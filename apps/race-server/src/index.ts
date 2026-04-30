@@ -5,6 +5,20 @@ import { TYPING_RACE_ROOM_NAME } from "@yeon/race-shared";
 import { TypingRaceRoom } from "./rooms/typing-race-room";
 
 const port = Number(process.env.PORT || 2567);
+
+type JsonResponse = {
+  json: (body: unknown) => void;
+};
+
+type TextResponse = {
+  type: (contentType: string) => TextResponse;
+  send: (body: string) => void;
+};
+
+type RoomsRequest = {
+  params: { roomName?: string };
+};
+
 const server = http.createServer();
 
 const gameServer = new Server({
@@ -12,17 +26,11 @@ const gameServer = new Server({
     server,
   }),
   express: (app) => {
-    app.get("/health", (
-      _request: unknown,
-      response: { json: (body: unknown) => void },
-    ) => {
+    app.get("/health", (_request: unknown, response: JsonResponse) => {
       response.json({ ok: true, room: TYPING_RACE_ROOM_NAME });
     });
 
-    app.get("/rooms/:roomName", async (
-      request: { params: { roomName?: string } },
-      response: { json: (body: unknown) => void },
-    ) => {
+    app.get("/rooms/:roomName", async (request: RoomsRequest, response: JsonResponse) => {
       const rooms = await matchMaker.query({
         name: request.params.roomName ?? TYPING_RACE_ROOM_NAME,
         locked: false,
@@ -30,12 +38,16 @@ const gameServer = new Server({
       });
       response.json(rooms);
     });
+
+    app.get("/", (_request: unknown, response: TextResponse) => {
+      response.type("text/plain; charset=utf-8");
+      response.send("typing-race room server");
+    });
   },
 });
 
 // locale + roomMode별 룸 풀 분리 (빠른 레이스와 로비 타자방 섞임 방지)
 gameServer.define(TYPING_RACE_ROOM_NAME, TypingRaceRoom).filterBy(["locale", "roomMode"]);
 
-void gameServer.listen(port, "0.0.0.0", undefined, () => {
-  console.log(`typing-race room server listening on ${port}`);
-});
+await gameServer.listen(port, "0.0.0.0");
+console.log(`typing-race room server listening on ${port}`);
