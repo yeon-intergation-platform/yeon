@@ -21,6 +21,7 @@ import {
 import { usePlayerIdentity } from "./use-player-identity";
 import { useRaceRoom } from "./use-race-room";
 import { useTypingProfile } from "./use-typing-profile";
+import { TypingBgmButton } from "./typing-bgm-button";
 import { TypingRaceMultiplayerScreen } from "./typing-race-multiplayer-screen";
 import { TypingSettingsButton } from "./typing-settings-button";
 import {
@@ -152,7 +153,10 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
           <Link href="/typing-service/rooms" className="inline-flex items-center gap-2 text-[13px] text-[#888] no-underline hover:text-[#111]">
             <ArrowLeft size={14} /> 타자방 로비
           </Link>
-          <TypingSettingsButton />
+          <div className="flex items-center gap-2">
+            <TypingBgmButton />
+            <TypingSettingsButton />
+          </div>
         </div>
       </header>
 

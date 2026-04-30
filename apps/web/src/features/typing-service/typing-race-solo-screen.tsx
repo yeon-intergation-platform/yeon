@@ -18,6 +18,7 @@ import {
 import { TYPING_PASSAGES } from "./typing-content";
 import { useTypingProfile } from "./use-typing-profile";
 import { createTranslator, getSpeedUnit, useTypingSettings } from "./use-typing-settings";
+import { TypingBgmButton } from "./typing-bgm-button";
 import { TypingSettingsButton } from "./typing-settings-button";
 
 const RACE_PASSAGES = TYPING_PASSAGES.filter((p) => p.difficulty === "flow");
@@ -264,6 +265,7 @@ export function TypingRaceSoloScreen({ offlineReason, retryLabel, onRetryMultipl
           </Link>
           <div className="flex items-center gap-3">
             <span className="font-mono text-[12px] text-[#aaa]">{passage.title}</span>
+            <TypingBgmButton />
             <TypingSettingsButton />
           </div>
         </div>

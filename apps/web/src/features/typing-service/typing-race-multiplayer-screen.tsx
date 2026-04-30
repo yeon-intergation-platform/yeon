@@ -17,6 +17,7 @@ import {
   type TypingRaceEngineController,
 } from "@yeon/typing-race-engine";
 import { useTypingProfile } from "./use-typing-profile";
+import { TypingBgmButton } from "./typing-bgm-button";
 import { createTranslator, useTypingSettings } from "./use-typing-settings";
 import { TypingSettingsButton } from "./typing-settings-button";
 import type { UseRaceRoomResult } from "./use-race-room";
@@ -215,6 +216,7 @@ export function TypingRaceMultiplayerScreen({ race }: TypingRaceMultiplayerScree
             <span className="font-mono text-[12px] text-[#aaa]">
               {race.snapshot?.roundLabel === "flow-focus" ? t("roundFlowFocus") : (race.snapshot?.roundLabel ?? "")}
             </span>
+            <TypingBgmButton />
             <TypingSettingsButton />
           </div>
         </div>
