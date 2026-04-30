@@ -158,7 +158,7 @@ function ReadyPlayBody({
       { difficulty, itemId: play.currentItem.id },
       {
         onSuccess: () => {
-          play.handleNext();
+          play.handleFirst();
         },
       },
     );
@@ -178,6 +178,7 @@ function ReadyPlayBody({
         <div className="flex gap-2">
           <button
             type="button"
+            aria-pressed={studyMode === CARD_STUDY_MODES.flashcard}
             onClick={() => handleStudyModeChange(CARD_STUDY_MODES.flashcard)}
             className={`rounded-xl border px-4 py-2 text-[13px] font-semibold ${
               studyMode === CARD_STUDY_MODES.flashcard
@@ -189,6 +190,7 @@ function ReadyPlayBody({
           </button>
           <button
             type="button"
+            aria-pressed={studyMode === CARD_STUDY_MODES.review}
             onClick={() => handleStudyModeChange(CARD_STUDY_MODES.review)}
             className={`rounded-xl border px-4 py-2 text-[13px] font-semibold ${
               studyMode === CARD_STUDY_MODES.review

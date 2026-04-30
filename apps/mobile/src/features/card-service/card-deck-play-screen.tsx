@@ -83,7 +83,8 @@ export function CardDeckPlayScreen({ deckId }: CardDeckPlayScreenProps) {
           queryKey: cardServiceQueryKeys.deck(deckId, sessionToken),
         });
       }
-      moveNext();
+      setCurrentIndex(0);
+      setAnswerVisible(false);
     },
   });
 
