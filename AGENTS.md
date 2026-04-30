@@ -19,6 +19,7 @@ This file is the **thin project override** for Yeon. The global baseline is `~/.
 - Do **not** create, rebase onto, merge into, deploy from, or open PRs against `develop` unless the user explicitly says to reactivate or use `develop`.
 - If an older skill or document says `origin/develop`, treat it as stale for this repository and follow this main-only policy.
 - Direct pushes to `main` remain forbidden unless explicitly requested; use branch → commit → push → PR → merge.
+- **항상 main 머지 완료까지 진행한다.** 코드를 수정했으면 기본 동작은 _commit → push → PR(main) → merge_ 까지 한 번에 마무리한다. 사용자가 명시적으로 “커밋만/푸시만/PR만”을 지시하지 않는 한 변경을 미머지 상태로 남기지 않는다. 검증(lint/typecheck/build)은 머지 전에 PASS 되어야 하며, 실패하면 머지 대신 수정 후 재검증한다.
 
 </main_only_policy>
 

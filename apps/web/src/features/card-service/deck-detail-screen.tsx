@@ -173,7 +173,7 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
                 </section>
               </section>
 
-              <aside className="hidden lg:sticky lg:top-6 lg:block">
+              <aside className="hidden lg:sticky lg:top-6 lg:block lg:max-h-[calc(100dvh-3rem)] lg:overflow-y-auto">
                 <AddCardsPanel
                   deckId={state.deck.id}
                   editingItem={selectedItem}
