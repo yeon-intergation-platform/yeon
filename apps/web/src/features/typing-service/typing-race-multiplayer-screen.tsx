@@ -7,6 +7,8 @@ import {
   TYPING_RACE_LANE_ACCENTS,
   TYPING_RACE_LANE_ROLE,
   TYPING_RACE_STAGE,
+  TYPING_ROOM_STATUS,
+  toWpmFromCpm,
   type TypingRaceLaneSnapshot,
   type TypingRaceSnapshot,
 } from "@yeon/race-shared";
@@ -15,7 +17,7 @@ import {
   type TypingRaceEngineController,
 } from "@yeon/typing-race-engine";
 import { useTypingProfile } from "./use-typing-profile";
-import { createTranslator, getSpeedUnit, useTypingSettings } from "./use-typing-settings";
+import { createTranslator, useTypingSettings } from "./use-typing-settings";
 import { TypingSettingsButton } from "./typing-settings-button";
 import type { UseRaceRoomResult } from "./use-race-room";
 
@@ -49,12 +51,12 @@ export type TypingRaceMultiplayerScreenProps = {
 export function TypingRaceMultiplayerScreen({ race }: TypingRaceMultiplayerScreenProps) {
   const { profile } = useTypingProfile();
   const { settings } = useTypingSettings();
-  const speedUnit = getSpeedUnit(settings.locale);
   const t = createTranslator(settings.locale);
 
   const [input, setInput] = useState("");
   const [startedAt, setStartedAt] = useState<number | null>(null);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [mistakeCount, setMistakeCount] = useState(0);
 
   const engineContainerRef = useRef<HTMLDivElement | null>(null);
   const engineControllerRef = useRef<TypingRaceEngineController | null>(null);
@@ -66,7 +68,8 @@ export function TypingRaceMultiplayerScreen({ race }: TypingRaceMultiplayerScree
 
   const progress = useMemo(() => getProgress(prompt, input), [prompt, input]);
   const accuracy = useMemo(() => calculateAccuracy(prompt, input), [prompt, input]);
-  const typingSpeed = useMemo(() => calculateTypingSpeed(input, elapsedSeconds), [elapsedSeconds, input]);
+  const cpm = useMemo(() => calculateTypingSpeed(input, elapsedSeconds), [elapsedSeconds, input]);
+  const wpm = useMemo(() => toWpmFromCpm(cpm), [cpm]);
   const completed = input.length > 0 && input === prompt;
 
   const mismatches = useMemo(() => {
@@ -76,7 +79,6 @@ export function TypingRaceMultiplayerScreen({ race }: TypingRaceMultiplayerScree
     }, []);
   }, [inputChars, promptChars]);
 
-  // 카운트다운 종료 시 타이머 시작 + 포커스
   useEffect(() => {
     if (race.stage !== TYPING_RACE_STAGE.LIVE || startedAt || completed) return;
     setStartedAt(Date.now());
@@ -91,7 +93,6 @@ export function TypingRaceMultiplayerScreen({ race }: TypingRaceMultiplayerScree
     return () => window.clearInterval(interval);
   }, [completed, startedAt]);
 
-  // 서버에 progress 전송 (500ms throttle)
   const lastSentProgressRef = useRef(0);
   const sendProgress = race.sendProgress;
   const sendFinish = race.sendFinish;
@@ -101,30 +102,38 @@ export function TypingRaceMultiplayerScreen({ race }: TypingRaceMultiplayerScree
     const now = Date.now();
     if (now - lastSentProgressRef.current < 500 && !completed) return;
     lastSentProgressRef.current = now;
-    sendProgress({ progress, wpm: typingSpeed, accuracy });
-  }, [accuracy, completed, progress, sendProgress, stage, typingSpeed]);
+    sendProgress({
+      progress,
+      cpm,
+      wpm,
+      accuracy,
+      mistakeCount,
+      elapsedTimeMs: Math.round(elapsedSeconds * 1000),
+    });
+  }, [accuracy, completed, cpm, elapsedSeconds, mistakeCount, progress, sendProgress, stage, wpm]);
 
-  // 완주 시 finish 전송
   const finishSentRef = useRef(false);
   useEffect(() => {
     if (!completed || finishSentRef.current) return;
     finishSentRef.current = true;
     sendFinish({
       progress: 100,
-      wpm: typingSpeed,
+      cpm,
+      wpm,
       accuracy,
+      mistakeCount,
+      elapsedTimeMs: Math.round(elapsedSeconds * 1000),
       finishedAt: Date.now(),
     });
-  }, [accuracy, completed, sendFinish, typingSpeed]);
+  }, [accuracy, completed, cpm, elapsedSeconds, mistakeCount, sendFinish, wpm]);
 
-  // 엔진 마운트: cleanup에서만 destroy해 double-destroy 방지
   useEffect(() => {
     let active = true;
     if (!engineContainerRef.current) return;
 
     const mountPromise = mountTypingRaceEngine({ container: engineContainerRef.current });
     mountPromise.then((controller) => {
-      if (!active) return; // cleanup이 처리하므로 여기서 destroy 호출 안 함
+      if (!active) return;
       engineControllerRef.current = controller;
     });
 
@@ -137,7 +146,6 @@ export function TypingRaceMultiplayerScreen({ race }: TypingRaceMultiplayerScree
     };
   }, []);
 
-  // 서버 스냅샷에 내 로컬 진행률 즉각 반영 (lag 보정)
   const displaySnapshot = useMemo<TypingRaceSnapshot | null>(() => {
     if (!race.snapshot) return null;
     const lanes: TypingRaceLaneSnapshot[] = race.snapshot.lanes.map((lane) => {
@@ -148,13 +156,14 @@ export function TypingRaceMultiplayerScreen({ race }: TypingRaceMultiplayerScree
           accent: TYPING_RACE_LANE_ACCENTS[0],
           role: TYPING_RACE_LANE_ROLE.LOCAL,
           progress,
-          wpm: completed ? typingSpeed : lane.wpm,
+          cpm,
+          wpm: cpm,
         };
       }
       return lane;
     });
-    return { ...race.snapshot, lanes, speedUnit };
-  }, [race.snapshot, race.mySeat, profile.nickname, progress, typingSpeed, completed, speedUnit]);
+    return { ...race.snapshot, lanes, speedUnit: "CPM" };
+  }, [race.snapshot, race.mySeat, profile.nickname, progress, cpm]);
 
   useEffect(() => {
     if (!displaySnapshot) return;
@@ -165,12 +174,31 @@ export function TypingRaceMultiplayerScreen({ race }: TypingRaceMultiplayerScree
     setInput("");
     setStartedAt(null);
     setElapsedSeconds(0);
+    setMistakeCount(0);
     finishSentRef.current = false;
     lastSentProgressRef.current = 0;
     race.rejoin();
   };
 
+  const handleInputChange = (nextRawValue: string) => {
+    const nextInput = Array.from(nextRawValue).slice(0, promptChars.length).join("");
+    const nextChars = Array.from(nextInput);
+    let addedMistakes = 0;
+    nextChars.forEach((char, index) => {
+      if (inputChars[index] !== char && char !== promptChars[index]) {
+        addedMistakes += 1;
+      }
+    });
+    if (addedMistakes > 0) setMistakeCount((count) => count + addedMistakes);
+    setInput(nextInput);
+  };
+
   const inCountdown = race.stage === TYPING_RACE_STAGE.COUNTDOWN;
+  const results = race.results;
+  const roomParticipants = race.roomSnapshot?.participants ?? [];
+  const myResult = results.find((result) => result.userId === race.mySeat);
+  const hasResults = results.length > 0;
+  const showResults = hasResults || race.roomSnapshot?.status === TYPING_ROOM_STATUS.FINISHED;
 
   return (
     <div className="min-h-screen bg-white text-[#111]">
@@ -197,9 +225,12 @@ export function TypingRaceMultiplayerScreen({ race }: TypingRaceMultiplayerScree
           <div ref={engineContainerRef} className="h-[520px] w-full" />
         </div>
 
-        <div className="mt-3 flex items-center gap-6 rounded-lg border border-[#e5e5e5] bg-[#fafafa] px-5 py-3 font-mono text-[13px]">
-          <span className="text-[#888]">{speedUnit}</span>
-          <span className="text-[18px] font-bold text-[#111]">{typingSpeed}</span>
+        <div className="mt-3 flex flex-wrap items-center gap-5 rounded-lg border border-[#e5e5e5] bg-[#fafafa] px-5 py-3 font-mono text-[13px]">
+          <span className="text-[#888]">CPM</span>
+          <span className="text-[18px] font-bold text-[#111]">{cpm}</span>
+          <span className="text-[#ddd]">·</span>
+          <span className="text-[#888]">WPM</span>
+          <span className="text-[18px] font-bold text-[#111]">{wpm}</span>
           <span className="text-[#ddd]">·</span>
           <span className="text-[#888]">acc</span>
           <span className="text-[18px] font-bold text-[#111]">{accuracy}%</span>
@@ -207,30 +238,71 @@ export function TypingRaceMultiplayerScreen({ race }: TypingRaceMultiplayerScree
           <span className="text-[#888]">progress</span>
           <span className="text-[18px] font-bold text-[#111]">{progress}%</span>
           <span className="text-[#ddd]">·</span>
+          <span className="text-[#888]">mistakes</span>
+          <span className="text-[18px] font-bold text-[#111]">{mistakeCount}</span>
+          <span className="text-[#ddd]">·</span>
           <span className="text-[#888]">time</span>
           <span className="text-[18px] font-bold text-[#111]">{elapsedSeconds.toFixed(1)}s</span>
         </div>
 
-        {completed && (
-          <div className="mt-3 flex items-center justify-between rounded-lg border border-[#e5e5e5] bg-[#fafafa] px-5 py-4">
-            <div className="flex items-center gap-6 font-mono text-[13px]">
-              <span className="text-[#888]">{t("result")}</span>
-              <span className="text-[#111]"><span className="text-[20px] font-bold">{typingSpeed}</span> {speedUnit}</span>
-              <span className="text-[#111]"><span className="text-[20px] font-bold">{accuracy}</span>% {t("accuracy")}</span>
-              <span className="text-[#111]"><span className="text-[20px] font-bold">{elapsedSeconds.toFixed(1)}</span>s</span>
+        <div className="mt-3 grid gap-2 rounded-lg border border-[#e5e5e5] bg-white px-5 py-4">
+          <div className="flex items-center justify-between text-[13px] font-bold text-[#111]">
+            <span>실시간 진행률</span>
+            {myResult && <span className="text-[#ff6b35]">현재 {myResult.rank}위</span>}
+          </div>
+          {roomParticipants.map((participant) => (
+            <div key={participant.id} className="grid gap-1">
+              <div className="flex items-center justify-between text-[12px] text-[#666]">
+                <span>{participant.label}{participant.id === race.mySeat ? " (나)" : ""}</span>
+                <span>{participant.progress}% · {participant.cpm} CPM · 정확도 {participant.accuracy}%</span>
+              </div>
+              <div className="h-2 overflow-hidden rounded-full bg-[#f1f1f1]">
+                <div className="h-full rounded-full bg-[#ff6b35] transition-all" style={{ width: `${participant.progress}%` }} />
+              </div>
             </div>
-            <button
-              type="button"
-              className="inline-flex items-center gap-2 rounded border border-[#e5e5e5] px-5 py-2 text-[13px] font-medium text-[#555] transition-colors hover:border-[#aaa]"
-              onClick={handleRestart}
-            >
-              <RotateCcw size={13} />
-              {t("restart")}
-            </button>
+          ))}
+        </div>
+
+        {showResults && (
+          <div className="mt-3 rounded-lg border border-[#e5e5e5] bg-[#fafafa] px-5 py-4">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-[12px] font-bold uppercase tracking-[0.16em] text-[#ff6b35]">Result</p>
+                <h2 className="mt-1 text-[22px] font-black tracking-[-0.03em]">타자 대결 결과</h2>
+              </div>
+              <button
+                type="button"
+                className="inline-flex items-center gap-2 rounded border border-[#e5e5e5] px-5 py-2 text-[13px] font-medium text-[#555] transition-colors hover:border-[#aaa]"
+                onClick={handleRestart}
+              >
+                <RotateCcw size={13} />
+                {t("restart")}
+              </button>
+            </div>
+
+            <div className="mt-4 grid gap-3 md:grid-cols-2">
+              {results.map((result) => (
+                <div key={result.userId} className="rounded-2xl border border-[#e5e5e5] bg-white p-4">
+                  <p className="text-[13px] font-bold text-[#888]">{result.rank}위</p>
+                  <h3 className="mt-1 text-[18px] font-black">{result.label}</h3>
+                  <div className="mt-3 grid grid-cols-2 gap-2 font-mono text-[12px]">
+                    <span>CPM <b className="text-[16px] text-[#111]">{result.cpm}</b></span>
+                    <span>WPM <b className="text-[16px] text-[#111]">{result.wpm}</b></span>
+                    <span>정확도 <b className="text-[16px] text-[#111]">{result.accuracy}%</b></span>
+                    <span>오타 <b className="text-[16px] text-[#111]">{result.mistakeCount}</b></span>
+                    <span>시간 <b className="text-[16px] text-[#111]">{(result.elapsedTimeMs / 1000).toFixed(1)}s</b></span>
+                    <span>점수 <b className="text-[16px] text-[#111]">{result.score}</b></span>
+                  </div>
+                </div>
+              ))}
+              {!hasResults && (
+                <p className="rounded-2xl border border-dashed border-[#ddd] bg-white p-5 text-[14px] text-[#777]">결과를 집계하는 중입니다.</p>
+              )}
+            </div>
           </div>
         )}
 
-        {!completed && (
+        {!showResults && (
           <div className="mt-3 grid gap-3">
             <div className="rounded-lg border border-[#e5e5e5] bg-[#fafafa] px-6 py-5 font-mono text-[19px] leading-[2] tracking-[0.01em]">
               {promptChars.map((char, index) => {
@@ -261,7 +333,7 @@ export function TypingRaceMultiplayerScreen({ race }: TypingRaceMultiplayerScree
             <textarea
               ref={textareaRef}
               value={input}
-              onChange={(e) => setInput(Array.from(e.target.value).slice(0, promptChars.length).join(""))}
+              onChange={(e) => handleInputChange(e.target.value)}
               disabled={inCountdown}
               rows={3}
               spellCheck={false}

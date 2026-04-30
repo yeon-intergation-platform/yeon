@@ -10,7 +10,12 @@ import {
   TYPING_ROOM_STATUS,
   TYPING_ROOM_TEXT_TYPE,
   TYPING_ROOM_VISIBILITY,
+  calculateTypingScore,
+  clampPercent,
   clampRaceProgress,
+  normalizeNonNegativeInteger,
+  rankTypingResults,
+  toWpmFromCpm,
   type MatchJoinMessage,
   type RaceFinishMessage,
   type RaceProgressMessage,
@@ -18,6 +23,7 @@ import {
   type TypingRaceLaneSnapshot,
   type TypingRaceSnapshot,
   type TypingRaceStage,
+  type TypingResultSnapshot,
   type TypingRoomCreateMessage,
   type TypingRoomLanguage,
   type TypingRoomParticipantSnapshot,
@@ -34,8 +40,14 @@ type RoomParticipant = {
   accent: string;
   kind: "player" | "benchmark";
   progress: number;
+  cpm: number;
   wpm: number;
   accuracy: number;
+  mistakeCount: number;
+  elapsedTimeMs: number;
+  finishedAt: number | null;
+  score: number;
+  rank: number | null;
   isReady: boolean;
   joinedAt: number;
 };
@@ -94,24 +106,20 @@ function normalizeSettings(options?: TypingRoomCreateMessage): TypingRoomSetting
 
   return {
     title: clampText(options?.title, DEFAULT_ROOM_SETTINGS.title, 40),
-    visibility: options?.visibility === TYPING_ROOM_VISIBILITY.PRIVATE
-      ? TYPING_ROOM_VISIBILITY.PRIVATE
-      : TYPING_ROOM_VISIBILITY.PUBLIC,
+    visibility: TYPING_ROOM_VISIBILITY.PUBLIC,
     maxParticipants: Math.min(
       MAX_PLAYERS_PER_ROOM,
-      clampOption(options?.maxParticipants, [2, 4, 8], DEFAULT_ROOM_SETTINGS.maxParticipants),
+      clampOption(options?.maxParticipants, [2, 4], DEFAULT_ROOM_SETTINGS.maxParticipants),
     ),
-    textType: Object.values(TYPING_ROOM_TEXT_TYPE).includes(options?.textType as never)
-      ? options!.textType!
-      : DEFAULT_ROOM_SETTINGS.textType,
-    language,
+    textType: TYPING_ROOM_TEXT_TYPE.SHORT,
+    language: language === TYPING_ROOM_LANGUAGE.EN
+      ? TYPING_ROOM_LANGUAGE.EN
+      : TYPING_ROOM_LANGUAGE.KO,
     difficulty: Object.values(TYPING_ROOM_DIFFICULTY).includes(options?.difficulty as never)
       ? options!.difficulty!
       : DEFAULT_ROOM_SETTINGS.difficulty,
-    roundCount: clampOption(options?.roundCount, [1, 3, 5], DEFAULT_ROOM_SETTINGS.roundCount),
-    mode: options?.mode === TYPING_ROOM_MODE.TIME_LIMIT
-      ? TYPING_ROOM_MODE.TIME_LIMIT
-      : TYPING_ROOM_MODE.FINISH,
+    roundCount: TYPING_RACE_DEFAULTS.sliceARoundCount,
+    mode: TYPING_ROOM_MODE.FINISH,
   };
 }
 
@@ -133,8 +141,6 @@ export class TypingRaceRoom extends Room {
   private startedAt: number = Date.now();
 
   private countdownAccumulator: number = 0;
-
-  private finishCount: number = 0;
 
   private hostId: string | null = null;
 
@@ -222,8 +228,14 @@ export class TypingRaceRoom extends Room {
       accent: TYPING_RACE_LANE_ACCENTS[this.participants.size % TYPING_RACE_LANE_ACCENTS.length],
       kind: "player",
       progress: 0,
+      cpm: 0,
       wpm: 0,
       accuracy: 100,
+      mistakeCount: 0,
+      elapsedTimeMs: 0,
+      finishedAt: null,
+      score: 0,
+      rank: null,
       isReady: !this.lobbyMode || this.hostId === client.sessionId,
       joinedAt: Date.now(),
     };
@@ -267,12 +279,7 @@ export class TypingRaceRoom extends Room {
       return;
     }
 
-    participant.progress = clampRaceProgress(message.progress);
-    participant.wpm = Math.max(0, Math.round(message.wpm));
-    participant.accuracy = Math.max(
-      0,
-      Math.min(100, Math.round(message.accuracy)),
-    );
+    this.applyParticipantMetrics(participant, message);
   }
 
   private finishParticipant(client: Client, message: RaceFinishMessage) {
@@ -282,18 +289,24 @@ export class TypingRaceRoom extends Room {
       return;
     }
 
-    participant.progress = clampRaceProgress(message.progress);
-    participant.wpm = Math.max(0, Math.round(message.wpm));
-    participant.accuracy = Math.max(
-      0,
-      Math.min(100, Math.round(message.accuracy)),
+    this.applyParticipantMetrics(participant, message);
+    participant.progress = 100;
+    participant.elapsedTimeMs = normalizeNonNegativeInteger(
+      message.elapsedTimeMs ?? Date.now() - this.startedAt,
     );
+    participant.finishedAt = Date.now();
+    participant.score = calculateTypingScore(participant.cpm, participant.accuracy);
+    this.updateRanks();
 
-    this.finishCount += 1;
-    client.send(RACE_EVENTS.RACE_RESULT, {
-      placement: this.finishCount,
-      totalPlayers: this.participants.size + this.benchmarks.size,
-      completedAt: Date.now(),
+    const results = this.createResultSnapshot();
+    const placement = results.find((result) => result.userId === participant.id)?.rank
+      ?? results.length;
+
+    this.broadcast(RACE_EVENTS.RACE_RESULT, {
+      placement,
+      totalPlayers: this.participants.size,
+      completedAt: participant.finishedAt,
+      results,
     });
 
     const allFinished = Array.from(this.participants.values()).every(
@@ -304,6 +317,48 @@ export class TypingRaceRoom extends Room {
       this.stage = TYPING_RACE_STAGE.FINISHED;
     }
     this.syncState();
+  }
+
+  private applyParticipantMetrics(
+    participant: RoomParticipant,
+    message: RaceProgressMessage | RaceFinishMessage,
+  ) {
+    const cpm = normalizeNonNegativeInteger(message.cpm ?? message.wpm);
+    participant.progress = clampRaceProgress(message.progress);
+    participant.cpm = cpm;
+    participant.wpm = toWpmFromCpm(cpm);
+    participant.accuracy = clampPercent(message.accuracy);
+    participant.mistakeCount = normalizeNonNegativeInteger(message.mistakeCount);
+    participant.elapsedTimeMs = normalizeNonNegativeInteger(
+      message.elapsedTimeMs ?? Date.now() - this.startedAt,
+    );
+    participant.score = calculateTypingScore(participant.cpm, participant.accuracy);
+  }
+
+  private updateRanks() {
+    const ranked = rankTypingResults(this.createResultSnapshot(false));
+    ranked.forEach((result) => {
+      const participant = this.participants.get(result.userId);
+      if (participant) participant.rank = result.rank;
+    });
+  }
+
+  private createResultSnapshot(onlyFinished = true): TypingResultSnapshot[] {
+    return rankTypingResults(
+      Array.from(this.participants.values())
+        .filter((participant) => !onlyFinished || participant.finishedAt !== null)
+        .map((participant) => ({
+          userId: participant.id,
+          label: participant.label,
+          cpm: participant.cpm,
+          wpm: participant.wpm,
+          accuracy: participant.accuracy,
+          mistakeCount: participant.mistakeCount,
+          elapsedTimeMs: participant.elapsedTimeMs,
+          score: participant.score,
+          finishedAt: participant.finishedAt ?? Number.MAX_SAFE_INTEGER,
+        })),
+    );
   }
 
   private tick(deltaTime: number) {
@@ -332,7 +387,7 @@ export class TypingRaceRoom extends Room {
       const promptChars = Math.max(1, Array.from(DEMO_PROMPTS[this.settings.language]).length);
 
       this.benchmarks.forEach((benchmark) => {
-        const charsTyped = elapsedSeconds * (benchmark.wpm / 60);
+        const charsTyped = elapsedSeconds * (benchmark.cpm / 60);
         benchmark.progress = clampRaceProgress((charsTyped / promptChars) * 100);
       });
     }
@@ -351,7 +406,8 @@ export class TypingRaceRoom extends Room {
         label: participant.label,
         accent: participant.accent,
         progress: participant.progress,
-        wpm: participant.wpm,
+        wpm: participant.cpm,
+        cpm: participant.cpm,
         role: participant.kind === "benchmark"
           ? TYPING_RACE_LANE_ROLE.BENCHMARK
           : TYPING_RACE_LANE_ROLE.GUEST,
@@ -388,8 +444,14 @@ export class TypingRaceRoom extends Room {
       role: participant.id === this.hostId ? "host" : "guest",
       isReady: participant.isReady,
       progress: participant.progress,
+      cpm: participant.cpm,
       wpm: participant.wpm,
       accuracy: participant.accuracy,
+      mistakeCount: participant.mistakeCount,
+      elapsedTimeMs: participant.elapsedTimeMs,
+      finishedAt: participant.finishedAt,
+      score: participant.score,
+      rank: participant.rank,
     }));
 
     return {
@@ -398,6 +460,7 @@ export class TypingRaceRoom extends Room {
       hostId: this.hostId,
       currentRound: 1,
       canStart: this.canStart(),
+      results: this.createResultSnapshot(),
     };
   }
 
@@ -415,8 +478,14 @@ export class TypingRaceRoom extends Room {
         accent: benchmark.accent,
         kind: "benchmark",
         progress: 0,
-        wpm: benchmark.wpm,
+        cpm: benchmark.wpm,
+        wpm: toWpmFromCpm(benchmark.wpm),
         accuracy: 100,
+        mistakeCount: 0,
+        elapsedTimeMs: 0,
+        finishedAt: null,
+        score: 0,
+        rank: null,
         isReady: true,
         joinedAt: Date.now(),
       });
@@ -428,11 +497,16 @@ export class TypingRaceRoom extends Room {
     this.countdownRemaining = seconds;
     this.startedAt = Date.now();
     this.countdownAccumulator = 0;
-    this.finishCount = 0;
     this.participants.forEach((participant) => {
       participant.progress = 0;
+      participant.cpm = 0;
       participant.wpm = 0;
       participant.accuracy = 100;
+      participant.mistakeCount = 0;
+      participant.elapsedTimeMs = 0;
+      participant.finishedAt = null;
+      participant.score = 0;
+      participant.rank = null;
     });
   }
 

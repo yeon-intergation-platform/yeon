@@ -23,6 +23,7 @@ export const TYPING_ROOM_STATUS = {
   COUNTDOWN: "countdown",
   LIVE: "live",
   FINISHED: "finished",
+  CLOSED: "closed",
 } as const;
 
 export type TypingRoomStatus =
@@ -74,11 +75,13 @@ export type TypingRoomMode =
 export const TYPING_RACE_DEFAULTS = {
   countdownSeconds: 10,
   roomCountdownSeconds: 3,
-  minPlayers: 2,
+  minPlayers: 1,
   maxPlayers: 6,
   lobbyMaxPlayers: 4,
   roomTickRate: 15,
   progressBroadcastRate: 8,
+  sliceAMaxParticipants: [2, 4],
+  sliceARoundCount: 1,
 } as const;
 
 export const TYPING_RACE_LANE_ACCENTS = [
@@ -114,6 +117,7 @@ export type TypingRaceLaneSnapshot = {
   role: TypingRaceLaneRole;
   progress: number;
   wpm: number;
+  cpm?: number;
   accent: string;
   isReady?: boolean;
 };
@@ -153,8 +157,27 @@ export type TypingRoomParticipantSnapshot = {
   role: "host" | "guest";
   isReady: boolean;
   progress: number;
+  cpm: number;
   wpm: number;
   accuracy: number;
+  mistakeCount: number;
+  elapsedTimeMs: number;
+  finishedAt: number | null;
+  score: number;
+  rank: number | null;
+};
+
+export type TypingResultSnapshot = {
+  userId: string;
+  label: string;
+  cpm: number;
+  wpm: number;
+  accuracy: number;
+  mistakeCount: number;
+  elapsedTimeMs: number;
+  score: number;
+  rank: number;
+  finishedAt: number;
 };
 
 export type TypingRoomSnapshot = TypingRoomSummary & {
@@ -162,6 +185,7 @@ export type TypingRoomSnapshot = TypingRoomSummary & {
   hostId: string | null;
   currentRound: number;
   canStart: boolean;
+  results: readonly TypingResultSnapshot[];
 };
 
 export type MatchJoinMessage = {
@@ -204,14 +228,20 @@ export type RaceCountdownMessage = {
 
 export type RaceProgressMessage = {
   progress: number;
+  cpm?: number;
   wpm: number;
   accuracy: number;
+  mistakeCount?: number;
+  elapsedTimeMs?: number;
 };
 
 export type RaceFinishMessage = {
   progress: number;
+  cpm?: number;
   wpm: number;
   accuracy: number;
+  mistakeCount?: number;
+  elapsedTimeMs?: number;
   finishedAt: number;
 };
 
@@ -219,6 +249,7 @@ export type RaceResultMessage = {
   placement: number;
   totalPlayers: number;
   completedAt: number;
+  results: readonly TypingResultSnapshot[];
 };
 
 export type RoomReadyMessage = {
@@ -229,6 +260,45 @@ export type RoomErrorMessage = {
   message: string;
 };
 
+export type RankableTypingResult = Omit<TypingResultSnapshot, "rank"> & {
+  rank?: number | null;
+};
+
 export function clampRaceProgress(value: number) {
   return Math.min(100, Math.max(0, Math.round(value)));
+}
+
+export function clampPercent(value: number) {
+  return Math.min(100, Math.max(0, Math.round(value)));
+}
+
+export function normalizeNonNegativeInteger(value: number | undefined) {
+  if (!Number.isFinite(value)) return 0;
+  return Math.max(0, Math.round(value ?? 0));
+}
+
+export function calculateTypingScore(cpm: number, accuracy: number) {
+  const normalizedCpm = normalizeNonNegativeInteger(cpm);
+  return Math.round(normalizedCpm * (clampPercent(accuracy) / 100));
+}
+
+export function toWpmFromCpm(cpm: number) {
+  return Math.round(normalizeNonNegativeInteger(cpm) / 5);
+}
+
+export function rankTypingResults(
+  results: readonly RankableTypingResult[],
+): TypingResultSnapshot[] {
+  return [...results]
+    .sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score;
+      if (b.accuracy !== a.accuracy) return b.accuracy - a.accuracy;
+      if (a.elapsedTimeMs !== b.elapsedTimeMs) return a.elapsedTimeMs - b.elapsedTimeMs;
+      if (a.mistakeCount !== b.mistakeCount) return a.mistakeCount - b.mistakeCount;
+      return a.finishedAt - b.finishedAt;
+    })
+    .map((result, index) => ({
+      ...result,
+      rank: index + 1,
+    }));
 }
