@@ -3,6 +3,29 @@ import { z } from "zod";
 export const CARD_TEXT_MAX_LENGTH = 2000;
 export const CARD_BULK_IMPORT_MAX_ITEMS = 100;
 
+export const CARD_STUDY_MODES = {
+  flashcard: "flashcard",
+  review: "review",
+} as const;
+export const CARD_REVIEW_DIFFICULTIES = {
+  hard: "hard",
+  good: "good",
+  easy: "easy",
+} as const;
+
+export const cardStudyModeSchema = z.enum([
+  CARD_STUDY_MODES.flashcard,
+  CARD_STUDY_MODES.review,
+]);
+export type CardStudyMode = z.infer<typeof cardStudyModeSchema>;
+
+export const cardReviewDifficultySchema = z.enum([
+  CARD_REVIEW_DIFFICULTIES.hard,
+  CARD_REVIEW_DIFFICULTIES.good,
+  CARD_REVIEW_DIFFICULTIES.easy,
+]);
+export type CardReviewDifficulty = z.infer<typeof cardReviewDifficultySchema>;
+
 export const createCardDeckBodySchema = z.object({
   title: z.string().min(1).max(120),
   description: z.string().max(2000).nullish(),
@@ -41,6 +64,20 @@ export type UpdateCardDeckItemBody = z.infer<
   typeof updateCardDeckItemBodySchema
 >;
 
+export const updateCardStudyPreferenceBodySchema = z.object({
+  studyMode: cardStudyModeSchema,
+});
+export type UpdateCardStudyPreferenceBody = z.infer<
+  typeof updateCardStudyPreferenceBodySchema
+>;
+
+export const reviewCardDeckItemBodySchema = z.object({
+  difficulty: cardReviewDifficultySchema,
+});
+export type ReviewCardDeckItemBody = z.infer<
+  typeof reviewCardDeckItemBodySchema
+>;
+
 export const cardDeckDtoSchema = z.object({
   id: z.string(),
   title: z.string(),
@@ -55,6 +92,9 @@ export const cardDeckItemDtoSchema = z.object({
   id: z.string(),
   frontText: z.string(),
   backText: z.string(),
+  reviewDifficulty: cardReviewDifficultySchema.nullable(),
+  lastReviewedAt: z.string().datetime().nullable(),
+  nextReviewAt: z.string().datetime().nullable(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
 });
@@ -75,9 +115,17 @@ export const cardDeckItemResponseSchema = z.object({
 });
 export type CardDeckItemResponse = z.infer<typeof cardDeckItemResponseSchema>;
 
+export const cardStudyPreferenceResponseSchema = z.object({
+  studyMode: cardStudyModeSchema,
+});
+export type CardStudyPreferenceResponse = z.infer<
+  typeof cardStudyPreferenceResponseSchema
+>;
+
 export const cardDeckDetailResponseSchema = z.object({
   deck: cardDeckDtoSchema,
   items: z.array(cardDeckItemDtoSchema),
+  studyMode: cardStudyModeSchema,
 });
 export type CardDeckDetailResponse = z.infer<
   typeof cardDeckDetailResponseSchema

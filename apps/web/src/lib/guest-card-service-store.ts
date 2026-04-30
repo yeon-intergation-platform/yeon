@@ -1,6 +1,9 @@
 "use client";
 
+import { CARD_STUDY_MODES } from "@yeon/api-contract/card-decks";
 import type {
+  CardReviewDifficulty,
+  CardStudyMode,
   CardDeckDetailResponse,
   CardDeckDto,
   CardDeckItemDto,
@@ -16,8 +19,10 @@ import { type DBSchema, type IDBPDatabase, openDB } from "idb";
 
 // DB_VERSION: 스키마 변경 시 openDB upgrade 콜백에서 분기 처리 추가 필요.
 // 1 = decks(by-created-at) + items(by-deck) 초기 스키마.
+// 2 = items SRS review fields.
 const DB_NAME = "yeon-guest-card-service";
-const DB_VERSION = 1;
+const DB_VERSION = 2;
+const STUDY_MODE_STORAGE_KEY = "yeon-card-study-mode";
 
 export class GuestStoreUnavailableError extends Error {
   constructor(message: string) {
@@ -51,6 +56,9 @@ type GuestItemRow = {
   deckPublicId: string;
   frontText: string;
   backText: string;
+  reviewDifficulty?: CardReviewDifficulty | null;
+  lastReviewedAt?: string | null;
+  nextReviewAt?: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -106,6 +114,23 @@ async function getDb(): Promise<IDBPDatabase<GuestCardServiceDb>> {
   return dbPromise;
 }
 
+export function getGuestCardStudyMode() {
+  if (typeof localStorage === "undefined") {
+    return CARD_STUDY_MODES.flashcard;
+  }
+  return localStorage.getItem(STUDY_MODE_STORAGE_KEY) ===
+    CARD_STUDY_MODES.review
+    ? CARD_STUDY_MODES.review
+    : CARD_STUDY_MODES.flashcard;
+}
+
+export function setGuestCardStudyMode(studyMode: CardStudyMode) {
+  if (typeof localStorage === "undefined") {
+    return;
+  }
+  localStorage.setItem(STUDY_MODE_STORAGE_KEY, studyMode);
+}
+
 function nowIso(): string {
   return new Date().toISOString();
 }
@@ -136,6 +161,9 @@ function toItemDto(row: GuestItemRow): CardDeckItemDto {
     id: row.publicId,
     frontText: row.frontText,
     backText: row.backText,
+    reviewDifficulty: row.reviewDifficulty ?? null,
+    lastReviewedAt: row.lastReviewedAt ?? null,
+    nextReviewAt: row.nextReviewAt ?? null,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };
@@ -172,6 +200,7 @@ export async function getGuestDeckDetail(
   return {
     deck: toDeckDto(deck, sortedItems.length),
     items: sortedItems.map(toItemDto),
+    studyMode: getGuestCardStudyMode(),
   };
 }
 
@@ -247,6 +276,9 @@ export async function addGuestCard(
     deckPublicId,
     frontText: body.frontText,
     backText: body.backText,
+    reviewDifficulty: null,
+    lastReviewedAt: null,
+    nextReviewAt: null,
     createdAt,
     updatedAt: createdAt,
   };
@@ -269,6 +301,9 @@ export async function addGuestCards(
     deckPublicId,
     frontText: item.frontText,
     backText: item.backText,
+    reviewDifficulty: null,
+    lastReviewedAt: null,
+    nextReviewAt: null,
     createdAt,
     updatedAt: createdAt,
   }));
@@ -339,6 +374,50 @@ export async function deleteGuestCard(itemId: string): Promise<void> {
     deckUpdate,
     tx.done,
   ]);
+}
+
+const GUEST_REVIEW_INTERVAL_DAYS: Record<CardReviewDifficulty, number> = {
+  hard: 1,
+  good: 3,
+  easy: 4,
+};
+
+function addIsoDays(days: number): string {
+  const next = new Date();
+  next.setDate(next.getDate() + days);
+  return next.toISOString();
+}
+
+export async function reviewGuestCard(
+  itemId: string,
+  difficulty: CardReviewDifficulty,
+): Promise<CardDeckItemDto> {
+  const db = await getDb();
+  const tx = db.transaction(["decks", "items"], "readwrite");
+  const existing = await tx.objectStore("items").get(itemId);
+  if (!existing) {
+    tx.abort();
+    throw new Error("카드를 찾을 수 없습니다.");
+  }
+
+  const now = nowIso();
+  const updated: GuestItemRow = {
+    ...existing,
+    reviewDifficulty: difficulty,
+    lastReviewedAt: now,
+    nextReviewAt: addIsoDays(GUEST_REVIEW_INTERVAL_DAYS[difficulty]),
+    updatedAt: now,
+  };
+  const deck = await tx.objectStore("decks").get(existing.deckPublicId);
+  const deckUpdate = deck
+    ? tx.objectStore("decks").put({ ...deck, updatedAt: now })
+    : Promise.resolve();
+  await Promise.all([
+    tx.objectStore("items").put(updated),
+    deckUpdate,
+    tx.done,
+  ]);
+  return toItemDto(updated);
 }
 
 export async function countGuestCardDecks(): Promise<number> {

@@ -29,7 +29,6 @@ import {
 import { colors } from "../../theme/colors";
 
 const CARD_SERVICE_ROUTE = "/card-service" as Href;
-const PREVIEW_MAX_LENGTH = 72;
 const CARD_SERVICE_DECK_PLAY_ROUTE =
   "/card-service/decks/[deckId]/play" as Href;
 
@@ -76,14 +75,6 @@ function formatDate(value?: string): string {
     .format(date)
     .replace(/\. /g, ". ")
     .replace(/\.$/, ".");
-}
-
-function toPreviewText(text: string): string {
-  const normalized = text.replace(/\s+/g, " ").trim();
-  if (normalized.length <= PREVIEW_MAX_LENGTH) {
-    return normalized;
-  }
-  return `${normalized.slice(0, PREVIEW_MAX_LENGTH).trimEnd()}...`;
 }
 
 function parseAiCardInput(input: string): ParsedCardInput[] {
@@ -564,16 +555,16 @@ export function CardDeckDetailScreen({ deckId }: CardDeckDetailScreenProps) {
                   </Text>
                   <LabeledTextarea
                     label="질문"
-                    maxLength={500}
+                    maxLength={2000}
                     onChangeText={setFrontText}
-                    placeholder="질문을 입력하세요"
+                    placeholder="질문을 Markdown으로 입력하세요"
                     value={frontText}
                   />
                   <LabeledTextarea
                     label="답변"
-                    maxLength={1000}
+                    maxLength={2000}
                     onChangeText={setBackText}
-                    placeholder="답변을 입력하세요"
+                    placeholder="답변을 Markdown으로 입력하세요"
                     value={backText}
                   />
                   <Pressable
@@ -760,15 +751,11 @@ function CompactCardRow({
         <View style={styles.itemContent}>
           <View style={styles.qaLine}>
             <Text style={styles.qaBadge}>질문</Text>
-            <Text numberOfLines={1} style={styles.questionText}>
-              {toPreviewText(item.frontText)}
-            </Text>
+            <Text style={styles.questionText}>{item.frontText}</Text>
           </View>
           <View style={styles.qaLine}>
             <Text style={styles.qaBadge}>답변</Text>
-            <Text numberOfLines={1} style={styles.answerText}>
-              {toPreviewText(item.backText)}
-            </Text>
+            <Text style={styles.answerText}>{item.backText}</Text>
           </View>
         </View>
         <Pressable
@@ -1007,7 +994,7 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
   },
   qaLine: {
-    alignItems: "center",
+    alignItems: "flex-start",
     flexDirection: "row",
     gap: 12,
     minWidth: 0,

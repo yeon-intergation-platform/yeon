@@ -7,6 +7,8 @@ export {
   useAddCards,
   useDeleteCard,
   useUpdateCard,
+  useReviewCard,
+  useUpdateCardStudyPreference,
 } from "./use-card-mutations";
 export { useDeckPlayState } from "./use-deck-play-state";
 export { useMergeGuestDecks } from "./use-merge-guest";

@@ -1,8 +1,14 @@
 import { ApiClientError } from "@yeon/api-client";
-import { useQuery } from "@tanstack/react-query";
+import {
+  CARD_REVIEW_DIFFICULTIES,
+  CARD_STUDY_MODES,
+  type CardReviewDifficulty,
+  type CardStudyMode,
+} from "@yeon/api-contract/card-decks";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type Href, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { ActionButton } from "../../components/ui/action-button";
@@ -23,12 +29,16 @@ interface CardDeckPlayScreenProps {
 
 export function CardDeckPlayScreen({ deckId }: CardDeckPlayScreenProps) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [sessionToken, setSessionToken] = useState<string | null>(null);
   const [authStatus, setAuthStatus] = useState<
     "booting" | "signed_out" | "signed_in"
   >("booting");
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isAnswerVisible, setAnswerVisible] = useState(false);
+  const [studyMode, setStudyMode] = useState<CardStudyMode>(
+    CARD_STUDY_MODES.flashcard,
+  );
 
   const detailQuery = useQuery({
     enabled:
@@ -40,6 +50,43 @@ export function CardDeckPlayScreen({ deckId }: CardDeckPlayScreenProps) {
       : ["card-service", "deck", "missing"],
   });
 
+  const studyModeMutation = useMutation({
+    mutationFn: async (nextMode: CardStudyMode) => {
+      if (!sessionToken) {
+        throw new Error("로그인이 필요합니다.");
+      }
+      return cardServiceApi.updateCardStudyPreference(
+        { studyMode: nextMode },
+        sessionToken,
+      );
+    },
+  });
+
+  const reviewMutation = useMutation({
+    mutationFn: async (params: {
+      difficulty: CardReviewDifficulty;
+      itemId: string;
+    }) => {
+      if (!deckId || !sessionToken) {
+        throw new Error("로그인이 필요합니다.");
+      }
+      return cardServiceApi.reviewCardDeckItem(
+        deckId,
+        params.itemId,
+        { difficulty: params.difficulty },
+        sessionToken,
+      );
+    },
+    onSuccess: async () => {
+      if (deckId) {
+        await queryClient.invalidateQueries({
+          queryKey: cardServiceQueryKeys.deck(deckId, sessionToken),
+        });
+      }
+      moveNext();
+    },
+  });
+
   useEffect(() => {
     void bootstrapAuth();
   }, []);
@@ -48,6 +95,7 @@ export function CardDeckPlayScreen({ deckId }: CardDeckPlayScreenProps) {
     if (!detailQuery.data) {
       return;
     }
+    setStudyMode(detailQuery.data.studyMode);
     if (currentIndex >= detailQuery.data.items.length) {
       setCurrentIndex(0);
       setAnswerVisible(false);
@@ -102,6 +150,20 @@ export function CardDeckPlayScreen({ deckId }: CardDeckPlayScreenProps) {
     setAnswerVisible(false);
   }
 
+  const currentCard = detailQuery.data?.items[currentIndex] ?? null;
+
+  function handleStudyModeChange(nextMode: CardStudyMode) {
+    setStudyMode(nextMode);
+    studyModeMutation.mutate(nextMode);
+  }
+
+  function handleReview(difficulty: CardReviewDifficulty) {
+    if (!currentCard) {
+      return;
+    }
+    reviewMutation.mutate({ difficulty, itemId: currentCard.id });
+  }
+
   if (authStatus === "booting") {
     return (
       <View style={[styles.screen, styles.center]}>
@@ -126,7 +188,6 @@ export function CardDeckPlayScreen({ deckId }: CardDeckPlayScreenProps) {
   }
 
   const detail = detailQuery.data;
-  const currentCard = detail?.items[currentIndex] ?? null;
 
   return (
     <SafeAreaView edges={["top"]} style={styles.screen}>
@@ -169,38 +230,95 @@ export function CardDeckPlayScreen({ deckId }: CardDeckPlayScreenProps) {
           <StateBlock message="학습할 카드가 없습니다." title="빈 덱" />
         ) : (
           <>
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => setAnswerVisible((prev) => !prev)}
-              style={styles.studyCard}
-            >
-              <Text style={styles.cardLabel}>
-                {isAnswerVisible ? "답변" : "질문"}
-              </Text>
-              <Text style={styles.cardText}>
-                {isAnswerVisible ? currentCard.backText : currentCard.frontText}
-              </Text>
-              <Text style={styles.cardHint}>
-                탭해서 {isAnswerVisible ? "질문" : "답변"} 보기
-              </Text>
-            </Pressable>
-
-            <View style={styles.controls}>
+            <View style={styles.modeTabs}>
               <Pressable
                 accessibilityRole="button"
-                onPress={movePrev}
-                style={styles.secondaryButton}
+                onPress={() =>
+                  handleStudyModeChange(CARD_STUDY_MODES.flashcard)
+                }
+                style={[
+                  styles.modeTab,
+                  studyMode === CARD_STUDY_MODES.flashcard &&
+                    styles.modeTabActive,
+                ]}
               >
-                <Text style={styles.secondaryButtonText}>이전</Text>
+                <Text
+                  style={[
+                    styles.modeTabText,
+                    studyMode === CARD_STUDY_MODES.flashcard &&
+                      styles.modeTabTextActive,
+                  ]}
+                >
+                  플래시카드
+                </Text>
               </Pressable>
               <Pressable
                 accessibilityRole="button"
-                onPress={moveNext}
-                style={styles.primaryButton}
+                onPress={() => handleStudyModeChange(CARD_STUDY_MODES.review)}
+                style={[
+                  styles.modeTab,
+                  studyMode === CARD_STUDY_MODES.review && styles.modeTabActive,
+                ]}
               >
-                <Text style={styles.primaryButtonText}>다음 카드</Text>
+                <Text
+                  style={[
+                    styles.modeTabText,
+                    studyMode === CARD_STUDY_MODES.review &&
+                      styles.modeTabTextActive,
+                  ]}
+                >
+                  복습 모드
+                </Text>
               </Pressable>
             </View>
+
+            {studyMode === CARD_STUDY_MODES.review ? (
+              <ReviewModeCard
+                isSaving={reviewMutation.isPending}
+                onReview={handleReview}
+                backText={currentCard.backText}
+                frontText={currentCard.frontText}
+              />
+            ) : (
+              <>
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={() => setAnswerVisible((prev) => !prev)}
+                  style={styles.studyCard}
+                >
+                  <Text style={styles.cardLabel}>
+                    {isAnswerVisible ? "답변" : "질문"}
+                  </Text>
+                  <ScrollView contentContainerStyle={styles.cardScrollContent}>
+                    <Text style={styles.cardText}>
+                      {isAnswerVisible
+                        ? currentCard.backText
+                        : currentCard.frontText}
+                    </Text>
+                  </ScrollView>
+                  <Text style={styles.cardHint}>
+                    탭해서 {isAnswerVisible ? "질문" : "답변"} 보기
+                  </Text>
+                </Pressable>
+
+                <View style={styles.controls}>
+                  <Pressable
+                    accessibilityRole="button"
+                    onPress={movePrev}
+                    style={styles.secondaryButton}
+                  >
+                    <Text style={styles.secondaryButtonText}>이전</Text>
+                  </Pressable>
+                  <Pressable
+                    accessibilityRole="button"
+                    onPress={moveNext}
+                    style={styles.primaryButton}
+                  >
+                    <Text style={styles.primaryButtonText}>다음 카드</Text>
+                  </Pressable>
+                </View>
+              </>
+            )}
           </>
         )}
       </View>
@@ -208,11 +326,83 @@ export function CardDeckPlayScreen({ deckId }: CardDeckPlayScreenProps) {
   );
 }
 
+function ReviewModeCard({
+  backText,
+  frontText,
+  isSaving,
+  onReview,
+}: {
+  backText: string;
+  frontText: string;
+  isSaving: boolean;
+  onReview: (difficulty: CardReviewDifficulty) => void;
+}) {
+  return (
+    <View style={styles.reviewCard}>
+      <ScrollView contentContainerStyle={styles.reviewScrollContent}>
+        <Text style={styles.cardLabel}>문제</Text>
+        <Text style={styles.reviewQuestion}>{frontText}</Text>
+        <Text style={[styles.cardLabel, styles.reviewAnswerLabel]}>정답</Text>
+        <Text style={styles.reviewAnswer}>{backText}</Text>
+      </ScrollView>
+      <View style={styles.reviewButtons}>
+        <ReviewButton
+          disabled={isSaving}
+          label="어려움 · 1일 후"
+          onPress={() => onReview(CARD_REVIEW_DIFFICULTIES.hard)}
+          tone="hard"
+        />
+        <ReviewButton
+          disabled={isSaving}
+          label="좋음 · 3일 후"
+          onPress={() => onReview(CARD_REVIEW_DIFFICULTIES.good)}
+          tone="good"
+        />
+        <ReviewButton
+          disabled={isSaving}
+          label="쉬움 · 4일 후"
+          onPress={() => onReview(CARD_REVIEW_DIFFICULTIES.easy)}
+          tone="easy"
+        />
+      </View>
+    </View>
+  );
+}
+
+function ReviewButton({
+  disabled,
+  label,
+  onPress,
+  tone,
+}: {
+  disabled: boolean;
+  label: string;
+  onPress: () => void;
+  tone: "hard" | "good" | "easy";
+}) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      disabled={disabled}
+      onPress={onPress}
+      style={[
+        styles.reviewButton,
+        styles[`reviewButton_${tone}`],
+        disabled && styles.disabledButton,
+      ]}
+    >
+      <Text style={styles.reviewButtonText}>
+        {disabled ? "저장 중..." : label}
+      </Text>
+    </Pressable>
+  );
+}
+
 const styles = StyleSheet.create({
   cardHint: {
     color: colors.textMuted,
     fontSize: 13,
-    marginTop: 28,
+    marginTop: 18,
     textAlign: "center",
   },
   cardLabel: {
@@ -221,13 +411,17 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     letterSpacing: 1,
   },
+  cardScrollContent: {
+    flexGrow: 1,
+    justifyContent: "center",
+  },
   cardText: {
     color: colors.text,
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: "700",
-    lineHeight: 36,
-    marginTop: 28,
-    textAlign: "center",
+    lineHeight: 34,
+    marginTop: 20,
+    textAlign: "left",
   },
   center: {
     gap: 14,
@@ -243,10 +437,13 @@ const styles = StyleSheet.create({
     gap: 12,
     marginTop: 18,
   },
+  disabledButton: {
+    opacity: 0.5,
+  },
   header: {
     alignItems: "center",
     flexDirection: "row",
-    marginBottom: 28,
+    marginBottom: 18,
   },
   headerButton: {
     alignItems: "center",
@@ -258,6 +455,31 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontSize: 32,
     fontWeight: "300",
+  },
+  modeTab: {
+    alignItems: "center",
+    borderColor: colors.borderStrong,
+    borderRadius: 12,
+    borderWidth: 1,
+    flex: 1,
+    paddingVertical: 12,
+  },
+  modeTabActive: {
+    backgroundColor: colors.black,
+    borderColor: colors.black,
+  },
+  modeTabText: {
+    color: colors.text,
+    fontSize: 14,
+    fontWeight: "900",
+  },
+  modeTabTextActive: {
+    color: colors.white,
+  },
+  modeTabs: {
+    flexDirection: "row",
+    gap: 10,
+    marginBottom: 16,
   },
   primaryButton: {
     alignItems: "center",
@@ -271,6 +493,63 @@ const styles = StyleSheet.create({
     color: colors.white,
     fontSize: 16,
     fontWeight: "900",
+  },
+  reviewAnswer: {
+    backgroundColor: colors.black,
+    borderRadius: 16,
+    color: colors.white,
+    fontSize: 18,
+    lineHeight: 28,
+    marginTop: 10,
+    padding: 18,
+  },
+  reviewAnswerLabel: {
+    marginTop: 24,
+  },
+  reviewButton: {
+    alignItems: "center",
+    borderRadius: 12,
+    justifyContent: "center",
+    minHeight: 54,
+  },
+  reviewButton_easy: {
+    backgroundColor: "#49ad4f",
+  },
+  reviewButton_good: {
+    backgroundColor: "#1f8fe5",
+  },
+  reviewButton_hard: {
+    backgroundColor: "#ff6b45",
+  },
+  reviewButtonText: {
+    color: colors.white,
+    fontSize: 14,
+    fontWeight: "900",
+  },
+  reviewButtons: {
+    gap: 10,
+    marginTop: 14,
+  },
+  reviewCard: {
+    borderColor: colors.borderStrong,
+    borderRadius: 22,
+    borderWidth: 1,
+    flex: 1,
+    padding: 18,
+  },
+  reviewQuestion: {
+    backgroundColor: "#FAFAFA",
+    borderColor: colors.border,
+    borderRadius: 16,
+    borderWidth: 1,
+    color: colors.text,
+    fontSize: 18,
+    lineHeight: 28,
+    marginTop: 10,
+    padding: 18,
+  },
+  reviewScrollContent: {
+    paddingBottom: 8,
   },
   screen: {
     backgroundColor: colors.background,
@@ -291,13 +570,11 @@ const styles = StyleSheet.create({
     fontWeight: "900",
   },
   studyCard: {
-    alignItems: "center",
     borderColor: colors.borderStrong,
     borderRadius: 24,
     borderWidth: 1,
     flex: 1,
-    justifyContent: "center",
-    padding: 28,
+    padding: 24,
   },
   subtitle: {
     color: colors.textMuted,

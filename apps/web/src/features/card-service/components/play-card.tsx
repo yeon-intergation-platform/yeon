@@ -2,6 +2,8 @@
 
 import type { KeyboardEvent } from "react";
 
+import { MarkdownContent } from "./markdown-content";
+
 interface PlayCardProps {
   frontText: string;
   backText: string;
@@ -58,9 +60,9 @@ export function PlayCard({
           className="absolute inset-0 flex items-center justify-center rounded-2xl border border-[#e5e5e5] bg-white p-12 text-center"
           style={FACE_STYLE}
         >
-          <p className="whitespace-pre-wrap break-keep text-[22px] leading-relaxed text-[#111]">
-            {frontText}
-          </p>
+          <div className="max-h-full overflow-y-auto text-[22px] text-[#111]">
+            <MarkdownContent>{frontText}</MarkdownContent>
+          </div>
         </div>
         <div
           className="absolute inset-0 flex items-center justify-center rounded-2xl border border-[#111] bg-[#111] p-12 text-center"
@@ -69,9 +71,9 @@ export function PlayCard({
             transform: "rotateY(180deg)",
           }}
         >
-          <p className="whitespace-pre-wrap break-keep text-[22px] leading-relaxed text-white">
-            {backText}
-          </p>
+          <div className="max-h-full overflow-y-auto text-[22px] text-white">
+            <MarkdownContent inverted>{backText}</MarkdownContent>
+          </div>
         </div>
       </div>
     </button>
