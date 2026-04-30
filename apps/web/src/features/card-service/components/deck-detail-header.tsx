@@ -64,6 +64,12 @@ export function DeckDetailHeader({
     setMobileMenuOpen(false);
   };
 
+  const startEditing = () => {
+    if (isEditing) return;
+    setMobileMenuOpen(false);
+    setEditing(true);
+  };
+
   return (
     <section className="bg-white text-[#111] md:rounded-xl md:border md:border-[#e5e5e5] md:p-6">
       <div className="grid grid-cols-[44px_minmax(0,1fr)_44px] items-start md:flex md:items-start md:justify-between md:gap-4">
@@ -78,7 +84,14 @@ export function DeckDetailHeader({
 
         <div className="min-w-0 text-center md:hidden">
           <h1 className="truncate text-[24px] font-semibold leading-tight text-[#111]">
-            {deck.title}
+            <button
+              type="button"
+              onClick={startEditing}
+              aria-label="덱 제목을 눌러 편집"
+              className="w-full max-w-full truncate rounded-lg px-1 text-[24px] font-semibold leading-tight text-[#111] outline-none transition-colors hover:bg-[#fafafa] focus-visible:ring-2 focus-visible:ring-[#111]"
+            >
+              {deck.title}
+            </button>
           </h1>
           <p className="mt-2 text-[15px] leading-5 text-[#888]">
             카드 {deck.itemCount}장 · 생성일 {createdDate}
@@ -98,10 +111,7 @@ export function DeckDetailHeader({
             <div className="absolute right-0 top-11 z-10 w-32 overflow-hidden rounded-xl border border-[#e5e5e5] bg-white text-[13px] shadow-[0_8px_24px_rgba(0,0,0,0.10)]">
               <button
                 type="button"
-                onClick={() => {
-                  setEditing(true);
-                  setMobileMenuOpen(false);
-                }}
+                onClick={startEditing}
                 className="block w-full px-3 py-2 text-left text-[#111] hover:bg-[#fafafa]"
               >
                 덱 편집
@@ -174,7 +184,14 @@ export function DeckDetailHeader({
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <h1 className="break-keep text-[28px] font-semibold leading-tight text-[#111]">
-                {deck.title}
+                <button
+                  type="button"
+                  onClick={startEditing}
+                  aria-label="덱 제목을 눌러 편집"
+                  className="break-keep rounded-lg px-1 text-left text-[28px] font-semibold leading-tight text-[#111] outline-none transition-colors hover:bg-[#fafafa] focus-visible:ring-2 focus-visible:ring-[#111]"
+                >
+                  {deck.title}
+                </button>
               </h1>
               {deck.description ? (
                 <p className="mt-2 whitespace-pre-wrap text-[14px] leading-6 text-[#666]">
@@ -186,7 +203,7 @@ export function DeckDetailHeader({
             </div>
             <button
               type="button"
-              onClick={() => setEditing(true)}
+              onClick={startEditing}
               className="shrink-0 rounded-lg border border-transparent px-2 py-1 text-[16px] text-[#666] transition-colors hover:border-[#e5e5e5] hover:text-[#111]"
               aria-label="덱 정보 편집"
             >

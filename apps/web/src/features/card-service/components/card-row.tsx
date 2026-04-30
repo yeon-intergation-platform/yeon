@@ -11,8 +11,6 @@ import type { CardDeckItemDto } from "@yeon/api-contract/card-decks";
 
 import { useDeleteCard, useUpdateCard } from "../hooks";
 
-const PREVIEW_MAX_LENGTH = 180;
-
 interface CardRowProps {
   deckId: string;
   item: CardDeckItemDto;
@@ -20,14 +18,6 @@ interface CardRowProps {
   isSelected?: boolean;
   onRequestEdit?: () => void;
   onDeleted?: () => void;
-}
-
-function toPreviewText(text: string): string {
-  const normalized = text.replace(/\s+/g, " ").trim();
-  if (normalized.length <= PREVIEW_MAX_LENGTH) {
-    return normalized;
-  }
-  return `${normalized.slice(0, PREVIEW_MAX_LENGTH).trimEnd()}...`;
 }
 
 export function CardRow({
@@ -39,7 +29,6 @@ export function CardRow({
   onDeleted,
 }: CardRowProps) {
   const [isEditing, setEditing] = useState(false);
-  const [isExpanded, setExpanded] = useState(false);
   const [isActionMenuOpen, setActionMenuOpen] = useState(false);
   const [isDeleteRevealed, setDeleteRevealed] = useState(false);
   const [frontText, setFrontText] = useState(item.frontText);
@@ -247,42 +236,28 @@ export function CardRow({
               <span className="mt-0.5 shrink-0 rounded-md border border-[#e5e5e5] bg-[#fafafa] px-2 py-1 text-center text-[12px] font-medium text-[#666]">
                 질문
               </span>
-              <p className="w-full min-w-0 overflow-hidden break-words text-[16px] font-medium leading-6 text-[#111] [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2] md:text-[14px] md:leading-6">
-                {toPreviewText(item.frontText)}
+              <p className="w-full min-w-0 whitespace-pre-wrap break-words text-[16px] font-medium leading-6 text-[#111] md:text-[14px] md:leading-6">
+                {item.frontText}
               </p>
             </div>
             <div className="flex min-w-0 flex-col items-start gap-1.5 md:grid md:grid-cols-[48px_minmax(0,1fr)] md:gap-3">
               <span className="mt-0.5 shrink-0 rounded-md border border-[#e5e5e5] bg-[#fafafa] px-2 py-1 text-center text-[12px] font-medium text-[#666]">
                 답변
               </span>
-              <p className="w-full min-w-0 overflow-hidden break-words text-[15px] leading-6 text-[#555] [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2] md:text-[14px] md:leading-6 md:text-[#333]">
-                {toPreviewText(item.backText)}
-              </p>
-            </div>
-          </div>
-
-          {isExpanded ? (
-            <div className="mt-3 rounded-lg bg-[#fafafa] p-3 text-[13px] leading-6 text-[#111]">
-              <p className="whitespace-pre-wrap break-keep font-medium">
-                {item.frontText}
-              </p>
-              <div className="my-3 border-t border-[#e5e5e5]" />
-              <p className="whitespace-pre-wrap break-keep text-[#333]">
+              <p className="w-full min-w-0 whitespace-pre-wrap break-words text-[15px] leading-6 text-[#555] md:text-[14px] md:leading-6 md:text-[#333]">
                 {item.backText}
               </p>
             </div>
-          ) : null}
+          </div>
 
           {deleteMutation.error ? (
             <p className="mt-2 text-[13px] text-red-600">
               {deleteMutation.error.message}
             </p>
           ) : null}
-          {isDeleteRevealed ? (
-            <p className="mt-2 text-right text-[12px] text-[#999] md:hidden">
-              삭제하려면 오른쪽의 삭제 버튼을 한 번 더 누르세요.
-            </p>
-          ) : null}
+          <p className="sr-only" role="status" aria-live="polite">
+            {isDeleteRevealed ? "삭제하려면 오른쪽의 삭제 버튼을 한 번 더 누르세요." : ""}
+          </p>
 
           {isActionMenuOpen ? (
             <div className="mt-3 flex justify-end gap-2 text-[13px]">
@@ -316,21 +291,7 @@ export function CardRow({
           ) : null}
         </div>
 
-        <div className="flex items-center justify-center gap-1 pr-1 md:pr-2">
-          <button
-            type="button"
-            onClick={(event) => {
-              event.stopPropagation();
-              setExpanded((prev) => !prev);
-              setActionMenuOpen(false);
-              setDeleteRevealed(false);
-              setDeleteConfirming(false);
-            }}
-            className="hidden h-8 w-8 items-center justify-center rounded-lg text-[18px] text-[#666] hover:bg-[#fafafa] hover:text-[#111] md:flex"
-            aria-label={isExpanded ? "카드 접기" : "카드 펼치기"}
-          >
-            {isExpanded ? "⌃" : "⌄"}
-          </button>
+        <div className="flex items-center justify-center pr-1 md:pr-2">
           <button
             type="button"
             onClick={(event) => {
