@@ -30,7 +30,7 @@ import {
 } from "./typing-room-labels";
 
 const MAX_PARTICIPANT_OPTIONS = [2, 4] as const;
-const ROUND_OPTIONS = [1, 3, 5] as const;
+const ROUND_OPTIONS = [1] as const;
 
 function SelectField<T extends string>({
   label,
@@ -75,7 +75,6 @@ export function TypingRoomLobbyScreen() {
   const [mode, setMode] = useState<TypingRoomMode>(TYPING_ROOM_MODE.FINISH);
 
   const generatedTitle = useMemo(() => {
-    if (textType === TYPING_ROOM_TEXT_TYPE.CODE) return "코드 타자 연습방";
     if (difficulty === TYPING_ROOM_DIFFICULTY.HARD) return "정확도 95% 도전방";
     return `${TYPING_ROOM_LANGUAGE_LABELS[language]} ${TYPING_ROOM_TEXT_TYPE_LABELS[textType]} 같이 치기`;
   }, [difficulty, language, textType]);
@@ -136,7 +135,7 @@ export function TypingRoomLobbyScreen() {
             {state.kind === "empty" && (
               <div className="rounded-2xl border border-dashed border-[#ddd] bg-[#fafafa] p-8 text-center">
                 <p className="text-[16px] font-bold text-[#111]">아직 대기중인 공개 타자방이 없어요.</p>
-                <p className="mt-2 text-[13px] text-[#777]">오른쪽에서 첫 방을 만들고 친구에게 링크를 공유해 보세요.</p>
+                <p className="mt-2 text-[13px] text-[#777]">오른쪽에서 첫 방을 만들고 초대 링크를 공유해 보세요.</p>
               </div>
             )}
             {state.kind === "ready" && state.rooms.map((room) => (
@@ -168,7 +167,7 @@ export function TypingRoomLobbyScreen() {
 
         <aside className="rounded-3xl border border-[#e5e5e5] bg-white p-5 shadow-sm md:p-6">
           <h2 className="text-[20px] font-black tracking-[-0.02em]">방 만들기</h2>
-          <p className="mt-1 text-[13px] leading-5 text-[#777]">MVP는 최대 4명까지 지원합니다. 8명 방은 레인 확장 후 열 예정입니다.</p>
+          <p className="mt-1 text-[13px] leading-5 text-[#777]">MVP Slice A는 2명 또는 4명, 짧은 문장, 1라운드 완주 모드만 지원합니다.</p>
 
           <form onSubmit={handleCreate} className="mt-5 grid gap-4">
             <label className="grid gap-1.5 text-[12px] font-semibold text-[#555]">
@@ -191,7 +190,7 @@ export function TypingRoomLobbyScreen() {
             </button>
 
             <div className="grid grid-cols-2 gap-3">
-              <SelectField label="공개 여부" value={visibility} options={[TYPING_ROOM_VISIBILITY.PUBLIC, TYPING_ROOM_VISIBILITY.PRIVATE]} labels={TYPING_ROOM_VISIBILITY_LABELS} onChange={setVisibility} />
+              <SelectField label="공개 여부" value={visibility} options={[TYPING_ROOM_VISIBILITY.PUBLIC]} labels={TYPING_ROOM_VISIBILITY_LABELS} onChange={setVisibility} />
               <label className="grid gap-1.5 text-[12px] font-semibold text-[#555]">
                 최대 인원
                 <select
@@ -202,8 +201,8 @@ export function TypingRoomLobbyScreen() {
                   {MAX_PARTICIPANT_OPTIONS.map((option) => <option key={option} value={option}>{option}명</option>)}
                 </select>
               </label>
-              <SelectField label="글 종류" value={textType} options={[TYPING_ROOM_TEXT_TYPE.SHORT, TYPING_ROOM_TEXT_TYPE.LONG, TYPING_ROOM_TEXT_TYPE.CODE]} labels={TYPING_ROOM_TEXT_TYPE_LABELS} onChange={setTextType} />
-              <SelectField label="언어" value={language} options={[TYPING_ROOM_LANGUAGE.KO, TYPING_ROOM_LANGUAGE.EN, TYPING_ROOM_LANGUAGE.CODE]} labels={TYPING_ROOM_LANGUAGE_LABELS} onChange={setLanguage} />
+              <SelectField label="글 종류" value={textType} options={[TYPING_ROOM_TEXT_TYPE.SHORT]} labels={TYPING_ROOM_TEXT_TYPE_LABELS} onChange={setTextType} />
+              <SelectField label="언어" value={language} options={[TYPING_ROOM_LANGUAGE.KO, TYPING_ROOM_LANGUAGE.EN]} labels={TYPING_ROOM_LANGUAGE_LABELS} onChange={setLanguage} />
               <SelectField label="난이도" value={difficulty} options={[TYPING_ROOM_DIFFICULTY.EASY, TYPING_ROOM_DIFFICULTY.NORMAL, TYPING_ROOM_DIFFICULTY.HARD]} labels={TYPING_ROOM_DIFFICULTY_LABELS} onChange={setDifficulty} />
               <label className="grid gap-1.5 text-[12px] font-semibold text-[#555]">
                 라운드 수
@@ -217,7 +216,7 @@ export function TypingRoomLobbyScreen() {
               </label>
             </div>
 
-            <SelectField label="제한 방식" value={mode} options={[TYPING_ROOM_MODE.FINISH, TYPING_ROOM_MODE.TIME_LIMIT]} labels={TYPING_ROOM_MODE_LABELS} onChange={setMode} />
+            <SelectField label="제한 방식" value={mode} options={[TYPING_ROOM_MODE.FINISH]} labels={TYPING_ROOM_MODE_LABELS} onChange={setMode} />
 
             <button type="submit" className="mt-2 rounded-2xl bg-[#111] px-4 py-4 text-[15px] font-bold text-white transition-colors hover:bg-[#333]">
               타자방 만들기

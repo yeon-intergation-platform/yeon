@@ -46,4 +46,5 @@ export const TYPING_ROOM_STATUS_LABELS: Record<TypingRoomStatus, string> = {
   [TYPING_ROOM_STATUS.COUNTDOWN]: "카운트다운",
   [TYPING_ROOM_STATUS.LIVE]: "진행중",
   [TYPING_ROOM_STATUS.FINISHED]: "종료",
+  [TYPING_ROOM_STATUS.CLOSED]: "닫힘",
 };

@@ -9,10 +9,12 @@ import {
   TYPING_RACE_STAGE,
   type RaceFinishMessage,
   type RaceProgressMessage,
+  type RaceResultMessage,
   type RaceSeedMessage,
   type RoomErrorMessage,
   type TypingRaceSnapshot,
   type TypingRaceStage,
+  type TypingResultSnapshot,
   type TypingRoomCreateMessage,
   type TypingRoomSnapshot,
 } from "@yeon/race-shared";
@@ -32,6 +34,7 @@ export type UseRaceRoomResult = {
   connectionState: RaceConnectionState;
   snapshot: TypingRaceSnapshot | null;
   roomSnapshot: TypingRoomSnapshot | null;
+  results: readonly TypingResultSnapshot[];
   prompt: string | null;
   countdownRemaining: number;
   stage: TypingRaceStage;
@@ -98,6 +101,7 @@ export function useRaceRoom(options: UseRaceRoomOptions): UseRaceRoomResult {
   const [snapshot, setSnapshot] = useState<TypingRaceSnapshot | null>(null);
   const [roomSnapshot, setRoomSnapshot] = useState<TypingRoomSnapshot | null>(null);
   const [prompt, setPrompt] = useState<string | null>(null);
+  const [results, setResults] = useState<readonly TypingResultSnapshot[]>([]);
   const [mySeat, setMySeat] = useState<string | null>(null);
   const [connectedRoomId, setConnectedRoomId] = useState<string | null>(null);
   const [roomError, setRoomError] = useState<string | null>(null);
@@ -120,6 +124,7 @@ export function useRaceRoom(options: UseRaceRoomOptions): UseRaceRoomResult {
     setSnapshot(null);
     setRoomSnapshot(null);
     setPrompt(null);
+    setResults([]);
     setMySeat(null);
     setConnectedRoomId(null);
     setRoomError(null);
@@ -167,6 +172,10 @@ export function useRaceRoom(options: UseRaceRoomOptions): UseRaceRoomResult {
 
         room.onMessage(RACE_EVENTS.ROOM_ERROR, (message: RoomErrorMessage) => {
           setRoomError(message.message);
+        });
+
+        room.onMessage(RACE_EVENTS.RACE_RESULT, (message: RaceResultMessage) => {
+          setResults(message.results);
         });
 
         room.onMessage(RACE_EVENTS.RACE_STATE, (message: TypingRaceSnapshot) => {
@@ -222,6 +231,7 @@ export function useRaceRoom(options: UseRaceRoomOptions): UseRaceRoomResult {
     setSnapshot(null);
     setRoomSnapshot(null);
     setPrompt(null);
+    setResults([]);
     setMySeat(null);
     setConnectedRoomId(null);
     setRoomError(null);
@@ -233,6 +243,7 @@ export function useRaceRoom(options: UseRaceRoomOptions): UseRaceRoomResult {
       connectionState,
       snapshot,
       roomSnapshot,
+      results: roomSnapshot?.results.length ? roomSnapshot.results : results,
       prompt,
       countdownRemaining: snapshot?.countdownRemaining ?? TYPING_RACE_DEFAULTS.countdownSeconds,
       stage: snapshot?.stage ?? TYPING_RACE_STAGE.COUNTDOWN,
@@ -249,6 +260,7 @@ export function useRaceRoom(options: UseRaceRoomOptions): UseRaceRoomResult {
       connectionState,
       snapshot,
       roomSnapshot,
+      results,
       prompt,
       mySeat,
       connectedRoomId,

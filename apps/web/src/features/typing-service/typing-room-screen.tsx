@@ -51,20 +51,20 @@ function useCreateRoomOptions(): TypingRoomCreateMessage {
   return useMemo(() => {
     const language = parseEnum<TypingRoomLanguage>(
       searchParams.get("language"),
-      [TYPING_ROOM_LANGUAGE.KO, TYPING_ROOM_LANGUAGE.EN, TYPING_ROOM_LANGUAGE.CODE],
+      [TYPING_ROOM_LANGUAGE.KO, TYPING_ROOM_LANGUAGE.EN],
       TYPING_ROOM_LANGUAGE.KO,
     );
     return {
       title: (searchParams.get("title") || "한글 짧은 문장 같이 치기").slice(0, 40),
       visibility: parseEnum<TypingRoomVisibility>(
         searchParams.get("visibility"),
-        [TYPING_ROOM_VISIBILITY.PUBLIC, TYPING_ROOM_VISIBILITY.PRIVATE],
+        [TYPING_ROOM_VISIBILITY.PUBLIC],
         TYPING_ROOM_VISIBILITY.PUBLIC,
       ),
       maxParticipants: parseNumber(searchParams.get("maxParticipants"), [2, 4], 4),
       textType: parseEnum<TypingRoomTextType>(
         searchParams.get("textType"),
-        [TYPING_ROOM_TEXT_TYPE.SHORT, TYPING_ROOM_TEXT_TYPE.LONG, TYPING_ROOM_TEXT_TYPE.CODE],
+        [TYPING_ROOM_TEXT_TYPE.SHORT],
         TYPING_ROOM_TEXT_TYPE.SHORT,
       ),
       language,
@@ -73,10 +73,10 @@ function useCreateRoomOptions(): TypingRoomCreateMessage {
         [TYPING_ROOM_DIFFICULTY.EASY, TYPING_ROOM_DIFFICULTY.NORMAL, TYPING_ROOM_DIFFICULTY.HARD],
         TYPING_ROOM_DIFFICULTY.NORMAL,
       ),
-      roundCount: parseNumber(searchParams.get("roundCount"), [1, 3, 5], 1),
+      roundCount: parseNumber(searchParams.get("roundCount"), [1], 1),
       mode: parseEnum<TypingRoomMode>(
         searchParams.get("mode"),
-        [TYPING_ROOM_MODE.FINISH, TYPING_ROOM_MODE.TIME_LIMIT],
+        [TYPING_ROOM_MODE.FINISH],
         TYPING_ROOM_MODE.FINISH,
       ),
     };
