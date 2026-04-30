@@ -113,6 +113,71 @@ select {
   color: #ffffff;
 }
 
+/* ── YEON 카드 마크다운 에디터 (@uiw/react-md-editor) ── */
+.yeon-markdown-editor .w-md-editor {
+  --md-editor-font-family:
+    "Noto Sans KR", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+  border-radius: 12px;
+  box-shadow: 0 0 0 1px #e5e5e5;
+  overflow: hidden;
+}
+
+.yeon-markdown-editor .w-md-editor:focus-within {
+  box-shadow: 0 0 0 1px #111111;
+}
+
+.yeon-markdown-editor .w-md-editor-toolbar {
+  background: #fafafa;
+  border-bottom-color: #e5e5e5;
+  padding: 6px;
+}
+
+.yeon-markdown-editor .w-md-editor-toolbar li > button {
+  border-radius: 8px;
+  color: #555555;
+  height: 26px;
+  padding: 5px;
+}
+
+.yeon-markdown-editor .w-md-editor-toolbar li > button:hover,
+.yeon-markdown-editor .w-md-editor-toolbar li > button:focus {
+  background: #eeeeee;
+  color: #111111;
+}
+
+.yeon-markdown-editor .w-md-editor-content {
+  background: #ffffff;
+}
+
+.yeon-markdown-editor .w-md-editor-text,
+.yeon-markdown-editor .w-md-editor-text-pre > code,
+.yeon-markdown-editor .w-md-editor-text-input {
+  font-size: 14px !important;
+  line-height: 24px !important;
+}
+
+.yeon-markdown-editor .w-md-editor-text {
+  padding: 12px;
+}
+
+.yeon-markdown-editor .w-md-editor-preview {
+  padding: 12px 14px;
+}
+
+.yeon-markdown-editor .wmde-markdown {
+  background: #ffffff;
+  color: #111111;
+  font-family:
+    "Noto Sans KR",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
 /* ── Spreadsheet Preview (SheetJS) ── */
 .spreadsheet-preview table {
   border-collapse: collapse;
