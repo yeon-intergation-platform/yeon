@@ -18,10 +18,65 @@ export const TYPING_RACE_LANE_ROLE = {
 export type TypingRaceLaneRole =
   (typeof TYPING_RACE_LANE_ROLE)[keyof typeof TYPING_RACE_LANE_ROLE];
 
+export const TYPING_ROOM_STATUS = {
+  WAITING: "waiting",
+  COUNTDOWN: "countdown",
+  LIVE: "live",
+  FINISHED: "finished",
+} as const;
+
+export type TypingRoomStatus =
+  (typeof TYPING_ROOM_STATUS)[keyof typeof TYPING_ROOM_STATUS];
+
+export const TYPING_ROOM_VISIBILITY = {
+  PUBLIC: "public",
+  PRIVATE: "private",
+} as const;
+
+export type TypingRoomVisibility =
+  (typeof TYPING_ROOM_VISIBILITY)[keyof typeof TYPING_ROOM_VISIBILITY];
+
+export const TYPING_ROOM_TEXT_TYPE = {
+  SHORT: "short",
+  LONG: "long",
+  CODE: "code",
+} as const;
+
+export type TypingRoomTextType =
+  (typeof TYPING_ROOM_TEXT_TYPE)[keyof typeof TYPING_ROOM_TEXT_TYPE];
+
+export const TYPING_ROOM_LANGUAGE = {
+  KO: "ko",
+  EN: "en",
+  CODE: "code",
+} as const;
+
+export type TypingRoomLanguage =
+  (typeof TYPING_ROOM_LANGUAGE)[keyof typeof TYPING_ROOM_LANGUAGE];
+
+export const TYPING_ROOM_DIFFICULTY = {
+  EASY: "easy",
+  NORMAL: "normal",
+  HARD: "hard",
+} as const;
+
+export type TypingRoomDifficulty =
+  (typeof TYPING_ROOM_DIFFICULTY)[keyof typeof TYPING_ROOM_DIFFICULTY];
+
+export const TYPING_ROOM_MODE = {
+  FINISH: "finish",
+  TIME_LIMIT: "time-limit",
+} as const;
+
+export type TypingRoomMode =
+  (typeof TYPING_ROOM_MODE)[keyof typeof TYPING_ROOM_MODE];
+
 export const TYPING_RACE_DEFAULTS = {
   countdownSeconds: 10,
+  roomCountdownSeconds: 3,
   minPlayers: 2,
   maxPlayers: 6,
+  lobbyMaxPlayers: 4,
   roomTickRate: 15,
   progressBroadcastRate: 8,
 } as const;
@@ -38,6 +93,10 @@ export const TYPING_RACE_LANE_ACCENTS = [
 export const RACE_EVENTS = {
   MATCH_JOIN: "match.join",
   MATCH_ACCEPTED: "match.accepted",
+  ROOM_STATE: "room.state",
+  ROOM_READY: "room.ready",
+  ROOM_START: "room.start",
+  ROOM_ERROR: "room.error",
   RACE_READY: "race.ready",
   RACE_SEED: "race.seed",
   RACE_COUNTDOWN: "race.countdown",
@@ -69,11 +128,61 @@ export type TypingRaceSnapshot = {
   speedUnit?: string;
 };
 
+export type TypingRoomSettings = {
+  title: string;
+  visibility: TypingRoomVisibility;
+  maxParticipants: number;
+  textType: TypingRoomTextType;
+  language: TypingRoomLanguage;
+  difficulty: TypingRoomDifficulty;
+  roundCount: number;
+  mode: TypingRoomMode;
+};
+
+export type TypingRoomSummary = TypingRoomSettings & {
+  roomId: string;
+  roomCode: string;
+  status: TypingRoomStatus;
+  currentParticipants: number;
+  createdAt: number;
+};
+
+export type TypingRoomParticipantSnapshot = {
+  id: string;
+  label: string;
+  role: "host" | "guest";
+  isReady: boolean;
+  progress: number;
+  wpm: number;
+  accuracy: number;
+};
+
+export type TypingRoomSnapshot = TypingRoomSummary & {
+  participants: readonly TypingRoomParticipantSnapshot[];
+  hostId: string | null;
+  currentRound: number;
+  canStart: boolean;
+};
+
 export type MatchJoinMessage = {
   difficulty?: string;
   playerLabel: string;
   playerId?: string;
   locale?: "ko" | "en";
+};
+
+export type TypingRoomCreateMessage = Partial<TypingRoomSettings> & {
+  playerLabel?: string;
+  playerId?: string;
+  locale?: "ko" | "en";
+  roomMode?: "lobby" | "quick";
+};
+
+export type TypingRoomJoinMessage = {
+  playerLabel: string;
+  playerId?: string;
+  locale?: "ko" | "en";
+  password?: string;
 };
 
 export type MatchAcceptedMessage = {
@@ -110,6 +219,14 @@ export type RaceResultMessage = {
   placement: number;
   totalPlayers: number;
   completedAt: number;
+};
+
+export type RoomReadyMessage = {
+  isReady: boolean;
+};
+
+export type RoomErrorMessage = {
+  message: string;
 };
 
 export function clampRaceProgress(value: number) {
