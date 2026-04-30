@@ -37,9 +37,14 @@ COPY --from=pruner /app/out/full/ .
 
 ENV NODE_ENV=production
 ENV PORT=2567
+ENV HOME=/home/race
+ENV COREPACK_HOME=/home/race/.cache/node/corepack
 
 RUN groupadd --system --gid 1001 nodejs \
-    && useradd --system --uid 1001 --gid nodejs race
+    && useradd --system --uid 1001 --gid nodejs --home-dir /home/race --create-home race \
+    && mkdir -p /home/race/.cache/node/corepack \
+    && corepack prepare pnpm@10.33.0 --activate \
+    && chown -R race:nodejs /home/race
 
 USER race
 
