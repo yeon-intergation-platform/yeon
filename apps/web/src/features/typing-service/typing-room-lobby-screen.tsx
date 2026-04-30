@@ -18,6 +18,7 @@ import {
   type TypingRoomVisibility,
 } from "@yeon/race-shared";
 import { useTypingProfile } from "./use-typing-profile";
+import { TypingBgmButton } from "./typing-bgm-button";
 import { TypingSettingsButton } from "./typing-settings-button";
 import { useTypingRoomLobby } from "./use-typing-room-lobby";
 import {
@@ -102,7 +103,10 @@ export function TypingRoomLobbyScreen() {
             <ArrowLeft size={14} />
             타자연습
           </Link>
-          <TypingSettingsButton />
+          <div className="flex items-center gap-2">
+            <TypingBgmButton />
+            <TypingSettingsButton />
+          </div>
         </div>
       </header>
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useTypingProfile } from "./use-typing-profile";
+import { TypingBgmButton } from "./typing-bgm-button";
 import { TypingProfileCard } from "./typing-profile-card";
 import { TypingSettingsButton } from "./typing-settings-button";
 import { createTranslator, useTypingSettings } from "./use-typing-settings";
@@ -15,7 +16,10 @@ export function TypingServiceHome() {
       <header className="border-b border-[#e5e5e5] px-6 py-3 md:px-12">
         <div className="mx-auto flex max-w-[1400px] items-center justify-between">
           <span className="text-[14px] font-semibold text-[#111]">{t("appName")}</span>
-          <TypingSettingsButton />
+          <div className="flex items-center gap-2">
+            <TypingBgmButton />
+            <TypingSettingsButton />
+          </div>
         </div>
       </header>
 
