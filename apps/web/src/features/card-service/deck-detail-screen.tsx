@@ -41,7 +41,6 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
   const [isDeleteOpen, setDeleteOpen] = useState(false);
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [isMobileEditorOpen, setMobileEditorOpen] = useState(false);
-  const [areCardsCollapsed, setCardsCollapsed] = useState(false);
   const detailQuery = useDeckDetail(deckId);
   const state = toViewState(detailQuery);
   const items = state.kind === "ready" ? state.items : [];
@@ -130,21 +129,9 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
                         {state.items.length}
                       </span>
                     </div>
-                    <div className="flex shrink-0 items-center gap-2">
-                      <span className="text-[15px] text-[#666] md:text-[13px] md:text-[#888]">
-                        전체 {state.items.length}
-                      </span>
-                      {!state.isEmpty ? (
-                        <button
-                          type="button"
-                          aria-pressed={areCardsCollapsed}
-                          onClick={() => setCardsCollapsed((prev) => !prev)}
-                          className="rounded-full border border-[#e5e5e5] px-3 py-1.5 text-[12px] font-semibold text-[#111] transition-colors hover:border-[#111] hover:bg-[#fafafa]"
-                        >
-                          {areCardsCollapsed ? "전체 열기" : "전체 접기"}
-                        </button>
-                      ) : null}
-                    </div>
+                    <span className="shrink-0 text-[15px] text-[#666] md:text-[13px] md:text-[#888]">
+                      전체 {state.items.length}
+                    </span>
                   </div>
 
                   {state.isEmpty ? (
@@ -171,7 +158,6 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
                             deckId={state.deck.id}
                             index={index + 1}
                             item={item}
-                            isCollapsed={areCardsCollapsed}
                             isSelected={selectedItemId === item.id}
                             onRequestEdit={() => handleRequestEdit(item.id)}
                             onDeleted={() => {

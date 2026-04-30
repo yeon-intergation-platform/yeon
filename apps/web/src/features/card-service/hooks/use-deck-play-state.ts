@@ -84,6 +84,10 @@ export function useDeckPlayState(items: CardDeckItemDto[]) {
     updateIndex(currentIndex - 1);
   }, [currentIndex, updateIndex]);
 
+  const handleFirst = useCallback(() => {
+    updateIndex(0);
+  }, [updateIndex]);
+
   const handleNext = useCallback(() => {
     if (currentIndex >= visibleItems.length - 1) return;
     updateIndex(currentIndex + 1);
@@ -114,6 +118,7 @@ export function useDeckPlayState(items: CardDeckItemDto[]) {
       handleFlip,
       handlePrev,
       handleNext,
+      handleFirst,
       handleToggleShuffle,
     }),
     [
@@ -125,6 +130,7 @@ export function useDeckPlayState(items: CardDeckItemDto[]) {
       handleFlip,
       handlePrev,
       handleNext,
+      handleFirst,
       handleToggleShuffle,
     ],
   );

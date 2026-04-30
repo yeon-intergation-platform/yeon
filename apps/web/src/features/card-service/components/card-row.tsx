@@ -16,7 +16,6 @@ interface CardRowProps {
   deckId: string;
   item: CardDeckItemDto;
   index?: number;
-  isCollapsed?: boolean;
   isSelected?: boolean;
   onRequestEdit?: () => void;
   onDeleted?: () => void;
@@ -26,7 +25,6 @@ export function CardRow({
   deckId,
   item,
   index,
-  isCollapsed = false,
   isSelected = false,
   onRequestEdit,
   onDeleted,
@@ -44,10 +42,6 @@ export function CardRow({
   const isSaving = updateMutation.isPending;
   const isDeleting = deleteMutation.isPending;
   const shouldUseExternalEditor = Boolean(onRequestEdit);
-  const contentVisibilityClass = isCollapsed
-    ? "max-h-[4.5rem] overflow-hidden"
-    : "";
-
   const canSave =
     frontText.trim().length > 0 && backText.trim().length > 0 && !isSaving;
 
@@ -223,7 +217,7 @@ export function CardRow({
       <div
         role="button"
         tabIndex={0}
-        aria-label={`카드를 클릭해 편집${isCollapsed ? " (내용 접힘)" : ""}`}
+        aria-label="카드를 클릭해 편집"
         onClick={handleCardClick}
         onKeyDown={handleViewKeyDown}
         onTouchStart={handleTouchStart}
@@ -242,9 +236,7 @@ export function CardRow({
               <span className="mt-0.5 shrink-0 rounded-md border border-[#e5e5e5] bg-[#fafafa] px-2 py-1 text-center text-[12px] font-medium text-[#666]">
                 질문
               </span>
-              <div
-                className={`w-full min-w-0 text-[16px] font-medium text-[#111] md:text-[15px] ${contentVisibilityClass}`}
-              >
+              <div className="w-full min-w-0 text-[16px] font-medium text-[#111] md:text-[15px]">
                 <MarkdownContent>{item.frontText}</MarkdownContent>
               </div>
             </div>
@@ -252,9 +244,7 @@ export function CardRow({
               <span className="mt-0.5 shrink-0 rounded-md border border-[#e5e5e5] bg-[#fafafa] px-2 py-1 text-center text-[12px] font-medium text-[#666]">
                 답변
               </span>
-              <div
-                className={`w-full min-w-0 text-[15px] text-[#555] md:text-[15px] md:text-[#333] ${contentVisibilityClass}`}
-              >
+              <div className="w-full min-w-0 text-[15px] text-[#555] md:text-[15px] md:text-[#333]">
                 <MarkdownContent>{item.backText}</MarkdownContent>
               </div>
             </div>
