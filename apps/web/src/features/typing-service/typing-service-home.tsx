@@ -29,12 +29,20 @@ export function TypingServiceHome() {
               locale={settings.locale}
             />
 
-            <a
-              href="/typing-service/play"
-              className="mt-5 inline-flex w-[340px] items-center justify-center rounded-xl bg-[#111] py-4 text-[15px] font-semibold text-white no-underline transition-colors hover:bg-[#333]"
-            >
-              {t("joinRace")}
-            </a>
+            <div className="mt-5 grid w-[340px] gap-3">
+              <a
+                href="/typing-service/rooms"
+                className="inline-flex items-center justify-center rounded-xl bg-[#111] py-4 text-[15px] font-semibold text-white no-underline transition-colors hover:bg-[#333]"
+              >
+                타자방 입장
+              </a>
+              <a
+                href="/typing-service/play"
+                className="inline-flex items-center justify-center rounded-xl border border-[#e5e5e5] bg-white py-3.5 text-[14px] font-semibold text-[#555] no-underline transition-colors hover:border-[#111] hover:text-[#111]"
+              >
+                {t("joinRace")}
+              </a>
+            </div>
           </>
         )}
       </main>
