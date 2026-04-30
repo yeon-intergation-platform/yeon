@@ -24,6 +24,7 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1025.0",
     "@aws-sdk/lib-storage": "^3.1025.0",
+    "@colyseus/sdk": "^0.17.42",
     "@cyntler/react-doc-viewer": "^1.17.1",
     "@node-rs/argon2": "^2.0.2",
     "@sentry/nextjs": "^10.48.0",
@@ -38,7 +39,6 @@
     "@yeon/domain": "workspace:*",
     "@yeon/race-shared": "workspace:*",
     "@yeon/typing-race-engine": "workspace:*",
-    "colyseus.js": "^0.16.22",
     "docx": "^9.6.1",
     "dompurify": "^3.3.3",
     "dotenv": "^17.4.1",
