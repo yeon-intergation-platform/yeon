@@ -7,6 +7,8 @@ import {
   SITE_DESCRIPTION,
   SITE_TITLE,
 } from "@/lib/site-brand";
+import "@uiw/react-md-editor/markdown-editor.css";
+import "@uiw/react-markdown-preview/markdown.css";
 import "./globals.css";
 
 export const metadata: Metadata = {
