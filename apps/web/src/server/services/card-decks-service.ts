@@ -1,16 +1,20 @@
 import { and, asc, desc, eq, sql } from "drizzle-orm";
-import type {
-  CardDeckDto,
-  CardDeckItemDto,
-  CreateCardDeckBody,
-  CreateCardDeckItemBody,
-  CreateCardDeckItemsBody,
-  UpdateCardDeckBody,
-  UpdateCardDeckItemBody,
+import {
+  CARD_REVIEW_DIFFICULTIES,
+  CARD_STUDY_MODES,
+  type CardReviewDifficulty,
+  type CardStudyMode,
+  type CardDeckDto,
+  type CardDeckItemDto,
+  type CreateCardDeckBody,
+  type CreateCardDeckItemBody,
+  type CreateCardDeckItemsBody,
+  type UpdateCardDeckBody,
+  type UpdateCardDeckItemBody,
 } from "@yeon/api-contract/card-decks";
 
 import { getDb } from "@/server/db";
-import { cardDeckItems, cardDecks } from "@/server/db/schema";
+import { cardDeckItems, cardDecks, users } from "@/server/db/schema";
 import { generatePublicId, ID_PREFIX } from "@/server/lib/public-id";
 
 import { ServiceError } from "./service-error";
@@ -29,14 +33,49 @@ function toCardDeckDto(row: CardDeckRow, itemCount: number): CardDeckDto {
   };
 }
 
+function toIsoOrNull(value: Date | null): string | null {
+  return value ? value.toISOString() : null;
+}
+
 function toCardDeckItemDto(row: CardDeckItemRow): CardDeckItemDto {
   return {
     id: row.publicId,
     frontText: row.frontText,
     backText: row.backText,
+    reviewDifficulty: row.reviewDifficulty as CardReviewDifficulty | null,
+    lastReviewedAt: toIsoOrNull(row.lastReviewedAt),
+    nextReviewAt: toIsoOrNull(row.nextReviewAt),
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };
+}
+
+function toStudyMode(value: string | null | undefined): CardStudyMode {
+  return value === CARD_STUDY_MODES.review
+    ? CARD_STUDY_MODES.review
+    : CARD_STUDY_MODES.flashcard;
+}
+
+async function getUserCardStudyMode(userId: string): Promise<CardStudyMode> {
+  const [row] = await getDb()
+    .select({ cardStudyMode: users.cardStudyMode })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+
+  return toStudyMode(row?.cardStudyMode);
+}
+
+const REVIEW_INTERVAL_DAYS: Record<CardReviewDifficulty, number> = {
+  [CARD_REVIEW_DIFFICULTIES.hard]: 1,
+  [CARD_REVIEW_DIFFICULTIES.good]: 3,
+  [CARD_REVIEW_DIFFICULTIES.easy]: 4,
+};
+
+function addDays(value: Date, days: number): Date {
+  const next = new Date(value);
+  next.setDate(next.getDate() + days);
+  return next;
 }
 
 async function findOwnedDeckRow(
@@ -152,17 +191,29 @@ export async function createCardDeck(
 export async function getCardDeckDetail(
   userId: string,
   deckPublicId: string,
-): Promise<{ deck: CardDeckDto; items: CardDeckItemDto[] }> {
+): Promise<{
+  deck: CardDeckDto;
+  items: CardDeckItemDto[];
+  studyMode: CardStudyMode;
+}> {
   const deckRow = await findOwnedDeckRow(userId, deckPublicId);
-  const itemRows = await getDb()
-    .select()
-    .from(cardDeckItems)
-    .where(eq(cardDeckItems.deckId, deckRow.id))
-    .orderBy(asc(cardDeckItems.createdAt));
+  const [itemRows, studyMode] = await Promise.all([
+    getDb()
+      .select()
+      .from(cardDeckItems)
+      .where(eq(cardDeckItems.deckId, deckRow.id))
+      .orderBy(
+        sql`case when ${cardDeckItems.nextReviewAt} is null then 0 when ${cardDeckItems.nextReviewAt} <= now() then 0 else 1 end`,
+        asc(cardDeckItems.nextReviewAt),
+        asc(cardDeckItems.createdAt),
+      ),
+    getUserCardStudyMode(userId),
+  ]);
 
   return {
     deck: toCardDeckDto(deckRow, itemRows.length),
     items: itemRows.map(toCardDeckItemDto),
+    studyMode,
   };
 }
 
@@ -337,4 +388,55 @@ export async function deleteCardDeckItem(
 ): Promise<void> {
   const { item } = await findOwnedItemRow(userId, deckPublicId, itemPublicId);
   await getDb().delete(cardDeckItems).where(eq(cardDeckItems.id, item.id));
+}
+
+export async function getCardStudyPreference(
+  userId: string,
+): Promise<CardStudyMode> {
+  return getUserCardStudyMode(userId);
+}
+
+export async function updateCardStudyPreference(
+  userId: string,
+  studyMode: CardStudyMode,
+): Promise<CardStudyMode> {
+  const [row] = await getDb()
+    .update(users)
+    .set({ cardStudyMode: studyMode, updatedAt: new Date() })
+    .where(eq(users.id, userId))
+    .returning({ cardStudyMode: users.cardStudyMode });
+
+  if (!row) {
+    throw new ServiceError(404, "사용자를 찾지 못했습니다.");
+  }
+
+  return toStudyMode(row.cardStudyMode);
+}
+
+export async function reviewCardDeckItem(
+  userId: string,
+  deckPublicId: string,
+  itemPublicId: string,
+  difficulty: CardReviewDifficulty,
+): Promise<CardDeckItemDto> {
+  const { item } = await findOwnedItemRow(userId, deckPublicId, itemPublicId);
+  const now = new Date();
+  const nextReviewAt = addDays(now, REVIEW_INTERVAL_DAYS[difficulty]);
+
+  const [updated] = await getDb()
+    .update(cardDeckItems)
+    .set({
+      reviewDifficulty: difficulty,
+      lastReviewedAt: now,
+      nextReviewAt,
+      updatedAt: now,
+    })
+    .where(eq(cardDeckItems.id, item.id))
+    .returning();
+
+  if (!updated) {
+    throw new ServiceError(500, "복습 결과를 저장하지 못했습니다.");
+  }
+
+  return toCardDeckItemDto(updated);
 }

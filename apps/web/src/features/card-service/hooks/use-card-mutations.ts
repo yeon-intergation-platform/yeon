@@ -5,6 +5,8 @@ import type {
   CardDeckItemDto,
   CreateCardDeckItemBody,
   CreateCardDeckItemsBody,
+  CardReviewDifficulty,
+  CardStudyMode,
   UpdateCardDeckItemBody,
 } from "@yeon/api-contract/card-decks";
 
@@ -12,6 +14,8 @@ import {
   addGuestCard,
   addGuestCards,
   deleteGuestCard,
+  reviewGuestCard,
+  setGuestCardStudyMode,
   updateGuestCard,
 } from "@/lib/guest-card-service-store";
 
@@ -128,5 +132,58 @@ export function useDeleteCard(deckId: string) {
     },
     onSuccess: () =>
       invalidateDeckAndList(queryClient, isAuthenticated, deckId),
+  });
+}
+
+export function useReviewCard(deckId: string) {
+  const queryClient = useQueryClient();
+  const isAuthenticated = useIsAuthenticated();
+  return useMutation({
+    mutationFn: async (params: {
+      itemId: string;
+      difficulty: CardReviewDifficulty;
+    }) => {
+      if (isAuthenticated) {
+        const data = await cardServiceFetchJson<{ item: CardDeckItemDto }>(
+          `/api/v1/card-decks/${deckId}/items/${params.itemId}/review`,
+          {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ difficulty: params.difficulty }),
+          },
+          "복습 결과를 저장하지 못했습니다.",
+        );
+        return data.item;
+      }
+      return reviewGuestCard(params.itemId, params.difficulty);
+    },
+    onSuccess: () =>
+      invalidateDeckAndList(queryClient, isAuthenticated, deckId),
+  });
+}
+
+export function useUpdateCardStudyPreference(deckId: string) {
+  const queryClient = useQueryClient();
+  const isAuthenticated = useIsAuthenticated();
+  return useMutation({
+    mutationFn: async (studyMode: CardStudyMode) => {
+      if (!isAuthenticated) {
+        setGuestCardStudyMode(studyMode);
+        return { studyMode };
+      }
+      return cardServiceFetchJson<{ studyMode: CardStudyMode }>(
+        "/api/v1/card-decks/study-preference",
+        {
+          method: "PATCH",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ studyMode }),
+        },
+        "학습 모드를 저장하지 못했습니다.",
+      );
+    },
+    onSuccess: () =>
+      void queryClient.invalidateQueries({
+        queryKey: cardDeckDetailQueryKey(isAuthenticated, deckId),
+      }),
   });
 }

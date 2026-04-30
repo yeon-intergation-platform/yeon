@@ -10,11 +10,13 @@ import {
 import type { CardDeckItemDto } from "@yeon/api-contract/card-decks";
 
 import { useDeleteCard, useUpdateCard } from "../hooks";
+import { MarkdownContent } from "./markdown-content";
 
 interface CardRowProps {
   deckId: string;
   item: CardDeckItemDto;
   index?: number;
+  isCollapsed?: boolean;
   isSelected?: boolean;
   onRequestEdit?: () => void;
   onDeleted?: () => void;
@@ -24,6 +26,7 @@ export function CardRow({
   deckId,
   item,
   index,
+  isCollapsed = false,
   isSelected = false,
   onRequestEdit,
   onDeleted,
@@ -41,6 +44,9 @@ export function CardRow({
   const isSaving = updateMutation.isPending;
   const isDeleting = deleteMutation.isPending;
   const shouldUseExternalEditor = Boolean(onRequestEdit);
+  const contentVisibilityClass = isCollapsed
+    ? "max-h-[4.5rem] overflow-hidden"
+    : "";
 
   const canSave =
     frontText.trim().length > 0 && backText.trim().length > 0 && !isSaving;
@@ -217,7 +223,7 @@ export function CardRow({
       <div
         role="button"
         tabIndex={0}
-        aria-label="카드를 클릭해 편집"
+        aria-label={`카드를 클릭해 편집${isCollapsed ? " (내용 접힘)" : ""}`}
         onClick={handleCardClick}
         onKeyDown={handleViewKeyDown}
         onTouchStart={handleTouchStart}
@@ -231,22 +237,26 @@ export function CardRow({
         </div>
 
         <div className="min-w-0 px-3 py-3 md:px-4">
-          <div className="grid min-w-0 gap-3 md:grid-cols-[minmax(0,0.95fr)_minmax(0,1fr)] md:gap-4">
-            <div className="flex min-w-0 flex-col items-start gap-1.5 md:grid md:grid-cols-[48px_minmax(0,1fr)] md:gap-3">
+          <div className="grid min-w-0 gap-4">
+            <div className="flex min-w-0 flex-col items-start gap-2 md:grid md:grid-cols-[48px_minmax(0,1fr)] md:gap-3">
               <span className="mt-0.5 shrink-0 rounded-md border border-[#e5e5e5] bg-[#fafafa] px-2 py-1 text-center text-[12px] font-medium text-[#666]">
                 질문
               </span>
-              <p className="w-full min-w-0 whitespace-pre-wrap break-words text-[16px] font-medium leading-6 text-[#111] md:text-[14px] md:leading-6">
-                {item.frontText}
-              </p>
+              <div
+                className={`w-full min-w-0 text-[16px] font-medium text-[#111] md:text-[15px] ${contentVisibilityClass}`}
+              >
+                <MarkdownContent>{item.frontText}</MarkdownContent>
+              </div>
             </div>
-            <div className="flex min-w-0 flex-col items-start gap-1.5 md:grid md:grid-cols-[48px_minmax(0,1fr)] md:gap-3">
+            <div className="flex min-w-0 flex-col items-start gap-2 border-t border-[#f0f0f0] pt-4 md:grid md:grid-cols-[48px_minmax(0,1fr)] md:gap-3">
               <span className="mt-0.5 shrink-0 rounded-md border border-[#e5e5e5] bg-[#fafafa] px-2 py-1 text-center text-[12px] font-medium text-[#666]">
                 답변
               </span>
-              <p className="w-full min-w-0 whitespace-pre-wrap break-words text-[15px] leading-6 text-[#555] md:text-[14px] md:leading-6 md:text-[#333]">
-                {item.backText}
-              </p>
+              <div
+                className={`w-full min-w-0 text-[15px] text-[#555] md:text-[15px] md:text-[#333] ${contentVisibilityClass}`}
+              >
+                <MarkdownContent>{item.backText}</MarkdownContent>
+              </div>
             </div>
           </div>
 
@@ -256,7 +266,9 @@ export function CardRow({
             </p>
           ) : null}
           <p className="sr-only" role="status" aria-live="polite">
-            {isDeleteRevealed ? "삭제하려면 오른쪽의 삭제 버튼을 한 번 더 누르세요." : ""}
+            {isDeleteRevealed
+              ? "삭제하려면 오른쪽의 삭제 버튼을 한 번 더 누르세요."
+              : ""}
           </p>
 
           {isActionMenuOpen ? (

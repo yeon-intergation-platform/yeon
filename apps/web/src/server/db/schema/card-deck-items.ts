@@ -1,4 +1,11 @@
-import { bigint, index, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import {
+  bigint,
+  index,
+  pgTable,
+  text,
+  timestamp,
+  varchar,
+} from "drizzle-orm/pg-core";
 
 import { cardDecks } from "./card-decks";
 
@@ -14,6 +21,9 @@ export const cardDeckItems = pgTable(
       .references(() => cardDecks.id, { onDelete: "cascade" }),
     frontText: text("front_text").notNull(),
     backText: text("back_text").notNull(),
+    reviewDifficulty: varchar("review_difficulty", { length: 16 }),
+    lastReviewedAt: timestamp("last_reviewed_at", { withTimezone: true }),
+    nextReviewAt: timestamp("next_review_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -25,6 +35,10 @@ export const cardDeckItems = pgTable(
     index("card_deck_items_deck_created_at_idx").on(
       table.deckId,
       table.createdAt,
+    ),
+    index("card_deck_items_deck_next_review_idx").on(
+      table.deckId,
+      table.nextReviewAt,
     ),
   ],
 );

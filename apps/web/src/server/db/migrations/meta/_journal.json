@@ -239,6 +239,13 @@
       "when": 1777551617493,
       "tag": "0033_add_life_os_days",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1777567411862,
+      "tag": "0034_add_card_srs_review",
+      "breakpoints": true
     }
   ]
 }

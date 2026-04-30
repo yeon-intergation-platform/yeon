@@ -10,6 +10,7 @@ import {
   setBulkCardHelpVisible,
   shouldShowBulkCardHelp,
 } from "../utils/bulk-card-help-preference";
+import { MarkdownContent } from "./markdown-content";
 
 const BULK_CARD_TEMPLATE = `[[Q]]
 문제
@@ -154,13 +155,13 @@ export function BulkAddCardsForm({ deckId }: BulkAddCardsFormProps) {
                 className="rounded-lg bg-[#fafafa] p-3 text-[13px]"
               >
                 <p className="font-semibold text-[#111]">{index + 1}. 앞면</p>
-                <p className="mt-1 whitespace-pre-wrap text-[#555]">
-                  {card.frontText}
-                </p>
+                <div className="mt-1 text-[#555]">
+                  <MarkdownContent>{card.frontText}</MarkdownContent>
+                </div>
                 <p className="mt-3 font-semibold text-[#111]">뒷면</p>
-                <p className="mt-1 whitespace-pre-wrap text-[#555]">
-                  {card.backText}
-                </p>
+                <div className="mt-1 text-[#555]">
+                  <MarkdownContent>{card.backText}</MarkdownContent>
+                </div>
               </li>
             ))}
           </ul>

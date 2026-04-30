@@ -4,14 +4,19 @@ import {
   cardDeckItemResponseSchema,
   cardDeckListResponseSchema,
   cardDeckResponseSchema,
+  cardStudyPreferenceResponseSchema,
   createCardDeckBodySchema,
   createCardDeckItemBodySchema,
+  reviewCardDeckItemBodySchema,
   updateCardDeckBodySchema,
   updateCardDeckItemBodySchema,
+  updateCardStudyPreferenceBodySchema,
   type CreateCardDeckBody,
   type CreateCardDeckItemBody,
+  type ReviewCardDeckItemBody,
   type UpdateCardDeckBody,
   type UpdateCardDeckItemBody,
+  type UpdateCardStudyPreferenceBody,
 } from "@yeon/api-contract/card-decks";
 import {
   chatServiceBlockProfileResponseSchema,
@@ -335,6 +340,49 @@ export function createApiClient(options: ApiClientOptions = {}) {
       return requestNoContent(`/api/v1/card-decks/${deckId}/items/${itemId}`, {
         method: "DELETE",
         headers: createAuthSessionHeaders(sessionToken),
+      });
+    },
+    getCardStudyPreference(sessionToken?: string) {
+      return request({
+        path: "/api/v1/card-decks/study-preference",
+        schema: cardStudyPreferenceResponseSchema,
+        init: {
+          headers: createAuthSessionHeaders(sessionToken),
+        },
+      });
+    },
+    updateCardStudyPreference(
+      body: UpdateCardStudyPreferenceBody,
+      sessionToken?: string,
+    ) {
+      const parsedBody = updateCardStudyPreferenceBodySchema.parse(body);
+
+      return request({
+        path: "/api/v1/card-decks/study-preference",
+        schema: cardStudyPreferenceResponseSchema,
+        init: {
+          method: "PATCH",
+          headers: createAuthSessionHeaders(sessionToken),
+          body: JSON.stringify(parsedBody),
+        },
+      });
+    },
+    reviewCardDeckItem(
+      deckId: string,
+      itemId: string,
+      body: ReviewCardDeckItemBody,
+      sessionToken?: string,
+    ) {
+      const parsedBody = reviewCardDeckItemBodySchema.parse(body);
+
+      return request({
+        path: `/api/v1/card-decks/${deckId}/items/${itemId}/review`,
+        schema: cardDeckItemResponseSchema,
+        init: {
+          method: "POST",
+          headers: createAuthSessionHeaders(sessionToken),
+          body: JSON.stringify(parsedBody),
+        },
       });
     },
     listLifeOsDays(sessionToken?: string) {

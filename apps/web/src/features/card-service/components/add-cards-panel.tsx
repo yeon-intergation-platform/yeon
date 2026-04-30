@@ -6,6 +6,7 @@ import type { CardDeckItemDto } from "@yeon/api-contract/card-decks";
 import { useUpdateCard } from "../hooks";
 import { AddCardForm } from "./add-card-form";
 import { BulkAddCardsForm } from "./bulk-add-cards-form";
+import { MarkdownEditor } from "./markdown-editor";
 
 const ADD_CARD_MODES = {
   manual: "manual",
@@ -169,26 +170,22 @@ function EditCardPanel({
       </div>
 
       <div className="mt-5 flex flex-col gap-4">
-        <label className="flex flex-col gap-2">
-          <span className="text-[13px] font-medium text-[#111]">질문</span>
-          <textarea
-            value={frontText}
-            onChange={(event) => setFrontText(event.target.value)}
-            maxLength={2000}
-            rows={5}
-            className="min-h-[130px] resize-y rounded-xl border border-[#e5e5e5] bg-white px-3 py-2 text-[14px] leading-6 text-[#111] outline-none focus:border-[#111]"
-          />
-        </label>
-        <label className="flex flex-col gap-2">
-          <span className="text-[13px] font-medium text-[#111]">답변</span>
-          <textarea
-            value={backText}
-            onChange={(event) => setBackText(event.target.value)}
-            maxLength={2000}
-            rows={7}
-            className="min-h-[180px] resize-y rounded-xl border border-[#e5e5e5] bg-white px-3 py-2 text-[14px] leading-6 text-[#111] outline-none focus:border-[#111]"
-          />
-        </label>
+        <MarkdownEditor
+          label="질문"
+          value={frontText}
+          onChange={setFrontText}
+          maxLength={2000}
+          minRows={5}
+          placeholder="질문을 Markdown으로 입력하세요..."
+        />
+        <MarkdownEditor
+          label="답변"
+          value={backText}
+          onChange={setBackText}
+          maxLength={2000}
+          minRows={7}
+          placeholder="답변을 Markdown으로 입력하세요..."
+        />
         {updateMutation.error ? (
           <p className="text-[13px] text-red-600">
             {updateMutation.error.message}
