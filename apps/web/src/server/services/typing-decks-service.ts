@@ -37,6 +37,9 @@ import { ServiceError } from "./service-error";
 
 type TypingDeckRow = typeof typingDecks.$inferSelect;
 type TypingDeckPassageRow = typeof typingDeckPassages.$inferSelect;
+type TypingDeckAccessOptions = {
+  adminMode?: boolean;
+};
 const PRIVATE_DECK_LOBBY_TITLE = "비공개 덱";
 const idBody = customAlphabet(
   "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_-",
@@ -102,10 +105,12 @@ function toDeckDto(
   row: TypingDeckRow,
   passageCount: number,
   currentUserId: string | null,
+  options: TypingDeckAccessOptions = {},
 ): TypingDeckDto {
   const isOwner = Boolean(
     currentUserId && row.ownerUserId && currentUserId === row.ownerUserId,
   );
+  const canManage = Boolean(options.adminMode || isOwner);
 
   return {
     id: row.publicId,
@@ -116,7 +121,7 @@ function toDeckDto(
     source: toSource(row.source),
     passageCount,
     isOwner,
-    canEdit: isOwner && row.source === TYPING_DECK_SOURCE.user,
+    canEdit: canManage && row.source === TYPING_DECK_SOURCE.user,
     createdAt: toIso(row.createdAt),
     updatedAt: toIso(row.updatedAt),
   };
@@ -236,6 +241,7 @@ async function findDbDeckRow(
 async function findReadableDbDeckRow(
   currentUserId: string | null,
   deckPublicId: string,
+  options: TypingDeckAccessOptions = {},
 ): Promise<TypingDeckRow> {
   const row = await findDbDeckRow(deckPublicId);
   if (!row) {
@@ -245,7 +251,11 @@ async function findReadableDbDeckRow(
   const isOwner = Boolean(
     currentUserId && row.ownerUserId && currentUserId === row.ownerUserId,
   );
-  if (row.visibility === TYPING_DECK_VISIBILITY.public || isOwner) {
+  if (
+    options.adminMode ||
+    row.visibility === TYPING_DECK_VISIBILITY.public ||
+    isOwner
+  ) {
     return row;
   }
 
@@ -255,14 +265,18 @@ async function findReadableDbDeckRow(
 async function findOwnedDbDeckRow(
   currentUserId: string | null,
   deckPublicId: string,
+  options: TypingDeckAccessOptions = {},
 ): Promise<TypingDeckRow> {
   if (!currentUserId) {
     throw new ServiceError(401, "로그인이 필요합니다.");
   }
 
   const row = await findDbDeckRow(deckPublicId);
-  if (!row || row.ownerUserId !== currentUserId) {
+  if (!row || (!options.adminMode && row.ownerUserId !== currentUserId)) {
     throw new ServiceError(404, "타자 덱을 찾지 못했습니다.");
+  }
+  if (row.source !== TYPING_DECK_SOURCE.user) {
+    throw new ServiceError(403, "기본 덱은 수정할 수 없습니다.");
   }
   return row;
 }
@@ -271,8 +285,9 @@ async function findOwnedPassageRow(
   currentUserId: string | null,
   deckPublicId: string,
   passagePublicId: string,
+  options: TypingDeckAccessOptions = {},
 ): Promise<{ deck: TypingDeckRow; passage: TypingDeckPassageRow }> {
-  const deck = await findOwnedDbDeckRow(currentUserId, deckPublicId);
+  const deck = await findOwnedDbDeckRow(currentUserId, deckPublicId, options);
   const [passage] = await getDb()
     .select()
     .from(typingDeckPassages)
@@ -294,6 +309,7 @@ async function findOwnedPassageRow(
 export async function listTypingDecks(
   currentUserId: string | null,
   query: TypingDeckListQuery,
+  options: TypingDeckAccessOptions = {},
 ): Promise<TypingDeckDto[]> {
   if (query.scope === "mine" && !currentUserId) {
     throw new ServiceError(401, "로그인이 필요합니다.");
@@ -305,7 +321,10 @@ export async function listTypingDecks(
     whereParts.push(languageFilter);
   }
 
-  if (query.scope === "mine") {
+  if (options.adminMode && query.scope === "all") {
+    // Admin overview intentionally includes all DB-backed decks regardless of
+    // owner/visibility, while default decks are still prepended below.
+  } else if (query.scope === "mine") {
     whereParts.push(eq(typingDecks.ownerUserId, currentUserId!));
   } else if (query.scope === "public") {
     whereParts.push(eq(typingDecks.visibility, TYPING_DECK_VISIBILITY.public));
@@ -366,6 +385,7 @@ export async function listTypingDecks(
       },
       row.passageCount,
       currentUserId,
+      options,
     ),
   );
 
@@ -377,6 +397,7 @@ export async function listTypingDecks(
 export async function createTypingDeck(
   currentUserId: string | null,
   body: CreateTypingDeckBody,
+  options: TypingDeckAccessOptions = {},
 ): Promise<TypingDeckDto> {
   if (!currentUserId) {
     throw new ServiceError(401, "로그인이 필요합니다.");
@@ -401,12 +422,13 @@ export async function createTypingDeck(
     throw new ServiceError(500, "타자 덱을 생성하지 못했습니다.");
   }
 
-  return toDeckDto(row, 0, currentUserId);
+  return toDeckDto(row, 0, currentUserId, options);
 }
 
 export async function getTypingDeckDetail(
   currentUserId: string | null,
   deckPublicId: string,
+  options: TypingDeckAccessOptions = {},
 ): Promise<{ deck: TypingDeckDto; passages: TypingDeckPassageDto[] }> {
   const defaultDeck = findDefaultDeck(deckPublicId);
   if (defaultDeck) {
@@ -416,7 +438,11 @@ export async function getTypingDeckDetail(
     };
   }
 
-  const deckRow = await findReadableDbDeckRow(currentUserId, deckPublicId);
+  const deckRow = await findReadableDbDeckRow(
+    currentUserId,
+    deckPublicId,
+    options,
+  );
   const passages = await getDb()
     .select()
     .from(typingDeckPassages)
@@ -427,7 +453,7 @@ export async function getTypingDeckDetail(
     );
 
   return {
-    deck: toDeckDto(deckRow, passages.length, currentUserId),
+    deck: toDeckDto(deckRow, passages.length, currentUserId, options),
     passages: passages.map(toPassageDto),
   };
 }
@@ -436,8 +462,13 @@ export async function updateTypingDeck(
   currentUserId: string | null,
   deckPublicId: string,
   body: UpdateTypingDeckBody,
+  options: TypingDeckAccessOptions = {},
 ): Promise<TypingDeckDto> {
-  const existingDeck = await findOwnedDbDeckRow(currentUserId, deckPublicId);
+  const existingDeck = await findOwnedDbDeckRow(
+    currentUserId,
+    deckPublicId,
+    options,
+  );
   const updateFields: Partial<typeof typingDecks.$inferInsert> = {
     updatedAt: new Date(),
   };
@@ -472,14 +503,19 @@ export async function updateTypingDeck(
     .from(typingDeckPassages)
     .where(eq(typingDeckPassages.deckId, updated.id));
 
-  return toDeckDto(updated, count, currentUserId);
+  return toDeckDto(updated, count, currentUserId, options);
 }
 
 export async function deleteTypingDeck(
   currentUserId: string | null,
   deckPublicId: string,
+  options: TypingDeckAccessOptions = {},
 ): Promise<void> {
-  const existingDeck = await findOwnedDbDeckRow(currentUserId, deckPublicId);
+  const existingDeck = await findOwnedDbDeckRow(
+    currentUserId,
+    deckPublicId,
+    options,
+  );
   await getDb().delete(typingDecks).where(eq(typingDecks.id, existingDeck.id));
 }
 
@@ -505,8 +541,13 @@ export async function createTypingDeckPassage(
   currentUserId: string | null,
   deckPublicId: string,
   body: CreateTypingDeckPassageBody,
+  options: TypingDeckAccessOptions = {},
 ): Promise<TypingDeckPassageDto> {
-  const deckRow = await findOwnedDbDeckRow(currentUserId, deckPublicId);
+  const deckRow = await findOwnedDbDeckRow(
+    currentUserId,
+    deckPublicId,
+    options,
+  );
   const [{ count }] = await getDb()
     .select({
       count: sql<number>`count(${typingDeckPassages.id})::int`.mapWith(Number),
@@ -535,8 +576,13 @@ export async function createTypingDeckPassages(
   currentUserId: string | null,
   deckPublicId: string,
   body: CreateTypingDeckPassagesBody,
+  options: TypingDeckAccessOptions = {},
 ): Promise<TypingDeckPassageDto[]> {
-  const deckRow = await findOwnedDbDeckRow(currentUserId, deckPublicId);
+  const deckRow = await findOwnedDbDeckRow(
+    currentUserId,
+    deckPublicId,
+    options,
+  );
   const [{ count }] = await getDb()
     .select({
       count: sql<number>`count(${typingDeckPassages.id})::int`.mapWith(Number),
@@ -563,11 +609,13 @@ export async function updateTypingDeckPassage(
   deckPublicId: string,
   passagePublicId: string,
   body: UpdateTypingDeckPassageBody,
+  options: TypingDeckAccessOptions = {},
 ): Promise<TypingDeckPassageDto> {
   const { deck, passage } = await findOwnedPassageRow(
     currentUserId,
     deckPublicId,
     passagePublicId,
+    options,
   );
   const now = new Date();
   const updateFields: Partial<typeof typingDeckPassages.$inferInsert> = {
@@ -612,11 +660,13 @@ export async function deleteTypingDeckPassage(
   currentUserId: string | null,
   deckPublicId: string,
   passagePublicId: string,
+  options: TypingDeckAccessOptions = {},
 ): Promise<void> {
   const { deck, passage } = await findOwnedPassageRow(
     currentUserId,
     deckPublicId,
     passagePublicId,
+    options,
   );
   await getDb().transaction(async (tx) => {
     await tx

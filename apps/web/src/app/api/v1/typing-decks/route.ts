@@ -12,7 +12,7 @@ import {
 import { ServiceError } from "@/server/services/service-error";
 
 import {
-  getOptionalAuthenticatedUser,
+  getTypingDeckRequestContext,
   jsonError,
   readJsonBody,
 } from "./_shared";
@@ -20,8 +20,6 @@ import {
 export const runtime = "nodejs";
 
 export async function GET(request: NextRequest) {
-  const { currentUser } = await getOptionalAuthenticatedUser(request);
-
   const parsedQuery = typingDeckListQuerySchema.safeParse(
     Object.fromEntries(request.nextUrl.searchParams.entries()),
   );
@@ -30,9 +28,11 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    const { currentUser, isAdmin } = await getTypingDeckRequestContext(request);
     const decks = await listTypingDecks(
       currentUser?.id ?? null,
       parsedQuery.data,
+      { adminMode: isAdmin },
     );
     return NextResponse.json({ decks });
   } catch (error) {
@@ -45,8 +45,6 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const { currentUser } = await getOptionalAuthenticatedUser(request);
-
   let body: unknown;
   try {
     body = await readJsonBody(request);
@@ -60,7 +58,10 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const deck = await createTypingDeck(currentUser?.id ?? null, parsed.data);
+    const { currentUser, isAdmin } = await getTypingDeckRequestContext(request);
+    const deck = await createTypingDeck(currentUser?.id ?? null, parsed.data, {
+      adminMode: isAdmin,
+    });
     return NextResponse.json({ deck }, { status: 201 });
   } catch (error) {
     if (error instanceof ServiceError) {

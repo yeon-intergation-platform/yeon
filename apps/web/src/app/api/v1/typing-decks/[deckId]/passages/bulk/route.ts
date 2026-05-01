@@ -6,7 +6,7 @@ import { createTypingDeckPassages } from "@/server/services/typing-decks-service
 import { ServiceError } from "@/server/services/service-error";
 
 import {
-  getOptionalAuthenticatedUser,
+  getTypingDeckRequestContext,
   jsonError,
   readJsonBody,
 } from "../../../_shared";
@@ -17,7 +17,6 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ deckId: string }> },
 ) {
-  const { currentUser } = await getOptionalAuthenticatedUser(request);
   const { deckId } = await params;
 
   let body: unknown;
@@ -33,10 +32,12 @@ export async function POST(
   }
 
   try {
+    const { currentUser, isAdmin } = await getTypingDeckRequestContext(request);
     const passages = await createTypingDeckPassages(
       currentUser?.id ?? null,
       deckId,
       parsed.data,
+      { adminMode: isAdmin },
     );
     return NextResponse.json({ passages }, { status: 201 });
   } catch (error) {

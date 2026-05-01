@@ -9,7 +9,7 @@ import {
 import { ServiceError } from "@/server/services/service-error";
 
 import {
-  getOptionalAuthenticatedUser,
+  getTypingDeckRequestContext,
   jsonError,
   readJsonBody,
 } from "../../../_shared";
@@ -20,7 +20,6 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ deckId: string; passageId: string }> },
 ) {
-  const { currentUser } = await getOptionalAuthenticatedUser(request);
   const { deckId, passageId } = await params;
 
   let body: unknown;
@@ -36,11 +35,13 @@ export async function PATCH(
   }
 
   try {
+    const { currentUser, isAdmin } = await getTypingDeckRequestContext(request);
     const passage = await updateTypingDeckPassage(
       currentUser?.id ?? null,
       deckId,
       passageId,
       parsed.data,
+      { adminMode: isAdmin },
     );
     return NextResponse.json({ passage });
   } catch (error) {
@@ -56,11 +57,13 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ deckId: string; passageId: string }> },
 ) {
-  const { currentUser } = await getOptionalAuthenticatedUser(request);
   const { deckId, passageId } = await params;
 
   try {
-    await deleteTypingDeckPassage(currentUser?.id ?? null, deckId, passageId);
+    const { currentUser, isAdmin } = await getTypingDeckRequestContext(request);
+    await deleteTypingDeckPassage(currentUser?.id ?? null, deckId, passageId, {
+      adminMode: isAdmin,
+    });
     return new NextResponse(null, { status: 204 });
   } catch (error) {
     if (error instanceof ServiceError) {

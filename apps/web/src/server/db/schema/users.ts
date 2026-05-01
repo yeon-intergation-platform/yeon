@@ -5,6 +5,7 @@ export const users = pgTable("users", {
   email: varchar("email", { length: 320 }).notNull().unique(),
   displayName: varchar("display_name", { length: 80 }),
   avatarUrl: varchar("avatar_url", { length: 2048 }),
+  role: varchar("role", { length: 32 }).notNull().default("user"),
   cardStudyMode: varchar("card_study_mode", { length: 24 })
     .notNull()
     .default("flashcard"),
