@@ -1,286 +1,742 @@
-export const DEFAULT_TYPING_DECK_SOURCE_RIGHTS_STATUSES = {
+import {
+  TYPING_DECK_LANGUAGE_TAGS,
+  type TypingDeckLanguageTag,
+} from "@yeon/api-contract/typing-decks";
+export const DEFAULT_TYPING_DECK_RIGHTS_STATUSES = {
   green: "green",
-  productLegalAcceptedYellow: "product-legal-accepted-yellow",
-  rejected: "rejected",
 } as const;
-
-type IncludedRightsStatus =
-  (typeof DEFAULT_TYPING_DECK_SOURCE_RIGHTS_STATUSES)["green"];
-
-type RejectedRightsStatus =
-  (typeof DEFAULT_TYPING_DECK_SOURCE_RIGHTS_STATUSES)["rejected"];
-
+export type DefaultTypingDeckRightsStatus =
+  (typeof DEFAULT_TYPING_DECK_RIGHTS_STATUSES)[keyof typeof DEFAULT_TYPING_DECK_RIGHTS_STATUSES];
 export type DefaultTypingDeckSourcePassage = {
-  passageId: string;
+  id: string;
+  title: string;
+  prompt: string;
   sourceLocator: string;
   sourceUrl: string;
-  sourcePermalink: string;
   cleanupNotes: string;
 };
-
 export type DefaultTypingDeckSource = {
-  deckId: string;
-  deckTitle: string;
+  id: string;
+  title: string;
+  description: string;
+  languageTag: TypingDeckLanguageTag;
   sourceWorkTitle: string;
   sourceAuthor: string;
   sourceEdition: string;
-  rightsStatus: IncludedRightsStatus;
+  rightsStatus: DefaultTypingDeckRightsStatus;
   sourceUrl: string;
   sourcePermalink: string;
-  crossCheckUrls: readonly string[];
+  retrievedAt: string;
   licenseNotes: string;
-  replacementForPreferredDeckTitle?: string;
   replacementRationale?: string;
   passages: readonly DefaultTypingDeckSourcePassage[];
 };
-
-export type RejectedDefaultTypingDeckSource = {
-  preferredDeckTitle: string;
-  rejectedSourceBasis: string;
-  rightsStatus: RejectedRightsStatus;
-  rejectionRationale: string;
-  replacementDeckId: string;
-};
-
-export const FINAL_DEFAULT_TYPING_DECK_IDS = [
-  "default-ko-jindallaekkot",
-  "default-en-art-of-war-giles",
-  "default-en-shakespeare-sonnets",
-  "default-en-lincoln-addresses",
-] as const;
-
-const JINDALLAE_SOURCE_URL =
-  "https://ko.wikisource.org/wiki/%EC%A7%84%EB%8B%AC%EB%9E%98%EA%BD%83_%28%EC%8B%9C%EC%A7%91%29";
-const JINDALLAE_SOURCE_PERMALINK =
-  "https://ko.wikisource.org/w/index.php?title=%EC%A7%84%EB%8B%AC%EB%9E%98%EA%BD%83_%28%EC%8B%9C%EC%A7%91%29&oldid=401458";
-const ART_OF_WAR_SOURCE_URL = "https://www.gutenberg.org/ebooks/132";
-const ART_OF_WAR_SOURCE_PERMALINK =
-  "https://www.gutenberg.org/files/132/132-0.txt";
-const SHAKESPEARE_SOURCE_URL = "https://www.gutenberg.org/ebooks/1041";
-const SHAKESPEARE_SOURCE_PERMALINK =
-  "https://www.gutenberg.org/files/1041/1041-0.txt";
-const LINCOLN_SOURCE_URL = "https://www.gutenberg.org/ebooks/3253";
-const LINCOLN_SOURCE_PERMALINK =
-  "https://www.gutenberg.org/files/3253/3253-0.txt";
-
-const PG_LICENSE_NOTES =
-  "Project Gutenberg source used only for the public-domain work text; PG headers, footers, license, trademark language, editor introductions, and boilerplate are excluded from passages.";
-
-const jindallaeCleanupNotes =
-  "Wikisource navigation, section headings, notes, and license text omitted; poem text only, preserving source spelling except whitespace normalization for typing.";
-
-const artOfWarCleanupNotes =
-  "PG header/license, front matter, footnotes, and editor commentary omitted; Lionel Giles translation text only, with paragraph whitespace normalized for typing.";
-
-const sonnetCleanupNotes =
-  "PG header/license and collection headings omitted; sonnet text only, preserving original spelling and punctuation except whitespace normalization for typing.";
-
-const lincolnCleanupNotes =
-  "PG header/license, collection/editor headings, and editorial matter omitted; Lincoln address text only, with whitespace normalized for typing.";
-
-export const REJECTED_DEFAULT_TYPING_DECK_SOURCES: readonly RejectedDefaultTypingDeckSource[] =
-  [
-    {
-      preferredDeckTitle: "하늘과 바람과 별과 시",
-      rejectedSourceBasis:
-        "The approved plan records an unresolved U.S. copyright caveat for 1931-1977 Korean publications and no explicit product/legal acceptance note exists for this deck.",
-      rightsStatus: DEFAULT_TYPING_DECK_SOURCE_RIGHTS_STATUSES.rejected,
-      rejectionRationale:
-        "Yellow is Red under the approved plan; executor cannot approve the unresolved cross-jurisdiction publication caveat.",
-      replacementDeckId: "default-ko-jindallaekkot",
-    },
-    {
-      preferredDeckTitle: "손자병법 Korean translation",
-      rejectedSourceBasis:
-        "Korean translation sources have unresolved translator authorship/license and potential CC BY-SA obligations.",
-      rightsStatus: DEFAULT_TYPING_DECK_SOURCE_RIGHTS_STATUSES.rejected,
-      rejectionRationale:
-        "No unverified translations are allowed. The included deck uses the verified public-domain Lionel Giles English translation instead.",
-      replacementDeckId: "default-en-art-of-war-giles",
-    },
-  ];
-
-export const DEFAULT_TYPING_DECK_SOURCES: readonly DefaultTypingDeckSource[] = [
+const SOURCE_RETRIEVED_AT = "2026-05-01";
+export const DEFAULT_TYPING_DECK_SOURCES = [
   {
-    deckId: "default-ko-jindallaekkot",
-    deckTitle: "진달래꽃 (시집)",
-    sourceWorkTitle: "진달래꽃",
+    id: "default-ko-azaleas",
+    title: "진달래꽃",
+    description: "김소월의 1925년 시집 「진달래꽃」에서 고른 한국어 기본 필사 덱입니다.",
+    languageTag: TYPING_DECK_LANGUAGE_TAGS.ko,
+    sourceWorkTitle: "진달래꽃 (시집)",
     sourceAuthor: "김소월",
-    sourceEdition:
-      "Korean Wikisource transcription of the 1925-12-26 MaeMunSa edition; author 김소월 lived 1902-1934.",
-    rightsStatus: DEFAULT_TYPING_DECK_SOURCE_RIGHTS_STATUSES.green,
-    sourceUrl: JINDALLAE_SOURCE_URL,
-    sourcePermalink: JINDALLAE_SOURCE_PERMALINK,
-    crossCheckUrls: [
-      "https://ko.wikisource.org/wiki/%EC%A0%80%EC%9E%90%3A%EA%B9%80%EC%86%8C%EC%9B%94",
-      "https://encykorea.aks.ac.kr/Article/E0054622",
-      "https://www.seoul.co.kr/news/society/2011/02/25/20110225029022",
-    ],
-    licenseNotes:
-      "The Wikisource work page identifies publication by 매문사 on 1925-12-26 and marks the work PD-old-70. Because the edition was published before 1931 and the author died in 1934, this deck is treated as Green for the approved MVP source gate.",
-    replacementForPreferredDeckTitle: "하늘과 바람과 별과 시",
-    replacementRationale:
-      "Keeps a Korean-language source/work-named default while replacing the 윤동주 deck that lacks explicit product/legal acceptance for its U.S. caveat.",
+    sourceEdition: "1925 MaeMunSa edition represented by Korean Wikisource transcriptions",
+    rightsStatus: DEFAULT_TYPING_DECK_RIGHTS_STATUSES.green,
+    sourceUrl: "https://ko.wikisource.org/wiki/%EC%A7%84%EB%8B%AC%EB%9E%98%EA%BD%83_%28%EC%8B%9C%EC%A7%91%29",
+    sourcePermalink: "https://ko.wikisource.org/w/index.php?title=%EC%A7%84%EB%8B%AC%EB%9E%98%EA%BD%83_(%EC%8B%9C%EC%A7%91)&oldid=401458",
+    retrievedAt: SOURCE_RETRIEVED_AT,
+    licenseNotes: "Korean Wikisource marks the collection PD-old-70; leader source gate accepted this as the conservative Korean replacement for the rejected Yun Dong-ju candidate.",
+    replacementRationale: "Replaces 하늘과 바람과 별과 시 because no product/legal acceptance exists for the U.S. copyright caveat.",
     passages: [
-      "먼 후일",
-      "풀따기",
-      "바다",
-      "산 위에",
-      "옛이야기",
-      "님의 노래",
-      "실제 1",
-      "님의 말씀",
-      "님에게",
-      "마른강 두덕에서",
-      "봄 밤",
-      "밤",
-      "꿈꾼 그 옛날",
-      "꿈으로 오는 한 사람",
-      "눈 오는 저녁",
-      "자주 구름",
-      "두 사람",
-      "닭소리",
-      "못잊어",
-      "예전엔 미처 몰랐어요",
-    ].map((sourceLocator, index) => ({
-      passageId: `default-ko-jindallaekkot-${String(index + 1).padStart(3, "0")}`,
-      sourceLocator,
-      sourceUrl: JINDALLAE_SOURCE_URL,
-      sourcePermalink: JINDALLAE_SOURCE_PERMALINK,
-      cleanupNotes: jindallaeCleanupNotes,
-    })),
+      {
+        id: "default-ko-azaleas-001",
+        title: "먼 후일",
+        prompt: "먼 훗날 당신이 찾으시면 그때에 내 말이 `잊었노라` 당신이 속으로 나무라면 `무척 그리다가 잊었노라`",
+        sourceLocator: "먼 후일",
+        sourceUrl: "https://ko.wikisource.org/wiki/%EC%A7%84%EB%8B%AC%EB%9E%98%EA%BD%83_%28%EC%8B%9C%EC%A7%91%29/%EB%A8%BC_%ED%9B%84%EC%9D%BC",
+        cleanupNotes: "Joined line breaks into one typing prompt; retained Korean Wikisource text, Hanja, punctuation, and archaic wording where present.",
+      },
+      {
+        id: "default-ko-azaleas-002",
+        title: "진달래꽃",
+        prompt: "나 보기가 역겨워 가실 때에는 말없이 고이 보내드리오리다. 영변(寧邊)에 약산(藥山) 진달래꽃 아름따다 가실 길에 뿌리오리다.",
+        sourceLocator: "진달래꽃",
+        sourceUrl: "https://ko.wikisource.org/wiki/%EC%A7%84%EB%8B%AC%EB%9E%98%EA%BD%83_%28%EC%8B%9C%EC%A7%91%29/%EC%A7%84%EB%8B%AC%EB%9E%98%EA%BD%83",
+        cleanupNotes: "Joined line breaks into one typing prompt; retained Korean Wikisource text, Hanja, punctuation, and archaic wording where present.",
+      },
+      {
+        id: "default-ko-azaleas-003",
+        title: "산유화",
+        prompt: "산에는 꽃 피네 꽃이 피네 갈 봄 여름없이 꽃이 피네 산에 산에 피는 꽃은 저만치 혼자서 피어 있네",
+        sourceLocator: "산유화",
+        sourceUrl: "https://ko.wikisource.org/wiki/%EC%A7%84%EB%8B%AC%EB%9E%98%EA%BD%83_%28%EC%8B%9C%EC%A7%91%29/%EC%82%B0%EC%9C%A0%ED%99%94",
+        cleanupNotes: "Joined line breaks into one typing prompt; retained Korean Wikisource text, Hanja, punctuation, and archaic wording where present.",
+      },
+      {
+        id: "default-ko-azaleas-004",
+        title: "초혼",
+        prompt: "산산이 부서진 이름이어! 허공중(虛空中)에 헤어진 이름이어! 불러도 주인(主人)없는 이름이어! 부르다가 내가 죽을 이름이어!",
+        sourceLocator: "초혼",
+        sourceUrl: "https://ko.wikisource.org/wiki/%EC%A7%84%EB%8B%AC%EB%9E%98%EA%BD%83_%28%EC%8B%9C%EC%A7%91%29/%EC%B4%88%ED%98%BC",
+        cleanupNotes: "Joined line breaks into one typing prompt; retained Korean Wikisource text, Hanja, punctuation, and archaic wording where present.",
+      },
+      {
+        id: "default-ko-azaleas-005",
+        title: "엄마야 누나야",
+        prompt: "엄마야 누나야 강변 살자, 뜰에는 반짝는 금모래빛, 뒷문 밖에는 갈잎의 노래 엄마야 누나야 강변 살자.",
+        sourceLocator: "엄마야 누나야",
+        sourceUrl: "https://ko.wikisource.org/wiki/%EC%A7%84%EB%8B%AC%EB%9E%98%EA%BD%83_%28%EC%8B%9C%EC%A7%91%29/%EC%97%84%EB%A7%88%EC%95%BC_%EB%88%84%EB%82%98%EC%95%BC",
+        cleanupNotes: "Joined line breaks into one typing prompt; retained Korean Wikisource text, Hanja, punctuation, and archaic wording where present.",
+      },
+      {
+        id: "default-ko-azaleas-006",
+        title: "가는 길",
+        prompt: "그립다 말을 할까 하니 그리워 그냥 갈까 그래도 다시 더 한 번...... 저 산(山)에도 까마귀, 들에 까마귀,",
+        sourceLocator: "가는 길",
+        sourceUrl: "https://ko.wikisource.org/wiki/%EC%A7%84%EB%8B%AC%EB%9E%98%EA%BD%83_%28%EC%8B%9C%EC%A7%91%29/%EA%B0%80%EB%8A%94_%EA%B8%B8",
+        cleanupNotes: "Joined line breaks into one typing prompt; retained Korean Wikisource text, Hanja, punctuation, and archaic wording where present.",
+      },
+      {
+        id: "default-ko-azaleas-007",
+        title: "못 잊어",
+        prompt: "못잊어 생각이 나겠지요, 그런대로 한세상 지내시구려, 사노라면 잊힐 날 있으리다.",
+        sourceLocator: "못 잊어",
+        sourceUrl: "https://ko.wikisource.org/wiki/%EC%A7%84%EB%8B%AC%EB%9E%98%EA%BD%83_%28%EC%8B%9C%EC%A7%91%29/%EB%AA%BB_%EC%9E%8A%EC%96%B4",
+        cleanupNotes: "Joined line breaks into one typing prompt; retained Korean Wikisource text, Hanja, punctuation, and archaic wording where present.",
+      },
+      {
+        id: "default-ko-azaleas-008",
+        title: "구름",
+        prompt: "저기 저 구름을 잡아타면 붉게도 피로 물든 저 구름을, 밤이면 새캄한 저 구름을. 잡아타고 내 몸은 저 멀리로",
+        sourceLocator: "구름",
+        sourceUrl: "https://ko.wikisource.org/wiki/%EC%A7%84%EB%8B%AC%EB%9E%98%EA%BD%83_%28%EC%8B%9C%EC%A7%91%29/%EA%B5%AC%EB%A6%84",
+        cleanupNotes: "Joined line breaks into one typing prompt; retained Korean Wikisource text, Hanja, punctuation, and archaic wording where present.",
+      },
+      {
+        id: "default-ko-azaleas-009",
+        title: "반달",
+        prompt: "희멀끔하여 떠돈다, 하늘 위에, 빛죽은 반달이 언제 올랐나! 바람은 나온다, 저녁은 춥구나,",
+        sourceLocator: "반달",
+        sourceUrl: "https://ko.wikisource.org/wiki/%EC%A7%84%EB%8B%AC%EB%9E%98%EA%BD%83_%28%EC%8B%9C%EC%A7%91%29/%EB%B0%98%EB%8B%AC",
+        cleanupNotes: "Joined line breaks into one typing prompt; retained Korean Wikisource text, Hanja, punctuation, and archaic wording where present.",
+      },
+      {
+        id: "default-ko-azaleas-010",
+        title: "달맞이",
+        prompt: "정월대보름날 달맞이, 달맞이 달마중을, 가자고! 새라새옷은 갈아입고도 가슴엔 묵은 설움 그대로,",
+        sourceLocator: "달맞이",
+        sourceUrl: "https://ko.wikisource.org/wiki/%EC%A7%84%EB%8B%AC%EB%9E%98%EA%BD%83_%28%EC%8B%9C%EC%A7%91%29/%EB%8B%AC%EB%A7%9E%EC%9D%B4",
+        cleanupNotes: "Joined line breaks into one typing prompt; retained Korean Wikisource text, Hanja, punctuation, and archaic wording where present.",
+      },
+      {
+        id: "default-ko-azaleas-011",
+        title: "님의 노래",
+        prompt: "그립은 우리님의 맑은 노래는 언제나 제 가슴에 젖어있어요 긴 날을 문밖에서 서서 들어도",
+        sourceLocator: "님의 노래",
+        sourceUrl: "https://ko.wikisource.org/wiki/%EC%A7%84%EB%8B%AC%EB%9E%98%EA%BD%83_%28%EC%8B%9C%EC%A7%91%29/%EB%8B%98%EC%9D%98_%EB%85%B8%EB%9E%98",
+        cleanupNotes: "Joined line breaks into one typing prompt; retained Korean Wikisource text, Hanja, punctuation, and archaic wording where present.",
+      },
+      {
+        id: "default-ko-azaleas-012",
+        title: "우리 집",
+        prompt: "이 바로 외따로 와 지나는 사람 없으니 `밤 자고 가자` 하며 나는 앉어라. 저 멀리, 하느편(便)에",
+        sourceLocator: "우리 집",
+        sourceUrl: "https://ko.wikisource.org/wiki/%EC%A7%84%EB%8B%AC%EB%9E%98%EA%BD%83_%28%EC%8B%9C%EC%A7%91%29/%EC%9A%B0%EB%A6%AC_%EC%A7%91",
+        cleanupNotes: "Joined line breaks into one typing prompt; retained Korean Wikisource text, Hanja, punctuation, and archaic wording where present.",
+      },
+      {
+        id: "default-ko-azaleas-013",
+        title: "엄숙",
+        prompt: "나는 혼자 뫼 위에 올랐어라. 솟아 퍼지는 아침 햇볕에 풀잎도 번쩍이며 바람은 속삭여라.",
+        sourceLocator: "엄숙",
+        sourceUrl: "https://ko.wikisource.org/wiki/%EC%A7%84%EB%8B%AC%EB%9E%98%EA%BD%83_%28%EC%8B%9C%EC%A7%91%29/%EC%97%84%EC%88%99",
+        cleanupNotes: "Joined line breaks into one typing prompt; retained Korean Wikisource text, Hanja, punctuation, and archaic wording where present.",
+      },
+      {
+        id: "default-ko-azaleas-014",
+        title: "널",
+        prompt: "성촌(城村)의 아가씨들 널 뛰노나 초파일 날이라고 널을 뛰지요 바람 불어요 바람이 분다고!",
+        sourceLocator: "널",
+        sourceUrl: "https://ko.wikisource.org/wiki/%EC%A7%84%EB%8B%AC%EB%9E%98%EA%BD%83_%28%EC%8B%9C%EC%A7%91%29/%EB%84%90",
+        cleanupNotes: "Joined line breaks into one typing prompt; retained Korean Wikisource text, Hanja, punctuation, and archaic wording where present.",
+      },
+      {
+        id: "default-ko-azaleas-015",
+        title: "무덤",
+        prompt: "그 누가 나를 헤내는 부르는 소리 붉으스름한 언덕, 여기저기 돌무더기도 움직이며, 달빛에,",
+        sourceLocator: "무덤",
+        sourceUrl: "https://ko.wikisource.org/wiki/%EC%A7%84%EB%8B%AC%EB%9E%98%EA%BD%83_%28%EC%8B%9C%EC%A7%91%29/%EB%AC%B4%EB%8D%A4",
+        cleanupNotes: "Joined line breaks into one typing prompt; retained Korean Wikisource text, Hanja, punctuation, and archaic wording where present.",
+      },
+      {
+        id: "default-ko-azaleas-016",
+        title: "첫 치마",
+        prompt: "봄은 가나니 저문 날에, 꽃은 지나니 저문 봄에, 속없이 우나니, 지는 꽃을,",
+        sourceLocator: "첫 치마",
+        sourceUrl: "https://ko.wikisource.org/wiki/%EC%A7%84%EB%8B%AC%EB%9E%98%EA%BD%83_%28%EC%8B%9C%EC%A7%91%29/%EC%B2%AB_%EC%B9%98%EB%A7%88",
+        cleanupNotes: "Joined line breaks into one typing prompt; retained Korean Wikisource text, Hanja, punctuation, and archaic wording where present.",
+      },
+      {
+        id: "default-ko-azaleas-017",
+        title: "바라건대는 우리에게 우리의 보습 대일 땅이 있었더면",
+        prompt: "나는 꿈꾸었노라, 동무들과 내가 가즈런히 벌가의 하루 일을 다 마치고 석양(夕陽)에 마을로 돌아오는 꿈을,",
+        sourceLocator: "바라건대는 우리에게 우리의 보습 대일 땅이 있었더면",
+        sourceUrl: "https://ko.wikisource.org/wiki/%EC%A7%84%EB%8B%AC%EB%9E%98%EA%BD%83_%28%EC%8B%9C%EC%A7%91%29/%EB%B0%94%EB%9D%BC%EA%B1%B4%EB%8C%80%EB%8A%94_%EC%9A%B0%EB%A6%AC%EC%97%90%EA%B2%8C_%EC%9A%B0%EB%A6%AC%EC%9D%98_%EB%B3%B4%EC%8A%B5_%EB%8C%80%EC%9D%BC_%EB%95%85%EC%9D%B4_%EC%9E%88%EC%97%88%EB%8D%94%EB%A9%B4",
+        cleanupNotes: "Joined line breaks into one typing prompt; retained Korean Wikisource text, Hanja, punctuation, and archaic wording where present.",
+      },
+      {
+        id: "default-ko-azaleas-018",
+        title: "사노라면 사람은 죽는 것을",
+        prompt: "하루라도 몇 번(番)씩 내 생각은 내가 무엇하려고 살려는지? 모르고 살았노라, 그럴 말로",
+        sourceLocator: "사노라면 사람은 죽는 것을",
+        sourceUrl: "https://ko.wikisource.org/wiki/%EC%A7%84%EB%8B%AC%EB%9E%98%EA%BD%83_%28%EC%8B%9C%EC%A7%91%29/%EC%82%AC%EB%85%B8%EB%9D%BC%EB%A9%B4_%EC%82%AC%EB%9E%8C%EC%9D%80_%EC%A3%BD%EB%8A%94_%EA%B2%83%EC%9D%84",
+        cleanupNotes: "Joined line breaks into one typing prompt; retained Korean Wikisource text, Hanja, punctuation, and archaic wording where present.",
+      },
+      {
+        id: "default-ko-azaleas-019",
+        title: "나의 집",
+        prompt: "들가에 떨어져 나가앉은 멧기슭의 넓은 바다의 물가 뒤에, 나는 지으리, 나의 집을,",
+        sourceLocator: "나의 집",
+        sourceUrl: "https://ko.wikisource.org/wiki/%EC%A7%84%EB%8B%AC%EB%9E%98%EA%BD%83_%28%EC%8B%9C%EC%A7%91%29/%EB%82%98%EC%9D%98_%EC%A7%91",
+        cleanupNotes: "Joined line breaks into one typing prompt; retained Korean Wikisource text, Hanja, punctuation, and archaic wording where present.",
+      },
+      {
+        id: "default-ko-azaleas-020",
+        title: "접동새",
+        prompt: "접동 접동 아우래비 접동 진두강(津頭江) 가람가에 살던 누나는 진두강 앞 마을에 와서 웁니다.",
+        sourceLocator: "접동새",
+        sourceUrl: "https://ko.wikisource.org/wiki/%EC%A7%84%EB%8B%AC%EB%9E%98%EA%BD%83_%28%EC%8B%9C%EC%A7%91%29/%EC%A0%91%EB%8F%99%EC%83%88",
+        cleanupNotes: "Joined line breaks into one typing prompt; retained Korean Wikisource text, Hanja, punctuation, and archaic wording where present.",
+      },
+    ],
   },
   {
-    deckId: "default-en-art-of-war-giles",
-    deckTitle: "손자병법 / The Art of War (Giles)",
+    id: "default-en-art-of-war-giles",
+    title: "The Art of War",
+    description: "Lionel Giles’s 1910 English translation of Sunzi, selected as concise strategic passages for English typing practice.",
+    languageTag: TYPING_DECK_LANGUAGE_TAGS.en,
     sourceWorkTitle: "The Art of War",
     sourceAuthor: "Sunzi; translated by Lionel Giles",
-    sourceEdition:
-      "Project Gutenberg eBook #132, Lionel Giles English translation, originally published 1910.",
-    rightsStatus: DEFAULT_TYPING_DECK_SOURCE_RIGHTS_STATUSES.green,
-    sourceUrl: ART_OF_WAR_SOURCE_URL,
-    sourcePermalink: ART_OF_WAR_SOURCE_PERMALINK,
-    crossCheckUrls: ["https://en.wikisource.org/wiki/The_Art_of_War_(Sun)"],
-    licenseNotes:
-      "Sunzi is ancient and Lionel Giles died in 1958; the 1910 English translation is public-domain in the United States. " +
-      PG_LICENSE_NOTES,
+    sourceEdition: "Lionel Giles translation, 1910; Project Gutenberg eBook #132",
+    rightsStatus: DEFAULT_TYPING_DECK_RIGHTS_STATUSES.green,
+    sourceUrl: "https://www.gutenberg.org/ebooks/132",
+    sourcePermalink: "https://www.gutenberg.org/cache/epub/132/pg132.txt",
+    retrievedAt: SOURCE_RETRIEVED_AT,
+    licenseNotes: "Project Gutenberg eBook #132 is a public-domain source in the United States; passages exclude PG license/header/footer and commentary brackets.",
+    replacementRationale: "Uses the English Giles translation; Korean Wikisource translation was not used because translation/licensing was not accepted.",
     passages: [
-      "Chapter I, Laying Plans, paragraphs 1-2",
-      "Chapter I, Laying Plans, paragraph 3",
-      "Chapter I, Laying Plans, paragraph 4",
-      "Chapter I, Laying Plans, paragraphs 5-6",
-      "Chapter I, Laying Plans, paragraph 7",
-      "Chapter I, Laying Plans, paragraphs 8-9",
-      "Chapter I, Laying Plans, paragraph 10",
-      "Chapter I, Laying Plans, paragraph 11",
-      "Chapter I, Laying Plans, paragraph 12",
-      "Chapter I, Laying Plans, paragraph 13",
-      "Chapter I, Laying Plans, paragraph 14",
-      "Chapter I, Laying Plans, paragraph 15",
-      "Chapter I, Laying Plans, paragraphs 16-17",
-      "Chapter I, Laying Plans, paragraph 18",
-      "Chapter I, Laying Plans, paragraph 19",
-      "Chapter I, Laying Plans, paragraph 20",
-      "Chapter I, Laying Plans, paragraph 21",
-      "Chapter I, Laying Plans, paragraph 22",
-      "Chapter I, Laying Plans, paragraph 23",
-      "Chapter I, Laying Plans, paragraphs 24-25",
-    ].map((sourceLocator, index) => ({
-      passageId: `default-en-art-of-war-giles-${String(index + 1).padStart(3, "0")}`,
-      sourceLocator,
-      sourceUrl: ART_OF_WAR_SOURCE_URL,
-      sourcePermalink: ART_OF_WAR_SOURCE_PERMALINK,
-      cleanupNotes: artOfWarCleanupNotes,
-    })),
-  },
-  {
-    deckId: "default-en-shakespeare-sonnets",
-    deckTitle: "Shakespeare’s Sonnets",
-    sourceWorkTitle: "Shakespeare's Sonnets",
-    sourceAuthor: "William Shakespeare",
-    sourceEdition:
-      "Project Gutenberg eBook #1041, Shakespeare’s sonnet text, released 1997-09-01.",
-    rightsStatus: DEFAULT_TYPING_DECK_SOURCE_RIGHTS_STATUSES.green,
-    sourceUrl: SHAKESPEARE_SOURCE_URL,
-    sourcePermalink: SHAKESPEARE_SOURCE_PERMALINK,
-    crossCheckUrls: ["https://www.gutenberg.org/help/shakespeare.html"],
-    licenseNotes:
-      "Author died in 1616 and original sonnets were first published in 1609. " +
-      PG_LICENSE_NOTES,
-    passages: [
-      "Sonnet 18",
-      "Sonnet 19",
-      "Sonnet 20",
-      "Sonnet 21",
-      "Sonnet 22",
-      "Sonnet 23",
-      "Sonnet 24",
-      "Sonnet 25",
-      "Sonnet 26",
-      "Sonnet 27",
-      "Sonnet 28",
-      "Sonnet 29",
-      "Sonnet 30",
-      "Sonnet 31",
-      "Sonnet 32",
-      "Sonnet 33",
-      "Sonnet 34",
-      "Sonnet 35",
-      "Sonnet 36",
-      "Sonnet 37",
-    ].map((sourceLocator, index) => ({
-      passageId: `default-en-shakespeare-sonnets-${String(index + 1).padStart(3, "0")}`,
-      sourceLocator,
-      sourceUrl: SHAKESPEARE_SOURCE_URL,
-      sourcePermalink: SHAKESPEARE_SOURCE_PERMALINK,
-      cleanupNotes: sonnetCleanupNotes,
-    })),
-  },
-  {
-    deckId: "default-en-lincoln-addresses",
-    deckTitle: "Lincoln’s Addresses",
-    sourceWorkTitle: "The Papers and Writings of Abraham Lincoln, Complete",
-    sourceAuthor: "Abraham Lincoln",
-    sourceEdition:
-      "Project Gutenberg eBook #3253, complete papers and writings collection; selected passages use Lincoln address text only.",
-    rightsStatus: DEFAULT_TYPING_DECK_SOURCE_RIGHTS_STATUSES.green,
-    sourceUrl: LINCOLN_SOURCE_URL,
-    sourcePermalink: LINCOLN_SOURCE_PERMALINK,
-    crossCheckUrls: [
-      "https://www.loc.gov/item/2024697384/",
-      "https://www.nps.gov/linc/learn/historyculture/gettysburgaddress.htm",
-      "https://www.nps.gov/linc/learn/historyculture/lincoln-second-inaugural.htm",
+      {
+        id: "default-en-art-of-war-giles-001",
+        title: "Laying Plans 01",
+        prompt: "The art of war is of vital importance to the State.",
+        sourceLocator: "Laying Plans 01",
+        sourceUrl: "https://www.gutenberg.org/ebooks/132",
+        cleanupNotes: "Removed commentary, footnote brackets, and surrounding section prose; retained the translated main text.",
+      },
+      {
+        id: "default-en-art-of-war-giles-002",
+        title: "Laying Plans 02",
+        prompt: "It is a matter of life and death, a road either to safety or to ruin.",
+        sourceLocator: "Laying Plans 02",
+        sourceUrl: "https://www.gutenberg.org/ebooks/132",
+        cleanupNotes: "Removed commentary, footnote brackets, and surrounding section prose; retained the translated main text.",
+      },
+      {
+        id: "default-en-art-of-war-giles-003",
+        title: "Laying Plans 03",
+        prompt: "Hence it is a subject of inquiry which can on no account be neglected.",
+        sourceLocator: "Laying Plans 03",
+        sourceUrl: "https://www.gutenberg.org/ebooks/132",
+        cleanupNotes: "Removed commentary, footnote brackets, and surrounding section prose; retained the translated main text.",
+      },
+      {
+        id: "default-en-art-of-war-giles-004",
+        title: "Laying Plans 18",
+        prompt: "All warfare is based on deception.",
+        sourceLocator: "Laying Plans 18",
+        sourceUrl: "https://www.gutenberg.org/ebooks/132",
+        cleanupNotes: "Removed commentary, footnote brackets, and surrounding section prose; retained the translated main text.",
+      },
+      {
+        id: "default-en-art-of-war-giles-005",
+        title: "Laying Plans 19",
+        prompt: "When able to attack, we must seem unable; when using our forces, we must seem inactive.",
+        sourceLocator: "Laying Plans 19",
+        sourceUrl: "https://www.gutenberg.org/ebooks/132",
+        cleanupNotes: "Removed commentary, footnote brackets, and surrounding section prose; retained the translated main text.",
+      },
+      {
+        id: "default-en-art-of-war-giles-006",
+        title: "Laying Plans 20",
+        prompt: "Hold out baits to entice the enemy. Feign disorder, and crush him.",
+        sourceLocator: "Laying Plans 20",
+        sourceUrl: "https://www.gutenberg.org/ebooks/132",
+        cleanupNotes: "Removed commentary, footnote brackets, and surrounding section prose; retained the translated main text.",
+      },
+      {
+        id: "default-en-art-of-war-giles-007",
+        title: "Laying Plans 21",
+        prompt: "If he is secure at all points, be prepared for him. If he is in superior strength, evade him.",
+        sourceLocator: "Laying Plans 21",
+        sourceUrl: "https://www.gutenberg.org/ebooks/132",
+        cleanupNotes: "Removed commentary, footnote brackets, and surrounding section prose; retained the translated main text.",
+      },
+      {
+        id: "default-en-art-of-war-giles-008",
+        title: "Laying Plans 24",
+        prompt: "Attack him where he is unprepared, appear where you are not expected.",
+        sourceLocator: "Laying Plans 24",
+        sourceUrl: "https://www.gutenberg.org/ebooks/132",
+        cleanupNotes: "Removed commentary, footnote brackets, and surrounding section prose; retained the translated main text.",
+      },
+      {
+        id: "default-en-art-of-war-giles-009",
+        title: "Laying Plans 26",
+        prompt: "The general who wins a battle makes many calculations in his temple ere the battle is fought.",
+        sourceLocator: "Laying Plans 26",
+        sourceUrl: "https://www.gutenberg.org/ebooks/132",
+        cleanupNotes: "Removed commentary, footnote brackets, and surrounding section prose; retained the translated main text.",
+      },
+      {
+        id: "default-en-art-of-war-giles-010",
+        title: "Waging War 19",
+        prompt: "In war, then, let your great object be victory, not lengthy campaigns.",
+        sourceLocator: "Waging War 19",
+        sourceUrl: "https://www.gutenberg.org/ebooks/132",
+        cleanupNotes: "Removed commentary, footnote brackets, and surrounding section prose; retained the translated main text.",
+      },
+      {
+        id: "default-en-art-of-war-giles-011",
+        title: "Attack by Stratagem 02",
+        prompt: "To fight and conquer in all your battles is not supreme excellence; supreme excellence consists in breaking the enemy’s resistance without fighting.",
+        sourceLocator: "Attack by Stratagem 02",
+        sourceUrl: "https://www.gutenberg.org/ebooks/132",
+        cleanupNotes: "Removed commentary, footnote brackets, and surrounding section prose; retained the translated main text.",
+      },
+      {
+        id: "default-en-art-of-war-giles-012",
+        title: "Tactical Dispositions 14",
+        prompt: "The skillful fighter puts himself into a position which makes defeat impossible, and does not miss the moment for defeating the enemy.",
+        sourceLocator: "Tactical Dispositions 14",
+        sourceUrl: "https://www.gutenberg.org/ebooks/132",
+        cleanupNotes: "Removed commentary, footnote brackets, and surrounding section prose; retained the translated main text.",
+      },
+      {
+        id: "default-en-art-of-war-giles-013",
+        title: "Energy 05",
+        prompt: "In all fighting, the direct method may be used for joining battle, but indirect methods will be needed in order to secure victory.",
+        sourceLocator: "Energy 05",
+        sourceUrl: "https://www.gutenberg.org/ebooks/132",
+        cleanupNotes: "Removed commentary, footnote brackets, and surrounding section prose; retained the translated main text.",
+      },
+      {
+        id: "default-en-art-of-war-giles-014",
+        title: "Energy 07",
+        prompt: "There are not more than five musical notes, yet the combinations of these five give rise to more melodies than can ever be heard.",
+        sourceLocator: "Energy 07",
+        sourceUrl: "https://www.gutenberg.org/ebooks/132",
+        cleanupNotes: "Removed commentary, footnote brackets, and surrounding section prose; retained the translated main text.",
+      },
+      {
+        id: "default-en-art-of-war-giles-015",
+        title: "Weak Points and Strong 01",
+        prompt: "The clever combatant imposes his will on the enemy, but does not allow the enemy’s will to be imposed on him.",
+        sourceLocator: "Weak Points and Strong 01",
+        sourceUrl: "https://www.gutenberg.org/ebooks/132",
+        cleanupNotes: "Removed commentary, footnote brackets, and surrounding section prose; retained the translated main text.",
+      },
+      {
+        id: "default-en-art-of-war-giles-016",
+        title: "Weak Points and Strong 30",
+        prompt: "So in war, the way is to avoid what is strong and to strike at what is weak.",
+        sourceLocator: "Weak Points and Strong 30",
+        sourceUrl: "https://www.gutenberg.org/ebooks/132",
+        cleanupNotes: "Removed commentary, footnote brackets, and surrounding section prose; retained the translated main text.",
+      },
+      {
+        id: "default-en-art-of-war-giles-017",
+        title: "Maneuvering 17",
+        prompt: "Let your rapidity be that of the wind, your compactness that of the forest.",
+        sourceLocator: "Maneuvering 17",
+        sourceUrl: "https://www.gutenberg.org/ebooks/132",
+        cleanupNotes: "Removed commentary, footnote brackets, and surrounding section prose; retained the translated main text.",
+      },
+      {
+        id: "default-en-art-of-war-giles-018",
+        title: "Maneuvering 18",
+        prompt: "In raiding and plundering be like fire, be immovable like a mountain.",
+        sourceLocator: "Maneuvering 18",
+        sourceUrl: "https://www.gutenberg.org/ebooks/132",
+        cleanupNotes: "Removed commentary, footnote brackets, and surrounding section prose; retained the translated main text.",
+      },
+      {
+        id: "default-en-art-of-war-giles-019",
+        title: "Attack by Stratagem 18",
+        prompt: "If you know the enemy and know yourself, you need not fear the result of a hundred battles.",
+        sourceLocator: "Attack by Stratagem 18",
+        sourceUrl: "https://www.gutenberg.org/ebooks/132",
+        cleanupNotes: "Removed commentary, footnote brackets, and surrounding section prose; retained the translated main text.",
+      },
+      {
+        id: "default-en-art-of-war-giles-020",
+        title: "Attack by Stratagem 18",
+        prompt: "If you know yourself but not the enemy, for every victory gained you will also suffer a defeat.",
+        sourceLocator: "Attack by Stratagem 18",
+        sourceUrl: "https://www.gutenberg.org/ebooks/132",
+        cleanupNotes: "Removed commentary, footnote brackets, and surrounding section prose; retained the translated main text.",
+      },
     ],
-    licenseNotes:
-      "Lincoln died in 1865; selected address text is public-domain historical speech text. " +
-      PG_LICENSE_NOTES,
-    passages: [
-      "First Inaugural Address, March 4, 1861, opening oath paragraph",
-      "First Inaugural Address, March 4, 1861, no special anxiety paragraph",
-      "First Inaugural Address, March 4, 1861, Southern States apprehension paragraph",
-      "First Inaugural Address, March 4, 1861, protection of States paragraph",
-      "First Inaugural Address, March 4, 1861, official oath paragraph",
-      "First Inaugural Address, March 4, 1861, Union is perpetual paragraph",
-      "First Inaugural Address, March 4, 1861, no State can lawfully leave paragraph",
-      "First Inaugural Address, March 4, 1861, mystic chords closing paragraph",
-      "Gettysburg Address, November 19, 1863, opening paragraph",
-      "Gettysburg Address, November 19, 1863, civil war and dedication paragraph",
-      "Gettysburg Address, November 19, 1863, larger sense paragraph",
-      "Gettysburg Address, November 19, 1863, unfinished work closing paragraph",
-      "Second Inaugural Address, March 4, 1865, opening paragraph",
-      "Second Inaugural Address, March 4, 1865, war came paragraph",
-      "Second Inaugural Address, March 4, 1865, slavery cause paragraph",
-      "Second Inaugural Address, March 4, 1865, both read same Bible paragraph",
-      "Second Inaugural Address, March 4, 1865, judgments of the Lord paragraph",
-      "Second Inaugural Address, March 4, 1865, malice toward none paragraph",
-      "Cooper Union Address, February 27, 1860, opening paragraph",
-      "Address to the 166th Ohio Regiment, August 22, 1864, closing paragraph",
-    ].map((sourceLocator, index) => ({
-      passageId: `default-en-lincoln-addresses-${String(index + 1).padStart(3, "0")}`,
-      sourceLocator,
-      sourceUrl: LINCOLN_SOURCE_URL,
-      sourcePermalink: LINCOLN_SOURCE_PERMALINK,
-      cleanupNotes: lincolnCleanupNotes,
-    })),
   },
-];
+  {
+    id: "default-en-shakespeare-sonnets",
+    title: "Shakespeare’s Sonnets",
+    description: "Selected opening quatrains from Shakespeare’s sonnets for compact English typing practice.",
+    languageTag: TYPING_DECK_LANGUAGE_TAGS.en,
+    sourceWorkTitle: "Shakespeare’s Sonnets",
+    sourceAuthor: "William Shakespeare",
+    sourceEdition: "Project Gutenberg eBook #1041",
+    rightsStatus: DEFAULT_TYPING_DECK_RIGHTS_STATUSES.green,
+    sourceUrl: "https://www.gutenberg.org/ebooks/1041",
+    sourcePermalink: "https://www.gutenberg.org/cache/epub/1041/pg1041.txt",
+    retrievedAt: SOURCE_RETRIEVED_AT,
+    licenseNotes: "Project Gutenberg eBook #1041 is a public-domain Shakespeare source in the United States; passages exclude PG license/header/footer.",
+    passages: [
+      {
+        id: "default-en-shakespeare-sonnets-001",
+        title: "Sonnet XVIII",
+        prompt: "Shall I compare thee to a summer’s day? Thou art more lovely and more temperate: Rough winds do shake the darling buds of May, And summer’s lease hath all too short a date:",
+        sourceLocator: "Sonnet XVIII",
+        sourceUrl: "https://www.gutenberg.org/ebooks/1041",
+        cleanupNotes: "Selected the first quatrain and joined line breaks into one typing prompt; retained punctuation and spelling from the PG text.",
+      },
+      {
+        id: "default-en-shakespeare-sonnets-002",
+        title: "Sonnet XXIX",
+        prompt: "When in disgrace with fortune and men’s eyes I all alone beweep my outcast state, And trouble deaf heaven with my bootless cries, And look upon myself, and curse my fate,",
+        sourceLocator: "Sonnet XXIX",
+        sourceUrl: "https://www.gutenberg.org/ebooks/1041",
+        cleanupNotes: "Selected the first quatrain and joined line breaks into one typing prompt; retained punctuation and spelling from the PG text.",
+      },
+      {
+        id: "default-en-shakespeare-sonnets-003",
+        title: "Sonnet XXX",
+        prompt: "When to the sessions of sweet silent thought I summon up remembrance of things past, I sigh the lack of many a thing I sought, And with old woes new wail my dear time’s waste:",
+        sourceLocator: "Sonnet XXX",
+        sourceUrl: "https://www.gutenberg.org/ebooks/1041",
+        cleanupNotes: "Selected the first quatrain and joined line breaks into one typing prompt; retained punctuation and spelling from the PG text.",
+      },
+      {
+        id: "default-en-shakespeare-sonnets-004",
+        title: "Sonnet XXXIII",
+        prompt: "Full many a glorious morning have I seen Flatter the mountain tops with sovereign eye, Kissing with golden face the meadows green, Gilding pale streams with heavenly alchemy;",
+        sourceLocator: "Sonnet XXXIII",
+        sourceUrl: "https://www.gutenberg.org/ebooks/1041",
+        cleanupNotes: "Selected the first quatrain and joined line breaks into one typing prompt; retained punctuation and spelling from the PG text.",
+      },
+      {
+        id: "default-en-shakespeare-sonnets-005",
+        title: "Sonnet LV",
+        prompt: "Not marble, nor the gilded monuments Of princes, shall outlive this powerful rhyme; But you shall shine more bright in these contents Than unswept stone, besmear’d with sluttish time.",
+        sourceLocator: "Sonnet LV",
+        sourceUrl: "https://www.gutenberg.org/ebooks/1041",
+        cleanupNotes: "Selected the first quatrain and joined line breaks into one typing prompt; retained punctuation and spelling from the PG text.",
+      },
+      {
+        id: "default-en-shakespeare-sonnets-006",
+        title: "Sonnet LX",
+        prompt: "Like as the waves make towards the pebbled shore, So do our minutes hasten to their end; Each changing place with that which goes before, In sequent toil all forwards do contend.",
+        sourceLocator: "Sonnet LX",
+        sourceUrl: "https://www.gutenberg.org/ebooks/1041",
+        cleanupNotes: "Selected the first quatrain and joined line breaks into one typing prompt; retained punctuation and spelling from the PG text.",
+      },
+      {
+        id: "default-en-shakespeare-sonnets-007",
+        title: "Sonnet LXV",
+        prompt: "Since brass, nor stone, nor earth, nor boundless sea, But sad mortality o’ersways their power, How with this rage shall beauty hold a plea, Whose action is no stronger than a flower?",
+        sourceLocator: "Sonnet LXV",
+        sourceUrl: "https://www.gutenberg.org/ebooks/1041",
+        cleanupNotes: "Selected the first quatrain and joined line breaks into one typing prompt; retained punctuation and spelling from the PG text.",
+      },
+      {
+        id: "default-en-shakespeare-sonnets-008",
+        title: "Sonnet LXXIII",
+        prompt: "That time of year thou mayst in me behold When yellow leaves, or none, or few, do hang Upon those boughs which shake against the cold, Bare ruin’d choirs, where late the sweet birds sang.",
+        sourceLocator: "Sonnet LXXIII",
+        sourceUrl: "https://www.gutenberg.org/ebooks/1041",
+        cleanupNotes: "Selected the first quatrain and joined line breaks into one typing prompt; retained punctuation and spelling from the PG text.",
+      },
+      {
+        id: "default-en-shakespeare-sonnets-009",
+        title: "Sonnet XCI",
+        prompt: "Some glory in their birth, some in their skill, Some in their wealth, some in their body’s force, Some in their garments though new-fangled ill; Some in their hawks and hounds, some in their horse;",
+        sourceLocator: "Sonnet XCI",
+        sourceUrl: "https://www.gutenberg.org/ebooks/1041",
+        cleanupNotes: "Selected the first quatrain and joined line breaks into one typing prompt; retained punctuation and spelling from the PG text.",
+      },
+      {
+        id: "default-en-shakespeare-sonnets-010",
+        title: "Sonnet XCVII",
+        prompt: "How like a winter hath my absence been From thee, the pleasure of the fleeting year! What freezings have I felt, what dark days seen! What old December’s bareness everywhere!",
+        sourceLocator: "Sonnet XCVII",
+        sourceUrl: "https://www.gutenberg.org/ebooks/1041",
+        cleanupNotes: "Selected the first quatrain and joined line breaks into one typing prompt; retained punctuation and spelling from the PG text.",
+      },
+      {
+        id: "default-en-shakespeare-sonnets-011",
+        title: "Sonnet XCVIII",
+        prompt: "From you have I been absent in the spring, When proud-pied April, dress’d in all his trim, Hath put a spirit of youth in every thing, That heavy Saturn laugh’d and leap’d with him.",
+        sourceLocator: "Sonnet XCVIII",
+        sourceUrl: "https://www.gutenberg.org/ebooks/1041",
+        cleanupNotes: "Selected the first quatrain and joined line breaks into one typing prompt; retained punctuation and spelling from the PG text.",
+      },
+      {
+        id: "default-en-shakespeare-sonnets-012",
+        title: "Sonnet CIV",
+        prompt: "To me, fair friend, you never can be old, For as you were when first your eye I ey’d, Such seems your beauty still. Three winters cold, Have from the forests shook three summers’ pride,",
+        sourceLocator: "Sonnet CIV",
+        sourceUrl: "https://www.gutenberg.org/ebooks/1041",
+        cleanupNotes: "Selected the first quatrain and joined line breaks into one typing prompt; retained punctuation and spelling from the PG text.",
+      },
+      {
+        id: "default-en-shakespeare-sonnets-013",
+        title: "Sonnet CVI",
+        prompt: "When in the chronicle of wasted time I see descriptions of the fairest wights, And beauty making beautiful old rime, In praise of ladies dead and lovely knights,",
+        sourceLocator: "Sonnet CVI",
+        sourceUrl: "https://www.gutenberg.org/ebooks/1041",
+        cleanupNotes: "Selected the first quatrain and joined line breaks into one typing prompt; retained punctuation and spelling from the PG text.",
+      },
+      {
+        id: "default-en-shakespeare-sonnets-014",
+        title: "Sonnet CVII",
+        prompt: "Not mine own fears, nor the prophetic soul Of the wide world dreaming on things to come, Can yet the lease of my true love control, Supposed as forfeit to a confin’d doom.",
+        sourceLocator: "Sonnet CVII",
+        sourceUrl: "https://www.gutenberg.org/ebooks/1041",
+        cleanupNotes: "Selected the first quatrain and joined line breaks into one typing prompt; retained punctuation and spelling from the PG text.",
+      },
+      {
+        id: "default-en-shakespeare-sonnets-015",
+        title: "Sonnet CXVI",
+        prompt: "Let me not to the marriage of true minds Admit impediments. Love is not love Which alters when it alteration finds, Or bends with the remover to remove:",
+        sourceLocator: "Sonnet CXVI",
+        sourceUrl: "https://www.gutenberg.org/ebooks/1041",
+        cleanupNotes: "Selected the first quatrain and joined line breaks into one typing prompt; retained punctuation and spelling from the PG text.",
+      },
+      {
+        id: "default-en-shakespeare-sonnets-016",
+        title: "Sonnet CXXIX",
+        prompt: "The expense of spirit in a waste of shame Is lust in action: and till action, lust Is perjur’d, murderous, bloody, full of blame, Savage, extreme, rude, cruel, not to trust;",
+        sourceLocator: "Sonnet CXXIX",
+        sourceUrl: "https://www.gutenberg.org/ebooks/1041",
+        cleanupNotes: "Selected the first quatrain and joined line breaks into one typing prompt; retained punctuation and spelling from the PG text.",
+      },
+      {
+        id: "default-en-shakespeare-sonnets-017",
+        title: "Sonnet CXXX",
+        prompt: "My mistress’ eyes are nothing like the sun; Coral is far more red, than her lips red: If snow be white, why then her breasts are dun; If hairs be wires, black wires grow on her head.",
+        sourceLocator: "Sonnet CXXX",
+        sourceUrl: "https://www.gutenberg.org/ebooks/1041",
+        cleanupNotes: "Selected the first quatrain and joined line breaks into one typing prompt; retained punctuation and spelling from the PG text.",
+      },
+      {
+        id: "default-en-shakespeare-sonnets-018",
+        title: "Sonnet CXXXVIII",
+        prompt: "When my love swears that she is made of truth, I do believe her though I know she lies, That she might think me some untutor’d youth, Unlearned in the world’s false subtleties.",
+        sourceLocator: "Sonnet CXXXVIII",
+        sourceUrl: "https://www.gutenberg.org/ebooks/1041",
+        cleanupNotes: "Selected the first quatrain and joined line breaks into one typing prompt; retained punctuation and spelling from the PG text.",
+      },
+      {
+        id: "default-en-shakespeare-sonnets-019",
+        title: "Sonnet CXLVI",
+        prompt: "Poor soul, the centre of my sinful earth, My sinful earth these rebel powers array, Why dost thou pine within and suffer dearth, Painting thy outward walls so costly gay?",
+        sourceLocator: "Sonnet CXLVI",
+        sourceUrl: "https://www.gutenberg.org/ebooks/1041",
+        cleanupNotes: "Selected the first quatrain and joined line breaks into one typing prompt; retained punctuation and spelling from the PG text.",
+      },
+      {
+        id: "default-en-shakespeare-sonnets-020",
+        title: "Sonnet CLIV",
+        prompt: "The little Love-god lying once asleep, Laid by his side his heart-inflaming brand, Whilst many nymphs that vow’d chaste life to keep Came tripping by; but in her maiden hand",
+        sourceLocator: "Sonnet CLIV",
+        sourceUrl: "https://www.gutenberg.org/ebooks/1041",
+        cleanupNotes: "Selected the first quatrain and joined line breaks into one typing prompt; retained punctuation and spelling from the PG text.",
+      },
+    ],
+  },
+  {
+    id: "default-en-lincoln-addresses",
+    title: "Lincoln’s Addresses",
+    description: "Selected passages from Abraham Lincoln’s public addresses and writings for historical English typing practice.",
+    languageTag: TYPING_DECK_LANGUAGE_TAGS.en,
+    sourceWorkTitle: "Lincoln’s Addresses",
+    sourceAuthor: "Abraham Lincoln",
+    sourceEdition: "Project Gutenberg eBook #3253, with Gettysburg and Second Inaugural checked against LOC/NPS guidance in the source gate",
+    rightsStatus: DEFAULT_TYPING_DECK_RIGHTS_STATUSES.green,
+    sourceUrl: "https://www.gutenberg.org/ebooks/3253",
+    sourcePermalink: "https://www.gutenberg.org/cache/epub/3253/pg3253.txt",
+    retrievedAt: SOURCE_RETRIEVED_AT,
+    licenseNotes: "Project Gutenberg eBook #3253 is a public-domain source in the United States; selected address text excludes editorial introductions and PG license/header/footer.",
+    passages: [
+      {
+        id: "default-en-lincoln-addresses-001",
+        title: "Gettysburg Address 01",
+        prompt: "Four score and seven years ago our fathers brought forth on this continent, a new nation, conceived in Liberty, and dedicated to the proposition that all men are created equal.",
+        sourceLocator: "Gettysburg Address 01",
+        sourceUrl: "https://www.gutenberg.org/ebooks/3253",
+        cleanupNotes: "Selected address sentences/paragraph excerpts and joined wrapped lines; excluded editorial introductions and PG boilerplate.",
+      },
+      {
+        id: "default-en-lincoln-addresses-002",
+        title: "Gettysburg Address 02",
+        prompt: "Now we are engaged in a great civil war, testing whether that nation or any nation so conceived and so dedicated, can long endure.",
+        sourceLocator: "Gettysburg Address 02",
+        sourceUrl: "https://www.gutenberg.org/ebooks/3253",
+        cleanupNotes: "Selected address sentences/paragraph excerpts and joined wrapped lines; excluded editorial introductions and PG boilerplate.",
+      },
+      {
+        id: "default-en-lincoln-addresses-003",
+        title: "Gettysburg Address 03",
+        prompt: "We are met on a great battle-field of that war. We have come to dedicate a portion of that field, as a final resting place for those who here gave their lives that that nation might live.",
+        sourceLocator: "Gettysburg Address 03",
+        sourceUrl: "https://www.gutenberg.org/ebooks/3253",
+        cleanupNotes: "Selected address sentences/paragraph excerpts and joined wrapped lines; excluded editorial introductions and PG boilerplate.",
+      },
+      {
+        id: "default-en-lincoln-addresses-004",
+        title: "Gettysburg Address 04",
+        prompt: "But, in a larger sense, we can not dedicate--we can not consecrate--we can not hallow--this ground.",
+        sourceLocator: "Gettysburg Address 04",
+        sourceUrl: "https://www.gutenberg.org/ebooks/3253",
+        cleanupNotes: "Selected address sentences/paragraph excerpts and joined wrapped lines; excluded editorial introductions and PG boilerplate.",
+      },
+      {
+        id: "default-en-lincoln-addresses-005",
+        title: "Gettysburg Address 05",
+        prompt: "The world will little note, nor long remember what we say here, but it can never forget what they did here.",
+        sourceLocator: "Gettysburg Address 05",
+        sourceUrl: "https://www.gutenberg.org/ebooks/3253",
+        cleanupNotes: "Selected address sentences/paragraph excerpts and joined wrapped lines; excluded editorial introductions and PG boilerplate.",
+      },
+      {
+        id: "default-en-lincoln-addresses-006",
+        title: "Gettysburg Address 06",
+        prompt: "It is rather for us to be here dedicated to the great task remaining before us--that from these honored dead we take increased devotion to that cause.",
+        sourceLocator: "Gettysburg Address 06",
+        sourceUrl: "https://www.gutenberg.org/ebooks/3253",
+        cleanupNotes: "Selected address sentences/paragraph excerpts and joined wrapped lines; excluded editorial introductions and PG boilerplate.",
+      },
+      {
+        id: "default-en-lincoln-addresses-007",
+        title: "Gettysburg Address 07",
+        prompt: "That this nation, under God, shall have a new birth of freedom--and that government of the people, by the people, for the people, shall not perish from the earth.",
+        sourceLocator: "Gettysburg Address 07",
+        sourceUrl: "https://www.gutenberg.org/ebooks/3253",
+        cleanupNotes: "Selected address sentences/paragraph excerpts and joined wrapped lines; excluded editorial introductions and PG boilerplate.",
+      },
+      {
+        id: "default-en-lincoln-addresses-008",
+        title: "Second Inaugural 01",
+        prompt: "At this second appearing to take the oath of the presidential office there is less occasion for an extended address than there was at the first.",
+        sourceLocator: "Second Inaugural 01",
+        sourceUrl: "https://www.gutenberg.org/ebooks/3253",
+        cleanupNotes: "Selected address sentences/paragraph excerpts and joined wrapped lines; excluded editorial introductions and PG boilerplate.",
+      },
+      {
+        id: "default-en-lincoln-addresses-009",
+        title: "Second Inaugural 02",
+        prompt: "Both parties deprecated war, but one of them would make war rather than let the nation survive, and the other would accept war rather than let it perish.",
+        sourceLocator: "Second Inaugural 02",
+        sourceUrl: "https://www.gutenberg.org/ebooks/3253",
+        cleanupNotes: "Selected address sentences/paragraph excerpts and joined wrapped lines; excluded editorial introductions and PG boilerplate.",
+      },
+      {
+        id: "default-en-lincoln-addresses-010",
+        title: "Second Inaugural 03",
+        prompt: "Neither party expected for the war the magnitude or the duration which it has already attained.",
+        sourceLocator: "Second Inaugural 03",
+        sourceUrl: "https://www.gutenberg.org/ebooks/3253",
+        cleanupNotes: "Selected address sentences/paragraph excerpts and joined wrapped lines; excluded editorial introductions and PG boilerplate.",
+      },
+      {
+        id: "default-en-lincoln-addresses-011",
+        title: "Second Inaugural 04",
+        prompt: "Both read the same Bible and pray to the same God, and each invokes His aid against the other.",
+        sourceLocator: "Second Inaugural 04",
+        sourceUrl: "https://www.gutenberg.org/ebooks/3253",
+        cleanupNotes: "Selected address sentences/paragraph excerpts and joined wrapped lines; excluded editorial introductions and PG boilerplate.",
+      },
+      {
+        id: "default-en-lincoln-addresses-012",
+        title: "Second Inaugural 05",
+        prompt: "The prayers of both could not be answered. That of neither has been answered fully. The Almighty has His own purposes.",
+        sourceLocator: "Second Inaugural 05",
+        sourceUrl: "https://www.gutenberg.org/ebooks/3253",
+        cleanupNotes: "Selected address sentences/paragraph excerpts and joined wrapped lines; excluded editorial introductions and PG boilerplate.",
+      },
+      {
+        id: "default-en-lincoln-addresses-013",
+        title: "Second Inaugural 06",
+        prompt: "Fondly do we hope, fervently do we pray, that this mighty scourge of war may speedily pass away.",
+        sourceLocator: "Second Inaugural 06",
+        sourceUrl: "https://www.gutenberg.org/ebooks/3253",
+        cleanupNotes: "Selected address sentences/paragraph excerpts and joined wrapped lines; excluded editorial introductions and PG boilerplate.",
+      },
+      {
+        id: "default-en-lincoln-addresses-014",
+        title: "Second Inaugural 07",
+        prompt: "With malice toward none, with charity for all, with firmness in the right as God gives us to see the right, let us strive on to finish the work we are in.",
+        sourceLocator: "Second Inaugural 07",
+        sourceUrl: "https://www.gutenberg.org/ebooks/3253",
+        cleanupNotes: "Selected address sentences/paragraph excerpts and joined wrapped lines; excluded editorial introductions and PG boilerplate.",
+      },
+      {
+        id: "default-en-lincoln-addresses-015",
+        title: "First Inaugural 01",
+        prompt: "The Union is much older than the Constitution. It was formed, in fact, by the Articles of Association in 1774.",
+        sourceLocator: "First Inaugural 01",
+        sourceUrl: "https://www.gutenberg.org/ebooks/3253",
+        cleanupNotes: "Selected address sentences/paragraph excerpts and joined wrapped lines; excluded editorial introductions and PG boilerplate.",
+      },
+      {
+        id: "default-en-lincoln-addresses-016",
+        title: "First Inaugural 02",
+        prompt: "No State upon its own mere motion can lawfully get out of the Union; that resolves and ordinances to that effect are legally void.",
+        sourceLocator: "First Inaugural 02",
+        sourceUrl: "https://www.gutenberg.org/ebooks/3253",
+        cleanupNotes: "Selected address sentences/paragraph excerpts and joined wrapped lines; excluded editorial introductions and PG boilerplate.",
+      },
+      {
+        id: "default-en-lincoln-addresses-017",
+        title: "First Inaugural 03",
+        prompt: "The power confided to me will be used to hold, occupy, and possess the property and places belonging to the Government.",
+        sourceLocator: "First Inaugural 03",
+        sourceUrl: "https://www.gutenberg.org/ebooks/3253",
+        cleanupNotes: "Selected address sentences/paragraph excerpts and joined wrapped lines; excluded editorial introductions and PG boilerplate.",
+      },
+      {
+        id: "default-en-lincoln-addresses-018",
+        title: "First Inaugural 04",
+        prompt: "The mails, unless repelled, will continue to be furnished in all parts of the Union.",
+        sourceLocator: "First Inaugural 04",
+        sourceUrl: "https://www.gutenberg.org/ebooks/3253",
+        cleanupNotes: "Selected address sentences/paragraph excerpts and joined wrapped lines; excluded editorial introductions and PG boilerplate.",
+      },
+      {
+        id: "default-en-lincoln-addresses-019",
+        title: "First Inaugural 05",
+        prompt: "Plainly, the central idea of secession is the essence of anarchy.",
+        sourceLocator: "First Inaugural 05",
+        sourceUrl: "https://www.gutenberg.org/ebooks/3253",
+        cleanupNotes: "Selected address sentences/paragraph excerpts and joined wrapped lines; excluded editorial introductions and PG boilerplate.",
+      },
+      {
+        id: "default-en-lincoln-addresses-020",
+        title: "First Inaugural 06",
+        prompt: "Physically speaking, we cannot separate. We cannot remove our respective sections from each other, nor build an impassable wall between them.",
+        sourceLocator: "First Inaugural 06",
+        sourceUrl: "https://www.gutenberg.org/ebooks/3253",
+        cleanupNotes: "Selected address sentences/paragraph excerpts and joined wrapped lines; excluded editorial introductions and PG boilerplate.",
+      },
+    ],
+  },
+] as const satisfies readonly DefaultTypingDeckSource[];
