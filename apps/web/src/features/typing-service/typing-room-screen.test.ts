@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { resolveTypingRoomSelectedDeck } from "./typing-room-screen";
+import { resolveTypingRoomSelectedDeck } from "./typing-room-selection";
 import type { TypingDeckOption } from "./use-typing-settings";
 
 const OLD_KO_DEFAULT_ID = "default-ko-daily-rhythm";
