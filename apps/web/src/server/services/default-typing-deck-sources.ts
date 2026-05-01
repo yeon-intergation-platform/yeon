@@ -42,43 +42,51 @@ export type RejectedDefaultTypingDeckSource = {
   replacementDeckId: string;
 };
 
-const PG_LICENSE_NOTES =
-  "Project Gutenberg source used only for the public-domain work text; PG headers, footers, license, trademark language, editor introductions, and boilerplate are excluded from passages.";
+export const FINAL_DEFAULT_TYPING_DECK_IDS = [
+  "default-ko-jindallaekkot",
+  "default-en-art-of-war-giles",
+  "default-en-shakespeare-sonnets",
+  "default-en-lincoln-addresses",
+] as const;
 
-const SUNZI_SOURCE_URL = "https://www.gutenberg.org/ebooks/23864";
-const SUNZI_SOURCE_PERMALINK =
-  "https://www.gutenberg.org/files/23864/23864-0.txt";
+const JINDALLAE_SOURCE_URL =
+  "https://ko.wikisource.org/wiki/진달래꽃_(시집)";
+const JINDALLAE_SOURCE_PERMALINK =
+  "https://ko.wikisource.org/w/index.php?title=진달래꽃_(시집)&oldid=401458";
+const ART_OF_WAR_SOURCE_URL = "https://www.gutenberg.org/ebooks/132";
+const ART_OF_WAR_SOURCE_PERMALINK =
+  "https://www.gutenberg.org/files/132/132-0.txt";
 const SHAKESPEARE_SOURCE_URL = "https://www.gutenberg.org/ebooks/1041";
 const SHAKESPEARE_SOURCE_PERMALINK =
   "https://www.gutenberg.org/files/1041/1041-0.txt";
-const LINCOLN_SOURCE_URL = "https://www.gutenberg.org/ebooks/14721";
+const LINCOLN_SOURCE_URL = "https://www.gutenberg.org/ebooks/3253";
 const LINCOLN_SOURCE_PERMALINK =
-  "https://www.gutenberg.org/files/14721/14721-0.txt";
-const AESOP_SOURCE_URL = "https://www.gutenberg.org/ebooks/21";
-const AESOP_SOURCE_PERMALINK =
-  "https://www.gutenberg.org/files/21/21-0.txt";
+  "https://www.gutenberg.org/files/3253/3253-0.txt";
 
-const sunziCleanupNotes =
-  "PG header/license omitted; original Classical Chinese source paragraph used as-is; no Korean or English translation embedded.";
+const PG_LICENSE_NOTES =
+  "Project Gutenberg source used only for the public-domain work text; PG headers, footers, license, trademark language, editor introductions, and boilerplate are excluded from passages.";
+
+const jindallaeCleanupNotes =
+  "Wikisource navigation, section headings, notes, and license text omitted; poem text only, preserving source spelling except whitespace normalization for typing.";
+
+const artOfWarCleanupNotes =
+  "PG header/license, front matter, footnotes, and editor commentary omitted; Lionel Giles translation text only, with paragraph whitespace normalized for typing.";
 
 const sonnetCleanupNotes =
   "PG header/license and collection headings omitted; sonnet text only, preserving original spelling and punctuation except whitespace normalization for typing.";
 
 const lincolnCleanupNotes =
-  "PG header/license, collection headings, ellipses, and editorial matter omitted; Lincoln address text only, with whitespace normalized for typing.";
-
-const aesopCleanupNotes =
-  "PG header/license, table of contents, preface, and surrounding headings omitted; fable body and moral only, with whitespace normalized for typing.";
+  "PG header/license, collection/editor headings, and editorial matter omitted; Lincoln address text only, with whitespace normalized for typing.";
 
 export const REJECTED_DEFAULT_TYPING_DECK_SOURCES: readonly RejectedDefaultTypingDeckSource[] = [
   {
     preferredDeckTitle: "하늘과 바람과 별과 시",
     rejectedSourceBasis:
-      "Korean Wikisource/source-library editions remain Yellow because the plan records a U.S. copyright caveat for 1931-1977 Korean publications and no explicit product/legal acceptance exists.",
+      "The approved plan records an unresolved U.S. copyright caveat for 1931-1977 Korean publications and no explicit product/legal acceptance note exists for this deck.",
     rightsStatus: DEFAULT_TYPING_DECK_SOURCE_RIGHTS_STATUSES.rejected,
     rejectionRationale:
       "Yellow is Red under the approved plan; executor cannot approve the unresolved cross-jurisdiction publication caveat.",
-    replacementDeckId: "default-en-aesop-fables-townsend",
+    replacementDeckId: "default-ko-jindallaekkot",
   },
   {
     preferredDeckTitle: "손자병법 Korean translation",
@@ -86,168 +94,103 @@ export const REJECTED_DEFAULT_TYPING_DECK_SOURCES: readonly RejectedDefaultTypin
       "Korean translation sources have unresolved translator authorship/license and potential CC BY-SA obligations.",
     rightsStatus: DEFAULT_TYPING_DECK_SOURCE_RIGHTS_STATUSES.rejected,
     rejectionRationale:
-      "No unverified translations are allowed. The included deck uses the ancient original Classical Chinese text instead of a translation.",
-    replacementDeckId: "default-mixed-sunzi-bingfa",
+      "No unverified translations are allowed. The included deck uses the verified public-domain Lionel Giles English translation instead.",
+    replacementDeckId: "default-en-art-of-war-giles",
   },
 ];
 
 export const DEFAULT_TYPING_DECK_SOURCES: readonly DefaultTypingDeckSource[] = [
   {
-    deckId: "default-mixed-sunzi-bingfa",
-    deckTitle: "손자병법 (孫子兵法)",
-    sourceWorkTitle: "孫子兵法",
-    sourceAuthor: "Sunzi",
+    deckId: "default-ko-jindallaekkot",
+    deckTitle: "진달래꽃 (시집)",
+    sourceWorkTitle: "진달래꽃",
+    sourceAuthor: "김소월",
     sourceEdition:
-      "Project Gutenberg eBook #23864, Classical Chinese original, produced by Wen Yen, released 2007-12-15.",
+      "Korean Wikisource transcription of the 1925-12-26 MaeMunSa edition; author 김소월 lived 1902-1934.",
     rightsStatus: DEFAULT_TYPING_DECK_SOURCE_RIGHTS_STATUSES.green,
-    sourceUrl: SUNZI_SOURCE_URL,
-    sourcePermalink: SUNZI_SOURCE_PERMALINK,
-    crossCheckUrls: ["https://zh.wikisource.org/zh-hans/孫子兵法"],
+    sourceUrl: JINDALLAE_SOURCE_URL,
+    sourcePermalink: JINDALLAE_SOURCE_PERMALINK,
+    crossCheckUrls: [
+      "https://ko.wikisource.org/wiki/저자:김소월",
+      "https://encykorea.aks.ac.kr/Article/E0054622",
+      "https://www.seoul.co.kr/news/society/2011/02/25/20110225029022",
+    ],
     licenseNotes:
-      "Ancient Classical Chinese work; no modern translation text is embedded. " +
+      "The Wikisource work page identifies publication by 매문사 on 1925-12-26 and marks the work PD-old-70. Because the edition was published before 1931 and the author died in 1934, this deck is treated as Green for the approved MVP source gate.",
+    replacementForPreferredDeckTitle: "하늘과 바람과 별과 시",
+    replacementRationale:
+      "Keeps a Korean-language source/work-named default while replacing the 윤동주 deck that lacks explicit product/legal acceptance for its U.S. caveat.",
+    passages: [
+      "먼 후일",
+      "풀따기",
+      "바다",
+      "산 위에",
+      "옛이야기",
+      "님의 노래",
+      "실제 1",
+      "님의 말씀",
+      "님에게",
+      "마른강 두덕에서",
+      "봄 밤",
+      "밤",
+      "꿈꾼 그 옛날",
+      "꿈으로 오는 한 사람",
+      "눈 오는 저녁",
+      "자주 구름",
+      "두 사람",
+      "닭소리",
+      "못잊어",
+      "예전엔 미처 몰랐어요",
+    ].map((sourceLocator, index) => ({
+      passageId: `default-ko-jindallaekkot-${String(index + 1).padStart(3, "0")}`,
+      sourceLocator,
+      sourceUrl: JINDALLAE_SOURCE_URL,
+      sourcePermalink: JINDALLAE_SOURCE_PERMALINK,
+      cleanupNotes: jindallaeCleanupNotes,
+    })),
+  },
+  {
+    deckId: "default-en-art-of-war-giles",
+    deckTitle: "손자병법 / The Art of War (Giles)",
+    sourceWorkTitle: "The Art of War",
+    sourceAuthor: "Sunzi; translated by Lionel Giles",
+    sourceEdition:
+      "Project Gutenberg eBook #132, Lionel Giles English translation, originally published 1910.",
+    rightsStatus: DEFAULT_TYPING_DECK_SOURCE_RIGHTS_STATUSES.green,
+    sourceUrl: ART_OF_WAR_SOURCE_URL,
+    sourcePermalink: ART_OF_WAR_SOURCE_PERMALINK,
+    crossCheckUrls: ["https://en.wikisource.org/wiki/The_Art_of_War_(Sun)"],
+    licenseNotes:
+      "Sunzi is ancient and Lionel Giles died in 1958; the 1910 English translation is public-domain in the United States. " +
       PG_LICENSE_NOTES,
     passages: [
-      {
-        passageId: "default-mixed-sunzi-bingfa-001",
-        sourceLocator: "始計第一, opening paragraph",
-        sourceUrl: SUNZI_SOURCE_URL,
-        sourcePermalink: SUNZI_SOURCE_PERMALINK,
-        cleanupNotes: sunziCleanupNotes,
-      },
-      {
-        passageId: "default-mixed-sunzi-bingfa-002",
-        sourceLocator: "始計第一, five factors paragraph",
-        sourceUrl: SUNZI_SOURCE_URL,
-        sourcePermalink: SUNZI_SOURCE_PERMALINK,
-        cleanupNotes: sunziCleanupNotes,
-      },
-      {
-        passageId: "default-mixed-sunzi-bingfa-003",
-        sourceLocator: "始計第一, definitions of 道/天/地/將/法",
-        sourceUrl: SUNZI_SOURCE_URL,
-        sourcePermalink: SUNZI_SOURCE_PERMALINK,
-        cleanupNotes: sunziCleanupNotes,
-      },
-      {
-        passageId: "default-mixed-sunzi-bingfa-004",
-        sourceLocator: "始計第一, seven comparisons paragraph",
-        sourceUrl: SUNZI_SOURCE_URL,
-        sourcePermalink: SUNZI_SOURCE_PERMALINK,
-        cleanupNotes: sunziCleanupNotes,
-      },
-      {
-        passageId: "default-mixed-sunzi-bingfa-005",
-        sourceLocator: "始計第一, counsel accepted/rejected paragraph",
-        sourceUrl: SUNZI_SOURCE_URL,
-        sourcePermalink: SUNZI_SOURCE_PERMALINK,
-        cleanupNotes: sunziCleanupNotes,
-      },
-      {
-        passageId: "default-mixed-sunzi-bingfa-006",
-        sourceLocator: "始計第一, 勢者 paragraph",
-        sourceUrl: SUNZI_SOURCE_URL,
-        sourcePermalink: SUNZI_SOURCE_PERMALINK,
-        cleanupNotes: sunziCleanupNotes,
-      },
-      {
-        passageId: "default-mixed-sunzi-bingfa-007",
-        sourceLocator: "始計第一, 兵者詭道也 paragraph",
-        sourceUrl: SUNZI_SOURCE_URL,
-        sourcePermalink: SUNZI_SOURCE_PERMALINK,
-        cleanupNotes: sunziCleanupNotes,
-      },
-      {
-        passageId: "default-mixed-sunzi-bingfa-008",
-        sourceLocator: "始計第一, 廟算勝負 paragraph",
-        sourceUrl: SUNZI_SOURCE_URL,
-        sourcePermalink: SUNZI_SOURCE_PERMALINK,
-        cleanupNotes: sunziCleanupNotes,
-      },
-      {
-        passageId: "default-mixed-sunzi-bingfa-009",
-        sourceLocator: "作戰第二, opening paragraph",
-        sourceUrl: SUNZI_SOURCE_URL,
-        sourcePermalink: SUNZI_SOURCE_PERMALINK,
-        cleanupNotes: sunziCleanupNotes,
-      },
-      {
-        passageId: "default-mixed-sunzi-bingfa-010",
-        sourceLocator: "作戰第二, 貴勝 paragraph",
-        sourceUrl: SUNZI_SOURCE_URL,
-        sourcePermalink: SUNZI_SOURCE_PERMALINK,
-        cleanupNotes: sunziCleanupNotes,
-      },
-      {
-        passageId: "default-mixed-sunzi-bingfa-011",
-        sourceLocator: "作戰第二, 善用兵者 paragraph",
-        sourceUrl: SUNZI_SOURCE_URL,
-        sourcePermalink: SUNZI_SOURCE_PERMALINK,
-        cleanupNotes: sunziCleanupNotes,
-      },
-      {
-        passageId: "default-mixed-sunzi-bingfa-012",
-        sourceLocator: "作戰第二, 務食於敵 paragraph",
-        sourceUrl: SUNZI_SOURCE_URL,
-        sourcePermalink: SUNZI_SOURCE_PERMALINK,
-        cleanupNotes: sunziCleanupNotes,
-      },
-      {
-        passageId: "default-mixed-sunzi-bingfa-013",
-        sourceLocator: "作戰第二, 兵貴勝 paragraph",
-        sourceUrl: SUNZI_SOURCE_URL,
-        sourcePermalink: SUNZI_SOURCE_PERMALINK,
-        cleanupNotes: sunziCleanupNotes,
-      },
-      {
-        passageId: "default-mixed-sunzi-bingfa-014",
-        sourceLocator: "謀攻第三, 全國為上 paragraph",
-        sourceUrl: SUNZI_SOURCE_URL,
-        sourcePermalink: SUNZI_SOURCE_PERMALINK,
-        cleanupNotes: sunziCleanupNotes,
-      },
-      {
-        passageId: "default-mixed-sunzi-bingfa-015",
-        sourceLocator: "謀攻第三, 上兵伐謀 paragraph",
-        sourceUrl: SUNZI_SOURCE_URL,
-        sourcePermalink: SUNZI_SOURCE_PERMALINK,
-        cleanupNotes: sunziCleanupNotes,
-      },
-      {
-        passageId: "default-mixed-sunzi-bingfa-016",
-        sourceLocator: "謀攻第三, 善用兵者 paragraph",
-        sourceUrl: SUNZI_SOURCE_URL,
-        sourcePermalink: SUNZI_SOURCE_PERMALINK,
-        cleanupNotes: sunziCleanupNotes,
-      },
-      {
-        passageId: "default-mixed-sunzi-bingfa-017",
-        sourceLocator: "謀攻第三, 十則圍之 paragraph",
-        sourceUrl: SUNZI_SOURCE_URL,
-        sourcePermalink: SUNZI_SOURCE_PERMALINK,
-        cleanupNotes: sunziCleanupNotes,
-      },
-      {
-        passageId: "default-mixed-sunzi-bingfa-018",
-        sourceLocator: "謀攻第三, 夫將者 paragraph",
-        sourceUrl: SUNZI_SOURCE_URL,
-        sourcePermalink: SUNZI_SOURCE_PERMALINK,
-        cleanupNotes: sunziCleanupNotes,
-      },
-      {
-        passageId: "default-mixed-sunzi-bingfa-019",
-        sourceLocator: "謀攻第三, 知勝有五 paragraph",
-        sourceUrl: SUNZI_SOURCE_URL,
-        sourcePermalink: SUNZI_SOURCE_PERMALINK,
-        cleanupNotes: sunziCleanupNotes,
-      },
-      {
-        passageId: "default-mixed-sunzi-bingfa-020",
-        sourceLocator: "謀攻第三, 知己知彼 paragraph",
-        sourceUrl: SUNZI_SOURCE_URL,
-        sourcePermalink: SUNZI_SOURCE_PERMALINK,
-        cleanupNotes: sunziCleanupNotes,
-      },
-    ],
+      "Chapter I, Laying Plans, paragraphs 1-2",
+      "Chapter I, Laying Plans, paragraph 3",
+      "Chapter I, Laying Plans, paragraph 4",
+      "Chapter I, Laying Plans, paragraphs 5-6",
+      "Chapter I, Laying Plans, paragraph 7",
+      "Chapter I, Laying Plans, paragraphs 8-9",
+      "Chapter I, Laying Plans, paragraph 10",
+      "Chapter I, Laying Plans, paragraph 11",
+      "Chapter I, Laying Plans, paragraph 12",
+      "Chapter I, Laying Plans, paragraph 13",
+      "Chapter I, Laying Plans, paragraph 14",
+      "Chapter I, Laying Plans, paragraph 15",
+      "Chapter I, Laying Plans, paragraphs 16-17",
+      "Chapter I, Laying Plans, paragraph 18",
+      "Chapter I, Laying Plans, paragraph 19",
+      "Chapter I, Laying Plans, paragraph 20",
+      "Chapter I, Laying Plans, paragraph 21",
+      "Chapter I, Laying Plans, paragraph 22",
+      "Chapter I, Laying Plans, paragraph 23",
+      "Chapter I, Laying Plans, paragraphs 24-25",
+    ].map((sourceLocator, index) => ({
+      passageId: `default-en-art-of-war-giles-${String(index + 1).padStart(3, "0")}`,
+      sourceLocator,
+      sourceUrl: ART_OF_WAR_SOURCE_URL,
+      sourcePermalink: ART_OF_WAR_SOURCE_PERMALINK,
+      cleanupNotes: artOfWarCleanupNotes,
+    })),
   },
   {
     deckId: "default-en-shakespeare-sonnets",
@@ -264,32 +207,29 @@ export const DEFAULT_TYPING_DECK_SOURCES: readonly DefaultTypingDeckSource[] = [
       "Author died in 1616 and original sonnets were first published in 1609. " +
       PG_LICENSE_NOTES,
     passages: [
-      "18",
-      "19",
-      "20",
-      "21",
-      "22",
-      "23",
-      "24",
-      "25",
-      "26",
-      "27",
-      "28",
-      "29",
-      "30",
-      "31",
-      "32",
-      "33",
-      "34",
-      "35",
-      "36",
-      "37",
-    ].map((sonnetNumber, index) => ({
-      passageId: `default-en-shakespeare-sonnets-${String(index + 1).padStart(
-        3,
-        "0",
-      )}`,
-      sourceLocator: `Sonnet ${sonnetNumber}`,
+      "Sonnet 18",
+      "Sonnet 19",
+      "Sonnet 20",
+      "Sonnet 21",
+      "Sonnet 22",
+      "Sonnet 23",
+      "Sonnet 24",
+      "Sonnet 25",
+      "Sonnet 26",
+      "Sonnet 27",
+      "Sonnet 28",
+      "Sonnet 29",
+      "Sonnet 30",
+      "Sonnet 31",
+      "Sonnet 32",
+      "Sonnet 33",
+      "Sonnet 34",
+      "Sonnet 35",
+      "Sonnet 36",
+      "Sonnet 37",
+    ].map((sourceLocator, index) => ({
+      passageId: `default-en-shakespeare-sonnets-${String(index + 1).padStart(3, "0")}`,
+      sourceLocator,
       sourceUrl: SHAKESPEARE_SOURCE_URL,
       sourcePermalink: SHAKESPEARE_SOURCE_PERMALINK,
       cleanupNotes: sonnetCleanupNotes,
@@ -298,10 +238,10 @@ export const DEFAULT_TYPING_DECK_SOURCES: readonly DefaultTypingDeckSource[] = [
   {
     deckId: "default-en-lincoln-addresses",
     deckTitle: "Lincoln’s Addresses",
-    sourceWorkTitle: "Speeches and Letters of Abraham Lincoln, 1832-1865",
+    sourceWorkTitle: "The Papers and Writings of Abraham Lincoln, Complete",
     sourceAuthor: "Abraham Lincoln",
     sourceEdition:
-      "Project Gutenberg eBook #14721, edited collection released 2005-01-18; selected passages use Lincoln address text only.",
+      "Project Gutenberg eBook #3253, complete papers and writings collection; selected passages use Lincoln address text only.",
     rightsStatus: DEFAULT_TYPING_DECK_SOURCE_RIGHTS_STATUSES.green,
     sourceUrl: LINCOLN_SOURCE_URL,
     sourcePermalink: LINCOLN_SOURCE_PERMALINK,
@@ -332,65 +272,14 @@ export const DEFAULT_TYPING_DECK_SOURCES: readonly DefaultTypingDeckSource[] = [
       "Second Inaugural Address, March 4, 1865, both read same Bible paragraph",
       "Second Inaugural Address, March 4, 1865, judgments of the Lord paragraph",
       "Second Inaugural Address, March 4, 1865, malice toward none paragraph",
-      "Letter to Thurlow Weed, March 15, 1865, inaugural address note paragraph",
+      "Cooper Union Address, February 27, 1860, opening paragraph",
       "Address to the 166th Ohio Regiment, August 22, 1864, closing paragraph",
     ].map((sourceLocator, index) => ({
-      passageId: `default-en-lincoln-addresses-${String(index + 1).padStart(
-        3,
-        "0",
-      )}`,
+      passageId: `default-en-lincoln-addresses-${String(index + 1).padStart(3, "0")}`,
       sourceLocator,
       sourceUrl: LINCOLN_SOURCE_URL,
       sourcePermalink: LINCOLN_SOURCE_PERMALINK,
       cleanupNotes: lincolnCleanupNotes,
-    })),
-  },
-  {
-    deckId: "default-en-aesop-fables-townsend",
-    deckTitle: "Aesop’s Fables (Townsend)",
-    sourceWorkTitle: "Three Hundred Aesop's Fables",
-    sourceAuthor: "Aesop; translated by George Fyler Townsend",
-    sourceEdition:
-      "Project Gutenberg eBook #21, George Fyler Townsend translation, released 2006-12-01.",
-    rightsStatus: DEFAULT_TYPING_DECK_SOURCE_RIGHTS_STATUSES.green,
-    sourceUrl: AESOP_SOURCE_URL,
-    sourcePermalink: AESOP_SOURCE_PERMALINK,
-    crossCheckUrls: ["https://onlinebooks.library.upenn.edu/webbin/gutbook/lookup?num=21"],
-    licenseNotes:
-      "Ancient fables with Townsend translation; Townsend died in 1900, satisfying life-plus-70 jurisdictions. " +
-      PG_LICENSE_NOTES,
-    replacementForPreferredDeckTitle: "하늘과 바람과 별과 시",
-    replacementRationale:
-      "윤동주 source status remains Yellow under the approved plan; Aesop/Townsend is a source-work-named public-domain replacement with clear translator provenance.",
-    passages: [
-      "The Wolf And The Lamb",
-      "The Wolf and the Crane",
-      "The Father And His Sons",
-      "The Bat And The Weasels",
-      "The Cock and the Jewel",
-      "The Swallow and the Crow",
-      "The Kingdom of the Lion",
-      "The Traveler and His Dog",
-      "The Ants and the Grasshopper",
-      "The Hare and the Tortoise",
-      "The Charcoal-Burner And The Fuller",
-      "The Boy Hunting Locusts",
-      "The Fisherman Piping",
-      "The Dog and the Shadow",
-      "Hercules and the Wagoner",
-      "The Mole and His Mother",
-      "The Herdsman and the Lost Bull",
-      "The Ass, the Fox, and the Lion",
-      "The Flies and the Honey-Pot",
-      "The Farmer and the Snake",
-    ].map((sourceLocator, index) => ({
-      passageId: `default-en-aesop-fables-townsend-${String(
-        index + 1,
-      ).padStart(3, "0")}`,
-      sourceLocator,
-      sourceUrl: AESOP_SOURCE_URL,
-      sourcePermalink: AESOP_SOURCE_PERMALINK,
-      cleanupNotes: aesopCleanupNotes,
     })),
   },
 ];
