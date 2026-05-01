@@ -29,21 +29,15 @@ import {
 import { getDb } from "@/server/db";
 import { typingDeckPassages, typingDecks } from "@/server/db/schema";
 
+import {
+  DEFAULT_TYPING_DECKS,
+  type DefaultTypingDeck,
+} from "./default-typing-decks";
 import { ServiceError } from "./service-error";
 
 type TypingDeckRow = typeof typingDecks.$inferSelect;
 type TypingDeckPassageRow = typeof typingDeckPassages.$inferSelect;
-type DefaultTypingDeck = Omit<
-  TypingDeckDto,
-  "passageCount" | "isOwner" | "canEdit" | "createdAt" | "updatedAt"
-> & {
-  createdAt: string;
-  updatedAt: string;
-  passages: TypingDeckPassageDto[];
-};
-
 const PRIVATE_DECK_LOBBY_TITLE = "비공개 덱";
-const STATIC_DEFAULT_CREATED_AT = "2026-05-01T00:00:00.000Z";
 const idBody = customAlphabet(
   "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_-",
   12,
@@ -56,97 +50,6 @@ function generateTypingDeckId() {
 function generateTypingPassageId() {
   return `tps_${idBody()}`;
 }
-
-function defaultPassage(
-  id: string,
-  title: string,
-  prompt: string,
-  sortOrder: number,
-  overrides: Partial<
-    Pick<TypingDeckPassageDto, "textType" | "difficulty">
-  > = {},
-): TypingDeckPassageDto {
-  return {
-    id,
-    title,
-    prompt,
-    textType: overrides.textType ?? TYPING_PASSAGE_TEXT_TYPES.short,
-    difficulty: overrides.difficulty ?? TYPING_PASSAGE_DIFFICULTIES.normal,
-    sortOrder,
-    createdAt: STATIC_DEFAULT_CREATED_AT,
-    updatedAt: STATIC_DEFAULT_CREATED_AT,
-  };
-}
-
-export const DEFAULT_TYPING_DECKS: readonly DefaultTypingDeck[] = [
-  {
-    id: "default-ko-daily-rhythm",
-    title: "한국어 기본 리듬",
-    description:
-      "짧은 문장과 자연스러운 호흡으로 정확도와 속도를 함께 기르는 기본 한국어 덱입니다.",
-    languageTag: TYPING_DECK_LANGUAGE_TAGS.ko,
-    visibility: TYPING_DECK_VISIBILITY.public,
-    source: TYPING_DECK_SOURCE.default,
-    createdAt: STATIC_DEFAULT_CREATED_AT,
-    updatedAt: STATIC_DEFAULT_CREATED_AT,
-    passages: [
-      defaultPassage(
-        "default-ko-daily-rhythm-01",
-        "정확도 워밍업",
-        "오늘은 빠르게 치기보다 정확하게 끝까지 치는 연습을 합니다. 손끝에 힘을 빼고 문장의 흐름을 천천히 따라가세요.",
-        0,
-        { difficulty: TYPING_PASSAGE_DIFFICULTIES.easy },
-      ),
-      defaultPassage(
-        "default-ko-daily-rhythm-02",
-        "업무 메모",
-        "회의 전에 핵심 질문을 세 가지로 정리하면 대화가 훨씬 선명해집니다. 기록은 짧게 남기고 결정 사항은 바로 공유합니다.",
-        1,
-      ),
-      defaultPassage(
-        "default-ko-daily-rhythm-03",
-        "긴 호흡",
-        "좋은 연습은 같은 문장을 무작정 반복하는 것이 아니라, 낯선 문장에서도 일정한 리듬을 유지하는 감각을 기르는 데서 시작됩니다.",
-        2,
-        { textType: TYPING_PASSAGE_TEXT_TYPES.long },
-      ),
-    ],
-  },
-  {
-    id: "default-en-flow-basics",
-    title: "English Flow Basics",
-    description:
-      "A default English deck for steady rhythm, word grouping, and comfortable typing flow.",
-    languageTag: TYPING_DECK_LANGUAGE_TAGS.en,
-    visibility: TYPING_DECK_VISIBILITY.public,
-    source: TYPING_DECK_SOURCE.default,
-    createdAt: STATIC_DEFAULT_CREATED_AT,
-    updatedAt: STATIC_DEFAULT_CREATED_AT,
-    passages: [
-      defaultPassage(
-        "default-en-flow-basics-01",
-        "Flow warmup",
-        "Keep your eyes one word ahead and let your fingers follow the rhythm. Smooth typing begins with relaxed shoulders and steady breathing.",
-        0,
-        { difficulty: TYPING_PASSAGE_DIFFICULTIES.easy },
-      ),
-      defaultPassage(
-        "default-en-flow-basics-02",
-        "Product note",
-        "Small improvements compound when the team writes down decisions, checks the outcome, and keeps the next action visible to everyone.",
-        1,
-      ),
-      defaultPassage(
-        "default-en-flow-basics-03",
-        "Long cadence",
-        "Typing practice becomes more useful when each passage has a different cadence, because real work rarely arrives in perfectly repeated sentences.",
-        2,
-        { textType: TYPING_PASSAGE_TEXT_TYPES.long },
-      ),
-    ],
-  },
-];
-
 function toIso(value: Date): string {
   return value.toISOString();
 }
