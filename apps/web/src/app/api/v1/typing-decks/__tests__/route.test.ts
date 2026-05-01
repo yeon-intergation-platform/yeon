@@ -12,10 +12,25 @@ import { DEFAULT_TYPING_DECKS } from "@/server/services/default-typing-decks";
 
 import { GET } from "../route";
 
+const EXPECTED_DEFAULT_DECKS = [
+  { id: "default-ko-azaleas", title: "진달래꽃 (시집)", languageTag: TYPING_DECK_LANGUAGE_TAGS.ko },
+  { id: "default-en-art-of-war-giles", title: "손자병법 / The Art of War", languageTag: TYPING_DECK_LANGUAGE_TAGS.en },
+  { id: "default-en-shakespeare-sonnets", title: "Shakespeare’s Sonnets", languageTag: TYPING_DECK_LANGUAGE_TAGS.en },
+  { id: "default-en-lincoln-addresses", title: "Lincoln’s Addresses", languageTag: TYPING_DECK_LANGUAGE_TAGS.en },
+] as const;
+
 const REMOVED_GENERATED_DEFAULT_DECK_IDS = [
   "default-ko-daily-rhythm",
   "default-en-flow-basics",
 ] as const;
+
+function expectedDecksForLanguage(languageTag: "ko" | "en") {
+  return EXPECTED_DEFAULT_DECKS.filter(
+    (deck) =>
+      deck.languageTag === languageTag ||
+      deck.languageTag === TYPING_DECK_LANGUAGE_TAGS.mixed,
+  );
+}
 
 function defaultDecksForLanguage(languageTag: "ko" | "en") {
   return DEFAULT_TYPING_DECKS.filter(
@@ -40,7 +55,7 @@ async function listDefaultDecks(languageTag: "ko" | "en") {
 describe("api/v1/typing-decks route default catalog", () => {
   it("GET exposes the Korean source-backed default decks with exact passage counts", async () => {
     const decks = await listDefaultDecks(TYPING_DECK_LANGUAGE_TAGS.ko);
-    const expectedDecks = defaultDecksForLanguage(TYPING_DECK_LANGUAGE_TAGS.ko);
+    const expectedDecks = expectedDecksForLanguage(TYPING_DECK_LANGUAGE_TAGS.ko);
 
     expect(DEFAULT_TYPING_DECKS).toHaveLength(4);
     expect(decks).toHaveLength(expectedDecks.length);
@@ -49,6 +64,12 @@ describe("api/v1/typing-decks route default catalog", () => {
     );
     expect(decks.map((deck) => deck.title)).toEqual(
       expectedDecks.map((deck) => deck.title),
+    );
+    expect(defaultDecksForLanguage(TYPING_DECK_LANGUAGE_TAGS.en).map((deck) => deck.id)).toEqual(
+      expectedDecks.map((deck) => deck.id),
+    );
+    expect(defaultDecksForLanguage(TYPING_DECK_LANGUAGE_TAGS.ko).map((deck) => deck.id)).toEqual(
+      expectedDecks.map((deck) => deck.id),
     );
     expect(decks.map((deck) => deck.id)).not.toEqual(
       expect.arrayContaining([...REMOVED_GENERATED_DEFAULT_DECK_IDS]),
@@ -66,7 +87,7 @@ describe("api/v1/typing-decks route default catalog", () => {
 
   it("GET exposes the English source-backed default decks with exact passage counts", async () => {
     const decks = await listDefaultDecks(TYPING_DECK_LANGUAGE_TAGS.en);
-    const expectedDecks = defaultDecksForLanguage(TYPING_DECK_LANGUAGE_TAGS.en);
+    const expectedDecks = expectedDecksForLanguage(TYPING_DECK_LANGUAGE_TAGS.en);
 
     expect(DEFAULT_TYPING_DECKS).toHaveLength(4);
     expect(decks).toHaveLength(expectedDecks.length);
