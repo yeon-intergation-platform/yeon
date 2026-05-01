@@ -50,9 +50,9 @@ export const FINAL_DEFAULT_TYPING_DECK_IDS = [
 ] as const;
 
 const JINDALLAE_SOURCE_URL =
-  "https://ko.wikisource.org/wiki/진달래꽃_(시집)";
+  "https://ko.wikisource.org/wiki/%EC%A7%84%EB%8B%AC%EB%9E%98%EA%BD%83_%28%EC%8B%9C%EC%A7%91%29";
 const JINDALLAE_SOURCE_PERMALINK =
-  "https://ko.wikisource.org/w/index.php?title=진달래꽃_(시집)&oldid=401458";
+  "https://ko.wikisource.org/w/index.php?title=%EC%A7%84%EB%8B%AC%EB%9E%98%EA%BD%83_%28%EC%8B%9C%EC%A7%91%29&oldid=401458";
 const ART_OF_WAR_SOURCE_URL = "https://www.gutenberg.org/ebooks/132";
 const ART_OF_WAR_SOURCE_PERMALINK =
   "https://www.gutenberg.org/files/132/132-0.txt";
@@ -78,26 +78,27 @@ const sonnetCleanupNotes =
 const lincolnCleanupNotes =
   "PG header/license, collection/editor headings, and editorial matter omitted; Lincoln address text only, with whitespace normalized for typing.";
 
-export const REJECTED_DEFAULT_TYPING_DECK_SOURCES: readonly RejectedDefaultTypingDeckSource[] = [
-  {
-    preferredDeckTitle: "하늘과 바람과 별과 시",
-    rejectedSourceBasis:
-      "The approved plan records an unresolved U.S. copyright caveat for 1931-1977 Korean publications and no explicit product/legal acceptance note exists for this deck.",
-    rightsStatus: DEFAULT_TYPING_DECK_SOURCE_RIGHTS_STATUSES.rejected,
-    rejectionRationale:
-      "Yellow is Red under the approved plan; executor cannot approve the unresolved cross-jurisdiction publication caveat.",
-    replacementDeckId: "default-ko-jindallaekkot",
-  },
-  {
-    preferredDeckTitle: "손자병법 Korean translation",
-    rejectedSourceBasis:
-      "Korean translation sources have unresolved translator authorship/license and potential CC BY-SA obligations.",
-    rightsStatus: DEFAULT_TYPING_DECK_SOURCE_RIGHTS_STATUSES.rejected,
-    rejectionRationale:
-      "No unverified translations are allowed. The included deck uses the verified public-domain Lionel Giles English translation instead.",
-    replacementDeckId: "default-en-art-of-war-giles",
-  },
-];
+export const REJECTED_DEFAULT_TYPING_DECK_SOURCES: readonly RejectedDefaultTypingDeckSource[] =
+  [
+    {
+      preferredDeckTitle: "하늘과 바람과 별과 시",
+      rejectedSourceBasis:
+        "The approved plan records an unresolved U.S. copyright caveat for 1931-1977 Korean publications and no explicit product/legal acceptance note exists for this deck.",
+      rightsStatus: DEFAULT_TYPING_DECK_SOURCE_RIGHTS_STATUSES.rejected,
+      rejectionRationale:
+        "Yellow is Red under the approved plan; executor cannot approve the unresolved cross-jurisdiction publication caveat.",
+      replacementDeckId: "default-ko-jindallaekkot",
+    },
+    {
+      preferredDeckTitle: "손자병법 Korean translation",
+      rejectedSourceBasis:
+        "Korean translation sources have unresolved translator authorship/license and potential CC BY-SA obligations.",
+      rightsStatus: DEFAULT_TYPING_DECK_SOURCE_RIGHTS_STATUSES.rejected,
+      rejectionRationale:
+        "No unverified translations are allowed. The included deck uses the verified public-domain Lionel Giles English translation instead.",
+      replacementDeckId: "default-en-art-of-war-giles",
+    },
+  ];
 
 export const DEFAULT_TYPING_DECK_SOURCES: readonly DefaultTypingDeckSource[] = [
   {
@@ -111,7 +112,7 @@ export const DEFAULT_TYPING_DECK_SOURCES: readonly DefaultTypingDeckSource[] = [
     sourceUrl: JINDALLAE_SOURCE_URL,
     sourcePermalink: JINDALLAE_SOURCE_PERMALINK,
     crossCheckUrls: [
-      "https://ko.wikisource.org/wiki/저자:김소월",
+      "https://ko.wikisource.org/wiki/%EC%A0%80%EC%9E%90%3A%EA%B9%80%EC%86%8C%EC%9B%94",
       "https://encykorea.aks.ac.kr/Article/E0054622",
       "https://www.seoul.co.kr/news/society/2011/02/25/20110225029022",
     ],
