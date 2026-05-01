@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import { Crown, Search, Users, X } from "lucide-react";
+import { TypingServiceHeader } from "./typing-service-header";
 import {
   TYPING_ROOM_DIFFICULTY,
   TYPING_ROOM_MODE,
@@ -149,24 +150,7 @@ export function TypingRoomLobbyScreen() {
 
   return (
     <div className="min-h-screen bg-white text-[#111]">
-      <header className="h-[76px] border-b border-[#e5e5e5] px-6 md:px-10">
-        <div className="flex h-full items-center justify-between">
-          <Link
-            href="/typing-service/rooms"
-            className="text-[25px] font-black tracking-[-0.04em] text-[#111] no-underline"
-          >
-            YEON 타자방
-          </Link>
-          <nav className="flex items-center gap-10 text-[17px] font-medium text-[#111]">
-            <Link href="/typing-service#usage" className="no-underline hover:opacity-70">
-              사용 방법
-            </Link>
-            <Link href="/typing-service#profile" className="no-underline hover:opacity-70">
-              내 프로필
-            </Link>
-          </nav>
-        </div>
-      </header>
+      <TypingServiceHeader active="rooms" title="YEON 타자방" />
 
       <main>
         <section className="flex min-h-[174px] items-center justify-between px-6 py-10 md:px-10">

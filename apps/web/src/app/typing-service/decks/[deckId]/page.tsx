@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { TypingServiceHeader } from "@/features/typing-service";
 import { TypingDeckDetailPanel } from "@/features/typing-service/typing-decks-screen";
 import { getCurrentAuthUser } from "@/server/auth/session";
 import { isAdminUser } from "@/server/auth/admin";
@@ -40,20 +41,16 @@ export default async function TypingDeckDetailPage({
 
   return (
     <div className="min-h-screen bg-white text-[#111]">
-      <header className="border-b border-[#e5e5e5] px-6 py-3 md:px-12">
-        <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-3">
-          <Link
-            href="/typing-service/decks"
-            className="text-[14px] font-semibold text-[#111] no-underline"
-          >
-            ← 타자 덱 목록
-          </Link>
-          <div className="flex flex-wrap items-center justify-end gap-2">
+      <TypingServiceHeader
+        active="decks"
+        title="YEON 연습덱"
+        controls={
+          <>
             <Link
-              href="/typing-service"
+              href="/typing-service/decks"
               className="rounded-xl border border-[#e5e5e5] px-4 py-2 text-[13px] font-semibold text-[#111] no-underline transition-colors hover:border-[#111] hover:bg-[#fafafa]"
             >
-              타자연습 홈
+              덱 목록
             </Link>
             {showAdminEntry ? (
               <Link
@@ -63,17 +60,11 @@ export default async function TypingDeckDetailPage({
                 관리자
               </Link>
             ) : null}
-            <Link
-              href="/typing-service/rooms"
-              className="rounded-xl border border-[#e5e5e5] px-4 py-2 text-[13px] font-semibold text-[#111] no-underline transition-colors hover:border-[#111] hover:bg-[#fafafa]"
-            >
-              타자방으로
-            </Link>
-          </div>
-        </div>
-      </header>
+          </>
+        }
+      />
 
-      <main className="mx-auto max-w-[1400px] px-6 py-10 md:px-12">
+      <main className="px-6 py-10 md:px-10">
         <div className="mb-8 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
             <p className="text-[13px] font-semibold text-[#888]">

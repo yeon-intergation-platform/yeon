@@ -6,6 +6,7 @@ import { usePlayerIdentity } from "./use-player-identity";
 import { useRaceRoom } from "./use-race-room";
 import { TypingRaceMultiplayerScreen } from "./typing-race-multiplayer-screen";
 import { TypingRaceSoloScreen } from "./typing-race-solo-screen";
+import { TypingServiceHeader } from "./typing-service-header";
 import { createTranslator, useTypingSettings } from "./use-typing-settings";
 
 const CONNECTION_TIMEOUT_MS = 4000;
@@ -56,10 +57,13 @@ export function TypingRacePlayScreen() {
 
   if (race.connectionState !== "connected" || !race.prompt) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-white text-[#111]">
-        <div className="flex flex-col items-center gap-3 font-mono text-[13px] text-[#888]">
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#e5e5e5] border-t-[#111]" />
-          <span>{t("connectingToServer")}</span>
+      <div className="min-h-screen bg-white text-[#111]">
+        <TypingServiceHeader active="race" title="YEON 레이스" />
+        <div className="flex min-h-[calc(100vh-76px)] items-center justify-center">
+          <div className="flex flex-col items-center gap-3 font-mono text-[13px] text-[#888]">
+            <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#e5e5e5] border-t-[#111]" />
+            <span>{t("connectingToServer")}</span>
+          </div>
         </div>
       </div>
     );

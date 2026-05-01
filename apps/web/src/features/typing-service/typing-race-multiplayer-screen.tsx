@@ -1,8 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, RotateCcw } from "lucide-react";
+import { RotateCcw } from "lucide-react";
 import {
   TYPING_RACE_LANE_ACCENTS,
   TYPING_RACE_LANE_ROLE,
@@ -20,6 +19,7 @@ import { useTypingProfile } from "./use-typing-profile";
 import { TypingBgmButton } from "./typing-bgm-button";
 import { createTranslator, useTypingSettings } from "./use-typing-settings";
 import { TypingSettingsButton } from "./typing-settings-button";
+import { TypingServiceHeader } from "./typing-service-header";
 import type { UseRaceRoomResult } from "./use-race-room";
 
 function calculateAccuracy(prompt: string, input: string) {
@@ -204,26 +204,23 @@ export function TypingRaceMultiplayerScreen({ race }: TypingRaceMultiplayerScree
 
   return (
     <div className="min-h-screen bg-white text-[#111]">
-      <header className="border-b border-[#e5e5e5] px-6 py-3 md:px-12">
-        <div className="mx-auto flex max-w-[1400px] items-center justify-between">
-          <Link
-            href="/typing-service"
-            className="inline-flex items-center gap-2 text-[13px] text-[#888] no-underline hover:text-[#111]"
-          >
-            <ArrowLeft size={14} />
-            {t("appName")}
-          </Link>
-          <div className="flex items-center gap-3">
+      <TypingServiceHeader
+        active="race"
+        title="YEON 레이스"
+        controls={
+          <>
             <span className="font-mono text-[12px] text-[#aaa]">
-              {race.snapshot?.roundLabel === "flow-focus" ? t("roundFlowFocus") : (race.snapshot?.roundLabel ?? "")}
+              {race.snapshot?.roundLabel === "flow-focus"
+                ? t("roundFlowFocus")
+                : (race.snapshot?.roundLabel ?? "")}
             </span>
             <TypingBgmButton />
             <TypingSettingsButton />
-          </div>
-        </div>
-      </header>
+          </>
+        }
+      />
 
-      <div className="mx-auto max-w-[1400px] px-4 py-4 md:px-8">
+      <div className="px-4 py-4 md:px-10">
         <div className="overflow-hidden rounded-xl border border-[#e5e5e5]">
           <div ref={engineContainerRef} className="h-[520px] w-full" />
         </div>

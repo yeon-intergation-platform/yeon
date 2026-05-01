@@ -17,6 +17,7 @@ import {
   typingDeckBadge,
   typingDeckLanguageLabel,
 } from "./typing-decks-screen";
+import { TypingServiceHeader } from "./typing-service-header";
 
 const ALL_LANGUAGE_FILTER = "all";
 type LanguageFilter = TypingDeckLanguageTag | typeof ALL_LANGUAGE_FILTER;
@@ -208,15 +209,11 @@ export function TypingDeckLibraryScreen({
 
   return (
     <div className="min-h-screen bg-white text-[#111]">
-      <header className="border-b border-[#e5e5e5] px-6 py-3 md:px-12">
-        <div className="mx-auto flex max-w-[1200px] items-center justify-between gap-3">
-          <Link
-            href="/typing-service"
-            className="text-[14px] font-semibold text-[#111] no-underline transition-colors hover:text-[#666]"
-          >
-            ← 타자연습 홈
-          </Link>
-          <div className="flex flex-wrap items-center justify-end gap-2">
+      <TypingServiceHeader
+        active="decks"
+        title="YEON 연습덱"
+        controls={
+          <>
             {showAdminEntry ? (
               <Link
                 href="/admin/typing-decks"
@@ -232,11 +229,11 @@ export function TypingDeckLibraryScreen({
             >
               새 덱 만들기
             </button>
-          </div>
-        </div>
-      </header>
+          </>
+        }
+      />
 
-      <main className="mx-auto max-w-[1200px] px-6 py-10 md:px-12">
+      <main className="px-6 py-10 md:px-10">
         <section className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
           <div>
             <p className="text-[13px] font-semibold text-[#888]">
@@ -251,6 +248,13 @@ export function TypingDeckLibraryScreen({
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => setCreateModalOpen(true)}
+              className="rounded-xl bg-[#111] px-5 py-3 text-[14px] font-semibold text-white transition-colors hover:bg-[#333]"
+            >
+              새 덱 만들기
+            </button>
             <Link
               href="/typing-service"
               className="rounded-xl border border-[#e5e5e5] bg-white px-5 py-3 text-[14px] font-semibold text-[#111] no-underline transition-colors hover:border-[#111]"

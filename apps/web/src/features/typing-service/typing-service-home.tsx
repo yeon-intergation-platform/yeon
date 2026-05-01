@@ -4,6 +4,7 @@ import { useTypingProfile } from "./use-typing-profile";
 import { TypingBgmButton } from "./typing-bgm-button";
 import { TypingProfileCard } from "./typing-profile-card";
 import { TypingSettingsButton } from "./typing-settings-button";
+import { TypingServiceHeader } from "./typing-service-header";
 import { createTranslator, useTypingSettings } from "./use-typing-settings";
 
 export function TypingServiceHome() {
@@ -13,17 +14,18 @@ export function TypingServiceHome() {
 
   return (
     <div className="min-h-screen bg-white text-[#111]">
-      <header className="border-b border-[#e5e5e5] px-6 py-3 md:px-12">
-        <div className="mx-auto flex max-w-[1400px] items-center justify-between">
-          <span className="text-[14px] font-semibold text-[#111]">{t("appName")}</span>
-          <div className="flex items-center gap-2">
+      <TypingServiceHeader
+        active="home"
+        title={t("appName")}
+        controls={
+          <>
             <TypingBgmButton />
             <TypingSettingsButton />
-          </div>
-        </div>
-      </header>
+          </>
+        }
+      />
 
-      <main className="flex flex-col items-center px-6 py-16 md:py-24">
+      <main className="flex flex-col items-center px-6 py-16 md:px-10 md:py-24">
         {loaded && (
           <>
             <TypingProfileCard

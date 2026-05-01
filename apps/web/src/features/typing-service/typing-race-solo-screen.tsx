@@ -1,8 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, RotateCcw } from "lucide-react";
+import { RotateCcw } from "lucide-react";
 import {
   TYPING_RACE_DEFAULTS,
   TYPING_RACE_LANE_ACCENTS,
@@ -26,6 +25,7 @@ import {
 } from "./use-typing-settings";
 import { TypingBgmButton } from "./typing-bgm-button";
 import { TypingSettingsButton } from "./typing-settings-button";
+import { TypingServiceHeader } from "./typing-service-header";
 
 const BENCHMARK_LANES = [
   {
@@ -377,28 +377,23 @@ export function TypingRaceSoloScreen({
 
   return (
     <div className="min-h-screen bg-white text-[#111]">
-      <header className="border-b border-[#e5e5e5] px-6 py-3 md:px-12">
-        <div className="mx-auto flex max-w-[1400px] items-center justify-between">
-          <Link
-            href="/typing-service"
-            className="inline-flex items-center gap-2 text-[13px] text-[#888] no-underline hover:text-[#111]"
-          >
-            <ArrowLeft size={14} />
-            {t("appName")}
-          </Link>
-          <div className="flex items-center gap-3">
+      <TypingServiceHeader
+        active="race"
+        title="YEON 레이스"
+        controls={
+          <>
             <span className="font-mono text-[12px] text-[#aaa]">
               {activeDeckTitle} · {passage.title}
             </span>
             <TypingBgmButton />
             <TypingSettingsButton />
-          </div>
-        </div>
-      </header>
+          </>
+        }
+      />
 
       {offlineReason && (
         <div className="border-b border-[#fcd34d] bg-[#fef3c7] px-6 py-2 text-[12px] text-[#92400e]">
-          <div className="mx-auto flex max-w-[1400px] items-center justify-between">
+          <div className="flex items-center justify-between px-6 md:px-10">
             <span>{offlineReason}</span>
             {onRetryMultiplayer && (
               <button
@@ -418,7 +413,7 @@ export function TypingRaceSoloScreen({
         deckState.error ||
         passagesError) && (
         <div className="border-b border-[#e5e5e5] bg-[#fafafa] px-6 py-2 text-[12px] text-[#777]">
-          <div className="mx-auto max-w-[1400px]">
+          <div>
             {deckState.loading || passagesLoading
               ? "선택한 연습 덱을 불러오는 중..."
               : (deckState.error ?? passagesError)}
@@ -426,7 +421,7 @@ export function TypingRaceSoloScreen({
         </div>
       )}
 
-      <div className="mx-auto max-w-[1400px] px-4 py-4 md:px-8">
+      <div className="px-4 py-4 md:px-10">
         <div className="overflow-hidden rounded-xl border border-[#e5e5e5]">
           <div ref={engineContainerRef} className="h-[520px] w-full" />
         </div>
