@@ -15,22 +15,65 @@ import {
   mountTypingRaceEngine,
   type TypingRaceEngineController,
 } from "@yeon/typing-race-engine";
-import { TYPING_PASSAGES } from "./typing-content";
 import { useTypingProfile } from "./use-typing-profile";
-import { createTranslator, getSpeedUnit, useTypingSettings } from "./use-typing-settings";
+import {
+  createTranslator,
+  getSpeedUnit,
+  useSelectedTypingDeck,
+  useTypingDeckPassages,
+  useTypingSettings,
+  type TypingDeckPassageOption,
+} from "./use-typing-settings";
 import { TypingBgmButton } from "./typing-bgm-button";
 import { TypingSettingsButton } from "./typing-settings-button";
 
-const RACE_PASSAGES = TYPING_PASSAGES.filter((p) => p.difficulty === "flow");
-
 const BENCHMARK_LANES = [
-  { id: "benchmark-1", label: "Guest", wpm: 270, multiplier: 1.0, startDelay: 0.4, accent: TYPING_RACE_LANE_ACCENTS[1] },
-  { id: "benchmark-2", label: "Guest", wpm: 270, multiplier: 1.0, startDelay: 0.7, accent: TYPING_RACE_LANE_ACCENTS[2] },
-  { id: "benchmark-3", label: "Guest", wpm: 270, multiplier: 1.0, startDelay: 1.1, accent: TYPING_RACE_LANE_ACCENTS[3] },
+  {
+    id: "benchmark-1",
+    label: "Guest",
+    wpm: 270,
+    multiplier: 1.0,
+    startDelay: 0.4,
+    accent: TYPING_RACE_LANE_ACCENTS[1],
+  },
+  {
+    id: "benchmark-2",
+    label: "Guest",
+    wpm: 270,
+    multiplier: 1.0,
+    startDelay: 0.7,
+    accent: TYPING_RACE_LANE_ACCENTS[2],
+  },
+  {
+    id: "benchmark-3",
+    label: "Guest",
+    wpm: 270,
+    multiplier: 1.0,
+    startDelay: 1.1,
+    accent: TYPING_RACE_LANE_ACCENTS[3],
+  },
 ] as const;
 
-function getRandomPassage() {
-  return RACE_PASSAGES[Math.floor(Math.random() * RACE_PASSAGES.length)] ?? RACE_PASSAGES[0];
+function pickNextPassage(
+  passages: readonly TypingDeckPassageOption[],
+  currentId?: string,
+) {
+  const candidates = passages.length > 0 ? passages : [];
+  if (candidates.length === 0) {
+    return {
+      id: "fallback-empty",
+      title: "기본 문장",
+      prompt:
+        "오늘도 한 문장씩 정확하게 입력하면 손끝의 리듬이 조금씩 살아납니다.",
+    } satisfies TypingDeckPassageOption;
+  }
+  if (candidates.length === 1) return candidates[0]!;
+  const available = currentId
+    ? candidates.filter((passage) => passage.id !== currentId)
+    : candidates;
+  return (
+    available[Math.floor(Math.random() * available.length)] ?? candidates[0]!
+  );
 }
 
 function calculateAccuracy(prompt: string, input: string) {
@@ -53,7 +96,10 @@ function calculateTypingSpeed(input: string, elapsedSeconds: number) {
 function getProgress(prompt: string, input: string) {
   const promptLen = Array.from(prompt).length;
   if (promptLen === 0) return 0;
-  return Math.min(100, Math.round((Array.from(input).length / promptLen) * 100));
+  return Math.min(
+    100,
+    Math.round((Array.from(input).length / promptLen) * 100),
+  );
 }
 
 export type TypingRaceSoloScreenProps = {
@@ -62,12 +108,24 @@ export type TypingRaceSoloScreenProps = {
   onRetryMultiplayer?: () => void;
 };
 
-export function TypingRaceSoloScreen({ offlineReason, retryLabel, onRetryMultiplayer }: TypingRaceSoloScreenProps) {
+export function TypingRaceSoloScreen({
+  offlineReason,
+  retryLabel,
+  onRetryMultiplayer,
+}: TypingRaceSoloScreenProps) {
   const { profile } = useTypingProfile();
   const { settings } = useTypingSettings();
+  const deckState = useSelectedTypingDeck(settings.locale);
+  const {
+    passages,
+    loading: passagesLoading,
+    error: passagesError,
+  } = useTypingDeckPassages(deckState.selectedDeck.id, settings.locale);
   const speedUnit = getSpeedUnit(settings.locale);
   const t = createTranslator(settings.locale);
-  const [passage, setPassage] = useState(() => getRandomPassage());
+  const [passage, setPassage] = useState<TypingDeckPassageOption>(() =>
+    pickNextPassage(passages),
+  );
   const [input, setInput] = useState("");
   const [countdownRemaining, setCountdownRemaining] = useState<number>(
     TYPING_RACE_DEFAULTS.countdownSeconds,
@@ -78,16 +136,18 @@ export function TypingRaceSoloScreen({ offlineReason, retryLabel, onRetryMultipl
   const engineContainerRef = useRef<HTMLDivElement | null>(null);
   const engineControllerRef = useRef<TypingRaceEngineController | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
-  const benchmarkNoiseRef = useRef<{
-    noise: number;
-    nextChangeAt: number;
-    accChars: number;
-    prevEffectiveSec: number;
-    finishedWpm: number | null;
-    giveUpAt: number | null;
-    pauseAt: number | null;
-    pausedUntil: number | null;
-  }[]>(
+  const benchmarkNoiseRef = useRef<
+    {
+      noise: number;
+      nextChangeAt: number;
+      accChars: number;
+      prevEffectiveSec: number;
+      finishedWpm: number | null;
+      giveUpAt: number | null;
+      pauseAt: number | null;
+      pausedUntil: number | null;
+    }[]
+  >(
     BENCHMARK_LANES.map(() => ({
       noise: 1.0,
       nextChangeAt: 0,
@@ -100,12 +160,33 @@ export function TypingRaceSoloScreen({ offlineReason, retryLabel, onRetryMultipl
     })),
   );
 
-  const promptChars = useMemo(() => Array.from(passage.prompt), [passage.prompt]);
+  useEffect(() => {
+    if (input.length > 0) return;
+    setPassage((current) =>
+      passages.some((candidate) => candidate.id === current.id)
+        ? current
+        : pickNextPassage(passages, current.id),
+    );
+  }, [input.length, passages]);
+
+  const promptChars = useMemo(
+    () => Array.from(passage.prompt),
+    [passage.prompt],
+  );
   const inputChars = useMemo(() => Array.from(input), [input]);
 
-  const progress = useMemo(() => getProgress(passage.prompt, input), [passage.prompt, input]);
-  const accuracy = useMemo(() => calculateAccuracy(passage.prompt, input), [passage.prompt, input]);
-  const typingSpeed = useMemo(() => calculateTypingSpeed(input, elapsedSeconds), [elapsedSeconds, input]);
+  const progress = useMemo(
+    () => getProgress(passage.prompt, input),
+    [passage.prompt, input],
+  );
+  const accuracy = useMemo(
+    () => calculateAccuracy(passage.prompt, input),
+    [passage.prompt, input],
+  );
+  const typingSpeed = useMemo(
+    () => calculateTypingSpeed(input, elapsedSeconds),
+    [elapsedSeconds, input],
+  );
   const completed = input === passage.prompt;
 
   const raceStage = completed
@@ -116,7 +197,8 @@ export function TypingRaceSoloScreen({ offlineReason, retryLabel, onRetryMultipl
 
   const mismatches = useMemo(() => {
     return promptChars.reduce<number[]>((acc, char, idx) => {
-      if (inputChars[idx] !== undefined && inputChars[idx] !== char) acc.push(idx);
+      if (inputChars[idx] !== undefined && inputChars[idx] !== char)
+        acc.push(idx);
       return acc;
     }, []);
   }, [inputChars, promptChars]);
@@ -147,7 +229,9 @@ export function TypingRaceSoloScreen({ offlineReason, retryLabel, onRetryMultipl
     let active = true;
     if (!engineContainerRef.current) return;
 
-    const mountPromise = mountTypingRaceEngine({ container: engineContainerRef.current });
+    const mountPromise = mountTypingRaceEngine({
+      container: engineContainerRef.current,
+    });
     mountPromise.then((controller) => {
       if (!active) return;
       engineControllerRef.current = controller;
@@ -156,9 +240,13 @@ export function TypingRaceSoloScreen({ offlineReason, retryLabel, onRetryMultipl
     return () => {
       active = false;
       engineControllerRef.current = null;
-      mountPromise.then((controller) => {
-        controller.destroy();
-      }).catch(() => { /* ignore */ });
+      mountPromise
+        .then((controller) => {
+          controller.destroy();
+        })
+        .catch(() => {
+          /* ignore */
+        });
     };
   }, []);
 
@@ -166,9 +254,10 @@ export function TypingRaceSoloScreen({ offlineReason, retryLabel, onRetryMultipl
     const promptLength = Math.max(1, promptChars.length);
 
     const benchmarkLanes = BENCHMARK_LANES.map((lane, index) => {
-      const effectiveSeconds = raceStage === TYPING_RACE_STAGE.COUNTDOWN
-        ? 0
-        : Math.max(0, elapsedSeconds - lane.startDelay);
+      const effectiveSeconds =
+        raceStage === TYPING_RACE_STAGE.COUNTDOWN
+          ? 0
+          : Math.max(0, elapsedSeconds - lane.startDelay);
 
       const noiseState = benchmarkNoiseRef.current[index]!;
       if (effectiveSeconds > 0 && effectiveSeconds >= noiseState.nextChangeAt) {
@@ -177,26 +266,42 @@ export function TypingRaceSoloScreen({ offlineReason, retryLabel, onRetryMultipl
       }
 
       const progressRatio = noiseState.accChars / promptLength;
-      const alreadyGaveUp = noiseState.giveUpAt !== null && progressRatio >= noiseState.giveUpAt;
+      const alreadyGaveUp =
+        noiseState.giveUpAt !== null && progressRatio >= noiseState.giveUpAt;
 
-      if (noiseState.pauseAt !== null && progressRatio >= noiseState.pauseAt && noiseState.pausedUntil === null) {
+      if (
+        noiseState.pauseAt !== null &&
+        progressRatio >= noiseState.pauseAt &&
+        noiseState.pausedUntil === null
+      ) {
         noiseState.pausedUntil = effectiveSeconds + 2;
         noiseState.pauseAt = null;
       }
-      const isPausing = noiseState.pausedUntil !== null && effectiveSeconds < noiseState.pausedUntil;
+      const isPausing =
+        noiseState.pausedUntil !== null &&
+        effectiveSeconds < noiseState.pausedUntil;
 
       if (effectiveSeconds > 0 && !alreadyGaveUp && !isPausing) {
         const delta = effectiveSeconds - noiseState.prevEffectiveSec;
         if (delta > 0) {
-          noiseState.accChars += delta * (lane.wpm / 60) * lane.multiplier * noiseState.noise;
+          noiseState.accChars +=
+            delta * (lane.wpm / 60) * lane.multiplier * noiseState.noise;
         }
       }
       noiseState.prevEffectiveSec = effectiveSeconds;
       const simulatedChars = noiseState.accChars;
-      const laneProgress = clampRaceProgress((simulatedChars / promptLength) * 100);
+      const laneProgress = clampRaceProgress(
+        (simulatedChars / promptLength) * 100,
+      );
 
-      if (laneProgress >= 100 && noiseState.finishedWpm === null && effectiveSeconds > 0) {
-        noiseState.finishedWpm = Math.round((simulatedChars / effectiveSeconds) * 60);
+      if (
+        laneProgress >= 100 &&
+        noiseState.finishedWpm === null &&
+        effectiveSeconds > 0
+      ) {
+        noiseState.finishedWpm = Math.round(
+          (simulatedChars / effectiveSeconds) * 60,
+        );
       }
 
       return {
@@ -228,7 +333,17 @@ export function TypingRaceSoloScreen({ offlineReason, retryLabel, onRetryMultipl
         ...benchmarkLanes,
       ],
     };
-  }, [countdownRemaining, elapsedSeconds, passage.title, profile.nickname, progress, promptChars.length, raceStage, speedUnit, typingSpeed]);
+  }, [
+    countdownRemaining,
+    elapsedSeconds,
+    passage.title,
+    profile.nickname,
+    progress,
+    promptChars.length,
+    raceStage,
+    speedUnit,
+    typingSpeed,
+  ]);
 
   useEffect(() => {
     engineControllerRef.current?.setSnapshot(snapshot);
@@ -245,7 +360,7 @@ export function TypingRaceSoloScreen({ offlineReason, retryLabel, onRetryMultipl
       pauseAt: Math.random() < 1 / 20 ? 0.2 + Math.random() * 0.6 : null,
       pausedUntil: null,
     }));
-    setPassage(getRandomPassage());
+    setPassage((current) => pickNextPassage(passages, current.id));
     setInput("");
     setCountdownRemaining(TYPING_RACE_DEFAULTS.countdownSeconds);
     setStartedAt(null);
@@ -264,7 +379,9 @@ export function TypingRaceSoloScreen({ offlineReason, retryLabel, onRetryMultipl
             {t("appName")}
           </Link>
           <div className="flex items-center gap-3">
-            <span className="font-mono text-[12px] text-[#aaa]">{passage.title}</span>
+            <span className="font-mono text-[12px] text-[#aaa]">
+              {deckState.selectedDeck.title} · {passage.title}
+            </span>
             <TypingBgmButton />
             <TypingSettingsButton />
           </div>
@@ -288,6 +405,19 @@ export function TypingRaceSoloScreen({ offlineReason, retryLabel, onRetryMultipl
         </div>
       )}
 
+      {(deckState.loading ||
+        passagesLoading ||
+        deckState.error ||
+        passagesError) && (
+        <div className="border-b border-[#e5e5e5] bg-[#fafafa] px-6 py-2 text-[12px] text-[#777]">
+          <div className="mx-auto max-w-[1400px]">
+            {deckState.loading || passagesLoading
+              ? "선택한 연습 덱을 불러오는 중..."
+              : (deckState.error ?? passagesError)}
+          </div>
+        </div>
+      )}
+
       <div className="mx-auto max-w-[1400px] px-4 py-4 md:px-8">
         <div className="overflow-hidden rounded-xl border border-[#e5e5e5]">
           <div ref={engineContainerRef} className="h-[520px] w-full" />
@@ -295,7 +425,9 @@ export function TypingRaceSoloScreen({ offlineReason, retryLabel, onRetryMultipl
 
         <div className="mt-3 flex items-center gap-6 rounded-lg border border-[#e5e5e5] bg-[#fafafa] px-5 py-3 font-mono text-[13px]">
           <span className="text-[#888]">{speedUnit}</span>
-          <span className="text-[18px] font-bold text-[#111]">{typingSpeed}</span>
+          <span className="text-[18px] font-bold text-[#111]">
+            {typingSpeed}
+          </span>
           <span className="text-[#ddd]">·</span>
           <span className="text-[#888]">acc</span>
           <span className="text-[18px] font-bold text-[#111]">{accuracy}%</span>
@@ -304,16 +436,29 @@ export function TypingRaceSoloScreen({ offlineReason, retryLabel, onRetryMultipl
           <span className="text-[18px] font-bold text-[#111]">{progress}%</span>
           <span className="text-[#ddd]">·</span>
           <span className="text-[#888]">time</span>
-          <span className="text-[18px] font-bold text-[#111]">{elapsedSeconds.toFixed(1)}s</span>
+          <span className="text-[18px] font-bold text-[#111]">
+            {elapsedSeconds.toFixed(1)}s
+          </span>
         </div>
 
         {completed && (
           <div className="mt-3 flex items-center justify-between rounded-lg border border-[#e5e5e5] bg-[#fafafa] px-5 py-4">
             <div className="flex items-center gap-6 font-mono text-[13px]">
               <span className="text-[#888]">{t("result")}</span>
-              <span className="text-[#111]"><span className="text-[20px] font-bold">{typingSpeed}</span> {speedUnit}</span>
-              <span className="text-[#111]"><span className="text-[20px] font-bold">{accuracy}</span>% {t("accuracy")}</span>
-              <span className="text-[#111]"><span className="text-[20px] font-bold">{elapsedSeconds.toFixed(1)}</span>s</span>
+              <span className="text-[#111]">
+                <span className="text-[20px] font-bold">{typingSpeed}</span>{" "}
+                {speedUnit}
+              </span>
+              <span className="text-[#111]">
+                <span className="text-[20px] font-bold">{accuracy}</span>%{" "}
+                {t("accuracy")}
+              </span>
+              <span className="text-[#111]">
+                <span className="text-[20px] font-bold">
+                  {elapsedSeconds.toFixed(1)}
+                </span>
+                s
+              </span>
             </div>
             <button
               type="button"
@@ -357,13 +502,23 @@ export function TypingRaceSoloScreen({ offlineReason, retryLabel, onRetryMultipl
             <textarea
               ref={textareaRef}
               value={input}
-              onChange={(e) => setInput(Array.from(e.target.value).slice(0, promptChars.length).join(""))}
+              onChange={(e) =>
+                setInput(
+                  Array.from(e.target.value)
+                    .slice(0, promptChars.length)
+                    .join(""),
+                )
+              }
               disabled={countdownRemaining > 0}
               rows={3}
               spellCheck={false}
               aria-label={t("typingInputLabel")}
               className="w-full resize-none rounded-lg border border-[#e5e5e5] bg-white px-5 py-4 font-mono text-[16px] leading-[1.7] text-[#111] outline-none transition-colors placeholder:text-[#ccc] focus:border-[#111] disabled:cursor-not-allowed disabled:opacity-40"
-              placeholder={countdownRemaining > 0 ? `${countdownRemaining}${t("startingIn")}` : t("typeHere")}
+              placeholder={
+                countdownRemaining > 0
+                  ? `${countdownRemaining}${t("startingIn")}`
+                  : t("typeHere")
+              }
             />
           </div>
         )}

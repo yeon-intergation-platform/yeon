@@ -67,6 +67,27 @@ import {
   mobileCredentialLoginResponseSchema,
   type CredentialLoginBody,
 } from "@yeon/api-contract/credential";
+import {
+  createTypingDeckBodySchema,
+  createTypingDeckPassageBodySchema,
+  createTypingDeckPassagesBodySchema,
+  createTypingRaceSeedBodySchema,
+  createTypingDeckPassagesResponseSchema,
+  typingDeckDetailResponseSchema,
+  typingDeckListResponseSchema,
+  typingDeckPassageResponseSchema,
+  typingDeckResponseSchema,
+  typingRaceSeedResponseSchema,
+  updateTypingDeckBodySchema,
+  updateTypingDeckPassageBodySchema,
+  type CreateTypingDeckBody,
+  type CreateTypingDeckPassageBody,
+  type CreateTypingDeckPassagesBody,
+  type CreateTypingRaceSeedBody,
+  type TypingDeckListQuery,
+  type UpdateTypingDeckBody,
+  type UpdateTypingDeckPassageBody,
+} from "@yeon/api-contract/typing-decks";
 import { errorResponseSchema } from "@yeon/api-contract/error";
 import { healthResponseSchema } from "@yeon/api-contract/health";
 import {
@@ -142,6 +163,17 @@ function createChatServiceHeaders(sessionToken?: string): HeadersInit {
   return {
     authorization: `Bearer ${sessionToken}`,
   };
+}
+
+function toQueryString(params: Record<string, string | boolean | undefined>) {
+  const searchParams = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== undefined) {
+      searchParams.set(key, String(value));
+    }
+  }
+  const queryString = searchParams.toString();
+  return queryString ? `?${queryString}` : "";
 }
 
 function createAuthSessionHeaders(sessionToken?: string): HeadersInit {
@@ -378,6 +410,149 @@ export function createApiClient(options: ApiClientOptions = {}) {
       return request({
         path: `/api/v1/card-decks/${deckId}/items/${itemId}/review`,
         schema: cardDeckItemResponseSchema,
+        init: {
+          method: "POST",
+          headers: createAuthSessionHeaders(sessionToken),
+          body: JSON.stringify(parsedBody),
+        },
+      });
+    },
+    listTypingDecks(
+      query: TypingDeckListQuery = { scope: "all", includeDefaults: false },
+      sessionToken?: string,
+    ) {
+      return request({
+        path: `/api/v1/typing-decks${toQueryString({
+          scope: query.scope,
+          languageTag: query.languageTag,
+          includeDefaults: query.includeDefaults,
+        })}`,
+        schema: typingDeckListResponseSchema,
+        init: {
+          headers: createAuthSessionHeaders(sessionToken),
+        },
+      });
+    },
+    createTypingDeck(body: CreateTypingDeckBody, sessionToken?: string) {
+      const parsedBody = createTypingDeckBodySchema.parse(body);
+
+      return request({
+        path: "/api/v1/typing-decks",
+        schema: typingDeckResponseSchema,
+        init: {
+          method: "POST",
+          headers: createAuthSessionHeaders(sessionToken),
+          body: JSON.stringify(parsedBody),
+        },
+      });
+    },
+    getTypingDeckDetail(deckId: string, sessionToken?: string) {
+      return request({
+        path: `/api/v1/typing-decks/${deckId}`,
+        schema: typingDeckDetailResponseSchema,
+        init: {
+          headers: createAuthSessionHeaders(sessionToken),
+        },
+      });
+    },
+    updateTypingDeck(
+      deckId: string,
+      body: UpdateTypingDeckBody,
+      sessionToken?: string,
+    ) {
+      const parsedBody = updateTypingDeckBodySchema.parse(body);
+
+      return request({
+        path: `/api/v1/typing-decks/${deckId}`,
+        schema: typingDeckResponseSchema,
+        init: {
+          method: "PATCH",
+          headers: createAuthSessionHeaders(sessionToken),
+          body: JSON.stringify(parsedBody),
+        },
+      });
+    },
+    deleteTypingDeck(deckId: string, sessionToken?: string) {
+      return requestNoContent(`/api/v1/typing-decks/${deckId}`, {
+        method: "DELETE",
+        headers: createAuthSessionHeaders(sessionToken),
+      });
+    },
+    createTypingDeckPassage(
+      deckId: string,
+      body: CreateTypingDeckPassageBody,
+      sessionToken?: string,
+    ) {
+      const parsedBody = createTypingDeckPassageBodySchema.parse(body);
+
+      return request({
+        path: `/api/v1/typing-decks/${deckId}/passages`,
+        schema: typingDeckPassageResponseSchema,
+        init: {
+          method: "POST",
+          headers: createAuthSessionHeaders(sessionToken),
+          body: JSON.stringify(parsedBody),
+        },
+      });
+    },
+    createTypingDeckPassages(
+      deckId: string,
+      body: CreateTypingDeckPassagesBody,
+      sessionToken?: string,
+    ) {
+      const parsedBody = createTypingDeckPassagesBodySchema.parse(body);
+
+      return request({
+        path: `/api/v1/typing-decks/${deckId}/passages/bulk`,
+        schema: createTypingDeckPassagesResponseSchema,
+        init: {
+          method: "POST",
+          headers: createAuthSessionHeaders(sessionToken),
+          body: JSON.stringify(parsedBody),
+        },
+      });
+    },
+    updateTypingDeckPassage(
+      deckId: string,
+      passageId: string,
+      body: UpdateTypingDeckPassageBody,
+      sessionToken?: string,
+    ) {
+      const parsedBody = updateTypingDeckPassageBodySchema.parse(body);
+
+      return request({
+        path: `/api/v1/typing-decks/${deckId}/passages/${passageId}`,
+        schema: typingDeckPassageResponseSchema,
+        init: {
+          method: "PATCH",
+          headers: createAuthSessionHeaders(sessionToken),
+          body: JSON.stringify(parsedBody),
+        },
+      });
+    },
+    deleteTypingDeckPassage(
+      deckId: string,
+      passageId: string,
+      sessionToken?: string,
+    ) {
+      return requestNoContent(
+        `/api/v1/typing-decks/${deckId}/passages/${passageId}`,
+        {
+          method: "DELETE",
+          headers: createAuthSessionHeaders(sessionToken),
+        },
+      );
+    },
+    createTypingRaceSeed(
+      deckId: string,
+      body: CreateTypingRaceSeedBody = {},
+      sessionToken?: string,
+    ) {
+      const parsedBody = createTypingRaceSeedBodySchema.parse(body);
+
+      return request({
+        path: `/api/v1/typing-decks/${deckId}/race-seed`,
+        schema: typingRaceSeedResponseSchema,
         init: {
           method: "POST",
           headers: createAuthSessionHeaders(sessionToken),

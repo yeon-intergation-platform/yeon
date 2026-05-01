@@ -55,6 +55,25 @@ export const TYPING_ROOM_LANGUAGE = {
 export type TypingRoomLanguage =
   (typeof TYPING_ROOM_LANGUAGE)[keyof typeof TYPING_ROOM_LANGUAGE];
 
+export const TYPING_DECK_LANGUAGE_TAG = {
+  KO: "ko",
+  EN: "en",
+  MIXED: "mixed",
+  CODE: "code",
+} as const;
+
+export type TypingDeckLanguageTag =
+  (typeof TYPING_DECK_LANGUAGE_TAG)[keyof typeof TYPING_DECK_LANGUAGE_TAG];
+
+export const TYPING_DECK_VISIBILITY = {
+  DEFAULT: "default",
+  PUBLIC: "public",
+  PRIVATE: "private",
+} as const;
+
+export type TypingDeckVisibility =
+  (typeof TYPING_DECK_VISIBILITY)[keyof typeof TYPING_DECK_VISIBILITY];
+
 export const TYPING_ROOM_DIFFICULTY = {
   EASY: "easy",
   NORMAL: "normal",
@@ -132,7 +151,25 @@ export type TypingRaceSnapshot = {
   speedUnit?: string;
 };
 
-export type TypingRoomSettings = {
+export type TypingRoomDeckMetadata = {
+  selectedDeckId?: string;
+  selectedDeckVisibility?: TypingDeckVisibility;
+  lobbyDeckTitle?: string;
+  selectedDeckLanguageTag?: TypingDeckLanguageTag;
+};
+
+export type TypingRaceSeed = {
+  passageId: string;
+  prompt: string;
+  roundLabel: string;
+  deckId?: string;
+  deckVisibility?: TypingDeckVisibility;
+  lobbyDeckTitle?: string;
+  participantDeckTitle?: string;
+  languageTag?: TypingDeckLanguageTag;
+};
+
+export type TypingRoomSettings = TypingRoomDeckMetadata & {
   title: string;
   visibility: TypingRoomVisibility;
   maxParticipants: number;
@@ -200,6 +237,7 @@ export type TypingRoomCreateMessage = Partial<TypingRoomSettings> & {
   playerId?: string;
   locale?: "ko" | "en";
   roomMode?: "lobby" | "quick";
+  raceSeed?: TypingRaceSeed;
 };
 
 export type TypingRoomJoinMessage = {
@@ -215,11 +253,7 @@ export type MatchAcceptedMessage = {
   seat: string;
 };
 
-export type RaceSeedMessage = {
-  passageId: string;
-  prompt: string;
-  roundLabel: string;
-};
+export type RaceSeedMessage = TypingRaceSeed;
 
 export type RaceCountdownMessage = {
   countdownSeconds: number;

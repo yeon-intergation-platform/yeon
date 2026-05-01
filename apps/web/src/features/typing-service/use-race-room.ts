@@ -136,13 +136,16 @@ export function useRaceRoom(options: UseRaceRoomOptions): UseRaceRoomResult {
       playerId,
       locale,
     };
-
-    const joinPromise = createRoom
-      ? client.create<unknown>(TYPING_RACE_ROOM_NAME, {
+    const createOptions: TypingRoomCreateMessage | null = createRoom
+      ? {
           ...createRoom,
           ...joinOptions,
           roomMode: "lobby",
-        })
+        }
+      : null;
+
+    const joinPromise = createOptions
+      ? client.create<unknown>(TYPING_RACE_ROOM_NAME, createOptions)
       : roomId
         ? client.joinById<unknown>(roomId, joinOptions)
         : client.joinOrCreate<unknown>(TYPING_RACE_ROOM_NAME, {

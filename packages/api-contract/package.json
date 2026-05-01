@@ -18,7 +18,8 @@
     "./spaces": "./src/spaces.ts",
     "./credential": "./src/credential.ts",
     "./card-deck-merge-guest": "./src/card-deck-merge-guest.ts",
-    "./life-os": "./src/life-os.ts"
+    "./life-os": "./src/life-os.ts",
+    "./typing-decks": "./src/typing-decks.ts"
   },
   "scripts": {
     "lint": "eslint src --ext .ts",
