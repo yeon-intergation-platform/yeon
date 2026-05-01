@@ -450,20 +450,36 @@ export function useTypingDeckOptions(
   };
 }
 
+export function getSelectedTypingDeckForLanguage(
+  settings: TypingSettings,
+  decks: TypingDeckOption[],
+  languageTag: TypingDeckLanguageTag | TypingLocale,
+) {
+  const normalizedLanguage = languageTag === "en" ? "en" : "ko";
+  const selectedDeckId =
+    settings.selectedDeckIdsByLanguage[normalizedLanguage] ??
+    getLocalDefaultDeck(normalizedLanguage).id;
+  const selectedDeck =
+    decks.find((deck) => deck.id === selectedDeckId) ??
+    getLocalDefaultDeck(normalizedLanguage);
+
+  return { selectedDeckId, selectedDeck };
+}
+
 export function useSelectedTypingDeck(
   languageTag: TypingDeckLanguageTag | TypingLocale,
 ) {
   const normalizedLanguage = languageTag === "en" ? "en" : "ko";
   const { settings, loaded } = useTypingSettings();
   const deckState = useTypingDeckOptions(normalizedLanguage);
-  const selectedDeckId =
-    settings.selectedDeckIdsByLanguage[normalizedLanguage] ??
-    getLocalDefaultDeck(normalizedLanguage).id;
-  const selectedDeck = useMemo(
+  const { selectedDeckId, selectedDeck } = useMemo(
     () =>
-      deckState.decks.find((deck) => deck.id === selectedDeckId) ??
-      getLocalDefaultDeck(normalizedLanguage),
-    [deckState.decks, normalizedLanguage, selectedDeckId],
+      getSelectedTypingDeckForLanguage(
+        settings,
+        deckState.decks,
+        normalizedLanguage,
+      ),
+    [deckState.decks, normalizedLanguage, settings],
   );
 
   return { ...deckState, selectedDeckId, selectedDeck, loaded };
