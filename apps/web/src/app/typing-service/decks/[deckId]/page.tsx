@@ -49,6 +49,12 @@ export default async function TypingDeckDetailPage({
             ← 타자 덱 목록
           </Link>
           <div className="flex flex-wrap items-center justify-end gap-2">
+            <Link
+              href="/typing-service"
+              className="rounded-xl border border-[#e5e5e5] px-4 py-2 text-[13px] font-semibold text-[#111] no-underline transition-colors hover:border-[#111] hover:bg-[#fafafa]"
+            >
+              타자연습 홈
+            </Link>
             {showAdminEntry ? (
               <Link
                 href="/admin/typing-decks"
