@@ -86,7 +86,7 @@ function useCreateRoomOptions(): DeckAwareCreateMessage {
       ),
       visibility: parseEnum<TypingRoomVisibility>(
         searchParams.get("visibility"),
-        [TYPING_ROOM_VISIBILITY.PUBLIC],
+        [TYPING_ROOM_VISIBILITY.PUBLIC, TYPING_ROOM_VISIBILITY.PRIVATE],
         TYPING_ROOM_VISIBILITY.PUBLIC,
       ),
       maxParticipants: parseNumber(
@@ -405,9 +405,7 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
               </div>
             </div>
             <div className="rounded-2xl border border-[#e5e5e5] bg-[#fafafa] px-4 py-3 text-center">
-              <p className="text-[12px] font-semibold text-[#888]">
-                인원
-              </p>
+              <p className="text-[12px] font-semibold text-[#888]">인원</p>
               <p className="mt-1 text-[24px] font-semibold text-[#111]">
                 {room.currentParticipants} / {room.maxParticipants}
               </p>
@@ -430,7 +428,9 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
                     )}
                   </div>
                   <div>
-                    <p className="text-[15px] font-semibold text-[#111]">{participant.label}</p>
+                    <p className="text-[15px] font-semibold text-[#111]">
+                      {participant.label}
+                    </p>
                     <p className="text-[12px] text-[#aaa]">
                       {participant.role === "host" ? "방장" : "참가자"}
                     </p>
@@ -454,14 +454,39 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
 
         <aside className="grid content-start gap-4 rounded-2xl border border-[#e5e5e5] bg-white p-5 md:p-6">
           <div className="rounded-2xl border border-[#e5e5e5] bg-[#fafafa] p-5 text-[#111]">
-            <p className="text-[13px] font-semibold text-[#666]">
-              시작 준비
-            </p>
+            <p className="text-[13px] font-semibold text-[#666]">시작 준비</p>
             <p className="mt-2 text-[28px] font-semibold tracking-[-0.03em]">
               3, 2, 1
             </p>
             <p className="mt-2 text-[13px] leading-5 text-[#666]">
               방장이 시작하면 모두에게 같은 제시문과 카운트다운이 동시에 뜹니다.
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-dashed border-[#ddd] bg-[#fafafa] p-4 text-[13px] leading-6 text-[#666]">
+            <p className="font-bold text-[#111]">방 설정</p>
+            <dl className="mt-2 grid grid-cols-[80px_1fr] gap-x-3 gap-y-1">
+              <dt>공개 여부</dt>
+              <dd className="font-semibold text-[#111]">
+                {TYPING_ROOM_VISIBILITY_LABELS[room.visibility]}
+              </dd>
+              <dt>인원</dt>
+              <dd className="font-semibold text-[#111]">
+                최대 {room.maxParticipants}명
+              </dd>
+              <dt>문장</dt>
+              <dd className="font-semibold text-[#111]">
+                {TYPING_ROOM_LANGUAGE_LABELS[room.language]} ·{" "}
+                {TYPING_ROOM_TEXT_TYPE_LABELS[room.textType]}
+              </dd>
+              <dt>진행</dt>
+              <dd className="font-semibold text-[#111]">
+                {TYPING_ROOM_DIFFICULTY_LABELS[room.difficulty]} ·{" "}
+                {room.roundCount}판 · {TYPING_ROOM_MODE_LABELS[room.mode]}
+              </dd>
+            </dl>
+            <p className="mt-2 text-[12px] text-[#888]">
+              MVP에서는 대기방에서 설정을 변경할 수 없습니다.
             </p>
           </div>
 

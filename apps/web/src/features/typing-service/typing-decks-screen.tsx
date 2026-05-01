@@ -40,11 +40,21 @@ Flow warmup
 [[TEXT]]
 Keep your eyes one word ahead and let your fingers follow the rhythm.`;
 
-const SCOPE_TABS: Array<{
+/**
+ * Exported seams for the deck-management routes.
+ *
+ * Keep these components admin-capable via `adminMode` so `/admin/typing-decks`
+ * continues to use the same mutations, readonly checks, and visual tone while
+ * follow-up library/detail routes can reuse the deck list and detail panels.
+ */
+
+export type TypingDeckScopeTab = {
   value: TypingDeckScope;
   label: string;
   help: string;
-}> = [
+};
+
+export const TYPING_DECK_SCOPE_TABS: TypingDeckScopeTab[] = [
   {
     value: "default",
     label: "기본 덱",
@@ -54,38 +64,40 @@ const SCOPE_TABS: Array<{
   { value: "public", label: "공개 덱", help: "다른 사용자가 공개한 덱" },
 ];
 
-function languageLabel(languageTag: TypingDeckLanguageTag) {
+export function typingDeckLanguageLabel(languageTag: TypingDeckLanguageTag) {
   return (
     TYPING_DECK_LANGUAGE_OPTIONS.find((option) => option.value === languageTag)
       ?.label ?? languageTag
   );
 }
 
-function visibilityLabel(visibility: TypingDeckVisibility) {
+export function typingDeckVisibilityLabel(visibility: TypingDeckVisibility) {
   return (
     TYPING_DECK_VISIBILITY_OPTIONS.find((option) => option.value === visibility)
       ?.label ?? visibility
   );
 }
 
-function deckBadge(deck: TypingDeckDto) {
+export function typingDeckBadge(deck: TypingDeckDto) {
   if (deck.source === "default") {
     return "기본";
   }
-  return visibilityLabel(deck.visibility);
+  return typingDeckVisibilityLabel(deck.visibility);
 }
 
-function DeckForm({
-  mode,
-  deck,
-  onSaved,
-  adminMode = false,
-}: {
+export type TypingDeckFormProps = {
   mode: "create" | "edit";
   deck?: TypingDeckDto;
   onSaved?: (deck: TypingDeckDto) => void;
   adminMode?: boolean;
-}) {
+};
+
+export function TypingDeckForm({
+  mode,
+  deck,
+  onSaved,
+  adminMode = false,
+}: TypingDeckFormProps) {
   const createDeck = useCreateTypingDeck(adminMode);
   const updateDeck = useUpdateTypingDeck(deck?.id ?? "", adminMode);
   const [title, setTitle] = useState(deck?.title ?? "");
@@ -235,15 +247,17 @@ function DeckForm({
   );
 }
 
-function DeckList({
-  decks,
-  selectedDeckId,
-  onSelectDeck,
-}: {
+export type TypingDeckListProps = {
   decks: TypingDeckDto[];
   selectedDeckId: string | null;
   onSelectDeck: (deckId: string) => void;
-}) {
+};
+
+export function TypingDeckList({
+  decks,
+  selectedDeckId,
+  onSelectDeck,
+}: TypingDeckListProps) {
   if (decks.length === 0) {
     return (
       <div className="rounded-2xl border border-dashed border-[#dcdcdc] p-8 text-center">
@@ -280,12 +294,12 @@ function DeckList({
                 </p>
               </div>
               <span className="shrink-0 rounded-full bg-[#f3f3f3] px-2.5 py-1 text-[12px] font-semibold text-[#666]">
-                {deckBadge(deck)}
+                {typingDeckBadge(deck)}
               </span>
             </div>
             <div className="mt-3 flex flex-wrap gap-2 text-[12px] text-[#777]">
               <span className="rounded-full border border-[#e8e8e8] px-2 py-0.5">
-                {languageLabel(deck.languageTag)}
+                {typingDeckLanguageLabel(deck.languageTag)}
               </span>
               <span className="rounded-full border border-[#e8e8e8] px-2 py-0.5">
                 문단 {deck.passageCount ?? 0}개
@@ -298,17 +312,19 @@ function DeckList({
   );
 }
 
-function PassageEditor({
-  deckId,
-  editingPassage,
-  onCancelEdit,
-  adminMode = false,
-}: {
+export type TypingDeckPassageEditorProps = {
   deckId: string;
   editingPassage: TypingDeckPassageDto | null;
   onCancelEdit: () => void;
   adminMode?: boolean;
-}) {
+};
+
+export function TypingDeckPassageEditor({
+  deckId,
+  editingPassage,
+  onCancelEdit,
+  adminMode = false,
+}: TypingDeckPassageEditorProps) {
   const addPassage = useCreateTypingDeckPassage(deckId, adminMode);
   const updatePassage = useUpdateTypingDeckPassage(deckId, adminMode);
   const [title, setTitle] = useState(editingPassage?.title ?? "");
@@ -430,13 +446,15 @@ function PassageEditor({
   );
 }
 
-function BulkPassageImportForm({
-  deckId,
-  adminMode = false,
-}: {
+export type TypingDeckBulkPassageImportFormProps = {
   deckId: string;
   adminMode?: boolean;
-}) {
+};
+
+export function TypingDeckBulkPassageImportForm({
+  deckId,
+  adminMode = false,
+}: TypingDeckBulkPassageImportFormProps) {
   const [rawText, setRawText] = useState("");
   const bulkCreate = useBulkCreateTypingDeckPassages(deckId, adminMode);
   const parseResult = useMemo(
@@ -571,19 +589,21 @@ function BulkPassageImportForm({
   );
 }
 
-function PassageList({
-  deckId,
-  passages,
-  onEdit,
-  readonly,
-  adminMode = false,
-}: {
+export type TypingDeckPassageListProps = {
   deckId: string;
   passages: TypingDeckPassageDto[];
   onEdit: (passage: TypingDeckPassageDto) => void;
   readonly: boolean;
   adminMode?: boolean;
-}) {
+};
+
+export function TypingDeckPassageList({
+  deckId,
+  passages,
+  onEdit,
+  readonly,
+  adminMode = false,
+}: TypingDeckPassageListProps) {
   const deletePassage = useDeleteTypingDeckPassage(deckId, adminMode);
 
   if (passages.length === 0) {
@@ -658,13 +678,15 @@ function PassageList({
   );
 }
 
-function DeckDetailPanel({
-  deckId,
-  adminMode = false,
-}: {
+export type TypingDeckDetailPanelProps = {
   deckId: string;
   adminMode?: boolean;
-}) {
+};
+
+export function TypingDeckDetailPanel({
+  deckId,
+  adminMode = false,
+}: TypingDeckDetailPanelProps) {
   const detailQuery = useTypingDeckDetail(deckId, adminMode);
   const deleteDeck = useDeleteTypingDeck(adminMode);
   const [editingPassage, setEditingPassage] =
@@ -692,14 +714,15 @@ function DeckDetailPanel({
                 {deck.title}
               </h2>
               <span className="rounded-full bg-white px-2.5 py-1 text-[12px] font-semibold text-[#666]">
-                {deckBadge(deck)}
+                {typingDeckBadge(deck)}
               </span>
             </div>
             <p className="mt-2 text-[13px] leading-6 text-[#666]">
               {deck.description || "설명이 없습니다."}
             </p>
             <p className="mt-2 text-[12px] text-[#888]">
-              {languageLabel(deck.languageTag)} · 문단 {passages.length}개
+              {typingDeckLanguageLabel(deck.languageTag)} · 문단{" "}
+              {passages.length}개
             </p>
           </div>
           {!readonly ? (
@@ -719,7 +742,7 @@ function DeckDetailPanel({
         ) : null}
       </section>
 
-      <DeckForm mode="edit" deck={deck} adminMode={adminMode} />
+      <TypingDeckForm mode="edit" deck={deck} adminMode={adminMode} />
 
       <section className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_420px] lg:items-start">
         <div>
@@ -729,7 +752,7 @@ function DeckDetailPanel({
               {passages.length}
             </span>
           </div>
-          <PassageList
+          <TypingDeckPassageList
             deckId={deck.id}
             passages={passages}
             onEdit={setEditingPassage}
@@ -739,13 +762,16 @@ function DeckDetailPanel({
         </div>
         {!readonly ? (
           <aside className="space-y-5 lg:sticky lg:top-5">
-            <PassageEditor
+            <TypingDeckPassageEditor
               deckId={deck.id}
               editingPassage={editingPassage}
               onCancelEdit={() => setEditingPassage(null)}
               adminMode={adminMode}
             />
-            <BulkPassageImportForm deckId={deck.id} adminMode={adminMode} />
+            <TypingDeckBulkPassageImportForm
+              deckId={deck.id}
+              adminMode={adminMode}
+            />
           </aside>
         ) : null}
       </section>
@@ -762,14 +788,14 @@ export function TypingDecksScreen({
 }) {
   const scopeTabs = adminMode
     ? [
-        ...SCOPE_TABS,
+        ...TYPING_DECK_SCOPE_TABS,
         {
           value: "all" as TypingDeckScope,
           label: "전체",
           help: "관리자 전용: 비공개 포함 모든 DB 덱",
         },
       ]
-    : SCOPE_TABS;
+    : TYPING_DECK_SCOPE_TABS;
   const [scope, setScope] = useState<TypingDeckScope>(
     adminMode ? "all" : "default",
   );
@@ -866,14 +892,14 @@ export function TypingDecksScreen({
               </p>
             ) : null}
             {decksQuery.isSuccess ? (
-              <DeckList
+              <TypingDeckList
                 decks={decks}
                 selectedDeckId={selectedDeckId}
                 onSelectDeck={setSelectedDeckId}
               />
             ) : null}
 
-            <DeckForm
+            <TypingDeckForm
               mode="create"
               onSaved={handleCreated}
               adminMode={adminMode}
@@ -882,7 +908,10 @@ export function TypingDecksScreen({
 
           <section className="min-w-0">
             {selectedDeckId ? (
-              <DeckDetailPanel deckId={selectedDeckId} adminMode={adminMode} />
+              <TypingDeckDetailPanel
+                deckId={selectedDeckId}
+                adminMode={adminMode}
+              />
             ) : (
               <div className="flex min-h-[520px] items-center justify-center rounded-3xl border border-dashed border-[#dcdcdc] bg-[#fafafa] p-10 text-center">
                 <div>
