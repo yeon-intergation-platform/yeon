@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { ArrowLeft, Copy, Crown, Play, Users } from "lucide-react";
+import { Copy, Crown, Play, Users } from "lucide-react";
 import {
   TYPING_ROOM_DIFFICULTY,
   TYPING_ROOM_LANGUAGE,
@@ -24,6 +24,7 @@ import { useTypingProfile } from "./use-typing-profile";
 import { TypingBgmButton } from "./typing-bgm-button";
 import { TypingRaceMultiplayerScreen } from "./typing-race-multiplayer-screen";
 import { TypingSettingsButton } from "./typing-settings-button";
+import { TypingServiceHeader } from "./typing-service-header";
 import {
   TYPING_ROOM_DIFFICULTY_LABELS,
   TYPING_ROOM_LANGUAGE_LABELS,
@@ -340,22 +341,24 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
 
   return (
     <div className="min-h-screen bg-white text-[#111]">
-      <header className="border-b border-[#e5e5e5] px-6 py-3 md:px-12">
-        <div className="mx-auto flex max-w-[1400px] items-center justify-between">
-          <Link
-            href="/typing-service/rooms"
-            className="inline-flex items-center gap-2 text-[13px] text-[#666] no-underline transition-colors hover:text-[#111]"
-          >
-            <ArrowLeft size={14} /> 타자방 로비
-          </Link>
-          <div className="flex items-center gap-2">
+      <TypingServiceHeader
+        active="rooms"
+        title="YEON 타자방"
+        controls={
+          <>
+            <Link
+              href="/typing-service/rooms"
+              className="rounded-xl border border-[#e5e5e5] px-4 py-2 text-[13px] font-semibold text-[#111] no-underline transition-colors hover:border-[#111] hover:bg-[#fafafa]"
+            >
+              타자방 로비
+            </Link>
             <TypingBgmButton />
             <TypingSettingsButton />
-          </div>
-        </div>
-      </header>
+          </>
+        }
+      />
 
-      <main className="mx-auto grid max-w-[1200px] gap-6 px-6 py-10 md:grid-cols-[1fr_360px] md:px-12">
+      <main className="grid gap-6 px-6 py-10 md:grid-cols-[1fr_360px] md:px-10">
         <section className="rounded-2xl border border-[#e5e5e5] bg-white p-6 md:p-8">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
