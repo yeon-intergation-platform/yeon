@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 
 import { TypingDecksScreen } from "@/features/typing-service/typing-decks-screen";
+import { getCurrentAuthUser } from "@/server/auth/session";
+import { isAdminUser } from "@/server/auth/admin";
 
 export const metadata: Metadata = {
   title: "YEON 타자 덱 관리",
@@ -15,6 +17,9 @@ export const metadata: Metadata = {
   },
 };
 
-export default function TypingDecksPage() {
-  return <TypingDecksScreen />;
+export default async function TypingDecksPage() {
+  const currentUser = await getCurrentAuthUser();
+  const showAdminEntry = currentUser ? await isAdminUser(currentUser) : false;
+
+  return <TypingDecksScreen showAdminEntry={showAdminEntry} />;
 }
