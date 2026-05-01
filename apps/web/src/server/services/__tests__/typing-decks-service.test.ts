@@ -6,87 +6,197 @@ import {
   TYPING_DECK_VISIBILITY,
 } from "@yeon/api-contract/typing-decks";
 
+import { DEFAULT_TYPING_DECKS } from "../default-typing-decks";
+import { DEFAULT_TYPING_DECK_SOURCES } from "../default-typing-deck-sources";
 import {
   createTypingRaceSeed,
   getTypingDeckDetail,
   listTypingDecks,
 } from "../typing-decks-service";
 
+const REMOVED_GENERATED_DEFAULT_DECK_IDS = new Set([
+  "default-ko-daily-rhythm",
+  "default-en-flow-basics",
+]);
+
+const ACCEPTED_RIGHTS_STATUSES = new Set([
+  "green",
+  "product-legal-accepted-yellow",
+]);
+
+type DefaultTypingDeckSource = {
+  deckId: string;
+  deckTitle: string;
+  sourceWorkTitle: string;
+  sourceAuthor: string;
+  sourceUrl: string;
+  rightsStatus: string;
+  licenseNotes: string;
+  passages: Array<{
+    passageId: string;
+    sourceLocator: string;
+    cleanupNotes: string;
+    sourceUrl?: string;
+  }>;
+};
+
+function expectDeckShape() {
+  expect(DEFAULT_TYPING_DECKS).toHaveLength(4);
+
+  for (const deck of DEFAULT_TYPING_DECKS) {
+    expect(REMOVED_GENERATED_DEFAULT_DECK_IDS.has(deck.id)).toBe(false);
+    expect(deck.source).toBe(TYPING_DECK_SOURCE.default);
+    expect(deck.visibility).toBe(TYPING_DECK_VISIBILITY.public);
+    expect(deck.passages).toHaveLength(20);
+    expect(deck.passages.map((passage) => passage.sortOrder)).toEqual(
+      Array.from({ length: 20 }, (_, index) => index),
+    );
+    expect(new Set(deck.passages.map((passage) => passage.id)).size).toBe(20);
+    expect(new Set(deck.passages.map((passage) => passage.prompt)).size).toBe(
+      20,
+    );
+  }
+}
+
+function expectManifestCoverage() {
+  const sources =
+    DEFAULT_TYPING_DECK_SOURCES as readonly DefaultTypingDeckSource[];
+  const sourcesByDeckId = new Map(
+    sources.map((source) => [source.deckId, source]),
+  );
+
+  expect(sources).toHaveLength(DEFAULT_TYPING_DECKS.length);
+
+  for (const deck of DEFAULT_TYPING_DECKS) {
+    const source = sourcesByDeckId.get(deck.id);
+
+    expect(source).toBeDefined();
+    expect(source?.deckTitle).toBe(deck.title);
+    expect(source?.sourceWorkTitle).toEqual(expect.any(String));
+    expect(source?.sourceAuthor).toEqual(expect.any(String));
+    expect(source?.sourceUrl).toMatch(/^https?:\/\//);
+    expect(source?.licenseNotes).toEqual(expect.any(String));
+    expect(ACCEPTED_RIGHTS_STATUSES.has(source?.rightsStatus ?? "")).toBe(true);
+    if (source?.rightsStatus === "product-legal-accepted-yellow") {
+      expect(source.licenseNotes.toLowerCase()).toContain("accepted");
+    }
+
+    const manifestPassageIds = source?.passages.map(
+      (passage) => passage.passageId,
+    );
+    expect(manifestPassageIds).toEqual(
+      deck.passages.map((passage) => passage.id),
+    );
+    expect(
+      source?.passages.every(
+        (passage) =>
+          passage.sourceLocator.trim().length > 0 &&
+          passage.cleanupNotes.trim().length > 0 &&
+          (!passage.sourceUrl || /^https?:\/\//.test(passage.sourceUrl)),
+      ),
+    ).toBe(true);
+  }
+}
+
 describe("typing-decks-service default decks", () => {
-  it("lists Korean default decks for anonymous readers", async () => {
+  it("lists Korean source-backed default decks for anonymous readers", async () => {
+    expectDeckShape();
+
     const decks = await listTypingDecks(null, {
       scope: "default",
       languageTag: TYPING_DECK_LANGUAGE_TAGS.ko,
       includeDefaults: false,
     });
+    const expectedDecks = DEFAULT_TYPING_DECKS.filter(
+      (deck) =>
+        deck.languageTag === TYPING_DECK_LANGUAGE_TAGS.ko ||
+        deck.languageTag === TYPING_DECK_LANGUAGE_TAGS.mixed,
+    );
 
-    expect(decks.length).toBeGreaterThan(0);
+    expect(decks).toHaveLength(expectedDecks.length);
+    expect(decks.map((deck) => deck.id)).toEqual(
+      expectedDecks.map((deck) => deck.id),
+    );
     expect(
       decks.every((deck) => deck.source === TYPING_DECK_SOURCE.default),
     ).toBe(true);
     expect(decks.every((deck) => deck.canEdit === false)).toBe(true);
+    expect(decks.every((deck) => deck.passageCount === 20)).toBe(true);
   });
 
-  it("exposes at least 100 Korean default passages through list and detail", async () => {
-    const decks = await listTypingDecks(null, {
-      scope: "default",
-      languageTag: TYPING_DECK_LANGUAGE_TAGS.ko,
-      includeDefaults: false,
-    });
-    const koreanDeck = decks.find(
-      (deck) => deck.id === "default-ko-daily-rhythm",
-    );
+  it("lists English source-backed default decks for anonymous readers", async () => {
+    expectDeckShape();
 
-    expect(koreanDeck?.passageCount).toBeGreaterThanOrEqual(100);
-
-    const detail = await getTypingDeckDetail(null, "default-ko-daily-rhythm");
-    expect(detail.passages).toHaveLength(koreanDeck!.passageCount);
-    expect(detail.passages.length).toBeGreaterThanOrEqual(100);
-    expect(new Set(detail.passages.map((passage) => passage.prompt)).size).toBe(
-      detail.passages.length,
-    );
-  });
-
-  it("exposes at least 100 English default passages through list and detail", async () => {
     const decks = await listTypingDecks(null, {
       scope: "default",
       languageTag: TYPING_DECK_LANGUAGE_TAGS.en,
       includeDefaults: false,
     });
-    const englishDeck = decks.find(
-      (deck) => deck.id === "default-en-flow-basics",
+    const expectedDecks = DEFAULT_TYPING_DECKS.filter(
+      (deck) =>
+        deck.languageTag === TYPING_DECK_LANGUAGE_TAGS.en ||
+        deck.languageTag === TYPING_DECK_LANGUAGE_TAGS.mixed,
     );
 
-    expect(englishDeck?.passageCount).toBeGreaterThanOrEqual(100);
-
-    const detail = await getTypingDeckDetail(null, "default-en-flow-basics");
-    expect(detail.passages).toHaveLength(englishDeck!.passageCount);
-    expect(detail.passages.length).toBeGreaterThanOrEqual(100);
-    expect(new Set(detail.passages.map((passage) => passage.prompt)).size).toBe(
-      detail.passages.length,
+    expect(decks).toHaveLength(expectedDecks.length);
+    expect(decks.map((deck) => deck.id)).toEqual(
+      expectedDecks.map((deck) => deck.id),
     );
+    expect(
+      decks.every((deck) => deck.source === TYPING_DECK_SOURCE.default),
+    ).toBe(true);
+    expect(decks.every((deck) => deck.canEdit === false)).toBe(true);
+    expect(decks.every((deck) => deck.passageCount === 20)).toBe(true);
+  });
+
+  it("exposes source manifest coverage for every default passage", () => {
+    expectDeckShape();
+    expectManifestCoverage();
   });
 
   it("returns default deck detail without authentication", async () => {
-    const detail = await getTypingDeckDetail(null, "default-en-flow-basics");
+    expectDeckShape();
 
-    expect(detail.deck.source).toBe(TYPING_DECK_SOURCE.default);
-    expect(detail.deck.visibility).toBe(TYPING_DECK_VISIBILITY.public);
-    expect(detail.passages.length).toBeGreaterThanOrEqual(3);
+    for (const expectedDeck of DEFAULT_TYPING_DECKS) {
+      const detail = await getTypingDeckDetail(null, expectedDeck.id);
+
+      expect(detail.deck).toMatchObject({
+        id: expectedDeck.id,
+        title: expectedDeck.title,
+        source: TYPING_DECK_SOURCE.default,
+        visibility: TYPING_DECK_VISIBILITY.public,
+        canEdit: false,
+        passageCount: 20,
+      });
+      expect(detail.passages).toHaveLength(20);
+      expect(detail.passages.map((passage) => passage.id)).toEqual(
+        expectedDeck.passages.map((passage) => passage.id),
+      );
+      expect(
+        new Set(detail.passages.map((passage) => passage.prompt)).size,
+      ).toBe(20);
+    }
   });
 
-  it("creates lobby-safe race seed metadata for default decks", async () => {
-    const raceSeed = await createTypingRaceSeed(
-      null,
-      "default-ko-daily-rhythm",
-      {
-        passageId: "default-ko-daily-rhythm-001",
-      },
-    );
+  it("creates lobby-safe race seed metadata for every final default deck", async () => {
+    expectDeckShape();
 
-    expect(raceSeed.deckVisibility).toBe(TYPING_DECK_SOURCE.default);
-    expect(raceSeed.lobbyDeckTitle).toBe(raceSeed.participantDeckTitle);
-    expect(raceSeed.seedToken).toMatch(/^v1\./);
-    expect(raceSeed.prompt.length).toBeGreaterThan(0);
+    for (const deck of DEFAULT_TYPING_DECKS) {
+      const firstPassage = deck.passages[0]!;
+      const raceSeed = await createTypingRaceSeed(null, deck.id, {
+        passageId: firstPassage.id,
+      });
+
+      expect(raceSeed).toMatchObject({
+        deckId: deck.id,
+        passageId: firstPassage.id,
+        prompt: firstPassage.prompt,
+        deckVisibility: TYPING_DECK_SOURCE.default,
+        lobbyDeckTitle: deck.title,
+        participantDeckTitle: deck.title,
+        languageTag: deck.languageTag,
+      });
+      expect(raceSeed.seedToken).toMatch(/^v1\./);
+    }
   });
 });
