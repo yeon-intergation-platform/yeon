@@ -212,9 +212,9 @@ export function TypingDeckLibraryScreen({
         <div className="mx-auto flex max-w-[1200px] items-center justify-between gap-3">
           <Link
             href="/typing-service"
-            className="text-[14px] font-semibold text-[#111] no-underline"
+            className="text-[14px] font-semibold text-[#111] no-underline transition-colors hover:text-[#666]"
           >
-            YEON 타자연습
+            ← 타자연습 홈
           </Link>
           <div className="flex flex-wrap items-center justify-end gap-2">
             {showAdminEntry ? (
@@ -250,12 +250,20 @@ export function TypingDeckLibraryScreen({
               문단 편집은 덱 상세 화면에서 이어집니다.
             </p>
           </div>
-          <Link
-            href="/typing-service/practice"
-            className="rounded-xl border border-[#e5e5e5] bg-white px-5 py-3 text-[14px] font-semibold text-[#111] no-underline transition-colors hover:border-[#111]"
-          >
-            자유 연습으로 이동
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            <Link
+              href="/typing-service"
+              className="rounded-xl border border-[#e5e5e5] bg-white px-5 py-3 text-[14px] font-semibold text-[#111] no-underline transition-colors hover:border-[#111]"
+            >
+              타자연습 홈으로
+            </Link>
+            <Link
+              href="/typing-service/practice"
+              className="rounded-xl border border-[#e5e5e5] bg-white px-5 py-3 text-[14px] font-semibold text-[#111] no-underline transition-colors hover:border-[#111]"
+            >
+              자유 연습으로 이동
+            </Link>
+          </div>
         </section>
 
         <section className="mt-8 rounded-3xl border border-[#e5e5e5] bg-[#fafafa] p-4 md:p-5">
