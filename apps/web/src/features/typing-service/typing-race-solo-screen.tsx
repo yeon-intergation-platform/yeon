@@ -103,12 +103,14 @@ function getProgress(prompt: string, input: string) {
 }
 
 export type TypingRaceSoloScreenProps = {
+  practiceDeckId?: string | null;
   offlineReason?: string | null;
   retryLabel?: string;
   onRetryMultiplayer?: () => void;
 };
 
 export function TypingRaceSoloScreen({
+  practiceDeckId,
   offlineReason,
   retryLabel,
   onRetryMultiplayer,
@@ -116,11 +118,17 @@ export function TypingRaceSoloScreen({
   const { profile } = useTypingProfile();
   const { settings } = useTypingSettings();
   const deckState = useSelectedTypingDeck(settings.locale);
+  const activeDeckId = practiceDeckId ?? deckState.selectedDeck.id;
+  const activeDeckTitle =
+    practiceDeckId === null || practiceDeckId === undefined
+      ? deckState.selectedDeck.title
+      : (deckState.decks.find((deck) => deck.id === practiceDeckId)?.title ??
+        "선택한 연습 덱");
   const {
     passages,
     loading: passagesLoading,
     error: passagesError,
-  } = useTypingDeckPassages(deckState.selectedDeck.id, settings.locale);
+  } = useTypingDeckPassages(activeDeckId, settings.locale);
   const speedUnit = getSpeedUnit(settings.locale);
   const t = createTranslator(settings.locale);
   const [passage, setPassage] = useState<TypingDeckPassageOption>(() =>
@@ -380,7 +388,7 @@ export function TypingRaceSoloScreen({
           </Link>
           <div className="flex items-center gap-3">
             <span className="font-mono text-[12px] text-[#aaa]">
-              {deckState.selectedDeck.title} · {passage.title}
+              {activeDeckTitle} · {passage.title}
             </span>
             <TypingBgmButton />
             <TypingSettingsButton />
