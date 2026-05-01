@@ -162,6 +162,7 @@ export type TypingRaceSeed = {
   passageId: string;
   prompt: string;
   roundLabel: string;
+  seedToken?: string;
   deckId?: string;
   deckVisibility?: TypingDeckVisibility;
   lobbyDeckTitle?: string;
@@ -185,6 +186,7 @@ export type TypingRoomSummary = TypingRoomSettings & {
   roomCode: string;
   status: TypingRoomStatus;
   currentParticipants: number;
+  hostLabel?: string;
   createdAt: number;
 };
 

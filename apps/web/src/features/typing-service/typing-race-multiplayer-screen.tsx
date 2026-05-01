@@ -199,7 +199,8 @@ export function TypingRaceMultiplayerScreen({ race }: TypingRaceMultiplayerScree
   const roomParticipants = race.roomSnapshot?.participants ?? [];
   const myResult = results.find((result) => result.userId === race.mySeat);
   const hasResults = results.length > 0;
-  const showResults = hasResults || race.roomSnapshot?.status === TYPING_ROOM_STATUS.FINISHED;
+  const showResults =
+    Boolean(myResult) || race.roomSnapshot?.status === TYPING_ROOM_STATUS.FINISHED;
 
   return (
     <div className="min-h-screen bg-white text-[#111]">
@@ -238,7 +239,12 @@ export function TypingRaceMultiplayerScreen({ race }: TypingRaceMultiplayerScree
           <span className="text-[18px] font-bold text-[#111]">{accuracy}%</span>
           <span className="text-[#ddd]">·</span>
           <span className="text-[#888]">progress</span>
-          <span className="text-[18px] font-bold text-[#111]">{progress}%</span>
+          <span
+            aria-label="내 진행률"
+            className="text-[18px] font-bold text-[#111]"
+          >
+            {progress}%
+          </span>
           <span className="text-[#ddd]">·</span>
           <span className="text-[#888]">mistakes</span>
           <span className="text-[18px] font-bold text-[#111]">{mistakeCount}</span>
@@ -253,7 +259,11 @@ export function TypingRaceMultiplayerScreen({ race }: TypingRaceMultiplayerScree
             {myResult && <span className="text-[#ff6b35]">현재 {myResult.rank}위</span>}
           </div>
           {roomParticipants.map((participant) => (
-            <div key={participant.id} className="grid gap-1">
+            <div
+              key={participant.id}
+              aria-label={`${participant.label} 진행률`}
+              className="grid gap-1"
+            >
               <div className="flex items-center justify-between text-[12px] text-[#666]">
                 <span>{participant.label}{participant.id === race.mySeat ? " (나)" : ""}</span>
                 <span>{participant.progress}% · {participant.cpm} CPM · 정확도 {participant.accuracy}%</span>

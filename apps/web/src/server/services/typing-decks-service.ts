@@ -1,4 +1,4 @@
-import { randomInt } from "node:crypto";
+import { createHmac, randomInt } from "node:crypto";
 
 import { customAlphabet } from "nanoid";
 import { and, asc, desc, eq, or, sql } from "drizzle-orm";
@@ -712,6 +712,39 @@ function toLobbyDeckTitle(deck: TypingDeckDto): string {
     : deck.title;
 }
 
+type UnsignedTypingRaceSeed = Omit<TypingRaceSeedDto, "seedToken">;
+
+const TYPING_RACE_SEED_FALLBACK_SECRET =
+  "yeon-local-typing-race-seed-secret";
+
+function getTypingRaceSeedSigningSecret() {
+  return (
+    process.env.TYPING_RACE_SEED_SECRET?.trim() ||
+    process.env.AUTH_SECRET?.trim() ||
+    TYPING_RACE_SEED_FALLBACK_SECRET
+  );
+}
+
+function raceSeedSigningPayload(seed: UnsignedTypingRaceSeed) {
+  return JSON.stringify({
+    passageId: seed.passageId,
+    prompt: seed.prompt,
+    roundLabel: seed.roundLabel,
+    deckId: seed.deckId,
+    deckVisibility: seed.deckVisibility,
+    lobbyDeckTitle: seed.lobbyDeckTitle,
+    participantDeckTitle: seed.participantDeckTitle,
+    languageTag: seed.languageTag,
+  });
+}
+
+function signTypingRaceSeed(seed: UnsignedTypingRaceSeed) {
+  const digest = createHmac("sha256", getTypingRaceSeedSigningSecret())
+    .update(raceSeedSigningPayload(seed))
+    .digest("base64url");
+  return `v1.${digest}`;
+}
+
 export async function createTypingRaceSeed(
   currentUserId: string | null,
   deckPublicId: string,
@@ -720,7 +753,7 @@ export async function createTypingRaceSeed(
   const detail = await getTypingDeckDetail(currentUserId, deckPublicId);
   const passage = pickPassage(detail.passages, body.passageId);
 
-  return {
+  const seed: UnsignedTypingRaceSeed = {
     passageId: passage.id,
     prompt: passage.prompt,
     roundLabel: passage.title ?? detail.deck.title,
@@ -729,5 +762,10 @@ export async function createTypingRaceSeed(
     lobbyDeckTitle: toLobbyDeckTitle(detail.deck),
     participantDeckTitle: detail.deck.title,
     languageTag: detail.deck.languageTag,
+  };
+
+  return {
+    ...seed,
+    seedToken: signTypingRaceSeed(seed),
   };
 }

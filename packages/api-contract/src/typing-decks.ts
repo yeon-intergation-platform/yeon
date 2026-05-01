@@ -206,6 +206,7 @@ export const typingRaceSeedDtoSchema = z.object({
   passageId: z.string(),
   prompt: z.string(),
   roundLabel: z.string(),
+  seedToken: z.string().min(1).optional(),
   deckId: z.string(),
   deckVisibility: typingRaceSeedVisibilitySchema,
   lobbyDeckTitle: z.string(),

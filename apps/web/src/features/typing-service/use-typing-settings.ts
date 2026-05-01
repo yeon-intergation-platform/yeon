@@ -228,6 +228,7 @@ function normalizeRaceSeed(
     prompt,
     roundLabel:
       asString(source.roundLabel) ?? asString(source.title) ?? deck.title,
+    seedToken: asString(source.seedToken) ?? undefined,
     deckId: asString(source.deckId) ?? deck.id,
     deckVisibility: normalizeVisibility({ ...deck, ...source }),
     lobbyDeckTitle:

@@ -493,6 +493,14 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
           >
             <Copy size={14} /> {copied ? "초대 링크 복사됨" : "초대 링크 복사"}
           </button>
+          <label className="grid gap-1.5 text-[12px] font-semibold text-text-secondary">
+            초대 링크
+            <input
+              readOnly
+              value={inviteUrl}
+              className="w-full rounded-2xl border border-border bg-surface-2 px-3 py-2 font-mono text-[12px] text-text"
+            />
+          </label>
 
           <div className="rounded-2xl border border-dashed border-border-light bg-surface-2 p-4 text-[13px] leading-6 text-text-secondary">
             <p className="flex items-center gap-2 font-bold text-text">

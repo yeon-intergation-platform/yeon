@@ -107,19 +107,31 @@ export function TypingRoomLobbyScreen() {
   const [roundCount, setRoundCount] = useState<number>(1);
   const [mode, setMode] = useState<TypingRoomMode>(TYPING_ROOM_MODE.FINISH);
   const deckState = useSelectedTypingDeck(language);
+  const roomDeckOptions = useMemo(
+    () => deckState.decks.filter((deck) => deck.visibility !== "private"),
+    [deckState.decks],
+  );
   const [selectedDeckId, setSelectedDeckId] = useState(
     deckState.selectedDeckId,
   );
 
   useEffect(() => {
-    setSelectedDeckId(deckState.selectedDeckId);
-  }, [deckState.selectedDeckId, language]);
+    const selectedDeckIsRoomSafe = roomDeckOptions.some(
+      (deck) => deck.id === deckState.selectedDeckId,
+    );
+    setSelectedDeckId(
+      selectedDeckIsRoomSafe
+        ? deckState.selectedDeckId
+        : (roomDeckOptions[0]?.id ?? deckState.selectedDeckId),
+    );
+  }, [deckState.selectedDeckId, language, roomDeckOptions]);
 
   const selectedDeck = useMemo(
     () =>
-      deckState.decks.find((deck) => deck.id === selectedDeckId) ??
+      roomDeckOptions.find((deck) => deck.id === selectedDeckId) ??
+      roomDeckOptions[0] ??
       deckState.selectedDeck,
-    [deckState.decks, deckState.selectedDeck, selectedDeckId],
+    [deckState.selectedDeck, roomDeckOptions, selectedDeckId],
   );
 
   const generatedTitle = useMemo(() => {
@@ -254,8 +266,8 @@ export function TypingRoomLobbyScreen() {
                       </p>
                       <div className="mt-4 flex flex-wrap gap-2 text-[12px] font-semibold">
                         <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-3 py-1.5 text-text-secondary">
-                          <Crown size={13} className="text-amber" /> 방장{" "}
-                          {occupancy.hostCount}명
+                          <Crown size={13} className="text-amber" />{" "}
+                          {room.hostLabel ? `${room.hostLabel}님의 방` : `방장 ${occupancy.hostCount}명`}
                         </span>
                         <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-3 py-1.5 text-text-secondary">
                           <Users size={13} className="text-accent" /> 참가자{" "}
@@ -397,7 +409,7 @@ export function TypingRoomLobbyScreen() {
                 onChange={(event) => setSelectedDeckId(event.target.value)}
                 className="rounded-xl border border-border bg-surface px-3 py-2.5 text-[14px] font-medium text-text outline-none transition-colors focus:border-accent-border"
               >
-                {deckState.decks.map((deck) => (
+                {roomDeckOptions.map((deck) => (
                   <option key={deck.id} value={deck.id}>
                     {deck.title}
                     {deck.visibility === "private"
@@ -411,7 +423,8 @@ export function TypingRoomLobbyScreen() {
               <span className="text-[11px] font-medium text-text-dim">
                 {deckState.loading
                   ? "덱을 불러오는 중..."
-                  : (deckState.error ?? `선택: ${selectedDeck.title}`)}
+                  : (deckState.error ??
+                    `선택: ${selectedDeck.title} · 비공개 내 덱은 공개 타자방에서 제외됩니다.`)}
               </span>
             </label>
 

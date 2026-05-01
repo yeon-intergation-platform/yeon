@@ -86,6 +86,7 @@ describe("typing-decks-service default decks", () => {
 
     expect(raceSeed.deckVisibility).toBe(TYPING_DECK_SOURCE.default);
     expect(raceSeed.lobbyDeckTitle).toBe(raceSeed.participantDeckTitle);
+    expect(raceSeed.seedToken).toMatch(/^v1\./);
     expect(raceSeed.prompt.length).toBeGreaterThan(0);
   });
 });

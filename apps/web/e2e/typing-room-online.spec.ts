@@ -102,20 +102,21 @@ test.describe("온라인 타자방 2-browser 검증", () => {
       await host.page.getByLabel("최대 인원").selectOption("2");
       await host.page.getByRole("button", { name: "타자방 만들기" }).click();
 
-      await expect(host.page.getByText(HOST_NAME)).toBeVisible({
-        timeout: 15_000,
-      });
+      await expect(
+        host.page.getByText(HOST_NAME, { exact: true }),
+      ).toBeVisible({ timeout: 15_000 });
       await expect(host.page.getByText(/Players\s*1\s*\/\s*2/)).toBeVisible();
-      const invitePath = new URL(host.page.url()).pathname;
+      const inviteUrl = await host.page.getByLabel("초대 링크").inputValue();
+      const invitePath = new URL(inviteUrl).pathname;
       expect(invitePath).toMatch(/\/typing-service\/rooms\/[^/]+$/);
 
       await guest.page.goto(invitePath);
-      await expect(guest.page.getByText(GUEST_NAME)).toBeVisible({
-        timeout: 15_000,
-      });
-      await expect(host.page.getByText(GUEST_NAME)).toBeVisible({
-        timeout: 15_000,
-      });
+      await expect(
+        guest.page.getByText(GUEST_NAME, { exact: true }),
+      ).toBeVisible({ timeout: 15_000 });
+      await expect(
+        host.page.getByText(GUEST_NAME, { exact: true }),
+      ).toBeVisible({ timeout: 15_000 });
       await expect(host.page.getByText(/Players\s*2\s*\/\s*2/)).toBeVisible();
 
       await guest.page.getByRole("button", { name: "준비하기" }).click();
@@ -135,12 +136,13 @@ test.describe("온라인 타자방 2-browser 검증", () => {
       await host.page
         .getByLabel("타자 입력 영역")
         .fill(hostPrompt.slice(0, Math.ceil(hostPrompt.length / 2)));
-      await expect(host.page.getByText(/progress\s+[1-9][0-9]?%/)).toBeVisible({
-        timeout: 3_000,
-      });
+      await expect(host.page.getByLabel("내 진행률")).toHaveText(
+        /[1-9][0-9]?%/,
+        { timeout: 3_000 },
+      );
       await expect(
-        guest.page.getByText(new RegExp(`${HOST_NAME}.*[1-9][0-9]?%`, "s")),
-      ).toBeVisible({ timeout: 5_000 });
+        guest.page.getByLabel(`${HOST_NAME} 진행률`),
+      ).toContainText(/[1-9][0-9]?%/, { timeout: 5_000 });
 
       await host.page.getByLabel("타자 입력 영역").fill(hostPrompt);
       await guest.page.getByLabel("타자 입력 영역").fill(guestPrompt);
