@@ -31,6 +31,8 @@ export { sheetIntegrations } from "./sheet-integrations";
 export { sheetIntegrationMemberSnapshots } from "./sheet-integration-member-snapshots";
 export { spaceMemberBoards } from "./space-member-boards";
 export { spaces } from "./spaces";
+export { typingDecks } from "./typing-decks";
+export { typingDeckPassages } from "./typing-deck-passages";
 export { spaceTemplates } from "./space-templates";
 export { userIdentities } from "./user-identities";
 export { onedriveTokens } from "./onedrive-tokens";

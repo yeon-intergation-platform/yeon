@@ -1,5 +1,7 @@
 import {
   RACE_EVENTS,
+  TYPING_DECK_LANGUAGE_TAG,
+  TYPING_DECK_VISIBILITY,
   TYPING_RACE_DEFAULTS,
   TYPING_RACE_LANE_ACCENTS,
   TYPING_RACE_LANE_ROLE,
@@ -19,8 +21,11 @@ import {
   type MatchJoinMessage,
   type RaceFinishMessage,
   type RaceProgressMessage,
+  type RaceSeedMessage,
   type RoomReadyMessage,
   type TypingRaceLaneSnapshot,
+  type TypingDeckLanguageTag,
+  type TypingDeckVisibility,
   type TypingRaceSnapshot,
   type TypingRaceStage,
   type TypingResultSnapshot,
@@ -59,6 +64,11 @@ const DEMO_PROMPTS: Record<TypingRoomLanguage, string> = {
 };
 
 const ROUND_LABEL_ID = "flow-focus"; // 클라이언트가 번역해 표시
+const DEFAULT_DECK_TITLE = "기본 덱";
+const PRIVATE_DECK_LOBBY_TITLE = "비공개 덱";
+const MAX_SEED_PROMPT_LENGTH = 4000;
+const MAX_SEED_ID_LENGTH = 120;
+const MAX_SEED_LABEL_LENGTH = 120;
 
 const BENCHMARKS = [
   { id: "benchmark-1", label: "Guest", accent: TYPING_RACE_LANE_ACCENTS[1], wpm: 265 },
@@ -91,6 +101,24 @@ function clampText(value: string | undefined, fallback: string, maxLength: numbe
   return trimmed.slice(0, maxLength);
 }
 
+function optionalText(value: unknown, maxLength: number) {
+  return typeof value === "string" && value.trim().length > 0
+    ? value.trim().slice(0, maxLength)
+    : undefined;
+}
+
+function normalizeDeckVisibility(value: unknown): TypingDeckVisibility | undefined {
+  return Object.values(TYPING_DECK_VISIBILITY).includes(value as TypingDeckVisibility)
+    ? (value as TypingDeckVisibility)
+    : undefined;
+}
+
+function normalizeDeckLanguageTag(value: unknown): TypingDeckLanguageTag | undefined {
+  return Object.values(TYPING_DECK_LANGUAGE_TAG).includes(value as TypingDeckLanguageTag)
+    ? (value as TypingDeckLanguageTag)
+    : undefined;
+}
+
 function createRoomCode() {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
@@ -103,6 +131,17 @@ function normalizeSettings(options?: TypingRoomCreateMessage): TypingRoomSetting
     : options?.locale === "en"
       ? TYPING_ROOM_LANGUAGE.EN
       : DEFAULT_ROOM_SETTINGS.language;
+
+  const seedVisibility = normalizeDeckVisibility(options?.raceSeed?.deckVisibility);
+  const selectedDeckVisibility = normalizeDeckVisibility(options?.selectedDeckVisibility)
+    ?? seedVisibility;
+  const selectedDeckLanguageTag = normalizeDeckLanguageTag(options?.selectedDeckLanguageTag)
+    ?? normalizeDeckLanguageTag(options?.raceSeed?.languageTag);
+  const selectedDeckId = optionalText(options?.selectedDeckId, MAX_SEED_ID_LENGTH)
+    ?? optionalText(options?.raceSeed?.deckId, MAX_SEED_ID_LENGTH);
+  const seedLobbyTitle = optionalText(options?.raceSeed?.lobbyDeckTitle, MAX_SEED_LABEL_LENGTH);
+  const suppliedLobbyTitle = optionalText(options?.lobbyDeckTitle, MAX_SEED_LABEL_LENGTH)
+    ?? seedLobbyTitle;
 
   return {
     title: clampText(options?.title, DEFAULT_ROOM_SETTINGS.title, 40),
@@ -120,6 +159,60 @@ function normalizeSettings(options?: TypingRoomCreateMessage): TypingRoomSetting
       : DEFAULT_ROOM_SETTINGS.difficulty,
     roundCount: TYPING_RACE_DEFAULTS.sliceARoundCount,
     mode: TYPING_ROOM_MODE.FINISH,
+    selectedDeckId,
+    selectedDeckVisibility,
+    selectedDeckLanguageTag,
+    lobbyDeckTitle: selectedDeckVisibility === TYPING_DECK_VISIBILITY.PRIVATE
+      ? PRIVATE_DECK_LOBBY_TITLE
+      : suppliedLobbyTitle,
+  };
+}
+
+function createFallbackRaceSeed(language: TypingRoomLanguage): RaceSeedMessage {
+  return {
+    passageId: ROUND_LABEL_ID,
+    prompt: DEMO_PROMPTS[language],
+    roundLabel: ROUND_LABEL_ID,
+    deckVisibility: TYPING_DECK_VISIBILITY.DEFAULT,
+    lobbyDeckTitle: DEFAULT_DECK_TITLE,
+    participantDeckTitle: DEFAULT_DECK_TITLE,
+    languageTag: language === TYPING_ROOM_LANGUAGE.EN
+      ? TYPING_DECK_LANGUAGE_TAG.EN
+      : TYPING_DECK_LANGUAGE_TAG.KO,
+  };
+}
+
+function normalizeRaceSeed(
+  suppliedSeed: TypingRoomCreateMessage["raceSeed"] | undefined,
+  language: TypingRoomLanguage,
+): RaceSeedMessage {
+  const fallback = createFallbackRaceSeed(language);
+  const prompt = optionalText(suppliedSeed?.prompt, MAX_SEED_PROMPT_LENGTH);
+
+  if (!prompt) {
+    return fallback;
+  }
+
+  const deckVisibility = normalizeDeckVisibility(suppliedSeed?.deckVisibility)
+    ?? fallback.deckVisibility;
+  const participantDeckTitle = optionalText(
+    suppliedSeed?.participantDeckTitle,
+    MAX_SEED_LABEL_LENGTH,
+  ) ?? optionalText(suppliedSeed?.lobbyDeckTitle, MAX_SEED_LABEL_LENGTH);
+  const lobbyDeckTitle = deckVisibility === TYPING_DECK_VISIBILITY.PRIVATE
+    ? PRIVATE_DECK_LOBBY_TITLE
+    : optionalText(suppliedSeed?.lobbyDeckTitle, MAX_SEED_LABEL_LENGTH)
+      ?? participantDeckTitle;
+
+  return {
+    passageId: optionalText(suppliedSeed?.passageId, MAX_SEED_ID_LENGTH) ?? fallback.passageId,
+    prompt,
+    roundLabel: optionalText(suppliedSeed?.roundLabel, MAX_SEED_LABEL_LENGTH) ?? fallback.roundLabel,
+    deckId: optionalText(suppliedSeed?.deckId, MAX_SEED_ID_LENGTH),
+    deckVisibility,
+    lobbyDeckTitle,
+    participantDeckTitle,
+    languageTag: normalizeDeckLanguageTag(suppliedSeed?.languageTag) ?? fallback.languageTag,
   };
 }
 
@@ -131,6 +224,8 @@ export class TypingRaceRoom extends Room {
   private readonly benchmarks = new Map<string, RoomParticipant>();
 
   private settings: TypingRoomSettings = DEFAULT_ROOM_SETTINGS;
+
+  private roomSeed: RaceSeedMessage = createFallbackRaceSeed(DEFAULT_ROOM_SETTINGS.language);
 
   private status: TypingRoomStatus = TYPING_ROOM_STATUS.COUNTDOWN;
 
@@ -153,6 +248,8 @@ export class TypingRaceRoom extends Room {
   onCreate(options?: TypingRoomCreateMessage) {
     this.lobbyMode = options?.roomMode === "lobby";
     this.settings = normalizeSettings(options);
+    this.roomSeed = normalizeRaceSeed(options?.raceSeed, this.settings.language);
+    this.settings = this.applyRoomSeedMetadata(this.settings, this.roomSeed);
     this.maxClients = this.settings.maxParticipants;
     this.status = this.lobbyMode ? TYPING_ROOM_STATUS.WAITING : TYPING_ROOM_STATUS.COUNTDOWN;
     this.countdownRemaining = this.lobbyMode
@@ -193,11 +290,7 @@ export class TypingRaceRoom extends Room {
   onJoin(client: Client, options: MatchJoinMessage) {
     this.registerParticipant(client, options);
     this.clock.setTimeout(() => {
-      client.send(RACE_EVENTS.RACE_SEED, {
-        passageId: ROUND_LABEL_ID,
-        prompt: DEMO_PROMPTS[this.settings.language],
-        roundLabel: ROUND_LABEL_ID,
-      });
+      client.send(RACE_EVENTS.RACE_SEED, this.roomSeed);
       client.send(RACE_EVENTS.ROOM_STATE, this.createRoomSnapshot());
       client.send(RACE_EVENTS.RACE_STATE, this.createSnapshot());
     }, 50);
@@ -265,6 +358,7 @@ export class TypingRaceRoom extends Room {
 
     this.status = TYPING_ROOM_STATUS.COUNTDOWN;
     this.resetRaceClock(TYPING_RACE_DEFAULTS.roomCountdownSeconds);
+    this.broadcast(RACE_EVENTS.RACE_SEED, this.roomSeed);
     this.lock();
     this.syncState();
   }
@@ -384,7 +478,7 @@ export class TypingRaceRoom extends Room {
 
     if (this.stage === TYPING_RACE_STAGE.LIVE) {
       const elapsedSeconds = (Date.now() - this.startedAt) / 1000;
-      const promptChars = Math.max(1, Array.from(DEMO_PROMPTS[this.settings.language]).length);
+      const promptChars = Math.max(1, Array.from(this.roomSeed.prompt).length);
 
       this.benchmarks.forEach((benchmark) => {
         const charsTyped = elapsedSeconds * (benchmark.cpm / 60);
@@ -393,6 +487,29 @@ export class TypingRaceRoom extends Room {
     }
 
     this.syncState();
+  }
+
+  private applyRoomSeedMetadata(
+    settings: TypingRoomSettings,
+    seed: RaceSeedMessage,
+  ): TypingRoomSettings {
+    const selectedDeckVisibility = normalizeDeckVisibility(settings.selectedDeckVisibility)
+      ?? normalizeDeckVisibility(seed.deckVisibility);
+    const lobbyDeckTitle = selectedDeckVisibility === TYPING_DECK_VISIBILITY.PRIVATE
+      ? PRIVATE_DECK_LOBBY_TITLE
+      : optionalText(settings.lobbyDeckTitle, MAX_SEED_LABEL_LENGTH)
+        ?? optionalText(seed.lobbyDeckTitle, MAX_SEED_LABEL_LENGTH)
+        ?? optionalText(seed.participantDeckTitle, MAX_SEED_LABEL_LENGTH);
+
+    return {
+      ...settings,
+      selectedDeckId: optionalText(settings.selectedDeckId, MAX_SEED_ID_LENGTH)
+        ?? optionalText(seed.deckId, MAX_SEED_ID_LENGTH),
+      selectedDeckVisibility,
+      selectedDeckLanguageTag: normalizeDeckLanguageTag(settings.selectedDeckLanguageTag)
+        ?? normalizeDeckLanguageTag(seed.languageTag),
+      lobbyDeckTitle,
+    };
   }
 
   private createSnapshot(): TypingRaceSnapshot {
@@ -419,7 +536,7 @@ export class TypingRaceRoom extends Room {
       countdownRemaining: this.countdownRemaining,
       headline: "",
       subheadline: "",
-      roundLabel: ROUND_LABEL_ID,
+      roundLabel: this.roomSeed.roundLabel,
       lanes,
     };
   }
