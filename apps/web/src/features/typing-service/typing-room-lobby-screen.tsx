@@ -41,7 +41,10 @@ const ROUND_OPTIONS = [1] as const;
 function getRoomOccupancy(room: TypingRoomSummary) {
   const hostCount = room.currentParticipants > 0 ? 1 : 0;
   const guestCount = Math.max(room.currentParticipants - hostCount, 0);
-  const openSeats = Math.max(room.maxParticipants - room.currentParticipants, 0);
+  const openSeats = Math.max(
+    room.maxParticipants - room.currentParticipants,
+    0,
+  );
   const isFull = openSeats === 0;
 
   return {
