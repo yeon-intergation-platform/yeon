@@ -51,3 +51,8 @@ gameServer.define(TYPING_RACE_ROOM_NAME, TypingRaceRoom).filterBy(["locale", "ro
 
 await gameServer.listen(port, "0.0.0.0");
 console.log(`typing-race room server listening on ${port}`);
+
+// Colyseus' ESM bootstrap can become quiescent in local `tsx` runs before a
+// browser connects. Keep a tiny active handle so Playwright/local dev servers
+// remain reachable after the "listening" log line.
+setInterval(() => undefined, 60_000);

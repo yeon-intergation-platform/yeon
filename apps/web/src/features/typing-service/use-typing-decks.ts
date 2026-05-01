@@ -103,11 +103,21 @@ export function typingDeckDetailQueryKey(deckId: string | null) {
   return ["typing-deck", deckId] as const;
 }
 
-export function useTypingDecks(scope: TypingDeckScope) {
+function withAdminQuery(path: string, adminMode: boolean) {
+  if (!adminMode) {
+    return path;
+  }
+  return `${path}${path.includes("?") ? "&" : "?"}admin=1`;
+}
+
+export function useTypingDecks(scope: TypingDeckScope, adminMode = false) {
   return useQuery({
-    queryKey: typingDecksQueryKey(scope),
+    queryKey: [...typingDecksQueryKey(scope), { adminMode }] as const,
     queryFn: async () => {
       const params = new URLSearchParams({ scope });
+      if (adminMode) {
+        params.set("admin", "1");
+      }
       return typingDecksFetchJson<TypingDeckListResponse>(
         `/api/v1/typing-decks?${params.toString()}`,
         { method: "GET" },
@@ -117,15 +127,15 @@ export function useTypingDecks(scope: TypingDeckScope) {
   });
 }
 
-export function useTypingDeckDetail(deckId: string | null) {
+export function useTypingDeckDetail(deckId: string | null, adminMode = false) {
   return useQuery({
-    queryKey: typingDeckDetailQueryKey(deckId),
+    queryKey: [...typingDeckDetailQueryKey(deckId), { adminMode }] as const,
     queryFn: async () => {
       if (!deckId) {
         throw new Error("덱을 선택해주세요.");
       }
       return typingDecksFetchJson<TypingDeckDetailResponse>(
-        `/api/v1/typing-decks/${deckId}`,
+        withAdminQuery(`/api/v1/typing-decks/${deckId}`, adminMode),
         { method: "GET" },
         "타자 덱을 불러오지 못했습니다.",
       );
@@ -150,12 +160,12 @@ function invalidateDeck(
   invalidateAllDeckLists(queryClient);
 }
 
-export function useCreateTypingDeck() {
+export function useCreateTypingDeck(adminMode = false) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (body: CreateTypingDeckBody) => {
       const data = await typingDecksFetchJson<TypingDeckResponse>(
-        "/api/v1/typing-decks",
+        withAdminQuery("/api/v1/typing-decks", adminMode),
         {
           method: "POST",
           headers: { "content-type": "application/json" },
@@ -169,12 +179,12 @@ export function useCreateTypingDeck() {
   });
 }
 
-export function useUpdateTypingDeck(deckId: string) {
+export function useUpdateTypingDeck(deckId: string, adminMode = false) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (body: UpdateTypingDeckBody) => {
       const data = await typingDecksFetchJson<TypingDeckResponse>(
-        `/api/v1/typing-decks/${deckId}`,
+        withAdminQuery(`/api/v1/typing-decks/${deckId}`, adminMode),
         {
           method: "PATCH",
           headers: { "content-type": "application/json" },
@@ -188,12 +198,12 @@ export function useUpdateTypingDeck(deckId: string) {
   });
 }
 
-export function useDeleteTypingDeck() {
+export function useDeleteTypingDeck(adminMode = false) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (deckId: string) => {
       await typingDecksFetchVoid(
-        `/api/v1/typing-decks/${deckId}`,
+        withAdminQuery(`/api/v1/typing-decks/${deckId}`, adminMode),
         { method: "DELETE" },
         "타자 덱을 삭제하지 못했습니다.",
       );
@@ -203,12 +213,12 @@ export function useDeleteTypingDeck() {
   });
 }
 
-export function useCreateTypingDeckPassage(deckId: string) {
+export function useCreateTypingDeckPassage(deckId: string, adminMode = false) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (body: CreateTypingDeckPassageBody) => {
       const data = await typingDecksFetchJson<TypingDeckPassageResponse>(
-        `/api/v1/typing-decks/${deckId}/passages`,
+        withAdminQuery(`/api/v1/typing-decks/${deckId}/passages`, adminMode),
         {
           method: "POST",
           headers: { "content-type": "application/json" },
@@ -222,14 +232,20 @@ export function useCreateTypingDeckPassage(deckId: string) {
   });
 }
 
-export function useBulkCreateTypingDeckPassages(deckId: string) {
+export function useBulkCreateTypingDeckPassages(
+  deckId: string,
+  adminMode = false,
+) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (body: CreateTypingDeckPassagesBody) => {
       const data = await typingDecksFetchJson<{
         passages: TypingDeckPassageDto[];
       }>(
-        `/api/v1/typing-decks/${deckId}/passages/bulk`,
+        withAdminQuery(
+          `/api/v1/typing-decks/${deckId}/passages/bulk`,
+          adminMode,
+        ),
         {
           method: "POST",
           headers: { "content-type": "application/json" },
@@ -243,7 +259,7 @@ export function useBulkCreateTypingDeckPassages(deckId: string) {
   });
 }
 
-export function useUpdateTypingDeckPassage(deckId: string) {
+export function useUpdateTypingDeckPassage(deckId: string, adminMode = false) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (params: {
@@ -251,7 +267,10 @@ export function useUpdateTypingDeckPassage(deckId: string) {
       body: UpdateTypingDeckPassageBody;
     }) => {
       const data = await typingDecksFetchJson<TypingDeckPassageResponse>(
-        `/api/v1/typing-decks/${deckId}/passages/${params.passageId}`,
+        withAdminQuery(
+          `/api/v1/typing-decks/${deckId}/passages/${params.passageId}`,
+          adminMode,
+        ),
         {
           method: "PATCH",
           headers: { "content-type": "application/json" },
@@ -265,12 +284,15 @@ export function useUpdateTypingDeckPassage(deckId: string) {
   });
 }
 
-export function useDeleteTypingDeckPassage(deckId: string) {
+export function useDeleteTypingDeckPassage(deckId: string, adminMode = false) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (passageId: string) => {
       await typingDecksFetchVoid(
-        `/api/v1/typing-decks/${deckId}/passages/${passageId}`,
+        withAdminQuery(
+          `/api/v1/typing-decks/${deckId}/passages/${passageId}`,
+          adminMode,
+        ),
         { method: "DELETE" },
         "문단을 삭제하지 못했습니다.",
       );

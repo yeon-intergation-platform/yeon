@@ -1,4 +1,4 @@
-import { randomInt } from "node:crypto";
+import { createHmac, randomInt } from "node:crypto";
 
 import { customAlphabet } from "nanoid";
 import { and, asc, desc, eq, or, sql } from "drizzle-orm";
@@ -29,21 +29,18 @@ import {
 import { getDb } from "@/server/db";
 import { typingDeckPassages, typingDecks } from "@/server/db/schema";
 
+import {
+  DEFAULT_TYPING_DECKS,
+  type DefaultTypingDeck,
+} from "./default-typing-decks";
 import { ServiceError } from "./service-error";
 
 type TypingDeckRow = typeof typingDecks.$inferSelect;
 type TypingDeckPassageRow = typeof typingDeckPassages.$inferSelect;
-type DefaultTypingDeck = Omit<
-  TypingDeckDto,
-  "passageCount" | "isOwner" | "canEdit" | "createdAt" | "updatedAt"
-> & {
-  createdAt: string;
-  updatedAt: string;
-  passages: TypingDeckPassageDto[];
+type TypingDeckAccessOptions = {
+  adminMode?: boolean;
 };
-
 const PRIVATE_DECK_LOBBY_TITLE = "비공개 덱";
-const STATIC_DEFAULT_CREATED_AT = "2026-05-01T00:00:00.000Z";
 const idBody = customAlphabet(
   "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_-",
   12,
@@ -56,97 +53,6 @@ function generateTypingDeckId() {
 function generateTypingPassageId() {
   return `tps_${idBody()}`;
 }
-
-function defaultPassage(
-  id: string,
-  title: string,
-  prompt: string,
-  sortOrder: number,
-  overrides: Partial<
-    Pick<TypingDeckPassageDto, "textType" | "difficulty">
-  > = {},
-): TypingDeckPassageDto {
-  return {
-    id,
-    title,
-    prompt,
-    textType: overrides.textType ?? TYPING_PASSAGE_TEXT_TYPES.short,
-    difficulty: overrides.difficulty ?? TYPING_PASSAGE_DIFFICULTIES.normal,
-    sortOrder,
-    createdAt: STATIC_DEFAULT_CREATED_AT,
-    updatedAt: STATIC_DEFAULT_CREATED_AT,
-  };
-}
-
-export const DEFAULT_TYPING_DECKS: readonly DefaultTypingDeck[] = [
-  {
-    id: "default-ko-daily-rhythm",
-    title: "한국어 기본 리듬",
-    description:
-      "짧은 문장과 자연스러운 호흡으로 정확도와 속도를 함께 기르는 기본 한국어 덱입니다.",
-    languageTag: TYPING_DECK_LANGUAGE_TAGS.ko,
-    visibility: TYPING_DECK_VISIBILITY.public,
-    source: TYPING_DECK_SOURCE.default,
-    createdAt: STATIC_DEFAULT_CREATED_AT,
-    updatedAt: STATIC_DEFAULT_CREATED_AT,
-    passages: [
-      defaultPassage(
-        "default-ko-daily-rhythm-01",
-        "정확도 워밍업",
-        "오늘은 빠르게 치기보다 정확하게 끝까지 치는 연습을 합니다. 손끝에 힘을 빼고 문장의 흐름을 천천히 따라가세요.",
-        0,
-        { difficulty: TYPING_PASSAGE_DIFFICULTIES.easy },
-      ),
-      defaultPassage(
-        "default-ko-daily-rhythm-02",
-        "업무 메모",
-        "회의 전에 핵심 질문을 세 가지로 정리하면 대화가 훨씬 선명해집니다. 기록은 짧게 남기고 결정 사항은 바로 공유합니다.",
-        1,
-      ),
-      defaultPassage(
-        "default-ko-daily-rhythm-03",
-        "긴 호흡",
-        "좋은 연습은 같은 문장을 무작정 반복하는 것이 아니라, 낯선 문장에서도 일정한 리듬을 유지하는 감각을 기르는 데서 시작됩니다.",
-        2,
-        { textType: TYPING_PASSAGE_TEXT_TYPES.long },
-      ),
-    ],
-  },
-  {
-    id: "default-en-flow-basics",
-    title: "English Flow Basics",
-    description:
-      "A default English deck for steady rhythm, word grouping, and comfortable typing flow.",
-    languageTag: TYPING_DECK_LANGUAGE_TAGS.en,
-    visibility: TYPING_DECK_VISIBILITY.public,
-    source: TYPING_DECK_SOURCE.default,
-    createdAt: STATIC_DEFAULT_CREATED_AT,
-    updatedAt: STATIC_DEFAULT_CREATED_AT,
-    passages: [
-      defaultPassage(
-        "default-en-flow-basics-01",
-        "Flow warmup",
-        "Keep your eyes one word ahead and let your fingers follow the rhythm. Smooth typing begins with relaxed shoulders and steady breathing.",
-        0,
-        { difficulty: TYPING_PASSAGE_DIFFICULTIES.easy },
-      ),
-      defaultPassage(
-        "default-en-flow-basics-02",
-        "Product note",
-        "Small improvements compound when the team writes down decisions, checks the outcome, and keeps the next action visible to everyone.",
-        1,
-      ),
-      defaultPassage(
-        "default-en-flow-basics-03",
-        "Long cadence",
-        "Typing practice becomes more useful when each passage has a different cadence, because real work rarely arrives in perfectly repeated sentences.",
-        2,
-        { textType: TYPING_PASSAGE_TEXT_TYPES.long },
-      ),
-    ],
-  },
-];
-
 function toIso(value: Date): string {
   return value.toISOString();
 }
@@ -199,10 +105,12 @@ function toDeckDto(
   row: TypingDeckRow,
   passageCount: number,
   currentUserId: string | null,
+  options: TypingDeckAccessOptions = {},
 ): TypingDeckDto {
   const isOwner = Boolean(
     currentUserId && row.ownerUserId && currentUserId === row.ownerUserId,
   );
+  const canManage = Boolean(options.adminMode || isOwner);
 
   return {
     id: row.publicId,
@@ -213,7 +121,7 @@ function toDeckDto(
     source: toSource(row.source),
     passageCount,
     isOwner,
-    canEdit: isOwner && row.source === TYPING_DECK_SOURCE.user,
+    canEdit: canManage && row.source === TYPING_DECK_SOURCE.user,
     createdAt: toIso(row.createdAt),
     updatedAt: toIso(row.updatedAt),
   };
@@ -333,6 +241,7 @@ async function findDbDeckRow(
 async function findReadableDbDeckRow(
   currentUserId: string | null,
   deckPublicId: string,
+  options: TypingDeckAccessOptions = {},
 ): Promise<TypingDeckRow> {
   const row = await findDbDeckRow(deckPublicId);
   if (!row) {
@@ -342,7 +251,11 @@ async function findReadableDbDeckRow(
   const isOwner = Boolean(
     currentUserId && row.ownerUserId && currentUserId === row.ownerUserId,
   );
-  if (row.visibility === TYPING_DECK_VISIBILITY.public || isOwner) {
+  if (
+    options.adminMode ||
+    row.visibility === TYPING_DECK_VISIBILITY.public ||
+    isOwner
+  ) {
     return row;
   }
 
@@ -352,14 +265,18 @@ async function findReadableDbDeckRow(
 async function findOwnedDbDeckRow(
   currentUserId: string | null,
   deckPublicId: string,
+  options: TypingDeckAccessOptions = {},
 ): Promise<TypingDeckRow> {
   if (!currentUserId) {
     throw new ServiceError(401, "로그인이 필요합니다.");
   }
 
   const row = await findDbDeckRow(deckPublicId);
-  if (!row || row.ownerUserId !== currentUserId) {
+  if (!row || (!options.adminMode && row.ownerUserId !== currentUserId)) {
     throw new ServiceError(404, "타자 덱을 찾지 못했습니다.");
+  }
+  if (row.source !== TYPING_DECK_SOURCE.user) {
+    throw new ServiceError(403, "기본 덱은 수정할 수 없습니다.");
   }
   return row;
 }
@@ -368,8 +285,9 @@ async function findOwnedPassageRow(
   currentUserId: string | null,
   deckPublicId: string,
   passagePublicId: string,
+  options: TypingDeckAccessOptions = {},
 ): Promise<{ deck: TypingDeckRow; passage: TypingDeckPassageRow }> {
-  const deck = await findOwnedDbDeckRow(currentUserId, deckPublicId);
+  const deck = await findOwnedDbDeckRow(currentUserId, deckPublicId, options);
   const [passage] = await getDb()
     .select()
     .from(typingDeckPassages)
@@ -391,6 +309,7 @@ async function findOwnedPassageRow(
 export async function listTypingDecks(
   currentUserId: string | null,
   query: TypingDeckListQuery,
+  options: TypingDeckAccessOptions = {},
 ): Promise<TypingDeckDto[]> {
   if (query.scope === "mine" && !currentUserId) {
     throw new ServiceError(401, "로그인이 필요합니다.");
@@ -402,7 +321,10 @@ export async function listTypingDecks(
     whereParts.push(languageFilter);
   }
 
-  if (query.scope === "mine") {
+  if (options.adminMode && query.scope === "all") {
+    // Admin overview intentionally includes all DB-backed decks regardless of
+    // owner/visibility, while default decks are still prepended below.
+  } else if (query.scope === "mine") {
     whereParts.push(eq(typingDecks.ownerUserId, currentUserId!));
   } else if (query.scope === "public") {
     whereParts.push(eq(typingDecks.visibility, TYPING_DECK_VISIBILITY.public));
@@ -463,6 +385,7 @@ export async function listTypingDecks(
       },
       row.passageCount,
       currentUserId,
+      options,
     ),
   );
 
@@ -474,6 +397,7 @@ export async function listTypingDecks(
 export async function createTypingDeck(
   currentUserId: string | null,
   body: CreateTypingDeckBody,
+  options: TypingDeckAccessOptions = {},
 ): Promise<TypingDeckDto> {
   if (!currentUserId) {
     throw new ServiceError(401, "로그인이 필요합니다.");
@@ -498,12 +422,13 @@ export async function createTypingDeck(
     throw new ServiceError(500, "타자 덱을 생성하지 못했습니다.");
   }
 
-  return toDeckDto(row, 0, currentUserId);
+  return toDeckDto(row, 0, currentUserId, options);
 }
 
 export async function getTypingDeckDetail(
   currentUserId: string | null,
   deckPublicId: string,
+  options: TypingDeckAccessOptions = {},
 ): Promise<{ deck: TypingDeckDto; passages: TypingDeckPassageDto[] }> {
   const defaultDeck = findDefaultDeck(deckPublicId);
   if (defaultDeck) {
@@ -513,7 +438,11 @@ export async function getTypingDeckDetail(
     };
   }
 
-  const deckRow = await findReadableDbDeckRow(currentUserId, deckPublicId);
+  const deckRow = await findReadableDbDeckRow(
+    currentUserId,
+    deckPublicId,
+    options,
+  );
   const passages = await getDb()
     .select()
     .from(typingDeckPassages)
@@ -524,7 +453,7 @@ export async function getTypingDeckDetail(
     );
 
   return {
-    deck: toDeckDto(deckRow, passages.length, currentUserId),
+    deck: toDeckDto(deckRow, passages.length, currentUserId, options),
     passages: passages.map(toPassageDto),
   };
 }
@@ -533,8 +462,13 @@ export async function updateTypingDeck(
   currentUserId: string | null,
   deckPublicId: string,
   body: UpdateTypingDeckBody,
+  options: TypingDeckAccessOptions = {},
 ): Promise<TypingDeckDto> {
-  const existingDeck = await findOwnedDbDeckRow(currentUserId, deckPublicId);
+  const existingDeck = await findOwnedDbDeckRow(
+    currentUserId,
+    deckPublicId,
+    options,
+  );
   const updateFields: Partial<typeof typingDecks.$inferInsert> = {
     updatedAt: new Date(),
   };
@@ -569,14 +503,19 @@ export async function updateTypingDeck(
     .from(typingDeckPassages)
     .where(eq(typingDeckPassages.deckId, updated.id));
 
-  return toDeckDto(updated, count, currentUserId);
+  return toDeckDto(updated, count, currentUserId, options);
 }
 
 export async function deleteTypingDeck(
   currentUserId: string | null,
   deckPublicId: string,
+  options: TypingDeckAccessOptions = {},
 ): Promise<void> {
-  const existingDeck = await findOwnedDbDeckRow(currentUserId, deckPublicId);
+  const existingDeck = await findOwnedDbDeckRow(
+    currentUserId,
+    deckPublicId,
+    options,
+  );
   await getDb().delete(typingDecks).where(eq(typingDecks.id, existingDeck.id));
 }
 
@@ -602,8 +541,13 @@ export async function createTypingDeckPassage(
   currentUserId: string | null,
   deckPublicId: string,
   body: CreateTypingDeckPassageBody,
+  options: TypingDeckAccessOptions = {},
 ): Promise<TypingDeckPassageDto> {
-  const deckRow = await findOwnedDbDeckRow(currentUserId, deckPublicId);
+  const deckRow = await findOwnedDbDeckRow(
+    currentUserId,
+    deckPublicId,
+    options,
+  );
   const [{ count }] = await getDb()
     .select({
       count: sql<number>`count(${typingDeckPassages.id})::int`.mapWith(Number),
@@ -632,8 +576,13 @@ export async function createTypingDeckPassages(
   currentUserId: string | null,
   deckPublicId: string,
   body: CreateTypingDeckPassagesBody,
+  options: TypingDeckAccessOptions = {},
 ): Promise<TypingDeckPassageDto[]> {
-  const deckRow = await findOwnedDbDeckRow(currentUserId, deckPublicId);
+  const deckRow = await findOwnedDbDeckRow(
+    currentUserId,
+    deckPublicId,
+    options,
+  );
   const [{ count }] = await getDb()
     .select({
       count: sql<number>`count(${typingDeckPassages.id})::int`.mapWith(Number),
@@ -660,11 +609,13 @@ export async function updateTypingDeckPassage(
   deckPublicId: string,
   passagePublicId: string,
   body: UpdateTypingDeckPassageBody,
+  options: TypingDeckAccessOptions = {},
 ): Promise<TypingDeckPassageDto> {
   const { deck, passage } = await findOwnedPassageRow(
     currentUserId,
     deckPublicId,
     passagePublicId,
+    options,
   );
   const now = new Date();
   const updateFields: Partial<typeof typingDeckPassages.$inferInsert> = {
@@ -709,11 +660,13 @@ export async function deleteTypingDeckPassage(
   currentUserId: string | null,
   deckPublicId: string,
   passagePublicId: string,
+  options: TypingDeckAccessOptions = {},
 ): Promise<void> {
   const { deck, passage } = await findOwnedPassageRow(
     currentUserId,
     deckPublicId,
     passagePublicId,
+    options,
   );
   await getDb().transaction(async (tx) => {
     await tx
@@ -759,6 +712,39 @@ function toLobbyDeckTitle(deck: TypingDeckDto): string {
     : deck.title;
 }
 
+type UnsignedTypingRaceSeed = Omit<TypingRaceSeedDto, "seedToken">;
+
+const TYPING_RACE_SEED_FALLBACK_SECRET =
+  "yeon-local-typing-race-seed-secret";
+
+function getTypingRaceSeedSigningSecret() {
+  return (
+    process.env.TYPING_RACE_SEED_SECRET?.trim() ||
+    process.env.AUTH_SECRET?.trim() ||
+    TYPING_RACE_SEED_FALLBACK_SECRET
+  );
+}
+
+function raceSeedSigningPayload(seed: UnsignedTypingRaceSeed) {
+  return JSON.stringify({
+    passageId: seed.passageId,
+    prompt: seed.prompt,
+    roundLabel: seed.roundLabel,
+    deckId: seed.deckId,
+    deckVisibility: seed.deckVisibility,
+    lobbyDeckTitle: seed.lobbyDeckTitle,
+    participantDeckTitle: seed.participantDeckTitle,
+    languageTag: seed.languageTag,
+  });
+}
+
+function signTypingRaceSeed(seed: UnsignedTypingRaceSeed) {
+  const digest = createHmac("sha256", getTypingRaceSeedSigningSecret())
+    .update(raceSeedSigningPayload(seed))
+    .digest("base64url");
+  return `v1.${digest}`;
+}
+
 export async function createTypingRaceSeed(
   currentUserId: string | null,
   deckPublicId: string,
@@ -767,7 +753,7 @@ export async function createTypingRaceSeed(
   const detail = await getTypingDeckDetail(currentUserId, deckPublicId);
   const passage = pickPassage(detail.passages, body.passageId);
 
-  return {
+  const seed: UnsignedTypingRaceSeed = {
     passageId: passage.id,
     prompt: passage.prompt,
     roundLabel: passage.title ?? detail.deck.title,
@@ -776,5 +762,10 @@ export async function createTypingRaceSeed(
     lobbyDeckTitle: toLobbyDeckTitle(detail.deck),
     participantDeckTitle: detail.deck.title,
     languageTag: detail.deck.languageTag,
+  };
+
+  return {
+    ...seed,
+    seedToken: signTypingRaceSeed(seed),
   };
 }

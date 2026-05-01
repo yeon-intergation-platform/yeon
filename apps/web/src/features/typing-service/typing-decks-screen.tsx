@@ -79,13 +79,15 @@ function DeckForm({
   mode,
   deck,
   onSaved,
+  adminMode = false,
 }: {
   mode: "create" | "edit";
   deck?: TypingDeckDto;
   onSaved?: (deck: TypingDeckDto) => void;
+  adminMode?: boolean;
 }) {
-  const createDeck = useCreateTypingDeck();
-  const updateDeck = useUpdateTypingDeck(deck?.id ?? "");
+  const createDeck = useCreateTypingDeck(adminMode);
+  const updateDeck = useUpdateTypingDeck(deck?.id ?? "", adminMode);
   const [title, setTitle] = useState(deck?.title ?? "");
   const [description, setDescription] = useState(deck?.description ?? "");
   const [languageTag, setLanguageTag] = useState<TypingDeckLanguageTag>(
@@ -300,13 +302,15 @@ function PassageEditor({
   deckId,
   editingPassage,
   onCancelEdit,
+  adminMode = false,
 }: {
   deckId: string;
   editingPassage: TypingDeckPassageDto | null;
   onCancelEdit: () => void;
+  adminMode?: boolean;
 }) {
-  const addPassage = useCreateTypingDeckPassage(deckId);
-  const updatePassage = useUpdateTypingDeckPassage(deckId);
+  const addPassage = useCreateTypingDeckPassage(deckId, adminMode);
+  const updatePassage = useUpdateTypingDeckPassage(deckId, adminMode);
   const [title, setTitle] = useState(editingPassage?.title ?? "");
   const [prompt, setPrompt] = useState(editingPassage?.prompt ?? "");
   const [textType, setTextType] = useState<TypingPassageTextType>(
@@ -426,9 +430,15 @@ function PassageEditor({
   );
 }
 
-function BulkPassageImportForm({ deckId }: { deckId: string }) {
+function BulkPassageImportForm({
+  deckId,
+  adminMode = false,
+}: {
+  deckId: string;
+  adminMode?: boolean;
+}) {
   const [rawText, setRawText] = useState("");
-  const bulkCreate = useBulkCreateTypingDeckPassages(deckId);
+  const bulkCreate = useBulkCreateTypingDeckPassages(deckId, adminMode);
   const parseResult = useMemo(
     () => parseBulkTypingPassageImportInput(rawText),
     [rawText],
@@ -566,13 +576,15 @@ function PassageList({
   passages,
   onEdit,
   readonly,
+  adminMode = false,
 }: {
   deckId: string;
   passages: TypingDeckPassageDto[];
   onEdit: (passage: TypingDeckPassageDto) => void;
   readonly: boolean;
+  adminMode?: boolean;
 }) {
-  const deletePassage = useDeleteTypingDeckPassage(deckId);
+  const deletePassage = useDeleteTypingDeckPassage(deckId, adminMode);
 
   if (passages.length === 0) {
     return (
@@ -646,9 +658,15 @@ function PassageList({
   );
 }
 
-function DeckDetailPanel({ deckId }: { deckId: string }) {
-  const detailQuery = useTypingDeckDetail(deckId);
-  const deleteDeck = useDeleteTypingDeck();
+function DeckDetailPanel({
+  deckId,
+  adminMode = false,
+}: {
+  deckId: string;
+  adminMode?: boolean;
+}) {
+  const detailQuery = useTypingDeckDetail(deckId, adminMode);
+  const deleteDeck = useDeleteTypingDeck(adminMode);
   const [editingPassage, setEditingPassage] =
     useState<TypingDeckPassageDto | null>(null);
 
@@ -701,7 +719,7 @@ function DeckDetailPanel({ deckId }: { deckId: string }) {
         ) : null}
       </section>
 
-      <DeckForm mode="edit" deck={deck} />
+      <DeckForm mode="edit" deck={deck} adminMode={adminMode} />
 
       <section className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_420px] lg:items-start">
         <div>
@@ -716,6 +734,7 @@ function DeckDetailPanel({ deckId }: { deckId: string }) {
             passages={passages}
             onEdit={setEditingPassage}
             readonly={readonly}
+            adminMode={adminMode}
           />
         </div>
         {!readonly ? (
@@ -724,8 +743,9 @@ function DeckDetailPanel({ deckId }: { deckId: string }) {
               deckId={deck.id}
               editingPassage={editingPassage}
               onCancelEdit={() => setEditingPassage(null)}
+              adminMode={adminMode}
             />
-            <BulkPassageImportForm deckId={deck.id} />
+            <BulkPassageImportForm deckId={deck.id} adminMode={adminMode} />
           </aside>
         ) : null}
       </section>
@@ -733,10 +753,26 @@ function DeckDetailPanel({ deckId }: { deckId: string }) {
   );
 }
 
-export function TypingDecksScreen() {
-  const [scope, setScope] = useState<TypingDeckScope>("default");
+export function TypingDecksScreen({
+  adminMode = false,
+}: {
+  adminMode?: boolean;
+}) {
+  const scopeTabs = adminMode
+    ? [
+        ...SCOPE_TABS,
+        {
+          value: "all" as TypingDeckScope,
+          label: "전체",
+          help: "관리자 전용: 비공개 포함 모든 DB 덱",
+        },
+      ]
+    : SCOPE_TABS;
+  const [scope, setScope] = useState<TypingDeckScope>(
+    adminMode ? "all" : "default",
+  );
   const [selectedDeckId, setSelectedDeckId] = useState<string | null>(null);
-  const decksQuery = useTypingDecks(scope);
+  const decksQuery = useTypingDecks(scope, adminMode);
   const decks = decksQuery.data?.decks ?? [];
 
   function handleCreated(deck: TypingDeckDto) {
@@ -782,8 +818,10 @@ export function TypingDecksScreen() {
         <div className="mt-8 grid gap-6 lg:grid-cols-[380px_minmax(0,1fr)] lg:items-start">
           <aside className="space-y-5 lg:sticky lg:top-5">
             <div className="rounded-2xl border border-[#e5e5e5] bg-white p-4">
-              <div className="grid grid-cols-3 gap-2">
-                {SCOPE_TABS.map((tab) => (
+              <div
+                className={`grid gap-2 ${adminMode ? "grid-cols-4" : "grid-cols-3"}`}
+              >
+                {scopeTabs.map((tab) => (
                   <button
                     key={tab.value}
                     type="button"
@@ -803,7 +841,7 @@ export function TypingDecksScreen() {
                 ))}
               </div>
               <p className="mt-3 text-[12px] leading-5 text-[#777]">
-                {SCOPE_TABS.find((tab) => tab.value === scope)?.help}
+                {scopeTabs.find((tab) => tab.value === scope)?.help}
               </p>
             </div>
 
@@ -823,12 +861,16 @@ export function TypingDecksScreen() {
               />
             ) : null}
 
-            <DeckForm mode="create" onSaved={handleCreated} />
+            <DeckForm
+              mode="create"
+              onSaved={handleCreated}
+              adminMode={adminMode}
+            />
           </aside>
 
           <section className="min-w-0">
             {selectedDeckId ? (
-              <DeckDetailPanel deckId={selectedDeckId} />
+              <DeckDetailPanel deckId={selectedDeckId} adminMode={adminMode} />
             ) : (
               <div className="flex min-h-[520px] items-center justify-center rounded-3xl border border-dashed border-[#dcdcdc] bg-[#fafafa] p-10 text-center">
                 <div>

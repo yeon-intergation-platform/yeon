@@ -10,7 +10,7 @@ import {
 import { ServiceError } from "@/server/services/service-error";
 
 import {
-  getOptionalAuthenticatedUser,
+  getTypingDeckRequestContext,
   jsonError,
   readJsonBody,
 } from "../_shared";
@@ -21,11 +21,13 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ deckId: string }> },
 ) {
-  const { currentUser } = await getOptionalAuthenticatedUser(request);
   const { deckId } = await params;
 
   try {
-    const detail = await getTypingDeckDetail(currentUser?.id ?? null, deckId);
+    const { currentUser, isAdmin } = await getTypingDeckRequestContext(request);
+    const detail = await getTypingDeckDetail(currentUser?.id ?? null, deckId, {
+      adminMode: isAdmin,
+    });
     return NextResponse.json(detail);
   } catch (error) {
     if (error instanceof ServiceError) {
@@ -40,7 +42,6 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ deckId: string }> },
 ) {
-  const { currentUser } = await getOptionalAuthenticatedUser(request);
   const { deckId } = await params;
 
   let body: unknown;
@@ -56,10 +57,12 @@ export async function PATCH(
   }
 
   try {
+    const { currentUser, isAdmin } = await getTypingDeckRequestContext(request);
     const deck = await updateTypingDeck(
       currentUser?.id ?? null,
       deckId,
       parsed.data,
+      { adminMode: isAdmin },
     );
     return NextResponse.json({ deck });
   } catch (error) {
@@ -75,11 +78,13 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ deckId: string }> },
 ) {
-  const { currentUser } = await getOptionalAuthenticatedUser(request);
   const { deckId } = await params;
 
   try {
-    await deleteTypingDeck(currentUser?.id ?? null, deckId);
+    const { currentUser, isAdmin } = await getTypingDeckRequestContext(request);
+    await deleteTypingDeck(currentUser?.id ?? null, deckId, {
+      adminMode: isAdmin,
+    });
     return new NextResponse(null, { status: 204 });
   } catch (error) {
     if (error instanceof ServiceError) {
