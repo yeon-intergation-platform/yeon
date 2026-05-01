@@ -755,8 +755,10 @@ function DeckDetailPanel({
 
 export function TypingDecksScreen({
   adminMode = false,
+  showAdminEntry = false,
 }: {
   adminMode?: boolean;
+  showAdminEntry?: boolean;
 }) {
   const scopeTabs = adminMode
     ? [
@@ -790,12 +792,22 @@ export function TypingDecksScreen({
           >
             YEON 타자연습
           </a>
-          <a
-            href="/typing-service/rooms"
-            className="rounded-xl border border-[#e5e5e5] px-4 py-2 text-[13px] font-semibold text-[#111] no-underline transition-colors hover:border-[#111] hover:bg-[#fafafa]"
-          >
-            타자방으로
-          </a>
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            {showAdminEntry && !adminMode ? (
+              <a
+                href="/admin/typing-decks"
+                className="rounded-xl bg-[#111] px-4 py-2 text-[13px] font-semibold text-white no-underline transition-colors hover:bg-[#333]"
+              >
+                관리자
+              </a>
+            ) : null}
+            <a
+              href="/typing-service/rooms"
+              className="rounded-xl border border-[#e5e5e5] px-4 py-2 text-[13px] font-semibold text-[#111] no-underline transition-colors hover:border-[#111] hover:bg-[#fafafa]"
+            >
+              타자방으로
+            </a>
+          </div>
         </div>
       </header>
 
