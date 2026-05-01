@@ -281,11 +281,11 @@ export function TypingRoomLobbyScreen() {
           </div>
         </section>
 
-        <aside className="rounded-3xl border border-[#e5e5e5] bg-white p-5 shadow-sm md:p-6">
+        <aside className="rounded-3xl border border-border bg-surface p-5 shadow-[0_24px_80px_rgba(0,0,0,0.2)] md:p-6">
           <h2 className="text-[20px] font-black tracking-[-0.02em]">
             방 만들기
           </h2>
-          <p className="mt-1 text-[13px] leading-5 text-[#777]">
+          <p className="mt-1 text-[13px] leading-5 text-text-secondary">
             MVP Slice A는 2명 또는 4명, 짧은 문장, 1라운드 완주 모드만
             지원합니다.
           </p>
@@ -300,14 +300,14 @@ export function TypingRoomLobbyScreen() {
                   loaded ? `${profile.nickname}님의 타자방` : generatedTitle
                 }
                 maxLength={40}
-                className="rounded-xl border border-[#e5e5e5] px-3 py-2.5 text-[14px] font-medium text-[#111] outline-none transition-colors focus:border-[#111]"
+                className="rounded-xl border border-border bg-surface px-3 py-2.5 text-[14px] font-medium text-text outline-none transition-colors placeholder:text-text-dim focus:border-accent-border"
               />
             </label>
 
             <button
               type="button"
               onClick={() => setTitle(generatedTitle)}
-              className="rounded-xl border border-dashed border-[#ddd] px-3 py-2 text-[12px] font-semibold text-[#777] transition-colors hover:border-[#111] hover:text-[#111]"
+              className="rounded-xl border border-dashed border-border-light bg-surface-2 px-3 py-2 text-[12px] font-semibold text-text-secondary transition-colors hover:border-accent-border hover:text-accent"
             >
               제목 자동 생성: {generatedTitle}
             </button>
@@ -405,7 +405,7 @@ export function TypingRoomLobbyScreen() {
                   </option>
                 ))}
               </select>
-              <span className="text-[11px] font-medium text-[#999]">
+              <span className="text-[11px] font-medium text-text-dim">
                 {deckState.loading
                   ? "덱을 불러오는 중..."
                   : (deckState.error ?? `선택: ${selectedDeck.title}`)}
@@ -414,7 +414,7 @@ export function TypingRoomLobbyScreen() {
 
             <button
               type="submit"
-              className="mt-2 rounded-2xl bg-[#111] px-4 py-4 text-[15px] font-bold text-white transition-colors hover:bg-[#333]"
+              className="mt-2 rounded-2xl bg-accent px-4 py-4 text-[15px] font-bold text-text transition-colors hover:bg-[var(--accent-hover)]"
             >
               타자방 만들기
             </button>
