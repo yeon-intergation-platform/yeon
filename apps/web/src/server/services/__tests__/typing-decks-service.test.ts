@@ -15,10 +15,26 @@ import {
 } from "../typing-decks-service";
 
 const EXPECTED_DEFAULT_DECKS = [
-  { id: "default-ko-azaleas", title: "진달래꽃 (시집)", languageTag: TYPING_DECK_LANGUAGE_TAGS.ko },
-  { id: "default-en-art-of-war-giles", title: "손자병법 / The Art of War", languageTag: TYPING_DECK_LANGUAGE_TAGS.en },
-  { id: "default-en-shakespeare-sonnets", title: "Shakespeare’s Sonnets", languageTag: TYPING_DECK_LANGUAGE_TAGS.en },
-  { id: "default-en-lincoln-addresses", title: "Lincoln’s Addresses", languageTag: TYPING_DECK_LANGUAGE_TAGS.en },
+  {
+    id: "default-ko-azaleas",
+    title: "진달래꽃 (시집)",
+    languageTag: TYPING_DECK_LANGUAGE_TAGS.ko,
+  },
+  {
+    id: "default-en-art-of-war-giles",
+    title: "손자병법 / The Art of War",
+    languageTag: TYPING_DECK_LANGUAGE_TAGS.en,
+  },
+  {
+    id: "default-en-shakespeare-sonnets",
+    title: "Shakespeare’s Sonnets",
+    languageTag: TYPING_DECK_LANGUAGE_TAGS.en,
+  },
+  {
+    id: "default-en-lincoln-addresses",
+    title: "Lincoln’s Addresses",
+    languageTag: TYPING_DECK_LANGUAGE_TAGS.en,
+  },
 ] as const;
 
 const REMOVED_GENERATED_DEFAULT_DECK_IDS = new Set([
@@ -48,7 +64,13 @@ type DefaultTypingDeckSource = {
 };
 
 function expectDeckShape() {
-  expect(DEFAULT_TYPING_DECKS.map((deck) => ({ id: deck.id, title: deck.title, languageTag: deck.languageTag }))).toEqual([...EXPECTED_DEFAULT_DECKS]);
+  expect(
+    DEFAULT_TYPING_DECKS.map((deck) => ({
+      id: deck.id,
+      title: deck.title,
+      languageTag: deck.languageTag,
+    })),
+  ).toEqual([...EXPECTED_DEFAULT_DECKS]);
 
   for (const deck of DEFAULT_TYPING_DECKS) {
     expect(REMOVED_GENERATED_DEFAULT_DECK_IDS.has(deck.id)).toBe(false);

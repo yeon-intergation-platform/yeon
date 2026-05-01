@@ -26,8 +26,12 @@ const REMOVED_GENERATED_DEFAULT_DECK_IDS = new Set([
 describe("api/v1/typing-decks/[deckId] default detail route", () => {
   it("GET exposes final default deck details with source-backed metadata", async () => {
     expect(DEFAULT_TYPING_DECKS).toHaveLength(4);
-
-    expect(DEFAULT_TYPING_DECKS.map((deck) => ({ id: deck.id, title: deck.title }))).toEqual([...EXPECTED_DEFAULT_DECKS]);
+    expect(
+      DEFAULT_TYPING_DECKS.map((deck) => ({
+        id: deck.id,
+        title: deck.title,
+      })),
+    ).toEqual([...EXPECTED_DEFAULT_DECKS]);
 
     for (const expectedDeck of DEFAULT_TYPING_DECKS) {
       expect(REMOVED_GENERATED_DEFAULT_DECK_IDS.has(expectedDeck.id)).toBe(
