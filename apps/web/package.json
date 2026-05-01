@@ -19,7 +19,10 @@
     "db:check:drift": "node scripts/check-schema-drift.mjs",
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "e2e": "playwright test",
+    "e2e:typing-room": "RUN_TYPING_ROOM_ONLINE_E2E=1 playwright test e2e/typing-room-online.spec.ts --project=chromium",
+    "e2e:typing-room:check": "playwright test e2e/typing-room-online.spec.ts --project=chromium"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1025.0",
