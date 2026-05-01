@@ -1,101 +1,83 @@
-# AGENTS.md — Yeon Project Override
+# AGENTS.md — Yeon Agent Onboarding
 
-<project_agent_contract scope="/home/osuma/coding_stuffs/yeon" format="xml+markdown" version="2026-04-30">
+This file is the project-level onboarding contract for coding agents in Yeon. Keep it short and broadly applicable. Detailed procedures belong in `docs/`, `.codex/skills/`, or local `README.md` files and should be loaded only when relevant.
 
-<purpose>
+## Why this repository exists
 
-This file is the **thin project override** for Yeon. The global baseline is `~/.codex/AGENTS.md`; this file only contains high-frequency project rules. Detailed product, architecture, validation, UI, DB, review, and release procedures live in skills and must be loaded selectively.
+Yeon is a private product monorepo for education/workspace services, mobile experiences, and realtime typing-race features. Agents should optimize for small, verified changes that preserve ownership boundaries and can be shipped safely to production.
 
-</purpose>
+## What is where
 
-<main_only_policy status="develop-suspended">
+- `apps/web/` — Next.js App Router web app; web UI, route handlers, server actions, server orchestration, persistence integration.
+- `apps/mobile/` — Expo app; native UI, mobile state, public API consumption, device integrations.
+- `apps/race-server/` — Colyseus realtime typing-race server.
+- `packages/api-contract/` — shared Zod schemas, DTOs, request/response contracts; importable by web and mobile.
+- `packages/api-client/` — typed public HTTP API client; depends on contracts, not app internals.
+- `packages/domain/` — pure domain logic only; no DB, HTTP, framework runtime, session, or UI code.
+- `packages/race-shared/` and `packages/typing-race-engine/` — shared typing-race logic and engine code.
+- `packages/design-tokens/` — cross-platform visual tokens only, not React components.
+- `packages/config/` and `packages/utils/` — shared tooling config and pure helpers.
+- `docs/` — official reusable team knowledge.
+- `ai-log/` — process notes for AI collaboration; promote settled decisions into `docs/`.
 
-## Branch and deployment policy
+Read the closest `README.md` before editing an app/package.
 
-- `develop` is **temporarily suspended**.
-- Default base branch: `origin/main`.
-- Default PR target: `main`.
-- Default deployment target: production `yeon.world` via `main` workflow.
-- Do **not** create, rebase onto, merge into, deploy from, or open PRs against `develop` unless the user explicitly says to reactivate or use `develop`.
-- If an older skill or document says `origin/develop`, treat it as stale for this repository and follow this main-only policy.
-- Direct pushes to `main` remain forbidden unless explicitly requested; use branch → commit → push → PR → merge.
-- **항상 main 머지 완료까지 진행한다.** 코드를 수정했으면 기본 동작은 _commit → push → PR(main) → merge_ 까지 한 번에 마무리한다. 사용자가 명시적으로 “커밋만/푸시만/PR만”을 지시하지 않는 한 변경을 미머지 상태로 남기지 않는다. 검증(lint/typecheck/build)은 머지 전에 PASS 되어야 하며, 실패하면 머지 대신 수정 후 재검증한다.
+## Progressive disclosure pointers
 
-</main_only_policy>
+Load only the context needed for the current task:
 
-<startup_protocol>
+- Product/domain/architecture/DB rules: `.codex/skills/SHARED/yeon-project-context/SKILL.md`, then linked source docs.
+- Git, PR, and main-only shipping: `.codex/skills/SHARED/git-pr-workflow/SKILL.md`, `.codex/skills/SHARED/ship/SKILL.md`, or `.codex/skills/SHARED/deploy-all/SKILL.md`.
+- Validation: `.codex/skills/SHARED/validate/SKILL.md` or `.codex/skills/verify/SKILL.md`.
+- Next.js, Expo, and monorepo boundaries: `nextjs-patterns`, `expo-patterns`, `monorepo-patterns` skills.
+- UI/design work: `design-workflow`, `design-eye`, `frontend-design`, or `ui-ux-pro-max` skills.
+- Cleanup/refactor/review: `ai-slop-cleaner`, `refactor-repo`, `self-improve-checklist`, or `code-review` skills.
+- Documentation placement: `docs/README.md`; architecture docs: `docs/architecture/`; deployment docs: `docs/deployment/`.
 
-- Read order:
-  1. `~/.codex/AGENTS.md`
-  2. this `AGENTS.md`
-  3. `AGENTS.local.md` if present
-  4. `CLAUDE.md` / `CLAUDE.local.md` only for pointer or environment notes
-  5. relevant skills only
-- Before modifying files, check current work state:
-  - `git status --short --branch`
-  - `ls ai-log/hyeonjun/<today>/` (or the active author directory) and previous-day unfinished logs when relevant
-- For development work, create or update a work log under `ai-log/{person}/YYYY-MM-DD/`.
+Prefer pointers to copies. Do not paste long policies, command catalogs, or code snippets into this file.
 
-</startup_protocol>
+## High-priority project policy
 
-<work_log_policy>
+- `develop` is temporarily suspended. Default base branch, PR target, and deployment path are `main` / `origin/main`.
+- Do not create, rebase onto, merge into, deploy from, or open PRs against `develop` unless the user explicitly reactivates it.
+- Direct pushes to `main` are forbidden unless explicitly requested and allowed; use branch → commit → push → PR(main) → merge.
+- If code or repo files are changed, default to completing commit → push → PR(main) → merge after verification unless the user explicitly asks to stop earlier.
+- Multiple agents may be active. Do not overwrite unrelated human/agent changes; stage only owned paths and avoid `git add .`.
 
-- New work logs go under `ai-log/{person}/YYYY-MM-DD/`.
-- Working filename: `N-작업-{claude|codex}_{시작HHMM}-{예상종료HHMM}_{주제}_[작업중].md`.
-- Completion filename: replace end time with actual time and suffix with `_[완료].md`; also update the internal actual end/status fields.
-- Do not recreate `personal_space/`; use root `docs/` for official documents and root `ai-log/` for process logs.
+## How agents should work here
 
-</work_log_policy>
+Before modifying files:
 
-<skill_loading_map>
+1. Inspect work state with `git status --short --branch`.
+2. Check `ai-log/hyeonjun/<today>/` and relevant unfinished prior logs.
+3. Create or update a work log under `ai-log/{person}/YYYY-MM-DD/` for development work.
 
-## Load these details only when needed
+Implementation defaults:
 
-- Product/domain/architecture/implementation rules: `yeon-project-context`.
-- Git, PR, and main-only shipping: `git-pr-workflow`, `ship`, `deploy-all`.
-- Validation pipeline: `validate`, `verify`.
-- Next.js/App Router: `nextjs-patterns`.
-- Expo/mobile: `expo-patterns`.
-- Monorepo boundaries: `monorepo-patterns`.
-- UI/design work: `design-workflow`, `design-eye`, `ui-ux-pro-max`, `frontend-design`.
-- Code review: `code-review`.
-- Cleanup/refactor/deslop: `ai-slop-cleaner`, `refactor-repo`, `self-improve-checklist`.
-- Skill inventory/routing: `.codex/skills/README.md`.
+- Use `pnpm`; workspace shape is `apps/*` and `packages/*` from `pnpm-workspace.yaml`.
+- Check actual scripts in root and workspace `package.json` before running commands.
+- Reuse existing feature slices, services, repositories, contracts, and shared packages before adding new structure.
+- Do not add dependencies unless the task clearly requires it and the justification is documented.
+- Keep diffs small, reversible, and owned by the package/app responsible for the behavior.
+- Use deterministic tools for style and formatting; do not turn this file into a style guide.
+- Do not recreate `personal_space/`; use root `docs/` for official docs and root `ai-log/` for process logs.
 
-</skill_loading_map>
+## Verification
 
-<repository_baseline>
+Verify before claiming completion. Choose the smallest checks that prove the change, then broaden when risk warrants it.
 
-- Monorepo uses pnpm workspaces.
-- Main app: `apps/web` (Next.js App Router).
-- Mobile app: `apps/mobile` (Expo).
-- Shared packages: `packages/*`.
-- Public production domain: `yeon.world`.
-- Development domain `dev.yeon.world` exists historically but is not the active default while `develop` is suspended.
-- Do not add dependencies without explicit need and clear justification.
-- Prefer existing utilities, contracts, and patterns before adding abstractions.
-
-</repository_baseline>
-
-<verification_baseline>
-
-- Check actual scripts in `package.json` and workspace `package.json` before running commands.
-- For app code changes, expected order is: lint/format/typecheck/build/tests as applicable.
-- For docs/config/governance-only changes, run at minimum:
+- Code changes: run relevant lint, typecheck, build, and tests based on the owning workspace scripts.
+- Web app changes: include `pnpm --filter @yeon/web build` when the change can affect production build behavior.
+- Schema changes: load `yeon-project-context` DB/migration guidance before editing and run drift checks afterward.
+- Docs/rules/skills-only changes: at minimum run:
   - `git diff --check`
   - `bash bin/sync-skills.sh --check`
   - `bash bin/verify-ssot.sh --project-only`
-- For schema changes, load `yeon-project-context` and follow DB migration rules before editing.
 
-</verification_baseline>
+If a check cannot run, report the exact command and reason. Final reports should name changed files, verification evidence, and remaining risks.
 
-<collaboration_safety>
+## Source-of-truth hygiene
 
-- Multiple agents may be working. Stage only owned paths; avoid `git add .`.
-- Do not revert unrelated modifications.
-- If another agent touches the same file, resolve the smallest semantic conflict instead of overwriting.
-- Keep diffs small enough to review; move low-frequency details into skills rather than expanding this file.
-
-</collaboration_safety>
-
-</project_agent_contract>
+- Project rules live here; `CLAUDE.md` is only a pointer for Claude CLI.
+- Global shared rules live in `~/.codex/AGENTS.md`; this file contains only Yeon-specific overrides.
+- Stable product/architecture/deployment knowledge belongs in `docs/` or the appropriate skill source, not in chat-only memory.
