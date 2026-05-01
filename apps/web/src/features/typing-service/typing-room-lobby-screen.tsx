@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import type { FormEvent } from "react";
@@ -58,26 +59,6 @@ function getRoomOccupancy(room: TypingRoomSummary) {
     openSeats,
     seatLabel: isFull ? "만석" : `${openSeats}자리 남음`,
   };
-}
-
-function PixelCamelIcon() {
-  return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 120 72"
-      className="h-20 w-36 text-[#111]"
-      shapeRendering="crispEdges"
-    >
-      <path
-        d="M18 48h10v-8h9l8-15 8 15h13l7-10 12 9h10v9h8M36 40v19M66 40v19M30 59h14M60 59h13M89 48v11M83 59h13M98 35h8v8h-8zM106 35h5v5M17 58h4M10 62h4M23 64h5M93 28h7M100 24h7M107 28h5"
-        fill="none"
-        stroke="currentColor"
-        strokeLinecap="square"
-        strokeLinejoin="miter"
-        strokeWidth="4"
-      />
-    </svg>
-  );
 }
 
 export function TypingRoomLobbyScreen() {
@@ -224,7 +205,14 @@ export function TypingRoomLobbyScreen() {
                     : "justify-center py-20"
                 }`}
               >
-                <PixelCamelIcon />
+                <Image
+                  src="/illustrations/typing-empty-keyboard.png"
+                  alt=""
+                  aria-hidden="true"
+                  width={160}
+                  height={160}
+                  className="h-40 w-40 object-contain"
+                />
                 <h2 className="mt-6 text-[32px] font-black leading-tight tracking-[-0.05em] text-[#111]">
                   {state.kind === "ready"
                     ? "검색 결과가 없어요"
