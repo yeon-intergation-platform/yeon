@@ -17,22 +17,22 @@ function AdminDenied() {
   const hasSeedEmail = seedEmails.some(Boolean);
 
   return (
-    <main className="app-theme flex min-h-screen items-center justify-center bg-bg px-6 text-text">
-      <section className="max-w-xl rounded-3xl border border-border bg-surface p-8 shadow-[0_24px_80px_rgba(0,0,0,0.24)]">
-        <p className="text-[12px] font-bold uppercase tracking-[0.18em] text-red">
-          Admin only
+    <main className="flex min-h-screen items-center justify-center bg-white px-6 text-[#111]">
+      <section className="max-w-xl rounded-2xl border border-[#e5e5e5] bg-white p-8">
+        <p className="text-[13px] font-semibold text-red-600">
+          관리자 전용
         </p>
-        <h1 className="mt-3 text-[28px] font-black tracking-[-0.04em]">
+        <h1 className="mt-2 text-[26px] font-semibold tracking-[-0.03em] text-[#111]">
           관리자 권한이 필요합니다
         </h1>
-        <p className="mt-3 text-[14px] leading-6 text-text-secondary">
+        <p className="mt-3 text-[14px] leading-6 text-[#666]">
           타자 덱 관리자 페이지는 DB role이 <strong>admin</strong>인 계정만
           접근할 수 있습니다. 최초 관리자는 운영 환경변수{" "}
           <code>YEON_ADMIN_EMAILS</code> 또는 <code>ADMIN_EMAILS</code>에
           이메일을 넣고 로그인하면 자동으로 admin role로 승격됩니다.
         </p>
-        <div className="mt-5 rounded-2xl border border-border bg-surface-2 p-4 text-[13px] leading-6 text-text-secondary">
-          <p className="font-bold text-text">현재 시드 설정</p>
+        <div className="mt-5 rounded-2xl border border-[#e5e5e5] bg-[#fafafa] p-4 text-[13px] leading-6 text-[#666]">
+          <p className="font-bold text-[#111]">현재 시드 설정</p>
           <p className="mt-1">
             {hasSeedEmail
               ? `${seedEmails.length}개 이메일이 설정되어 있습니다.`
@@ -42,13 +42,13 @@ function AdminDenied() {
         <div className="mt-6 flex flex-wrap gap-2">
           <Link
             href="/auth/login"
-            className="rounded-2xl bg-accent px-5 py-3 text-[14px] font-bold text-text no-underline transition-colors hover:bg-[var(--accent-hover)]"
+            className="rounded-xl bg-[#111] px-5 py-3 text-[14px] font-semibold text-white no-underline transition-colors hover:bg-[#333]"
           >
             로그인하기
           </Link>
           <Link
             href="/typing-service/decks"
-            className="rounded-2xl border border-border bg-surface-2 px-5 py-3 text-[14px] font-bold text-text-secondary no-underline transition-colors hover:border-border-light hover:text-text"
+            className="rounded-xl border border-[#e5e5e5] bg-white px-5 py-3 text-[14px] font-semibold text-[#666] no-underline transition-colors hover:border-[#ddd] hover:text-[#111]"
           >
             일반 덱 화면으로
           </Link>
@@ -67,11 +67,11 @@ export default async function AdminTypingDecksPage() {
 
   return (
     <div>
-      <div className="app-theme border-b border-border bg-surface px-6 py-3 text-text md:px-12">
+      <div className="border-b border-[#e5e5e5] bg-white px-6 py-3 text-[#111] md:px-12">
         <div className="mx-auto flex max-w-[1400px] flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="text-[12px] font-bold uppercase tracking-[0.18em] text-accent">
-              Admin
+            <p className="text-[13px] font-semibold text-[#888]">
+              관리자
             </p>
             <p className="text-[14px] font-semibold">
               {adminUser.email} · 타자 덱 관리자
@@ -79,7 +79,7 @@ export default async function AdminTypingDecksPage() {
           </div>
           <Link
             href="/typing-service/rooms"
-            className="rounded-xl border border-border bg-surface-2 px-4 py-2 text-[13px] font-bold text-text no-underline transition-colors hover:border-accent-border"
+            className="rounded-xl border border-[#e5e5e5] bg-[#fafafa] px-4 py-2 text-[13px] font-semibold text-[#111] no-underline transition-colors hover:border-[#111]"
           >
             타자방 로비 확인
           </Link>
