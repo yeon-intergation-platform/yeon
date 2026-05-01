@@ -41,6 +41,12 @@ export function TypingServiceHome() {
                 타자방 입장
               </a>
               <a
+                href="/typing-service/decks"
+                className="inline-flex items-center justify-center rounded-xl border border-[#e5e5e5] bg-white py-3.5 text-[14px] font-semibold text-[#555] no-underline transition-colors hover:border-[#111] hover:text-[#111]"
+              >
+                연습 덱 관리
+              </a>
+              <a
                 href="/typing-service/play"
                 className="inline-flex items-center justify-center rounded-xl border border-[#e5e5e5] bg-white py-3.5 text-[14px] font-semibold text-[#555] no-underline transition-colors hover:border-[#111] hover:text-[#111]"
               >
