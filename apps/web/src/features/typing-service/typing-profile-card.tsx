@@ -6,14 +6,19 @@ import { TYPING_CHARACTERS, findCharacter } from "./characters";
 import type { TypingProfile } from "./use-typing-profile";
 import type { TypingLocale } from "./use-typing-settings";
 
-// 카드 캐릭터 표시 영역의 최대 height. 실제 displayHeight는 frameHeight의 정수 분수 중
-// 이 값에 들어맞는 가장 큰 값으로 snap한다 — sub-pixel scale에서 background-position이
-// 프레임마다 1px씩 어긋나 캐릭터가 흔들려 보이는 문제를 막기 위해.
-const CARD_DISPLAY_MAX_HEIGHT = 160;
+// 카드 캐릭터 표시 영역의 최대 height.
+// integer multiple(×1, ×2, ×3 ...)을 먼저 시도해 가장 큰 정수 배수를 반환한다.
+// 정수 배수가 없으면 integer divisor(1/2, 1/3 ...)로 fallback.
+// sub-pixel scale을 금지해 background-position 1px 어긋남(흔들림) 방지.
+const CARD_DISPLAY_MAX_HEIGHT = 312;
+
+// 접기/펼치기 기준 캐릭터 id
+const FEATURED_IDS = ["camel", "guga", "yuki"] as const;
 
 function snapDisplayHeight(frameHeight: number, maxHeight: number): number {
-  // scale 후보: 1, 1/2, 1/3, ... — frameHeight를 정수로 나눠 정수 픽셀이 보장된다.
-  for (let divisor = 1; divisor <= 16; divisor++) {
+  const mult = Math.floor(maxHeight / frameHeight);
+  if (mult >= 1) return frameHeight * mult;
+  for (let divisor = 2; divisor <= 16; divisor++) {
     const candidate = frameHeight / divisor;
     if (candidate <= maxHeight) return Math.round(candidate);
   }
@@ -77,6 +82,7 @@ export function TypingProfileCard({
 }: TypingProfileCardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState(profile.nickname);
+  const [expanded, setExpanded] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -96,10 +102,24 @@ export function TypingProfileCard({
 
   const selectedChar = findCharacter(profile.characterId);
 
+  const featured = TYPING_CHARACTERS.filter((c) =>
+    (FEATURED_IDS as readonly string[]).includes(c.id)
+  );
+  const rest = TYPING_CHARACTERS.filter(
+    (c) => !(FEATURED_IDS as readonly string[]).includes(c.id)
+  );
+
+  const charBtnClass = (id: string) =>
+    `rounded-lg border px-3 py-1.5 text-[12px] font-medium transition-colors ${
+      profile.characterId === id
+        ? "border-[#111] bg-[#111] text-white"
+        : "border-[#e5e5e5] text-[#555] hover:border-[#aaa]"
+    }`;
+
   return (
-    <div className="flex w-[340px] flex-col items-center rounded-2xl border border-[#e5e5e5] bg-white px-10 py-8">
+    <div className="flex w-[380px] flex-col items-center rounded-2xl border border-[#e5e5e5] bg-white px-10 py-8">
       {/* 캐릭터 애니메이션 */}
-      <div className="mb-6 flex h-[200px] items-end justify-center rounded-xl bg-[#f5f5f5] px-5 py-3">
+      <div className="mb-6 flex h-[360px] items-end justify-center rounded-xl bg-[#f5f5f5] px-4 py-3">
         <CharacterSprite
           character={selectedChar}
           maxHeight={CARD_DISPLAY_MAX_HEIGHT}
@@ -137,21 +157,40 @@ export function TypingProfileCard({
       </div>
 
       {/* 캐릭터 선택 */}
-      <div className="flex flex-wrap justify-center gap-2">
-        {TYPING_CHARACTERS.map((char) => (
-          <button
-            key={char.id}
-            type="button"
-            onClick={() => onCharacterChange(char.id)}
-            className={`rounded-lg border px-3 py-1.5 text-[12px] font-medium transition-colors ${
-              profile.characterId === char.id
-                ? "border-[#111] bg-[#111] text-white"
-                : "border-[#e5e5e5] text-[#555] hover:border-[#aaa]"
-            }`}
-          >
-            {char.label[locale]}
-          </button>
-        ))}
+      <div className="flex flex-col items-center gap-2">
+        <div className="flex flex-wrap justify-center gap-2">
+          {featured.map((char) => (
+            <button
+              key={char.id}
+              type="button"
+              onClick={() => onCharacterChange(char.id)}
+              className={charBtnClass(char.id)}
+            >
+              {char.label[locale]}
+            </button>
+          ))}
+        </div>
+        {expanded && (
+          <div className="flex flex-wrap justify-center gap-2">
+            {rest.map((char) => (
+              <button
+                key={char.id}
+                type="button"
+                onClick={() => onCharacterChange(char.id)}
+                className={charBtnClass(char.id)}
+              >
+                {char.label[locale]}
+              </button>
+            ))}
+          </div>
+        )}
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          className="mt-1 text-[11px] text-[#aaa] hover:text-[#555]"
+        >
+          {expanded ? "접기 ↑" : `더 보기 (${rest.length}개) ↓`}
+        </button>
       </div>
     </div>
   );

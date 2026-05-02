@@ -1,12 +1,15 @@
 {
   "id": "linnea",
-  "label": { "ko": "린네아", "en": "Linnea" },
+  "label": {
+    "ko": "린네아",
+    "en": "Linnea"
+  },
   "sprite": "/sprites/characters/linnea/run.png",
   "frameWidth": 192,
   "frameHeight": 208,
   "frameCount": 8,
   "frameCols": 8,
-  "fps": 4,
+  "fps": 5,
   "credit": {
     "source": "Augury Bird fae chibi sprite (사용자 부여 공개 배포 허가, 2026-05-03)",
     "license": "approved"
