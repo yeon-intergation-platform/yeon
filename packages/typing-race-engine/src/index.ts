@@ -43,6 +43,22 @@ const BENCHMARK_CHARACTER: TypingRacePlayerCharacter = {
 // 캐릭터 height가 다르더라도 트랙 위에서 같은 시각적 크기로 보이도록 표시 높이 통일.
 const LANE_DISPLAY_HEIGHT = 46;
 
+// frameHeight를 정수 분수(1, 1/2, 1/3, ...)로 나눈 값 중 target에 가장 가까운 scale.
+// 비정수 setScale은 sub-pixel 잔여 떨림을 만들기 때문에 정수 분수로 강제한다.
+function snapLaneScale(frameHeight: number, target: number): number {
+  let bestScale = 1;
+  let bestDist = Math.abs(frameHeight - target);
+  for (let divisor = 2; divisor <= 16; divisor++) {
+    const candidate = 1 / divisor;
+    const dist = Math.abs(frameHeight * candidate - target);
+    if (dist < bestDist) {
+      bestDist = dist;
+      bestScale = candidate;
+    }
+  }
+  return bestScale;
+}
+
 const animationKeyFor = (id: string) => `character-run:${id}`;
 const textureKeyFor = (id: string) => `character-sprite:${id}`;
 
@@ -281,7 +297,7 @@ function createStartLineScene(
         const character = this.characterForLane(lane);
         const textureKey = textureKeyFor(character.id);
         const animKey = animationKeyFor(character.id);
-        const scale = LANE_DISPLAY_HEIGHT / character.frameHeight;
+        const scale = snapLaneScale(character.frameHeight, LANE_DISPLAY_HEIGHT);
         const existing = this.laneVisuals.get(lane.id);
 
         if (!existing) {

@@ -36,7 +36,13 @@ COL_COUNT = 8
 
 
 def extract_run_row(src: Path, dst: Path, *, flip_horizontal: bool = False) -> tuple[int, int]:
-    """src 시트의 RUN_ROW를 8프레임 단일 PNG로 추출한다.
+    """src 시트의 RUN_ROW를 8프레임 단일 PNG로 추출하면서 정규화한다.
+
+    정규화 절차:
+      1) 각 셀에서 캐릭터 alpha bbox 검출.
+      2) 모든 프레임의 가로 중심을 셀 가로 중심에 정렬.
+      3) 모든 프레임의 발 baseline(bbox 하단)을 셀 바닥에 정렬.
+      4) 가로폭 변동에 따른 좌우 흔들림 시각효과를 줄이기 위해 위 정렬을 강제.
 
     반환: (frame_width, frame_height) — registry 메타에 그대로 기록.
     """
@@ -51,22 +57,30 @@ def extract_run_row(src: Path, dst: Path, *, flip_horizontal: bool = False) -> t
     cell_w = sheet_w // COL_COUNT
     cell_h = sheet_h // ROW_COUNT
     top = RUN_ROW_INDEX * cell_h
-
     row_img = sheet.crop((0, top, sheet_w, top + cell_h))
-    if flip_horizontal:
-        # 왼쪽 달리기 시트를 오른쪽으로 재배치할 때만 사용.
-        # 프레임 순서도 뒤집어야 자연스러움(공중 이동 방향 일치).
-        frames = [
-            row_img.crop((c * cell_w, 0, (c + 1) * cell_w, cell_h)).transpose(
-                Image.FLIP_LEFT_RIGHT
-            )
-            for c in range(COL_COUNT - 1, -1, -1)
-        ]
-        out = Image.new("RGBA", (sheet_w, cell_h), (0, 0, 0, 0))
-        for i, frame in enumerate(frames):
-            out.paste(frame, (i * cell_w, 0))
-    else:
-        out = row_img
+
+    out = Image.new("RGBA", (sheet_w, cell_h), (0, 0, 0, 0))
+    for c in range(COL_COUNT):
+        cell = row_img.crop((c * cell_w, 0, (c + 1) * cell_w, cell_h))
+        if flip_horizontal:
+            cell = cell.transpose(Image.FLIP_LEFT_RIGHT)
+        bbox = cell.split()[-1].getbbox()
+        if bbox is None:
+            # 빈 셀은 그대로 둠.
+            target_index = COL_COUNT - 1 - c if flip_horizontal else c
+            out.paste(cell, (target_index * cell_w, 0))
+            continue
+        l, t, r, b = bbox
+        char = cell.crop(bbox)
+        char_w = r - l
+        char_h = b - t
+        # 가로 중심 = 셀 가로 중심, 세로 baseline = 셀 바닥.
+        target_x = (cell_w - char_w) // 2
+        target_y = cell_h - char_h
+        normalized = Image.new("RGBA", (cell_w, cell_h), (0, 0, 0, 0))
+        normalized.paste(char, (target_x, target_y))
+        target_index = COL_COUNT - 1 - c if flip_horizontal else c
+        out.paste(normalized, (target_index * cell_w, 0))
 
     dst.parent.mkdir(parents=True, exist_ok=True)
     out.save(dst, format="PNG")
