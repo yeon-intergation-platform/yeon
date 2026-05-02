@@ -316,9 +316,9 @@ export function CardRow({ deckId, item, index, onDeleted }: CardRowProps) {
               e.stopPropagation();
               if (!isDeleteRevealed) handleDelete();
             }}
-            disabled={isDeleting}
+            disabled={isDeleting || !!editingField}
             aria-label="카드 삭제"
-            className={`flex h-8 w-8 items-center justify-center rounded-lg transition-colors disabled:opacity-50 ${
+            className={`flex h-8 w-8 items-center justify-center rounded-lg transition-colors disabled:invisible ${
               isDeleteConfirming
                 ? "text-red-500 hover:bg-red-50"
                 : "text-[#ccc] hover:bg-[#fafafa] hover:text-[#888]"
