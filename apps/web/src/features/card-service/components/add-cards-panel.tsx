@@ -63,7 +63,7 @@ export function AddCardsPanel({
               : "text-[#666] hover:text-[#111]"
           }`}
         >
-          AI 형식 붙여넣기
+          일괄 추가
         </button>
       </div>
 
