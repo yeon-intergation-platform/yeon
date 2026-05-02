@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import type { UseQueryResult } from "@tanstack/react-query";
 import type { CardDeckDetailResponse } from "@yeon/api-contract/card-decks";
 
@@ -39,25 +39,9 @@ interface DeckDetailScreenProps {
 export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
   const router = useRouter();
   const [isDeleteOpen, setDeleteOpen] = useState(false);
-  const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [isEditorOpen, setEditorOpen] = useState(false);
   const detailQuery = useDeckDetail(deckId);
   const state = toViewState(detailQuery);
-  const items = state.kind === "ready" ? state.items : [];
-  const selectedItem = useMemo(
-    () => items.find((item) => item.id === selectedItemId) ?? null,
-    [items, selectedItemId],
-  );
-
-  useEffect(() => {
-    if (!selectedItemId) {
-      return;
-    }
-    if (!items.some((item) => item.id === selectedItemId)) {
-      setSelectedItemId(null);
-      setEditorOpen(false);
-    }
-  }, [items, selectedItemId]);
 
   useEffect(() => {
     if (!isEditorOpen) {
@@ -73,20 +57,8 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
     };
   }, [isEditorOpen]);
 
-  const handleRequestAdd = () => {
-    setSelectedItemId(null);
-    setEditorOpen(true);
-  };
-
-  const handleRequestEdit = (itemId: string) => {
-    setSelectedItemId(itemId);
-    setEditorOpen(true);
-  };
-
-  const handleCloseEditor = () => {
-    setSelectedItemId(null);
-    setEditorOpen(false);
-  };
+  const handleRequestAdd = () => setEditorOpen(true);
+  const handleCloseEditor = () => setEditorOpen(false);
 
   return (
     <div className="min-h-screen bg-white text-[#111]">
@@ -160,13 +132,6 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
                           deckId={state.deck.id}
                           index={index + 1}
                           item={item}
-                          isSelected={selectedItemId === item.id}
-                          onRequestEdit={() => handleRequestEdit(item.id)}
-                          onDeleted={() => {
-                            if (selectedItemId === item.id) {
-                              handleCloseEditor();
-                            }
-                          }}
                         />
                       </li>
                     ))}
@@ -198,9 +163,6 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
                   <div className="mx-auto mb-4 h-1.5 w-16 rounded-full bg-[#d4d4d4]" />
                   <AddCardsPanel
                     deckId={state.deck.id}
-                    editingItem={selectedItem}
-                    onCancelEdit={handleCloseEditor}
-                    onSavedEdit={handleCloseEditor}
                     surface="sheet"
                   />
                 </div>
@@ -230,9 +192,6 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
                   <div className="flex-1 overflow-y-auto p-5">
                     <AddCardsPanel
                       deckId={state.deck.id}
-                      editingItem={selectedItem}
-                      onCancelEdit={handleCloseEditor}
-                      onSavedEdit={handleCloseEditor}
                       surface="sheet"
                     />
                   </div>
