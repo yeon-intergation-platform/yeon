@@ -112,7 +112,6 @@ export function BulkAddCardsForm({ deckId }: BulkAddCardsFormProps) {
       ) : null}
 
       <label className="flex flex-col gap-2">
-        <span className="text-[13px] text-[#666]">AI 형식 붙여넣기</span>
         <textarea
           value={rawText}
           onChange={(e) => setRawText(e.target.value)}

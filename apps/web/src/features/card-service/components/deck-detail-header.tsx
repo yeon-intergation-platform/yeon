@@ -10,6 +10,7 @@ interface DeckDetailHeaderProps {
   deck: CardDeckDto;
   onOpenDelete: () => void;
   onRequestAdd?: () => void;
+  onRequestExport?: () => void;
 }
 
 function formatDate(value: string): string {
@@ -31,6 +32,7 @@ export function DeckDetailHeader({
   deck,
   onOpenDelete,
   onRequestAdd,
+  onRequestExport,
 }: DeckDetailHeaderProps) {
   const [isEditing, setEditing] = useState(false);
   const [isMobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -122,6 +124,16 @@ export function DeckDetailHeader({
                 type="button"
                 onClick={() => {
                   setMobileMenuOpen(false);
+                  onRequestExport?.();
+                }}
+                className="block w-full px-3 py-2 text-left text-[#111] hover:bg-[#fafafa]"
+              >
+                내보내기
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setMobileMenuOpen(false);
                   onOpenDelete();
                 }}
                 className="block w-full px-3 py-2 text-left text-red-600 hover:bg-red-50"
@@ -139,6 +151,13 @@ export function DeckDetailHeader({
             className="rounded-xl bg-[#111] px-3 py-1.5 text-[12px] font-medium text-white transition-colors hover:bg-[#333]"
           >
             카드 추가
+          </button>
+          <button
+            type="button"
+            onClick={onRequestExport}
+            className="rounded-xl border border-[#e5e5e5] px-3 py-1.5 text-[12px] font-medium text-[#777] transition-colors hover:border-[#111] hover:text-[#111]"
+          >
+            내보내기
           </button>
           <button
             type="button"

@@ -1,4 +1,5 @@
 export { AddCardsPanel } from "./add-cards-panel";
+export { ExportDeckPanel } from "./export-deck-panel";
 export { AddCardForm } from "./add-card-form";
 export { BulkAddCardsForm } from "./bulk-add-cards-form";
 export { CardRow } from "./card-row";

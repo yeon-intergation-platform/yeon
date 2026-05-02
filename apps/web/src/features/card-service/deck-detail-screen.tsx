@@ -10,6 +10,7 @@ import {
   CardRow,
   DeckDetailHeader,
   DeleteDeckConfirm,
+  ExportDeckPanel,
 } from "./components";
 import { useDeckDetail } from "./hooks";
 import type { DeckDetailViewState } from "./types";
@@ -40,6 +41,7 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
   const router = useRouter();
   const [isDeleteOpen, setDeleteOpen] = useState(false);
   const [isEditorOpen, setEditorOpen] = useState(false);
+  const [isExportOpen, setExportOpen] = useState(false);
   const detailQuery = useDeckDetail(deckId);
   const state = toViewState(detailQuery);
 
@@ -91,6 +93,7 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
                 deck={state.deck}
                 onOpenDelete={() => setDeleteOpen(true)}
                 onRequestAdd={handleRequestAdd}
+                onRequestExport={() => setExportOpen(true)}
               />
 
               <section>
@@ -197,6 +200,13 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
                   </div>
                 </div>
               </>
+            ) : null}
+
+            {isExportOpen ? (
+              <ExportDeckPanel
+                items={state.items}
+                onClose={() => setExportOpen(false)}
+              />
             ) : null}
 
             {isDeleteOpen ? (
