@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { CharacterSprite } from "./character-sprite";
 import { TYPING_CHARACTERS, findCharacter } from "./characters";
+import { useCharacterFrameOverrides } from "./use-character-frame-overrides";
 import type { TypingProfile } from "./use-typing-profile";
 import type { TypingLocale } from "./use-typing-settings";
 
@@ -24,6 +25,7 @@ export function TypingProfileCard({
   onCharacterChange,
   locale,
 }: TypingProfileCardProps) {
+  const frameOverrides = useCharacterFrameOverrides();
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState(profile.nickname);
   const [expanded, setExpanded] = useState(false);
@@ -67,6 +69,7 @@ export function TypingProfileCard({
         <CharacterSprite
           character={selectedChar}
           maxHeight={CARD_DISPLAY_MAX_HEIGHT}
+          sequenceOverride={frameOverrides[selectedChar.id]}
         />
       </div>
 

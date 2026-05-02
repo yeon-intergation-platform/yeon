@@ -1,75 +1,83 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type { FrameSlot } from "./frame-slot";
 
-const STORAGE_KEY = "yeon:character-frame-sequences";
+export type { FrameSlot } from "./frame-slot";
 
-export type FrameSlot = { frameIdx: number; enabled: boolean };
-
+type OverrideItem = { characterId: string; frameSlots: FrameSlot[] };
 type SequenceStore = Record<string, FrameSlot[]>;
 
-function migrateEntry(value: unknown): FrameSlot[] | null {
-  if (!Array.isArray(value) || value.length === 0) return null;
-  // 구형 number[] 포맷 → FrameSlot[] 마이그레이션
-  if (typeof value[0] === "number") {
-    return (value as number[]).map((fi) => ({ frameIdx: fi, enabled: true }));
-  }
-  return value as FrameSlot[];
+const QUERY_KEY = ["typing-character-frames"] as const;
+
+async function fetchOverrides(): Promise<SequenceStore> {
+  const res = await fetch("/api/v1/typing-character-frames");
+  if (!res.ok) return {};
+  const data = (await res.json()) as { overrides: OverrideItem[] };
+  return Object.fromEntries(
+    data.overrides.map((o) => [o.characterId, o.frameSlots])
+  );
 }
 
-function readStore(): SequenceStore {
-  if (typeof window === "undefined") return {};
-  try {
-    const raw = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "{}") as Record<
-      string,
-      unknown
-    >;
-    const result: SequenceStore = {};
-    for (const [id, val] of Object.entries(raw)) {
-      const migrated = migrateEntry(val);
-      if (migrated) result[id] = migrated;
-    }
-    return result;
-  } catch {
-    return {};
-  }
+async function saveOverride(
+  characterId: string,
+  frameSlots: FrameSlot[] | null
+): Promise<void> {
+  await fetch(`/api/v1/typing-character-frames/${characterId}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ frameSlots }),
+  });
 }
 
 export function useFrameSequenceStore() {
-  const [store, setStore] = useState<SequenceStore>({});
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    setStore(readStore());
-  }, []);
+  const { data: store = {}, isLoading } = useQuery({
+    queryKey: QUERY_KEY,
+    queryFn: fetchOverrides,
+  });
 
-  const setSequence = useCallback(
-    (characterId: string, seq: FrameSlot[] | null) => {
-      setStore((prev) => {
-        const next = { ...prev };
+  const saveMutation = useMutation({
+    mutationFn: ({
+      characterId,
+      seq,
+    }: {
+      characterId: string;
+      seq: FrameSlot[] | null;
+    }) => saveOverride(characterId, seq),
+    onMutate: async ({ characterId, seq }) => {
+      await queryClient.cancelQueries({ queryKey: QUERY_KEY });
+      const prev = queryClient.getQueryData<SequenceStore>(QUERY_KEY);
+      queryClient.setQueryData<SequenceStore>(QUERY_KEY, (old = {}) => {
+        const next = { ...old };
         if (!seq || seq.length === 0) {
           delete next[characterId];
         } else {
           next[characterId] = seq;
         }
-        try {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-        } catch {
-          // localStorage 미지원 환경(프라이빗 브라우징 등) 무시
-        }
         return next;
       });
+      return { prev };
     },
-    []
-  );
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.prev !== undefined) {
+        queryClient.setQueryData(QUERY_KEY, ctx.prev);
+      }
+    },
+  });
 
-  const resetAll = useCallback(() => {
-    try {
-      localStorage.removeItem(STORAGE_KEY);
-    } catch {
-      // localStorage 미지원 환경 무시
-    }
-    setStore({});
-  }, []);
+  const setSequence = (characterId: string, seq: FrameSlot[] | null) => {
+    saveMutation.mutate({ characterId, seq });
+  };
 
-  return { store, setSequence, resetAll };
+  const resetAll = () => {
+    const ids = Object.keys(store);
+    queryClient.setQueryData<SequenceStore>(QUERY_KEY, {});
+    Promise.all(ids.map((id) => saveOverride(id, null))).catch((err) =>
+      console.error("전체 초기화 실패:", err)
+    );
+  };
+
+  return { store, setSequence, resetAll, isLoading };
 }

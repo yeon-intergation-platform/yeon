@@ -260,6 +260,13 @@
       "when": 1777602894139,
       "tag": "0036_add_users_role",
       "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1777766301762,
+      "tag": "0037_add_typing_character_frame_overrides",
+      "breakpoints": true
     }
   ]
 }

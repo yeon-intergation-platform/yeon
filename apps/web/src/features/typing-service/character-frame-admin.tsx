@@ -214,7 +214,7 @@ function CharacterFrameCard({
 }
 
 export function CharacterFrameAdmin() {
-  const { store, setSequence, resetAll } = useFrameSequenceStore();
+  const { store, setSequence, resetAll, isLoading } = useFrameSequenceStore();
   const [search, setSearch] = useState("");
 
   const filtered = search
@@ -264,6 +264,11 @@ export function CharacterFrameAdmin() {
           className="mb-5 w-full rounded-lg border border-[#e5e5e5] bg-white px-3 py-2 text-[13px] text-[#111] outline-none focus:border-[#999]"
         />
 
+        {isLoading && (
+          <p className="text-[12px] text-[#bbb]">
+            서버에서 프레임 데이터 로딩 중...
+          </p>
+        )}
         <div className="flex flex-col gap-4">
           {filtered.map((char) => (
             <CharacterFrameCard
