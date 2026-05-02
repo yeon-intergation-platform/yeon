@@ -4,10 +4,10 @@ import { useState } from "react";
 import type { CharacterDef } from "./characters";
 import { TYPING_CHARACTERS } from "./characters";
 import { CharacterSprite } from "./character-sprite";
+import type { FrameSlot } from "./use-frame-sequence-store";
 import { useFrameSequenceStore } from "./use-frame-sequence-store";
 
-const PICK_H = 80; // 프레임 선택 영역 썸네일 높이
-const SEQ_H = 52; // 재생 순서 영역 썸네일 높이
+const PICK_H = 80;
 
 function SpriteThumbnail({
   character,
@@ -39,51 +39,80 @@ function SpriteThumbnail({
   );
 }
 
+function isDefaultSlots(
+  slots: FrameSlot[],
+  defaultSlots: FrameSlot[]
+): boolean {
+  return (
+    slots.length === defaultSlots.length &&
+    slots.every(
+      (s, i) =>
+        s.frameIdx === defaultSlots[i]!.frameIdx &&
+        s.enabled === defaultSlots[i]!.enabled
+    )
+  );
+}
+
 function CharacterFrameCard({
   character,
   override,
   onSequenceChange,
 }: {
   character: CharacterDef;
-  override: number[] | undefined;
-  onSequenceChange: (seq: number[] | null) => void;
+  override: FrameSlot[] | undefined;
+  onSequenceChange: (seq: FrameSlot[] | null) => void;
 }) {
   const defaultSeq =
     character.frameSequence ??
     Array.from({ length: character.frameCount }, (_, i) => i);
-  const sequence = override ?? defaultSeq;
+  const defaultSlots: FrameSlot[] = defaultSeq.map((fi) => ({
+    frameIdx: fi,
+    enabled: true,
+  }));
+  const slots: FrameSlot[] = override ?? defaultSlots;
   const isModified = !!override;
 
-  function toggleFrame(idx: number) {
-    const pos = sequence.indexOf(idx);
-    const next =
-      pos === -1 ? [...sequence, idx] : sequence.filter((_, i) => i !== pos);
-    const isDefault = JSON.stringify(next) === JSON.stringify(defaultSeq);
-    onSequenceChange(isDefault || next.length === 0 ? null : next);
+  const [dragSrcPos, setDragSrcPos] = useState<number | null>(null);
+  const [dragOverPos, setDragOverPos] = useState<number | null>(null);
+
+  function toggleFrame(frameIdx: number) {
+    const next = slots.map((s) =>
+      s.frameIdx === frameIdx ? { ...s, enabled: !s.enabled } : s
+    );
+    onSequenceChange(isDefaultSlots(next, defaultSlots) ? null : next);
   }
 
-  function moveLeft(i: number) {
-    if (i === 0) return;
-    const next = [...sequence];
-    [next[i - 1], next[i]] = [next[i]!, next[i - 1]!];
-    onSequenceChange(next);
+  function handleDragStart(pos: number) {
+    setDragSrcPos(pos);
   }
 
-  function moveRight(i: number) {
-    if (i === sequence.length - 1) return;
-    const next = [...sequence];
-    [next[i + 1], next[i]] = [next[i]!, next[i + 1]!];
-    onSequenceChange(next);
+  function handleDragOver(e: React.DragEvent, pos: number) {
+    e.preventDefault();
+    setDragOverPos(pos);
   }
 
-  function removeAt(i: number) {
-    const next = sequence.filter((_, idx) => idx !== i);
-    onSequenceChange(next.length > 0 ? next : null);
+  function handleDrop(pos: number) {
+    if (dragSrcPos !== null && dragSrcPos !== pos) {
+      const next = [...slots];
+      const [moved] = next.splice(dragSrcPos, 1);
+      next.splice(pos, 0, moved!);
+      onSequenceChange(isDefaultSlots(next, defaultSlots) ? null : next);
+    }
+    setDragSrcPos(null);
+    setDragOverPos(null);
   }
 
-  function copyToClipboard() {
-    navigator.clipboard?.writeText(JSON.stringify(sequence)).catch(() => {});
+  function handleDragEnd() {
+    setDragSrcPos(null);
+    setDragOverPos(null);
   }
+
+  // 애니메이션 프리뷰에는 활성 프레임만 전달 (비어있으면 undefined → 기본값 사용)
+  const activeSpriteSeq = override
+    ? override.filter((s) => s.enabled).map((s) => s.frameIdx)
+    : undefined;
+  const spriteOverride =
+    activeSpriteSeq && activeSpriteSeq.length > 0 ? activeSpriteSeq : undefined;
 
   return (
     <div className="rounded-xl border border-[#e5e5e5] bg-white p-4">
@@ -114,7 +143,9 @@ function CharacterFrameCard({
       {/* 프레임 선택 영역 */}
       <div className="mb-1 flex items-center gap-2">
         <span className="text-[11px] font-medium text-[#555]">프레임 선택</span>
-        <span className="text-[10px] text-[#bbb]">클릭해서 추가/제거</span>
+        <span className="text-[10px] text-[#bbb]">
+          클릭해서 활성/비활성 전환, 드래그로 순서 변경
+        </span>
       </div>
       <div className="mb-3 flex flex-wrap items-end gap-3">
         {/* 프리뷰 */}
@@ -122,103 +153,61 @@ function CharacterFrameCard({
           <CharacterSprite
             character={character}
             maxHeight={76}
-            sequenceOverride={override}
+            sequenceOverride={spriteOverride}
           />
         </div>
-        {/* 프레임 썸네일 */}
+        {/* 프레임 슬롯: 비활성 포함 전체 순서대로 표시 */}
         <div className="flex flex-wrap gap-2">
-          {Array.from({ length: character.frameCount }, (_, i) => {
-            const pos = sequence.indexOf(i);
-            const inSeq = pos !== -1;
+          {slots.map((slot, seqPos) => {
+            const { frameIdx, enabled } = slot;
+            const isDragging = dragSrcPos === seqPos;
+            const isDropTarget =
+              dragOverPos === seqPos && dragSrcPos !== seqPos;
             return (
               <button
-                key={i}
+                key={`slot-${seqPos}`}
                 type="button"
-                onClick={() => toggleFrame(i)}
+                draggable
+                onClick={() => toggleFrame(frameIdx)}
+                onDragStart={() => handleDragStart(seqPos)}
+                onDragOver={(e) => handleDragOver(e, seqPos)}
+                onDrop={() => handleDrop(seqPos)}
+                onDragEnd={handleDragEnd}
                 className="relative"
+                style={{ cursor: "grab" }}
                 title={
-                  inSeq
-                    ? `시퀀스 ${pos + 1}번째 — 클릭해서 제거`
-                    : `클릭해서 추가`
+                  enabled
+                    ? `${seqPos + 1}번째 — 클릭해서 비활성화, 드래그로 순서 변경`
+                    : `${seqPos + 1}번째 (비활성) — 클릭해서 활성화, 드래그로 순서 변경`
                 }
               >
                 <div
                   style={{
-                    opacity: inSeq ? 1 : 0.35,
-                    outline: inSeq ? "2px solid #111" : "2px solid #e5e5e5",
+                    opacity: isDragging ? 0.4 : enabled ? 1 : 0.3,
+                    outline: isDropTarget
+                      ? "2px solid #e87310"
+                      : enabled
+                        ? "2px solid #111"
+                        : "2px solid #e5e5e5",
                     outlineOffset: "2px",
                   }}
                 >
                   <SpriteThumbnail
                     character={character}
-                    frameIndex={i}
+                    frameIndex={frameIdx}
                     height={PICK_H}
                   />
                 </div>
-                {inSeq && (
-                  <span className="absolute -right-1 -top-1 flex h-[18px] w-[18px] items-center justify-center rounded-full bg-[#111] text-[10px] font-bold text-white">
-                    {pos + 1}
-                  </span>
-                )}
+                <span
+                  className="absolute -right-1 -top-1 flex h-[18px] w-[18px] items-center justify-center rounded-full text-[10px] font-bold text-white"
+                  style={{ backgroundColor: enabled ? "#111" : "#bbb" }}
+                >
+                  {enabled ? seqPos + 1 : "×"}
+                </span>
               </button>
             );
           })}
         </div>
-      </div>
-
-      {/* 재생 순서 영역 */}
-      <div className="mb-1 flex items-center gap-2">
-        <span className="text-[11px] font-medium text-[#555]">재생 순서</span>
-        <span className="text-[10px] text-[#bbb]">
-          ◀▶ 로 순서 변경, × 로 제거
-        </span>
-        <button
-          type="button"
-          onClick={copyToClipboard}
-          className="ml-auto rounded border border-[#e5e5e5] px-2 py-0.5 text-[10px] text-[#aaa] hover:border-[#aaa] hover:text-[#555]"
-          title="JSON 배열로 클립보드에 복사"
-        >
-          복사 → JSON
-        </button>
-      </div>
-      <div className="flex flex-wrap gap-2">
-        {sequence.map((frameIdx, i) => (
-          <div key={i} className="flex flex-col items-center gap-1">
-            <SpriteThumbnail
-              character={character}
-              frameIndex={frameIdx}
-              height={SEQ_H}
-            />
-            <div className="flex items-center gap-0.5">
-              <button
-                type="button"
-                onClick={() => moveLeft(i)}
-                disabled={i === 0}
-                className="rounded px-1 py-0.5 text-[11px] text-[#bbb] disabled:opacity-25 hover:bg-[#f5f5f5] hover:text-[#555]"
-              >
-                ◀
-              </button>
-              <span className="min-w-[14px] text-center text-[10px] text-[#aaa]">
-                {frameIdx}
-              </span>
-              <button
-                type="button"
-                onClick={() => moveRight(i)}
-                disabled={i === sequence.length - 1}
-                className="rounded px-1 py-0.5 text-[11px] text-[#bbb] disabled:opacity-25 hover:bg-[#f5f5f5] hover:text-[#555]"
-              >
-                ▶
-              </button>
-              <button
-                type="button"
-                onClick={() => removeAt(i)}
-                className="rounded px-1 py-0.5 text-[11px] text-[#bbb] hover:bg-[#fff0f0] hover:text-[#d00]"
-              >
-                ×
-              </button>
-            </div>
-          </div>
-        ))}
       </div>
     </div>
   );
@@ -248,12 +237,12 @@ export function CharacterFrameAdmin() {
               캐릭터 프레임 시퀀스
             </h1>
             <p className="mt-1 text-[12px] text-[#888]">
-              상단에서 프레임을 클릭해 추가/제거 → 하단 순서 영역에서 ◀▶으로
-              조정 → <strong>복사 → JSON</strong> 후 해당 캐릭터 JSON의{" "}
+              프레임 클릭해서 활성/비활성 전환, 드래그로 순서 변경 → 해당 캐릭터
+              JSON의{" "}
               <code className="rounded bg-[#f5f5f5] px-1 text-[11px]">
                 frameSequence
               </code>
-              에 붙여넣기
+              에 적용
             </p>
           </div>
           {modifiedCount > 0 && (
