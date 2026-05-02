@@ -14,13 +14,22 @@ export function MarkdownContent({
   children,
   inverted = false,
 }: MarkdownContentProps) {
-  const textColor = inverted ? "text-white" : "text-[#111]";
-  const mutedColor = inverted ? "text-white/80" : "text-[#555]";
-  const borderColor = inverted ? "border-white/20" : "border-[#e5e5e5]";
-  const codeBg = inverted ? "bg-white/10" : "bg-[#f7f7f7]";
+  const colors = inverted
+    ? {
+        text: "text-white",
+        muted: "text-white/80",
+        border: "border-white/20",
+        code: "bg-white/10",
+      }
+    : {
+        text: "text-[#111]",
+        muted: "text-[#555]",
+        border: "border-[#e5e5e5]",
+        code: "bg-[#f7f7f7]",
+      };
 
   return (
-    <div className={`${baseTextClass} text-[15px] leading-7 ${textColor}`}>
+    <div className={`${baseTextClass} text-[15px] leading-7 ${colors.text}`}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{
@@ -36,7 +45,7 @@ export function MarkdownContent({
           li: ({ children: nodeChildren }) => <li>{nodeChildren}</li>,
           blockquote: ({ children: nodeChildren }) => (
             <blockquote
-              className={`my-3 border-l-4 ${borderColor} pl-3 ${mutedColor}`}
+              className={`my-3 border-l-4 ${colors.border} pl-3 ${colors.muted}`}
             >
               {nodeChildren}
             </blockquote>
@@ -46,7 +55,7 @@ export function MarkdownContent({
             if (!isBlock) {
               return (
                 <code
-                  className={`rounded px-1 py-0.5 font-mono text-[0.92em] ${codeBg}`}
+                  className={`rounded px-1 py-0.5 font-mono text-[0.92em] ${colors.code}`}
                 >
                   {nodeChildren}
                 </code>
@@ -60,7 +69,7 @@ export function MarkdownContent({
           },
           pre: ({ children: nodeChildren }) => (
             <pre
-              className={`my-3 overflow-x-auto rounded-xl ${codeBg} p-3 text-left`}
+              className={`my-3 overflow-x-auto rounded-xl ${colors.code} p-3 text-left`}
             >
               {nodeChildren}
             </pre>
@@ -82,19 +91,19 @@ export function MarkdownContent({
           table: ({ children: nodeChildren }) => (
             <div className="my-3 overflow-x-auto">
               <table
-                className={`min-w-full border-collapse border ${borderColor} text-left text-[13px]`}
+                className={`min-w-full border-collapse border ${colors.border} text-left text-[13px]`}
               >
                 {nodeChildren}
               </table>
             </div>
           ),
           th: ({ children: nodeChildren }) => (
-            <th className={`border ${borderColor} px-2 py-1 font-semibold`}>
+            <th className={`border ${colors.border} px-2 py-1 font-semibold`}>
               {nodeChildren}
             </th>
           ),
           td: ({ children: nodeChildren }) => (
-            <td className={`border ${borderColor} px-2 py-1`}>
+            <td className={`border ${colors.border} px-2 py-1`}>
               {nodeChildren}
             </td>
           ),

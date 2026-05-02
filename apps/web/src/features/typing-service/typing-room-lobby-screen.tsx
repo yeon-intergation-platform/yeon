@@ -48,7 +48,7 @@ function getRoomOccupancy(room: TypingRoomSummary) {
   const guestCount = Math.max(room.currentParticipants - hostCount, 0);
   const openSeats = Math.max(
     room.maxParticipants - room.currentParticipants,
-    0,
+    0
   );
   const isFull = openSeats === 0;
 
@@ -68,7 +68,7 @@ export function TypingRoomLobbyScreen() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [visibility, setVisibility] = useState<TypingRoomVisibility>(
-    TYPING_ROOM_VISIBILITY.PUBLIC,
+    TYPING_ROOM_VISIBILITY.PUBLIC
   );
   const [selectedFilter, setSelectedFilter] = useState<LobbyFilter>("all");
   const [searchKeyword, setSearchKeyword] = useState("");
@@ -76,19 +76,17 @@ export function TypingRoomLobbyScreen() {
   const deckState = useSelectedTypingDeck(fixedLanguage);
   const roomDeckOptions = useMemo(
     () => deckState.decks.filter((deck) => deck.visibility !== "private"),
-    [deckState.decks],
+    [deckState.decks]
   );
   const selectedDeck = useMemo(
     () =>
       roomDeckOptions.find((deck) => deck.id === deckState.selectedDeckId) ??
       roomDeckOptions[0] ??
       deckState.selectedDeck,
-    [deckState.selectedDeck, deckState.selectedDeckId, roomDeckOptions],
+    [deckState.selectedDeck, deckState.selectedDeckId, roomDeckOptions]
   );
 
-  const generatedTitle = useMemo(() => {
-    return `${TYPING_ROOM_LANGUAGE_LABELS[fixedLanguage]} ${TYPING_ROOM_TEXT_TYPE_LABELS[FIXED_TEXT_TYPE]} 같이 치기`;
-  }, [fixedLanguage]);
+  const generatedTitle = `${TYPING_ROOM_LANGUAGE_LABELS[fixedLanguage]} ${TYPING_ROOM_TEXT_TYPE_LABELS[FIXED_TEXT_TYPE]} 같이 치기`;
 
   const rooms = state.kind === "ready" ? state.rooms : [];
   const filteredRooms = useMemo(() => {
@@ -268,7 +266,8 @@ export function TypingRoomLobbyScreen() {
                           {TYPING_ROOM_LANGUAGE_LABELS[room.language]} ·{" "}
                           {TYPING_ROOM_TEXT_TYPE_LABELS[room.textType]} ·{" "}
                           {TYPING_ROOM_DIFFICULTY_LABELS[room.difficulty]} ·{" "}
-                          {room.roundCount}판 · {TYPING_ROOM_MODE_LABELS[room.mode]}
+                          {room.roundCount}판 ·{" "}
+                          {TYPING_ROOM_MODE_LABELS[room.mode]}
                         </p>
                         <div className="mt-4 flex flex-wrap gap-2 text-[12px] font-semibold">
                           <span className="inline-flex items-center gap-1.5 rounded-full border border-[#e5e5e5] bg-white px-3 py-1.5 text-[#666]">

@@ -76,6 +76,27 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
 
+function pickArray(
+  payload: unknown,
+  paths: readonly (string | readonly string[])[]
+): unknown[] {
+  if (Array.isArray(payload)) return payload;
+  if (!isRecord(payload)) return [];
+  for (const path of paths) {
+    const keys = typeof path === "string" ? [path] : path;
+    let current: unknown = payload;
+    for (const key of keys) {
+      if (!isRecord(current)) {
+        current = undefined;
+        break;
+      }
+      current = current[key];
+    }
+    if (Array.isArray(current)) return current;
+  }
+  return [];
+}
+
 function asString(value: unknown): string | null {
   return typeof value === "string" && value.trim().length > 0
     ? value.trim()
@@ -84,7 +105,7 @@ function asString(value: unknown): string | null {
 
 function asLanguageTag(
   value: unknown,
-  fallback: TypingDeckLanguageTag,
+  fallback: TypingDeckLanguageTag
 ): TypingDeckLanguageTag {
   return value === "ko" ||
     value === "en" ||
@@ -95,13 +116,13 @@ function asLanguageTag(
 }
 
 function toLocale(
-  languageTag: TypingDeckLanguageTag | TypingLocale,
+  languageTag: TypingDeckLanguageTag | TypingLocale
 ): TypingLocale {
   return languageTag === "en" ? "en" : "ko";
 }
 
 function getLocalDefaultDeck(
-  languageTag: TypingDeckLanguageTag | TypingLocale,
+  languageTag: TypingDeckLanguageTag | TypingLocale
 ) {
   return LOCAL_DEFAULT_DECKS[toLocale(languageTag)];
 }
@@ -111,7 +132,7 @@ function isLocalDefaultDeckId(deckId: string | null | undefined) {
 }
 
 function normalizeVisibility(
-  deck: Record<string, unknown>,
+  deck: Record<string, unknown>
 ): SelectedDeckVisibility {
   const explicit = deck.selectedDeckVisibility ?? deck.deckVisibility;
   if (explicit === "default" || explicit === "public" || explicit === "private")
@@ -123,7 +144,7 @@ function normalizeVisibility(
 
 function normalizeDeck(
   value: unknown,
-  fallbackLanguage: TypingDeckLanguageTag,
+  fallbackLanguage: TypingDeckLanguageTag
 ): TypingDeckOption | null {
   if (!isRecord(value)) return null;
   const id =
@@ -149,18 +170,9 @@ function normalizeDeck(
 
 function normalizeDeckList(
   payload: unknown,
-  fallbackLanguage: TypingDeckLanguageTag,
+  fallbackLanguage: TypingDeckLanguageTag
 ) {
-  const source = Array.isArray(payload)
-    ? payload
-    : isRecord(payload) && Array.isArray(payload.decks)
-      ? payload.decks
-      : isRecord(payload) && Array.isArray(payload.items)
-        ? payload.items
-        : isRecord(payload) && Array.isArray(payload.data)
-          ? payload.data
-          : [];
-  return source
+  return pickArray(payload, ["decks", "items", "data"])
     .map((item) => normalizeDeck(item, fallbackLanguage))
     .filter((item): item is TypingDeckOption => item !== null);
 }
@@ -180,24 +192,13 @@ function normalizePassage(value: unknown): TypingDeckPassageOption | null {
 }
 
 function normalizePassages(payload: unknown) {
-  const source = Array.isArray(payload)
-    ? payload
-    : isRecord(payload) && Array.isArray(payload.passages)
-      ? payload.passages
-      : isRecord(payload) &&
-          isRecord(payload.deck) &&
-          Array.isArray(payload.deck.passages)
-        ? payload.deck.passages
-        : isRecord(payload) && Array.isArray(payload.items)
-          ? payload.items
-          : [];
-  return source
+  return pickArray(payload, ["passages", ["deck", "passages"], "items"])
     .map(normalizePassage)
     .filter((item): item is TypingDeckPassageOption => item !== null);
 }
 
 function localPassagesFor(
-  languageTag: TypingDeckLanguageTag | TypingLocale,
+  languageTag: TypingDeckLanguageTag | TypingLocale
 ): TypingDeckPassageOption[] {
   const locale = toLocale(languageTag);
   return TYPING_PASSAGES.map((passage: TypingPassage) => ({
@@ -211,7 +212,7 @@ function localPassagesFor(
 function normalizeRaceSeed(
   payload: unknown,
   deck: TypingDeckOption,
-  fallbackLanguage: TypingDeckLanguageTag,
+  fallbackLanguage: TypingDeckLanguageTag
 ): TypingRaceSeed | null {
   const source =
     isRecord(payload) && isRecord(payload.raceSeed)
@@ -241,7 +242,7 @@ function normalizeRaceSeed(
 
 function localRaceSeed(
   deck: TypingDeckOption,
-  languageTag: TypingDeckLanguageTag,
+  languageTag: TypingDeckLanguageTag
 ): TypingRaceSeed {
   const passages = localPassagesFor(languageTag);
   const passage =
@@ -344,7 +345,7 @@ type TypingSettingsStore = {
   updateSettings: (updates: Partial<TypingSettings>) => void;
   setDefaultDeckForLanguage: (
     languageTag: TypingDeckLanguageTag,
-    deckId: string | null,
+    deckId: string | null
   ) => void;
 };
 
@@ -373,7 +374,7 @@ const useTypingSettingsStore = create<TypingSettingsStore>()(
               setItem: () => undefined,
               removeItem: () => undefined,
             }
-          : window.localStorage,
+          : window.localStorage
       ),
       partialize: (state) => ({ settings: state.settings }),
       merge: (persisted, current) => {
@@ -386,7 +387,7 @@ const useTypingSettingsStore = create<TypingSettingsStore>()(
             ...current.settings,
             locale: persistedSettings.locale === "en" ? "en" : "ko",
             selectedDeckIdsByLanguage: isRecord(
-              persistedSettings.selectedDeckIdsByLanguage,
+              persistedSettings.selectedDeckIdsByLanguage
             )
               ? (persistedSettings.selectedDeckIdsByLanguage as Partial<
                   Record<TypingDeckLanguageTag, string>
@@ -395,15 +396,15 @@ const useTypingSettingsStore = create<TypingSettingsStore>()(
           },
         };
       },
-    },
-  ),
+    }
+  )
 );
 
 export function useTypingSettings() {
   const settings = useTypingSettingsStore((s) => s.settings);
   const updateSettings = useTypingSettingsStore((s) => s.updateSettings);
   const setDefaultDeckForLanguage = useTypingSettingsStore(
-    (s) => s.setDefaultDeckForLanguage,
+    (s) => s.setDefaultDeckForLanguage
   );
 
   // SSR/CSR hydration mismatch 방지: persist rehydrate 완료 시점을 노출.
@@ -423,7 +424,7 @@ export function useTypingSettings() {
 }
 
 export function useTypingDeckOptions(
-  languageTag: TypingDeckLanguageTag | TypingLocale,
+  languageTag: TypingDeckLanguageTag | TypingLocale
 ) {
   const normalizedLanguage = languageTag === "en" ? "en" : "ko";
   const fallbackDeck = getLocalDefaultDeck(normalizedLanguage);
@@ -434,7 +435,7 @@ export function useTypingDeckOptions(
       .filter(
         (deck) =>
           deck.languageTag === normalizedLanguage ||
-          deck.languageTag === "mixed",
+          deck.languageTag === "mixed"
       )
       .filter((deck) => deck.id !== fallbackDeck.id);
     return [fallbackDeck, ...remoteDecks];
@@ -453,7 +454,7 @@ export function useTypingDeckOptions(
 export function getSelectedTypingDeckForLanguage(
   settings: TypingSettings,
   decks: TypingDeckOption[],
-  languageTag: TypingDeckLanguageTag | TypingLocale,
+  languageTag: TypingDeckLanguageTag | TypingLocale
 ) {
   const normalizedLanguage = languageTag === "en" ? "en" : "ko";
   const selectedDeckId =
@@ -467,7 +468,7 @@ export function getSelectedTypingDeckForLanguage(
 }
 
 export function useSelectedTypingDeck(
-  languageTag: TypingDeckLanguageTag | TypingLocale,
+  languageTag: TypingDeckLanguageTag | TypingLocale
 ) {
   const normalizedLanguage = languageTag === "en" ? "en" : "ko";
   const { settings, loaded } = useTypingSettings();
@@ -477,9 +478,9 @@ export function useSelectedTypingDeck(
       getSelectedTypingDeckForLanguage(
         settings,
         deckState.decks,
-        normalizedLanguage,
+        normalizedLanguage
       ),
-    [deckState.decks, normalizedLanguage, settings],
+    [deckState.decks, normalizedLanguage, settings]
   );
 
   return { ...deckState, selectedDeckId, selectedDeck, loaded };
@@ -487,16 +488,16 @@ export function useSelectedTypingDeck(
 
 export function useTypingDeckPassages(
   deckId: string | null | undefined,
-  languageTag: TypingDeckLanguageTag | TypingLocale,
+  languageTag: TypingDeckLanguageTag | TypingLocale
 ) {
   const normalizedLanguage = languageTag === "en" ? "en" : "ko";
   const fallback = useMemo(
     () => localPassagesFor(normalizedLanguage),
-    [normalizedLanguage],
+    [normalizedLanguage]
   );
   const shouldFetchDeck = Boolean(deckId && !isLocalDefaultDeckId(deckId));
   const detailQuery = useTypingDeckDetail(
-    shouldFetchDeck ? (deckId ?? null) : null,
+    shouldFetchDeck ? (deckId ?? null) : null
   );
 
   const passages = useMemo(() => {
@@ -517,7 +518,7 @@ export function useTypingDeckPassages(
 
 export async function resolveTypingRaceSeed(
   deck: TypingDeckOption | null,
-  languageTag: TypingDeckLanguageTag,
+  languageTag: TypingDeckLanguageTag
 ): Promise<ResolveTypingRaceSeedResult> {
   if (!deck) return { ok: true, seed: null, deck: null };
   if (isLocalDefaultDeckId(deck.id))
@@ -529,7 +530,7 @@ export async function resolveTypingRaceSeed(
       {
         method: "POST",
         body: JSON.stringify({ languageTag }),
-      },
+      }
     );
     const seed = normalizeRaceSeed(payload, deck, languageTag);
     if (!seed) throw new Error("Invalid race seed response");

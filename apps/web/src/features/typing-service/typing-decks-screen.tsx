@@ -64,18 +64,19 @@ export const TYPING_DECK_SCOPE_TABS: TypingDeckScopeTab[] = [
   { value: "public", label: "공개 덱", help: "다른 사용자가 공개한 덱" },
 ];
 
+function getOptionLabel<T extends string>(
+  options: readonly { value: T; label: string }[],
+  value: T
+): string {
+  return options.find((option) => option.value === value)?.label ?? value;
+}
+
 export function typingDeckLanguageLabel(languageTag: TypingDeckLanguageTag) {
-  return (
-    TYPING_DECK_LANGUAGE_OPTIONS.find((option) => option.value === languageTag)
-      ?.label ?? languageTag
-  );
+  return getOptionLabel(TYPING_DECK_LANGUAGE_OPTIONS, languageTag);
 }
 
 export function typingDeckVisibilityLabel(visibility: TypingDeckVisibility) {
-  return (
-    TYPING_DECK_VISIBILITY_OPTIONS.find((option) => option.value === visibility)
-      ?.label ?? visibility
-  );
+  return getOptionLabel(TYPING_DECK_VISIBILITY_OPTIONS, visibility);
 }
 
 export function typingDeckBadge(deck: TypingDeckDto) {
@@ -103,10 +104,10 @@ export function TypingDeckForm({
   const [title, setTitle] = useState(deck?.title ?? "");
   const [description, setDescription] = useState(deck?.description ?? "");
   const [languageTag, setLanguageTag] = useState<TypingDeckLanguageTag>(
-    deck?.languageTag ?? "ko",
+    deck?.languageTag ?? "ko"
   );
   const [visibility, setVisibility] = useState<TypingDeckVisibility>(
-    deck?.visibility ?? "private",
+    deck?.visibility ?? "private"
   );
   const isDefaultDeck = deck?.source === "default";
   const mutation = mode === "create" ? createDeck : updateDeck;
@@ -330,10 +331,10 @@ export function TypingDeckPassageEditor({
   const [title, setTitle] = useState(editingPassage?.title ?? "");
   const [prompt, setPrompt] = useState(editingPassage?.prompt ?? "");
   const [textType, setTextType] = useState<TypingPassageTextType>(
-    editingPassage?.textType ?? "short",
+    editingPassage?.textType ?? "short"
   );
   const [difficulty, setDifficulty] = useState<TypingPassageDifficulty>(
-    editingPassage?.difficulty ?? "normal",
+    editingPassage?.difficulty ?? "normal"
   );
   const mutation = editingPassage ? updatePassage : addPassage;
   const canSubmit = prompt.trim().length > 0 && !mutation.isPending;
@@ -359,7 +360,7 @@ export function TypingDeckPassageEditor({
     if (editingPassage) {
       updatePassage.mutate(
         { passageId: editingPassage.id, body },
-        { onSuccess: onCancelEdit },
+        { onSuccess: onCancelEdit }
       );
       return;
     }
@@ -459,7 +460,7 @@ export function TypingDeckBulkPassageImportForm({
   const bulkCreate = useBulkCreateTypingDeckPassages(deckId, adminMode);
   const parseResult = useMemo(
     () => parseBulkTypingPassageImportInput(rawText),
-    [rawText],
+    [rawText]
   );
   const hasParsedPassages = Boolean(parseResult.passages.length);
   const hasParseErrors = Boolean(parseResult.errors.length);
@@ -470,7 +471,7 @@ export function TypingDeckBulkPassageImportForm({
   const hasPreviewPassages = Boolean(previewPassages.length);
   const hiddenPreviewCount = Math.max(
     parseResult.passages.length - previewPassages.length,
-    0,
+    0
   );
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -487,7 +488,7 @@ export function TypingDeckBulkPassageImportForm({
           difficulty: "normal",
         })),
       },
-      { onSuccess: () => setRawText("") },
+      { onSuccess: () => setRawText("") }
     );
   }
 
@@ -797,7 +798,7 @@ export function TypingDecksScreen({
       ]
     : TYPING_DECK_SCOPE_TABS;
   const [scope, setScope] = useState<TypingDeckScope>(
-    adminMode ? "all" : "default",
+    adminMode ? "all" : "default"
   );
   const [selectedDeckId, setSelectedDeckId] = useState<string | null>(null);
   const decksQuery = useTypingDecks(scope, adminMode);

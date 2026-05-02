@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  useEffect,
-  useRef,
-  useState,
-  type KeyboardEvent,
-  type TouchEvent,
-} from "react";
+import { useRef, useState, type KeyboardEvent, type TouchEvent } from "react";
 import type { CardDeckItemDto } from "@yeon/api-contract/card-decks";
 
 import { useDeleteCard, useUpdateCard } from "../hooks";
@@ -27,20 +21,16 @@ export function CardRow({ deckId, item, index, onDeleted }: CardRowProps) {
   const [frontText, setFrontText] = useState(item.frontText);
   const [backText, setBackText] = useState(item.backText);
   const [isDeleteConfirming, setDeleteConfirming] = useState(false);
-  const touchStartXRef = useRef<number | null>(null);
-  const shouldIgnoreNextClickRef = useRef(false);
+  const touchStateRef = useRef<{
+    startX: number | null;
+    ignoreNextClick: boolean;
+  }>({ startX: null, ignoreNextClick: false });
   const updateMutation = useUpdateCard(deckId);
   const deleteMutation = useDeleteCard(deckId);
   const isSaving = updateMutation.isPending;
   const isDeleting = deleteMutation.isPending;
   const canSave =
     frontText.trim().length > 0 && backText.trim().length > 0 && !isSaving;
-
-  useEffect(() => {
-    if (editingField) return;
-    setFrontText(item.frontText);
-    setBackText(item.backText);
-  }, [editingField, item.frontText, item.backText]);
 
   const startEditing = (field: EditingField) => {
     setFrontText(item.frontText);
@@ -70,59 +60,43 @@ export function CardRow({ deckId, item, index, onDeleted }: CardRowProps) {
       },
       {
         onSuccess: () => setEditingField(null),
-      },
+      }
     );
-  };
-
-  const handleFieldKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (event.key === "Escape") {
-      event.preventDefault();
-      handleCancel();
-      return;
-    }
-    if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
-      event.preventDefault();
-      handleSave();
-    }
   };
 
   const handleTouchStart = (event: TouchEvent<HTMLDivElement>) => {
     if (editingField) return;
-    touchStartXRef.current = event.touches[0]?.clientX ?? null;
+    touchStateRef.current.startX = event.touches[0]?.clientX ?? null;
   };
 
   const handleTouchEnd = (event: TouchEvent<HTMLDivElement>) => {
-    const startX = touchStartXRef.current;
-    touchStartXRef.current = null;
+    const startX = touchStateRef.current.startX;
+    touchStateRef.current.startX = null;
     if (startX === null) return;
 
     const endX = event.changedTouches[0]?.clientX ?? startX;
     const deltaX = endX - startX;
 
     if (deltaX < -48) {
-      shouldIgnoreNextClickRef.current = true;
+      touchStateRef.current.ignoreNextClick = true;
       setDeleteRevealed(true);
       setDeleteConfirming(false);
       return;
     }
     if (deltaX > 32) {
-      shouldIgnoreNextClickRef.current = true;
+      touchStateRef.current.ignoreNextClick = true;
       setDeleteRevealed(false);
       setDeleteConfirming(false);
     }
   };
 
   const handleContainerClick = () => {
-    if (shouldIgnoreNextClickRef.current) {
-      shouldIgnoreNextClickRef.current = false;
+    if (touchStateRef.current.ignoreNextClick) {
+      touchStateRef.current.ignoreNextClick = false;
       return;
     }
-    if (isDeleteRevealed) {
-      setDeleteRevealed(false);
-      setDeleteConfirming(false);
-    } else if (isDeleteConfirming) {
-      setDeleteConfirming(false);
-    }
+    if (isDeleteRevealed) setDeleteRevealed(false);
+    if (isDeleteRevealed || isDeleteConfirming) setDeleteConfirming(false);
   };
 
   const handleDelete = () => {
@@ -162,42 +136,16 @@ export function CardRow({ deckId, item, index, onDeleted }: CardRowProps) {
               질문
             </span>
             {editingField === "front" ? (
-              <div className="mt-1.5" onClick={(e) => e.stopPropagation()}>
-                <textarea
-                  autoFocus
-                  value={frontText}
-                  onChange={(e) => setFrontText(e.target.value)}
-                  onKeyDown={handleFieldKeyDown}
-                  maxLength={2000}
-                  rows={Math.max(2, frontText.split("\n").length)}
-                  className="w-full resize-none rounded-lg border border-[#111] px-3 py-2 text-[14px] text-[#111] outline-none"
-                />
-                {updateMutation.error ? (
-                  <p className="mt-1 text-[12px] text-red-600">
-                    {updateMutation.error.message}
-                  </p>
-                ) : null}
-                <p className="mt-1 text-[11px] text-[#aaa]">
-                  Cmd/Ctrl+Enter로 저장, Esc로 취소
-                </p>
-                <div className="mt-2 flex justify-end gap-2">
-                  <button
-                    type="button"
-                    onClick={handleCancel}
-                    className="rounded-lg border border-[#e5e5e5] px-3 py-1.5 text-[12px] text-[#111] hover:bg-[#fafafa]"
-                  >
-                    취소
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleSave}
-                    disabled={!canSave}
-                    className="rounded-lg bg-[#111] px-3 py-1.5 text-[12px] font-semibold text-white disabled:opacity-50"
-                  >
-                    {isSaving ? "저장 중..." : "저장"}
-                  </button>
-                </div>
-              </div>
+              <EditableField
+                value={frontText}
+                onChange={setFrontText}
+                onCancel={handleCancel}
+                onSave={handleSave}
+                error={updateMutation.error}
+                isSaving={isSaving}
+                canSave={canSave}
+                minRows={2}
+              />
             ) : (
               <button
                 type="button"
@@ -219,42 +167,16 @@ export function CardRow({ deckId, item, index, onDeleted }: CardRowProps) {
               답변
             </span>
             {editingField === "back" ? (
-              <div className="mt-1.5" onClick={(e) => e.stopPropagation()}>
-                <textarea
-                  autoFocus
-                  value={backText}
-                  onChange={(e) => setBackText(e.target.value)}
-                  onKeyDown={handleFieldKeyDown}
-                  maxLength={2000}
-                  rows={Math.max(3, backText.split("\n").length)}
-                  className="w-full resize-none rounded-lg border border-[#111] px-3 py-2 text-[14px] text-[#111] outline-none"
-                />
-                {updateMutation.error ? (
-                  <p className="mt-1 text-[12px] text-red-600">
-                    {updateMutation.error.message}
-                  </p>
-                ) : null}
-                <p className="mt-1 text-[11px] text-[#aaa]">
-                  Cmd/Ctrl+Enter로 저장, Esc로 취소
-                </p>
-                <div className="mt-2 flex justify-end gap-2">
-                  <button
-                    type="button"
-                    onClick={handleCancel}
-                    className="rounded-lg border border-[#e5e5e5] px-3 py-1.5 text-[12px] text-[#111] hover:bg-[#fafafa]"
-                  >
-                    취소
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleSave}
-                    disabled={!canSave}
-                    className="rounded-lg bg-[#111] px-3 py-1.5 text-[12px] font-semibold text-white disabled:opacity-50"
-                  >
-                    {isSaving ? "저장 중..." : "저장"}
-                  </button>
-                </div>
-              </div>
+              <EditableField
+                value={backText}
+                onChange={setBackText}
+                onCancel={handleCancel}
+                onSave={handleSave}
+                error={updateMutation.error}
+                isSaving={isSaving}
+                canSave={canSave}
+                minRows={3}
+              />
             ) : (
               <button
                 type="button"
@@ -324,8 +246,17 @@ export function CardRow({ deckId, item, index, onDeleted }: CardRowProps) {
                 : "text-[#ccc] hover:bg-[#fafafa] hover:text-[#888]"
             }`}
           >
-            <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M2 4h12M5 4V2.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 .5.5V4M6 7v5M10 7v5M3 4l1 9.5a.5.5 0 0 0 .5.5h7a.5.5 0 0 0 .5-.5L13 4"/>
+            <svg
+              width="15"
+              height="15"
+              viewBox="0 0 16 16"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M2 4h12M5 4V2.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 .5.5V4M6 7v5M10 7v5M3 4l1 9.5a.5.5 0 0 0 .5.5h7a.5.5 0 0 0 .5-.5L13 4" />
             </svg>
           </button>
         </div>
@@ -347,6 +278,77 @@ export function CardRow({ deckId, item, index, onDeleted }: CardRowProps) {
           className="h-full w-full text-[13px] font-semibold text-red-600 disabled:opacity-50"
         >
           {isDeleting ? "삭제 중" : isDeleteConfirming ? "확인" : "삭제"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+interface EditableFieldProps {
+  value: string;
+  onChange: (next: string) => void;
+  onCancel: () => void;
+  onSave: () => void;
+  error: Error | null;
+  isSaving: boolean;
+  canSave: boolean;
+  minRows: number;
+}
+
+function EditableField({
+  value,
+  onChange,
+  onCancel,
+  onSave,
+  error,
+  isSaving,
+  canSave,
+  minRows,
+}: EditableFieldProps) {
+  const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      onCancel();
+      return;
+    }
+    if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
+      event.preventDefault();
+      onSave();
+    }
+  };
+
+  return (
+    <div className="mt-1.5" onClick={(e) => e.stopPropagation()}>
+      <textarea
+        autoFocus
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onKeyDown={handleKeyDown}
+        maxLength={2000}
+        rows={Math.max(minRows, value.split("\n").length)}
+        className="w-full resize-none rounded-lg border border-[#111] px-3 py-2 text-[14px] text-[#111] outline-none"
+      />
+      {error ? (
+        <p className="mt-1 text-[12px] text-red-600">{error.message}</p>
+      ) : null}
+      <p className="mt-1 text-[11px] text-[#aaa]">
+        Cmd/Ctrl+Enter로 저장, Esc로 취소
+      </p>
+      <div className="mt-2 flex justify-end gap-2">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="rounded-lg border border-[#e5e5e5] px-3 py-1.5 text-[12px] text-[#111] hover:bg-[#fafafa]"
+        >
+          취소
+        </button>
+        <button
+          type="button"
+          onClick={onSave}
+          disabled={!canSave}
+          className="rounded-lg bg-[#111] px-3 py-1.5 text-[12px] font-semibold text-white disabled:opacity-50"
+        >
+          {isSaving ? "저장 중..." : "저장"}
         </button>
       </div>
     </div>

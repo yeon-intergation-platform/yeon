@@ -11,19 +11,6 @@ interface PlayCardProps {
   onFlip: () => void;
 }
 
-const CARD_STYLE = {
-  perspective: "1200px",
-} as const;
-
-const INNER_BASE_STYLE = {
-  transformStyle: "preserve-3d" as const,
-  transition: "transform 350ms ease",
-};
-
-const FACE_STYLE = {
-  backfaceVisibility: "hidden" as const,
-};
-
 export function PlayCard({
   frontText,
   backText,
@@ -37,11 +24,6 @@ export function PlayCard({
     }
   };
 
-  const innerStyle = {
-    ...INNER_BASE_STYLE,
-    transform: isFlipped ? "rotateY(180deg)" : "rotateY(0deg)",
-  };
-
   return (
     <button
       type="button"
@@ -53,26 +35,44 @@ export function PlayCard({
           : "앞면: 클릭하거나 Space를 눌러 뒷면으로"
       }
       className="relative h-[380px] w-full max-w-[720px] cursor-pointer rounded-2xl border-0 bg-transparent p-0 text-left outline-none focus-visible:ring-2 focus-visible:ring-[#111]"
-      style={CARD_STYLE}
+      style={{ perspective: "1200px" }}
     >
-      <div className="relative h-full w-full" style={innerStyle}>
+      <div
+        className="relative h-full w-full"
+        style={{
+          transformStyle: "preserve-3d",
+          transition: "transform 350ms ease",
+          transform: isFlipped ? "rotateY(180deg)" : "rotateY(0deg)",
+        }}
+      >
         <div
-          className="absolute inset-0 flex items-center justify-center rounded-2xl border border-[#e5e5e5] bg-white p-12 text-center"
-          style={FACE_STYLE}
+          className="absolute inset-0 flex flex-col overflow-hidden rounded-2xl border border-[#e5e5e5] bg-white"
+          style={{ backfaceVisibility: "hidden" }}
         >
-          <div className="max-h-full overflow-y-auto text-[22px] text-[#111]">
-            <MarkdownContent>{frontText}</MarkdownContent>
+          <div className="shrink-0 border-b border-[#e5e5e5] bg-[#f5f5f5] px-4 py-1.5">
+            <span className="text-[11px] font-semibold tracking-wide text-[#888]">
+              질문
+            </span>
+          </div>
+          <div className="flex flex-1 items-center justify-center overflow-y-auto p-12 text-center">
+            <div className="text-[22px] text-[#111]">
+              <MarkdownContent>{frontText}</MarkdownContent>
+            </div>
           </div>
         </div>
         <div
-          className="absolute inset-0 flex items-center justify-center rounded-2xl border border-[#111] bg-[#111] p-12 text-center"
-          style={{
-            ...FACE_STYLE,
-            transform: "rotateY(180deg)",
-          }}
+          className="absolute inset-0 flex flex-col overflow-hidden rounded-2xl border border-[#e5e5e5] bg-white"
+          style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}
         >
-          <div className="max-h-full overflow-y-auto text-[22px] text-white">
-            <MarkdownContent inverted>{backText}</MarkdownContent>
+          <div className="shrink-0 bg-[#111] px-4 py-1.5">
+            <span className="text-[11px] font-semibold tracking-wide text-white">
+              답변
+            </span>
+          </div>
+          <div className="flex flex-1 items-center justify-center overflow-y-auto p-12 text-center">
+            <div className="text-[22px] text-[#111]">
+              <MarkdownContent>{backText}</MarkdownContent>
+            </div>
           </div>
         </div>
       </div>

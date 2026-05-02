@@ -4,7 +4,8 @@
   "version": "0.0.0",
   "type": "module",
   "devDependencies": {
-    "@yeon/config": "workspace:*"
+    "@yeon/config": "workspace:*",
+    "typescript": "^6.0.2"
   },
   "exports": {
     ".": "./src/index.ts",
