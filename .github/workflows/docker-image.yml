@@ -142,7 +142,8 @@ jobs:
       - name: 디스크·이미지 정리 (빌드 전)
         run: |
           docker image prune -f --filter "until=48h"
-          docker builder prune -f --filter "until=48h" --keep-storage 10GB
+          # builder prune은 pnpm-store 등 BuildKit 인라인 캐시도 지우므로 pre-build에서는 제거.
+          # 캐시 크기 관리는 post-build의 Buildx cache prune 스텝(until=168h)이 담당한다.
 
       - name: Resolve BUILDX_LOCAL_CACHE
         run: echo "BUILDX_LOCAL_CACHE=$HOME/.cache/buildx-yeon-web-arm64" >> "$GITHUB_ENV"
@@ -435,7 +436,8 @@ jobs:
       - name: 디스크·이미지 정리 (빌드 전)
         run: |
           docker image prune -f --filter "until=48h"
-          docker builder prune -f --filter "until=48h" --keep-storage 10GB
+          # builder prune은 pnpm-store 등 BuildKit 인라인 캐시도 지우므로 pre-build에서는 제거.
+          # 캐시 크기 관리는 post-build의 Buildx cache prune 스텝(until=168h)이 담당한다.
 
       - name: Resolve BUILDX_LOCAL_CACHE
         run: echo "BUILDX_LOCAL_CACHE=$HOME/.cache/buildx-yeon-race-arm64" >> "$GITHUB_ENV"
