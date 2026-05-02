@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { DEFAULT_CHARACTER_ID, findCharacter } from "./characters";
 
 export type TypingProfile = {
   nickname: string;
@@ -8,7 +9,25 @@ export type TypingProfile = {
 };
 
 const STORAGE_KEY = "yeon:typing-profile";
-const DEFAULT_PROFILE: TypingProfile = { nickname: "Guest", characterId: "camel" };
+const DEFAULT_PROFILE: TypingProfile = {
+  nickname: "Guest",
+  characterId: DEFAULT_CHARACTER_ID,
+};
+
+function normalizeProfile(raw: unknown): TypingProfile {
+  if (!raw || typeof raw !== "object") return DEFAULT_PROFILE;
+  const candidate = raw as Partial<TypingProfile>;
+  const nickname =
+    typeof candidate.nickname === "string" &&
+    candidate.nickname.trim().length > 0
+      ? candidate.nickname.trim()
+      : DEFAULT_PROFILE.nickname;
+  // registry에서 사라진 캐릭터 ID는 기본값으로 폴백 — stale localStorage 방어.
+  const characterId = findCharacter(
+    typeof candidate.characterId === "string" ? candidate.characterId : null
+  ).id;
+  return { nickname, characterId };
+}
 
 export function useTypingProfile() {
   const [profile, setProfile] = useState<TypingProfile>(DEFAULT_PROFILE);
@@ -17,7 +36,7 @@ export function useTypingProfile() {
   useEffect(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) setProfile(JSON.parse(raw) as TypingProfile);
+      if (raw) setProfile(normalizeProfile(JSON.parse(raw)));
     } catch {
       // localStorage 접근 불가 환경 무시
     }
@@ -26,8 +45,12 @@ export function useTypingProfile() {
 
   const updateProfile = useCallback((updates: Partial<TypingProfile>) => {
     setProfile((prev) => {
-      const next = { ...prev, ...updates };
-      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); } catch { /* ignore */ }
+      const next = normalizeProfile({ ...prev, ...updates });
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      } catch {
+        /* ignore */
+      }
       return next;
     });
   }, []);

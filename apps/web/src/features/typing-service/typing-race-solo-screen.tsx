@@ -14,6 +14,7 @@ import {
   mountTypingRaceEngine,
   type TypingRaceEngineController,
 } from "@yeon/typing-race-engine";
+import { findCharacter, toEnginePlayerCharacter } from "./characters";
 import { useTypingProfile } from "./use-typing-profile";
 import {
   createTranslator,
@@ -118,7 +119,7 @@ export function TypingRaceSoloScreen({
   retryLabel,
   onRetryMultiplayer,
 }: TypingRaceSoloScreenProps) {
-  const { profile } = useTypingProfile();
+  const { profile, loaded: profileLoaded } = useTypingProfile();
   const { settings } = useTypingSettings();
   const deckState = useSelectedTypingDeck(settings.locale);
   const activeDeckId = practiceDeckId ?? deckState.selectedDeck.id;
@@ -219,9 +220,14 @@ export function TypingRaceSoloScreen({
   useEffect(() => {
     let active = true;
     if (!engineContainerRef.current) return;
+    // 프로필 hydrate 전에 마운트하면 default 캐릭터로 잘못 시작 → 깜빡임 방지.
+    if (!profileLoaded) return;
 
     const mountPromise = mountTypingRaceEngine({
       container: engineContainerRef.current,
+      playerCharacter: toEnginePlayerCharacter(
+        findCharacter(profile.characterId)
+      ),
     });
     mountPromise.then((controller) => {
       if (!active) return;
@@ -239,7 +245,7 @@ export function TypingRaceSoloScreen({
           /* ignore */
         });
     };
-  }, []);
+  }, [profile.characterId, profileLoaded]);
 
   const snapshot = useMemo<TypingRaceSnapshot>(() => {
     const promptLength = Math.max(1, promptChars.length);
