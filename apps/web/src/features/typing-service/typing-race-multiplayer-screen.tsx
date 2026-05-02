@@ -15,6 +15,7 @@ import {
   mountTypingRaceEngine,
   type TypingRaceEngineController,
 } from "@yeon/typing-race-engine";
+import { findCharacter, toEnginePlayerCharacter } from "./characters";
 import { useTypingProfile } from "./use-typing-profile";
 import { TypingBgmButton } from "./typing-bgm-button";
 import { createTranslator, useTypingSettings } from "./use-typing-settings";
@@ -34,7 +35,7 @@ export type TypingRaceMultiplayerScreenProps = {
 export function TypingRaceMultiplayerScreen({
   race,
 }: TypingRaceMultiplayerScreenProps) {
-  const { profile } = useTypingProfile();
+  const { profile, loaded: profileLoaded } = useTypingProfile();
   const { settings } = useTypingSettings();
   const t = createTranslator(settings.locale);
 
@@ -132,9 +133,14 @@ export function TypingRaceMultiplayerScreen({
   useEffect(() => {
     let active = true;
     if (!engineContainerRef.current) return;
+    // 프로필 hydrate 전에 마운트하면 default 캐릭터로 잘못 시작 → 깜빡임 방지.
+    if (!profileLoaded) return;
 
     const mountPromise = mountTypingRaceEngine({
       container: engineContainerRef.current,
+      playerCharacter: toEnginePlayerCharacter(
+        findCharacter(profile.characterId)
+      ),
     });
     mountPromise.then((controller) => {
       if (!active) return;
@@ -152,7 +158,7 @@ export function TypingRaceMultiplayerScreen({
           /* ignore */
         });
     };
-  }, []);
+  }, [profile.characterId, profileLoaded]);
 
   const displaySnapshot = useMemo<TypingRaceSnapshot | null>(() => {
     if (!race.snapshot) return null;

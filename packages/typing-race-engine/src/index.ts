@@ -8,9 +8,19 @@ import {
 
 type PhaserModule = typeof import("phaser");
 
+export type TypingRacePlayerCharacter = {
+  id: string;
+  spritePath: string;
+  frameWidth: number;
+  frameHeight: number;
+  frameCount: number;
+  fps?: number;
+};
+
 export type TypingRaceEngineMountOptions = {
   container: HTMLElement;
   snapshot?: TypingRaceSnapshot;
+  playerCharacter?: TypingRacePlayerCharacter;
 };
 
 export type TypingRaceEngineController = {
@@ -20,13 +30,35 @@ export type TypingRaceEngineController = {
 
 const SNAPSHOT_EVENT = "typing-race:snapshot";
 
+// 벤치마크(NPC) 레인은 항상 카멜로 고정.
+const BENCHMARK_CHARACTER: TypingRacePlayerCharacter = {
+  id: "camel",
+  spritePath: "/sprites/camel-run.png",
+  frameWidth: 96,
+  frameHeight: 96,
+  frameCount: 6,
+  fps: 10,
+};
+
+// 캐릭터 height가 다르더라도 트랙 위에서 같은 시각적 크기로 보이도록 표시 높이 통일.
+const LANE_DISPLAY_HEIGHT = 46;
+
+const animationKeyFor = (id: string) => `character-run:${id}`;
+const textureKeyFor = (id: string) => `character-sprite:${id}`;
+
 export async function mountTypingRaceEngine(
-  options: TypingRaceEngineMountOptions,
+  options: TypingRaceEngineMountOptions
 ): Promise<TypingRaceEngineController> {
   const Phaser = await import("phaser");
   const snapshotBus = new EventTarget();
   let currentSnapshot = options.snapshot ?? createFallbackSnapshot();
-  const scene = createStartLineScene(Phaser, snapshotBus, currentSnapshot);
+  const playerCharacter = options.playerCharacter ?? BENCHMARK_CHARACTER;
+  const scene = createStartLineScene(
+    Phaser,
+    snapshotBus,
+    currentSnapshot,
+    playerCharacter
+  );
 
   const game = new Phaser.Game({
     type: Phaser.AUTO,
@@ -60,7 +92,7 @@ export async function mountTypingRaceEngine(
       snapshotBus.dispatchEvent(
         new CustomEvent<TypingRaceSnapshot>(SNAPSHOT_EVENT, {
           detail: snapshot,
-        }),
+        })
       );
     },
   };
@@ -70,12 +102,13 @@ export async function mountTypingRaceEngine(
 // 새 배경: 하늘 28% + 4개 흙길 레인 균등 배치, 좌측 컬러 깃발·우측 체크무늬 결승선 내장
 const LANE_Y_RATIOS = [0.325, 0.475, 0.625, 0.775] as const;
 const TRACK_START_X_RATIO = 0.08; // 좌측 깃발 오른쪽
-const TRACK_END_X_RATIO = 0.99;   // 우측 체크무늬 왼쪽
+const TRACK_END_X_RATIO = 0.99; // 우측 체크무늬 왼쪽
 
 function createStartLineScene(
   Phaser: PhaserModule,
   snapshotBus: EventTarget,
   initialSnapshot: TypingRaceSnapshot,
+  playerCharacter: TypingRacePlayerCharacter
 ) {
   return class TypingRaceStartLineScene extends Phaser.Scene {
     private readonly laneVisuals = new Map<
@@ -100,10 +133,25 @@ function createStartLineScene(
 
     preload() {
       this.load.image("race-bg", "/sprites/race-bg.png");
-      this.load.spritesheet("camel-run", "/sprites/camel-run.png", {
-        frameWidth: 96,
-        frameHeight: 96,
-      });
+      // 벤치마크 + 플레이어 캐릭터 두 시트를 모두 로드. 동일 캐릭터면 중복 로드 OK(Phaser가 무시).
+      this.load.spritesheet(
+        textureKeyFor(BENCHMARK_CHARACTER.id),
+        BENCHMARK_CHARACTER.spritePath,
+        {
+          frameWidth: BENCHMARK_CHARACTER.frameWidth,
+          frameHeight: BENCHMARK_CHARACTER.frameHeight,
+        }
+      );
+      if (playerCharacter.id !== BENCHMARK_CHARACTER.id) {
+        this.load.spritesheet(
+          textureKeyFor(playerCharacter.id),
+          playerCharacter.spritePath,
+          {
+            frameWidth: playerCharacter.frameWidth,
+            frameHeight: playerCharacter.frameHeight,
+          }
+        );
+      }
     }
 
     create() {
@@ -116,16 +164,9 @@ function createStartLineScene(
       bg.setDisplaySize(width, height);
 
       // 애니메이션 (중복 등록 방지)
-      if (!this.anims.exists("camel-run")) {
-        this.anims.create({
-          key: "camel-run",
-          frames: this.anims.generateFrameNumbers("camel-run", {
-            start: 0,
-            end: 5,
-          }),
-          frameRate: 10,
-          repeat: -1,
-        });
+      this.ensureAnimation(BENCHMARK_CHARACTER);
+      if (playerCharacter.id !== BENCHMARK_CHARACTER.id) {
+        this.ensureAnimation(playerCharacter);
       }
 
       // 카운트다운 (캔버스 중앙)
@@ -157,6 +198,25 @@ function createStartLineScene(
       });
     }
 
+    private ensureAnimation(character: TypingRacePlayerCharacter) {
+      const animKey = animationKeyFor(character.id);
+      if (this.anims.exists(animKey)) return;
+      this.anims.create({
+        key: animKey,
+        frames: this.anims.generateFrameNumbers(textureKeyFor(character.id), {
+          start: 0,
+          end: character.frameCount - 1,
+        }),
+        frameRate: character.fps ?? 10,
+        repeat: -1,
+      });
+    }
+
+    private characterForLane(lane: TypingRaceLaneSnapshot) {
+      // 로컬 플레이어 레인만 선택된 캐릭터, 나머지는 벤치마크 카멜.
+      return lane.role === "local" ? playerCharacter : BENCHMARK_CHARACTER;
+    }
+
     private renderSnapshot(snapshot: TypingRaceSnapshot) {
       const wasCountdown = this.previousStage === TYPING_RACE_STAGE.COUNTDOWN;
       const isNowLive = snapshot.stage === TYPING_RACE_STAGE.LIVE;
@@ -179,17 +239,23 @@ function createStartLineScene(
       this.previousStage = snapshot.stage;
       this.syncLanes(snapshot.lanes, snapshot.speedUnit);
 
-      // 레이스 시작 시 낙타 애니메이션 보장
+      // 레이스 시작 시 모든 캐릭터 애니메이션 보장.
       if (snapshot.stage !== TYPING_RACE_STAGE.COUNTDOWN) {
-        for (const visual of this.laneVisuals.values()) {
-          if (!visual.car.anims.isPlaying) {
-            visual.car.play("camel-run");
-          }
+        for (const [id, visual] of this.laneVisuals.entries()) {
+          if (visual.car.anims.isPlaying) continue;
+          const lane = snapshot.lanes.find((l) => l.id === id);
+          const character = lane
+            ? this.characterForLane(lane)
+            : BENCHMARK_CHARACTER;
+          visual.car.play(animationKeyFor(character.id));
         }
       }
     }
 
-    private syncLanes(lanes: readonly TypingRaceLaneSnapshot[], speedUnit?: string) {
+    private syncLanes(
+      lanes: readonly TypingRaceLaneSnapshot[],
+      speedUnit?: string
+    ) {
       const width = this.scale.width;
       const height = this.scale.height;
       const trackStartX = width * TRACK_START_X_RATIO;
@@ -209,6 +275,10 @@ function createStartLineScene(
 
       lanes.forEach((lane, index) => {
         const laneY = height * (LANE_Y_RATIOS[index] ?? 0.5);
+        const character = this.characterForLane(lane);
+        const textureKey = textureKeyFor(character.id);
+        const animKey = animationKeyFor(character.id);
+        const scale = LANE_DISPLAY_HEIGHT / character.frameHeight;
         const existing = this.laneVisuals.get(lane.id);
 
         if (!existing) {
@@ -223,11 +293,11 @@ function createStartLineScene(
           label.setOrigin(0.5, 0);
           label.setDepth(5);
 
-          const car = this.add.sprite(trackStartX, laneY, "camel-run");
+          const car = this.add.sprite(trackStartX, laneY, textureKey);
           car.setOrigin(0, 0.5);
-          car.setScale(0.48);
+          car.setScale(scale);
           car.setDepth(5);
-          car.play("camel-run");
+          car.play(animKey);
 
           const speed = this.add.text(trackEndX - 50, laneY + 14, "", {
             color: "#ffffff",
@@ -251,13 +321,22 @@ function createStartLineScene(
         const visual = this.laneVisuals.get(lane.id);
         if (!visual) return;
 
+        // 캐릭터가 바뀐 경우(예: 게임 도중 프로필 변경) 텍스처/스케일 갱신.
+        if (visual.car.texture.key !== textureKey) {
+          visual.car.setTexture(textureKey);
+          visual.car.setScale(scale);
+          visual.car.play(animKey);
+        }
+
         // 참여자 이탈로 index가 바뀌면 Y 위치도 재배치 (기존 생성 시 Y가 고정되던 버그 수정)
         visual.car.y = laneY;
         visual.label.y = laneY + 28;
         visual.speed.y = laneY + 14;
 
         visual.label.setText(lane.label);
-        visual.speed.setText(lane.progress >= 100 ? `${lane.wpm}${speedUnit ?? "타"}` : "");
+        visual.speed.setText(
+          lane.progress >= 100 ? `${lane.wpm}${speedUnit ?? "타"}` : ""
+        );
         const spriteW = visual.car.displayWidth;
         visual.car.x =
           visual.startX +
@@ -265,7 +344,6 @@ function createStartLineScene(
             (clampRaceProgress(lane.progress) / 100);
         visual.label.x = visual.car.x + spriteW / 2 - 7;
       });
-
     }
   };
 }
@@ -291,7 +369,7 @@ function createFallbackLane(
   label: string,
   accent: string,
   progress: number,
-  wpm: number,
+  wpm: number
 ): TypingRaceLaneSnapshot {
   return {
     id,

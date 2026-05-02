@@ -1,37 +1,48 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import type { CharacterDef } from "./characters";
+import { TYPING_CHARACTERS, findCharacter } from "./characters";
 import type { TypingProfile } from "./use-typing-profile";
-import { createTranslator, type TypingLocale } from "./use-typing-settings";
+import type { TypingLocale } from "./use-typing-settings";
 
-export const TYPING_CHARACTERS = [
-  { id: "camel", labelKey: "characterCamel" as const, sprite: "/sprites/camel-run.png" },
-] as const;
+// 카드 캐릭터 디스플레이 height. 캐릭터 비율은 frameWidth/frameHeight 그대로 따라간다.
+const CARD_DISPLAY_HEIGHT = 160;
 
-const FRAME_SIZE = 96; // original sprite frame px
-const FRAME_COUNT = 6;
-const FRAME_COLS = 2;
-
-function CharacterSprite({ sprite, displaySize }: { sprite: string; displaySize: number }) {
+function CharacterSprite({
+  character,
+  displayHeight,
+}: {
+  character: CharacterDef;
+  displayHeight: number;
+}) {
+  const { sprite, frameWidth, frameHeight, frameCount, frameCols, fps } =
+    character;
   const [frame, setFrame] = useState(0);
 
   useEffect(() => {
-    const id = setInterval(() => setFrame((f) => (f + 1) % FRAME_COUNT), 100);
+    const intervalMs = Math.max(40, Math.round(1000 / fps));
+    const id = setInterval(
+      () => setFrame((f) => (f + 1) % frameCount),
+      intervalMs
+    );
     return () => clearInterval(id);
-  }, []);
+  }, [frameCount, fps]);
 
-  const col = frame % FRAME_COLS;
-  const row = Math.floor(frame / FRAME_COLS);
-  const scale = displaySize / FRAME_SIZE;
+  const col = frame % frameCols;
+  const row = Math.floor(frame / frameCols);
+  const sheetRows = Math.max(1, Math.ceil(frameCount / frameCols));
+  const scale = displayHeight / frameHeight;
+  const displayWidth = frameWidth * scale;
 
   return (
     <div
       style={{
-        width: displaySize,
-        height: displaySize,
+        width: displayWidth,
+        height: displayHeight,
         backgroundImage: `url('${sprite}')`,
-        backgroundSize: `${FRAME_SIZE * FRAME_COLS * scale}px ${FRAME_SIZE * (FRAME_COUNT / FRAME_COLS) * scale}px`,
-        backgroundPosition: `-${col * displaySize}px -${row * displaySize}px`,
+        backgroundSize: `${frameWidth * frameCols * scale}px ${frameHeight * sheetRows * scale}px`,
+        backgroundPosition: `-${col * displayWidth}px -${row * displayHeight}px`,
         imageRendering: "pixelated",
         flexShrink: 0,
       }}
@@ -52,7 +63,6 @@ export function TypingProfileCard({
   onCharacterChange,
   locale,
 }: TypingProfileCardProps) {
-  const t = createTranslator(locale);
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState(profile.nickname);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -72,14 +82,16 @@ export function TypingProfileCard({
     setIsEditing(false);
   };
 
-  const selectedChar =
-    TYPING_CHARACTERS.find((c) => c.id === profile.characterId) ?? TYPING_CHARACTERS[0];
+  const selectedChar = findCharacter(profile.characterId);
 
   return (
     <div className="flex w-[340px] flex-col items-center rounded-2xl border border-[#e5e5e5] bg-white px-10 py-8">
       {/* 캐릭터 애니메이션 */}
-      <div className="mb-6 flex items-center justify-center rounded-xl bg-[#f5f5f5] p-5">
-        <CharacterSprite sprite={selectedChar.sprite} displaySize={160} />
+      <div className="mb-6 flex h-[200px] items-end justify-center rounded-xl bg-[#f5f5f5] px-5 py-3">
+        <CharacterSprite
+          character={selectedChar}
+          displayHeight={CARD_DISPLAY_HEIGHT}
+        />
       </div>
 
       {/* 닉네임 */}
@@ -125,7 +137,7 @@ export function TypingProfileCard({
                 : "border-[#e5e5e5] text-[#555] hover:border-[#aaa]"
             }`}
           >
-            {t(char.labelKey)}
+            {char.label[locale]}
           </button>
         ))}
       </div>
