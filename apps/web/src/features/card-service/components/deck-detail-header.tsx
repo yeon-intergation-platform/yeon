@@ -9,6 +9,7 @@ import { useUpdateDeck } from "../hooks";
 interface DeckDetailHeaderProps {
   deck: CardDeckDto;
   onOpenDelete: () => void;
+  onRequestAdd?: () => void;
 }
 
 function formatDate(value: string): string {
@@ -29,6 +30,7 @@ function formatDate(value: string): string {
 export function DeckDetailHeader({
   deck,
   onOpenDelete,
+  onRequestAdd,
 }: DeckDetailHeaderProps) {
   const [isEditing, setEditing] = useState(false);
   const [isMobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -71,8 +73,8 @@ export function DeckDetailHeader({
   };
 
   return (
-    <section className="bg-white text-[#111] md:rounded-xl md:border md:border-[#e5e5e5] md:p-6">
-      <div className="grid grid-cols-[44px_minmax(0,1fr)_44px] items-start md:flex md:items-start md:justify-between md:gap-4">
+    <section className="bg-white text-[#111]">
+      <div className="grid grid-cols-[44px_minmax(0,1fr)_44px] items-start md:flex md:items-center md:justify-between md:gap-4">
         <Link
           href="/card-service"
           className="flex h-11 w-11 items-center justify-start text-[28px] font-light leading-none text-[#111] no-underline hover:text-[#555] md:h-auto md:w-auto md:text-[13px] md:font-medium md:text-[#666]"
@@ -130,14 +132,22 @@ export function DeckDetailHeader({
           ) : null}
         </div>
 
-        <div className="hidden md:block" />
-        <button
-          type="button"
-          onClick={onOpenDelete}
-          className="hidden rounded-xl border border-[#e5e5e5] px-3 py-1.5 text-[12px] font-medium text-[#777] transition-colors hover:border-red-200 hover:bg-[#fff5f5] hover:text-red-600 md:block"
-        >
-          덱 삭제
-        </button>
+        <div className="hidden items-center gap-2 md:flex">
+          <button
+            type="button"
+            onClick={onRequestAdd}
+            className="rounded-xl bg-[#111] px-3 py-1.5 text-[12px] font-medium text-white transition-colors hover:bg-[#333]"
+          >
+            카드 추가
+          </button>
+          <button
+            type="button"
+            onClick={onOpenDelete}
+            className="rounded-xl border border-[#e5e5e5] px-3 py-1.5 text-[12px] font-medium text-[#777] transition-colors hover:border-red-200 hover:bg-[#fff5f5] hover:text-red-600"
+          >
+            덱 삭제
+          </button>
+        </div>
       </div>
 
       {isEditing ? (
@@ -210,27 +220,11 @@ export function DeckDetailHeader({
               ✎
             </button>
           </div>
+          <p className="mt-3 text-[13px] text-[#888]">
+            카드 {deck.itemCount}장 · 학습 진행률 0% · 생성일 {createdDate}
+          </p>
         </div>
       )}
-
-      <div className="mt-5 hidden gap-3 text-[13px] text-[#666] md:grid md:grid-cols-3">
-        <div className="rounded-xl border border-[#e5e5e5] px-4 py-3">
-          <p className="text-[12px] text-[#888]">카드 수</p>
-          <p className="mt-1 text-[16px] font-semibold text-[#111]">
-            {deck.itemCount}장
-          </p>
-        </div>
-        <div className="rounded-xl border border-[#e5e5e5] px-4 py-3">
-          <p className="text-[12px] text-[#888]">학습 진행률</p>
-          <p className="mt-1 text-[16px] font-semibold text-[#111]">0%</p>
-        </div>
-        <div className="rounded-xl border border-[#e5e5e5] px-4 py-3">
-          <p className="text-[12px] text-[#888]">생성일</p>
-          <p className="mt-1 text-[16px] font-semibold text-[#111]">
-            {createdDate}
-          </p>
-        </div>
-      </div>
 
       <Link
         href={`/card-service/decks/${deck.id}/play`}

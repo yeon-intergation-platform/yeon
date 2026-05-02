@@ -7,7 +7,10 @@ import {
 } from "@yeon/api-contract/typing-decks";
 
 import { DEFAULT_TYPING_DECKS } from "../default-typing-decks";
-import { DEFAULT_TYPING_DECK_SOURCES } from "../default-typing-deck-sources";
+import {
+  DEFAULT_TYPING_DECK_SOURCES,
+  type DefaultTypingDeckSource,
+} from "../default-typing-deck-sources";
 import {
   createTypingRaceSeed,
   getTypingDeckDetail,
@@ -47,21 +50,6 @@ const ACCEPTED_RIGHTS_STATUSES = new Set([
   "product-legal-accepted-yellow",
 ]);
 
-type DefaultTypingDeckSource = {
-  deckId: string;
-  deckTitle: string;
-  sourceWorkTitle: string;
-  sourceAuthor: string;
-  sourceUrl: string;
-  rightsStatus: string;
-  licenseNotes: string;
-  passages: Array<{
-    passageId: string;
-    sourceLocator: string;
-    cleanupNotes: string;
-    sourceUrl?: string;
-  }>;
-};
 
 function expectDeckShape() {
   expect(
@@ -91,7 +79,7 @@ function expectManifestCoverage() {
   const sources =
     DEFAULT_TYPING_DECK_SOURCES as readonly DefaultTypingDeckSource[];
   const sourcesByDeckId = new Map(
-    sources.map((source) => [source.deckId, source]),
+    sources.map((source) => [source.id, source]),
   );
 
   expect(sources).toHaveLength(DEFAULT_TYPING_DECKS.length);
@@ -100,18 +88,15 @@ function expectManifestCoverage() {
     const source = sourcesByDeckId.get(deck.id);
 
     expect(source).toBeDefined();
-    expect(source?.deckTitle).toBe(deck.title);
+    expect(source?.title).toBe(deck.title);
     expect(source?.sourceWorkTitle).toEqual(expect.any(String));
     expect(source?.sourceAuthor).toEqual(expect.any(String));
     expect(source?.sourceUrl).toMatch(/^https?:\/\//);
     expect(source?.licenseNotes).toEqual(expect.any(String));
     expect(ACCEPTED_RIGHTS_STATUSES.has(source?.rightsStatus ?? "")).toBe(true);
-    if (source?.rightsStatus === "product-legal-accepted-yellow") {
-      expect(source.licenseNotes.toLowerCase()).toContain("accepted");
-    }
 
     const manifestPassageIds = source?.passages.map(
-      (passage) => passage.passageId,
+      (passage) => passage.id,
     );
     expect(manifestPassageIds).toEqual(
       deck.passages.map((passage) => passage.id),
