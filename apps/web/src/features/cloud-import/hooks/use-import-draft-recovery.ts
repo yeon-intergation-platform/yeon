@@ -47,7 +47,7 @@ export function useImportDraftRecovery<
       setDraftId(nextDraftId);
       localStorage.setItem(storageKey, nextDraftId);
     },
-    [storageKey],
+    [storageKey]
   );
 
   const clearRecoveryNotice = useCallback(() => {
@@ -60,7 +60,7 @@ export function useImportDraftRecovery<
       setRecoveryNotice(null);
       setRestoredFromDraft(false);
     },
-    [persistDraftId],
+    [persistDraftId]
   );
 
   const restoreDraft = useCallback(
@@ -80,18 +80,22 @@ export function useImportDraftRecovery<
         clearStoredDraftId();
       }
     },
-    [applySnapshot, clearStoredDraftId, loadDraft, persistDraftId],
+    [applySnapshot, clearStoredDraftId, loadDraft, persistDraftId]
   );
 
   useEffect(() => {
     const preferredDraftId = initialDraftId?.trim();
 
-    if (!preferredDraftId) {
+    if (preferredDraftId) {
+      markFreshDraft(preferredDraftId);
+      void restoreDraft(preferredDraftId);
       return;
     }
 
-    markFreshDraft(preferredDraftId);
-    void restoreDraft(preferredDraftId);
+    const storedDraftId = localStorage.getItem(storageKey);
+    if (storedDraftId) {
+      void restoreDraft(storedDraftId);
+    }
   }, [initialDraftId, markFreshDraft, restoreDraft, storageKey]);
 
   useEffect(() => {
