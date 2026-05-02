@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import Script from "next/script";
 import {
   TYPING_FAQS,
@@ -7,6 +8,7 @@ import {
   TYPING_SEO_KEYWORDS,
   TypingServiceHome,
 } from "@/features/typing-service";
+import { getCurrentAdminUser } from "@/server/auth/admin";
 
 export const metadata: Metadata = {
   title: TYPING_PAGE_TITLE,
@@ -60,7 +62,9 @@ function getTypingServiceJsonLd() {
   };
 }
 
-export default function TypingServicePage() {
+export default async function TypingServicePage() {
+  const admin = await getCurrentAdminUser();
+
   return (
     <>
       <Script
@@ -70,6 +74,16 @@ export default function TypingServicePage() {
           __html: JSON.stringify(getTypingServiceJsonLd()),
         }}
       />
+      {admin && (
+        <div className="flex justify-end px-4 pt-2">
+          <Link
+            href="/admin/typing-characters"
+            className="text-[11px] text-[#bbb] hover:text-[#555]"
+          >
+            캐릭터 프레임 설정 →
+          </Link>
+        </div>
+      )}
       <TypingServiceHome />
     </>
   );
