@@ -25,8 +25,9 @@ export const TYPING_CHARACTERS: readonly CharacterDef[] = [
     frameCols: 8,
     fps: 12,
     credit: {
-      source: "Yuuki Asuna chibi sprite (외부 자산, 사내 검토 필요)",
-      license: "internal-only",
+      source:
+        "Yuuki Asuna chibi sprite (사용자 부여 공개 배포 허가, 2026-05-03)",
+      license: "approved",
     },
   },
   {
@@ -39,8 +40,9 @@ export const TYPING_CHARACTERS: readonly CharacterDef[] = [
     frameCols: 8,
     fps: 12,
     credit: {
-      source: "Augury Bird fae chibi sprite (외부 자산, 사내 검토 필요)",
-      license: "internal-only",
+      source:
+        "Augury Bird fae chibi sprite (사용자 부여 공개 배포 허가, 2026-05-03)",
+      license: "approved",
     },
   },
 ];
