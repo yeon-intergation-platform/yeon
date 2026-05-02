@@ -1,22 +1,21 @@
 """
 타자연습 캐릭터 스프라이트 정규화 도구.
 
-원본 chibi 스프라이트시트(9행×8열, 셀 192×208)에서
-2번째 줄(오른쪽 달리기 8프레임)을 잘라 표준 시트로 출력한다.
+데이터 SoT는 `apps/web/src/features/typing-service/characters/data/<id>.json` 이다.
+JSON 의 `extract` 필드가 정의된 캐릭터만 처리한다.
 
-사용:
-  python3 scripts/sprites/extract-character-run.py
+- 원본 시트 위치: `scripts/sprites/raw/<rawSheet>` (사용자가 외부에서 받아온 시트를 여기 복사한다)
+- 결과 PNG 위치: data 의 `sprite` 필드를 절대 web 경로로 보고 `apps/web/public` + sprite 로 도출
+- 정규화: 9행×8열 layout 가정 → 2번째 줄(우측 달리기 8프레임)을 letterbox 정렬해 출력
 
-manifest는 이 파일 하단의 CHARACTERS 리스트에 추가한다.
-새 캐릭터 추가 시 src 경로/타깃 id/플립 여부만 적으면 끝.
-
-요구사항: PIL(Pillow). 시스템 Python에 없으면 venv에서 실행:
-  python3 -m venv /tmp/pil-venv && /tmp/pil-venv/bin/pip install Pillow
-  /tmp/pil-venv/bin/python scripts/sprites/extract-character-run.py
+요구사항: PIL(Pillow). venv 사용 시:
+  /tmp/pil-venv/bin/python scripts/sprites/extract-character-run.py [--id <character-id>]
 """
 
 from __future__ import annotations
 
+import argparse
+import json
 import sys
 from pathlib import Path
 
@@ -29,10 +28,23 @@ except ImportError as exc:  # pragma: no cover
     raise SystemExit(1) from exc
 
 
-# 원본 시트 layout: 9행 × 8열, 셀 너비 = 시트 폭 / 8
-RUN_ROW_INDEX = 1   # 2번째 줄 (오른쪽 달리기)
+REPO_ROOT = Path(__file__).resolve().parents[2]
+DATA_DIR = REPO_ROOT / "apps/web/src/features/typing-service/characters/data"
+RAW_DIR = REPO_ROOT / "scripts/sprites/raw"
+PUBLIC_ROOT = REPO_ROOT / "apps/web/public"
+
+# 원본 시트 layout: 9행 × 8열
+RUN_ROW_INDEX = 1
 ROW_COUNT = 9
 COL_COUNT = 8
+
+
+def public_path_for(sprite: str) -> Path:
+    if not sprite.startswith("/"):
+        raise ValueError(
+            f"sprite path must be absolute web path (예: /sprites/...): {sprite}"
+        )
+    return PUBLIC_ROOT / sprite.lstrip("/")
 
 
 def extract_run_row(src: Path, dst: Path, *, flip_horizontal: bool = False) -> tuple[int, int]:
@@ -42,9 +54,8 @@ def extract_run_row(src: Path, dst: Path, *, flip_horizontal: bool = False) -> t
       1) 각 셀에서 캐릭터 alpha bbox 검출.
       2) 모든 프레임의 가로 중심을 셀 가로 중심에 정렬.
       3) 모든 프레임의 발 baseline(bbox 하단)을 셀 바닥에 정렬.
-      4) 가로폭 변동에 따른 좌우 흔들림 시각효과를 줄이기 위해 위 정렬을 강제.
 
-    반환: (frame_width, frame_height) — registry 메타에 그대로 기록.
+    반환: (frame_width, frame_height)
     """
     sheet = Image.open(src).convert("RGBA")
     sheet_w, sheet_h = sheet.size
@@ -65,21 +76,18 @@ def extract_run_row(src: Path, dst: Path, *, flip_horizontal: bool = False) -> t
         if flip_horizontal:
             cell = cell.transpose(Image.FLIP_LEFT_RIGHT)
         bbox = cell.split()[-1].getbbox()
+        target_index = COL_COUNT - 1 - c if flip_horizontal else c
         if bbox is None:
-            # 빈 셀은 그대로 둠.
-            target_index = COL_COUNT - 1 - c if flip_horizontal else c
             out.paste(cell, (target_index * cell_w, 0))
             continue
         l, t, r, b = bbox
         char = cell.crop(bbox)
         char_w = r - l
         char_h = b - t
-        # 가로 중심 = 셀 가로 중심, 세로 baseline = 셀 바닥.
         target_x = (cell_w - char_w) // 2
         target_y = cell_h - char_h
         normalized = Image.new("RGBA", (cell_w, cell_h), (0, 0, 0, 0))
         normalized.paste(char, (target_x, target_y))
-        target_index = COL_COUNT - 1 - c if flip_horizontal else c
         out.paste(normalized, (target_index * cell_w, 0))
 
     dst.parent.mkdir(parents=True, exist_ok=True)
@@ -87,34 +95,42 @@ def extract_run_row(src: Path, dst: Path, *, flip_horizontal: bool = False) -> t
     return cell_w, cell_h
 
 
-# 새 캐릭터 추가 시 여기에 한 줄 추가하면 끝.
-CHARACTERS = [
-    {
-        "id": "asuna",
-        "src": "/home/osuma/OneDrive-Linux/Downloads/spritesheet.webp",
-        "dst": "apps/web/public/sprites/characters/asuna/run.png",
-        "flip": False,  # row1이 이미 RIGHT facing
-    },
-    {
-        "id": "linnea",
-        "src": "/home/osuma/OneDrive-Linux/Downloads/pet/spritesheet.webp",
-        "dst": "apps/web/public/sprites/characters/linnea/run.png",
-        "flip": False,
-    },
-]
+def load_extract_jobs(only_id: str | None) -> list[dict]:
+    if not DATA_DIR.is_dir():
+        raise SystemExit(f"data 디렉토리 없음: {DATA_DIR}")
+    jobs: list[dict] = []
+    for json_path in sorted(DATA_DIR.glob("*.json")):
+        meta = json.loads(json_path.read_text(encoding="utf-8"))
+        if only_id and meta.get("id") != only_id:
+            continue
+        if not meta.get("extract"):
+            continue
+        jobs.append(meta)
+    return jobs
 
 
 def main() -> int:
-    repo_root = Path(__file__).resolve().parents[2]
-    print(f"repo_root = {repo_root}")
-    for entry in CHARACTERS:
-        src = Path(entry["src"])
-        dst = repo_root / entry["dst"]
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--id", help="특정 캐릭터 id만 추출")
+    args = parser.parse_args()
+
+    jobs = load_extract_jobs(args.id)
+    if not jobs:
+        print("처리 대상 없음 (data/*.json 의 extract 필드를 확인하세요).")
+        return 0
+
+    for meta in jobs:
+        cid = meta["id"]
+        ext = meta["extract"]
+        src = RAW_DIR / ext["rawSheet"]
+        dst = public_path_for(meta["sprite"])
         if not src.is_file():
-            print(f"  [skip] {entry['id']}: src 없음 ({src})")
+            print(f"  [skip] {cid}: 원본 시트 없음 → {src.relative_to(REPO_ROOT)}")
             continue
-        fw, fh = extract_run_row(src, dst, flip_horizontal=entry["flip"])
-        print(f"  [ok]   {entry['id']}: {dst.relative_to(repo_root)}  frame={fw}x{fh} count=8")
+        fw, fh = extract_run_row(src, dst, flip_horizontal=bool(ext.get("flip")))
+        print(
+            f"  [ok]   {cid}: {dst.relative_to(REPO_ROOT)}  frame={fw}x{fh} count={COL_COUNT}",
+        )
     return 0
 
 
