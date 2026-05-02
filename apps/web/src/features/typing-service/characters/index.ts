@@ -23,7 +23,7 @@ export const TYPING_CHARACTERS: readonly CharacterDef[] = [
     frameHeight: 208,
     frameCount: 8,
     frameCols: 8,
-    fps: 12,
+    fps: 8,
     credit: {
       source:
         "Yuuki Asuna chibi sprite (사용자 부여 공개 배포 허가, 2026-05-03)",
@@ -38,7 +38,7 @@ export const TYPING_CHARACTERS: readonly CharacterDef[] = [
     frameHeight: 208,
     frameCount: 8,
     frameCols: 8,
-    fps: 12,
+    fps: 8,
     credit: {
       source:
         "Augury Bird fae chibi sprite (사용자 부여 공개 배포 허가, 2026-05-03)",
