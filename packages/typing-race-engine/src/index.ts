@@ -66,6 +66,9 @@ export async function mountTypingRaceEngine(
     backgroundColor: "#a8d8f0",
     width: Math.max(options.container.clientWidth, 960),
     height: 520,
+    // 모든 캐릭터가 픽셀아트 시트라 sub-pixel scale에서 antialiasing이 들어가면 프레임 사이 떨림이 보인다.
+    // pixelArt 모드는 nearest-neighbor 샘플링 + roundPixels 자동 적용 → 흔들림 제거 + 선명도 유지.
+    pixelArt: true,
     scale: {
       mode: Phaser.Scale.RESIZE,
       autoCenter: Phaser.Scale.CENTER_BOTH,

@@ -6,15 +6,26 @@ import { TYPING_CHARACTERS, findCharacter } from "./characters";
 import type { TypingProfile } from "./use-typing-profile";
 import type { TypingLocale } from "./use-typing-settings";
 
-// 카드 캐릭터 디스플레이 height. 캐릭터 비율은 frameWidth/frameHeight 그대로 따라간다.
-const CARD_DISPLAY_HEIGHT = 160;
+// 카드 캐릭터 표시 영역의 최대 height. 실제 displayHeight는 frameHeight의 정수 분수 중
+// 이 값에 들어맞는 가장 큰 값으로 snap한다 — sub-pixel scale에서 background-position이
+// 프레임마다 1px씩 어긋나 캐릭터가 흔들려 보이는 문제를 막기 위해.
+const CARD_DISPLAY_MAX_HEIGHT = 160;
+
+function snapDisplayHeight(frameHeight: number, maxHeight: number): number {
+  // scale 후보: 1, 1/2, 1/3, ... — frameHeight를 정수로 나눠 정수 픽셀이 보장된다.
+  for (let divisor = 1; divisor <= 16; divisor++) {
+    const candidate = frameHeight / divisor;
+    if (candidate <= maxHeight) return Math.round(candidate);
+  }
+  return frameHeight;
+}
 
 function CharacterSprite({
   character,
-  displayHeight,
+  maxHeight,
 }: {
   character: CharacterDef;
-  displayHeight: number;
+  maxHeight: number;
 }) {
   const { sprite, frameWidth, frameHeight, frameCount, frameCols, fps } =
     character;
@@ -29,11 +40,12 @@ function CharacterSprite({
     return () => clearInterval(id);
   }, [frameCount, fps]);
 
+  const displayHeight = snapDisplayHeight(frameHeight, maxHeight);
+  const scale = displayHeight / frameHeight;
+  const displayWidth = Math.round(frameWidth * scale);
+  const sheetRows = Math.max(1, Math.ceil(frameCount / frameCols));
   const col = frame % frameCols;
   const row = Math.floor(frame / frameCols);
-  const sheetRows = Math.max(1, Math.ceil(frameCount / frameCols));
-  const scale = displayHeight / frameHeight;
-  const displayWidth = frameWidth * scale;
 
   return (
     <div
@@ -41,7 +53,7 @@ function CharacterSprite({
         width: displayWidth,
         height: displayHeight,
         backgroundImage: `url('${sprite}')`,
-        backgroundSize: `${frameWidth * frameCols * scale}px ${frameHeight * sheetRows * scale}px`,
+        backgroundSize: `${displayWidth * frameCols}px ${displayHeight * sheetRows}px`,
         backgroundPosition: `-${col * displayWidth}px -${row * displayHeight}px`,
         imageRendering: "pixelated",
         flexShrink: 0,
@@ -90,7 +102,7 @@ export function TypingProfileCard({
       <div className="mb-6 flex h-[200px] items-end justify-center rounded-xl bg-[#f5f5f5] px-5 py-3">
         <CharacterSprite
           character={selectedChar}
-          displayHeight={CARD_DISPLAY_HEIGHT}
+          maxHeight={CARD_DISPLAY_MAX_HEIGHT}
         />
       </div>
 
