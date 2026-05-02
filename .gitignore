@@ -69,3 +69,7 @@ apps/web/test-results/
 
 # Worktree artifacts
 apps/web/apps/
+
+# 캐릭터 원본 시트 (외부 자산, 사용자가 로컬에 복사한 후 extract 스크립트로 정규화)
+scripts/sprites/raw/*
+!scripts/sprites/raw/README.md

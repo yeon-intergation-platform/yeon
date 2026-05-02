@@ -3,8 +3,9 @@
   "private": true,
   "version": "0.0.0",
   "scripts": {
-    "predev": "rm -f .next/dev/trace .next/dev/trace-turbopack",
+    "predev": "rm -f .next/dev/trace .next/dev/trace-turbopack && node ../../scripts/build-character-registry.mjs",
     "dev": "drizzle-kit migrate --config=drizzle.config.ts && next dev",
+    "prebuild": "node ../../scripts/build-character-registry.mjs",
     "build": "next build",
     "lint": "eslint src --ext .ts,.tsx",
     "start": "next start",

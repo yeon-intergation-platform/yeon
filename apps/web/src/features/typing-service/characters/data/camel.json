@@ -1,0 +1,10 @@
+{
+  "id": "camel",
+  "label": { "ko": "낙타", "en": "Camel" },
+  "sprite": "/sprites/camel-run.png",
+  "frameWidth": 96,
+  "frameHeight": 96,
+  "frameCount": 6,
+  "frameCols": 2,
+  "fps": 10
+}
