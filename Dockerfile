@@ -37,6 +37,7 @@ FROM deps AS builder
 WORKDIR /app
 
 COPY --from=pruner /app/out/full/ .
+COPY --from=pruner /app/scripts/ ./scripts/
 COPY voice-test-data/test-counseling.mp3 ./voice-test-data/test-counseling.mp3
 COPY "voice-test-data/상담기록_테스트음성_20분.mp3" "./voice-test-data/상담기록_테스트음성_20분.mp3"
 COPY voice-test-data/test-bootcamp-counseling-1hour.mp3 ./voice-test-data/test-bootcamp-counseling-1hour.mp3
