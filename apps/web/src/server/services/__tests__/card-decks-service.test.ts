@@ -1,9 +1,20 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 
-const { responses, txCalls, txControl, chain } = vi.hoisted(() => {
+const { responses, txCalls, txControl, txOps, chain } = vi.hoisted(() => {
   const responses: unknown[] = [];
   const txCalls: { count: number } = { count: 0 };
   const txControl: { failure: Error | null } = { failure: null };
+  const txOps: {
+    insideTx: boolean;
+    insertCount: number;
+    updateCount: number;
+    outsideTxUpdateCount: number;
+  } = {
+    insideTx: false,
+    insertCount: 0,
+    updateCount: 0,
+    outsideTxUpdateCount: 0,
+  };
   const proxy: unknown = new Proxy({} as Record<string | symbol, unknown>, {
     get(_target, prop) {
       if (prop === "then") {
@@ -17,13 +28,33 @@ const { responses, txCalls, txControl, chain } = vi.hoisted(() => {
           if (txControl.failure) {
             throw txControl.failure;
           }
-          return fn(proxy);
+          txOps.insideTx = true;
+          try {
+            return await fn(proxy);
+          } finally {
+            txOps.insideTx = false;
+          }
+        };
+      }
+      if (prop === "insert") {
+        return () => {
+          txOps.insertCount += 1;
+          return proxy;
+        };
+      }
+      if (prop === "update") {
+        return () => {
+          txOps.updateCount += 1;
+          if (!txOps.insideTx) {
+            txOps.outsideTxUpdateCount += 1;
+          }
+          return proxy;
         };
       }
       return () => proxy;
     },
   });
-  return { responses, txCalls, txControl, chain: proxy };
+  return { responses, txCalls, txControl, txOps, chain: proxy };
 });
 
 vi.mock("@/server/db", () => ({ getDb: () => chain }));
@@ -88,6 +119,10 @@ beforeEach(() => {
   generatedIds.length = 0;
   txCalls.count = 0;
   txControl.failure = null;
+  txOps.insideTx = false;
+  txOps.insertCount = 0;
+  txOps.updateCount = 0;
+  txOps.outsideTxUpdateCount = 0;
   vi.useFakeTimers();
   vi.setSystemTime(FIXED_NOW);
 });
@@ -187,6 +222,31 @@ describe("reviewCardDeckItem", () => {
     expect(result.reviewDifficulty).toBe("easy");
     expect(result.nextReviewAt).toBe(expectedNext.toISOString());
   });
+
+  it("비소유자가 접근하면 deck 단계에서 404 ServiceError 를 던진다", async () => {
+    responses.push([]);
+
+    await expect(
+      reviewCardDeckItem("other-user", "dck_test1", "dki_test1", "good")
+    ).rejects.toMatchObject({
+      status: 404,
+      message: "덱을 찾지 못했습니다.",
+    });
+    expect(txOps.updateCount).toBe(0);
+  });
+
+  it("itemId 가 존재하지 않으면 404 ServiceError 를 던진다", async () => {
+    const deck = makeDeckRow();
+    responses.push([deck], []);
+
+    await expect(
+      reviewCardDeckItem("user-1", "dck_test1", "dki_missing", "good")
+    ).rejects.toMatchObject({
+      status: 404,
+      message: "카드를 찾지 못했습니다.",
+    });
+    expect(txOps.updateCount).toBe(0);
+  });
 });
 
 describe("getCardDeckDetail", () => {
@@ -272,5 +332,41 @@ describe("createCardDeckItems", () => {
 
     expect(result[0].updatedAt).toBe(FIXED_NOW.toISOString());
     expect(result[0].updatedAt).toBe(insertedRows[0].updatedAt.toISOString());
+  });
+
+  it("deck.updatedAt 갱신은 transaction 콜백 안에서만 일어난다 (rollback 보장)", async () => {
+    const deck = makeDeckRow();
+    const insertedRows = [
+      makeItemRow({
+        id: 14,
+        publicId: "dki_test1",
+        createdAt: FIXED_NOW,
+        updatedAt: FIXED_NOW,
+      }),
+    ];
+
+    responses.push([deck], insertedRows, []);
+
+    await createCardDeckItems("user-1", "dck_test1", {
+      items: [{ frontText: "앞면", backText: "뒷면" }],
+    });
+
+    expect(txOps.updateCount).toBeGreaterThanOrEqual(1);
+    expect(txOps.outsideTxUpdateCount).toBe(0);
+  });
+
+  it("transaction 진입 전 실패하면 deck.updatedAt 도 갱신되지 않는다", async () => {
+    const deck = makeDeckRow();
+    responses.push([deck]);
+    txControl.failure = new Error("DB write failed");
+
+    await expect(
+      createCardDeckItems("user-1", "dck_test1", {
+        items: [{ frontText: "앞면", backText: "뒷면" }],
+      })
+    ).rejects.toMatchObject({ status: 500 });
+
+    expect(txOps.updateCount).toBe(0);
+    expect(txOps.insertCount).toBe(0);
   });
 });
