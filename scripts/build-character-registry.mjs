@@ -65,6 +65,7 @@ function toRuntimeShape(c) {
     frameCols: c.frameCols,
     fps: c.fps,
   };
+  if (c.frameSequence) out.frameSequence = c.frameSequence;
   if (c.credit) out.credit = c.credit;
   return out;
 }

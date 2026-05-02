@@ -1,71 +1,15 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { CharacterDef } from "./characters";
+import { CharacterSprite } from "./character-sprite";
 import { TYPING_CHARACTERS, findCharacter } from "./characters";
 import type { TypingProfile } from "./use-typing-profile";
 import type { TypingLocale } from "./use-typing-settings";
 
-// 카드 캐릭터 표시 영역의 최대 height.
-// integer multiple(×1, ×2, ×3 ...)을 먼저 시도해 가장 큰 정수 배수를 반환한다.
-// 정수 배수가 없으면 integer divisor(1/2, 1/3 ...)로 fallback.
-// sub-pixel scale을 금지해 background-position 1px 어긋남(흔들림) 방지.
 const CARD_DISPLAY_MAX_HEIGHT = 312;
 
 // 접기/펼치기 기준 캐릭터 id
 const FEATURED_IDS = ["camel", "guga", "yuki"] as const;
-
-function snapDisplayHeight(frameHeight: number, maxHeight: number): number {
-  const mult = Math.floor(maxHeight / frameHeight);
-  if (mult >= 1) return frameHeight * mult;
-  for (let divisor = 2; divisor <= 16; divisor++) {
-    const candidate = frameHeight / divisor;
-    if (candidate <= maxHeight) return Math.round(candidate);
-  }
-  return frameHeight;
-}
-
-function CharacterSprite({
-  character,
-  maxHeight,
-}: {
-  character: CharacterDef;
-  maxHeight: number;
-}) {
-  const { sprite, frameWidth, frameHeight, frameCount, frameCols, fps } =
-    character;
-  const [frame, setFrame] = useState(0);
-
-  useEffect(() => {
-    const intervalMs = Math.max(40, Math.round(1000 / fps));
-    const id = setInterval(
-      () => setFrame((f) => (f + 1) % frameCount),
-      intervalMs
-    );
-    return () => clearInterval(id);
-  }, [frameCount, fps]);
-
-  const displayHeight = snapDisplayHeight(frameHeight, maxHeight);
-  const scale = displayHeight / frameHeight;
-  const displayWidth = Math.round(frameWidth * scale);
-  const sheetRows = Math.max(1, Math.ceil(frameCount / frameCols));
-  const col = frame % frameCols;
-  const row = Math.floor(frame / frameCols);
-
-  return (
-    <div
-      style={{
-        width: displayWidth,
-        height: displayHeight,
-        backgroundImage: `url('${sprite}')`,
-        backgroundSize: `${displayWidth * frameCols}px ${displayHeight * sheetRows}px`,
-        backgroundPosition: `-${col * displayWidth}px -${row * displayHeight}px`,
-        imageRendering: "pixelated",
-        flexShrink: 0,
-      }}
-    />
-  );
-}
 
 type TypingProfileCardProps = {
   profile: TypingProfile;

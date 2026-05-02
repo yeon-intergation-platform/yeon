@@ -9,5 +9,7 @@ export type CharacterDef = {
   frameCount: number;
   frameCols: number;
   fps: number;
+  // 재생할 sheet frame 인덱스 순서. 없으면 0..frameCount-1 순서로 fallback.
+  frameSequence?: number[];
   credit?: { source: string; license: string };
 };
