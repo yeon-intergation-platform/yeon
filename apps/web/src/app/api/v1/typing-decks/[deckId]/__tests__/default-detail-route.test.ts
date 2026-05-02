@@ -12,8 +12,8 @@ import { DEFAULT_TYPING_DECKS } from "@/server/services/default-typing-decks";
 import { GET } from "../route";
 
 const EXPECTED_DEFAULT_DECKS = [
-  { id: "default-ko-azaleas", title: "진달래꽃 (시집)" },
-  { id: "default-en-art-of-war-giles", title: "손자병법 / The Art of War" },
+  { id: "default-ko-azaleas", title: "진달래꽃" },
+  { id: "default-en-art-of-war-giles", title: "The Art of War" },
   { id: "default-en-shakespeare-sonnets", title: "Shakespeare’s Sonnets" },
   { id: "default-en-lincoln-addresses", title: "Lincoln’s Addresses" },
 ] as const;
@@ -30,19 +30,19 @@ describe("api/v1/typing-decks/[deckId] default detail route", () => {
       DEFAULT_TYPING_DECKS.map((deck) => ({
         id: deck.id,
         title: deck.title,
-      })),
+      }))
     ).toEqual([...EXPECTED_DEFAULT_DECKS]);
 
     for (const expectedDeck of DEFAULT_TYPING_DECKS) {
       expect(REMOVED_GENERATED_DEFAULT_DECK_IDS.has(expectedDeck.id)).toBe(
-        false,
+        false
       );
 
       const response = await GET(
         new NextRequest(
-          `http://localhost/api/v1/typing-decks/${expectedDeck.id}`,
+          `http://localhost/api/v1/typing-decks/${expectedDeck.id}`
         ),
-        { params: Promise.resolve({ deckId: expectedDeck.id }) },
+        { params: Promise.resolve({ deckId: expectedDeck.id }) }
       );
 
       expect(response.status).toBe(200);
@@ -58,10 +58,10 @@ describe("api/v1/typing-decks/[deckId] default detail route", () => {
       });
       expect(body.passages).toHaveLength(20);
       expect(body.passages.map((passage) => passage.id)).toEqual(
-        expectedDeck.passages.map((passage) => passage.id),
+        expectedDeck.passages.map((passage) => passage.id)
       );
       expect(new Set(body.passages.map((passage) => passage.prompt)).size).toBe(
-        20,
+        20
       );
     }
   });

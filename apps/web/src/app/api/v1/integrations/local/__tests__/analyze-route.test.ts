@@ -65,7 +65,7 @@ describe("local analyze route", () => {
       {
         method: "POST",
         body: new FormData(),
-      },
+      }
     );
 
     const response = await POST(request);
@@ -81,6 +81,7 @@ describe("local analyze route", () => {
     mockGetImportDraftBuffer.mockResolvedValue({
       row: {
         id: "draft-1",
+        publicId: "draft-1",
         sourceFileName: "students.csv",
         sourceMimeType: "text/csv",
         sourceFileKind: "csv",
@@ -100,7 +101,7 @@ describe("local analyze route", () => {
       new NextRequest("http://localhost/api/v1/integrations/local/analyze", {
         method: "POST",
         body: form,
-      }),
+      })
     );
 
     expect(mockMarkImportDraftAnalyzing).toHaveBeenCalled();
@@ -115,7 +116,7 @@ describe("local analyze route", () => {
     });
     mockCreateLocalImportDraft.mockResolvedValue({ id: "draft-1" });
     mockAnalyzeBuffer.mockRejectedValue(
-      new ServiceError(400, "지원하지 않는 파일 형식입니다."),
+      new ServiceError(400, "지원하지 않는 파일 형식입니다.")
     );
 
     const file = new File(["bad"], "archive.zip", { type: "application/zip" });
@@ -126,7 +127,7 @@ describe("local analyze route", () => {
       new NextRequest("http://localhost/api/v1/integrations/local/analyze", {
         method: "POST",
         body: form,
-      }),
+      })
     );
 
     expect(mockSaveImportDraftError).toHaveBeenCalledWith({

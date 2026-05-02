@@ -1,7 +1,6 @@
 import { eq } from "drizzle-orm";
 
-import { resolveApiHrefForBasePath } from "@/lib/app-route-paths";
-import { DEFAULT_COUNSELING_SERVICE_HREF } from "@/lib/platform-services";
+import { DEFAULT_COUNSELING_SERVICE_BASE_PATH } from "@/lib/app-route-paths";
 import { decryptField, encryptField } from "@/server/auth/field-crypto";
 import { getDb } from "@/server/db";
 import { onedriveTokens } from "@/server/db/schema";
@@ -47,19 +46,17 @@ function getClientSecret(): string {
   if (!secret)
     throw new ServiceError(
       500,
-      "MICROSOFT_CLIENT_SECRET가 설정되지 않았습니다.",
+      "MICROSOFT_CLIENT_SECRET가 설정되지 않았습니다."
     );
   return secret;
 }
 
 function getRedirectUri(): string {
   const base = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-  const callbackPath = resolveApiHrefForBasePath(
-    DEFAULT_COUNSELING_SERVICE_HREF,
-    "/api/v1/integrations/onedrive/auth/callback",
-  );
-
-  return new URL(callbackPath, base).toString();
+  return new URL(
+    `${DEFAULT_COUNSELING_SERVICE_BASE_PATH}/api/v1/integrations/onedrive/auth/callback`,
+    base
+  ).toString();
 }
 
 /* ── OAuth URL 생성 ── */
@@ -119,7 +116,7 @@ export async function exchangeCode(code: string): Promise<{
 /* ── 토큰 갱신 ── */
 
 export async function refreshAccessToken(
-  refreshToken: string,
+  refreshToken: string
 ): Promise<{ accessToken: string; refreshToken: string; expiresAt: Date }> {
   const body = new URLSearchParams({
     client_id: getClientId(),
@@ -157,7 +154,7 @@ export async function refreshAccessToken(
 
 export async function saveTokens(
   userId: string,
-  tokens: { accessToken: string; refreshToken: string; expiresAt: Date },
+  tokens: { accessToken: string; refreshToken: string; expiresAt: Date }
 ): Promise<void> {
   const db = getDb();
   const now = new Date();
@@ -193,7 +190,7 @@ export async function saveTokens(
 /* ── DB에서 유효한 토큰 가져오기 (만료 시 자동 갱신) ── */
 
 export async function getValidAccessToken(
-  userId: string,
+  userId: string
 ): Promise<string | null> {
   const db = getDb();
 
@@ -242,7 +239,7 @@ export interface OneDriveFile {
 
 export async function listFiles(
   accessToken: string,
-  folderId?: string,
+  folderId?: string
 ): Promise<OneDriveFile[]> {
   const endpoint = folderId
     ? `${GRAPH_URL}/me/drive/items/${folderId}/children`
@@ -250,7 +247,7 @@ export async function listFiles(
 
   const res = await fetch(
     `${endpoint}?$select=id,name,size,lastModifiedDateTime,file&$top=200`,
-    { headers: { Authorization: `Bearer ${accessToken}` } },
+    { headers: { Authorization: `Bearer ${accessToken}` } }
   );
 
   if (!res.ok) {
@@ -261,12 +258,12 @@ export async function listFiles(
       if (body.error?.code === "accessDenied") {
         throw new ServiceError(
           403,
-          "이 폴더는 Personal Vault로 보호되어 있어 접근할 수 없습니다. OneDrive 앱에서 직접 잠금을 해제한 뒤 다시 시도해 주세요.",
+          "이 폴더는 Personal Vault로 보호되어 있어 접근할 수 없습니다. OneDrive 앱에서 직접 잠금을 해제한 뒤 다시 시도해 주세요."
         );
       }
       throw new ServiceError(
         403,
-        "OneDrive 접근 권한이 없습니다. 다시 연결해 주세요.",
+        "OneDrive 접근 권한이 없습니다. 다시 연결해 주세요."
       );
     }
     throw new ServiceError(502, "OneDrive 파일 목록 조회 실패");
@@ -295,7 +292,7 @@ export async function listFiles(
 
 export async function downloadFile(
   accessToken: string,
-  fileId: string,
+  fileId: string
 ): Promise<Buffer> {
   const res = await fetch(`${GRAPH_URL}/me/drive/items/${fileId}/content`, {
     headers: { Authorization: `Bearer ${accessToken}` },

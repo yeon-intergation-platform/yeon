@@ -1,7 +1,6 @@
 import { eq } from "drizzle-orm";
 
-import { resolveApiHrefForBasePath } from "@/lib/app-route-paths";
-import { DEFAULT_COUNSELING_SERVICE_HREF } from "@/lib/platform-services";
+import { DEFAULT_COUNSELING_SERVICE_BASE_PATH } from "@/lib/app-route-paths";
 import { decryptField, encryptField } from "@/server/auth/field-crypto";
 import { getDb } from "@/server/db";
 import { googledriveTokens } from "@/server/db/schema";
@@ -54,19 +53,19 @@ function parseScopeSet(scopeText: string | undefined): Set<string> {
     (scopeText ?? "")
       .split(/\s+/)
       .map((scope) => scope.trim())
-      .filter(Boolean),
+      .filter(Boolean)
   );
 }
 
 function hasAnyRequiredScope(
   grantedScopes: Set<string>,
-  requiredScopes: readonly string[],
+  requiredScopes: readonly string[]
 ): boolean {
   return requiredScopes.some((scope) => grantedScopes.has(scope));
 }
 
 async function getSavedTokenRow(
-  userId: string,
+  userId: string
 ): Promise<GoogleDriveTokenRow | null> {
   const db = getDb();
   const [row] = await db
@@ -86,7 +85,7 @@ async function fetchGrantedScopes(accessToken: string): Promise<Set<string>> {
     const text = await res.text().catch(() => "");
     throw new ServiceError(
       502,
-      `Google 권한 범위를 확인하지 못했습니다: ${text || res.status}`,
+      `Google 권한 범위를 확인하지 못했습니다: ${text || res.status}`
     );
   }
 
@@ -110,12 +109,10 @@ function getClientSecret(): string {
 
 function getRedirectUri(): string {
   const base = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-  const callbackPath = resolveApiHrefForBasePath(
-    DEFAULT_COUNSELING_SERVICE_HREF,
-    "/api/v1/integrations/googledrive/auth/callback",
-  );
-
-  return new URL(callbackPath, base).toString();
+  return new URL(
+    `${DEFAULT_COUNSELING_SERVICE_BASE_PATH}/api/v1/integrations/googledrive/auth/callback`,
+    base
+  ).toString();
 }
 
 export function getOAuthUrl(state: string): string {
@@ -139,7 +136,7 @@ export async function exchangeCode(code: string): Promise<{
 }>;
 export async function exchangeCode(
   code: string,
-  existingRefreshToken: string | null,
+  existingRefreshToken: string | null
 ): Promise<{
   accessToken: string;
   refreshToken: string;
@@ -147,7 +144,7 @@ export async function exchangeCode(
 }>;
 export async function exchangeCode(
   code: string,
-  existingRefreshToken: string | null = null,
+  existingRefreshToken: string | null = null
 ): Promise<{
   accessToken: string;
   refreshToken: string;
@@ -184,7 +181,7 @@ export async function exchangeCode(
     // 참고: https://developers.google.com/identity/protocols/oauth2/web-server#offline
     throw new ServiceError(
       502,
-      "Google이 refresh_token을 반환하지 않았습니다. Google 계정 > 보안 > 타사 앱 접근에서 이 앱의 접근 권한을 제거한 뒤 다시 연결해주세요.",
+      "Google이 refresh_token을 반환하지 않았습니다. Google 계정 > 보안 > 타사 앱 접근에서 이 앱의 접근 권한을 제거한 뒤 다시 연결해주세요."
     );
   }
 
@@ -192,7 +189,7 @@ export async function exchangeCode(
   if (!refreshToken) {
     throw new ServiceError(
       502,
-      "Google refresh token을 확인하지 못했습니다. 다시 연결해주세요.",
+      "Google refresh token을 확인하지 못했습니다. 다시 연결해주세요."
     );
   }
 
@@ -204,7 +201,7 @@ export async function exchangeCode(
 }
 
 export async function refreshAccessToken(
-  refreshToken: string,
+  refreshToken: string
 ): Promise<{ accessToken: string; refreshToken: string; expiresAt: Date }> {
   const body = new URLSearchParams({
     client_id: getClientId(),
@@ -239,7 +236,7 @@ export async function refreshAccessToken(
 
 export async function saveTokens(
   userId: string,
-  tokens: { accessToken: string; refreshToken: string; expiresAt: Date },
+  tokens: { accessToken: string; refreshToken: string; expiresAt: Date }
 ): Promise<void> {
   const db = getDb();
   const now = new Date();
@@ -273,14 +270,14 @@ export async function saveTokens(
 }
 
 export async function getSavedRefreshToken(
-  userId: string,
+  userId: string
 ): Promise<string | null> {
   const row = await getSavedTokenRow(userId);
   return row ? readPlainRefreshToken(row) : null;
 }
 
 export async function getValidAccessToken(
-  userId: string,
+  userId: string
 ): Promise<string | null> {
   const row = await getSavedTokenRow(userId);
 
@@ -309,7 +306,7 @@ export async function hasGoogleSheetsAccess(userId: string): Promise<boolean> {
 }
 
 export async function getValidSheetsAccessToken(
-  userId: string,
+  userId: string
 ): Promise<string | null> {
   const accessToken = await getValidAccessToken(userId);
 
@@ -324,7 +321,7 @@ export async function getValidSheetsAccessToken(
 
   throw new ServiceError(
     401,
-    "Google Sheets 권한이 부족합니다. Google 계정을 다시 연결한 뒤 다시 시도해주세요.",
+    "Google Sheets 권한이 부족합니다. Google 계정을 다시 연결한 뒤 다시 시도해주세요."
   );
 }
 
@@ -348,7 +345,7 @@ export interface GoogleDriveFile {
 
 export async function listFiles(
   accessToken: string,
-  folderId?: string,
+  folderId?: string
 ): Promise<GoogleDriveFile[]> {
   const parent = folderId ? `'${folderId}' in parents` : "'root' in parents";
   const q = `${parent} and trashed=false`;
@@ -390,7 +387,7 @@ export async function listFiles(
 export async function downloadFile(
   accessToken: string,
   fileId: string,
-  mimeType: string,
+  mimeType: string
 ): Promise<Buffer> {
   const isGoogleSheet = mimeType === "application/vnd.google-apps.spreadsheet";
 

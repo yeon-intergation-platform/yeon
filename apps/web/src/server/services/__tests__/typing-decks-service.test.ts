@@ -20,12 +20,12 @@ import {
 const EXPECTED_DEFAULT_DECKS = [
   {
     id: "default-ko-azaleas",
-    title: "진달래꽃 (시집)",
+    title: "진달래꽃",
     languageTag: TYPING_DECK_LANGUAGE_TAGS.ko,
   },
   {
     id: "default-en-art-of-war-giles",
-    title: "손자병법 / The Art of War",
+    title: "The Art of War",
     languageTag: TYPING_DECK_LANGUAGE_TAGS.en,
   },
   {
@@ -50,14 +50,13 @@ const ACCEPTED_RIGHTS_STATUSES = new Set([
   "product-legal-accepted-yellow",
 ]);
 
-
 function expectDeckShape() {
   expect(
     DEFAULT_TYPING_DECKS.map((deck) => ({
       id: deck.id,
       title: deck.title,
       languageTag: deck.languageTag,
-    })),
+    }))
   ).toEqual([...EXPECTED_DEFAULT_DECKS]);
 
   for (const deck of DEFAULT_TYPING_DECKS) {
@@ -66,11 +65,11 @@ function expectDeckShape() {
     expect(deck.visibility).toBe(TYPING_DECK_VISIBILITY.public);
     expect(deck.passages).toHaveLength(20);
     expect(deck.passages.map((passage) => passage.sortOrder)).toEqual(
-      Array.from({ length: 20 }, (_, index) => index),
+      Array.from({ length: 20 }, (_, index) => index)
     );
     expect(new Set(deck.passages.map((passage) => passage.id)).size).toBe(20);
     expect(new Set(deck.passages.map((passage) => passage.prompt)).size).toBe(
-      20,
+      20
     );
   }
 }
@@ -78,9 +77,7 @@ function expectDeckShape() {
 function expectManifestCoverage() {
   const sources =
     DEFAULT_TYPING_DECK_SOURCES as readonly DefaultTypingDeckSource[];
-  const sourcesByDeckId = new Map(
-    sources.map((source) => [source.id, source]),
-  );
+  const sourcesByDeckId = new Map(sources.map((source) => [source.id, source]));
 
   expect(sources).toHaveLength(DEFAULT_TYPING_DECKS.length);
 
@@ -95,19 +92,17 @@ function expectManifestCoverage() {
     expect(source?.licenseNotes).toEqual(expect.any(String));
     expect(ACCEPTED_RIGHTS_STATUSES.has(source?.rightsStatus ?? "")).toBe(true);
 
-    const manifestPassageIds = source?.passages.map(
-      (passage) => passage.id,
-    );
+    const manifestPassageIds = source?.passages.map((passage) => passage.id);
     expect(manifestPassageIds).toEqual(
-      deck.passages.map((passage) => passage.id),
+      deck.passages.map((passage) => passage.id)
     );
     expect(
       source?.passages.every(
         (passage) =>
           passage.sourceLocator.trim().length > 0 &&
           passage.cleanupNotes.trim().length > 0 &&
-          (!passage.sourceUrl || /^https?:\/\//.test(passage.sourceUrl)),
-      ),
+          (!passage.sourceUrl || /^https?:\/\//.test(passage.sourceUrl))
+      )
     ).toBe(true);
   }
 }
@@ -124,15 +119,15 @@ describe("typing-decks-service default decks", () => {
     const expectedDecks = DEFAULT_TYPING_DECKS.filter(
       (deck) =>
         deck.languageTag === TYPING_DECK_LANGUAGE_TAGS.ko ||
-        deck.languageTag === TYPING_DECK_LANGUAGE_TAGS.mixed,
+        deck.languageTag === TYPING_DECK_LANGUAGE_TAGS.mixed
     );
 
     expect(decks).toHaveLength(expectedDecks.length);
     expect(decks.map((deck) => deck.id)).toEqual(
-      expectedDecks.map((deck) => deck.id),
+      expectedDecks.map((deck) => deck.id)
     );
     expect(
-      decks.every((deck) => deck.source === TYPING_DECK_SOURCE.default),
+      decks.every((deck) => deck.source === TYPING_DECK_SOURCE.default)
     ).toBe(true);
     expect(decks.every((deck) => deck.canEdit === false)).toBe(true);
     expect(decks.every((deck) => deck.passageCount === 20)).toBe(true);
@@ -149,15 +144,15 @@ describe("typing-decks-service default decks", () => {
     const expectedDecks = DEFAULT_TYPING_DECKS.filter(
       (deck) =>
         deck.languageTag === TYPING_DECK_LANGUAGE_TAGS.en ||
-        deck.languageTag === TYPING_DECK_LANGUAGE_TAGS.mixed,
+        deck.languageTag === TYPING_DECK_LANGUAGE_TAGS.mixed
     );
 
     expect(decks).toHaveLength(expectedDecks.length);
     expect(decks.map((deck) => deck.id)).toEqual(
-      expectedDecks.map((deck) => deck.id),
+      expectedDecks.map((deck) => deck.id)
     );
     expect(
-      decks.every((deck) => deck.source === TYPING_DECK_SOURCE.default),
+      decks.every((deck) => deck.source === TYPING_DECK_SOURCE.default)
     ).toBe(true);
     expect(decks.every((deck) => deck.canEdit === false)).toBe(true);
     expect(decks.every((deck) => deck.passageCount === 20)).toBe(true);
@@ -184,10 +179,10 @@ describe("typing-decks-service default decks", () => {
       });
       expect(detail.passages).toHaveLength(20);
       expect(detail.passages.map((passage) => passage.id)).toEqual(
-        expectedDeck.passages.map((passage) => passage.id),
+        expectedDeck.passages.map((passage) => passage.id)
       );
       expect(
-        new Set(detail.passages.map((passage) => passage.prompt)).size,
+        new Set(detail.passages.map((passage) => passage.prompt)).size
       ).toBe(20);
     }
   });
