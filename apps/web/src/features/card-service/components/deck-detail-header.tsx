@@ -22,10 +22,7 @@ function formatDate(value: string): string {
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
-  })
-    .format(date)
-    .replace(/\. /g, ". ")
-    .replace(/\.$/, ".");
+  }).format(date);
 }
 
 export function DeckDetailHeader({
@@ -57,7 +54,7 @@ export function DeckDetailHeader({
           setEditing(false);
           setMobileMenuOpen(false);
         },
-      },
+      }
     );
   };
 

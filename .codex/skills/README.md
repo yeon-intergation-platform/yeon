@@ -34,6 +34,7 @@ Use for normal Yeon development.
 - `deploy-all` — main-only production deployment.
 - `validate` / `verify` — verification pipeline.
 - `nextjs-patterns`, `expo-patterns`, `monorepo-patterns`, `component-patterns` — framework/boundary details.
+- `service-context-*` — service-specific design/function/routing context for `omx team` lane kickoff.
 
 ### 3. Review, cleanup, and quality
 
@@ -68,27 +69,13 @@ These are generated under `.codex/skills/SHARED/` from `.claude/commands` or `.c
 
 <!-- SYNC-SKILLS:LOCAL:BEGIN -->
 
-- `bug-repo`
-- `clarify`
-- `code-review`
-- `component-patterns`
-- `deploy-all`
-- `design-eye`
-- `design-workflow`
-- `expo-patterns`
-- `git-pr-workflow`
-- `monorepo-patterns`
-- `nextjs-patterns`
-- `ralph-strict`
-- `refactor-repo`
-- `retrospective`
-- `review-repo`
-- `self-improve-checklist`
-- `session-insights`
-- `ship`
-- `validate`
-- `wrap`
-- `yeon-project-context`
+- `ai-call-wrapper`
+- `drizzle-migration-workflow`
+- `guest-auth-branching`
+- `race-server-conventions`
+- `route-state-contract`
+- `tanstack-query-conventions`
+- `zod-contract-conventions`
 
 <!-- SYNC-SKILLS:LOCAL:END -->
 

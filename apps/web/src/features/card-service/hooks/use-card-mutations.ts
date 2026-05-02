@@ -30,7 +30,7 @@ import { cardDecksQueryKey } from "./use-deck-list";
 function invalidateDeckAndList(
   queryClient: ReturnType<typeof useQueryClient>,
   isAuthenticated: boolean,
-  deckId: string,
+  deckId: string
 ) {
   void queryClient.invalidateQueries({
     queryKey: cardDeckDetailQueryKey(isAuthenticated, deckId),
@@ -40,11 +40,23 @@ function invalidateDeckAndList(
   });
 }
 
-export function useAddCard(deckId: string) {
+function useDeckMutation<TInput, TOutput>(
+  deckId: string,
+  mutationFn: (input: TInput, isAuthenticated: boolean) => Promise<TOutput>
+) {
   const queryClient = useQueryClient();
   const isAuthenticated = useIsAuthenticated();
   return useMutation({
-    mutationFn: async (body: CreateCardDeckItemBody) => {
+    mutationFn: (input: TInput) => mutationFn(input, isAuthenticated),
+    onSuccess: () =>
+      invalidateDeckAndList(queryClient, isAuthenticated, deckId),
+  });
+}
+
+export function useAddCard(deckId: string) {
+  return useDeckMutation(
+    deckId,
+    async (body: CreateCardDeckItemBody, isAuthenticated) => {
       if (isAuthenticated) {
         const data = await cardServiceFetchJson<{ item: CardDeckItemDto }>(
           `/api/v1/card-decks/${deckId}/items`,
@@ -53,22 +65,19 @@ export function useAddCard(deckId: string) {
             headers: { "content-type": "application/json" },
             body: JSON.stringify(body),
           },
-          "카드를 추가하지 못했습니다.",
+          "카드를 추가하지 못했습니다."
         );
         return data.item;
       }
       return addGuestCard(deckId, body);
-    },
-    onSuccess: () =>
-      invalidateDeckAndList(queryClient, isAuthenticated, deckId),
-  });
+    }
+  );
 }
 
 export function useAddCards(deckId: string) {
-  const queryClient = useQueryClient();
-  const isAuthenticated = useIsAuthenticated();
-  return useMutation({
-    mutationFn: async (body: CreateCardDeckItemsBody) => {
+  return useDeckMutation(
+    deckId,
+    async (body: CreateCardDeckItemsBody, isAuthenticated) => {
       if (isAuthenticated) {
         const data = await cardServiceFetchJson<{ items: CardDeckItemDto[] }>(
           `/api/v1/card-decks/${deckId}/items/bulk`,
@@ -77,25 +86,22 @@ export function useAddCards(deckId: string) {
             headers: { "content-type": "application/json" },
             body: JSON.stringify(body),
           },
-          "카드를 일괄 추가하지 못했습니다.",
+          "카드를 일괄 추가하지 못했습니다."
         );
         return data.items;
       }
       return addGuestCards(deckId, body);
-    },
-    onSuccess: () =>
-      invalidateDeckAndList(queryClient, isAuthenticated, deckId),
-  });
+    }
+  );
 }
 
 export function useUpdateCard(deckId: string) {
-  const queryClient = useQueryClient();
-  const isAuthenticated = useIsAuthenticated();
-  return useMutation({
-    mutationFn: async (params: {
-      itemId: string;
-      body: UpdateCardDeckItemBody;
-    }) => {
+  return useDeckMutation(
+    deckId,
+    async (
+      params: { itemId: string; body: UpdateCardDeckItemBody },
+      isAuthenticated
+    ) => {
       if (isAuthenticated) {
         const data = await cardServiceFetchJson<{ item: CardDeckItemDto }>(
           `/api/v1/card-decks/${deckId}/items/${params.itemId}`,
@@ -104,45 +110,36 @@ export function useUpdateCard(deckId: string) {
             headers: { "content-type": "application/json" },
             body: JSON.stringify(params.body),
           },
-          "카드를 수정하지 못했습니다.",
+          "카드를 수정하지 못했습니다."
         );
         return data.item;
       }
       return updateGuestCard(params.itemId, params.body);
-    },
-    onSuccess: () =>
-      invalidateDeckAndList(queryClient, isAuthenticated, deckId),
-  });
+    }
+  );
 }
 
 export function useDeleteCard(deckId: string) {
-  const queryClient = useQueryClient();
-  const isAuthenticated = useIsAuthenticated();
-  return useMutation({
-    mutationFn: async (itemId: string) => {
-      if (isAuthenticated) {
-        await cardServiceFetchVoid(
-          `/api/v1/card-decks/${deckId}/items/${itemId}`,
-          { method: "DELETE" },
-          "카드를 삭제하지 못했습니다.",
-        );
-        return;
-      }
-      await deleteGuestCard(itemId);
-    },
-    onSuccess: () =>
-      invalidateDeckAndList(queryClient, isAuthenticated, deckId),
+  return useDeckMutation(deckId, async (itemId: string, isAuthenticated) => {
+    if (isAuthenticated) {
+      await cardServiceFetchVoid(
+        `/api/v1/card-decks/${deckId}/items/${itemId}`,
+        { method: "DELETE" },
+        "카드를 삭제하지 못했습니다."
+      );
+      return;
+    }
+    await deleteGuestCard(itemId);
   });
 }
 
 export function useReviewCard(deckId: string) {
-  const queryClient = useQueryClient();
-  const isAuthenticated = useIsAuthenticated();
-  return useMutation({
-    mutationFn: async (params: {
-      itemId: string;
-      difficulty: CardReviewDifficulty;
-    }) => {
+  return useDeckMutation(
+    deckId,
+    async (
+      params: { itemId: string; difficulty: CardReviewDifficulty },
+      isAuthenticated
+    ) => {
       if (isAuthenticated) {
         const data = await cardServiceFetchJson<{ item: CardDeckItemDto }>(
           `/api/v1/card-decks/${deckId}/items/${params.itemId}/review`,
@@ -151,15 +148,13 @@ export function useReviewCard(deckId: string) {
             headers: { "content-type": "application/json" },
             body: JSON.stringify({ difficulty: params.difficulty }),
           },
-          "복습 결과를 저장하지 못했습니다.",
+          "복습 결과를 저장하지 못했습니다."
         );
         return data.item;
       }
       return reviewGuestCard(params.itemId, params.difficulty);
-    },
-    onSuccess: () =>
-      invalidateDeckAndList(queryClient, isAuthenticated, deckId),
-  });
+    }
+  );
 }
 
 export function useUpdateCardStudyPreference(deckId: string) {
@@ -178,7 +173,7 @@ export function useUpdateCardStudyPreference(deckId: string) {
           headers: { "content-type": "application/json" },
           body: JSON.stringify({ studyMode }),
         },
-        "학습 모드를 저장하지 못했습니다.",
+        "학습 모드를 저장하지 못했습니다."
       );
     },
     onSuccess: () =>

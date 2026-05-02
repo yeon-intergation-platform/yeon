@@ -26,6 +26,11 @@ import {
 import { TypingBgmButton } from "./typing-bgm-button";
 import { TypingSettingsButton } from "./typing-settings-button";
 import { TypingServiceHeader } from "./typing-service-header";
+import {
+  calculateAccuracy,
+  calculateTypingSpeed,
+  getProgress,
+} from "./race-metrics";
 
 const BENCHMARK_LANES = [
   {
@@ -56,7 +61,7 @@ const BENCHMARK_LANES = [
 
 function pickNextPassage(
   passages: readonly TypingDeckPassageOption[],
-  currentId?: string,
+  currentId?: string
 ) {
   const candidates = passages.length > 0 ? passages : [];
   if (candidates.length === 0) {
@@ -76,30 +81,28 @@ function pickNextPassage(
   );
 }
 
-function calculateAccuracy(prompt: string, input: string) {
-  const promptChars = Array.from(prompt);
-  const inputChars = Array.from(input);
-  if (inputChars.length === 0) return 100;
-  const matched = inputChars.reduce(
-    (count, char, i) => count + Number(char === promptChars[i]),
-    0,
-  );
-  return Math.max(0, Math.round((matched / inputChars.length) * 100));
-}
+type BenchmarkNoiseState = {
+  noise: number;
+  nextChangeAt: number;
+  accChars: number;
+  prevEffectiveSec: number;
+  finishedWpm: number | null;
+  giveUpAt: number | null;
+  pauseAt: number | null;
+  pausedUntil: number | null;
+};
 
-function calculateTypingSpeed(input: string, elapsedSeconds: number) {
-  const len = Array.from(input).length;
-  if (elapsedSeconds <= 0 || len === 0) return 0;
-  return Math.round((len / elapsedSeconds) * 60);
-}
-
-function getProgress(prompt: string, input: string) {
-  const promptLen = Array.from(prompt).length;
-  if (promptLen === 0) return 0;
-  return Math.min(
-    100,
-    Math.round((Array.from(input).length / promptLen) * 100),
-  );
+function createBenchmarkNoiseStates(): BenchmarkNoiseState[] {
+  return BENCHMARK_LANES.map(() => ({
+    noise: 1.0,
+    nextChangeAt: 0,
+    accChars: 0,
+    prevEffectiveSec: 0,
+    finishedWpm: null,
+    giveUpAt: Math.random() < 1 / 25 ? 0.25 + Math.random() * 0.45 : null,
+    pauseAt: Math.random() < 1 / 20 ? 0.2 + Math.random() * 0.6 : null,
+    pausedUntil: null,
+  }));
 }
 
 export type TypingRaceSoloScreenProps = {
@@ -132,11 +135,11 @@ export function TypingRaceSoloScreen({
   const speedUnit = getSpeedUnit(settings.locale);
   const t = createTranslator(settings.locale);
   const [passage, setPassage] = useState<TypingDeckPassageOption>(() =>
-    pickNextPassage(passages),
+    pickNextPassage(passages)
   );
   const [input, setInput] = useState("");
   const [countdownRemaining, setCountdownRemaining] = useState<number>(
-    TYPING_RACE_DEFAULTS.countdownSeconds,
+    TYPING_RACE_DEFAULTS.countdownSeconds
   );
   const [startedAt, setStartedAt] = useState<number | null>(null);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
@@ -144,28 +147,8 @@ export function TypingRaceSoloScreen({
   const engineContainerRef = useRef<HTMLDivElement | null>(null);
   const engineControllerRef = useRef<TypingRaceEngineController | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
-  const benchmarkNoiseRef = useRef<
-    {
-      noise: number;
-      nextChangeAt: number;
-      accChars: number;
-      prevEffectiveSec: number;
-      finishedWpm: number | null;
-      giveUpAt: number | null;
-      pauseAt: number | null;
-      pausedUntil: number | null;
-    }[]
-  >(
-    BENCHMARK_LANES.map(() => ({
-      noise: 1.0,
-      nextChangeAt: 0,
-      accChars: 0,
-      prevEffectiveSec: 0,
-      finishedWpm: null,
-      giveUpAt: Math.random() < 1 / 25 ? 0.25 + Math.random() * 0.45 : null,
-      pauseAt: Math.random() < 1 / 20 ? 0.2 + Math.random() * 0.6 : null,
-      pausedUntil: null,
-    })),
+  const benchmarkNoiseRef = useRef<BenchmarkNoiseState[]>(
+    createBenchmarkNoiseStates()
   );
 
   useEffect(() => {
@@ -173,27 +156,27 @@ export function TypingRaceSoloScreen({
     setPassage((current) =>
       passages.some((candidate) => candidate.id === current.id)
         ? current
-        : pickNextPassage(passages, current.id),
+        : pickNextPassage(passages, current.id)
     );
   }, [input.length, passages]);
 
   const promptChars = useMemo(
     () => Array.from(passage.prompt),
-    [passage.prompt],
+    [passage.prompt]
   );
   const inputChars = useMemo(() => Array.from(input), [input]);
 
   const progress = useMemo(
     () => getProgress(passage.prompt, input),
-    [passage.prompt, input],
+    [passage.prompt, input]
   );
   const accuracy = useMemo(
     () => calculateAccuracy(passage.prompt, input),
-    [passage.prompt, input],
+    [passage.prompt, input]
   );
   const typingSpeed = useMemo(
     () => calculateTypingSpeed(input, elapsedSeconds),
-    [elapsedSeconds, input],
+    [elapsedSeconds, input]
   );
   const completed = input === passage.prompt;
 
@@ -299,7 +282,7 @@ export function TypingRaceSoloScreen({
       noiseState.prevEffectiveSec = effectiveSeconds;
       const simulatedChars = noiseState.accChars;
       const laneProgress = clampRaceProgress(
-        (simulatedChars / promptLength) * 100,
+        (simulatedChars / promptLength) * 100
       );
 
       if (
@@ -308,7 +291,7 @@ export function TypingRaceSoloScreen({
         effectiveSeconds > 0
       ) {
         noiseState.finishedWpm = Math.round(
-          (simulatedChars / effectiveSeconds) * 60,
+          (simulatedChars / effectiveSeconds) * 60
         );
       }
 
@@ -358,16 +341,7 @@ export function TypingRaceSoloScreen({
   }, [snapshot]);
 
   const handleRestart = () => {
-    benchmarkNoiseRef.current = BENCHMARK_LANES.map(() => ({
-      noise: 1.0,
-      nextChangeAt: 0,
-      accChars: 0,
-      prevEffectiveSec: 0,
-      finishedWpm: null,
-      giveUpAt: Math.random() < 1 / 25 ? 0.25 + Math.random() * 0.45 : null,
-      pauseAt: Math.random() < 1 / 20 ? 0.2 + Math.random() * 0.6 : null,
-      pausedUntil: null,
-    }));
+    benchmarkNoiseRef.current = createBenchmarkNoiseStates();
     setPassage((current) => pickNextPassage(passages, current.id));
     setInput("");
     setCountdownRemaining(TYPING_RACE_DEFAULTS.countdownSeconds);
@@ -509,7 +483,7 @@ export function TypingRaceSoloScreen({
                 setInput(
                   Array.from(e.target.value)
                     .slice(0, promptChars.length)
-                    .join(""),
+                    .join("")
                 )
               }
               disabled={countdownRemaining > 0}

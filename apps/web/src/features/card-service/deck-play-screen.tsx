@@ -33,7 +33,7 @@ type DeckPlayViewState =
     };
 
 function toViewState(
-  query: UseQueryResult<CardDeckDetailResponse>,
+  query: UseQueryResult<CardDeckDetailResponse>
 ): DeckPlayViewState {
   if (query.isPending) {
     return { kind: "loading" };
@@ -121,6 +121,11 @@ function EmptyPlayScreen({
   );
 }
 
+const STUDY_MODE_OPTIONS = [
+  { mode: CARD_STUDY_MODES.flashcard, label: "플래시카드" },
+  { mode: CARD_STUDY_MODES.review, label: "복습 모드" },
+] as const;
+
 function ReadyPlayBody({
   deckId,
   deckTitle,
@@ -151,16 +156,10 @@ function ReadyPlayBody({
   }
 
   function handleReview(difficulty: CardReviewDifficulty) {
-    if (!play.currentItem) {
-      return;
-    }
+    if (!play.currentItem) return;
     reviewMutation.mutate(
       { difficulty, itemId: play.currentItem.id },
-      {
-        onSuccess: () => {
-          play.handleFirst();
-        },
-      },
+      { onSuccess: () => play.handleFirst() }
     );
   }
 
@@ -176,30 +175,21 @@ function ReadyPlayBody({
           </p>
         </div>
         <div className="flex gap-2">
-          <button
-            type="button"
-            aria-pressed={studyMode === CARD_STUDY_MODES.flashcard}
-            onClick={() => handleStudyModeChange(CARD_STUDY_MODES.flashcard)}
-            className={`rounded-xl border px-4 py-2 text-[13px] font-semibold ${
-              studyMode === CARD_STUDY_MODES.flashcard
-                ? "border-[#111] bg-[#111] text-white"
-                : "border-[#e5e5e5] text-[#111] hover:border-[#111]"
-            }`}
-          >
-            플래시카드
-          </button>
-          <button
-            type="button"
-            aria-pressed={studyMode === CARD_STUDY_MODES.review}
-            onClick={() => handleStudyModeChange(CARD_STUDY_MODES.review)}
-            className={`rounded-xl border px-4 py-2 text-[13px] font-semibold ${
-              studyMode === CARD_STUDY_MODES.review
-                ? "border-[#111] bg-[#111] text-white"
-                : "border-[#e5e5e5] text-[#111] hover:border-[#111]"
-            }`}
-          >
-            복습 모드
-          </button>
+          {STUDY_MODE_OPTIONS.map(({ mode, label }) => (
+            <button
+              key={mode}
+              type="button"
+              aria-pressed={studyMode === mode}
+              onClick={() => handleStudyModeChange(mode)}
+              className={`rounded-xl border px-4 py-2 text-[13px] font-semibold ${
+                studyMode === mode
+                  ? "border-[#111] bg-[#111] text-white"
+                  : "border-[#e5e5e5] text-[#111] hover:border-[#111]"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
           <button
             type="button"
             onClick={play.handleToggleShuffle}
@@ -306,8 +296,15 @@ function ReviewModeCard({
           <p className="text-[12px] font-semibold uppercase tracking-[0.14em] text-[#888]">
             정답
           </p>
-          <div className="mt-2 rounded-xl border border-[#111] bg-[#111] p-4">
-            <MarkdownContent inverted>{item.backText}</MarkdownContent>
+          <div className="mt-2 overflow-hidden rounded-xl border border-[#e5e5e5] bg-white">
+            <div className="bg-[#111] px-3 py-1">
+              <span className="text-[11px] font-semibold tracking-wide text-white">
+                답변
+              </span>
+            </div>
+            <div className="p-4">
+              <MarkdownContent>{item.backText}</MarkdownContent>
+            </div>
           </div>
         </section>
       </div>

@@ -16,7 +16,7 @@ import { useDeckDetail } from "./hooks";
 import type { DeckDetailViewState } from "./types";
 
 function toViewState(
-  query: UseQueryResult<CardDeckDetailResponse>,
+  query: UseQueryResult<CardDeckDetailResponse>
 ): DeckDetailViewState {
   if (query.isPending) {
     return { kind: "loading" };
@@ -46,12 +46,8 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
   const state = toViewState(detailQuery);
 
   useEffect(() => {
-    if (!isEditorOpen) {
+    if (!isEditorOpen || window.matchMedia("(min-width: 1024px)").matches)
       return;
-    }
-    if (window.matchMedia("(min-width: 1024px)").matches) {
-      return;
-    }
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
@@ -164,10 +160,7 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
                 />
                 <div className="absolute inset-x-0 bottom-0 max-h-[88vh] overflow-y-auto rounded-t-[28px] border border-[#e5e5e5] bg-white p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] shadow-[0_-16px_40px_rgba(0,0,0,0.12)]">
                   <div className="mx-auto mb-4 h-1.5 w-16 rounded-full bg-[#d4d4d4]" />
-                  <AddCardsPanel
-                    deckId={state.deck.id}
-                    surface="sheet"
-                  />
+                  <AddCardsPanel deckId={state.deck.id} surface="sheet" />
                 </div>
               </div>
             ) : null}
@@ -193,10 +186,7 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
                     </button>
                   </div>
                   <div className="flex-1 overflow-y-auto p-5">
-                    <AddCardsPanel
-                      deckId={state.deck.id}
-                      surface="sheet"
-                    />
+                    <AddCardsPanel deckId={state.deck.id} surface="sheet" />
                   </div>
                 </div>
               </>

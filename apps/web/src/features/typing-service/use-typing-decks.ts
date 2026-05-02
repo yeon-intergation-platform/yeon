@@ -54,45 +54,40 @@ export const TYPING_DECK_VISIBILITY_OPTIONS: Array<{
   { value: "public", label: "공개" },
 ];
 
+async function ensureOk(
+  res: Response,
+  fallbackErrorMessage: string
+): Promise<void> {
+  if (res.ok) return;
+  const text = await res.text().catch(() => "");
+  try {
+    const parsed = text ? (JSON.parse(text) as { message?: string }) : null;
+    throw new Error(parsed?.message || fallbackErrorMessage);
+  } catch (error) {
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error(fallbackErrorMessage);
+  }
+}
+
 async function typingDecksFetchJson<T>(
   input: RequestInfo | URL,
   init: RequestInit,
-  fallbackErrorMessage: string,
+  fallbackErrorMessage: string
 ): Promise<T> {
   const res = await fetch(input, { credentials: "include", ...init });
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    try {
-      const parsed = text ? (JSON.parse(text) as { message?: string }) : null;
-      throw new Error(parsed?.message || fallbackErrorMessage);
-    } catch (error) {
-      if (error instanceof Error) {
-        throw error;
-      }
-      throw new Error(fallbackErrorMessage);
-    }
-  }
+  await ensureOk(res, fallbackErrorMessage);
   return (await res.json()) as T;
 }
 
 async function typingDecksFetchVoid(
   input: RequestInfo | URL,
   init: RequestInit,
-  fallbackErrorMessage: string,
+  fallbackErrorMessage: string
 ): Promise<void> {
   const res = await fetch(input, { credentials: "include", ...init });
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    try {
-      const parsed = text ? (JSON.parse(text) as { message?: string }) : null;
-      throw new Error(parsed?.message || fallbackErrorMessage);
-    } catch (error) {
-      if (error instanceof Error) {
-        throw error;
-      }
-      throw new Error(fallbackErrorMessage);
-    }
-  }
+  await ensureOk(res, fallbackErrorMessage);
 }
 
 export function typingDecksQueryKey(scope: TypingDeckScope) {
@@ -121,7 +116,7 @@ export function useTypingDecks(scope: TypingDeckScope, adminMode = false) {
       return typingDecksFetchJson<TypingDeckListResponse>(
         `/api/v1/typing-decks?${params.toString()}`,
         { method: "GET" },
-        "타자 덱 목록을 불러오지 못했습니다.",
+        "타자 덱 목록을 불러오지 못했습니다."
       );
     },
   });
@@ -137,7 +132,7 @@ export function useTypingDeckDetail(deckId: string | null, adminMode = false) {
       return typingDecksFetchJson<TypingDeckDetailResponse>(
         withAdminQuery(`/api/v1/typing-decks/${deckId}`, adminMode),
         { method: "GET" },
-        "타자 덱을 불러오지 못했습니다.",
+        "타자 덱을 불러오지 못했습니다."
       );
     },
     enabled: Boolean(deckId),
@@ -145,14 +140,14 @@ export function useTypingDeckDetail(deckId: string | null, adminMode = false) {
 }
 
 function invalidateAllDeckLists(
-  queryClient: ReturnType<typeof useQueryClient>,
+  queryClient: ReturnType<typeof useQueryClient>
 ) {
   void queryClient.invalidateQueries({ queryKey: ["typing-decks"] });
 }
 
 function invalidateDeck(
   queryClient: ReturnType<typeof useQueryClient>,
-  deckId: string,
+  deckId: string
 ) {
   void queryClient.invalidateQueries({
     queryKey: typingDeckDetailQueryKey(deckId),
@@ -171,7 +166,7 @@ export function useCreateTypingDeck(adminMode = false) {
           headers: { "content-type": "application/json" },
           body: JSON.stringify(body),
         },
-        "타자 덱을 만들지 못했습니다.",
+        "타자 덱을 만들지 못했습니다."
       );
       return data.deck;
     },
@@ -190,7 +185,7 @@ export function useUpdateTypingDeck(deckId: string, adminMode = false) {
           headers: { "content-type": "application/json" },
           body: JSON.stringify(body),
         },
-        "타자 덱을 수정하지 못했습니다.",
+        "타자 덱을 수정하지 못했습니다."
       );
       return data.deck;
     },
@@ -205,7 +200,7 @@ export function useDeleteTypingDeck(adminMode = false) {
       await typingDecksFetchVoid(
         withAdminQuery(`/api/v1/typing-decks/${deckId}`, adminMode),
         { method: "DELETE" },
-        "타자 덱을 삭제하지 못했습니다.",
+        "타자 덱을 삭제하지 못했습니다."
       );
       return deckId;
     },
@@ -224,7 +219,7 @@ export function useCreateTypingDeckPassage(deckId: string, adminMode = false) {
           headers: { "content-type": "application/json" },
           body: JSON.stringify(body),
         },
-        "문단을 추가하지 못했습니다.",
+        "문단을 추가하지 못했습니다."
       );
       return data.passage;
     },
@@ -234,7 +229,7 @@ export function useCreateTypingDeckPassage(deckId: string, adminMode = false) {
 
 export function useBulkCreateTypingDeckPassages(
   deckId: string,
-  adminMode = false,
+  adminMode = false
 ) {
   const queryClient = useQueryClient();
   return useMutation({
@@ -244,14 +239,14 @@ export function useBulkCreateTypingDeckPassages(
       }>(
         withAdminQuery(
           `/api/v1/typing-decks/${deckId}/passages/bulk`,
-          adminMode,
+          adminMode
         ),
         {
           method: "POST",
           headers: { "content-type": "application/json" },
           body: JSON.stringify(body),
         },
-        "문단을 일괄 추가하지 못했습니다.",
+        "문단을 일괄 추가하지 못했습니다."
       );
       return data.passages;
     },
@@ -269,14 +264,14 @@ export function useUpdateTypingDeckPassage(deckId: string, adminMode = false) {
       const data = await typingDecksFetchJson<TypingDeckPassageResponse>(
         withAdminQuery(
           `/api/v1/typing-decks/${deckId}/passages/${params.passageId}`,
-          adminMode,
+          adminMode
         ),
         {
           method: "PATCH",
           headers: { "content-type": "application/json" },
           body: JSON.stringify(params.body),
         },
-        "문단을 수정하지 못했습니다.",
+        "문단을 수정하지 못했습니다."
       );
       return data.passage;
     },
@@ -291,10 +286,10 @@ export function useDeleteTypingDeckPassage(deckId: string, adminMode = false) {
       await typingDecksFetchVoid(
         withAdminQuery(
           `/api/v1/typing-decks/${deckId}/passages/${passageId}`,
-          adminMode,
+          adminMode
         ),
         { method: "DELETE" },
-        "문단을 삭제하지 못했습니다.",
+        "문단을 삭제하지 못했습니다."
       );
       return passageId;
     },

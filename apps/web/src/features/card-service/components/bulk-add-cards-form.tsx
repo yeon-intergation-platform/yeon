@@ -32,7 +32,7 @@ export function BulkAddCardsForm({ deckId }: BulkAddCardsFormProps) {
   const { mutate, isPending, error } = useAddCards(deckId);
   const parseResult = useMemo(
     () => parseBulkCardImportInput(rawText),
-    [rawText],
+    [rawText]
   );
   const canSubmit =
     parseResult.cards.length > 0 &&
@@ -41,27 +41,18 @@ export function BulkAddCardsForm({ deckId }: BulkAddCardsFormProps) {
   const previewCards = parseResult.cards.slice(0, 5);
   const hiddenPreviewCount = Math.max(
     parseResult.cards.length - previewCards.length,
-    0,
+    0
   );
 
   useEffect(() => {
     setHelpVisible(shouldShowBulkCardHelp());
-
-    function handlePreferenceChange(event: Event) {
+    const handler = (event: Event) => {
       const customEvent = event as CustomEvent<{ isVisible: boolean }>;
       setHelpVisible(customEvent.detail?.isVisible ?? shouldShowBulkCardHelp());
-    }
-
-    window.addEventListener(
-      BULK_CARD_HELP_VISIBILITY_EVENT,
-      handlePreferenceChange,
-    );
-    return () => {
-      window.removeEventListener(
-        BULK_CARD_HELP_VISIBILITY_EVENT,
-        handlePreferenceChange,
-      );
     };
+    window.addEventListener(BULK_CARD_HELP_VISIBILITY_EVENT, handler);
+    return () =>
+      window.removeEventListener(BULK_CARD_HELP_VISIBILITY_EVENT, handler);
   }, []);
 
   function handleDismissHelp() {
@@ -81,7 +72,7 @@ export function BulkAddCardsForm({ deckId }: BulkAddCardsFormProps) {
         onSuccess: () => {
           setRawText("");
         },
-      },
+      }
     );
   };
 
