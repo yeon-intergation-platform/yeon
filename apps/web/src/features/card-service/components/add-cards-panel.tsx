@@ -1,12 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import type { CardDeckItemDto } from "@yeon/api-contract/card-decks";
+import { useState } from "react";
 
-import { useUpdateCard } from "../hooks";
 import { AddCardForm } from "./add-card-form";
 import { BulkAddCardsForm } from "./bulk-add-cards-form";
-import { MarkdownEditor } from "./markdown-editor";
 
 const ADD_CARD_MODES = {
   manual: "manual",
@@ -17,34 +14,16 @@ type AddCardMode = (typeof ADD_CARD_MODES)[keyof typeof ADD_CARD_MODES];
 
 interface AddCardsPanelProps {
   deckId: string;
-  editingItem?: CardDeckItemDto | null;
-  onCancelEdit?: () => void;
-  onSavedEdit?: () => void;
   surface?: "panel" | "sheet";
 }
 
 export function AddCardsPanel({
   deckId,
-  editingItem,
-  onCancelEdit,
-  onSavedEdit,
   surface = "panel",
 }: AddCardsPanelProps) {
   const [mode, setMode] = useState<AddCardMode>(() =>
     surface === "sheet" ? ADD_CARD_MODES.manual : ADD_CARD_MODES.bulk,
   );
-
-  if (editingItem) {
-    return (
-      <EditCardPanel
-        deckId={deckId}
-        item={editingItem}
-        onCancel={onCancelEdit}
-        onSaved={onSavedEdit}
-        surface={surface}
-      />
-    );
-  }
 
   const isSheet = surface === "sheet";
 
@@ -99,116 +78,3 @@ export function AddCardsPanel({
   );
 }
 
-interface EditCardPanelProps {
-  deckId: string;
-  item: CardDeckItemDto;
-  onCancel?: () => void;
-  onSaved?: () => void;
-  surface?: "panel" | "sheet";
-}
-
-function EditCardPanel({
-  deckId,
-  item,
-  onCancel,
-  onSaved,
-  surface = "panel",
-}: EditCardPanelProps) {
-  const [frontText, setFrontText] = useState(item.frontText);
-  const [backText, setBackText] = useState(item.backText);
-  const updateMutation = useUpdateCard(deckId);
-  const isSaving = updateMutation.isPending;
-  const canSave =
-    frontText.trim().length > 0 && backText.trim().length > 0 && !isSaving;
-
-  useEffect(() => {
-    setFrontText(item.frontText);
-    setBackText(item.backText);
-  }, [item.backText, item.frontText, item.id]);
-
-  function handleSave() {
-    if (!canSave) {
-      return;
-    }
-
-    updateMutation.mutate(
-      {
-        itemId: item.id,
-        body: {
-          frontText: frontText.trim(),
-          backText: backText.trim(),
-        },
-      },
-      {
-        onSuccess: () => {
-          onSaved?.();
-        },
-      },
-    );
-  }
-
-  const isSheet = surface === "sheet";
-
-  return (
-    <section
-      className={
-        isSheet
-          ? "bg-white text-[#111]"
-          : "rounded-xl border border-[#111] bg-white p-5 text-[#111]"
-      }
-    >
-      <div>
-        <p className="text-[12px] font-semibold uppercase tracking-[0.12em] text-[#888]">
-          선택한 카드
-        </p>
-        <h3 className="mt-1 text-[18px] font-semibold text-[#111]">
-          카드 편집
-        </h3>
-        <p className="mt-2 text-[13px] leading-5 text-[#666]">
-          왼쪽 카드 목록에서 선택한 카드를 수정합니다.
-        </p>
-      </div>
-
-      <div className="mt-5 flex flex-col gap-4">
-        <MarkdownEditor
-          label="질문"
-          value={frontText}
-          onChange={setFrontText}
-          maxLength={2000}
-          minRows={5}
-          placeholder="질문을 Markdown으로 입력하세요..."
-        />
-        <MarkdownEditor
-          label="답변"
-          value={backText}
-          onChange={setBackText}
-          maxLength={2000}
-          minRows={7}
-          placeholder="답변을 Markdown으로 입력하세요..."
-        />
-        {updateMutation.error ? (
-          <p className="text-[13px] text-red-600">
-            {updateMutation.error.message}
-          </p>
-        ) : null}
-        <div className="flex justify-end gap-2">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="rounded-xl border border-[#e5e5e5] px-4 py-2 text-[13px] font-semibold text-[#111] transition-colors hover:border-[#111] hover:bg-[#fafafa]"
-          >
-            취소
-          </button>
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={!canSave}
-            className="rounded-xl bg-[#111] px-4 py-2 text-[13px] font-semibold text-white transition-colors hover:bg-[#333] disabled:opacity-50"
-          >
-            {isSaving ? "저장 중..." : "수정 저장"}
-          </button>
-        </div>
-      </div>
-    </section>
-  );
-}
