@@ -20,6 +20,7 @@
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "e2e": "playwright test",
     "e2e:typing-room": "RUN_TYPING_ROOM_ONLINE_E2E=1 playwright test e2e/typing-room-online.spec.ts --project=chromium",
     "e2e:typing-room:check": "node -e \"console.error('Use pnpm --filter @yeon/web e2e:typing-room after starting web and race-server; this check intentionally fails instead of reporting a skipped online test.'); process.exit(1)\""

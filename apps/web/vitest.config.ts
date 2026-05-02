@@ -8,6 +8,22 @@ export default defineConfig({
     setupFiles: [],
     include: ["src/**/*.test.ts", "src/**/*.test.tsx"],
     exclude: ["e2e/**", "node_modules/**"],
+    coverage: {
+      provider: "v8",
+      reporter: ["text"],
+      exclude: [
+        "**/*.test.{ts,tsx}",
+        "**/__tests__/**",
+        "e2e/**",
+        ".next/**",
+        "scripts/**",
+        "src/server/db/migrations/**",
+        "**/*.d.ts",
+        "next-env.d.ts",
+        "node_modules/**",
+        "**/*.config.*",
+      ],
+    },
   },
   resolve: {
     alias: {

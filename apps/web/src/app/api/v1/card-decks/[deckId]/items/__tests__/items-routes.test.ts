@@ -28,7 +28,7 @@ import { POST as itemsPost } from "../route";
 import { DELETE as itemDelete, PATCH as itemPatch } from "../[itemId]/route";
 import { POST as reviewPost } from "../[itemId]/review/route";
 
-const sampleItem = {
+const sampleItem = cardDeckItemDtoSchema.parse({
   id: "item-1",
   frontText: "앞면",
   backText: "뒷면",
@@ -37,7 +37,7 @@ const sampleItem = {
   nextReviewAt: null,
   createdAt: "2026-05-01T00:00:00.000Z",
   updatedAt: "2026-05-01T00:00:00.000Z",
-};
+});
 
 describe("card-decks items routes", () => {
   beforeEach(() => {
