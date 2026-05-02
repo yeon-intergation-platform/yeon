@@ -6,52 +6,36 @@ import { TYPING_CHARACTERS } from "./characters";
 import { CharacterSprite } from "./character-sprite";
 import { useFrameSequenceStore } from "./use-frame-sequence-store";
 
-const THUMB_HEIGHT = 80;
+const PICK_H = 80; // 프레임 선택 영역 썸네일 높이
+const SEQ_H = 52; // 재생 순서 영역 썸네일 높이
 
-function FrameThumbnail({
+function SpriteThumbnail({
   character,
   frameIndex,
-  seqPosition,
-  onClick,
+  height,
 }: {
   character: CharacterDef;
   frameIndex: number;
-  seqPosition: number | null;
-  onClick: () => void;
+  height: number;
 }) {
   const { sprite, frameWidth, frameHeight, frameCount, frameCols } = character;
-  const scale = THUMB_HEIGHT / frameHeight;
-  const thumbW = Math.round(frameWidth * scale);
+  const scale = height / frameHeight;
+  const w = Math.round(frameWidth * scale);
   const sheetRows = Math.max(1, Math.ceil(frameCount / frameCols));
   const col = frameIndex % frameCols;
   const row = Math.floor(frameIndex / frameCols);
-  const selected = seqPosition !== null;
-
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="relative flex flex-col items-center"
-    >
-      <div
-        style={{
-          width: thumbW,
-          height: THUMB_HEIGHT,
-          backgroundImage: `url('${sprite}')`,
-          backgroundSize: `${thumbW * frameCols}px ${THUMB_HEIGHT * sheetRows}px`,
-          backgroundPosition: `-${col * thumbW}px -${row * THUMB_HEIGHT}px`,
-          imageRendering: "pixelated",
-          outline: selected ? "2px solid #111" : "2px solid #e5e5e5",
-          outlineOffset: "2px",
-        }}
-      />
-      {selected && (
-        <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#111] text-[9px] font-bold text-white">
-          {seqPosition! + 1}
-        </span>
-      )}
-      <span className="mt-1 text-[10px] text-[#999]">{frameIndex}</span>
-    </button>
+    <div
+      style={{
+        width: w,
+        height,
+        backgroundImage: `url('${sprite}')`,
+        backgroundSize: `${w * frameCols}px ${height * sheetRows}px`,
+        backgroundPosition: `-${col * w}px -${row * height}px`,
+        imageRendering: "pixelated",
+        flexShrink: 0,
+      }}
+    />
   );
 }
 
@@ -127,75 +111,114 @@ function CharacterFrameCard({
         )}
       </div>
 
-      {/* Preview + Frame grid */}
-      <div className="mb-3 flex flex-wrap items-end gap-4">
-        <div className="flex h-[100px] w-[72px] shrink-0 items-end justify-center rounded-lg bg-[#f5f5f5]">
+      {/* 프레임 선택 영역 */}
+      <div className="mb-1 flex items-center gap-2">
+        <span className="text-[11px] font-medium text-[#555]">프레임 선택</span>
+        <span className="text-[10px] text-[#bbb]">클릭해서 추가/제거</span>
+      </div>
+      <div className="mb-3 flex flex-wrap items-end gap-3">
+        {/* 프리뷰 */}
+        <div className="flex h-[calc(80px+8px)] w-[64px] shrink-0 items-end justify-center rounded-lg bg-[#f5f5f5]">
           <CharacterSprite
             character={character}
-            maxHeight={96}
+            maxHeight={76}
             sequenceOverride={override}
           />
         </div>
+        {/* 프레임 썸네일 */}
         <div className="flex flex-wrap gap-2">
           {Array.from({ length: character.frameCount }, (_, i) => {
             const pos = sequence.indexOf(i);
+            const inSeq = pos !== -1;
             return (
-              <FrameThumbnail
+              <button
                 key={i}
-                character={character}
-                frameIndex={i}
-                seqPosition={pos !== -1 ? pos : null}
+                type="button"
                 onClick={() => toggleFrame(i)}
-              />
+                className="relative"
+                title={
+                  inSeq
+                    ? `시퀀스 ${pos + 1}번째 — 클릭해서 제거`
+                    : `클릭해서 추가`
+                }
+              >
+                <div
+                  style={{
+                    opacity: inSeq ? 1 : 0.35,
+                    outline: inSeq ? "2px solid #111" : "2px solid #e5e5e5",
+                    outlineOffset: "2px",
+                  }}
+                >
+                  <SpriteThumbnail
+                    character={character}
+                    frameIndex={i}
+                    height={PICK_H}
+                  />
+                </div>
+                {inSeq && (
+                  <span className="absolute -right-1 -top-1 flex h-[18px] w-[18px] items-center justify-center rounded-full bg-[#111] text-[10px] font-bold text-white">
+                    {pos + 1}
+                  </span>
+                )}
+              </button>
             );
           })}
         </div>
       </div>
 
-      {/* Sequence order row */}
-      <div className="flex flex-wrap items-center gap-1.5">
-        <span className="text-[11px] text-[#aaa]">순서:</span>
-        {sequence.map((frameIdx, i) => (
-          <div
-            key={i}
-            className="flex items-center gap-0.5 rounded border border-[#e5e5e5] px-1.5 py-0.5"
-          >
-            <span className="min-w-[12px] text-center text-[12px] font-medium text-[#111]">
-              {frameIdx}
-            </span>
-            <button
-              type="button"
-              onClick={() => moveLeft(i)}
-              disabled={i === 0}
-              className="px-0.5 text-[10px] text-[#bbb] disabled:opacity-30 hover:text-[#555]"
-            >
-              ◀
-            </button>
-            <button
-              type="button"
-              onClick={() => moveRight(i)}
-              disabled={i === sequence.length - 1}
-              className="px-0.5 text-[10px] text-[#bbb] disabled:opacity-30 hover:text-[#555]"
-            >
-              ▶
-            </button>
-            <button
-              type="button"
-              onClick={() => removeAt(i)}
-              className="px-0.5 text-[10px] text-[#bbb] hover:text-[#d00]"
-            >
-              ×
-            </button>
-          </div>
-        ))}
+      {/* 재생 순서 영역 */}
+      <div className="mb-1 flex items-center gap-2">
+        <span className="text-[11px] font-medium text-[#555]">재생 순서</span>
+        <span className="text-[10px] text-[#bbb]">
+          ◀▶ 로 순서 변경, × 로 제거
+        </span>
         <button
           type="button"
           onClick={copyToClipboard}
-          className="ml-1 rounded border border-[#e5e5e5] px-2 py-0.5 text-[10px] text-[#aaa] hover:border-[#aaa] hover:text-[#555]"
+          className="ml-auto rounded border border-[#e5e5e5] px-2 py-0.5 text-[10px] text-[#aaa] hover:border-[#aaa] hover:text-[#555]"
           title="JSON 배열로 클립보드에 복사"
         >
-          복사 →&nbsp;JSON
+          복사 → JSON
         </button>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {sequence.map((frameIdx, i) => (
+          <div key={i} className="flex flex-col items-center gap-1">
+            <SpriteThumbnail
+              character={character}
+              frameIndex={frameIdx}
+              height={SEQ_H}
+            />
+            <div className="flex items-center gap-0.5">
+              <button
+                type="button"
+                onClick={() => moveLeft(i)}
+                disabled={i === 0}
+                className="rounded px-1 py-0.5 text-[11px] text-[#bbb] disabled:opacity-25 hover:bg-[#f5f5f5] hover:text-[#555]"
+              >
+                ◀
+              </button>
+              <span className="min-w-[14px] text-center text-[10px] text-[#aaa]">
+                {frameIdx}
+              </span>
+              <button
+                type="button"
+                onClick={() => moveRight(i)}
+                disabled={i === sequence.length - 1}
+                className="rounded px-1 py-0.5 text-[11px] text-[#bbb] disabled:opacity-25 hover:bg-[#f5f5f5] hover:text-[#555]"
+              >
+                ▶
+              </button>
+              <button
+                type="button"
+                onClick={() => removeAt(i)}
+                className="rounded px-1 py-0.5 text-[11px] text-[#bbb] hover:bg-[#fff0f0] hover:text-[#d00]"
+              >
+                ×
+              </button>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -225,13 +248,12 @@ export function CharacterFrameAdmin() {
               캐릭터 프레임 시퀀스
             </h1>
             <p className="mt-1 text-[12px] text-[#888]">
-              프레임 썸네일 클릭으로 시퀀스 추가/제거, ◀▶로 순서 변경. 설정은
-              localStorage에 저장됩니다. 확정되면 &ldquo;복사 → JSON&rdquo;으로
-              복사 후 해당 캐릭터 JSON 파일의{" "}
+              상단에서 프레임을 클릭해 추가/제거 → 하단 순서 영역에서 ◀▶으로
+              조정 → <strong>복사 → JSON</strong> 후 해당 캐릭터 JSON의{" "}
               <code className="rounded bg-[#f5f5f5] px-1 text-[11px]">
                 frameSequence
               </code>
-              에 붙여넣으세요.
+              에 붙여넣기
             </p>
           </div>
           {modifiedCount > 0 && (
