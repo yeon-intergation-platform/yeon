@@ -23,7 +23,6 @@ type EditingField = "front" | "back";
 
 export function CardRow({ deckId, item, index, onDeleted }: CardRowProps) {
   const [editingField, setEditingField] = useState<EditingField | null>(null);
-  const [isDeleteMenuOpen, setDeleteMenuOpen] = useState(false);
   const [isDeleteRevealed, setDeleteRevealed] = useState(false);
   const [frontText, setFrontText] = useState(item.frontText);
   const [backText, setBackText] = useState(item.backText);
@@ -47,7 +46,6 @@ export function CardRow({ deckId, item, index, onDeleted }: CardRowProps) {
     setFrontText(item.frontText);
     setBackText(item.backText);
     setEditingField(field);
-    setDeleteMenuOpen(false);
     setDeleteRevealed(false);
     setDeleteConfirming(false);
     updateMutation.reset();
@@ -103,7 +101,6 @@ export function CardRow({ deckId, item, index, onDeleted }: CardRowProps) {
 
     if (deltaX < -48) {
       shouldIgnoreNextClickRef.current = true;
-      setDeleteMenuOpen(false);
       setDeleteRevealed(true);
       setDeleteConfirming(false);
       return;
@@ -123,6 +120,8 @@ export function CardRow({ deckId, item, index, onDeleted }: CardRowProps) {
     if (isDeleteRevealed) {
       setDeleteRevealed(false);
       setDeleteConfirming(false);
+    } else if (isDeleteConfirming) {
+      setDeleteConfirming(false);
     }
   };
 
@@ -133,7 +132,6 @@ export function CardRow({ deckId, item, index, onDeleted }: CardRowProps) {
     }
     deleteMutation.mutate(item.id, {
       onSuccess: () => {
-        setDeleteMenuOpen(false);
         setDeleteConfirming(false);
         setDeleteRevealed(false);
         onDeleted?.();
@@ -279,18 +277,15 @@ export function CardRow({ deckId, item, index, onDeleted }: CardRowProps) {
             </p>
           ) : null}
 
-          {/* 삭제 확인 메뉴 */}
-          {isDeleteMenuOpen ? (
+          {/* 삭제 확인 */}
+          {isDeleteConfirming ? (
             <div
               className="mt-2 flex justify-end gap-2"
               onClick={(e) => e.stopPropagation()}
             >
               <button
                 type="button"
-                onClick={() => {
-                  setDeleteMenuOpen(false);
-                  setDeleteConfirming(false);
-                }}
+                onClick={() => setDeleteConfirming(false)}
                 className="rounded-lg border border-[#e5e5e5] px-3 py-1.5 text-[12px] text-[#111] hover:bg-[#fafafa]"
               >
                 취소
@@ -301,11 +296,7 @@ export function CardRow({ deckId, item, index, onDeleted }: CardRowProps) {
                 disabled={isDeleting}
                 className="rounded-lg border border-red-100 px-3 py-1.5 text-[12px] text-red-600 hover:bg-red-50 disabled:opacity-50"
               >
-                {isDeleting
-                  ? "삭제 중..."
-                  : isDeleteConfirming
-                    ? "삭제 확인"
-                    : "삭제"}
+                {isDeleting ? "삭제 중..." : "삭제 확인"}
               </button>
             </div>
           ) : null}
@@ -317,20 +308,25 @@ export function CardRow({ deckId, item, index, onDeleted }: CardRowProps) {
           </p>
         </div>
 
-        {/* ⋮ 버튼 */}
+        {/* 삭제 버튼 */}
         <div className="flex items-start justify-center pt-3 pr-1 md:pr-2">
           <button
             type="button"
             onClick={(e) => {
               e.stopPropagation();
-              setDeleteMenuOpen((prev) => !prev);
-              setDeleteRevealed(false);
-              setDeleteConfirming(false);
+              if (!isDeleteRevealed) handleDelete();
             }}
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-[16px] text-[#999] hover:bg-[#fafafa] hover:text-[#111]"
-            aria-label="카드 삭제 메뉴"
+            disabled={isDeleting}
+            aria-label="카드 삭제"
+            className={`flex h-8 w-8 items-center justify-center rounded-lg transition-colors disabled:opacity-50 ${
+              isDeleteConfirming
+                ? "text-red-500 hover:bg-red-50"
+                : "text-[#ccc] hover:bg-[#fafafa] hover:text-[#888]"
+            }`}
           >
-            ⋮
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M2 4h12M5 4V2.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 .5.5V4M6 7v5M10 7v5M3 4l1 9.5a.5.5 0 0 0 .5.5h7a.5.5 0 0 0 .5-.5L13 4"/>
+            </svg>
           </button>
         </div>
       </div>
