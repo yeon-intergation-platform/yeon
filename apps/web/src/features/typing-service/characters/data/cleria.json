@@ -1,0 +1,21 @@
+{
+  "id": "cleria",
+  "label": {
+    "ko": "클레리아",
+    "en": "Cleria"
+  },
+  "sprite": "/sprites/characters/cleria/run.png",
+  "frameWidth": 192,
+  "frameHeight": 208,
+  "frameCount": 8,
+  "frameCols": 8,
+  "fps": 4,
+  "credit": {
+    "source": "Codex digital pet (사용자 부여 공개 배포 허가, 2026-05-03)",
+    "license": "approved"
+  },
+  "extract": {
+    "rawSheet": "pets/cleria/spritesheet.webp",
+    "flip": false
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "id": "tata-cat",
+  "label": {
+    "ko": "타타캣",
+    "en": "Tata Cat"
+  },
+  "sprite": "/sprites/characters/tata-cat/run.png",
+  "frameWidth": 192,
+  "frameHeight": 208,
+  "frameCount": 8,
+  "frameCols": 8,
+  "fps": 4,
+  "credit": {
+    "source": "Codex digital pet (사용자 부여 공개 배포 허가, 2026-05-03)",
+    "license": "approved"
+  },
+  "extract": {
+    "rawSheet": "pets/tata-cat/spritesheet.webp",
+    "flip": false
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "id": "mecha-rex",
+  "label": {
+    "ko": "메카 렉스",
+    "en": "Mecha Rex"
+  },
+  "sprite": "/sprites/characters/mecha-rex/run.png",
+  "frameWidth": 192,
+  "frameHeight": 208,
+  "frameCount": 8,
+  "frameCols": 8,
+  "fps": 4,
+  "credit": {
+    "source": "Codex digital pet (사용자 부여 공개 배포 허가, 2026-05-03)",
+    "license": "approved"
+  },
+  "extract": {
+    "rawSheet": "pets/mecha-rex/spritesheet.webp",
+    "flip": false
+  }
+}

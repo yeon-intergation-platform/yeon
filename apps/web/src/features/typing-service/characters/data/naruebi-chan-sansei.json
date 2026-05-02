@@ -1,0 +1,21 @@
+{
+  "id": "naruebi-chan-sansei",
+  "label": {
+    "ko": "나루에비짱 삼세",
+    "en": "Naruebi-chan III"
+  },
+  "sprite": "/sprites/characters/naruebi-chan-sansei/run.png",
+  "frameWidth": 192,
+  "frameHeight": 208,
+  "frameCount": 8,
+  "frameCols": 8,
+  "fps": 4,
+  "credit": {
+    "source": "Codex digital pet (사용자 부여 공개 배포 허가, 2026-05-03)",
+    "license": "approved"
+  },
+  "extract": {
+    "rawSheet": "pets/naruebi-chan-sansei/spritesheet.webp",
+    "flip": false
+  }
+}

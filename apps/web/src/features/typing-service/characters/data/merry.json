@@ -1,0 +1,21 @@
+{
+  "id": "merry",
+  "label": {
+    "ko": "메리",
+    "en": "Merry"
+  },
+  "sprite": "/sprites/characters/merry/run.png",
+  "frameWidth": 192,
+  "frameHeight": 208,
+  "frameCount": 8,
+  "frameCols": 8,
+  "fps": 4,
+  "credit": {
+    "source": "Codex digital pet (사용자 부여 공개 배포 허가, 2026-05-03)",
+    "license": "approved"
+  },
+  "extract": {
+    "rawSheet": "pets/merry/spritesheet.webp",
+    "flip": false
+  }
+}
