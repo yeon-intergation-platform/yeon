@@ -159,6 +159,15 @@ select {
 
 .yeon-markdown-editor .w-md-editor-text {
   padding: 12px;
+  height: 100%;
+}
+
+.yeon-markdown-editor .w-md-editor-text-input {
+  height: 100% !important;
+}
+
+.yeon-markdown-editor .w-md-editor-toolbar ul:last-child {
+  display: none;
 }
 
 .yeon-markdown-editor .w-md-editor-preview {

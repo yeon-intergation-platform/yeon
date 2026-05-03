@@ -46,7 +46,7 @@ export function PlayCard({
         }}
       >
         <div
-          className="absolute inset-0 flex flex-col overflow-hidden rounded-2xl border border-[#e5e5e5] bg-white"
+          className="absolute inset-0 flex flex-col rounded-2xl border border-[#e5e5e5] bg-white"
           style={{ backfaceVisibility: "hidden" }}
         >
           <div className="shrink-0 border-b border-[#e5e5e5] bg-[#f5f5f5] px-4 py-1.5">
@@ -54,14 +54,14 @@ export function PlayCard({
               질문
             </span>
           </div>
-          <div className="flex flex-1 items-center justify-center overflow-y-auto p-12 text-center">
-            <div className="text-[22px] text-[#111]">
+          <div className="flex flex-1 overflow-y-auto p-12 text-center">
+            <div className="my-auto w-full text-[22px] text-[#111]">
               <MarkdownContent>{frontText}</MarkdownContent>
             </div>
           </div>
         </div>
         <div
-          className="absolute inset-0 flex flex-col overflow-hidden rounded-2xl border border-[#e5e5e5] bg-white"
+          className="absolute inset-0 flex flex-col rounded-2xl border border-[#e5e5e5] bg-white"
           style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}
         >
           <div className="shrink-0 bg-[#111] px-4 py-1.5">
@@ -69,8 +69,8 @@ export function PlayCard({
               답변
             </span>
           </div>
-          <div className="flex flex-1 items-center justify-center overflow-y-auto p-12 text-center">
-            <div className="text-[22px] text-[#111]">
+          <div className="flex flex-1 overflow-y-auto p-12 text-center">
+            <div className="my-auto w-full text-[22px] text-[#111]">
               <MarkdownContent>{backText}</MarkdownContent>
             </div>
           </div>
