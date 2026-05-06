@@ -31,6 +31,11 @@ export const INDEXABLE_SITEMAP_ENTRIES = [
     priority: 0.9,
   },
   {
+    pathname: "/card-service",
+    changeFrequency: "weekly",
+    priority: 0.8,
+  },
+  {
     pathname: "/privacy",
     changeFrequency: "yearly",
     priority: 0.2,

@@ -18,7 +18,7 @@ import { useDeckList } from "./hooks";
 import type { CardServiceHomeViewState } from "./types";
 
 function toViewState(
-  query: UseQueryResult<CardDeckDto[]>,
+  query: UseQueryResult<CardDeckDto[]>
 ): CardServiceHomeViewState {
   if (query.isPending) {
     return { kind: "loading" };
@@ -124,12 +124,12 @@ export function CardServiceHome() {
         <h1 className="text-[22px] font-semibold text-[#111]">
           {isAuthenticated ? "내 덱" : "로그인 없이 만드는 덱"}
         </h1>
-        {!isAuthenticated ? (
-          <p className="mt-2 text-[13px] leading-[1.6] text-[#666]">
-            지금 만든 덱은 이 기기에만 저장됩니다. 로그인하면 기기 간
-            동기화되며, 로그인 직후 계정으로 옮길 수 있어요.
-          </p>
-        ) : null}
+        <p className="mt-2 text-[13px] leading-[1.7] text-[#666]">
+          플래시카드로 단어 암기와 반복 학습을 바로 시작할 수 있습니다.
+          {!isAuthenticated
+            ? " 지금 만든 덱은 이 기기에만 저장되며, 로그인하면 계정으로 옮겨 계속 학습할 수 있어요."
+            : " 만든 덱과 카드를 열어 바로 복습 흐름으로 이어갈 수 있어요."}
+        </p>
         <div className="mt-6">
           {state.kind === "loading" ? (
             <p className="text-[14px] text-[#888]">불러오는 중...</p>

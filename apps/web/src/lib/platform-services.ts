@@ -51,9 +51,9 @@ export const PLATFORM_SERVICES = [
     href: "/card-service",
     title: "플래시카드 덱",
     summary:
-      "내 덱을 만들고 카드를 추가해 앞뒷면을 뒤집으며 학습하는 개인용 플래시카드 서비스입니다.",
+      "로그인 없이 바로 덱을 만들고 플래시카드로 반복 학습을 시작한 뒤, 필요할 때 계정으로 이어서 쓰는 카드 학습 서비스입니다.",
     audience: "개인 학습자",
-    accessPolicy: platformServiceAccessPolicies.authRequired,
+    accessPolicy: platformServiceAccessPolicies.mixed,
     status: platformServiceStatuses.live,
   },
 ] as const satisfies readonly PlatformServiceDescriptor[];
@@ -73,13 +73,13 @@ export function getPlatformServiceByPathname(pathname: string) {
   return (
     PLATFORM_SERVICES.find(
       (service) =>
-        pathname === service.href || pathname.startsWith(`${service.href}/`),
+        pathname === service.href || pathname.startsWith(`${service.href}/`)
     ) ?? null
   );
 }
 
 export function serviceRequiresAuthentication(
-  service: Pick<PlatformServiceDescriptor, "accessPolicy"> | null | undefined,
+  service: Pick<PlatformServiceDescriptor, "accessPolicy"> | null | undefined
 ) {
   return service?.accessPolicy === platformServiceAccessPolicies.authRequired;
 }
