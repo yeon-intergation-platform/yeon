@@ -31,9 +31,16 @@ export function TypingServiceHome() {
             <TypingProfileCard
               profile={profile}
               onNicknameChange={(nickname) => updateProfile({ nickname })}
-              onCharacterChange={(characterId) => updateProfile({ characterId })}
+              onCharacterChange={(characterId) =>
+                updateProfile({ characterId })
+              }
               locale={settings.locale}
             />
+
+            <p className="mt-4 max-w-[340px] text-center text-[13px] leading-[1.7] text-[#666]">
+              무료 한글 타자연습과 타자 속도 테스트를 한 화면에서 바로 시작하고,
+              정확도와 타수를 함께 확인할 수 있습니다.
+            </p>
 
             <div className="mt-5 grid w-[340px] gap-3">
               <a
