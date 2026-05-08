@@ -5,7 +5,7 @@
 export async function cardServiceFetchJson<T>(
   input: RequestInfo | URL,
   init: RequestInit,
-  fallbackErrorMessage: string,
+  fallbackErrorMessage: string
 ): Promise<T> {
   const res = await fetch(input, { credentials: "include", ...init });
   if (!res.ok) {
@@ -26,7 +26,7 @@ export async function cardServiceFetchJson<T>(
 export async function cardServiceFetchVoid(
   input: RequestInfo | URL,
   init: RequestInit,
-  fallbackErrorMessage: string,
+  fallbackErrorMessage: string
 ): Promise<void> {
   const res = await fetch(input, { credentials: "include", ...init });
   if (!res.ok) {
@@ -41,4 +41,16 @@ export async function cardServiceFetchVoid(
       throw new Error(fallbackErrorMessage);
     }
   }
+}
+
+export async function uploadCardDeckImage(
+  file: File
+): Promise<{ storageKey: string; imageUrl: string }> {
+  const formData = new FormData();
+  formData.append("file", file);
+  return cardServiceFetchJson<{ storageKey: string; imageUrl: string }>(
+    "/api/v1/card-decks/assets",
+    { method: "POST", body: formData },
+    "이미지를 업로드하지 못했습니다."
+  );
 }

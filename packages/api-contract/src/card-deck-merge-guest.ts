@@ -9,6 +9,7 @@ const MERGE_GUEST_MAX_ITEMS_PER_DECK = 500;
 const mergeGuestItemSchema = z.object({
   frontText: z.string().min(1).max(CARD_TEXT_MAX_LENGTH),
   backText: z.string().min(1).max(CARD_TEXT_MAX_LENGTH),
+  imageStorageKey: z.string().min(1).max(512).nullish(),
 });
 export type MergeGuestItem = z.infer<typeof mergeGuestItemSchema>;
 
