@@ -151,8 +151,13 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
   const [seedRetryToken, setSeedRetryToken] = useState(0);
   const [useDefaultFallback, setUseDefaultFallback] = useState(false);
   const [copied, setCopied] = useState(false);
+<<<<<<< HEAD
   const trackedRoomEntryRef = useRef<string | null>(null);
   const hasTrackedRoomCreateSuccessRef = useRef(false);
+||||||| parent of b3843e6 (chore: 스프링 마이그레이션 복구 스냅샷 보존)
+=======
+  const hasTrackedRoomCreateSuccessRef = useRef(false);
+>>>>>>> b3843e6 (chore: 스프링 마이그레이션 복구 스냅샷 보존)
 
   useEffect(() => {
     if (mode !== "create") return;

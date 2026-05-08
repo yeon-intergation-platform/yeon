@@ -50,8 +50,6 @@ type RootLayoutProps = {
 
 const GOOGLE_ANALYTICS_ID = "G-YGRNS3PQBQ";
 
-const GOOGLE_ANALYTICS_ID = "G-YGRNS3PQBQ";
-
 export default function RootLayout({ children }: RootLayoutProps) {
   const shouldLoadGoogleAnalytics =
     isCanonicalDeployment() && GOOGLE_ANALYTICS_ID.length > 0;
