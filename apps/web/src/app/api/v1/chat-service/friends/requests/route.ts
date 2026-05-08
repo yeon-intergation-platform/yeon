@@ -5,7 +5,10 @@ import {
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
-import { sendChatServiceFriendRequest } from "@/server/services/chat-service/friends-service";
+import {
+  ChatServiceFriendRequestSpringBackendHttpError,
+  sendChatServiceFriendRequestInSpring,
+} from "@/server/chat-service-friend-request-spring-client";
 import { ServiceError } from "@/server/services/service-error";
 
 import {
@@ -24,16 +27,19 @@ export async function POST(request: NextRequest) {
       return jsonChatServiceError("친구 요청 대상이 올바르지 않습니다.", 400);
     }
 
-    const response = await sendChatServiceFriendRequest(
-      profile.id,
-      parsedBody.data.targetProfileId,
-    );
+    const response = await sendChatServiceFriendRequestInSpring({
+      currentProfileId: profile.id,
+      targetProfileId: parsedBody.data.targetProfileId,
+    });
 
     return NextResponse.json(
       chatServiceFriendMutationResponseSchema.parse(response),
     );
   } catch (error) {
     if (error instanceof ServiceError) {
+      return jsonChatServiceError(error.message, error.status);
+    }
+    if (error instanceof ChatServiceFriendRequestSpringBackendHttpError) {
       return jsonChatServiceError(error.message, error.status);
     }
 

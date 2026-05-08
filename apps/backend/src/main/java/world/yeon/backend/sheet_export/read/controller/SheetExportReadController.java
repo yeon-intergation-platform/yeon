@@ -1,0 +1,50 @@
+package world.yeon.backend.sheet_export.read.controller;
+
+import java.util.NoSuchElementException;
+import java.util.UUID;
+
+import org.springframework.context.annotation.Profile;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import world.yeon.backend.sheet_export.read.dto.SheetExportRowsResponse;
+import world.yeon.backend.sheet_export.read.service.SheetExportReadService;
+
+@Validated
+@RestController
+@Profile("jdbc")
+@RequestMapping("/spaces/{spaceId}/sheet-export/rows")
+public class SheetExportReadController {
+
+	private final SheetExportReadService service;
+
+	public SheetExportReadController(SheetExportReadService service) {
+		this.service = service;
+	}
+
+	@GetMapping
+	public SheetExportRowsResponse getRows(
+		@PathVariable String spaceId,
+		@RequestHeader("X-Yeon-User-Id") UUID userId
+	) {
+		return service.getRows(spaceId);
+	}
+
+	@ExceptionHandler(NoSuchElementException.class)
+	public ResponseEntity<ErrorResponse> handleNotFound(NoSuchElementException error) {
+		String code = "스페이스를 찾지 못했습니다.".equals(error.getMessage())
+			? "SPACE_NOT_FOUND"
+			: "NOT_FOUND";
+		return ResponseEntity.status(HttpStatus.NOT_FOUND)
+			.body(new ErrorResponse(code, error.getMessage()));
+	}
+
+	public record ErrorResponse(String code, String message) {}
+}

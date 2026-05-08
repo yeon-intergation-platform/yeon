@@ -7,24 +7,22 @@ import {
   requireAuthenticatedUser,
 } from "@/app/api/v1/counseling-records/_shared";
 import {
-  createCardDeck,
-  listCardDecks,
-} from "@/server/services/card-decks-service";
-import { ServiceError } from "@/server/services/service-error";
+  CardDecksSpringBackendHttpError,
+  createCardDeckInSpring,
+  fetchCardDecksFromSpring,
+} from "@/server/card-decks-spring-client";
 
 export const runtime = "nodejs";
 
 export async function GET(request: NextRequest) {
   const { currentUser, response } = await requireAuthenticatedUser(request);
-  if (!currentUser) {
-    return response;
-  }
+  if (!currentUser) return response;
 
   try {
-    const decks = await listCardDecks(currentUser.id);
-    return NextResponse.json({ decks });
+    const decks = await fetchCardDecksFromSpring(currentUser.id);
+    return NextResponse.json(decks);
   } catch (error) {
-    if (error instanceof ServiceError) {
+    if (error instanceof CardDecksSpringBackendHttpError) {
       return jsonError(error.message, error.status);
     }
     console.error(error);
@@ -34,9 +32,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   const { currentUser, response } = await requireAuthenticatedUser(request);
-  if (!currentUser) {
-    return response;
-  }
+  if (!currentUser) return response;
 
   let body: unknown;
   try {
@@ -51,10 +47,10 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const deck = await createCardDeck(currentUser.id, parsed.data);
-    return NextResponse.json({ deck }, { status: 201 });
+    const deck = await createCardDeckInSpring(currentUser.id, parsed.data);
+    return NextResponse.json(deck, { status: 201 });
   } catch (error) {
-    if (error instanceof ServiceError) {
+    if (error instanceof CardDecksSpringBackendHttpError) {
       return jsonError(error.message, error.status);
     }
     console.error(error);

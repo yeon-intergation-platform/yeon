@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
-import type { ReactNode } from "react";
-import { Suspense } from "react";
 import Script from "next/script";
+import type { ReactNode } from "react";
 
-import { GoogleAnalyticsPageTracker } from "@/components/analytics/google-analytics-page-tracker";
-import { GA_MEASUREMENT_ID } from "@/lib/analytics";
-import { getDefaultSiteRobots, getSeoMetadataBase } from "@/lib/seo";
-import { isCanonicalDeployment } from "@/lib/seo";
+import {
+  getDefaultSiteRobots,
+  getSeoMetadataBase,
+  isCanonicalDeployment,
+} from "@/lib/seo";
 import {
   SITE_BRAND_NAME,
   SITE_DESCRIPTION,
@@ -48,30 +48,31 @@ type RootLayoutProps = {
   children: ReactNode;
 };
 
+const GOOGLE_ANALYTICS_ID = "G-YGRNS3PQBQ";
+
+const GOOGLE_ANALYTICS_ID = "G-YGRNS3PQBQ";
+
 export default function RootLayout({ children }: RootLayoutProps) {
-  const analyticsEnabled = isCanonicalDeployment();
+  const shouldLoadGoogleAnalytics =
+    isCanonicalDeployment() && GOOGLE_ANALYTICS_ID.length > 0;
 
   return (
     <html lang="ko">
       <body>
-        {analyticsEnabled ? (
+        {shouldLoadGoogleAnalytics ? (
           <>
             <Script
-              src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
+              src={`https://www.googletagmanager.com/gtag/js?id=${GOOGLE_ANALYTICS_ID}`}
               strategy="afterInteractive"
             />
             <Script id="google-analytics" strategy="afterInteractive">
               {`
                 window.dataLayer = window.dataLayer || [];
                 function gtag(){dataLayer.push(arguments);}
-                window.gtag = gtag;
                 gtag('js', new Date());
-                gtag('config', '${GA_MEASUREMENT_ID}', { send_page_view: false });
+                gtag('config', '${GOOGLE_ANALYTICS_ID}');
               `}
             </Script>
-            <Suspense fallback={null}>
-              <GoogleAnalyticsPageTracker />
-            </Suspense>
           </>
         ) : null}
         {children}

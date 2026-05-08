@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import {
+  lifeOsDayResponseSchema,
   lifeOsLocalDateSchema,
   upsertLifeOsDayBodySchema,
 } from "@yeon/api-contract/life-os";
@@ -9,10 +10,10 @@ import {
   requireAuthenticatedUser,
 } from "@/app/api/v1/counseling-records/_shared";
 import {
-  getLifeOsDay,
-  upsertLifeOsDay,
-} from "@/server/services/life-os-service";
-import { ServiceError } from "@/server/services/service-error";
+  fetchLifeOsDayFromSpring,
+  LifeOsSpringBackendHttpError,
+  updateLifeOsDayInSpring,
+} from "@/server/life-os-spring-client";
 
 export const runtime = "nodejs";
 
@@ -32,10 +33,10 @@ export async function GET(
   }
 
   try {
-    const day = await getLifeOsDay(currentUser.id, parsedDate.data);
-    return NextResponse.json({ day });
+    const day = await fetchLifeOsDayFromSpring(currentUser.id, parsedDate.data);
+    return NextResponse.json(lifeOsDayResponseSchema.parse(day));
   } catch (error) {
-    if (error instanceof ServiceError) {
+    if (error instanceof LifeOsSpringBackendHttpError) {
       return jsonError(error.message, error.status);
     }
     console.error(error);
@@ -77,10 +78,14 @@ export async function PUT(
   }
 
   try {
-    const day = await upsertLifeOsDay(currentUser.id, parsed.data);
-    return NextResponse.json({ day });
+    const day = await updateLifeOsDayInSpring(
+      currentUser.id,
+      parsedDate.data,
+      parsed.data,
+    );
+    return NextResponse.json(lifeOsDayResponseSchema.parse(day));
   } catch (error) {
-    if (error instanceof ServiceError) {
+    if (error instanceof LifeOsSpringBackendHttpError) {
       return jsonError(error.message, error.status);
     }
     console.error(error);

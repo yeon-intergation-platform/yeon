@@ -10,8 +10,10 @@ import {
   clearRememberedPublicCheckIdentityCookie,
   getRememberedPublicCheckIdentities,
 } from "@/server/services/public-check-device-cookie";
-import { getPublicCheckSessionByToken } from "@/server/services/public-check-service";
-import { ServiceError } from "@/server/services/service-error";
+import {
+  fetchPublicCheckSessionFromSpring,
+  PublicCheckRuntimeSpringBackendHttpError,
+} from "@/server/public-check-runtime-spring-client";
 
 export const runtime = "nodejs";
 
@@ -27,10 +29,10 @@ export async function GET(request: NextRequest, context: RouteContext) {
 
   try {
     const { session, spaceId, shouldClearRememberedIdentity } =
-      await getPublicCheckSessionByToken({
+      await fetchPublicCheckSessionFromSpring({
         token,
         entry: parsedEntry.success ? parsedEntry.data : null,
-        rememberedIdentities: getRememberedPublicCheckIdentities(request),
+        remembered: getRememberedPublicCheckIdentities(request),
       });
     const response = NextResponse.json(
       publicCheckSessionPublicSchema.parse(session),
@@ -42,7 +44,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
 
     return response;
   } catch (error) {
-    if (error instanceof ServiceError) {
+    if (error instanceof PublicCheckRuntimeSpringBackendHttpError) {
       return jsonError(error.message, error.status);
     }
 

@@ -7,12 +7,10 @@ import {
   requireAuthenticatedUser,
 } from "@/app/api/v1/counseling-records/_shared";
 import {
-  createCustomTab,
-  createDefaultSystemTabs,
-  getTabsForSpace,
-} from "@/server/services/member-tabs-service";
-import { requireSpaceInternalIdByPublicId } from "@/server/services/spaces-service";
-import { ServiceError } from "@/server/services/service-error";
+  createMemberTabInSpring,
+  fetchMemberTabsFromSpring,
+  MemberTabsSpringBackendHttpError,
+} from "@/server/member-tabs-spring-client";
 
 export const runtime = "nodejs";
 
@@ -26,18 +24,12 @@ export async function GET(
   const { spaceId } = await params;
 
   try {
-    let tabs = await getTabsForSpace(spaceId);
-    // 시스템 탭이 없으면 lazy init (기존 스페이스 backfill)
-    const hasSystemTabs = tabs.some((t) => t.tabType === "system");
-    if (!hasSystemTabs) {
-      const spaceInternalId = await requireSpaceInternalIdByPublicId(spaceId);
-      await createDefaultSystemTabs(spaceInternalId, currentUser.id);
-      tabs = await getTabsForSpace(spaceId);
-    }
-    return NextResponse.json({ tabs });
+    const result = await fetchMemberTabsFromSpring(spaceId, currentUser.id);
+    return NextResponse.json(result);
   } catch (error) {
-    if (error instanceof ServiceError)
+    if (error instanceof MemberTabsSpringBackendHttpError) {
       return jsonError(error.message, error.status);
+    }
     console.error(error);
     return jsonError("탭 목록을 불러오지 못했습니다.", 500);
   }
@@ -64,10 +56,10 @@ export async function POST(
     return jsonError("요청 데이터가 올바르지 않습니다.", 400);
 
   try {
-    const tab = await createCustomTab(spaceId, currentUser.id, parsed.data);
-    return NextResponse.json({ tab }, { status: 201 });
+    const result = await createMemberTabInSpring(spaceId, currentUser.id, parsed.data);
+    return NextResponse.json(result, { status: 201 });
   } catch (error) {
-    if (error instanceof ServiceError)
+    if (error instanceof MemberTabsSpringBackendHttpError)
       return jsonError(error.message, error.status);
     console.error(error);
     return jsonError("탭을 생성하지 못했습니다.", 500);

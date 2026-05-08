@@ -7,9 +7,10 @@ import {
   requireAuthenticatedUser,
   withHandler,
 } from "@/app/api/v1/counseling-records/_shared";
-import { searchPublicCheckLocations } from "@/server/services/public-check-location-search-service";
-import { ServiceError } from "@/server/services/service-error";
-import { assertSpaceOwnedByUser } from "@/server/services/student-board-service";
+import {
+  fetchPublicCheckLocationsFromSpring,
+  PublicCheckLocationsSpringBackendHttpError,
+} from "@/server/public-check-locations-spring-client";
 
 export const runtime = "nodejs";
 
@@ -26,8 +27,6 @@ export async function GET(request: NextRequest, context: RouteContext) {
     }
 
     const { spaceId } = await context.params;
-    await assertSpaceOwnedByUser(currentUser.id, spaceId);
-
     const query = request.nextUrl.searchParams.get("query")?.trim() ?? "";
 
     if (!query) {
@@ -37,12 +36,16 @@ export async function GET(request: NextRequest, context: RouteContext) {
     }
 
     try {
-      const data = await searchPublicCheckLocations(query);
+      const data = await fetchPublicCheckLocationsFromSpring({
+        userId: currentUser.id,
+        spaceId,
+        query,
+      });
       return NextResponse.json(
         publicCheckLocationSearchResponseSchema.parse(data),
       );
     } catch (error) {
-      if (error instanceof ServiceError) {
+      if (error instanceof PublicCheckLocationsSpringBackendHttpError) {
         return jsonError(error.message, error.status);
       }
 

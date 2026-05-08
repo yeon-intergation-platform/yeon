@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
-
 import { analyticsEvents, trackEvent } from "@/lib/analytics";
 import {
   TYPING_DECK_LANGUAGE_OPTIONS,
@@ -90,18 +89,24 @@ function DeckLibraryCard({ deck }: { deck: TypingDeckDto }) {
     language_tag: deck.languageTag,
   };
 
+  function handleDeckOpen() {
+    trackEvent("deck_open", {
+      source: "typing_deck_library",
+      deck_id: deck.id,
+      deck_title: deck.title,
+      deck_source: deck.source,
+      deck_visibility: deck.visibility,
+      deck_language: deck.languageTag,
+    });
+  }
+
   return (
     <article className="group relative flex min-h-[230px] flex-col rounded-3xl border border-[#e5e5e5] bg-white p-5 transition-colors hover:border-[#111]">
       <Link
         href={detailHref}
         aria-label={`${deck.title} 자세히 보기`}
         className="absolute inset-0 rounded-3xl"
-        onClick={() =>
-          trackEvent(analyticsEvents.typingDeckOpen, {
-            ...detailParams,
-            source: "deck_card_surface",
-          })
-        }
+        onClick={handleDeckOpen}
       />
       <div className="relative z-10 flex flex-wrap items-center gap-2 text-[12px] font-semibold text-[#666]">
         <span className="rounded-full bg-[#f3f3f3] px-2.5 py-1">
@@ -134,6 +139,7 @@ function DeckLibraryCard({ deck }: { deck: TypingDeckDto }) {
         <div className="flex flex-wrap gap-2">
           <Link
             href={detailHref}
+            onClick={handleDeckOpen}
             className="rounded-xl border border-[#e5e5e5] bg-white px-4 py-2 text-[13px] font-semibold text-[#111] no-underline transition-colors hover:border-[#111]"
             onClick={() =>
               trackEvent(analyticsEvents.typingDeckOpen, {

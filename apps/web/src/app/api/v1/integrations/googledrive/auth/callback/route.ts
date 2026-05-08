@@ -5,11 +5,7 @@ import {
   createOAuthCallbackSuccessResponse,
   resolveOAuthCallbackContext,
 } from "@/app/api/v1/integrations/_shared";
-import {
-  exchangeCode,
-  getSavedRefreshToken,
-  saveTokens,
-} from "@/server/services/googledrive-service";
+import { CloudOAuthSpringBackendHttpError, exchangeGoogleDriveOAuthCodeInSpring } from "@/server/cloud-oauth-spring-client";
 
 export const runtime = "nodejs";
 
@@ -23,19 +19,16 @@ export async function GET(request: NextRequest) {
     return context.response;
   }
 
-  let tokens: Awaited<ReturnType<typeof exchangeCode>>;
   try {
-    const existingRefreshToken = await getSavedRefreshToken(context.userId);
-    tokens = await exchangeCode(context.code, existingRefreshToken);
+    await exchangeGoogleDriveOAuthCodeInSpring({
+      userId: context.userId,
+      code: context.code,
+    });
   } catch (error) {
     console.error("Google Drive 토큰 교환 실패:", error);
-    return createOAuthCallbackErrorResponse("googledrive", "exchange_failed");
-  }
-
-  try {
-    await saveTokens(context.userId, tokens);
-  } catch (error) {
-    console.error("Google Drive 토큰 저장 실패:", error);
+    if (error instanceof CloudOAuthSpringBackendHttpError && error.status >= 500) {
+      return createOAuthCallbackErrorResponse("googledrive", "exchange_failed");
+    }
     return createOAuthCallbackErrorResponse("googledrive", "save_failed");
   }
 

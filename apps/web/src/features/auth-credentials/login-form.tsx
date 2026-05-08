@@ -8,7 +8,7 @@ import {
   credentialLogin,
   getCredentialErrorMessage,
 } from "@/lib/credential-client";
-import { analyticsEvents, trackEvent } from "@/lib/analytics";
+import { trackEvent } from "@/lib/analytics";
 
 type LoginViewState =
   | { kind: "idle" }
@@ -40,7 +40,8 @@ export function LoginForm({ nextPath }: LoginFormProps) {
 
     try {
       await loginMutation.mutateAsync({ email, password });
-      trackEvent(analyticsEvents.loginSuccess, {
+      trackEvent("login_success", {
+        source: "credentials_login_form",
         method: "credentials",
         next_path: nextPath,
       });

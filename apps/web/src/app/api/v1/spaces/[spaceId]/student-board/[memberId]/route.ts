@@ -6,8 +6,10 @@ import {
   jsonError,
   requireAuthenticatedUser,
 } from "@/app/api/v1/counseling-records/_shared";
-import { ServiceError } from "@/server/services/service-error";
-import { upsertMemberBoardStatus } from "@/server/services/student-board-service";
+import {
+  StudentBoardSpringBackendHttpError,
+  updateStudentBoardInSpring,
+} from "@/server/student-board-spring-client";
 
 export const runtime = "nodejs";
 
@@ -37,16 +39,16 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
   }
 
   try {
-    const board = await upsertMemberBoardStatus({
-      userId: currentUser.id,
+    const board = await updateStudentBoardInSpring(
       spaceId,
       memberId,
-      ...parsed.data,
-    });
+      currentUser.id,
+      parsed.data,
+    );
 
     return NextResponse.json(board);
   } catch (error) {
-    if (error instanceof ServiceError) {
+    if (error instanceof StudentBoardSpringBackendHttpError) {
       return jsonError(error.message, error.status);
     }
 

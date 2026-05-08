@@ -11,8 +11,10 @@ import {
   clearRememberedPublicCheckIdentityCookie,
   getRememberedPublicCheckIdentities,
 } from "@/server/services/public-check-device-cookie";
-import { submitPublicCheck } from "@/server/services/public-check-service";
-import { ServiceError } from "@/server/services/service-error";
+import {
+  PublicCheckRuntimeSpringBackendHttpError,
+  submitPublicCheckInSpring,
+} from "@/server/public-check-runtime-spring-client";
 
 export const runtime = "nodejs";
 
@@ -36,10 +38,11 @@ export async function POST(request: NextRequest, context: RouteContext) {
   }
 
   try {
-    const outcome = await submitPublicCheck({
-      token,
-      body: parsed.data,
-      rememberedIdentities: getRememberedPublicCheckIdentities(request),
+    const outcome = await submitPublicCheckInSpring(token, {
+      ...parsed.data,
+      remembered: getRememberedPublicCheckIdentities(request).map(
+        (identity) => `${identity.spaceId}:${identity.memberId}`,
+      ),
     });
     const response = NextResponse.json(
       submitPublicCheckResultSchema.parse(outcome.result),
@@ -63,7 +66,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
 
     return response;
   } catch (error) {
-    if (error instanceof ServiceError) {
+    if (error instanceof PublicCheckRuntimeSpringBackendHttpError) {
       return jsonError(error.message, error.status);
     }
 

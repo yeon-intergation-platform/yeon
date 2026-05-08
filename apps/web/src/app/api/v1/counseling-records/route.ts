@@ -8,10 +8,12 @@ import { NextResponse } from "next/server";
 import {
   createCounselingRecordAndQueueTranscription,
   createTextMemoRecord,
-  listCounselingRecords,
-  listCounselingRecordsBySpace,
-  listUnlinkedCounselingRecords,
+  ensureCounselingRecordProcessingScheduledForListItems,
 } from "@/server/services/counseling-records-service";
+import {
+  CounselingRecordListSpringBackendHttpError,
+  fetchCounselingRecordListFromSpring,
+} from "@/server/counseling-record-list-spring-client";
 import {
   AUDIO_UPLOAD_ERROR_MESSAGE,
   isAcceptedAudioFile,
@@ -76,28 +78,27 @@ export async function GET(request: NextRequest) {
 
   try {
     const listOptions = parseListOptions(searchParams);
-    let records;
-
-    if (spaceId) {
-      records = await listCounselingRecordsBySpace(
-        currentUser.id,
+    const payload = listCounselingRecordsResponseSchema.parse(
+      await fetchCounselingRecordListFromSpring({
+        userId: currentUser.id,
         spaceId,
-        listOptions,
-      );
-    } else if (unlinked) {
-      records = await listUnlinkedCounselingRecords(
-        currentUser.id,
-        listOptions,
-      );
-    } else {
-      records = await listCounselingRecords(currentUser.id, listOptions);
-    }
-
-    return NextResponse.json(
-      listCounselingRecordsResponseSchema.parse({ records }),
+        unlinked,
+        limit: listOptions.limit,
+        before: listOptions.beforeCreatedAt?.toISOString(),
+      }),
     );
+
+    ensureCounselingRecordProcessingScheduledForListItems(
+      currentUser.id,
+      payload.records,
+    );
+
+    return NextResponse.json(payload);
   } catch (error) {
     if (error instanceof ServiceError) {
+      return jsonError(error.message, error.status);
+    }
+    if (error instanceof CounselingRecordListSpringBackendHttpError) {
       return jsonError(error.message, error.status);
     }
 

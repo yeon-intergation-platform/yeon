@@ -6,8 +6,10 @@ import {
   jsonError,
   requireAuthenticatedUser,
 } from "@/app/api/v1/counseling-records/_shared";
-import { reviewCardDeckItem } from "@/server/services/card-decks-service";
-import { ServiceError } from "@/server/services/service-error";
+import {
+  CardDecksSpringBackendHttpError,
+  reviewCardDeckItemInSpring,
+} from "@/server/card-decks-spring-client";
 
 export const runtime = "nodejs";
 
@@ -16,10 +18,7 @@ export async function POST(
   { params }: { params: Promise<{ deckId: string; itemId: string }> },
 ) {
   const { currentUser, response } = await requireAuthenticatedUser(request);
-  if (!currentUser) {
-    return response;
-  }
-
+  if (!currentUser) return response;
   const { deckId, itemId } = await params;
 
   let body: unknown;
@@ -35,15 +34,10 @@ export async function POST(
   }
 
   try {
-    const item = await reviewCardDeckItem(
-      currentUser.id,
-      deckId,
-      itemId,
-      parsed.data.difficulty,
-    );
-    return NextResponse.json({ item });
+    const item = await reviewCardDeckItemInSpring(currentUser.id, deckId, itemId, parsed.data);
+    return NextResponse.json(item);
   } catch (error) {
-    if (error instanceof ServiceError) {
+    if (error instanceof CardDecksSpringBackendHttpError) {
       return jsonError(error.message, error.status);
     }
     console.error(error);

@@ -2,26 +2,11 @@
 globs:
   - apps/mobile/**
 ---
-# Mobile — Expo 기반 React Native, 웹과 API 계약 공유
+# Mobile (Claude wrapper)
 
-## 런타임
-- Expo (React Native) — 웹 컴포넌트(`div`, `className`) 사용 불가
-- React Native 컴포넌트: `View`, `Text`, `TouchableOpacity`, `StyleSheet`
+이 파일은 wrapper다. 실제 규칙은 SSOT에 있다.
 
-## 색상 (웹과 다름 — 의도적 차이)
-- 파일: `apps/mobile/src/theme/colors.ts`
-- Accent: `#4B57FF` (파란색) — 웹의 검정/오렌지와 다름, 유지할 것
-- Error: `#D92D20`, Border: `#DFE3E8`
+**SSOT**: `docs/agent-rules/mobile.md`
 
-## 웹과 공유하는 것
-- API 계약: `@yeon/api-contract` (동일 Zod 스키마)
-- HTTP 클라이언트: `@yeon/api-client`
-- 카드 서비스 feature: `apps/mobile/src/features/card-service/` ↔ 웹과 동일 API
-
-## contract 변경 시
-- `packages/api-contract/` 변경 → 모바일 소비자 경로도 확인
-- mobile credential response는 웹과 별도 계약 (`auth.ts`의 mobile 분기)
-
-## 상태 관리
-- Zustand 기반 로컬 상태
-- TanStack Query로 서버 상태 (웹과 동일 패턴)
+작업 시작 전 반드시 SSOT 파일을 Read한 뒤 그 규칙을 따른다.
+규칙 변경은 SSOT 파일에서만 한다. 이 파일을 직접 수정하지 않는다.

@@ -5,410 +5,409 @@ import type { CharacterDef } from "./types";
 
 export const TYPING_CHARACTERS: readonly CharacterDef[] = [
   {
-    id: "camel",
-    label: {
-      ko: "낙타",
-      en: "Camel",
+    "id": "camel",
+    "label": {
+      "ko": "낙타",
+      "en": "Camel"
     },
-    sprite: "/sprites/camel-run.png",
-    frameWidth: 96,
-    frameHeight: 96,
-    frameCount: 6,
-    frameCols: 2,
-    fps: 10,
+    "sprite": "/sprites/camel-run.png",
+    "frameWidth": 96,
+    "frameHeight": 96,
+    "frameCount": 6,
+    "frameCols": 2,
+    "fps": 10
   },
   {
-    id: "amane",
-    label: {
-      ko: "아마네",
-      en: "Amane",
+    "id": "amane",
+    "label": {
+      "ko": "아마네",
+      "en": "Amane"
     },
-    sprite: "/sprites/characters/amane/run.png",
-    frameWidth: 192,
-    frameHeight: 208,
-    frameCount: 8,
-    frameCols: 8,
-    fps: 9,
-    credit: {
-      source: "Codex digital pet (사용자 부여 공개 배포 허가, 2026-05-03)",
-      license: "approved",
-    },
+    "sprite": "/sprites/characters/amane/run.png",
+    "frameWidth": 192,
+    "frameHeight": 208,
+    "frameCount": 8,
+    "frameCols": 8,
+    "fps": 9,
+    "credit": {
+      "source": "Codex digital pet (사용자 부여 공개 배포 허가, 2026-05-03)",
+      "license": "approved"
+    }
   },
   {
-    id: "bluebell",
-    label: {
-      ko: "블루벨",
-      en: "Bluebell",
+    "id": "bluebell",
+    "label": {
+      "ko": "블루벨",
+      "en": "Bluebell"
     },
-    sprite: "/sprites/characters/bluebell/run.png",
-    frameWidth: 192,
-    frameHeight: 208,
-    frameCount: 8,
-    frameCols: 8,
-    fps: 9,
-    credit: {
-      source: "Codex digital pet (사용자 부여 공개 배포 허가, 2026-05-03)",
-      license: "approved",
-    },
+    "sprite": "/sprites/characters/bluebell/run.png",
+    "frameWidth": 192,
+    "frameHeight": 208,
+    "frameCount": 8,
+    "frameCols": 8,
+    "fps": 9,
+    "credit": {
+      "source": "Codex digital pet (사용자 부여 공개 배포 허가, 2026-05-03)",
+      "license": "approved"
+    }
   },
   {
-    id: "cleria",
-    label: {
-      ko: "클레리아",
-      en: "Cleria",
+    "id": "cleria",
+    "label": {
+      "ko": "클레리아",
+      "en": "Cleria"
     },
-    sprite: "/sprites/characters/cleria/run.png",
-    frameWidth: 192,
-    frameHeight: 208,
-    frameCount: 8,
-    frameCols: 8,
-    fps: 9,
-    credit: {
-      source: "Codex digital pet (사용자 부여 공개 배포 허가, 2026-05-03)",
-      license: "approved",
-    },
+    "sprite": "/sprites/characters/cleria/run.png",
+    "frameWidth": 192,
+    "frameHeight": 208,
+    "frameCount": 8,
+    "frameCols": 8,
+    "fps": 9,
+    "credit": {
+      "source": "Codex digital pet (사용자 부여 공개 배포 허가, 2026-05-03)",
+      "license": "approved"
+    }
   },
   {
-    id: "diana",
-    label: {
-      ko: "다이아나",
-      en: "Diana",
+    "id": "diana",
+    "label": {
+      "ko": "다이아나",
+      "en": "Diana"
     },
-    sprite: "/sprites/characters/diana/run.png",
-    frameWidth: 192,
-    frameHeight: 208,
-    frameCount: 8,
-    frameCols: 8,
-    fps: 9,
-    credit: {
-      source: "Codex digital pet (사용자 부여 공개 배포 허가, 2026-05-03)",
-      license: "approved",
-    },
+    "sprite": "/sprites/characters/diana/run.png",
+    "frameWidth": 192,
+    "frameHeight": 208,
+    "frameCount": 8,
+    "frameCols": 8,
+    "fps": 9,
+    "credit": {
+      "source": "Codex digital pet (사용자 부여 공개 배포 허가, 2026-05-03)",
+      "license": "approved"
+    }
   },
   {
-    id: "femme-soule",
-    label: {
-      ko: "팜 술레",
-      en: "Femme Soule",
+    "id": "femme-soule",
+    "label": {
+      "ko": "팜 술레",
+      "en": "Femme Soule"
     },
-    sprite: "/sprites/characters/femme-soule/run.png",
-    frameWidth: 192,
-    frameHeight: 208,
-    frameCount: 8,
-    frameCols: 8,
-    fps: 9,
-    credit: {
-      source: "Codex digital pet (사용자 부여 공개 배포 허가, 2026-05-03)",
-      license: "approved",
-    },
+    "sprite": "/sprites/characters/femme-soule/run.png",
+    "frameWidth": 192,
+    "frameHeight": 208,
+    "frameCount": 8,
+    "frameCols": 8,
+    "fps": 9,
+    "credit": {
+      "source": "Codex digital pet (사용자 부여 공개 배포 허가, 2026-05-03)",
+      "license": "approved"
+    }
   },
   {
-    id: "gopal",
-    label: {
-      ko: "고팔",
-      en: "Gopal",
+    "id": "gopal",
+    "label": {
+      "ko": "고팔",
+      "en": "Gopal"
     },
-    sprite: "/sprites/characters/gopal/run.png",
-    frameWidth: 192,
-    frameHeight: 208,
-    frameCount: 8,
-    frameCols: 8,
-    fps: 9,
-    credit: {
-      source: "Codex digital pet (사용자 부여 공개 배포 허가, 2026-05-03)",
-      license: "approved",
-    },
+    "sprite": "/sprites/characters/gopal/run.png",
+    "frameWidth": 192,
+    "frameHeight": 208,
+    "frameCount": 8,
+    "frameCols": 8,
+    "fps": 9,
+    "credit": {
+      "source": "Codex digital pet (사용자 부여 공개 배포 허가, 2026-05-03)",
+      "license": "approved"
+    }
   },
   {
-    id: "guga",
-    label: {
-      ko: "구가",
-      en: "Guga",
+    "id": "guga",
+    "label": {
+      "ko": "구가",
+      "en": "Guga"
     },
-    sprite: "/sprites/characters/guga/run.png",
-    frameWidth: 192,
-    frameHeight: 208,
-    frameCount: 8,
-    frameCols: 8,
-    fps: 9,
-    credit: {
-      source: "Codex digital pet (사용자 부여 공개 배포 허가, 2026-05-03)",
-      license: "approved",
-    },
+    "sprite": "/sprites/characters/guga/run.png",
+    "frameWidth": 192,
+    "frameHeight": 208,
+    "frameCount": 8,
+    "frameCols": 8,
+    "fps": 9,
+    "credit": {
+      "source": "Codex digital pet (사용자 부여 공개 배포 허가, 2026-05-03)",
+      "license": "approved"
+    }
   },
   {
-    id: "hearthling",
-    label: {
-      ko: "하스링",
-      en: "Hearthling",
+    "id": "hearthling",
+    "label": {
+      "ko": "하스링",
+      "en": "Hearthling"
     },
-    sprite: "/sprites/characters/hearthling/run.png",
-    frameWidth: 192,
-    frameHeight: 208,
-    frameCount: 8,
-    frameCols: 8,
-    fps: 9,
-    credit: {
-      source: "Codex digital pet (사용자 부여 공개 배포 허가, 2026-05-03)",
-      license: "approved",
-    },
+    "sprite": "/sprites/characters/hearthling/run.png",
+    "frameWidth": 192,
+    "frameHeight": 208,
+    "frameCount": 8,
+    "frameCols": 8,
+    "fps": 9,
+    "credit": {
+      "source": "Codex digital pet (사용자 부여 공개 배포 허가, 2026-05-03)",
+      "license": "approved"
+    }
   },
   {
-    id: "kana",
-    label: {
-      ko: "아리마 카나",
-      en: "Kana",
+    "id": "kana",
+    "label": {
+      "ko": "아리마 카나",
+      "en": "Kana"
     },
-    sprite: "/sprites/characters/kana/run.png",
-    frameWidth: 192,
-    frameHeight: 208,
-    frameCount: 8,
-    frameCols: 8,
-    fps: 9,
-    credit: {
-      source: "Codex digital pet (사용자 부여 공개 배포 허가, 2026-05-03)",
-      license: "approved",
-    },
+    "sprite": "/sprites/characters/kana/run.png",
+    "frameWidth": 192,
+    "frameHeight": 208,
+    "frameCount": 8,
+    "frameCols": 8,
+    "fps": 9,
+    "credit": {
+      "source": "Codex digital pet (사용자 부여 공개 배포 허가, 2026-05-03)",
+      "license": "approved"
+    }
   },
   {
-    id: "karen-chan",
-    label: {
-      ko: "카렌짱",
-      en: "Karen-chan",
+    "id": "karen-chan",
+    "label": {
+      "ko": "카렌짱",
+      "en": "Karen-chan"
     },
-    sprite: "/sprites/characters/karen-chan/run.png",
-    frameWidth: 192,
-    frameHeight: 208,
-    frameCount: 8,
-    frameCols: 8,
-    fps: 9,
-    credit: {
-      source: "Codex digital pet (사용자 부여 공개 배포 허가, 2026-05-03)",
-      license: "approved",
-    },
+    "sprite": "/sprites/characters/karen-chan/run.png",
+    "frameWidth": 192,
+    "frameHeight": 208,
+    "frameCount": 8,
+    "frameCols": 8,
+    "fps": 9,
+    "credit": {
+      "source": "Codex digital pet (사용자 부여 공개 배포 허가, 2026-05-03)",
+      "license": "approved"
+    }
   },
   {
-    id: "kumite-champ",
-    label: {
-      ko: "쿠미테 챔프",
-      en: "Kumite Champ",
+    "id": "kumite-champ",
+    "label": {
+      "ko": "쿠미테 챔프",
+      "en": "Kumite Champ"
     },
-    sprite: "/sprites/characters/kumite-champ/run.png",
-    frameWidth: 192,
-    frameHeight: 208,
-    frameCount: 8,
-    frameCols: 8,
-    fps: 9,
-    credit: {
-      source: "Codex digital pet (사용자 부여 공개 배포 허가, 2026-05-03)",
-      license: "approved",
-    },
+    "sprite": "/sprites/characters/kumite-champ/run.png",
+    "frameWidth": 192,
+    "frameHeight": 208,
+    "frameCount": 8,
+    "frameCols": 8,
+    "fps": 9,
+    "credit": {
+      "source": "Codex digital pet (사용자 부여 공개 배포 허가, 2026-05-03)",
+      "license": "approved"
+    }
   },
   {
-    id: "linnea",
-    label: {
-      ko: "린네아",
-      en: "Linnea",
+    "id": "linnea",
+    "label": {
+      "ko": "린네아",
+      "en": "Linnea"
     },
-    sprite: "/sprites/characters/linnea/run.png",
-    frameWidth: 192,
-    frameHeight: 208,
-    frameCount: 8,
-    frameCols: 8,
-    fps: 9,
-    credit: {
-      source:
-        "Augury Bird fae chibi sprite (사용자 부여 공개 배포 허가, 2026-05-03)",
-      license: "approved",
-    },
+    "sprite": "/sprites/characters/linnea/run.png",
+    "frameWidth": 192,
+    "frameHeight": 208,
+    "frameCount": 8,
+    "frameCols": 8,
+    "fps": 9,
+    "credit": {
+      "source": "Augury Bird fae chibi sprite (사용자 부여 공개 배포 허가, 2026-05-03)",
+      "license": "approved"
+    }
   },
   {
-    id: "mecha-rex",
-    label: {
-      ko: "메카 렉스",
-      en: "Mecha Rex",
+    "id": "mecha-rex",
+    "label": {
+      "ko": "메카 렉스",
+      "en": "Mecha Rex"
     },
-    sprite: "/sprites/characters/mecha-rex/run.png",
-    frameWidth: 192,
-    frameHeight: 208,
-    frameCount: 8,
-    frameCols: 8,
-    fps: 9,
-    credit: {
-      source: "Codex digital pet (사용자 부여 공개 배포 허가, 2026-05-03)",
-      license: "approved",
-    },
+    "sprite": "/sprites/characters/mecha-rex/run.png",
+    "frameWidth": 192,
+    "frameHeight": 208,
+    "frameCount": 8,
+    "frameCols": 8,
+    "fps": 9,
+    "credit": {
+      "source": "Codex digital pet (사용자 부여 공개 배포 허가, 2026-05-03)",
+      "license": "approved"
+    }
   },
   {
-    id: "meizon",
-    label: {
-      ko: "메이존",
-      en: "Meizon",
+    "id": "meizon",
+    "label": {
+      "ko": "메이존",
+      "en": "Meizon"
     },
-    sprite: "/sprites/characters/meizon/run.png",
-    frameWidth: 192,
-    frameHeight: 208,
-    frameCount: 8,
-    frameCols: 8,
-    fps: 9,
-    credit: {
-      source: "Codex digital pet (사용자 부여 공개 배포 허가, 2026-05-03)",
-      license: "approved",
-    },
+    "sprite": "/sprites/characters/meizon/run.png",
+    "frameWidth": 192,
+    "frameHeight": 208,
+    "frameCount": 8,
+    "frameCols": 8,
+    "fps": 9,
+    "credit": {
+      "source": "Codex digital pet (사용자 부여 공개 배포 허가, 2026-05-03)",
+      "license": "approved"
+    }
   },
   {
-    id: "merry",
-    label: {
-      ko: "메리",
-      en: "Merry",
+    "id": "merry",
+    "label": {
+      "ko": "메리",
+      "en": "Merry"
     },
-    sprite: "/sprites/characters/merry/run.png",
-    frameWidth: 192,
-    frameHeight: 208,
-    frameCount: 8,
-    frameCols: 8,
-    fps: 9,
-    credit: {
-      source: "Codex digital pet (사용자 부여 공개 배포 허가, 2026-05-03)",
-      license: "approved",
-    },
+    "sprite": "/sprites/characters/merry/run.png",
+    "frameWidth": 192,
+    "frameHeight": 208,
+    "frameCount": 8,
+    "frameCols": 8,
+    "fps": 9,
+    "credit": {
+      "source": "Codex digital pet (사용자 부여 공개 배포 허가, 2026-05-03)",
+      "license": "approved"
+    }
   },
   {
-    id: "naruebi-chan-sansei",
-    label: {
-      ko: "나루에비짱 삼세",
-      en: "Naruebi-chan III",
+    "id": "naruebi-chan-sansei",
+    "label": {
+      "ko": "나루에비짱 삼세",
+      "en": "Naruebi-chan III"
     },
-    sprite: "/sprites/characters/naruebi-chan-sansei/run.png",
-    frameWidth: 192,
-    frameHeight: 208,
-    frameCount: 8,
-    frameCols: 8,
-    fps: 9,
-    credit: {
-      source: "Codex digital pet (사용자 부여 공개 배포 허가, 2026-05-03)",
-      license: "approved",
-    },
+    "sprite": "/sprites/characters/naruebi-chan-sansei/run.png",
+    "frameWidth": 192,
+    "frameHeight": 208,
+    "frameCount": 8,
+    "frameCols": 8,
+    "fps": 9,
+    "credit": {
+      "source": "Codex digital pet (사용자 부여 공개 배포 허가, 2026-05-03)",
+      "license": "approved"
+    }
   },
   {
-    id: "oguri",
-    label: {
-      ko: "오구리",
-      en: "Oguri",
+    "id": "oguri",
+    "label": {
+      "ko": "오구리",
+      "en": "Oguri"
     },
-    sprite: "/sprites/characters/oguri/run.png",
-    frameWidth: 192,
-    frameHeight: 208,
-    frameCount: 8,
-    frameCols: 8,
-    fps: 9,
-    credit: {
-      source: "Codex digital pet (사용자 부여 공개 배포 허가, 2026-05-03)",
-      license: "approved",
-    },
+    "sprite": "/sprites/characters/oguri/run.png",
+    "frameWidth": 192,
+    "frameHeight": 208,
+    "frameCount": 8,
+    "frameCols": 8,
+    "fps": 9,
+    "credit": {
+      "source": "Codex digital pet (사용자 부여 공개 배포 허가, 2026-05-03)",
+      "license": "approved"
+    }
   },
   {
-    id: "sakura",
-    label: {
-      ko: "사쿠라",
-      en: "Sakura",
+    "id": "sakura",
+    "label": {
+      "ko": "사쿠라",
+      "en": "Sakura"
     },
-    sprite: "/sprites/characters/sakura/run.png",
-    frameWidth: 192,
-    frameHeight: 208,
-    frameCount: 8,
-    frameCols: 8,
-    fps: 9,
-    credit: {
-      source: "Codex digital pet (사용자 부여 공개 배포 허가, 2026-05-03)",
-      license: "approved",
-    },
+    "sprite": "/sprites/characters/sakura/run.png",
+    "frameWidth": 192,
+    "frameHeight": 208,
+    "frameCount": 8,
+    "frameCols": 8,
+    "fps": 9,
+    "credit": {
+      "source": "Codex digital pet (사용자 부여 공개 배포 허가, 2026-05-03)",
+      "license": "approved"
+    }
   },
   {
-    id: "samo",
-    label: {
-      ko: "사모",
-      en: "Samo",
+    "id": "samo",
+    "label": {
+      "ko": "사모",
+      "en": "Samo"
     },
-    sprite: "/sprites/characters/samo/run.png",
-    frameWidth: 192,
-    frameHeight: 208,
-    frameCount: 8,
-    frameCols: 8,
-    fps: 9,
-    credit: {
-      source: "Codex digital pet (사용자 부여 공개 배포 허가, 2026-05-03)",
-      license: "approved",
-    },
+    "sprite": "/sprites/characters/samo/run.png",
+    "frameWidth": 192,
+    "frameHeight": 208,
+    "frameCount": 8,
+    "frameCols": 8,
+    "fps": 9,
+    "credit": {
+      "source": "Codex digital pet (사용자 부여 공개 배포 허가, 2026-05-03)",
+      "license": "approved"
+    }
   },
   {
-    id: "senninha",
-    label: {
-      ko: "세니냐",
-      en: "Senninha",
+    "id": "senninha",
+    "label": {
+      "ko": "세니냐",
+      "en": "Senninha"
     },
-    sprite: "/sprites/characters/senninha/run.png",
-    frameWidth: 192,
-    frameHeight: 208,
-    frameCount: 8,
-    frameCols: 8,
-    fps: 9,
-    credit: {
-      source: "Codex digital pet (사용자 부여 공개 배포 허가, 2026-05-03)",
-      license: "approved",
-    },
+    "sprite": "/sprites/characters/senninha/run.png",
+    "frameWidth": 192,
+    "frameHeight": 208,
+    "frameCount": 8,
+    "frameCols": 8,
+    "fps": 9,
+    "credit": {
+      "source": "Codex digital pet (사용자 부여 공개 배포 허가, 2026-05-03)",
+      "license": "approved"
+    }
   },
   {
-    id: "skullfire",
-    label: {
-      ko: "스컬파이어",
-      en: "Skullfire",
+    "id": "skullfire",
+    "label": {
+      "ko": "스컬파이어",
+      "en": "Skullfire"
     },
-    sprite: "/sprites/characters/skullfire/run.png",
-    frameWidth: 192,
-    frameHeight: 208,
-    frameCount: 8,
-    frameCols: 8,
-    fps: 9,
-    credit: {
-      source: "Codex digital pet (사용자 부여 공개 배포 허가, 2026-05-03)",
-      license: "approved",
-    },
+    "sprite": "/sprites/characters/skullfire/run.png",
+    "frameWidth": 192,
+    "frameHeight": 208,
+    "frameCount": 8,
+    "frameCols": 8,
+    "fps": 9,
+    "credit": {
+      "source": "Codex digital pet (사용자 부여 공개 배포 허가, 2026-05-03)",
+      "license": "approved"
+    }
   },
   {
-    id: "tata-cat",
-    label: {
-      ko: "타타캣",
-      en: "Tata Cat",
+    "id": "tata-cat",
+    "label": {
+      "ko": "타타캣",
+      "en": "Tata Cat"
     },
-    sprite: "/sprites/characters/tata-cat/run.png",
-    frameWidth: 192,
-    frameHeight: 208,
-    frameCount: 8,
-    frameCols: 8,
-    fps: 9,
-    credit: {
-      source: "Codex digital pet (사용자 부여 공개 배포 허가, 2026-05-03)",
-      license: "approved",
-    },
+    "sprite": "/sprites/characters/tata-cat/run.png",
+    "frameWidth": 192,
+    "frameHeight": 208,
+    "frameCount": 8,
+    "frameCols": 8,
+    "fps": 9,
+    "credit": {
+      "source": "Codex digital pet (사용자 부여 공개 배포 허가, 2026-05-03)",
+      "license": "approved"
+    }
   },
   {
-    id: "yuki",
-    label: {
-      ko: "유키",
-      en: "Yuki",
+    "id": "yuki",
+    "label": {
+      "ko": "유키",
+      "en": "Yuki"
     },
-    sprite: "/sprites/characters/yuki/run.png",
-    frameWidth: 192,
-    frameHeight: 208,
-    frameCount: 8,
-    frameCols: 8,
-    fps: 9,
-    credit: {
-      source: "Codex digital pet (사용자 부여 공개 배포 허가, 2026-05-03)",
-      license: "approved",
-    },
-  },
+    "sprite": "/sprites/characters/yuki/run.png",
+    "frameWidth": 192,
+    "frameHeight": 208,
+    "frameCount": 8,
+    "frameCols": 8,
+    "fps": 9,
+    "credit": {
+      "source": "Codex digital pet (사용자 부여 공개 배포 허가, 2026-05-03)",
+      "license": "approved"
+    }
+  }
 ];
 
 export const DEFAULT_CHARACTER_ID = "camel";

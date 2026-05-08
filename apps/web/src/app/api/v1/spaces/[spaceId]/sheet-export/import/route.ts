@@ -1,23 +1,21 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-import { and, eq } from "drizzle-orm";
 
 import {
   jsonError,
   requireAuthenticatedUser,
 } from "@/app/api/v1/counseling-records/_shared";
-import { getDb } from "@/server/db";
-import { sheetIntegrations } from "@/server/db/schema";
+import {
+  fetchSheetExportIntegrationFromSpring,
+  SheetExportSpringBackendHttpError,
+} from "@/server/sheet-export-spring-client";
 import {
   importSpaceFromLinkedSheet,
   type SheetImportResult,
 } from "@/server/services/google-sheets-export-service";
 import { ServiceError } from "@/server/services/service-error";
-import { requireSpaceInternalIdByPublicId } from "@/server/services/spaces-service";
 
 export const runtime = "nodejs";
-
-const EXPORT_DATA_TYPE = "export";
 
 export async function POST(
   request: NextRequest,
@@ -29,18 +27,10 @@ export async function POST(
   const { spaceId } = await params;
 
   try {
-    const spaceInternalId = await requireSpaceInternalIdByPublicId(spaceId);
-    const db = getDb();
-    const [integration] = await db
-      .select()
-      .from(sheetIntegrations)
-      .where(
-        and(
-          eq(sheetIntegrations.spaceId, spaceInternalId),
-          eq(sheetIntegrations.dataType, EXPORT_DATA_TYPE),
-        ),
-      )
-      .limit(1);
+    const { integration } = await fetchSheetExportIntegrationFromSpring(
+      spaceId,
+      currentUser.id,
+    );
 
     if (!integration) {
       return jsonError(
@@ -67,6 +57,9 @@ export async function POST(
       { status: result.status === "blocked" ? 409 : 200 },
     );
   } catch (error) {
+    if (error instanceof SheetExportSpringBackendHttpError) {
+      return jsonError(error.message, error.status);
+    }
     if (error instanceof ServiceError) {
       return jsonError(error.message, error.status);
     }

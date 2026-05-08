@@ -7,10 +7,10 @@ import {
   requireAuthenticatedUser,
 } from "@/app/api/v1/counseling-records/_shared";
 import {
-  deleteCustomTab,
-  updateTab,
-} from "@/server/services/member-tabs-service";
-import { ServiceError } from "@/server/services/service-error";
+  deleteMemberTabInSpring,
+  MemberTabsSpringBackendHttpError,
+  updateMemberTabInSpring,
+} from "@/server/member-tabs-spring-client";
 
 export const runtime = "nodejs";
 
@@ -35,10 +35,15 @@ export async function PATCH(
     return jsonError("요청 데이터가 올바르지 않습니다.", 400);
 
   try {
-    const tab = await updateTab(tabId, spaceId, parsed.data);
-    return NextResponse.json({ tab });
+    const result = await updateMemberTabInSpring(
+      spaceId,
+      tabId,
+      currentUser.id,
+      parsed.data,
+    );
+    return NextResponse.json(result);
   } catch (error) {
-    if (error instanceof ServiceError)
+    if (error instanceof MemberTabsSpringBackendHttpError)
       return jsonError(error.message, error.status);
     console.error(error);
     return jsonError("탭을 수정하지 못했습니다.", 500);
@@ -55,10 +60,10 @@ export async function DELETE(
   const { spaceId, tabId } = await params;
 
   try {
-    await deleteCustomTab(tabId, spaceId);
+    await deleteMemberTabInSpring(spaceId, tabId, currentUser.id);
     return new NextResponse(null, { status: 204 });
   } catch (error) {
-    if (error instanceof ServiceError)
+    if (error instanceof MemberTabsSpringBackendHttpError)
       return jsonError(error.message, error.status);
     console.error(error);
     return jsonError("탭을 삭제하지 못했습니다.", 500);

@@ -3,11 +3,11 @@ import { NextResponse } from "next/server";
 import { updateSpaceBodySchema } from "@yeon/api-contract/spaces";
 
 import {
-  deleteSpace,
-  getSpaceById,
-  updateSpace,
-} from "@/server/services/spaces-service";
-import { ServiceError } from "@/server/services/service-error";
+  deleteSpaceInSpring,
+  fetchSpaceFromSpring,
+  SpacesSpringBackendHttpError,
+  updateSpaceInSpring,
+} from "@/server/spaces-spring-client";
 
 import {
   jsonError,
@@ -29,11 +29,11 @@ export async function GET(
   const { spaceId } = await params;
 
   try {
-    const space = await getSpaceById(spaceId);
+    const space = await fetchSpaceFromSpring(currentUser.id, spaceId);
 
-    return NextResponse.json({ space });
+    return NextResponse.json(space);
   } catch (error) {
-    if (error instanceof ServiceError) {
+    if (error instanceof SpacesSpringBackendHttpError) {
       return jsonError(error.message, error.status);
     }
 
@@ -55,10 +55,10 @@ export async function DELETE(
   const { spaceId } = await params;
 
   try {
-    await deleteSpace(currentUser.id, spaceId);
+    await deleteSpaceInSpring(currentUser.id, spaceId);
     return new NextResponse(null, { status: 204 });
   } catch (error) {
-    if (error instanceof ServiceError) {
+    if (error instanceof SpacesSpringBackendHttpError) {
       return jsonError(error.message, error.status);
     }
 
@@ -92,10 +92,10 @@ export async function PATCH(
   }
 
   try {
-    const space = await updateSpace(currentUser.id, spaceId, parsed.data);
-    return NextResponse.json({ space });
+    const space = await updateSpaceInSpring(currentUser.id, spaceId, parsed.data);
+    return NextResponse.json(space);
   } catch (error) {
-    if (error instanceof ServiceError) {
+    if (error instanceof SpacesSpringBackendHttpError) {
       return jsonError(error.message, error.status);
     }
 

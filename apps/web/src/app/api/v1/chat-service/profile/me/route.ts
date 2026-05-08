@@ -8,10 +8,11 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
 import {
-  deleteMyChatServiceProfile,
-  getMyChatServiceProfile,
-  updateMyChatServiceProfile,
-} from "@/server/services/chat-service/profile-service";
+  ChatServiceMyProfileSpringBackendHttpError,
+  deleteMyChatServiceProfileInSpring,
+  fetchMyChatServiceProfileFromSpring,
+  updateMyChatServiceProfileInSpring,
+} from "@/server/chat-service-my-profile-spring-client";
 import { ServiceError } from "@/server/services/service-error";
 
 import {
@@ -24,13 +25,16 @@ import {
 export async function GET(request: NextRequest) {
   try {
     const { profile } = await requireChatServiceAuth(request);
-    const response = await getMyChatServiceProfile(profile.id);
+    const response = await fetchMyChatServiceProfileFromSpring(profile.id);
 
     return NextResponse.json(
       chatServiceGetMyProfileResponseSchema.parse(response),
     );
   } catch (error) {
     if (error instanceof ServiceError) {
+      return jsonChatServiceError(error.message, error.status);
+    }
+    if (error instanceof ChatServiceMyProfileSpringBackendHttpError) {
       return jsonChatServiceError(error.message, error.status);
     }
 
@@ -52,16 +56,23 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    const response = await updateMyChatServiceProfile(
-      profile.id,
-      parsedBody.data,
-    );
+    const response = await updateMyChatServiceProfileInSpring({
+      currentProfileId: profile.id,
+      nickname: parsedBody.data.nickname,
+      ageLabel: parsedBody.data.ageLabel,
+      regionLabel: parsedBody.data.regionLabel,
+      bio: parsedBody.data.bio,
+      notificationsEnabled: parsedBody.data.notificationsEnabled,
+    });
 
     return NextResponse.json(
       chatServiceUpdateMyProfileResponseSchema.parse(response),
     );
   } catch (error) {
     if (error instanceof ServiceError) {
+      return jsonChatServiceError(error.message, error.status);
+    }
+    if (error instanceof ChatServiceMyProfileSpringBackendHttpError) {
       return jsonChatServiceError(error.message, error.status);
     }
 
@@ -73,7 +84,7 @@ export async function PATCH(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     const { profile } = await requireChatServiceAuth(request);
-    const response = await deleteMyChatServiceProfile(profile.id);
+    const response = await deleteMyChatServiceProfileInSpring(profile.id);
     const nextResponse = NextResponse.json(
       chatServiceDeleteAccountResponseSchema.parse(response),
     );
@@ -83,6 +94,9 @@ export async function DELETE(request: NextRequest) {
     return nextResponse;
   } catch (error) {
     if (error instanceof ServiceError) {
+      return jsonChatServiceError(error.message, error.status);
+    }
+    if (error instanceof ChatServiceMyProfileSpringBackendHttpError) {
       return jsonChatServiceError(error.message, error.status);
     }
 

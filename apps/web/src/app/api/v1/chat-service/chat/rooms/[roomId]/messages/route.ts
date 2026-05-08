@@ -5,7 +5,10 @@ import {
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
-import { sendChatServiceMessage } from "@/server/services/chat-service/chat-service";
+import {
+  ChatServiceChatRoomsSpringBackendHttpError,
+  sendChatServiceMessageInSpring,
+} from "@/server/chat-service-chat-rooms-spring-client";
 import { ServiceError } from "@/server/services/service-error";
 
 import {
@@ -31,11 +34,11 @@ export async function POST(request: NextRequest, { params }: Params) {
     }
 
     const { roomId } = await params;
-    const response = await sendChatServiceMessage(
-      profile.id,
+    const response = await sendChatServiceMessageInSpring({
+      currentProfileId: profile.id,
       roomId,
-      parsedBody.data.body,
-    );
+      body: parsedBody.data.body,
+    });
 
     return NextResponse.json(
       chatServiceSendChatMessageResponseSchema.parse(response),
@@ -43,6 +46,9 @@ export async function POST(request: NextRequest, { params }: Params) {
     );
   } catch (error) {
     if (error instanceof ServiceError) {
+      return jsonChatServiceError(error.message, error.status);
+    }
+    if (error instanceof ChatServiceChatRoomsSpringBackendHttpError) {
       return jsonChatServiceError(error.message, error.status);
     }
 

@@ -1,11 +1,14 @@
 import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 
-import { requireAuthenticatedUser } from "@/app/api/v1/counseling-records/_shared";
-import { handleProviderFileProxyRoute } from "@/app/api/v1/integrations/_shared";
 import {
-  getValidAccessToken,
-  downloadFile,
-} from "@/server/services/onedrive-service";
+  jsonError,
+  requireAuthenticatedUser,
+} from "@/app/api/v1/counseling-records/_shared";
+import {
+  downloadOneDriveFileFromSpring,
+  OneDriveBrowserSpringBackendHttpError,
+} from "@/server/onedrive-browser-spring-client";
 
 export const runtime = "nodejs";
 
@@ -19,14 +22,27 @@ export async function GET(
   const { fileId } = await params;
   const mimeType = request.nextUrl.searchParams.get("mimeType") ?? "";
 
-  return handleProviderFileProxyRoute({
-    userId: currentUser.id,
-    fileId,
-    mimeType,
-    getAccessToken: getValidAccessToken,
-    downloadFile: (accessToken, targetFileId) =>
-      downloadFile(accessToken, targetFileId),
-    disconnectedMessage: "OneDrive가 연결되지 않았습니다.",
-    logLabel: "OneDrive",
-  });
+  try {
+    const downloaded = await downloadOneDriveFileFromSpring({
+      userId: currentUser.id,
+      fileId,
+      mimeType,
+    });
+
+    const body = Buffer.from(downloaded.bytes);
+
+    return new NextResponse(body, {
+      headers: {
+        "Content-Type": downloaded.contentType,
+        "Content-Length": String(body.byteLength),
+        "Cache-Control": "private, max-age=300",
+      },
+    });
+  } catch (error) {
+    if (error instanceof OneDriveBrowserSpringBackendHttpError) {
+      return jsonError(error.message, error.status);
+    }
+    console.error("OneDrive 파일 프록시 오류:", error);
+    return jsonError("파일을 가져오지 못했습니다.", 500);
+  }
 }

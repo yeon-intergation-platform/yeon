@@ -7,10 +7,10 @@ import {
   requireAuthenticatedUser,
 } from "@/app/api/v1/counseling-records/_shared";
 import {
-  deleteCardDeckItem,
-  updateCardDeckItem,
-} from "@/server/services/card-decks-service";
-import { ServiceError } from "@/server/services/service-error";
+  CardDecksSpringBackendHttpError,
+  deleteCardDeckItemInSpring,
+  updateCardDeckItemInSpring,
+} from "@/server/card-decks-spring-client";
 
 export const runtime = "nodejs";
 
@@ -19,10 +19,7 @@ export async function PATCH(
   { params }: { params: Promise<{ deckId: string; itemId: string }> },
 ) {
   const { currentUser, response } = await requireAuthenticatedUser(request);
-  if (!currentUser) {
-    return response;
-  }
-
+  if (!currentUser) return response;
   const { deckId, itemId } = await params;
 
   let body: unknown;
@@ -38,15 +35,10 @@ export async function PATCH(
   }
 
   try {
-    const item = await updateCardDeckItem(
-      currentUser.id,
-      deckId,
-      itemId,
-      parsed.data,
-    );
-    return NextResponse.json({ item });
+    const item = await updateCardDeckItemInSpring(currentUser.id, deckId, itemId, parsed.data);
+    return NextResponse.json(item);
   } catch (error) {
-    if (error instanceof ServiceError) {
+    if (error instanceof CardDecksSpringBackendHttpError) {
       return jsonError(error.message, error.status);
     }
     console.error(error);
@@ -59,17 +51,14 @@ export async function DELETE(
   { params }: { params: Promise<{ deckId: string; itemId: string }> },
 ) {
   const { currentUser, response } = await requireAuthenticatedUser(request);
-  if (!currentUser) {
-    return response;
-  }
-
+  if (!currentUser) return response;
   const { deckId, itemId } = await params;
 
   try {
-    await deleteCardDeckItem(currentUser.id, deckId, itemId);
+    await deleteCardDeckItemInSpring(currentUser.id, deckId, itemId);
     return new NextResponse(null, { status: 204 });
   } catch (error) {
-    if (error instanceof ServiceError) {
+    if (error instanceof CardDecksSpringBackendHttpError) {
       return jsonError(error.message, error.status);
     }
     console.error(error);

@@ -2,6 +2,7 @@ import type {
   AuthUserDto,
   CounselingChatMessage,
   CounselingRecordDetail,
+  CounselingRecordListItem,
   CounselingRecordSpeakerTone,
   StudentSummary,
 } from "@yeon/api-contract";
@@ -540,6 +541,28 @@ function mapReadyRecordListItems(records: CounselingRecordListRow[]) {
   const visibleRecords = filterVisibleRecords(records);
   ensureRecordProcessingScheduledForList(visibleRecords);
   return visibleRecords.map(mapRecordListItem);
+}
+
+export function ensureCounselingRecordProcessingScheduledForListItems(
+  userId: string,
+  records: CounselingRecordListItem[],
+) {
+  for (const record of records) {
+    ensureCounselingRecordTranscriptionScheduled({
+      id: record.id,
+      status: record.status,
+      processingStage: record.processingStage,
+      recordSource: record.recordSource,
+      audioStoragePath: "",
+      createdByUserId: userId,
+    });
+    ensureCounselingRecordAnalysisScheduled({
+      id: record.id,
+      status: record.status,
+      analysisStatus: record.analysisStatus,
+      createdByUserId: userId,
+    });
+  }
 }
 
 async function mapRequestedRecordDetails(params: {

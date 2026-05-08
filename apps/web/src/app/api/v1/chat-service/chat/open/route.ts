@@ -5,7 +5,10 @@ import {
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
-import { openChatServiceRoom } from "@/server/services/chat-service/chat-service";
+import {
+  ChatServiceChatOpenSpringBackendHttpError,
+  openChatServiceRoomInSpring,
+} from "@/server/chat-service-chat-open-spring-client";
 import { ServiceError } from "@/server/services/service-error";
 
 import {
@@ -24,10 +27,10 @@ export async function POST(request: NextRequest) {
       return jsonChatServiceError("대화 오픈 대상이 올바르지 않습니다.", 400);
     }
 
-    const response = await openChatServiceRoom(
-      profile.id,
-      parsedBody.data.targetProfileId,
-    );
+    const response = await openChatServiceRoomInSpring({
+      currentProfileId: profile.id,
+      targetProfileId: parsedBody.data.targetProfileId,
+    });
 
     return NextResponse.json(
       chatServiceOpenChatResponseSchema.parse(response),
@@ -37,6 +40,9 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     if (error instanceof ServiceError) {
+      return jsonChatServiceError(error.message, error.status);
+    }
+    if (error instanceof ChatServiceChatOpenSpringBackendHttpError) {
       return jsonChatServiceError(error.message, error.status);
     }
 

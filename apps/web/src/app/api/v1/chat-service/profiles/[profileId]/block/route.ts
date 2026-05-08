@@ -3,9 +3,10 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
 import {
-  blockChatServiceProfile,
-  unblockChatServiceProfile,
-} from "@/server/services/chat-service/friends-service";
+  ChatServiceBlockSpringBackendHttpError,
+  blockChatServiceProfileInSpring,
+  unblockChatServiceProfileInSpring,
+} from "@/server/chat-service-block-spring-client";
 import { ServiceError } from "@/server/services/service-error";
 
 import {
@@ -23,13 +24,16 @@ export async function POST(request: NextRequest, { params }: Params) {
   try {
     const { profile } = await requireChatServiceAuth(request);
     const { profileId } = await params;
-    const response = await blockChatServiceProfile(profile.id, profileId);
+    const response = await blockChatServiceProfileInSpring(profile.id, profileId);
 
     return NextResponse.json(
       chatServiceBlockProfileResponseSchema.parse(response),
     );
   } catch (error) {
     if (error instanceof ServiceError) {
+      return jsonChatServiceError(error.message, error.status);
+    }
+    if (error instanceof ChatServiceBlockSpringBackendHttpError) {
       return jsonChatServiceError(error.message, error.status);
     }
 
@@ -42,13 +46,16 @@ export async function DELETE(request: NextRequest, { params }: Params) {
   try {
     const { profile } = await requireChatServiceAuth(request);
     const { profileId } = await params;
-    const response = await unblockChatServiceProfile(profile.id, profileId);
+    const response = await unblockChatServiceProfileInSpring(profile.id, profileId);
 
     return NextResponse.json(
       chatServiceBlockProfileResponseSchema.parse(response),
     );
   } catch (error) {
     if (error instanceof ServiceError) {
+      return jsonChatServiceError(error.message, error.status);
+    }
+    if (error instanceof ChatServiceBlockSpringBackendHttpError) {
       return jsonChatServiceError(error.message, error.status);
     }
 

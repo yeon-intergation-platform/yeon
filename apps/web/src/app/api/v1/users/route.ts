@@ -12,8 +12,11 @@ import {
   clearAuthSessionCookie,
   getAuthUserBySessionToken,
 } from "@/server/auth/session";
-import { ServiceError } from "@/server/services/service-error";
-import { createUser, listUsers } from "@/server/services/users-service";
+import {
+  createUserInSpring,
+  fetchUsersFromSpring,
+  UsersSpringBackendHttpError,
+} from "@/server/users-spring-client";
 
 function jsonError(message: string, status: number) {
   return NextResponse.json(errorResponseSchema.parse({ message }), { status });
@@ -44,10 +47,14 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const users = await listUsers();
+    const users = await fetchUsersFromSpring(currentUser.id);
 
-    return NextResponse.json(listUsersResponseSchema.parse({ users }));
+    return NextResponse.json(listUsersResponseSchema.parse(users));
   } catch (error) {
+    if (error instanceof UsersSpringBackendHttpError) {
+      return jsonError(error.message, error.status);
+    }
+
     console.error(error);
     return jsonError("사용자 목록을 불러오지 못했습니다.", 500);
   }
@@ -83,13 +90,13 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const user = await createUser(parseResult.data);
+    const result = await createUserInSpring(currentUser.id, parseResult.data);
 
-    return NextResponse.json(createUserResponseSchema.parse({ user }), {
+    return NextResponse.json(createUserResponseSchema.parse(result), {
       status: 201,
     });
   } catch (error) {
-    if (error instanceof ServiceError) {
+    if (error instanceof UsersSpringBackendHttpError) {
       return jsonError(error.message, error.status);
     }
 

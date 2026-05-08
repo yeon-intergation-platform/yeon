@@ -7,16 +7,30 @@ import {
   requireAuthenticatedUser,
 } from "@/app/api/v1/counseling-records/_shared";
 import {
-  createField,
-  createDefaultOverviewFields,
-  getFieldsForTab,
-} from "@/server/services/member-fields-service";
-import { getFieldValuesForDefinitions } from "@/server/services/member-field-values-service";
-import { getOverviewTab } from "@/server/services/member-tabs-service";
-import { ServiceError } from "@/server/services/service-error";
-import { requireSpaceInternalIdByPublicId } from "@/server/services/spaces-service";
+  bootstrapOverviewFieldsInSpring,
+  createMemberFieldInSpring,
+  fetchMemberFieldsFromSpring,
+  fetchMemberFieldValuesFromSpring,
+  MemberFieldsSpringBackendHttpError,
+} from "@/server/member-fields-spring-client";
 
 export const runtime = "nodejs";
+
+async function maybeBootstrapOverviewFields(
+  spaceId: string,
+  tabId: string,
+  userId: string,
+) {
+  await bootstrapOverviewFieldsInSpring(spaceId, tabId, userId).catch((error) => {
+    if (
+      error instanceof MemberFieldsSpringBackendHttpError &&
+      error.message === "개요 탭에서만 기본 필드 초기화를 수행할 수 있습니다."
+    ) {
+      return null;
+    }
+    throw error;
+  });
+}
 
 export async function GET(
   request: NextRequest,
@@ -29,31 +43,21 @@ export async function GET(
   const memberId = request.nextUrl.searchParams.get("memberId");
 
   try {
-    const overviewTab = await getOverviewTab(spaceId);
-    if (overviewTab?.publicId === tabId) {
-      const spaceInternalId = await requireSpaceInternalIdByPublicId(spaceId);
-      await createDefaultOverviewFields(
-        spaceInternalId,
-        overviewTab.id,
-        currentUser.id,
-      );
-    }
-
-    const fields = await getFieldsForTab(tabId, spaceId);
+    await maybeBootstrapOverviewFields(spaceId, tabId, currentUser.id);
 
     if (!memberId) {
-      return NextResponse.json({ fields });
+      const result = await fetchMemberFieldsFromSpring(spaceId, tabId, currentUser.id);
+      return NextResponse.json(result);
     }
 
-    const values = await getFieldValuesForDefinitions(
-      memberId,
-      spaceId,
-      fields.map((field) => field.publicId),
-    );
+    const [fieldsResult, valuesResult] = await Promise.all([
+      fetchMemberFieldsFromSpring(spaceId, tabId, currentUser.id),
+      fetchMemberFieldValuesFromSpring(spaceId, tabId, memberId, currentUser.id),
+    ]);
 
-    return NextResponse.json({ fields, values });
+    return NextResponse.json({ fields: fieldsResult.fields, values: valuesResult.values });
   } catch (error) {
-    if (error instanceof ServiceError)
+    if (error instanceof MemberFieldsSpringBackendHttpError)
       return jsonError(error.message, error.status);
     console.error(error);
     return jsonError("필드 목록을 불러오지 못했습니다.", 500);
@@ -81,25 +85,17 @@ export async function POST(
     return jsonError("요청 데이터가 올바르지 않습니다.", 400);
 
   try {
-    const overviewTab = await getOverviewTab(spaceId);
-    if (overviewTab?.publicId === tabId) {
-      const spaceInternalId = await requireSpaceInternalIdByPublicId(spaceId);
-      await createDefaultOverviewFields(
-        spaceInternalId,
-        overviewTab.id,
-        currentUser.id,
-      );
-    }
+    await maybeBootstrapOverviewFields(spaceId, tabId, currentUser.id);
 
-    const field = await createField(
+    const result = await createMemberFieldInSpring(
       spaceId,
       tabId,
       currentUser.id,
       parsed.data,
     );
-    return NextResponse.json({ field }, { status: 201 });
+    return NextResponse.json(result, { status: 201 });
   } catch (error) {
-    if (error instanceof ServiceError)
+    if (error instanceof MemberFieldsSpringBackendHttpError)
       return jsonError(error.message, error.status);
     console.error(error);
     return jsonError("필드를 생성하지 못했습니다.", 500);

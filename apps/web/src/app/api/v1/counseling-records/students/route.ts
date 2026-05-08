@@ -2,8 +2,7 @@ import { listStudentSummariesResponseSchema } from "@yeon/api-contract/counselin
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
-import { listStudentSummaries } from "@/server/services/counseling-records-service";
-import { ServiceError } from "@/server/services/service-error";
+import { fetchCounselingRecordStudentsFromSpring, CounselingRecordStudentsSpringBackendHttpError } from "@/server/counseling-record-students-spring-client";
 
 import { jsonError, requireAuthenticatedUser } from "../_shared";
 
@@ -17,13 +16,10 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const students = await listStudentSummaries(currentUser.id);
-
-    return NextResponse.json(
-      listStudentSummariesResponseSchema.parse({ students }),
-    );
+    const payload = await fetchCounselingRecordStudentsFromSpring(currentUser.id);
+    return NextResponse.json(listStudentSummariesResponseSchema.parse(payload));
   } catch (error) {
-    if (error instanceof ServiceError) {
+    if (error instanceof CounselingRecordStudentsSpringBackendHttpError) {
       return jsonError(error.message, error.status);
     }
 

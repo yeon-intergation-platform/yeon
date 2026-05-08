@@ -5,7 +5,10 @@ import {
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
-import { createChatServiceReport } from "@/server/services/chat-service/moderation-service";
+import {
+  ChatServiceReportSpringBackendHttpError,
+  createChatServiceReportInSpring,
+} from "@/server/chat-service-report-spring-client";
 import { ServiceError } from "@/server/services/service-error";
 
 import {
@@ -24,7 +27,12 @@ export async function POST(request: NextRequest) {
       return jsonChatServiceError("신고 요청값이 올바르지 않습니다.", 400);
     }
 
-    const response = await createChatServiceReport(profile.id, parsedBody.data);
+    const response = await createChatServiceReportInSpring({
+      currentProfileId: profile.id,
+      targetType: parsedBody.data.targetType,
+      targetId: parsedBody.data.targetId,
+      reason: parsedBody.data.reason,
+    });
 
     return NextResponse.json(
       chatServiceCreateReportResponseSchema.parse(response),
@@ -32,6 +40,9 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     if (error instanceof ServiceError) {
+      return jsonChatServiceError(error.message, error.status);
+    }
+    if (error instanceof ChatServiceReportSpringBackendHttpError) {
       return jsonChatServiceError(error.message, error.status);
     }
 

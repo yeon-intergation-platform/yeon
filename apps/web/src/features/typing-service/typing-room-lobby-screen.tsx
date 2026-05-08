@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import { Crown, Search, Users, X } from "lucide-react";
-import { analyticsEvents, trackEvent } from "@/lib/analytics";
+import { trackEvent } from "@/lib/analytics";
 import { TypingServiceHeader } from "./typing-service-header";
 import {
   TYPING_ROOM_DIFFICULTY,
@@ -112,11 +112,12 @@ export function TypingRoomLobbyScreen() {
 
   const handleCreate = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    trackEvent(analyticsEvents.typingRoomCreateSubmit, {
+    trackEvent("room_create_intent", {
+      source: "typing_room_lobby",
       visibility,
       language: fixedLanguage,
       deck_id: selectedDeck.id,
-      deck_visibility: selectedDeck.visibility,
+      deck_title: selectedDeck.title,
     });
     const params = new URLSearchParams({
       title: title.trim() || generatedTitle,
@@ -134,9 +135,9 @@ export function TypingRoomLobbyScreen() {
 
   const openCreateModal = () => {
     setIsCreateModalOpen(true);
-    trackEvent(analyticsEvents.typingRoomCreateOpen, {
+    trackEvent("room_create_modal_open", {
+      source: "typing_room_lobby",
       language: fixedLanguage,
-      selected_filter: selectedFilter,
     });
   };
 
@@ -260,7 +261,8 @@ export function TypingRoomLobbyScreen() {
                       aria-label={`${room.title} 입장, ${occupancy.seatLabel}`}
                       className="group grid gap-5 rounded-2xl border border-[#e5e5e5] bg-[#fafafa] p-5 no-underline transition-colors hover:border-[#111] hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#111] md:grid-cols-[1fr_auto]"
                       onClick={() =>
-                        trackEvent(analyticsEvents.typingRoomJoinClick, {
+                        trackEvent("room_join_click", {
+                          source: "typing_room_lobby",
                           room_id: room.roomId,
                           visibility: room.visibility,
                           language: room.language,

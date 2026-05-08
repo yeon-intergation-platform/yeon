@@ -3,10 +3,12 @@ import { NextResponse } from "next/server";
 import { updateTypingDeckBodySchema } from "@yeon/api-contract/typing-decks";
 
 import {
-  deleteTypingDeck,
-  getTypingDeckDetail,
-  updateTypingDeck,
-} from "@/server/services/typing-decks-service";
+  TypingDecksSpringBackendHttpError,
+  deleteTypingDeckInSpring,
+  fetchTypingDeckDetailFromSpring,
+  updateTypingDeckInSpring,
+} from "@/server/typing-decks-spring-client";
+import { getDefaultTypingDeckDetail } from "@/server/typing-deck-defaults";
 import { ServiceError } from "@/server/services/service-error";
 
 import {
@@ -22,15 +24,24 @@ export async function GET(
   { params }: { params: Promise<{ deckId: string }> },
 ) {
   const { deckId } = await params;
+  const defaultDetail = getDefaultTypingDeckDetail(deckId);
+  if (defaultDetail) {
+    return NextResponse.json(defaultDetail);
+  }
 
   try {
     const { currentUser, isAdmin } = await getTypingDeckRequestContext(request);
-    const detail = await getTypingDeckDetail(currentUser?.id ?? null, deckId, {
+    const detail = await fetchTypingDeckDetailFromSpring({
+      userId: currentUser?.id ?? null,
+      deckId,
       adminMode: isAdmin,
     });
     return NextResponse.json(detail);
   } catch (error) {
     if (error instanceof ServiceError) {
+      return jsonError(error.message, error.status);
+    }
+    if (error instanceof TypingDecksSpringBackendHttpError) {
       return jsonError(error.message, error.status);
     }
     console.error(error);
@@ -58,15 +69,18 @@ export async function PATCH(
 
   try {
     const { currentUser, isAdmin } = await getTypingDeckRequestContext(request);
-    const deck = await updateTypingDeck(
+    const deck = await updateTypingDeckInSpring(
       currentUser?.id ?? null,
       deckId,
       parsed.data,
-      { adminMode: isAdmin },
+      isAdmin,
     );
-    return NextResponse.json({ deck });
+    return NextResponse.json(deck);
   } catch (error) {
     if (error instanceof ServiceError) {
+      return jsonError(error.message, error.status);
+    }
+    if (error instanceof TypingDecksSpringBackendHttpError) {
       return jsonError(error.message, error.status);
     }
     console.error(error);
@@ -82,12 +96,13 @@ export async function DELETE(
 
   try {
     const { currentUser, isAdmin } = await getTypingDeckRequestContext(request);
-    await deleteTypingDeck(currentUser?.id ?? null, deckId, {
-      adminMode: isAdmin,
-    });
+    await deleteTypingDeckInSpring(currentUser?.id ?? null, deckId, isAdmin);
     return new NextResponse(null, { status: 204 });
   } catch (error) {
     if (error instanceof ServiceError) {
+      return jsonError(error.message, error.status);
+    }
+    if (error instanceof TypingDecksSpringBackendHttpError) {
       return jsonError(error.message, error.status);
     }
     console.error(error);

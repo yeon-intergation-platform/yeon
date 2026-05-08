@@ -7,9 +7,10 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
 import {
-  createChatServiceAskPost,
-  listChatServiceAskPosts,
-} from "@/server/services/chat-service/ask-service";
+  ChatServiceAskSpringBackendHttpError,
+  createChatServiceAskPostInSpring,
+  fetchChatServiceAskPostsFromSpring,
+} from "@/server/chat-service-ask-spring-client";
 import { ServiceError } from "@/server/services/service-error";
 
 import {
@@ -21,13 +22,16 @@ import {
 export async function GET(request: NextRequest) {
   try {
     const { profile } = await requireChatServiceAuth(request);
-    const response = await listChatServiceAskPosts(profile.id);
+    const response = await fetchChatServiceAskPostsFromSpring(profile.id);
 
     return NextResponse.json(
       chatServiceListAskPostsResponseSchema.parse(response),
     );
   } catch (error) {
     if (error instanceof ServiceError) {
+      return jsonChatServiceError(error.message, error.status);
+    }
+    if (error instanceof ChatServiceAskSpringBackendHttpError) {
       return jsonChatServiceError(error.message, error.status);
     }
 
@@ -46,10 +50,12 @@ export async function POST(request: NextRequest) {
       return jsonChatServiceError("에스크 작성값이 올바르지 않습니다.", 400);
     }
 
-    const response = await createChatServiceAskPost(
-      profile.id,
-      parsedBody.data,
-    );
+    const response = await createChatServiceAskPostInSpring({
+      currentProfileId: profile.id,
+      question: parsedBody.data.question,
+      kind: parsedBody.data.kind,
+      options: parsedBody.data.options,
+    });
 
     return NextResponse.json(
       chatServiceCreateAskPostResponseSchema.parse(response),
@@ -59,6 +65,9 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     if (error instanceof ServiceError) {
+      return jsonChatServiceError(error.message, error.status);
+    }
+    if (error instanceof ChatServiceAskSpringBackendHttpError) {
       return jsonChatServiceError(error.message, error.status);
     }
 

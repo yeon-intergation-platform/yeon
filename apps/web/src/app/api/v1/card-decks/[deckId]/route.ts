@@ -7,11 +7,11 @@ import {
   requireAuthenticatedUser,
 } from "@/app/api/v1/counseling-records/_shared";
 import {
-  deleteCardDeck,
-  getCardDeckDetail,
-  updateCardDeck,
-} from "@/server/services/card-decks-service";
-import { ServiceError } from "@/server/services/service-error";
+  CardDecksSpringBackendHttpError,
+  deleteCardDeckInSpring,
+  fetchCardDeckDetailFromSpring,
+  updateCardDeckInSpring,
+} from "@/server/card-decks-spring-client";
 
 export const runtime = "nodejs";
 
@@ -20,17 +20,14 @@ export async function GET(
   { params }: { params: Promise<{ deckId: string }> },
 ) {
   const { currentUser, response } = await requireAuthenticatedUser(request);
-  if (!currentUser) {
-    return response;
-  }
-
+  if (!currentUser) return response;
   const { deckId } = await params;
 
   try {
-    const detail = await getCardDeckDetail(currentUser.id, deckId);
+    const detail = await fetchCardDeckDetailFromSpring(currentUser.id, deckId);
     return NextResponse.json(detail);
   } catch (error) {
-    if (error instanceof ServiceError) {
+    if (error instanceof CardDecksSpringBackendHttpError) {
       return jsonError(error.message, error.status);
     }
     console.error(error);
@@ -43,10 +40,7 @@ export async function PATCH(
   { params }: { params: Promise<{ deckId: string }> },
 ) {
   const { currentUser, response } = await requireAuthenticatedUser(request);
-  if (!currentUser) {
-    return response;
-  }
-
+  if (!currentUser) return response;
   const { deckId } = await params;
 
   let body: unknown;
@@ -62,10 +56,10 @@ export async function PATCH(
   }
 
   try {
-    const deck = await updateCardDeck(currentUser.id, deckId, parsed.data);
-    return NextResponse.json({ deck });
+    const deck = await updateCardDeckInSpring(currentUser.id, deckId, parsed.data);
+    return NextResponse.json(deck);
   } catch (error) {
-    if (error instanceof ServiceError) {
+    if (error instanceof CardDecksSpringBackendHttpError) {
       return jsonError(error.message, error.status);
     }
     console.error(error);
@@ -78,17 +72,14 @@ export async function DELETE(
   { params }: { params: Promise<{ deckId: string }> },
 ) {
   const { currentUser, response } = await requireAuthenticatedUser(request);
-  if (!currentUser) {
-    return response;
-  }
-
+  if (!currentUser) return response;
   const { deckId } = await params;
 
   try {
-    await deleteCardDeck(currentUser.id, deckId);
+    await deleteCardDeckInSpring(currentUser.id, deckId);
     return new NextResponse(null, { status: 204 });
   } catch (error) {
-    if (error instanceof ServiceError) {
+    if (error instanceof CardDecksSpringBackendHttpError) {
       return jsonError(error.message, error.status);
     }
     console.error(error);

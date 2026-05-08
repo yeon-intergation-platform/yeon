@@ -1,11 +1,11 @@
 import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 
-import { requireAuthenticatedUser } from "@/app/api/v1/counseling-records/_shared";
-import { handleProviderStatusRoute } from "@/app/api/v1/integrations/_shared";
 import {
-  hasGoogleSheetsAccess,
-  isConnected,
-} from "@/server/services/googledrive-service";
+  jsonError,
+  requireAuthenticatedUser,
+} from "@/app/api/v1/counseling-records/_shared";
+import { GoogleDriveBrowserSpringBackendHttpError, fetchGoogleDriveStatusFromSpring } from "@/server/googledrive-browser-spring-client";
 
 export const runtime = "nodejs";
 
@@ -13,16 +13,14 @@ export async function GET(request: NextRequest) {
   const { currentUser, response } = await requireAuthenticatedUser(request);
   if (!currentUser) return response;
 
-  return handleProviderStatusRoute({
-    userId: currentUser.id,
-    getPayload: async (userId) => {
-      const connected = await isConnected(userId);
-      const sheetSyncReady = connected
-        ? await hasGoogleSheetsAccess(userId)
-        : false;
-
-      return { connected, sheetSyncReady };
-    },
-    failureMessage: "Google Drive 연결 상태를 확인하지 못했습니다.",
-  });
+  try {
+    const payload = await fetchGoogleDriveStatusFromSpring(currentUser.id);
+    return NextResponse.json(payload);
+  } catch (error) {
+    if (error instanceof GoogleDriveBrowserSpringBackendHttpError) {
+      return jsonError(error.message, error.status);
+    }
+    console.error(error);
+    return jsonError("Google Drive 연결 상태를 확인하지 못했습니다.", 500);
+  }
 }

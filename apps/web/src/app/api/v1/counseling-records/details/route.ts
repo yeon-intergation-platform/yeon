@@ -9,8 +9,10 @@ import {
   jsonError,
   requireAuthenticatedUser,
 } from "@/app/api/v1/counseling-records/_shared";
-import { getMultipleCounselingRecordDetails } from "@/server/services/counseling-records-service";
-import { ServiceError } from "@/server/services/service-error";
+import {
+  CounselingRecordDetailsSpringBackendHttpError,
+  fetchCounselingRecordDetailsFromSpring,
+} from "@/server/counseling-record-details-spring-client";
 
 export const runtime = "nodejs";
 
@@ -34,16 +36,16 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const records = await getMultipleCounselingRecordDetails(
+    const springResponse = await fetchCounselingRecordDetailsFromSpring(
       currentUser.id,
-      parsed.data.recordIds,
+      parsed.data,
     );
 
     return NextResponse.json(
-      bulkCounselingRecordDetailsResponseSchema.parse({ records }),
+      bulkCounselingRecordDetailsResponseSchema.parse(springResponse),
     );
   } catch (error) {
-    if (error instanceof ServiceError) {
+    if (error instanceof CounselingRecordDetailsSpringBackendHttpError) {
       return jsonError(error.message, error.status);
     }
 

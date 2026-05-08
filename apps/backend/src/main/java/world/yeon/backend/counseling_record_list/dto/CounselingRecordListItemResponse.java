@@ -1,0 +1,40 @@
+package world.yeon.backend.counseling_record_list.dto;
+
+import java.util.List;
+
+public record CounselingRecordListItemResponse(
+	String id,
+	String spaceId,
+	String memberId,
+	String studentName,
+	String sessionTitle,
+	String counselingType,
+	String counselorName,
+	String status,
+	String recordSource,
+	String preview,
+	List<String> tags,
+	String audioOriginalName,
+	String audioMimeType,
+	long audioByteSize,
+	Integer audioDurationMs,
+	int transcriptSegmentCount,
+	int transcriptTextLength,
+	String processingStage,
+	int processingProgress,
+	String processingMessage,
+	int processingChunkCount,
+	int processingChunkCompletedCount,
+	int transcriptionAttemptCount,
+	String analysisStatus,
+	int analysisProgress,
+	String analysisErrorMessage,
+	int analysisAttemptCount,
+	String language,
+	String sttModel,
+	String errorMessage,
+	String createdAt,
+	String updatedAt,
+	String transcriptionCompletedAt,
+	String analysisCompletedAt
+) {}

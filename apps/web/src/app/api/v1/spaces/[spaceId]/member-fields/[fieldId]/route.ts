@@ -7,10 +7,10 @@ import {
   requireAuthenticatedUser,
 } from "@/app/api/v1/counseling-records/_shared";
 import {
-  deleteField,
-  updateField,
-} from "@/server/services/member-fields-service";
-import { ServiceError } from "@/server/services/service-error";
+  deleteMemberFieldInSpring,
+  MemberFieldsSpringBackendHttpError,
+  updateMemberFieldInSpring,
+} from "@/server/member-fields-spring-client";
 
 export const runtime = "nodejs";
 
@@ -35,10 +35,10 @@ export async function PATCH(
     return jsonError("요청 데이터가 올바르지 않습니다.", 400);
 
   try {
-    const field = await updateField(fieldId, spaceId, parsed.data);
-    return NextResponse.json({ field });
+    const result = await updateMemberFieldInSpring(spaceId, fieldId, currentUser.id, parsed.data);
+    return NextResponse.json(result);
   } catch (error) {
-    if (error instanceof ServiceError)
+    if (error instanceof MemberFieldsSpringBackendHttpError)
       return jsonError(error.message, error.status);
     console.error(error);
     return jsonError("필드를 수정하지 못했습니다.", 500);
@@ -55,10 +55,10 @@ export async function DELETE(
   const { spaceId, fieldId } = await params;
 
   try {
-    await deleteField(fieldId, spaceId);
+    await deleteMemberFieldInSpring(spaceId, fieldId, currentUser.id);
     return new NextResponse(null, { status: 204 });
   } catch (error) {
-    if (error instanceof ServiceError)
+    if (error instanceof MemberFieldsSpringBackendHttpError)
       return jsonError(error.message, error.status);
     console.error(error);
     return jsonError("필드를 삭제하지 못했습니다.", 500);

@@ -7,11 +7,14 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
 import {
-  deleteCounselingRecord,
-  getCounselingRecordDetail,
-  linkCounselingRecordMember,
-} from "@/server/services/counseling-records-service";
-import { ServiceError } from "@/server/services/service-error";
+  CounselingRecordDetailsSpringBackendHttpError,
+  fetchCounselingRecordDetailFromSpring,
+} from "@/server/counseling-record-details-spring-client";
+import {
+  CounselingRecordMutationSpringBackendHttpError,
+  deleteCounselingRecordInSpring,
+  linkCounselingRecordMemberInSpring,
+} from "@/server/counseling-record-mutation-spring-client";
 
 import { jsonError, requireAuthenticatedUser } from "../_shared";
 
@@ -33,13 +36,16 @@ export async function GET(request: NextRequest, context: RouteContext) {
   const { recordId } = await context.params;
 
   try {
-    const record = await getCounselingRecordDetail(currentUser.id, recordId);
+    const springResponse = await fetchCounselingRecordDetailFromSpring(
+      currentUser.id,
+      recordId,
+    );
 
     return NextResponse.json(
-      counselingRecordDetailResponseSchema.parse({ record }),
+      counselingRecordDetailResponseSchema.parse(springResponse),
     );
   } catch (error) {
-    if (error instanceof ServiceError) {
+    if (error instanceof CounselingRecordDetailsSpringBackendHttpError) {
       return jsonError(error.message, error.status);
     }
 
@@ -70,7 +76,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
   }
 
   try {
-    await linkCounselingRecordMember(
+    await linkCounselingRecordMemberInSpring(
       currentUser.id,
       recordId,
       parsed.data.memberId,
@@ -78,7 +84,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 
     return NextResponse.json(linkMemberResponseSchema.parse({ ok: true }));
   } catch (error) {
-    if (error instanceof ServiceError) {
+    if (error instanceof CounselingRecordMutationSpringBackendHttpError) {
       return jsonError(error.message, error.status);
     }
 
@@ -97,11 +103,11 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
   const { recordId } = await context.params;
 
   try {
-    await deleteCounselingRecord(currentUser.id, recordId);
+    await deleteCounselingRecordInSpring(currentUser.id, recordId);
 
     return NextResponse.json({ ok: true });
   } catch (error) {
-    if (error instanceof ServiceError) {
+    if (error instanceof CounselingRecordMutationSpringBackendHttpError) {
       return jsonError(error.message, error.status);
     }
 

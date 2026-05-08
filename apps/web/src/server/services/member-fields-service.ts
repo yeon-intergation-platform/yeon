@@ -348,29 +348,3 @@ export async function deleteField(
     throw new ServiceError(500, "필드를 삭제하지 못했습니다.");
   }
 }
-
-/**
- * 탭 내 필드 순서 일괄 변경
- * order: fieldPublicId 배열 (index = 새 displayOrder)
- */
-export async function reorderFields(
-  spacePublicId: string,
-  order: string[],
-): Promise<void> {
-  const db = getDb();
-  const spaceInternalId = await requireSpaceInternalIdByPublicId(spacePublicId);
-
-  await Promise.all(
-    order.map((fieldPublicId, idx) =>
-      db
-        .update(memberFieldDefinitions)
-        .set({ displayOrder: idx, updatedAt: new Date() })
-        .where(
-          and(
-            eq(memberFieldDefinitions.publicId, fieldPublicId),
-            eq(memberFieldDefinitions.spaceId, spaceInternalId),
-          ),
-        ),
-    ),
-  );
-}

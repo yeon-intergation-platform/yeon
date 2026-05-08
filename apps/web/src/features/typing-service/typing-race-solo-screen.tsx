@@ -20,6 +20,7 @@ import {
 } from "@yeon/typing-race-engine";
 import { findCharacter, toEnginePlayerCharacter } from "./characters";
 import { useTypingProfile } from "./use-typing-profile";
+import { trackEvent } from "@/lib/analytics";
 import {
   createTranslator,
   useSelectedTypingDeck,
@@ -157,6 +158,7 @@ export function TypingRaceSoloScreen({
   const engineContainerRef = useRef<HTMLDivElement | null>(null);
   const engineControllerRef = useRef<TypingRaceEngineController | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const hasTrackedTypingStartRef = useRef(false);
   const benchmarkNoiseRef = useRef<BenchmarkNoiseState[]>(
     createBenchmarkNoiseStates()
   );
@@ -269,6 +271,31 @@ export function TypingRaceSoloScreen({
     }, 100);
     return () => window.clearInterval(interval);
   }, [completed, startedAt]);
+
+  useEffect(() => {
+    if (hasTrackedTypingStartRef.current) {
+      return;
+    }
+
+    if (!startedAt || input.length === 0) {
+      return;
+    }
+
+    hasTrackedTypingStartRef.current = true;
+    trackEvent("typing_start", {
+      source: practiceDeckId ? "typing_practice" : "typing_play",
+      deck_id: activeDeckId,
+      deck_title: activeDeckTitle,
+      language: settings.locale,
+    });
+  }, [
+    activeDeckId,
+    activeDeckTitle,
+    input.length,
+    practiceDeckId,
+    settings.locale,
+    startedAt,
+  ]);
 
   useEffect(() => {
     let active = true;

@@ -10,8 +10,7 @@ import {
   requireAuthenticatedUser,
   withHandler,
 } from "@/app/api/v1/counseling-records/_shared";
-import { ServiceError } from "@/server/services/service-error";
-import { listMemberStudentBoardHistory } from "@/server/services/student-board-service";
+import { fetchMemberStudentBoardHistoryFromSpring, StudentBoardHistorySpringBackendHttpError } from "@/server/student-board-history-spring-client";
 
 export const runtime = "nodejs";
 
@@ -37,16 +36,16 @@ export async function GET(request: NextRequest, context: RouteContext) {
     }
 
     try {
-      const data = await listMemberStudentBoardHistory({
-        userId: currentUser.id,
+      const data = await fetchMemberStudentBoardHistoryFromSpring(
         spaceId,
         memberId,
-        period: periodResult.data,
-      });
+        currentUser.id,
+        periodResult.data,
+      );
 
       return NextResponse.json(memberStudentBoardResponseSchema.parse(data));
     } catch (error) {
-      if (error instanceof ServiceError) {
+      if (error instanceof StudentBoardHistorySpringBackendHttpError) {
         return jsonError(error.message, error.status);
       }
 

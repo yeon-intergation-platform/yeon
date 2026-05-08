@@ -6,8 +6,7 @@ import {
   jsonError,
   requireAuthenticatedUser,
 } from "@/app/api/v1/counseling-records/_shared";
-import { updatePublicCheckSession } from "@/server/services/public-check-service";
-import { ServiceError } from "@/server/services/service-error";
+import { PublicCheckSessionsSpringBackendHttpError, updatePublicCheckSessionInSpring } from "@/server/public-check-sessions-spring-client";
 
 export const runtime = "nodejs";
 
@@ -37,16 +36,16 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
   }
 
   try {
-    const session = await updatePublicCheckSession({
-      userId: currentUser.id,
+    const { session } = await updatePublicCheckSessionInSpring(
       spaceId,
       sessionId,
-      ...parsed.data,
-    });
+      currentUser.id,
+      parsed.data,
+    );
 
     return NextResponse.json({ session });
   } catch (error) {
-    if (error instanceof ServiceError) {
+    if (error instanceof PublicCheckSessionsSpringBackendHttpError) {
       return jsonError(error.message, error.status);
     }
 

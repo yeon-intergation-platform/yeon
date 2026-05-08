@@ -19,9 +19,6 @@ export type CreateMemberInput = CreateMemberBody;
 
 export type MemberRow = typeof members.$inferSelect;
 
-/**
- * publicId → 내부 bigint id 해석. 존재하지 않으면 null.
- */
 export async function resolveMemberInternalIdByPublicId(
   publicId: string,
 ): Promise<bigint | null> {
@@ -133,7 +130,6 @@ export async function getMemberByPublicId(
   return member;
 }
 
-/** 기존 호출자 호환용 별칭. */
 export const getMemberById = getMemberByPublicId;
 
 export async function getMemberByIdWithRisk(
@@ -153,7 +149,6 @@ export async function getMemberByIdWithRisk(
   };
 }
 
-/** 현재 사용자의 space에 속한 멤버인지 소유권까지 검증한다. */
 export async function getMemberByIdForUser(
   userId: string,
   memberPublicId: string,
