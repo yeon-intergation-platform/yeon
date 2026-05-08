@@ -62,6 +62,9 @@ apps/web/e2e/.auth/
 # OMC state
 .omc/
 apps/web/.omc/
+.idea/
+apps/backend/.gradle/
+apps/backend/HELP.md
 
 # Playwright test results
 test-results/
