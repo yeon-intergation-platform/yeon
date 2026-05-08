@@ -32,6 +32,8 @@ const sampleItem = cardDeckItemDtoSchema.parse({
   id: "item-1",
   frontText: "앞면",
   backText: "뒷면",
+  imageStorageKey: null,
+  imageUrl: null,
   reviewDifficulty: null,
   lastReviewedAt: null,
   nextReviewAt: null,

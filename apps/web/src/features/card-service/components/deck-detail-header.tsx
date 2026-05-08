@@ -9,7 +9,6 @@ import { useUpdateDeck } from "../hooks";
 interface DeckDetailHeaderProps {
   deck: CardDeckDto;
   onOpenDelete: () => void;
-  onRequestAdd?: () => void;
   onRequestExport?: () => void;
 }
 
@@ -28,7 +27,6 @@ function formatDate(value: string): string {
 export function DeckDetailHeader({
   deck,
   onOpenDelete,
-  onRequestAdd,
   onRequestExport,
 }: DeckDetailHeaderProps) {
   const [isEditing, setEditing] = useState(false);
@@ -76,7 +74,7 @@ export function DeckDetailHeader({
       <div className="grid grid-cols-[44px_minmax(0,1fr)_44px] items-start md:flex md:items-center md:justify-between md:gap-4">
         <Link
           href="/card-service"
-          className="flex h-11 w-11 items-center justify-start text-[28px] font-light leading-none text-[#111] no-underline hover:text-[#555] md:h-auto md:w-auto md:text-[13px] md:font-medium md:text-[#666]"
+          className="flex h-11 w-11 items-center justify-start text-[28px] font-light leading-none text-[#111] no-underline hover:text-[#555] md:h-auto md:w-auto md:text-[14px] md:font-medium md:text-[#666]"
           aria-label="내 덱으로 돌아가기"
         >
           <span className="md:hidden">←</span>
@@ -84,17 +82,17 @@ export function DeckDetailHeader({
         </Link>
 
         <div className="min-w-0 text-center md:hidden">
-          <h1 className="truncate text-[24px] font-semibold leading-tight text-[#111]">
+          <h1 className="truncate text-[28px] font-semibold leading-tight text-[#111]">
             <button
               type="button"
               onClick={startEditing}
               aria-label="덱 제목을 눌러 편집"
-              className="w-full max-w-full truncate rounded-lg px-1 text-[24px] font-semibold leading-tight text-[#111] outline-none transition-colors hover:bg-[#fafafa] focus-visible:ring-2 focus-visible:ring-[#111]"
+              className="w-full max-w-full truncate rounded-lg px-1 text-[28px] font-semibold leading-tight text-[#111] outline-none transition-colors hover:bg-[#fafafa] focus-visible:ring-2 focus-visible:ring-[#111]"
             >
               {deck.title}
             </button>
           </h1>
-          <p className="mt-2 text-[15px] leading-5 text-[#888]">
+          <p className="mt-2 text-[15px] leading-6 text-[#888]">
             카드 {deck.itemCount}장 · 생성일 {createdDate}
           </p>
         </div>
@@ -144,22 +142,15 @@ export function DeckDetailHeader({
         <div className="hidden items-center gap-2 md:flex">
           <button
             type="button"
-            onClick={onRequestAdd}
-            className="rounded-xl bg-[#111] px-3 py-1.5 text-[12px] font-medium text-white transition-colors hover:bg-[#333]"
-          >
-            카드 추가
-          </button>
-          <button
-            type="button"
             onClick={onRequestExport}
-            className="rounded-xl border border-[#e5e5e5] px-3 py-1.5 text-[12px] font-medium text-[#777] transition-colors hover:border-[#111] hover:text-[#111]"
+            className="rounded-xl border border-[#e5e5e5] px-3 py-1.5 text-[13px] font-medium text-[#777] transition-colors hover:border-[#111] hover:text-[#111]"
           >
             내보내기
           </button>
           <button
             type="button"
             onClick={onOpenDelete}
-            className="rounded-xl border border-[#e5e5e5] px-3 py-1.5 text-[12px] font-medium text-[#777] transition-colors hover:border-red-200 hover:bg-[#fff5f5] hover:text-red-600"
+            className="rounded-xl border border-[#e5e5e5] px-3 py-1.5 text-[13px] font-medium text-[#777] transition-colors hover:border-red-200 hover:bg-[#fff5f5] hover:text-red-600"
           >
             덱 삭제
           </button>
@@ -173,7 +164,7 @@ export function DeckDetailHeader({
             onChange={(e) => setTitle(e.target.value)}
             maxLength={120}
             autoFocus
-            className="rounded-xl border border-[#e5e5e5] px-3 py-2 text-[20px] font-semibold text-[#111] outline-none focus:border-[#111]"
+            className="rounded-2xl border border-[#e5e5e5] px-4 py-3 text-[22px] font-semibold text-[#111] outline-none focus:border-[#111]"
           />
           <textarea
             value={description}
@@ -181,7 +172,7 @@ export function DeckDetailHeader({
             maxLength={2000}
             rows={3}
             placeholder="설명 (선택)"
-            className="resize-none rounded-xl border border-[#e5e5e5] px-3 py-2 text-[14px] leading-6 text-[#111] outline-none focus:border-[#111]"
+            className="resize-none rounded-2xl border border-[#e5e5e5] px-4 py-3 text-[15px] leading-7 text-[#111] outline-none focus:border-[#111]"
           />
           {updateMutation.error ? (
             <p className="text-[13px] text-red-600">
@@ -192,59 +183,49 @@ export function DeckDetailHeader({
             <button
               type="button"
               onClick={handleCancel}
-              className="rounded-xl border border-[#e5e5e5] px-4 py-2 text-[13px] font-semibold text-[#111] hover:border-[#111] hover:bg-[#fafafa]"
+              className="rounded-2xl border border-[#e5e5e5] px-4 py-2 text-[14px] font-semibold text-[#111] hover:border-[#111] hover:bg-[#fafafa]"
             >
               취소
             </button>
             <button
               type="submit"
               disabled={!canSave}
-              className="rounded-xl bg-[#111] px-4 py-2 text-[13px] font-semibold text-white transition-colors hover:bg-[#333] disabled:opacity-50"
+              className="rounded-2xl bg-[#111] px-4 py-2 text-[14px] font-semibold text-white transition-colors hover:bg-[#333] disabled:opacity-50"
             >
               {isSaving ? "저장 중..." : "저장"}
             </button>
           </div>
         </form>
       ) : (
-        <div className="mt-5 hidden md:block">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <h1 className="break-keep text-[28px] font-semibold leading-tight text-[#111]">
-                <button
-                  type="button"
-                  onClick={startEditing}
-                  aria-label="덱 제목을 눌러 편집"
-                  className="break-keep rounded-lg px-1 text-left text-[28px] font-semibold leading-tight text-[#111] outline-none transition-colors hover:bg-[#fafafa] focus-visible:ring-2 focus-visible:ring-[#111]"
-                >
-                  {deck.title}
-                </button>
-              </h1>
-              {deck.description ? (
-                <p className="mt-2 whitespace-pre-wrap text-[14px] leading-6 text-[#666]">
-                  {deck.description}
-                </p>
-              ) : (
-                <p className="mt-2 text-[13px] text-[#aaa]">설명 없음</p>
-              )}
-            </div>
-            <button
-              type="button"
-              onClick={startEditing}
-              className="shrink-0 rounded-lg border border-transparent px-2 py-1 text-[16px] text-[#666] transition-colors hover:border-[#e5e5e5] hover:text-[#111]"
-              aria-label="덱 정보 편집"
-            >
-              ✎
-            </button>
+        <div className="mt-6 hidden md:block">
+          <div className="min-w-0">
+            <h1 className="break-keep text-[34px] font-semibold leading-tight text-[#111]">
+              <button
+                type="button"
+                onClick={startEditing}
+                aria-label="덱 제목을 눌러 편집"
+                className="break-keep rounded-lg px-1 text-left text-[34px] font-semibold leading-tight text-[#111] outline-none transition-colors hover:bg-[#fafafa] focus-visible:ring-2 focus-visible:ring-[#111]"
+              >
+                {deck.title}
+              </button>
+            </h1>
+            {deck.description ? (
+              <p className="mt-3 whitespace-pre-wrap text-[16px] leading-7 text-[#666]">
+                {deck.description}
+              </p>
+            ) : (
+              <p className="mt-3 text-[14px] text-[#aaa]">설명 없음</p>
+            )}
+            <p className="mt-4 text-[14px] text-[#888]">
+              카드 {deck.itemCount}장 · 학습 진행률 0% · 생성일 {createdDate}
+            </p>
           </div>
-          <p className="mt-3 text-[13px] text-[#888]">
-            카드 {deck.itemCount}장 · 학습 진행률 0% · 생성일 {createdDate}
-          </p>
         </div>
       )}
 
       <Link
         href={`/card-service/decks/${deck.id}/play`}
-        className="mt-8 flex w-full items-center justify-center rounded-xl bg-[#111] px-4 py-4 text-[20px] font-semibold text-white no-underline transition-colors hover:bg-[#333] md:mt-5 md:py-3 md:text-[15px]"
+        className="mt-8 flex w-full items-center justify-center rounded-[22px] bg-[#111] px-4 py-4 text-[20px] font-semibold text-white no-underline transition-colors hover:bg-[#333] md:mt-6 md:py-3.5 md:text-[16px]"
       >
         ▶ 학습 시작
       </Link>

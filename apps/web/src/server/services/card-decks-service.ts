@@ -17,6 +17,10 @@ import { getDb } from "@/server/db";
 import { cardDeckItems, cardDecks, users } from "@/server/db/schema";
 import { generatePublicId, ID_PREFIX } from "@/server/lib/public-id";
 
+import {
+  deleteCardDeckImage,
+  resolveCardDeckImageUrl,
+} from "./card-deck-image-storage";
 import { ServiceError } from "./service-error";
 
 type CardDeckRow = typeof cardDecks.$inferSelect;
@@ -42,6 +46,8 @@ function toCardDeckItemDto(row: CardDeckItemRow): CardDeckItemDto {
     id: row.publicId,
     frontText: row.frontText,
     backText: row.backText,
+    imageStorageKey: row.imageStorageKey,
+    imageUrl: resolveCardDeckImageUrl(row.imageStorageKey),
     reviewDifficulty: row.reviewDifficulty as CardReviewDifficulty | null,
     lastReviewedAt: toIsoOrNull(row.lastReviewedAt),
     nextReviewAt: toIsoOrNull(row.nextReviewAt),
@@ -80,7 +86,7 @@ function addDays(value: Date, days: number): Date {
 
 async function findOwnedDeckRow(
   userId: string,
-  deckPublicId: string,
+  deckPublicId: string
 ): Promise<CardDeckRow> {
   const [row] = await getDb()
     .select()
@@ -88,8 +94,8 @@ async function findOwnedDeckRow(
     .where(
       and(
         eq(cardDecks.publicId, deckPublicId),
-        eq(cardDecks.ownerUserId, userId),
-      ),
+        eq(cardDecks.ownerUserId, userId)
+      )
     )
     .limit(1);
 
@@ -103,7 +109,7 @@ async function findOwnedDeckRow(
 async function findOwnedItemRow(
   userId: string,
   deckPublicId: string,
-  itemPublicId: string,
+  itemPublicId: string
 ): Promise<{ deck: CardDeckRow; item: CardDeckItemRow }> {
   const deck = await findOwnedDeckRow(userId, deckPublicId);
   const [item] = await getDb()
@@ -112,8 +118,8 @@ async function findOwnedItemRow(
     .where(
       and(
         eq(cardDeckItems.publicId, itemPublicId),
-        eq(cardDeckItems.deckId, deck.id),
-      ),
+        eq(cardDeckItems.deckId, deck.id)
+      )
     )
     .limit(1);
 
@@ -153,14 +159,14 @@ export async function listCardDecks(userId: string): Promise<CardDeckDto[]> {
         createdAt: row.createdAt,
         updatedAt: row.updatedAt,
       },
-      row.itemCount,
-    ),
+      row.itemCount
+    )
   );
 }
 
 export async function createCardDeck(
   userId: string,
-  body: CreateCardDeckBody,
+  body: CreateCardDeckBody
 ): Promise<CardDeckDto> {
   const title = body.title.trim();
   if (!title) {
@@ -190,7 +196,7 @@ export async function createCardDeck(
 
 export async function getCardDeckDetail(
   userId: string,
-  deckPublicId: string,
+  deckPublicId: string
 ): Promise<{
   deck: CardDeckDto;
   items: CardDeckItemDto[];
@@ -205,7 +211,7 @@ export async function getCardDeckDetail(
       .orderBy(
         sql`case when ${cardDeckItems.nextReviewAt} is null then 0 when ${cardDeckItems.nextReviewAt} <= now() then 0 else 1 end`,
         asc(cardDeckItems.nextReviewAt),
-        asc(cardDeckItems.createdAt),
+        asc(cardDeckItems.createdAt)
       ),
     getUserCardStudyMode(userId),
   ]);
@@ -220,7 +226,7 @@ export async function getCardDeckDetail(
 export async function updateCardDeck(
   userId: string,
   deckPublicId: string,
-  body: UpdateCardDeckBody,
+  body: UpdateCardDeckBody
 ): Promise<CardDeckDto> {
   const existingDeck = await findOwnedDeckRow(userId, deckPublicId);
 
@@ -262,7 +268,7 @@ export async function updateCardDeck(
 
 export async function deleteCardDeck(
   userId: string,
-  deckPublicId: string,
+  deckPublicId: string
 ): Promise<void> {
   const existingDeck = await findOwnedDeckRow(userId, deckPublicId);
   await getDb().delete(cardDecks).where(eq(cardDecks.id, existingDeck.id));
@@ -271,7 +277,7 @@ export async function deleteCardDeck(
 export async function createCardDeckItem(
   userId: string,
   deckPublicId: string,
-  body: CreateCardDeckItemBody,
+  body: CreateCardDeckItemBody
 ): Promise<CardDeckItemDto> {
   const deckRow = await findOwnedDeckRow(userId, deckPublicId);
   const frontText = body.frontText.trim();
@@ -288,6 +294,7 @@ export async function createCardDeckItem(
       deckId: deckRow.id,
       frontText,
       backText,
+      imageStorageKey: body.imageStorageKey?.trim() || null,
       updatedAt: new Date(),
     })
     .returning();
@@ -302,7 +309,7 @@ export async function createCardDeckItem(
 export async function createCardDeckItems(
   userId: string,
   deckPublicId: string,
-  body: CreateCardDeckItemsBody,
+  body: CreateCardDeckItemsBody
 ): Promise<CardDeckItemDto[]> {
   const deckRow = await findOwnedDeckRow(userId, deckPublicId);
   const now = new Date();
@@ -311,6 +318,7 @@ export async function createCardDeckItems(
     deckId: deckRow.id,
     frontText: item.frontText.trim(),
     backText: item.backText.trim(),
+    imageStorageKey: item.imageStorageKey?.trim() || null,
     updatedAt: now,
   }));
 
@@ -344,9 +352,10 @@ export async function updateCardDeckItem(
   userId: string,
   deckPublicId: string,
   itemPublicId: string,
-  body: UpdateCardDeckItemBody,
+  body: UpdateCardDeckItemBody
 ): Promise<CardDeckItemDto> {
   const { item } = await findOwnedItemRow(userId, deckPublicId, itemPublicId);
+  const previousImageStorageKey = item.imageStorageKey;
 
   const updateFields: Partial<typeof cardDeckItems.$inferInsert> = {
     updatedAt: new Date(),
@@ -368,6 +377,10 @@ export async function updateCardDeckItem(
     updateFields.backText = next;
   }
 
+  if (body.imageStorageKey !== undefined) {
+    updateFields.imageStorageKey = body.imageStorageKey?.trim() || null;
+  }
+
   const [updated] = await getDb()
     .update(cardDeckItems)
     .set(updateFields)
@@ -378,27 +391,36 @@ export async function updateCardDeckItem(
     throw new ServiceError(500, "카드를 수정하지 못했습니다.");
   }
 
+  if (
+    body.imageStorageKey !== undefined &&
+    previousImageStorageKey &&
+    previousImageStorageKey !== updated.imageStorageKey
+  ) {
+    await deleteCardDeckImage(previousImageStorageKey);
+  }
+
   return toCardDeckItemDto(updated);
 }
 
 export async function deleteCardDeckItem(
   userId: string,
   deckPublicId: string,
-  itemPublicId: string,
+  itemPublicId: string
 ): Promise<void> {
   const { item } = await findOwnedItemRow(userId, deckPublicId, itemPublicId);
   await getDb().delete(cardDeckItems).where(eq(cardDeckItems.id, item.id));
+  await deleteCardDeckImage(item.imageStorageKey);
 }
 
 export async function getCardStudyPreference(
-  userId: string,
+  userId: string
 ): Promise<CardStudyMode> {
   return getUserCardStudyMode(userId);
 }
 
 export async function updateCardStudyPreference(
   userId: string,
-  studyMode: CardStudyMode,
+  studyMode: CardStudyMode
 ): Promise<CardStudyMode> {
   const [row] = await getDb()
     .update(users)
@@ -417,7 +439,7 @@ export async function reviewCardDeckItem(
   userId: string,
   deckPublicId: string,
   itemPublicId: string,
-  difficulty: CardReviewDifficulty,
+  difficulty: CardReviewDifficulty
 ): Promise<CardDeckItemDto> {
   const { item } = await findOwnedItemRow(userId, deckPublicId, itemPublicId);
   const now = new Date();

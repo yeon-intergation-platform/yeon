@@ -267,6 +267,13 @@
       "when": 1777766301762,
       "tag": "0037_add_typing_character_frame_overrides",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1778275060460,
+      "tag": "0038_add_card_item_image_storage_key",
+      "breakpoints": true
     }
   ]
 }

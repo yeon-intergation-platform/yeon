@@ -2,6 +2,7 @@ import { z } from "zod";
 
 export const CARD_TEXT_MAX_LENGTH = 2000;
 export const CARD_BULK_IMPORT_MAX_ITEMS = 100;
+export const CARD_IMAGE_STORAGE_KEY_MAX_LENGTH = 512;
 
 export const CARD_STUDY_MODES = {
   flashcard: "flashcard",
@@ -41,6 +42,11 @@ export type UpdateCardDeckBody = z.infer<typeof updateCardDeckBodySchema>;
 export const createCardDeckItemBodySchema = z.object({
   frontText: z.string().min(1).max(CARD_TEXT_MAX_LENGTH),
   backText: z.string().min(1).max(CARD_TEXT_MAX_LENGTH),
+  imageStorageKey: z
+    .string()
+    .min(1)
+    .max(CARD_IMAGE_STORAGE_KEY_MAX_LENGTH)
+    .nullish(),
 });
 export type CreateCardDeckItemBody = z.infer<
   typeof createCardDeckItemBodySchema
@@ -59,6 +65,12 @@ export type CreateCardDeckItemsBody = z.infer<
 export const updateCardDeckItemBodySchema = z.object({
   frontText: z.string().min(1).max(CARD_TEXT_MAX_LENGTH).optional(),
   backText: z.string().min(1).max(CARD_TEXT_MAX_LENGTH).optional(),
+  imageStorageKey: z
+    .string()
+    .min(1)
+    .max(CARD_IMAGE_STORAGE_KEY_MAX_LENGTH)
+    .nullable()
+    .optional(),
 });
 export type UpdateCardDeckItemBody = z.infer<
   typeof updateCardDeckItemBodySchema
@@ -92,6 +104,8 @@ export const cardDeckItemDtoSchema = z.object({
   id: z.string(),
   frontText: z.string(),
   backText: z.string(),
+  imageStorageKey: z.string().nullable(),
+  imageUrl: z.string().nullable(),
   reviewDifficulty: cardReviewDifficultySchema.nullable(),
   lastReviewedAt: z.string().datetime().nullable(),
   nextReviewAt: z.string().datetime().nullable(),

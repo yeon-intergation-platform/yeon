@@ -24,9 +24,15 @@ const BULK_CARD_TEMPLATE = `[[Q]]
 
 interface BulkAddCardsFormProps {
   deckId: string;
+  onSuccess?: () => void;
+  onDirtyChange?: (dirty: boolean) => void;
 }
 
-export function BulkAddCardsForm({ deckId }: BulkAddCardsFormProps) {
+export function BulkAddCardsForm({
+  deckId,
+  onSuccess,
+  onDirtyChange,
+}: BulkAddCardsFormProps) {
   const [rawText, setRawText] = useState("");
   const [isHelpVisible, setHelpVisible] = useState(true);
   const { mutate, isPending, error } = useAddCards(deckId);
@@ -43,6 +49,10 @@ export function BulkAddCardsForm({ deckId }: BulkAddCardsFormProps) {
     parseResult.cards.length - previewCards.length,
     0
   );
+
+  useEffect(() => {
+    onDirtyChange?.(rawText.trim().length > 0);
+  }, [onDirtyChange, rawText]);
 
   useEffect(() => {
     setHelpVisible(shouldShowBulkCardHelp());
@@ -71,15 +81,16 @@ export function BulkAddCardsForm({ deckId }: BulkAddCardsFormProps) {
       {
         onSuccess: () => {
           setRawText("");
+          onSuccess?.();
         },
       }
     );
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-5">
       {isHelpVisible ? (
-        <div className="relative rounded-xl border border-[#e5e5e5] bg-[#fafafa] p-4 pr-12 text-[13px] text-[#555]">
+        <div className="relative rounded-2xl border border-[#e5e5e5] bg-[#fafafa] p-4 pr-12 text-[13px] leading-6 text-[#555] md:p-5">
           <button
             aria-label="AI 형식 도움말 숨기기"
             className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-full border border-[#e5e5e5] bg-white text-[15px] font-semibold text-[#666] transition-colors hover:border-[#111] hover:text-[#111]"
@@ -88,45 +99,47 @@ export function BulkAddCardsForm({ deckId }: BulkAddCardsFormProps) {
           >
             ×
           </button>
-          <p className="font-semibold text-[#111]">
-            AI에게 이렇게 만들어달라고 요청하세요.
+          <p className="text-[15px] font-semibold text-[#111]">
+            AI에게 아래 형식으로 카드 묶음을 만들어달라고 요청하세요.
           </p>
-          <pre className="mt-3 overflow-x-auto whitespace-pre-wrap rounded-lg bg-white p-3 text-[12px] leading-5 text-[#333]">
+          <pre className="mt-3 overflow-x-auto whitespace-pre-wrap rounded-xl bg-white p-3 text-[12px] leading-5 text-[#333] md:p-4">
             {BULK_CARD_TEMPLATE}
           </pre>
           <p className="mt-3">
             마커는 한 줄 전체가 <code>[[Q]]</code>, <code>[[A]]</code>,{" "}
-            <code>[[CARD]]</code>일 때만 인식합니다. 문제/정답 안의 일반
-            대괄호는 그대로 저장됩니다.
+            <code>[[CARD]]</code>일 때만 인식합니다.
           </p>
         </div>
       ) : null}
 
       <label className="flex flex-col gap-2">
+        <span className="text-[14px] font-semibold text-[#111]">
+          일괄 카드 입력
+        </span>
         <textarea
           value={rawText}
           onChange={(e) => setRawText(e.target.value)}
-          rows={12}
+          rows={14}
           placeholder={BULK_CARD_TEMPLATE}
-          className="resize-y rounded-lg border border-[#e5e5e5] px-3 py-2 font-mono text-[13px] leading-5 text-[#111] outline-none focus:border-[#111]"
+          className="resize-y rounded-2xl border border-[#e5e5e5] px-4 py-3 font-mono text-[14px] leading-6 text-[#111] outline-none focus:border-[#111]"
         />
       </label>
 
-      <div className="flex flex-col gap-2 text-[13px]">
+      <div className="flex flex-col gap-2 text-[13px] md:text-[14px]">
         <p className="text-[#666]">
           인식된 카드:{" "}
           <strong className="text-[#111]">{parseResult.cards.length}</strong>장
           / 최대 {CARD_BULK_IMPORT_MAX_ITEMS}장
         </p>
         {parseResult.errors.length > 0 ? (
-          <ul className="flex flex-col gap-1 rounded-lg border border-red-200 bg-red-50 p-3 text-red-700">
+          <ul className="flex flex-col gap-1 rounded-xl border border-red-200 bg-red-50 p-3 text-red-700">
             {parseResult.errors.map((message) => (
               <li key={message}>• {message}</li>
             ))}
           </ul>
         ) : null}
         {parseResult.warnings.length > 0 ? (
-          <ul className="flex flex-col gap-1 rounded-lg border border-amber-200 bg-amber-50 p-3 text-amber-700">
+          <ul className="flex flex-col gap-1 rounded-xl border border-amber-200 bg-amber-50 p-3 text-amber-700">
             {parseResult.warnings.map((message) => (
               <li key={message}>• {message}</li>
             ))}
@@ -136,19 +149,19 @@ export function BulkAddCardsForm({ deckId }: BulkAddCardsFormProps) {
       </div>
 
       {previewCards.length > 0 ? (
-        <div className="rounded-xl border border-[#e5e5e5] p-4">
-          <h4 className="text-[14px] font-semibold text-[#111]">미리보기</h4>
+        <div className="rounded-2xl border border-[#e5e5e5] p-4 md:p-5">
+          <h4 className="text-[15px] font-semibold text-[#111]">미리보기</h4>
           <ul className="mt-3 flex flex-col gap-3">
             {previewCards.map((card, index) => (
               <li
                 key={`${card.frontText}-${index}`}
-                className="rounded-lg bg-[#fafafa] p-3 text-[13px]"
+                className="rounded-xl bg-[#fafafa] p-3 text-[14px]"
               >
-                <p className="font-semibold text-[#111]">{index + 1}. 앞면</p>
+                <p className="font-semibold text-[#111]">{index + 1}. 질문</p>
                 <div className="mt-1 text-[#555]">
                   <MarkdownContent>{card.frontText}</MarkdownContent>
                 </div>
-                <p className="mt-3 font-semibold text-[#111]">뒷면</p>
+                <p className="mt-3 font-semibold text-[#111]">답변</p>
                 <div className="mt-1 text-[#555]">
                   <MarkdownContent>{card.backText}</MarkdownContent>
                 </div>
@@ -167,7 +180,7 @@ export function BulkAddCardsForm({ deckId }: BulkAddCardsFormProps) {
         <button
           type="submit"
           disabled={!canSubmit}
-          className="rounded-xl bg-[#111] px-4 py-2 text-[14px] font-semibold text-white transition-colors hover:bg-[#333] disabled:opacity-50"
+          className="rounded-2xl bg-[#111] px-5 py-3 text-[14px] font-semibold text-white transition-colors hover:bg-[#333] disabled:opacity-50"
         >
           {isPending ? "추가 중..." : `${parseResult.cards.length || 0}장 추가`}
         </button>

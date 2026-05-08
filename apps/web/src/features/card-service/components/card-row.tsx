@@ -1,9 +1,10 @@
 "use client";
 
-import { useRef, useState, type KeyboardEvent, type TouchEvent } from "react";
+import { useRef, useState, type TouchEvent } from "react";
 import type { CardDeckItemDto } from "@yeon/api-contract/card-decks";
 
-import { useDeleteCard, useUpdateCard } from "../hooks";
+import { useDeleteCard } from "../hooks";
+import { EditCardDialog } from "./edit-card-dialog";
 import { MarkdownContent } from "./markdown-content";
 
 interface CardRowProps {
@@ -13,59 +14,19 @@ interface CardRowProps {
   onDeleted?: () => void;
 }
 
-type EditingField = "front" | "back";
-
 export function CardRow({ deckId, item, index, onDeleted }: CardRowProps) {
-  const [editingField, setEditingField] = useState<EditingField | null>(null);
   const [isDeleteRevealed, setDeleteRevealed] = useState(false);
-  const [frontText, setFrontText] = useState(item.frontText);
-  const [backText, setBackText] = useState(item.backText);
   const [isDeleteConfirming, setDeleteConfirming] = useState(false);
+  const [isEditOpen, setEditOpen] = useState(false);
   const touchStateRef = useRef<{
     startX: number | null;
     ignoreNextClick: boolean;
   }>({ startX: null, ignoreNextClick: false });
-  const updateMutation = useUpdateCard(deckId);
   const deleteMutation = useDeleteCard(deckId);
-  const isSaving = updateMutation.isPending;
   const isDeleting = deleteMutation.isPending;
-  const canSave =
-    frontText.trim().length > 0 && backText.trim().length > 0 && !isSaving;
-
-  const startEditing = (field: EditingField) => {
-    setFrontText(item.frontText);
-    setBackText(item.backText);
-    setEditingField(field);
-    setDeleteRevealed(false);
-    setDeleteConfirming(false);
-    updateMutation.reset();
-  };
-
-  const handleCancel = () => {
-    setFrontText(item.frontText);
-    setBackText(item.backText);
-    setEditingField(null);
-    updateMutation.reset();
-  };
-
-  const handleSave = () => {
-    if (!canSave) return;
-    updateMutation.mutate(
-      {
-        itemId: item.id,
-        body: {
-          frontText: frontText.trim(),
-          backText: backText.trim(),
-        },
-      },
-      {
-        onSuccess: () => setEditingField(null),
-      }
-    );
-  };
 
   const handleTouchStart = (event: TouchEvent<HTMLDivElement>) => {
-    if (editingField) return;
+    if (isEditOpen) return;
     touchStateRef.current.startX = event.touches[0]?.clientX ?? null;
   };
 
@@ -90,15 +51,6 @@ export function CardRow({ deckId, item, index, onDeleted }: CardRowProps) {
     }
   };
 
-  const handleContainerClick = () => {
-    if (touchStateRef.current.ignoreNextClick) {
-      touchStateRef.current.ignoreNextClick = false;
-      return;
-    }
-    if (isDeleteRevealed) setDeleteRevealed(false);
-    if (isDeleteRevealed || isDeleteConfirming) setDeleteConfirming(false);
-  };
-
   const handleDelete = () => {
     if (!isDeleteConfirming) {
       setDeleteConfirming(true);
@@ -114,243 +66,154 @@ export function CardRow({ deckId, item, index, onDeleted }: CardRowProps) {
   };
 
   return (
-    <div className="relative overflow-hidden rounded-xl border border-[#e5e5e5] bg-white">
-      <div
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
-        onClick={handleContainerClick}
-        className={`grid grid-cols-[44px_minmax(0,1fr)_48px] items-stretch transition-transform duration-200 md:grid-cols-[56px_minmax(0,1fr)_52px] ${
-          isDeleteRevealed ? "-translate-x-24" : "translate-x-0"
-        }`}
-      >
-        {/* 번호 */}
-        <div className="flex items-start justify-center border-r border-[#e5e5e5] pt-4 text-[14px] font-semibold text-[#888]">
-          {index ?? "-"}
-        </div>
+    <>
+      <div className="relative overflow-hidden rounded-[24px] border border-[#e8e8e8] bg-white shadow-[0_6px_22px_rgba(17,17,17,0.04)]">
+        <div
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+          onClick={() => {
+            if (touchStateRef.current.ignoreNextClick) {
+              touchStateRef.current.ignoreNextClick = false;
+              return;
+            }
+            if (isDeleteRevealed) {
+              setDeleteRevealed(false);
+              setDeleteConfirming(false);
+              return;
+            }
+            setEditOpen(true);
+          }}
+          className={`grid grid-cols-[52px_minmax(0,1fr)_48px] items-stretch transition-transform duration-200 md:grid-cols-[64px_minmax(0,1fr)_56px] ${
+            isDeleteRevealed ? "-translate-x-24" : "translate-x-0"
+          }`}
+        >
+          <div className="flex items-start justify-center border-r border-[#efefef] pt-5 text-[15px] font-semibold text-[#888] md:text-[16px]">
+            {index ?? "-"}
+          </div>
 
-        {/* 내용 */}
-        <div className="min-w-0 px-3 py-3 md:px-4">
-          {/* 질문 필드 */}
-          <div>
-            <span className="inline-block rounded-md border border-[#e5e5e5] bg-[#fafafa] px-2 py-0.5 text-[11px] font-semibold text-[#888]">
-              질문
-            </span>
-            {editingField === "front" ? (
-              <EditableField
-                value={frontText}
-                onChange={setFrontText}
-                onCancel={handleCancel}
-                onSave={handleSave}
-                error={updateMutation.error}
-                isSaving={isSaving}
-                canSave={canSave}
-                minRows={2}
-              />
-            ) : (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (!isDeleteRevealed) startEditing("front");
-                }}
-                className="mt-1.5 w-full rounded-md px-1 py-1 text-left text-[15px] font-medium text-[#111] hover:bg-[#fafafa] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#111] md:text-[14px]"
-                aria-label="질문 클릭해 편집"
-              >
+          <div className="min-w-0 px-4 py-4 md:px-5 md:py-5">
+            <div>
+              <span className="inline-flex rounded-full border border-[#ececec] bg-[#fafafa] px-2.5 py-1 text-[11px] font-semibold text-[#888] md:text-[12px]">
+                질문
+              </span>
+              <div className="mt-3 text-[18px] font-semibold leading-8 text-[#111] md:text-[20px]">
                 <MarkdownContent>{item.frontText}</MarkdownContent>
-              </button>
-            )}
-          </div>
-
-          {/* 답변 필드 */}
-          <div className="mt-3 border-t border-[#f0f0f0] pt-3">
-            <span className="inline-block rounded-md border border-[#e5e5e5] bg-[#fafafa] px-2 py-0.5 text-[11px] font-semibold text-[#888]">
-              답변
-            </span>
-            {editingField === "back" ? (
-              <EditableField
-                value={backText}
-                onChange={setBackText}
-                onCancel={handleCancel}
-                onSave={handleSave}
-                error={updateMutation.error}
-                isSaving={isSaving}
-                canSave={canSave}
-                minRows={3}
-              />
-            ) : (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (!isDeleteRevealed) startEditing("back");
-                }}
-                className="mt-1.5 w-full rounded-md px-1 py-1 text-left text-[14px] text-[#444] hover:bg-[#fafafa] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#111]"
-                aria-label="답변 클릭해 편집"
-              >
-                <MarkdownContent>{item.backText}</MarkdownContent>
-              </button>
-            )}
-          </div>
-
-          {/* 삭제 오류 */}
-          {deleteMutation.error ? (
-            <p className="mt-2 text-[12px] text-red-600">
-              {deleteMutation.error.message}
-            </p>
-          ) : null}
-
-          {/* 삭제 확인 */}
-          {isDeleteConfirming ? (
-            <div
-              className="mt-2 flex justify-end gap-2"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <button
-                type="button"
-                onClick={() => setDeleteConfirming(false)}
-                className="rounded-lg border border-[#e5e5e5] px-3 py-1.5 text-[12px] text-[#111] hover:bg-[#fafafa]"
-              >
-                취소
-              </button>
-              <button
-                type="button"
-                onClick={handleDelete}
-                disabled={isDeleting}
-                className="rounded-lg border border-red-100 px-3 py-1.5 text-[12px] text-red-600 hover:bg-red-50 disabled:opacity-50"
-              >
-                {isDeleting ? "삭제 중..." : "삭제 확인"}
-              </button>
+              </div>
             </div>
-          ) : null}
 
-          <p className="sr-only" role="status" aria-live="polite">
-            {isDeleteRevealed
-              ? "삭제하려면 오른쪽의 삭제 버튼을 한 번 더 누르세요."
-              : ""}
-          </p>
+            {item.imageUrl ? (
+              <div className="mt-4 rounded-2xl border border-[#efefef] bg-[#fafafa] p-3">
+                <p className="mb-2 text-[12px] font-semibold text-[#777]">
+                  첨부 이미지
+                </p>
+                <img
+                  src={item.imageUrl}
+                  alt="카드 첨부 이미지"
+                  className="max-h-[280px] w-full rounded-xl object-contain"
+                  draggable={false}
+                />
+              </div>
+            ) : null}
+
+            <div className="mt-5 border-t border-[#f0f0f0] pt-4">
+              <span className="inline-flex rounded-full border border-[#ececec] bg-[#fafafa] px-2.5 py-1 text-[11px] font-semibold text-[#888] md:text-[12px]">
+                답변
+              </span>
+              <div className="mt-3 text-[15px] leading-7 text-[#444] md:text-[16px]">
+                <MarkdownContent>{item.backText}</MarkdownContent>
+              </div>
+            </div>
+
+            <div className="mt-4 flex items-center justify-between gap-3 text-[12px] text-[#888] md:text-[13px]">
+              <span>카드를 눌러 수정</span>
+              {deleteMutation.error ? (
+                <span className="font-medium text-red-600">
+                  {deleteMutation.error.message}
+                </span>
+              ) : null}
+            </div>
+
+            {isDeleteConfirming ? (
+              <div
+                className="mt-3 flex justify-end gap-2"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <button
+                  type="button"
+                  onClick={() => setDeleteConfirming(false)}
+                  className="rounded-xl border border-[#e5e5e5] px-3 py-2 text-[12px] font-semibold text-[#111] hover:bg-[#fafafa]"
+                >
+                  취소
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDelete}
+                  disabled={isDeleting}
+                  className="rounded-xl border border-red-100 px-3 py-2 text-[12px] font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50"
+                >
+                  {isDeleting ? "삭제 중..." : "삭제 확인"}
+                </button>
+              </div>
+            ) : null}
+          </div>
+
+          <div className="flex items-start justify-center pt-4 pr-1 md:pr-2">
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                if (!isDeleteRevealed) handleDelete();
+              }}
+              disabled={isDeleting}
+              aria-label="카드 삭제"
+              className={`flex h-9 w-9 items-center justify-center rounded-xl transition-colors ${
+                isDeleteConfirming
+                  ? "text-red-500 hover:bg-red-50"
+                  : "text-[#ccc] hover:bg-[#fafafa] hover:text-[#888]"
+              }`}
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 16 16"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M2 4h12M5 4V2.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 .5.5V4M6 7v5M10 7v5M3 4l1 9.5a.5.5 0 0 0 .5.5h7a.5.5 0 0 0 .5-.5L13 4" />
+              </svg>
+            </button>
+          </div>
         </div>
 
-        {/* 삭제 버튼 */}
-        <div className="flex items-start justify-center pt-3 pr-1 md:pr-2">
+        <div
+          className={`absolute inset-y-0 right-0 flex w-24 items-center justify-center bg-red-50 transition-transform duration-200 ${
+            isDeleteRevealed ? "translate-x-0" : "translate-x-full"
+          }`}
+        >
           <button
             type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              if (!isDeleteRevealed) handleDelete();
+            onClick={(event) => {
+              event.stopPropagation();
+              handleDelete();
             }}
-            disabled={isDeleting || !!editingField}
-            aria-label="카드 삭제"
-            className={`flex h-8 w-8 items-center justify-center rounded-lg transition-colors disabled:invisible ${
-              isDeleteConfirming
-                ? "text-red-500 hover:bg-red-50"
-                : "text-[#ccc] hover:bg-[#fafafa] hover:text-[#888]"
-            }`}
+            disabled={isDeleting}
+            className="h-full w-full text-[13px] font-semibold text-red-600 disabled:opacity-50"
           >
-            <svg
-              width="15"
-              height="15"
-              viewBox="0 0 16 16"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M2 4h12M5 4V2.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 .5.5V4M6 7v5M10 7v5M3 4l1 9.5a.5.5 0 0 0 .5.5h7a.5.5 0 0 0 .5-.5L13 4" />
-            </svg>
+            {isDeleting ? "삭제 중" : isDeleteConfirming ? "확인" : "삭제"}
           </button>
         </div>
       </div>
 
-      {/* 스와이프 삭제 버튼 */}
-      <div
-        className={`absolute inset-y-0 right-0 flex w-24 items-center justify-center bg-red-50 transition-transform duration-200 ${
-          isDeleteRevealed ? "translate-x-0" : "translate-x-full"
-        }`}
-      >
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            handleDelete();
-          }}
-          disabled={isDeleting}
-          className="h-full w-full text-[13px] font-semibold text-red-600 disabled:opacity-50"
-        >
-          {isDeleting ? "삭제 중" : isDeleteConfirming ? "확인" : "삭제"}
-        </button>
-      </div>
-    </div>
-  );
-}
-
-interface EditableFieldProps {
-  value: string;
-  onChange: (next: string) => void;
-  onCancel: () => void;
-  onSave: () => void;
-  error: Error | null;
-  isSaving: boolean;
-  canSave: boolean;
-  minRows: number;
-}
-
-function EditableField({
-  value,
-  onChange,
-  onCancel,
-  onSave,
-  error,
-  isSaving,
-  canSave,
-  minRows,
-}: EditableFieldProps) {
-  const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (event.key === "Escape") {
-      event.preventDefault();
-      onCancel();
-      return;
-    }
-    if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
-      event.preventDefault();
-      onSave();
-    }
-  };
-
-  return (
-    <div className="mt-1.5" onClick={(e) => e.stopPropagation()}>
-      <textarea
-        autoFocus
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        onKeyDown={handleKeyDown}
-        maxLength={2000}
-        rows={Math.max(minRows, value.split("\n").length)}
-        className="w-full resize-none rounded-lg border border-[#111] px-3 py-2 text-[14px] text-[#111] outline-none"
-      />
-      {error ? (
-        <p className="mt-1 text-[12px] text-red-600">{error.message}</p>
+      {isEditOpen ? (
+        <EditCardDialog
+          deckId={deckId}
+          item={item}
+          onClose={() => setEditOpen(false)}
+        />
       ) : null}
-      <p className="mt-1 text-[11px] text-[#aaa]">
-        Cmd/Ctrl+Enter로 저장, Esc로 취소
-      </p>
-      <div className="mt-2 flex justify-end gap-2">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="rounded-lg border border-[#e5e5e5] px-3 py-1.5 text-[12px] text-[#111] hover:bg-[#fafafa]"
-        >
-          취소
-        </button>
-        <button
-          type="button"
-          onClick={onSave}
-          disabled={!canSave}
-          className="rounded-lg bg-[#111] px-3 py-1.5 text-[12px] font-semibold text-white disabled:opacity-50"
-        >
-          {isSaving ? "저장 중..." : "저장"}
-        </button>
-      </div>
-    </div>
+    </>
   );
 }

@@ -56,6 +56,7 @@ type GuestItemRow = {
   deckPublicId: string;
   frontText: string;
   backText: string;
+  imageStorageKey?: string | null;
   reviewDifficulty?: CardReviewDifficulty | null;
   lastReviewedAt?: string | null;
   nextReviewAt?: string | null;
@@ -85,7 +86,7 @@ let dbPromise: Promise<IDBPDatabase<GuestCardServiceDb>> | null = null;
 async function getDb(): Promise<IDBPDatabase<GuestCardServiceDb>> {
   if (typeof indexedDB === "undefined") {
     throw new GuestStoreUnavailableError(
-      "이 브라우저에서는 로그인 없이 카드덱을 사용할 수 없습니다.",
+      "이 브라우저에서는 로그인 없이 카드덱을 사용할 수 없습니다."
     );
   }
 
@@ -161,6 +162,10 @@ function toItemDto(row: GuestItemRow): CardDeckItemDto {
     id: row.publicId,
     frontText: row.frontText,
     backText: row.backText,
+    imageStorageKey: row.imageStorageKey ?? null,
+    imageUrl: row.imageStorageKey
+      ? `/api/v1/card-decks/assets/${encodeURIComponent(row.imageStorageKey)}`
+      : null,
     reviewDifficulty: row.reviewDifficulty ?? null,
     lastReviewedAt: row.lastReviewedAt ?? null,
     nextReviewAt: row.nextReviewAt ?? null,
@@ -177,7 +182,7 @@ export async function listGuestDecks(): Promise<CardDeckDto[]> {
     const itemCount = await db.countFromIndex(
       "items",
       "by-deck",
-      deck.publicId,
+      deck.publicId
     );
     result.push(toDeckDto(deck, itemCount));
   }
@@ -186,7 +191,7 @@ export async function listGuestDecks(): Promise<CardDeckDto[]> {
 }
 
 export async function getGuestDeckDetail(
-  publicId: string,
+  publicId: string
 ): Promise<CardDeckDetailResponse | null> {
   const db = await getDb();
   const deck = await db.get("decks", publicId);
@@ -195,7 +200,7 @@ export async function getGuestDeckDetail(
   }
   const items = await db.getAllFromIndex("items", "by-deck", publicId);
   const sortedItems = [...items].sort((a, b) =>
-    a.createdAt < b.createdAt ? -1 : 1,
+    a.createdAt < b.createdAt ? -1 : 1
   );
   return {
     deck: toDeckDto(deck, sortedItems.length),
@@ -205,7 +210,7 @@ export async function getGuestDeckDetail(
 }
 
 export async function createGuestDeck(
-  body: CreateCardDeckBody,
+  body: CreateCardDeckBody
 ): Promise<CardDeckDto> {
   const db = await getDb();
   const publicId = randomId();
@@ -223,7 +228,7 @@ export async function createGuestDeck(
 
 export async function updateGuestDeck(
   publicId: string,
-  body: UpdateCardDeckBody,
+  body: UpdateCardDeckBody
 ): Promise<CardDeckDto> {
   const db = await getDb();
   const existing = await db.get("decks", publicId);
@@ -260,7 +265,7 @@ export async function deleteGuestDeck(publicId: string): Promise<void> {
 
 export async function addGuestCard(
   deckPublicId: string,
-  body: CreateCardDeckItemBody,
+  body: CreateCardDeckItemBody
 ): Promise<CardDeckItemDto> {
   const db = await getDb();
   const publicId = randomId();
@@ -276,6 +281,7 @@ export async function addGuestCard(
     deckPublicId,
     frontText: body.frontText,
     backText: body.backText,
+    imageStorageKey: body.imageStorageKey ?? null,
     reviewDifficulty: null,
     lastReviewedAt: null,
     nextReviewAt: null,
@@ -292,7 +298,7 @@ export async function addGuestCard(
 
 export async function addGuestCards(
   deckPublicId: string,
-  body: CreateCardDeckItemsBody,
+  body: CreateCardDeckItemsBody
 ): Promise<CardDeckItemDto[]> {
   const db = await getDb();
   const createdAt = nowIso();
@@ -301,6 +307,7 @@ export async function addGuestCards(
     deckPublicId,
     frontText: item.frontText,
     backText: item.backText,
+    imageStorageKey: item.imageStorageKey ?? null,
     reviewDifficulty: null,
     lastReviewedAt: null,
     nextReviewAt: null,
@@ -328,7 +335,7 @@ export async function addGuestCards(
 
 export async function updateGuestCard(
   itemId: string,
-  body: UpdateCardDeckItemBody,
+  body: UpdateCardDeckItemBody
 ): Promise<CardDeckItemDto> {
   const db = await getDb();
   const tx = db.transaction(["decks", "items"], "readwrite");
@@ -342,6 +349,10 @@ export async function updateGuestCard(
     ...existing,
     frontText: body.frontText ?? existing.frontText,
     backText: body.backText ?? existing.backText,
+    imageStorageKey:
+      body.imageStorageKey === undefined
+        ? (existing.imageStorageKey ?? null)
+        : body.imageStorageKey,
     updatedAt: now,
   };
   const deck = await tx.objectStore("decks").get(existing.deckPublicId);
@@ -390,7 +401,7 @@ function addIsoDays(days: number): string {
 
 export async function reviewGuestCard(
   itemId: string,
-  difficulty: CardReviewDifficulty,
+  difficulty: CardReviewDifficulty
 ): Promise<CardDeckItemDto> {
   const db = await getDb();
   const tx = db.transaction(["decks", "items"], "readwrite");
@@ -431,13 +442,13 @@ export async function dumpGuestCardDecksForMerge(): Promise<GuestMergeDump> {
 
   if (decks.length === 0) {
     throw new GuestStoreMergeContractError(
-      "이관할 덱이 없습니다. 먼저 덱을 만들어 주세요.",
+      "이관할 덱이 없습니다. 먼저 덱을 만들어 주세요."
     );
   }
 
   if (decks.length > mergeGuestLimits.maxDecks) {
     throw new GuestStoreMergeContractError(
-      `한 번에 ${mergeGuestLimits.maxDecks}개 이하 덱만 계정에 추가할 수 있습니다. 일부 덱을 정리한 뒤 다시 시도해 주세요.`,
+      `한 번에 ${mergeGuestLimits.maxDecks}개 이하 덱만 계정에 추가할 수 있습니다. 일부 덱을 정리한 뒤 다시 시도해 주세요.`
     );
   }
 
@@ -447,11 +458,11 @@ export async function dumpGuestCardDecksForMerge(): Promise<GuestMergeDump> {
     const items = await db.getAllFromIndex("items", "by-deck", deck.publicId);
     if (items.length > mergeGuestLimits.maxItemsPerDeck) {
       throw new GuestStoreMergeContractError(
-        `"${deck.title}" 덱의 카드 수가 ${mergeGuestLimits.maxItemsPerDeck}장을 초과했습니다. 일부 카드를 정리한 뒤 다시 시도해 주세요.`,
+        `"${deck.title}" 덱의 카드 수가 ${mergeGuestLimits.maxItemsPerDeck}장을 초과했습니다. 일부 카드를 정리한 뒤 다시 시도해 주세요.`
       );
     }
     const sortedItems = [...items].sort((a, b) =>
-      a.createdAt < b.createdAt ? -1 : 1,
+      a.createdAt < b.createdAt ? -1 : 1
     );
     deckPublicIds.push(deck.publicId);
     payloadDecks.push({
@@ -460,6 +471,7 @@ export async function dumpGuestCardDecksForMerge(): Promise<GuestMergeDump> {
       items: sortedItems.map((item) => ({
         frontText: item.frontText,
         backText: item.backText,
+        imageStorageKey: item.imageStorageKey ?? null,
       })),
     });
   }
@@ -471,7 +483,7 @@ export async function dumpGuestCardDecksForMerge(): Promise<GuestMergeDump> {
 }
 
 export async function clearGuestCardDecksByPublicIds(
-  publicIds: string[],
+  publicIds: string[]
 ): Promise<void> {
   if (publicIds.length === 0) {
     return;
@@ -482,7 +494,7 @@ export async function clearGuestCardDecksByPublicIds(
   const decksStore = tx.objectStore("decks");
   // 모든 item key 수집을 동시 start 로 전개 — 트랜잭션 내 microtask 휴면 방지.
   const itemKeyResults = await Promise.all(
-    publicIds.map((id) => itemsStore.index("by-deck").getAllKeys(id)),
+    publicIds.map((id) => itemsStore.index("by-deck").getAllKeys(id))
   );
   const ops: Promise<unknown>[] = [];
   for (const [i, keys] of itemKeyResults.entries()) {

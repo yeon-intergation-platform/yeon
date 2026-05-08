@@ -53,6 +53,7 @@ export async function mergeGuestCardDecks(params: {
           deckId: deckRow.id,
           frontText: item.frontText.trim(),
           backText: item.backText.trim(),
+          imageStorageKey: item.imageStorageKey?.trim() || null,
           updatedAt: now,
         }));
 
@@ -60,7 +61,7 @@ export async function mergeGuestCardDecks(params: {
           if (!value.frontText || !value.backText) {
             throw new ServiceError(
               400,
-              "앞면과 뒷면이 모두 있는 카드만 이관할 수 있습니다. 빈 카드를 정리한 뒤 다시 시도해 주세요.",
+              "앞면과 뒷면이 모두 있는 카드만 이관할 수 있습니다. 빈 카드를 정리한 뒤 다시 시도해 주세요."
             );
           }
         }
@@ -78,10 +79,7 @@ export async function mergeGuestCardDecks(params: {
       throw error;
     }
     console.error("guest 덱 이관 트랜잭션 실패", error);
-    throw new ServiceError(
-      500,
-      "덱 이관에 실패했습니다. 다시 시도해 주세요.",
-    );
+    throw new ServiceError(500, "덱 이관에 실패했습니다. 다시 시도해 주세요.");
   }
 
   return { createdDeckCount, createdItemCount };
