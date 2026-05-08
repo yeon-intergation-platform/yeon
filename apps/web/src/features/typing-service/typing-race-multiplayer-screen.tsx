@@ -3,11 +3,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { RotateCcw } from "lucide-react";
 import {
+  resolveTypingSpeedStyle,
   TYPING_RACE_LANE_ACCENTS,
   TYPING_RACE_LANE_ROLE,
   TYPING_RACE_STAGE,
+  TYPING_SPEED_STYLE,
   TYPING_ROOM_STATUS,
-  toWpmFromCpm,
   type TypingRaceLaneSnapshot,
   type TypingRaceSnapshot,
 } from "@yeon/race-shared";
@@ -24,7 +25,7 @@ import { TypingServiceHeader } from "./typing-service-header";
 import type { UseRaceRoomResult } from "./use-race-room";
 import {
   calculateAccuracy,
-  calculateTypingSpeed,
+  calculateTypingSpeedMetrics,
   getProgress,
 } from "./race-metrics";
 
@@ -49,6 +50,8 @@ export function TypingRaceMultiplayerScreen({
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   const prompt = race.prompt ?? "";
+  const speedSource = race.roomSnapshot?.language ?? settings.locale;
+  const speedStyle = resolveTypingSpeedStyle(speedSource);
   const promptChars = useMemo(() => Array.from(prompt), [prompt]);
   const inputChars = useMemo(() => Array.from(input), [input]);
 
@@ -57,11 +60,11 @@ export function TypingRaceMultiplayerScreen({
     () => calculateAccuracy(prompt, input),
     [prompt, input]
   );
-  const cpm = useMemo(
-    () => calculateTypingSpeed(input, elapsedSeconds),
-    [elapsedSeconds, input]
+  const speedMetrics = useMemo(
+    () => calculateTypingSpeedMetrics(input, elapsedSeconds, speedSource),
+    [elapsedSeconds, input, speedSource]
   );
-  const wpm = useMemo(() => toWpmFromCpm(cpm), [cpm]);
+  const { cpm, wpm, displaySpeed, displayUnit, typedUnitCount } = speedMetrics;
   const completed = input.length > 0 && input === prompt;
 
   const mismatches = useMemo(() => {
@@ -102,6 +105,7 @@ export function TypingRaceMultiplayerScreen({
       accuracy,
       mistakeCount,
       elapsedTimeMs: Math.round(elapsedSeconds * 1000),
+      typedUnitCount,
     });
   }, [
     accuracy,
@@ -112,6 +116,7 @@ export function TypingRaceMultiplayerScreen({
     progress,
     sendProgress,
     stage,
+    typedUnitCount,
     wpm,
   ]);
 
@@ -126,9 +131,19 @@ export function TypingRaceMultiplayerScreen({
       accuracy,
       mistakeCount,
       elapsedTimeMs: Math.round(elapsedSeconds * 1000),
+      typedUnitCount,
       finishedAt: Date.now(),
     });
-  }, [accuracy, completed, cpm, elapsedSeconds, mistakeCount, sendFinish, wpm]);
+  }, [
+    accuracy,
+    completed,
+    cpm,
+    elapsedSeconds,
+    mistakeCount,
+    sendFinish,
+    typedUnitCount,
+    wpm,
+  ]);
 
   useEffect(() => {
     let active = true;
@@ -171,13 +186,23 @@ export function TypingRaceMultiplayerScreen({
           role: TYPING_RACE_LANE_ROLE.LOCAL,
           progress,
           cpm,
-          wpm: cpm,
+          wpm,
+          displaySpeed,
         };
       }
       return lane;
     });
-    return { ...race.snapshot, lanes, speedUnit: "CPM" };
-  }, [race.snapshot, race.mySeat, profile.nickname, progress, cpm]);
+    return { ...race.snapshot, lanes, speedUnit: displayUnit };
+  }, [
+    race.snapshot,
+    race.mySeat,
+    profile.nickname,
+    progress,
+    cpm,
+    wpm,
+    displaySpeed,
+    displayUnit,
+  ]);
 
   useEffect(() => {
     if (!displaySnapshot) return;
@@ -246,11 +271,20 @@ export function TypingRaceMultiplayerScreen({
         </div>
 
         <div className="mt-3 flex flex-wrap items-center gap-5 rounded-lg border border-[#e5e5e5] bg-[#fafafa] px-5 py-3 font-mono text-[13px]">
-          <span className="text-[#888]">CPM</span>
-          <span className="text-[18px] font-bold text-[#111]">{cpm}</span>
-          <span className="text-[#ddd]">·</span>
-          <span className="text-[#888]">WPM</span>
-          <span className="text-[18px] font-bold text-[#111]">{wpm}</span>
+          <span className="text-[#888]">
+            {speedStyle === TYPING_SPEED_STYLE.KO_JASO ? "타수" : "WPM"}
+          </span>
+          <span className="text-[18px] font-bold text-[#111]">
+            {displaySpeed}
+          </span>
+          <span className="text-[#888]">{displayUnit}</span>
+          {speedStyle !== TYPING_SPEED_STYLE.KO_JASO && (
+            <>
+              <span className="text-[#ddd]">·</span>
+              <span className="text-[#888]">CPM</span>
+              <span className="text-[18px] font-bold text-[#111]">{cpm}</span>
+            </>
+          )}
           <span className="text-[#ddd]">·</span>
           <span className="text-[#888]">acc</span>
           <span className="text-[18px] font-bold text-[#111]">{accuracy}%</span>
@@ -293,8 +327,11 @@ export function TypingRaceMultiplayerScreen({
                   {participant.id === race.mySeat ? " (나)" : ""}
                 </span>
                 <span>
-                  {participant.progress}% · {participant.cpm} CPM · 정확도{" "}
-                  {participant.accuracy}%
+                  {participant.progress}% ·{" "}
+                  {speedStyle === TYPING_SPEED_STYLE.KO_JASO
+                    ? `${participant.cpm} 타`
+                    : `${participant.wpm} WPM`}{" "}
+                  · 정확도 {participant.accuracy}%
                 </span>
               </div>
               <div className="h-2 overflow-hidden rounded-full bg-[#f1f1f1]">
@@ -342,12 +379,18 @@ export function TypingRaceMultiplayerScreen({
                   </h3>
                   <div className="mt-3 grid grid-cols-2 gap-2 font-mono text-[12px]">
                     <span>
-                      CPM{" "}
-                      <b className="text-[16px] text-[#111]">{result.cpm}</b>
+                      {speedStyle === TYPING_SPEED_STYLE.KO_JASO
+                        ? "타수"
+                        : "WPM"}{" "}
+                      <b className="text-[16px] text-[#111]">
+                        {speedStyle === TYPING_SPEED_STYLE.KO_JASO
+                          ? result.cpm
+                          : result.wpm}
+                      </b>
                     </span>
                     <span>
-                      WPM{" "}
-                      <b className="text-[16px] text-[#111]">{result.wpm}</b>
+                      CPM{" "}
+                      <b className="text-[16px] text-[#111]">{result.cpm}</b>
                     </span>
                     <span>
                       정확도{" "}

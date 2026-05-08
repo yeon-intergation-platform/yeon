@@ -112,6 +112,22 @@ export const TYPING_RACE_LANE_ACCENTS = [
   "#ffd148",
 ] as const;
 
+export const TYPING_SPEED_STYLE = {
+  KO_JASO: "ko-jaso",
+  ENGLISH_WPM: "english-wpm",
+} as const;
+
+export type TypingSpeedStyle =
+  (typeof TYPING_SPEED_STYLE)[keyof typeof TYPING_SPEED_STYLE];
+
+export type TypingSpeedMetrics = {
+  cpm: number;
+  wpm: number;
+  displaySpeed: number;
+  displayUnit: "타" | "wpm";
+  typedUnitCount: number;
+};
+
 export const RACE_EVENTS = {
   MATCH_JOIN: "match.join",
   MATCH_ACCEPTED: "match.accepted",
@@ -137,6 +153,7 @@ export type TypingRaceLaneSnapshot = {
   progress: number;
   wpm: number;
   cpm?: number;
+  displaySpeed?: number;
   accent: string;
   isReady?: boolean;
 };
@@ -269,6 +286,7 @@ export type RaceProgressMessage = {
   accuracy: number;
   mistakeCount?: number;
   elapsedTimeMs?: number;
+  typedUnitCount?: number;
 };
 
 export type RaceFinishMessage = {
@@ -278,6 +296,7 @@ export type RaceFinishMessage = {
   accuracy: number;
   mistakeCount?: number;
   elapsedTimeMs?: number;
+  typedUnitCount?: number;
   finishedAt: number;
 };
 
@@ -322,15 +341,103 @@ export function toWpmFromCpm(cpm: number) {
   return Math.round(normalizeNonNegativeInteger(cpm) / 5);
 }
 
+export function resolveTypingSpeedStyle(
+  value: TypingRoomLanguage | TypingDeckLanguageTag | "ko" | "en" | undefined
+) {
+  return value === "ko"
+    ? TYPING_SPEED_STYLE.KO_JASO
+    : TYPING_SPEED_STYLE.ENGLISH_WPM;
+}
+
+export function getTypingDisplayUnit(style: TypingSpeedStyle) {
+  return style === TYPING_SPEED_STYLE.KO_JASO ? "타" : "wpm";
+}
+
+const HANGUL_SYLLABLE_BASE = 0xac00;
+const HANGUL_SYLLABLE_END = 0xd7a3;
+const HANGUL_JONGSEONG_COUNT = 28;
+const HANGUL_COMPAT_JAMO_START = 0x3131;
+const HANGUL_COMPAT_JAMO_END = 0x318e;
+const HANGUL_JAMO_START = 0x1100;
+const HANGUL_JAMO_END = 0x11ff;
+const HANGUL_JAMO_EXTENDED_A_START = 0xa960;
+const HANGUL_JAMO_EXTENDED_A_END = 0xa97f;
+const HANGUL_JAMO_EXTENDED_B_START = 0xd7b0;
+const HANGUL_JAMO_EXTENDED_B_END = 0xd7ff;
+
+function isHangulJamo(codePoint: number) {
+  return (
+    (codePoint >= HANGUL_COMPAT_JAMO_START &&
+      codePoint <= HANGUL_COMPAT_JAMO_END) ||
+    (codePoint >= HANGUL_JAMO_START && codePoint <= HANGUL_JAMO_END) ||
+    (codePoint >= HANGUL_JAMO_EXTENDED_A_START &&
+      codePoint <= HANGUL_JAMO_EXTENDED_A_END) ||
+    (codePoint >= HANGUL_JAMO_EXTENDED_B_START &&
+      codePoint <= HANGUL_JAMO_EXTENDED_B_END)
+  );
+}
+
+function countKoreanTypingUnits(text: string) {
+  return Array.from(text).reduce((count, char) => {
+    const codePoint = char.codePointAt(0);
+    if (!codePoint) return count;
+    if (codePoint >= HANGUL_SYLLABLE_BASE && codePoint <= HANGUL_SYLLABLE_END) {
+      const syllableIndex = codePoint - HANGUL_SYLLABLE_BASE;
+      const jongseong = syllableIndex % HANGUL_JONGSEONG_COUNT;
+      const hasFinalConsonant = jongseong !== 0;
+      return count + (hasFinalConsonant ? 3 : 2);
+    }
+    if (isHangulJamo(codePoint)) {
+      return count + 1;
+    }
+    return count + 1;
+  }, 0);
+}
+
+export function countTypingMetricUnits(text: string, style: TypingSpeedStyle) {
+  return style === TYPING_SPEED_STYLE.KO_JASO
+    ? countKoreanTypingUnits(text)
+    : Array.from(text).length;
+}
+
+export function calculateTypingSpeedMetrics(
+  text: string,
+  elapsedSeconds: number,
+  source: TypingRoomLanguage | TypingDeckLanguageTag | "ko" | "en" | undefined
+): TypingSpeedMetrics {
+  const style = resolveTypingSpeedStyle(source);
+  const typedUnitCount = countTypingMetricUnits(text, style);
+  if (elapsedSeconds <= 0 || typedUnitCount === 0) {
+    return {
+      cpm: 0,
+      wpm: 0,
+      displaySpeed: 0,
+      displayUnit: getTypingDisplayUnit(style),
+      typedUnitCount,
+    };
+  }
+  const cpm = Math.round((typedUnitCount / elapsedSeconds) * 60);
+  const wpm = style === TYPING_SPEED_STYLE.KO_JASO ? 0 : toWpmFromCpm(cpm);
+  return {
+    cpm,
+    wpm,
+    displaySpeed: style === TYPING_SPEED_STYLE.KO_JASO ? cpm : wpm,
+    displayUnit: getTypingDisplayUnit(style),
+    typedUnitCount,
+  };
+}
+
 export function rankTypingResults(
-  results: readonly RankableTypingResult[],
+  results: readonly RankableTypingResult[]
 ): TypingResultSnapshot[] {
   return [...results]
     .sort((a, b) => {
       if (b.score !== a.score) return b.score - a.score;
       if (b.accuracy !== a.accuracy) return b.accuracy - a.accuracy;
-      if (a.elapsedTimeMs !== b.elapsedTimeMs) return a.elapsedTimeMs - b.elapsedTimeMs;
-      if (a.mistakeCount !== b.mistakeCount) return a.mistakeCount - b.mistakeCount;
+      if (a.elapsedTimeMs !== b.elapsedTimeMs)
+        return a.elapsedTimeMs - b.elapsedTimeMs;
+      if (a.mistakeCount !== b.mistakeCount)
+        return a.mistakeCount - b.mistakeCount;
       return a.finishedAt - b.finishedAt;
     })
     .map((result, index) => ({

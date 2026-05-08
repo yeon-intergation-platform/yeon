@@ -7,7 +7,11 @@ import {
   TYPING_RACE_LANE_ACCENTS,
   TYPING_RACE_LANE_ROLE,
   TYPING_RACE_STAGE,
+  TYPING_SPEED_STYLE,
   clampRaceProgress,
+  countTypingMetricUnits,
+  resolveTypingSpeedStyle,
+  toWpmFromCpm,
   type TypingRaceSnapshot,
 } from "@yeon/race-shared";
 import {
@@ -18,7 +22,6 @@ import { findCharacter, toEnginePlayerCharacter } from "./characters";
 import { useTypingProfile } from "./use-typing-profile";
 import {
   createTranslator,
-  getSpeedUnit,
   useSelectedTypingDeck,
   useTypingDeckPassages,
   useTypingSettings,
@@ -29,7 +32,7 @@ import { TypingSettingsButton } from "./typing-settings-button";
 import { TypingServiceHeader } from "./typing-service-header";
 import {
   calculateAccuracy,
-  calculateTypingSpeed,
+  calculateTypingSpeedMetrics,
   getProgress,
 } from "./race-metrics";
 
@@ -37,7 +40,7 @@ const BENCHMARK_LANES = [
   {
     id: "benchmark-1",
     label: "Guest",
-    wpm: 270,
+    cpm: 270,
     multiplier: 1.0,
     startDelay: 0.4,
     accent: TYPING_RACE_LANE_ACCENTS[1],
@@ -45,7 +48,7 @@ const BENCHMARK_LANES = [
   {
     id: "benchmark-2",
     label: "Guest",
-    wpm: 270,
+    cpm: 270,
     multiplier: 1.0,
     startDelay: 0.7,
     accent: TYPING_RACE_LANE_ACCENTS[2],
@@ -53,7 +56,7 @@ const BENCHMARK_LANES = [
   {
     id: "benchmark-3",
     label: "Guest",
-    wpm: 270,
+    cpm: 270,
     multiplier: 1.0,
     startDelay: 1.1,
     accent: TYPING_RACE_LANE_ACCENTS[3],
@@ -87,7 +90,7 @@ type BenchmarkNoiseState = {
   nextChangeAt: number;
   accChars: number;
   prevEffectiveSec: number;
-  finishedWpm: number | null;
+  finishedCpm: number | null;
   giveUpAt: number | null;
   pauseAt: number | null;
   pausedUntil: number | null;
@@ -99,7 +102,7 @@ function createBenchmarkNoiseStates(): BenchmarkNoiseState[] {
     nextChangeAt: 0,
     accChars: 0,
     prevEffectiveSec: 0,
-    finishedWpm: null,
+    finishedCpm: null,
     giveUpAt: Math.random() < 1 / 25 ? 0.25 + Math.random() * 0.45 : null,
     pauseAt: Math.random() < 1 / 20 ? 0.2 + Math.random() * 0.6 : null,
     pausedUntil: null,
@@ -133,7 +136,12 @@ export function TypingRaceSoloScreen({
     loading: passagesLoading,
     error: passagesError,
   } = useTypingDeckPassages(activeDeckId, settings.locale);
-  const speedUnit = getSpeedUnit(settings.locale);
+  const activeLanguageTag =
+    practiceDeckId === null || practiceDeckId === undefined
+      ? deckState.selectedDeck.languageTag
+      : (deckState.decks.find((deck) => deck.id === practiceDeckId)
+          ?.languageTag ?? deckState.selectedDeck.languageTag);
+  const speedStyle = resolveTypingSpeedStyle(activeLanguageTag);
   const t = createTranslator(settings.locale);
   const [passage, setPassage] = useState<TypingDeckPassageOption>(() =>
     pickNextPassage(passages)
@@ -175,10 +183,11 @@ export function TypingRaceSoloScreen({
     () => calculateAccuracy(passage.prompt, input),
     [passage.prompt, input]
   );
-  const typingSpeed = useMemo(
-    () => calculateTypingSpeed(input, elapsedSeconds),
-    [elapsedSeconds, input]
+  const speedMetrics = useMemo(
+    () => calculateTypingSpeedMetrics(input, elapsedSeconds, activeLanguageTag),
+    [activeLanguageTag, elapsedSeconds, input]
   );
+  const { cpm, wpm, displaySpeed, displayUnit } = speedMetrics;
   const completed = input === passage.prompt;
 
   const raceStage = completed
@@ -249,6 +258,11 @@ export function TypingRaceSoloScreen({
 
   const snapshot = useMemo<TypingRaceSnapshot>(() => {
     const promptLength = Math.max(1, promptChars.length);
+    const promptTypingUnits = Math.max(
+      1,
+      countTypingMetricUnits(passage.prompt, speedStyle)
+    );
+    const averageUnitsPerChar = promptTypingUnits / promptLength;
 
     const benchmarkLanes = BENCHMARK_LANES.map((lane, index) => {
       const effectiveSeconds =
@@ -282,7 +296,10 @@ export function TypingRaceSoloScreen({
         const delta = effectiveSeconds - noiseState.prevEffectiveSec;
         if (delta > 0) {
           noiseState.accChars +=
-            delta * (lane.wpm / 60) * lane.multiplier * noiseState.noise;
+            delta *
+            (lane.cpm / averageUnitsPerChar / 60) *
+            lane.multiplier *
+            noiseState.noise;
         }
       }
       noiseState.prevEffectiveSec = effectiveSeconds;
@@ -293,13 +310,17 @@ export function TypingRaceSoloScreen({
 
       if (
         laneProgress >= 100 &&
-        noiseState.finishedWpm === null &&
+        noiseState.finishedCpm === null &&
         effectiveSeconds > 0
       ) {
-        noiseState.finishedWpm = Math.round(
-          (simulatedChars / effectiveSeconds) * 60
+        noiseState.finishedCpm = Math.round(
+          ((simulatedChars * averageUnitsPerChar) / effectiveSeconds) * 60
         );
       }
+
+      const laneCpm = noiseState.finishedCpm ?? 0;
+      const laneWpm =
+        speedStyle === TYPING_SPEED_STYLE.KO_JASO ? 0 : toWpmFromCpm(laneCpm);
 
       return {
         id: lane.id,
@@ -307,7 +328,10 @@ export function TypingRaceSoloScreen({
         accent: lane.accent,
         role: TYPING_RACE_LANE_ROLE.BENCHMARK,
         progress: laneProgress,
-        wpm: noiseState.finishedWpm ?? 0,
+        cpm: laneCpm,
+        wpm: laneWpm,
+        displaySpeed:
+          speedStyle === TYPING_SPEED_STYLE.KO_JASO ? laneCpm : laneWpm,
       };
     });
 
@@ -317,7 +341,7 @@ export function TypingRaceSoloScreen({
       headline: "",
       subheadline: "",
       roundLabel: passage.title,
-      speedUnit,
+      speedUnit: displayUnit,
       lanes: [
         {
           id: "local-player",
@@ -325,21 +349,27 @@ export function TypingRaceSoloScreen({
           accent: TYPING_RACE_LANE_ACCENTS[0],
           role: TYPING_RACE_LANE_ROLE.LOCAL,
           progress,
-          wpm: typingSpeed,
+          cpm,
+          wpm,
+          displaySpeed,
         },
         ...benchmarkLanes,
       ],
     };
   }, [
     countdownRemaining,
+    cpm,
+    displaySpeed,
+    displayUnit,
     elapsedSeconds,
     passage.title,
+    passage.prompt,
     profile.nickname,
     progress,
     promptChars.length,
     raceStage,
-    speedUnit,
-    typingSpeed,
+    speedStyle,
+    wpm,
   ]);
 
   useEffect(() => {
@@ -407,10 +437,20 @@ export function TypingRaceSoloScreen({
         </div>
 
         <div className="mt-3 flex items-center gap-6 rounded-lg border border-[#e5e5e5] bg-[#fafafa] px-5 py-3 font-mono text-[13px]">
-          <span className="text-[#888]">{speedUnit}</span>
-          <span className="text-[18px] font-bold text-[#111]">
-            {typingSpeed}
+          <span className="text-[#888]">
+            {speedStyle === TYPING_SPEED_STYLE.KO_JASO ? "타수" : "WPM"}
           </span>
+          <span className="text-[18px] font-bold text-[#111]">
+            {displaySpeed}
+          </span>
+          <span className="text-[#888]">{displayUnit}</span>
+          {speedStyle !== TYPING_SPEED_STYLE.KO_JASO && (
+            <>
+              <span className="text-[#ddd]">·</span>
+              <span className="text-[#888]">CPM</span>
+              <span className="text-[18px] font-bold text-[#111]">{cpm}</span>
+            </>
+          )}
           <span className="text-[#ddd]">·</span>
           <span className="text-[#888]">acc</span>
           <span className="text-[18px] font-bold text-[#111]">{accuracy}%</span>
@@ -429,8 +469,8 @@ export function TypingRaceSoloScreen({
             <div className="flex items-center gap-6 font-mono text-[13px]">
               <span className="text-[#888]">{t("result")}</span>
               <span className="text-[#111]">
-                <span className="text-[20px] font-bold">{typingSpeed}</span>{" "}
-                {speedUnit}
+                <span className="text-[20px] font-bold">{displaySpeed}</span>{" "}
+                {displayUnit}
               </span>
               <span className="text-[#111]">
                 <span className="text-[20px] font-bold">{accuracy}</span>%{" "}
