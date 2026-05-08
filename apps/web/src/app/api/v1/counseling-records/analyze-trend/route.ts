@@ -1,8 +1,12 @@
 import { z } from "zod";
 import type { NextRequest } from "next/server";
 
-import { getMultipleRecordsWithSegments } from "@/server/services/counseling-records-service";
+import {
+  CounselingRecordTrendSpringBackendHttpError,
+  fetchCounselingRecordTrendSourcesFromSpring,
+} from "@/server/counseling-record-trend-spring-client";
 import { streamTrendAnalysis } from "@/server/services/counseling-ai-service";
+import { ServiceError } from "@/server/services/service-error";
 
 import { jsonError, requireAuthenticatedUser, withHandler } from "../_shared";
 
@@ -37,17 +41,25 @@ export async function POST(request: NextRequest) {
   const { recordIds } = parsed.data;
 
   return withHandler(async () => {
-    const records = await getMultipleRecordsWithSegments(
-      currentUser.id,
-      recordIds,
-    );
+    let records;
+    try {
+      records = await fetchCounselingRecordTrendSourcesFromSpring(
+        currentUser.id,
+        { recordIds },
+      );
+    } catch (error) {
+      if (error instanceof CounselingRecordTrendSpringBackendHttpError) {
+        throw new ServiceError(error.status, error.message);
+      }
+      throw error;
+    }
 
-    if (records.length === 0) {
+    if (records.records.length === 0) {
       return jsonError("분석할 기록이 없습니다.", 400);
     }
 
-    const studentName = records[0].studentName;
-    const stream = await streamTrendAnalysis(studentName, records);
+    const studentName = records.records[0].studentName;
+    const stream = await streamTrendAnalysis(studentName, records.records);
 
     return new Response(stream, {
       headers: {

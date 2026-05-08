@@ -6,9 +6,14 @@ import {
 } from "@yeon/api-contract/typing-decks";
 
 import {
-  createTypingDeck,
-  listTypingDecks,
-} from "@/server/services/typing-decks-service";
+  TypingDecksSpringBackendHttpError,
+  createTypingDeckInSpring,
+  fetchTypingDecksFromSpring,
+} from "@/server/typing-decks-spring-client";
+import {
+  listDefaultTypingDecks,
+  shouldPrependDefaultTypingDecks,
+} from "@/server/typing-deck-defaults";
 import { ServiceError } from "@/server/services/service-error";
 
 import {
@@ -27,16 +32,30 @@ export async function GET(request: NextRequest) {
     return jsonError("목록 요청 형식이 올바르지 않습니다.", 400);
   }
 
+  if (parsedQuery.data.scope === "default") {
+    return NextResponse.json({
+      decks: listDefaultTypingDecks(parsedQuery.data.languageTag),
+    });
+  }
+
   try {
     const { currentUser, isAdmin } = await getTypingDeckRequestContext(request);
-    const decks = await listTypingDecks(
-      currentUser?.id ?? null,
-      parsedQuery.data,
-      { adminMode: isAdmin },
-    );
-    return NextResponse.json({ decks });
+    const spring = await fetchTypingDecksFromSpring({
+      userId: currentUser?.id ?? null,
+      scope: parsedQuery.data.scope,
+      languageTag: parsedQuery.data.languageTag,
+      adminMode: isAdmin,
+    });
+    const defaults = shouldPrependDefaultTypingDecks(parsedQuery.data)
+      ? listDefaultTypingDecks(parsedQuery.data.languageTag)
+      : [];
+
+    return NextResponse.json({ decks: [...defaults, ...spring.decks] });
   } catch (error) {
     if (error instanceof ServiceError) {
+      return jsonError(error.message, error.status);
+    }
+    if (error instanceof TypingDecksSpringBackendHttpError) {
       return jsonError(error.message, error.status);
     }
     console.error(error);
@@ -59,12 +78,17 @@ export async function POST(request: NextRequest) {
 
   try {
     const { currentUser, isAdmin } = await getTypingDeckRequestContext(request);
-    const deck = await createTypingDeck(currentUser?.id ?? null, parsed.data, {
-      adminMode: isAdmin,
-    });
-    return NextResponse.json({ deck }, { status: 201 });
+    const created = await createTypingDeckInSpring(
+      currentUser?.id ?? null,
+      parsed.data,
+      isAdmin,
+    );
+    return NextResponse.json(created, { status: 201 });
   } catch (error) {
     if (error instanceof ServiceError) {
+      return jsonError(error.message, error.status);
+    }
+    if (error instanceof TypingDecksSpringBackendHttpError) {
       return jsonError(error.message, error.status);
     }
     console.error(error);

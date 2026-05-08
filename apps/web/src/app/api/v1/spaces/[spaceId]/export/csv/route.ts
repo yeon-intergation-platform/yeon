@@ -31,7 +31,7 @@ export async function GET(
   const { spaceId } = await params;
 
   try {
-    const { values } = await buildSpaceExportData(spaceId);
+    const { values } = await buildSpaceExportData(spaceId, currentUser.id);
 
     // Excel에서 한글이 깨지지 않도록 UTF-8 BOM 추가
     const BOM = "\uFEFF";

@@ -2,10 +2,8 @@ import type { NextRequest } from "next/server";
 
 import { requireAuthenticatedUser } from "@/app/api/v1/counseling-records/_shared";
 import { handleCloudAnalyzeRoute } from "@/app/api/v1/integrations/_shared";
-import {
-  downloadFile,
-  getValidAccessToken,
-} from "@/server/services/onedrive-service";
+import { downloadOneDriveFileFromSpring, OneDriveBrowserSpringBackendHttpError } from "@/server/onedrive-browser-spring-client";
+import { ServiceError } from "@/server/services/service-error";
 
 export const runtime = "nodejs";
 
@@ -21,8 +19,22 @@ export async function POST(request: NextRequest) {
     userId: currentUser.id,
     provider: "onedrive",
     providerLabel: "OneDrive",
-    getAccessToken: getValidAccessToken,
-    downloadFile: (accessToken, fileId) => downloadFile(accessToken, fileId),
+    getAccessToken: async () => "spring-transport",
+    downloadFile: async (_accessToken, fileId, mimeType) => {
+      try {
+        const downloaded = await downloadOneDriveFileFromSpring({
+          userId: currentUser.id,
+          fileId,
+          mimeType,
+        });
+        return Buffer.from(downloaded.bytes);
+      } catch (error) {
+        if (error instanceof OneDriveBrowserSpringBackendHttpError) {
+          throw new ServiceError(error.status, error.message);
+        }
+        throw error;
+      }
+    },
     requireMimeType: false,
   });
 }

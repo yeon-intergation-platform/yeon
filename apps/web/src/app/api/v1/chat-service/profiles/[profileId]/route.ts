@@ -2,7 +2,10 @@ import { chatServiceGetProfileResponseSchema } from "@yeon/api-contract/chat-ser
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
-import { getChatServiceProfile } from "@/server/services/chat-service/profile-service";
+import {
+  ChatServiceProfileSpringBackendHttpError,
+  fetchChatServiceProfileFromSpring,
+} from "@/server/chat-service-profile-spring-client";
 import { ServiceError } from "@/server/services/service-error";
 
 import {
@@ -20,13 +23,19 @@ export async function GET(request: NextRequest, { params }: Params) {
   try {
     const { profile } = await requireChatServiceAuth(request);
     const { profileId } = await params;
-    const response = await getChatServiceProfile(profile.id, profileId);
+    const response = await fetchChatServiceProfileFromSpring({
+      currentProfileId: profile.id,
+      targetProfileId: profileId,
+    });
 
     return NextResponse.json(
       chatServiceGetProfileResponseSchema.parse(response),
     );
   } catch (error) {
     if (error instanceof ServiceError) {
+      return jsonChatServiceError(error.message, error.status);
+    }
+    if (error instanceof ChatServiceProfileSpringBackendHttpError) {
       return jsonChatServiceError(error.message, error.status);
     }
 

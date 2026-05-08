@@ -277,44 +277,6 @@ export async function deleteCustomTab(
  * - 커스텀 탭 전부 삭제 (필드 CASCADE 삭제)
  * - 시스템 탭 이름/순서/isVisible 원래대로 복원
  */
-export async function resetSpaceTabsToDefaults(
-  spacePublicId: string,
-): Promise<void> {
-  const db = getDb();
-  const now = new Date();
-  const spaceInternalId = await requireSpaceInternalIdByPublicId(spacePublicId);
-
-  // 커스텀 탭 삭제 (필드는 CASCADE로 자동 삭제)
-  await db
-    .delete(memberTabDefinitions)
-    .where(
-      and(
-        eq(memberTabDefinitions.spaceId, spaceInternalId),
-        ne(memberTabDefinitions.tabType, "system"),
-      ),
-    );
-
-  // 시스템 탭 원상 복구
-  await Promise.all(
-    DEFAULT_SYSTEM_TABS.map((def) =>
-      db
-        .update(memberTabDefinitions)
-        .set({
-          name: def.name,
-          displayOrder: def.displayOrder,
-          isVisible: true,
-          updatedAt: now,
-        })
-        .where(
-          and(
-            eq(memberTabDefinitions.spaceId, spaceInternalId),
-            eq(memberTabDefinitions.systemKey, def.systemKey),
-          ),
-        ),
-    ),
-  );
-}
-
 /**
  * 탭 순서 일괄 변경
  * order: tabPublicId 배열 (index = 새 displayOrder)

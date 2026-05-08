@@ -5,13 +5,11 @@ import { ServiceError } from "@/server/services/service-error";
 
 const mockCreateCloudImportDraft = vi.fn();
 const mockMarkImportDraftAnalyzing = vi.fn();
-const mockMarkImportDraftImported = vi.fn();
-const mockMarkImportDraftImporting = vi.fn();
 const mockSaveImportDraftError = vi.fn();
 const mockSaveImportDraftPreview = vi.fn();
 const mockSaveImportDraftProcessingState = vi.fn();
 const mockGetImportDraftSource = vi.fn();
-const mockImportPreviewIntoSpaces = vi.fn();
+const mockRunImportCommitInSpring = vi.fn();
 const mockAnalyzeBuffer = vi.fn();
 const mockCreateImportSSEStream = vi.fn();
 
@@ -20,10 +18,6 @@ vi.mock("@/server/services/import-drafts-service", () => ({
     mockCreateCloudImportDraft(...args),
   markImportDraftAnalyzing: (...args: unknown[]) =>
     mockMarkImportDraftAnalyzing(...args),
-  markImportDraftImported: (...args: unknown[]) =>
-    mockMarkImportDraftImported(...args),
-  markImportDraftImporting: (...args: unknown[]) =>
-    mockMarkImportDraftImporting(...args),
   saveImportDraftError: (...args: unknown[]) =>
     mockSaveImportDraftError(...args),
   saveImportDraftPreview: (...args: unknown[]) =>
@@ -35,13 +29,12 @@ vi.mock("@/server/services/import-drafts-service", () => ({
 }));
 vi.mock("@/server/services/import-preview-service", async () => {
   const { z } = await import("zod");
-
-  return {
-    importPreviewBodySchema: z.object({ cohorts: z.array(z.unknown()) }),
-    importPreviewIntoSpaces: (...args: unknown[]) =>
-      mockImportPreviewIntoSpaces(...args),
-  };
+  return { importPreviewBodySchema: z.object({ cohorts: z.array(z.unknown()) }) };
 });
+vi.mock("@/server/import-commit-spring-client", () => ({
+  ImportCommitSpringBackendHttpError: class ImportCommitSpringBackendHttpError extends Error { constructor(public status:number, message:string){ super(message); } },
+  runImportCommitInSpring: (...args: unknown[]) => mockRunImportCommitInSpring(...args),
+}));
 vi.mock("@/server/services/file-analysis-service", () => ({
   analyzeBuffer: (...args: unknown[]) => mockAnalyzeBuffer(...args),
 }));
@@ -109,10 +102,9 @@ describe("integrations _shared", () => {
     expect(response.status).toBe(400);
   });
 
-  it("handleImportCommitRoute는 draftId가 있으면 importing/imported를 모두 기록한다", async () => {
-    mockImportPreviewIntoSpaces.mockResolvedValue({
-      spaces: 1,
-      members: 2,
+  it("handleImportCommitRoute는 Spring commit 결과를 그대로 반환한다", async () => {
+    mockRunImportCommitInSpring.mockResolvedValue({
+      created: { spaces: 1, members: 2 },
       spaceIds: ["space-1"],
     });
     const request = new NextRequest(
@@ -132,11 +124,9 @@ describe("integrations _shared", () => {
       userId: "user-1",
     });
 
-    expect(mockMarkImportDraftImporting).toHaveBeenCalled();
-    expect(mockMarkImportDraftImported).toHaveBeenCalledWith({
-      userId: "user-1",
+    expect(mockRunImportCommitInSpring).toHaveBeenCalledWith("user-1", {
       draftId: "550e8400-e29b-41d4-a716-446655440000",
-      result: { spaces: 1, members: 2, spaceIds: ["space-1"] },
+      preview: { cohorts: [] },
     });
     expect(response.status).toBe(201);
     await expect(response.json()).resolves.toEqual({

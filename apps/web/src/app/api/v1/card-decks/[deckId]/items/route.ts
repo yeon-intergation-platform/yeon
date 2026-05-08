@@ -6,8 +6,10 @@ import {
   jsonError,
   requireAuthenticatedUser,
 } from "@/app/api/v1/counseling-records/_shared";
-import { createCardDeckItem } from "@/server/services/card-decks-service";
-import { ServiceError } from "@/server/services/service-error";
+import {
+  CardDecksSpringBackendHttpError,
+  createCardDeckItemInSpring,
+} from "@/server/card-decks-spring-client";
 
 export const runtime = "nodejs";
 
@@ -16,10 +18,7 @@ export async function POST(
   { params }: { params: Promise<{ deckId: string }> },
 ) {
   const { currentUser, response } = await requireAuthenticatedUser(request);
-  if (!currentUser) {
-    return response;
-  }
-
+  if (!currentUser) return response;
   const { deckId } = await params;
 
   let body: unknown;
@@ -35,10 +34,10 @@ export async function POST(
   }
 
   try {
-    const item = await createCardDeckItem(currentUser.id, deckId, parsed.data);
-    return NextResponse.json({ item }, { status: 201 });
+    const item = await createCardDeckItemInSpring(currentUser.id, deckId, parsed.data);
+    return NextResponse.json(item, { status: 201 });
   } catch (error) {
-    if (error instanceof ServiceError) {
+    if (error instanceof CardDecksSpringBackendHttpError) {
       return jsonError(error.message, error.status);
     }
     console.error(error);

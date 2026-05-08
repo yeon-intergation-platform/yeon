@@ -22,7 +22,7 @@ export async function GET(
   const { spaceId } = await params;
 
   try {
-    const { values } = await buildSpaceExportData(spaceId);
+    const { values } = await buildSpaceExportData(spaceId, currentUser.id);
 
     const worksheet = XLSX.utils.aoa_to_sheet(values);
     const workbook = XLSX.utils.book_new();

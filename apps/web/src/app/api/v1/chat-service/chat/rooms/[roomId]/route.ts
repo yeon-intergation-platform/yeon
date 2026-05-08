@@ -2,7 +2,10 @@ import { chatServiceGetChatRoomResponseSchema } from "@yeon/api-contract/chat-se
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
-import { getChatServiceRoom } from "@/server/services/chat-service/chat-service";
+import {
+  ChatServiceChatRoomsSpringBackendHttpError,
+  fetchChatServiceRoomFromSpring,
+} from "@/server/chat-service-chat-rooms-spring-client";
 import { ServiceError } from "@/server/services/service-error";
 
 import {
@@ -20,13 +23,19 @@ export async function GET(request: NextRequest, { params }: Params) {
   try {
     const { profile } = await requireChatServiceAuth(request);
     const { roomId } = await params;
-    const response = await getChatServiceRoom(profile.id, roomId);
+    const response = await fetchChatServiceRoomFromSpring({
+      currentProfileId: profile.id,
+      roomId,
+    });
 
     return NextResponse.json(
       chatServiceGetChatRoomResponseSchema.parse(response),
     );
   } catch (error) {
     if (error instanceof ServiceError) {
+      return jsonChatServiceError(error.message, error.status);
+    }
+    if (error instanceof ChatServiceChatRoomsSpringBackendHttpError) {
       return jsonChatServiceError(error.message, error.status);
     }
 

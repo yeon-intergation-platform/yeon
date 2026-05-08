@@ -3,9 +3,11 @@ import { errorResponseSchema } from "@yeon/api-contract/error";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
+import {
+  CardDeckMergeGuestSpringBackendHttpError,
+  mergeGuestCardDecksInSpring,
+} from "@/server/card-decks-merge-guest-spring-client";
 import { getCurrentAuthUser } from "@/server/auth/session";
-import { mergeGuestCardDecks } from "@/server/services/merge-guest-card-decks-service";
-import { ServiceError } from "@/server/services/service-error";
 
 export const runtime = "nodejs";
 
@@ -38,13 +40,13 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const result = await mergeGuestCardDecks({
+    const result = await mergeGuestCardDecksInSpring({
       userId: user.id,
       payload: parsed.data,
     });
     return NextResponse.json(result, { status: 200 });
   } catch (error) {
-    if (error instanceof ServiceError) {
+    if (error instanceof CardDeckMergeGuestSpringBackendHttpError) {
       return jsonError(error.message, error.status);
     }
     console.error("guest 덱 이관 처리 중 오류", error);

@@ -7,11 +7,10 @@ import {
   requireAuthenticatedUser,
 } from "@/app/api/v1/counseling-records/_shared";
 import {
-  countActivityLogsForMember,
-  createMemberMemoLog,
-  listActivityLogsForMember,
-} from "@/server/services/activity-logs-service";
-import { ServiceError } from "@/server/services/service-error";
+  ActivityLogsSpringBackendHttpError,
+  createActivityLogInSpring,
+  fetchActivityLogsFromSpring,
+} from "@/server/activity-logs-spring-client";
 
 export const runtime = "nodejs";
 
@@ -44,25 +43,16 @@ export async function GET(request: NextRequest, context: RouteContext) {
       return jsonError("limit은 1 이상 500 이하의 정수여야 합니다.", 400);
     }
 
-    const [logs, totalCount] = await Promise.all([
-      listActivityLogsForMember({
-        userId: currentUser.id,
-        spaceId,
-        memberId,
-        type,
-        limit,
-      }),
-      countActivityLogsForMember({
-        userId: currentUser.id,
-        spaceId,
-        memberId,
-        type,
-      }),
-    ]);
+    const { logs, totalCount } = await fetchActivityLogsFromSpring(
+      spaceId,
+      memberId,
+      currentUser.id,
+      { type, limit },
+    );
 
     return NextResponse.json({ logs, totalCount });
   } catch (error) {
-    if (error instanceof ServiceError) {
+    if (error instanceof ActivityLogsSpringBackendHttpError) {
       return jsonError(error.message, error.status);
     }
 
@@ -95,17 +85,14 @@ export async function POST(request: NextRequest, context: RouteContext) {
   }
 
   try {
-    const log = await createMemberMemoLog({
-      userId: currentUser.id,
-      spaceId,
-      memberId,
+    const { log } = await createActivityLogInSpring(spaceId, memberId, currentUser.id, {
       text: parsed.data.text,
       authorLabel: currentUser.displayName,
     });
 
     return NextResponse.json({ log }, { status: 201 });
   } catch (error) {
-    if (error instanceof ServiceError) {
+    if (error instanceof ActivityLogsSpringBackendHttpError) {
       return jsonError(error.message, error.status);
     }
 

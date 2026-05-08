@@ -8,17 +8,12 @@ import { DEFAULT_COUNSELING_SERVICE_HREF } from "@/lib/platform-services";
 import {
   createCloudImportDraft,
   markImportDraftAnalyzing,
-  markImportDraftImported,
-  markImportDraftImporting,
   saveImportDraftError,
   saveImportDraftPreview,
   saveImportDraftProcessingState,
   getImportDraftSource,
 } from "@/server/services/import-drafts-service";
-import {
-  importPreviewBodySchema,
-  importPreviewIntoSpaces,
-} from "@/server/services/import-preview-service";
+import { importPreviewBodySchema } from "@/server/services/import-preview-service";
 import type {
   FieldSchemaHint,
   ImportPreview,
@@ -30,6 +25,7 @@ import { ServiceError } from "@/server/services/service-error";
 import type { FileKind } from "@/features/cloud-import/file-kind";
 import { detectFileKind } from "@/features/cloud-import/file-kind";
 import { jsonError } from "@/app/api/v1/counseling-records/_shared";
+import { ImportCommitSpringBackendHttpError, runImportCommitInSpring } from "@/server/import-commit-spring-client";
 
 const importRequestSchema = z.object({
   draftId: z.string().min(1).optional(),
@@ -115,7 +111,7 @@ interface HandleProviderFileProxyRouteParams {
 interface HandleOAuthStartRouteParams {
   userId: string;
   providerKey: CloudProvider;
-  getOAuthUrl: (state: string) => string;
+  getOAuthUrl: (state: string) => string | Promise<string>;
   failureMessage: string;
 }
 
@@ -158,7 +154,7 @@ function buildOAuthRedirectTarget() {
   return new URL(studentManagementPath, baseUrl).toString();
 }
 
-export function handleOAuthStartRoute({
+export async function handleOAuthStartRoute({
   userId,
   providerKey,
   getOAuthUrl,
@@ -166,7 +162,7 @@ export function handleOAuthStartRoute({
 }: HandleOAuthStartRouteParams) {
   try {
     const state = randomUUID();
-    const redirectUrl = getOAuthUrl(state);
+    const redirectUrl = await getOAuthUrl(state);
 
     const response = NextResponse.redirect(redirectUrl);
     response.cookies.set(buildOAuthCookieName(providerKey, "state"), state, {
@@ -288,28 +284,12 @@ export async function handleImportCommitRoute({
   }
 
   try {
-    const created = await importPreviewIntoSpaces(userId, parsed.data.preview);
-
-    if (parsed.data.draftId) {
-      await markImportDraftImporting({
-        userId,
-        draftId: parsed.data.draftId,
-      });
-      await markImportDraftImported({
-        userId,
-        draftId: parsed.data.draftId,
-        result: created,
-      });
-    }
-
-    return NextResponse.json(
-      {
-        created: { spaces: created.spaces, members: created.members },
-        spaceIds: created.spaceIds,
-      },
-      { status: 201 },
-    );
+    const result = await runImportCommitInSpring(userId, parsed.data);
+    return NextResponse.json(result, { status: 201 });
   } catch (error) {
+    if (error instanceof ImportCommitSpringBackendHttpError) {
+      return jsonError(error.message, error.status);
+    }
     if (error instanceof ServiceError) {
       return jsonError(error.message, error.status);
     }

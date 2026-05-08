@@ -2,30 +2,16 @@ import { listCounselingRecordsResponseSchema } from "@yeon/api-contract/counseli
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
-import { eq } from "drizzle-orm";
-
-import {
-  jsonError,
-  requireAuthenticatedUser,
-} from "@/app/api/v1/counseling-records/_shared";
-import { getDb } from "@/server/db";
-import { spaces } from "@/server/db/schema";
-import { listCounselingRecordsByMember } from "@/server/services/counseling-records-service";
-import { getMemberByIdForUser } from "@/server/services/members-service";
-import { ServiceError } from "@/server/services/service-error";
+import { jsonError, requireAuthenticatedUser } from "@/app/api/v1/counseling-records/_shared";
+import { fetchMemberInSpaceFromSpring, MembersSpringBackendHttpError } from "@/server/members-spring-client";
+import { fetchMemberCounselingRecordsFromSpring, MemberCounselingRecordsSpringBackendHttpError } from "@/server/member-counseling-records-spring-client";
 
 export const runtime = "nodejs";
-
-type RouteContext = {
-  params: Promise<{ spaceId: string; memberId: string }>;
-};
+type RouteContext = { params: Promise<{ spaceId: string; memberId: string }> };
 
 export async function GET(request: NextRequest, context: RouteContext) {
   const { currentUser, response } = await requireAuthenticatedUser(request);
-
-  if (!currentUser) {
-    return response;
-  }
+  if (!currentUser) return response;
 
   const { spaceId, memberId } = await context.params;
   const rawLimit = request.nextUrl.searchParams.get("limit");
@@ -33,42 +19,26 @@ export async function GET(request: NextRequest, context: RouteContext) {
 
   try {
     const limit = rawLimit ? Number(rawLimit) : undefined;
-    if (limit !== undefined) {
-      if (!Number.isInteger(limit) || limit <= 0 || limit > 500) {
-        return jsonError("limit은 1 이상 500 이하의 정수여야 합니다.", 400);
-      }
+    if (limit !== undefined && (!Number.isInteger(limit) || limit <= 0 || limit > 500)) {
+      return jsonError("limit은 1 이상 500 이하의 정수여야 합니다.", 400);
     }
-
     const beforeCreatedAt = rawBefore ? new Date(rawBefore) : undefined;
     if (beforeCreatedAt && Number.isNaN(beforeCreatedAt.getTime())) {
       return jsonError("before 커서 형식이 올바르지 않습니다.", 400);
     }
 
-    // memberId가 spaceId에 속하며 현재 사용자 소유인지 검증
-    const member = await getMemberByIdForUser(currentUser.id, memberId);
-    const [memberSpace] = await getDb()
-      .select({ publicId: spaces.publicId })
-      .from(spaces)
-      .where(eq(spaces.id, member.spaceId))
-      .limit(1);
-    if (!memberSpace || memberSpace.publicId !== spaceId) {
-      return jsonError("해당 스페이스에 속한 수강생이 아닙니다.", 404);
-    }
-
-    const records = await listCounselingRecordsByMember(
-      currentUser.id,
+    await fetchMemberInSpaceFromSpring(spaceId, memberId, currentUser.id);
+    const payload = await fetchMemberCounselingRecordsFromSpring({
+      userId: currentUser.id,
+      spaceId,
       memberId,
-      { limit, beforeCreatedAt },
-    );
-
-    return NextResponse.json(
-      listCounselingRecordsResponseSchema.parse({ records }),
-    );
+      limit,
+      before: rawBefore ?? undefined,
+    });
+    return NextResponse.json(listCounselingRecordsResponseSchema.parse(payload));
   } catch (error) {
-    if (error instanceof ServiceError) {
-      return jsonError(error.message, error.status);
-    }
-
+    if (error instanceof MembersSpringBackendHttpError) return jsonError(error.message, error.status);
+    if (error instanceof MemberCounselingRecordsSpringBackendHttpError) return jsonError(error.message, error.status);
     console.error(error);
     return jsonError("수강생의 상담 기록을 불러오지 못했습니다.", 500);
   }

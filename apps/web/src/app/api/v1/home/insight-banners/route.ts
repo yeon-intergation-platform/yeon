@@ -12,9 +12,10 @@ import {
   withHandler,
 } from "@/app/api/v1/counseling-records/_shared";
 import {
-  dismissHomeInsightBanner,
-  listHomeInsightBannerDismissals,
-} from "@/server/services/home-insight-banner-service";
+  dismissHomeInsightBannerInSpring,
+  fetchHomeInsightBannerStateFromSpring,
+  HomeInsightBannerSpringBackendHttpError,
+} from "@/server/home-insight-banner-spring-client";
 
 export const runtime = "nodejs";
 
@@ -25,9 +26,18 @@ export async function GET(request: NextRequest) {
       return response;
     }
 
-    const state = await listHomeInsightBannerDismissals(currentUser.id);
+    try {
+      const state = await fetchHomeInsightBannerStateFromSpring(currentUser.id);
 
-    return NextResponse.json(homeInsightBannerStateResponseSchema.parse(state));
+      return NextResponse.json(
+        homeInsightBannerStateResponseSchema.parse(state),
+      );
+    } catch (error) {
+      if (error instanceof HomeInsightBannerSpringBackendHttpError) {
+        return jsonError(error.message, error.status);
+      }
+      throw error;
+    }
   });
 }
 
@@ -50,13 +60,19 @@ export async function POST(request: NextRequest) {
       return jsonError("배너 dismiss 요청 값이 올바르지 않습니다.", 400);
     }
 
-    const result = await dismissHomeInsightBanner({
-      userId: currentUser.id,
-      bannerKey: parsed.data.bannerKey,
-    });
+    try {
+      const result = await dismissHomeInsightBannerInSpring(currentUser.id, {
+        bannerKey: parsed.data.bannerKey,
+      });
 
-    return NextResponse.json(
-      dismissHomeInsightBannerResponseSchema.parse(result),
-    );
+      return NextResponse.json(
+        dismissHomeInsightBannerResponseSchema.parse(result),
+      );
+    } catch (error) {
+      if (error instanceof HomeInsightBannerSpringBackendHttpError) {
+        return jsonError(error.message, error.status);
+      }
+      throw error;
+    }
   });
 }

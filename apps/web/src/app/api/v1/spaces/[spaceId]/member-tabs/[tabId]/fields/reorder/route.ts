@@ -6,8 +6,10 @@ import {
   jsonError,
   requireAuthenticatedUser,
 } from "@/app/api/v1/counseling-records/_shared";
-import { reorderFields } from "@/server/services/member-fields-service";
-import { ServiceError } from "@/server/services/service-error";
+import {
+  MemberFieldsSpringBackendHttpError,
+  reorderMemberFieldsInSpring,
+} from "@/server/member-fields-spring-client";
 
 export const runtime = "nodejs";
 
@@ -18,7 +20,7 @@ export async function PATCH(
   const { currentUser, response } = await requireAuthenticatedUser(request);
   if (!currentUser) return response;
 
-  const { spaceId } = await params;
+  const { spaceId, tabId } = await params;
 
   let body: unknown;
   try {
@@ -32,10 +34,15 @@ export async function PATCH(
     return jsonError("요청 데이터가 올바르지 않습니다.", 400);
 
   try {
-    await reorderFields(spaceId, parsed.data.order);
-    return NextResponse.json({ ok: true });
+    const result = await reorderMemberFieldsInSpring(
+      spaceId,
+      tabId,
+      currentUser.id,
+      parsed.data,
+    );
+    return NextResponse.json(result);
   } catch (error) {
-    if (error instanceof ServiceError)
+    if (error instanceof MemberFieldsSpringBackendHttpError)
       return jsonError(error.message, error.status);
     console.error(error);
     return jsonError("필드 순서를 변경하지 못했습니다.", 500);

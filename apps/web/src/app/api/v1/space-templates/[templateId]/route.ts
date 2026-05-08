@@ -7,13 +7,11 @@ import {
   requireAuthenticatedUser,
 } from "@/app/api/v1/counseling-records/_shared";
 import {
-  deleteTemplate,
-  detailSpaceTemplate,
-  getTemplateForUser,
-  summarizeSpaceTemplate,
-  updateTemplate,
-} from "@/server/services/space-templates-service";
-import { ServiceError } from "@/server/services/service-error";
+  deleteSpaceTemplateInSpring,
+  fetchSpaceTemplateDetailFromSpring,
+  SpringBackendHttpError,
+  updateSpaceTemplateInSpring,
+} from "@/server/space-templates-spring-client";
 
 export const runtime = "nodejs";
 
@@ -32,11 +30,15 @@ export async function GET(
   const { templateId } = await params;
 
   try {
-    const template = await getTemplateForUser(templateId, currentUser.id);
-    return NextResponse.json({ template: detailSpaceTemplate(template) });
+    const result = await fetchSpaceTemplateDetailFromSpring(
+      templateId,
+      currentUser.id,
+    );
+    return NextResponse.json(result);
   } catch (error) {
-    if (error instanceof ServiceError)
+    if (error instanceof SpringBackendHttpError) {
       return jsonError(error.message, error.status);
+    }
     console.error(error);
     return jsonError("템플릿을 불러오지 못했습니다.", 500);
   }
@@ -64,15 +66,19 @@ export async function PATCH(
   }
 
   try {
-    const template = await updateTemplate(
+    const result = await updateSpaceTemplateInSpring(
       templateId,
       currentUser.id,
-      parsed.data,
+      {
+        name: parsed.data.name,
+        description: parsed.data.description,
+      },
     );
-    return NextResponse.json({ template: summarizeSpaceTemplate(template) });
+    return NextResponse.json(result);
   } catch (error) {
-    if (error instanceof ServiceError)
+    if (error instanceof SpringBackendHttpError) {
       return jsonError(error.message, error.status);
+    }
     console.error(error);
     return jsonError("템플릿을 수정하지 못했습니다.", 500);
   }
@@ -88,11 +94,12 @@ export async function DELETE(
   const { templateId } = await params;
 
   try {
-    await deleteTemplate(templateId, currentUser.id);
+    await deleteSpaceTemplateInSpring(templateId, currentUser.id);
     return new NextResponse(null, { status: 204 });
   } catch (error) {
-    if (error instanceof ServiceError)
+    if (error instanceof SpringBackendHttpError) {
       return jsonError(error.message, error.status);
+    }
     console.error(error);
     return jsonError("템플릿을 삭제하지 못했습니다.", 500);
   }

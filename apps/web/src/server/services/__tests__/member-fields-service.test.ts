@@ -29,7 +29,6 @@ import {
   createField,
   updateField,
   deleteField,
-  reorderFields,
   getFieldsForTab,
   VALID_FIELD_TYPES,
 } from "../member-fields-service";
@@ -260,24 +259,6 @@ describe("getFieldsForTab", () => {
   });
 });
 
-/* ── reorderFields ── */
-
-describe("reorderFields", () => {
-  it("빈 배열로 호출해도 오류 없이 완료된다", async () => {
-    await expect(reorderFields("space-1", [])).resolves.toBeUndefined();
-  });
-
-  it("여러 fieldId를 순서대로 업데이트한다", async () => {
-    responses.push(undefined);
-    responses.push(undefined);
-    responses.push(undefined);
-
-    await expect(
-      reorderFields("space-1", ["field-a", "field-b", "field-c"]),
-    ).resolves.toBeUndefined();
-  });
-});
-
 /* ── 경계값 테스트 ── */
 
 describe("경계값: createField", () => {
@@ -502,25 +483,6 @@ describe("오류 케이스 심화: getFieldsForTab", () => {
   });
 });
 
-describe("오류 케이스 심화: reorderFields", () => {
-  it("일부 ID만 포함해도 오류 없이 완료된다", async () => {
-    responses.push(undefined);
-    responses.push(undefined);
-
-    await expect(
-      reorderFields("space-1", ["field-a", "field-b"]),
-    ).resolves.toBeUndefined();
-  });
-
-  it("단일 ID만 포함해도 정상 동작한다", async () => {
-    responses.push(undefined);
-
-    await expect(
-      reorderFields("space-1", ["field-only"]),
-    ).resolves.toBeUndefined();
-  });
-});
-
 /* ── 정상 흐름 심화 ── */
 
 describe("정상 흐름 심화: createField + getFieldsForTab 조합", () => {
@@ -541,33 +503,6 @@ describe("정상 흐름 심화: createField + getFieldsForTab 조합", () => {
     const fields = await getFieldsForTab("tab-1", "space-1");
     expect(fields).toHaveLength(1);
     expect(fields[0].name).toBe("새로 생성");
-  });
-
-  it("여러 필드 생성 후 reorderFields로 순서를 변경한다", async () => {
-    const field1 = makeField({ id: "f1", displayOrder: 0 });
-    const field2 = makeField({ id: "f2", displayOrder: 1 });
-
-    // 두 번의 createField
-    responses.push([]); // getFieldsForTab (f1 생성)
-    responses.push([field1]); // insert.returning()
-    responses.push([field1]); // getFieldsForTab (f2 생성, f1 포함)
-    responses.push([field2]); // insert.returning()
-
-    await createField("space-1", "tab-1", "user-1", {
-      name: "필드1",
-      fieldType: "text",
-    });
-    await createField("space-1", "tab-1", "user-1", {
-      name: "필드2",
-      fieldType: "text",
-    });
-
-    // 역순으로 reorder
-    responses.push(undefined);
-    responses.push(undefined);
-    await expect(
-      reorderFields("space-1", ["f2", "f1"]),
-    ).resolves.toBeUndefined();
   });
 
   it("updateField로 이름·isRequired를 동시에 변경할 수 있다", async () => {
@@ -727,12 +662,4 @@ describe("DB mock 활용 패턴", () => {
     ).rejects.toMatchObject({ status: 500 });
   });
 
-  it("reorderFields는 각 fieldId마다 update를 독립적으로 실행한다", async () => {
-    const ids = ["fa", "fb", "fc", "fd"];
-    ids.forEach(() => responses.push(undefined));
-
-    await expect(reorderFields("space-1", ids)).resolves.toBeUndefined();
-    // responses 큐가 모두 소비됨
-    expect(responses.length).toBe(0);
-  });
 });

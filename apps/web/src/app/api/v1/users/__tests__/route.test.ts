@@ -1,12 +1,12 @@
 import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { ServiceError } from "@/server/services/service-error";
+import { UsersSpringBackendHttpError } from "@/server/users-spring-client";
 
 const mockGetAuthUserBySessionToken = vi.fn();
 const mockClearAuthSessionCookie = vi.fn();
-const mockListUsers = vi.fn();
-const mockCreateUser = vi.fn();
+const mockFetchUsersFromSpring = vi.fn();
+const mockCreateUserInSpring = vi.fn();
 
 vi.mock("@/server/auth/session", () => ({
   getAuthUserBySessionToken: (...args: unknown[]) =>
@@ -15,10 +15,17 @@ vi.mock("@/server/auth/session", () => ({
     mockClearAuthSessionCookie(...args),
 }));
 
-vi.mock("@/server/services/users-service", () => ({
-  listUsers: (...args: unknown[]) => mockListUsers(...args),
-  createUser: (...args: unknown[]) => mockCreateUser(...args),
-}));
+vi.mock("@/server/users-spring-client", async () => {
+  const actual = await vi.importActual<typeof import("@/server/users-spring-client")>(
+    "@/server/users-spring-client",
+  );
+
+  return {
+    ...actual,
+    fetchUsersFromSpring: (...args: unknown[]) => mockFetchUsersFromSpring(...args),
+    createUserInSpring: (...args: unknown[]) => mockCreateUserInSpring(...args),
+  };
+});
 
 import { GET, POST } from "../route";
 
@@ -41,17 +48,19 @@ describe("api/v1/users route", () => {
     });
   });
 
-  it("GET은 인증되면 사용자 목록을 반환한다", async () => {
+  it("GET은 인증되면 Spring 사용자 목록을 반환한다", async () => {
     mockGetAuthUserBySessionToken.mockResolvedValue({ id: "user-1" });
-    mockListUsers.mockResolvedValue([
-      {
-        id: "550e8400-e29b-41d4-a716-446655440000",
-        email: "user@yeon.world",
-        displayName: "유저",
-        createdAt: "2026-04-12T10:00:00.000Z",
-        updatedAt: "2026-04-12T10:00:00.000Z",
-      },
-    ]);
+    mockFetchUsersFromSpring.mockResolvedValue({
+      users: [
+        {
+          id: "550e8400-e29b-41d4-a716-446655440000",
+          email: "user@yeon.world",
+          displayName: "유저",
+          createdAt: "2026-04-12T10:00:00.000Z",
+          updatedAt: "2026-04-12T10:00:00.000Z",
+        },
+      ],
+    });
     const request = new NextRequest("http://localhost/api/v1/users", {
       headers: { cookie: "yeon.session=valid-token" },
     });
@@ -59,6 +68,7 @@ describe("api/v1/users route", () => {
     const response = await GET(request);
 
     expect(response.status).toBe(200);
+    expect(mockFetchUsersFromSpring).toHaveBeenCalledWith("user-1");
     await expect(response.json()).resolves.toEqual({
       users: [
         {
@@ -110,10 +120,10 @@ describe("api/v1/users route", () => {
     });
   });
 
-  it("POST는 ServiceError를 그대로 노출한다", async () => {
+  it("POST는 Spring duplicate email을 그대로 노출한다", async () => {
     mockGetAuthUserBySessionToken.mockResolvedValue({ id: "user-1" });
-    mockCreateUser.mockRejectedValue(
-      new ServiceError(409, "이미 등록된 이메일입니다."),
+    mockCreateUserInSpring.mockRejectedValue(
+      new UsersSpringBackendHttpError(409, "이미 등록된 이메일입니다."),
     );
     const request = new NextRequest("http://localhost/api/v1/users", {
       method: "POST",
@@ -134,12 +144,14 @@ describe("api/v1/users route", () => {
 
   it("POST는 성공 시 201과 생성된 유저를 반환한다", async () => {
     mockGetAuthUserBySessionToken.mockResolvedValue({ id: "user-1" });
-    mockCreateUser.mockResolvedValue({
-      id: "550e8400-e29b-41d4-a716-446655440000",
-      email: "user@yeon.world",
-      displayName: "유저",
-      createdAt: "2026-04-12T10:00:00.000Z",
-      updatedAt: "2026-04-12T10:00:00.000Z",
+    mockCreateUserInSpring.mockResolvedValue({
+      user: {
+        id: "550e8400-e29b-41d4-a716-446655440000",
+        email: "user@yeon.world",
+        displayName: "유저",
+        createdAt: "2026-04-12T10:00:00.000Z",
+        updatedAt: "2026-04-12T10:00:00.000Z",
+      },
     });
     const request = new NextRequest("http://localhost/api/v1/users", {
       method: "POST",
@@ -153,6 +165,10 @@ describe("api/v1/users route", () => {
     const response = await POST(request);
 
     expect(response.status).toBe(201);
+    expect(mockCreateUserInSpring).toHaveBeenCalledWith("user-1", {
+      email: "user@yeon.world",
+      displayName: "유저",
+    });
     await expect(response.json()).resolves.toEqual({
       user: {
         id: "550e8400-e29b-41d4-a716-446655440000",

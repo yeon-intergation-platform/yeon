@@ -1,0 +1,18 @@
+# spring-chat-service-chat-open-pilot
+
+## 작업내용
+- `/api/v1/chat-service/chat/open` POST를 Spring으로 이관한다.
+- chat-service auth는 Next에 유지한다.
+
+## 논의 필요
+- 이후 `chat/rooms*` read/write까지 같은 축으로 바로 확장할지 여부
+
+## 선택지
+1. open mutation만 먼저 분리
+2. chat room 축 전체를 한 번에 이관
+
+## 추천
+- 1. room 생성 경계만 먼저 분리하고 rooms/message는 다음 lane으로 둔다.
+
+## 사용자 방향
+- 추천 기준으로 진행

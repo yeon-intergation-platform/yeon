@@ -1,0 +1,70 @@
+package world.yeon.backend.card_decks.merge_guest.repository;
+
+import jakarta.persistence.EntityManager;
+import java.sql.Timestamp;
+import java.time.OffsetDateTime;
+import java.util.List;
+import java.util.UUID;
+import org.springframework.context.annotation.Profile;
+import org.springframework.stereotype.Repository;
+
+@Repository
+@Profile("jdbc")
+public class MergeGuestCardDeckRepository {
+	public record InsertedDeckRow(Long id) {}
+
+	private final EntityManager entityManager;
+
+	public MergeGuestCardDeckRepository(EntityManager entityManager) {
+		this.entityManager = entityManager;
+	}
+
+	public InsertedDeckRow insertDeck(
+		String publicId,
+		UUID userId,
+		String title,
+		String description,
+		OffsetDateTime now
+	) {
+		List<?> rows = entityManager.createNativeQuery("""
+			insert into public.card_decks (public_id, owner_user_id, title, description, created_at, updated_at)
+			values (:publicId, :userId, :title, :description, :createdAt, :updatedAt)
+			returning id
+			""")
+			.setParameter("publicId", publicId)
+			.setParameter("userId", userId)
+			.setParameter("title", title)
+			.setParameter("description", description)
+			.setParameter("createdAt", Timestamp.from(now.toInstant()))
+			.setParameter("updatedAt", Timestamp.from(now.toInstant()))
+			.getResultList();
+		Object value = rows.getFirst();
+		Object[] row = value instanceof Object[] arr ? arr : new Object[]{value};
+		return new InsertedDeckRow(((Number) row[0]).longValue());
+	}
+
+	public int insertItems(Long deckId, List<Object[]> rows, OffsetDateTime now) {
+		int count = 0;
+		for (Object[] row : rows) {
+			entityManager.createNativeQuery("""
+				insert into public.card_deck_items (
+				  public_id, deck_id, front_text, back_text,
+				  review_difficulty, last_reviewed_at, next_review_at, created_at, updated_at
+				)
+				values (
+				  :publicId, :deckId, :frontText, :backText,
+				  null, null, null, :createdAt, :updatedAt
+				)
+				""")
+				.setParameter("publicId", row[0])
+				.setParameter("deckId", deckId)
+				.setParameter("frontText", row[1])
+				.setParameter("backText", row[2])
+				.setParameter("createdAt", Timestamp.from(now.toInstant()))
+				.setParameter("updatedAt", Timestamp.from(now.toInstant()))
+				.executeUpdate();
+			count += 1;
+		}
+		return count;
+	}
+}

@@ -3,9 +3,10 @@ import { NextResponse } from "next/server";
 import { updateTypingDeckPassageBodySchema } from "@yeon/api-contract/typing-decks";
 
 import {
-  deleteTypingDeckPassage,
-  updateTypingDeckPassage,
-} from "@/server/services/typing-decks-service";
+  TypingDecksSpringBackendHttpError,
+  deleteTypingDeckPassageInSpring,
+  updateTypingDeckPassageInSpring,
+} from "@/server/typing-decks-spring-client";
 import { ServiceError } from "@/server/services/service-error";
 
 import {
@@ -36,16 +37,19 @@ export async function PATCH(
 
   try {
     const { currentUser, isAdmin } = await getTypingDeckRequestContext(request);
-    const passage = await updateTypingDeckPassage(
+    const passage = await updateTypingDeckPassageInSpring(
       currentUser?.id ?? null,
       deckId,
       passageId,
       parsed.data,
-      { adminMode: isAdmin },
+      isAdmin,
     );
-    return NextResponse.json({ passage });
+    return NextResponse.json(passage);
   } catch (error) {
     if (error instanceof ServiceError) {
+      return jsonError(error.message, error.status);
+    }
+    if (error instanceof TypingDecksSpringBackendHttpError) {
       return jsonError(error.message, error.status);
     }
     console.error(error);
@@ -61,12 +65,18 @@ export async function DELETE(
 
   try {
     const { currentUser, isAdmin } = await getTypingDeckRequestContext(request);
-    await deleteTypingDeckPassage(currentUser?.id ?? null, deckId, passageId, {
-      adminMode: isAdmin,
-    });
+    await deleteTypingDeckPassageInSpring(
+      currentUser?.id ?? null,
+      deckId,
+      passageId,
+      isAdmin,
+    );
     return new NextResponse(null, { status: 204 });
   } catch (error) {
     if (error instanceof ServiceError) {
+      return jsonError(error.message, error.status);
+    }
+    if (error instanceof TypingDecksSpringBackendHttpError) {
       return jsonError(error.message, error.status);
     }
     console.error(error);

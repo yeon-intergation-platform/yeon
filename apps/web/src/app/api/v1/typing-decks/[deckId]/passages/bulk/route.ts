@@ -2,7 +2,10 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { createTypingDeckPassagesBodySchema } from "@yeon/api-contract/typing-decks";
 
-import { createTypingDeckPassages } from "@/server/services/typing-decks-service";
+import {
+  TypingDecksSpringBackendHttpError,
+  createTypingDeckPassagesInSpring,
+} from "@/server/typing-decks-spring-client";
 import { ServiceError } from "@/server/services/service-error";
 
 import {
@@ -33,15 +36,18 @@ export async function POST(
 
   try {
     const { currentUser, isAdmin } = await getTypingDeckRequestContext(request);
-    const passages = await createTypingDeckPassages(
+    const passages = await createTypingDeckPassagesInSpring(
       currentUser?.id ?? null,
       deckId,
       parsed.data,
-      { adminMode: isAdmin },
+      isAdmin,
     );
-    return NextResponse.json({ passages }, { status: 201 });
+    return NextResponse.json(passages, { status: 201 });
   } catch (error) {
     if (error instanceof ServiceError) {
+      return jsonError(error.message, error.status);
+    }
+    if (error instanceof TypingDecksSpringBackendHttpError) {
       return jsonError(error.message, error.status);
     }
     console.error(error);

@@ -6,8 +6,10 @@ import {
   jsonError,
   requireAuthenticatedUser,
 } from "@/app/api/v1/counseling-records/_shared";
-import { reorderTabs } from "@/server/services/member-tabs-service";
-import { ServiceError } from "@/server/services/service-error";
+import {
+  MemberTabsSpringBackendHttpError,
+  reorderMemberTabsInSpring,
+} from "@/server/member-tabs-spring-client";
 
 export const runtime = "nodejs";
 
@@ -32,10 +34,14 @@ export async function PATCH(
     return jsonError("요청 데이터가 올바르지 않습니다.", 400);
 
   try {
-    await reorderTabs(spaceId, parsed.data.order);
-    return NextResponse.json({ ok: true });
+    const result = await reorderMemberTabsInSpring(
+      spaceId,
+      currentUser.id,
+      parsed.data,
+    );
+    return NextResponse.json(result);
   } catch (error) {
-    if (error instanceof ServiceError)
+    if (error instanceof MemberTabsSpringBackendHttpError)
       return jsonError(error.message, error.status);
     console.error(error);
     return jsonError("탭 순서를 변경하지 못했습니다.", 500);

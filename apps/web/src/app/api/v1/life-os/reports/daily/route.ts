@@ -1,12 +1,17 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { lifeOsDailyReportQuerySchema } from "@yeon/api-contract/life-os";
+import {
+  lifeOsDailyReportQuerySchema,
+  lifeOsReportResponseSchema,
+} from "@yeon/api-contract/life-os";
 
 import {
   jsonError,
   requireAuthenticatedUser,
 } from "@/app/api/v1/counseling-records/_shared";
-import { buildLifeOsDailyReport } from "@/server/services/life-os-service";
-import { ServiceError } from "@/server/services/service-error";
+import {
+  fetchLifeOsDailyReportFromSpring,
+  LifeOsSpringBackendHttpError,
+} from "@/server/life-os-spring-client";
 
 export const runtime = "nodejs";
 
@@ -25,13 +30,13 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const report = await buildLifeOsDailyReport(
+    const report = await fetchLifeOsDailyReportFromSpring(
       currentUser.id,
       parsed.data.localDate,
     );
-    return NextResponse.json({ report });
+    return NextResponse.json(lifeOsReportResponseSchema.parse(report));
   } catch (error) {
-    if (error instanceof ServiceError) {
+    if (error instanceof LifeOsSpringBackendHttpError) {
       return jsonError(error.message, error.status);
     }
     console.error(error);

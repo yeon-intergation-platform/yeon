@@ -2,9 +2,11 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { createSpaceBodySchema } from "@yeon/api-contract/spaces";
 
-import { createSpace, getSpaces } from "@/server/services/spaces-service";
-import { createDefaultSystemTabs } from "@/server/services/member-tabs-service";
-import { ServiceError } from "@/server/services/service-error";
+import {
+  createSpaceInSpring,
+  fetchSpacesFromSpring,
+  SpacesSpringBackendHttpError,
+} from "@/server/spaces-spring-client";
 
 import {
   jsonError,
@@ -21,11 +23,11 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const spaceList = await getSpaces(currentUser.id);
+    const spaceList = await fetchSpacesFromSpring(currentUser.id);
 
-    return NextResponse.json({ spaces: spaceList });
+    return NextResponse.json(spaceList);
   } catch (error) {
-    if (error instanceof ServiceError) {
+    if (error instanceof SpacesSpringBackendHttpError) {
       return jsonError(error.message, error.status);
     }
 
@@ -56,12 +58,11 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const space = await createSpace(currentUser.id, parsed.data);
-    await createDefaultSystemTabs(space.id, currentUser.id);
+    const result = await createSpaceInSpring(currentUser.id, parsed.data);
 
-    return NextResponse.json({ space }, { status: 201 });
+    return NextResponse.json(result, { status: 201 });
   } catch (error) {
-    if (error instanceof ServiceError) {
+    if (error instanceof SpacesSpringBackendHttpError) {
       return jsonError(error.message, error.status);
     }
 

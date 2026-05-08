@@ -1,12 +1,12 @@
 import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { ServiceError } from "@/server/services/service-error";
+import { ImportDraftsSpringBackendHttpError } from "@/server/import-drafts-spring-client";
 
 const mockRequireAuthenticatedUser = vi.fn();
-const mockGetImportDraftSnapshot = vi.fn();
-const mockSaveImportDraftPreview = vi.fn();
-const mockDeleteImportDraft = vi.fn();
+const mockFetchImportDraftFromSpring = vi.fn();
+const mockPatchImportDraftPreviewInSpring = vi.fn();
+const mockDeleteImportDraftInSpring = vi.fn();
 
 vi.mock("@/app/api/v1/counseling-records/_shared", () => ({
   jsonError: (message: string, status: number) =>
@@ -14,13 +14,15 @@ vi.mock("@/app/api/v1/counseling-records/_shared", () => ({
   requireAuthenticatedUser: (...args: unknown[]) =>
     mockRequireAuthenticatedUser(...args),
 }));
-vi.mock("@/server/services/import-drafts-service", () => ({
-  getImportDraftSnapshot: (...args: unknown[]) =>
-    mockGetImportDraftSnapshot(...args),
-  saveImportDraftPreview: (...args: unknown[]) =>
-    mockSaveImportDraftPreview(...args),
-  deleteImportDraft: (...args: unknown[]) => mockDeleteImportDraft(...args),
-}));
+vi.mock("@/server/import-drafts-spring-client", async () => {
+  const actual = await vi.importActual<typeof import("@/server/import-drafts-spring-client")>("@/server/import-drafts-spring-client");
+  return {
+    ...actual,
+    fetchImportDraftFromSpring: (...args: unknown[]) => mockFetchImportDraftFromSpring(...args),
+    patchImportDraftPreviewInSpring: (...args: unknown[]) => mockPatchImportDraftPreviewInSpring(...args),
+    deleteImportDraftInSpring: (...args: unknown[]) => mockDeleteImportDraftInSpring(...args),
+  };
+});
 
 import { DELETE, GET, PATCH } from "../route";
 
@@ -34,7 +36,7 @@ describe("local draft detail route", () => {
       currentUser: { id: "user-1" },
       response: null,
     });
-    mockGetImportDraftSnapshot.mockResolvedValue({
+    mockFetchImportDraftFromSpring.mockResolvedValue({
       id: "draft-1",
       status: "uploaded",
     });
@@ -100,8 +102,8 @@ describe("local draft detail route", () => {
       currentUser: { id: "user-1" },
       response: null,
     });
-    mockDeleteImportDraft.mockRejectedValue(
-      new ServiceError(404, "초안을 찾지 못했습니다."),
+    mockDeleteImportDraftInSpring.mockRejectedValue(
+      new ImportDraftsSpringBackendHttpError(404, "초안을 찾지 못했습니다."),
     );
 
     const response = await DELETE(

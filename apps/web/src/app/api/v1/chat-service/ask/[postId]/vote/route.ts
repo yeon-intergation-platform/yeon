@@ -5,7 +5,10 @@ import {
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
-import { voteChatServiceAskPost } from "@/server/services/chat-service/ask-service";
+import {
+  ChatServiceAskSpringBackendHttpError,
+  voteChatServiceAskPostInSpring,
+} from "@/server/chat-service-ask-spring-client";
 import { ServiceError } from "@/server/services/service-error";
 
 import {
@@ -31,17 +34,20 @@ export async function POST(request: NextRequest, { params }: Params) {
     }
 
     const { postId } = await params;
-    const response = await voteChatServiceAskPost(
-      profile.id,
+    const response = await voteChatServiceAskPostInSpring({
+      currentProfileId: profile.id,
       postId,
-      parsedBody.data.optionIndex,
-    );
+      optionIndex: parsedBody.data.optionIndex,
+    });
 
     return NextResponse.json(
       chatServiceVoteAskPostResponseSchema.parse(response),
     );
   } catch (error) {
     if (error instanceof ServiceError) {
+      return jsonChatServiceError(error.message, error.status);
+    }
+    if (error instanceof ChatServiceAskSpringBackendHttpError) {
       return jsonChatServiceError(error.message, error.status);
     }
 

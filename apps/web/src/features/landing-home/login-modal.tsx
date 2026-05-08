@@ -8,6 +8,7 @@ import { ChevronDown, X } from "lucide-react";
 
 import { analyticsEvents, trackEvent } from "@/lib/analytics";
 import type { DevLoginOption } from "@/lib/auth/dev-login-options";
+import { trackEvent } from "@/lib/analytics";
 
 type LoginModalProps = {
   open: boolean;
@@ -147,6 +148,11 @@ export function LoginModal({
     : { opacity: 0, y: 8, scale: 0.99 };
 
   function moveToSocialLogin(provider: "google" | "kakao", href: string) {
+    trackEvent("login_click", {
+      source: "landing_modal",
+      method: provider,
+      next_path: nextPath,
+    });
     setPendingProvider(provider);
     trackEvent(analyticsEvents.loginProviderClick, {
       provider,

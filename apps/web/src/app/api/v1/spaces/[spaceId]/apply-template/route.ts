@@ -1,19 +1,16 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-import { z } from "zod";
 
 import {
   jsonError,
   requireAuthenticatedUser,
 } from "@/app/api/v1/counseling-records/_shared";
-import { applyTemplateToSpace } from "@/server/services/space-templates-service";
-import { ServiceError } from "@/server/services/service-error";
+import {
+  applySpaceTemplateInSpring,
+  SpringBackendHttpError,
+} from "@/server/space-templates-spring-client";
 
 export const runtime = "nodejs";
-
-const bodySchema = z.object({
-  templateId: z.string().min(1),
-});
 
 export async function POST(
   request: NextRequest,
@@ -31,16 +28,13 @@ export async function POST(
     return jsonError("요청 본문이 올바른 JSON 형식이 아닙니다.", 400);
   }
 
-  const parsed = bodySchema.safeParse(body);
-  if (!parsed.success)
-    return jsonError("요청 데이터가 올바르지 않습니다.", 400);
-
   try {
-    await applyTemplateToSpace(parsed.data.templateId, spaceId, currentUser.id);
-    return NextResponse.json({ ok: true });
+    const result = await applySpaceTemplateInSpring(spaceId, currentUser.id, body as { templateId: string });
+    return NextResponse.json(result);
   } catch (error) {
-    if (error instanceof ServiceError)
+    if (error instanceof SpringBackendHttpError) {
       return jsonError(error.message, error.status);
+    }
     console.error(error);
     return jsonError("템플릿을 적용하지 못했습니다.", 500);
   }

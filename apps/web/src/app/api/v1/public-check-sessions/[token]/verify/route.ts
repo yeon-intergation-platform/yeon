@@ -7,8 +7,10 @@ import {
 
 import { jsonError } from "@/app/api/v1/counseling-records/_shared";
 import { applyRememberedPublicCheckIdentityCookie } from "@/server/services/public-check-device-cookie";
-import { verifyPublicCheckIdentity } from "@/server/services/public-check-service";
-import { ServiceError } from "@/server/services/service-error";
+import {
+  PublicCheckRuntimeSpringBackendHttpError,
+  verifyPublicCheckIdentityInSpring,
+} from "@/server/public-check-runtime-spring-client";
 
 export const runtime = "nodejs";
 
@@ -32,10 +34,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
   }
 
   try {
-    const outcome = await verifyPublicCheckIdentity({
-      token,
-      body: parsed.data,
-    });
+    const outcome = await verifyPublicCheckIdentityInSpring(token, parsed.data);
     const response = NextResponse.json(
       verifyPublicCheckIdentityResultSchema.parse(outcome.result),
     );
@@ -50,7 +49,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
 
     return response;
   } catch (error) {
-    if (error instanceof ServiceError) {
+    if (error instanceof PublicCheckRuntimeSpringBackendHttpError) {
       return jsonError(error.message, error.status);
     }
 

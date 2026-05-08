@@ -2,7 +2,12 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { createTypingRaceSeedBodySchema } from "@yeon/api-contract/typing-decks";
 
-import { createTypingRaceSeed } from "@/server/services/typing-decks-service";
+import {
+  TypingDecksSpringBackendHttpError,
+  createTypingRaceSeedInSpring,
+} from "@/server/typing-decks-spring-client";
+import { createTypingRaceSeedFromDetail } from "@/server/typing-race-seed";
+import { getDefaultTypingDeckDetail } from "@/server/typing-deck-defaults";
 import { ServiceError } from "@/server/services/service-error";
 
 import { getOptionalAuthenticatedUser, jsonError } from "../../_shared";
@@ -29,15 +34,32 @@ export async function POST(
     return jsonError("요청 데이터가 올바르지 않습니다.", 400);
   }
 
+  const defaultDetail = getDefaultTypingDeckDetail(deckId);
+  if (defaultDetail) {
+    try {
+      return NextResponse.json({
+        raceSeed: createTypingRaceSeedFromDetail(
+          defaultDetail,
+          parsed.data.passageId,
+        ),
+      });
+    } catch (error) {
+      if (error instanceof ServiceError) {
+        return jsonError(error.message, error.status);
+      }
+      throw error;
+    }
+  }
+
   try {
-    const raceSeed = await createTypingRaceSeed(
+    const raceSeed = await createTypingRaceSeedInSpring(
       currentUser?.id ?? null,
       deckId,
       parsed.data,
     );
-    return NextResponse.json({ raceSeed });
+    return NextResponse.json(raceSeed);
   } catch (error) {
-    if (error instanceof ServiceError) {
+    if (error instanceof TypingDecksSpringBackendHttpError) {
       return jsonError(error.message, error.status);
     }
     console.error(error);

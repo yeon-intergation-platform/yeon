@@ -1,10 +1,10 @@
 import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { ServiceError } from "@/server/services/service-error";
+import { CounselingRecordAudioSpringBackendHttpError } from "@/server/counseling-record-audio-spring-client";
 
 const mockRequireAuthenticatedUser = vi.fn();
-const mockGetCounselingRecordAudio = vi.fn();
+const mockFetchCounselingRecordAudioFromSpring = vi.fn();
 
 vi.mock("../../_shared", () => ({
   jsonError: (message: string, status: number) =>
@@ -12,21 +12,18 @@ vi.mock("../../_shared", () => ({
   requireAuthenticatedUser: (...args: unknown[]) =>
     mockRequireAuthenticatedUser(...args),
 }));
-vi.mock("@/server/services/counseling-records-service", () => ({
-  getCounselingRecordAudio: (...args: unknown[]) =>
-    mockGetCounselingRecordAudio(...args),
-}));
+vi.mock("@/server/counseling-record-audio-spring-client", async () => {
+  const actual = await vi.importActual<
+    typeof import("@/server/counseling-record-audio-spring-client")
+  >("@/server/counseling-record-audio-spring-client");
+  return {
+    ...actual,
+    fetchCounselingRecordAudioFromSpring: (...args: unknown[]) =>
+      mockFetchCounselingRecordAudioFromSpring(...args),
+  };
+});
 
 import { GET } from "../audio/route";
-
-function makeStream(text: string) {
-  return new ReadableStream<Uint8Array>({
-    start(controller) {
-      controller.enqueue(new TextEncoder().encode(text));
-      controller.close();
-    },
-  });
-}
 
 describe("audio route", () => {
   beforeEach(() => {
@@ -57,12 +54,12 @@ describe("audio route", () => {
       currentUser: { id: "user-1" },
       response: null,
     });
-    mockGetCounselingRecordAudio.mockResolvedValue({
-      stream: makeStream("audio"),
+    mockFetchCounselingRecordAudioFromSpring.mockResolvedValue({
+      bytes: new Uint8Array(new TextEncoder().encode("audio")),
       status: 206,
       mimeType: "audio/webm",
-      contentLength: 5,
-      originalName: "상담.webm",
+      contentLength: "5",
+      contentDisposition: "inline; filename*=UTF-8''%EC%83%81%EB%8B%B4.webm",
       contentRange: "bytes 0-4/10",
     });
 
@@ -76,23 +73,26 @@ describe("audio route", () => {
       { params: Promise.resolve({ recordId: "record-1" }) },
     );
 
-    expect(mockGetCounselingRecordAudio).toHaveBeenCalledWith(
-      "user-1",
-      "record-1",
-      "bytes=0-4",
-    );
+    expect(mockFetchCounselingRecordAudioFromSpring).toHaveBeenCalledWith({
+      userId: "user-1",
+      recordId: "record-1",
+      rangeHeader: "bytes=0-4",
+    });
     expect(response.status).toBe(206);
     expect(response.headers.get("content-range")).toBe("bytes 0-4/10");
     expect(response.headers.get("content-type")).toBe("audio/webm");
   });
 
-  it("ServiceError면 그대로 반환한다", async () => {
+  it("Spring 오류면 그대로 반환한다", async () => {
     mockRequireAuthenticatedUser.mockResolvedValue({
       currentUser: { id: "user-1" },
       response: null,
     });
-    mockGetCounselingRecordAudio.mockRejectedValue(
-      new ServiceError(404, "파일이 없습니다."),
+    mockFetchCounselingRecordAudioFromSpring.mockRejectedValue(
+      new CounselingRecordAudioSpringBackendHttpError(
+        404,
+        "파일이 없습니다.",
+      ),
     );
 
     const response = await GET(

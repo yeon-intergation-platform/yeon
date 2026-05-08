@@ -1,0 +1,30 @@
+package world.yeon.backend.member_counseling_records.dto;
+
+public record MemberCounselingRecordItemResponse(
+	String id,
+	String studentName,
+	String sessionTitle,
+	String counselingType,
+	String counselorName,
+	String status,
+	String recordSource,
+	String audioOriginalName,
+	String audioMimeType,
+	long audioByteSize,
+	Integer audioDurationMs,
+	String processingStage,
+	Integer processingProgress,
+	String processingMessage,
+	String analysisStatus,
+	Integer analysisProgress,
+	String analysisErrorMessage,
+	String errorMessage,
+	String language,
+	String sttModel,
+	String createdAt,
+	String updatedAt,
+	String transcriptionCompletedAt,
+	String analysisCompletedAt,
+	String spaceId,
+	String memberId
+) {}

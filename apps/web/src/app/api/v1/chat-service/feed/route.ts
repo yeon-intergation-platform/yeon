@@ -7,9 +7,10 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
 import {
-  createChatServiceFeedPost,
-  listChatServiceFeed,
-} from "@/server/services/chat-service/feed-service";
+  ChatServiceFeedSpringBackendHttpError,
+  createChatServiceFeedPostInSpring,
+  fetchChatServiceFeedFromSpring,
+} from "@/server/chat-service-feed-spring-client";
 import { ServiceError } from "@/server/services/service-error";
 
 import {
@@ -21,11 +22,14 @@ import {
 export async function GET(request: NextRequest) {
   try {
     const { profile } = await requireChatServiceAuth(request);
-    const response = await listChatServiceFeed(profile.id);
+    const response = await fetchChatServiceFeedFromSpring(profile.id);
 
     return NextResponse.json(chatServiceListFeedResponseSchema.parse(response));
   } catch (error) {
     if (error instanceof ServiceError) {
+      return jsonChatServiceError(error.message, error.status);
+    }
+    if (error instanceof ChatServiceFeedSpringBackendHttpError) {
       return jsonChatServiceError(error.message, error.status);
     }
 
@@ -44,10 +48,10 @@ export async function POST(request: NextRequest) {
       return jsonChatServiceError("피드 글 입력값이 올바르지 않습니다.", 400);
     }
 
-    const response = await createChatServiceFeedPost(
-      profile.id,
-      parsedBody.data.body,
-    );
+    const response = await createChatServiceFeedPostInSpring({
+      currentProfileId: profile.id,
+      body: parsedBody.data.body,
+    });
 
     return NextResponse.json(
       chatServiceCreateFeedPostResponseSchema.parse(response),
@@ -57,6 +61,9 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     if (error instanceof ServiceError) {
+      return jsonChatServiceError(error.message, error.status);
+    }
+    if (error instanceof ChatServiceFeedSpringBackendHttpError) {
       return jsonChatServiceError(error.message, error.status);
     }
 

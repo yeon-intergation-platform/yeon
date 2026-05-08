@@ -7,24 +7,22 @@ import {
   requireAuthenticatedUser,
 } from "@/app/api/v1/counseling-records/_shared";
 import {
-  getCardStudyPreference,
-  updateCardStudyPreference,
-} from "@/server/services/card-decks-service";
-import { ServiceError } from "@/server/services/service-error";
+  CardDecksSpringBackendHttpError,
+  fetchCardStudyPreferenceFromSpring,
+  updateCardStudyPreferenceInSpring,
+} from "@/server/card-decks-spring-client";
 
 export const runtime = "nodejs";
 
 export async function GET(request: NextRequest) {
   const { currentUser, response } = await requireAuthenticatedUser(request);
-  if (!currentUser) {
-    return response;
-  }
+  if (!currentUser) return response;
 
   try {
-    const studyMode = await getCardStudyPreference(currentUser.id);
-    return NextResponse.json({ studyMode });
+    const studyMode = await fetchCardStudyPreferenceFromSpring(currentUser.id);
+    return NextResponse.json(studyMode);
   } catch (error) {
-    if (error instanceof ServiceError) {
+    if (error instanceof CardDecksSpringBackendHttpError) {
       return jsonError(error.message, error.status);
     }
     console.error(error);
@@ -34,9 +32,7 @@ export async function GET(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   const { currentUser, response } = await requireAuthenticatedUser(request);
-  if (!currentUser) {
-    return response;
-  }
+  if (!currentUser) return response;
 
   let body: unknown;
   try {
@@ -51,13 +47,10 @@ export async function PATCH(request: NextRequest) {
   }
 
   try {
-    const studyMode = await updateCardStudyPreference(
-      currentUser.id,
-      parsed.data.studyMode,
-    );
-    return NextResponse.json({ studyMode });
+    const studyMode = await updateCardStudyPreferenceInSpring(currentUser.id, parsed.data);
+    return NextResponse.json(studyMode);
   } catch (error) {
-    if (error instanceof ServiceError) {
+    if (error instanceof CardDecksSpringBackendHttpError) {
       return jsonError(error.message, error.status);
     }
     console.error(error);

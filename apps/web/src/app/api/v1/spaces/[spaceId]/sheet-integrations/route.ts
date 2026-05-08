@@ -1,19 +1,16 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { eq } from "drizzle-orm";
-
-import { getDb } from "@/server/db";
-import { sheetIntegrations } from "@/server/db/schema";
-import { extractSheetId } from "@/server/services/google-sheets-service";
-import { ServiceError } from "@/server/services/service-error";
-import { requireSpaceInternalIdByPublicId } from "@/server/services/spaces-service";
-import { generatePublicId, ID_PREFIX } from "@/server/lib/public-id";
 
 import {
   jsonError,
   requireAuthenticatedUser,
 } from "@/app/api/v1/counseling-records/_shared";
+import {
+  createSheetIntegrationInSpring,
+  fetchSheetIntegrationsFromSpring,
+  SheetIntegrationsSpringBackendHttpError,
+} from "@/server/sheet-integrations-spring-client";
 
 export const runtime = "nodejs";
 
@@ -35,27 +32,17 @@ export async function GET(
   { params }: { params: Promise<{ spaceId: string }> },
 ) {
   const { currentUser, response } = await requireAuthenticatedUser(request);
-
-  if (!currentUser) {
-    return response;
-  }
+  if (!currentUser) return response;
 
   const { spaceId } = await params;
 
   try {
-    const spaceInternalId = await requireSpaceInternalIdByPublicId(spaceId);
-    const db = getDb();
-    const integrationList = await db
-      .select()
-      .from(sheetIntegrations)
-      .where(eq(sheetIntegrations.spaceId, spaceInternalId));
-
-    return NextResponse.json({ integrations: integrationList });
+    const result = await fetchSheetIntegrationsFromSpring(spaceId, currentUser.id);
+    return NextResponse.json(result);
   } catch (error) {
-    if (error instanceof ServiceError) {
+    if (error instanceof SheetIntegrationsSpringBackendHttpError) {
       return jsonError(error.message, error.status);
     }
-
     console.error(error);
     return jsonError("시트 연동 목록을 불러오지 못했습니다.", 500);
   }
@@ -66,15 +53,11 @@ export async function POST(
   { params }: { params: Promise<{ spaceId: string }> },
 ) {
   const { currentUser, response } = await requireAuthenticatedUser(request);
-
-  if (!currentUser) {
-    return response;
-  }
+  if (!currentUser) return response;
 
   const { spaceId } = await params;
 
   let body: unknown;
-
   try {
     body = await request.json();
   } catch {
@@ -82,35 +65,17 @@ export async function POST(
   }
 
   const parsed = createSheetIntegrationBodySchema.safeParse(body);
-
   if (!parsed.success) {
     return jsonError("요청 데이터가 올바르지 않습니다.", 400);
   }
 
   try {
-    const spaceInternalId = await requireSpaceInternalIdByPublicId(spaceId);
-    const sheetId = extractSheetId(parsed.data.sheetUrl);
-    const db = getDb();
-
-    const [integration] = await db
-      .insert(sheetIntegrations)
-      .values({
-        publicId: generatePublicId(ID_PREFIX.sheetIntegrations),
-        spaceId: spaceInternalId,
-        sheetUrl: parsed.data.sheetUrl,
-        sheetId,
-        dataType: parsed.data.dataType,
-        columnMapping: parsed.data.columnMapping ?? null,
-        updatedAt: new Date(),
-      })
-      .returning();
-
-    return NextResponse.json({ integration }, { status: 201 });
+    const result = await createSheetIntegrationInSpring(spaceId, currentUser.id, parsed.data);
+    return NextResponse.json(result, { status: 201 });
   } catch (error) {
-    if (error instanceof ServiceError) {
+    if (error instanceof SheetIntegrationsSpringBackendHttpError) {
       return jsonError(error.message, error.status);
     }
-
     console.error(error);
     return jsonError("시트 연동을 추가하지 못했습니다.", 500);
   }

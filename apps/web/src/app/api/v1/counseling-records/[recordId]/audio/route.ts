@@ -1,8 +1,10 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
-import { getCounselingRecordAudio } from "@/server/services/counseling-records-service";
-import { ServiceError } from "@/server/services/service-error";
+import {
+  CounselingRecordAudioSpringBackendHttpError,
+  fetchCounselingRecordAudioFromSpring,
+} from "@/server/counseling-record-audio-spring-client";
 
 import { jsonError, requireAuthenticatedUser } from "../../_shared";
 
@@ -24,18 +26,26 @@ export async function GET(request: NextRequest, context: RouteContext) {
   const { recordId } = await context.params;
 
   try {
-    const audio = await getCounselingRecordAudio(
-      currentUser.id,
+    const audio = await fetchCounselingRecordAudioFromSpring({
+      userId: currentUser.id,
       recordId,
-      request.headers.get("range"),
-    );
+      rangeHeader: request.headers.get("range"),
+    });
 
-    return new NextResponse(audio.stream, {
+    return new NextResponse(audio.bytes, {
       status: audio.status,
       headers: {
         "content-type": audio.mimeType,
-        "content-length": String(audio.contentLength),
-        "content-disposition": `inline; filename*=UTF-8''${encodeURIComponent(audio.originalName)}`,
+        ...(audio.contentLength
+          ? {
+              "content-length": audio.contentLength,
+            }
+          : {}),
+        ...(audio.contentDisposition
+          ? {
+              "content-disposition": audio.contentDisposition,
+            }
+          : {}),
         "cache-control": "private, no-store",
         "accept-ranges": "bytes",
         ...(audio.contentRange
@@ -46,7 +56,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
       },
     });
   } catch (error) {
-    if (error instanceof ServiceError) {
+    if (error instanceof CounselingRecordAudioSpringBackendHttpError) {
       return jsonError(error.message, error.status);
     }
 

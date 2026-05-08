@@ -1,0 +1,8 @@
+import { beforeEach, describe, expect, test, vi } from "vitest";
+const requireAuthenticatedUser = vi.fn();
+vi.mock("@/app/api/v1/counseling-records/_shared", () => ({ jsonError: (message:string,status:number)=>Response.json({message},{status}), requireAuthenticatedUser }));
+describe('GET /api/v1/members/[memberId]', () => { beforeEach(() => { vi.resetModules(); vi.clearAllMocks(); vi.unstubAllGlobals(); });
+ test('Spring owned member 결과를 반환한다', async () => { requireAuthenticatedUser.mockResolvedValue({ currentUser:{id:'user-1'}, response:null }); process.env.SPRING_INTERNAL_TOKEN='internal-token'; vi.stubGlobal('fetch', vi.fn()
+ .mockResolvedValueOnce(new Response(JSON.stringify({ member:{ id:'mem_1', spaceId:'space_alpha', name:'홍길동', email:null, phone:null, status:'active', initialRiskLevel:null, createdAt:'2026-05-08T00:00:00.000Z', updatedAt:'2026-05-08T00:00:00.000Z' } }), { status:200, headers:{'content-type':'application/json'} } ))
+ .mockResolvedValueOnce(new Response(JSON.stringify({ profiles:[{ id:'mem_1', aiRiskLevel:null, aiRiskSummary:null, aiRiskSignals:[], riskSource:null, counselingRecordCount:0, lastCounselingAt:null }] }), { status:200, headers:{'content-type':'application/json'} } )));
+ const { GET } = await import('../route'); const response = await GET(new Request('http://localhost/api/v1/members/mem_1') as never, { params: Promise.resolve({ memberId:'mem_1' }) }); const body = await response.json(); expect(response.status).toBe(200); expect(body.member.id).toBe('mem_1'); expect(fetch).toHaveBeenCalledWith('http://127.0.0.1:8081/members/mem_1', expect.objectContaining({ method:'GET' })); }); });

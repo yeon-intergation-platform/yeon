@@ -2,10 +2,8 @@ import type { NextRequest } from "next/server";
 
 import { requireAuthenticatedUser } from "@/app/api/v1/counseling-records/_shared";
 import { handleCloudAnalyzeRoute } from "@/app/api/v1/integrations/_shared";
-import {
-  downloadFile,
-  getValidAccessToken,
-} from "@/server/services/googledrive-service";
+import { downloadGoogleDriveFileFromSpring, GoogleDriveBrowserSpringBackendHttpError } from "@/server/googledrive-browser-spring-client";
+import { ServiceError } from "@/server/services/service-error";
 
 export const runtime = "nodejs";
 
@@ -18,8 +16,22 @@ export async function POST(request: NextRequest) {
     userId: currentUser.id,
     provider: "googledrive",
     providerLabel: "Google Drive",
-    getAccessToken: getValidAccessToken,
-    downloadFile,
+    getAccessToken: async () => "spring-transport",
+    downloadFile: async (_accessToken, fileId, mimeType) => {
+      try {
+        const downloaded = await downloadGoogleDriveFileFromSpring({
+          userId: currentUser.id,
+          fileId,
+          mimeType,
+        });
+        return Buffer.from(downloaded.bytes);
+      } catch (error) {
+        if (error instanceof GoogleDriveBrowserSpringBackendHttpError) {
+          throw new ServiceError(error.status, error.message);
+        }
+        throw error;
+      }
+    },
     requireMimeType: true,
   });
 }

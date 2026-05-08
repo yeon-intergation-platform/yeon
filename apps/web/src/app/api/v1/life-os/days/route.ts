@@ -1,15 +1,19 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { upsertLifeOsDayBodySchema } from "@yeon/api-contract/life-os";
+import {
+  lifeOsDaysResponseSchema,
+  lifeOsDayResponseSchema,
+  upsertLifeOsDayBodySchema,
+} from "@yeon/api-contract/life-os";
 
 import {
   jsonError,
   requireAuthenticatedUser,
 } from "@/app/api/v1/counseling-records/_shared";
 import {
-  listLifeOsDays,
-  upsertLifeOsDay,
-} from "@/server/services/life-os-service";
-import { ServiceError } from "@/server/services/service-error";
+  createLifeOsDayInSpring,
+  fetchLifeOsDaysFromSpring,
+  LifeOsSpringBackendHttpError,
+} from "@/server/life-os-spring-client";
 
 export const runtime = "nodejs";
 
@@ -20,10 +24,10 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const days = await listLifeOsDays(currentUser.id);
-    return NextResponse.json({ days });
+    const days = await fetchLifeOsDaysFromSpring(currentUser.id);
+    return NextResponse.json(lifeOsDaysResponseSchema.parse(days));
   } catch (error) {
-    if (error instanceof ServiceError) {
+    if (error instanceof LifeOsSpringBackendHttpError) {
       return jsonError(error.message, error.status);
     }
     console.error(error);
@@ -50,10 +54,10 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const day = await upsertLifeOsDay(currentUser.id, parsed.data);
-    return NextResponse.json({ day }, { status: 201 });
+    const day = await createLifeOsDayInSpring(currentUser.id, parsed.data);
+    return NextResponse.json(lifeOsDayResponseSchema.parse(day), { status: 201 });
   } catch (error) {
-    if (error instanceof ServiceError) {
+    if (error instanceof LifeOsSpringBackendHttpError) {
       return jsonError(error.message, error.status);
     }
     console.error(error);

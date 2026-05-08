@@ -6,10 +6,9 @@ import {
   requireAuthenticatedUser,
 } from "@/app/api/v1/counseling-records/_shared";
 import {
-  duplicateTemplate,
-  summarizeSpaceTemplate,
-} from "@/server/services/space-templates-service";
-import { ServiceError } from "@/server/services/service-error";
+  duplicateSpaceTemplateInSpring,
+  SpringBackendHttpError,
+} from "@/server/space-templates-spring-client";
 
 export const runtime = "nodejs";
 
@@ -23,14 +22,12 @@ export async function POST(
   const { templateId } = await params;
 
   try {
-    const template = await duplicateTemplate(templateId, currentUser.id);
-    return NextResponse.json(
-      { template: summarizeSpaceTemplate(template) },
-      { status: 201 },
-    );
+    const result = await duplicateSpaceTemplateInSpring(templateId, currentUser.id);
+    return NextResponse.json(result, { status: 201 });
   } catch (error) {
-    if (error instanceof ServiceError)
+    if (error instanceof SpringBackendHttpError) {
       return jsonError(error.message, error.status);
+    }
     console.error(error);
     return jsonError("템플릿을 복제하지 못했습니다.", 500);
   }

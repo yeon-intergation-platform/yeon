@@ -11,9 +11,11 @@ import {
   requireAuthenticatedUser,
   withHandler,
 } from "@/app/api/v1/counseling-records/_shared";
-import { createPublicCheckSession } from "@/server/services/public-check-service";
-import { ServiceError } from "@/server/services/service-error";
-import { listSpaceStudentBoard } from "@/server/services/student-board-service";
+import { createPublicCheckSessionInSpring, PublicCheckSessionsSpringBackendHttpError } from "@/server/public-check-sessions-spring-client";
+import {
+  fetchStudentBoardFromSpring,
+  StudentBoardSpringBackendHttpError,
+} from "@/server/student-board-spring-client";
 
 export const runtime = "nodejs";
 
@@ -38,13 +40,22 @@ export async function GET(request: NextRequest, context: RouteContext) {
       return jsonError("보드 이력 기간 값이 올바르지 않습니다.", 400);
     }
 
-    const data = await listSpaceStudentBoard(
-      currentUser.id,
-      spaceId,
-      periodResult.data,
-    );
+    try {
+      const data = await fetchStudentBoardFromSpring(
+        spaceId,
+        currentUser.id,
+        periodResult.data,
+      );
 
-    return NextResponse.json(studentBoardResponseSchema.parse(data));
+      return NextResponse.json(studentBoardResponseSchema.parse(data));
+    } catch (error) {
+      if (error instanceof StudentBoardSpringBackendHttpError) {
+        return jsonError(error.message, error.status);
+      }
+
+      console.error(error);
+      return jsonError("학생 보드를 불러오지 못했습니다.", 500);
+    }
   });
 }
 
@@ -70,15 +81,15 @@ export async function POST(request: NextRequest, context: RouteContext) {
   }
 
   try {
-    const session = await createPublicCheckSession({
-      userId: currentUser.id,
+    const { session } = await createPublicCheckSessionInSpring(
       spaceId,
-      body: parsed.data,
-    });
+      currentUser.id,
+      parsed.data,
+    );
 
     return NextResponse.json({ session }, { status: 201 });
   } catch (error) {
-    if (error instanceof ServiceError) {
+    if (error instanceof PublicCheckSessionsSpringBackendHttpError) {
       return jsonError(error.message, error.status);
     }
 

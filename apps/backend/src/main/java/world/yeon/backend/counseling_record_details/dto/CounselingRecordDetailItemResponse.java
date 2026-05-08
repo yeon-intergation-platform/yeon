@@ -1,0 +1,46 @@
+package world.yeon.backend.counseling_record_details.dto;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import java.util.List;
+
+public record CounselingRecordDetailItemResponse(
+	String id,
+	String spaceId,
+	String memberId,
+	String studentName,
+	String sessionTitle,
+	String counselingType,
+	String counselorName,
+	String status,
+	String recordSource,
+	String preview,
+	List<String> tags,
+	String audioOriginalName,
+	String audioMimeType,
+	int audioByteSize,
+	Integer audioDurationMs,
+	int transcriptSegmentCount,
+	int transcriptTextLength,
+	String processingStage,
+	int processingProgress,
+	String processingMessage,
+	int processingChunkCount,
+	int processingChunkCompletedCount,
+	int transcriptionAttemptCount,
+	String analysisStatus,
+	int analysisProgress,
+	String analysisErrorMessage,
+	int analysisAttemptCount,
+	String language,
+	String sttModel,
+	String errorMessage,
+	String createdAt,
+	String updatedAt,
+	String transcriptionCompletedAt,
+	String analysisCompletedAt,
+	String transcriptText,
+	List<CounselingRecordTranscriptSegmentResponse> transcriptSegments,
+	String audioUrl,
+	JsonNode analysisResult,
+	List<CounselingRecordAssistantMessageResponse> assistantMessages
+) {}

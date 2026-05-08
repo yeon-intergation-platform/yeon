@@ -40,7 +40,7 @@ import {
   type TypingRaceSeed,
 } from "./use-typing-settings";
 import { resolveTypingRoomSelectedDeck } from "./typing-room-selection";
-import { analyticsEvents, trackEvent } from "@/lib/analytics";
+import { trackEvent } from "@/lib/analytics";
 
 type TypingRoomScreenProps = {
   roomId?: string;
@@ -152,6 +152,7 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
   const [useDefaultFallback, setUseDefaultFallback] = useState(false);
   const [copied, setCopied] = useState(false);
   const trackedRoomEntryRef = useRef<string | null>(null);
+  const hasTrackedRoomCreateSuccessRef = useRef(false);
 
   useEffect(() => {
     if (mode !== "create") return;
@@ -215,6 +216,33 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
     createRoom: deckAwareCreateRoomOptions,
   });
 
+  useEffect(() => {
+    if (mode !== "create") {
+      return;
+    }
+
+    if (!race.roomId || hasTrackedRoomCreateSuccessRef.current) {
+      return;
+    }
+
+    hasTrackedRoomCreateSuccessRef.current = true;
+    trackEvent("room_create_success", {
+      source: "typing_room_create",
+      room_id: race.roomId,
+      visibility: createRoomOptions.visibility,
+      language: createRoomOptions.language,
+      deck_id: selectedDeck.id,
+      deck_title: selectedDeck.title,
+    });
+  }, [
+    createRoomOptions.language,
+    createRoomOptions.visibility,
+    mode,
+    race.roomId,
+    selectedDeck.id,
+    selectedDeck.title,
+  ]);
+
   const room = race.roomSnapshot;
   const me =
     room?.participants.find((participant) => participant.id === race.mySeat) ??
@@ -245,10 +273,9 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
 
     trackedRoomEntryRef.current = trackingKey;
     trackEvent(
-      mode === "create"
-        ? analyticsEvents.typingRoomCreated
-        : analyticsEvents.typingRoomJoined,
+      mode === "create" ? "room_created" : "room_joined",
       {
+        source: "typing_room",
         room_id: race.roomId,
         visibility: room.visibility,
         current_participants: room.currentParticipants,
@@ -265,7 +292,8 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
     if (!inviteUrl) return;
     try {
       await navigator.clipboard.writeText(inviteUrl);
-      trackEvent(analyticsEvents.typingRoomInviteCopy, {
+      trackEvent("room_invite_copy", {
+        source: "typing_room",
         room_id: race.roomId ?? roomId ?? null,
         mode,
       });

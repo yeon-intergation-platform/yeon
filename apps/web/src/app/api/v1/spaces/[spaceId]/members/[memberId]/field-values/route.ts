@@ -7,11 +7,10 @@ import {
   requireAuthenticatedUser,
 } from "@/app/api/v1/counseling-records/_shared";
 import {
-  bulkUpsertFieldValues,
-  getFieldValues,
-  getFieldValuesForDefinitions,
-} from "@/server/services/member-field-values-service";
-import { ServiceError } from "@/server/services/service-error";
+  bulkUpsertMemberFieldValuesInSpring,
+  fetchMemberFieldValuesFromSpring,
+  MemberFieldValuesSpringBackendHttpError,
+} from "@/server/member-field-values-spring-client";
 
 export const runtime = "nodejs";
 
@@ -28,17 +27,15 @@ export async function GET(
     .filter(Boolean);
 
   try {
-    const values =
-      fieldDefinitionIds.length > 0
-        ? await getFieldValuesForDefinitions(
-            memberId,
-            spaceId,
-            fieldDefinitionIds,
-          )
-        : await getFieldValues(memberId, spaceId);
-    return NextResponse.json({ values });
+    const result = await fetchMemberFieldValuesFromSpring(
+      spaceId,
+      memberId,
+      currentUser.id,
+      fieldDefinitionIds,
+    );
+    return NextResponse.json(result);
   } catch (error) {
-    if (error instanceof ServiceError)
+    if (error instanceof MemberFieldValuesSpringBackendHttpError)
       return jsonError(error.message, error.status);
     console.error(error);
     return jsonError("필드 값을 불러오지 못했습니다.", 500);
@@ -66,15 +63,15 @@ export async function PATCH(
     return jsonError("요청 데이터가 올바르지 않습니다.", 400);
 
   try {
-    await bulkUpsertFieldValues(memberId, spaceId, parsed.data.values);
-    const values = await getFieldValuesForDefinitions(
-      memberId,
+    const result = await bulkUpsertMemberFieldValuesInSpring(
       spaceId,
-      parsed.data.values.map((value) => value.fieldDefinitionId),
+      memberId,
+      currentUser.id,
+      parsed.data,
     );
-    return NextResponse.json({ ok: true, values });
+    return NextResponse.json(result);
   } catch (error) {
-    if (error instanceof ServiceError)
+    if (error instanceof MemberFieldValuesSpringBackendHttpError)
       return jsonError(error.message, error.status);
     console.error(error);
     return jsonError("필드 값을 저장하지 못했습니다.", 500);
