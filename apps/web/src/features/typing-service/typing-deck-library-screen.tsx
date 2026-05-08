@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
-import { analyticsEvents, trackEvent } from "@/lib/analytics";
+import { trackEvent } from "@/lib/analytics";
 import {
   TYPING_DECK_LANGUAGE_OPTIONS,
   type TypingDeckDto,
@@ -100,6 +100,17 @@ function DeckLibraryCard({ deck }: { deck: TypingDeckDto }) {
     });
   }
 
+  function handleDeckOpen() {
+    trackEvent("deck_open", {
+      source: "typing_deck_library",
+      deck_id: deck.id,
+      deck_title: deck.title,
+      deck_source: deck.source,
+      deck_visibility: deck.visibility,
+      deck_language: deck.languageTag,
+    });
+  }
+
   return (
     <article className="group relative flex min-h-[230px] flex-col rounded-3xl border border-[#e5e5e5] bg-white p-5 transition-colors hover:border-[#111]">
       <Link
@@ -142,7 +153,7 @@ function DeckLibraryCard({ deck }: { deck: TypingDeckDto }) {
             onClick={handleDeckOpen}
             className="rounded-xl border border-[#e5e5e5] bg-white px-4 py-2 text-[13px] font-semibold text-[#111] no-underline transition-colors hover:border-[#111]"
             onClick={() =>
-              trackEvent(analyticsEvents.typingDeckOpen, {
+              trackEvent("deck_open", {
                 ...detailParams,
                 source: "deck_card_button",
               })
@@ -154,7 +165,7 @@ function DeckLibraryCard({ deck }: { deck: TypingDeckDto }) {
             href={practiceHref}
             className="rounded-xl bg-[#111] px-4 py-2 text-[13px] font-semibold text-white no-underline transition-colors hover:bg-[#333]"
             onClick={() =>
-              trackEvent(analyticsEvents.typingPracticeSelect, {
+              trackEvent("typing_practice_select", {
                 ...detailParams,
                 source: "deck_card_button",
               })
@@ -239,7 +250,7 @@ export function TypingDeckLibraryScreen({
   const hasAnyDecks = Boolean(decks[0]);
   const openCreateModal = (source: string) => {
     setCreateModalOpen(true);
-    trackEvent(analyticsEvents.typingDeckCreateOpen, {
+    trackEvent("typing_deck_create_open", {
       source,
       scope,
       language_filter: languageFilter,
@@ -304,7 +315,7 @@ export function TypingDeckLibraryScreen({
               href="/typing-service/practice"
               className="rounded-xl border border-[#e5e5e5] bg-white px-5 py-3 text-[14px] font-semibold text-[#111] no-underline transition-colors hover:border-[#111]"
               onClick={() =>
-                trackEvent(analyticsEvents.typingPracticeSelect, {
+                trackEvent("typing_practice_select", {
                   source: "library_hero",
                   deck_scope: scope,
                 })
