@@ -1,3 +1,9 @@
+import {
+  calculateTypingSpeedMetrics as calculateSharedTypingSpeedMetrics,
+  type TypingDeckLanguageTag,
+  type TypingRoomLanguage,
+} from "@yeon/race-shared";
+
 export function calculateAccuracy(prompt: string, input: string) {
   const promptChars = Array.from(prompt);
   const inputChars = Array.from(input);
@@ -9,10 +15,12 @@ export function calculateAccuracy(prompt: string, input: string) {
   return Math.max(0, Math.round((matched / inputChars.length) * 100));
 }
 
-export function calculateTypingSpeed(input: string, elapsedSeconds: number) {
-  const len = Array.from(input).length;
-  if (elapsedSeconds <= 0 || len === 0) return 0;
-  return Math.round((len / elapsedSeconds) * 60);
+export function calculateTypingSpeedMetrics(
+  input: string,
+  elapsedSeconds: number,
+  source: TypingRoomLanguage | TypingDeckLanguageTag | "ko" | "en" | undefined
+) {
+  return calculateSharedTypingSpeedMetrics(input, elapsedSeconds, source);
 }
 
 export function getProgress(prompt: string, input: string) {

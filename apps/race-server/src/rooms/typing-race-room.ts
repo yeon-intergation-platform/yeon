@@ -6,6 +6,7 @@ import {
   TYPING_RACE_LANE_ACCENTS,
   TYPING_RACE_LANE_ROLE,
   TYPING_RACE_STAGE,
+  TYPING_SPEED_STYLE,
   TYPING_ROOM_DIFFICULTY,
   TYPING_ROOM_LANGUAGE,
   TYPING_ROOM_MODE,
@@ -15,8 +16,11 @@ import {
   calculateTypingScore,
   clampPercent,
   clampRaceProgress,
+  countTypingMetricUnits,
+  getTypingDisplayUnit,
   normalizeNonNegativeInteger,
   rankTypingResults,
+  resolveTypingSpeedStyle,
   toWpmFromCpm,
   type MatchJoinMessage,
   type RaceFinishMessage,
@@ -71,13 +75,27 @@ const MAX_SEED_PROMPT_LENGTH = 4000;
 const MAX_SEED_ID_LENGTH = 120;
 const MAX_SEED_LABEL_LENGTH = 120;
 const MAX_REASONABLE_CPM = 1200;
-const TYPING_RACE_SEED_FALLBACK_SECRET =
-  "yeon-local-typing-race-seed-secret";
+const TYPING_RACE_SEED_FALLBACK_SECRET = "yeon-local-typing-race-seed-secret";
 
 const BENCHMARKS = [
-  { id: "benchmark-1", label: "Guest", accent: TYPING_RACE_LANE_ACCENTS[1], wpm: 265 },
-  { id: "benchmark-2", label: "Guest", accent: TYPING_RACE_LANE_ACCENTS[2], wpm: 241 },
-  { id: "benchmark-3", label: "Guest", accent: TYPING_RACE_LANE_ACCENTS[3], wpm: 227 },
+  {
+    id: "benchmark-1",
+    label: "Guest",
+    accent: TYPING_RACE_LANE_ACCENTS[1],
+    cpm: 265,
+  },
+  {
+    id: "benchmark-2",
+    label: "Guest",
+    accent: TYPING_RACE_LANE_ACCENTS[2],
+    cpm: 241,
+  },
+  {
+    id: "benchmark-3",
+    label: "Guest",
+    accent: TYPING_RACE_LANE_ACCENTS[3],
+    cpm: 227,
+  },
 ] as const;
 
 const DEFAULT_ROOM_SETTINGS: TypingRoomSettings = {
@@ -94,12 +112,20 @@ const DEFAULT_ROOM_SETTINGS: TypingRoomSettings = {
 // 엔진 레인 수가 4개라 maxClients도 4로 제한 (LANE_Y_RATIOS 길이와 일치시켜 5번째 참여자 누락 방지)
 const MAX_PLAYERS_PER_ROOM = TYPING_RACE_DEFAULTS.lobbyMaxPlayers;
 
-function clampOption(value: number | undefined, allowed: readonly number[], fallback: number) {
+function clampOption(
+  value: number | undefined,
+  allowed: readonly number[],
+  fallback: number
+) {
   if (!value) return fallback;
   return allowed.includes(value) ? value : fallback;
 }
 
-function clampText(value: string | undefined, fallback: string, maxLength: number) {
+function clampText(
+  value: string | undefined,
+  fallback: string,
+  maxLength: number
+) {
   const trimmed = value?.trim();
   if (!trimmed) return fallback;
   return trimmed.slice(0, maxLength);
@@ -111,14 +137,22 @@ function optionalText(value: unknown, maxLength: number) {
     : undefined;
 }
 
-function normalizeDeckVisibility(value: unknown): TypingDeckVisibility | undefined {
-  return Object.values(TYPING_DECK_VISIBILITY).includes(value as TypingDeckVisibility)
+function normalizeDeckVisibility(
+  value: unknown
+): TypingDeckVisibility | undefined {
+  return Object.values(TYPING_DECK_VISIBILITY).includes(
+    value as TypingDeckVisibility
+  )
     ? (value as TypingDeckVisibility)
     : undefined;
 }
 
-function normalizeDeckLanguageTag(value: unknown): TypingDeckLanguageTag | undefined {
-  return Object.values(TYPING_DECK_LANGUAGE_TAG).includes(value as TypingDeckLanguageTag)
+function normalizeDeckLanguageTag(
+  value: unknown
+): TypingDeckLanguageTag | undefined {
+  return Object.values(TYPING_DECK_LANGUAGE_TAG).includes(
+    value as TypingDeckLanguageTag
+  )
     ? (value as TypingDeckLanguageTag)
     : undefined;
 }
@@ -166,38 +200,55 @@ function createRoomCode() {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
-function normalizeSettings(options?: TypingRoomCreateMessage): TypingRoomSettings {
+function normalizeSettings(
+  options?: TypingRoomCreateMessage
+): TypingRoomSettings {
   const language = Object.values(TYPING_ROOM_LANGUAGE).includes(
-    options?.language as TypingRoomLanguage,
+    options?.language as TypingRoomLanguage
   )
     ? (options?.language as TypingRoomLanguage)
     : options?.locale === "en"
       ? TYPING_ROOM_LANGUAGE.EN
       : DEFAULT_ROOM_SETTINGS.language;
 
-  const seedVisibility = normalizeDeckVisibility(options?.raceSeed?.deckVisibility);
-  const selectedDeckVisibility = normalizeDeckVisibility(options?.selectedDeckVisibility)
-    ?? seedVisibility;
-  const selectedDeckLanguageTag = normalizeDeckLanguageTag(options?.selectedDeckLanguageTag)
-    ?? normalizeDeckLanguageTag(options?.raceSeed?.languageTag);
-  const selectedDeckId = optionalText(options?.selectedDeckId, MAX_SEED_ID_LENGTH)
-    ?? optionalText(options?.raceSeed?.deckId, MAX_SEED_ID_LENGTH);
-  const seedLobbyTitle = optionalText(options?.raceSeed?.lobbyDeckTitle, MAX_SEED_LABEL_LENGTH);
-  const suppliedLobbyTitle = optionalText(options?.lobbyDeckTitle, MAX_SEED_LABEL_LENGTH)
-    ?? seedLobbyTitle;
+  const seedVisibility = normalizeDeckVisibility(
+    options?.raceSeed?.deckVisibility
+  );
+  const selectedDeckVisibility =
+    normalizeDeckVisibility(options?.selectedDeckVisibility) ?? seedVisibility;
+  const selectedDeckLanguageTag =
+    normalizeDeckLanguageTag(options?.selectedDeckLanguageTag) ??
+    normalizeDeckLanguageTag(options?.raceSeed?.languageTag);
+  const selectedDeckId =
+    optionalText(options?.selectedDeckId, MAX_SEED_ID_LENGTH) ??
+    optionalText(options?.raceSeed?.deckId, MAX_SEED_ID_LENGTH);
+  const seedLobbyTitle = optionalText(
+    options?.raceSeed?.lobbyDeckTitle,
+    MAX_SEED_LABEL_LENGTH
+  );
+  const suppliedLobbyTitle =
+    optionalText(options?.lobbyDeckTitle, MAX_SEED_LABEL_LENGTH) ??
+    seedLobbyTitle;
 
   return {
     title: clampText(options?.title, DEFAULT_ROOM_SETTINGS.title, 40),
     visibility: TYPING_ROOM_VISIBILITY.PUBLIC,
     maxParticipants: Math.min(
       MAX_PLAYERS_PER_ROOM,
-      clampOption(options?.maxParticipants, [2, 4], DEFAULT_ROOM_SETTINGS.maxParticipants),
+      clampOption(
+        options?.maxParticipants,
+        [2, 4],
+        DEFAULT_ROOM_SETTINGS.maxParticipants
+      )
     ),
     textType: TYPING_ROOM_TEXT_TYPE.SHORT,
-    language: language === TYPING_ROOM_LANGUAGE.EN
-      ? TYPING_ROOM_LANGUAGE.EN
-      : TYPING_ROOM_LANGUAGE.KO,
-    difficulty: Object.values(TYPING_ROOM_DIFFICULTY).includes(options?.difficulty as never)
+    language:
+      language === TYPING_ROOM_LANGUAGE.EN
+        ? TYPING_ROOM_LANGUAGE.EN
+        : TYPING_ROOM_LANGUAGE.KO,
+    difficulty: Object.values(TYPING_ROOM_DIFFICULTY).includes(
+      options?.difficulty as never
+    )
       ? options!.difficulty!
       : DEFAULT_ROOM_SETTINGS.difficulty,
     roundCount: TYPING_RACE_DEFAULTS.sliceARoundCount,
@@ -205,9 +256,10 @@ function normalizeSettings(options?: TypingRoomCreateMessage): TypingRoomSetting
     selectedDeckId,
     selectedDeckVisibility,
     selectedDeckLanguageTag,
-    lobbyDeckTitle: selectedDeckVisibility === TYPING_DECK_VISIBILITY.PRIVATE
-      ? PRIVATE_DECK_LOBBY_TITLE
-      : suppliedLobbyTitle,
+    lobbyDeckTitle:
+      selectedDeckVisibility === TYPING_DECK_VISIBILITY.PRIVATE
+        ? PRIVATE_DECK_LOBBY_TITLE
+        : suppliedLobbyTitle,
   };
 }
 
@@ -219,15 +271,16 @@ function createFallbackRaceSeed(language: TypingRoomLanguage): RaceSeedMessage {
     deckVisibility: TYPING_DECK_VISIBILITY.DEFAULT,
     lobbyDeckTitle: DEFAULT_DECK_TITLE,
     participantDeckTitle: DEFAULT_DECK_TITLE,
-    languageTag: language === TYPING_ROOM_LANGUAGE.EN
-      ? TYPING_DECK_LANGUAGE_TAG.EN
-      : TYPING_DECK_LANGUAGE_TAG.KO,
+    languageTag:
+      language === TYPING_ROOM_LANGUAGE.EN
+        ? TYPING_DECK_LANGUAGE_TAG.EN
+        : TYPING_DECK_LANGUAGE_TAG.KO,
   };
 }
 
 function normalizeRaceSeed(
   suppliedSeed: TypingRoomCreateMessage["raceSeed"] | undefined,
-  language: TypingRoomLanguage,
+  language: TypingRoomLanguage
 ): RaceSeedMessage {
   const fallback = createFallbackRaceSeed(language);
   const prompt = optionalText(suppliedSeed?.prompt, MAX_SEED_PROMPT_LENGTH);
@@ -236,30 +289,36 @@ function normalizeRaceSeed(
     return fallback;
   }
 
-  const deckVisibility = normalizeDeckVisibility(suppliedSeed?.deckVisibility)
-    ?? fallback.deckVisibility;
+  const deckVisibility =
+    normalizeDeckVisibility(suppliedSeed?.deckVisibility) ??
+    fallback.deckVisibility;
   if (deckVisibility === TYPING_DECK_VISIBILITY.PRIVATE) {
     return fallback;
   }
 
-  const participantDeckTitle = optionalText(
-    suppliedSeed?.participantDeckTitle,
-    MAX_SEED_LABEL_LENGTH,
-  ) ?? optionalText(suppliedSeed?.lobbyDeckTitle, MAX_SEED_LABEL_LENGTH);
+  const participantDeckTitle =
+    optionalText(suppliedSeed?.participantDeckTitle, MAX_SEED_LABEL_LENGTH) ??
+    optionalText(suppliedSeed?.lobbyDeckTitle, MAX_SEED_LABEL_LENGTH);
   const lobbyDeckTitle =
     optionalText(suppliedSeed?.lobbyDeckTitle, MAX_SEED_LABEL_LENGTH) ??
     participantDeckTitle;
 
   const seed: RaceSeedMessage = {
-    passageId: optionalText(suppliedSeed?.passageId, MAX_SEED_ID_LENGTH) ?? fallback.passageId,
+    passageId:
+      optionalText(suppliedSeed?.passageId, MAX_SEED_ID_LENGTH) ??
+      fallback.passageId,
     prompt,
-    roundLabel: optionalText(suppliedSeed?.roundLabel, MAX_SEED_LABEL_LENGTH) ?? fallback.roundLabel,
+    roundLabel:
+      optionalText(suppliedSeed?.roundLabel, MAX_SEED_LABEL_LENGTH) ??
+      fallback.roundLabel,
     seedToken: optionalText(suppliedSeed?.seedToken, 256),
     deckId: optionalText(suppliedSeed?.deckId, MAX_SEED_ID_LENGTH),
     deckVisibility,
     lobbyDeckTitle,
     participantDeckTitle,
-    languageTag: normalizeDeckLanguageTag(suppliedSeed?.languageTag) ?? fallback.languageTag,
+    languageTag:
+      normalizeDeckLanguageTag(suppliedSeed?.languageTag) ??
+      fallback.languageTag,
   };
 
   return verifyRaceSeedToken(seed) ? seed : fallback;
@@ -274,7 +333,9 @@ export class TypingRaceRoom extends Room {
 
   private settings: TypingRoomSettings = DEFAULT_ROOM_SETTINGS;
 
-  private roomSeed: RaceSeedMessage = createFallbackRaceSeed(DEFAULT_ROOM_SETTINGS.language);
+  private roomSeed: RaceSeedMessage = createFallbackRaceSeed(
+    DEFAULT_ROOM_SETTINGS.language
+  );
 
   private status: TypingRoomStatus = TYPING_ROOM_STATUS.COUNTDOWN;
 
@@ -294,13 +355,24 @@ export class TypingRaceRoom extends Room {
 
   private lobbyMode: boolean = false;
 
+  private get speedStyle() {
+    return resolveTypingSpeedStyle(
+      this.roomSeed.languageTag ?? this.settings.language
+    );
+  }
+
   onCreate(options?: TypingRoomCreateMessage) {
     this.lobbyMode = options?.roomMode === "lobby";
     this.settings = normalizeSettings(options);
-    this.roomSeed = normalizeRaceSeed(options?.raceSeed, this.settings.language);
+    this.roomSeed = normalizeRaceSeed(
+      options?.raceSeed,
+      this.settings.language
+    );
     this.settings = this.applyRoomSeedMetadata(this.settings, this.roomSeed);
     this.maxClients = this.settings.maxParticipants;
-    this.status = this.lobbyMode ? TYPING_ROOM_STATUS.WAITING : TYPING_ROOM_STATUS.COUNTDOWN;
+    this.status = this.lobbyMode
+      ? TYPING_ROOM_STATUS.WAITING
+      : TYPING_ROOM_STATUS.COUNTDOWN;
     this.countdownRemaining = this.lobbyMode
       ? TYPING_RACE_DEFAULTS.roomCountdownSeconds
       : TYPING_RACE_DEFAULTS.countdownSeconds;
@@ -332,7 +404,7 @@ export class TypingRaceRoom extends Room {
       (deltaTime) => {
         this.tick(deltaTime);
       },
-      Math.round(1000 / TYPING_RACE_DEFAULTS.roomTickRate),
+      Math.round(1000 / TYPING_RACE_DEFAULTS.roomTickRate)
     );
   }
 
@@ -367,7 +439,10 @@ export class TypingRaceRoom extends Room {
     const participant: RoomParticipant = {
       id: client.sessionId,
       label: message?.playerLabel || "Guest",
-      accent: TYPING_RACE_LANE_ACCENTS[this.participants.size % TYPING_RACE_LANE_ACCENTS.length],
+      accent:
+        TYPING_RACE_LANE_ACCENTS[
+          this.participants.size % TYPING_RACE_LANE_ACCENTS.length
+        ],
       kind: "player",
       progress: 0,
       cpm: 0,
@@ -390,18 +465,23 @@ export class TypingRaceRoom extends Room {
     if (this.status !== TYPING_ROOM_STATUS.WAITING) return;
     const participant = this.participants.get(client.sessionId);
     if (!participant) return;
-    participant.isReady = client.sessionId === this.hostId ? true : Boolean(message.isReady);
+    participant.isReady =
+      client.sessionId === this.hostId ? true : Boolean(message.isReady);
     this.syncState();
   }
 
   private startFromLobby(client: Client) {
     if (this.status !== TYPING_ROOM_STATUS.WAITING) return;
     if (client.sessionId !== this.hostId) {
-      client.send(RACE_EVENTS.ROOM_ERROR, { message: "방장만 게임을 시작할 수 있어요." });
+      client.send(RACE_EVENTS.ROOM_ERROR, {
+        message: "방장만 게임을 시작할 수 있어요.",
+      });
       return;
     }
     if (!this.canStart()) {
-      client.send(RACE_EVENTS.ROOM_ERROR, { message: "아직 준비하지 않은 참여자가 있어요." });
+      client.send(RACE_EVENTS.ROOM_ERROR, {
+        message: "아직 준비하지 않은 참여자가 있어요.",
+      });
       return;
     }
 
@@ -414,7 +494,7 @@ export class TypingRaceRoom extends Room {
 
   private updateParticipantProgress(
     client: Client,
-    message: RaceProgressMessage,
+    message: RaceProgressMessage
   ) {
     if (!this.isRaceLive()) {
       return;
@@ -444,12 +524,16 @@ export class TypingRaceRoom extends Room {
     participant.progress = 100;
     participant.elapsedTimeMs = this.serverElapsedTimeMs();
     participant.finishedAt = Date.now();
-    participant.score = calculateTypingScore(participant.cpm, participant.accuracy);
+    participant.score = calculateTypingScore(
+      participant.cpm,
+      participant.accuracy
+    );
     this.updateRanks();
 
     const results = this.createResultSnapshot();
-    const placement = results.find((result) => result.userId === participant.id)?.rank
-      ?? results.length;
+    const placement =
+      results.find((result) => result.userId === participant.id)?.rank ??
+      results.length;
 
     this.broadcast(RACE_EVENTS.RACE_RESULT, {
       placement,
@@ -459,7 +543,7 @@ export class TypingRaceRoom extends Room {
     });
 
     const allFinished = Array.from(this.participants.values()).every(
-      (p) => p.finishedAt !== null,
+      (p) => p.finishedAt !== null
     );
     if (allFinished && this.participants.size > 0) {
       this.status = TYPING_ROOM_STATUS.FINISHED;
@@ -470,27 +554,37 @@ export class TypingRaceRoom extends Room {
 
   private applyParticipantMetrics(
     participant: RoomParticipant,
-    message: RaceProgressMessage | RaceFinishMessage,
+    message: RaceProgressMessage | RaceFinishMessage
   ) {
     participant.progress = clampRaceProgress(message.progress);
     const elapsedTimeMs = this.serverElapsedTimeMs();
-    const typedChars = Math.round(
-      (Array.from(this.roomSeed.prompt).length * participant.progress) / 100,
+    const promptTypingUnits = Math.max(
+      1,
+      countTypingMetricUnits(this.roomSeed.prompt, this.speedStyle)
     );
+    const typedUnits =
+      normalizeNonNegativeInteger(message.typedUnitCount) ||
+      Math.round((promptTypingUnits * participant.progress) / 100);
     const observedCpm =
-      elapsedTimeMs > 0 ? Math.round((typedChars / elapsedTimeMs) * 60_000) : 0;
+      elapsedTimeMs > 0 ? Math.round((typedUnits / elapsedTimeMs) * 60_000) : 0;
     const reportedCpm = normalizeNonNegativeInteger(message.cpm ?? message.wpm);
     const cpm = Math.min(
       MAX_REASONABLE_CPM,
       reportedCpm > 0 ? reportedCpm : observedCpm,
-      observedCpm > 0 ? observedCpm : MAX_REASONABLE_CPM,
+      observedCpm > 0 ? observedCpm : MAX_REASONABLE_CPM
     );
     participant.cpm = cpm;
-    participant.wpm = toWpmFromCpm(cpm);
+    participant.wpm =
+      this.speedStyle === TYPING_SPEED_STYLE.KO_JASO ? 0 : toWpmFromCpm(cpm);
     participant.accuracy = clampPercent(message.accuracy);
-    participant.mistakeCount = normalizeNonNegativeInteger(message.mistakeCount);
+    participant.mistakeCount = normalizeNonNegativeInteger(
+      message.mistakeCount
+    );
     participant.elapsedTimeMs = elapsedTimeMs;
-    participant.score = calculateTypingScore(participant.cpm, participant.accuracy);
+    participant.score = calculateTypingScore(
+      participant.cpm,
+      participant.accuracy
+    );
   }
 
   private isRaceLive() {
@@ -515,7 +609,9 @@ export class TypingRaceRoom extends Room {
   private createResultSnapshot(onlyFinished = true): TypingResultSnapshot[] {
     return rankTypingResults(
       Array.from(this.participants.values())
-        .filter((participant) => !onlyFinished || participant.finishedAt !== null)
+        .filter(
+          (participant) => !onlyFinished || participant.finishedAt !== null
+        )
         .map((participant) => ({
           userId: participant.id,
           label: participant.label,
@@ -526,7 +622,7 @@ export class TypingRaceRoom extends Room {
           elapsedTimeMs: participant.elapsedTimeMs,
           score: participant.score,
           finishedAt: participant.finishedAt ?? Number.MAX_SAFE_INTEGER,
-        })),
+        }))
     );
   }
 
@@ -553,11 +649,16 @@ export class TypingRaceRoom extends Room {
 
     if (this.stage === TYPING_RACE_STAGE.LIVE) {
       const elapsedSeconds = (Date.now() - this.startedAt) / 1000;
-      const promptChars = Math.max(1, Array.from(this.roomSeed.prompt).length);
+      const promptTypingUnits = Math.max(
+        1,
+        countTypingMetricUnits(this.roomSeed.prompt, this.speedStyle)
+      );
 
       this.benchmarks.forEach((benchmark) => {
-        const charsTyped = elapsedSeconds * (benchmark.cpm / 60);
-        benchmark.progress = clampRaceProgress((charsTyped / promptChars) * 100);
+        const typedUnits = elapsedSeconds * (benchmark.cpm / 60);
+        benchmark.progress = clampRaceProgress(
+          (typedUnits / promptTypingUnits) * 100
+        );
       });
     }
 
@@ -566,23 +667,27 @@ export class TypingRaceRoom extends Room {
 
   private applyRoomSeedMetadata(
     settings: TypingRoomSettings,
-    seed: RaceSeedMessage,
+    seed: RaceSeedMessage
   ): TypingRoomSettings {
-    const selectedDeckVisibility = normalizeDeckVisibility(settings.selectedDeckVisibility)
-      ?? normalizeDeckVisibility(seed.deckVisibility);
-    const lobbyDeckTitle = selectedDeckVisibility === TYPING_DECK_VISIBILITY.PRIVATE
-      ? PRIVATE_DECK_LOBBY_TITLE
-      : optionalText(settings.lobbyDeckTitle, MAX_SEED_LABEL_LENGTH)
-        ?? optionalText(seed.lobbyDeckTitle, MAX_SEED_LABEL_LENGTH)
-        ?? optionalText(seed.participantDeckTitle, MAX_SEED_LABEL_LENGTH);
+    const selectedDeckVisibility =
+      normalizeDeckVisibility(settings.selectedDeckVisibility) ??
+      normalizeDeckVisibility(seed.deckVisibility);
+    const lobbyDeckTitle =
+      selectedDeckVisibility === TYPING_DECK_VISIBILITY.PRIVATE
+        ? PRIVATE_DECK_LOBBY_TITLE
+        : (optionalText(settings.lobbyDeckTitle, MAX_SEED_LABEL_LENGTH) ??
+          optionalText(seed.lobbyDeckTitle, MAX_SEED_LABEL_LENGTH) ??
+          optionalText(seed.participantDeckTitle, MAX_SEED_LABEL_LENGTH));
 
     return {
       ...settings,
-      selectedDeckId: optionalText(settings.selectedDeckId, MAX_SEED_ID_LENGTH)
-        ?? optionalText(seed.deckId, MAX_SEED_ID_LENGTH),
+      selectedDeckId:
+        optionalText(settings.selectedDeckId, MAX_SEED_ID_LENGTH) ??
+        optionalText(seed.deckId, MAX_SEED_ID_LENGTH),
       selectedDeckVisibility,
-      selectedDeckLanguageTag: normalizeDeckLanguageTag(settings.selectedDeckLanguageTag)
-        ?? normalizeDeckLanguageTag(seed.languageTag),
+      selectedDeckLanguageTag:
+        normalizeDeckLanguageTag(settings.selectedDeckLanguageTag) ??
+        normalizeDeckLanguageTag(seed.languageTag),
       lobbyDeckTitle,
     };
   }
@@ -598,11 +703,16 @@ export class TypingRaceRoom extends Room {
         label: participant.label,
         accent: participant.accent,
         progress: participant.progress,
-        wpm: participant.cpm,
+        wpm: participant.wpm,
         cpm: participant.cpm,
-        role: participant.kind === "benchmark"
-          ? TYPING_RACE_LANE_ROLE.BENCHMARK
-          : TYPING_RACE_LANE_ROLE.GUEST,
+        displaySpeed:
+          this.speedStyle === TYPING_SPEED_STYLE.KO_JASO
+            ? participant.cpm
+            : participant.wpm,
+        role:
+          participant.kind === "benchmark"
+            ? TYPING_RACE_LANE_ROLE.BENCHMARK
+            : TYPING_RACE_LANE_ROLE.GUEST,
         isReady: participant.isReady,
       }));
 
@@ -613,6 +723,7 @@ export class TypingRaceRoom extends Room {
       subheadline: "",
       roundLabel: this.roomSeed.roundLabel,
       lanes,
+      speedUnit: getTypingDisplayUnit(this.speedStyle),
     };
   }
 
@@ -632,7 +743,7 @@ export class TypingRaceRoom extends Room {
 
   private createRoomSnapshot(): TypingRoomSnapshot {
     const participants: TypingRoomParticipantSnapshot[] = Array.from(
-      this.participants.values(),
+      this.participants.values()
     ).map((participant) => ({
       id: participant.id,
       label: participant.label,
@@ -660,8 +771,11 @@ export class TypingRaceRoom extends Room {
   }
 
   private canStart() {
-    return this.participants.size > 0 && Array.from(this.participants.values()).every(
-      (participant) => participant.isReady,
+    return (
+      this.participants.size > 0 &&
+      Array.from(this.participants.values()).every(
+        (participant) => participant.isReady
+      )
     );
   }
 
@@ -673,8 +787,11 @@ export class TypingRaceRoom extends Room {
         accent: benchmark.accent,
         kind: "benchmark",
         progress: 0,
-        cpm: benchmark.wpm,
-        wpm: toWpmFromCpm(benchmark.wpm),
+        cpm: benchmark.cpm,
+        wpm:
+          this.speedStyle === TYPING_SPEED_STYLE.KO_JASO
+            ? 0
+            : toWpmFromCpm(benchmark.cpm),
         accuracy: 100,
         mistakeCount: 0,
         elapsedTimeMs: 0,

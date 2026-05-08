@@ -354,7 +354,9 @@ function createStartLineScene(
 
         visual.label.setText(lane.label);
         visual.speed.setText(
-          lane.progress >= 100 ? `${lane.wpm}${speedUnit ?? "타"}` : ""
+          lane.progress >= 100
+            ? `${lane.displaySpeed ?? lane.wpm}${speedUnit ?? "타"}`
+            : ""
         );
         const spriteW = visual.car.displayWidth;
         visual.car.x =
