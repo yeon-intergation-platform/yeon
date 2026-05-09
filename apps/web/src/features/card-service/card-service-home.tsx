@@ -33,24 +33,6 @@ function toViewState(
   return { kind: "ready", decks: query.data };
 }
 
-const CARD_SERVICE_HIGHLIGHTS = [
-  {
-    title: "바로 덱 만들기",
-    description:
-      "필요한 덱을 만들고 바로 카드를 추가해 복습 흐름을 시작할 수 있습니다.",
-  },
-  {
-    title: "로그인 후 이어쓰기",
-    description:
-      "이 기기에서 만들던 덱도 로그인 후 계정으로 옮겨 계속 사용할 수 있습니다.",
-  },
-  {
-    title: "짧은 복습 정리",
-    description:
-      "앞뒷면 카드를 빠르게 추가해 단어, 개념, 짧은 암기 내용을 정리할 수 있습니다.",
-  },
-] as const;
-
 export function CardServiceHome() {
   const [isCreateOpen, setCreateOpen] = useState(false);
   const [isSettingsOpen, setSettingsOpen] = useState(false);
@@ -159,25 +141,8 @@ export function CardServiceHome() {
             덱을 만들고 바로 복습하세요
           </h1>
           <p className="mt-4 max-w-[720px] text-[14px] leading-[1.8] text-[#666] md:text-[15px]">
-            필요한 덱을 만든 뒤 카드를 추가하고 바로 학습을 시작할 수 있습니다.
-            로그인하면 지금 만들던 덱을 계정으로 이어서 사용할 수 있습니다.
+            필요한 덱을 선택하거나 새로 만들어 바로 시작해보세요.
           </p>
-
-          <div className="mt-8 grid gap-3 md:grid-cols-3">
-            {CARD_SERVICE_HIGHLIGHTS.map((highlight) => (
-              <article
-                key={highlight.title}
-                className="rounded-2xl border border-[#e5e5e5] bg-[#fafafa] p-5"
-              >
-                <h2 className="text-[15px] font-semibold text-[#111]">
-                  {highlight.title}
-                </h2>
-                <p className="mt-2 text-[13px] leading-[1.7] text-[#666]">
-                  {highlight.description}
-                </p>
-              </article>
-            ))}
-          </div>
         </section>
 
         <section className="mt-10">

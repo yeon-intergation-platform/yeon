@@ -1,0 +1,21 @@
+# 11-작업-codex*1642-1645_remove-visible-seo-copy*[완료]
+
+- 시작: 16:42
+- 종료: 16:45
+- 목표: 공개 서비스 홈의 과한 설명/SEO성 노출을 제거하고 카드 덱 상세의 카드 추가 버튼을 우측 상단 액션으로 복구
+- 변경 파일:
+  - `apps/web/src/features/typing-service/typing-service-home.tsx`
+  - `apps/web/src/features/card-service/card-service-home.tsx`
+  - `apps/web/src/features/card-service/deck-detail-screen.tsx`
+  - `docs/product/backlog/seo.md`
+- 요약:
+  - typing/card 서비스 홈의 하이라이트형 설명 블록 제거
+  - 두 서비스 홈 도입 문구를 최소한으로 축소
+  - 카드 덱 상세 중앙 배너 제거
+  - `카드 추가` 버튼을 카드 목록 우측 상단 액션으로 복구
+- 검증:
+  - `pnpm --filter @yeon/web lint`
+  - `pnpm --filter @yeon/web build`
+  - `git diff --check`
+- 메모:
+  - `apps/web/src/features/typing-service/characters/registry.generated.ts`는 build로 갱신되지만 작업 범위에서 제외하기 위해 원복함

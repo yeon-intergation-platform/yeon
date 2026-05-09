@@ -8,24 +8,6 @@ import { TypingSettingsButton } from "./typing-settings-button";
 import { TypingServiceHeader } from "./typing-service-header";
 import { createTranslator, useTypingSettings } from "./use-typing-settings";
 
-const TYPING_SERVICE_HIGHLIGHTS = [
-  {
-    title: "바로 연습 시작",
-    description:
-      "닉네임과 캐릭터를 고른 뒤 바로 연습을 시작하고 현재 속도와 정확도를 확인할 수 있습니다.",
-  },
-  {
-    title: "혼자 연습하고 이어서 이동",
-    description:
-      "개인 연습으로 손을 푼 뒤 타자방이나 레이스로 자연스럽게 이어갈 수 있습니다.",
-  },
-  {
-    title: "문장 흐름 점검",
-    description:
-      "길이와 난이도가 다른 문장으로 손의 리듬과 입력 흐름을 계속 점검할 수 있습니다.",
-  },
-] as const;
-
 export function TypingServiceHome() {
   const { profile, updateProfile, loaded } = useTypingProfile();
   const { settings } = useTypingSettings();
@@ -59,25 +41,8 @@ export function TypingServiceHome() {
               바로 시작하는 타자 연습
             </h1>
             <p className="mt-4 text-[14px] leading-[1.8] text-[#666] md:text-[15px]">
-              연습 문장을 입력하며 속도와 정확도를 확인하고, 타자방과 레이스로
-              바로 이어서 사용할 수 있습니다.
+              닉네임과 캐릭터를 고른 뒤 바로 연습을 시작해보세요.
             </p>
-          </div>
-
-          <div className="mt-10 grid gap-3 md:grid-cols-3">
-            {TYPING_SERVICE_HIGHLIGHTS.map((highlight) => (
-              <article
-                key={highlight.title}
-                className="rounded-2xl border border-[#e5e5e5] bg-[#fafafa] p-5"
-              >
-                <h2 className="text-[15px] font-semibold text-[#111]">
-                  {highlight.title}
-                </h2>
-                <p className="mt-2 text-[13px] leading-[1.7] text-[#666]">
-                  {highlight.description}
-                </p>
-              </article>
-            ))}
           </div>
         </section>
 
