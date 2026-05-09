@@ -1,5 +1,6 @@
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
+import Script from "next/script";
 
 import { LandingHome } from "@/features/landing-home";
 import {
@@ -16,6 +17,7 @@ import {
   PLATFORM_HOME_HREF,
   getPlatformServices,
 } from "@/lib/platform-services";
+import { SITE_BRAND_NAME, SITE_SUPPORT_EMAIL } from "@/lib/site-brand";
 
 type HomePageProps = {
   searchParams: Promise<{
@@ -48,6 +50,45 @@ function buildHomeRedirectPath(options: {
   return query ? `/?${query}` : "/";
 }
 
+function getHomeJsonLd() {
+  const services = getPlatformServices();
+
+  return {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        name: SITE_BRAND_NAME,
+        url: "https://yeon.world",
+        inLanguage: "ko-KR",
+        description:
+          "상담 기록 워크스페이스, 타자연습, 플래시카드 학습을 한곳에서 운영하는 멀티 서비스 플랫폼",
+      },
+      {
+        "@type": "Organization",
+        name: SITE_BRAND_NAME,
+        url: "https://yeon.world",
+        email: SITE_SUPPORT_EMAIL,
+      },
+      {
+        "@type": "CollectionPage",
+        name: `${SITE_BRAND_NAME} 서비스 목록`,
+        url: "https://yeon.world/",
+        mainEntity: {
+          "@type": "ItemList",
+          itemListElement: services.map((service, index) => ({
+            "@type": "ListItem",
+            position: index + 1,
+            name: service.title,
+            url: `https://yeon.world${service.href}`,
+            description: service.summary,
+          })),
+        },
+      },
+    ],
+  };
+}
+
 export default async function HomePage({ searchParams }: HomePageProps) {
   const resolvedSearchParams = await searchParams;
   const requestedNextPath = pickFirstValue(resolvedSearchParams.next);
@@ -74,23 +115,32 @@ export default async function HomePage({ searchParams }: HomePageProps) {
           nextPath,
           hasNextPath: hasRequestedNextPath,
           openLoginModalOnLoad,
-        }),
-      ),
+        })
+      )
     );
   }
 
   const requestHostname = getRequestHostnameFromHostHeader(
-    headerStore.get("x-forwarded-host") ?? headerStore.get("host"),
+    headerStore.get("x-forwarded-host") ?? headerStore.get("host")
   );
   const devLoginOptions = await listDevLoginOptions(requestHostname);
 
   return (
-    <LandingHome
-      nextPath={hasRequestedNextPath ? nextPath : PLATFORM_HOME_HREF}
-      initialLoginModalOpen={openLoginModalOnLoad}
-      devLoginOptions={devLoginOptions}
-      services={getPlatformServices()}
-      isAuthenticated={!!currentUser}
-    />
+    <>
+      <Script
+        id="home-jsonld"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(getHomeJsonLd()),
+        }}
+      />
+      <LandingHome
+        nextPath={hasRequestedNextPath ? nextPath : PLATFORM_HOME_HREF}
+        initialLoginModalOpen={openLoginModalOnLoad}
+        devLoginOptions={devLoginOptions}
+        services={getPlatformServices()}
+        isAuthenticated={!!currentUser}
+      />
+    </>
   );
 }

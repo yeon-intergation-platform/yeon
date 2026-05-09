@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Script from "next/script";
 
+import { SITE_BRAND_NAME } from "@/lib/site-brand";
 import {
   CARD_SERVICE_FAQS,
   CARD_SERVICE_PAGE_DESCRIPTION,
@@ -20,7 +21,9 @@ export const metadata: Metadata = {
     title: CARD_SERVICE_PAGE_TITLE,
     description: CARD_SERVICE_PAGE_DESCRIPTION,
     url: "/card-service",
+    siteName: SITE_BRAND_NAME,
     type: "website",
+    locale: "ko_KR",
   },
   twitter: {
     card: "summary_large_image",
@@ -47,6 +50,8 @@ function getCardServiceJsonLd() {
         name: "YEON 플래시카드 학습",
         applicationCategory: "EducationalApplication",
         operatingSystem: "Web",
+        inLanguage: "ko-KR",
+        isAccessibleForFree: true,
         description: CARD_SERVICE_PAGE_DESCRIPTION,
         offers: {
           "@type": "Offer",

@@ -10,6 +10,7 @@ import { isCanonicalDeployment } from "@/lib/seo";
 import {
   SITE_BRAND_NAME,
   SITE_DESCRIPTION,
+  SITE_KEYWORDS,
   SITE_TITLE,
 } from "@/lib/site-brand";
 import "@uiw/react-md-editor/markdown-editor.css";
@@ -19,6 +20,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: SITE_TITLE,
   description: SITE_DESCRIPTION,
+  keywords: [...SITE_KEYWORDS],
   metadataBase: getSeoMetadataBase(),
   alternates: {
     canonical: "/",
@@ -29,6 +31,7 @@ export const metadata: Metadata = {
     siteName: SITE_BRAND_NAME,
     type: "website",
     url: "/",
+    locale: "ko_KR",
   },
   twitter: {
     card: "summary_large_image",
