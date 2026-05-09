@@ -2,9 +2,9 @@ export const SITE_BRAND_NAME = "YEON";
 
 export const SITE_SUPPORT_EMAIL = "hiclaudepro@gmail.com";
 
-export const SITE_TITLE = `${SITE_BRAND_NAME} | 여러 서비스를 여는 멀티 서비스 플랫폼`;
+export const SITE_TITLE = `${SITE_BRAND_NAME} | 상담 기록, 타자연습, 플래시카드 학습`;
 
-export const SITE_DESCRIPTION = `${SITE_BRAND_NAME}은 루트 포털 아래 상담 기록 워크스페이스, 타자연습, 공개형 실험 서비스를 함께 운영하는 멀티 서비스 플랫폼입니다. 로그인과 계정은 공통으로 관리하고, 각 서비스는 자기 경로와 경험을 독립적으로 소유합니다.`;
+export const SITE_DESCRIPTION = `${SITE_BRAND_NAME}에서 상담 기록 워크스페이스, 타자연습, 플래시카드 학습을 한곳에서 이용할 수 있습니다. 공통 계정으로 연결되며 각 서비스는 독립된 경험으로 바로 이동할 수 있습니다.`;
 
 export const SITE_KEYWORDS = [
   "YEON",

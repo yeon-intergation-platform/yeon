@@ -1,8 +1,8 @@
 export const CARD_SERVICE_PAGE_TITLE =
-  "YEON 플래시카드 학습 | 암기 카드 · 단어 학습 서비스";
+  "YEON 플래시카드 | 덱을 만들고 바로 복습하는 카드 학습";
 
 export const CARD_SERVICE_PAGE_DESCRIPTION =
-  "플래시카드로 단어 암기와 반복 학습을 바로 시작할 수 있는 카드 학습 서비스입니다. 로그인 없이 이 기기에서 덱을 만들고, 로그인하면 계정으로 옮겨 계속 학습할 수 있습니다.";
+  "YEON 플래시카드에서 덱을 만들고 카드를 추가해 바로 복습을 시작할 수 있습니다. 현재 기기에서 시작한 학습도 로그인 후 계정으로 이어서 사용할 수 있습니다.";
 
 export const CARD_SERVICE_SEO_KEYWORDS = [
   "플래시카드",

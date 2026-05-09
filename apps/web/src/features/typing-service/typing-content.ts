@@ -11,10 +11,10 @@ export type TypingPassage = {
 };
 
 export const TYPING_PAGE_TITLE =
-  "YEON 타자연습 | 무료 한글 타자연습 · 타자 속도 테스트";
+  "YEON 타자연습 | 로그인 없이 시작하는 한글 타자 연습";
 
 export const TYPING_PAGE_DESCRIPTION =
-  "로그인 없이 바로 시작하는 무료 한글 타자연습 서비스입니다. 짧은 문장부터 몰입형 문단까지 타수 테스트, 타자 속도 테스트, 타자 정확도 확인을 한 화면에서 바로 진행할 수 있습니다.";
+  "YEON 타자연습에서 문장 입력으로 속도와 정확도를 확인하고, 개인 연습 뒤 타자방과 레이스까지 바로 이어서 이용할 수 있습니다.";
 
 export const TYPING_SEO_KEYWORDS = [
   "타자연습",
