@@ -26,12 +26,20 @@ export function TypingServiceHeader({
   return (
     <header className="h-[76px] border-b border-[#e5e5e5] bg-white px-6 md:px-10">
       <div className="flex h-full items-center justify-between gap-5">
-        <Link
-          href="/typing-service"
-          className="shrink-0 text-[25px] font-black tracking-[-0.04em] text-[#111] no-underline transition-opacity hover:opacity-70"
-        >
-          {title}
-        </Link>
+        <div className="flex shrink-0 items-center gap-2">
+          <Link
+            href="/"
+            className="text-[22px] font-black tracking-[-0.04em] text-[#111] no-underline transition-opacity hover:opacity-70 md:text-[25px]"
+          >
+            YEON
+          </Link>
+          <Link
+            href="/typing-service"
+            className="shrink-0 text-[20px] font-black tracking-[-0.04em] text-[#111] no-underline transition-opacity hover:opacity-70 md:text-[25px]"
+          >
+            {title}
+          </Link>
+        </div>
 
         <div className="flex min-w-0 items-center justify-end gap-5">
           <nav

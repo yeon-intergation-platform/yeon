@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import type { UseQueryResult } from "@tanstack/react-query";
 import type { CardDeckDto } from "@yeon/api-contract/card-decks";
+import Link from "next/link";
 
 import { analyticsEvents, trackEvent } from "@/lib/analytics";
 import { countGuestCardDecks } from "@/lib/guest-card-service-store";
@@ -97,9 +98,12 @@ export function CardServiceHome() {
     <div className="min-h-screen bg-white text-[#111]">
       <header className="border-b border-[#e5e5e5] px-6 py-3 md:px-12">
         <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-3">
-          <span className="text-[14px] font-semibold text-[#111]">
+          <Link
+            href="/"
+            className="text-[14px] font-semibold text-[#111] no-underline hover:opacity-70"
+          >
             YEON 카드
-          </span>
+          </Link>
           <div className="flex items-center gap-2">
             {showManualMergeButton ? (
               <button
