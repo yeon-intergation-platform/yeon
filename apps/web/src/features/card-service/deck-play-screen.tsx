@@ -66,9 +66,12 @@ export function DeckPlayScreen({ deckId }: DeckPlayScreenProps) {
           >
             ← 덱으로
           </Link>
-          <span className="text-[14px] font-semibold text-[#111]">
+          <Link
+            href="/"
+            className="text-[14px] font-semibold text-[#111] no-underline hover:opacity-70"
+          >
             YEON 카드 · 실행
-          </span>
+          </Link>
         </div>
       </header>
 

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { UseQueryResult } from "@tanstack/react-query";
 import type { CardDeckDetailResponse } from "@yeon/api-contract/card-decks";
@@ -46,13 +47,24 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
   const detailQuery = useDeckDetail(deckId);
   const state = toViewState(detailQuery);
 
+  const openCardEditor = (source = "detail_header") => {
+    setEditorOpen(true);
+    trackEvent(analyticsEvents.cardAddOpen, {
+      deck_id: deckId,
+      source,
+    });
+  };
+
   return (
     <div className="min-h-screen bg-white text-[#111]">
       <header className="hidden border-b border-[#e5e5e5] px-5 py-3 md:block md:px-12">
         <div className="mx-auto flex max-w-[1280px] items-center justify-between">
-          <span className="text-[14px] font-semibold text-[#111]">
+          <Link
+            href="/"
+            className="text-[14px] font-semibold text-[#111] no-underline transition-colors hover:opacity-70"
+          >
             YEON 카드
-          </span>
+          </Link>
           {state.kind === "ready" ? (
             <span className="text-[13px] text-[#888]">
               카드 {state.items.length}장
@@ -72,6 +84,16 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
 
         {state.kind === "ready" ? (
           <>
+            <button
+              type="button"
+              onClick={() => {
+                openCardEditor();
+              }}
+              className="inline-flex items-center justify-center rounded-[18px] bg-[#111] px-4 py-2 text-[14px] font-semibold text-white transition-colors hover:bg-[#333]"
+            >
+              + 카드 추가
+            </button>
+
             <div className="space-y-6">
               <DeckDetailHeader
                 deck={state.deck}
@@ -93,19 +115,6 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
                     <span className="shrink-0 text-[15px] text-[#666] md:text-[14px] md:text-[#888]">
                       전체 {state.items.length}
                     </span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setEditorOpen(true);
-                        trackEvent(analyticsEvents.cardAddOpen, {
-                          deck_id: state.deck.id,
-                          source: "detail_header",
-                        });
-                      }}
-                      className="inline-flex items-center justify-center rounded-[18px] bg-[#111] px-4 py-2 text-[14px] font-semibold text-white transition-colors hover:bg-[#333]"
-                    >
-                      + 카드 추가
-                    </button>
                   </div>
                 </div>
 
@@ -121,11 +130,7 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
                     <button
                       type="button"
                       onClick={() => {
-                        setEditorOpen(true);
-                        trackEvent(analyticsEvents.cardAddOpen, {
-                          deck_id: state.deck.id,
-                          source: "empty_state",
-                        });
+                        openCardEditor("empty_state");
                       }}
                       className="mt-5 rounded-[22px] bg-[#111] px-5 py-3 text-[14px] font-semibold text-white transition-colors hover:bg-[#333]"
                     >

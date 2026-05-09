@@ -191,6 +191,12 @@ export function TopNav({ section }: TopNavProps) {
 
   return (
     <div className="sticky top-0 z-[100] bg-[rgba(9,9,11,0.85)] backdrop-blur-[16px] border-b border-border flex items-center px-4 h-12 gap-3">
+      <Link
+        href="/"
+        className="rounded-[10px] bg-none px-[10px] py-[6px] text-sm font-semibold text-text transition-all duration-150 hover:text-text hover:bg-surface-3"
+      >
+        YEON
+      </Link>
       <div ref={sectionMenuRef} className="relative">
         <button
           className="flex items-center gap-2 rounded-[10px] bg-none px-[10px] py-[6px] text-text transition-all duration-150 hover:bg-surface-3"
