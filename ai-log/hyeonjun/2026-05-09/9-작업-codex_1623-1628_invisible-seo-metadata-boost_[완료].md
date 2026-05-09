@@ -1,0 +1,24 @@
+# 9-작업-codex*1623-1628_invisible-seo-metadata-boost*[완료]
+
+- 시작 시각: 2026-05-09 16:23 KST
+- 종료 시각: 2026-05-09 16:28 KST
+- 목표: 화면 노출 없이 메타데이터/구조화데이터/루트 JSON-LD만으로 SEO를 보강한다.
+- 범위:
+  - `apps/web/src/app/layout.tsx`
+  - `apps/web/src/app/page.tsx`
+  - `apps/web/src/app/typing-service/page.tsx`
+  - `apps/web/src/app/card-service/page.tsx`
+  - `apps/web/src/lib/site-brand.ts`
+  - `docs/product/backlog/seo.md`
+- 수행 내용:
+  - 루트 metadata에 keywords/locale 보강
+  - 루트 페이지에 WebSite + Organization + CollectionPage(ItemList) JSON-LD 추가
+  - typing/card route metadata에 siteName/locale 보강
+  - typing/card SoftwareApplication JSON-LD에 `inLanguage`, `isAccessibleForFree` 추가
+- 검증:
+  - `pnpm --filter @yeon/web lint`
+  - `pnpm --filter @yeon/web build`
+  - `git diff --check`
+- 메모:
+  - 화면 UI 카피는 변경하지 않음.
+  - `apps/web/src/features/typing-service/characters/registry.generated.ts`는 작업 전 상태로 복원해 이번 변경에 포함하지 않음.

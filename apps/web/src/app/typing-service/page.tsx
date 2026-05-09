@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Script from "next/script";
+import { SITE_BRAND_NAME } from "@/lib/site-brand";
 import {
   TYPING_FAQS,
   TYPING_PAGE_DESCRIPTION,
@@ -21,7 +22,9 @@ export const metadata: Metadata = {
     title: TYPING_PAGE_TITLE,
     description: TYPING_PAGE_DESCRIPTION,
     url: "/typing-service",
+    siteName: SITE_BRAND_NAME,
     type: "website",
+    locale: "ko_KR",
   },
   twitter: {
     card: "summary_large_image",
@@ -39,6 +42,8 @@ function getTypingServiceJsonLd() {
         name: "YEON 타자연습",
         applicationCategory: "EducationalApplication",
         operatingSystem: "Web",
+        inLanguage: "ko-KR",
+        isAccessibleForFree: true,
         description: TYPING_PAGE_DESCRIPTION,
         offers: {
           "@type": "Offer",
