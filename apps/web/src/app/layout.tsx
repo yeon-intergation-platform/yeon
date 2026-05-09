@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import { Suspense } from "react";
 import Script from "next/script";
 
 import { GoogleAnalyticsPageTracker } from "@/components/analytics/google-analytics-page-tracker";
@@ -65,7 +66,9 @@ export default function RootLayout({ children }: RootLayoutProps) {
                 gtag('config', '${GA_MEASUREMENT_ID}', { send_page_view: false });
               `}
             </Script>
-            <GoogleAnalyticsPageTracker />
+            <Suspense fallback={null}>
+              <GoogleAnalyticsPageTracker />
+            </Suspense>
           </>
         ) : null}
         {children}
