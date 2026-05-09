@@ -1,6 +1,47 @@
 name: yeon-develop
 
 services:
+  backend:
+    image: ${YEON_BACKEND_IMAGE:-ghcr.io/hyeonjun0527/yeon-backend:develop}
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: jdbc
+      SPRING_INTERNAL_TOKEN: ${SPRING_INTERNAL_TOKEN}
+      BACKEND_JDBC_DATABASE_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-yeon_develop}
+      BACKEND_JDBC_DATABASE_USERNAME: ${POSTGRES_USER:-yeon_develop}
+      BACKEND_JDBC_DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-change-me}
+      AUTH_SECRET: ${AUTH_SECRET}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      GOOGLE_SERVICE_ACCOUNT_KEY: ${GOOGLE_SERVICE_ACCOUNT_KEY:-}
+      MICROSOFT_CLIENT_ID: ${MICROSOFT_CLIENT_ID}
+      MICROSOFT_CLIENT_SECRET: ${MICROSOFT_CLIENT_SECRET}
+      R2_ACCOUNT_ID: ${R2_ACCOUNT_ID}
+      R2_BUCKET_NAME: ${R2_BUCKET_NAME}
+      R2_ENDPOINT: ${R2_ENDPOINT:-}
+      R2_ACCESS_KEY_ID: ${R2_ACCESS_KEY_ID}
+      R2_SECRET_ACCESS_KEY: ${R2_SECRET_ACCESS_KEY}
+    ports:
+      - "${BACKEND_PORT:-8081}:8081"
+    networks:
+      default:
+      edge:
+        aliases:
+          - yeon-dev-backend
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -fsS http://127.0.0.1:8081/actuator/health >/dev/null || exit 1",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
   web:
     image: ${YEON_WEB_IMAGE:-ghcr.io/hyeonjun0527/yeon-web-app:develop}
     restart: unless-stopped
@@ -11,6 +52,9 @@ services:
       DATABASE_URL: ${DATABASE_URL}
       NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL}
       AUTH_SECRET: ${AUTH_SECRET}
+      SPRING_BOOTSTRAP_BASE_URL: http://backend:8081
+      SPRING_BACKEND_BASE_URL: http://backend:8081
+      SPRING_INTERNAL_TOKEN: ${SPRING_INTERNAL_TOKEN}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
       KAKAO_REST_API_KEY: ${KAKAO_REST_API_KEY}
@@ -44,6 +88,8 @@ services:
           - yeon-dev-web
     depends_on:
       db:
+        condition: service_healthy
+      backend:
         condition: service_healthy
 
   race-server:

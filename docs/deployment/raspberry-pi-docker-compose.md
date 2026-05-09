@@ -95,11 +95,15 @@ develop 서버를 상시 자동배포 환경으로 운영할 거면 DB도 운영
 
 ```env
 YEON_WEB_IMAGE=ghcr.io/hyeonjun0527/yeon-web-app:latest
+YEON_RACE_SERVER_IMAGE=ghcr.io/hyeonjun0527/yeon-race-server:latest
+YEON_BACKEND_IMAGE=ghcr.io/hyeonjun0527/yeon-backend:latest
 WEB_PORT=3000
+BACKEND_PORT=8081
 NODE_ENV=production
 PORT=3000
 NEXT_PUBLIC_APP_URL=https://yeon.world
 AUTH_SECRET=<prod-secret>
+SPRING_INTERNAL_TOKEN=<prod-internal-token>
 GOOGLE_CLIENT_ID=<google-client-id>
 GOOGLE_CLIENT_SECRET=<google-client-secret>
 KAKAO_REST_API_KEY=<kakao-rest-api-key>
@@ -114,11 +118,15 @@ develop 서버 예시:
 
 ```env
 YEON_WEB_IMAGE=ghcr.io/hyeonjun0527/yeon-web-app:develop
+YEON_RACE_SERVER_IMAGE=ghcr.io/hyeonjun0527/yeon-race-server:develop
+YEON_BACKEND_IMAGE=ghcr.io/hyeonjun0527/yeon-backend:develop
 WEB_PORT=3001
+BACKEND_PORT=8081
 NODE_ENV=production
 PORT=3000
 NEXT_PUBLIC_APP_URL=https://dev.yeon.world
 AUTH_SECRET=<dev-secret>
+SPRING_INTERNAL_TOKEN=<dev-internal-token>
 GOOGLE_CLIENT_ID=<google-client-id>
 GOOGLE_CLIENT_SECRET=<google-client-secret>
 KAKAO_REST_API_KEY=<kakao-rest-api-key>
@@ -171,6 +179,7 @@ docker compose -f compose.dev.yml logs -f
 
 - `yeon.world` -> `http://yeon-prod-web:3000`
 - `dev.yeon.world` -> `http://yeon-dev-web:3000`
+- web 내부 Spring 호출 -> `http://yeon-prod-backend:8081`, `http://yeon-dev-backend:8081`
 
 전제:
 
