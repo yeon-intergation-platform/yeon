@@ -56,6 +56,10 @@ function getNodeModulesWarningLines() {
   ];
 }
 
+function ensureDir(directoryPath) {
+  fs.mkdirSync(directoryPath, { recursive: true });
+}
+
 function buildPaneCommand(service) {
   const serviceCommand = [service.command, ...(service.args ?? [])]
     .map(quoteShell)
@@ -70,6 +74,18 @@ function buildPaneCommand(service) {
   const warningLines = service.showDependencyWarning
     ? getNodeModulesWarningLines()
     : [];
+  const logIntroLine = service.logFile
+    ? `echo \"[${escapedName}] log ${service.logFile}\"`
+    : null;
+  const logHeaderLines = service.logFile
+    ? [
+        `mkdir -p ${quoteShell(service.logDir)}`,
+        `printf '%s\\n' \"=== ${escapedName} | $(date '+%Y-%m-%d %H:%M:%S %Z') ===\" >> ${quoteShell(service.logFile)}`,
+      ]
+    : [];
+  const executedCommand = service.logFile
+    ? `${serviceCommand} > >(tee -a ${quoteShell(service.logFile)}) 2> >(tee -a ${quoteShell(service.logFile)} >&2)`
+    : serviceCommand;
 
   return `${shell} -lc ${quoteShell(
     [
@@ -77,12 +93,15 @@ function buildPaneCommand(service) {
       "clear",
       `echo \"=== ${escapedName} ===\"`,
       ...(portLine ? [portLine] : []),
+      ...(logIntroLine ? [logIntroLine] : []),
       ...warningLines,
+      ...logHeaderLines,
       ...exports,
-      serviceCommand,
+      executedCommand,
       "exit_code=$?",
       'echo ""',
       `echo \"[${escapedName}] exited with code $exit_code\"`,
+      'echo "[dev:all] pane는 유지됩니다. 위 로그와 log 경로를 확인하세요."',
       `exec ${quoteShell(shell)} -i`,
     ].join("; ")
   )}`;
@@ -90,6 +109,7 @@ function buildPaneCommand(service) {
 
 function sendServiceToPane(paneId, service) {
   runTmux(["select-pane", "-t", paneId, "-T", service.name]);
+  runTmux(["set-window-option", "-t", paneId, "remain-on-exit", "on"]);
   runTmux(["send-keys", "-t", paneId, buildPaneCommand(service), "C-m"]);
 }
 
@@ -150,6 +170,12 @@ function createDetachedSession() {
   const sessionName = `yeon-dev-all-${Date.now()}`;
   runTmux(["new-session", "-d", "-s", sessionName, "-n", "bootstrap"]);
   return sessionName;
+}
+
+function createLogRoot(sessionName) {
+  const logRoot = path.join(projectRoot, ".logs", "dev-all", sessionName);
+  ensureDir(logRoot);
+  return logRoot;
 }
 
 function cleanupManagedWindows(sessionName) {
@@ -224,10 +250,14 @@ async function resolvePorts() {
   return { racePort, backendPort, webPort, mobilePort };
 }
 
-function createServices(ports) {
+function createServices(ports, logRoot) {
   const backendBaseUrl = `http://127.0.0.1:${ports.backendPort}`;
   const webBaseUrl = `http://localhost:${ports.webPort}`;
   const raceServerUrl = `ws://localhost:${ports.racePort}`;
+  const withLogFile = (serviceName) => ({
+    logDir: logRoot,
+    logFile: path.join(logRoot, `${serviceName}.log`),
+  });
 
   return {
     mainPaneServices: [
@@ -244,6 +274,7 @@ function createServices(ports) {
         },
         port: ports.webPort,
         showDependencyWarning: true,
+        ...withLogFile("web"),
       },
       {
         name: "backend",
@@ -251,6 +282,7 @@ function createServices(ports) {
         command: gradleCommand,
         args: ["bootRun", `--args=--server.port=${ports.backendPort}`],
         port: ports.backendPort,
+        ...withLogFile("backend"),
       },
       {
         name: "mobile",
@@ -269,6 +301,7 @@ function createServices(ports) {
         },
         port: ports.mobilePort,
         showDependencyWarning: true,
+        ...withLogFile("mobile"),
       },
     ],
     extraWindowServices: [
@@ -282,6 +315,7 @@ function createServices(ports) {
         },
         port: ports.racePort,
         showDependencyWarning: true,
+        ...withLogFile("race-server"),
       },
     ],
   };
@@ -306,7 +340,11 @@ async function main() {
   cleanupManagedWindows(sessionName);
 
   const ports = await resolvePorts();
-  const { mainPaneServices, extraWindowServices } = createServices(ports);
+  const logRoot = createLogRoot(sessionName);
+  const { mainPaneServices, extraWindowServices } = createServices(
+    ports,
+    logRoot
+  );
 
   createMainWindow(sessionName, mainPaneServices);
   createExtraWindows(sessionName, extraWindowServices);
@@ -316,7 +354,7 @@ async function main() {
     "display-message",
     "-d",
     "7000",
-    `race-server window 생성됨: ${sessionName}:race-server | web ${ports.webPort} | mobile ${ports.mobilePort} | backend ${ports.backendPort} | race ${ports.racePort}`,
+    `race-server window 생성됨: ${sessionName}:race-server | web ${ports.webPort} | mobile ${ports.mobilePort} | backend ${ports.backendPort} | race ${ports.racePort} | logs ${logRoot}`,
   ]);
 
   if (!process.env.TMUX) {
