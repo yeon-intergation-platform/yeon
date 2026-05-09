@@ -1,0 +1,21 @@
+# 8-작업-codex*1517-1520_visible-seo-copy-rollback*[완료]
+
+- 시작 시각: 2026-05-09 15:17 KST
+- 종료 시각: 2026-05-09 15:20 KST
+- 목표: 화면에 직접 노출된 SEO성 문구를 제품 톤으로 되돌리고, 검색 노출은 metadata/JSON-LD/robots/sitemap으로 유지한다.
+- 범위:
+  - `apps/web/src/features/typing-service/typing-service-home.tsx`
+  - `apps/web/src/features/card-service/card-service-home.tsx`
+  - `apps/web/src/lib/platform-services.ts`
+  - `docs/product/backlog/seo.md`
+- 수행 내용:
+  - typing/card 홈의 SEO성 헤드라인과 본문 문구를 제품 설명 중심으로 축소
+  - typing/card 홈의 화면 노출 FAQ 섹션 제거
+  - 루트 서비스 카드 summary를 메타/분류 표현 없이 제품 문구로 정리
+  - metadata, keywords, FAQ JSON-LD, robots, sitemap은 유지
+- 검증:
+  - `pnpm --filter @yeon/web lint`
+  - `pnpm --filter @yeon/web build`
+  - `git diff --check`
+- 메모:
+  - `apps/web/src/features/typing-service/characters/registry.generated.ts`는 작업 전 상태로 복원해 이번 변경에 포함하지 않음.

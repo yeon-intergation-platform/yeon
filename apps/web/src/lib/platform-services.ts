@@ -41,8 +41,8 @@ export const PLATFORM_SERVICES = [
     href: "/typing-service",
     title: "키보드 타자연습",
     summary:
-      "로그인 없이 바로 시작해 정확도와 타수를 확인할 수 있는 공개형 타자연습 서비스입니다.",
-    audience: "대중형 바이럴 서비스",
+      "바로 연습을 시작하고 속도와 정확도를 확인할 수 있는 타자 서비스입니다.",
+    audience: "타자 연습",
     accessPolicy: platformServiceAccessPolicies.anonymous,
     status: platformServiceStatuses.live,
   },
@@ -51,8 +51,8 @@ export const PLATFORM_SERVICES = [
     href: "/card-service",
     title: "플래시카드 덱",
     summary:
-      "로그인 없이 바로 덱을 만들고 플래시카드로 반복 학습을 시작한 뒤, 필요할 때 계정으로 이어서 쓰는 카드 학습 서비스입니다.",
-    audience: "개인 학습자",
+      "덱을 만들고 카드를 추가해 바로 복습을 시작할 수 있는 카드 학습 서비스입니다.",
+    audience: "카드 학습",
     accessPolicy: platformServiceAccessPolicies.mixed,
     status: platformServiceStatuses.live,
   },
