@@ -1,0 +1,29 @@
+# 10-작업-codex*1633-1640_seo-og-boost*[완료]
+
+- 시작 시각: 2026-05-09 16:33 KST
+- 종료 시각: 2026-05-09 16:40 KST
+- 목표: 화면 노출 없이 루트/typing/card의 메타 문구 CTR을 다듬고 route별 OG 이미지를 추가한다.
+- 범위:
+  - `apps/web/src/app/layout.tsx`
+  - `apps/web/src/app/page.tsx`
+  - `apps/web/src/app/opengraph-image.tsx`
+  - `apps/web/src/app/typing-service/page.tsx`
+  - `apps/web/src/app/typing-service/opengraph-image.tsx`
+  - `apps/web/src/app/card-service/page.tsx`
+  - `apps/web/src/app/card-service/opengraph-image.tsx`
+  - `apps/web/src/app/_lib/og-image.tsx`
+  - `apps/web/src/features/typing-service/typing-content.ts`
+  - `apps/web/src/features/card-service/card-service-content.ts`
+  - `docs/product/backlog/seo.md`
+- 수행 내용:
+  - 루트/typing/card 메타 title·description을 더 자연스러운 CTR 문구로 정리
+  - 공용 OG 이미지 생성 helper 추가
+  - 루트/typing/card 전용 `opengraph-image.tsx` 추가
+  - 빌드 중 `ImageResponse` 제한(`inline-flex` 불가) 문제를 `flex`로 수정해 해결
+- 검증:
+  - `pnpm --filter @yeon/web lint`
+  - `pnpm --filter @yeon/web build`
+  - `git diff --check`
+- 메모:
+  - 화면 UI 카피는 변경하지 않음.
+  - `apps/web/src/features/typing-service/characters/registry.generated.ts`는 작업 전 상태로 복원해 이번 변경에 포함하지 않음.
