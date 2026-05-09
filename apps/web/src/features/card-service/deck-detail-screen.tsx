@@ -79,30 +79,8 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
                 onRequestExport={() => setExportOpen(true)}
               />
 
-              <section className="rounded-[28px] border border-[#efefef] bg-[#fcfcfc] px-5 py-5 md:px-6 md:py-6">
-                <div className="mx-auto max-w-[760px] text-center">
-                  <p className="text-[14px] font-medium text-[#666] md:text-[15px]">
-                    새 카드는 화면 중앙 모달에서 질문, 답변, Markdown, 이미지를
-                    함께 작성합니다.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setEditorOpen(true);
-                      trackEvent(analyticsEvents.cardAddOpen, {
-                        deck_id: state.deck.id,
-                        source: "detail_banner",
-                      });
-                    }}
-                    className="mt-4 inline-flex items-center justify-center rounded-[22px] bg-[#111] px-6 py-3 text-[15px] font-semibold text-white transition-colors hover:bg-[#333] md:min-w-[220px] md:text-[16px]"
-                  >
-                    + 카드 추가
-                  </button>
-                </div>
-              </section>
-
               <section>
-                <div className="mb-4 flex items-center justify-between gap-3">
+                <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                   <div className="flex items-center gap-2">
                     <h2 className="text-[24px] font-semibold text-[#111] md:text-[26px]">
                       카드 목록
@@ -111,9 +89,24 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
                       {state.items.length}
                     </span>
                   </div>
-                  <span className="shrink-0 text-[15px] text-[#666] md:text-[14px] md:text-[#888]">
-                    전체 {state.items.length}
-                  </span>
+                  <div className="flex items-center gap-3">
+                    <span className="shrink-0 text-[15px] text-[#666] md:text-[14px] md:text-[#888]">
+                      전체 {state.items.length}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditorOpen(true);
+                        trackEvent(analyticsEvents.cardAddOpen, {
+                          deck_id: state.deck.id,
+                          source: "detail_header",
+                        });
+                      }}
+                      className="inline-flex items-center justify-center rounded-[18px] bg-[#111] px-4 py-2 text-[14px] font-semibold text-white transition-colors hover:bg-[#333]"
+                    >
+                      + 카드 추가
+                    </button>
+                  </div>
                 </div>
 
                 {state.isEmpty ? (
