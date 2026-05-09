@@ -1,0 +1,26 @@
+# 12-작업-codex*1718-1755_dev-all-port-allocation*[완료]
+
+- 시작 시각: 2026-05-09 17:18 KST
+- 종료 시각: 2026-05-09 17:55 KST
+- 목표: `pnpm dev:all`을 Web/Backend/Mobile/Race 통합 실행으로 전환하고, 서비스 간 중복 없이 포트를 자동 할당한다.
+- 범위:
+  - `scripts/dev-all.mjs`
+  - `scripts/dev-ports.mjs`
+- 수행 내용:
+  - 포트 탐색 공통 유틸(`scripts/dev-ports.mjs`) 신설
+    - 시작 포트부터 `+1` 방식 탐색
+    - 현재 사용 중인 포트/이미 예약된 포트 검사 후 사용 포트 반환
+  - `pnpm dev:all` 실행 흐름 재설계
+    - 기본 포트: Web 3000, Backend 8080, Mobile 8081, Race 2567
+    - 서비스 간 포트 충돌 시 기존 할당 포트를 스킵하고 다음 포트를 탐색
+    - 최종 할당 포트를 실행 로그에 `- web`, `- backend`, `- mobile`, `- race-server` 형태로 출력
+  - Spring Backend 실행기 감지 로직 추가
+    - `gradlew(.bat)`, `mvnw(.cmd)`, `build.gradle*`, `pom.xml`, `build/libs/*.jar` 순으로 실행 방식 선택
+    - 최종 실행에는 `PORT` 대체 변수로 `SERVER_PORT` 및 런타임 인자(`--server.port=...`)를 사용
+  - backend 포함으로 서비스 실행 대상 확장: Web, Backend, Mobile, Race
+  - 기존 동작을 크게 깨지 않도록 wrapper 방식 유지 및 tmux/legacy 모드 공통 사용
+- 검증:
+  - `node --check scripts/dev-all.mjs`
+  - `node --check scripts/dev-ports.mjs`
+- 메모:
+  - 현재 작업 트리에 백엔드가 `gradlew/mvnw`/`build.gradle/pom` 기준으로 확인되지 않는 상태이므로, 백엔드 실제 실행은 환경별 backend 구조 존재 시 자동으로 동작하도록 감지 기반으로 작성됨.

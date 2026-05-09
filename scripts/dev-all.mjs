@@ -1,363 +1,694 @@
-import fs from "node:fs";
-import net from "node:net";
-import { spawnSync } from "node:child_process";
-import path from "node:path";
+import {
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  unlinkSync,
+  writeFileSync,
+} from "node:fs";
+import { join } from "node:path";
+import { spawn, spawnSync } from "node:child_process";
+import readline from "node:readline";
+import { findAvailablePort, normalizePort } from "./dev-ports.mjs";
 
 const command = process.platform === "win32" ? "pnpm.cmd" : "pnpm";
-const gradleCommand =
-  process.platform === "win32" ? "gradlew.bat" : "./gradlew";
-const tmuxCommand = process.platform === "win32" ? "tmux.exe" : "tmux";
-const shell = process.env.SHELL ?? "zsh";
-const projectRoot = process.cwd();
+const isWindows = process.platform === "win32";
+const rootDir = process.cwd();
+const backendDir = join(rootDir, "apps", "backend");
+const useLegacyMode = process.argv.includes("--legacy");
+const reset = "\x1b[0m";
 
-function fail(message) {
-  console.error(`[dev:all] ${message}`);
-  process.exit(1);
+const children = new Map();
+let shuttingDown = false;
+let sawFailure = false;
+const webLockPath = join(rootDir, "apps", "web", ".next", "dev", "lock");
+
+const portSources = {
+  web: ["WEB_PORT", "PORT"],
+  backend: ["BACKEND_PORT", "SERVER_PORT", "PORT"],
+  mobile: ["MOBILE_PORT", "EXPO_DEV_SERVER_PORT", "PORT"],
+  race: ["RACE_SERVER_PORT", "PORT"],
+};
+
+function shellQuote(value) {
+  return `'${String(value).replace(/'/g, "'\\''")}'`;
 }
 
-function quoteShell(value) {
-  return `'${String(value).replace(/'/g, `'\\''`)}'`;
+function logLine(service, message, stream = "stdout") {
+  const streamTag = stream === "stderr" ? "!" : ">";
+  process.stdout.write(
+    `${service.color}[${service.name}:${streamTag}]${reset} ${message}\n`
+  );
 }
 
-function runTmux(args, options = {}) {
-  const result = spawnSync(tmuxCommand, args, {
-    cwd: projectRoot,
-    encoding: "utf8",
-    stdio: options.captureOutput ? ["ignore", "pipe", "pipe"] : "inherit",
+function attachLines(service, stream, streamName) {
+  const rl = readline.createInterface({ input: stream });
+  rl.on("line", (line) => {
+    logLine(service, line, streamName);
   });
+}
 
-  if (result.error) {
-    fail(`tmux 실행 실패: ${result.error.message}`);
+function fileExists(path) {
+  return existsSync(path);
+}
+
+function getPidCommandLine(pid) {
+  if (isWindows) {
+    return "";
   }
+
+  const result = spawnSync("ps", ["-p", String(pid), "-o", "command="], {
+    stdio: ["ignore", "pipe", "pipe"],
+    encoding: "utf8",
+  });
 
   if (result.status !== 0) {
-    const stderr = result.stderr?.trim();
-    const stdout = result.stdout?.trim();
-    fail(
-      [stderr, stdout].find(Boolean) ??
-        `tmux 명령이 code ${result.status}로 종료되었습니다.`
-    );
+    return "";
   }
 
-  return result.stdout?.trim() ?? "";
+  return (result.stdout || "").trim();
 }
 
-function getNodeModulesWarningLines() {
-  const nodeModulesPath = path.join(projectRoot, "node_modules");
-
-  if (fs.existsSync(nodeModulesPath)) {
-    return [];
-  }
-
-  return [
-    'echo "[dev:all] node_modules가 없어 일부 JS 서비스가 즉시 종료될 수 있습니다."',
-    'echo "[dev:all] 먼저 pnpm install 을 실행하세요."',
-    'echo ""',
-  ];
-}
-
-function ensureDir(directoryPath) {
-  fs.mkdirSync(directoryPath, { recursive: true });
-}
-
-function buildPaneCommand(service) {
-  const serviceCommand = [service.command, ...(service.args ?? [])]
-    .map(quoteShell)
-    .join(" ");
-  const escapedName = service.name.replace(/"/g, '\\"');
-  const exports = Object.entries(service.env ?? {}).map(
-    ([key, value]) => `export ${key}=${quoteShell(value)}`
-  );
-  const portLine = service.port
-    ? `echo \"[${escapedName}] port ${service.port}\"`
-    : null;
-  const warningLines = service.showDependencyWarning
-    ? getNodeModulesWarningLines()
-    : [];
-  const logIntroLine = service.logFile
-    ? `echo \"[${escapedName}] log ${service.logFile}\"`
-    : null;
-  const logHeaderLines = service.logFile
-    ? [
-        `mkdir -p ${quoteShell(service.logDir)}`,
-        `printf '%s\\n' \"=== ${escapedName} | $(date '+%Y-%m-%d %H:%M:%S %Z') ===\" >> ${quoteShell(service.logFile)}`,
-      ]
-    : [];
-  const executedCommand = service.logFile
-    ? `${serviceCommand} > >(tee -a ${quoteShell(service.logFile)}) 2> >(tee -a ${quoteShell(service.logFile)} >&2)`
-    : serviceCommand;
-
-  return `${shell} -lc ${quoteShell(
-    [
-      `cd ${quoteShell(service.cwd)}`,
-      `echo \"=== ${escapedName} ===\"`,
-      ...(portLine ? [portLine] : []),
-      ...(logIntroLine ? [logIntroLine] : []),
-      ...warningLines,
-      ...logHeaderLines,
-      ...exports,
-      executedCommand,
-      "exit_code=$?",
-      'echo ""',
-      `echo \"[${escapedName}] exited with code $exit_code\"`,
-      'echo "[dev:all] pane는 유지됩니다. 위 로그와 log 경로를 확인하세요."',
-      `exec ${quoteShell(shell)} -i`,
-    ].join("; ")
-  )}`;
-}
-
-function sendServiceToPane(paneId, service) {
-  runTmux(["select-pane", "-t", paneId, "-T", service.name]);
-  runTmux(["set-window-option", "-t", paneId, "remain-on-exit", "on"]);
-  runTmux(["send-keys", "-t", paneId, buildPaneCommand(service), "C-m"]);
-}
-
-function createMainWindow(sessionName, windowName, services) {
-  const targetSession = `${sessionName}:`;
-  const firstPaneId = runTmux(
-    [
-      "new-window",
-      "-P",
-      "-F",
-      "#{pane_id}",
-      "-t",
-      targetSession,
-      "-n",
-      windowName,
-    ],
-    { captureOutput: true }
-  );
-
-  const secondPaneId = runTmux(
-    ["split-window", "-h", "-P", "-F", "#{pane_id}", "-t", firstPaneId],
-    { captureOutput: true }
-  );
-
-  const thirdPaneId = runTmux(
-    ["split-window", "-h", "-P", "-F", "#{pane_id}", "-t", firstPaneId],
-    { captureOutput: true }
-  );
-
-  runTmux(["select-layout", "-t", firstPaneId, "even-horizontal"]);
-
-  [firstPaneId, secondPaneId, thirdPaneId].forEach((paneId, index) => {
-    sendServiceToPane(paneId, services[index]);
-  });
-}
-
-function createExtraWindows(sessionName, services) {
-  services.forEach((service) => {
-    const paneId = runTmux(
-      [
-        "new-window",
-        "-P",
-        "-F",
-        "#{pane_id}",
-        "-t",
-        `${sessionName}:`,
-        "-n",
-        service.name,
-      ],
-      { captureOutput: true }
-    );
-
-    sendServiceToPane(paneId, service);
-  });
-}
-
-function createDetachedSession() {
-  const sessionName = `yeon-dev-all-${Date.now()}`;
-  runTmux(["new-session", "-d", "-s", sessionName, "-n", "bootstrap"]);
-  return sessionName;
-}
-
-function createRunId() {
-  return new Date()
-    .toISOString()
-    .replace(/[-:]/g, "")
-    .replace(/\..+$/, "")
-    .replace("T", "-");
-}
-
-function createLogRoot(sessionName, runId) {
-  const logRoot = path.join(projectRoot, ".logs", "dev-all", sessionName, runId);
-  ensureDir(logRoot);
-  return logRoot;
-}
-
-function cleanupBootstrapWindow(sessionName) {
-  const windows = runTmux(
-    ["list-windows", "-t", `${sessionName}:`, "-F", "#{window_name}"],
-    { captureOutput: true }
-  )
-    .split("\n")
-    .map((line) => line.trim())
-    .filter(Boolean);
-
-  if (windows.length <= 1 || !windows.includes("bootstrap")) {
+function ensureWebLockSafe() {
+  if (!existsSync(webLockPath)) {
     return;
   }
 
-  runTmux(["kill-window", "-t", `${sessionName}:bootstrap`]);
-}
-
-function canListen(port) {
-  return new Promise((resolve) => {
-    const server = net.createServer();
-
-    server.once("error", () => {
-      resolve(false);
-    });
-
-    server.once("listening", () => {
-      server.close(() => resolve(true));
-    });
-
-    server.listen(port, "127.0.0.1");
-  });
-}
-
-async function findAvailablePort(startPort, reservedPorts = new Set()) {
-  let port = startPort;
-
-  while (reservedPorts.has(port) || !(await canListen(port))) {
-    port += 1;
+  let lock;
+  try {
+    lock = JSON.parse(readFileSync(webLockPath, "utf8"));
+  } catch {
+    try {
+      unlinkSync(webLockPath);
+    } catch {
+      // lock 파일이 손상되어 있어도 다음 실행에서 다시 판단할 수 있도록 제거만 시도합니다.
+    }
+    return;
   }
 
-  return port;
+  const lockPid = Number.parseInt(lock?.pid, 10);
+  const lockCommandLine = getPidCommandLine(lockPid);
+  const isNextServerPid =
+    Number.isInteger(lockPid) &&
+    lockPid > 0 &&
+    /\b(next-server|next)\b/.test(lockCommandLine) &&
+    /(\bdev\b|--args=--server\.port=|next-server)/.test(lockCommandLine);
+
+  if (isNextServerPid) {
+    try {
+      process.kill(lockPid, "SIGTERM");
+    } catch (error) {
+      // 이미 종료된 상태거나 접근 권한이 없는 경우는 다음 단계에서 lock만 정리합니다.
+      logLine(
+        {
+          name: "dev-all",
+          color: "\x1b[33m",
+        },
+        `웹 락 대상 PID 종료 시도 실패: ${error.message}`
+      );
+    }
+
+    setTimeout(() => {
+      try {
+        process.kill(lockPid, "SIGKILL");
+      } catch {
+        // no-op
+      }
+    }, 800).unref();
+  }
+
+  try {
+    unlinkSync(webLockPath);
+  } catch {
+    // lock 파일이 보호되어 있으면 다음 실행에서 다시 판단하도록 둡니다.
+  }
 }
 
-async function resolvePorts() {
-  const reservedPorts = new Set();
-  const racePort = await findAvailablePort(2567, reservedPorts);
-  reservedPorts.add(racePort);
-  const backendPort = await findAvailablePort(8081, reservedPorts);
-  reservedPorts.add(backendPort);
-  const webPort = await findAvailablePort(3000, reservedPorts);
-  reservedPorts.add(webPort);
-  const mobilePort = await findAvailablePort(8081, reservedPorts);
-  reservedPorts.add(mobilePort);
+function resolveInitialPort(serviceKey, fallbackPort) {
+  for (const envName of portSources[serviceKey] || []) {
+    const candidate = normalizePort(process.env[envName], NaN);
 
-  return { racePort, backendPort, webPort, mobilePort };
+    if (Number.isInteger(candidate)) {
+      return candidate;
+    }
+  }
+
+  return fallbackPort;
 }
 
-function createServices(ports, logRoot) {
-  const backendBaseUrl = `http://127.0.0.1:${ports.backendPort}`;
-  const webBaseUrl = `http://localhost:${ports.webPort}`;
-  const raceServerUrl = `ws://localhost:${ports.racePort}`;
-  const withLogFile = (serviceName) => ({
-    logDir: logRoot,
-    logFile: path.join(logRoot, `${serviceName}.log`),
-  });
-
-  return {
-    mainPaneServices: [
-      {
-        name: "web",
-        cwd: projectRoot,
-        command,
-        args: ["--filter", "@yeon/web", "dev"],
-        env: {
-          PORT: String(ports.webPort),
-          SPRING_BOOTSTRAP_BASE_URL: backendBaseUrl,
-          SPRING_BACKEND_BASE_URL: backendBaseUrl,
-          NEXT_PUBLIC_RACE_SERVER_URL: raceServerUrl,
-        },
-        port: ports.webPort,
-        showDependencyWarning: true,
-        ...withLogFile("web"),
-      },
-      {
-        name: "backend",
-        cwd: path.join(projectRoot, "apps/backend"),
-        command: gradleCommand,
-        args: ["bootRun", `--args=--server.port=${ports.backendPort}`],
-        port: ports.backendPort,
-        ...withLogFile("backend"),
-      },
-      {
-        name: "mobile",
-        cwd: projectRoot,
-        command,
-        args: [
-          "--filter",
-          "@yeon/mobile",
-          "dev",
-          "--",
-          "--port",
-          String(ports.mobilePort),
-        ],
-        env: {
-          EXPO_PUBLIC_API_BASE_URL: webBaseUrl,
-        },
-        port: ports.mobilePort,
-        showDependencyWarning: true,
-        ...withLogFile("mobile"),
-      },
-    ],
-    extraWindowServices: [
-      {
-        name: "race-server",
-        cwd: projectRoot,
-        command,
-        args: ["--filter", "@yeon/race-server", "dev"],
-        env: {
-          PORT: String(ports.racePort),
-        },
-        port: ports.racePort,
-        showDependencyWarning: true,
-        ...withLogFile("race-server"),
-      },
-    ],
+function resolveBackendRunner(basePort) {
+  const gradleRunner = {
+    command: "./gradlew",
+    args: ["bootRun", `--args=--server.port=${basePort}`],
+    cwd: backendDir,
+    env: {
+      PORT: String(basePort),
+      SERVER_PORT: String(basePort),
+      BACKEND_PORT: String(basePort),
+    },
   };
-}
+  const gradleBat = {
+    command: "gradlew.bat",
+    args: ["bootRun", `--args=--server.port=${basePort}`],
+    cwd: backendDir,
+    env: {
+      PORT: String(basePort),
+      SERVER_PORT: String(basePort),
+      BACKEND_PORT: String(basePort),
+    },
+  };
+  const mavenRunner = {
+    command: "./mvnw",
+    args: [
+      "spring-boot:run",
+      `-Dspring-boot.run.arguments=--server.port=${basePort}`,
+    ],
+    cwd: backendDir,
+    env: {
+      PORT: String(basePort),
+      SERVER_PORT: String(basePort),
+      BACKEND_PORT: String(basePort),
+    },
+  };
+  const mavenBat = {
+    command: "mvnw.cmd",
+    args: [
+      "spring-boot:run",
+      `-Dspring-boot.run.arguments=--server.port=${basePort}`,
+    ],
+    cwd: backendDir,
+    env: {
+      PORT: String(basePort),
+      SERVER_PORT: String(basePort),
+      BACKEND_PORT: String(basePort),
+    },
+  };
 
-async function main() {
-  const tmuxCheck = spawnSync(tmuxCommand, ["-V"], {
-    cwd: projectRoot,
-    stdio: "ignore",
-  });
-
-  if (tmuxCheck.error || tmuxCheck.status !== 0) {
-    fail("tmux가 필요합니다. tmux 설치 후 다시 실행해주세요.");
+  if (isWindows) {
+    if (fileExists(join(backendDir, "gradlew.bat"))) {
+      return gradleBat;
+    }
+    if (fileExists(join(backendDir, "gradlew"))) {
+      return gradleRunner;
+    }
+    if (fileExists(join(backendDir, "mvnw.cmd"))) {
+      return mavenBat;
+    }
+    if (fileExists(join(backendDir, "mvnw"))) {
+      return mavenRunner;
+    }
+  } else {
+    if (fileExists(join(backendDir, "gradlew"))) {
+      return gradleRunner;
+    }
+    if (fileExists(join(backendDir, "mvnw"))) {
+      return mavenRunner;
+    }
+    if (fileExists(join(backendDir, "gradlew.bat"))) {
+      return gradleBat;
+    }
+    if (fileExists(join(backendDir, "mvnw.cmd"))) {
+      return mavenBat;
+    }
   }
 
-  const sessionName = process.env.TMUX
-    ? runTmux(["display-message", "-p", "#{session_name}"], {
-        captureOutput: true,
-      })
-    : createDetachedSession();
-  const runId = createRunId();
-  const mainWindowName = `dev-all-${runId}`;
-  const raceWindowName = `race-server-${runId}`;
+  if (
+    fileExists(join(backendDir, "build.gradle")) ||
+    fileExists(join(backendDir, "build.gradle.kts"))
+  ) {
+    return {
+      command: "gradle",
+      args: ["bootRun", `--args=--server.port=${basePort}`],
+      cwd: backendDir,
+      env: {
+        PORT: String(basePort),
+        SERVER_PORT: String(basePort),
+        BACKEND_PORT: String(basePort),
+      },
+    };
+  }
 
-  const ports = await resolvePorts();
-  const logRoot = createLogRoot(sessionName, runId);
-  const { mainPaneServices, extraWindowServices } = createServices(
-    ports,
-    logRoot
+  if (fileExists(join(backendDir, "pom.xml"))) {
+    return {
+      command: "mvn",
+      args: [
+        "spring-boot:run",
+        `-Dspring-boot.run.arguments=--server.port=${basePort}`,
+      ],
+      cwd: backendDir,
+      env: {
+        PORT: String(basePort),
+        SERVER_PORT: String(basePort),
+        BACKEND_PORT: String(basePort),
+      },
+    };
+  }
+
+  const libsDir = join(backendDir, "build", "libs");
+  if (fileExists(libsDir)) {
+    const jarCandidates = readdirSync(libsDir)
+      .filter((entry) => entry.endsWith(".jar"))
+      .sort();
+    if (jarCandidates.length > 0) {
+      return {
+        command: "java",
+        args: [
+          "-jar",
+          join(libsDir, jarCandidates[0]),
+          `--server.port=${basePort}`,
+        ],
+        cwd: backendDir,
+        env: {
+          PORT: String(basePort),
+          SERVER_PORT: String(basePort),
+          BACKEND_PORT: String(basePort),
+        },
+      };
+    }
+  }
+
+  throw new Error(
+    `백엔드 실행기 탐색 실패: ${backendDir}에 gradlew/mvnw/gradle/maven/최신 build/libs jar가 없습니다.`
   );
-  const namedExtraWindowServices = extraWindowServices.map((service) => ({
+}
+
+async function resolveServices() {
+  const usedPorts = new Set();
+  const services = [];
+
+  const webPort = await findAvailablePort(
+    resolveInitialPort("web", 3000),
+    usedPorts
+  );
+  usedPorts.add(webPort);
+  const backendPort = await findAvailablePort(
+    resolveInitialPort("backend", 8080),
+    usedPorts
+  );
+  usedPorts.add(backendPort);
+  const mobilePort = await findAvailablePort(
+    resolveInitialPort("mobile", 8081),
+    usedPorts
+  );
+  usedPorts.add(mobilePort);
+  const racePort = await findAvailablePort(
+    resolveInitialPort("race", 2567),
+    usedPorts
+  );
+  usedPorts.add(racePort);
+
+  const backendRunner = resolveBackendRunner(backendPort);
+
+  services.push({
+    name: "web",
+    color: "\x1b[35m",
+    command,
+    args: ["--filter", "@yeon/web", "dev"],
+    cwd: rootDir,
+    env: {
+      PORT: String(webPort),
+    },
+    assignedPort: webPort,
+    interactive: false,
+  });
+
+  services.push({
+    name: "backend",
+    color: "\x1b[33m",
+    command: backendRunner.command,
+    args: backendRunner.args,
+    cwd: backendRunner.cwd,
+    env: {
+      ...backendRunner.env,
+    },
+    assignedPort: backendPort,
+    interactive: false,
+  });
+
+  services.push({
+    name: "mobile",
+    color: "\x1b[36m",
+    command,
+    args: [
+      "--filter",
+      "@yeon/mobile",
+      "dev",
+      "--",
+      "--port",
+      String(mobilePort),
+    ],
+    cwd: rootDir,
+    env: {
+      EXPO_DEV_SERVER_PORT: String(mobilePort),
+      PORT: String(mobilePort),
+    },
+    assignedPort: mobilePort,
+    interactive: false,
+  });
+
+  services.push({
+    name: "race-server",
+    color: "\x1b[32m",
+    command,
+    args: ["--filter", "@yeon/race-server", "dev"],
+    cwd: rootDir,
+    env: {
+      PORT: String(racePort),
+    },
+    assignedPort: racePort,
+    interactive: false,
+  });
+
+  return services;
+}
+
+function logPortAssignments(services) {
+  logLine({ name: "dev-all", color: "\x1b[33m" }, "최종 포트 할당:");
+  for (const service of services) {
+    logLine(
+      { name: "dev-all", color: "\x1b[33m" },
+      `- ${service.name}: ${service.assignedPort}`
+    );
+  }
+}
+
+function isInsideTmux() {
+  if (!process.env.TMUX) {
+    return false;
+  }
+
+  const result = runTmuxCommand(["display-message", "-p", "#{session_name}"], {
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+
+  if (result.status !== 0) {
+    return false;
+  }
+
+  return Boolean(result.stdout?.trim());
+}
+
+function maybeExit() {
+  if (children.size > 0) {
+    return;
+  }
+  process.exit(sawFailure ? 1 : 0);
+}
+
+function stopChildren(signal = "SIGINT") {
+  if (shuttingDown) {
+    return;
+  }
+  shuttingDown = true;
+
+  for (const child of children.values()) {
+    child.kill(signal);
+  }
+
+  setTimeout(() => {
+    for (const child of children.values()) {
+      child.kill("SIGKILL");
+    }
+  }, 2_000).unref();
+}
+
+function runLegacyMode(services) {
+  for (const service of services) {
+    const child = spawn(service.command, service.args, {
+      cwd: service.cwd,
+      env: {
+        ...process.env,
+        ...service.env,
+      },
+      stdio: service.interactive ? "inherit" : ["ignore", "pipe", "pipe"],
+    });
+
+    children.set(service.name, child);
+    if (!service.interactive) {
+      attachLines(service, child.stdout, "stdout");
+      attachLines(service, child.stderr, "stderr");
+    }
+
+    child.on("exit", (code, signal) => {
+      children.delete(service.name);
+
+      if (shuttingDown) {
+        maybeExit();
+        return;
+      }
+
+      const exitReason = signal
+        ? `signal ${signal}`
+        : `code ${code === null ? "null" : code}`;
+      if (code && code !== 0) {
+        sawFailure = true;
+        logLine(
+          service,
+          `프로세스가 ${exitReason}로 종료되었습니다.`,
+          "stderr"
+        );
+      } else {
+        logLine(service, `프로세스가 ${exitReason}로 종료되었습니다.`);
+      }
+
+      maybeExit();
+    });
+
+    child.on("error", (error) => {
+      sawFailure = true;
+      logLine(
+        service,
+        `프로세스를 시작하지 못했습니다: ${error.message}`,
+        "stderr"
+      );
+    });
+  }
+
+  process.on("SIGINT", () => stopChildren("SIGINT"));
+  process.on("SIGTERM", () => stopChildren("SIGTERM"));
+}
+
+function hasTmux() {
+  const result = spawnSync("tmux", ["-V"], { stdio: "pipe", encoding: "utf8" });
+  return result.status === 0;
+}
+
+function runTmuxCommand(args, options = {}) {
+  return spawnSync("tmux", args, {
+    stdio: ["ignore", "pipe", "pipe"],
+    encoding: "utf8",
+    ...options,
+  });
+}
+
+function buildTmuxCommand(service, logPath) {
+  const envArgs = Object.entries(service.env || {})
+    .map(([key, value]) => `${key}=${shellQuote(value)}`)
+    .join(" ");
+  const args = service.args.map((value) => shellQuote(value)).join(" ");
+  const cwd = shellQuote(service.cwd || rootDir);
+  const commandLine = `${shellQuote(service.command)} ${args}`.trim();
+  const prefixedCommand =
+    envArgs.length > 0 ? `${envArgs} ${commandLine}` : commandLine;
+
+  return `cd ${cwd} && ${prefixedCommand} 2>&1 | tee -a ${shellQuote(logPath)}`;
+}
+
+function runTmuxMode(services) {
+  if (!hasTmux()) {
+    logLine(
+      {
+        name: "dev-all",
+        color: "\x1b[33m",
+      },
+      "tmux가 없어 --legacy 모드로 실행합니다.",
+      "stderr"
+    );
+    runLegacyMode(services);
+    return;
+  }
+
+  const logDir = join(rootDir, ".tmp", "dev-all");
+  const servicesWithLog = services.map((service) => ({
     ...service,
-    name: raceWindowName,
+    logPath: join(logDir, `${service.name}.log`),
   }));
 
-  createMainWindow(sessionName, mainWindowName, mainPaneServices);
-  createExtraWindows(sessionName, namedExtraWindowServices);
-  cleanupBootstrapWindow(sessionName);
-  runTmux(["select-window", "-t", `${sessionName}:${mainWindowName}`]);
-  runTmux([
-    "display-message",
+  mkdirSync(logDir, { recursive: true });
+  for (const service of servicesWithLog) {
+    writeFileSync(service.logPath, "");
+  }
+
+  const sessionName = `yeon-dev-all-${Date.now().toString(36)}`;
+  const [firstService, ...restServices] = servicesWithLog;
+
+  const firstResult = runTmuxCommand([
+    "new-session",
     "-d",
-    "7000",
-    `run ${runId} | race-server window ${sessionName}:${raceWindowName} | web ${ports.webPort} | mobile ${ports.mobilePort} | backend ${ports.backendPort} | race ${ports.racePort} | logs ${logRoot}`,
+    "-s",
+    sessionName,
+    "-n",
+    firstService.name,
+    buildTmuxCommand(firstService, firstService.logPath),
   ]);
 
-  if (!process.env.TMUX) {
-    runTmux(["attach-session", "-t", sessionName]);
+  if (firstResult.status !== 0) {
+    logLine(
+      {
+        name: "dev-all",
+        color: "\x1b[31m",
+      },
+      `tmux 첫 창 생성 실패: ${firstResult.stderr || firstResult.error?.message}`,
+      "stderr"
+    );
+    process.exit(1);
+  }
+
+  for (const service of restServices) {
+    const windowResult = runTmuxCommand([
+      "new-window",
+      "-t",
+      sessionName,
+      "-n",
+      service.name,
+      buildTmuxCommand(service, service.logPath),
+    ]);
+
+    if (windowResult.status !== 0) {
+      runTmuxCommand(["kill-session", "-t", sessionName]);
+      logLine(
+        {
+          name: "dev-all",
+          color: "\x1b[31m",
+        },
+        `tmux 창 생성 실패(${service.name}): ${windowResult.stderr || windowResult.error?.message}`,
+        "stderr"
+      );
+      process.exit(1);
+    }
+  }
+
+  for (const service of servicesWithLog) {
+    const remainResult = runTmuxCommand([
+      "set-window-option",
+      "-t",
+      `${sessionName}:${service.name}`,
+      "remain-on-exit",
+      "on",
+    ]);
+
+    if (remainResult.status !== 0) {
+      logLine(
+        {
+          name: "dev-all",
+          color: "\x1b[33m",
+        },
+        `remain-on-exit 설정 실패(${service.name})`,
+        "stderr"
+      );
+    }
+  }
+
+  logLine(
+    {
+      name: "dev-all",
+      color: "\x1b[33m",
+    },
+    `tmux 세션 시작: ${sessionName}`
+  );
+  logLine(
+    {
+      name: "dev-all",
+      color: "\x1b[33m",
+    },
+    `로그: ${join(logDir, "<서비스명>.log")}`
+  );
+  const attached = isInsideTmux();
+  logLine(
+    {
+      name: "dev-all",
+      color: "\x1b[33m",
+    },
+    `tmux 창 이동: ${
+      attached
+        ? `tmux switch-client -t ${sessionName}`
+        : `tmux a -t ${sessionName}`
+    }`
+  );
+
+  const shouldAttach = process.stdout.isTTY && process.stdin.isTTY && !attached;
+
+  if (shouldAttach) {
+    const attach = spawn("tmux", ["attach-session", "-t", sessionName], {
+      stdio: "inherit",
+    });
+
+    attach.on("exit", () => {
+      process.exit(0);
+    });
+  } else {
+    if (attached) {
+      const switchResult = runTmuxCommand(["switch-client", "-t", sessionName]);
+
+      if (switchResult.status === 0) {
+        logLine(
+          {
+            name: "dev-all",
+            color: "\x1b[33m",
+          },
+          "현재 tmux 세션에서 세션을 전환합니다."
+        );
+        process.exit(0);
+      }
+
+      logLine(
+        {
+          name: "dev-all",
+          color: "\x1b[33m",
+        },
+        "현재 tmux 내부에서 세션 전환을 시도했지만 실패했습니다."
+      );
+      logLine(
+        {
+          name: "dev-all",
+          color: "\x1b[33m",
+        },
+        `수동 전환: tmux switch-client -t ${sessionName} 또는 tmux a -d -t ${sessionName}`
+      );
+      process.exit(0);
+    }
+
+    logLine(
+      {
+        name: "dev-all",
+        color: "\x1b[33m",
+      },
+      `이 환경은 TTY가 아니어서 자동 attach를 건너뜁니다. 세션으로 붙으려면: tmux a -t ${sessionName}`
+    );
+    process.exit(0);
   }
 }
 
-main().catch((error) => {
-  fail(error instanceof Error ? error.message : String(error));
+async function runDevAll() {
+  const services = await resolveServices();
+  ensureWebLockSafe();
+  logPortAssignments(services);
+
+  if (useLegacyMode) {
+    runLegacyMode(services);
+  } else {
+    runTmuxMode(services);
+  }
+}
+
+runDevAll().catch((error) => {
+  logLine(
+    {
+      name: "dev-all",
+      color: "\x1b[31m",
+    },
+    `실행 준비 중 오류: ${error.message}`,
+    "stderr"
+  );
+  process.exit(1);
 });

@@ -151,13 +151,8 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
   const [seedRetryToken, setSeedRetryToken] = useState(0);
   const [useDefaultFallback, setUseDefaultFallback] = useState(false);
   const [copied, setCopied] = useState(false);
-<<<<<<< HEAD
   const trackedRoomEntryRef = useRef<string | null>(null);
   const hasTrackedRoomCreateSuccessRef = useRef(false);
-||||||| parent of b3843e6 (chore: 스프링 마이그레이션 복구 스냅샷 보존)
-=======
-  const hasTrackedRoomCreateSuccessRef = useRef(false);
->>>>>>> b3843e6 (chore: 스프링 마이그레이션 복구 스냅샷 보존)
 
   useEffect(() => {
     if (mode !== "create") return;
@@ -277,20 +272,17 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
     }
 
     trackedRoomEntryRef.current = trackingKey;
-    trackEvent(
-      mode === "create" ? "room_created" : "room_joined",
-      {
-        source: "typing_room",
-        room_id: race.roomId,
-        visibility: room.visibility,
-        current_participants: room.currentParticipants,
-        max_participants: room.maxParticipants,
-        selected_deck_id:
-          mode === "create"
-            ? (deckAwareCreateRoomOptions?.selectedDeckId ?? null)
-            : null,
-      }
-    );
+    trackEvent(mode === "create" ? "room_created" : "room_joined", {
+      source: "typing_room",
+      room_id: race.roomId,
+      visibility: room.visibility,
+      current_participants: room.currentParticipants,
+      max_participants: room.maxParticipants,
+      selected_deck_id:
+        mode === "create"
+          ? (deckAwareCreateRoomOptions?.selectedDeckId ?? null)
+          : null,
+    });
   }, [deckAwareCreateRoomOptions, mode, race.roomId, room]);
 
   const copyInvite = async () => {
