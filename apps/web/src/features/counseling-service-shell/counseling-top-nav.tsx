@@ -8,6 +8,7 @@ import { createPortal } from "react-dom";
 import { TutorialTriggerButton } from "@/components/tutorial";
 import { useTutorialPolicy } from "./counseling-sidebar-layout-context";
 import { useAppRoute } from "@/lib/app-route-context";
+import { PLATFORM_HOME_HREF } from "@/lib/platform-services";
 
 const SECTION_LABELS: Record<string, string> = {
   records: "상담 기록",
@@ -172,7 +173,7 @@ export function TopNav({ section }: TopNavProps) {
   const helpContent = HELP_CONTENTS[helpContentKey];
   const sectionMenuRef = useClickOutside<HTMLDivElement>(
     () => setSectionMenuOpen(false),
-    sectionMenuOpen,
+    sectionMenuOpen
   );
 
   const tutorialKey =
@@ -192,7 +193,7 @@ export function TopNav({ section }: TopNavProps) {
   return (
     <div className="sticky top-0 z-[100] bg-[rgba(9,9,11,0.85)] backdrop-blur-[16px] border-b border-border flex items-center px-4 h-12 gap-3">
       <Link
-        href="/"
+        href={PLATFORM_HOME_HREF}
         className="rounded-[10px] bg-none px-[10px] py-[6px] text-sm font-semibold text-text transition-all duration-150 hover:text-text hover:bg-surface-3"
       >
         YEON
@@ -476,7 +477,7 @@ function TopNavHelpModal({
                 className="inline-flex min-h-10 items-center justify-center rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-95"
                 onClick={() =>
                   setCurrentPageIndex((prev) =>
-                    Math.min(prev + 1, lastPageIndex),
+                    Math.min(prev + 1, lastPageIndex)
                   )
                 }
               >
@@ -495,7 +496,7 @@ function TopNavHelpModal({
         </div>
       </div>
     </div>,
-    portalRoot,
+    portalRoot
   );
 }
 

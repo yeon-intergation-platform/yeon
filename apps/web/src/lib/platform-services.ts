@@ -58,7 +58,7 @@ export const PLATFORM_SERVICES = [
   },
 ] as const satisfies readonly PlatformServiceDescriptor[];
 
-export const PLATFORM_HOME_HREF = "/";
+export const PLATFORM_HOME_HREF = "https://yeon.world";
 export const DEFAULT_COUNSELING_SERVICE_HREF = "/counseling-service";
 
 export function getPlatformServices() {

@@ -16,6 +16,7 @@ import { useDeckDetail } from "./hooks";
 import type { DeckDetailViewState } from "./types";
 import { useState } from "react";
 import { analyticsEvents, trackEvent } from "@/lib/analytics";
+import { PLATFORM_HOME_HREF } from "@/lib/platform-services";
 
 function toViewState(
   query: UseQueryResult<CardDeckDetailResponse>
@@ -60,7 +61,7 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
       <header className="hidden border-b border-[#e5e5e5] px-5 py-3 md:block md:px-12">
         <div className="mx-auto flex max-w-[1280px] items-center justify-between">
           <Link
-            href="/"
+            href={PLATFORM_HOME_HREF}
             className="text-[14px] font-semibold text-[#111] no-underline transition-colors hover:opacity-70"
           >
             YEON 카드

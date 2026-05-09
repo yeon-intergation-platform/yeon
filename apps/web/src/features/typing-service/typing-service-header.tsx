@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { PLATFORM_HOME_HREF } from "@/lib/platform-services";
 
 export type TypingServiceNavKey = "home" | "rooms" | "decks" | "race";
 
@@ -28,7 +29,7 @@ export function TypingServiceHeader({
       <div className="flex h-full items-center justify-between gap-5">
         <div className="flex shrink-0 items-center gap-2">
           <Link
-            href="/"
+            href={PLATFORM_HOME_HREF}
             className="text-[22px] font-black tracking-[-0.04em] text-[#111] no-underline transition-opacity hover:opacity-70 md:text-[25px]"
           >
             YEON

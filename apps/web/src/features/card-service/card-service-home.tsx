@@ -7,6 +7,7 @@ import Link from "next/link";
 
 import { analyticsEvents, trackEvent } from "@/lib/analytics";
 import { countGuestCardDecks } from "@/lib/guest-card-service-store";
+import { PLATFORM_HOME_HREF } from "@/lib/platform-services";
 
 import { useIsAuthenticated } from "./auth-context";
 import {
@@ -99,7 +100,7 @@ export function CardServiceHome() {
       <header className="border-b border-[#e5e5e5] px-6 py-3 md:px-12">
         <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-3">
           <Link
-            href="/"
+            href={PLATFORM_HOME_HREF}
             className="text-[14px] font-semibold text-[#111] no-underline hover:opacity-70"
           >
             YEON 카드

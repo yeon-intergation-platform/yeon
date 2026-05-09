@@ -20,6 +20,7 @@ import {
   useReviewCard,
   useUpdateCardStudyPreference,
 } from "./hooks";
+import { PLATFORM_HOME_HREF } from "@/lib/platform-services";
 
 type DeckPlayViewState =
   | { kind: "loading" }
@@ -67,7 +68,7 @@ export function DeckPlayScreen({ deckId }: DeckPlayScreenProps) {
             ← 덱으로
           </Link>
           <Link
-            href="/"
+            href={PLATFORM_HOME_HREF}
             className="text-[14px] font-semibold text-[#111] no-underline hover:opacity-70"
           >
             YEON 카드 · 실행
