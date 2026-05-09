@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 
+import { analyticsEvents, trackEvent } from "@/lib/analytics";
 import {
   TYPING_DECK_LANGUAGE_OPTIONS,
   type TypingDeckDto,
@@ -82,6 +83,12 @@ function DeckLibraryEmptyState({
 function DeckLibraryCard({ deck }: { deck: TypingDeckDto }) {
   const detailHref = `/typing-service/decks/${deck.id}`;
   const practiceHref = `/typing-service/practice?deckId=${encodeURIComponent(deck.id)}`;
+  const detailParams = {
+    deck_id: deck.id,
+    deck_source: deck.source,
+    deck_visibility: deck.visibility,
+    language_tag: deck.languageTag,
+  };
 
   return (
     <article className="group relative flex min-h-[230px] flex-col rounded-3xl border border-[#e5e5e5] bg-white p-5 transition-colors hover:border-[#111]">
@@ -89,6 +96,12 @@ function DeckLibraryCard({ deck }: { deck: TypingDeckDto }) {
         href={detailHref}
         aria-label={`${deck.title} 자세히 보기`}
         className="absolute inset-0 rounded-3xl"
+        onClick={() =>
+          trackEvent(analyticsEvents.typingDeckOpen, {
+            ...detailParams,
+            source: "deck_card_surface",
+          })
+        }
       />
       <div className="relative z-10 flex flex-wrap items-center gap-2 text-[12px] font-semibold text-[#666]">
         <span className="rounded-full bg-[#f3f3f3] px-2.5 py-1">
@@ -122,12 +135,24 @@ function DeckLibraryCard({ deck }: { deck: TypingDeckDto }) {
           <Link
             href={detailHref}
             className="rounded-xl border border-[#e5e5e5] bg-white px-4 py-2 text-[13px] font-semibold text-[#111] no-underline transition-colors hover:border-[#111]"
+            onClick={() =>
+              trackEvent(analyticsEvents.typingDeckOpen, {
+                ...detailParams,
+                source: "deck_card_button",
+              })
+            }
           >
             자세히 보기
           </Link>
           <Link
             href={practiceHref}
             className="rounded-xl bg-[#111] px-4 py-2 text-[13px] font-semibold text-white no-underline transition-colors hover:bg-[#333]"
+            onClick={() =>
+              trackEvent(analyticsEvents.typingPracticeSelect, {
+                ...detailParams,
+                source: "deck_card_button",
+              })
+            }
           >
             연습하기
           </Link>
@@ -200,12 +225,20 @@ export function TypingDeckLibraryScreen({
       decks.filter(
         (deck) =>
           deckMatchesSearch(deck, normalizedSearch) &&
-          deckMatchesLanguage(deck, languageFilter),
+          deckMatchesLanguage(deck, languageFilter)
       ),
-    [decks, languageFilter, normalizedSearch],
+    [decks, languageFilter, normalizedSearch]
   );
   const hasFilteredDecks = Boolean(filteredDecks[0]);
   const hasAnyDecks = Boolean(decks[0]);
+  const openCreateModal = (source: string) => {
+    setCreateModalOpen(true);
+    trackEvent(analyticsEvents.typingDeckCreateOpen, {
+      source,
+      scope,
+      language_filter: languageFilter,
+    });
+  };
 
   return (
     <div className="min-h-screen bg-white text-[#111]">
@@ -224,7 +257,7 @@ export function TypingDeckLibraryScreen({
             ) : null}
             <button
               type="button"
-              onClick={() => setCreateModalOpen(true)}
+              onClick={() => openCreateModal("header")}
               className="rounded-xl bg-[#111] px-4 py-2 text-[13px] font-semibold text-white transition-colors hover:bg-[#333]"
             >
               새 덱 만들기
@@ -250,7 +283,7 @@ export function TypingDeckLibraryScreen({
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
-              onClick={() => setCreateModalOpen(true)}
+              onClick={() => openCreateModal("hero")}
               className="rounded-xl bg-[#111] px-5 py-3 text-[14px] font-semibold text-white transition-colors hover:bg-[#333]"
             >
               새 덱 만들기
@@ -264,6 +297,12 @@ export function TypingDeckLibraryScreen({
             <Link
               href="/typing-service/practice"
               className="rounded-xl border border-[#e5e5e5] bg-white px-5 py-3 text-[14px] font-semibold text-[#111] no-underline transition-colors hover:border-[#111]"
+              onClick={() =>
+                trackEvent(analyticsEvents.typingPracticeSelect, {
+                  source: "library_hero",
+                  deck_scope: scope,
+                })
+              }
             >
               자유 연습으로 이동
             </Link>
@@ -351,7 +390,7 @@ export function TypingDeckLibraryScreen({
           {decksQuery.isSuccess && !hasFilteredDecks ? (
             <DeckLibraryEmptyState
               hasAnyDecks={hasAnyDecks}
-              onCreate={() => setCreateModalOpen(true)}
+              onCreate={() => openCreateModal("empty_state")}
             />
           ) : null}
         </section>

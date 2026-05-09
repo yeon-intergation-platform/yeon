@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState, type FormEvent } from "react";
 import type { CardDeckDto } from "@yeon/api-contract/card-decks";
 
+import { analyticsEvents, trackEvent } from "@/lib/analytics";
 import { useUpdateDeck } from "../hooks";
 
 interface DeckDetailHeaderProps {
@@ -226,6 +227,12 @@ export function DeckDetailHeader({
       <Link
         href={`/card-service/decks/${deck.id}/play`}
         className="mt-8 flex w-full items-center justify-center rounded-[22px] bg-[#111] px-4 py-4 text-[20px] font-semibold text-white no-underline transition-colors hover:bg-[#333] md:mt-6 md:py-3.5 md:text-[16px]"
+        onClick={() =>
+          trackEvent(analyticsEvents.cardStudyStart, {
+            deck_id: deck.id,
+            item_count: deck.itemCount,
+          })
+        }
       >
         ▶ 학습 시작
       </Link>

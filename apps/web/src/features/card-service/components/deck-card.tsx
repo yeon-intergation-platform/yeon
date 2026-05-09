@@ -1,6 +1,8 @@
 import Link from "next/link";
 import type { CardDeckDto } from "@yeon/api-contract/card-decks";
 
+import { analyticsEvents, trackEvent } from "@/lib/analytics";
+
 interface DeckCardProps {
   deck: CardDeckDto;
 }
@@ -18,6 +20,13 @@ export function DeckCard({ deck }: DeckCardProps) {
     <Link
       href={`/card-service/decks/${deck.id}`}
       className="block rounded-xl border border-[#e5e5e5] p-5 text-[#111] no-underline transition-colors hover:border-[#111]"
+      onClick={() =>
+        trackEvent(analyticsEvents.cardDeckOpen, {
+          deck_id: deck.id,
+          item_count: deck.itemCount,
+          source: "deck_list",
+        })
+      }
     >
       <h3 className="text-[16px] font-semibold">{deck.title}</h3>
       {deck.description ? (

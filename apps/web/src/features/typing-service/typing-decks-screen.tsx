@@ -28,6 +28,7 @@ import {
   parseBulkTypingPassageImportInput,
   TYPING_PASSAGE_BULK_IMPORT_MAX_ITEMS,
 } from "./utils/bulk-typing-passage-import-parser";
+import { analyticsEvents, trackEvent } from "@/lib/analytics";
 
 const BULK_PASSAGE_TEMPLATE = `[[PASSAGE]]
 [[TITLE]]
@@ -128,6 +129,12 @@ export function TypingDeckForm({
     mutation.mutate(body, {
       onSuccess: (savedDeck) => {
         if (mode === "create") {
+          trackEvent(analyticsEvents.typingDeckCreated, {
+            deck_id: savedDeck.id,
+            language_tag: savedDeck.languageTag,
+            visibility: savedDeck.visibility,
+            admin_mode: adminMode,
+          });
           setTitle("");
           setDescription("");
           setLanguageTag("ko");

@@ -10,6 +10,7 @@ import {
   type FormEvent,
 } from "react";
 
+import { analyticsEvents, trackEvent } from "@/lib/analytics";
 import { useAddCard, useUpdateCard } from "../hooks";
 import { uploadCardDeckImage } from "../hooks/card-service-fetch";
 import { MarkdownEditor } from "./markdown-editor";
@@ -239,6 +240,10 @@ export function AddCardForm({
 
     addMutation.mutate(body, {
       onSuccess: () => {
+        trackEvent(analyticsEvents.cardCreated, {
+          deck_id: deckId,
+          has_image: !!imageStorageKey,
+        });
         resetDraft();
         setFrontText("");
         setBackText("");

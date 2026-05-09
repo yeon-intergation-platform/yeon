@@ -1,5 +1,6 @@
 "use client";
 
+import { analyticsEvents, trackEvent } from "@/lib/analytics";
 import { TYPING_FAQS } from "./typing-content";
 import { useTypingProfile } from "./use-typing-profile";
 import { TypingBgmButton } from "./typing-bgm-button";
@@ -30,6 +31,14 @@ export function TypingServiceHome() {
   const { profile, updateProfile, loaded } = useTypingProfile();
   const { settings } = useTypingSettings();
   const t = createTranslator(settings.locale);
+  const handleCtaClick = (target: string) => {
+    trackEvent(analyticsEvents.typingHomeCtaClick, {
+      target,
+      locale: settings.locale,
+      has_profile: loaded,
+      character_id: profile.characterId,
+    });
+  };
 
   return (
     <div className="min-h-screen bg-white text-[#111]">
@@ -97,18 +106,21 @@ export function TypingServiceHome() {
               <a
                 href="/typing-service/rooms"
                 className="inline-flex items-center justify-center rounded-xl bg-[#111] py-4 text-[15px] font-semibold text-white no-underline transition-colors hover:bg-[#333]"
+                onClick={() => handleCtaClick("rooms")}
               >
                 타자방 입장
               </a>
               <a
                 href="/typing-service/decks"
                 className="inline-flex items-center justify-center rounded-xl border border-[#e5e5e5] bg-white py-3.5 text-[14px] font-semibold text-[#555] no-underline transition-colors hover:border-[#111] hover:text-[#111]"
+                onClick={() => handleCtaClick("decks")}
               >
                 연습 덱 관리
               </a>
               <a
                 href="/typing-service/play"
                 className="inline-flex items-center justify-center rounded-xl border border-[#e5e5e5] bg-white py-3.5 text-[14px] font-semibold text-[#555] no-underline transition-colors hover:border-[#111] hover:text-[#111]"
+                onClick={() => handleCtaClick("play")}
               >
                 {t("joinRace")}
               </a>

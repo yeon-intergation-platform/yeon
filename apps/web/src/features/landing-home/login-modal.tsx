@@ -6,6 +6,7 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import Link from "next/link";
 import { ChevronDown, X } from "lucide-react";
 
+import { analyticsEvents, trackEvent } from "@/lib/analytics";
 import type { DevLoginOption } from "@/lib/auth/dev-login-options";
 
 type LoginModalProps = {
@@ -85,13 +86,13 @@ export function LoginModal({
     "google" | "kakao" | "dev-login" | "dev-create" | null
   >(null);
   const [selectedDevLoginAccount, setSelectedDevLoginAccount] = useState(
-    devLoginOptions[0]?.accountKey ?? "",
+    devLoginOptions[0]?.accountKey ?? ""
   );
   const prefersReducedMotion = useReducedMotion();
   const hasDevLoginOptions = devLoginOptions.length > 0;
   const selectedDevLoginOption =
     devLoginOptions.find(
-      (option) => option.accountKey === selectedDevLoginAccount,
+      (option) => option.accountKey === selectedDevLoginAccount
     ) ?? devLoginOptions[0];
 
   useEffect(() => {
@@ -147,6 +148,11 @@ export function LoginModal({
 
   function moveToSocialLogin(provider: "google" | "kakao", href: string) {
     setPendingProvider(provider);
+    trackEvent(analyticsEvents.loginProviderClick, {
+      provider,
+      next_path: nextPath,
+      surface: "landing_modal",
+    });
     window.location.assign(href);
   }
 
@@ -156,6 +162,11 @@ export function LoginModal({
     }
 
     setPendingProvider("dev-login");
+    trackEvent(analyticsEvents.loginProviderClick, {
+      provider: "dev-login",
+      next_path: nextPath,
+      surface: "landing_modal",
+    });
 
     const searchParams = new URLSearchParams({
       account: selectedDevLoginAccount,
@@ -167,6 +178,11 @@ export function LoginModal({
 
   function createDevLoginAccount() {
     setPendingProvider("dev-create");
+    trackEvent(analyticsEvents.loginProviderClick, {
+      provider: "dev-create",
+      next_path: nextPath,
+      surface: "landing_modal",
+    });
 
     const searchParams = new URLSearchParams({
       create: "1",
@@ -269,6 +285,13 @@ export function LoginModal({
                 <Link
                   href={`/auth/login?next=${encodeURIComponent(nextPath)}`}
                   className="font-semibold text-[#2b313d] underline-offset-2 hover:underline"
+                  onClick={() =>
+                    trackEvent(analyticsEvents.loginSecondaryClick, {
+                      target: "email_login",
+                      next_path: nextPath,
+                      surface: "landing_modal",
+                    })
+                  }
                 >
                   이메일로 로그인
                 </Link>
@@ -276,6 +299,13 @@ export function LoginModal({
                 <Link
                   href={`/auth/register?next=${encodeURIComponent(nextPath)}`}
                   className="underline-offset-2 hover:underline"
+                  onClick={() =>
+                    trackEvent(analyticsEvents.loginSecondaryClick, {
+                      target: "email_register",
+                      next_path: nextPath,
+                      surface: "landing_modal",
+                    })
+                  }
                 >
                   이메일로 가입
                 </Link>
@@ -283,6 +313,13 @@ export function LoginModal({
                 <Link
                   href="/auth/reset-request"
                   className="underline-offset-2 hover:underline"
+                  onClick={() =>
+                    trackEvent(analyticsEvents.loginSecondaryClick, {
+                      target: "reset_request",
+                      next_path: nextPath,
+                      surface: "landing_modal",
+                    })
+                  }
                 >
                   비밀번호 찾기
                 </Link>
@@ -362,6 +399,6 @@ export function LoginModal({
         </motion.div>
       ) : null}
     </AnimatePresence>,
-    document.body,
+    document.body
   );
 }

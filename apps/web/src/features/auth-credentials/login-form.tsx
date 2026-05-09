@@ -8,6 +8,7 @@ import {
   credentialLogin,
   getCredentialErrorMessage,
 } from "@/lib/credential-client";
+import { analyticsEvents, trackEvent } from "@/lib/analytics";
 
 type LoginViewState =
   | { kind: "idle" }
@@ -32,15 +33,23 @@ export function LoginForm({ nextPath }: LoginFormProps) {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setState({ kind: "submitting" });
+    trackEvent(analyticsEvents.credentialLoginSubmit, {
+      method: "credentials",
+      next_path: nextPath,
+    });
 
     try {
       await loginMutation.mutateAsync({ email, password });
+      trackEvent(analyticsEvents.loginSuccess, {
+        method: "credentials",
+        next_path: nextPath,
+      });
       router.push(nextPath);
       router.refresh();
     } catch (error) {
       const message = getCredentialErrorMessage(
         error,
-        "로그인에 실패했습니다. 잠시 후 다시 시도해 주세요.",
+        "로그인에 실패했습니다. 잠시 후 다시 시도해 주세요."
       );
       setState({ kind: "error", message });
     }

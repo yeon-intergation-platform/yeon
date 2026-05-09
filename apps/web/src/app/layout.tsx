@@ -1,7 +1,11 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import Script from "next/script";
 
+import { GoogleAnalyticsPageTracker } from "@/components/analytics/google-analytics-page-tracker";
+import { GA_MEASUREMENT_ID } from "@/lib/analytics";
 import { getDefaultSiteRobots, getSeoMetadataBase } from "@/lib/seo";
+import { isCanonicalDeployment } from "@/lib/seo";
 import {
   SITE_BRAND_NAME,
   SITE_DESCRIPTION,
@@ -41,9 +45,31 @@ type RootLayoutProps = {
 };
 
 export default function RootLayout({ children }: RootLayoutProps) {
+  const analyticsEnabled = isCanonicalDeployment();
+
   return (
     <html lang="ko">
-      <body>{children}</body>
+      <body>
+        {analyticsEnabled ? (
+          <>
+            <Script
+              src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
+              strategy="afterInteractive"
+            />
+            <Script id="google-analytics" strategy="afterInteractive">
+              {`
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                window.gtag = gtag;
+                gtag('js', new Date());
+                gtag('config', '${GA_MEASUREMENT_ID}', { send_page_view: false });
+              `}
+            </Script>
+            <GoogleAnalyticsPageTracker />
+          </>
+        ) : null}
+        {children}
+      </body>
     </html>
   );
 }

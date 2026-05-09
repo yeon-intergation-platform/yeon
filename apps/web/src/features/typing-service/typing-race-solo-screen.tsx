@@ -35,6 +35,7 @@ import {
   calculateTypingSpeedMetrics,
   getProgress,
 } from "./race-metrics";
+import { analyticsEvents, trackEvent } from "@/lib/analytics";
 
 const BENCHMARK_LANES = [
   {
@@ -159,6 +160,8 @@ export function TypingRaceSoloScreen({
   const benchmarkNoiseRef = useRef<BenchmarkNoiseState[]>(
     createBenchmarkNoiseStates()
   );
+  const startedTrackedRef = useRef(false);
+  const completedTrackedRef = useRef(false);
 
   useEffect(() => {
     if (input.length > 0) return;
@@ -215,8 +218,49 @@ export function TypingRaceSoloScreen({
   useEffect(() => {
     if (countdownRemaining !== 0 || startedAt || completed) return;
     setStartedAt(Date.now());
+    if (!startedTrackedRef.current) {
+      startedTrackedRef.current = true;
+      trackEvent(analyticsEvents.typingPracticeStart, {
+        deck_id: activeDeckId,
+        deck_title: activeDeckTitle,
+        language_tag: activeLanguageTag,
+        source: practiceDeckId
+          ? "practice_deck"
+          : offlineReason
+            ? "play_fallback"
+            : "solo_play",
+      });
+    }
     textareaRef.current?.focus();
   }, [completed, countdownRemaining, startedAt]);
+
+  useEffect(() => {
+    if (!completed || completedTrackedRef.current) {
+      return;
+    }
+
+    completedTrackedRef.current = true;
+    trackEvent(analyticsEvents.typingPracticeComplete, {
+      deck_id: activeDeckId,
+      deck_title: activeDeckTitle,
+      language_tag: activeLanguageTag,
+      accuracy,
+      cpm,
+      wpm,
+      elapsed_seconds: Number(elapsedSeconds.toFixed(1)),
+      prompt_length: passage.prompt.length,
+    });
+  }, [
+    accuracy,
+    activeDeckId,
+    activeDeckTitle,
+    activeLanguageTag,
+    completed,
+    cpm,
+    elapsedSeconds,
+    passage.prompt.length,
+    wpm,
+  ]);
 
   useEffect(() => {
     if (!startedAt || completed) return;
@@ -378,6 +422,8 @@ export function TypingRaceSoloScreen({
 
   const handleRestart = () => {
     benchmarkNoiseRef.current = createBenchmarkNoiseStates();
+    startedTrackedRef.current = false;
+    completedTrackedRef.current = false;
     setPassage((current) => pickNextPassage(passages, current.id));
     setInput("");
     setCountdownRemaining(TYPING_RACE_DEFAULTS.countdownSeconds);

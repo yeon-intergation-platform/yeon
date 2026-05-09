@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Copy, Crown, Play, Users } from "lucide-react";
 import {
@@ -40,6 +40,7 @@ import {
   type TypingRaceSeed,
 } from "./use-typing-settings";
 import { resolveTypingRoomSelectedDeck } from "./typing-room-selection";
+import { analyticsEvents, trackEvent } from "@/lib/analytics";
 
 type TypingRoomScreenProps = {
   roomId?: string;
@@ -49,7 +50,7 @@ type TypingRoomScreenProps = {
 function parseEnum<T extends string>(
   value: string | null,
   allowed: readonly T[],
-  fallback: T,
+  fallback: T
 ): T {
   return value && allowed.includes(value as T) ? (value as T) : fallback;
 }
@@ -57,7 +58,7 @@ function parseEnum<T extends string>(
 function parseNumber(
   value: string | null,
   allowed: readonly number[],
-  fallback: number,
+  fallback: number
 ) {
   const parsed = Number(value);
   return allowed.includes(parsed) ? parsed : fallback;
@@ -78,28 +79,28 @@ function useCreateRoomOptions(): DeckAwareCreateMessage {
     const language = parseEnum<TypingRoomLanguage>(
       searchParams.get("language"),
       [TYPING_ROOM_LANGUAGE.KO, TYPING_ROOM_LANGUAGE.EN],
-      TYPING_ROOM_LANGUAGE.KO,
+      TYPING_ROOM_LANGUAGE.KO
     );
     return {
       selectedDeckId: searchParams.get("selectedDeckId") ?? undefined,
       title: (searchParams.get("title") || "한글 짧은 문장 같이 치기").slice(
         0,
-        40,
+        40
       ),
       visibility: parseEnum<TypingRoomVisibility>(
         searchParams.get("visibility"),
         [TYPING_ROOM_VISIBILITY.PUBLIC, TYPING_ROOM_VISIBILITY.PRIVATE],
-        TYPING_ROOM_VISIBILITY.PUBLIC,
+        TYPING_ROOM_VISIBILITY.PUBLIC
       ),
       maxParticipants: parseNumber(
         searchParams.get("maxParticipants"),
         [2, 4],
-        4,
+        4
       ),
       textType: parseEnum<TypingRoomTextType>(
         searchParams.get("textType"),
         [TYPING_ROOM_TEXT_TYPE.SHORT],
-        TYPING_ROOM_TEXT_TYPE.SHORT,
+        TYPING_ROOM_TEXT_TYPE.SHORT
       ),
       language,
       difficulty: parseEnum<TypingRoomDifficulty>(
@@ -109,13 +110,13 @@ function useCreateRoomOptions(): DeckAwareCreateMessage {
           TYPING_ROOM_DIFFICULTY.NORMAL,
           TYPING_ROOM_DIFFICULTY.HARD,
         ],
-        TYPING_ROOM_DIFFICULTY.NORMAL,
+        TYPING_ROOM_DIFFICULTY.NORMAL
       ),
       roundCount: parseNumber(searchParams.get("roundCount"), [1], 1),
       mode: parseEnum<TypingRoomMode>(
         searchParams.get("mode"),
         [TYPING_ROOM_MODE.FINISH],
-        TYPING_ROOM_MODE.FINISH,
+        TYPING_ROOM_MODE.FINISH
       ),
     };
   }, [searchParams]);
@@ -133,14 +134,14 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
         createRoomOptions.selectedDeckId,
         deckState.decks,
         deckState.selectedDeck,
-        createRoomOptions.language,
+        createRoomOptions.language
       ),
     [
       createRoomOptions.language,
       createRoomOptions.selectedDeckId,
       deckState.decks,
       deckState.selectedDeck,
-    ],
+    ]
   );
   const [seedState, setSeedState] = useState<
     | { kind: "idle" | "loading" }
@@ -150,6 +151,7 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
   const [seedRetryToken, setSeedRetryToken] = useState(0);
   const [useDefaultFallback, setUseDefaultFallback] = useState(false);
   const [copied, setCopied] = useState(false);
+  const trackedRoomEntryRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (mode !== "create") return;
@@ -166,7 +168,7 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
         if (cancelled) return;
         if (result.ok) setSeedState({ kind: "ready", seed: result.seed });
         else setSeedState({ kind: "error", message: result.message });
-      },
+      }
     );
 
     return () => {
@@ -231,10 +233,42 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
       ? ""
       : `${window.location.origin}/typing-service/rooms/${race.roomId}`;
 
+  useEffect(() => {
+    if (!room || !race.roomId) {
+      return;
+    }
+
+    const trackingKey = `${mode}:${race.roomId}`;
+    if (trackedRoomEntryRef.current === trackingKey) {
+      return;
+    }
+
+    trackedRoomEntryRef.current = trackingKey;
+    trackEvent(
+      mode === "create"
+        ? analyticsEvents.typingRoomCreated
+        : analyticsEvents.typingRoomJoined,
+      {
+        room_id: race.roomId,
+        visibility: room.visibility,
+        current_participants: room.currentParticipants,
+        max_participants: room.maxParticipants,
+        selected_deck_id:
+          mode === "create"
+            ? (deckAwareCreateRoomOptions?.selectedDeckId ?? null)
+            : null,
+      }
+    );
+  }, [deckAwareCreateRoomOptions, mode, race.roomId, room]);
+
   const copyInvite = async () => {
     if (!inviteUrl) return;
     try {
       await navigator.clipboard.writeText(inviteUrl);
+      trackEvent(analyticsEvents.typingRoomInviteCopy, {
+        room_id: race.roomId ?? roomId ?? null,
+        mode,
+      });
       setCopied(true);
       window.setTimeout(() => setCopied(false), 1600);
     } catch {
