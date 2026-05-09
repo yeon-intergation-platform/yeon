@@ -90,7 +90,6 @@ function buildPaneCommand(service) {
   return `${shell} -lc ${quoteShell(
     [
       `cd ${quoteShell(service.cwd)}`,
-      "clear",
       `echo \"=== ${escapedName} ===\"`,
       ...(portLine ? [portLine] : []),
       ...(logIntroLine ? [logIntroLine] : []),
@@ -113,7 +112,7 @@ function sendServiceToPane(paneId, service) {
   runTmux(["send-keys", "-t", paneId, buildPaneCommand(service), "C-m"]);
 }
 
-function createMainWindow(sessionName, services) {
+function createMainWindow(sessionName, windowName, services) {
   const targetSession = `${sessionName}:`;
   const firstPaneId = runTmux(
     [
@@ -124,7 +123,7 @@ function createMainWindow(sessionName, services) {
       "-t",
       targetSession,
       "-n",
-      "dev-all",
+      windowName,
     ],
     { captureOutput: true }
   );
@@ -172,26 +171,18 @@ function createDetachedSession() {
   return sessionName;
 }
 
-function createLogRoot(sessionName) {
-  const logRoot = path.join(projectRoot, ".logs", "dev-all", sessionName);
-  ensureDir(logRoot);
-  return logRoot;
+function createRunId() {
+  return new Date()
+    .toISOString()
+    .replace(/[-:]/g, "")
+    .replace(/\..+$/, "")
+    .replace("T", "-");
 }
 
-function cleanupManagedWindows(sessionName) {
-  const windows = runTmux(
-    ["list-windows", "-t", `${sessionName}:`, "-F", "#{window_name}"],
-    { captureOutput: true }
-  )
-    .split("\n")
-    .map((line) => line.trim())
-    .filter(Boolean);
-
-  ["dev-all", "race-server"].forEach((windowName) => {
-    if (windows.includes(windowName)) {
-      runTmux(["kill-window", "-t", `${sessionName}:${windowName}`]);
-    }
-  });
+function createLogRoot(sessionName, runId) {
+  const logRoot = path.join(projectRoot, ".logs", "dev-all", sessionName, runId);
+  ensureDir(logRoot);
+  return logRoot;
 }
 
 function cleanupBootstrapWindow(sessionName) {
@@ -336,25 +327,30 @@ async function main() {
         captureOutput: true,
       })
     : createDetachedSession();
-
-  cleanupManagedWindows(sessionName);
+  const runId = createRunId();
+  const mainWindowName = `dev-all-${runId}`;
+  const raceWindowName = `race-server-${runId}`;
 
   const ports = await resolvePorts();
-  const logRoot = createLogRoot(sessionName);
+  const logRoot = createLogRoot(sessionName, runId);
   const { mainPaneServices, extraWindowServices } = createServices(
     ports,
     logRoot
   );
+  const namedExtraWindowServices = extraWindowServices.map((service) => ({
+    ...service,
+    name: raceWindowName,
+  }));
 
-  createMainWindow(sessionName, mainPaneServices);
-  createExtraWindows(sessionName, extraWindowServices);
+  createMainWindow(sessionName, mainWindowName, mainPaneServices);
+  createExtraWindows(sessionName, namedExtraWindowServices);
   cleanupBootstrapWindow(sessionName);
-  runTmux(["select-window", "-t", `${sessionName}:dev-all`]);
+  runTmux(["select-window", "-t", `${sessionName}:${mainWindowName}`]);
   runTmux([
     "display-message",
     "-d",
     "7000",
-    `race-server window 생성됨: ${sessionName}:race-server | web ${ports.webPort} | mobile ${ports.mobilePort} | backend ${ports.backendPort} | race ${ports.racePort} | logs ${logRoot}`,
+    `run ${runId} | race-server window ${sessionName}:${raceWindowName} | web ${ports.webPort} | mobile ${ports.mobilePort} | backend ${ports.backendPort} | race ${ports.racePort} | logs ${logRoot}`,
   ]);
 
   if (!process.env.TMUX) {
