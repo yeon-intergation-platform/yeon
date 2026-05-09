@@ -1,0 +1,131 @@
+# 차수31 라우트 이관 매핑 정합성 점검
+- 생성일시: 2026-05-09T19:22:54.773401
+- route.ts 총계: 111
+- server/services 직접 의존: 46
+- spring-client 라우팅: 57
+- 기타 라우트: 8
+
+- **작업내용**: `apps/web/src/app/api/v1` 라우트를 대상 이관 라우트 111개 기준으로 정리하고, `@/server/services` 직접 의존(46개), spring-client 중개(57개), 미분류(8개) 집합으로 분해했다.
+- **논의 필요**: 46개 직접 의존 라우트 모두를 1차 전환 대상으로 볼지, 회귀 위험이 큰 도메인부터 선순위를 둘지.
+- **선택지**:
+  1. 도메인 위험도 기준으로 선순위 전환
+  2. 의존도 순차(최대 의존 라우트 먼저)로 전환
+- **추천**: 의존도 우선(낮은 리스크부터가 아니라 영향 범위 큰 라우트를 먼저 확보)
+- **사용자 방향**: 추천 기준 진행
+
+## server/services 직접 의존 라우트
+- apps/web/src/app/api/v1/card-decks/assets/[...assetKey]/route.ts
+- apps/web/src/app/api/v1/card-decks/assets/route.ts
+- apps/web/src/app/api/v1/chat-service/ask/[postId]/vote/route.ts
+- apps/web/src/app/api/v1/chat-service/ask/route.ts
+- apps/web/src/app/api/v1/chat-service/auth/request-otp/route.ts
+- apps/web/src/app/api/v1/chat-service/auth/session/route.ts
+- apps/web/src/app/api/v1/chat-service/auth/verify-otp/route.ts
+- apps/web/src/app/api/v1/chat-service/chat/open/route.ts
+- apps/web/src/app/api/v1/chat-service/chat/rooms/[roomId]/messages/route.ts
+- apps/web/src/app/api/v1/chat-service/chat/rooms/[roomId]/route.ts
+- apps/web/src/app/api/v1/chat-service/chat/rooms/route.ts
+- apps/web/src/app/api/v1/chat-service/feed/[postId]/replies/route.ts
+- apps/web/src/app/api/v1/chat-service/feed/route.ts
+- apps/web/src/app/api/v1/chat-service/friends/overview/route.ts
+- apps/web/src/app/api/v1/chat-service/friends/requests/route.ts
+- apps/web/src/app/api/v1/chat-service/profile/me/route.ts
+- apps/web/src/app/api/v1/chat-service/profiles/[profileId]/block/route.ts
+- apps/web/src/app/api/v1/chat-service/profiles/[profileId]/route.ts
+- apps/web/src/app/api/v1/chat-service/reports/route.ts
+- apps/web/src/app/api/v1/counseling-records/[recordId]/analyze/route.ts
+- apps/web/src/app/api/v1/counseling-records/[recordId]/chat/route.ts
+- apps/web/src/app/api/v1/counseling-records/[recordId]/segments/[segmentId]/route.ts
+- apps/web/src/app/api/v1/counseling-records/[recordId]/segments/bulk/route.ts
+- apps/web/src/app/api/v1/counseling-records/[recordId]/transcribe/route.ts
+- apps/web/src/app/api/v1/counseling-records/analyze-trend/route.ts
+- apps/web/src/app/api/v1/counseling-records/route.ts
+- apps/web/src/app/api/v1/integrations/googledrive/analyze/route.ts
+- apps/web/src/app/api/v1/integrations/googledrive/auth/route.ts
+- apps/web/src/app/api/v1/integrations/local/analyze/route.ts
+- apps/web/src/app/api/v1/integrations/local/drafts/[draftId]/route.ts
+- apps/web/src/app/api/v1/integrations/onedrive/analyze/route.ts
+- apps/web/src/app/api/v1/integrations/onedrive/auth/route.ts
+- apps/web/src/app/api/v1/public-check-sessions/[token]/route.ts
+- apps/web/src/app/api/v1/public-check-sessions/[token]/submit/route.ts
+- apps/web/src/app/api/v1/public-check-sessions/[token]/verify/route.ts
+- apps/web/src/app/api/v1/spaces/[spaceId]/export/csv/route.ts
+- apps/web/src/app/api/v1/spaces/[spaceId]/export/xlsx/route.ts
+- apps/web/src/app/api/v1/spaces/[spaceId]/members/[memberId]/profile-import/route.ts
+- apps/web/src/app/api/v1/spaces/[spaceId]/sheet-export/import/route.ts
+- apps/web/src/app/api/v1/spaces/[spaceId]/sheet-export/sync/route.ts
+- apps/web/src/app/api/v1/typing-decks/[deckId]/passages/[passageId]/route.ts
+- apps/web/src/app/api/v1/typing-decks/[deckId]/passages/bulk/route.ts
+- apps/web/src/app/api/v1/typing-decks/[deckId]/passages/route.ts
+- apps/web/src/app/api/v1/typing-decks/[deckId]/race-seed/route.ts
+- apps/web/src/app/api/v1/typing-decks/[deckId]/route.ts
+- apps/web/src/app/api/v1/typing-decks/route.ts
+
+## spring-client 라우트(전체)
+- apps/web/src/app/api/v1/card-decks/[deckId]/items/[itemId]/review/route.ts
+- apps/web/src/app/api/v1/card-decks/[deckId]/items/[itemId]/route.ts
+- apps/web/src/app/api/v1/card-decks/[deckId]/items/bulk/route.ts
+- apps/web/src/app/api/v1/card-decks/[deckId]/items/route.ts
+- apps/web/src/app/api/v1/card-decks/[deckId]/route.ts
+- apps/web/src/app/api/v1/card-decks/merge-guest/route.ts
+- apps/web/src/app/api/v1/card-decks/route.ts
+- apps/web/src/app/api/v1/card-decks/study-preference/route.ts
+- apps/web/src/app/api/v1/counseling-records/[recordId]/audio/route.ts
+- apps/web/src/app/api/v1/counseling-records/[recordId]/route.ts
+- apps/web/src/app/api/v1/counseling-records/details/route.ts
+- apps/web/src/app/api/v1/counseling-records/students/route.ts
+- apps/web/src/app/api/v1/home/insight-banners/route.ts
+- apps/web/src/app/api/v1/integrations/googledrive/auth/callback/route.ts
+- apps/web/src/app/api/v1/integrations/googledrive/file/[fileId]/route.ts
+- apps/web/src/app/api/v1/integrations/googledrive/files/route.ts
+- apps/web/src/app/api/v1/integrations/googledrive/status/route.ts
+- apps/web/src/app/api/v1/integrations/local/drafts/[draftId]/file/route.ts
+- apps/web/src/app/api/v1/integrations/local/drafts/route.ts
+- apps/web/src/app/api/v1/integrations/onedrive/auth/callback/route.ts
+- apps/web/src/app/api/v1/integrations/onedrive/file/[fileId]/route.ts
+- apps/web/src/app/api/v1/integrations/onedrive/files/route.ts
+- apps/web/src/app/api/v1/integrations/onedrive/status/route.ts
+- apps/web/src/app/api/v1/life-os/days/[date]/route.ts
+- apps/web/src/app/api/v1/life-os/days/route.ts
+- apps/web/src/app/api/v1/life-os/reports/daily/route.ts
+- apps/web/src/app/api/v1/life-os/reports/weekly/route.ts
+- apps/web/src/app/api/v1/members/[memberId]/route.ts
+- apps/web/src/app/api/v1/space-templates/[templateId]/duplicate/route.ts
+- apps/web/src/app/api/v1/space-templates/[templateId]/route.ts
+- apps/web/src/app/api/v1/space-templates/route.ts
+- apps/web/src/app/api/v1/spaces/[spaceId]/apply-template/route.ts
+- apps/web/src/app/api/v1/spaces/[spaceId]/member-fields/[fieldId]/route.ts
+- apps/web/src/app/api/v1/spaces/[spaceId]/member-tabs/[tabId]/fields/reorder/route.ts
+- apps/web/src/app/api/v1/spaces/[spaceId]/member-tabs/[tabId]/fields/route.ts
+- apps/web/src/app/api/v1/spaces/[spaceId]/member-tabs/[tabId]/route.ts
+- apps/web/src/app/api/v1/spaces/[spaceId]/member-tabs/reorder/route.ts
+- apps/web/src/app/api/v1/spaces/[spaceId]/member-tabs/reset/route.ts
+- apps/web/src/app/api/v1/spaces/[spaceId]/member-tabs/route.ts
+- apps/web/src/app/api/v1/spaces/[spaceId]/members/[memberId]/activity-logs/route.ts
+- apps/web/src/app/api/v1/spaces/[spaceId]/members/[memberId]/board-history/route.ts
+- apps/web/src/app/api/v1/spaces/[spaceId]/members/[memberId]/counseling-records/route.ts
+- apps/web/src/app/api/v1/spaces/[spaceId]/members/[memberId]/field-values/route.ts
+- apps/web/src/app/api/v1/spaces/[spaceId]/members/[memberId]/route.ts
+- apps/web/src/app/api/v1/spaces/[spaceId]/members/bulk-delete/route.ts
+- apps/web/src/app/api/v1/spaces/[spaceId]/members/route.ts
+- apps/web/src/app/api/v1/spaces/[spaceId]/public-check-locations/route.ts
+- apps/web/src/app/api/v1/spaces/[spaceId]/public-check-sessions/[sessionId]/route.ts
+- apps/web/src/app/api/v1/spaces/[spaceId]/route.ts
+- apps/web/src/app/api/v1/spaces/[spaceId]/sheet-export/route.ts
+- apps/web/src/app/api/v1/spaces/[spaceId]/sheet-integrations/[integrationId]/sync/route.ts
+- apps/web/src/app/api/v1/spaces/[spaceId]/sheet-integrations/route.ts
+- apps/web/src/app/api/v1/spaces/[spaceId]/snapshot-template/route.ts
+- apps/web/src/app/api/v1/spaces/[spaceId]/student-board/[memberId]/route.ts
+- apps/web/src/app/api/v1/spaces/[spaceId]/student-board/route.ts
+- apps/web/src/app/api/v1/spaces/route.ts
+- apps/web/src/app/api/v1/users/route.ts
+
+## 기타 라우트(미분류)
+- apps/web/src/app/api/v1/auth/session/route.ts
+- apps/web/src/app/api/v1/integrations/googledrive/import/route.ts
+- apps/web/src/app/api/v1/integrations/local/import/route.ts
+- apps/web/src/app/api/v1/integrations/onedrive/import/route.ts
+- apps/web/src/app/api/v1/mobile/auth/credentials/login/route.ts
+- apps/web/src/app/api/v1/public-check-sessions/[token]/qr/route.ts
+- apps/web/src/app/api/v1/typing-character-frames/[characterId]/route.ts
+- apps/web/src/app/api/v1/typing-character-frames/route.ts
