@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import type { DevLoginOption } from "@/lib/auth/dev-login-options";
+import { analyticsEvents, trackEvent } from "@/lib/analytics";
 import type { PlatformServiceDescriptor } from "@/lib/platform-services";
 import {
   platformServiceAccessPolicies,
@@ -26,7 +27,7 @@ export function LandingHome({
   isAuthenticated,
 }: LandingHomeProps) {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(
-    initialLoginModalOpen,
+    initialLoginModalOpen
   );
   const [loginNextPath, setLoginNextPath] = useState(nextPath);
 
@@ -34,12 +35,27 @@ export function LandingHome({
     setLoginNextPath(nextPath);
   }, [nextPath]);
 
+  useEffect(() => {
+    if (!initialLoginModalOpen) {
+      return;
+    }
+
+    trackEvent(analyticsEvents.loginModalOpen, {
+      source: "landing_query",
+      next_path: nextPath,
+    });
+  }, [initialLoginModalOpen, nextPath]);
+
   const handleLoginModalOpen = useCallback(
-    (targetNextPath: string = nextPath) => {
+    (targetNextPath: string = nextPath, source: string = "landing") => {
       setLoginNextPath(targetNextPath);
       setIsLoginModalOpen(true);
+      trackEvent(analyticsEvents.loginModalOpen, {
+        source,
+        next_path: targetNextPath,
+      });
     },
-    [nextPath],
+    [nextPath]
   );
 
   const handleLoginModalClose = useCallback(() => {
@@ -83,6 +99,13 @@ export function LandingHome({
             <a
               href="/counseling-service"
               className="rounded-md border border-white/15 bg-white/6 px-4 py-2 text-[13px] font-medium text-white/85 no-underline transition-colors hover:bg-white/12"
+              onClick={() =>
+                trackEvent(analyticsEvents.serviceEntryClick, {
+                  source: "landing_nav",
+                  service: "counseling-service",
+                  authenticated: true,
+                })
+              }
             >
               서비스 바로가기
             </a>
@@ -90,7 +113,7 @@ export function LandingHome({
             <button
               type="button"
               className="rounded-md border border-white/15 bg-white/6 px-4 py-2 text-[13px] font-medium text-white/85 transition-colors hover:bg-white/12"
-              onClick={() => handleLoginModalOpen(nextPath)}
+              onClick={() => handleLoginModalOpen(nextPath, "landing_nav")}
             >
               로그인
             </button>
@@ -160,6 +183,14 @@ export function LandingHome({
                     key={service.slug}
                     href={service.href}
                     className={`${cardBase} no-underline`}
+                    onClick={() =>
+                      trackEvent(analyticsEvents.serviceEntryClick, {
+                        source: "landing_card",
+                        service: service.slug,
+                        access_policy: service.accessPolicy,
+                        authenticated: isAuthenticated,
+                      })
+                    }
                   >
                     {cardInner}
                   </a>
@@ -171,7 +202,18 @@ export function LandingHome({
                     key={service.slug}
                     type="button"
                     className={cardBase}
-                    onClick={() => handleLoginModalOpen(service.href)}
+                    onClick={() => {
+                      trackEvent(analyticsEvents.serviceEntryClick, {
+                        source: "landing_card_login_gate",
+                        service: service.slug,
+                        access_policy: service.accessPolicy,
+                        authenticated: isAuthenticated,
+                      });
+                      handleLoginModalOpen(
+                        service.href,
+                        `${service.slug}_card`
+                      );
+                    }}
                   >
                     {cardInner}
                   </button>

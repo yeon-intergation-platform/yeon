@@ -2,6 +2,8 @@
 
 import { useState, type FormEvent } from "react";
 
+import { analyticsEvents, trackEvent } from "@/lib/analytics";
+import { useIsAuthenticated } from "../auth-context";
 import { useCreateDeck } from "../hooks";
 
 interface CreateDeckDialogProps {
@@ -12,6 +14,7 @@ export function CreateDeckDialog({ onClose }: CreateDeckDialogProps) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const { mutate, isPending, error } = useCreateDeck();
+  const isAuthenticated = useIsAuthenticated();
 
   const trimmedTitle = title.trim();
   const canSubmit = trimmedTitle.length > 0 && !isPending;
@@ -21,16 +24,24 @@ export function CreateDeckDialog({ onClose }: CreateDeckDialogProps) {
     if (!canSubmit) {
       return;
     }
+    trackEvent(analyticsEvents.cardDeckCreateSubmit, {
+      authenticated: isAuthenticated,
+      title_length: trimmedTitle.length,
+    });
     mutate(
       {
         title: trimmedTitle,
         description: description.trim() || null,
       },
       {
-        onSuccess: () => {
+        onSuccess: (deck) => {
+          trackEvent(analyticsEvents.cardDeckCreated, {
+            deck_id: deck.id,
+            authenticated: isAuthenticated,
+          });
           onClose();
         },
-      },
+      }
     );
   };
 

@@ -14,6 +14,7 @@ import {
 import { useDeckDetail } from "./hooks";
 import type { DeckDetailViewState } from "./types";
 import { useState } from "react";
+import { analyticsEvents, trackEvent } from "@/lib/analytics";
 
 function toViewState(
   query: UseQueryResult<CardDeckDetailResponse>
@@ -86,7 +87,13 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
                   </p>
                   <button
                     type="button"
-                    onClick={() => setEditorOpen(true)}
+                    onClick={() => {
+                      setEditorOpen(true);
+                      trackEvent(analyticsEvents.cardAddOpen, {
+                        deck_id: state.deck.id,
+                        source: "detail_banner",
+                      });
+                    }}
                     className="mt-4 inline-flex items-center justify-center rounded-[22px] bg-[#111] px-6 py-3 text-[15px] font-semibold text-white transition-colors hover:bg-[#333] md:min-w-[220px] md:text-[16px]"
                   >
                     + 카드 추가
@@ -120,7 +127,13 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
                     </p>
                     <button
                       type="button"
-                      onClick={() => setEditorOpen(true)}
+                      onClick={() => {
+                        setEditorOpen(true);
+                        trackEvent(analyticsEvents.cardAddOpen, {
+                          deck_id: state.deck.id,
+                          source: "empty_state",
+                        });
+                      }}
                       className="mt-5 rounded-[22px] bg-[#111] px-5 py-3 text-[14px] font-semibold text-white transition-colors hover:bg-[#333]"
                     >
                       카드 추가

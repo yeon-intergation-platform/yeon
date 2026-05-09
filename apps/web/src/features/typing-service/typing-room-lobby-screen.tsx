@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import { Crown, Search, Users, X } from "lucide-react";
+import { analyticsEvents, trackEvent } from "@/lib/analytics";
 import { TypingServiceHeader } from "./typing-service-header";
 import {
   TYPING_ROOM_DIFFICULTY,
@@ -111,6 +112,12 @@ export function TypingRoomLobbyScreen() {
 
   const handleCreate = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    trackEvent(analyticsEvents.typingRoomCreateSubmit, {
+      visibility,
+      language: fixedLanguage,
+      deck_id: selectedDeck.id,
+      deck_visibility: selectedDeck.visibility,
+    });
     const params = new URLSearchParams({
       title: title.trim() || generatedTitle,
       visibility,
@@ -125,7 +132,13 @@ export function TypingRoomLobbyScreen() {
     router.push(`/typing-service/rooms/new?${params.toString()}`);
   };
 
-  const openCreateModal = () => setIsCreateModalOpen(true);
+  const openCreateModal = () => {
+    setIsCreateModalOpen(true);
+    trackEvent(analyticsEvents.typingRoomCreateOpen, {
+      language: fixedLanguage,
+      selected_filter: selectedFilter,
+    });
+  };
 
   return (
     <div className="min-h-screen bg-white text-[#111]">
@@ -246,6 +259,14 @@ export function TypingRoomLobbyScreen() {
                       href={`/typing-service/rooms/${room.roomId}`}
                       aria-label={`${room.title} 입장, ${occupancy.seatLabel}`}
                       className="group grid gap-5 rounded-2xl border border-[#e5e5e5] bg-[#fafafa] p-5 no-underline transition-colors hover:border-[#111] hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#111] md:grid-cols-[1fr_auto]"
+                      onClick={() =>
+                        trackEvent(analyticsEvents.typingRoomJoinClick, {
+                          room_id: room.roomId,
+                          visibility: room.visibility,
+                          language: room.language,
+                          current_participants: room.currentParticipants,
+                        })
+                      }
                     >
                       <div>
                         <div className="flex flex-wrap items-center gap-2">

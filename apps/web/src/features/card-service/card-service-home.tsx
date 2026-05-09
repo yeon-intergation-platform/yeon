@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import type { UseQueryResult } from "@tanstack/react-query";
 import type { CardDeckDto } from "@yeon/api-contract/card-decks";
 
+import { analyticsEvents, trackEvent } from "@/lib/analytics";
 import { countGuestCardDecks } from "@/lib/guest-card-service-store";
 
 import { CARD_SERVICE_FAQS } from "./card-service-content";
@@ -103,6 +104,13 @@ export function CardServiceHome() {
     !isMergeDialogOpen &&
     guestDeckCount !== null &&
     guestDeckCount > 0;
+  const openCreate = (source: string) => {
+    setCreateOpen(true);
+    trackEvent(analyticsEvents.cardDeckCreateOpen, {
+      source,
+      authenticated: isAuthenticated,
+    });
+  };
 
   return (
     <div className="min-h-screen bg-white text-[#111]">
@@ -115,7 +123,14 @@ export function CardServiceHome() {
             {showManualMergeButton ? (
               <button
                 type="button"
-                onClick={() => setMergeDialogOpen(true)}
+                onClick={() => {
+                  setMergeDialogOpen(true);
+                  trackEvent(analyticsEvents.cardDeckOpen, {
+                    source: "merge_guest_prompt",
+                    authenticated: isAuthenticated,
+                    guest_deck_count: guestDeckCount,
+                  });
+                }}
                 className="rounded-xl border border-[rgba(17,19,24,0.12)] bg-[rgba(232,99,10,0.08)] px-3 py-2 text-[12px] font-semibold text-[#a3430a] transition-colors hover:bg-[rgba(232,99,10,0.16)]"
               >
                 게스트 덱 {guestDeckCount}개 계정에 추가
@@ -123,7 +138,7 @@ export function CardServiceHome() {
             ) : null}
             <button
               type="button"
-              onClick={() => setCreateOpen(true)}
+              onClick={() => openCreate("header")}
               className="rounded-xl bg-[#111] px-4 py-2 text-[13px] font-semibold text-white transition-colors hover:bg-[#333]"
             >
               + 새 덱
@@ -188,7 +203,7 @@ export function CardServiceHome() {
               <p className="text-[14px] text-red-600">{state.message}</p>
             ) : null}
             {state.kind === "empty" ? (
-              <EmptyDecksScreen onCreate={() => setCreateOpen(true)} />
+              <EmptyDecksScreen onCreate={() => openCreate("empty_state")} />
             ) : null}
             {state.kind === "ready" ? <DeckList decks={state.decks} /> : null}
           </div>
