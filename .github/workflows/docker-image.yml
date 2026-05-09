@@ -38,8 +38,82 @@ env:
   BACKEND_IMAGE_REPOSITORY: yeon-backend
 
 jobs:
+  detect_changes:
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    outputs:
+      web: ${{ steps.scope.outputs.web }}
+      backend: ${{ steps.scope.outputs.backend }}
+      race: ${{ steps.scope.outputs.race }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: 변경 범위 판별
+        id: scope
+        run: |
+          set -eu
+
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "web=true" >> "$GITHUB_OUTPUT"
+            echo "backend=true" >> "$GITHUB_OUTPUT"
+            echo "race=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if ! git rev-parse "${{ github.event.before }}" >/dev/null 2>&1; then
+            echo "web=true" >> "$GITHUB_OUTPUT"
+            echo "backend=true" >> "$GITHUB_OUTPUT"
+            echo "race=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          web="false"
+          backend="false"
+          race="false"
+
+          while IFS= read -r file; do
+            case "$file" in
+              apps/web/*)
+                web="true"
+                ;;
+
+              apps/backend/*)
+                backend="true"
+                ;;
+
+              apps/race-server/*)
+                race="true"
+                ;;
+
+              Dockerfile|.github/workflows/docker-image.yml|.dockerignore|.env.example|package.json|pnpm-lock.yaml|pnpm-workspace.yaml|turbo.json|compose.dev.yml|compose.prod.yml|scripts/migrate.sh)
+                web="true"
+                backend="true"
+                race="true"
+                ;;
+
+              packages/api-contract/*|packages/api-client/*|packages/domain/*|packages/design-tokens/*|packages/utils/*)
+                web="true"
+                ;;
+
+              packages/config/*|packages/race-shared/*|packages/typing-race-engine/*)
+                web="true"
+                race="true"
+                ;;
+            esac
+          done < <(git diff --name-only "${{ github.event.before }}" "${{ github.sha }}")
+
+          echo "web=$web"
+          echo "backend=$backend"
+          echo "race=$race"
+
+          echo "web=$web" >> "$GITHUB_OUTPUT"
+          echo "backend=$backend" >> "$GITHUB_OUTPUT"
+          echo "race=$race" >> "$GITHUB_OUTPUT"
+
   build_amd64:
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
+    if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop') && needs.detect_changes.outputs.web == 'true'
+    needs: detect_changes
     runs-on: ubuntu-latest
     env:
       DIGEST_DIR: ${{ github.workspace }}/.ci-digests/digests-amd64-${{ github.run_id }}-${{ github.run_attempt }}
@@ -105,7 +179,8 @@ jobs:
           retention-days: 1
 
   build_arm64:
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
+    if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop') && needs.detect_changes.outputs.web == 'true'
+    needs: detect_changes
     runs-on: [self-hosted, Linux, ARM64]
     env:
       DIGEST_DIR: ${{ github.workspace }}/.ci-digests/digests-arm64-${{ github.run_id }}-${{ github.run_attempt }}
@@ -205,8 +280,9 @@ jobs:
         run: docker buildx prune -f --keep-storage 10GB --filter "until=168h" || true
 
   publish_manifest:
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
+    if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop') && needs.detect_changes.outputs.web == 'true'
     needs:
+      - detect_changes
       - build_amd64
       - build_arm64
     runs-on: ubuntu-latest
@@ -347,7 +423,8 @@ jobs:
           done
 
   build_race_amd64:
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
+    if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop') && needs.detect_changes.outputs.race == 'true'
+    needs: detect_changes
     runs-on: ubuntu-latest
     env:
       DIGEST_DIR: ${{ github.workspace }}/.ci-digests/digests-race-amd64-${{ github.run_id }}-${{ github.run_attempt }}
@@ -410,7 +487,8 @@ jobs:
           retention-days: 1
 
   build_race_arm64:
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
+    if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop') && needs.detect_changes.outputs.race == 'true'
+    needs: detect_changes
     runs-on: [self-hosted, Linux, ARM64]
     env:
       DIGEST_DIR: ${{ github.workspace }}/.ci-digests/digests-race-arm64-${{ github.run_id }}-${{ github.run_attempt }}
@@ -503,8 +581,9 @@ jobs:
         run: docker buildx prune -f --keep-storage 10GB --filter "until=168h" || true
 
   publish_race_manifest:
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
+    if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop') && needs.detect_changes.outputs.race == 'true'
     needs:
+      - detect_changes
       - build_race_amd64
       - build_race_arm64
     runs-on: ubuntu-latest
@@ -600,7 +679,8 @@ jobs:
           done
 
   build_backend_amd64:
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
+    if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop') && needs.detect_changes.outputs.backend == 'true'
+    needs: detect_changes
     runs-on: ubuntu-latest
     env:
       DIGEST_DIR: ${{ github.workspace }}/.ci-digests/digests-backend-amd64-${{ github.run_id }}-${{ github.run_attempt }}
@@ -663,7 +743,8 @@ jobs:
           retention-days: 1
 
   build_backend_arm64:
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
+    if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop') && needs.detect_changes.outputs.backend == 'true'
+    needs: detect_changes
     runs-on: [self-hosted, Linux, ARM64]
     env:
       DIGEST_DIR: ${{ github.workspace }}/.ci-digests/digests-backend-arm64-${{ github.run_id }}-${{ github.run_attempt }}
@@ -749,8 +830,9 @@ jobs:
         run: docker buildx prune -f --keep-storage 10GB --filter "until=168h" || true
 
   publish_backend_manifest:
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
+    if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop') && needs.detect_changes.outputs.backend == 'true'
     needs:
+      - detect_changes
       - build_backend_amd64
       - build_backend_arm64
     runs-on: ubuntu-latest
@@ -846,8 +928,9 @@ jobs:
           done
 
   deploy_develop:
-    if: github.ref == 'refs/heads/develop'
+    if: always() && github.ref == 'refs/heads/develop' && (needs.detect_changes.outputs.web == 'true' || needs.detect_changes.outputs.backend == 'true' || needs.detect_changes.outputs.race == 'true')
     needs:
+      - detect_changes
       - publish_manifest
       - publish_race_manifest
       - publish_backend_manifest
@@ -888,25 +971,44 @@ jobs:
           set -eu
           owner_lower="$(printf '%s' "${GITHUB_REPOSITORY_OWNER}" | tr '[:upper:]' '[:lower:]')"
           cd "${DEPLOY_DIR}"
+
+          services=()
+          if [[ "${{ needs.detect_changes.outputs.backend }}" == "true" ]]; then
+            services+=(backend)
+          fi
+          if [[ "${{ needs.detect_changes.outputs.web }}" == "true" ]]; then
+            services+=(web)
+          fi
+          if [[ "${{ needs.detect_changes.outputs.race }}" == "true" ]]; then
+            services+=(race-server)
+          fi
+
+          if [ "${#services[@]}" -eq 0 ]; then
+            echo "변경된 서비스가 없어 배포를 스킵합니다."
+            exit 0
+          fi
+
           export YEON_WEB_IMAGE="ghcr.io/${owner_lower}/yeon-web-app:${IMAGE_TAG}"
           export YEON_RACE_SERVER_IMAGE="ghcr.io/${owner_lower}/yeon-race-server:${IMAGE_TAG}"
           export YEON_BACKEND_IMAGE="ghcr.io/${owner_lower}/yeon-backend:${IMAGE_TAG}"
           for i in 1 2 3; do
-            docker compose -f "${COMPOSE_FILE}" pull && break
+            docker compose -f "${COMPOSE_FILE}" pull "${services[@]}" && break
             [ "$i" -eq 3 ] && exit 1
             echo "pull 실패 (${i}/3), 30초 후 재시도..."
             sleep 30
           done
-          docker compose -f "${COMPOSE_FILE}" up -d --wait
+          docker compose -f "${COMPOSE_FILE}" up -d --wait "${services[@]}"
 
       - name: Run DB migrations
+        if: needs.detect_changes.outputs.backend == 'true'
         run: |
           set -eu
           DEPLOY_DIR="${DEPLOY_DIR}" COMPOSE_FILE="${COMPOSE_FILE}" bash scripts/migrate.sh
 
   deploy_production:
-    if: github.ref == 'refs/heads/main'
+    if: always() && github.ref == 'refs/heads/main' && (needs.detect_changes.outputs.web == 'true' || needs.detect_changes.outputs.backend == 'true' || needs.detect_changes.outputs.race == 'true')
     needs:
+      - detect_changes
       - publish_manifest
       - publish_race_manifest
       - publish_backend_manifest
@@ -947,21 +1049,38 @@ jobs:
           set -eu
           owner_lower="$(printf '%s' "${GITHUB_REPOSITORY_OWNER}" | tr '[:upper:]' '[:lower:]')"
           cd "${DEPLOY_DIR}"
+          services=()
+          if [[ "${{ needs.detect_changes.outputs.backend }}" == "true" ]]; then
+            services+=(backend)
+          fi
+          if [[ "${{ needs.detect_changes.outputs.web }}" == "true" ]]; then
+            services+=(web)
+          fi
+          if [[ "${{ needs.detect_changes.outputs.race }}" == "true" ]]; then
+            services+=(race-server)
+          fi
+
+          if [ "${#services[@]}" -eq 0 ]; then
+            echo "변경된 서비스가 없어 배포를 스킵합니다."
+            exit 0
+          fi
+
           export YEON_WEB_IMAGE="ghcr.io/${owner_lower}/yeon-web-app:${IMAGE_TAG}"
           export YEON_RACE_SERVER_IMAGE="ghcr.io/${owner_lower}/yeon-race-server:${IMAGE_TAG}"
           export YEON_BACKEND_IMAGE="ghcr.io/${owner_lower}/yeon-backend:${IMAGE_TAG}"
           # Pi 네트워크 대응: pull 실패 시 최대 3회 재시도
           for i in 1 2 3; do
-            docker compose -f "${COMPOSE_FILE}" pull && break
+            docker compose -f "${COMPOSE_FILE}" pull "${services[@]}" && break
             [ "$i" -eq 3 ] && exit 1
             echo "pull 실패 (${i}/3), 30초 후 재시도..."
             sleep 30
           done
           # --force-recreate 제거: 변경된 서비스(web)만 재시작, DB는 불필요하게 재시작하지 않음
           # --wait: 모든 서비스가 healthy 상태가 될 때까지 대기 후 반환
-          docker compose -f "${COMPOSE_FILE}" up -d --wait
+          docker compose -f "${COMPOSE_FILE}" up -d --wait "${services[@]}"
 
       - name: Run DB migrations
+        if: needs.detect_changes.outputs.backend == 'true'
         run: |
           set -eu
           DEPLOY_DIR="${DEPLOY_DIR}" COMPOSE_FILE="${COMPOSE_FILE}" bash scripts/migrate.sh
