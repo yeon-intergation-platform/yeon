@@ -72,6 +72,8 @@ permissions:
 
 ```txt
 ghcr.io/<owner>/yeon-web-app
+ghcr.io/<owner>/yeon-race-server
+ghcr.io/<owner>/yeon-backend
 ```
 
 기본 태그:
