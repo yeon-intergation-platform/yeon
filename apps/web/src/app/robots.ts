@@ -19,7 +19,14 @@ export default function robots(): MetadataRoute.Robots {
   return {
     rules: {
       userAgent: "*",
-      allow: ["/", "/typing-service", "/card-service", "/privacy", "/terms"],
+      allow: [
+        "/",
+        "/typing-service",
+        "/card-service",
+        "/community",
+        "/privacy",
+        "/terms",
+      ],
       disallow: [
         "/api/",
         "/api/auth/",

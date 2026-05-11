@@ -56,6 +56,16 @@ export const PLATFORM_SERVICES = [
     accessPolicy: platformServiceAccessPolicies.mixed,
     status: platformServiceStatuses.live,
   },
+  {
+    slug: "community",
+    href: "/community",
+    title: "커뮤니티",
+    summary:
+      "실시간 채팅과 글·댓글 피드가 함께 운영되는 커뮤니티 공간입니다.",
+    audience: "커뮤니티",
+    accessPolicy: platformServiceAccessPolicies.mixed,
+    status: platformServiceStatuses.live,
+  },
 ] as const satisfies readonly PlatformServiceDescriptor[];
 
 export const PLATFORM_HOME_HREF = "https://yeon.world";
