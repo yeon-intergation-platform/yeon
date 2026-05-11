@@ -7,13 +7,13 @@
 - 현재 웹 앱의 Next.js 버전과 Turbopack 사용 여부를 확인한다.
 - npm 기준 최신 Next.js 패치 버전으로 업데이트한다.
 - 개발/프로덕션 빌드 스크립트에서 Turbopack 사용을 명시한다.
-- `main` 배포 workflow가 성공하면 다음 `vX.Y.Z` 태그와 GitHub Release가 자동 생성되도록 한다.
+- `main` 배포 workflow가 push 또는 workflow_dispatch로 성공하면 다음 `vX.Y.Z` 태그와 GitHub Release가 자동 생성되도록 한다.
 
 ### 논의 필요
 
 - Next.js major 업그레이드는 별도 호환성 검증이 필요하다.
 - 현재 요청 범위에서는 같은 16.x 패치 최신화만 수행한다.
-- 자동 릴리즈 버전은 배포 성공 시점의 기존 SemVer 태그 중 가장 큰 값에서 patch를 1 올린다.
+- 자동 릴리즈 버전은 push 또는 workflow_dispatch 배포 성공 시점의 기존 SemVer 태그 중 가장 큰 값에서 patch를 1 올린다.
 - 자동 태그는 배포 완료 커밋을 가리키며, `package.json` version과 반드시 같아야 하는 제약은 제거한다.
 
 ### 선택지
