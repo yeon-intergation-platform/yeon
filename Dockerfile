@@ -48,7 +48,8 @@ ARG NODE_MEMORY=4096
 ARG NEXT_PUBLIC_RACE_SERVER_URL
 ENV NEXT_PUBLIC_RACE_SERVER_URL=${NEXT_PUBLIC_RACE_SERVER_URL}
 
-RUN NODE_OPTIONS="--max-old-space-size=${NODE_MEMORY}" \
+RUN --mount=type=cache,id=next-cache,target=/app/apps/web/.next/cache \
+    NODE_OPTIONS="--max-old-space-size=${NODE_MEMORY}" \
     pnpm --filter @yeon/web build
 
 # ── Stage 4: production runner ───────────────────────────────────────────────
