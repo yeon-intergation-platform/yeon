@@ -1,0 +1,21 @@
+# mobile warning + backend boundary review
+
+- 기준: `origin/main` fast-forward 후 `codex/mobile-warning-backend-boundary-20260512` 브랜치.
+- 목표:
+  - Expo CLI 경고(`expo`, `expo-linking` 기대 패치 버전 차이) 해소.
+  - 현재 구현된 커뮤니티/채팅/카드/타이핑 기능의 도메인 확장성/땜빵 여부 리뷰.
+  - Next가 백엔드 역할을 맡는 구간 식별.
+  - 에이전트 SSOT에 “백엔드 역할은 Spring만 담당, Next는 신규 백엔드 역할 금지” 명시.
+- 진행 로그:
+  - `apps/web/src/app/api/**/route.ts` 130개 확인.
+  - `@/server/services|db|repositories|auth`를 직접 참조하는 API route 67개 확인.
+  - `expo@~54.0.34`, `expo-linking@~8.0.12`로 업데이트.
+  - `AGENTS.md`, `docs/agent-rules/server-services.md`에 Spring-only backend boundary 명시.
+  - `docs/architecture/next-backend-boundary-audit.md`에 origin/main 기준 감사 결과 작성.
+- 검증:
+  - `pnpm --filter @yeon/mobile exec expo install --check` 통과.
+  - `pnpm --filter @yeon/mobile typecheck` 통과.
+  - `pnpm --filter @yeon/mobile lint` 통과.
+  - `git diff --check` 통과.
+  - `bash bin/sync-skills.sh --check` 통과.
+  - `bash bin/verify-ssot.sh --project-only` 통과.
