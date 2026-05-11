@@ -219,7 +219,7 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
     let cancelled = false;
     setSeedState({ kind: "loading" });
 
-    if (useDefaultFallback || !createRoomOptions.selectedDeckId) {
+    if (useDefaultFallback) {
       setSeedState({ kind: "ready", seed: null });
       return;
     }

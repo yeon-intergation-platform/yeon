@@ -1,29 +1,98 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import {
+  TYPING_ROOM_LANGUAGE,
+  type TypingRoomCreateMessage,
+} from "@yeon/race-shared";
 import { useTypingProfile } from "./use-typing-profile";
 import { usePlayerIdentity } from "./use-player-identity";
 import { useRaceRoom } from "./use-race-room";
 import { TypingRaceMultiplayerScreen } from "./typing-race-multiplayer-screen";
 import { TypingRaceSoloScreen } from "./typing-race-solo-screen";
 import { TypingServiceHeader } from "./typing-service-header";
-import { createTranslator, useTypingSettings } from "./use-typing-settings";
+import {
+  createTranslator,
+  resolveTypingRaceSeed,
+  useSelectedTypingDeck,
+  useTypingSettings,
+  type TypingRaceSeed,
+} from "./use-typing-settings";
 
 const CONNECTION_TIMEOUT_MS = 4000;
 
 export function TypingRacePlayScreen() {
   const { profile, loaded: profileLoaded } = useTypingProfile();
   const { settings } = useTypingSettings();
+  const deckState = useSelectedTypingDeck(settings.locale);
   const t = createTranslator(settings.locale);
   const playerId = usePlayerIdentity();
   const [fallbackToSolo, setFallbackToSolo] = useState(false);
+  const [seedState, setSeedState] = useState<
+    | { kind: "idle" | "loading" }
+    | { kind: "ready"; seed: TypingRaceSeed | null }
+    | { kind: "error"; message: string }
+  >({ kind: "idle" });
+
+  useEffect(() => {
+    let cancelled = false;
+    setSeedState({ kind: "loading" });
+
+    resolveTypingRaceSeed(deckState.selectedDeck, settings.locale).then(
+      (result) => {
+        if (cancelled) return;
+        if (result.ok) {
+          setSeedState({ kind: "ready", seed: result.seed });
+          return;
+        }
+        setSeedState({ kind: "error", message: result.message });
+        setFallbackToSolo(true);
+      }
+    );
+
+    return () => {
+      cancelled = true;
+    };
+  }, [deckState.selectedDeck, settings.locale]);
+
+  const quickRoom = useMemo<TypingRoomCreateMessage | null>(
+    () =>
+      seedState.kind === "ready"
+        ? {
+            selectedDeckId: deckState.selectedDeck.id,
+            selectedDeckVisibility: deckState.selectedDeck.visibility,
+            lobbyDeckTitle:
+              deckState.selectedDeck.visibility === "private"
+                ? "비공개 덱"
+                : deckState.selectedDeck.title,
+            participantDeckTitle: deckState.selectedDeck.title,
+            language:
+              deckState.selectedDeck.languageTag === "en"
+                ? TYPING_ROOM_LANGUAGE.EN
+                : TYPING_ROOM_LANGUAGE.KO,
+            raceSeed: seedState.seed ?? undefined,
+          }
+        : null,
+    [
+      deckState.selectedDeck.id,
+      deckState.selectedDeck.languageTag,
+      deckState.selectedDeck.title,
+      deckState.selectedDeck.visibility,
+      seedState,
+    ]
+  );
 
   const race = useRaceRoom({
-    enabled: profileLoaded && !!playerId && !fallbackToSolo,
+    enabled:
+      profileLoaded &&
+      !!playerId &&
+      !fallbackToSolo &&
+      seedState.kind === "ready",
     playerLabel: profile.nickname,
     playerId,
     characterId: profile.characterId,
     locale: settings.locale,
+    quickRoom,
   });
 
   // 연결 실패 시 솔로 모드로 fallback

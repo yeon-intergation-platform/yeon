@@ -37,6 +37,7 @@ export type UseRaceRoomOptions = {
   locale: "ko" | "en";
   roomId?: string | null;
   createRoom?: TypingRoomCreateMessage | null;
+  quickRoom?: TypingRoomCreateMessage | null;
 };
 
 export type UseRaceRoomResult = {
@@ -202,6 +203,7 @@ export function useRaceRoom(options: UseRaceRoomOptions): UseRaceRoomResult {
     locale,
     roomId,
     createRoom,
+    quickRoom,
   } = options;
   const [connectionState, setConnectionState] =
     useState<RaceConnectionState>("idle");
@@ -218,6 +220,7 @@ export function useRaceRoom(options: UseRaceRoomOptions): UseRaceRoomResult {
 
   const roomRef = useRef<Room | null>(null);
   const createRoomKey = createRoom ? JSON.stringify(createRoom) : "";
+  const quickRoomKey = quickRoom ? JSON.stringify(quickRoom) : "";
 
   // playerLabel은 접속 시점의 값만 사용 (변경 시 재연결 방지)
   const playerLabelRef = useRef(playerLabel);
@@ -259,6 +262,7 @@ export function useRaceRoom(options: UseRaceRoomOptions): UseRaceRoomResult {
       : roomId
         ? client.joinById<unknown>(roomId, joinOptions)
         : client.joinOrCreate<unknown>(TYPING_RACE_ROOM_NAME, {
+            ...quickRoom,
             ...joinOptions,
             roomMode: "quick",
           });
@@ -343,6 +347,7 @@ export function useRaceRoom(options: UseRaceRoomOptions): UseRaceRoomResult {
     locale,
     roomId,
     createRoomKey,
+    quickRoomKey,
     rejoinToken,
   ]);
 
