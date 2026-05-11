@@ -50,7 +50,7 @@ import {
   type TypingRoomSummary,
 } from "@yeon/race-shared";
 import { type Client, Room } from "colyseus";
-import { createHmac, timingSafeEqual } from "node:crypto";
+import { createHmac, randomInt, timingSafeEqual } from "node:crypto";
 
 type RoomParticipant = {
   id: string;
@@ -71,13 +71,70 @@ type RoomParticipant = {
   joinedAt: number;
 };
 
-const DEMO_PROMPTS: Record<TypingRoomLanguage, string> = {
-  ko: "열 초 카운트다운이 끝나면 눈보다 손이 먼저 나가지 않게 문장을 끝까지 밀어 보세요.",
-  en: "Once the countdown ends, let your fingers move forward through the sentence with a steady rhythm.",
-  code: "function typeRace(input) { return input.trim().length > 0; }",
+const DEMO_PROMPT_OPTIONS: Record<
+  TypingRoomLanguage,
+  readonly { id: string; title: string; prompt: string }[]
+> = {
+  ko: [
+    {
+      id: "fallback-ko-countdown",
+      title: "카운트다운",
+      prompt:
+        "열 초 카운트다운이 끝나면 눈보다 손이 먼저 나가지 않게 문장을 끝까지 밀어 보세요.",
+    },
+    {
+      id: "fallback-ko-rhythm",
+      title: "리듬 유지",
+      prompt:
+        "빠른 손보다 안정적인 리듬이 먼저입니다. 다음 단어를 미리 읽고 손끝은 차분하게 따라가 보세요.",
+    },
+    {
+      id: "fallback-ko-focus",
+      title: "집중 흐름",
+      prompt:
+        "한 글자씩 정확하게 지나가면 긴 문장도 부담이 줄어듭니다. 속도는 흐름이 잡힌 뒤에 자연스럽게 올라갑니다.",
+    },
+  ],
+  en: [
+    {
+      id: "fallback-en-countdown",
+      title: "Countdown",
+      prompt:
+        "Once the countdown ends, let your fingers move forward through the sentence with a steady rhythm.",
+    },
+    {
+      id: "fallback-en-rhythm",
+      title: "Steady rhythm",
+      prompt:
+        "Accuracy comes first, then speed follows. Read the next word early and keep your hands moving calmly.",
+    },
+    {
+      id: "fallback-en-focus",
+      title: "Focus flow",
+      prompt:
+        "A clean typing flow starts with small choices. Keep your eyes ahead and let every key press land with intent.",
+    },
+  ],
+  code: [
+    {
+      id: "fallback-code-trim",
+      title: "Trim check",
+      prompt: "function typeRace(input) { return input.trim().length > 0; }",
+    },
+    {
+      id: "fallback-code-map",
+      title: "Map labels",
+      prompt: "const labels = users.map((user) => user.name).filter(Boolean);",
+    },
+    {
+      id: "fallback-code-guard",
+      title: "Guard clause",
+      prompt: "if (!room || room.status !== 'waiting') return null;",
+    },
+  ],
 };
 
-const ROUND_LABEL_ID = "flow-focus"; // 클라이언트가 번역해 표시
+const LOCAL_DEFAULT_DECK_ID_PREFIX = "local-default";
 const DEFAULT_DECK_TITLE = "기본 덱";
 const PRIVATE_DECK_LOBBY_TITLE = "비공개 덱";
 const MAX_SEED_PROMPT_LENGTH = 4000;
@@ -304,10 +361,12 @@ function normalizeSettings(
 }
 
 function createFallbackRaceSeed(language: TypingRoomLanguage): RaceSeedMessage {
+  const options = DEMO_PROMPT_OPTIONS[language] ?? DEMO_PROMPT_OPTIONS.ko;
+  const passage = options[randomInt(options.length)] ?? options[0]!;
   return {
-    passageId: ROUND_LABEL_ID,
-    prompt: DEMO_PROMPTS[language],
-    roundLabel: ROUND_LABEL_ID,
+    passageId: passage.id,
+    prompt: passage.prompt,
+    roundLabel: passage.title,
     deckVisibility: TYPING_DECK_VISIBILITY.DEFAULT,
     lobbyDeckTitle: DEFAULT_DECK_TITLE,
     participantDeckTitle: DEFAULT_DECK_TITLE,
@@ -316,6 +375,15 @@ function createFallbackRaceSeed(language: TypingRoomLanguage): RaceSeedMessage {
         ? TYPING_DECK_LANGUAGE_TAG.EN
         : TYPING_DECK_LANGUAGE_TAG.KO,
   };
+}
+
+function isTrustedUnsignedDefaultSeed(seed: RaceSeedMessage) {
+  return (
+    !seed.seedToken &&
+    seed.deckVisibility === TYPING_DECK_VISIBILITY.DEFAULT &&
+    typeof seed.deckId === "string" &&
+    seed.deckId.startsWith(`${LOCAL_DEFAULT_DECK_ID_PREFIX}-`)
+  );
 }
 
 function normalizeRaceSeed(
@@ -361,7 +429,9 @@ function normalizeRaceSeed(
       fallback.languageTag,
   };
 
-  return verifyRaceSeedToken(seed) ? seed : fallback;
+  return verifyRaceSeedToken(seed) || isTrustedUnsignedDefaultSeed(seed)
+    ? seed
+    : fallback;
 }
 
 export class TypingRaceRoom extends Room {
