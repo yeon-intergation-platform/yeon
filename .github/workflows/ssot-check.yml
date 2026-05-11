@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     name: SSOT + 스킬 wrapper drift 검증
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6.0.2
 
       - name: 프로젝트 SSOT 건전성 검사
         run: bash bin/verify-ssot.sh --project-only
