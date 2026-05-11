@@ -29,7 +29,7 @@ permissions:
 
 concurrency:
   group: docker-image-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 env:
   REGISTRY: ghcr.io
@@ -931,7 +931,13 @@ jobs:
           done
 
   deploy_develop:
-    if: always() && github.ref == 'refs/heads/develop' && (needs.detect_changes.outputs.web == 'true' || needs.detect_changes.outputs.backend == 'true' || needs.detect_changes.outputs.race == 'true')
+    if: >
+      always() &&
+      github.ref == 'refs/heads/develop' &&
+      (needs.detect_changes.outputs.web == 'true' || needs.detect_changes.outputs.backend == 'true' || needs.detect_changes.outputs.race == 'true') &&
+      (needs.detect_changes.outputs.web != 'true' || needs.publish_manifest.result == 'success') &&
+      (needs.detect_changes.outputs.race != 'true' || needs.publish_race_manifest.result == 'success') &&
+      (needs.detect_changes.outputs.backend != 'true' || needs.publish_backend_manifest.result == 'success')
     needs:
       - detect_changes
       - publish_manifest
@@ -991,9 +997,11 @@ jobs:
             exit 0
           fi
 
-          export YEON_WEB_IMAGE="ghcr.io/${owner_lower}/yeon-web-app:${IMAGE_TAG}"
-          export YEON_RACE_SERVER_IMAGE="ghcr.io/${owner_lower}/yeon-race-server:${IMAGE_TAG}"
-          export YEON_BACKEND_IMAGE="ghcr.io/${owner_lower}/yeon-backend:${IMAGE_TAG}"
+          image_tag="sha-${GITHUB_SHA::7}"
+          echo "배포 이미지 태그: ${image_tag}"
+          export YEON_WEB_IMAGE="ghcr.io/${owner_lower}/yeon-web-app:${image_tag}"
+          export YEON_RACE_SERVER_IMAGE="ghcr.io/${owner_lower}/yeon-race-server:${image_tag}"
+          export YEON_BACKEND_IMAGE="ghcr.io/${owner_lower}/yeon-backend:${image_tag}"
           for i in 1 2 3; do
             docker compose -f "${COMPOSE_FILE}" pull "${services[@]}" && break
             [ "$i" -eq 3 ] && exit 1
@@ -1009,7 +1017,13 @@ jobs:
           DEPLOY_DIR="${DEPLOY_DIR}" COMPOSE_FILE="${COMPOSE_FILE}" bash scripts/migrate.sh
 
   deploy_production:
-    if: always() && github.ref == 'refs/heads/main' && (needs.detect_changes.outputs.web == 'true' || needs.detect_changes.outputs.backend == 'true' || needs.detect_changes.outputs.race == 'true')
+    if: >
+      always() &&
+      github.ref == 'refs/heads/main' &&
+      (needs.detect_changes.outputs.web == 'true' || needs.detect_changes.outputs.backend == 'true' || needs.detect_changes.outputs.race == 'true') &&
+      (needs.detect_changes.outputs.web != 'true' || needs.publish_manifest.result == 'success') &&
+      (needs.detect_changes.outputs.race != 'true' || needs.publish_race_manifest.result == 'success') &&
+      (needs.detect_changes.outputs.backend != 'true' || needs.publish_backend_manifest.result == 'success')
     needs:
       - detect_changes
       - publish_manifest
@@ -1068,9 +1082,11 @@ jobs:
             exit 0
           fi
 
-          export YEON_WEB_IMAGE="ghcr.io/${owner_lower}/yeon-web-app:${IMAGE_TAG}"
-          export YEON_RACE_SERVER_IMAGE="ghcr.io/${owner_lower}/yeon-race-server:${IMAGE_TAG}"
-          export YEON_BACKEND_IMAGE="ghcr.io/${owner_lower}/yeon-backend:${IMAGE_TAG}"
+          image_tag="sha-${GITHUB_SHA::7}"
+          echo "배포 이미지 태그: ${image_tag}"
+          export YEON_WEB_IMAGE="ghcr.io/${owner_lower}/yeon-web-app:${image_tag}"
+          export YEON_RACE_SERVER_IMAGE="ghcr.io/${owner_lower}/yeon-race-server:${image_tag}"
+          export YEON_BACKEND_IMAGE="ghcr.io/${owner_lower}/yeon-backend:${image_tag}"
           # Pi 네트워크 대응: pull 실패 시 최대 3회 재시도
           for i in 1 2 3; do
             docker compose -f "${COMPOSE_FILE}" pull "${services[@]}" && break
