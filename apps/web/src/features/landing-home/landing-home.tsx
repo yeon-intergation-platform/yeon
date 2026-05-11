@@ -20,6 +20,8 @@ type LandingHomeProps = {
   isAuthenticated: boolean;
 };
 
+const COUNSELING_SERVICE_SLUG = "counseling-service";
+
 export function LandingHome({
   nextPath,
   initialLoginModalOpen = false,
@@ -31,6 +33,8 @@ export function LandingHome({
     initialLoginModalOpen
   );
   const [loginNextPath, setLoginNextPath] = useState(nextPath);
+  const [isCounselingServiceHidden, setIsCounselingServiceHidden] =
+    useState(true);
 
   useEffect(() => {
     setLoginNextPath(nextPath);
@@ -63,6 +67,13 @@ export function LandingHome({
     setIsLoginModalOpen(false);
   }, []);
 
+  const visibleServices = isCounselingServiceHidden
+    ? services.filter((service) => service.slug !== COUNSELING_SERVICE_SLUG)
+    : services;
+  const hasHiddenCounselingService = services.some(
+    (service) => service.slug === COUNSELING_SERVICE_SLUG
+  );
+
   return (
     <>
       <LoginModal
@@ -76,21 +87,7 @@ export function LandingHome({
         <CommonProductHeader
           activeService="home"
           rightExtras={
-            isAuthenticated ? (
-              <a
-                href="/counseling-service"
-                className="rounded-xl bg-[#111] px-4 py-2 text-[13px] font-semibold text-white no-underline transition-colors hover:bg-[#333]"
-                onClick={() =>
-                  trackEvent(analyticsEvents.serviceEntryClick, {
-                    source: "landing_nav",
-                    service: "counseling-service",
-                    authenticated: true,
-                  })
-                }
-              >
-                서비스 바로가기
-              </a>
-            ) : (
+            !isAuthenticated ? (
               <button
                 type="button"
                 className="rounded-xl border border-[#e5e5e5] bg-white px-4 py-2 text-[13px] font-semibold text-[#111] transition-colors hover:border-[#111] hover:bg-[#fafafa]"
@@ -98,23 +95,37 @@ export function LandingHome({
               >
                 로그인
               </button>
-            )
+            ) : null
           }
         />
 
         <main className="mx-auto max-w-[1400px] px-6 py-16 md:px-12 md:py-20">
           <section className="max-w-[720px]">
             <h1 className="mt-4 text-[30px] font-black tracking-[-0.04em] text-[#111] md:text-[40px]">
-              현재 {services.length}가지 서비스를 운영 중입니다.
+              현재 {visibleServices.length}가지 서비스를 운영 중입니다.
             </h1>
             <p className="mt-4 max-w-[720px] text-[14px] leading-[1.8] text-[#666] md:text-[15px]">
               필요한 서비스를 선택해 바로 이용해보세요.
             </p>
+            {hasHiddenCounselingService ? (
+              <button
+                type="button"
+                className="mt-5 rounded-xl border border-[#e5e5e5] bg-white px-4 py-2 text-[13px] font-semibold text-[#555] transition-colors hover:border-[#111] hover:text-[#111]"
+                aria-pressed={!isCounselingServiceHidden}
+                onClick={() =>
+                  setIsCounselingServiceHidden((hidden) => !hidden)
+                }
+              >
+                {isCounselingServiceHidden
+                  ? "숨김 서비스 보기"
+                  : "상담 기록 워크스페이스 숨기기"}
+              </button>
+            ) : null}
           </section>
 
           <section className="mt-10">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {services.map((service) => {
+              {visibleServices.map((service) => {
                 const isLive = service.status === platformServiceStatuses.live;
                 const requiresAuth =
                   service.accessPolicy ===

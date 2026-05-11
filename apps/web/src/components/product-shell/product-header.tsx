@@ -18,26 +18,24 @@ type CommonServiceKey = "home" | "typing" | "card" | "community";
 
 type CommonProductHeaderProps = {
   activeService: CommonServiceKey;
+  brandLabel?: string;
   settingsControl?: ReactNode;
   profileControl?: ReactNode;
   rightExtras?: ReactNode;
 };
+
+const COMMON_HEADER_BRAND_LABELS: Record<CommonServiceKey, string> = {
+  home: "YEON",
+  typing: "YEON 타자연습",
+  card: "YEON 카드",
+  community: "YEON 커뮤니티",
+} as const;
 
 const PRODUCT_HEADER_FRAME_CLASS =
   "h-[61px] border-b border-[#e5e5e5] bg-white px-6 py-3 md:px-12";
 const PRODUCT_HEADER_INNER_BASE_CLASS = "mx-auto h-full max-w-[1400px]";
 const PRODUCT_HEADER_INNER_DEFAULT_LAYOUT_CLASS =
   "flex items-center justify-between gap-3";
-
-const COMMON_HEADER_NAV_ITEMS: Array<{
-  key: Exclude<CommonServiceKey, "home">;
-  label: string;
-  href: string;
-}> = [
-  { key: "typing", label: "타자", href: "/typing-service" },
-  { key: "card", label: "플래시카드", href: "/card-service" },
-  { key: "community", label: "커뮤니티", href: "/community" },
-];
 
 function joinClassNames(...values: Array<string | undefined>) {
   return values.filter(Boolean).join(" ");
@@ -75,6 +73,7 @@ export function ProductHeader({
 
 export function CommonProductHeader({
   activeService,
+  brandLabel = COMMON_HEADER_BRAND_LABELS[activeService],
   settingsControl,
   profileControl,
   rightExtras,
@@ -88,28 +87,12 @@ export function CommonProductHeader({
       <Link
         href="/"
         aria-current={activeService === "home" ? "page" : undefined}
-        className="text-[22px] font-black tracking-[-0.04em] text-[#111] no-underline transition-opacity hover:opacity-70 md:text-[25px]"
+        className="min-w-0 text-[19px] font-black tracking-[-0.04em] text-[#111] no-underline transition-opacity hover:opacity-70 md:text-[23px]"
       >
-        YEON
+        {brandLabel}
       </Link>
 
-      <div className="flex min-w-0 justify-center">
-        <div className="flex max-w-full items-center gap-4 overflow-x-auto text-[14px] font-semibold text-[#111] md:gap-7 md:text-[16px]">
-          {COMMON_HEADER_NAV_ITEMS.map((item) => (
-            <Link
-              key={item.key}
-              href={item.href}
-              aria-current={activeService === item.key ? "page" : undefined}
-              className={joinClassNames(
-                "shrink-0 no-underline transition-opacity hover:opacity-70",
-                activeService === item.key ? "font-black" : "font-medium"
-              )}
-            >
-              {item.label}
-            </Link>
-          ))}
-        </div>
-      </div>
+      <div aria-hidden="true" />
 
       <div className="flex min-w-0 items-center justify-end gap-2">
         {rightExtras ? (
@@ -165,7 +148,7 @@ export function ProductHeaderDefaultSettingsButton() {
 }
 
 export function ProductHeaderProfileButton({
-  href = "/counseling-service",
+  href = "/profile",
 }: {
   href?: string;
 }) {
