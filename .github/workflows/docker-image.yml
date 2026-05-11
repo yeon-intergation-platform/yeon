@@ -48,6 +48,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: 변경 범위 판별
         id: scope
@@ -61,7 +63,8 @@ jobs:
             exit 0
           fi
 
-          if ! git rev-parse "${{ github.event.before }}" >/dev/null 2>&1; then
+          if ! git cat-file -e "${{ github.event.before }}^{commit}" 2>/dev/null; then
+            echo "이전 커밋을 확인할 수 없어 전체 서비스를 배포 대상으로 표시합니다."
             echo "web=true" >> "$GITHUB_OUTPUT"
             echo "backend=true" >> "$GITHUB_OUTPUT"
             echo "race=true" >> "$GITHUB_OUTPUT"

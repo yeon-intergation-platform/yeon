@@ -178,3 +178,30 @@
 - 긴 설명문과 MVP 규칙 문구가 상시 노출되지 않는다.
 - 모든 화면 액션은 권한 매트릭스와 일치한다.
 - 방 설정 변경 시 참가자 준비 상태는 정합 기준에 따라 초기화되거나 명시적으로 보존된다.
+
+## 긴급 차수: 운영 배포 변경 감지 보정
+
+### 작업내용
+
+- 타자방 로비 PR merge 후 GitHub Actions가 success로 표시됐지만 실제 운영 배포 job이 skipped된 원인을 수정한다.
+- `detect_changes`가 shallow checkout에서 `github.event.before` 커밋을 찾지 못하는 경우에도 web/race/backend 배포 대상 fallback이 정확히 동작하게 한다.
+- 운영에는 `workflow_dispatch`로 즉시 재배포를 걸고, workflow 수정은 별도 PR로 main에 반영한다.
+
+### 논의 필요
+
+- 없음. 운영 반영 누락 재발 방지성 CI/CD 버그 수정이다.
+
+### 선택지
+
+1. `detect_changes` job만 `fetch-depth: 0`으로 전체 히스토리를 받아 기존 diff 기준을 유지한다.
+2. shallow checkout을 유지하되 `before` 커밋을 별도 fetch한다.
+3. 변경 감지를 제거하고 main push마다 전체 서비스를 배포한다.
+
+### 추천
+
+- 1번. detect job 하나만 전체 히스토리를 받아 단순하고 안전하게 `before..sha` diff를 보장한다.
+- 추가로 객체 존재 검사는 `git cat-file -e <sha>^{commit}`로 바꿔 `rev-parse`의 false positive를 제거한다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행.
