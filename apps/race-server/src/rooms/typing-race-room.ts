@@ -25,6 +25,7 @@ import {
   type MatchJoinMessage,
   type RoomChatMessage,
   type RoomSettingsUpdateMessage,
+  type RoomStartMessage,
   type RaceFinishMessage,
   type RaceProgressMessage,
   type RaceSeedMessage,
@@ -85,6 +86,7 @@ const MAX_SEED_LABEL_LENGTH = 120;
 const MAX_REASONABLE_CPM = 1200;
 const MAX_CHAT_MESSAGE_LENGTH = 500;
 const MAX_LOBBY_CHAT_MESSAGES = 100;
+const EMPTY_LOBBY_CLOSE_GRACE_MS = 10000;
 const TYPING_RACE_SEED_FALLBACK_SECRET = "yeon-local-typing-race-seed-secret";
 const LOBBY_MAX_PARTICIPANTS_OPTIONS = [2, 3, 4] as const;
 const LOBBY_ROUND_COUNT_OPTIONS = [1, 3, 5] as const;
@@ -394,6 +396,8 @@ export class TypingRaceRoom extends Room {
 
   private lobbyMode: boolean = false;
 
+  private emptyLobbyCloseTimer: { clear: () => void } | null = null;
+
   private get speedStyle() {
     return resolveTypingSpeedStyle(
       this.roomSeed.languageTag ?? this.settings.language
@@ -402,6 +406,7 @@ export class TypingRaceRoom extends Room {
 
   onCreate(options?: TypingRoomCreateMessage) {
     this.lobbyMode = options?.roomMode === "lobby";
+    this.autoDispose = !this.lobbyMode;
     this.settings = normalizeSettings(options);
     this.roomSeed = normalizeRaceSeed(
       options?.raceSeed,
@@ -437,8 +442,8 @@ export class TypingRaceRoom extends Room {
       this.addChat(client, message as RoomChatMessage);
     });
 
-    this.onMessage(RACE_EVENTS.ROOM_START, (client) => {
-      this.startFromLobby(client);
+    this.onMessage(RACE_EVENTS.ROOM_START, (client, message) => {
+      this.startFromLobby(client, message as RoomStartMessage | undefined);
     });
 
     this.onMessage(RACE_EVENTS.RACE_PROGRESS, (client, message) => {
@@ -458,6 +463,8 @@ export class TypingRaceRoom extends Room {
   }
 
   onJoin(client: Client, options: MatchJoinMessage) {
+    this.clearEmptyLobbyCloseTimer();
+
     if (this.lobbyMode && this.status !== TYPING_ROOM_STATUS.WAITING) {
       client.send(RACE_EVENTS.ROOM_ERROR, { message: "이미 시작된 방입니다." });
       client.leave();
@@ -484,11 +491,17 @@ export class TypingRaceRoom extends Room {
     this.participants.delete(client.sessionId);
 
     if (this.lobbyMode && client.sessionId === this.hostId) {
-      this.hostId = null;
-      this.status = TYPING_ROOM_STATUS.CLOSED;
-      this.appendSystemMessage("방장이 나가 방이 종료되었습니다.");
+      const nextHostId = this.participants.keys().next().value ?? null;
+      this.hostId = nextHostId;
+      const nextHost = nextHostId ? this.participants.get(nextHostId) : null;
+      if (nextHost) {
+        nextHost.isReady = true;
+        this.appendSystemMessage("방장이 변경되었습니다.");
+      } else {
+        this.appendSystemMessage("방장이 나갔습니다.");
+        this.scheduleEmptyLobbyClose();
+      }
       this.syncState();
-      this.disconnect();
       return;
     }
 
@@ -502,10 +515,34 @@ export class TypingRaceRoom extends Room {
 
     if (this.lobbyMode && participant) {
       this.appendSystemMessage(`${participant.label}님이 퇴장했습니다.`);
+      if (this.participants.size === 0) {
+        this.scheduleEmptyLobbyClose();
+      }
       this.syncState();
       return;
     }
+    if (this.lobbyMode && this.participants.size === 0) {
+      this.scheduleEmptyLobbyClose();
+    }
     this.syncState();
+  }
+
+  private clearEmptyLobbyCloseTimer() {
+    this.emptyLobbyCloseTimer?.clear();
+    this.emptyLobbyCloseTimer = null;
+  }
+
+  private scheduleEmptyLobbyClose() {
+    if (!this.lobbyMode || this.participants.size > 0) return;
+    if (this.emptyLobbyCloseTimer) return;
+
+    this.emptyLobbyCloseTimer = this.clock.setTimeout(() => {
+      this.emptyLobbyCloseTimer = null;
+      if (!this.lobbyMode || this.participants.size > 0) return;
+      this.status = TYPING_ROOM_STATUS.CLOSED;
+      this.syncState();
+      this.disconnect();
+    }, EMPTY_LOBBY_CLOSE_GRACE_MS);
   }
 
   private registerParticipant(client: Client, message?: MatchJoinMessage) {
@@ -774,7 +811,7 @@ export class TypingRaceRoom extends Room {
     this.syncState();
   }
 
-  private startFromLobby(client: Client) {
+  private startFromLobby(client: Client, message?: RoomStartMessage) {
     if (this.status !== TYPING_ROOM_STATUS.WAITING) return;
     if (client.sessionId !== this.hostId) {
       client.send(RACE_EVENTS.ROOM_ERROR, {
@@ -787,6 +824,14 @@ export class TypingRaceRoom extends Room {
         message: "아직 준비하지 않은 참여자가 있어요.",
       });
       return;
+    }
+
+    if (message && "raceSeed" in message) {
+      this.roomSeed = normalizeRaceSeed(
+        message.raceSeed ?? undefined,
+        this.settings.language
+      );
+      this.settings = this.applyRoomSeedMetadata(this.settings, this.roomSeed);
     }
 
     this.status = TYPING_ROOM_STATUS.COUNTDOWN;

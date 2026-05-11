@@ -84,7 +84,7 @@ export function TypingBgmButton({
         <span>{playing ? "BGM ON" : "BGM"}</span>
         {showCredit ? (
           <span className="hidden text-[11px] font-medium text-[#777] md:inline">
-            Kevin MacLeod
+            찹츄찹찹츄
           </span>
         ) : null}
       </button>

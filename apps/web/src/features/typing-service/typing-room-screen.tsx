@@ -410,6 +410,33 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
     [createRoomOptions.language, deckState.decks, room?.language, sendSetting]
   );
 
+  const onStart = useCallback(async () => {
+    if (!isHost || !room?.canStart) return;
+
+    const activeDeck =
+      deckState.decks.find((deck) => deck.id === room.selectedDeckId) ??
+      selectedDeck;
+    const result = await resolveTypingRaceSeed(activeDeck, room.language);
+
+    if (!result.ok) {
+      setSettingsError(result.message);
+      return;
+    }
+
+    setSettingsError(null);
+    race.sendStart({
+      raceSeed: result.seed ?? undefined,
+    });
+  }, [
+    deckState.decks,
+    isHost,
+    race,
+    room?.canStart,
+    room?.language,
+    room?.selectedDeckId,
+    selectedDeck,
+  ]);
+
   const deckOptions = useMemo<TypingDeckOption[]>(() => {
     const language = room?.language ?? createRoomOptions.language;
     const options = deckState.decks.filter(
@@ -621,7 +648,7 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
                 {isHost ? (
                   <button
                     type="button"
-                    onClick={race.sendStart}
+                    onClick={onStart}
                     disabled={!room.canStart}
                     className="inline-flex items-center gap-2 rounded-xl bg-[#111] px-5 py-2.5 text-[14px] font-semibold text-white transition-colors hover:bg-[#333] disabled:cursor-not-allowed disabled:bg-[#f1f1f1] disabled:text-[#aaa]"
                   >

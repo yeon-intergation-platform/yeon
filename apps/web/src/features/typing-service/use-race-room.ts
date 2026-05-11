@@ -12,6 +12,7 @@ import {
   type RaceResultMessage,
   type RaceSeedMessage,
   type RoomSettingsUpdateMessage,
+  type RoomStartMessage,
   type RoomChatMessage,
   type RoomErrorMessage,
   type TypingRaceSnapshot,
@@ -52,7 +53,7 @@ export type UseRaceRoomResult = {
   sendProgress: (payload: RaceProgressMessage) => void;
   sendFinish: (payload: RaceFinishMessage) => void;
   sendReady: (isReady: boolean) => void;
-  sendStart: () => void;
+  sendStart: (payload?: RoomStartMessage) => void;
   sendChat: (content: string) => void;
   sendRoomSettings: (payload: RoomSettingsUpdateMessage) => void;
   rejoin: () => void;
@@ -358,9 +359,9 @@ export function useRaceRoom(options: UseRaceRoomOptions): UseRaceRoomResult {
     roomRef.current?.send(RACE_EVENTS.ROOM_READY, { isReady });
   }, []);
 
-  const sendStart = useCallback(() => {
+  const sendStart = useCallback((payload?: RoomStartMessage) => {
     setRoomError(null);
-    roomRef.current?.send(RACE_EVENTS.ROOM_START);
+    roomRef.current?.send(RACE_EVENTS.ROOM_START, payload);
   }, []);
 
   const sendChat = useCallback((content: string) => {
