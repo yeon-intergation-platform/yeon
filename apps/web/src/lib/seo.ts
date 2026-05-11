@@ -31,6 +31,11 @@ export const INDEXABLE_SITEMAP_ENTRIES = [
     priority: 0.9,
   },
   {
+    pathname: "/community",
+    changeFrequency: "daily",
+    priority: 0.85,
+  },
+  {
     pathname: "/typing-service/rooms",
     changeFrequency: "daily",
     priority: 0.85,

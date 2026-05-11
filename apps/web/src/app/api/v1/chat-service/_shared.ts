@@ -36,6 +36,20 @@ export async function requireChatServiceAuth(request: NextRequest) {
   };
 }
 
+export async function getOptionalChatServiceAuth(request: NextRequest) {
+  const sessionToken = getChatServiceSessionToken(request);
+  const auth = await getChatServiceAuthByToken(sessionToken);
+
+  if (!auth || !sessionToken) {
+    return null;
+  }
+
+  return {
+    sessionToken,
+    profile: auth.profile,
+  };
+}
+
 export async function parseJsonBody(request: NextRequest) {
   try {
     return await request.json();

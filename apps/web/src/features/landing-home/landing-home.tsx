@@ -106,7 +106,7 @@ export function LandingHome({
         <main className="mx-auto max-w-[1400px] px-6 py-16 md:px-12 md:py-20">
           <section className="max-w-[720px]">
             <h1 className="mt-4 text-[30px] font-black tracking-[-0.04em] text-[#111] md:text-[40px]">
-              현재 3가지 서비스를 운영 중입니다.
+              현재 {services.length}가지 서비스를 운영 중입니다.
             </h1>
             <p className="mt-4 max-w-[720px] text-[14px] leading-[1.8] text-[#666] md:text-[15px]">
               필요한 서비스를 선택해 바로 이용해보세요.
