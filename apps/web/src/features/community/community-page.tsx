@@ -77,12 +77,18 @@ function FeedGuestIdentityForm(props: {
   guestPassword: string;
   onChangeNickname: (value: string) => void;
   onChangePassword: (value: string) => void;
+  className?: string;
 }) {
-  const { guestNickname, guestPassword, onChangeNickname, onChangePassword } =
-    props;
+  const {
+    guestNickname,
+    guestPassword,
+    onChangeNickname,
+    onChangePassword,
+    className,
+  } = props;
 
   return (
-    <div className="grid gap-2 md:grid-cols-2">
+    <div className={["grid gap-2", className].filter(Boolean).join(" ")}>
       <label className="text-[12px] font-semibold text-[#555]">
         닉네임
         <input
@@ -618,11 +624,25 @@ export function CommunityPage() {
       <CommonProductHeader activeService="community" />
 
       <main className="mx-auto flex max-w-[1280px] flex-col gap-4 px-4 py-4 md:px-8 md:py-5">
-        <section
-          className="mx-auto w-full max-w-[680px]"
-          aria-label="실시간 채팅"
-        >
-          <CommunityChatWidget variant="feed" />
+        <section className="grid w-full gap-4 lg:grid-cols-[minmax(0,_1fr)_280px]">
+          <div className="min-w-0" aria-label="실시간 채팅">
+            <CommunityChatWidget variant="feed" />
+          </div>
+          <aside className="rounded-2xl border border-[#e7e7e7] bg-white p-4">
+            <h2 className="text-[15px] font-black tracking-[-0.02em] text-[#111]">
+              작성자 정보
+            </h2>
+            <p className="mt-2 text-[12px] leading-[1.6] text-[#777]">
+              비회원 글 수정/삭제와 댓글 삭제에 사용됩니다.
+            </p>
+            <FeedGuestIdentityForm
+              className="mt-3"
+              guestNickname={guestNickname}
+              guestPassword={guestPassword}
+              onChangeNickname={setGuestNickname}
+              onChangePassword={setGuestPassword}
+            />
+          </aside>
         </section>
 
         <section className="grid gap-4 lg:grid-cols-[minmax(0,_1fr)_280px]">
@@ -654,13 +674,6 @@ export function CommunityPage() {
                   글쓰기
                 </button>
               </div>
-
-              <FeedGuestIdentityForm
-                guestNickname={guestNickname}
-                guestPassword={guestPassword}
-                onChangeNickname={setGuestNickname}
-                onChangePassword={setGuestPassword}
-              />
             </div>
 
             {isWriteOpen ? (

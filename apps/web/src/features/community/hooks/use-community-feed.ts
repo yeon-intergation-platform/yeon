@@ -47,7 +47,7 @@ export function useCommunityFeed() {
   const [isRepliesLoading, setIsRepliesLoading] = useState<LoadingByPost>({});
   const [replyErrors, setReplyErrors] = useState<ErrorByPost>({});
   const [replyDeleteErrors, setReplyDeleteErrors] = useState<ErrorByPost>({});
-  const [guestNickname, setGuestNickname] = useState("");
+  const [guestNickname, setGuestNickname] = useState("익명이");
   const [guestPassword, setGuestPassword] = useState("");
 
   const actorPayload = useMemo(() => {

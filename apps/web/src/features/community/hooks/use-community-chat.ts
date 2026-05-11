@@ -2,6 +2,10 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+import {
+  readPresenceSessionId,
+  sendPresenceHeartbeat,
+} from "../community-presence";
 import { chatServiceApi, type ChatServiceFeedPost } from "../chat-service-api";
 
 type ErrorState = string | null;
@@ -28,7 +32,7 @@ function createCommunityChatGuest(): CommunityChatGuest {
       : createFallbackRandomId();
 
   return {
-    guestNickname: `손님${randomId.slice(0, 4)}`,
+    guestNickname: "익명이",
     guestPassword: `guest-${randomId}-${Date.now()}`,
   };
 }
@@ -71,6 +75,7 @@ export function useCommunityChat({
   const [isMessagesLoading, setIsMessagesLoading] = useState(true);
   const [messageError, setMessageError] = useState<ErrorState>(null);
   const [isSendingMessage, setIsSendingMessage] = useState(false);
+  const [activePresenceCount, setActivePresenceCount] = useState(1);
 
   const currentGuestNickname = guest?.guestNickname ?? null;
 
@@ -103,6 +108,32 @@ export function useCommunityChat({
     setGuest(readCommunityChatGuest());
     void loadMessages();
   }, [loadMessages]);
+
+  useEffect(() => {
+    const sessionId = readPresenceSessionId();
+    let isDisposed = false;
+
+    const updatePresence = async () => {
+      try {
+        const response = await sendPresenceHeartbeat(sessionId);
+        if (!isDisposed && typeof response.activeCount === "number") {
+          setActivePresenceCount(Math.max(1, response.activeCount));
+        }
+      } catch {
+        if (!isDisposed) {
+          setActivePresenceCount(1);
+        }
+      }
+    };
+
+    void updatePresence();
+    const intervalId = window.setInterval(updatePresence, 10_000);
+
+    return () => {
+      isDisposed = true;
+      window.clearInterval(intervalId);
+    };
+  }, []);
 
   useEffect(() => {
     const intervalId = window.setInterval(() => {
@@ -173,6 +204,7 @@ export function useCommunityChat({
     sendMessage,
     currentGuestNickname,
     setGuestNickname,
+    activePresenceCount,
   };
 }
 
