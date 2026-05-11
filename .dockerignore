@@ -32,3 +32,14 @@ CLAUDE.local.md
 Dockerfile*
 compose*.override.yml
 
+
+# Public mp3 assets are served from Cloudflare R2 in production.
+voice-test-data
+apps/web/public/test-data/*.mp3
+apps/web/public/audio/*.mp3
+space-test-data
+screenshot
+.omx
+.playwright-mcp
+apps/web/.data
+apps/backend/.gradle

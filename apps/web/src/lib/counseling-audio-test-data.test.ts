@@ -7,7 +7,9 @@ describe("COUNSELING_AUDIO_TEST_DATA", () => {
     expect(COUNSELING_AUDIO_TEST_DATA).toHaveLength(3);
 
     for (const sample of COUNSELING_AUDIO_TEST_DATA) {
-      expect(sample.href.startsWith("/test-data/")).toBe(true);
+      expect(
+        sample.href.startsWith("https://assets.yeon.world/test-data/")
+      ).toBe(true);
       expect(sample.fileName.endsWith(".mp3")).toBe(true);
       expect(sample.shortLabel.length).toBeGreaterThan(0);
     }
