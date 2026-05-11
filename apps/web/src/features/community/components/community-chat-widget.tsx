@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { useCommunityChat } from "../hooks/use-community-chat";
 
 type CommunityChatWidgetProps = {
-  variant?: "full" | "compact";
+  variant?: "full" | "compact" | "feed";
   className?: string;
 };
 
@@ -26,6 +26,7 @@ export function CommunityChatWidget({
   className,
 }: CommunityChatWidgetProps) {
   const [messageBody, setMessageBody] = useState("");
+  const [nicknameDraft, setNicknameDraft] = useState("");
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   const {
@@ -35,12 +36,21 @@ export function CommunityChatWidget({
     isSendingMessage,
     sendMessage,
     currentGuestNickname,
+    setGuestNickname,
   } = useCommunityChat({
     pollIntervalMs: variant === "compact" ? 8000 : 5000,
   });
 
+  useEffect(() => {
+    if (currentGuestNickname) {
+      setNicknameDraft(currentGuestNickname);
+    }
+  }, [currentGuestNickname]);
+
   const isCompact = variant === "compact";
+  const isFeed = variant === "feed";
   const canSendMessage = !isSendingMessage;
+  const visibleMessages = isFeed ? messages.slice(-3) : messages;
 
   return (
     <section
@@ -54,25 +64,27 @@ export function CommunityChatWidget({
         .filter(Boolean)
         .join(" ")}
     >
-      <div className="px-4 py-3">
+      <div className={isFeed ? "px-4 py-2.5" : "px-4 py-3"}>
         <div className="flex items-center justify-between gap-3">
           <div>
-            <h2 className="text-[16px] font-semibold text-[#111]">
-              실시간 커뮤니티 채팅
+            <h2 className="text-[15px] font-semibold text-[#111]">
+              실시간 채팅
             </h2>
-            <p className="mt-1 text-[12px] text-[#777]">
-              로그인이나 전화번호 인증 없이 바로 대화할 수 있어요.
-            </p>
           </div>
-          {isCompact ? (
-            <button
-              type="button"
-              onClick={() => setIsCollapsed((value) => !value)}
-              className="rounded-lg border border-[#e5e5e5] px-2 py-1 text-[11px] font-semibold text-[#333]"
-            >
-              {isCollapsed ? "열기" : "접기"}
-            </button>
-          ) : null}
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] font-semibold text-[#999]">
+              {messages.length}개
+            </span>
+            {isCompact ? (
+              <button
+                type="button"
+                onClick={() => setIsCollapsed((value) => !value)}
+                className="rounded-lg border border-[#e5e5e5] px-2 py-1 text-[11px] font-semibold text-[#333]"
+              >
+                {isCollapsed ? "열기" : "접기"}
+              </button>
+            ) : null}
+          </div>
         </div>
       </div>
 
@@ -83,11 +95,16 @@ export function CommunityChatWidget({
       ) : null}
 
       {!isCompact || !isCollapsed ? (
-        <div className="space-y-3 border-t border-[#f0f0f0] px-4 pb-4 pt-3">
+        <div
+          className={[
+            "space-y-2 border-t border-[#f0f0f0] px-4 pb-3 pt-2.5",
+            isFeed ? "" : "space-y-3 pb-4 pt-3",
+          ].join(" ")}
+        >
           <div
             className={[
-              "rounded-xl border border-[#eee] bg-[#fafafa] p-3",
-              isCompact ? "h-[220px]" : "h-[360px]",
+              "rounded-xl border border-[#eee] bg-[#fafafa] p-2.5",
+              isCompact ? "h-[220px]" : isFeed ? "h-[96px]" : "h-[360px]",
               "overflow-y-auto",
             ].join(" ")}
           >
@@ -99,11 +116,9 @@ export function CommunityChatWidget({
               <p className="text-[12px] text-red-600">{messageError}</p>
             ) : null}
 
-            {!isMessagesLoading && messages.length === 0 ? (
-              <p className="text-[12px] text-[#777]">아직 메시지가 없어요.</p>
-            ) : (
-              <div className="space-y-2">
-                {messages.map((message) => {
+            {!isMessagesLoading && visibleMessages.length === 0 ? null : (
+              <div className="space-y-1.5">
+                {visibleMessages.map((message) => {
                   const isMine =
                     currentGuestNickname !== null &&
                     message.author.nickname === currentGuestNickname;
@@ -111,32 +126,17 @@ export function CommunityChatWidget({
                   return (
                     <div
                       key={message.id}
-                      className={`flex ${isMine ? "justify-end" : "justify-start"}`}
+                      className="grid grid-cols-[72px_42px_minmax(0,1fr)] items-baseline gap-2 text-[12px] leading-[1.45]"
                     >
-                      <div
-                        className={[
-                          "max-w-[85%] rounded-xl px-3 py-2",
-                          isMine
-                            ? "bg-[#111] text-white"
-                            : "bg-[#efefef] text-[#111]",
-                        ].join(" ")}
-                      >
-                        <p className="text-[12px] font-semibold">
-                          {isMine ? "나" : message.author.nickname}
-                        </p>
-                        <p className="mt-1 text-[13px] leading-[1.45]">
-                          {trimDisplayText(message.body)}
-                        </p>
-                        <p
-                          className={
-                            isMine
-                              ? "mt-1 text-[10px] text-[#ddd]"
-                              : "mt-1 text-[10px] text-[#666]"
-                          }
-                        >
-                          {formatMessageTime(message.createdAt)}
-                        </p>
-                      </div>
+                      <span className="truncate font-semibold text-[#555]">
+                        {isMine ? "나" : message.author.nickname}
+                      </span>
+                      <span className="font-mono text-[10px] text-[#999]">
+                        {formatMessageTime(message.createdAt)}
+                      </span>
+                      <span className="truncate text-[#111]">
+                        {trimDisplayText(message.body)}
+                      </span>
                     </div>
                   );
                 })}
@@ -152,26 +152,35 @@ export function CommunityChatWidget({
                 return;
               }
 
+              setGuestNickname(nicknameDraft);
               void sendMessage(trimmed).then(() => {
                 setMessageBody("");
               });
             }}
-            className="flex gap-2"
+            className="grid grid-cols-[112px_minmax(0,1fr)_58px] gap-2"
           >
+            <input
+              value={nicknameDraft}
+              onChange={(event) => setNicknameDraft(event.target.value)}
+              placeholder="닉네임"
+              className="h-9 rounded-xl border border-[#ddd] px-3 text-[13px] outline-none focus:border-[#111]"
+              maxLength={40}
+              disabled={!canSendMessage}
+            />
             <input
               value={messageBody}
               onChange={(event) => setMessageBody(event.target.value)}
-              placeholder="메시지를 입력하세요"
-              className="flex-1 rounded-xl border border-[#ddd] px-3 py-2 text-[14px] outline-none focus:border-[#111]"
+              placeholder="메시지 입력"
+              className="h-9 rounded-xl border border-[#ddd] px-3 text-[13px] outline-none focus:border-[#111]"
               maxLength={400}
               disabled={!canSendMessage}
             />
             <button
               type="submit"
               disabled={!canSendMessage || !messageBody.trim()}
-              className="rounded-xl bg-[#111] px-4 py-2 text-[13px] font-semibold text-white disabled:bg-[#d0d0d0]"
+              className="h-9 rounded-xl bg-[#111] px-3 text-[12px] font-semibold text-white disabled:bg-[#d0d0d0]"
             >
-              {isSendingMessage ? "전송 중" : "전송"}
+              {isSendingMessage ? "전송" : "전송"}
             </button>
           </form>
         </div>

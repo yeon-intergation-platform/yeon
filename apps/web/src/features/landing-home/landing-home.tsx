@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import type { DevLoginOption } from "@/lib/auth/dev-login-options";
 import { analyticsEvents, trackEvent } from "@/lib/analytics";
-import { ProductHeader } from "@/components/product-shell/product-header";
+import { CommonProductHeader } from "@/components/product-shell/product-header";
 import type { PlatformServiceDescriptor } from "@/lib/platform-services";
 import {
   platformServiceAccessPolicies,
@@ -73,34 +73,34 @@ export function LandingHome({
       />
 
       <div className="min-h-screen bg-white text-[#111]">
-        <ProductHeader as="nav" ariaLabel="YEON 서비스 이동">
-          <span className="text-[15px] font-bold tracking-[-0.02em] text-[#111]">
-            {SITE_BRAND_NAME}
-          </span>
-          {isAuthenticated ? (
-            <a
-              href="/counseling-service"
-              className="rounded-xl bg-[#111] px-4 py-2 text-[13px] font-semibold text-white no-underline transition-colors hover:bg-[#333]"
-              onClick={() =>
-                trackEvent(analyticsEvents.serviceEntryClick, {
-                  source: "landing_nav",
-                  service: "counseling-service",
-                  authenticated: true,
-                })
-              }
-            >
-              서비스 바로가기
-            </a>
-          ) : (
-            <button
-              type="button"
-              className="rounded-xl border border-[#e5e5e5] bg-white px-4 py-2 text-[13px] font-semibold text-[#111] transition-colors hover:border-[#111] hover:bg-[#fafafa]"
-              onClick={() => handleLoginModalOpen(nextPath, "landing_nav")}
-            >
-              로그인
-            </button>
-          )}
-        </ProductHeader>
+        <CommonProductHeader
+          activeService="home"
+          rightExtras={
+            isAuthenticated ? (
+              <a
+                href="/counseling-service"
+                className="rounded-xl bg-[#111] px-4 py-2 text-[13px] font-semibold text-white no-underline transition-colors hover:bg-[#333]"
+                onClick={() =>
+                  trackEvent(analyticsEvents.serviceEntryClick, {
+                    source: "landing_nav",
+                    service: "counseling-service",
+                    authenticated: true,
+                  })
+                }
+              >
+                서비스 바로가기
+              </a>
+            ) : (
+              <button
+                type="button"
+                className="rounded-xl border border-[#e5e5e5] bg-white px-4 py-2 text-[13px] font-semibold text-[#111] transition-colors hover:border-[#111] hover:bg-[#fafafa]"
+                onClick={() => handleLoginModalOpen(nextPath, "landing_nav")}
+              >
+                로그인
+              </button>
+            )
+          }
+        />
 
         <main className="mx-auto max-w-[1400px] px-6 py-16 md:px-12 md:py-20">
           <section className="max-w-[720px]">

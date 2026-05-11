@@ -19,7 +19,9 @@ function getTypingRoomBgmAudio() {
   return typingRoomBgmAudio;
 }
 
-export function TypingBgmButton() {
+export function TypingBgmButton({
+  showCredit = true,
+}: { showCredit?: boolean } = {}) {
   const [playing, setPlaying] = useState(false);
   const [blocked, setBlocked] = useState(false);
 
@@ -82,14 +84,16 @@ export function TypingBgmButton() {
         <span>{playing ? "BGM ON" : "BGM"}</span>
         <span className="hidden text-[#999] sm:inline">Kevin MacLeod</span>
       </button>
-      <a
-        href="/audio/typing-room-bgm.LICENSE.md"
-        target="_blank"
-        rel="noreferrer"
-        className="hidden text-[11px] font-medium text-[#aaa] underline-offset-2 hover:text-[#555] hover:underline lg:inline"
-      >
-        credit
-      </a>
+      {showCredit ? (
+        <a
+          href="/audio/typing-room-bgm.LICENSE.md"
+          target="_blank"
+          rel="noreferrer"
+          className="hidden text-[11px] font-medium text-[#aaa] underline-offset-2 hover:text-[#555] hover:underline lg:inline"
+        >
+          credit
+        </a>
+      ) : null}
       {blocked && (
         <span className="hidden text-[11px] text-[#c2410c] md:inline">
           다시 눌러 재생해 주세요

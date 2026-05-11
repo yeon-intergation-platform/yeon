@@ -18,9 +18,7 @@ import {
 } from "@yeon/typing-race-engine";
 import { findCharacter, toEnginePlayerCharacter } from "./characters";
 import { useTypingProfile } from "./use-typing-profile";
-import { TypingBgmButton } from "./typing-bgm-button";
 import { createTranslator, useTypingSettings } from "./use-typing-settings";
-import { TypingSettingsButton } from "./typing-settings-button";
 import { TypingServiceHeader } from "./typing-service-header";
 import type { UseRaceRoomResult } from "./use-race-room";
 import {
@@ -253,15 +251,11 @@ export function TypingRaceMultiplayerScreen({
         active="race"
         title="YEON 레이스"
         controls={
-          <>
-            <span className="font-mono text-[12px] text-[#aaa]">
-              {race.snapshot?.roundLabel === "flow-focus"
-                ? t("roundFlowFocus")
-                : (race.snapshot?.roundLabel ?? "")}
-            </span>
-            <TypingBgmButton />
-            <TypingSettingsButton />
-          </>
+          <span className="font-mono text-[12px] text-[#aaa]">
+            {race.snapshot?.roundLabel === "flow-focus"
+              ? t("roundFlowFocus")
+              : (race.snapshot?.roundLabel ?? "")}
+          </span>
         }
       />
 

@@ -112,6 +112,26 @@ export function useCommunityChat({
     return () => window.clearInterval(intervalId);
   }, [loadMessages, pollIntervalMs]);
 
+  const setGuestNickname = useCallback(
+    (nickname: string) => {
+      const trimmedNickname = nickname.trim();
+      const previous = guest ?? readCommunityChatGuest();
+      const next = {
+        ...previous,
+        guestNickname: trimmedNickname || previous.guestNickname,
+      };
+
+      setGuest(next);
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem(
+          COMMUNITY_CHAT_GUEST_STORAGE_KEY,
+          JSON.stringify(next)
+        );
+      }
+    },
+    [guest]
+  );
+
   const sendMessage = useCallback(
     async (message: string) => {
       const trimmed = message.trim();
@@ -152,6 +172,7 @@ export function useCommunityChat({
     isSendingMessage,
     sendMessage,
     currentGuestNickname,
+    setGuestNickname,
   };
 }
 

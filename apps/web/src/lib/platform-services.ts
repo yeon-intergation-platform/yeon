@@ -60,8 +60,7 @@ export const PLATFORM_SERVICES = [
     slug: "community",
     href: "/community",
     title: "커뮤니티",
-    summary:
-      "실시간 채팅과 글·댓글 피드가 함께 운영되는 커뮤니티 공간입니다.",
+    summary: "실시간 채팅과 커뮤니티 글·댓글 피드를 함께 제공합니다.",
     audience: "커뮤니티",
     accessPolicy: platformServiceAccessPolicies.mixed,
     status: platformServiceStatuses.live,

@@ -2,9 +2,7 @@
 
 import { analyticsEvents, trackEvent } from "@/lib/analytics";
 import { useTypingProfile } from "./use-typing-profile";
-import { TypingBgmButton } from "./typing-bgm-button";
 import { TypingProfileCard } from "./typing-profile-card";
-import { TypingSettingsButton } from "./typing-settings-button";
 import { TypingServiceHeader } from "./typing-service-header";
 import { createTranslator, useTypingSettings } from "./use-typing-settings";
 
@@ -23,16 +21,7 @@ export function TypingServiceHome() {
 
   return (
     <div className="min-h-screen bg-white text-[#111]">
-      <TypingServiceHeader
-        active="home"
-        title={t("appName")}
-        controls={
-          <>
-            <TypingBgmButton />
-            <TypingSettingsButton />
-          </>
-        }
-      />
+      <TypingServiceHeader active="home" title={t("appName")} />
 
       <main className="flex flex-col items-center px-6 py-16 md:px-10 md:py-24">
         <section className="w-full max-w-[760px]">
