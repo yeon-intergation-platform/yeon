@@ -67,9 +67,55 @@ export const chatServiceFeedPostDtoSchema = z.object({
   createdAt: z.string().datetime(),
 });
 
+const chatServiceFeedGuestNicknameSchema = z.string().trim().min(1).max(40);
+const chatServiceFeedGuestPasswordSchema = z.string().trim().min(1).max(128);
+
+export const chatServiceFeedActorBaseSchema = z.object({
+  guestNickname: chatServiceFeedGuestNicknameSchema.optional(),
+  guestPassword: chatServiceFeedGuestPasswordSchema.optional(),
+});
+
+export const chatServiceFeedActorSchema =
+  chatServiceFeedActorBaseSchema.superRefine((value, context) => {
+    const hasNickname = Boolean(value.guestNickname?.trim().length);
+    const hasPassword = Boolean(value.guestPassword?.trim().length);
+
+    if ((hasNickname && !hasPassword) || (!hasNickname && hasPassword)) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "비로그인 작성 시 닉네임과 비밀번호는 함께 입력해야 합니다.",
+        path: ["guestNickname", "guestPassword"],
+      });
+    }
+  });
+
 export const chatServiceCreateFeedPostBodySchema = z.object({
   body: z.string().trim().min(1).max(400),
 });
+
+export const chatServiceWriteFeedPostBodySchema =
+  chatServiceCreateFeedPostBodySchema
+    .merge(chatServiceFeedActorBaseSchema)
+    .superRefine((value, context) => {
+      const hasNickname = Boolean(value.guestNickname?.trim().length);
+      const hasPassword = Boolean(value.guestPassword?.trim().length);
+
+      if (!hasNickname && !hasPassword) {
+        return;
+      }
+
+      if (hasNickname !== hasPassword) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "비로그인 작성 시 닉네임과 비밀번호는 함께 입력해야 합니다.",
+          path: ["guestNickname", "guestPassword"],
+        });
+      }
+    });
+
+export const chatServiceUpdateFeedPostBodySchema =
+  chatServiceWriteFeedPostBodySchema;
+export const chatServiceDeleteFeedPostBodySchema = chatServiceFeedActorSchema;
 
 export const chatServiceListFeedResponseSchema = z.object({
   posts: z.array(chatServiceFeedPostDtoSchema),
@@ -77,6 +123,15 @@ export const chatServiceListFeedResponseSchema = z.object({
 
 export const chatServiceCreateFeedPostResponseSchema = z.object({
   post: chatServiceFeedPostDtoSchema,
+});
+export const chatServiceUpdateFeedPostResponseSchema =
+  chatServiceCreateFeedPostResponseSchema;
+export const chatServiceFeedPostActionResponseSchema =
+  chatServiceCreateFeedPostResponseSchema;
+
+export const chatServiceDeleteFeedPostResponseSchema = z.object({
+  deleted: z.literal(true),
+  postId: z.string().uuid(),
 });
 
 export const chatServiceListFeedRepliesResponseSchema = z.object({

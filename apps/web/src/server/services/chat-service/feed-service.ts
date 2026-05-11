@@ -1,5 +1,5 @@
 import { chatServiceCreateFeedPostResponseSchema } from "@yeon/api-contract/chat-service";
-import { desc, eq, isNull, or } from "drizzle-orm";
+import { and, desc, eq, isNull, or } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
 
 import { getDb } from "@/server/db";
@@ -18,7 +18,7 @@ function buildReplyCountMap(
     replyToPostId: string | null;
     authorId: string;
   }>,
-  blockedRelationIds: Set<string>,
+  blockedRelationIds: Set<string>
 ) {
   const replyCountMap = new Map<string, number>();
 
@@ -29,7 +29,7 @@ function buildReplyCountMap(
 
     replyCountMap.set(
       row.replyToPostId,
-      (replyCountMap.get(row.replyToPostId) ?? 0) + 1,
+      (replyCountMap.get(row.replyToPostId) ?? 0) + 1
     );
   }
 
@@ -38,7 +38,7 @@ function buildReplyCountMap(
 
 async function listReplyCounts(
   postIds: string[],
-  blockedRelationIds: Set<string>,
+  blockedRelationIds: Set<string>
 ) {
   if (postIds.length === 0) {
     return new Map<string, number>();
@@ -54,9 +54,9 @@ async function listReplyCounts(
     .where(
       or(
         ...postIds.map((postId) =>
-          eq(chatServiceFeedPosts.replyToPostId, postId),
-        ),
-      ),
+          eq(chatServiceFeedPosts.replyToPostId, postId)
+        )
+      )
     );
 
   return buildReplyCountMap(rows, blockedRelationIds);
@@ -64,18 +64,18 @@ async function listReplyCounts(
 
 async function buildFeedPostsFromRows(
   rows: (typeof chatServiceFeedPosts.$inferSelect)[],
-  blockedRelationIds: Set<string>,
+  blockedRelationIds: Set<string>
 ) {
   const visibleRows = rows.filter(
-    (row) => !blockedRelationIds.has(row.authorId),
+    (row) => !blockedRelationIds.has(row.authorId)
   );
   const authors = await listChatServiceProfilesByIds(
-    visibleRows.map((row) => row.authorId),
+    visibleRows.map((row) => row.authorId)
   );
   const authorMap = new Map(authors.map((author) => [author.id, author]));
   const replyCountMap = await listReplyCounts(
     visibleRows.map((row) => row.id),
-    blockedRelationIds,
+    blockedRelationIds
   );
 
   return visibleRows.map((row) => {
@@ -96,10 +96,19 @@ async function buildFeedPostsFromRows(
   });
 }
 
-export async function listChatServiceFeed(currentProfileId: string) {
+async function getBlockedRelationIds(
+  currentProfileId: string | null | undefined
+) {
+  if (!currentProfileId) {
+    return new Set<string>();
+  }
+
+  return listChatServiceBlockedRelationIds(currentProfileId);
+}
+
+export async function listChatServiceFeed(currentProfileId?: string | null) {
   await ensureChatServiceSeedData();
-  const blockedRelationIds =
-    await listChatServiceBlockedRelationIds(currentProfileId);
+  const blockedRelationIds = await getBlockedRelationIds(currentProfileId);
 
   const db = getDb();
   const rows = await db
@@ -115,11 +124,10 @@ export async function listChatServiceFeed(currentProfileId: string) {
 }
 
 export async function listChatServiceFeedReplies(
-  currentProfileId: string,
-  postId: string,
+  currentProfileId: string | null | undefined,
+  postId: string
 ) {
-  const blockedRelationIds =
-    await listChatServiceBlockedRelationIds(currentProfileId);
+  const blockedRelationIds = await getBlockedRelationIds(currentProfileId);
   const db = getDb();
   const rows = await db
     .select()
@@ -136,7 +144,7 @@ export async function listChatServiceFeedReplies(
 export async function createChatServiceFeedPost(
   profileId: string,
   body: string,
-  replyToPostId?: string,
+  replyToPostId?: string
 ) {
   const db = getDb();
 
@@ -170,5 +178,91 @@ export async function createChatServiceFeedPost(
 
   return {
     post,
+  };
+}
+
+export async function updateChatServiceFeedPost(
+  currentProfileId: string,
+  postId: string,
+  body: string
+) {
+  const db = getDb();
+  const [currentPost] = await db
+    .select()
+    .from(chatServiceFeedPosts)
+    .where(eq(chatServiceFeedPosts.id, postId))
+    .limit(1);
+
+  if (!currentPost) {
+    throw new ServiceError(404, "수정할 글을 찾지 못했습니다.");
+  }
+
+  if (currentPost.replyToPostId) {
+    throw new ServiceError(400, "댓글은 수정할 수 없습니다.");
+  }
+
+  if (currentPost.authorId !== currentProfileId) {
+    throw new ServiceError(403, "수정 권한이 없습니다.");
+  }
+
+  const [updated] = await db
+    .update(chatServiceFeedPosts)
+    .set({ body })
+    .where(
+      and(
+        eq(chatServiceFeedPosts.id, postId),
+        eq(chatServiceFeedPosts.authorId, currentProfileId)
+      )
+    )
+    .returning();
+
+  if (!updated) {
+    throw new ServiceError(500, "글 수정에 실패했습니다.");
+  }
+
+  const [post] = await buildFeedPostsFromRows([updated], new Set());
+
+  return {
+    post,
+  };
+}
+
+export async function deleteChatServiceFeedPost(
+  currentProfileId: string,
+  postId: string
+) {
+  const db = getDb();
+  const [currentPost] = await db
+    .select()
+    .from(chatServiceFeedPosts)
+    .where(eq(chatServiceFeedPosts.id, postId))
+    .limit(1);
+
+  if (!currentPost) {
+    throw new ServiceError(404, "삭제할 글을 찾지 못했습니다.");
+  }
+
+  if (currentPost.authorId !== currentProfileId) {
+    throw new ServiceError(403, "삭제 권한이 없습니다.");
+  }
+
+  await db.transaction(async (transaction) => {
+    await transaction
+      .delete(chatServiceFeedPosts)
+      .where(eq(chatServiceFeedPosts.replyToPostId, postId));
+
+    await transaction
+      .delete(chatServiceFeedPosts)
+      .where(
+        and(
+          eq(chatServiceFeedPosts.id, postId),
+          eq(chatServiceFeedPosts.authorId, currentProfileId)
+        )
+      );
+  });
+
+  return {
+    deleted: true,
+    postId,
   };
 }

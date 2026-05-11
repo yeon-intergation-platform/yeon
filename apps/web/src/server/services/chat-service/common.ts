@@ -26,6 +26,8 @@ import { ServiceError } from "@/server/services/service-error";
 
 export const CHAT_SERVICE_OTP_TTL_MS = 5 * 60 * 1000;
 export const CHAT_SERVICE_SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+const CHAT_SERVICE_GUEST_PHONE_PREFIX = "guest:";
+const CHAT_SERVICE_GUEST_PHONE_KEY_LENGTH = 14;
 
 export type ChatServiceProfileRow = typeof chatServiceProfiles.$inferSelect;
 export type ChatServiceChatRoomRow = typeof chatServiceChatRooms.$inferSelect;
@@ -62,6 +64,22 @@ export function createChatServiceRoomKey(userAId: string, userBId: string) {
   return [userAId, userBId].sort().join(":");
 }
 
+function normalizeChatServiceGuestString(value: string) {
+  return value.trim();
+}
+
+export function buildChatServiceGuestProfilePhoneNumber(
+  guestNickname: string,
+  guestPassword: string
+) {
+  const normalizedNickname = normalizeChatServiceGuestString(guestNickname);
+  const normalizedPassword = normalizeChatServiceGuestString(guestPassword);
+
+  return `${CHAT_SERVICE_GUEST_PHONE_PREFIX}${hashChatServiceSecret(
+    `${normalizedNickname}\u0000${normalizedPassword}`
+  ).slice(0, CHAT_SERVICE_GUEST_PHONE_KEY_LENGTH)}`;
+}
+
 export function parseChatServiceOptionsJson(optionsJson: string) {
   try {
     const parsed = JSON.parse(optionsJson);
@@ -79,7 +97,7 @@ export function parseChatServiceOptionsJson(optionsJson: string) {
 }
 
 export function buildChatServiceProfileSummary(
-  profile: ChatServiceProfileRow,
+  profile: ChatServiceProfileRow
 ): ChatServiceProfileSummaryDto {
   return chatServiceProfileSummaryDtoSchema.parse({
     id: profile.id,
@@ -93,7 +111,7 @@ export function buildChatServiceProfileSummary(
 }
 
 export function buildChatServiceProfileDetail(
-  profile: ChatServiceProfileRow,
+  profile: ChatServiceProfileRow
 ): ChatServiceProfileDto {
   return chatServiceProfileDtoSchema.parse({
     id: profile.id,
@@ -108,8 +126,43 @@ export function buildChatServiceProfileDetail(
   });
 }
 
+export async function getOrCreateChatServiceGuestProfile(params: {
+  guestNickname: string;
+  guestPassword: string;
+}) {
+  const phoneNumber = buildChatServiceGuestProfilePhoneNumber(
+    params.guestNickname,
+    params.guestPassword
+  );
+  const db = getDb();
+  const [existing] = await db
+    .select()
+    .from(chatServiceProfiles)
+    .where(eq(chatServiceProfiles.phoneNumber, phoneNumber))
+    .limit(1);
+
+  if (existing) {
+    return existing;
+  }
+
+  const [created] = await db
+    .insert(chatServiceProfiles)
+    .values({
+      id: randomUUID(),
+      phoneNumber,
+      nickname: params.guestNickname.trim(),
+      ageLabel: "익명",
+      regionLabel: "익명",
+      bio: "",
+      points: 1000,
+    })
+    .returning();
+
+  return created;
+}
+
 export function buildChatServicePublicProfile(
-  profile: ChatServiceProfileRow,
+  profile: ChatServiceProfileRow
 ): ChatServicePublicProfileDto {
   return chatServicePublicProfileDtoSchema.parse({
     id: profile.id,
@@ -158,7 +211,7 @@ export async function listChatServiceBlockedProfiles(blockerId: string) {
 }
 
 export async function listChatServiceBlockedRelationIds(
-  currentProfileId: string,
+  currentProfileId: string
 ) {
   const db = getDb();
   const blockRows = await db
@@ -170,20 +223,20 @@ export async function listChatServiceBlockedRelationIds(
     .where(
       or(
         eq(chatServiceBlocks.blockerId, currentProfileId),
-        eq(chatServiceBlocks.blockedId, currentProfileId),
-      ),
+        eq(chatServiceBlocks.blockedId, currentProfileId)
+      )
     );
 
   return new Set(
     blockRows.map((row) =>
-      row.blockerId === currentProfileId ? row.blockedId : row.blockerId,
-    ),
+      row.blockerId === currentProfileId ? row.blockedId : row.blockerId
+    )
   );
 }
 
 export async function assertChatServiceInteractionAllowed(
   currentProfileId: string,
-  targetProfileId: string,
+  targetProfileId: string
 ) {
   if (currentProfileId === targetProfileId) {
     throw new ServiceError(400, "자기 자신과는 상호작용할 수 없습니다.");
@@ -197,20 +250,20 @@ export async function assertChatServiceInteractionAllowed(
       or(
         and(
           eq(chatServiceBlocks.blockerId, currentProfileId),
-          eq(chatServiceBlocks.blockedId, targetProfileId),
+          eq(chatServiceBlocks.blockedId, targetProfileId)
         ),
         and(
           eq(chatServiceBlocks.blockerId, targetProfileId),
-          eq(chatServiceBlocks.blockedId, currentProfileId),
-        ),
-      ),
+          eq(chatServiceBlocks.blockedId, currentProfileId)
+        )
+      )
     )
     .limit(1);
 
   if (blocked) {
     throw new ServiceError(
       403,
-      "차단 관계에서는 이 작업을 수행할 수 없습니다.",
+      "차단 관계에서는 이 작업을 수행할 수 없습니다."
     );
   }
 }

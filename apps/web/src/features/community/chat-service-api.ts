@@ -1,11 +1,15 @@
 import type { z } from "zod";
 import {
-  chatServiceCreateFeedPostBodySchema,
   chatServiceCreateFeedPostResponseSchema,
+  chatServiceDeleteFeedPostBodySchema,
+  chatServiceDeleteFeedPostResponseSchema,
   chatServiceGetChatRoomResponseSchema,
   chatServiceListChatRoomsResponseSchema,
   chatServiceListFeedRepliesResponseSchema,
   chatServiceListFeedResponseSchema,
+  chatServiceUpdateFeedPostBodySchema,
+  chatServiceUpdateFeedPostResponseSchema,
+  chatServiceWriteFeedPostBodySchema,
   chatServiceRequestOtpBodySchema,
   chatServiceRequestOtpResponseSchema,
   chatServiceSessionResponseSchema,
@@ -27,7 +31,7 @@ type RequestBody = Record<string, unknown> | undefined;
 
 async function parseJsonResponse<TSchema extends z.ZodTypeAny>(
   response: Response,
-  schema: TSchema,
+  schema: TSchema
 ): Promise<ParsedPayload<TSchema>> {
   const payload = await response.json().catch(() => null);
 
@@ -43,10 +47,13 @@ async function parseJsonResponse<TSchema extends z.ZodTypeAny>(
   return schema.parse(payload);
 }
 
-async function requestJson<TSchema extends z.ZodTypeAny, TBody extends RequestBody = undefined>(
+async function requestJson<
+  TSchema extends z.ZodTypeAny,
+  TBody extends RequestBody = undefined,
+>(
   path: string,
   init: Omit<RequestInit, "body"> & { body?: TBody } = {},
-  schema: TSchema,
+  schema: TSchema
 ): Promise<ParsedPayload<TSchema>> {
   const requestInit: RequestInit = {
     credentials: "include",
@@ -67,7 +74,7 @@ export const chatServiceApi = {
     return requestJson(
       "/auth/session",
       { method: "GET" },
-      chatServiceSessionResponseSchema,
+      chatServiceSessionResponseSchema
     );
   },
 
@@ -79,7 +86,7 @@ export const chatServiceApi = {
         method: "POST",
         body: parsed,
       },
-      chatServiceRequestOtpResponseSchema,
+      chatServiceRequestOtpResponseSchema
     );
   },
 
@@ -95,7 +102,7 @@ export const chatServiceApi = {
         method: "POST",
         body: parsed,
       },
-      chatServiceVerifyOtpResponseSchema,
+      chatServiceVerifyOtpResponseSchema
     );
   },
 
@@ -103,7 +110,7 @@ export const chatServiceApi = {
     return requestJson(
       "/chat/rooms",
       { method: "GET" },
-      chatServiceListChatRoomsResponseSchema,
+      chatServiceListChatRoomsResponseSchema
     );
   },
 
@@ -111,7 +118,7 @@ export const chatServiceApi = {
     return requestJson(
       `/chat/rooms/${roomId}`,
       { method: "GET" },
-      chatServiceGetChatRoomResponseSchema,
+      chatServiceGetChatRoomResponseSchema
     );
   },
 
@@ -123,23 +130,36 @@ export const chatServiceApi = {
         method: "POST",
         body: parsed,
       },
-      chatServiceSendChatMessageResponseSchema,
+      chatServiceSendChatMessageResponseSchema
     );
   },
 
   async listFeedPosts() {
-    return requestJson("/feed", { method: "GET" }, chatServiceListFeedResponseSchema);
+    return requestJson(
+      "/feed",
+      { method: "GET" },
+      chatServiceListFeedResponseSchema
+    );
   },
 
-  async createFeedPost(body: string) {
-    const parsed = chatServiceCreateFeedPostBodySchema.parse({ body });
+  async createFeedPost(
+    body: string,
+    actor?: {
+      guestNickname?: string;
+      guestPassword?: string;
+    }
+  ) {
+    const parsed = chatServiceWriteFeedPostBodySchema.parse({
+      body,
+      ...(actor ?? {}),
+    });
     return requestJson(
       "/feed",
       {
         method: "POST",
         body: parsed,
       },
-      chatServiceCreateFeedPostResponseSchema,
+      chatServiceCreateFeedPostResponseSchema
     );
   },
 
@@ -147,19 +167,93 @@ export const chatServiceApi = {
     return requestJson(
       `/feed/${postId}/replies`,
       { method: "GET" },
-      chatServiceListFeedRepliesResponseSchema,
+      chatServiceListFeedRepliesResponseSchema
     );
   },
 
-  async createFeedReply(postId: string, body: string) {
-    const parsed = chatServiceCreateFeedPostBodySchema.parse({ body });
+  async createFeedReply(
+    postId: string,
+    body: string,
+    actor?: {
+      guestNickname?: string;
+      guestPassword?: string;
+    }
+  ) {
+    const parsed = chatServiceWriteFeedPostBodySchema.parse({
+      body,
+      ...(actor ?? {}),
+    });
     return requestJson(
       `/feed/${postId}/replies`,
       {
         method: "POST",
         body: parsed,
       },
-      chatServiceCreateFeedPostResponseSchema,
+      chatServiceCreateFeedPostResponseSchema
+    );
+  },
+
+  async updateFeedPost(
+    postId: string,
+    body: string,
+    actor?: {
+      guestNickname?: string;
+      guestPassword?: string;
+    }
+  ) {
+    const parsed = chatServiceUpdateFeedPostBodySchema.parse({
+      body,
+      ...(actor ?? {}),
+    });
+    return requestJson(
+      `/feed/${postId}`,
+      {
+        method: "PATCH",
+        body: parsed,
+      },
+      chatServiceUpdateFeedPostResponseSchema
+    );
+  },
+
+  async deleteFeedPost(
+    postId: string,
+    actor?: {
+      guestNickname?: string;
+      guestPassword?: string;
+    }
+  ) {
+    const parsed = chatServiceDeleteFeedPostBodySchema.parse(actor ?? {});
+    return requestJson(
+      `/feed/${postId}`,
+      {
+        method: "DELETE",
+        body: parsed,
+      },
+      chatServiceDeleteFeedPostResponseSchema
+    );
+  },
+
+  async deleteFeedReply(
+    postId: string,
+    replyId: string,
+    actor?: {
+      guestNickname?: string;
+      guestPassword?: string;
+    }
+  ) {
+    const parsed = chatServiceDeleteFeedPostBodySchema.parse({
+      ...(actor ?? {}),
+    });
+    return requestJson(
+      `/feed/${postId}/replies`,
+      {
+        method: "DELETE",
+        body: {
+          ...parsed,
+          replyId,
+        },
+      },
+      chatServiceDeleteFeedPostResponseSchema
     );
   },
 };
