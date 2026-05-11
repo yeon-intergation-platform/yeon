@@ -54,6 +54,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 type RoomParticipant = {
   id: string;
   label: string;
+  characterId?: string;
   accent: string;
   kind: "player" | "benchmark";
   progress: number;
@@ -519,6 +520,7 @@ export class TypingRaceRoom extends Room {
     const participant: RoomParticipant = {
       id: client.sessionId,
       label: message?.playerLabel || "Guest",
+      characterId: optionalText(message?.characterId, MAX_SEED_ID_LENGTH),
       accent:
         TYPING_RACE_LANE_ACCENTS[
           this.participants.size % TYPING_RACE_LANE_ACCENTS.length
@@ -1049,6 +1051,7 @@ export class TypingRaceRoom extends Room {
     ).map((participant) => ({
       id: participant.id,
       label: participant.label,
+      characterId: participant.characterId,
       role: participant.id === this.hostId ? "host" : "guest",
       isReady: participant.isReady,
       progress: participant.progress,

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ChangeEvent } from "react";
 import { useSearchParams } from "next/navigation";
-import { Crown, Play, Send } from "lucide-react";
+import { ArrowLeft, Crown, Play, Send } from "lucide-react";
 import {
   TYPING_ROOM_DIFFICULTY,
   TYPING_ROOM_LANGUAGE,
@@ -20,6 +20,9 @@ import {
   type TypingRoomVisibility,
   type RoomSettingsUpdateMessage,
 } from "@yeon/race-shared";
+import { CharacterSprite } from "./character-sprite";
+import { findCharacter } from "./characters";
+import { useCharacterFrameOverrides } from "./use-character-frame-overrides";
 import { usePlayerIdentity } from "./use-player-identity";
 import { useRaceRoom } from "./use-race-room";
 import { useTypingProfile } from "./use-typing-profile";
@@ -85,6 +88,31 @@ function normalizeDeckTitle(deck: TypingDeckOption) {
 
 function parseModeLabel(mode: TypingRoomMode) {
   return mode === TYPING_ROOM_MODE.TIME_LIMIT ? "시간 제한" : "완주 모드";
+}
+
+function buildRoomSummary({
+  language,
+  textType,
+  difficulty,
+  roundCount,
+  mode,
+  deckTitle,
+}: {
+  language: TypingRoomLanguage;
+  textType: TypingRoomTextType;
+  difficulty: TypingRoomDifficulty;
+  roundCount: number;
+  mode: TypingRoomMode;
+  deckTitle: string;
+}) {
+  return [
+    TYPING_ROOM_LANGUAGE_LABELS[language],
+    TYPING_ROOM_TEXT_TYPE_LABELS[textType],
+    TYPING_ROOM_DIFFICULTY_LABELS[difficulty],
+    `${roundCount}판`,
+    parseModeLabel(mode),
+    deckTitle,
+  ].join(" · ");
 }
 
 function useCreateRoomOptions(): DeckAwareCreateMessage {
@@ -248,6 +276,7 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
       (mode !== "create" || !!deckAwareCreateRoomOptions),
     playerLabel: profile.nickname,
     playerId,
+    characterId: profile.characterId,
     locale: settings.locale,
     roomId: mode === "join" ? roomId : null,
     createRoom: deckAwareCreateRoomOptions,
@@ -406,6 +435,27 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
   ]);
 
   const roomDeckTitle = room?.lobbyDeckTitle ?? "기본 타자 문장";
+  const frameOverrides = useCharacterFrameOverrides();
+  const summaryLanguage =
+    room?.language ?? createRoomOptions.language ?? TYPING_ROOM_LANGUAGE.KO;
+  const summaryTextType =
+    room?.textType ?? createRoomOptions.textType ?? TYPING_ROOM_TEXT_TYPE.SHORT;
+  const summaryDifficulty =
+    room?.difficulty ??
+    createRoomOptions.difficulty ??
+    TYPING_ROOM_DIFFICULTY.NORMAL;
+  const summaryRoundCount =
+    room?.roundCount ?? createRoomOptions.roundCount ?? 1;
+  const summaryMode =
+    room?.mode ?? createRoomOptions.mode ?? TYPING_ROOM_MODE.FINISH;
+  const roomSummary = buildRoomSummary({
+    language: summaryLanguage,
+    textType: summaryTextType,
+    difficulty: summaryDifficulty,
+    roundCount: summaryRoundCount,
+    mode: summaryMode,
+    deckTitle: roomDeckTitle,
+  });
 
   const participants = useMemo(() => {
     const values = room?.participants ?? [];
@@ -521,22 +571,9 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
     <div className="min-h-screen bg-white text-[#111]">
       <TypingServiceHeader
         active="rooms"
-        title="YEON 타자방"
+        title="타자방"
         controls={
           <>
-            <button
-              type="button"
-              onClick={copyInvite}
-              className="rounded-xl border border-[#e5e5e5] px-4 py-2 text-[13px] font-semibold text-[#111] transition-colors hover:border-[#111] hover:bg-[#fafafa]"
-            >
-              {copied ? "초대 링크가 복사되었습니다." : "초대"}
-            </button>
-            <Link
-              href="/typing-service/rooms"
-              className="rounded-xl border border-[#e5e5e5] px-4 py-2 text-[13px] font-semibold text-[#111] no-underline transition-colors hover:border-[#111] hover:bg-[#fafafa]"
-            >
-              나가기
-            </Link>
             <TypingBgmButton />
             <TypingSettingsButton />
           </>
@@ -549,8 +586,16 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
       )}
 
       <main className="grid gap-4 px-4 py-6 md:gap-6 md:px-8 md:py-10">
+        <Link
+          href="/typing-service/rooms"
+          className="inline-flex w-fit items-center gap-2 text-[13px] font-semibold text-[#666] no-underline transition-colors hover:text-[#111]"
+        >
+          <ArrowLeft size={15} />
+          타자방 나가기
+        </Link>
+
         <header className="rounded-2xl border border-[#e5e5e5] bg-white p-4 md:p-6">
-          <div className="flex flex-wrap items-start justify-between gap-2">
+          <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(280px,420px)]">
             <div>
               <p className="text-[12px] font-semibold text-[#666]">
                 {waitingStateLabel} ·{" "}
@@ -562,283 +607,331 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
               </h1>
               <p className="mt-2 text-[13px] text-[#666]">{room.roomCode}</p>
             </div>
-            <div className="text-right text-[12px] text-[#888]">
-              <p>참여자 상태 확인</p>
-              <p>
-                {room.currentParticipants} / {room.maxParticipants}
+            <div className="flex h-full flex-col items-start justify-end gap-3 lg:items-end lg:text-right">
+              <p className="text-[12px] font-semibold text-[#666]">
+                참여자 {room.currentParticipants} / {room.maxParticipants}
               </p>
+              <p className="max-w-[420px] text-[12px] leading-5 text-[#666]">
+                {roomSummary}
+              </p>
+
+              {race.roomError && (
+                <div className="rounded-lg border border-red-100 bg-red-50 px-4 py-2 text-[12px] text-red-600">
+                  {race.roomError}
+                </div>
+              )}
+
+              <div className="flex flex-wrap gap-2 lg:justify-end">
+                <button
+                  type="button"
+                  onClick={copyInvite}
+                  className="rounded-xl border border-[#e5e5e5] px-4 py-2.5 text-[13px] font-semibold text-[#111] transition-colors hover:border-[#111] hover:bg-[#fafafa]"
+                >
+                  {copied ? "초대 링크 복사됨" : "초대"}
+                </button>
+                {isHost ? (
+                  <button
+                    type="button"
+                    onClick={race.sendStart}
+                    disabled={!room.canStart}
+                    className="inline-flex items-center gap-2 rounded-xl bg-[#111] px-5 py-2.5 text-[14px] font-semibold text-white transition-colors hover:bg-[#333] disabled:cursor-not-allowed disabled:bg-[#f1f1f1] disabled:text-[#aaa]"
+                  >
+                    <Play size={14} />
+                    시작하기
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => race.sendReady(!isReady)}
+                    className={`rounded-xl px-5 py-2.5 text-[14px] font-semibold transition-colors ${
+                      isReady
+                        ? "border border-[#e5e5e5] bg-[#fafafa] text-[#666] hover:border-[#ddd]"
+                        : "bg-[#111] text-white hover:bg-[#333]"
+                    }`}
+                  >
+                    {isReady ? "준비 취소" : "준비하기"}
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </header>
 
-        <section className="grid gap-4 md:grid-cols-[300px_1fr_320px]">
-          <section className="order-2 rounded-2xl border border-[#e5e5e5] bg-white p-4 md:order-2 md:p-5">
-            <h2 className="mb-3 text-[14px] font-bold">참여자</h2>
-            <div className="grid gap-2">
-              {participants.map((participant, index) => (
-                <div
-                  key={participant?.id ?? `empty-${index}`}
-                  className="flex items-center justify-between rounded-xl border border-[#e5e5e5] bg-[#fafafa] px-3 py-2"
-                >
-                  {participant ? (
-                    <>
-                      <div className="flex min-w-0 items-center gap-3">
-                        <div className="grid h-8 w-8 place-items-center rounded-full bg-white text-[13px] font-semibold">
-                          {participant.role === "host" ? (
-                            <Crown size={14} className="text-[#b7791f]" />
-                          ) : (
-                            participant.label.slice(0, 1).toUpperCase()
-                          )}
-                        </div>
-                        <div className="min-w-0">
-                          <p className="truncate text-[14px] font-semibold">
-                            {participant.label}
-                          </p>
-                          <p className="text-[12px] text-[#666]">
-                            {participant.role === "host" ? "방장" : "참가자"}
-                            {participant.role === "host"
-                              ? " · 자동 준비완료"
-                              : ""}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span
-                          className={`rounded-full px-3 py-1 text-[12px] font-bold ${participant.isReady ? "border border-[#d9ead3] bg-[#eef8ea] text-[#2f7d32]" : "border border-[#e5e5e5] bg-[#f1f1f1] text-[#aaa]"}`}
-                        >
-                          {participant.isReady ? "준비완료" : "대기중"}
-                        </span>
-                        {participant.id !== me?.id && (
-                          <button
-                            type="button"
-                            className="rounded-md border border-[#e5e5e5] bg-white px-2 py-1 text-[12px] text-[#666] transition-colors hover:border-[#111] hover:text-[#111]"
-                          >
-                            친구추가
-                          </button>
-                        )}
-                      </div>
-                    </>
-                  ) : (
-                    <span className="text-[13px] text-[#aaa]">빈자리</span>
-                  )}
-                </div>
-              ))}
-            </div>
-          </section>
+        <section className="grid gap-4 xl:grid-cols-[minmax(300px,360px)_minmax(0,960px)] xl:items-start xl:justify-center">
+          <div className="grid gap-4">
+            <section className="rounded-2xl border border-[#e5e5e5] bg-white p-4 md:p-5">
+              <h2 className="mb-3 text-[14px] font-bold">참여자</h2>
+              <div className="grid grid-cols-2 gap-3">
+                {participants.map((participant, index) => {
+                  const character = participant
+                    ? findCharacter(participant.characterId)
+                    : null;
 
-          <section className="order-1 rounded-2xl border border-[#e5e5e5] bg-white p-4 md:order-1 md:p-6">
-            <h2 className="mb-3 text-[14px] font-bold">방 설정</h2>
-
-            <label className="mb-3 grid gap-1.5 text-[12px] font-semibold text-[#666]">
-              공개 여부
-              {isHost ? (
-                <select
-                  value={room.visibility}
-                  onChange={(event) =>
-                    sendSetting({
-                      visibility: event.target.value as TypingRoomVisibility,
-                    })
-                  }
-                  className="h-10 rounded-lg border border-[#d7d7d7] px-2"
-                >
-                  {Object.values(TYPING_ROOM_VISIBILITY).map((value) => (
-                    <option key={value} value={value}>
-                      {TYPING_ROOM_VISIBILITY_LABELS[value]}
-                    </option>
-                  ))}
-                </select>
-              ) : (
-                <p className="rounded-lg border border-[#e5e5e5] bg-[#fafafa] px-3 py-2">
-                  {TYPING_ROOM_VISIBILITY_LABELS[room.visibility]}
-                </p>
-              )}
-            </label>
-
-            <label className="mb-3 grid gap-1.5 text-[12px] font-semibold text-[#666]">
-              최대 인원
-              {isHost ? (
-                <select
-                  value={room.maxParticipants}
-                  onChange={(event) =>
-                    sendSetting({ maxParticipants: Number(event.target.value) })
-                  }
-                  className="h-10 rounded-lg border border-[#d7d7d7] px-2"
-                >
-                  {LOBBY_MAX_PARTICIPANT_OPTIONS.map((value) => (
-                    <option
-                      key={value}
-                      value={value}
-                      disabled={value < room.currentParticipants}
+                  return (
+                    <div
+                      key={participant?.id ?? `empty-${index}`}
+                      className="min-h-[196px] rounded-2xl border border-[#e5e5e5] bg-[#fafafa] p-3"
                     >
-                      {value}명
-                    </option>
-                  ))}
-                </select>
-              ) : (
-                <p className="rounded-lg border border-[#e5e5e5] bg-[#fafafa] px-3 py-2">
-                  최대 {room.maxParticipants}명
-                </p>
-              )}
-            </label>
+                      {participant && character ? (
+                        <div className="flex h-full flex-col justify-between gap-3">
+                          <div className="flex items-center justify-between gap-2">
+                            <span
+                              className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${participant.isReady ? "border border-[#d9ead3] bg-[#eef8ea] text-[#2f7d32]" : "border border-[#e5e5e5] bg-white text-[#999]"}`}
+                            >
+                              {participant.isReady ? "준비완료" : "대기중"}
+                            </span>
+                            {participant.role === "host" ? (
+                              <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[#b7791f]">
+                                <Crown size={13} /> 방장
+                              </span>
+                            ) : null}
+                          </div>
+                          <div className="flex h-[104px] items-end justify-center overflow-hidden rounded-xl bg-white px-2 py-1">
+                            <CharacterSprite
+                              character={character}
+                              maxHeight={96}
+                              sequenceOverride={frameOverrides[character.id]}
+                            />
+                          </div>
+                          <div className="min-w-0 text-center">
+                            <p className="truncate text-[14px] font-semibold">
+                              {participant.label}
+                              {participant.id === me?.id ? " (나)" : ""}
+                            </p>
+                            <p className="mt-1 text-[11px] text-[#888]">
+                              {character.label[settings.locale]}
+                            </p>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex h-full min-h-[168px] items-center justify-center rounded-xl border border-dashed border-[#ddd] bg-white text-[13px] font-semibold text-[#aaa]">
+                          빈자리
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
 
-            <label className="mb-3 grid gap-1.5 text-[12px] font-semibold text-[#666]">
-              언어
-              {isHost ? (
-                <select
-                  value={room.language}
-                  onChange={(event) =>
-                    sendSetting({
-                      language: event.target.value as TypingRoomLanguage,
-                    })
-                  }
-                  className="h-10 rounded-lg border border-[#d7d7d7] px-2"
-                >
-                  {[
-                    TYPING_ROOM_LANGUAGE.KO,
-                    TYPING_ROOM_LANGUAGE.EN,
-                    TYPING_ROOM_LANGUAGE.CODE,
-                  ].map((value) => (
-                    <option key={value} value={value}>
-                      {TYPING_ROOM_LANGUAGE_LABELS[value]}
-                    </option>
-                  ))}
-                </select>
-              ) : (
-                <p className="rounded-lg border border-[#e5e5e5] bg-[#fafafa] px-3 py-2">
-                  {TYPING_ROOM_LANGUAGE_LABELS[room.language]}
-                </p>
-              )}
-            </label>
+            <section className="rounded-2xl border border-[#e5e5e5] bg-white p-4 md:p-6">
+              <h2 className="mb-3 text-[14px] font-bold">방 설정</h2>
 
-            <label className="mb-3 grid gap-1.5 text-[12px] font-semibold text-[#666]">
-              문장 길이
-              {isHost ? (
-                <select
-                  value={room.textType}
-                  onChange={(event) =>
-                    sendSetting({
-                      textType: event.target.value as TypingRoomTextType,
-                    })
-                  }
-                  className="h-10 rounded-lg border border-[#d7d7d7] px-2"
-                >
-                  {Object.values(TYPING_ROOM_TEXT_TYPE).map((value) => (
-                    <option key={value} value={value}>
-                      {TYPING_ROOM_TEXT_TYPE_LABELS[value]}
-                    </option>
-                  ))}
-                </select>
-              ) : (
-                <p className="rounded-lg border border-[#e5e5e5] bg-[#fafafa] px-3 py-2">
-                  {TYPING_ROOM_TEXT_TYPE_LABELS[room.textType]}
-                </p>
-              )}
-            </label>
-
-            <label className="mb-3 grid gap-1.5 text-[12px] font-semibold text-[#666]">
-              난이도
-              {isHost ? (
-                <select
-                  value={room.difficulty}
-                  onChange={(event) =>
-                    sendSetting({
-                      difficulty: event.target.value as TypingRoomDifficulty,
-                    })
-                  }
-                  className="h-10 rounded-lg border border-[#d7d7d7] px-2"
-                >
-                  {Object.values(TYPING_ROOM_DIFFICULTY).map((value) => (
-                    <option key={value} value={value}>
-                      {TYPING_ROOM_DIFFICULTY_LABELS[value]}
-                    </option>
-                  ))}
-                </select>
-              ) : (
-                <p className="rounded-lg border border-[#e5e5e5] bg-[#fafafa] px-3 py-2">
-                  {TYPING_ROOM_DIFFICULTY_LABELS[room.difficulty]}
-                </p>
-              )}
-            </label>
-
-            <label className="mb-3 grid gap-1.5 text-[12px] font-semibold text-[#666]">
-              판 수
-              {isHost ? (
-                <select
-                  value={room.roundCount}
-                  onChange={(event) =>
-                    sendSetting({ roundCount: Number(event.target.value) })
-                  }
-                  className="h-10 rounded-lg border border-[#d7d7d7] px-2"
-                >
-                  {LOBBY_ROUND_COUNT_OPTIONS.map((value) => (
-                    <option key={value} value={value}>
-                      {value}판
-                    </option>
-                  ))}
-                </select>
-              ) : (
-                <p className="rounded-lg border border-[#e5e5e5] bg-[#fafafa] px-3 py-2">
-                  {room.roundCount}판
-                </p>
-              )}
-            </label>
-
-            <label className="mb-3 grid gap-1.5 text-[12px] font-semibold text-[#666]">
-              진행 방식
-              {isHost ? (
-                <select
-                  value={room.mode}
-                  onChange={(event) =>
-                    sendSetting({ mode: event.target.value as TypingRoomMode })
-                  }
-                  className="h-10 rounded-lg border border-[#d7d7d7] px-2"
-                >
-                  {[TYPING_ROOM_MODE.FINISH, TYPING_ROOM_MODE.TIME_LIMIT].map(
-                    (value) => (
+              <label className="mb-3 grid gap-1.5 text-[12px] font-semibold text-[#666]">
+                공개 여부
+                {isHost ? (
+                  <select
+                    value={room.visibility}
+                    onChange={(event) =>
+                      sendSetting({
+                        visibility: event.target.value as TypingRoomVisibility,
+                      })
+                    }
+                    className="h-10 rounded-lg border border-[#d7d7d7] px-2"
+                  >
+                    {Object.values(TYPING_ROOM_VISIBILITY).map((value) => (
                       <option key={value} value={value}>
-                        {TYPING_ROOM_MODE_LABELS[value]}
+                        {TYPING_ROOM_VISIBILITY_LABELS[value]}
                       </option>
-                    )
-                  )}
-                </select>
-              ) : (
-                <p className="rounded-lg border border-[#e5e5e5] bg-[#fafafa] px-3 py-2">
-                  {TYPING_ROOM_MODE_LABELS[room.mode]}
+                    ))}
+                  </select>
+                ) : (
+                  <p className="rounded-lg border border-[#e5e5e5] bg-[#fafafa] px-3 py-2">
+                    {TYPING_ROOM_VISIBILITY_LABELS[room.visibility]}
+                  </p>
+                )}
+              </label>
+
+              <label className="mb-3 grid gap-1.5 text-[12px] font-semibold text-[#666]">
+                최대 인원
+                {isHost ? (
+                  <select
+                    value={room.maxParticipants}
+                    onChange={(event) =>
+                      sendSetting({
+                        maxParticipants: Number(event.target.value),
+                      })
+                    }
+                    className="h-10 rounded-lg border border-[#d7d7d7] px-2"
+                  >
+                    {LOBBY_MAX_PARTICIPANT_OPTIONS.map((value) => (
+                      <option
+                        key={value}
+                        value={value}
+                        disabled={value < room.currentParticipants}
+                      >
+                        {value}명
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <p className="rounded-lg border border-[#e5e5e5] bg-[#fafafa] px-3 py-2">
+                    최대 {room.maxParticipants}명
+                  </p>
+                )}
+              </label>
+
+              <label className="mb-3 grid gap-1.5 text-[12px] font-semibold text-[#666]">
+                언어
+                {isHost ? (
+                  <select
+                    value={room.language}
+                    onChange={(event) =>
+                      sendSetting({
+                        language: event.target.value as TypingRoomLanguage,
+                      })
+                    }
+                    className="h-10 rounded-lg border border-[#d7d7d7] px-2"
+                  >
+                    {[
+                      TYPING_ROOM_LANGUAGE.KO,
+                      TYPING_ROOM_LANGUAGE.EN,
+                      TYPING_ROOM_LANGUAGE.CODE,
+                    ].map((value) => (
+                      <option key={value} value={value}>
+                        {TYPING_ROOM_LANGUAGE_LABELS[value]}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <p className="rounded-lg border border-[#e5e5e5] bg-[#fafafa] px-3 py-2">
+                    {TYPING_ROOM_LANGUAGE_LABELS[room.language]}
+                  </p>
+                )}
+              </label>
+
+              <label className="mb-3 grid gap-1.5 text-[12px] font-semibold text-[#666]">
+                문장 길이
+                {isHost ? (
+                  <select
+                    value={room.textType}
+                    onChange={(event) =>
+                      sendSetting({
+                        textType: event.target.value as TypingRoomTextType,
+                      })
+                    }
+                    className="h-10 rounded-lg border border-[#d7d7d7] px-2"
+                  >
+                    {Object.values(TYPING_ROOM_TEXT_TYPE).map((value) => (
+                      <option key={value} value={value}>
+                        {TYPING_ROOM_TEXT_TYPE_LABELS[value]}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <p className="rounded-lg border border-[#e5e5e5] bg-[#fafafa] px-3 py-2">
+                    {TYPING_ROOM_TEXT_TYPE_LABELS[room.textType]}
+                  </p>
+                )}
+              </label>
+
+              <label className="mb-3 grid gap-1.5 text-[12px] font-semibold text-[#666]">
+                난이도
+                {isHost ? (
+                  <select
+                    value={room.difficulty}
+                    onChange={(event) =>
+                      sendSetting({
+                        difficulty: event.target.value as TypingRoomDifficulty,
+                      })
+                    }
+                    className="h-10 rounded-lg border border-[#d7d7d7] px-2"
+                  >
+                    {Object.values(TYPING_ROOM_DIFFICULTY).map((value) => (
+                      <option key={value} value={value}>
+                        {TYPING_ROOM_DIFFICULTY_LABELS[value]}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <p className="rounded-lg border border-[#e5e5e5] bg-[#fafafa] px-3 py-2">
+                    {TYPING_ROOM_DIFFICULTY_LABELS[room.difficulty]}
+                  </p>
+                )}
+              </label>
+
+              <label className="mb-3 grid gap-1.5 text-[12px] font-semibold text-[#666]">
+                판 수
+                {isHost ? (
+                  <select
+                    value={room.roundCount}
+                    onChange={(event) =>
+                      sendSetting({ roundCount: Number(event.target.value) })
+                    }
+                    className="h-10 rounded-lg border border-[#d7d7d7] px-2"
+                  >
+                    {LOBBY_ROUND_COUNT_OPTIONS.map((value) => (
+                      <option key={value} value={value}>
+                        {value}판
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <p className="rounded-lg border border-[#e5e5e5] bg-[#fafafa] px-3 py-2">
+                    {room.roundCount}판
+                  </p>
+                )}
+              </label>
+
+              <label className="mb-3 grid gap-1.5 text-[12px] font-semibold text-[#666]">
+                진행 방식
+                {isHost ? (
+                  <select
+                    value={room.mode}
+                    onChange={(event) =>
+                      sendSetting({
+                        mode: event.target.value as TypingRoomMode,
+                      })
+                    }
+                    className="h-10 rounded-lg border border-[#d7d7d7] px-2"
+                  >
+                    {[TYPING_ROOM_MODE.FINISH, TYPING_ROOM_MODE.TIME_LIMIT].map(
+                      (value) => (
+                        <option key={value} value={value}>
+                          {TYPING_ROOM_MODE_LABELS[value]}
+                        </option>
+                      )
+                    )}
+                  </select>
+                ) : (
+                  <p className="rounded-lg border border-[#e5e5e5] bg-[#fafafa] px-3 py-2">
+                    {TYPING_ROOM_MODE_LABELS[room.mode]}
+                  </p>
+                )}
+              </label>
+
+              {settingsError && (
+                <p className="mb-3 rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-[12px] text-red-600">
+                  {settingsError}
                 </p>
               )}
-            </label>
 
-            {settingsError && (
-              <p className="mb-3 rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-[12px] text-red-600">
-                {settingsError}
-              </p>
-            )}
+              <label className="grid gap-1.5 text-[12px] font-semibold text-[#666]">
+                덱
+                {isHost ? (
+                  <select
+                    value={room.selectedDeckId ?? selectedDeck.id}
+                    onChange={onDeckChange}
+                    className="h-10 rounded-lg border border-[#d7d7d7] px-2"
+                  >
+                    {deckOptions.map((deck) => (
+                      <option key={deck.id} value={deck.id}>
+                        {normalizeDeckTitle(deck)}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <p className="rounded-lg border border-[#e5e5e5] bg-[#fafafa] px-3 py-2">
+                    {roomDeckTitle}
+                  </p>
+                )}
+              </label>
+            </section>
+          </div>
 
-            <label className="grid gap-1.5 text-[12px] font-semibold text-[#666]">
-              덱
-              {isHost ? (
-                <select
-                  value={room.selectedDeckId ?? selectedDeck.id}
-                  onChange={onDeckChange}
-                  className="h-10 rounded-lg border border-[#d7d7d7] px-2"
-                >
-                  {deckOptions.map((deck) => (
-                    <option key={deck.id} value={deck.id}>
-                      {normalizeDeckTitle(deck)}
-                    </option>
-                  ))}
-                </select>
-              ) : (
-                <p className="rounded-lg border border-[#e5e5e5] bg-[#fafafa] px-3 py-2">
-                  {roomDeckTitle}
-                </p>
-              )}
-            </label>
-          </section>
-
-          <section className="order-3 rounded-2xl border border-[#e5e5e5] bg-white p-4 md:order-3 md:p-6">
+          <section className="rounded-2xl border border-[#e5e5e5] bg-white p-4 md:p-6 xl:max-w-[960px]">
             <h2 className="mb-3 text-[14px] font-bold">채팅</h2>
-            <div className="h-64 overflow-y-auto rounded-xl border border-[#e5e5e5] bg-[#fafafa] p-3">
+            <div className="h-[360px] overflow-y-auto rounded-xl border border-[#e5e5e5] bg-[#fafafa] p-4 md:h-[460px]">
               {!hasMessages && (
                 <p className="text-[12px] leading-5 text-[#aaa]">
                   아직 메시지가 없습니다.
@@ -897,47 +990,6 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
               <p className="mt-2 text-[12px] text-[#d33]">{chatError}</p>
             )}
           </section>
-        </section>
-
-        <section className="order-4 rounded-2xl border border-[#e5e5e5] bg-white p-4 md:order-4 md:p-5">
-          <p className="text-[12px] leading-5 text-[#666]">
-            {TYPING_ROOM_LANGUAGE_LABELS[room.language]} ·{" "}
-            {TYPING_ROOM_TEXT_TYPE_LABELS[room.textType]} ·{" "}
-            {TYPING_ROOM_DIFFICULTY_LABELS[room.difficulty]} · {room.roundCount}
-            판 · {parseModeLabel(room.mode)} · {roomDeckTitle}
-          </p>
-
-          {race.roomError && (
-            <div className="mt-3 rounded-lg border border-red-100 bg-red-50 px-4 py-2 text-[12px] text-red-600">
-              {race.roomError}
-            </div>
-          )}
-
-          <div className="mt-4 flex flex-wrap gap-3">
-            {isHost ? (
-              <button
-                type="button"
-                onClick={race.sendStart}
-                disabled={!room.canStart}
-                className="inline-flex items-center gap-2 rounded-xl bg-[#111] px-5 py-3 text-[14px] font-semibold text-white transition-colors hover:bg-[#333] disabled:cursor-not-allowed disabled:bg-[#f1f1f1] disabled:text-[#aaa]"
-              >
-                <Play size={14} />
-                시작하기
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => race.sendReady(!isReady)}
-                className={`rounded-xl px-5 py-3 text-[14px] font-semibold transition-colors ${
-                  isReady
-                    ? "border border-[#e5e5e5] bg-[#fafafa] text-[#666] hover:border-[#ddd]"
-                    : "bg-[#111] text-white hover:bg-[#333]"
-                }`}
-              >
-                {isReady ? "준비 취소" : "준비하기"}
-              </button>
-            )}
-          </div>
         </section>
       </main>
     </div>

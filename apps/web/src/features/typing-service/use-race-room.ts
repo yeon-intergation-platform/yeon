@@ -32,6 +32,7 @@ export type UseRaceRoomOptions = {
   enabled: boolean;
   playerLabel: string;
   playerId: string | null;
+  characterId?: string;
   locale: "ko" | "en";
   roomId?: string | null;
   createRoom?: TypingRoomCreateMessage | null;
@@ -192,8 +193,15 @@ export function resolveRaceServerUrl() {
 }
 
 export function useRaceRoom(options: UseRaceRoomOptions): UseRaceRoomResult {
-  const { enabled, playerLabel, playerId, locale, roomId, createRoom } =
-    options;
+  const {
+    enabled,
+    playerLabel,
+    playerId,
+    characterId,
+    locale,
+    roomId,
+    createRoom,
+  } = options;
   const [connectionState, setConnectionState] =
     useState<RaceConnectionState>("idle");
   const [snapshot, setSnapshot] = useState<TypingRaceSnapshot | null>(null);
@@ -234,6 +242,7 @@ export function useRaceRoom(options: UseRaceRoomOptions): UseRaceRoomResult {
     const joinOptions = {
       playerLabel: playerLabelRef.current,
       playerId,
+      characterId,
       locale,
     };
     const createOptions: TypingRoomCreateMessage | null = createRoom
@@ -326,7 +335,15 @@ export function useRaceRoom(options: UseRaceRoomOptions): UseRaceRoomResult {
         }
       }
     };
-  }, [enabled, playerId, locale, roomId, createRoomKey, rejoinToken]);
+  }, [
+    enabled,
+    playerId,
+    characterId,
+    locale,
+    roomId,
+    createRoomKey,
+    rejoinToken,
+  ]);
 
   const sendProgress = useCallback((payload: RaceProgressMessage) => {
     roomRef.current?.send(RACE_EVENTS.RACE_PROGRESS, payload);
