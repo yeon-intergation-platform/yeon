@@ -59,3 +59,13 @@
   - B. 매번 완전히 새 세션을 만들어 이전 세션을 사용자가 직접 관리하게 한다.
 - 추천: A. 사용자가 "그 터미널 세션에 그대로 실패 로그"를 원하므로 같은 세션 안에서 이전 window를 남겨 두는 편이 가장 직관적이다.
 - 사용자 방향: A
+
+## 7차
+
+- 작업내용: `pnpm dev:all`의 backend 실행을 dev-only 자동 재시작 구조로 보강한다. Spring Boot DevTools를 `developmentOnly` 의존성으로 추가하고, backend 실행 시 Gradle `classes --continuous`를 함께 띄워 Java 소스 변경이 classpath 변경으로 반영되도록 한다.
+- 논의 필요: DevTools 의존성만 추가할지, `dev:all`에서 classpath 갱신 프로세스까지 같이 관리할지 결정이 필요하다.
+- 선택지:
+  - A. `developmentOnly spring-boot-devtools`만 추가하고 사용자가 IDE/수동 빌드로 classpath를 갱신한다.
+  - B. `dev:all` backend 실행에서 `classes --continuous`와 `bootRun`을 함께 관리해 저장 후 자동 재시작까지 이어지게 한다.
+- 추천: B. 사용자가 기대하는 것은 "백엔드 코드 수정 시 로컬 백엔드가 알아서 반영"되는 경험이므로 DevTools만 추가하면 반쪽짜리다. dev-only 보조 스크립트로 classpath 갱신까지 묶는 편이 가장 직접적이다.
+- 사용자 방향: B
