@@ -1,8 +1,4 @@
-import type {
-  CreateMemberFieldBody,
-  ReorderMemberFieldsBody,
-  UpdateMemberFieldBody,
-} from "@yeon/api-contract/spaces";
+import type { ReorderMemberFieldsBody } from "@yeon/api-contract/spaces";
 
 const DEFAULT_BACKEND_BASE_URL = "http://127.0.0.1:8081";
 const INTERNAL_TOKEN_HEADER = "X-Yeon-Internal-Token";

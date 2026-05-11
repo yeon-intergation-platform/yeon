@@ -23,6 +23,8 @@ import {
   resolveTypingSpeedStyle,
   toWpmFromCpm,
   type MatchJoinMessage,
+  type RoomChatMessage,
+  type RoomSettingsUpdateMessage,
   type RaceFinishMessage,
   type RaceProgressMessage,
   type RaceSeedMessage,
@@ -35,7 +37,12 @@ import {
   type TypingResultSnapshot,
   type TypingRoomCreateMessage,
   type TypingRoomLanguage,
+  type TypingRoomMode,
+  type TypingRoomTextType,
+  type TypingRoomDifficulty,
+  type TypingRoomVisibility,
   type TypingRoomParticipantSnapshot,
+  type TypingRoomChatMessage,
   type TypingRoomSettings,
   type TypingRoomSnapshot,
   type TypingRoomStatus,
@@ -75,7 +82,11 @@ const MAX_SEED_PROMPT_LENGTH = 4000;
 const MAX_SEED_ID_LENGTH = 120;
 const MAX_SEED_LABEL_LENGTH = 120;
 const MAX_REASONABLE_CPM = 1200;
+const MAX_CHAT_MESSAGE_LENGTH = 500;
+const MAX_LOBBY_CHAT_MESSAGES = 100;
 const TYPING_RACE_SEED_FALLBACK_SECRET = "yeon-local-typing-race-seed-secret";
+const LOBBY_MAX_PARTICIPANTS_OPTIONS = [2, 3, 4] as const;
+const LOBBY_ROUND_COUNT_OPTIONS = [1, 3, 5] as const;
 
 const BENCHMARKS = [
   {
@@ -203,6 +214,45 @@ function createRoomCode() {
 function normalizeSettings(
   options?: TypingRoomCreateMessage
 ): TypingRoomSettings {
+  const visibility = Object.values(TYPING_ROOM_VISIBILITY).includes(
+    options?.visibility as TypingRoomVisibility
+  )
+    ? (options?.visibility as TypingRoomVisibility)
+    : DEFAULT_ROOM_SETTINGS.visibility;
+
+  const textType = Object.values(TYPING_ROOM_TEXT_TYPE).includes(
+    options?.textType as TypingRoomTextType
+  )
+    ? (options?.textType as TypingRoomTextType)
+    : DEFAULT_ROOM_SETTINGS.textType;
+
+  const difficulty = Object.values(TYPING_ROOM_DIFFICULTY).includes(
+    options?.difficulty as TypingRoomDifficulty
+  )
+    ? (options?.difficulty as TypingRoomDifficulty)
+    : DEFAULT_ROOM_SETTINGS.difficulty;
+
+  const roundCount = clampOption(
+    options?.roundCount,
+    [...LOBBY_ROUND_COUNT_OPTIONS],
+    DEFAULT_ROOM_SETTINGS.roundCount
+  );
+
+  const mode = Object.values(TYPING_ROOM_MODE).includes(
+    options?.mode as TypingRoomMode
+  )
+    ? (options?.mode as TypingRoomMode)
+    : DEFAULT_ROOM_SETTINGS.mode;
+
+  const maxParticipants = Math.min(
+    MAX_PLAYERS_PER_ROOM,
+    clampOption(
+      options?.maxParticipants,
+      [...LOBBY_MAX_PARTICIPANTS_OPTIONS],
+      DEFAULT_ROOM_SETTINGS.maxParticipants
+    )
+  );
+
   const language = Object.values(TYPING_ROOM_LANGUAGE).includes(
     options?.language as TypingRoomLanguage
   )
@@ -232,27 +282,13 @@ function normalizeSettings(
 
   return {
     title: clampText(options?.title, DEFAULT_ROOM_SETTINGS.title, 40),
-    visibility: TYPING_ROOM_VISIBILITY.PUBLIC,
-    maxParticipants: Math.min(
-      MAX_PLAYERS_PER_ROOM,
-      clampOption(
-        options?.maxParticipants,
-        [2, 4],
-        DEFAULT_ROOM_SETTINGS.maxParticipants
-      )
-    ),
-    textType: TYPING_ROOM_TEXT_TYPE.SHORT,
-    language:
-      language === TYPING_ROOM_LANGUAGE.EN
-        ? TYPING_ROOM_LANGUAGE.EN
-        : TYPING_ROOM_LANGUAGE.KO,
-    difficulty: Object.values(TYPING_ROOM_DIFFICULTY).includes(
-      options?.difficulty as never
-    )
-      ? options!.difficulty!
-      : DEFAULT_ROOM_SETTINGS.difficulty,
-    roundCount: TYPING_RACE_DEFAULTS.sliceARoundCount,
-    mode: TYPING_ROOM_MODE.FINISH,
+    visibility,
+    maxParticipants,
+    textType,
+    language,
+    difficulty,
+    roundCount,
+    mode,
     selectedDeckId,
     selectedDeckVisibility,
     selectedDeckLanguageTag,
@@ -333,6 +369,8 @@ export class TypingRaceRoom extends Room {
 
   private settings: TypingRoomSettings = DEFAULT_ROOM_SETTINGS;
 
+  private readonly lobbyMessages: TypingRoomChatMessage[] = [];
+
   private roomSeed: RaceSeedMessage = createFallbackRaceSeed(
     DEFAULT_ROOM_SETTINGS.language
   );
@@ -384,8 +422,18 @@ export class TypingRaceRoom extends Room {
       this.bootstrapBenchmarks();
     }
 
+    this.appendSystemMessage("방이 생성되었습니다.");
+
     this.onMessage(RACE_EVENTS.ROOM_READY, (client, message) => {
       this.updateReady(client, message as RoomReadyMessage);
+    });
+
+    this.onMessage(RACE_EVENTS.ROOM_SETTINGS, (client, message) => {
+      this.updateSettings(client, message as RoomSettingsUpdateMessage);
+    });
+
+    this.onMessage(RACE_EVENTS.ROOM_CHAT, (client, message) => {
+      this.addChat(client, message as RoomChatMessage);
     });
 
     this.onMessage(RACE_EVENTS.ROOM_START, (client) => {
@@ -409,7 +457,20 @@ export class TypingRaceRoom extends Room {
   }
 
   onJoin(client: Client, options: MatchJoinMessage) {
+    if (this.lobbyMode && this.status !== TYPING_ROOM_STATUS.WAITING) {
+      client.send(RACE_EVENTS.ROOM_ERROR, { message: "이미 시작된 방입니다." });
+      client.leave();
+      return;
+    }
+
     this.registerParticipant(client, options);
+    const participant = this.participants.get(client.sessionId);
+
+    if (participant && this.lobbyMode) {
+      this.appendSystemMessage(`${participant.label}님이 입장했습니다.`);
+      this.syncState();
+    }
+
     this.clock.setTimeout(() => {
       client.send(RACE_EVENTS.RACE_SEED, this.roomSeed);
       client.send(RACE_EVENTS.ROOM_STATE, this.createRoomSnapshot());
@@ -418,11 +479,30 @@ export class TypingRaceRoom extends Room {
   }
 
   onLeave(client: Client) {
+    const participant = this.participants.get(client.sessionId);
     this.participants.delete(client.sessionId);
+
+    if (this.lobbyMode && client.sessionId === this.hostId) {
+      this.hostId = null;
+      this.status = TYPING_ROOM_STATUS.CLOSED;
+      this.appendSystemMessage("방장이 나가 방이 종료되었습니다.");
+      this.syncState();
+      this.disconnect();
+      return;
+    }
+
     if (this.hostId === client.sessionId) {
       this.hostId = this.participants.keys().next().value ?? null;
       const nextHost = this.hostId ? this.participants.get(this.hostId) : null;
-      if (nextHost) nextHost.isReady = true;
+      if (nextHost) {
+        nextHost.isReady = true;
+      }
+    }
+
+    if (this.lobbyMode && participant) {
+      this.appendSystemMessage(`${participant.label}님이 퇴장했습니다.`);
+      this.syncState();
+      return;
     }
     this.syncState();
   }
@@ -461,12 +541,234 @@ export class TypingRaceRoom extends Room {
     this.syncState();
   }
 
+  private appendChatMessage(message: TypingRoomChatMessage) {
+    this.lobbyMessages.push(message);
+    if (this.lobbyMessages.length > MAX_LOBBY_CHAT_MESSAGES) {
+      this.lobbyMessages.splice(
+        0,
+        this.lobbyMessages.length - MAX_LOBBY_CHAT_MESSAGES
+      );
+    }
+  }
+
+  private appendSystemMessage(content: string) {
+    this.appendChatMessage({
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
+      messageType: "system",
+      content,
+      createdAt: Date.now(),
+    });
+  }
+
+  private addChat(client: Client, message: RoomChatMessage) {
+    if (this.status !== TYPING_ROOM_STATUS.WAITING) return;
+    const participant = this.participants.get(client.sessionId);
+    if (!participant) return;
+    const content = optionalText(message.content, MAX_CHAT_MESSAGE_LENGTH);
+    if (!content) return;
+    this.appendChatMessage({
+      id: `${Date.now()}-${client.sessionId}`,
+      senderId: participant.id,
+      senderLabel: participant.label,
+      messageType: "user",
+      content,
+      createdAt: Date.now(),
+    });
+    const lastMessage = this.lobbyMessages[this.lobbyMessages.length - 1];
+    if (lastMessage) {
+      this.broadcast(RACE_EVENTS.ROOM_CHAT, lastMessage);
+    }
+    this.syncState();
+  }
+
+  private updateSettings(client: Client, message: RoomSettingsUpdateMessage) {
+    if (!this.lobbyMode || this.status !== TYPING_ROOM_STATUS.WAITING) return;
+    if (client.sessionId !== this.hostId) {
+      client.send(RACE_EVENTS.ROOM_ERROR, {
+        message: "방장만 설정을 변경할 수 있어요.",
+      });
+      return;
+    }
+
+    let didChange = false;
+    let languageChanged = false;
+    const next = { ...this.settings } as TypingRoomSettings;
+
+    const nextVisibility = Object.values(TYPING_ROOM_VISIBILITY).includes(
+      message.visibility as TypingRoomVisibility
+    )
+      ? (message.visibility as TypingRoomVisibility)
+      : next.visibility;
+
+    if (nextVisibility !== next.visibility) {
+      next.visibility = nextVisibility;
+      didChange = true;
+    }
+
+    if (typeof message.maxParticipants === "number") {
+      const normalized = clampOption(
+        message.maxParticipants,
+        [...LOBBY_MAX_PARTICIPANTS_OPTIONS],
+        next.maxParticipants
+      );
+      if (normalized < this.participants.size) {
+        client.send(RACE_EVENTS.ROOM_ERROR, {
+          message: "현재 참여자 수보다 적은 인원으로 변경할 수 없습니다.",
+        });
+        return;
+      }
+      if (normalized !== next.maxParticipants) {
+        next.maxParticipants = Math.min(MAX_PLAYERS_PER_ROOM, normalized);
+        this.maxClients = next.maxParticipants;
+        didChange = true;
+      }
+    }
+
+    if (
+      Object.values(TYPING_ROOM_TEXT_TYPE).includes(
+        message.textType as TypingRoomTextType
+      )
+    ) {
+      const nextTextType = message.textType as TypingRoomTextType;
+      if (nextTextType !== next.textType) {
+        next.textType = nextTextType;
+        didChange = true;
+      }
+    }
+
+    if (
+      Object.values(TYPING_ROOM_LANGUAGE).includes(
+        message.language as TypingRoomLanguage
+      )
+    ) {
+      const nextLanguage = message.language as TypingRoomLanguage;
+      if (nextLanguage !== next.language) {
+        next.language = nextLanguage;
+        this.roomSeed = createFallbackRaceSeed(next.language);
+        languageChanged = true;
+        didChange = true;
+      }
+    }
+
+    if (
+      Object.values(TYPING_ROOM_DIFFICULTY).includes(
+        message.difficulty as TypingRoomDifficulty
+      )
+    ) {
+      const nextDifficulty = message.difficulty as TypingRoomDifficulty;
+      if (nextDifficulty !== next.difficulty) {
+        next.difficulty = nextDifficulty;
+        didChange = true;
+      }
+    }
+
+    const nextRoundCount = clampOption(
+      message.roundCount,
+      [...LOBBY_ROUND_COUNT_OPTIONS],
+      next.roundCount
+    );
+    if (nextRoundCount !== next.roundCount) {
+      next.roundCount = nextRoundCount;
+      didChange = true;
+    }
+
+    if (
+      Object.values(TYPING_ROOM_MODE).includes(message.mode as TypingRoomMode)
+    ) {
+      const nextMode = message.mode as TypingRoomMode;
+      if (nextMode !== next.mode) {
+        next.mode = nextMode;
+        didChange = true;
+      }
+    }
+
+    if (
+      typeof message.selectedDeckId === "string" &&
+      message.selectedDeckId.length > 0
+    ) {
+      const nextDeckId = message.selectedDeckId.slice(0, MAX_SEED_ID_LENGTH);
+      if (nextDeckId !== next.selectedDeckId) {
+        next.selectedDeckId = nextDeckId;
+        didChange = true;
+      }
+    } else if (message.selectedDeckId === null) {
+      if (next.selectedDeckId !== undefined) {
+        next.selectedDeckId = undefined;
+        didChange = true;
+      }
+    }
+
+    if (
+      Object.values(TYPING_DECK_VISIBILITY).includes(
+        message.selectedDeckVisibility as TypingDeckVisibility
+      )
+    ) {
+      const nextDeckVisibility =
+        message.selectedDeckVisibility as TypingDeckVisibility;
+      if (nextDeckVisibility !== next.selectedDeckVisibility) {
+        next.selectedDeckVisibility = nextDeckVisibility;
+        didChange = true;
+      }
+    }
+
+    const nextLobbyDeckTitle = optionalText(
+      message.lobbyDeckTitle,
+      MAX_SEED_LABEL_LENGTH
+    );
+    if (
+      nextLobbyDeckTitle !== undefined &&
+      nextLobbyDeckTitle !== next.lobbyDeckTitle
+    ) {
+      next.lobbyDeckTitle = nextLobbyDeckTitle;
+      didChange = true;
+    }
+
+    if (message.raceSeed !== undefined) {
+      this.roomSeed = normalizeRaceSeed(
+        message.raceSeed ?? undefined,
+        next.language
+      );
+      languageChanged = false;
+      didChange = true;
+    }
+
+    if (!didChange) return;
+    if (languageChanged) {
+      next.selectedDeckId = this.roomSeed.deckId;
+      next.selectedDeckVisibility = this.roomSeed.deckVisibility;
+      next.selectedDeckLanguageTag = this.roomSeed.languageTag;
+      next.lobbyDeckTitle = this.roomSeed.lobbyDeckTitle;
+    }
+    this.settings = this.applyRoomSeedMetadata(next, this.roomSeed);
+    this.appendSystemMessage("방 설정이 변경되었습니다.");
+
+    this.resetParticipantReadyState();
+    this.syncState();
+  }
+
+  private resetParticipantReadyState() {
+    this.participants.forEach((participant) => {
+      participant.isReady = participant.id === this.hostId;
+    });
+  }
+
   private updateReady(client: Client, message: RoomReadyMessage) {
     if (this.status !== TYPING_ROOM_STATUS.WAITING) return;
     const participant = this.participants.get(client.sessionId);
     if (!participant) return;
-    participant.isReady =
+    const nextReady =
       client.sessionId === this.hostId ? true : Boolean(message.isReady);
+    if (participant.isReady === nextReady) return;
+    participant.isReady = nextReady;
+
+    if (client.sessionId !== this.hostId) {
+      this.appendSystemMessage(
+        `${participant.label}님이 ${
+          nextReady ? "준비완료했습니다." : "준비 취소했습니다."
+        }`
+      );
+    }
+
     this.syncState();
   }
 
@@ -767,6 +1069,7 @@ export class TypingRaceRoom extends Room {
       currentRound: 1,
       canStart: this.canStart(),
       results: this.createResultSnapshot(),
+      messages: [...this.lobbyMessages],
     };
   }
 

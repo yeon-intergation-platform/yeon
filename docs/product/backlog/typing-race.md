@@ -2,6 +2,9 @@
 
 타이핑 레이스 프로젝트의 실행 항목을 관리합니다.
 
+- 로비 핵심 기능 실행 계획: `docs/product/backlog/typing-room-lobby-backlog.md`
+- 타자방 로비 화면 정의(운영/기능/정책 정합): `docs/projects/typing-race/typing-room-lobby-screen-definition.md`
+
 ## Active
 
 - 공식 프로젝트 문서: `docs/projects/typing-race/`
