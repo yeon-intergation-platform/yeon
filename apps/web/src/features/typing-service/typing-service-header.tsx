@@ -19,48 +19,56 @@ const NAV_ITEMS: { key: TypingServiceNavKey; label: string; href: string }[] = [
   { key: "race", label: "레이스", href: "/typing-service/play" },
 ];
 
+function normalizeHeaderTitle(title: string) {
+  return title.replace(/^YEON\s*/, "").trim();
+}
+
 export function TypingServiceHeader({
   active,
-  title = "YEON 타자연습",
+  title = "타자연습",
   controls,
 }: TypingServiceHeaderProps) {
+  const displayTitle = normalizeHeaderTitle(title);
+
   return (
     <header className="h-[76px] border-b border-[#e5e5e5] bg-white px-6 md:px-10">
-      <div className="flex h-full items-center justify-between gap-5">
-        <div className="flex shrink-0 items-center gap-2">
+      <div className="grid h-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-4">
+        <div className="flex min-w-0 items-center gap-2">
           <Link
             href={PLATFORM_HOME_HREF}
             className="text-[22px] font-black tracking-[-0.04em] text-[#111] no-underline transition-opacity hover:opacity-70 md:text-[25px]"
           >
             YEON
           </Link>
-          <Link
-            href="/typing-service"
-            className="shrink-0 text-[20px] font-black tracking-[-0.04em] text-[#111] no-underline transition-opacity hover:opacity-70 md:text-[25px]"
-          >
-            {title}
-          </Link>
+          {displayTitle ? (
+            <Link
+              href="/typing-service"
+              className="hidden min-w-0 truncate text-[18px] font-black tracking-[-0.04em] text-[#111] no-underline transition-opacity hover:opacity-70 sm:block md:text-[22px]"
+            >
+              {displayTitle}
+            </Link>
+          ) : null}
         </div>
 
-        <div className="flex min-w-0 items-center justify-end gap-5">
-          <nav
-            aria-label="타자 서비스 이동"
-            className="flex items-center gap-5 overflow-x-auto text-[15px] font-semibold text-[#111] md:gap-8 md:text-[17px]"
-          >
-            {NAV_ITEMS.map((item) => (
-              <Link
-                key={item.key}
-                href={item.href}
-                aria-current={active === item.key ? "page" : undefined}
-                className={`shrink-0 no-underline transition-opacity hover:opacity-70 ${
-                  active === item.key ? "font-black" : "font-medium"
-                }`}
-              >
-                {item.label}
-              </Link>
-            ))}
-          </nav>
+        <nav
+          aria-label="타자 서비스 이동"
+          className="flex min-w-0 items-center justify-center gap-5 overflow-x-auto text-[15px] font-semibold text-[#111] md:gap-8 md:text-[17px]"
+        >
+          {NAV_ITEMS.map((item) => (
+            <Link
+              key={item.key}
+              href={item.href}
+              aria-current={active === item.key ? "page" : undefined}
+              className={`shrink-0 no-underline transition-opacity hover:opacity-70 ${
+                active === item.key ? "font-black" : "font-medium"
+              }`}
+            >
+              {item.label}
+            </Link>
+          ))}
+        </nav>
 
+        <div className="flex min-w-0 items-center justify-end gap-2">
           {controls ? (
             <div className="hidden shrink-0 items-center gap-2 md:flex">
               {controls}

@@ -212,6 +212,7 @@ export type TypingRoomSummary = TypingRoomSettings & {
 export type TypingRoomParticipantSnapshot = {
   id: string;
   label: string;
+  characterId?: string;
   role: "host" | "guest";
   isReady: boolean;
   progress: number;
@@ -278,12 +279,14 @@ export type MatchJoinMessage = {
   difficulty?: string;
   playerLabel: string;
   playerId?: string;
+  characterId?: string;
   locale?: "ko" | "en";
 };
 
 export type TypingRoomCreateMessage = Partial<TypingRoomSettings> & {
   playerLabel?: string;
   playerId?: string;
+  characterId?: string;
   locale?: "ko" | "en";
   roomMode?: "lobby" | "quick";
   raceSeed?: TypingRaceSeed;

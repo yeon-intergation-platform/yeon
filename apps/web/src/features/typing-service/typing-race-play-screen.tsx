@@ -22,13 +22,18 @@ export function TypingRacePlayScreen() {
     enabled: profileLoaded && !!playerId && !fallbackToSolo,
     playerLabel: profile.nickname,
     playerId,
+    characterId: profile.characterId,
     locale: settings.locale,
   });
 
   // 연결 실패 시 솔로 모드로 fallback
   useEffect(() => {
-    if (race.connectionState === "connected" || race.connectionState === "idle") return;
-    if (race.connectionState === "error" || race.connectionState === "disconnected") {
+    if (race.connectionState === "connected" || race.connectionState === "idle")
+      return;
+    if (
+      race.connectionState === "error" ||
+      race.connectionState === "disconnected"
+    ) {
       setFallbackToSolo(true);
       return;
     }
