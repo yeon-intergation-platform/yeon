@@ -8,7 +8,7 @@ export const metadata: Metadata = {
     canonical: "/typing-service/rooms",
   },
   robots: {
-    index: false,
+    index: true,
     follow: true,
   },
 };
