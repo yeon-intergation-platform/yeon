@@ -2,7 +2,6 @@ import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { CounselingRecordTrendSpringBackendHttpError } from "@/server/counseling-record-trend-spring-client";
-import { ServiceError } from "@/server/services/service-error";
 
 const mockRequireAuthenticatedUser = vi.fn();
 const mockFetchCounselingRecordTrendSourcesFromSpring = vi.fn();

@@ -1,6 +1,8 @@
+import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 
 const requireAuthenticatedUser = vi.fn();
+
 
 vi.mock("@/app/api/v1/counseling-records/_shared", () => ({
   jsonError: (message: string, status: number) =>
@@ -26,8 +28,7 @@ describe("/api/v1/spaces/[spaceId]/member-tabs/[tabId]/fields", () => {
     );
 
     const { GET } = await import("../route");
-    const request: any = new Request("http://localhost/api/v1/spaces/space_alpha/member-tabs/mtb_custom/fields");
-    request.nextUrl = new URL("http://localhost/api/v1/spaces/space_alpha/member-tabs/mtb_custom/fields");
+    const request = new NextRequest("http://localhost/api/v1/spaces/space_alpha/member-tabs/mtb_custom/fields");
     const response = await GET(request, { params: Promise.resolve({ spaceId: "space_alpha", tabId: "mtb_custom" }) });
     const body = await response.json();
 
@@ -49,8 +50,7 @@ describe("/api/v1/spaces/[spaceId]/member-tabs/[tabId]/fields", () => {
     );
 
     const { GET } = await import("../route");
-    const request: any = new Request("http://localhost/api/v1/spaces/space_alpha/member-tabs/mtb_overview/fields?memberId=mem_1");
-    request.nextUrl = new URL("http://localhost/api/v1/spaces/space_alpha/member-tabs/mtb_overview/fields?memberId=mem_1");
+    const request = new NextRequest("http://localhost/api/v1/spaces/space_alpha/member-tabs/mtb_overview/fields?memberId=mem_1");
     const response = await GET(request, { params: Promise.resolve({ spaceId: "space_alpha", tabId: "mtb_overview" }) });
     const body = await response.json();
 
@@ -75,12 +75,11 @@ describe("/api/v1/spaces/[spaceId]/member-tabs/[tabId]/fields", () => {
     );
 
     const { POST } = await import("../route");
-    const request: any = new Request("http://localhost/api/v1/spaces/space_alpha/member-tabs/mtb_custom/fields", {
+    const request = new NextRequest("http://localhost/api/v1/spaces/space_alpha/member-tabs/mtb_custom/fields", {
       method: "POST",
       body: JSON.stringify({ name: "새 필드", fieldType: "text" }),
       headers: { "content-type": "application/json" },
     });
-    request.nextUrl = new URL("http://localhost/api/v1/spaces/space_alpha/member-tabs/mtb_custom/fields");
     const response = await POST(request, { params: Promise.resolve({ spaceId: "space_alpha", tabId: "mtb_custom" }) });
     const body = await response.json();
 

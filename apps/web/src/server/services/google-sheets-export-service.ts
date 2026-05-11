@@ -7,53 +7,6 @@ import {
 import { getValidSheetsAccessToken } from "./googledrive-service";
 import { ServiceError } from "./service-error";
 
-function formatGoogleSheetsApiError(rawText: string, actionLabel: string) {
-  try {
-    const parsed = JSON.parse(rawText) as {
-      error?: {
-        message?: string;
-        details?: Array<{
-          "@type"?: string;
-          reason?: string;
-          metadata?: {
-            consumer?: string;
-            activationUrl?: string;
-            serviceTitle?: string;
-          };
-        }>;
-      };
-    };
-
-    const serviceDisabled = parsed.error?.details?.find(
-      (detail) => detail.reason === "SERVICE_DISABLED",
-    );
-
-    if (serviceDisabled) {
-      const project =
-        serviceDisabled.metadata?.consumer ?? "현재 Google Cloud 프로젝트";
-      const activationUrl = serviceDisabled.metadata?.activationUrl;
-      const serviceTitle =
-        serviceDisabled.metadata?.serviceTitle ?? "Google Sheets API";
-
-      return [
-        `${serviceTitle}가 비활성화되어 있어 ${actionLabel}을 진행할 수 없습니다.`,
-        `${project}에서 ${serviceTitle}를 활성화한 뒤 몇 분 후 다시 시도해주세요.`,
-        activationUrl ? `활성화 링크: ${activationUrl}` : null,
-      ]
-        .filter(Boolean)
-        .join(" ");
-    }
-
-    if (parsed.error?.message) {
-      return `${actionLabel}에 실패했습니다: ${parsed.error.message}`;
-    }
-  } catch {
-    // raw text fallback
-  }
-
-  return `${actionLabel}에 실패했습니다: ${rawText}`;
-}
-
 export function extractSheetId(sheetUrl: string): string {
   const match = sheetUrl.match(/\/spreadsheets\/d\/([a-zA-Z0-9_-]+)/);
 

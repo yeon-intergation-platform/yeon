@@ -134,6 +134,8 @@ export const RACE_EVENTS = {
   ROOM_STATE: "room.state",
   ROOM_READY: "room.ready",
   ROOM_START: "room.start",
+  ROOM_SETTINGS: "room.settings",
+  ROOM_CHAT: "room.chat",
   ROOM_ERROR: "room.error",
   RACE_READY: "race.ready",
   RACE_SEED: "race.seed",
@@ -223,6 +225,33 @@ export type TypingRoomParticipantSnapshot = {
   rank: number | null;
 };
 
+export type TypingRoomChatMessage = {
+  id: string;
+  senderId?: string | null;
+  senderLabel?: string | null;
+  messageType: "user" | "system";
+  content: string;
+  createdAt: number;
+};
+
+export type RoomSettingsUpdateMessage = {
+  visibility?: TypingRoomVisibility;
+  maxParticipants?: number;
+  textType?: TypingRoomTextType;
+  language?: TypingRoomLanguage;
+  difficulty?: TypingRoomDifficulty;
+  roundCount?: number;
+  mode?: TypingRoomMode;
+  selectedDeckId?: string | null;
+  selectedDeckVisibility?: TypingDeckVisibility;
+  lobbyDeckTitle?: string | null;
+  raceSeed?: TypingRaceSeed | null;
+};
+
+export type RoomChatMessage = {
+  content: string;
+};
+
 export type TypingResultSnapshot = {
   userId: string;
   label: string;
@@ -242,6 +271,7 @@ export type TypingRoomSnapshot = TypingRoomSummary & {
   currentRound: number;
   canStart: boolean;
   results: readonly TypingResultSnapshot[];
+  messages: readonly TypingRoomChatMessage[];
 };
 
 export type MatchJoinMessage = {
