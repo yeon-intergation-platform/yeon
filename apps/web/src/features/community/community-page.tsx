@@ -1,7 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 
+import { ProductHeader } from "@/components/product-shell/product-header";
+import { PLATFORM_HOME_HREF } from "@/lib/platform-services";
 import { type ChatServiceFeedPost } from "./chat-service-api";
 import { CommunityChatWidget } from "./components/community-chat-widget";
 import { useCommunityFeed } from "./hooks/use-community-feed";
@@ -393,6 +396,15 @@ export function CommunityPage() {
 
   return (
     <div className="min-h-screen bg-white text-[#111]">
+      <ProductHeader>
+        <Link
+          href={PLATFORM_HOME_HREF}
+          className="text-[14px] font-semibold text-[#111] no-underline hover:opacity-70"
+        >
+          YEON 커뮤니티
+        </Link>
+      </ProductHeader>
+
       <main className="mx-auto flex max-w-[1300px] flex-col gap-6 px-6 py-10 md:px-10">
         <section>
           <p className="text-[12px] font-semibold text-[#666]">커뮤니티</p>
