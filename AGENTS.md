@@ -175,6 +175,7 @@ https://dev.yeon.world/counseling-service/api/v1/integrations/<provider>/auth/ca
 - breaking/minor 의도가 있으면 PR title/body/label에 `semver:major`, `semver:minor`, `BREAKING CHANGE`, `feat:` 같은 결정적 신호를 남긴다.
 - root `package.json`의 `version`은 자동 운영 릴리즈 번호를 막거나 대체하는 기준으로 쓰지 않는다.
 - PR 생성/merge 명령을 수행한 뒤에는 머지 상태 재조회나 CI/CD/배포/릴리즈 완료 대기로 오래 멈추지 않는다. 후속 상태는 GitHub Actions 비동기 흐름에 맡기고, 필요한 URL만 남긴다.
+- 사후 동작 확인은 개발자가 이미 `pnpm dev:all`로 켜둔 `http://localhost:3000/`을 기준으로 한다. 에이전트가 직접 dev server를 기동하지 않는다.
 
 ## Claude CLI / OMC skill 참고
 
