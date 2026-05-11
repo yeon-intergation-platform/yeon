@@ -6,6 +6,10 @@ import type { CardDeckDto } from "@yeon/api-contract/card-decks";
 import Link from "next/link";
 
 import { analyticsEvents, trackEvent } from "@/lib/analytics";
+import {
+  ProductHeader,
+  ProductHeaderSettingsButton,
+} from "@/components/product-shell/product-header";
 import { countGuestCardDecks } from "@/lib/guest-card-service-store";
 import { PLATFORM_HOME_HREF } from "@/lib/platform-services";
 
@@ -97,48 +101,43 @@ export function CardServiceHome() {
 
   return (
     <div className="min-h-screen bg-white text-[#111]">
-      <header className="border-b border-[#e5e5e5] px-6 py-3 md:px-12">
-        <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-3">
-          <Link
-            href={PLATFORM_HOME_HREF}
-            className="text-[14px] font-semibold text-[#111] no-underline hover:opacity-70"
+      <ProductHeader>
+        <Link
+          href={PLATFORM_HOME_HREF}
+          className="text-[14px] font-semibold text-[#111] no-underline hover:opacity-70"
+        >
+          YEON 카드
+        </Link>
+        <div className="flex items-center gap-2">
+          {showManualMergeButton ? (
+            <button
+              type="button"
+              onClick={() => {
+                setMergeDialogOpen(true);
+                trackEvent(analyticsEvents.cardDeckOpen, {
+                  source: "merge_guest_prompt",
+                  authenticated: isAuthenticated,
+                  guest_deck_count: guestDeckCount,
+                });
+              }}
+              className="rounded-xl border border-[rgba(17,19,24,0.12)] bg-[rgba(232,99,10,0.08)] px-3 py-2 text-[12px] font-semibold text-[#a3430a] transition-colors hover:bg-[rgba(232,99,10,0.16)]"
+            >
+              게스트 덱 {guestDeckCount}개 계정에 추가
+            </button>
+          ) : null}
+          <button
+            type="button"
+            onClick={() => openCreate("header")}
+            className="rounded-xl bg-[#111] px-4 py-2 text-[13px] font-semibold text-white transition-colors hover:bg-[#333]"
           >
-            YEON 카드
-          </Link>
-          <div className="flex items-center gap-2">
-            {showManualMergeButton ? (
-              <button
-                type="button"
-                onClick={() => {
-                  setMergeDialogOpen(true);
-                  trackEvent(analyticsEvents.cardDeckOpen, {
-                    source: "merge_guest_prompt",
-                    authenticated: isAuthenticated,
-                    guest_deck_count: guestDeckCount,
-                  });
-                }}
-                className="rounded-xl border border-[rgba(17,19,24,0.12)] bg-[rgba(232,99,10,0.08)] px-3 py-2 text-[12px] font-semibold text-[#a3430a] transition-colors hover:bg-[rgba(232,99,10,0.16)]"
-              >
-                게스트 덱 {guestDeckCount}개 계정에 추가
-              </button>
-            ) : null}
-            <button
-              type="button"
-              onClick={() => openCreate("header")}
-              className="rounded-xl bg-[#111] px-4 py-2 text-[13px] font-semibold text-white transition-colors hover:bg-[#333]"
-            >
-              + 새 덱
-            </button>
-            <button
-              type="button"
-              onClick={() => setSettingsOpen(true)}
-              className="rounded-xl border border-[#e5e5e5] px-4 py-2 text-[13px] font-semibold text-[#111] transition-colors hover:border-[#111] hover:bg-[#fafafa]"
-            >
-              설정
-            </button>
-          </div>
+            + 새 덱
+          </button>
+          <ProductHeaderSettingsButton
+            onClick={() => setSettingsOpen(true)}
+            aria-label="카드 설정"
+          />
         </div>
-      </header>
+      </ProductHeader>
 
       <main className="mx-auto max-w-[1400px] px-6 py-12 md:px-12">
         <section className="max-w-[820px]">

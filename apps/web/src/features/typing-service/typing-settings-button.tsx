@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Settings } from "lucide-react";
+import { ProductHeaderSettingsButton } from "@/components/product-shell/product-header";
 import {
   createTranslator,
   type TypingLocale,
@@ -41,14 +41,10 @@ export function TypingSettingsButton() {
 
   return (
     <div ref={ref} className="relative">
-      <button
-        type="button"
+      <ProductHeaderSettingsButton
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center justify-center rounded-lg border border-[#e5e5e5] p-2 text-[#888] transition-colors hover:border-[#aaa] hover:text-[#111]"
         aria-label={t("settings")}
-      >
-        <Settings size={15} />
-      </button>
+      />
 
       {open && (
         <div className="absolute right-0 top-full z-50 mt-1.5 w-64 rounded-xl border border-[#e5e5e5] bg-white py-1 shadow-lg">
