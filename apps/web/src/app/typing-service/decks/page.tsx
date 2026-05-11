@@ -12,7 +12,7 @@ export const metadata: Metadata = {
     canonical: "/typing-service/decks",
   },
   robots: {
-    index: false,
+    index: true,
     follow: true,
   },
 };
