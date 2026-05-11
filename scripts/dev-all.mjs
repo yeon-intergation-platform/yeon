@@ -23,6 +23,7 @@ const children = new Map();
 let shuttingDown = false;
 let sawFailure = false;
 const webLockPath = join(rootDir, "apps", "web", ".next", "dev", "lock");
+const defaultLocalSpringInternalToken = "local-dev-internal-token";
 
 const portSources = {
   web: ["WEB_PORT", "PORT"],
@@ -299,6 +300,10 @@ async function resolveServices() {
   usedPorts.add(racePort);
 
   const backendRunner = resolveBackendRunner(backendPort);
+  const springBackendBaseUrl = `http://127.0.0.1:${backendPort}`;
+  const springInternalToken =
+    process.env.SPRING_INTERNAL_TOKEN?.trim() ||
+    defaultLocalSpringInternalToken;
 
   services.push({
     name: "web",
@@ -308,6 +313,9 @@ async function resolveServices() {
     cwd: rootDir,
     env: {
       PORT: String(webPort),
+      SPRING_BACKEND_BASE_URL: springBackendBaseUrl,
+      SPRING_BOOTSTRAP_BASE_URL: springBackendBaseUrl,
+      SPRING_INTERNAL_TOKEN: springInternalToken,
     },
     assignedPort: webPort,
     interactive: false,
@@ -321,6 +329,7 @@ async function resolveServices() {
     cwd: backendRunner.cwd,
     env: {
       ...backendRunner.env,
+      SPRING_INTERNAL_TOKEN: springInternalToken,
     },
     assignedPort: backendPort,
     interactive: false,
