@@ -274,7 +274,7 @@ export function useRaceRoom(options: UseRaceRoomOptions): UseRaceRoomResult {
         }
 
         roomRef.current = room;
-        setMySeat(room.sessionId);
+        setMySeat(playerId);
         setConnectedRoomId(room.roomId);
         setConnectionState("connected");
 

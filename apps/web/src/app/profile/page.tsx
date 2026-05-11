@@ -37,12 +37,6 @@ export default async function ProfilePage() {
           {user ? (
             <div className="mt-8 grid gap-4">
               <div className="rounded-2xl border border-[#e5e5e5] bg-white p-5">
-                <p className="text-[12px] font-semibold text-[#888]">이름</p>
-                <p className="mt-2 text-[18px] font-bold">
-                  {user.displayName ?? "이름 없음"}
-                </p>
-              </div>
-              <div className="rounded-2xl border border-[#e5e5e5] bg-white p-5">
                 <p className="text-[12px] font-semibold text-[#888]">이메일</p>
                 <p className="mt-2 text-[15px] font-semibold">{user.email}</p>
               </div>

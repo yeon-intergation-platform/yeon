@@ -24,10 +24,7 @@ export default async function CardServiceLayout({
       <CardServiceAuthProvider isAuthenticated={Boolean(user)}>
         {children}
         <div className="fixed inset-x-4 bottom-3 z-40 sm:inset-auto sm:right-6 sm:bottom-6">
-          <CommunityChatWidget
-            variant="compact"
-            className="w-[calc(100%-0.75rem)] max-w-[328px]"
-          />
+          <CommunityChatWidget variant="compact" />
         </div>
       </CardServiceAuthProvider>
     </QueryProvider>

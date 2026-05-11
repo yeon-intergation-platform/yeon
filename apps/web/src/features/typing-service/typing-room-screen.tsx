@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ChangeEvent } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, Crown, Play, Send } from "lucide-react";
 import {
   TYPING_ROOM_DIFFICULTY,
@@ -177,6 +177,7 @@ function useCreateRoomOptions(): DeckAwareCreateMessage {
 }
 
 export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
+  const router = useRouter();
   const { profile, loaded: profileLoaded } = useTypingProfile();
   const { settings } = useTypingSettings();
   const playerId = usePlayerIdentity();
@@ -287,6 +288,7 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
     }
 
     hasTrackedRoomCreateSuccessRef.current = true;
+    router.replace(`/typing-service/rooms/${race.roomId}`);
     trackEvent("room_create_success", {
       source: "typing_room_create",
       room_id: race.roomId,
@@ -300,6 +302,7 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
     createRoomOptions.visibility,
     mode,
     race.roomId,
+    router,
     selectedDeck.id,
     selectedDeck.title,
   ]);
@@ -574,7 +577,7 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
         </p>
       )}
 
-      <main className="grid gap-4 px-4 py-6 md:gap-6 md:px-8 md:py-10">
+      <main className="grid gap-3 px-4 py-3 md:px-8 md:py-4">
         <Link
           href="/typing-service/rooms"
           className="inline-flex w-fit items-center gap-2 text-[13px] font-semibold text-[#666] no-underline transition-colors hover:text-[#111]"
@@ -583,18 +586,18 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
           타자방 나가기
         </Link>
 
-        <header className="rounded-2xl border border-[#e5e5e5] bg-white p-4 md:p-6">
-          <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(280px,420px)]">
+        <header className="rounded-2xl border border-[#e5e5e5] bg-white p-3 md:p-4">
+          <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(280px,420px)]">
             <div>
               <p className="text-[12px] font-semibold text-[#666]">
                 {waitingStateLabel} ·{" "}
                 {TYPING_ROOM_VISIBILITY_LABELS[room.visibility]} ·{" "}
                 {room.currentParticipants}/{room.maxParticipants}
               </p>
-              <h1 className="mt-1 text-[28px] font-semibold tracking-[-0.03em] md:text-[32px]">
+              <h1 className="mt-1 text-[22px] font-semibold tracking-[-0.03em] md:text-[26px]">
                 {room.title}
               </h1>
-              <p className="mt-2 text-[13px] text-[#666]">{room.roomCode}</p>
+              <p className="mt-1 text-[12px] text-[#666]">{room.roomCode}</p>
             </div>
             <div className="flex h-full flex-col items-start justify-end gap-3 lg:items-end lg:text-right">
               <p className="text-[12px] font-semibold text-[#666]">
@@ -614,7 +617,7 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
                 <button
                   type="button"
                   onClick={copyInvite}
-                  className="rounded-xl border border-[#e5e5e5] px-4 py-2.5 text-[13px] font-semibold text-[#111] transition-colors hover:border-[#111] hover:bg-[#fafafa]"
+                  className="rounded-xl border border-[#e5e5e5] px-3 py-2 text-[12px] font-semibold text-[#111] transition-colors hover:border-[#111] hover:bg-[#fafafa]"
                 >
                   {copied ? "초대 링크 복사됨" : "초대"}
                 </button>
@@ -623,7 +626,7 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
                     type="button"
                     onClick={race.sendStart}
                     disabled={!room.canStart}
-                    className="inline-flex items-center gap-2 rounded-xl bg-[#111] px-5 py-2.5 text-[14px] font-semibold text-white transition-colors hover:bg-[#333] disabled:cursor-not-allowed disabled:bg-[#f1f1f1] disabled:text-[#aaa]"
+                    className="inline-flex items-center gap-2 rounded-xl bg-[#111] px-4 py-2 text-[13px] font-semibold text-white transition-colors hover:bg-[#333] disabled:cursor-not-allowed disabled:bg-[#f1f1f1] disabled:text-[#aaa]"
                   >
                     <Play size={14} />
                     시작하기
@@ -632,7 +635,7 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
                   <button
                     type="button"
                     onClick={() => race.sendReady(!isReady)}
-                    className={`rounded-xl px-5 py-2.5 text-[14px] font-semibold transition-colors ${
+                    className={`rounded-xl px-4 py-2 text-[13px] font-semibold transition-colors ${
                       isReady
                         ? "border border-[#e5e5e5] bg-[#fafafa] text-[#666] hover:border-[#ddd]"
                         : "bg-[#111] text-white hover:bg-[#333]"
@@ -646,9 +649,9 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
           </div>
         </header>
 
-        <section className="grid gap-4 xl:grid-cols-[minmax(300px,360px)_minmax(0,960px)] xl:items-start xl:justify-center">
-          <div className="grid gap-4">
-            <section className="rounded-2xl border border-[#e5e5e5] bg-white p-4 md:p-5">
+        <section className="grid gap-3 xl:grid-cols-[minmax(260px,320px)_minmax(360px,420px)_minmax(0,1fr)] xl:items-start">
+          <div className="contents">
+            <section className="rounded-2xl border border-[#e5e5e5] bg-white p-3 xl:order-2">
               <h2 className="mb-3 text-[14px] font-bold">참여자</h2>
               <div className="grid grid-cols-2 gap-3">
                 {participants.map((participant, index) => {
@@ -659,10 +662,10 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
                   return (
                     <div
                       key={participant?.id ?? `empty-${index}`}
-                      className="min-h-[196px] rounded-2xl border border-[#e5e5e5] bg-[#fafafa] p-3"
+                      className="min-h-[148px] rounded-2xl border border-[#e5e5e5] bg-[#fafafa] p-2.5"
                     >
                       {participant && character ? (
-                        <div className="flex h-full flex-col justify-between gap-3">
+                        <div className="flex h-full flex-col justify-between gap-2">
                           <div className="flex items-center justify-between gap-2">
                             <span
                               className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${participant.isReady ? "border border-[#d9ead3] bg-[#eef8ea] text-[#2f7d32]" : "border border-[#e5e5e5] bg-white text-[#999]"}`}
@@ -675,10 +678,10 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
                               </span>
                             ) : null}
                           </div>
-                          <div className="flex h-[104px] items-end justify-center overflow-hidden rounded-xl bg-white px-2 py-1">
+                          <div className="flex h-[72px] items-end justify-center overflow-hidden rounded-xl bg-white px-2 py-1">
                             <CharacterSprite
                               character={character}
-                              maxHeight={96}
+                              maxHeight={68}
                               sequenceOverride={frameOverrides[character.id]}
                             />
                           </div>
@@ -687,13 +690,13 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
                               {participant.label}
                               {participant.id === me?.id ? " (나)" : ""}
                             </p>
-                            <p className="mt-1 text-[11px] text-[#888]">
+                            <p className="mt-0.5 text-[11px] text-[#888]">
                               {character.label[settings.locale]}
                             </p>
                           </div>
                         </div>
                       ) : (
-                        <div className="flex h-full min-h-[168px] items-center justify-center rounded-xl border border-dashed border-[#ddd] bg-white text-[13px] font-semibold text-[#aaa]">
+                        <div className="flex h-full min-h-[120px] items-center justify-center rounded-xl border border-dashed border-[#ddd] bg-white text-[13px] font-semibold text-[#aaa]">
                           빈자리
                         </div>
                       )}
@@ -703,224 +706,228 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
               </div>
             </section>
 
-            <section className="rounded-2xl border border-[#e5e5e5] bg-white p-4 md:p-6">
+            <section className="rounded-2xl border border-[#e5e5e5] bg-white p-3 xl:order-1">
               <h2 className="mb-3 text-[14px] font-bold">방 설정</h2>
+              <div className="grid grid-cols-2 gap-2">
+                <label className="grid gap-1 text-[12px] font-semibold text-[#666]">
+                  공개 여부
+                  {isHost ? (
+                    <select
+                      value={room.visibility}
+                      onChange={(event) =>
+                        sendSetting({
+                          visibility: event.target
+                            .value as TypingRoomVisibility,
+                        })
+                      }
+                      className="h-9 rounded-lg border border-[#d7d7d7] px-2"
+                    >
+                      {Object.values(TYPING_ROOM_VISIBILITY).map((value) => (
+                        <option key={value} value={value}>
+                          {TYPING_ROOM_VISIBILITY_LABELS[value]}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <p className="rounded-lg border border-[#e5e5e5] bg-[#fafafa] px-3 py-2">
+                      {TYPING_ROOM_VISIBILITY_LABELS[room.visibility]}
+                    </p>
+                  )}
+                </label>
 
-              <label className="mb-3 grid gap-1.5 text-[12px] font-semibold text-[#666]">
-                공개 여부
-                {isHost ? (
-                  <select
-                    value={room.visibility}
-                    onChange={(event) =>
-                      sendSetting({
-                        visibility: event.target.value as TypingRoomVisibility,
-                      })
-                    }
-                    className="h-10 rounded-lg border border-[#d7d7d7] px-2"
-                  >
-                    {Object.values(TYPING_ROOM_VISIBILITY).map((value) => (
-                      <option key={value} value={value}>
-                        {TYPING_ROOM_VISIBILITY_LABELS[value]}
-                      </option>
-                    ))}
-                  </select>
-                ) : (
-                  <p className="rounded-lg border border-[#e5e5e5] bg-[#fafafa] px-3 py-2">
-                    {TYPING_ROOM_VISIBILITY_LABELS[room.visibility]}
-                  </p>
-                )}
-              </label>
+                <label className="grid gap-1 text-[12px] font-semibold text-[#666]">
+                  최대 인원
+                  {isHost ? (
+                    <select
+                      value={room.maxParticipants}
+                      onChange={(event) =>
+                        sendSetting({
+                          maxParticipants: Number(event.target.value),
+                        })
+                      }
+                      className="h-9 rounded-lg border border-[#d7d7d7] px-2"
+                    >
+                      {LOBBY_MAX_PARTICIPANT_OPTIONS.map((value) => (
+                        <option
+                          key={value}
+                          value={value}
+                          disabled={value < room.currentParticipants}
+                        >
+                          {value}명
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <p className="rounded-lg border border-[#e5e5e5] bg-[#fafafa] px-3 py-2">
+                      최대 {room.maxParticipants}명
+                    </p>
+                  )}
+                </label>
 
-              <label className="mb-3 grid gap-1.5 text-[12px] font-semibold text-[#666]">
-                최대 인원
-                {isHost ? (
-                  <select
-                    value={room.maxParticipants}
-                    onChange={(event) =>
-                      sendSetting({
-                        maxParticipants: Number(event.target.value),
-                      })
-                    }
-                    className="h-10 rounded-lg border border-[#d7d7d7] px-2"
-                  >
-                    {LOBBY_MAX_PARTICIPANT_OPTIONS.map((value) => (
-                      <option
-                        key={value}
-                        value={value}
-                        disabled={value < room.currentParticipants}
-                      >
-                        {value}명
-                      </option>
-                    ))}
-                  </select>
-                ) : (
-                  <p className="rounded-lg border border-[#e5e5e5] bg-[#fafafa] px-3 py-2">
-                    최대 {room.maxParticipants}명
-                  </p>
-                )}
-              </label>
+                <label className="grid gap-1 text-[12px] font-semibold text-[#666]">
+                  언어
+                  {isHost ? (
+                    <select
+                      value={room.language}
+                      onChange={(event) =>
+                        sendSetting({
+                          language: event.target.value as TypingRoomLanguage,
+                        })
+                      }
+                      className="h-9 rounded-lg border border-[#d7d7d7] px-2"
+                    >
+                      {[
+                        TYPING_ROOM_LANGUAGE.KO,
+                        TYPING_ROOM_LANGUAGE.EN,
+                        TYPING_ROOM_LANGUAGE.CODE,
+                      ].map((value) => (
+                        <option key={value} value={value}>
+                          {TYPING_ROOM_LANGUAGE_LABELS[value]}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <p className="rounded-lg border border-[#e5e5e5] bg-[#fafafa] px-3 py-2">
+                      {TYPING_ROOM_LANGUAGE_LABELS[room.language]}
+                    </p>
+                  )}
+                </label>
 
-              <label className="mb-3 grid gap-1.5 text-[12px] font-semibold text-[#666]">
-                언어
-                {isHost ? (
-                  <select
-                    value={room.language}
-                    onChange={(event) =>
-                      sendSetting({
-                        language: event.target.value as TypingRoomLanguage,
-                      })
-                    }
-                    className="h-10 rounded-lg border border-[#d7d7d7] px-2"
-                  >
-                    {[
-                      TYPING_ROOM_LANGUAGE.KO,
-                      TYPING_ROOM_LANGUAGE.EN,
-                      TYPING_ROOM_LANGUAGE.CODE,
-                    ].map((value) => (
-                      <option key={value} value={value}>
-                        {TYPING_ROOM_LANGUAGE_LABELS[value]}
-                      </option>
-                    ))}
-                  </select>
-                ) : (
-                  <p className="rounded-lg border border-[#e5e5e5] bg-[#fafafa] px-3 py-2">
-                    {TYPING_ROOM_LANGUAGE_LABELS[room.language]}
-                  </p>
-                )}
-              </label>
+                <label className="grid gap-1 text-[12px] font-semibold text-[#666]">
+                  문장 길이
+                  {isHost ? (
+                    <select
+                      value={room.textType}
+                      onChange={(event) =>
+                        sendSetting({
+                          textType: event.target.value as TypingRoomTextType,
+                        })
+                      }
+                      className="h-9 rounded-lg border border-[#d7d7d7] px-2"
+                    >
+                      {Object.values(TYPING_ROOM_TEXT_TYPE).map((value) => (
+                        <option key={value} value={value}>
+                          {TYPING_ROOM_TEXT_TYPE_LABELS[value]}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <p className="rounded-lg border border-[#e5e5e5] bg-[#fafafa] px-3 py-2">
+                      {TYPING_ROOM_TEXT_TYPE_LABELS[room.textType]}
+                    </p>
+                  )}
+                </label>
 
-              <label className="mb-3 grid gap-1.5 text-[12px] font-semibold text-[#666]">
-                문장 길이
-                {isHost ? (
-                  <select
-                    value={room.textType}
-                    onChange={(event) =>
-                      sendSetting({
-                        textType: event.target.value as TypingRoomTextType,
-                      })
-                    }
-                    className="h-10 rounded-lg border border-[#d7d7d7] px-2"
-                  >
-                    {Object.values(TYPING_ROOM_TEXT_TYPE).map((value) => (
-                      <option key={value} value={value}>
-                        {TYPING_ROOM_TEXT_TYPE_LABELS[value]}
-                      </option>
-                    ))}
-                  </select>
-                ) : (
-                  <p className="rounded-lg border border-[#e5e5e5] bg-[#fafafa] px-3 py-2">
-                    {TYPING_ROOM_TEXT_TYPE_LABELS[room.textType]}
-                  </p>
-                )}
-              </label>
+                <label className="grid gap-1 text-[12px] font-semibold text-[#666]">
+                  난이도
+                  {isHost ? (
+                    <select
+                      value={room.difficulty}
+                      onChange={(event) =>
+                        sendSetting({
+                          difficulty: event.target
+                            .value as TypingRoomDifficulty,
+                        })
+                      }
+                      className="h-9 rounded-lg border border-[#d7d7d7] px-2"
+                    >
+                      {Object.values(TYPING_ROOM_DIFFICULTY).map((value) => (
+                        <option key={value} value={value}>
+                          {TYPING_ROOM_DIFFICULTY_LABELS[value]}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <p className="rounded-lg border border-[#e5e5e5] bg-[#fafafa] px-3 py-2">
+                      {TYPING_ROOM_DIFFICULTY_LABELS[room.difficulty]}
+                    </p>
+                  )}
+                </label>
 
-              <label className="mb-3 grid gap-1.5 text-[12px] font-semibold text-[#666]">
-                난이도
-                {isHost ? (
-                  <select
-                    value={room.difficulty}
-                    onChange={(event) =>
-                      sendSetting({
-                        difficulty: event.target.value as TypingRoomDifficulty,
-                      })
-                    }
-                    className="h-10 rounded-lg border border-[#d7d7d7] px-2"
-                  >
-                    {Object.values(TYPING_ROOM_DIFFICULTY).map((value) => (
-                      <option key={value} value={value}>
-                        {TYPING_ROOM_DIFFICULTY_LABELS[value]}
-                      </option>
-                    ))}
-                  </select>
-                ) : (
-                  <p className="rounded-lg border border-[#e5e5e5] bg-[#fafafa] px-3 py-2">
-                    {TYPING_ROOM_DIFFICULTY_LABELS[room.difficulty]}
-                  </p>
-                )}
-              </label>
+                <label className="grid gap-1 text-[12px] font-semibold text-[#666]">
+                  판 수
+                  {isHost ? (
+                    <select
+                      value={room.roundCount}
+                      onChange={(event) =>
+                        sendSetting({ roundCount: Number(event.target.value) })
+                      }
+                      className="h-9 rounded-lg border border-[#d7d7d7] px-2"
+                    >
+                      {LOBBY_ROUND_COUNT_OPTIONS.map((value) => (
+                        <option key={value} value={value}>
+                          {value}판
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <p className="rounded-lg border border-[#e5e5e5] bg-[#fafafa] px-3 py-2">
+                      {room.roundCount}판
+                    </p>
+                  )}
+                </label>
 
-              <label className="mb-3 grid gap-1.5 text-[12px] font-semibold text-[#666]">
-                판 수
-                {isHost ? (
-                  <select
-                    value={room.roundCount}
-                    onChange={(event) =>
-                      sendSetting({ roundCount: Number(event.target.value) })
-                    }
-                    className="h-10 rounded-lg border border-[#d7d7d7] px-2"
-                  >
-                    {LOBBY_ROUND_COUNT_OPTIONS.map((value) => (
-                      <option key={value} value={value}>
-                        {value}판
-                      </option>
-                    ))}
-                  </select>
-                ) : (
-                  <p className="rounded-lg border border-[#e5e5e5] bg-[#fafafa] px-3 py-2">
-                    {room.roundCount}판
-                  </p>
-                )}
-              </label>
-
-              <label className="mb-3 grid gap-1.5 text-[12px] font-semibold text-[#666]">
-                진행 방식
-                {isHost ? (
-                  <select
-                    value={room.mode}
-                    onChange={(event) =>
-                      sendSetting({
-                        mode: event.target.value as TypingRoomMode,
-                      })
-                    }
-                    className="h-10 rounded-lg border border-[#d7d7d7] px-2"
-                  >
-                    {[TYPING_ROOM_MODE.FINISH, TYPING_ROOM_MODE.TIME_LIMIT].map(
-                      (value) => (
+                <label className="grid gap-1 text-[12px] font-semibold text-[#666]">
+                  진행 방식
+                  {isHost ? (
+                    <select
+                      value={room.mode}
+                      onChange={(event) =>
+                        sendSetting({
+                          mode: event.target.value as TypingRoomMode,
+                        })
+                      }
+                      className="h-9 rounded-lg border border-[#d7d7d7] px-2"
+                    >
+                      {[
+                        TYPING_ROOM_MODE.FINISH,
+                        TYPING_ROOM_MODE.TIME_LIMIT,
+                      ].map((value) => (
                         <option key={value} value={value}>
                           {TYPING_ROOM_MODE_LABELS[value]}
                         </option>
-                      )
-                    )}
-                  </select>
-                ) : (
-                  <p className="rounded-lg border border-[#e5e5e5] bg-[#fafafa] px-3 py-2">
-                    {TYPING_ROOM_MODE_LABELS[room.mode]}
+                      ))}
+                    </select>
+                  ) : (
+                    <p className="rounded-lg border border-[#e5e5e5] bg-[#fafafa] px-3 py-2">
+                      {TYPING_ROOM_MODE_LABELS[room.mode]}
+                    </p>
+                  )}
+                </label>
+
+                {settingsError && (
+                  <p className="col-span-2 rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-[12px] text-red-600">
+                    {settingsError}
                   </p>
                 )}
-              </label>
 
-              {settingsError && (
-                <p className="mb-3 rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-[12px] text-red-600">
-                  {settingsError}
-                </p>
-              )}
-
-              <label className="grid gap-1.5 text-[12px] font-semibold text-[#666]">
-                덱
-                {isHost ? (
-                  <select
-                    value={room.selectedDeckId ?? selectedDeck.id}
-                    onChange={onDeckChange}
-                    className="h-10 rounded-lg border border-[#d7d7d7] px-2"
-                  >
-                    {deckOptions.map((deck) => (
-                      <option key={deck.id} value={deck.id}>
-                        {normalizeDeckTitle(deck)}
-                      </option>
-                    ))}
-                  </select>
-                ) : (
-                  <p className="rounded-lg border border-[#e5e5e5] bg-[#fafafa] px-3 py-2">
-                    {roomDeckTitle}
-                  </p>
-                )}
-              </label>
+                <label className="col-span-2 grid gap-1 text-[12px] font-semibold text-[#666]">
+                  덱
+                  {isHost ? (
+                    <select
+                      value={room.selectedDeckId ?? selectedDeck.id}
+                      onChange={onDeckChange}
+                      className="h-9 rounded-lg border border-[#d7d7d7] px-2"
+                    >
+                      {deckOptions.map((deck) => (
+                        <option key={deck.id} value={deck.id}>
+                          {normalizeDeckTitle(deck)}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <p className="rounded-lg border border-[#e5e5e5] bg-[#fafafa] px-3 py-2">
+                      {roomDeckTitle}
+                    </p>
+                  )}
+                </label>
+              </div>
             </section>
           </div>
 
-          <section className="rounded-2xl border border-[#e5e5e5] bg-white p-4 md:p-6 xl:max-w-[960px]">
+          <section className="rounded-2xl border border-[#e5e5e5] bg-white p-3 xl:order-3">
             <h2 className="mb-3 text-[14px] font-bold">채팅</h2>
-            <div className="h-[360px] overflow-y-auto rounded-xl border border-[#e5e5e5] bg-[#fafafa] p-4 md:h-[460px]">
+            <div className="h-[260px] overflow-y-auto rounded-xl border border-[#e5e5e5] bg-[#fafafa] p-3 md:h-[320px] xl:h-[300px]">
               {!hasMessages && (
                 <p className="text-[12px] leading-5 text-[#aaa]">
                   아직 메시지가 없습니다.
@@ -958,7 +965,7 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
                   }
                 }}
                 placeholder="메시지 입력"
-                className="h-10 flex-1 rounded-lg border border-[#d7d7d7] px-3 text-[14px]"
+                className="h-9 flex-1 rounded-lg border border-[#d7d7d7] px-3 text-[13px]"
                 onKeyDown={(event) => {
                   if (event.key === "Enter" && !event.shiftKey) {
                     event.preventDefault();

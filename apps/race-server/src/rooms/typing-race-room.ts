@@ -85,6 +85,8 @@ const MAX_SEED_LABEL_LENGTH = 120;
 const MAX_REASONABLE_CPM = 1200;
 const MAX_CHAT_MESSAGE_LENGTH = 500;
 const MAX_LOBBY_CHAT_MESSAGES = 100;
+const LOBBY_RECONNECT_GRACE_MS = 30_000;
+const LOBBY_RETURN_DELAY_MS = 4_500;
 const TYPING_RACE_SEED_FALLBACK_SECRET = "yeon-local-typing-race-seed-secret";
 const LOBBY_MAX_PARTICIPANTS_OPTIONS = [2, 3, 4] as const;
 const LOBBY_ROUND_COUNT_OPTIONS = [1, 3, 5] as const;
@@ -366,6 +368,13 @@ export class TypingRaceRoom extends Room {
 
   private readonly participants = new Map<string, RoomParticipant>();
 
+  private readonly clientParticipantIds = new Map<string, string>();
+
+  private readonly participantCleanupTimers = new Map<
+    string,
+    { clear: () => void }
+  >();
+
   private readonly benchmarks = new Map<string, RoomParticipant>();
 
   private settings: TypingRoomSettings = DEFAULT_ROOM_SETTINGS;
@@ -393,6 +402,8 @@ export class TypingRaceRoom extends Room {
   private createdAt: number = Date.now();
 
   private lobbyMode: boolean = false;
+
+  private lobbyReturnTimer: { clear: () => void } | null = null;
 
   private get speedStyle() {
     return resolveTypingSpeedStyle(
@@ -458,14 +469,22 @@ export class TypingRaceRoom extends Room {
   }
 
   onJoin(client: Client, options: MatchJoinMessage) {
-    if (this.lobbyMode && this.status !== TYPING_ROOM_STATUS.WAITING) {
+    const participantId = this.normalizeParticipantId(client, options);
+    const isKnownParticipant = this.participants.has(participantId);
+
+    if (
+      this.lobbyMode &&
+      this.status !== TYPING_ROOM_STATUS.WAITING &&
+      this.status !== TYPING_ROOM_STATUS.FINISHED &&
+      !isKnownParticipant
+    ) {
       client.send(RACE_EVENTS.ROOM_ERROR, { message: "이미 시작된 방입니다." });
       client.leave();
       return;
     }
 
     this.registerParticipant(client, options);
-    const participant = this.participants.get(client.sessionId);
+    const participant = this.participants.get(this.getParticipantId(client));
 
     if (participant && this.lobbyMode) {
       this.appendSystemMessage(`${participant.label}님이 입장했습니다.`);
@@ -480,45 +499,53 @@ export class TypingRaceRoom extends Room {
   }
 
   onLeave(client: Client) {
-    const participant = this.participants.get(client.sessionId);
-    this.participants.delete(client.sessionId);
-
-    if (this.lobbyMode && client.sessionId === this.hostId) {
-      this.hostId = null;
-      this.status = TYPING_ROOM_STATUS.CLOSED;
-      this.appendSystemMessage("방장이 나가 방이 종료되었습니다.");
-      this.syncState();
-      this.disconnect();
-      return;
-    }
-
-    if (this.hostId === client.sessionId) {
-      this.hostId = this.participants.keys().next().value ?? null;
-      const nextHost = this.hostId ? this.participants.get(this.hostId) : null;
-      if (nextHost) {
-        nextHost.isReady = true;
-      }
-    }
+    const participantId = this.getParticipantId(client);
+    const participant = participantId
+      ? this.participants.get(participantId)
+      : null;
+    this.clientParticipantIds.delete(client.sessionId);
 
     if (this.lobbyMode && participant) {
-      this.appendSystemMessage(`${participant.label}님이 퇴장했습니다.`);
+      this.scheduleParticipantCleanup(participant.id);
+      this.appendSystemMessage(
+        `${participant.label}님과의 연결이 잠시 끊겼습니다.`
+      );
       this.syncState();
       return;
     }
+
+    if (participantId) {
+      this.removeParticipant(participantId);
+    }
+
     this.syncState();
   }
 
   private registerParticipant(client: Client, message?: MatchJoinMessage) {
-    if (this.participants.has(client.sessionId)) {
+    const participantId = this.normalizeParticipantId(client, message);
+    this.clientParticipantIds.set(client.sessionId, participantId);
+    this.clearParticipantCleanup(participantId);
+
+    const existing = this.participants.get(participantId);
+    if (existing) {
+      existing.label = message?.playerLabel || existing.label;
+      existing.characterId =
+        optionalText(message?.characterId, MAX_SEED_ID_LENGTH) ??
+        existing.characterId;
+      if (!this.hostId) {
+        this.hostId = existing.id;
+        existing.isReady = true;
+      }
+      this.syncState();
       return;
     }
 
     if (!this.hostId) {
-      this.hostId = client.sessionId;
+      this.hostId = participantId;
     }
 
     const participant: RoomParticipant = {
-      id: client.sessionId,
+      id: participantId,
       label: message?.playerLabel || "Guest",
       characterId: optionalText(message?.characterId, MAX_SEED_ID_LENGTH),
       accent:
@@ -535,12 +562,61 @@ export class TypingRaceRoom extends Room {
       finishedAt: null,
       score: 0,
       rank: null,
-      isReady: !this.lobbyMode || this.hostId === client.sessionId,
+      isReady: !this.lobbyMode || this.hostId === participantId,
       joinedAt: Date.now(),
     };
 
-    this.participants.set(client.sessionId, participant);
+    this.participants.set(participantId, participant);
     this.syncState();
+  }
+
+  private normalizeParticipantId(client: Client, message?: MatchJoinMessage) {
+    return (
+      optionalText(message?.playerId, MAX_SEED_ID_LENGTH) ?? client.sessionId
+    );
+  }
+
+  private getParticipantId(client: Client) {
+    return this.clientParticipantIds.get(client.sessionId) ?? client.sessionId;
+  }
+
+  private clearParticipantCleanup(participantId: string) {
+    const timer = this.participantCleanupTimers.get(participantId);
+    if (!timer) return;
+    timer.clear();
+    this.participantCleanupTimers.delete(participantId);
+  }
+
+  private scheduleParticipantCleanup(participantId: string) {
+    this.clearParticipantCleanup(participantId);
+    const timer = this.clock.setTimeout(() => {
+      this.participantCleanupTimers.delete(participantId);
+      this.removeParticipant(participantId);
+      this.syncState();
+    }, LOBBY_RECONNECT_GRACE_MS);
+    this.participantCleanupTimers.set(participantId, timer);
+  }
+
+  private removeParticipant(participantId: string) {
+    const participant = this.participants.get(participantId);
+    if (!participant) return;
+
+    this.participants.delete(participantId);
+    if (this.hostId === participantId) {
+      this.hostId = this.participants.keys().next().value ?? null;
+      const nextHost = this.hostId ? this.participants.get(this.hostId) : null;
+      if (nextHost) {
+        nextHost.isReady = true;
+      }
+    }
+
+    if (this.lobbyMode) {
+      this.appendSystemMessage(`${participant.label}님이 퇴장했습니다.`);
+      if (this.participants.size === 0) {
+        this.status = TYPING_ROOM_STATUS.CLOSED;
+        this.disconnect();
+      }
+    }
   }
 
   private appendChatMessage(message: TypingRoomChatMessage) {
@@ -564,12 +640,13 @@ export class TypingRaceRoom extends Room {
 
   private addChat(client: Client, message: RoomChatMessage) {
     if (this.status !== TYPING_ROOM_STATUS.WAITING) return;
-    const participant = this.participants.get(client.sessionId);
+    const participantId = this.getParticipantId(client);
+    const participant = this.participants.get(participantId);
     if (!participant) return;
     const content = optionalText(message.content, MAX_CHAT_MESSAGE_LENGTH);
     if (!content) return;
     this.appendChatMessage({
-      id: `${Date.now()}-${client.sessionId}`,
+      id: `${Date.now()}-${participantId}`,
       senderId: participant.id,
       senderLabel: participant.label,
       messageType: "user",
@@ -585,7 +662,7 @@ export class TypingRaceRoom extends Room {
 
   private updateSettings(client: Client, message: RoomSettingsUpdateMessage) {
     if (!this.lobbyMode || this.status !== TYPING_ROOM_STATUS.WAITING) return;
-    if (client.sessionId !== this.hostId) {
+    if (this.getParticipantId(client) !== this.hostId) {
       client.send(RACE_EVENTS.ROOM_ERROR, {
         message: "방장만 설정을 변경할 수 있어요.",
       });
@@ -756,14 +833,15 @@ export class TypingRaceRoom extends Room {
 
   private updateReady(client: Client, message: RoomReadyMessage) {
     if (this.status !== TYPING_ROOM_STATUS.WAITING) return;
-    const participant = this.participants.get(client.sessionId);
+    const participantId = this.getParticipantId(client);
+    const participant = this.participants.get(participantId);
     if (!participant) return;
     const nextReady =
-      client.sessionId === this.hostId ? true : Boolean(message.isReady);
+      participantId === this.hostId ? true : Boolean(message.isReady);
     if (participant.isReady === nextReady) return;
     participant.isReady = nextReady;
 
-    if (client.sessionId !== this.hostId) {
+    if (participantId !== this.hostId) {
       this.appendSystemMessage(
         `${participant.label}님이 ${
           nextReady ? "준비완료했습니다." : "준비 취소했습니다."
@@ -776,7 +854,7 @@ export class TypingRaceRoom extends Room {
 
   private startFromLobby(client: Client) {
     if (this.status !== TYPING_ROOM_STATUS.WAITING) return;
-    if (client.sessionId !== this.hostId) {
+    if (this.getParticipantId(client) !== this.hostId) {
       client.send(RACE_EVENTS.ROOM_ERROR, {
         message: "방장만 게임을 시작할 수 있어요.",
       });
@@ -789,10 +867,14 @@ export class TypingRaceRoom extends Room {
       return;
     }
 
+    this.lobbyReturnTimer?.clear();
+    this.lobbyReturnTimer = null;
     this.status = TYPING_ROOM_STATUS.COUNTDOWN;
     this.resetRaceClock(TYPING_RACE_DEFAULTS.roomCountdownSeconds);
     this.broadcast(RACE_EVENTS.RACE_SEED, this.roomSeed);
-    this.lock();
+    if (!this.lobbyMode) {
+      this.lock();
+    }
     this.syncState();
   }
 
@@ -804,7 +886,7 @@ export class TypingRaceRoom extends Room {
       return;
     }
 
-    const participant = this.participants.get(client.sessionId);
+    const participant = this.participants.get(this.getParticipantId(client));
 
     if (!participant) {
       return;
@@ -818,7 +900,7 @@ export class TypingRaceRoom extends Room {
       return;
     }
 
-    const participant = this.participants.get(client.sessionId);
+    const participant = this.participants.get(this.getParticipantId(client));
 
     if (!participant || participant.finishedAt !== null) {
       return;
@@ -852,6 +934,10 @@ export class TypingRaceRoom extends Room {
     if (allFinished && this.participants.size > 0) {
       this.status = TYPING_ROOM_STATUS.FINISHED;
       this.stage = TYPING_RACE_STAGE.FINISHED;
+      this.unlock();
+      if (this.lobbyMode) {
+        this.scheduleLobbyReturn();
+      }
     }
     this.syncState();
   }
@@ -896,6 +982,26 @@ export class TypingRaceRoom extends Room {
       this.status === TYPING_ROOM_STATUS.LIVE &&
       this.stage === TYPING_RACE_STAGE.LIVE
     );
+  }
+
+  private scheduleLobbyReturn() {
+    if (this.lobbyReturnTimer) {
+      return;
+    }
+
+    this.lobbyReturnTimer = this.clock.setTimeout(() => {
+      this.lobbyReturnTimer = null;
+      if (!this.lobbyMode || this.status !== TYPING_ROOM_STATUS.FINISHED) {
+        return;
+      }
+
+      this.status = TYPING_ROOM_STATUS.WAITING;
+      this.unlock();
+      this.resetRaceClock(TYPING_RACE_DEFAULTS.roomCountdownSeconds);
+      this.resetParticipantReadyState();
+      this.appendSystemMessage("경기가 끝나 대기실로 돌아왔습니다.");
+      this.syncState();
+    }, LOBBY_RETURN_DELAY_MS);
   }
 
   private serverElapsedTimeMs() {
@@ -946,7 +1052,9 @@ export class TypingRaceRoom extends Room {
           this.stage = TYPING_RACE_STAGE.LIVE;
           this.status = TYPING_ROOM_STATUS.LIVE;
           this.startedAt = Date.now();
-          this.lock();
+          if (!this.lobbyMode) {
+            this.lock();
+          }
         }
       }
     }
