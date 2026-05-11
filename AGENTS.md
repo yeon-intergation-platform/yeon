@@ -8,7 +8,8 @@ Yeon is a private product monorepo for education/workspace services, mobile expe
 
 ## What is where
 
-- `apps/web/` — Next.js App Router web app; web UI, route handlers, server actions, server orchestration, persistence integration.
+- `apps/web/` — Next.js App Router web app; web UI, route handlers, server actions, and temporary migration/BFF adapters. Do not add new backend ownership here.
+- `apps/backend/` — Spring backend. New backend business logic, persistence ownership, API behavior, auth/session mutations, and domain writes belong here by default.
 - `apps/mobile/` — Expo app; native UI, mobile state, public API consumption, device integrations.
 - `apps/race-server/` — Colyseus realtime typing-race server.
 - `packages/api-contract/` — shared Zod schemas, DTOs, request/response contracts; importable by web and mobile.
@@ -51,6 +52,7 @@ Prefer pointers to copies. Do not paste long policies, command catalogs, or code
 - Do not create, rebase onto, merge into, deploy from, or open PRs against `develop` unless the user explicitly reactivates it.
 - Direct pushes to `main` are forbidden unless explicitly requested and allowed; use branch → commit → push → PR(main) → merge.
 - **작업하고 나면 즉시 main에 배포한다. 이는 언제나 반드시 지킨다.** 코드 또는 저장소 파일이 변경되면 예외 없이 commit → push → PR(main) → merge를 완료한다.
+- **Next.js는 신규 백엔드 역할을 맡지 않는다. 백엔드 역할은 Spring(`apps/backend`)만 담당한다.** `apps/web`의 API route/server code는 기존 호환, 인증 쿠키 브리지, 외부 API 프록시, Spring 호출 BFF처럼 명시된 전환 역할만 허용한다. 신규 DB 스키마, 비즈니스 규칙, 도메인 쓰기 로직, 권한 판정, 장기 상태 원천은 Spring에 구현한다.
 - Multiple agents may be active. Do not overwrite unrelated human/agent changes; stage only owned paths and avoid `git add .`.
 
 ## How agents should work here
