@@ -100,17 +100,6 @@ function DeckLibraryCard({ deck }: { deck: TypingDeckDto }) {
     });
   }
 
-  function handleDeckOpen() {
-    trackEvent("deck_open", {
-      source: "typing_deck_library",
-      deck_id: deck.id,
-      deck_title: deck.title,
-      deck_source: deck.source,
-      deck_visibility: deck.visibility,
-      deck_language: deck.languageTag,
-    });
-  }
-
   return (
     <article className="group relative flex min-h-[230px] flex-col rounded-3xl border border-[#e5e5e5] bg-white p-5 transition-colors hover:border-[#111]">
       <Link
@@ -150,7 +139,6 @@ function DeckLibraryCard({ deck }: { deck: TypingDeckDto }) {
         <div className="flex flex-wrap gap-2">
           <Link
             href={detailHref}
-            onClick={handleDeckOpen}
             className="rounded-xl border border-[#e5e5e5] bg-white px-4 py-2 text-[13px] font-semibold text-[#111] no-underline transition-colors hover:border-[#111]"
             onClick={() =>
               trackEvent("deck_open", {

@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import { Crown, Search, Users, X } from "lucide-react";
-import { trackEvent } from "@/lib/analytics";
 import { TypingServiceHeader } from "./typing-service-header";
 import { trackEvent } from "@/lib/analytics";
 import {
