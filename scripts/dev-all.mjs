@@ -15,6 +15,7 @@ const command = process.platform === "win32" ? "pnpm.cmd" : "pnpm";
 const isWindows = process.platform === "win32";
 const rootDir = process.cwd();
 const backendDir = join(rootDir, "apps", "backend");
+const backendDevRunnerPath = join(rootDir, "scripts", "dev-backend.mjs");
 const useLegacyMode = process.argv.includes("--legacy");
 const reset = "\x1b[0m";
 
@@ -138,9 +139,9 @@ function resolveInitialPort(serviceKey, fallbackPort) {
 
 function resolveBackendRunner(basePort) {
   const gradleRunner = {
-    command: "./gradlew",
-    args: ["bootRun", `--args=--server.port=${basePort}`],
-    cwd: backendDir,
+    command: process.execPath,
+    args: [backendDevRunnerPath, `--port`, String(basePort)],
+    cwd: rootDir,
     env: {
       PORT: String(basePort),
       SERVER_PORT: String(basePort),
@@ -148,9 +149,9 @@ function resolveBackendRunner(basePort) {
     },
   };
   const gradleBat = {
-    command: "gradlew.bat",
-    args: ["bootRun", `--args=--server.port=${basePort}`],
-    cwd: backendDir,
+    command: process.execPath,
+    args: [backendDevRunnerPath, `--port`, String(basePort)],
+    cwd: rootDir,
     env: {
       PORT: String(basePort),
       SERVER_PORT: String(basePort),
@@ -217,9 +218,9 @@ function resolveBackendRunner(basePort) {
     fileExists(join(backendDir, "build.gradle.kts"))
   ) {
     return {
-      command: "gradle",
-      args: ["bootRun", `--args=--server.port=${basePort}`],
-      cwd: backendDir,
+      command: process.execPath,
+      args: [backendDevRunnerPath, `--port`, String(basePort)],
+      cwd: rootDir,
       env: {
         PORT: String(basePort),
         SERVER_PORT: String(basePort),
