@@ -42,7 +42,7 @@ export function TypingServiceHome({
         }
       />
 
-      <main className="flex flex-col items-center px-5 py-8 md:px-10 md:py-10">
+      <main className="flex flex-col items-center px-5 py-5 md:px-10 md:py-5">
         <section className="w-full max-w-[960px]">
           <div className="max-w-[640px]">
             <h1 className="text-[27px] font-black tracking-[-0.04em] text-[#111] md:text-[34px]">
@@ -54,66 +54,62 @@ export function TypingServiceHome({
           </div>
         </section>
 
-        {loaded ? (
-          <section className="mt-8 grid w-full max-w-[980px] overflow-hidden rounded-[28px] border border-[#e5e5e5] bg-white md:grid-cols-[430px_minmax(0,1fr)]">
-            <div className="border-b border-[#e5e5e5] p-5 md:border-b-0 md:border-r md:p-6">
-              <h2 className="text-[16px] font-bold text-[#111]">내 프로필</h2>
-              <div className="mt-5 flex justify-center">
-                <TypingProfileCard
-                  profile={profile}
-                  onNicknameChange={(nickname) => updateProfile({ nickname })}
-                  onCharacterChange={(characterId) =>
-                    updateProfile({ characterId })
-                  }
-                  locale={settings.locale}
-                />
-              </div>
+        <section className="mt-8 grid w-full max-w-[980px] overflow-hidden rounded-[28px] border border-[#e5e5e5] bg-white md:grid-cols-[430px_minmax(0,1fr)]">
+          <div className="border-b border-[#e5e5e5] p-5 md:border-b-0 md:border-r md:p-6">
+            <h2 className="text-[16px] font-bold text-[#111]">내 프로필</h2>
+            <div className="mt-5 flex justify-center">
+              <TypingProfileCard
+                profile={profile}
+                onNicknameChange={(nickname) => updateProfile({ nickname })}
+                onCharacterChange={(characterId) =>
+                  updateProfile({ characterId })
+                }
+                locale={settings.locale}
+              />
             </div>
+          </div>
 
-            <div className="p-5 md:p-6">
-              <h2 className="text-[16px] font-bold text-[#111]">오늘의 시작</h2>
+          <div className="p-5 md:p-6">
+            <h2 className="text-[16px] font-bold text-[#111]">오늘의 시작</h2>
 
-              <div className="mt-5 grid gap-4">
-                <a
-                  href="/typing-service/rooms"
-                  className="block rounded-2xl border border-[#111] bg-[#111] px-5 py-5 text-white no-underline transition-colors hover:bg-[#333]"
-                  onClick={() => handleCtaClick("rooms")}
-                >
-                  <span className="block text-[16px] font-bold">
-                    타자방 입장
-                  </span>
-                  <span className="mt-1 block text-[13px] leading-[1.6] text-white/70">
-                    친구들과 실시간으로 연습하기
-                  </span>
-                </a>
-                <a
-                  href="/typing-service/decks"
-                  className="block rounded-2xl border border-[#e5e5e5] bg-white px-5 py-5 text-[#111] no-underline transition-colors hover:border-[#111]"
-                  onClick={() => handleCtaClick("decks")}
-                >
-                  <span className="block text-[16px] font-bold">
-                    연습 덱 관리
-                  </span>
-                  <span className="mt-1 block text-[13px] leading-[1.6] text-[#777]">
-                    내가 연습할 문장 관리
-                  </span>
-                </a>
-                <a
-                  href="/typing-service/play"
-                  className="block rounded-2xl border border-[#e5e5e5] bg-white px-5 py-5 text-[#111] no-underline transition-colors hover:border-[#111]"
-                  onClick={() => handleCtaClick("play")}
-                >
-                  <span className="block text-[16px] font-bold">
-                    {t("joinRace")}
-                  </span>
-                  <span className="mt-1 block text-[13px] leading-[1.6] text-[#777]">
-                    다른 사용자와 속도 경쟁
-                  </span>
-                </a>
-              </div>
+            <div className="mt-5 grid gap-4">
+              <a
+                href="/typing-service/rooms"
+                className="block rounded-2xl border border-[#111] bg-[#111] px-5 py-5 text-white no-underline transition-colors hover:bg-[#333]"
+                onClick={() => handleCtaClick("rooms")}
+              >
+                <span className="block text-[16px] font-bold">타자방 입장</span>
+                <span className="mt-1 block text-[13px] leading-[1.6] text-white/70">
+                  친구들과 실시간으로 연습하기
+                </span>
+              </a>
+              <a
+                href="/typing-service/decks"
+                className="block rounded-2xl border border-[#e5e5e5] bg-white px-5 py-5 text-[#111] no-underline transition-colors hover:border-[#111]"
+                onClick={() => handleCtaClick("decks")}
+              >
+                <span className="block text-[16px] font-bold">
+                  연습 덱 관리
+                </span>
+                <span className="mt-1 block text-[13px] leading-[1.6] text-[#777]">
+                  내가 연습할 문장 관리
+                </span>
+              </a>
+              <a
+                href="/typing-service/play"
+                className="block rounded-2xl border border-[#e5e5e5] bg-white px-5 py-5 text-[#111] no-underline transition-colors hover:border-[#111]"
+                onClick={() => handleCtaClick("play")}
+              >
+                <span className="block text-[16px] font-bold">
+                  {t("joinRace")}
+                </span>
+                <span className="mt-1 block text-[13px] leading-[1.6] text-[#777]">
+                  다른 사용자와 속도 경쟁
+                </span>
+              </a>
             </div>
-          </section>
-        ) : null}
+          </div>
+        </section>
       </main>
     </div>
   );
