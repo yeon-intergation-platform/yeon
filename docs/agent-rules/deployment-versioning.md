@@ -1,38 +1,94 @@
-# Release Versioning — SemVer + GitHub Releases
+# Release Versioning — Auto SemVer + GitHub Releases
 
 ## 목적
 
-운영 배포와 제품 변경 이력을 GitHub Release로 추적한다. 버전의 source of truth는 root `package.json`의 `version`이다.
+운영 배포와 제품 변경 이력을 GitHub Release로 추적한다. 이 문서는 에이전트/하네스가 릴리즈 번호와 MAJOR/MINOR/PATCH 판정을 판단할 때 참조하는 SSOT다.
 
-## 최소 버전관리 규칙
+## Source of truth
 
-- 현재 초기 버전은 `0.0.0`이다.
-- 버전 형식은 항상 SemVer `MAJOR.MINOR.PATCH`를 사용한다.
-- GitHub Release 태그는 항상 `v<package.json version>` 형식이다. 예: `v0.1.0`.
-- release workflow는 태그와 `package.json` version이 다르면 실패해야 한다.
+- 운영 제품 버전의 SSOT는 성공한 `main` 배포 뒤 생성되는 GitHub Release tag다.
+- 릴리즈 태그는 항상 SemVer `vMAJOR.MINOR.PATCH` 형식이다. 예: `v0.1.0`.
 - 운영 Docker rollout은 디버깅 가능성을 위해 현재 커밋의 `sha-<short-sha>` 이미지 태그를 사용하고, 제품 릴리즈 이력은 GitHub Release로 관리한다.
+- root `package.json`의 `version`은 패키지/도구 기준값일 수 있지만, 자동 운영 릴리즈 번호를 막거나 대체하는 기준으로 쓰지 않는다.
+- 수동 tag 기반 release workflow는 `package.json`과 tag version 불일치를 경고할 수 있으나, 자동 배포 릴리즈의 성공/실패 기준은 GitHub Release tag다.
 
-## bump 기준
+## 자동 릴리즈 하네스
 
-- `MAJOR`: 호환되지 않는 API/데이터/사용자 플로우 변경, 수동 마이그레이션이 필요한 변경.
-- `MINOR`: 하위 호환되는 신규 기능, 새 화면/서비스 흐름, 사용자에게 보이는 주요 기능 추가.
-- `PATCH`: 버그 수정, UI 문구/배치 수정, 배포/CI 수정, 하위 호환되는 작은 개선.
+- `.github/workflows/auto-release.yml`은 `Build, Push, and Deploy Docker Image` workflow가 성공한 뒤 실행된다.
+- 대상은 `main` push 또는 `workflow_dispatch`로 성공한 배포 커밋이다.
+- 하네스는 최신 `vX.Y.Z` tag부터 배포 대상 SHA까지의 commit message와 관련 PR title/body/label을 수집한다.
+- 수집한 텍스트에서 결정적 신호를 찾아 다음 버전을 자동 계산한다.
+- 우선순위는 `MAJOR > MINOR > PATCH`다. 한 범위에 여러 신호가 있으면 가장 큰 변경 수준을 선택한다.
+- 이미 같은 tag가 있으면 PATCH를 하나씩 올려 충돌 없는 tag를 만든다.
 
-`0.x.y` 단계에서도 위 기준을 유지한다. 단, 제품 안정화 전에는 breaking change라도 사용자 영향이 제한적이면 에이전트가 근거를 남기고 `MINOR`로 낮출 수 있다.
+## 자동 판정 기준
 
-## 에이전트 하네스 규칙
+### MAJOR
 
-- 코드/배포 변경을 마무리할 때 release 필요 여부를 판단한다.
-- release가 필요하면 `pnpm version:bump -- <major|minor|patch>`로 root `package.json`만 bump한다.
-- release PR에는 bump 이유와 선택한 MAJOR/MINOR/PATCH 근거를 남긴다.
-- main merge 후 release tag `vX.Y.Z`를 만들고 GitHub Release 생성 여부를 확인한다.
-- GitHub Actions가 성공했더라도 release가 필요한 변경에 release가 없으면 완료로 보고하지 않는다.
+다음 중 하나라도 있으면 MAJOR로 판정한다.
 
-## 명령
+- `BREAKING CHANGE`
+- `semver:major`
+- `release:major`
+- `major release`
+- Conventional Commit breaking marker: `type!:` 또는 `type(scope)!:`
 
-```bash
-pnpm version:bump -- patch
-pnpm version:bump -- minor
-pnpm version:bump -- major
-pnpm release:verify -- v0.1.0
-```
+사용 기준:
+
+- 호환되지 않는 공개 API/계약 변경
+- 기존 데이터나 사용자가 수동 대응해야 하는 마이그레이션
+- 기존 핵심 사용자 플로우를 깨는 변경
+- 인증/권한/저장소 정책처럼 기존 사용 방식이 달라지는 변경
+
+### MINOR
+
+MAJOR 신호가 없고 다음 중 하나라도 있으면 MINOR로 판정한다.
+
+- `semver:minor`
+- `release:minor`
+- `minor release`
+- Conventional Commit feature: `feat:` 또는 `feat(scope):`
+
+사용 기준:
+
+- 하위 호환되는 신규 기능
+- 새 화면/서비스 흐름 추가
+- 사용자에게 보이는 주요 기능 확장
+- 기존 기능을 깨지 않는 새 API/계약 추가
+
+### PATCH
+
+MAJOR/MINOR 신호가 없고 다음 중 하나라도 있으면 PATCH로 판정한다.
+
+- `semver:patch`
+- `release:patch`
+- `patch release`
+- Conventional Commit type: `fix`, `perf`, `refactor`, `ci`, `docs`, `chore`, `test`, `style`, `build`
+- 위 신호가 전혀 없을 때의 기본값
+
+사용 기준:
+
+- 버그 수정
+- UI 문구/배치 수정
+- 배포/CI 수정
+- 하위 호환되는 작은 개선
+- 문서/규칙/운영 메타데이터 정리
+
+## 에이전트 규칙
+
+- 변경 의도에 맞는 Conventional Commit type을 commit/PR title에 남긴다.
+- MAJOR 또는 MINOR가 필요하면 PR title/body/label 중 하나에 결정적 신호를 반드시 남긴다.
+- breaking change를 의도했는데 `BREAKING CHANGE` 또는 `semver:major`가 없으면 완료로 보고하지 않는다.
+- 자동 릴리즈가 성공해야 운영 배포 완료로 보고한다.
+- 자동 릴리즈가 실패한 경우에만 원인을 확인하고, 사용자가 명시했을 때 수동 tag/release를 생성한다.
+- 수동으로 `package.json` version만 올리는 방식은 운영 릴리즈 생성 기준으로 사용하지 않는다.
+
+## 예시
+
+| 변경                            | 권장 신호                                   | 자동 bump |
+| ------------------------------- | ------------------------------------------- | --------- |
+| 커뮤니티 게시글 CRUD 신규 추가  | `feat: 커뮤니티 익명 게시글 CRUD 추가`      | MINOR     |
+| 로그인 없는 댓글 삭제 버그 수정 | `fix: 커뮤니티 익명 댓글 삭제 검증 복구`    | PATCH     |
+| API 응답 필드 제거              | PR body에 `BREAKING CHANGE: ...`            | MAJOR     |
+| Docker 배포 감지 수정           | `ci: 운영 배포 변경 감지 누락 보정`         | PATCH     |
+| 릴리즈 기준 문서화              | `docs: 자동 릴리즈 SemVer 판정 기준 문서화` | PATCH     |

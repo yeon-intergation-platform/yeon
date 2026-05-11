@@ -38,9 +38,6 @@ WORKDIR /app
 
 COPY --from=pruner /app/out/full/ .
 COPY --from=pruner /app/scripts/ ./scripts/
-COPY voice-test-data/test-counseling.mp3 ./voice-test-data/test-counseling.mp3
-COPY "voice-test-data/상담기록_테스트음성_20분.mp3" "./voice-test-data/상담기록_테스트음성_20분.mp3"
-COPY voice-test-data/test-bootcamp-counseling-1hour.mp3 ./voice-test-data/test-bootcamp-counseling-1hour.mp3
 
 ENV NEXT_TELEMETRY_DISABLED=1
 
@@ -50,14 +47,6 @@ ARG NODE_MEMORY=4096
 # 타자 레이스 WebSocket 서버 URL (Next.js 빌드 시점에 번들에 인라인된다)
 ARG NEXT_PUBLIC_RACE_SERVER_URL
 ENV NEXT_PUBLIC_RACE_SERVER_URL=${NEXT_PUBLIC_RACE_SERVER_URL}
-
-RUN mkdir -p apps/web/public/test-data \
-    && rm -f apps/web/public/test-data/test-counseling.mp3 \
-      "apps/web/public/test-data/상담기록_테스트음성_20분.mp3" \
-      apps/web/public/test-data/test-bootcamp-counseling-1hour.mp3 \
-    && cp voice-test-data/test-counseling.mp3 apps/web/public/test-data/test-counseling.mp3 \
-    && cp "voice-test-data/상담기록_테스트음성_20분.mp3" "apps/web/public/test-data/상담기록_테스트음성_20분.mp3" \
-    && cp voice-test-data/test-bootcamp-counseling-1hour.mp3 apps/web/public/test-data/test-bootcamp-counseling-1hour.mp3
 
 RUN NODE_OPTIONS="--max-old-space-size=${NODE_MEMORY}" \
     pnpm --filter @yeon/web build

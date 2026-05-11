@@ -30,6 +30,9 @@ jobs:
 
       - name: Resolve next SemVer tag
         id: version
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TARGET_SHA: ${{ github.event.workflow_run.head_sha }}
         shell: bash
         run: |
           set -eu
@@ -38,17 +41,65 @@ jobs:
 
           latest_tag="$(git tag -l 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | head -n 1 || true)"
           if [ -z "${latest_tag}" ]; then
+            range=""
             major=0
             minor=0
             patch=1
           elif [[ "${latest_tag}" =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+            range="${latest_tag}..${TARGET_SHA}"
             major="${BASH_REMATCH[1]}"
             minor="${BASH_REMATCH[2]}"
-            patch="$((BASH_REMATCH[3] + 1))"
+            patch="${BASH_REMATCH[3]}"
           else
             echo "SemVer 태그를 해석할 수 없습니다: ${latest_tag}" >&2
             exit 1
           fi
+
+          bump="patch"
+          release_context=""
+          if [ -n "${range}" ]; then
+            release_context="$(git log --format='%s%n%b' "${range}" || true)"
+          else
+            release_context="$(git log --format='%s%n%b' --max-count=50 "${TARGET_SHA}" || true)"
+          fi
+
+          pr_numbers="$(printf '%s\n' "${release_context}" | grep -Eo '#[0-9]+' | tr -d '#' | sort -u || true)"
+          if [ -n "${pr_numbers}" ]; then
+            while IFS= read -r pr_number; do
+              [ -z "${pr_number}" ] && continue
+              pr_payload="$(gh pr view "${pr_number}" --json title,body,labels 2>/dev/null || true)"
+              [ -z "${pr_payload}" ] && continue
+              pr_context="$(jq -r '.title, (.body // ""), (.labels[]?.name // "")' <<< "${pr_payload}")"
+              printf -v release_context '%s\n%s' "${release_context}" "${pr_context}"
+            done <<< "${pr_numbers}"
+          fi
+
+          if printf '%s\n' "${release_context}" | grep -Eiq '(^|[^a-zA-Z0-9_-])(BREAKING CHANGE|semver:major|release:major|major release)([^a-zA-Z0-9_-]|$)|^[a-z]+(\([^)]+\))?!:'; then
+            bump="major"
+          elif printf '%s\n' "${release_context}" | grep -Eiq '(^|[^a-zA-Z0-9_-])(semver:minor|release:minor|minor release)([^a-zA-Z0-9_-]|$)|^feat(\([^)]+\))?:'; then
+            bump="minor"
+          elif printf '%s\n' "${release_context}" | grep -Eiq '(^|[^a-zA-Z0-9_-])(semver:patch|release:patch|patch release)([^a-zA-Z0-9_-]|$)|^(fix|perf|refactor|ci|docs|chore|test|style|build)(\([^)]+\))?:'; then
+            bump="patch"
+          fi
+
+          case "${bump}" in
+            major)
+              major="$((major + 1))"
+              minor=0
+              patch=0
+              ;;
+            minor)
+              minor="$((minor + 1))"
+              patch=0
+              ;;
+            patch)
+              patch="$((patch + 1))"
+              ;;
+            *)
+              echo "지원하지 않는 SemVer bump입니다: ${bump}" >&2
+              exit 1
+              ;;
+          esac
 
           next_tag="v${major}.${minor}.${patch}"
           while git rev-parse -q --verify "refs/tags/${next_tag}" >/dev/null; do
@@ -56,7 +107,9 @@ jobs:
             next_tag="v${major}.${minor}.${patch}"
           done
 
+          echo "bump=${bump}" >> "$GITHUB_OUTPUT"
           echo "tag=${next_tag}" >> "$GITHUB_OUTPUT"
+          echo "SemVer bump: ${bump}"
           echo "다음 릴리즈 태그: ${next_tag}"
 
       - name: Create tag and GitHub Release

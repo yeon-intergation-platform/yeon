@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react";
 import { Volume2, VolumeX } from "lucide-react";
 
-const TYPING_ROOM_BGM_SRC = "/audio/typing-room-bgm.mp3";
-const TYPING_ROOM_BGM_ATTRIBUTION =
-  "Monkeys Spinning Monkeys Kevin MacLeod (incompetech.com), CC BY 3.0";
+import { PUBLIC_MP3_ASSET_URLS } from "@/lib/public-mp3-assets";
+
+const TYPING_ROOM_BGM_SRC = PUBLIC_MP3_ASSET_URLS.typingRoomBgm;
 
 let typingRoomBgmAudio: HTMLAudioElement | null = null;
 
@@ -74,26 +74,20 @@ export function TypingBgmButton({
     <div className="flex items-center gap-2">
       <button
         type="button"
-        aria-label={`${label}: ${TYPING_ROOM_BGM_ATTRIBUTION}`}
+        aria-label={label}
         aria-pressed={playing}
-        title={`BGM: ${TYPING_ROOM_BGM_ATTRIBUTION}`}
+        title={label}
         onClick={toggleBgm}
         className="inline-flex items-center gap-2 rounded-full border border-[#e5e5e5] bg-white px-3 py-1.5 text-[12px] font-semibold text-[#555] transition-colors hover:border-[#111] hover:text-[#111]"
       >
         <Icon size={14} />
         <span>{playing ? "BGM ON" : "BGM"}</span>
-        <span className="hidden text-[#999] sm:inline">Kevin MacLeod</span>
+        {showCredit ? (
+          <span className="hidden text-[11px] font-medium text-[#777] md:inline">
+            Kevin MacLeod
+          </span>
+        ) : null}
       </button>
-      {showCredit ? (
-        <a
-          href="/audio/typing-room-bgm.LICENSE.md"
-          target="_blank"
-          rel="noreferrer"
-          className="hidden text-[11px] font-medium text-[#aaa] underline-offset-2 hover:text-[#555] hover:underline lg:inline"
-        >
-          credit
-        </a>
-      ) : null}
       {blocked && (
         <span className="hidden text-[11px] text-[#c2410c] md:inline">
           다시 눌러 재생해 주세요

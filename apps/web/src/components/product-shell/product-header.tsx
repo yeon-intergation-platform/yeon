@@ -116,7 +116,7 @@ export function CommonProductHeader({
           <div className="hidden items-center gap-2 xl:flex">{rightExtras}</div>
         ) : null}
         <div className="hidden shrink-0 md:block">
-          <TypingBgmButton showCredit={false} />
+          <TypingBgmButton />
         </div>
         {settingsControl ?? <ProductHeaderDefaultSettingsButton />}
         {profileControl ?? <ProductHeaderProfileButton />}
