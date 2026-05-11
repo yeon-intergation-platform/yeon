@@ -169,11 +169,12 @@ https://dev.yeon.world/counseling-service/api/v1/integrations/<provider>/auth/ca
 
 ## 릴리즈 / 최소 버전관리 규칙
 
-- 제품 버전의 SSOT는 root `package.json`의 `version`이다. 초기값은 `0.0.0`이며 SemVer `MAJOR.MINOR.PATCH`만 사용한다.
-- GitHub Release tag는 반드시 `v<package.json version>` 형식이다.
-- 변경을 마무리할 때 에이전트는 release 필요 여부와 bump 수준(MAJOR/MINOR/PATCH)을 판단하고 근거를 남긴다.
-- bump 기준과 명령은 `docs/agent-rules/deployment-versioning.md`를 따른다.
-- 운영 배포 완료를 보고할 때 release가 필요한 변경이면 GitHub Release 생성 여부를 함께 확인한다.
+- 운영 제품 버전의 SSOT는 성공한 `main` 배포 뒤 생성되는 GitHub Release tag `vMAJOR.MINOR.PATCH`이다.
+- 자동 릴리즈 하네스는 배포 커밋 범위의 commit/PR title/body/label을 읽어 MAJOR/MINOR/PATCH를 결정한다.
+- 세부 자동 판정 기준과 예외 처리는 `docs/agent-rules/deployment-versioning.md`를 따른다.
+- breaking/minor 의도가 있으면 PR title/body/label에 `semver:major`, `semver:minor`, `BREAKING CHANGE`, `feat:` 같은 결정적 신호를 남긴다.
+- root `package.json`의 `version`은 자동 운영 릴리즈 번호를 막거나 대체하는 기준으로 쓰지 않는다.
+- 운영 배포 완료를 보고할 때 해당 배포 커밋의 GitHub Release 생성 여부를 함께 확인한다.
 
 ## Claude CLI / OMC skill 참고
 
