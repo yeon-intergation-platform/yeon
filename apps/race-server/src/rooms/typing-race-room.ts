@@ -25,6 +25,7 @@ import {
   type MatchJoinMessage,
   type RoomChatMessage,
   type RoomSettingsUpdateMessage,
+  type RoomStartMessage,
   type RaceFinishMessage,
   type RaceProgressMessage,
   type RaceSeedMessage,
@@ -413,6 +414,7 @@ export class TypingRaceRoom extends Room {
 
   onCreate(options?: TypingRoomCreateMessage) {
     this.lobbyMode = options?.roomMode === "lobby";
+    this.autoDispose = !this.lobbyMode;
     this.settings = normalizeSettings(options);
     this.roomSeed = normalizeRaceSeed(
       options?.raceSeed,
@@ -448,8 +450,8 @@ export class TypingRaceRoom extends Room {
       this.addChat(client, message as RoomChatMessage);
     });
 
-    this.onMessage(RACE_EVENTS.ROOM_START, (client) => {
-      this.startFromLobby(client);
+    this.onMessage(RACE_EVENTS.ROOM_START, (client, message) => {
+      this.startFromLobby(client, message as RoomStartMessage | undefined);
     });
 
     this.onMessage(RACE_EVENTS.RACE_PROGRESS, (client, message) => {
@@ -852,7 +854,7 @@ export class TypingRaceRoom extends Room {
     this.syncState();
   }
 
-  private startFromLobby(client: Client) {
+  private startFromLobby(client: Client, message?: RoomStartMessage) {
     if (this.status !== TYPING_ROOM_STATUS.WAITING) return;
     if (this.getParticipantId(client) !== this.hostId) {
       client.send(RACE_EVENTS.ROOM_ERROR, {
@@ -869,6 +871,13 @@ export class TypingRaceRoom extends Room {
 
     this.lobbyReturnTimer?.clear();
     this.lobbyReturnTimer = null;
+    if (message && "raceSeed" in message) {
+      this.roomSeed = normalizeRaceSeed(
+        message.raceSeed ?? undefined,
+        this.settings.language
+      );
+      this.settings = this.applyRoomSeedMetadata(this.settings, this.roomSeed);
+    }
     this.status = TYPING_ROOM_STATUS.COUNTDOWN;
     this.resetRaceClock(TYPING_RACE_DEFAULTS.roomCountdownSeconds);
     this.broadcast(RACE_EVENTS.RACE_SEED, this.roomSeed);

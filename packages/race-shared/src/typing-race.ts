@@ -249,6 +249,10 @@ export type RoomSettingsUpdateMessage = {
   raceSeed?: TypingRaceSeed | null;
 };
 
+export type RoomStartMessage = {
+  raceSeed?: TypingRaceSeed | null;
+};
+
 export type RoomChatMessage = {
   content: string;
 };
