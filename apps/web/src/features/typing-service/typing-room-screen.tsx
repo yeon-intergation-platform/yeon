@@ -26,9 +26,7 @@ import { useCharacterFrameOverrides } from "./use-character-frame-overrides";
 import { usePlayerIdentity } from "./use-player-identity";
 import { useRaceRoom } from "./use-race-room";
 import { useTypingProfile } from "./use-typing-profile";
-import { TypingBgmButton } from "./typing-bgm-button";
 import { TypingRaceMultiplayerScreen } from "./typing-race-multiplayer-screen";
-import { TypingSettingsButton } from "./typing-settings-button";
 import { TypingServiceHeader } from "./typing-service-header";
 import {
   TYPING_ROOM_DIFFICULTY_LABELS,
@@ -569,16 +567,7 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
 
   return (
     <div className="min-h-screen bg-white text-[#111]">
-      <TypingServiceHeader
-        active="rooms"
-        title="타자방"
-        controls={
-          <>
-            <TypingBgmButton />
-            <TypingSettingsButton />
-          </>
-        }
-      />
+      <TypingServiceHeader active="rooms" title="타자방" />
       {copyError && (
         <p className="mx-4 mt-2 rounded-md border border-red-100 bg-red-50 p-2 text-[12px] text-red-600 md:mx-8">
           {copyError}

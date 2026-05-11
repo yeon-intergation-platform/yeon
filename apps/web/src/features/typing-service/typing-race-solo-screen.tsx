@@ -27,8 +27,6 @@ import {
   useTypingSettings,
   type TypingDeckPassageOption,
 } from "./use-typing-settings";
-import { TypingBgmButton } from "./typing-bgm-button";
-import { TypingSettingsButton } from "./typing-settings-button";
 import { TypingServiceHeader } from "./typing-service-header";
 import { analyticsEvents, trackEvent } from "@/lib/analytics";
 import {
@@ -463,13 +461,9 @@ export function TypingRaceSoloScreen({
         active="race"
         title="YEON 레이스"
         controls={
-          <>
-            <span className="font-mono text-[12px] text-[#aaa]">
-              {activeDeckTitle} · {passage.title}
-            </span>
-            <TypingBgmButton />
-            <TypingSettingsButton />
-          </>
+          <span className="font-mono text-[12px] text-[#aaa]">
+            {activeDeckTitle} · {passage.title}
+          </span>
         }
       />
 

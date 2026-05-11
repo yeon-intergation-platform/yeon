@@ -32,7 +32,7 @@ function getCommunityJsonLd() {
     "@type": "CollectionPage",
     name: `${SITE_BRAND_NAME} 커뮤니티`,
     url: new URL("/community", CANONICAL_SITE_URL).toString(),
-    description: "실시간 채팅과 글/댓글이 있는 커뮤니티 공간",
+    description: "실시간 채팅과 커뮤니티 글/댓글 피드",
     mainEntity: {
       "@type": "CreativeWork",
       name: "커뮤니티 피드",

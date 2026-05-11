@@ -19,7 +19,9 @@ function getTypingRoomBgmAudio() {
   return typingRoomBgmAudio;
 }
 
-export function TypingBgmButton() {
+export function TypingBgmButton({
+  showCredit = true,
+}: { showCredit?: boolean } = {}) {
   const [playing, setPlaying] = useState(false);
   const [blocked, setBlocked] = useState(false);
 
@@ -80,6 +82,11 @@ export function TypingBgmButton() {
       >
         <Icon size={14} />
         <span>{playing ? "BGM ON" : "BGM"}</span>
+        {showCredit ? (
+          <span className="hidden text-[11px] font-medium text-[#777] md:inline">
+            Kevin MacLeod
+          </span>
+        ) : null}
       </button>
       {blocked && (
         <span className="hidden text-[11px] text-[#c2410c] md:inline">

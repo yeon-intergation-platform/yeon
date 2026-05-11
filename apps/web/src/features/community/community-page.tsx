@@ -1,13 +1,27 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 
-import { ProductHeader } from "@/components/product-shell/product-header";
-import { PLATFORM_HOME_HREF } from "@/lib/platform-services";
+import { CommonProductHeader } from "@/components/product-shell/product-header";
 import { type ChatServiceFeedPost } from "./chat-service-api";
 import { CommunityChatWidget } from "./components/community-chat-widget";
 import { useCommunityFeed } from "./hooks/use-community-feed";
+
+const COMMUNITY_CATEGORIES = [
+  "전체",
+  "잡담",
+  "타자친구 모집",
+  "카드친구 모집",
+  "관리자에게 아무말/조언",
+] as const;
+
+type CommunityCategory = (typeof COMMUNITY_CATEGORIES)[number];
+type WritableCommunityCategory = Exclude<CommunityCategory, "전체">;
+
+const WRITABLE_CATEGORIES = COMMUNITY_CATEGORIES.filter(
+  (category): category is WritableCommunityCategory => category !== "전체"
+);
 
 function formatKoreanDateTime(isoDate: string) {
   return new Intl.DateTimeFormat("ko-KR", {
@@ -17,6 +31,45 @@ function formatKoreanDateTime(isoDate: string) {
     minute: "2-digit",
     hour12: false,
   }).format(new Date(isoDate));
+}
+
+function formatRelativeTime(isoDate: string) {
+  const diffMs = Date.now() - new Date(isoDate).getTime();
+  const diffMinutes = Math.max(0, Math.floor(diffMs / 60000));
+
+  if (diffMinutes < 1) return "방금 전";
+  if (diffMinutes < 60) return `${diffMinutes}분 전`;
+
+  const diffHours = Math.floor(diffMinutes / 60);
+  if (diffHours < 24) return `${diffHours}시간 전`;
+
+  return formatKoreanDateTime(isoDate);
+}
+
+function serializeCommunityPost(input: {
+  category: WritableCommunityCategory;
+  title: string;
+  content: string;
+}) {
+  return `[${input.category}] ${input.title.trim()}\n${input.content.trim()}`;
+}
+
+export function parseCommunityPost(post: Pick<ChatServiceFeedPost, "body">) {
+  const normalizedBody = post.body.trim();
+  const match = normalizedBody.match(/^\[(.+?)\]\s*(.+?)(?:\n([\s\S]*))?$/);
+  const matchedCategory = match?.[1];
+  const category = WRITABLE_CATEGORIES.includes(
+    matchedCategory as WritableCommunityCategory
+  )
+    ? (matchedCategory as WritableCommunityCategory)
+    : "잡담";
+  const title = match?.[2]?.trim() || normalizedBody.split("\n")[0] || "글";
+  const content =
+    match?.[3]?.trim() ||
+    normalizedBody.split("\n").slice(1).join("\n").trim() ||
+    normalizedBody;
+
+  return { category, title, content };
 }
 
 function FeedGuestIdentityForm(props: {
@@ -29,34 +82,28 @@ function FeedGuestIdentityForm(props: {
     props;
 
   return (
-    <div className="rounded-2xl border border-[#e8e8e8] bg-[#fafafa] p-3">
-      <div className="flex flex-col gap-2 md:flex-row">
-        <label className="flex-1 text-[12px] font-semibold text-[#555]">
-          닉네임
-          <input
-            value={guestNickname}
-            onChange={(event) => onChangeNickname(event.target.value)}
-            placeholder="익명 닉네임"
-            maxLength={40}
-            className="mt-1 w-full rounded-xl border border-[#ddd] bg-white px-3 py-2 text-[13px] font-normal text-[#111] outline-none focus:border-[#111]"
-          />
-        </label>
-        <label className="flex-1 text-[12px] font-semibold text-[#555]">
-          비밀번호
-          <input
-            value={guestPassword}
-            onChange={(event) => onChangePassword(event.target.value)}
-            placeholder="수정/삭제용 비밀번호"
-            type="password"
-            maxLength={128}
-            className="mt-1 w-full rounded-xl border border-[#ddd] bg-white px-3 py-2 text-[13px] font-normal text-[#111] outline-none focus:border-[#111]"
-          />
-        </label>
-      </div>
-      <p className="mt-2 text-[11px] leading-[1.5] text-[#777]">
-        로그인하지 않아도 닉네임과 비밀번호를 입력하면 글 작성/수정/삭제, 댓글
-        작성/삭제가 가능합니다. 댓글 수정은 제공하지 않습니다.
-      </p>
+    <div className="grid gap-2 md:grid-cols-2">
+      <label className="text-[12px] font-semibold text-[#555]">
+        닉네임
+        <input
+          value={guestNickname}
+          onChange={(event) => onChangeNickname(event.target.value)}
+          placeholder="닉네임 입력"
+          maxLength={40}
+          className="mt-1 h-9 w-full rounded-xl border border-[#ddd] bg-white px-3 text-[13px] font-normal text-[#111] outline-none focus:border-[#111]"
+        />
+      </label>
+      <label className="text-[12px] font-semibold text-[#555]">
+        비밀번호
+        <input
+          value={guestPassword}
+          onChange={(event) => onChangePassword(event.target.value)}
+          placeholder="수정/삭제용 비밀번호"
+          type="password"
+          maxLength={128}
+          className="mt-1 h-9 w-full rounded-xl border border-[#ddd] bg-white px-3 text-[13px] font-normal text-[#111] outline-none focus:border-[#111]"
+        />
+      </label>
     </div>
   );
 }
@@ -93,7 +140,7 @@ function FeedPostActions(props: {
       >
         {isRepliesExpanded
           ? "댓글 닫기"
-          : `${post.replyCount}개 댓글 보기${isRepliesLoading ? " (불러오는 중)" : ""}`}
+          : `댓글 ${post.replyCount}${isRepliesLoading ? " · 불러오는 중" : ""}`}
       </button>
       <button
         type="button"
@@ -179,7 +226,7 @@ function FeedPostReplyForm(props: {
         void onSubmit();
       }}
     >
-      <div className="flex items-start gap-2">
+      <div className="grid gap-2 md:grid-cols-[minmax(0,1fr)_64px]">
         <label htmlFor={`community-reply-${postId}`} className="sr-only">
           댓글 입력
         </label>
@@ -190,7 +237,7 @@ function FeedPostReplyForm(props: {
           rows={2}
           maxLength={400}
           placeholder="댓글을 입력하세요"
-          className="min-h-[72px] w-full resize-y rounded-xl border border-[#ddd] px-3 py-2 text-[13px] outline-none focus:border-[#111]"
+          className="min-h-[66px] w-full resize-y rounded-xl border border-[#ddd] px-3 py-2 text-[13px] outline-none focus:border-[#111]"
         />
         <button
           type="submit"
@@ -201,6 +248,14 @@ function FeedPostReplyForm(props: {
         </button>
       </div>
     </form>
+  );
+}
+
+function CategoryBadge({ category }: { category: WritableCommunityCategory }) {
+  return (
+    <span className="rounded-full border border-[#e5e5e5] bg-white px-2.5 py-1 text-[11px] font-semibold text-[#555]">
+      {category}
+    </span>
   );
 }
 
@@ -244,6 +299,7 @@ function FeedPostItem(props: {
     onDeletePost,
     onDeleteReply,
   } = props;
+  const parsedPost = parseCommunityPost(post);
   const [isEditing, setIsEditing] = useState(false);
   const [editDraft, setEditDraft] = useState(post.body);
 
@@ -254,7 +310,7 @@ function FeedPostItem(props: {
   }, [isEditing, post.body]);
 
   return (
-    <article className="rounded-2xl border border-[#e7e7e7] bg-[#fafafa] p-4">
+    <article className="rounded-2xl border border-[#e7e7e7] bg-white p-4 transition-colors hover:border-[#cfcfcf]">
       {isEditing ? (
         <FeedPostEditForm
           draft={editDraft}
@@ -268,11 +324,21 @@ function FeedPostItem(props: {
         />
       ) : (
         <>
-          <p className="whitespace-pre-wrap text-[14px] leading-[1.7] text-[#111]">
-            {post.body}
+          <div className="flex items-start justify-between gap-3">
+            <Link
+              href={`/community/posts/${post.id}`}
+              className="min-w-0 text-[16px] font-black tracking-[-0.02em] text-[#111] no-underline hover:underline"
+            >
+              {parsedPost.title}
+            </Link>
+            <CategoryBadge category={parsedPost.category} />
+          </div>
+          <p className="mt-2 line-clamp-2 whitespace-pre-wrap text-[13px] leading-[1.6] text-[#555]">
+            {parsedPost.content}
           </p>
-          <p className="mt-2 text-[11px] leading-[1.4] text-[#777]">
-            {post.author.nickname} · {formatKoreanDateTime(post.createdAt)}
+          <p className="mt-3 text-[11px] leading-[1.4] text-[#777]">
+            {post.author.nickname} · {formatRelativeTime(post.createdAt)} · 댓글{" "}
+            {post.replyCount}
           </p>
         </>
       )}
@@ -300,28 +366,26 @@ function FeedPostItem(props: {
         ) : null}
 
         {expanded ? (
-          <div className="mt-3 space-y-3">
+          <div className="mt-3 space-y-3 border-t border-[#f0f0f0] pt-3">
             {isRepliesLoading ? (
               <p className="text-[12px] text-[#777]">댓글을 불러오는 중...</p>
             ) : null}
 
-            {!replies.length ? (
-              <p className="text-[12px] text-[#777]">아직 댓글이 없습니다.</p>
-            ) : (
+            {replies.length ? (
               <div className="space-y-2">
                 {replies.map((reply) => (
                   <div
                     key={reply.id}
-                    className="rounded-xl border border-[#ededed] bg-white p-3"
+                    className="rounded-xl border border-[#ededed] bg-[#fafafa] p-3"
                   >
-                    <p className="whitespace-pre-wrap text-[13px] leading-[1.6] text-[#111]">
+                    <p className="text-[12px] font-semibold text-[#555]">
+                      {reply.author.nickname}
+                    </p>
+                    <p className="mt-1 whitespace-pre-wrap text-[13px] leading-[1.6] text-[#111]">
                       {reply.body}
                     </p>
                     <div className="mt-1 flex flex-wrap items-center justify-between gap-2 text-[11px] text-[#777]">
-                      <p>
-                        {reply.author.nickname} ·{" "}
-                        {formatKoreanDateTime(reply.createdAt)}
-                      </p>
+                      <p>{formatRelativeTime(reply.createdAt)}</p>
                       <button
                         type="button"
                         onClick={() => {
@@ -341,7 +405,7 @@ function FeedPostItem(props: {
                   </div>
                 ))}
               </div>
-            )}
+            ) : null}
 
             <FeedPostReplyForm
               postId={post.id}
@@ -354,6 +418,119 @@ function FeedPostItem(props: {
         ) : null}
       </div>
     </article>
+  );
+}
+
+function WritePostPanel(props: {
+  category: WritableCommunityCategory;
+  title: string;
+  content: string;
+  isCreatingPost: boolean;
+  onChangeCategory: (value: WritableCommunityCategory) => void;
+  onChangeTitle: (value: string) => void;
+  onChangeContent: (value: string) => void;
+  onCancel: () => void;
+  onSubmit: () => void;
+}) {
+  const {
+    category,
+    title,
+    content,
+    isCreatingPost,
+    onChangeCategory,
+    onChangeTitle,
+    onChangeContent,
+    onCancel,
+    onSubmit,
+  } = props;
+
+  return (
+    <form
+      onSubmit={(event) => {
+        event.preventDefault();
+        onSubmit();
+      }}
+      className="rounded-2xl border border-[#e7e7e7] bg-[#fafafa] p-4"
+    >
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="text-[16px] font-black tracking-[-0.02em] text-[#111]">
+          글쓰기
+        </h2>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="rounded-xl border border-[#ddd] bg-white px-3 py-2 text-[12px] font-semibold text-[#333]"
+          >
+            취소
+          </button>
+          <button
+            type="submit"
+            disabled={isCreatingPost || !title.trim() || !content.trim()}
+            className="rounded-xl bg-[#111] px-3 py-2 text-[12px] font-semibold text-white disabled:bg-[#d0d0d0]"
+          >
+            {isCreatingPost ? "등록 중" : "등록"}
+          </button>
+        </div>
+      </div>
+
+      <div className="mt-4 grid gap-3">
+        <label className="text-[12px] font-semibold text-[#555]">
+          카테고리
+          <select
+            value={category}
+            onChange={(event) =>
+              onChangeCategory(event.target.value as WritableCommunityCategory)
+            }
+            className="mt-1 h-9 w-full rounded-xl border border-[#ddd] bg-white px-3 text-[13px] font-normal text-[#111] outline-none focus:border-[#111]"
+          >
+            {WRITABLE_CATEGORIES.map((item) => (
+              <option key={item} value={item}>
+                {item}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="text-[12px] font-semibold text-[#555]">
+          제목
+          <input
+            value={title}
+            onChange={(event) => onChangeTitle(event.target.value)}
+            placeholder="제목을 입력하세요"
+            maxLength={80}
+            className="mt-1 h-9 w-full rounded-xl border border-[#ddd] bg-white px-3 text-[13px] font-normal text-[#111] outline-none focus:border-[#111]"
+          />
+        </label>
+        <label className="text-[12px] font-semibold text-[#555]">
+          내용
+          <textarea
+            value={content}
+            onChange={(event) => onChangeContent(event.target.value)}
+            placeholder="내용을 입력하세요"
+            rows={4}
+            maxLength={280}
+            className="mt-1 w-full resize-y rounded-xl border border-[#ddd] bg-white px-3 py-2 text-[13px] font-normal text-[#111] outline-none focus:border-[#111]"
+          />
+        </label>
+      </div>
+    </form>
+  );
+}
+
+function SidebarPanel({
+  title,
+  children,
+}: {
+  title: string;
+  children: ReactNode;
+}) {
+  return (
+    <section className="rounded-2xl border border-[#e7e7e7] bg-white p-4">
+      <h2 className="text-[15px] font-black tracking-[-0.02em] text-[#111]">
+        {title}
+      </h2>
+      <div className="mt-3">{children}</div>
+    </section>
   );
 }
 
@@ -388,45 +565,94 @@ export function CommunityPage() {
     deleteReply,
   } = useCommunityFeed();
 
-  const [postBody, setPostBody] = useState("");
+  const [selectedCategory, setSelectedCategory] =
+    useState<CommunityCategory>("전체");
+  const [isWriteOpen, setIsWriteOpen] = useState(false);
+  const [postCategory, setPostCategory] =
+    useState<WritableCommunityCategory>("잡담");
+  const [postTitle, setPostTitle] = useState("");
+  const [postContent, setPostContent] = useState("");
 
   useEffect(() => {
     void loadPosts();
   }, [loadPosts]);
 
+  const filteredPosts = useMemo(() => {
+    if (selectedCategory === "전체") return posts;
+
+    return posts.filter(
+      (post) => parseCommunityPost(post).category === selectedCategory
+    );
+  }, [posts, selectedCategory]);
+
+  const popularPosts = useMemo(() => {
+    return [...posts].sort((a, b) => b.replyCount - a.replyCount).slice(0, 4);
+  }, [posts]);
+
+  const recentReplies = useMemo(() => {
+    return Object.values(repliesByPost)
+      .flat()
+      .sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      )
+      .slice(0, 3);
+  }, [repliesByPost]);
+
+  const handleCreatePost = () => {
+    const body = serializeCommunityPost({
+      category: postCategory,
+      title: postTitle,
+      content: postContent,
+    });
+
+    void createPost(body).then(() => {
+      setPostTitle("");
+      setPostContent("");
+      setIsWriteOpen(false);
+    });
+  };
+
   return (
     <div className="min-h-screen bg-white text-[#111]">
-      <ProductHeader>
-        <Link
-          href={PLATFORM_HOME_HREF}
-          className="text-[14px] font-semibold text-[#111] no-underline hover:opacity-70"
-        >
-          YEON 커뮤니티
-        </Link>
-      </ProductHeader>
+      <CommonProductHeader activeService="community" />
 
-      <main className="mx-auto flex max-w-[1300px] flex-col gap-6 px-6 py-10 md:px-10">
-        <section>
-          <p className="text-[12px] font-semibold text-[#666]">커뮤니티</p>
-          <h1 className="mt-2 text-[30px] font-black tracking-[-0.04em] text-[#111] md:text-[40px]">
-            커뮤니티 공간
-          </h1>
-          <p className="mt-2 max-w-[720px] text-[14px] leading-[1.7] text-[#666]">
-            실시간 채팅과 글/댓글이 함께 보이는 공간입니다. 글과 댓글은 로그인
-            없이도 닉네임과 비밀번호로 바로 참여할 수 있습니다.
-          </p>
+      <main className="mx-auto flex max-w-[1280px] flex-col gap-4 px-4 py-4 md:px-8 md:py-5">
+        <section
+          className="mx-auto w-full max-w-[680px]"
+          aria-label="실시간 채팅"
+        >
+          <CommunityChatWidget variant="feed" />
         </section>
 
-        <section className="grid gap-6 lg:grid-cols-[minmax(0,_1fr)_420px]">
-          <div className="order-2 min-h-0 space-y-4 rounded-2xl border border-[#e7e7e7] bg-[#fff] p-4">
-            <div className="space-y-3">
-              <div className="flex flex-col gap-1">
-                <h2 className="text-[20px] font-semibold text-[#111]">
-                  커뮤니티 글
-                </h2>
-                <p className="text-[12px] text-[#777]">
-                  글 CRUD와 댓글 작성/삭제를 닉네임+비밀번호로 처리합니다.
-                </p>
+        <section className="grid gap-4 lg:grid-cols-[minmax(0,_1fr)_280px]">
+          <div className="min-h-0 space-y-3 rounded-2xl border border-[#e7e7e7] bg-[#fff] p-4">
+            <div className="flex flex-col gap-3 border-b border-[#f0f0f0] pb-3">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex flex-wrap gap-2">
+                  {COMMUNITY_CATEGORIES.map((category) => (
+                    <button
+                      key={category}
+                      type="button"
+                      onClick={() => setSelectedCategory(category)}
+                      className={[
+                        "rounded-full border px-3 py-1.5 text-[12px] font-semibold transition-colors",
+                        selectedCategory === category
+                          ? "border-[#111] bg-[#111] text-white"
+                          : "border-[#e5e5e5] bg-white text-[#555] hover:border-[#aaa]",
+                      ].join(" ")}
+                    >
+                      {category}
+                    </button>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsWriteOpen((value) => !value)}
+                  className="rounded-xl bg-[#111] px-4 py-2 text-[13px] font-semibold text-white transition-colors hover:bg-[#333]"
+                >
+                  글쓰기
+                </button>
               </div>
 
               <FeedGuestIdentityForm
@@ -435,110 +661,118 @@ export function CommunityPage() {
                 onChangeNickname={setGuestNickname}
                 onChangePassword={setGuestPassword}
               />
-
-              <form
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  const trimmed = postBody.trim();
-                  if (!trimmed) {
-                    return;
-                  }
-
-                  void createPost(trimmed).then(() => {
-                    setPostBody("");
-                  });
-                }}
-                className="space-y-2"
-              >
-                <label htmlFor="community-post-input" className="sr-only">
-                  새 글 입력
-                </label>
-                <textarea
-                  id="community-post-input"
-                  value={postBody}
-                  onChange={(event) => setPostBody(event.target.value)}
-                  rows={4}
-                  maxLength={400}
-                  placeholder="커뮤니티에 공유할 글을 남겨보세요"
-                  className="w-full rounded-2xl border border-[#ddd] px-3 py-3 text-[14px] outline-none focus:border-[#111]"
-                />
-                <div className="flex items-center justify-between gap-3">
-                  <p className="text-[11px] text-[#777]">
-                    {postBody.length}/400
-                  </p>
-                  <button
-                    type="submit"
-                    disabled={isCreatingPost || !postBody.trim()}
-                    className="rounded-xl bg-[#111] px-4 py-2 text-[13px] font-semibold text-white disabled:bg-[#d0d0d0]"
-                  >
-                    {isCreatingPost ? "작성 중" : "글 작성"}
-                  </button>
-                </div>
-              </form>
-
-              {postsError ? (
-                <p className="text-[12px] text-red-600">{postsError}</p>
-              ) : null}
             </div>
 
+            {isWriteOpen ? (
+              <WritePostPanel
+                category={postCategory}
+                title={postTitle}
+                content={postContent}
+                isCreatingPost={isCreatingPost}
+                onChangeCategory={setPostCategory}
+                onChangeTitle={setPostTitle}
+                onChangeContent={setPostContent}
+                onCancel={() => setIsWriteOpen(false)}
+                onSubmit={handleCreatePost}
+              />
+            ) : null}
+
+            {postsError ? (
+              <p className="text-[12px] text-red-600">{postsError}</p>
+            ) : null}
+
+            {isPostsLoading ? (
+              <p className="text-[12px] text-[#777]">
+                글 목록을 불러오는 중...
+              </p>
+            ) : null}
+
             <div className="space-y-3">
-              <h3 className="text-[16px] font-semibold text-[#111]">최신 글</h3>
-
-              {isPostsLoading ? (
-                <p className="text-[12px] text-[#777]">
-                  글 목록을 불러오는 중...
-                </p>
-              ) : null}
-
-              {!posts.length && !isPostsLoading ? (
-                <p className="text-[13px] text-[#777]">
-                  아직 글이 없습니다. 첫 글을 남겨보세요.
-                </p>
-              ) : null}
-
-              <div className="space-y-3">
-                {posts.map((post) => (
-                  <FeedPostItem
-                    key={post.id}
-                    post={post}
-                    expanded={!!expandedReplies[post.id]}
-                    replies={repliesByPost[post.id] ?? []}
-                    isRepliesLoading={!!isRepliesLoading[post.id]}
-                    replyError={replyErrors[post.id] ?? null}
-                    replyDraft={replyDrafts[post.id] ?? ""}
-                    isSubmittingReply={!!isSubmittingReply[post.id]}
-                    postError={postErrors[post.id] ?? null}
-                    isUpdatingPost={!!isUpdatingPost[post.id]}
-                    isDeletingPost={!!isDeletingPost[post.id]}
-                    isDeletingReply={isDeletingReply}
-                    replyDeleteErrors={replyDeleteErrors}
-                    onToggleReplies={() => {
-                      toggleReplies(post.id);
-                    }}
-                    onChangeReplyDraft={(postId, value) => {
-                      setReplyDraft(postId, value);
-                    }}
-                    onSubmitReply={async (postId) => {
-                      await submitReply(postId);
-                    }}
-                    onUpdatePost={async (postId, body) => {
-                      await updatePost(postId, body);
-                    }}
-                    onDeletePost={async (postId) => {
-                      await deletePost(postId);
-                    }}
-                    onDeleteReply={async (postId, replyId) => {
-                      await deleteReply(postId, replyId);
-                    }}
-                  />
-                ))}
-              </div>
+              {filteredPosts.map((post) => (
+                <FeedPostItem
+                  key={post.id}
+                  post={post}
+                  expanded={!!expandedReplies[post.id]}
+                  replies={repliesByPost[post.id] ?? []}
+                  isRepliesLoading={!!isRepliesLoading[post.id]}
+                  replyError={replyErrors[post.id] ?? null}
+                  replyDraft={replyDrafts[post.id] ?? ""}
+                  isSubmittingReply={!!isSubmittingReply[post.id]}
+                  postError={postErrors[post.id] ?? null}
+                  isUpdatingPost={!!isUpdatingPost[post.id]}
+                  isDeletingPost={!!isDeletingPost[post.id]}
+                  isDeletingReply={isDeletingReply}
+                  replyDeleteErrors={replyDeleteErrors}
+                  onToggleReplies={() => {
+                    toggleReplies(post.id);
+                  }}
+                  onChangeReplyDraft={(postId, value) => {
+                    setReplyDraft(postId, value);
+                  }}
+                  onSubmitReply={async (postId) => {
+                    await submitReply(postId);
+                  }}
+                  onUpdatePost={async (postId, body) => {
+                    await updatePost(postId, body);
+                  }}
+                  onDeletePost={async (postId) => {
+                    await deletePost(postId);
+                  }}
+                  onDeleteReply={async (postId, replyId) => {
+                    await deleteReply(postId, replyId);
+                  }}
+                />
+              ))}
             </div>
           </div>
 
-          <section className="order-1" aria-label="커뮤니티 실시간 채팅">
-            <CommunityChatWidget variant="full" className="min-h-[560px]" />
-          </section>
+          <aside className="space-y-4">
+            <SidebarPanel title="인기 글">
+              {popularPosts.length ? (
+                <ol className="space-y-2 text-[12px] text-[#555]">
+                  {popularPosts.map((post, index) => {
+                    const parsedPost = parseCommunityPost(post);
+                    return (
+                      <li
+                        key={post.id}
+                        className="grid grid-cols-[18px_minmax(0,1fr)_auto] gap-2"
+                      >
+                        <span className="font-mono text-[#999]">
+                          {index + 1}
+                        </span>
+                        <span className="truncate font-semibold text-[#333]">
+                          {parsedPost.title}
+                        </span>
+                        <span className="text-[#999]">
+                          댓글 {post.replyCount}
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ol>
+              ) : null}
+            </SidebarPanel>
+
+            <SidebarPanel title="최근 댓글">
+              {recentReplies.length ? (
+                <ul className="space-y-2 text-[12px] text-[#555]">
+                  {recentReplies.map((reply) => (
+                    <li
+                      key={reply.id}
+                      className="grid grid-cols-[minmax(0,1fr)_auto] gap-2"
+                    >
+                      <span className="truncate font-semibold text-[#333]">
+                        {reply.body}
+                      </span>
+                      <span className="text-[#999]">
+                        {formatRelativeTime(reply.createdAt)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+            </SidebarPanel>
+          </aside>
         </section>
       </main>
     </div>
