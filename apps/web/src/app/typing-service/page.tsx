@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import Script from "next/script";
 import { SITE_BRAND_NAME } from "@/lib/site-brand";
 import {
@@ -79,17 +78,7 @@ export default async function TypingServicePage() {
           __html: JSON.stringify(getTypingServiceJsonLd()),
         }}
       />
-      {admin && (
-        <div className="flex justify-end px-4 pt-2">
-          <Link
-            href="/admin/typing-characters"
-            className="text-[11px] text-[#bbb] hover:text-[#555]"
-          >
-            캐릭터 프레임 설정 →
-          </Link>
-        </div>
-      )}
-      <TypingServiceHome />
+      <TypingServiceHome showCharacterAdminLink={!!admin} />
     </>
   );
 }

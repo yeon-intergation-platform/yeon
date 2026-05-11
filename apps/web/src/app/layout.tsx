@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Script from "next/script";
 import type { ReactNode } from "react";
 
+import { CommunityPresenceTracker } from "@/features/community/components/community-presence-tracker";
 import {
   getDefaultSiteRobots,
   getSeoMetadataBase,
@@ -73,6 +74,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
             </Script>
           </>
         ) : null}
+        <CommunityPresenceTracker />
         {children}
       </body>
     </html>
