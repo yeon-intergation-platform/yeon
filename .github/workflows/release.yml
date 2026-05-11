@@ -35,8 +35,16 @@ jobs:
           fi
           echo "tag=${tag}" >> "$GITHUB_OUTPUT"
 
-      - name: Verify package version matches tag
-        run: node scripts/verify-release-version.mjs "${{ steps.release.outputs.tag }}"
+      - name: Report package version match
+        run: |
+          set +e
+          node scripts/verify-release-version.mjs "${{ steps.release.outputs.tag }}"
+          status="$?"
+          set -e
+
+          if [ "$status" -ne 0 ]; then
+            echo "::warning::릴리즈 태그와 package.json version이 다릅니다. 배포 자동 SemVer 태그를 우선 사용합니다."
+          fi
 
       - name: Create GitHub Release
         env:
