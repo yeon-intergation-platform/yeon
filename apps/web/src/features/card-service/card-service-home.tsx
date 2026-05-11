@@ -118,13 +118,6 @@ export function CardServiceHome() {
                 게스트 덱 {guestDeckCount}개 계정에 추가
               </button>
             ) : null}
-            <button
-              type="button"
-              onClick={() => openCreate("header")}
-              className="rounded-xl bg-[#111] px-4 py-2 text-[13px] font-semibold text-white transition-colors hover:bg-[#333]"
-            >
-              + 새 덱
-            </button>
           </>
         }
         settingsControl={
@@ -146,15 +139,26 @@ export function CardServiceHome() {
         </section>
 
         <section className="mt-10">
-          <h2 className="text-[22px] font-semibold text-[#111]">
-            {isAuthenticated ? "내 덱" : "로그인 없이 만드는 덱"}
-          </h2>
-          <p className="mt-2 text-[13px] leading-[1.7] text-[#666]">
-            덱을 열어 카드를 추가하고 바로 복습을 시작할 수 있습니다.
-            {!isAuthenticated
-              ? " 지금 만든 덱은 이 기기에만 저장되며, 로그인하면 계정으로 옮겨 계속 학습할 수 있어요."
-              : " 만든 덱과 카드를 열어 바로 복습 흐름으로 이어갈 수 있어요."}
-          </p>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h2 className="text-[22px] font-semibold text-[#111]">
+                {isAuthenticated ? "내 덱" : "로그인 없이 만드는 덱"}
+              </h2>
+              <p className="mt-2 text-[13px] leading-[1.7] text-[#666]">
+                덱을 열어 카드를 추가하고 바로 복습을 시작할 수 있습니다.
+                {!isAuthenticated
+                  ? " 지금 만든 덱은 이 기기에만 저장되며, 로그인하면 계정으로 옮겨 계속 학습할 수 있어요."
+                  : " 만든 덱과 카드를 열어 바로 복습 흐름으로 이어갈 수 있어요."}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => openCreate("deck_section")}
+              className="inline-flex h-11 shrink-0 items-center justify-center rounded-xl bg-[#111] px-5 text-[13px] font-semibold text-white transition-colors hover:bg-[#333]"
+            >
+              + 새 덱
+            </button>
+          </div>
           <div className="mt-6">
             {state.kind === "loading" ? (
               <p className="text-[14px] text-[#888]">불러오는 중...</p>
