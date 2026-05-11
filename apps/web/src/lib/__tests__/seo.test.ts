@@ -23,7 +23,7 @@ describe("seo", () => {
 
   it("canonical url은 항상 yeon.world를 기준으로 만든다", () => {
     expect(buildCanonicalUrl("/typing-service")).toBe(
-      "https://yeon.world/typing-service",
+      "https://yeon.world/typing-service"
     );
   });
 
@@ -55,6 +55,11 @@ describe("seo", () => {
         url: "https://yeon.world/typing-service",
         changeFrequency: "daily",
         priority: 0.9,
+      },
+      {
+        url: "https://yeon.world/card-service",
+        changeFrequency: "weekly",
+        priority: 0.8,
       },
       {
         url: "https://yeon.world/privacy",

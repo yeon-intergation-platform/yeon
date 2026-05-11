@@ -6,9 +6,8 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import Link from "next/link";
 import { ChevronDown, X } from "lucide-react";
 
-import { analyticsEvents, trackEvent } from "@/lib/analytics";
 import type { DevLoginOption } from "@/lib/auth/dev-login-options";
-import { trackEvent } from "@/lib/analytics";
+import { analyticsEvents, trackEvent } from "@/lib/analytics";
 
 type LoginModalProps = {
   open: boolean;

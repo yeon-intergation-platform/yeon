@@ -20,7 +20,6 @@ import {
 } from "@yeon/typing-race-engine";
 import { findCharacter, toEnginePlayerCharacter } from "./characters";
 import { useTypingProfile } from "./use-typing-profile";
-import { trackEvent } from "@/lib/analytics";
 import {
   createTranslator,
   useSelectedTypingDeck,
@@ -31,12 +30,12 @@ import {
 import { TypingBgmButton } from "./typing-bgm-button";
 import { TypingSettingsButton } from "./typing-settings-button";
 import { TypingServiceHeader } from "./typing-service-header";
+import { analyticsEvents, trackEvent } from "@/lib/analytics";
 import {
   calculateAccuracy,
   calculateTypingSpeedMetrics,
   getProgress,
 } from "./race-metrics";
-import { analyticsEvents, trackEvent } from "@/lib/analytics";
 
 const BENCHMARK_LANES = [
   {

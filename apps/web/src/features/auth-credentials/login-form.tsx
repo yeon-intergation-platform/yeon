@@ -8,7 +8,7 @@ import {
   credentialLogin,
   getCredentialErrorMessage,
 } from "@/lib/credential-client";
-import { trackEvent } from "@/lib/analytics";
+import { analyticsEvents, trackEvent } from "@/lib/analytics";
 
 type LoginViewState =
   | { kind: "idle" }
