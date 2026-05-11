@@ -167,6 +167,14 @@ https://dev.yeon.world/counseling-service/api/v1/integrations/<provider>/auth/ca
 - arbitrary value는 기존 scale이나 토큰으로 표현할 수 없고 반복 가능성이 있을 때만 쓴다.
 - 전역 CSS에는 화면 전용 스타일이나 임시 수정용 스타일을 넣지 않는다.
 
+## 릴리즈 / 최소 버전관리 규칙
+
+- 제품 버전의 SSOT는 root `package.json`의 `version`이다. 초기값은 `0.0.0`이며 SemVer `MAJOR.MINOR.PATCH`만 사용한다.
+- GitHub Release tag는 반드시 `v<package.json version>` 형식이다.
+- 변경을 마무리할 때 에이전트는 release 필요 여부와 bump 수준(MAJOR/MINOR/PATCH)을 판단하고 근거를 남긴다.
+- bump 기준과 명령은 `docs/agent-rules/deployment-versioning.md`를 따른다.
+- 운영 배포 완료를 보고할 때 release가 필요한 변경이면 GitHub Release 생성 여부를 함께 확인한다.
+
 ## Claude CLI / OMC skill 참고
 
 이 저장소는 OMC(oh-my-claudecode) 레이어를 사용한다. Claude 측에서만 의미 있는 skill 기호:

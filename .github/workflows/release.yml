@@ -1,0 +1,55 @@
+name: GitHub Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to publish, for example v0.1.0"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  create_release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag || github.ref }}
+
+      - name: Resolve release tag
+        id: release
+        run: |
+          set -eu
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            tag="${{ github.event.inputs.tag }}"
+          else
+            tag="${GITHUB_REF_NAME}"
+          fi
+          echo "tag=${tag}" >> "$GITHUB_OUTPUT"
+
+      - name: Verify package version matches tag
+        run: node scripts/verify-release-version.mjs "${{ steps.release.outputs.tag }}"
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG_NAME: ${{ steps.release.outputs.tag }}
+        run: |
+          set -eu
+          if gh release view "${TAG_NAME}" >/dev/null 2>&1; then
+            echo "GitHub Release already exists: ${TAG_NAME}"
+            exit 0
+          fi
+
+          gh release create "${TAG_NAME}" \
+            --verify-tag \
+            --title "YEON ${TAG_NAME}" \
+            --generate-notes
