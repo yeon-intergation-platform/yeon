@@ -1,9 +1,13 @@
 "use client";
 
-import { useState } from "react";
 import type { RecordItem } from "@/features/counseling-record-workspace/lib/types";
 import type { MemberWithStatus } from "../_hooks";
-import { exportMemberReportDocx } from "@/features/counseling-record-workspace/lib/export-docx";
+import { useMemberPanelModel } from "@/features/counseling-record-workspace/hooks/use-member-panel-model";
+import {
+  formatDaysSince,
+  formatRecordDate,
+  formatRecordDuration,
+} from "@/features/counseling-record-workspace/lib/member-panel-format";
 
 export interface MemberPanelProps {
   member: MemberWithStatus;
@@ -12,77 +16,22 @@ export interface MemberPanelProps {
   onOpenNewRecordEntry: () => void;
 }
 
-function fmtDaysSince(days: number | null): string {
-  if (days === null) return "상담 기록 없음";
-  if (days === 0) return "오늘 상담";
-  if (days === 1) return "어제 상담";
-  return `${days}일 전 상담`;
-}
-
-function fmtDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("ko-KR", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  });
-}
-
-function fmtDuration(ms: number): string {
-  if (!ms) return "";
-  const s = Math.round(ms / 1000);
-  const m = Math.floor(s / 60);
-  const sec = s % 60;
-  return `${m}:${String(sec).padStart(2, "0")}`;
-}
-
 export function MemberPanel({
   member,
   records,
   onSelectRecord,
   onOpenNewRecordEntry,
 }: MemberPanelProps) {
-  const [exporting, setExporting] = useState(false);
-
-  async function handleExport() {
-    setExporting(true);
-    try {
-      await exportMemberReportDocx(member, records);
-    } finally {
-      setExporting(false);
-    }
-  }
-
-  const memberRecords = records
-    .filter((r) => r.memberId === member.id)
-    .sort(
-      (a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    );
-  const latestRecord = memberRecords[0] ?? null;
-  const hasProcessingRecord = memberRecords.some(
-    (record) => record.status === "processing"
-  );
-  const statusText = hasProcessingRecord
-    ? "상담 분석 진행중"
-    : member.indicator === "recent"
-      ? "관리 중"
-      : member.indicator === "warning"
-        ? "주의 필요"
-        : "상담 필요";
-
-  const indicatorColor =
-    member.indicator === "recent"
-      ? "bg-green"
-      : member.indicator === "warning"
-        ? "bg-amber"
-        : "bg-surface-4 border border-border";
-
-  const indicatorTextColor =
-    member.indicator === "recent"
-      ? "text-green"
-      : member.indicator === "warning"
-        ? "text-amber"
-        : "text-text-dim";
+  const {
+    exporting,
+    memberRecords,
+    latestRecord,
+    hasProcessingRecord,
+    statusText,
+    indicatorColor,
+    indicatorTextColor,
+    handleExport,
+  } = useMemberPanelModel({ member, records });
 
   return (
     <div className="scrollbar-subtle flex-1 overflow-y-auto p-6 max-w-2xl mx-auto w-full">
@@ -104,7 +53,7 @@ export function MemberPanel({
             <span>
               {hasProcessingRecord
                 ? "상담 분석 진행중"
-                : fmtDaysSince(member.daysSinceLast)}
+                : formatDaysSince(member.daysSinceLast)}
             </span>
           </div>
         </div>
@@ -175,7 +124,7 @@ export function MemberPanel({
             마지막 상담
           </div>
           <div className={`text-sm font-semibold mt-1 ${indicatorTextColor}`}>
-            {latestRecord ? fmtDate(latestRecord.createdAt) : "─"}
+            {latestRecord ? formatRecordDate(latestRecord.createdAt) : "─"}
           </div>
         </div>
 
@@ -239,11 +188,11 @@ export function MemberPanel({
                     </span>
                   </div>
                   <div className="flex items-center gap-2 text-xs text-text-dim">
-                    <span>{fmtDate(rec.createdAt)}</span>
+                    <span>{formatRecordDate(rec.createdAt)}</span>
                     {rec.durationMs > 0 && (
                       <>
                         <span>·</span>
-                        <span>{fmtDuration(rec.durationMs)}</span>
+                        <span>{formatRecordDuration(rec.durationMs)}</span>
                       </>
                     )}
                     {rec.type && (
