@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useMutation, useQuery } from "@tanstack/react-query";
 import { LoaderCircle } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import type {
@@ -9,30 +8,16 @@ import type {
   PublicCheckMethod,
   PublicCheckSessionPublic,
   StudentAssignmentStatus,
-  SubmitPublicCheckResult,
-  VerifyPublicCheckIdentityResult,
 } from "@yeon/api-contract";
-
-type PublicCheckFeedback = {
-  message: string;
-  matchedMemberName: string | null;
-  tone: "error" | "success";
-};
+import {
+  type PublicCheckFeedback,
+  usePublicCheckSession,
+  useSubmitPublicCheck,
+  useVerifyPublicCheck,
+} from "./_hooks/use-public-check";
 
 function resolveEntryMode(value: string | null): PublicCheckEntry {
   return value === "location" ? "location" : "qr";
-}
-
-function buildFeedback(params: {
-  message: string;
-  matchedMemberName: string | null;
-  tone: "error" | "success";
-}): PublicCheckFeedback {
-  return {
-    message: params.message,
-    matchedMemberName: params.matchedMemberName,
-    tone: params.tone,
-  };
 }
 
 function getQrSubmitLabel(checkMode: PublicCheckSessionPublic["checkMode"]) {
@@ -90,25 +75,9 @@ export default function PublicCheckPage({
     void params.then((value) => setTokenState(value.token));
   }, [params]);
 
-  const sessionQuery = useQuery({
-    queryKey: ["public-check-session", tokenState, entryMode],
-    enabled: !!tokenState,
-    queryFn: async () => {
-      const response = await fetch(
-        `/api/v1/public-check-sessions/${tokenState}?entry=${entryMode}`,
-      );
-      const payload = (await response.json().catch(() => null)) as
-        | ({ message?: string } & Partial<PublicCheckSessionPublic>)
-        | null;
-
-      if (!response.ok) {
-        throw new Error(
-          payload?.message || "체크인 세션을 불러오지 못했습니다.",
-        );
-      }
-
-      return payload as PublicCheckSessionPublic;
-    },
+  const sessionQuery = usePublicCheckSession({
+    token: tokenState,
+    entryMode,
   });
 
   const session = sessionQuery.data;
@@ -130,162 +99,24 @@ export default function PublicCheckPage({
     !session.requiresPhoneLast4 &&
     supportsCurrentEntry;
 
-  async function resolveLocationIfNeeded(currentMethod: PublicCheckMethod) {
-    if (currentMethod !== "location") {
-      return { latitude: null, longitude: null };
-    }
-
-    return new Promise<{ latitude: number; longitude: number }>(
-      (resolve, reject) => {
-        if (!navigator.geolocation) {
-          reject(new Error("이 브라우저는 위치 정보를 지원하지 않습니다."));
-          return;
-        }
-
-        navigator.geolocation.getCurrentPosition(
-          (position) =>
-            resolve({
-              latitude: position.coords.latitude,
-              longitude: position.coords.longitude,
-            }),
-          () =>
-            reject(
-              new Error("위치 권한을 허용해야 위치 기반 체크인이 가능합니다."),
-            ),
-          { enableHighAccuracy: true, timeout: 10000 },
-        );
-      },
-    );
-  }
-
-  const verifyMutation = useMutation({
-    mutationFn: async () => {
-      if (!tokenState) {
-        throw new Error("체크인 세션을 찾지 못했습니다.");
-      }
-
-      const response = await fetch(
-        `/api/v1/public-check-sessions/${tokenState}/verify`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name: name.trim(),
-            phoneLast4,
-          }),
-        },
-      );
-      const payload = (await response.json().catch(() => null)) as
-        | ({ message?: string } & Partial<VerifyPublicCheckIdentityResult>)
-        | null;
-
-      if (!response.ok) {
-        throw new Error(payload?.message || "본인 확인을 처리하지 못했습니다.");
-      }
-
-      return payload as VerifyPublicCheckIdentityResult;
-    },
-    onMutate: () => {
-      setFeedback(null);
-    },
-    onSuccess: async (payload) => {
-      if (payload.verificationStatus !== "matched") {
-        setFeedback(
-          buildFeedback({
-            message: payload.message,
-            matchedMemberName: payload.matchedMemberName,
-            tone: "error",
-          }),
-        );
-        return;
-      }
-
-      setFeedback(
-        buildFeedback({
-          message: payload.message,
-          matchedMemberName: payload.matchedMemberName,
-          tone: "success",
-        }),
-      );
-      await sessionQuery.refetch();
-    },
-    onError: (error) => {
-      setFeedback(
-        buildFeedback({
-          message:
-            error instanceof Error
-              ? error.message
-              : "본인 확인을 처리하지 못했습니다.",
-          matchedMemberName: null,
-          tone: "error",
-        }),
-      );
-    },
+  const verifyMutation = useVerifyPublicCheck({
+    token: tokenState,
+    name,
+    phoneLast4,
+    onFeedback: setFeedback,
+    onVerified: () => sessionQuery.refetch(),
   });
 
-  const submitMutation = useMutation({
-    mutationFn: async () => {
-      if (!tokenState) {
-        throw new Error("체크인 세션을 찾지 못했습니다.");
-      }
-
-      const location = await resolveLocationIfNeeded(method);
-      const response = await fetch(
-        `/api/v1/public-check-sessions/${tokenState}/submit`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            method,
-            name: needsIdentityVerification ? name.trim() || null : null,
-            phoneLast4: needsIdentityVerification ? phoneLast4 || null : null,
-            assignmentStatus:
-              session?.checkMode === "attendance_only"
-                ? undefined
-                : assignmentStatus,
-            assignmentLink:
-              session?.checkMode === "attendance_only"
-                ? undefined
-                : assignmentLink.trim() || null,
-            latitude: location.latitude,
-            longitude: location.longitude,
-          }),
-        },
-      );
-      const payload = (await response.json().catch(() => null)) as
-        | ({ message?: string } & Partial<SubmitPublicCheckResult>)
-        | null;
-
-      if (!response.ok) {
-        throw new Error(payload?.message || "체크인을 처리하지 못했습니다.");
-      }
-
-      return payload as SubmitPublicCheckResult;
-    },
-    onMutate: () => {
-      setFeedback(null);
-    },
-    onSuccess: (payload) => {
-      setFeedback(
-        buildFeedback({
-          message: payload.message,
-          matchedMemberName: payload.matchedMemberName,
-          tone: payload.verificationStatus === "matched" ? "success" : "error",
-        }),
-      );
-    },
-    onError: (error) => {
-      setFeedback(
-        buildFeedback({
-          message:
-            error instanceof Error
-              ? error.message
-              : "체크인을 처리하지 못했습니다.",
-          matchedMemberName: null,
-          tone: "error",
-        }),
-      );
-    },
+  const submitMutation = useSubmitPublicCheck({
+    token: tokenState,
+    method,
+    name,
+    phoneLast4,
+    needsIdentityVerification,
+    assignmentStatus,
+    assignmentLink,
+    checkMode: session?.checkMode,
+    onFeedback: setFeedback,
   });
 
   useEffect(() => {
@@ -368,7 +199,7 @@ export default function PublicCheckPage({
                   value={phoneLast4}
                   onChange={(event) =>
                     setPhoneLast4(
-                      event.target.value.replace(/\D/g, "").slice(0, 4),
+                      event.target.value.replace(/\D/g, "").slice(0, 4)
                     )
                   }
                 />
@@ -382,7 +213,7 @@ export default function PublicCheckPage({
                   value={assignmentStatus}
                   onChange={(event) =>
                     setAssignmentStatus(
-                      event.target.value as StudentAssignmentStatus,
+                      event.target.value as StudentAssignmentStatus
                     )
                   }
                 >
