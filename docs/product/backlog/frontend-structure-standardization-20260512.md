@@ -1654,3 +1654,29 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 67차 — public check page route bridge 분리
+
+### 작업내용
+
+- `app/check/[token]/page.tsx`에 남아 있는 public check 화면 상태/검증/제출 orchestration을 feature component로 이동한다.
+- app page는 `params`와 `searchParams`를 해석해 `token`, `entryMode`를 넘기는 route bridge 역할만 담당하게 한다.
+- 기존 세션 조회, 본인 확인, 제출, 자동 QR 출석 완료, feedback UI 동작은 유지한다.
+
+### 논의 필요
+
+- public check 전용 query/mutation hook은 이미 존재하지만 route page가 여전히 화면 상태와 mutation wiring을 직접 소유한다. app boundary를 route 조립으로 제한하려면 feature component가 실제 화면 상태를 소유해야 한다.
+
+### 선택지
+
+1. `PublicCheckPageContent` feature component를 추가하고 app page를 route bridge로 축소한다.
+2. verify/submit 버튼만 작은 component로 나눈다.
+3. description/helper 함수만 lib로 옮긴다.
+
+### 추천
+
+- 선택지 1. query/mutation wiring과 UI 상태의 소유권을 feature layer로 옮겨 app 내부 feature logic을 줄인다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.
