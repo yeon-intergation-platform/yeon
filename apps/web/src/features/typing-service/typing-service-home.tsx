@@ -11,6 +11,51 @@ type TypingServiceHomeProps = {
   showCharacterAdminLink?: boolean;
 };
 
+type StartCardProps = {
+  href: string;
+  label: string;
+  description: string;
+  tone: "primary" | "secondary";
+  onClick: () => void;
+};
+
+function StartCard({
+  href,
+  label,
+  description,
+  tone,
+  onClick,
+}: StartCardProps) {
+  const isPrimary = tone === "primary";
+
+  return (
+    <YeonButton
+      as="a"
+      href={href}
+      variant={isPrimary ? "primary" : "secondary"}
+      className={
+        isPrimary
+          ? "group relative flex min-h-[96px] items-start overflow-hidden rounded-2xl px-5 py-5 text-left shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-[#111] hover:shadow-[0_16px_34px_rgba(17,17,17,0.18)] focus-visible:-translate-y-0.5 focus-visible:shadow-[0_16px_34px_rgba(17,17,17,0.18)]"
+          : "group relative flex min-h-[96px] items-start overflow-hidden rounded-2xl px-5 py-5 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-[#111] hover:bg-[#fafafa] hover:shadow-[0_14px_30px_rgba(17,17,17,0.08)] focus-visible:-translate-y-0.5 focus-visible:shadow-[0_14px_30px_rgba(17,17,17,0.08)]"
+      }
+      onClick={onClick}
+    >
+      <span className="block text-[17px] font-extrabold tracking-[-0.03em]">
+        {label}
+      </span>
+      <span
+        className={
+          isPrimary
+            ? "pointer-events-none absolute inset-x-5 bottom-4 line-clamp-2 translate-y-1 text-[13px] font-medium leading-[1.45] text-white/72 opacity-0 transition-all duration-200 ease-out group-hover:translate-y-0 group-hover:opacity-100 group-focus-visible:translate-y-0 group-focus-visible:opacity-100"
+            : "pointer-events-none absolute inset-x-5 bottom-4 line-clamp-2 translate-y-1 text-[13px] font-medium leading-[1.45] text-[#666] opacity-0 transition-all duration-200 ease-out group-hover:translate-y-0 group-hover:opacity-100 group-focus-visible:translate-y-0 group-focus-visible:opacity-100"
+        }
+      >
+        {description}
+      </span>
+    </YeonButton>
+  );
+}
+
 export function TypingServiceHome({
   showCharacterAdminLink = false,
 }: TypingServiceHomeProps) {
@@ -74,46 +119,27 @@ export function TypingServiceHome({
             <h2 className="text-[16px] font-bold text-[#111]">오늘의 시작</h2>
 
             <div className="mt-5 grid gap-4">
-              <YeonButton
-                as="a"
+              <StartCard
                 href="/typing-service/rooms"
-                variant="primary"
-                className="block rounded-2xl px-5 py-5 text-left"
+                label="타자방 입장"
+                description="친구들과 실시간으로 함께 연습합니다."
+                tone="primary"
                 onClick={() => handleCtaClick("rooms")}
-              >
-                <span className="block text-[16px] font-bold">타자방 입장</span>
-                <span className="mt-1 block text-[13px] leading-[1.6] text-white/70">
-                  친구들과 실시간으로 연습하기
-                </span>
-              </YeonButton>
-              <YeonButton
-                as="a"
+              />
+              <StartCard
                 href="/typing-service/decks"
-                variant="secondary"
-                className="block rounded-2xl px-5 py-5 text-left"
+                label="연습 덱 관리"
+                description="연습할 문장을 직접 추가하고 관리합니다."
+                tone="secondary"
                 onClick={() => handleCtaClick("decks")}
-              >
-                <span className="block text-[16px] font-bold">
-                  연습 덱 관리
-                </span>
-                <span className="mt-1 block text-[13px] leading-[1.6] text-[#666]">
-                  내가 연습할 문장 관리
-                </span>
-              </YeonButton>
-              <YeonButton
-                as="a"
+              />
+              <StartCard
                 href="/typing-service/play"
-                variant="secondary"
-                className="block rounded-2xl px-5 py-5 text-left"
+                label="레이스 입장"
+                description="다른 사용자와 타자 속도를 겨룹니다."
+                tone="secondary"
                 onClick={() => handleCtaClick("play")}
-              >
-                <span className="block text-[16px] font-bold">
-                  {t("joinRace")}
-                </span>
-                <span className="mt-1 block text-[13px] leading-[1.6] text-[#666]">
-                  다른 사용자와 속도 경쟁
-                </span>
-              </YeonButton>
+              />
             </div>
           </div>
         </YeonSurface>
