@@ -17,6 +17,7 @@ import type {
 } from "../_lib/types";
 import { getProcessingChecklistStep } from "../_lib/processing-progress";
 import { fmtRelativeDate, fmtDurationMs } from "../_lib/utils";
+import { counselingWorkspaceQueryKeys } from "./counseling-workspace-query-keys";
 import { resolveApiHrefForCurrentPath } from "@/lib/app-route-paths";
 import { normalizeCounselingTranscriptSegments } from "@/lib/counseling-transcript-display";
 
@@ -64,13 +65,13 @@ function listItemToRecordItem(item: CounselingRecordListItem): RecordItem {
 }
 
 function detailToTranscript(
-  detail: CounselingRecordDetail,
+  detail: CounselingRecordDetail
 ): TranscriptSegment[] {
   return normalizeCounselingTranscriptSegments(detail.transcriptSegments);
 }
 
 function detailToRecordPatch(
-  detail: CounselingRecordDetail,
+  detail: CounselingRecordDetail
 ): Partial<RecordItem> {
   const rawAnalysis = detail.analysisResult;
   const parsedAnalysis =
@@ -147,10 +148,10 @@ export function useRecords(selectedRecordId: string | null) {
 
   // 서버 목록 쿼리
   const { data: serverData, isPending } = useQuery({
-    queryKey: ["counseling-records"],
+    queryKey: counselingWorkspaceQueryKeys.records(),
     queryFn: async () => {
       const res = await fetch(
-        resolveApiHrefForCurrentPath("/api/v1/counseling-records"),
+        resolveApiHrefForCurrentPath("/api/v1/counseling-records")
       );
       if (!res.ok) throw new Error("목록 조회 실패");
       return res.json() as Promise<{ records: CounselingRecordListItem[] }>;
@@ -180,7 +181,7 @@ export function useRecords(selectedRecordId: string | null) {
     const preserved = tempRecords.filter(
       (t) =>
         !serverIds.has(t.id) &&
-        (t.id.startsWith("temp-") || t.status === "processing"),
+        (t.id.startsWith("temp-") || t.status === "processing")
     );
 
     return [...preserved, ...serverMerged];
@@ -189,7 +190,7 @@ export function useRecords(selectedRecordId: string | null) {
   // selected: 외부에서 받은 selectedRecordId로 파생
   const selected = useMemo(
     () => records.find((r) => r.id === selectedRecordId) ?? null,
-    [records, selectedRecordId],
+    [records, selectedRecordId]
   );
 
   // records를 ref로 유지 — ensureDetail이 항상 최신 목록을 읽되 deps에는 넣지 않는다
@@ -215,13 +216,13 @@ export function useRecords(selectedRecordId: string | null) {
 
     for (const item of readyTransitioned) {
       queryClient.prefetchQuery({
-        queryKey: ["counseling-record", item.id],
+        queryKey: counselingWorkspaceQueryKeys.record(item.id),
         queryFn: async () => {
           // eslint-disable-next-line no-restricted-syntax
           const res = await fetch(
             resolveApiHrefForCurrentPath(
-              `/api/v1/counseling-records/${item.id}`,
-            ),
+              `/api/v1/counseling-records/${item.id}`
+            )
           );
           if (!res.ok) throw new Error("상세 조회 실패");
           return res.json() as Promise<{ record: CounselingRecordDetail }>;
@@ -246,10 +247,10 @@ export function useRecords(selectedRecordId: string | null) {
       setTranscriptLoading(true);
       try {
         const data = await queryClient.fetchQuery({
-          queryKey: ["counseling-record", id],
+          queryKey: counselingWorkspaceQueryKeys.record(id),
           queryFn: async () => {
             const res = await fetch(
-              resolveApiHrefForCurrentPath(`/api/v1/counseling-records/${id}`),
+              resolveApiHrefForCurrentPath(`/api/v1/counseling-records/${id}`)
             );
             if (!res.ok) throw new Error("상세 조회 실패");
             return res.json() as Promise<{ record: CounselingRecordDetail }>;
@@ -287,7 +288,7 @@ export function useRecords(selectedRecordId: string | null) {
         setTranscriptLoading(false);
       }
     },
-    [queryClient],
+    [queryClient]
   );
 
   // ── ensureDetail: selectRecord의 데이터 전용 후속 (선택 상태 변경 없음) ──
@@ -306,7 +307,7 @@ export function useRecords(selectedRecordId: string | null) {
         fetchDetail(id);
       }
     },
-    [fetchDetail],
+    [fetchDetail]
   );
 
   const addProcessingRecord = useCallback((record: RecordItem) => {
@@ -323,21 +324,25 @@ export function useRecords(selectedRecordId: string | null) {
         if (prev.some((r) => r.id === record.id)) return prev;
         return [record, ...prev];
       });
-      queryClient.invalidateQueries({ queryKey: ["counseling-records"] });
+      queryClient.invalidateQueries({
+        queryKey: counselingWorkspaceQueryKeys.records(),
+      });
       // 선택은 호출자가 selection.selectRecord(record.id)로 처리
     },
-    [queryClient],
+    [queryClient]
   );
 
   const replaceRecord = useCallback(
     (tempId: string, realRecord: RecordItem) => {
       setTempRecords((prev) =>
-        prev.map((r) => (r.id === tempId ? realRecord : r)),
+        prev.map((r) => (r.id === tempId ? realRecord : r))
       );
-      queryClient.invalidateQueries({ queryKey: ["counseling-records"] });
+      queryClient.invalidateQueries({
+        queryKey: counselingWorkspaceQueryKeys.records(),
+      });
       // 선택 ID 교체는 호출자가 selection.replaceSelectedRecordId(tempId, realRecord.id)로 처리
     },
-    [queryClient],
+    [queryClient]
   );
 
   const removeRecord = useCallback(
@@ -348,10 +353,12 @@ export function useRecords(selectedRecordId: string | null) {
         next.delete(id);
         return next;
       });
-      queryClient.invalidateQueries({ queryKey: ["counseling-records"] });
+      queryClient.invalidateQueries({
+        queryKey: counselingWorkspaceQueryKeys.records(),
+      });
       // 선택 해제는 호출자가 selection.clearRecordIfSelected(id)로 처리
     },
-    [queryClient],
+    [queryClient]
   );
 
   const markUploadError = useCallback((id: string, message: string) => {
@@ -364,8 +371,8 @@ export function useRecords(selectedRecordId: string | null) {
               status: "error" as const,
               errorMessage: message,
             }
-          : r,
-      ),
+          : r
+      )
     );
     setLocalOverrides((prev) => {
       const next = new Map(prev);
@@ -394,7 +401,7 @@ export function useRecords(selectedRecordId: string | null) {
         return next;
       });
     },
-    [],
+    []
   );
 
   const clearMessages = useCallback(async (id: string) => {
@@ -402,7 +409,7 @@ export function useRecords(selectedRecordId: string | null) {
       resolveApiHrefForCurrentPath(`/api/v1/counseling-records/${id}/chat`),
       {
         method: "DELETE",
-      },
+      }
     );
 
     if (!response.ok) {
@@ -437,7 +444,7 @@ export function useRecords(selectedRecordId: string | null) {
       boostPolling();
       // 선택은 호출자가 이미 해당 record를 보고 있을 때만 호출
     },
-    [boostPolling],
+    [boostPolling]
   );
 
   const updateAnalysisResult = useCallback(
@@ -449,7 +456,7 @@ export function useRecords(selectedRecordId: string | null) {
         return next;
       });
     },
-    [],
+    []
   );
 
   const updateMemberId = useCallback((id: string, memberId: string | null) => {
@@ -470,16 +477,18 @@ export function useRecords(selectedRecordId: string | null) {
         next.set(detail.id, { ...existing, ...patch });
         return next;
       });
-      queryClient.setQueryData(["counseling-record", detail.id], {
+      queryClient.setQueryData(counselingWorkspaceQueryKeys.record(detail.id), {
         record: detail,
       });
-      queryClient.invalidateQueries({ queryKey: ["counseling-records"] });
+      queryClient.invalidateQueries({
+        queryKey: counselingWorkspaceQueryKeys.records(),
+      });
       if (needsBackgroundPolling(detail)) {
         boostPolling();
       }
       // 선택 변경은 호출자가 필요하면 selection.selectRecord(detail.id)로 처리
     },
-    [boostPolling, queryClient],
+    [boostPolling, queryClient]
   );
 
   // viewState — isRecording은 명시 상태, processing은 selected에서 파생

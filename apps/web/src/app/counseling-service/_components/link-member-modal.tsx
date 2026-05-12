@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { X, Loader2, Search, UserPlus, Users } from "lucide-react";
+import { counselingWorkspaceQueryKeys } from "../_hooks/counseling-workspace-query-keys";
 import { resolveApiHrefForCurrentPath } from "@/lib/app-route-paths";
 
 import { detectRecordMemberMismatch } from "../_lib/record-member-mismatch";
@@ -43,14 +44,14 @@ export function LinkMemberModal({
   const [selectedSpaceId, setSelectedSpaceId] = useState<string>("");
   const [query, setQuery] = useState("");
   const [selectedMemberId, setSelectedMemberId] = useState<string | null>(
-    currentMemberId,
+    currentMemberId
   );
   const [newName, setNewName] = useState(studentName || "");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const { data: spacesData, isPending: spacesLoading } = useQuery({
-    queryKey: ["spaces"],
+    queryKey: counselingWorkspaceQueryKeys.spaces(),
     queryFn: async () => {
       const res = await fetch(resolveApiHrefForCurrentPath("/api/v1/spaces"));
       if (!res.ok) return { spaces: [] as Space[] };
@@ -71,12 +72,12 @@ export function LinkMemberModal({
   }, [spacesData, spaces]);
 
   const { data: membersData, isPending: membersLoading } = useQuery({
-    queryKey: ["modal-space-members", selectedSpaceId],
+    queryKey: counselingWorkspaceQueryKeys.spaceMembers(selectedSpaceId),
     queryFn: async () => {
       const res = await fetch(
         resolveApiHrefForCurrentPath(
-          `/api/v1/spaces/${selectedSpaceId}/members`,
-        ),
+          `/api/v1/spaces/${selectedSpaceId}/members`
+        )
       );
       if (!res.ok) return { members: [] as Member[] };
       return res.json() as Promise<{ members: Member[] }>;
@@ -87,14 +88,14 @@ export function LinkMemberModal({
 
   const filteredMembers = query.trim()
     ? members.filter((m) =>
-        m.name.toLowerCase().includes(query.trim().toLowerCase()),
+        m.name.toLowerCase().includes(query.trim().toLowerCase())
       )
     : members;
 
   const mismatchWarning = detectRecordMemberMismatch(
     record,
     members,
-    mode === "existing" ? selectedMemberId : currentMemberId,
+    mode === "existing" ? selectedMemberId : currentMemberId
   );
 
   const patchMember = async (memberId: string | null) => {
@@ -104,7 +105,7 @@ export function LinkMemberModal({
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ memberId }),
-      },
+      }
     );
     if (!res.ok) throw new Error("연결에 실패했습니다.");
   };
@@ -134,13 +135,13 @@ export function LinkMemberModal({
       /* 수강생 생성 */
       const createRes = await fetch(
         resolveApiHrefForCurrentPath(
-          `/api/v1/spaces/${selectedSpaceId}/members`,
+          `/api/v1/spaces/${selectedSpaceId}/members`
         ),
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ name: newName.trim() }),
-        },
+        }
       );
       if (!createRes.ok) throw new Error("수강생 등록에 실패했습니다.");
       const { member } = (await createRes.json()) as { member: Member };

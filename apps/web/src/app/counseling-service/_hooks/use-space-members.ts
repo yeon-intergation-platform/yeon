@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { counselingWorkspaceQueryKeys } from "./counseling-workspace-query-keys";
 import { resolveApiHrefForCurrentPath } from "@/lib/app-route-paths";
 import type { RecordItem } from "../_lib/types";
 
@@ -26,7 +27,7 @@ export interface MemberWithStatus {
 }
 
 function computeIndicator(
-  daysSinceLast: number | null,
+  daysSinceLast: number | null
 ): MemberWithStatus["indicator"] {
   if (daysSinceLast === null) return "none";
   if (daysSinceLast <= 14) return "recent";
@@ -36,16 +37,16 @@ function computeIndicator(
 
 export function useSpaceMembers(
   spaceId: string | null,
-  records: RecordItem[],
+  records: RecordItem[]
 ): {
   members: MemberWithStatus[];
   loading: boolean;
 } {
   const { data, isPending } = useQuery({
-    queryKey: ["space-members", spaceId],
+    queryKey: counselingWorkspaceQueryKeys.spaceMembers(spaceId),
     queryFn: async () => {
       const res = await fetch(
-        resolveApiHrefForCurrentPath(`/api/v1/spaces/${spaceId}/members`),
+        resolveApiHrefForCurrentPath(`/api/v1/spaces/${spaceId}/members`)
       );
       if (!res.ok) return { members: [] as SpaceMember[] };
       return res.json() as Promise<{ members: SpaceMember[] }>;
@@ -74,11 +75,11 @@ export function useSpaceMembers(
 
         const sorted = [...memberRecords].sort(
           (a, b) =>
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         );
         const lastDate = sorted[0].createdAt;
         const daysSinceLast = Math.floor(
-          (Date.now() - new Date(lastDate).getTime()) / 86400000,
+          (Date.now() - new Date(lastDate).getTime()) / 86400000
         );
 
         return {
@@ -89,7 +90,7 @@ export function useSpaceMembers(
           indicator: computeIndicator(daysSinceLast),
         };
       }),
-    [rawMembers, records],
+    [rawMembers, records]
   );
 
   return { members, loading };

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { counselingWorkspaceQueryKeys } from "./counseling-workspace-query-keys";
 import { resolveApiHrefForCurrentPath } from "@/lib/app-route-paths";
 
 const STORAGE_KEY = "yeon_current_space_id";
@@ -23,16 +24,16 @@ export function useCurrentSpace() {
   const initialSpaceIdRef = useRef<string | null>(
     typeof window !== "undefined"
       ? new URLSearchParams(window.location.search).get("spaceId")
-      : null,
+      : null
   );
   const initializedRef = useRef(false);
 
   const [currentSpaceId, setCurrentSpaceIdState] = useState<string | null>(
-    null,
+    null
   );
 
   const { data, isLoading: loading } = useQuery({
-    queryKey: ["spaces"],
+    queryKey: counselingWorkspaceQueryKeys.spaces(),
     queryFn: async () => {
       const res = await fetch(resolveApiHrefForCurrentPath("/api/v1/spaces"));
       if (!res.ok) throw new Error("스페이스 조회 실패");
@@ -106,7 +107,7 @@ export function useCurrentSpace() {
       if (typeof window !== "undefined")
         localStorage.setItem(STORAGE_KEY, space.id);
     },
-    [queryClient],
+    [queryClient]
   );
 
   const removeSpace = useCallback(
@@ -114,7 +115,7 @@ export function useCurrentSpace() {
       queryClient.setQueryData<{ spaces: Space[] }>(["spaces"], (old) => {
         const currentSpaces = old ? old.spaces : [];
         const nextSpaces = currentSpaces.filter(
-          (space) => space.id !== spaceId,
+          (space) => space.id !== spaceId
         );
         return { spaces: nextSpaces };
       });
@@ -126,7 +127,7 @@ export function useCurrentSpace() {
           "spaces",
         ]);
         const nextSpaces = (cachedSpaces ? cachedSpaces.spaces : []).filter(
-          (space) => space.id !== spaceId,
+          (space) => space.id !== spaceId
         );
         const next = nextSpaces[0]?.id ?? null;
 
@@ -141,7 +142,7 @@ export function useCurrentSpace() {
         return next;
       });
     },
-    [queryClient],
+    [queryClient]
   );
 
   const currentSpace = spaces.find((s) => s.id === currentSpaceId) ?? null;
