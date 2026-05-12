@@ -36,7 +36,7 @@ public class SheetExportRunController {
 		@RequestHeader("X-Yeon-User-Id") UUID userId,
 		@RequestBody RunSheetExportRequest request
 	) {
-		return service.run(spaceId, request);
+		return service.run(spaceId, userId, request);
 	}
 
 	@ExceptionHandler(NoSuchElementException.class)

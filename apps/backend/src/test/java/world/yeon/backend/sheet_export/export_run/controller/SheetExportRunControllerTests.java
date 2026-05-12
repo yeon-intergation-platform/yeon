@@ -35,7 +35,7 @@ class SheetExportRunControllerTests {
 
 	@Test
 	void exportRun응답shape를반환한다() throws Exception {
-		when(service.run(eq("space_alpha"), eq(new RunSheetExportRequest("sheet-1", "token-1"))))
+		when(service.run(eq("space_alpha"), eq(OWNER_ID), eq(new RunSheetExportRequest("sheet-1", "token-1"))))
 			.thenReturn(new RunSheetExportResponse(2, OffsetDateTime.parse("2026-05-08T06:00:00Z")));
 
 		mockMvc.perform(post("/spaces/space_alpha/sheet-export/export-run")
@@ -51,7 +51,7 @@ class SheetExportRunControllerTests {
 
 	@Test
 	void googleError는502다() throws Exception {
-		when(service.run(eq("space_alpha"), eq(new RunSheetExportRequest("sheet-1", "token-1"))))
+		when(service.run(eq("space_alpha"), eq(OWNER_ID), eq(new RunSheetExportRequest("sheet-1", "token-1"))))
 			.thenThrow(new SheetExportRunServiceException(502, "GOOGLE_SHEETS_API_ERROR", "구글 시트 쓰기에 실패했습니다."));
 
 		mockMvc.perform(post("/spaces/space_alpha/sheet-export/export-run")

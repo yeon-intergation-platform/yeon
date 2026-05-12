@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -17,6 +18,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import world.yeon.backend.googledrive_browser.service.GoogleDriveBrowserService;
 import world.yeon.backend.sheet_export.export_run.dto.RunSheetExportRequest;
 import world.yeon.backend.sheet_export.read.dto.SheetExportFieldDefinitionResponse;
 import world.yeon.backend.sheet_export.read.dto.SheetExportPayloadCoreResponse;
@@ -34,11 +36,13 @@ class SheetExportRunServiceTests {
 	@Mock private SheetExportReadService readService;
 	@Mock private SheetExportSnapshotRepository snapshotRepository;
 	@Mock private SheetExportSnapshotService snapshotService;
+	@Mock private GoogleDriveBrowserService googleDriveBrowserService;
+	private static final UUID OWNER_ID = UUID.fromString("00000000-0000-0000-0000-000000000802");
 	private TestableSheetExportRunService service;
 
 	@BeforeEach
 	void setUp() {
-		service = new TestableSheetExportRunService(readService, snapshotRepository, snapshotService);
+		service = new TestableSheetExportRunService(readService, snapshotRepository, snapshotService, googleDriveBrowserService);
 	}
 
 	@Test
@@ -57,8 +61,9 @@ class SheetExportRunServiceTests {
 		when(snapshotService.finalizeSync(eq("space_alpha"), any())).thenReturn(
 			new FinalizeSheetExportSyncResponse(1, OffsetDateTime.parse("2026-05-08T06:00:00Z"))
 		);
+		when(googleDriveBrowserService.getValidAccessToken(OWNER_ID)).thenReturn("token-from-spring");
 
-		var result = service.run("space_alpha", new RunSheetExportRequest("sheet-1", "token-1"));
+		var result = service.run("space_alpha", OWNER_ID, new RunSheetExportRequest("sheet-1", null));
 
 		assertThat(result.exportedCount()).isEqualTo(1);
 		assertThat(service.clearedSheetId).isEqualTo("sheet-1");
@@ -69,7 +74,7 @@ class SheetExportRunServiceTests {
 	@Test
 	void integration이없으면404다() {
 		when(snapshotRepository.findIntegration("space_alpha", "sheet-1")).thenReturn(null);
-		assertThatThrownBy(() -> service.run("space_alpha", new RunSheetExportRequest("sheet-1", "token-1")))
+		assertThatThrownBy(() -> service.run("space_alpha", OWNER_ID, new RunSheetExportRequest("sheet-1", null)))
 			.isInstanceOf(java.util.NoSuchElementException.class)
 			.hasMessage("연동된 익스포트 시트를 찾지 못했습니다.");
 	}
@@ -81,9 +86,10 @@ class SheetExportRunServiceTests {
 		private TestableSheetExportRunService(
 			SheetExportReadService readService,
 			SheetExportSnapshotRepository snapshotRepository,
-			SheetExportSnapshotService snapshotService
+			SheetExportSnapshotService snapshotService,
+			GoogleDriveBrowserService googleDriveBrowserService
 		) {
-			super(readService, snapshotRepository, snapshotService);
+			super(readService, snapshotRepository, snapshotService, googleDriveBrowserService);
 		}
 
 		@Override

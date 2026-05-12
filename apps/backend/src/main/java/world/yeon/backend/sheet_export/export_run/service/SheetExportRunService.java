@@ -11,11 +11,13 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import world.yeon.backend.googledrive_browser.service.GoogleDriveBrowserService;
 import world.yeon.backend.sheet_export.export_run.dto.RunSheetExportRequest;
 import world.yeon.backend.sheet_export.export_run.dto.RunSheetExportResponse;
 import world.yeon.backend.sheet_export.read.dto.SheetExportRowResponse;
@@ -35,36 +37,37 @@ public class SheetExportRunService {
 	private final SheetExportReadService readService;
 	private final SheetExportSnapshotRepository snapshotRepository;
 	private final SheetExportSnapshotService snapshotService;
+	private final GoogleDriveBrowserService googleDriveBrowserService;
 	private final HttpClient httpClient = HttpClient.newHttpClient();
 	private final ObjectMapper objectMapper = new ObjectMapper().findAndRegisterModules();
 
 	public SheetExportRunService(
 		SheetExportReadService readService,
 		SheetExportSnapshotRepository snapshotRepository,
-		SheetExportSnapshotService snapshotService
+		SheetExportSnapshotService snapshotService,
+		GoogleDriveBrowserService googleDriveBrowserService
 	) {
 		this.readService = readService;
 		this.snapshotRepository = snapshotRepository;
 		this.snapshotService = snapshotService;
+		this.googleDriveBrowserService = googleDriveBrowserService;
 	}
 
-	public RunSheetExportResponse run(String spaceId, RunSheetExportRequest request) {
+	public RunSheetExportResponse run(String spaceId, UUID userId, RunSheetExportRequest request) {
 		if (request == null || request.sheetId() == null || request.sheetId().isBlank()) {
 			throw new IllegalArgumentException("sheetId는 필수입니다.");
-		}
-		if (request.accessToken() == null || request.accessToken().isBlank()) {
-			throw new IllegalArgumentException("accessToken은 필수입니다.");
 		}
 		if (snapshotRepository.findIntegration(spaceId, request.sheetId()) == null) {
 			throw new java.util.NoSuchElementException("연동된 익스포트 시트를 찾지 못했습니다.");
 		}
 
+		String accessToken = googleDriveBrowserService.getValidAccessToken(userId);
 		var rowsResponse = readService.getRows(spaceId);
 		OffsetDateTime exportedAt = OffsetDateTime.now(ZoneOffset.UTC);
 		List<List<String>> values = buildSheetValues(rowsResponse.rows(), rowsResponse.fieldDefinitions().stream().map(field -> field.name()).toList(), exportedAt.toString());
 
-		clearSheet(request.accessToken(), request.sheetId());
-		writeSheetValues(request.accessToken(), request.sheetId(), values);
+		clearSheet(accessToken, request.sheetId());
+		writeSheetValues(accessToken, request.sheetId(), values);
 
 		var syncResult = snapshotService.finalizeSync(spaceId, new FinalizeSheetExportSyncRequest(
 			request.sheetId(),
