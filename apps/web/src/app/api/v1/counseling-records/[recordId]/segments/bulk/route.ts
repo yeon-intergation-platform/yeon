@@ -5,7 +5,10 @@ import {
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
-import { bulkUpdateSpeakerLabel } from "@/server/services/counseling-records-service";
+import {
+  bulkUpdateSpeakerInSpring,
+  CounselingRecordMutationSpringBackendHttpError,
+} from "@/server/counseling-record-mutation-spring-client";
 import { ServiceError } from "@/server/services/service-error";
 
 import { jsonError, requireAuthenticatedUser } from "../../../_shared";
@@ -42,19 +45,18 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
   }
 
   try {
-    const updatedCount = await bulkUpdateSpeakerLabel(
+    const result = await bulkUpdateSpeakerInSpring(
       currentUser.id,
       recordId,
-      parsed.data.fromSpeakerLabel,
-      parsed.data.toSpeakerLabel,
-      parsed.data.toSpeakerTone,
+      parsed.data
     );
 
-    return NextResponse.json(
-      bulkUpdateSpeakerResponseSchema.parse({ updatedCount }),
-    );
+    return NextResponse.json(bulkUpdateSpeakerResponseSchema.parse(result));
   } catch (error) {
-    if (error instanceof ServiceError) {
+    if (
+      error instanceof ServiceError ||
+      error instanceof CounselingRecordMutationSpringBackendHttpError
+    ) {
       return jsonError(error.message, error.status);
     }
 

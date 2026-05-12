@@ -1,0 +1,70 @@
+# Next 백엔드 역할 0% - counseling-records Spring 이관 백로그 (2026-05-13)
+
+## 목표
+
+`apps/web/src/app/api/v1/counseling-records/**`에 남은 Next-side 서버 서비스 호출을 Spring API 호출 브리지로 전환해 Next.js의 백엔드 역할을 제거한다.
+
+## 1차 - 상담 transcript segment mutation Spring 이관 (완료)
+
+- 작업내용
+  - Spring `counseling_record_mutation`에 segment 단건 수정 API를 추가한다.
+  - Spring `counseling_record_mutation`에 speaker label bulk 수정 API를 추가한다.
+  - Web Next route는 Zod validation, 인증/쿠키 bridge, Spring client 호출, 응답 매핑만 담당하게 한다.
+  - 기존 response contract(`updateSegmentResponseSchema`, `bulkUpdateSpeakerResponseSchema`)를 유지한다.
+- 논의 필요
+  - 없음. 사용자 방향은 Next backend role 0%이며, segment mutation은 현재 남은 `api/v1` backend-role 중 가장 작고 검증 가능한 단위다.
+- 선택지
+  - A. segment mutation 2개만 먼저 작은 PR로 이관한다.
+  - B. counseling-records 전체 create/analyze/chat/transcribe/trend까지 한 번에 이관한다.
+- 추천
+  - A. DB mutation과 응답 contract를 먼저 Spring으로 고정해 이후 분석/스트리밍 이관 리스크를 줄인다.
+- 사용자 방향
+  - 추천 기준으로 진행한다.
+- 완료 근거
+  - Spring segment 단건 수정/bulk speaker 수정 API와 Next Spring bridge 전환을 구현했다.
+  - backend controller test, web typecheck/build, diff/skill/SSOT 검증을 수행했다.
+
+## 2차 - 상담 분석/채팅/재전사 streaming Spring 이관
+
+- 작업내용
+  - `analyze`, `chat`, `transcribe`, `analyze-trend` route의 OpenAI/STT/search/streaming 소유를 Spring service로 옮긴다.
+  - Next route는 SSE bridge와 request/response adapter만 유지한다.
+- 논의 필요
+  - streaming error/event 형식과 기존 클라이언트 호환성 확인.
+- 선택지
+  - A. API별로 작은 PR 분리.
+  - B. AI/streaming 전체를 하나의 PR로 묶음.
+- 추천
+  - A. 외부 AI 호출과 SSE는 회귀 범위가 커서 API별 검증이 안전하다.
+- 사용자 방향
+  - 추천 기준으로 진행한다.
+
+## 3차 - 상담 기록 생성/list scheduling 잔여 Spring 이관
+
+- 작업내용
+  - `POST /counseling-records` 텍스트/음성 업로드, R2 저장, DB insert, transcription scheduling을 Spring이 소유하게 한다.
+  - `GET /counseling-records`에서 Next-side scheduling 보조 호출을 제거하고 Spring list/detail 서비스 책임으로 통일한다.
+- 논의 필요
+  - R2 업로드 실패 시 보상/삭제 경계.
+- 선택지
+  - A. text create와 audio create를 분리.
+  - B. create 전체를 한 번에 전환.
+- 추천
+  - A. 저장소와 STT side effect가 다르므로 분리한다.
+- 사용자 방향
+  - 추천 기준으로 진행한다.
+
+## 4차 - legacy web backend runtime 제거 준비
+
+- 작업내용
+  - `apps/web/src/server/services`, `repositories`, `db` 사용처를 재검사한다.
+  - 더 이상 route runtime에서 쓰지 않는 legacy DB/service 파일을 삭제 후보로 정리한다.
+- 논의 필요
+  - 테스트 fixture나 migration 비교용으로 잠시 남길 파일 범위.
+- 선택지
+  - A. 사용처 0개 확인 후 삭제.
+  - B. deprecated 표기 후 다음 PR에서 삭제.
+- 추천
+  - A. Next backend role 0% 목표에는 runtime 제거가 필요하므로 사용처 0개 단위로 삭제한다.
+- 사용자 방향
+  - 추천 기준으로 진행한다.
