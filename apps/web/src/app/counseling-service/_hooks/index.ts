@@ -3,7 +3,7 @@ export { useRecords } from "./use-records";
 export { useRecording } from "@/features/counseling-record-workspace/hooks/use-recording";
 export { useFileUpload } from "@/features/counseling-record-workspace/hooks/use-file-upload";
 export { useAudioPlayer } from "@/features/counseling-record-workspace/hooks/use-audio-player";
-export { useAiChat } from "./use-ai-chat";
+export { useAiChat } from "@/features/counseling-record-workspace/hooks/use-ai-chat";
 export { useAiPanel } from "@/features/counseling-record-workspace/hooks/use-ai-panel";
 export { useCurrentSpace } from "@/features/counseling-record-workspace/hooks/use-current-space";
 export { useCounselingInsightBannerDismissals } from "@/features/counseling-record-workspace/hooks/use-counseling-insight-banner-dismissals";

@@ -982,3 +982,29 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 41차 — counseling AI chat hook feature 이동
+
+### 작업내용
+
+- `use-ai-chat`을 `apps/web/src/app/counseling-service/_hooks`에서 `features/counseling-record-workspace/hooks`로 이동한다.
+- AI 채팅 SSE POST와 자동 분석 POST 호출을 `counseling-records-api` helper로 분리한다.
+- app `_hooks/index.ts`는 기존 import 호환을 위한 re-export만 유지한다.
+
+### 논의 필요
+
+- `AiMessage`, `AnalysisResult`, `AttachedImage` 타입은 아직 app `_lib/types`가 원천이다. 이번 차수에서 타입 이동까지 함께 하면 영향 범위가 커진다.
+
+### 선택지
+
+1. 훅과 API 호출만 feature 경계로 옮기고 타입 이동은 후속 차수로 남긴다.
+2. 관련 타입까지 feature model로 이동한다.
+3. `use-records`까지 함께 묶어 큰 단위로 재배치한다.
+
+### 추천
+
+- 선택지 1. 앱 레이어의 실행 훅 누수를 한 번에 하나씩 제거하고, 타입/model 이동은 별도 차수에서 사용처를 전수 확인한다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.

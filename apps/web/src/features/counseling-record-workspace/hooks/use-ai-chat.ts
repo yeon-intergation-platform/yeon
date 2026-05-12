@@ -2,12 +2,15 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import type { CounselingChatRequest } from "@yeon/api-contract/counseling-records";
-import { resolveApiHrefForCurrentPath } from "@/lib/app-route-paths";
 import {
-  counselingWorkspaceFetchJson,
-  counselingWorkspaceFetchResponse,
-} from "@/features/counseling-record-workspace/api/counseling-workspace-fetch";
-import type { AiMessage, AnalysisResult, AttachedImage } from "../_lib/types";
+  analyzeCounselingRecord,
+  streamCounselingRecordChat,
+} from "@/features/counseling-record-workspace/api/counseling-records-api";
+import type {
+  AiMessage,
+  AnalysisResult,
+  AttachedImage,
+} from "@/app/counseling-service/_lib/types";
 
 interface UseAiChatParams {
   selectedId: string | null;
@@ -174,17 +177,10 @@ export function useAiChat({
         return updated;
       });
 
-      const response = await counselingWorkspaceFetchResponse(
-        resolveApiHrefForCurrentPath(
-          `/api/v1/counseling-records/${recordId}/chat`
-        ),
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-          signal: abortRef.current.signal,
-        },
-        "AI 응답에 실패했습니다."
+      const response = await streamCounselingRecordChat(
+        recordId,
+        payload,
+        abortRef.current.signal
       );
 
       if (!response.body) {
@@ -242,16 +238,7 @@ export function useAiChat({
     analyzeAbortRef.current = controller;
     setAnalyzing(true);
 
-    counselingWorkspaceFetchJson<{ analysisResult: AnalysisResult }>(
-      resolveApiHrefForCurrentPath(
-        `/api/v1/counseling-records/${capturedId}/analyze`
-      ),
-      {
-        method: "POST",
-        signal: controller.signal,
-      },
-      "AI 분석을 시작하지 못했습니다."
-    )
+    analyzeCounselingRecord<AnalysisResult>(capturedId, controller.signal)
       .then((data) => {
         onUpdateAnalysisResult(capturedId, data.analysisResult);
       })

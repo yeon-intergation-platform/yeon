@@ -1,11 +1,13 @@
 import type {
   CounselingRecordDetail,
   CounselingRecordListItem,
+  CounselingChatRequest,
 } from "@yeon/api-contract/counseling-records";
 import { resolveApiHrefForCurrentPath } from "@/lib/app-route-paths";
 import { buildCounselingClientRequestId } from "@/app/counseling-service/_lib/client-request-id";
 import {
   counselingWorkspaceFetchJson,
+  counselingWorkspaceFetchResponse,
   counselingWorkspaceFetchVoid,
 } from "./counseling-workspace-fetch";
 
@@ -15,6 +17,10 @@ export type CounselingRecordsListResponse = {
 
 export type CounselingRecordDetailResponse = {
   record: CounselingRecordDetail;
+};
+
+export type CounselingRecordAnalysisResponse<TAnalysisResult> = {
+  analysisResult: TAnalysisResult;
 };
 
 export function fetchCounselingRecords() {
@@ -82,5 +88,40 @@ export function retryCounselingRecordAnalysis(recordId: string) {
       },
     },
     "AI 분석을 다시 시작하지 못했습니다."
+  );
+}
+
+export function streamCounselingRecordChat(
+  recordId: string,
+  payload: CounselingChatRequest,
+  signal: AbortSignal
+) {
+  return counselingWorkspaceFetchResponse(
+    resolveApiHrefForCurrentPath(`/api/v1/counseling-records/${recordId}/chat`),
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      signal,
+    },
+    "AI 응답에 실패했습니다."
+  );
+}
+
+export function analyzeCounselingRecord<TAnalysisResult>(
+  recordId: string,
+  signal: AbortSignal
+) {
+  return counselingWorkspaceFetchJson<
+    CounselingRecordAnalysisResponse<TAnalysisResult>
+  >(
+    resolveApiHrefForCurrentPath(
+      `/api/v1/counseling-records/${recordId}/analyze`
+    ),
+    {
+      method: "POST",
+      signal,
+    },
+    "AI 분석을 시작하지 못했습니다."
   );
 }
