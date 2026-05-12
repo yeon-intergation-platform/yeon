@@ -17,24 +17,6 @@ export type SpaceSelectionState = {
   anchorId: string | null;
 };
 
-export type LocalImportDraftSummary = {
-  id: string;
-  status:
-    | "uploaded"
-    | "analyzing"
-    | "analyzed"
-    | "edited"
-    | "imported"
-    | "error";
-  selectedFile: {
-    name: string;
-  };
-  processingMessage: string | null;
-  error: string | null;
-  updatedAt: string;
-  expiresAt: string;
-};
-
 export type CreateModalState = {
   open: boolean;
   initialStep: StudentSpaceCreateStep;
