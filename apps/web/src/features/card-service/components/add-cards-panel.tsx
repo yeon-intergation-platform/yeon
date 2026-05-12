@@ -25,7 +25,7 @@ export function AddCardsPanel({ deckId, onClose }: AddCardsPanelProps) {
   const modeDescription = useMemo(
     () =>
       mode === ADD_CARD_MODES.manual
-        ? "질문, 답변, Markdown, 이미지까지 한 화면에서 작성하고 저장할 수 있습니다."
+        ? "질문, 답변, 인라인 이미지를 한 화면에서 작성하고 저장할 수 있습니다."
         : "AI가 만든 카드 묶음을 붙여넣어 여러 장을 한 번에 추가할 수 있습니다.",
     [mode]
   );

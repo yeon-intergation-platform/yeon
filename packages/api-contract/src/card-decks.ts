@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const CARD_TEXT_MAX_LENGTH = 2000;
+export const CARD_TEXT_MAX_LENGTH = 20000;
 export const CARD_BULK_IMPORT_MAX_ITEMS = 100;
 export const CARD_IMAGE_STORAGE_KEY_MAX_LENGTH = 512;
 
