@@ -2108,3 +2108,29 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 85차 — community chat React Query boundary 정리
+
+### 작업내용
+
+- `use-community-chat.ts`의 수동 메시지 로딩/폴링/전송 상태를 TanStack Query `useQuery`/`useMutation`으로 전환한다.
+- community query key는 `communityQueryKeys` factory로 고정한다.
+- `/community` route에 `QueryProvider` layout을 추가해 community feature의 server-state hook 실행 경계를 명확히 한다.
+- 메시지 목록 polling, 전송 후 목록 invalidation, 접속자 heartbeat polling, 익명 guest nickname 전송 동작은 유지한다.
+
+### 논의 필요
+
+- feed 게시글/댓글까지 같은 PR에서 React Query로 전환할지 여부.
+
+### 선택지
+
+1. 이번 차수는 실시간 채팅만 전환하고 feed는 별도 차수로 둔다.
+2. 채팅과 feed를 한 번에 전환한다.
+
+### 추천
+
+- 1번. feed는 작성/수정/삭제/댓글 draft 상태가 많아 server state와 draft 분리 설계가 필요하므로 채팅부터 작게 전환한다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.
