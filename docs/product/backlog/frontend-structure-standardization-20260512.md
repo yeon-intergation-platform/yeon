@@ -2159,3 +2159,30 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 87차 — 커뮤니티 피드 서버 상태 React Query 전환
+
+### 작업내용
+
+- `features/community/hooks/use-community-feed.ts`의 게시글 목록 서버 상태를 React Query로 전환한다.
+- `communityQueryKeys`에 피드 게시글/댓글 key factory를 추가하고 raw key 배열을 쓰지 않는다.
+- 글 작성/수정/삭제 mutation 성공 시 게시글 목록 캐시를 명시적으로 갱신하거나 무효화한다.
+- 댓글 draft/펼침/삭제 오류 같은 순수 UI 상태는 React Query로 올리지 않고 hook 내부 local state로 유지한다.
+- API 호출은 기존 `chatServiceApi` wrapper만 경유한다.
+
+### 논의 필요
+
+- 댓글 목록까지 같은 차수에서 React Query로 전환할지 여부.
+
+### 선택지
+
+1. 게시글 목록과 게시글 CRUD만 먼저 전환하고 댓글은 후속 차수로 분리한다.
+2. 댓글 목록/댓글 CRUD까지 한 번에 전환한다.
+
+### 추천
+
+- 1번. 현재 훅에는 댓글 draft, 펼침 상태, post replyCount 보정이 함께 있어 한 번에 옮기면 회귀 범위가 커진다. 게시글 목록 source of truth부터 React Query로 고정하고 댓글은 다음 차수에서 분리한다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.
