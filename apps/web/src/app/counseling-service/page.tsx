@@ -19,6 +19,7 @@ import {
   type Space,
 } from "./_hooks";
 import { detectRecordMemberMismatch } from "./_lib/record-member-mismatch";
+import { counselingWorkspaceFetchVoid } from "./_hooks/counseling-workspace-fetch";
 import { getCounselingWorkspaceUiPolicy } from "./_lib/counseling-workspace-ui-policy";
 import { exportRecordDocx, exportMemberReportDocx } from "./_lib/export-docx";
 import {
@@ -260,20 +261,15 @@ function CounselingServiceWorkspaceInner() {
   // ── 삭제 핸들러 ───────────────────────────────────────────────
   const handleDeleteRecord = useCallback(
     async (recordId: string) => {
-      const res = await fetch(
+      await counselingWorkspaceFetchVoid(
         resolveApiHref(`/api/v1/counseling-records/${recordId}`),
-        {
-          method: "DELETE",
-        }
+        { method: "DELETE" },
+        "상담 기록을 삭제하지 못했습니다."
       );
-      if (!res.ok) {
-        const text = await res.text().catch(() => "");
-        throw new Error(text || "상담 기록을 삭제하지 못했습니다.");
-      }
       records.removeRecord(recordId);
       selection.clearRecordIfSelected(recordId);
     },
-    [records, selection]
+    [records, resolveApiHref, selection]
   );
 
   const handleDeleteMember = useCallback(
@@ -281,14 +277,11 @@ function CounselingServiceWorkspaceInner() {
       if (!currentSpaceId) {
         throw new Error("선택된 스페이스가 없습니다.");
       }
-      const res = await fetch(
+      await counselingWorkspaceFetchVoid(
         resolveApiHref(`/api/v1/spaces/${currentSpaceId}/members/${memberId}`),
-        { method: "DELETE" }
+        { method: "DELETE" },
+        "수강생을 삭제하지 못했습니다."
       );
-      if (!res.ok) {
-        const text = await res.text().catch(() => "");
-        throw new Error(text || "수강생을 삭제하지 못했습니다.");
-      }
       selection.clearMemberIfSelected(memberId);
       await queryClient.invalidateQueries({
         queryKey: counselingWorkspaceQueryKeys.spaceMembers(currentSpaceId),
@@ -297,18 +290,16 @@ function CounselingServiceWorkspaceInner() {
         queryKey: counselingWorkspaceQueryKeys.records(),
       });
     },
-    [currentSpaceId, queryClient, selection]
+    [currentSpaceId, queryClient, resolveApiHref, selection]
   );
 
   const handleDeleteSpace = useCallback(
     async (spaceId: string) => {
-      const res = await fetch(resolveApiHref(`/api/v1/spaces/${spaceId}`), {
-        method: "DELETE",
-      });
-      if (!res.ok) {
-        const text = await res.text().catch(() => "");
-        throw new Error(text || "스페이스를 삭제하지 못했습니다.");
-      }
+      await counselingWorkspaceFetchVoid(
+        resolveApiHref(`/api/v1/spaces/${spaceId}`),
+        { method: "DELETE" },
+        "스페이스를 삭제하지 못했습니다."
+      );
       removeSpace(spaceId);
       if (currentSpaceId === spaceId) {
         selection.clearAll();
@@ -317,7 +308,13 @@ function CounselingServiceWorkspaceInner() {
         queryKey: counselingWorkspaceQueryKeys.records(),
       });
     },
-    [currentSpaceId, queryClient, removeSpace, selection.clearAll]
+    [
+      currentSpaceId,
+      queryClient,
+      removeSpace,
+      resolveApiHref,
+      selection.clearAll,
+    ]
   );
 
   // ── 내보내기 핸들러 ────────────────────────────────────────────

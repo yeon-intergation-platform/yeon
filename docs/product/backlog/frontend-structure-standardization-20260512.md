@@ -179,3 +179,28 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 9차: counseling-service page 삭제 액션 fetch wrapper 적용
+
+### 작업내용
+
+- `app/counseling-service/page.tsx`의 상담 기록/수강생/스페이스 삭제 핸들러에서 직접 `fetch()`를 제거한다.
+- 기존 `counselingWorkspaceFetchVoid`를 사용해 오류 파싱과 credentials 정책을 workspace fetch boundary로 통일한다.
+- 삭제 후 로컬 상태 정리와 query invalidation 동작은 유지한다.
+
+### 논의 필요
+
+- 삭제 액션 전체를 page에서 별도 action hook으로 분리할지 여부.
+
+### 선택지
+
+1. 이번 차수는 fetch boundary만 정리하고 action hook 분리는 후속 작업으로 둔다.
+2. `useCounselingWorkspaceDeleteActions`까지 즉시 분리한다.
+
+### 추천
+
+- 1번. page 로직 분리는 더 큰 UI 상태 결합을 건드리므로 fetch 표준화와 분리한다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.
