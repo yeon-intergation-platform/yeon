@@ -2,10 +2,8 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { X } from "lucide-react";
-import { resolveApiHrefForCurrentPath } from "@/lib/app-route-paths";
-
 import { FIELD_TYPE_LABELS } from "../types";
-import type { SpaceTemplateDetail } from "../types";
+import { fetchSpaceTemplateDetail } from "../space-settings-api";
 
 const spaceSettingsQueryKeys = {
   templateDetail: (templateId: string | null) =>
@@ -25,17 +23,7 @@ export function SpaceTemplatePreviewModal({
 }: SpaceTemplatePreviewModalProps) {
   const { data, isPending, error } = useQuery({
     queryKey: spaceSettingsQueryKeys.templateDetail(templateId),
-    queryFn: async () => {
-      const response = await fetch(
-        resolveApiHrefForCurrentPath(`/api/v1/space-templates/${templateId}`)
-      );
-      if (!response.ok) {
-        const text = await response.text().catch(() => "");
-        throw new Error(text || "템플릿을 불러오지 못했습니다.");
-      }
-
-      return response.json() as Promise<{ template: SpaceTemplateDetail }>;
-    },
+    queryFn: () => fetchSpaceTemplateDetail(templateId ?? ""),
     enabled: open && Boolean(templateId),
   });
 
