@@ -2288,3 +2288,28 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 92차 — 타자방 연결 상태 화면/옵션 상수 경계 분리
+
+### 작업내용
+
+- `typing-room-screen.tsx`에 함께 있던 loading/error 상태 화면을 `typing-room-state-views.tsx`로 분리한다.
+- 대기방 인원/라운드/채팅 제한 상수를 `typing-room-options.ts`로 분리해 URL 파싱과 화면 검증이 같은 source of truth를 보게 한다.
+- 이번 차수는 동작/API/문구를 유지하고, 다음 차수에서 header/participants/settings/chat view를 추가 분리할 수 있는 안전한 경계를 만든다.
+
+### 논의 필요
+
+- 남은 대기방 본문 view를 한 번에 분리할지, panel 단위로 나눌지 여부.
+
+### 선택지
+
+1. 이번 차수는 상태 화면과 옵션 상수만 먼저 분리한다.
+2. 대기방 header/participants/settings/chat까지 한 번에 분리한다.
+
+### 추천
+
+- 1번. 타자방은 실시간 Colyseus 연결/퇴장/라우팅 경계가 있어 첫 차수는 무동작 변경이 확실한 상태 화면과 상수부터 분리한다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.

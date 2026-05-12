@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ChangeEvent, MouseEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -43,6 +42,16 @@ import {
   type TypingRaceSeed,
 } from "./use-typing-settings";
 import { resolveTypingRoomSelectedDeck } from "./typing-room-selection";
+import {
+  TypingRoomConnectionErrorState,
+  TypingRoomLoadingState,
+  TypingRoomSeedErrorState,
+} from "./typing-room-state-views";
+import {
+  LOBBY_MAX_PARTICIPANT_OPTIONS,
+  LOBBY_ROUND_COUNT_OPTIONS,
+  MAX_LOBBY_CHAT_LENGTH,
+} from "./typing-room-options";
 import { trackEvent } from "@/lib/analytics";
 
 type TypingRoomScreenProps = {
@@ -58,10 +67,6 @@ type DeckAwareCreateMessage = TypingRoomCreateMessage & {
   participantDeckTitle?: string;
   raceSeed?: TypingRaceSeed;
 };
-
-const LOBBY_MAX_PARTICIPANT_OPTIONS = [2, 3, 4] as const;
-const LOBBY_ROUND_COUNT_OPTIONS = [1, 3, 5] as const;
-const MAX_LOBBY_CHAT_LENGTH = 500;
 
 function parseEnum<T extends string>(
   value: string | null,
@@ -557,64 +562,29 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
 
   if (mode === "create" && seedState.kind === "loading") {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-white text-[#111]">
-        <div className="flex flex-col items-center gap-3 text-center font-mono text-[13px] text-[#666]">
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#e5e5e5] border-t-[#111]" />
-          <span>선택한 덱에서 레이스 문장을 준비하는 중...</span>
-        </div>
-      </div>
+      <TypingRoomLoadingState message="선택한 덱에서 레이스 문장을 준비하는 중..." />
     );
   }
 
   if (mode === "create" && seedState.kind === "error") {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-white px-6 text-[#111]">
-        <div className="max-w-md rounded-2xl border border-[#e5e5e5] bg-white p-8 text-center">
-          <h1 className="text-[24px] font-semibold tracking-[-0.03em] text-[#111]">
-            덱 문장을 준비하지 못했어요
-          </h1>
-          <p className="mt-3 text-[14px] leading-6 text-[#666]">
-            {seedState.message}
-          </p>
-          <div className="mt-6 grid gap-2 sm:grid-cols-2">
-            <button
-              type="button"
-              onClick={() => setSeedRetryToken((value) => value + 1)}
-              className="rounded-xl bg-[#111] px-5 py-3 text-[14px] font-semibold text-white transition-colors hover:bg-[#333]"
-            >
-              다시 시도
-            </button>
-            <button
-              type="button"
-              onClick={() => setUseDefaultFallback(true)}
-              className="rounded-xl border border-[#e5e5e5] bg-white px-5 py-3 text-[14px] font-semibold text-[#666] transition-colors hover:border-[#ddd] hover:text-[#111]"
-            >
-              기본 덱으로 시작
-            </button>
-          </div>
-          <Link
-            href="/typing-service/rooms"
-            className="mt-4 inline-flex text-[13px] font-semibold text-[#666] no-underline transition-colors hover:text-[#111]"
-          >
-            로비로 돌아가기
-          </Link>
-        </div>
-      </div>
+      <TypingRoomSeedErrorState
+        message={seedState.message}
+        onRetry={() => setSeedRetryToken((value) => value + 1)}
+        onUseDefaultDeck={() => setUseDefaultFallback(true)}
+      />
     );
   }
 
   if (race.connectionState === "connecting" || !room) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-white text-[#111]">
-        <div className="flex flex-col items-center gap-3 font-mono text-[13px] text-[#666]">
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#e5e5e5] border-t-[#111]" />
-          <span>
-            {mode === "create"
-              ? "타자방을 만드는 중..."
-              : "타자방에 입장하는 중..."}
-          </span>
-        </div>
-      </div>
+      <TypingRoomLoadingState
+        message={
+          mode === "create"
+            ? "타자방을 만드는 중..."
+            : "타자방에 입장하는 중..."
+        }
+      />
     );
   }
 
@@ -623,23 +593,12 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
     race.connectionState === "disconnected"
   ) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-white px-6 text-[#111]">
-        <div className="max-w-md rounded-2xl border border-[#e5e5e5] bg-white p-8 text-center">
-          <h1 className="text-[24px] font-semibold tracking-[-0.03em] text-[#111]">
-            타자방에 연결할 수 없어요
-          </h1>
-          <p className="mt-3 text-[14px] leading-6 text-[#666]">
-            {race.roomError ??
-              "방이 이미 시작되었거나 서버 연결이 끊겼을 수 있어요."}
-          </p>
-          <Link
-            href="/typing-service/rooms"
-            className="mt-6 inline-flex rounded-xl bg-[#111] px-5 py-3 text-[14px] font-semibold text-white transition-colors hover:bg-[#333] no-underline"
-          >
-            로비로 돌아가기
-          </Link>
-        </div>
-      </div>
+      <TypingRoomConnectionErrorState
+        message={
+          race.roomError ??
+          "방이 이미 시작되었거나 서버 연결이 끊겼을 수 있어요."
+        }
+      />
     );
   }
 
