@@ -53,14 +53,14 @@ const WRITABLE_CATEGORIES = COMMUNITY_CATEGORIES.filter(
 function getCategoryBadgeClassName(category: WritableCommunityCategory) {
   switch (category) {
     case "타자친구 모집":
-      return "inline-flex items-center rounded-full border border-[#dcfce7] bg-[#f0fdf4] px-2 py-0.5 text-[11px] font-bold text-[#047857]";
+      return "inline-flex items-center rounded-full bg-[#e7f7ef] px-2 py-0.5 text-[11px] font-bold text-[#00875a]";
     case "카드친구 모집":
-      return "inline-flex items-center rounded-full border border-[#fef3c7] bg-[#fffbeb] px-2 py-0.5 text-[11px] font-bold text-[#92400e]";
+      return "inline-flex items-center rounded-full bg-[#fff4d6] px-2 py-0.5 text-[11px] font-bold text-[#8a5a00]";
     case "관리자에게 아무말/조언":
-      return "inline-flex items-center rounded-full border border-[#f3e8ff] bg-[#faf5ff] px-2 py-0.5 text-[11px] font-bold text-[#7e22ce]";
+      return "inline-flex items-center rounded-full bg-[#f1e8ff] px-2 py-0.5 text-[11px] font-bold text-[#6d28d9]";
     case "잡담":
     default:
-      return "inline-flex items-center rounded-full border border-[#dbeafe] bg-[#eff6ff] px-2 py-0.5 text-[11px] font-bold text-[#1d4ed8]";
+      return "inline-flex items-center rounded-full bg-[#e8f5fd] px-2 py-0.5 text-[11px] font-bold text-[#1d9bf0]";
   }
 }
 
@@ -97,14 +97,14 @@ function getTimelineActionButtonClassName(
 ) {
   switch (tone) {
     case "reply":
-      return "group inline-flex items-center gap-1.5 rounded-full pr-2 text-[13px] font-semibold text-[#536471] transition-colors hover:bg-[#e8f5fd] hover:text-[#1d9bf0] disabled:cursor-not-allowed disabled:text-[#aab8c2]";
+      return "group inline-flex min-w-0 items-center gap-1.5 rounded-full text-[15px] font-medium text-[#536471] transition-colors hover:text-[#1d9bf0] disabled:cursor-not-allowed disabled:text-[#aab8c2]";
     case "repost":
-      return "group inline-flex items-center gap-1.5 rounded-full pr-2 text-[13px] font-semibold text-[#536471] transition-colors hover:bg-[#def1eb] hover:text-[#00ba7c] disabled:cursor-not-allowed disabled:text-[#aab8c2]";
+      return "group inline-flex min-w-0 items-center gap-1.5 rounded-full text-[15px] font-medium text-[#536471] transition-colors hover:text-[#00ba7c] disabled:cursor-not-allowed disabled:text-[#aab8c2]";
     case "like":
-      return "group inline-flex items-center gap-1.5 rounded-full pr-2 text-[13px] font-semibold text-[#536471] transition-colors hover:bg-[#fce8f3] hover:text-[#f91880] disabled:cursor-not-allowed disabled:text-[#aab8c2]";
+      return "group inline-flex min-w-0 items-center gap-1.5 rounded-full text-[15px] font-medium text-[#536471] transition-colors hover:text-[#f91880] disabled:cursor-not-allowed disabled:text-[#aab8c2]";
     case "default":
     default:
-      return "group inline-flex items-center gap-1.5 rounded-full pr-2 text-[13px] font-semibold text-[#536471] transition-colors hover:bg-[#eff3f4] hover:text-[#0f1419] disabled:cursor-not-allowed disabled:text-[#aab8c2]";
+      return "group inline-flex min-w-0 items-center gap-1.5 rounded-full text-[15px] font-medium text-[#536471] transition-colors hover:text-[#0f1419] disabled:cursor-not-allowed disabled:text-[#aab8c2]";
   }
 }
 
@@ -290,7 +290,9 @@ function TimelineActionButton(props: {
       <span className="inline-flex h-8 w-8 items-center justify-center rounded-full transition-colors group-hover:bg-current/10">
         {icon}
       </span>
-      {typeof count === "number" ? <span>{formatMetricCount(count)}</span> : null}
+      {typeof count === "number" ? (
+        <span className="tabular-nums">{formatMetricCount(count)}</span>
+      ) : null}
     </button>
   );
 }
@@ -310,7 +312,7 @@ function FeedPostEditForm(props: {
         event.preventDefault();
         void onSubmit();
       }}
-      className="rounded-2xl border border-[#cfd9de] bg-white p-3"
+      className="border-l-2 border-[#1d9bf0] bg-[#f7f9f9] p-3"
     >
       <textarea
         value={draft}
@@ -353,14 +355,14 @@ function FeedPostReplyForm(props: {
 
   return (
     <form
-      className="mt-4 grid grid-cols-[40px_minmax(0,1fr)] gap-3"
+      className="mt-5 grid grid-cols-[40px_minmax(0,1fr)] gap-3"
       onSubmit={(event) => {
         event.preventDefault();
         void onSubmit();
       }}
     >
       <div className="h-10 w-10 rounded-full bg-[#eff3f4]" aria-hidden="true" />
-      <div className="rounded-2xl border border-[#cfd9de] bg-white p-3">
+      <div className="rounded-[18px] border border-[#cfd9de] bg-white p-3">
         <label htmlFor={`community-reply-${postId}`} className="sr-only">
           댓글 입력
         </label>
@@ -494,8 +496,10 @@ function FeedPostItem(props: {
   }, [isEditing, post.body]);
 
   return (
-    <article className="group grid grid-cols-[48px_minmax(0,1fr)] gap-3 border-b border-[#eff3f4] px-4 py-4 transition-colors hover:bg-[#f7f9f9]">
-      <AuthorAvatar post={post} />
+    <article className="group grid grid-cols-[56px_minmax(0,1fr)] gap-4 border-b border-[#eff3f4] px-5 py-5 transition-colors hover:bg-[#f7f9f9] sm:grid-cols-[64px_minmax(0,1fr)] sm:px-6">
+      <div className="pt-0.5">
+        <AuthorAvatar post={post} />
+      </div>
       <div className="min-w-0">
         {isEditing ? (
           <FeedPostEditForm
@@ -518,7 +522,7 @@ function FeedPostItem(props: {
                   <span className="truncate font-black text-[#0f1419]">
                     {post.author.nickname}
                   </span>
-                  <ShieldCheck size={17} className="shrink-0 text-[#1d9bf0]" aria-hidden="true" />
+                  <ShieldCheck size={18} className="shrink-0 text-[#1d9bf0]" aria-hidden="true" />
                   <span className="truncate text-[#536471]">
                     {createAuthorHandle(post.author.nickname)}
                   </span>
@@ -527,11 +531,10 @@ function FeedPostItem(props: {
                     {formatRelativeTime(post.createdAt)}
                   </time>
                 </div>
-                <div className="mt-1 flex flex-wrap items-center gap-2">
+                <div className="mt-1 flex flex-wrap items-center gap-2 text-[13px] leading-[1.4] text-[#536471]">
+                  <span>YEON 커뮤니티</span>
+                  <span aria-hidden="true">·</span>
                   <CategoryBadge category={parsedPost.category} />
-                  <span className="text-[12px] font-medium text-[#536471]">
-                    YEON 커뮤니티에서 게시
-                  </span>
                 </div>
               </div>
               <button
@@ -544,11 +547,11 @@ function FeedPostItem(props: {
             </div>
 
             <Link href={`/community/posts/${post.id}`} className="mt-2 block no-underline">
-              <h2 className="whitespace-pre-wrap text-[20px] font-semibold leading-[1.35] tracking-[-0.02em] text-[#0f1419] group-hover:underline">
-                {parsedPost.title}
-              </h2>
-              <p className="mt-2 whitespace-pre-wrap text-[16px] leading-[1.55] text-[#0f1419]">
-                {parsedPost.content}
+              <p className="whitespace-pre-wrap text-[19px] leading-[1.48] tracking-[-0.015em] text-[#0f1419] sm:text-[20px]">
+                <span className="font-semibold">{parsedPost.title}</span>
+                {parsedPost.content ? (
+                  <span>{`\n${parsedPost.content}`}</span>
+                ) : null}
               </p>
             </Link>
           </>
@@ -556,7 +559,7 @@ function FeedPostItem(props: {
 
         {postError ? <p className="mt-2 text-[12px] text-red-600">{postError}</p> : null}
 
-        <div className="mt-3 flex max-w-[560px] items-center justify-between gap-2">
+        <div className="mt-4 grid max-w-[620px] grid-cols-[1fr_1fr_1fr_1.15fr_auto_auto] items-center gap-1 pr-1">
           <TimelineActionButton
             icon={<MessageCircle size={18} />}
             label={expanded ? "댓글 닫기" : "댓글 열기"}
@@ -589,7 +592,7 @@ function FeedPostItem(props: {
           </div>
         </div>
 
-        <div className="mt-1 flex flex-wrap items-center gap-1">
+        <div className="mt-2 flex flex-wrap items-center gap-1 text-[#536471]">
           <button
             type="button"
             onClick={() => setIsEditing(true)}
@@ -618,7 +621,7 @@ function FeedPostItem(props: {
         {replyError ? <p className="mt-2 text-[12px] text-red-600">{replyError}</p> : null}
 
         {expanded ? (
-          <div className="mt-4 border-t border-[#eff3f4] pt-4">
+          <div className="mt-5 border-t border-[#eff3f4] pt-4">
             {isRepliesLoading ? <p className="text-[13px] text-[#536471]">댓글을 불러오는 중...</p> : null}
 
             {replies.length ? (
@@ -683,7 +686,7 @@ function WritePostPanel(props: {
         event.preventDefault();
         onSubmit();
       }}
-      className="grid grid-cols-[48px_minmax(0,1fr)] gap-3 border-b border-[#eff3f4] bg-white px-4 py-4"
+      className="grid grid-cols-[56px_minmax(0,1fr)] gap-4 border-b border-[#eff3f4] bg-white px-5 py-5 sm:grid-cols-[64px_minmax(0,1fr)] sm:px-6"
     >
       <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-[#0f1419] to-[#536471] text-[18px] font-black text-white">
         {guestNickname.trim().slice(0, 1) || "연"}
@@ -726,7 +729,7 @@ function WritePostPanel(props: {
           onChange={(event) => onChangeTitle(event.target.value)}
           placeholder="무슨 일이 일어나고 있나요? 제목을 적어주세요"
           maxLength={80}
-          className="mt-3 w-full border-0 bg-transparent text-[20px] font-semibold tracking-[-0.02em] text-[#0f1419] outline-none placeholder:text-[#536471]"
+          className="mt-4 w-full border-0 bg-transparent text-[22px] font-medium tracking-[-0.02em] text-[#0f1419] outline-none placeholder:text-[#536471]"
         />
         <textarea
           value={content}
@@ -734,7 +737,7 @@ function WritePostPanel(props: {
           placeholder="내용을 이어서 적어주세요"
           rows={4}
           maxLength={280}
-          className="mt-2 w-full resize-y border-0 bg-transparent text-[16px] leading-[1.55] text-[#0f1419] outline-none placeholder:text-[#536471]"
+          className="mt-2 w-full resize-y border-0 bg-transparent text-[18px] leading-[1.5] text-[#0f1419] outline-none placeholder:text-[#536471]"
         />
         <div className="border-t border-[#eff3f4] pt-3 text-[12px] font-semibold text-[#536471]">
           {title.length + content.length}/360
@@ -752,8 +755,8 @@ function SidebarPanel({
   children: ReactNode;
 }) {
   return (
-    <section className="rounded-[28px] border border-[#eff3f4] bg-[#f7f9f9] p-4">
-      <h2 className="text-[18px] font-black tracking-[-0.03em] text-[#0f1419]">
+    <section className="rounded-[28px] bg-[#f7f9f9] p-4">
+      <h2 className="text-[20px] font-black tracking-[-0.03em] text-[#0f1419]">
         {title}
       </h2>
       <div className="mt-3">{children}</div>
@@ -868,16 +871,16 @@ export function CommunityPage() {
     <div className="min-h-screen bg-white text-[#0f1419]">
       <CommonProductHeader activeService="community" />
 
-      <main className="mx-auto grid max-w-[1180px] gap-0 px-0 md:grid-cols-[minmax(0,_760px)_320px] md:gap-6 md:px-6">
-        <section className="min-w-0 border-x border-[#eff3f4]">
-          <div className="sticky top-0 z-10 border-b border-[#eff3f4] bg-white/90 px-4 py-3 backdrop-blur">
-            <div className="flex items-center justify-between gap-3">
+      <main className="mx-auto grid max-w-[1265px] gap-0 px-0 lg:grid-cols-[minmax(0,_740px)_360px] lg:gap-8 lg:px-6">
+        <section className="min-w-0 border-x border-[#eff3f4] bg-white">
+          <div className="sticky top-0 z-10 border-b border-[#eff3f4] bg-white/95 backdrop-blur">
+            <div className="flex items-center justify-between gap-3 px-5 py-3 sm:px-6">
               <div>
-                <h1 className="text-[20px] font-black tracking-[-0.03em] text-[#0f1419]">
+                <h1 className="text-[21px] font-black tracking-[-0.035em] text-[#0f1419]">
                   YEON 커뮤니티
                 </h1>
                 <p className="mt-0.5 text-[12px] font-semibold text-[#536471]">
-                  피드는 피드답게, 채팅은 채팅답게 흐르는 실시간 광장
+                  실시간 채팅과 피드가 분리된 타임라인
                 </p>
               </div>
               <button
@@ -888,7 +891,14 @@ export function CommunityPage() {
                 글쓰기
               </button>
             </div>
-            <div className="mt-3 flex gap-1 overflow-x-auto pb-1">
+            <div className="grid grid-cols-3 border-t border-[#eff3f4] text-center text-[14px] font-bold text-[#536471]">
+              <span className="relative px-3 py-3 text-[#0f1419] after:absolute after:bottom-0 after:left-1/2 after:h-1 after:w-14 after:-translate-x-1/2 after:rounded-full after:bg-[#1d9bf0]">
+                추천
+              </span>
+              <span className="px-3 py-3 transition-colors hover:bg-[#f7f9f9]">실시간</span>
+              <span className="px-3 py-3 transition-colors hover:bg-[#f7f9f9]">친구 모집</span>
+            </div>
+            <div className="flex gap-1 overflow-x-auto border-t border-[#eff3f4] px-5 py-2 sm:px-6">
               {COMMUNITY_CATEGORIES.map((category) => (
                 <button
                   key={category}
@@ -989,7 +999,7 @@ export function CommunityPage() {
           </div>
         </section>
 
-        <aside className="hidden space-y-4 py-4 md:block">
+        <aside className="hidden space-y-4 py-4 lg:block">
           <SidebarPanel title="작성자 정보">
             <p className="text-[13px] leading-[1.6] text-[#536471]">
               비회원 글 작성/수정/삭제와 댓글 작성/삭제에 사용됩니다.
