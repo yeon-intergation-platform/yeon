@@ -21,14 +21,13 @@ import {
   SPACE_FULL_TEST_DATA,
   SPACE_LITE_TEST_DATA,
 } from "@/lib/test-data-downloads";
+import { studentManagementFetchJson } from "@/features/student-management/hooks/student-management-fetch";
 import { getSpacePeriodInputError } from "@/lib/space-period";
 
 import {
   SPACE_CREATE_CHOICES,
   type SpaceCreateChoiceStep,
 } from "./space-create-choice-options";
-import { resolveApiHrefForCurrentPath } from "@/lib/app-route-paths";
-
 import type { Space } from "../types";
 import type { ImportCommitResult } from "@/features/cloud-import/types";
 
@@ -91,7 +90,7 @@ export function StudentSpaceCreateModal({
 
     const periodError = getSpacePeriodInputError(
       startDate || null,
-      endDate || null,
+      endDate || null
     );
     if (periodError) {
       setError(periodError);
@@ -102,8 +101,8 @@ export function StudentSpaceCreateModal({
     setError(null);
 
     try {
-      const response = await fetch(
-        resolveApiHrefForCurrentPath("/api/v1/spaces"),
+      const data = await studentManagementFetchJson<{ space: Space }>(
+        "/api/v1/spaces",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -113,21 +112,15 @@ export function StudentSpaceCreateModal({
             endDate: endDate || null,
           }),
         },
+        "스페이스를 만들지 못했습니다."
       );
-
-      if (!response.ok) {
-        const message = await response.text().catch(() => "");
-        throw new Error(message || "스페이스를 만들지 못했습니다.");
-      }
-
-      const data = (await response.json()) as { space: Space };
       onCreated(data.space);
       onClose();
     } catch (requestError) {
       setError(
         requestError instanceof Error
           ? requestError.message
-          : "스페이스를 만들지 못했습니다.",
+          : "스페이스를 만들지 못했습니다."
       );
     } finally {
       setSaving(false);

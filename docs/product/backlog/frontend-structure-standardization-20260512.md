@@ -554,3 +554,28 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 24차: student space create modal fetch wrapper 정리
+
+### 작업내용
+
+- `features/student-management/components/space-create-modal.tsx`의 빈 스페이스 생성 직접 `fetch()` 호출을 제거한다.
+- 스페이스 생성 요청은 `studentManagementFetchJson` wrapper를 사용해 credentials/error parsing 정책을 student-management 기준으로 통일한다.
+- 이름/기간 validation, `onCreated`, `onClose`, import mode 흐름은 유지한다.
+
+### 논의 필요
+
+- 생성 modal의 blank/import 상태를 별도 container hook으로 즉시 분리할지 여부.
+
+### 선택지
+
+1. 이번 차수는 fetch boundary만 닫고 modal 구조 분해는 후속 god component 정리에서 다룬다.
+2. blank 생성 form 상태를 별도 hook으로 즉시 분리한다.
+
+### 추천
+
+- 1번. 네트워크 boundary 정리와 modal 구조 분해를 분리해 import 모드 회귀 면적을 줄인다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.
