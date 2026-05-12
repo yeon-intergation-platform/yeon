@@ -2415,3 +2415,28 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 97차 — 타자방 설정 panel view 분리
+
+### 작업내용
+
+- `typing-room-screen.tsx`에 남은 대기방 설정 panel JSX를 `typing-room-settings-panel.tsx`로 분리한다.
+- 설정 select UI는 presentational component가 담당하고, room setting payload 전송과 덱 seed 재계산 orchestration은 screen에 유지한다.
+- 공개 여부/인원/언어/문장 길이/난이도/판 수/진행 방식/덱 변경 동작과 문구는 변경하지 않는다.
+
+### 논의 필요
+
+- 설정 panel 내부 select row까지 별도 작은 컴포넌트로 쪼갤지 여부.
+
+### 선택지
+
+1. 이번 차수는 settings panel 파일 하나로 분리한다.
+2. select row와 readonly row까지 여러 파일로 나눈다.
+
+### 추천
+
+- 1번. 먼저 screen의 God component 압축을 줄이고, 반복 row 추상화는 실제 중복 압력이 더 커질 때 진행한다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.
