@@ -1,9 +1,16 @@
 import {
   credentialLoginResponseSchema,
+  credentialRegisterResponseSchema,
   mobileCredentialLoginResponseSchema,
   type CredentialLoginBody,
   type CredentialLoginResponse,
   type MobileCredentialLoginResponse,
+  type CredentialRegisterBody,
+  type CredentialRegisterResponse,
+  type CredentialResetConfirmBody,
+  type CredentialResetRequestBody,
+  type CredentialResendVerificationBody,
+  type CredentialSetPasswordBody,
 } from "@yeon/api-contract/credential";
 
 import {
@@ -14,6 +21,7 @@ import {
 import { buildSpringBffHeaders } from "@/server/spring-bff-client";
 
 const DEFAULT_BACKEND_BASE_URL = "http://127.0.0.1:8081";
+const SESSION_TOKEN_HEADER = "X-Yeon-Session-Token";
 
 function resolveSpringBackendBaseUrl() {
   const raw =
@@ -56,6 +64,43 @@ function extractError(parsed: unknown) {
   };
 }
 
+type SpringCredentialRequest = {
+  path: string;
+  method?: "GET" | "POST";
+  body?: unknown;
+  sessionToken?: string;
+};
+
+async function requestCredentialSpring({
+  path,
+  method = "POST",
+  body,
+  sessionToken,
+}: SpringCredentialRequest) {
+  const headers = buildSpringBffHeaders({ "content-type": "application/json" });
+
+  if (sessionToken) {
+    headers.set(SESSION_TOKEN_HEADER, sessionToken);
+  }
+
+  const response = await fetch(`${resolveSpringBackendBaseUrl()}${path}`, {
+    method,
+    cache: "no-store",
+    headers,
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+
+  const raw = await response.text();
+  const parsed = raw.length > 0 ? tryParseJson(raw) : null;
+
+  if (!response.ok) {
+    const error = extractError(parsed);
+    throw new AuthFlowError(error.code, error.message);
+  }
+
+  return parsed;
+}
+
 type LoginParams = CredentialLoginBody & {
   ipAddress: string;
 };
@@ -63,23 +108,10 @@ type LoginParams = CredentialLoginBody & {
 async function loginWithCredentialInSpring(
   params: LoginParams
 ): Promise<MobileCredentialLoginResponse> {
-  const response = await fetch(
-    `${resolveSpringBackendBaseUrl()}/auth/credentials/login`,
-    {
-      method: "POST",
-      cache: "no-store",
-      headers: buildSpringBffHeaders({ "content-type": "application/json" }),
-      body: JSON.stringify(params),
-    }
-  );
-
-  const raw = await response.text();
-  const parsed = tryParseJson(raw);
-
-  if (!response.ok) {
-    const error = extractError(parsed);
-    throw new AuthFlowError(error.code, error.message);
-  }
+  const parsed = await requestCredentialSpring({
+    path: "/auth/credentials/login",
+    body: params,
+  });
 
   return mobileCredentialLoginResponseSchema.parse(parsed);
 }
@@ -106,4 +138,65 @@ export async function loginCredentialWebInSpring(params: LoginParams): Promise<
 
 export async function loginCredentialMobileInSpring(params: LoginParams) {
   return loginWithCredentialInSpring(params);
+}
+
+type AppOriginParams = {
+  ipAddress: string;
+  appOrigin: string;
+};
+
+export async function registerCredentialInSpring(
+  params: CredentialRegisterBody & AppOriginParams
+): Promise<CredentialRegisterResponse> {
+  const parsed = await requestCredentialSpring({
+    path: "/auth/credentials/register",
+    body: params,
+  });
+
+  return credentialRegisterResponseSchema.parse(parsed);
+}
+
+export async function resendCredentialVerificationInSpring(
+  params: CredentialResendVerificationBody & AppOriginParams
+) {
+  await requestCredentialSpring({
+    path: "/auth/credentials/resend-verification",
+    body: params,
+  });
+}
+
+export async function verifyCredentialEmailInSpring(token: string) {
+  await requestCredentialSpring({
+    path: `/auth/credentials/verify?token=${encodeURIComponent(token)}`,
+    method: "GET",
+  });
+}
+
+export async function requestCredentialPasswordResetInSpring(
+  params: CredentialResetRequestBody & AppOriginParams
+) {
+  await requestCredentialSpring({
+    path: "/auth/credentials/reset-request",
+    body: params,
+  });
+}
+
+export async function confirmCredentialPasswordResetInSpring(
+  params: CredentialResetConfirmBody
+) {
+  await requestCredentialSpring({
+    path: "/auth/credentials/reset-confirm",
+    body: params,
+  });
+}
+
+export async function setCredentialPasswordInSpring(params: {
+  sessionToken: string;
+  body: CredentialSetPasswordBody;
+}) {
+  await requestCredentialSpring({
+    path: "/auth/credentials/set-password",
+    body: params.body,
+    sessionToken: params.sessionToken,
+  });
 }

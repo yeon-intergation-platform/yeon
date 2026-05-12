@@ -3,12 +3,12 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
 import { AuthFlowError } from "@/server/auth/auth-errors";
-import { confirmPasswordReset } from "@/server/auth/credentials/reset-password-service";
 import {
   respondWithAuthError,
   respondWithInvalidInput,
   respondWithServerError,
 } from "@/server/auth/credentials/route-helpers";
+import { confirmCredentialPasswordResetInSpring } from "@/server/credential-auth-spring-client";
 
 export const runtime = "nodejs";
 
@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    await confirmPasswordReset({
+    await confirmCredentialPasswordResetInSpring({
       token: parsed.data.token,
       newPassword: parsed.data.newPassword,
     });
@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
     if (error instanceof AuthFlowError) {
       return respondWithAuthError(error);
     }
-    console.error("비밀번호 재설정 확인 처리 중 오류", error);
+    console.error("비밀번호 재설정 Spring 확인 처리 중 오류", error);
     return respondWithServerError();
   }
 }
