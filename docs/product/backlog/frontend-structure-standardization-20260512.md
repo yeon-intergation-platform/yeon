@@ -1524,3 +1524,29 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 62차 — cloud import workspace split hook 추출
+
+### 작업내용
+
+- `features/cloud-import/components/cloud-import-inline.tsx`의 확장 프리뷰 레이아웃 분할 비율, viewport 판정, pointer resize 상태를 `useCloudImportWorkspaceSplit` hook으로 추출한다.
+- component는 로컬/클라우드 가져오기 흐름과 렌더링 조립에 집중하고, split ratio 저장/복원/키보드 조절/drag 상태는 hook이 소유한다.
+- 동작과 UI 클래스는 유지하고 파일 크기와 상태 책임을 줄인다.
+
+### 논의 필요
+
+- `cloud-import-inline.tsx`는 아직 저장 초안 모달, entry header, 파일 브라우저, 프리뷰 workspace를 모두 가진 큰 컴포넌트다. 이번 차수는 회귀 위험이 낮은 레이아웃 상태 머신부터 분리한다.
+
+### 선택지
+
+1. split ratio/resize 상태를 hook으로 추출한다.
+2. 저장 초안 모달 UI를 먼저 component로 추출한다.
+3. 파일 브라우저 전체를 별도 component로 추출한다.
+
+### 추천
+
+- 선택지 1. DOM pointer 이벤트와 localStorage 동기화가 컴포넌트 본문을 크게 오염시키므로 먼저 hook으로 격리한다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.
