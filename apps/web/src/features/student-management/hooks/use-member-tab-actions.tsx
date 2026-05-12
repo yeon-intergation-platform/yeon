@@ -8,7 +8,7 @@ import {
   patchSpaceTab,
 } from "../../space-settings/space-settings-api";
 import type { DynamicTab } from "./use-dynamic-member-tabs";
-import { memberTabsQueryKey } from "./use-dynamic-member-tabs";
+import { studentManagementQueryKeys } from "./student-management-query-keys";
 
 type MemberTabActionTarget = {
   id: string;
@@ -24,7 +24,7 @@ type ContextMenuState = {
 function resolveNextActiveTab(
   tabs: DynamicTab[],
   removedTabId: string,
-  currentActiveTab: string,
+  currentActiveTab: string
 ) {
   if (currentActiveTab !== removedTabId) {
     return null;
@@ -52,7 +52,7 @@ export function useMemberTabActions({
 }) {
   const queryClient = useQueryClient();
   const [contextMenu, setContextMenu] = React.useState<ContextMenuState | null>(
-    null,
+    null
   );
   const [renameTarget, setRenameTarget] =
     React.useState<MemberTabActionTarget | null>(null);
@@ -102,7 +102,7 @@ export function useMemberTabActions({
     onSuccess: async () => {
       if (spaceId) {
         await queryClient.invalidateQueries({
-          queryKey: memberTabsQueryKey(spaceId),
+          queryKey: studentManagementQueryKeys.memberTabs(spaceId),
           exact: true,
         });
       }
@@ -127,7 +127,7 @@ export function useMemberTabActions({
 
       if (spaceId) {
         await queryClient.invalidateQueries({
-          queryKey: memberTabsQueryKey(spaceId),
+          queryKey: studentManagementQueryKeys.memberTabs(spaceId),
           exact: true,
         });
       }
@@ -139,7 +139,7 @@ export function useMemberTabActions({
 
   function openTabMenu(
     target: MemberTabActionTarget,
-    position: { x: number; y: number },
+    position: { x: number; y: number }
   ) {
     setContextMenu({
       target,

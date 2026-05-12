@@ -23,13 +23,9 @@ function toVisibleTabs(data: DynamicTab[] | undefined) {
   return data ? data : [];
 }
 
-export function memberTabsQueryKey(spaceId: string | null) {
-  return studentManagementQueryKeys.memberTabs(spaceId);
-}
-
 export function useDynamicMemberTabs(spaceId: string | null) {
   const queryClient = useQueryClient();
-  const queryKey = memberTabsQueryKey(spaceId);
+  const queryKey = studentManagementQueryKeys.memberTabs(spaceId);
 
   const { data, isPending } = useQuery({
     queryKey,

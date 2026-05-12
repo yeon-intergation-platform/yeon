@@ -479,3 +479,28 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 21차: student-management query key factory 스코프 정리
+
+### 작업내용
+
+- `student-management` 내부에 남아 있는 보조 query key 함수(`customTabFieldsQueryKey`, `memberTabsQueryKey`)를 서비스 SSOT인 `studentManagementQueryKeys`로 흡수한다.
+- `membersRoot()`를 사용하는 광역 cache patch/invalidation 중 실제 선택 스페이스나 import 결과 스페이스로 좁힐 수 있는 경로를 정리한다.
+- 수강생 목록, 상세, 커스텀 탭 필드, 멤버 탭의 동작은 유지한다.
+
+### 논의 필요
+
+- `membersRoot()` 기반 전체 목록 조회 fallback을 즉시 제거할지 여부.
+
+### 선택지
+
+1. 이번 차수는 쓰기/무효화 범위만 좁히고, 상세 fallback 조회는 유지한다.
+2. 상세 fallback 조회까지 제거하고 URL 직접 진입 시 상세 API만 사용하게 한다.
+
+### 추천
+
+- 1번. 캐시 오염 위험이 큰 write/invalidation부터 줄이고, 상세 직접 진입 회귀 면적은 후속 차수에서 다룬다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.

@@ -39,8 +39,8 @@ import { getFieldChoiceOptions } from "../member-field-edit-policy";
 import { useAppRoute } from "@/lib/app-route-context";
 import { createPatchedHref } from "@/lib/route-state/search-params";
 import { formatSpacePeriodLabel } from "@/lib/space-period";
-import { customTabFieldsQueryKey } from "../hooks/use-custom-tab-fields";
 import { useMemberFieldActions } from "../hooks/use-member-field-actions";
+import { studentManagementQueryKeys } from "../hooks/student-management-query-keys";
 
 const REMOVED_SYSTEM_TAB_KEYS = new Set(["courses", "guardian"]);
 
@@ -114,7 +114,7 @@ export function StudentDetailScreen({
       setNewTabName("");
     } catch (error) {
       setQuickAddError(
-        error instanceof Error ? error.message : "탭을 추가하지 못했습니다.",
+        error instanceof Error ? error.message : "탭을 추가하지 못했습니다."
       );
     } finally {
       setAddingTab(false);
@@ -137,14 +137,14 @@ export function StudentDetailScreen({
             memberId,
             studentName: memberName,
             newRecordEntry: "true",
-          },
-        ),
+          }
+        )
       );
     },
-    [resolveAppHref, router],
+    [resolveAppHref, router]
   );
   const visibleDynamicTabs = dynamicTabs.filter(
-    (tab) => !REMOVED_SYSTEM_TAB_KEYS.has(tab.systemKey ?? ""),
+    (tab) => !REMOVED_SYSTEM_TAB_KEYS.has(tab.systemKey ?? "")
   );
   const tabItems =
     visibleDynamicTabs.length > 0
@@ -156,15 +156,19 @@ export function StudentDetailScreen({
       : undefined;
   // 현재 탭이 시스템 키가 아닌 UUID이면 커스텀 탭
   const activeCustomTab = visibleDynamicTabs.find(
-    (t) => t.tabType === "custom" && t.id === activeTab,
+    (t) => t.tabType === "custom" && t.id === activeTab
   );
   const overviewTab = visibleDynamicTabs.find(
-    (t) => t.systemKey === "overview",
+    (t) => t.systemKey === "overview"
   );
   const legacyGuardianTab = dynamicTabs.find((t) => t.systemKey === "guardian");
   const activeCustomTabQueryKey =
     member && activeCustomTab
-      ? customTabFieldsQueryKey(member.spaceId, member.id, activeCustomTab.id)
+      ? studentManagementQueryKeys.customTabFields(
+          member.spaceId,
+          member.id,
+          activeCustomTab.id
+        )
       : null;
   const memberTabActions = useMemberTabActions({
     spaceId: detailSpaceId,
@@ -236,7 +240,7 @@ export function StudentDetailScreen({
       spaces.find((space) => space.id === member.spaceId) ?? null;
     const memberSpacePeriodLabel = formatSpacePeriodLabel(
       memberSpace?.startDate ?? null,
-      memberSpace?.endDate ?? null,
+      memberSpace?.endDate ?? null
     );
 
     return (
@@ -308,7 +312,7 @@ export function StudentDetailScreen({
           onRequestAddTab={selectedSpaceId ? handleRequestAddTab : undefined}
           onRequestTabMenu={(tabId, position) => {
             const targetTab = visibleDynamicTabs.find(
-              (tab) => tab.tabType === "custom" && tab.id === tabId,
+              (tab) => tab.tabType === "custom" && tab.id === tabId
             );
             if (!targetTab) {
               return;
@@ -319,7 +323,7 @@ export function StudentDetailScreen({
                 id: targetTab.id,
                 name: targetTab.name,
               },
-              position,
+              position
             );
           }}
         />
@@ -370,7 +374,7 @@ export function StudentDetailScreen({
               handleOpenMemberRecordEntry(
                 member.id,
                 member.name,
-                member.spaceId,
+                member.spaceId
               )
             }
           />
@@ -394,11 +398,11 @@ export function StudentDetailScreen({
                   valueFieldType: field.fieldType,
                   valueOptions: getFieldChoiceOptions(
                     field.fieldType,
-                    field.options,
+                    field.options
                   ),
                   valueScope: "fieldValue",
                 },
-                position,
+                position
               )
             }
           />
@@ -483,12 +487,12 @@ export function StudentDetailScreen({
             y={memberTabActions.contextMenu.y}
             onRename={() =>
               memberTabActions.openRenameModal(
-                memberTabActions.contextMenu!.target,
+                memberTabActions.contextMenu!.target
               )
             }
             onDelete={() =>
               memberTabActions.openDeleteModal(
-                memberTabActions.contextMenu!.target,
+                memberTabActions.contextMenu!.target
               )
             }
           />
@@ -516,12 +520,12 @@ export function StudentDetailScreen({
             y={customFieldActions.contextMenu.y}
             onRename={() =>
               customFieldActions.openEditModal(
-                customFieldActions.contextMenu!.target,
+                customFieldActions.contextMenu!.target
               )
             }
             onDelete={() =>
               customFieldActions.openDeleteModal(
-                customFieldActions.contextMenu!.target,
+                customFieldActions.contextMenu!.target
               )
             }
           />

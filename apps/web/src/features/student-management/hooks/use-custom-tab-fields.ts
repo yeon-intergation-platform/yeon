@@ -54,7 +54,7 @@ export function applyUpdatedFieldValues(
 
 export function patchFieldValuesInCache(
   queryClient: QueryClient,
-  queryKey: ReturnType<typeof customTabFieldsQueryKey>,
+  queryKey: ReturnType<typeof studentManagementQueryKeys.customTabFields>,
   updatedValues: FieldValue[]
 ) {
   queryClient.setQueryData<CustomTabFieldsQueryData | undefined>(
@@ -77,14 +77,6 @@ export async function saveMemberFieldValues(
     },
     "필드 값을 저장하지 못했습니다."
   );
-}
-
-export function customTabFieldsQueryKey(
-  spaceId: string,
-  memberId: string,
-  tabId: string
-) {
-  return studentManagementQueryKeys.customTabFields(spaceId, memberId, tabId);
 }
 
 export function resolveValue(
@@ -112,7 +104,11 @@ export function useCustomTabFields(
 ) {
   const queryClient = useQueryClient();
   const enabled = !!spaceId && !!memberId && !!tabId;
-  const queryKey = customTabFieldsQueryKey(spaceId, memberId, tabId);
+  const queryKey = studentManagementQueryKeys.customTabFields(
+    spaceId,
+    memberId,
+    tabId
+  );
 
   const { data, isPending } = useQuery({
     queryKey,
