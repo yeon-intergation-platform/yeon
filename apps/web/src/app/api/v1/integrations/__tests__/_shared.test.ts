@@ -1,8 +1,6 @@
 import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { ServiceError } from "@/server/services/service-error";
-
 const mockCreateCloudImportDraft = vi.fn();
 const mockMarkImportDraftAnalyzing = vi.fn();
 const mockSaveImportDraftError = vi.fn();
@@ -10,6 +8,7 @@ const mockSaveImportDraftPreview = vi.fn();
 const mockSaveImportDraftProcessingState = vi.fn();
 const mockGetImportDraftSource = vi.fn();
 const mockRunImportCommitInSpring = vi.fn();
+const mockRunLocalImportAnalyzeInSpring = vi.fn();
 const mockAnalyzeBuffer = vi.fn();
 const mockCreateImportSSEStream = vi.fn();
 
@@ -29,11 +28,33 @@ vi.mock("@/server/services/import-drafts-service", () => ({
 }));
 vi.mock("@/server/services/import-preview-service", async () => {
   const { z } = await import("zod");
-  return { importPreviewBodySchema: z.object({ cohorts: z.array(z.unknown()) }) };
+  return {
+    importPreviewBodySchema: z.object({ cohorts: z.array(z.unknown()) }),
+  };
 });
 vi.mock("@/server/import-commit-spring-client", () => ({
-  ImportCommitSpringBackendHttpError: class ImportCommitSpringBackendHttpError extends Error { constructor(public status:number, message:string){ super(message); } },
-  runImportCommitInSpring: (...args: unknown[]) => mockRunImportCommitInSpring(...args),
+  ImportCommitSpringBackendHttpError: class ImportCommitSpringBackendHttpError extends Error {
+    constructor(
+      public status: number,
+      message: string
+    ) {
+      super(message);
+    }
+  },
+  runImportCommitInSpring: (...args: unknown[]) =>
+    mockRunImportCommitInSpring(...args),
+}));
+vi.mock("@/server/local-import-analysis-spring-client", () => ({
+  LocalImportAnalysisSpringBackendHttpError: class LocalImportAnalysisSpringBackendHttpError extends Error {
+    constructor(
+      public status: number,
+      message: string
+    ) {
+      super(message);
+    }
+  },
+  runLocalImportAnalyzeInSpring: (...args: unknown[]) =>
+    mockRunLocalImportAnalyzeInSpring(...args),
 }));
 vi.mock("@/server/services/file-analysis-service", () => ({
   analyzeBuffer: (...args: unknown[]) => mockAnalyzeBuffer(...args),
@@ -69,18 +90,18 @@ describe("integrations _shared", () => {
     const response = createOAuthCallbackSuccessResponse("googledrive");
 
     expect(response.headers.get("location")).toBe(
-      "https://yeon.world/counseling-service/student-management?googledrive_connected=true",
+      "https://yeon.world/counseling-service/student-management?googledrive_connected=true"
     );
   });
 
   it("OAuth callback 실패 응답은 counseling-service student-management로 돌려보낸다", () => {
     const response = createOAuthCallbackErrorResponse(
       "onedrive",
-      "exchange_failed",
+      "exchange_failed"
     );
 
     expect(response.headers.get("location")).toBe(
-      "https://yeon.world/counseling-service/student-management?onedrive_error=exchange_failed",
+      "https://yeon.world/counseling-service/student-management?onedrive_error=exchange_failed"
     );
   });
 
@@ -91,7 +112,7 @@ describe("integrations _shared", () => {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: "{bad json",
-      },
+      }
     );
 
     const response = await handleImportCommitRoute({
@@ -116,7 +137,7 @@ describe("integrations _shared", () => {
           draftId: "550e8400-e29b-41d4-a716-446655440000",
           preview: { cohorts: [] },
         }),
-      },
+      }
     );
 
     const response = await handleImportCommitRoute({
@@ -146,7 +167,7 @@ describe("integrations _shared", () => {
           fileName: "students.xlsx",
           mimeType: "application/vnd.ms-excel",
         }),
-      },
+      }
     );
 
     const response = await handleCloudAnalyzeRoute({
@@ -162,17 +183,10 @@ describe("integrations _shared", () => {
     expect(response.status).toBe(401);
   });
 
-  it("handleCloudAnalyzeRoute는 provider가 다른 draft 복구를 차단한다", async () => {
-    mockGetImportDraftSource.mockResolvedValue({
-      id: "draft-1",
-      provider: "onedrive",
-      selectedFile: {
-        id: "file-1",
-        name: "students.xlsx",
-        mimeType: "application/vnd.ms-excel",
-        fileKind: "spreadsheet",
-      },
-    });
+  it("handleCloudAnalyzeRoute는 draftId 복구를 Spring 분석으로 전달한다", async () => {
+    mockRunLocalImportAnalyzeInSpring.mockResolvedValue(
+      Response.json({ draftId: "draft-1", preview: { cohorts: [] } })
+    );
     const request = new NextRequest(
       "http://localhost/api/v1/integrations/googledrive/analyze",
       {
@@ -181,7 +195,7 @@ describe("integrations _shared", () => {
         body: JSON.stringify({
           draftId: "550e8400-e29b-41d4-a716-446655440000",
         }),
-      },
+      }
     );
 
     const response = await handleCloudAnalyzeRoute({
@@ -194,7 +208,10 @@ describe("integrations _shared", () => {
       requireMimeType: true,
     });
 
-    expect(response.status).toBe(400);
+    expect(response.status).toBe(200);
+    expect(mockRunLocalImportAnalyzeInSpring).toHaveBeenCalledWith(
+      expect.objectContaining({ userId: "user-1" })
+    );
   });
 
   it("handleCloudAnalyzeRoute는 파일 필수 필드가 없으면 400을 반환한다", async () => {
@@ -204,7 +221,7 @@ describe("integrations _shared", () => {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ fileId: "file-1" }),
-      },
+      }
     );
 
     const response = await handleCloudAnalyzeRoute({
@@ -220,10 +237,9 @@ describe("integrations _shared", () => {
     expect(response.status).toBe(400);
   });
 
-  it("handleCloudAnalyzeRoute는 분석 실패 시 draft error를 저장하고 ServiceError를 반환한다", async () => {
-    mockCreateCloudImportDraft.mockResolvedValue({ id: "draft-1" });
-    mockAnalyzeBuffer.mockRejectedValue(
-      new ServiceError(400, "지원하지 않는 파일 형식입니다."),
+  it("handleCloudAnalyzeRoute는 Spring 분석 실패를 그대로 반환한다", async () => {
+    mockRunLocalImportAnalyzeInSpring.mockRejectedValue(
+      new Error("지원하지 않는 파일 형식입니다.")
     );
     const request = new NextRequest(
       "http://localhost/api/v1/integrations/googledrive/analyze",
@@ -235,7 +251,7 @@ describe("integrations _shared", () => {
           fileName: "students.xlsx",
           mimeType: "application/vnd.ms-excel",
         }),
-      },
+      }
     );
 
     const response = await handleCloudAnalyzeRoute({
@@ -248,11 +264,6 @@ describe("integrations _shared", () => {
       requireMimeType: true,
     });
 
-    expect(mockSaveImportDraftError).toHaveBeenCalledWith({
-      userId: "user-1",
-      draftId: "draft-1",
-      message: "지원하지 않는 파일 형식입니다.",
-    });
-    expect(response.status).toBe(400);
+    expect(response.status).toBe(500);
   });
 });
