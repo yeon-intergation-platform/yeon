@@ -28,7 +28,9 @@ public class ChatServiceFeedController {
 	}
 
 	@GetMapping("/chat-service/feed")
-	public ChatServiceFeedListResponse list(@RequestHeader("X-Yeon-Chat-Profile-Id") UUID currentProfileId) {
+	public ChatServiceFeedListResponse list(
+		@RequestHeader(value = "X-Yeon-Chat-Profile-Id", required = false) UUID currentProfileId
+	) {
 		return service.list(currentProfileId);
 	}
 
@@ -43,7 +45,7 @@ public class ChatServiceFeedController {
 
 	@GetMapping("/chat-service/feed/{postId}/replies")
 	public ChatServiceFeedRepliesResponse listReplies(
-		@RequestHeader("X-Yeon-Chat-Profile-Id") UUID currentProfileId,
+		@RequestHeader(value = "X-Yeon-Chat-Profile-Id", required = false) UUID currentProfileId,
 		@PathVariable UUID postId
 	) {
 		return service.listReplies(currentProfileId, postId);

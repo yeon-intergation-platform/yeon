@@ -4,6 +4,7 @@ import static world.yeon.backend.chat_service_feed.mapper.ChatServiceFeedMapper.
 import static world.yeon.backend.chat_service_feed.mapper.ChatServiceFeedMapper.toMutationResponse;
 import static world.yeon.backend.chat_service_feed.mapper.ChatServiceFeedMapper.toRepliesResponse;
 
+import java.util.Set;
 import java.util.UUID;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
@@ -24,7 +25,7 @@ public class ChatServiceFeedService {
 
 	@Transactional(readOnly = true)
 	public ChatServiceFeedListResponse list(UUID currentProfileId) {
-		var blocked = repository.listBlockedRelationIds(currentProfileId);
+		var blocked = listBlockedRelationIds(currentProfileId);
 		var rows = repository.listRootFeed();
 		var replyCounts = repository.listReplyCounts(rows.stream().map(ChatServiceFeedRepository.FeedPostRow::id).toList(), blocked);
 		return toListResponse(rows, blocked, replyCounts);
@@ -32,7 +33,7 @@ public class ChatServiceFeedService {
 
 	@Transactional(readOnly = true)
 	public ChatServiceFeedRepliesResponse listReplies(UUID currentProfileId, UUID postId) {
-		var blocked = repository.listBlockedRelationIds(currentProfileId);
+		var blocked = listBlockedRelationIds(currentProfileId);
 		var rows = repository.listReplies(postId);
 		var replyCounts = repository.listReplyCounts(rows.stream().map(ChatServiceFeedRepository.FeedPostRow::id).toList(), blocked);
 		return toRepliesResponse(rows, blocked, replyCounts);
@@ -54,5 +55,12 @@ public class ChatServiceFeedService {
 			throw new ChatServiceFeedServiceException(500, "CHAT_SERVICE_FEED_CREATE_FAILED", "피드 글을 생성하지 못했습니다.");
 		}
 		return toMutationResponse(row);
+	}
+
+	private Set<UUID> listBlockedRelationIds(UUID currentProfileId) {
+		if (currentProfileId == null) {
+			return Set.of();
+		}
+		return repository.listBlockedRelationIds(currentProfileId);
 	}
 }

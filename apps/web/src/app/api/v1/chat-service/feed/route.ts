@@ -9,9 +9,10 @@ import { NextResponse } from "next/server";
 
 import { ServiceError } from "@/server/services/service-error";
 import {
-  createChatServiceFeedPost,
-  listChatServiceFeed,
-} from "@/server/services/chat-service/feed-service";
+  ChatServiceFeedSpringBackendHttpError,
+  createChatServiceFeedPostInSpring,
+  fetchChatServiceFeedFromSpring,
+} from "@/server/chat-service-feed-spring-client";
 import { getOrCreateChatServiceGuestProfile } from "@/server/services/chat-service/common";
 
 import {
@@ -48,11 +49,14 @@ async function resolveFeedProfileId(
 export async function GET(request: NextRequest) {
   try {
     const auth = await getOptionalChatServiceAuth(request);
-    const response = await listChatServiceFeed(auth?.profile.id);
+    const response = await fetchChatServiceFeedFromSpring(auth?.profile.id);
 
     return NextResponse.json(chatServiceListFeedResponseSchema.parse(response));
   } catch (error) {
     if (error instanceof ServiceError) {
+      return jsonChatServiceError(error.message, error.status);
+    }
+    if (error instanceof ChatServiceFeedSpringBackendHttpError) {
       return jsonChatServiceError(error.message, error.status);
     }
 
@@ -71,10 +75,10 @@ export async function POST(request: NextRequest) {
     }
 
     const profileId = await resolveFeedProfileId(request, parsedBody.data);
-    const response = await createChatServiceFeedPost(
-      profileId,
-      parsedBody.data.body
-    );
+    const response = await createChatServiceFeedPostInSpring({
+      currentProfileId: profileId,
+      body: parsedBody.data.body,
+    });
 
     return NextResponse.json(
       chatServiceCreateFeedPostResponseSchema.parse(response),
@@ -84,6 +88,9 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     if (error instanceof ServiceError) {
+      return jsonChatServiceError(error.message, error.status);
+    }
+    if (error instanceof ChatServiceFeedSpringBackendHttpError) {
       return jsonChatServiceError(error.message, error.status);
     }
 

@@ -1,6 +1,7 @@
 package world.yeon.backend.chat_service_feed.controller;
 
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -34,6 +35,13 @@ class ChatServiceFeedControllerTests {
 	@Test void 피드목록응답을반환한다() throws Exception {
 		when(service.list(eq(CURRENT_PROFILE_ID))).thenReturn(new ChatServiceFeedListResponse(List.of(samplePost())));
 		mockMvc.perform(get("/chat-service/feed").header("X-Yeon-Chat-Profile-Id", CURRENT_PROFILE_ID).header("X-Yeon-Internal-Token", "test-internal-token"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.posts[0].body").value("본문"));
+	}
+
+	@Test void 비로그인피드목록도응답한다() throws Exception {
+		when(service.list(isNull())).thenReturn(new ChatServiceFeedListResponse(List.of(samplePost())));
+		mockMvc.perform(get("/chat-service/feed").header("X-Yeon-Internal-Token", "test-internal-token"))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.posts[0].body").value("본문"));
 	}

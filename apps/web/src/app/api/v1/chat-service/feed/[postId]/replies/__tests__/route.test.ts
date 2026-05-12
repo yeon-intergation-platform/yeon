@@ -5,8 +5,8 @@ import { ServiceError } from "@/server/services/service-error";
 
 const mockGetOptionalChatServiceAuth = vi.fn();
 const mockParseJsonBody = vi.fn();
-const mockListChatServiceFeedReplies = vi.fn();
-const mockCreateChatServiceFeedPost = vi.fn();
+const mockFetchChatServiceFeedRepliesFromSpring = vi.fn();
+const mockCreateChatServiceFeedPostInSpring = vi.fn();
 const mockDeleteChatServiceFeedPost = vi.fn();
 const mockGetOrCreateChatServiceGuestProfile = vi.fn();
 
@@ -19,12 +19,22 @@ vi.mock("@/app/api/v1/chat-service/_shared", () => ({
 }));
 
 vi.mock("@/server/services/chat-service/feed-service", () => ({
-  createChatServiceFeedPost: (...args: unknown[]) =>
-    mockCreateChatServiceFeedPost(...args),
   deleteChatServiceFeedPost: (...args: unknown[]) =>
     mockDeleteChatServiceFeedPost(...args),
-  listChatServiceFeedReplies: (...args: unknown[]) =>
-    mockListChatServiceFeedReplies(...args),
+}));
+
+vi.mock("@/server/chat-service-feed-spring-client", () => ({
+  ChatServiceFeedSpringBackendHttpError: class ChatServiceFeedSpringBackendHttpError extends Error {
+    status: number;
+    constructor(status: number, message: string) {
+      super(message);
+      this.status = status;
+    }
+  },
+  createChatServiceFeedPostInSpring: (...args: unknown[]) =>
+    mockCreateChatServiceFeedPostInSpring(...args),
+  fetchChatServiceFeedRepliesFromSpring: (...args: unknown[]) =>
+    mockFetchChatServiceFeedRepliesFromSpring(...args),
 }));
 
 vi.mock("@/server/services/chat-service/common", () => ({
@@ -63,7 +73,9 @@ describe("chat-service feed replies route", () => {
 
   it("비로그인도 replies 목록 응답을 반환한다", async () => {
     mockGetOptionalChatServiceAuth.mockResolvedValue(null);
-    mockListChatServiceFeedReplies.mockResolvedValue({ replies: [] });
+    mockFetchChatServiceFeedRepliesFromSpring.mockResolvedValue({
+      replies: [],
+    });
 
     const response = await GET(
       new NextRequest("http://localhost/api/v1/chat-service/feed/333/replies"),
@@ -71,10 +83,10 @@ describe("chat-service feed replies route", () => {
     );
 
     expect(response.status).toBe(200);
-    expect(mockListChatServiceFeedReplies).toHaveBeenCalledWith(
-      undefined,
-      postId
-    );
+    expect(mockFetchChatServiceFeedRepliesFromSpring).toHaveBeenCalledWith({
+      currentProfileId: undefined,
+      postId,
+    });
   });
 
   it("invalid body면 400을 반환한다", async () => {
@@ -95,7 +107,7 @@ describe("chat-service feed replies route", () => {
       profile: { id: profileId },
     });
     mockParseJsonBody.mockResolvedValue({ body: "답글" });
-    mockCreateChatServiceFeedPost.mockResolvedValue(replyResponse);
+    mockCreateChatServiceFeedPostInSpring.mockResolvedValue(replyResponse);
 
     const response = await POST(
       new NextRequest("http://localhost/api/v1/chat-service/feed/333/replies", {
@@ -105,11 +117,11 @@ describe("chat-service feed replies route", () => {
     );
 
     expect(response.status).toBe(201);
-    expect(mockCreateChatServiceFeedPost).toHaveBeenCalledWith(
-      profileId,
-      "답글",
-      postId
-    );
+    expect(mockCreateChatServiceFeedPostInSpring).toHaveBeenCalledWith({
+      currentProfileId: profileId,
+      body: "답글",
+      replyToPostId: postId,
+    });
   });
 
   it("비로그인 닉네임/비밀번호로 reply를 삭제한다", async () => {
@@ -139,7 +151,7 @@ describe("chat-service feed replies route", () => {
   });
 
   it("ServiceError를 그대로 반환한다", async () => {
-    mockListChatServiceFeedReplies.mockRejectedValue(
+    mockFetchChatServiceFeedRepliesFromSpring.mockRejectedValue(
       new ServiceError(500, "답글 목록을 불러오지 못했습니다.")
     );
 
