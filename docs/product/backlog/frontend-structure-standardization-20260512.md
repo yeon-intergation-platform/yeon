@@ -1907,3 +1907,28 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 77차 — counseling sidebar 액션 조립 hook 분리
+
+### 작업내용
+
+- `app/counseling-service/_components/sidebar.tsx` 내부에 남은 member item action ref 조립과 context menu action 조립을 feature hook으로 분리한다.
+- Sidebar component는 데이터 파생, 렌더 조립, modal/context menu 표시만 담당하게 줄인다.
+- 기존 multi-select, drag selection, context menu, export/delete/navigation 동작은 변경하지 않는다.
+
+### 논의 필요
+
+- `sidebar.tsx` 전체를 feature component로 즉시 이동할지 여부.
+
+### 선택지
+
+1. 이번 차수는 action 조립 hook만 분리하고 component 소유권 이동은 후속으로 둔다.
+2. action hook 분리와 동시에 `Sidebar` 자체도 feature component로 이동한다.
+
+### 추천
+
+- 1번. Sidebar는 app hook 타입과 create-space modal에 아직 결합되어 있어, 내부 action 조립부터 줄이는 편이 회귀 위험이 낮다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.
