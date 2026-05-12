@@ -2212,3 +2212,28 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 89차 — 커뮤니티 피드 화면 presentational 컴포넌트 분리
+
+### 작업내용
+
+- `community-page.tsx`에 인라인으로 섞인 피드 게시글/댓글/글쓰기 presentational 컴포넌트를 `components/community-feed-components.tsx`로 분리한다.
+- route/page 컨테이너는 카테고리 필터, 작성 상태, guest identity confirm orchestration, feed hook 연결만 담당하게 한다.
+- UI 마크업/문구/동작은 변경하지 않는다.
+
+### 논의 필요
+
+- 게시글 카드와 글쓰기 패널을 한 파일에 둘지, 더 세분화할지 여부.
+
+### 선택지
+
+1. 이번 차수는 피드 화면 전용 presentational 묶음 파일 하나로 분리한다.
+2. 카드/댓글/글쓰기 파일을 각각 나눈다.
+
+### 추천
+
+- 1번. 첫 구조 분해는 import churn을 줄이고, 이후 재사용/변경이 생길 때 세분화한다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.
