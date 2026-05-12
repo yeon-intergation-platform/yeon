@@ -1,18 +1,17 @@
 "use client";
 
 import { useState, useRef, useCallback } from "react";
-import type { CounselingRecordDetail } from "@yeon/api-contract/counseling-records";
-
 import {
   AUDIO_UPLOAD_ERROR_MESSAGE,
   isAcceptedAudioFile,
   readAudioDurationMs,
 } from "@/lib/audio-file";
-import { resolveApiHrefForCurrentPath } from "@/lib/app-route-paths";
-
-import type { RecordItem } from "../_lib/types";
-import { createTimestamp, fmtDurationMs } from "../_lib/utils";
-import { counselingWorkspaceFetchJson } from "@/features/counseling-record-workspace/api/counseling-workspace-fetch";
+import type { RecordItem } from "@/app/counseling-service/_lib/types";
+import {
+  createTimestamp,
+  fmtDurationMs,
+} from "@/app/counseling-service/_lib/utils";
+import { uploadCounselingRecordAudio } from "@/features/counseling-record-workspace/api/counseling-records-api";
 
 interface UseFileUploadParams {
   onFileUpload: (record: RecordItem) => void;
@@ -102,14 +101,8 @@ export function useFileUpload({
           formData.append("audioDurationMs", String(audioDurationMs));
         }
 
-        const data = await counselingWorkspaceFetchJson<{
-          record: CounselingRecordDetail;
-        }>(
-          resolveApiHrefForCurrentPath("/api/v1/counseling-records"),
-          {
-            method: "POST",
-            body: formData,
-          },
+        const data = await uploadCounselingRecordAudio(
+          formData,
           "업로드에 실패했습니다."
         );
         const item = data.record;

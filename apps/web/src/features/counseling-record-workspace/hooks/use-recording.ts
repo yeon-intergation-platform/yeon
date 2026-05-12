@@ -1,11 +1,13 @@
 "use client";
 
 import { useState, useRef, useCallback } from "react";
-import type { CounselingRecordDetail } from "@yeon/api-contract/counseling-records";
-import { resolveApiHrefForCurrentPath } from "@/lib/app-route-paths";
-import { counselingWorkspaceFetchJson } from "@/features/counseling-record-workspace/api/counseling-workspace-fetch";
-import type { RecordItem } from "../_lib/types";
-import { fmtDuration, fmtDurationMs, createTimestamp } from "../_lib/utils";
+import { uploadCounselingRecordAudio } from "@/features/counseling-record-workspace/api/counseling-records-api";
+import type { RecordItem } from "@/app/counseling-service/_lib/types";
+import {
+  fmtDuration,
+  fmtDurationMs,
+  createTimestamp,
+} from "@/app/counseling-service/_lib/utils";
 
 interface UseRecordingParams {
   /** 녹음 중단 즉시 호출 — 임시 레코드로 processing 상태로 즉시 전환 */
@@ -110,14 +112,8 @@ export function useRecording({
         }
         formData.append("audioDurationMs", String(elapsedRef.current * 1000));
 
-        const data = await counselingWorkspaceFetchJson<{
-          record: CounselingRecordDetail;
-        }>(
-          resolveApiHrefForCurrentPath("/api/v1/counseling-records"),
-          {
-            method: "POST",
-            body: formData,
-          },
+        const data = await uploadCounselingRecordAudio(
+          formData,
           "녹음 파일을 업로드하지 못했습니다."
         );
         const item = data.record;
