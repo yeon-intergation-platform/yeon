@@ -104,3 +104,28 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 6차: sheet-export fetch wrapper 분리
+
+### 작업내용
+
+- `features/student-management/components/sheet-export-panel.tsx`에 남아 있는 직접 `fetch()` 호출을 서비스 전용 wrapper로 이동한다.
+- Google Drive 상태 조회, sheet-export 설정 조회/연결/동기화/가져오기/다운로드/연결해제를 `sheet-export-fetch.ts`의 함수로 노출한다.
+- 패널 컴포넌트는 UI 상태와 사용자 이벤트 조립만 담당하게 하고, HTTP 경로·에러 파싱·응답 타입은 wrapper가 소유하게 한다.
+
+### 논의 필요
+
+- 다운로드처럼 Blob과 DOM anchor가 함께 필요한 동작을 wrapper가 어디까지 책임질지.
+
+### 선택지
+
+1. wrapper는 HTTP 응답/Blob 획득까지만 담당하고 DOM 다운로드 트리거는 컴포넌트가 담당한다.
+2. wrapper가 파일명 생성과 anchor 클릭까지 모두 수행한다.
+
+### 추천
+
+- 1번. HTTP boundary와 DOM side effect를 분리하면 테스트와 재사용 범위가 명확하다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.

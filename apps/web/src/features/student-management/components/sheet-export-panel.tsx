@@ -10,58 +10,34 @@ import {
   Undo2,
 } from "lucide-react";
 import { useAppRoute } from "@/lib/app-route-context";
+import {
+  connectSheetExport,
+  disconnectSheetExport,
+  fetchGoogleDriveSheetStatus,
+  fetchSheetExportStatus,
+  fetchStudentExportBlob,
+  importSheetExport,
+  syncSheetExport,
+  type SheetExportConflict,
+  type SheetExportIntegration,
+  type StudentExportFormat,
+} from "../hooks/sheet-export-fetch";
 
 interface SheetExportPanelProps {
   spaceId: string;
 }
 
-interface ExportIntegration {
-  id: string;
-  sheetUrl: string;
-  sheetId: string;
-  lastSyncedAt: string | null;
-}
-
-type SheetConflict = {
-  type: string;
-  rowNumber: number | null;
-  memberId: string | null;
-  memberName: string | null;
-  changedFields: string[];
-  message: string;
-};
-
 type PanelState =
   | { kind: "drive-disconnected" }
   | {
       kind: "ready";
-      integration: ExportIntegration | null;
+      integration: SheetExportIntegration | null;
       sheetSyncReady: boolean;
     };
 
 const DISCONNECTED_PANEL_STATE: PanelState = {
   kind: "drive-disconnected",
 };
-
-async function readErrorMessage(
-  res: Response,
-  fallbackMessage: string,
-): Promise<string> {
-  const contentType = res.headers.get("content-type") ?? "";
-
-  if (contentType.includes("application/json")) {
-    const data = (await res.json().catch(() => null)) as {
-      message?: string;
-    } | null;
-
-    if (typeof data?.message === "string" && data.message.trim()) {
-      return data.message;
-    }
-  }
-
-  const text = await res.text().catch(() => "");
-  return text || fallbackMessage;
-}
 
 export function SheetExportPanel({ spaceId }: SheetExportPanelProps) {
   const { resolveApiHref } = useAppRoute();
@@ -88,12 +64,13 @@ export function SheetExportPanel({ spaceId }: SheetExportPanelProps) {
     conflicts: number;
     lastSyncedAt: string;
   } | null>(null);
-  const [importConflicts, setImportConflicts] = useState<SheetConflict[]>([]);
+  const [importConflicts, setImportConflicts] = useState<SheetExportConflict[]>(
+    []
+  );
 
   const [disconnecting, setDisconnecting] = useState(false);
-  const [downloadingFormat, setDownloadingFormat] = useState<
-    "csv" | "xlsx" | null
-  >(null);
+  const [downloadingFormat, setDownloadingFormat] =
+    useState<StudentExportFormat | null>(null);
 
   const stateCacheRef = useRef(new Map<string, PanelState>());
   const visibleStateRef = useRef<PanelState | null>(null);
@@ -139,7 +116,7 @@ export function SheetExportPanel({ spaceId }: SheetExportPanelProps) {
       visibleStateRef.current = nextState;
       setState(nextState);
     },
-    [],
+    []
   );
 
   const load = useCallback(async () => {
@@ -158,37 +135,23 @@ export function SheetExportPanel({ spaceId }: SheetExportPanelProps) {
     }
 
     try {
-      const [driveRes, sheetRes] = await Promise.all([
-        fetch(resolveApiHref("/api/v1/integrations/googledrive/status")),
-        fetch(resolveApiHref(`/api/v1/spaces/${spaceId}/sheet-export`)),
+      const [driveData, sheetData] = await Promise.all([
+        fetchGoogleDriveSheetStatus(resolveApiHref),
+        fetchSheetExportStatus(resolveApiHref, spaceId),
       ]);
 
       if (requestId !== requestIdRef.current) {
         return;
       }
 
-      if (!driveRes.ok) {
-        throw new Error("Google 연결 상태를 확인하지 못했습니다.");
-      }
-      const driveData = (await driveRes.json()) as {
-        connected: boolean;
-        sheetSyncReady?: boolean;
-      };
-
       if (!driveData.connected) {
         commitState(spaceId, DISCONNECTED_PANEL_STATE);
         return;
       }
 
-      if (!sheetRes.ok) {
-        throw new Error("시트 익스포트 설정을 불러오지 못했습니다.");
-      }
-      const data = (await sheetRes.json()) as {
-        integration: ExportIntegration | null;
-      };
       commitState(spaceId, {
         kind: "ready",
-        integration: data.integration,
+        integration: sheetData.integration,
         sheetSyncReady: driveData.sheetSyncReady ?? true,
       });
     } catch (err) {
@@ -199,7 +162,7 @@ export function SheetExportPanel({ spaceId }: SheetExportPanelProps) {
       setError(
         err instanceof Error
           ? err.message
-          : "시트 익스포트 패널을 초기화하지 못했습니다.",
+          : "시트 익스포트 패널을 초기화하지 못했습니다."
       );
       const fallbackState = cachedState ?? DISCONNECTED_PANEL_STATE;
       visibleStateRef.current = fallbackState;
@@ -209,7 +172,7 @@ export function SheetExportPanel({ spaceId }: SheetExportPanelProps) {
         setIsLoading(false);
       }
     }
-  }, [commitState, spaceId]);
+  }, [commitState, resolveApiHref, spaceId]);
 
   useEffect(() => {
     void load();
@@ -238,32 +201,19 @@ export function SheetExportPanel({ spaceId }: SheetExportPanelProps) {
     setImportConflicts([]);
 
     try {
-      const res = await fetch(
-        resolveApiHref(`/api/v1/spaces/${spaceId}/sheet-export`),
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ sheetUrl: sheetUrl.trim() }),
-        },
-      );
-
-      if (!res.ok) {
-        throw new Error(
-          await readErrorMessage(res, "시트를 연결하지 못했습니다."),
-        );
-      }
+      await connectSheetExport(resolveApiHref, spaceId, sheetUrl.trim());
 
       setSheetUrl("");
       setShowSheetConnectForm(false);
       await load();
     } catch (err) {
       setFormError(
-        err instanceof Error ? err.message : "시트를 연결하지 못했습니다.",
+        err instanceof Error ? err.message : "시트를 연결하지 못했습니다."
       );
     } finally {
       setSubmitting(false);
     }
-  }, [spaceId, sheetUrl, load]);
+  }, [resolveApiHref, spaceId, sheetUrl, load]);
 
   const handleSync = useCallback(async () => {
     setSyncing(true);
@@ -273,33 +223,17 @@ export function SheetExportPanel({ spaceId }: SheetExportPanelProps) {
     setError(null);
 
     try {
-      const res = await fetch(
-        resolveApiHref(`/api/v1/spaces/${spaceId}/sheet-export/sync`),
-        {
-          method: "POST",
-        },
-      );
-
-      if (!res.ok) {
-        throw new Error(
-          await readErrorMessage(res, "시트에 반영하지 못했습니다."),
-        );
-      }
-
-      const data = (await res.json()) as {
-        exported: number;
-        lastSyncedAt: string;
-      };
-      setSyncResult(data);
+      const result = await syncSheetExport(resolveApiHref, spaceId);
+      setSyncResult(result);
       await load();
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "시트에 반영하지 못했습니다.",
+        err instanceof Error ? err.message : "시트에 반영하지 못했습니다."
       );
     } finally {
       setSyncing(false);
     }
-  }, [spaceId, load]);
+  }, [resolveApiHref, spaceId, load]);
 
   const handleImportFromSheet = useCallback(async () => {
     if (displayState.kind !== "ready" || !displayState.integration) {
@@ -312,83 +246,38 @@ export function SheetExportPanel({ spaceId }: SheetExportPanelProps) {
     setImportConflicts([]);
 
     try {
-      const res = await fetch(
-        resolveApiHref(`/api/v1/spaces/${spaceId}/sheet-export/import`),
-        {
-          method: "POST",
-        },
-      );
+      const result = await importSheetExport(resolveApiHref, spaceId);
 
-      if (res.status === 409) {
-        const data = (await res.json()) as {
-          status: "blocked";
-          summary: {
-            created: number;
-            updated: number;
-            unchanged: number;
-            skipped: number;
-            conflicts: number;
-          };
-          conflicts: SheetConflict[];
-          lastSyncedAt: string | null;
-        };
-        setImportConflicts(data.conflicts);
+      if (result.status === "blocked") {
+        setImportConflicts(result.conflicts);
         setError(
-          `시트와 웹에서 동시에 수정된 항목 ${data.summary.conflicts}건이 있어 자동 반영을 중단했습니다.`,
+          `시트와 웹에서 동시에 수정된 항목 ${result.summary.conflicts}건이 있어 자동 반영을 중단했습니다.`
         );
         return;
       }
 
-      if (!res.ok) {
-        throw new Error(
-          await readErrorMessage(
-            res,
-            "시트에서 수강생 데이터를 가져오지 못했습니다.",
-          ),
-        );
-      }
-
-      const data = (await res.json()) as {
-        status: "applied";
-        summary: {
-          created: number;
-          updated: number;
-          unchanged: number;
-          skipped: number;
-          conflicts: number;
-        };
-        lastSyncedAt: string;
-      };
-
-      setImportResult({ ...data.summary, lastSyncedAt: data.lastSyncedAt });
+      setImportResult({ ...result.summary, lastSyncedAt: result.lastSyncedAt });
       await load();
     } catch (err) {
       setError(
         err instanceof Error
           ? err.message
-          : "시트에서 수강생 데이터를 가져오지 못했습니다.",
+          : "시트에서 수강생 데이터를 가져오지 못했습니다."
       );
     } finally {
       setImporting(false);
     }
-  }, [displayState, load, spaceId]);
+  }, [displayState, load, resolveApiHref, spaceId]);
 
   const handleDownload = useCallback(
-    async (format: "csv" | "xlsx") => {
+    async (format: StudentExportFormat) => {
       setDownloadingFormat(format);
       try {
-        const res = await fetch(
-          resolveApiHref(`/api/v1/spaces/${spaceId}/export/${format}`),
+        const blob = await fetchStudentExportBlob(
+          resolveApiHref,
+          spaceId,
+          format
         );
-        if (!res.ok) {
-          throw new Error(
-            (await readErrorMessage(res, "")) ||
-              (format === "csv"
-                ? "CSV 다운로드에 실패했습니다."
-                : "엑셀 다운로드에 실패했습니다."),
-          );
-        }
-        const blob = await res.blob();
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
@@ -401,13 +290,13 @@ export function SheetExportPanel({ spaceId }: SheetExportPanelProps) {
             ? err.message
             : format === "csv"
               ? "CSV 다운로드에 실패했습니다."
-              : "엑셀 다운로드에 실패했습니다.",
+              : "엑셀 다운로드에 실패했습니다."
         );
       } finally {
         setDownloadingFormat(null);
       }
     },
-    [spaceId],
+    [resolveApiHref, spaceId]
   );
 
   const handleDisconnect = useCallback(async () => {
@@ -416,28 +305,17 @@ export function SheetExportPanel({ spaceId }: SheetExportPanelProps) {
     setSyncResult(null);
 
     try {
-      const res = await fetch(
-        resolveApiHref(`/api/v1/spaces/${spaceId}/sheet-export`),
-        {
-          method: "DELETE",
-        },
-      );
-
-      if (!res.ok) {
-        throw new Error(
-          await readErrorMessage(res, "연결을 해제하지 못했습니다."),
-        );
-      }
+      await disconnectSheetExport(resolveApiHref, spaceId);
 
       await load();
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "연결을 해제하지 못했습니다.",
+        err instanceof Error ? err.message : "연결을 해제하지 못했습니다."
       );
     } finally {
       setDisconnecting(false);
     }
-  }, [spaceId, load]);
+  }, [resolveApiHref, spaceId, load]);
 
   const lastSyncedLabel = integration?.lastSyncedAt
     ? new Date(integration.lastSyncedAt).toLocaleString("ko-KR")
