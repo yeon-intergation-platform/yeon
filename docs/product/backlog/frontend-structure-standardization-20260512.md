@@ -2263,3 +2263,28 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 91차 — 카드 리치 에디터 미리보기/스타일 분리
+
+### 작업내용
+
+- `card-rich-markdown-editor.tsx`에 함께 있던 미리보기 렌더링, 의미 있는 콘텐츠 판정, styled-jsx global style을 별도 view 파일로 분리한다.
+- 에디터 본체 파일은 TipTap editor wiring, 업로드 이벤트, toolbar 연결만 담당하게 한다.
+- UI/동작/이미지 업로드 흐름은 변경하지 않는다.
+
+### 논의 필요
+
+- styled-jsx global style을 CSS 파일로 옮길지 여부.
+
+### 선택지
+
+1. 이번 차수는 같은 feature component의 별도 TSX 파일로 분리한다.
+2. 전역 CSS 또는 CSS module로 옮긴다.
+
+### 추천
+
+- 1번. 전역 CSS 확장은 프로젝트 스타일링 원칙과 충돌할 수 있으므로 현재 scoped global style을 component 경계만 나눠 유지한다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.
