@@ -4,6 +4,12 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
 import { CommonProductHeader } from "@/components/product-shell/product-header";
+import {
+  CommunityGuestIdentityConfirmModal,
+  isCommunityGuestIdentityConfirmDismissed,
+  persistCommunityGuestIdentityConfirmDismissed,
+  type CommunityGuestIdentity,
+} from "./components/community-guest-identity-confirm-modal";
 import { parseCommunityPost } from "./community-page";
 import { useCommunityFeed } from "./hooks/use-community-feed";
 
@@ -13,6 +19,12 @@ function formatKoreanDateTime(isoDate: string) {
     timeStyle: "short",
   }).format(new Date(isoDate));
 }
+
+type PendingGuestIdentityAction = {
+  actionLabel: string;
+  run: (identity: CommunityGuestIdentity) => Promise<void>;
+  resolve: (completed: boolean) => void;
+} | null;
 
 export function CommunityPostDetailPage({ postId }: { postId: string }) {
   const {
@@ -43,6 +55,8 @@ export function CommunityPostDetailPage({ postId }: { postId: string }) {
   } = useCommunityFeed();
   const [isEditing, setIsEditing] = useState(false);
   const [editDraft, setEditDraft] = useState("");
+  const [pendingGuestIdentityAction, setPendingGuestIdentityAction] =
+    useState<PendingGuestIdentityAction>(null);
 
   const post = useMemo(
     () => posts.find((candidate) => candidate.id === postId) ?? null,
@@ -62,6 +76,25 @@ export function CommunityPostDetailPage({ postId }: { postId: string }) {
   }, [loadReplies, post]);
 
   const parsedPost = post ? parseCommunityPost(post) : null;
+
+  const runWithGuestIdentityConfirm = (
+    actionLabel: string,
+    run: (identity: CommunityGuestIdentity) => Promise<void>
+  ) => {
+    const currentIdentity = { guestNickname, guestPassword };
+
+    if (isCommunityGuestIdentityConfirmDismissed()) {
+      return run(currentIdentity).then(() => true);
+    }
+
+    return new Promise<boolean>((resolve) => {
+      setPendingGuestIdentityAction({
+        actionLabel,
+        run,
+        resolve,
+      });
+    });
+  };
 
   return (
     <div className="min-h-screen bg-white text-[#111]">
@@ -119,9 +152,14 @@ export function CommunityPostDetailPage({ postId }: { postId: string }) {
                     type="button"
                     disabled={!!isUpdatingPost[post.id] || !editDraft.trim()}
                     onClick={() => {
-                      void updatePost(post.id, editDraft).then(() =>
-                        setIsEditing(false)
-                      );
+                      void runWithGuestIdentityConfirm(
+                        "글을 수정",
+                        (identity) => updatePost(post.id, editDraft, identity)
+                      ).then((completed) => {
+                        if (completed) {
+                          setIsEditing(false);
+                        }
+                      });
                     }}
                     className="rounded-xl bg-[#111] px-3 py-2 text-[12px] font-semibold text-white disabled:bg-[#d0d0d0]"
                   >
@@ -153,7 +191,9 @@ export function CommunityPostDetailPage({ postId }: { postId: string }) {
                 type="button"
                 disabled={!!isDeletingPost[post.id]}
                 onClick={() => {
-                  void deletePost(post.id);
+                  void runWithGuestIdentityConfirm("글을 삭제", (identity) =>
+                    deletePost(post.id, identity)
+                  );
                 }}
                 className="text-[12px] font-semibold text-red-600 underline-offset-4 hover:underline disabled:text-[#aaa]"
               >
@@ -191,7 +231,9 @@ export function CommunityPostDetailPage({ postId }: { postId: string }) {
               className="mt-3 grid gap-2 md:grid-cols-[minmax(0,1fr)_70px]"
               onSubmit={(event) => {
                 event.preventDefault();
-                void submitReply(post.id);
+                void runWithGuestIdentityConfirm("댓글을 작성", (identity) =>
+                  submitReply(post.id, identity)
+                );
               }}
             >
               <textarea
@@ -244,7 +286,10 @@ export function CommunityPostDetailPage({ postId }: { postId: string }) {
                     type="button"
                     disabled={!!isDeletingReply[reply.id]}
                     onClick={() => {
-                      void deleteReply(post.id, reply.id);
+                      void runWithGuestIdentityConfirm(
+                        "댓글을 삭제",
+                        (identity) => deleteReply(post.id, reply.id, identity)
+                      );
                     }}
                     className="mt-2 text-[12px] font-semibold text-red-600 underline-offset-4 hover:underline disabled:text-[#aaa]"
                   >
@@ -261,6 +306,33 @@ export function CommunityPostDetailPage({ postId }: { postId: string }) {
           </section>
         ) : null}
       </main>
+
+      <CommunityGuestIdentityConfirmModal
+        isOpen={pendingGuestIdentityAction !== null}
+        actionLabel={pendingGuestIdentityAction?.actionLabel ?? "수정/삭제"}
+        guestNickname={guestNickname}
+        guestPassword={guestPassword}
+        onClose={() => {
+          pendingGuestIdentityAction?.resolve(false);
+          setPendingGuestIdentityAction(null);
+        }}
+        onConfirm={(identity, options) => {
+          setGuestNickname(identity.guestNickname);
+          setGuestPassword(identity.guestPassword);
+
+          const pending = pendingGuestIdentityAction;
+          setPendingGuestIdentityAction(null);
+          void pending
+            ?.run(identity)
+            .then(() => {
+              if (options.dismiss) {
+                persistCommunityGuestIdentityConfirmDismissed();
+              }
+              pending.resolve(true);
+            })
+            .catch(() => pending.resolve(false));
+        }}
+      />
     </div>
   );
 }
