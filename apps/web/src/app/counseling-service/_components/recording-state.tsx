@@ -1,5 +1,5 @@
 import { MicIcon } from "./icons";
-import { fmtTime } from "../_lib/utils";
+import { fmtTime } from "@/features/counseling-record-workspace/lib/utils";
 import styles from "../workspace.module.css";
 
 export interface RecordingStateProps {

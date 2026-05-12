@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { inferFailurePresentation } from "../failure-presentation";
+import { inferFailurePresentation } from "../record-failure-presentation";
 import type { RecordItem } from "../types";
 
 function makeRecord(overrides: Partial<RecordItem> = {}): RecordItem {
@@ -38,7 +38,7 @@ describe("inferFailurePresentation", () => {
       makeRecord({
         errorMessage:
           "음성 전사 결과가 비어 있습니다. chunk 1부터 다시 확인해 주세요.",
-      }),
+      })
     );
 
     expect(presentation.badge).toBe("무음 녹음");
@@ -51,7 +51,7 @@ describe("inferFailurePresentation", () => {
     const presentation = inferFailurePresentation(
       makeRecord({
         errorMessage: "STT 제공자가 전사 요청을 처리하지 못했습니다.",
-      }),
+      })
     );
 
     expect(presentation.badge).toBe("전사 실패");
@@ -64,7 +64,7 @@ describe("inferFailurePresentation", () => {
       makeRecord({
         errorMessage:
           "긴 음성 파일 분할에 필요한 ffmpeg가 서버 이미지에 없습니다. 배포 컨테이너에 ffmpeg 패키지를 포함해 주세요.",
-      }),
+      })
     );
 
     expect(presentation.badge).toBe("전사 환경 오류");

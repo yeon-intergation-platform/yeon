@@ -3,9 +3,15 @@
 import { useState } from "react";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import type { RecordItem, AttachedImage } from "../_lib/types";
-import type { AiModelType } from "../_lib/constants";
-import { AI_QUICK_CHIPS, AI_MODELS } from "../_lib/constants";
+import type {
+  RecordItem,
+  AttachedImage,
+} from "@/features/counseling-record-workspace/lib/types";
+import type { AiModelType } from "@/features/counseling-record-workspace/constants/ai-panel";
+import {
+  AI_QUICK_CHIPS,
+  AI_MODELS,
+} from "@/features/counseling-record-workspace/constants/ai-panel";
 import { useClickOutside } from "@/lib/hooks/use-click-outside";
 import {
   PlusCircleIcon,
@@ -105,7 +111,7 @@ export function AiPanel({
   const [showModelMenu, setShowModelMenu] = useState(false);
   const modelMenuRef = useClickOutside<HTMLDivElement>(
     () => setShowModelMenu(false),
-    showModelMenu,
+    showModelMenu
   );
 
   return (
@@ -464,12 +470,12 @@ function ChatHistoryTab({ selected }: { selected: RecordItem | null }) {
           저장된 대화 {selected.aiMessages.length}개
         </div>
         {formatMessageTime(
-          selected.aiMessages[selected.aiMessages.length - 1]?.createdAt,
+          selected.aiMessages[selected.aiMessages.length - 1]?.createdAt
         ) ? (
           <div className="mt-1 text-[11px] text-text-dim">
             최근 대화{" "}
             {formatMessageTime(
-              selected.aiMessages[selected.aiMessages.length - 1]?.createdAt,
+              selected.aiMessages[selected.aiMessages.length - 1]?.createdAt
             )}
           </div>
         ) : null}

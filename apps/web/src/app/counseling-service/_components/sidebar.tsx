@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { RecordItem } from "../_lib/types";
+import type { RecordItem } from "@/features/counseling-record-workspace/lib/types";
 import type { Space } from "../_hooks";
 import type { MemberWithStatus } from "../_hooks";
 import { useClickOutside } from "@/lib/hooks/use-click-outside";

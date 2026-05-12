@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { RecordItem } from "../_lib/types";
+import type { RecordItem } from "@/features/counseling-record-workspace/lib/types";
 import type { MemberWithStatus } from "../_hooks";
 import { exportMemberReportDocx } from "@/features/counseling-record-workspace/lib/export-docx";
 

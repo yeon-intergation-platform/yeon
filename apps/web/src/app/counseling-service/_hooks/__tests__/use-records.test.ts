@@ -5,7 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createElement } from "react";
 import type { ReactNode } from "react";
 import { useRecords } from "@/features/counseling-record-workspace/hooks/use-records";
-import type { RecordItem } from "../../_lib/types";
+import type { RecordItem } from "@/features/counseling-record-workspace/lib/types";
 
 /* ── fetch 모킹 ── */
 
