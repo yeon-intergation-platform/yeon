@@ -1932,3 +1932,28 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 78차 — create space modal controller hook 분리
+
+### 작업내용
+
+- `create-space-modal.tsx`의 step/form/template query/create mutation 상태를 feature hook으로 이동한다.
+- modal component는 import 화면과 choose/template/form view 렌더링만 담당하도록 줄인다.
+- 스페이스 생성, 템플릿 조회/적용, 오류 문구, 닫기 동작은 유지한다.
+
+### 논의 필요
+
+- template 선택 화면과 form 화면도 별도 presentational component로 즉시 분리할지 여부.
+
+### 선택지
+
+1. 이번 차수는 controller hook만 분리하고 화면 컴포넌트 분리는 후속으로 둔다.
+2. hook 분리와 동시에 template/form presentational component까지 분리한다.
+
+### 추천
+
+- 1번. 생성/템플릿 적용 로직을 먼저 feature hook으로 빼고, UI 분해는 렌더 구조만 다루는 별도 차수로 분리한다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.
