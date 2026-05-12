@@ -4,7 +4,7 @@ import {
   jsonError,
   requireAuthenticatedUser,
 } from "@/app/api/v1/counseling-records/_shared";
-import { buildSpaceExportData } from "@/server/services/google-sheets-export-service";
+import { buildSpaceExportData } from "@/server/sheet-export-bff";
 import { ServiceError } from "@/server/services/service-error";
 
 export const runtime = "nodejs";
@@ -23,7 +23,7 @@ function toCsvRow(cells: string[]): string {
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ spaceId: string }> },
+  { params }: { params: Promise<{ spaceId: string }> }
 ) {
   const { currentUser, response } = await requireAuthenticatedUser(request);
   if (!currentUser) return response;

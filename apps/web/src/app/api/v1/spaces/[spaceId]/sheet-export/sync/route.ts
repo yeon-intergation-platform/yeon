@@ -9,14 +9,14 @@ import {
   fetchSheetExportIntegrationFromSpring,
   SheetExportSpringBackendHttpError,
 } from "@/server/sheet-export-spring-client";
-import { exportSpaceToSheet } from "@/server/services/google-sheets-export-service";
+import { exportSpaceToSheet } from "@/server/sheet-export-bff";
 import { ServiceError } from "@/server/services/service-error";
 
 export const runtime = "nodejs";
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ spaceId: string }> },
+  { params }: { params: Promise<{ spaceId: string }> }
 ) {
   const { currentUser, response } = await requireAuthenticatedUser(request);
   if (!currentUser) return response;
@@ -26,7 +26,7 @@ export async function POST(
   try {
     const { integration } = await fetchSheetExportIntegrationFromSpring(
       spaceId,
-      currentUser.id,
+      currentUser.id
     );
 
     if (!integration) {
@@ -36,7 +36,7 @@ export async function POST(
     const result = await exportSpaceToSheet(
       spaceId,
       integration.sheetId,
-      currentUser.id,
+      currentUser.id
     );
 
     return NextResponse.json({

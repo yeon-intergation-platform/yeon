@@ -1,9 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import {
-  buildSpaceExportData,
-  extractSheetId,
-} from "../google-sheets-export-service";
+import { buildSpaceExportData, extractSheetId } from "../../sheet-export-bff";
 import { fetchSheetExportRowsFromSpring } from "@/server/sheet-export-spring-client";
 
 vi.mock("@/server/sheet-export-spring-client", () => ({
@@ -20,14 +17,14 @@ describe("google-sheets-export-service", () => {
   it("정상 구글 시트 URL에서 sheet id를 추출한다", () => {
     expect(
       extractSheetId(
-        "https://docs.google.com/spreadsheets/d/abc123_DEF-456/edit#gid=0",
-      ),
+        "https://docs.google.com/spreadsheets/d/abc123_DEF-456/edit#gid=0"
+      )
     ).toBe("abc123_DEF-456");
   });
 
   it("시트 ID를 추출할 수 없는 URL이면 400을 던진다", () => {
     expect(() =>
-      extractSheetId("https://docs.google.com/document/d/abc/edit"),
+      extractSheetId("https://docs.google.com/document/d/abc/edit")
     ).toThrow();
   });
 
@@ -71,7 +68,7 @@ describe("google-sheets-export-service", () => {
 
     expect(fetchSheetExportRowsFromSpring).toHaveBeenCalledWith(
       "space_alpha",
-      "user_1",
+      "user_1"
     );
     expect(result.memberCount).toBe(1);
     expect(result.rows).toEqual([
@@ -126,7 +123,7 @@ describe("google-sheets-export-service", () => {
       "mem_1",
     ]);
     expect(result.values[1]?.[9]).toMatch(
-      /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/,
+      /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/
     );
   });
 });
