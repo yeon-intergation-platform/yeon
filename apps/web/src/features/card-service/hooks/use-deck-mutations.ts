@@ -15,9 +15,8 @@ import { useIsAuthenticated } from "../auth-context";
 import {
   cardServiceFetchJson,
   cardServiceFetchVoid,
-} from "./card-service-fetch";
-import { cardDeckDetailQueryKey } from "./use-deck-detail";
-import { cardDecksQueryKey } from "./use-deck-list";
+} from "../card-service-fetch";
+import { cardServiceQueryKeys } from "../card-service-query-keys";
 
 export function useUpdateDeck(deckId: string) {
   const queryClient = useQueryClient();
@@ -32,7 +31,7 @@ export function useUpdateDeck(deckId: string) {
             headers: { "content-type": "application/json" },
             body: JSON.stringify(body),
           },
-          "덱을 수정하지 못했습니다.",
+          "덱을 수정하지 못했습니다."
         );
         return data.deck;
       }
@@ -40,10 +39,10 @@ export function useUpdateDeck(deckId: string) {
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({
-        queryKey: cardDecksQueryKey(isAuthenticated),
+        queryKey: cardServiceQueryKeys.decks(isAuthenticated),
       });
       void queryClient.invalidateQueries({
-        queryKey: cardDeckDetailQueryKey(isAuthenticated, deckId),
+        queryKey: cardServiceQueryKeys.deckDetail(isAuthenticated, deckId),
       });
     },
   });
@@ -58,7 +57,7 @@ export function useDeleteDeck() {
         await cardServiceFetchVoid(
           `/api/v1/card-decks/${deckId}`,
           { method: "DELETE" },
-          "덱을 삭제하지 못했습니다.",
+          "덱을 삭제하지 못했습니다."
         );
         return;
       }
@@ -66,7 +65,7 @@ export function useDeleteDeck() {
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({
-        queryKey: cardDecksQueryKey(isAuthenticated),
+        queryKey: cardServiceQueryKeys.decks(isAuthenticated),
       });
     },
   });

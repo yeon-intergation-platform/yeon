@@ -1,6 +1,7 @@
-export { cardDecksQueryKey, useDeckList } from "./use-deck-list";
+export { cardServiceQueryKeys } from "../card-service-query-keys";
+export { useDeckList } from "./use-deck-list";
 export { useCreateDeck } from "./use-create-deck";
-export { cardDeckDetailQueryKey, useDeckDetail } from "./use-deck-detail";
+export { useDeckDetail } from "./use-deck-detail";
 export { useDeleteDeck, useUpdateDeck } from "./use-deck-mutations";
 export {
   useAddCard,
