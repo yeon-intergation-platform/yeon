@@ -1,6 +1,6 @@
 import styles from "../workspace.module.css";
 import type { RecordItem } from "../_lib/types";
-import type { RecordMemberMismatchWarning } from "../_lib/record-member-mismatch";
+import type { RecordMemberMismatchWarning } from "@/features/counseling-record-workspace/lib/record-member-mismatch";
 import { RecordEmptyState } from "@/features/counseling-record-workspace/components/record-empty-state";
 import { RecordFailureState } from "@/features/counseling-record-workspace/components/record-failure-state";
 import { RecordPartialTranscriptState } from "@/features/counseling-record-workspace/components/record-partial-transcript-state";

@@ -11,7 +11,7 @@ import {
 import { counselingWorkspaceQueryKeys } from "@/features/counseling-record-workspace/api/counseling-workspace-query-keys";
 import { resolveApiHrefForCurrentPath } from "@/lib/app-route-paths";
 
-import { detectRecordMemberMismatch } from "../_lib/record-member-mismatch";
+import { detectRecordMemberMismatch } from "@/features/counseling-record-workspace/lib/record-member-mismatch";
 import type { RecordItem } from "../_lib/types";
 
 const LAST_SPACE_KEY = "yeon_last_space_id";
