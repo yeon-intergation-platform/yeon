@@ -13,23 +13,7 @@ import { useTypingSettings } from "@/features/typing-service/use-typing-settings
 
 import { useIsAuthenticated } from "./auth-context";
 import { CardServiceSettingsDialog, CreateDeckDialog } from "./components";
-
-const CARD_HOME_CTA_ITEMS = [
-  {
-    href: "/card-service/rooms",
-    title: "카드방 입장",
-    description: "친구와 역할을 나눠 채팅으로 암기 답변을 검증해요.",
-    target: "rooms",
-    primary: true,
-  },
-  {
-    href: "/card-service/decks",
-    title: "내 덱 보기",
-    description: "기존 덱을 열어 카드를 추가하거나 혼자 복습해요.",
-    target: "decks",
-    primary: false,
-  },
-] as const;
+import { useDeckList } from "./hooks";
 
 export function CardServiceHome() {
   const [isCreateOpen, setCreateOpen] = useState(false);
@@ -37,6 +21,10 @@ export function CardServiceHome() {
   const isAuthenticated = useIsAuthenticated();
   const { profile, updateProfile, loaded } = useTypingProfile();
   const { settings } = useTypingSettings();
+  const decksQuery = useDeckList();
+  const hasDecks = (decksQuery.data?.length ?? 0) > 0;
+  const isDeckStateLoading = decksQuery.isPending;
+  const shouldShowDeckListAction = decksQuery.isError || hasDecks;
 
   const trackHomeClick = (target: string) => {
     trackEvent(analyticsEvents.cardDeckOpen, {
@@ -100,41 +88,59 @@ export function CardServiceHome() {
           <div className="p-5 md:p-6">
             <h2 className="text-[16px] font-bold text-[#111]">오늘의 시작</h2>
             <div className="mt-5 grid gap-4">
-              {CARD_HOME_CTA_ITEMS.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`block rounded-2xl border px-5 py-5 no-underline transition-colors ${
-                    item.primary
-                      ? "border-[#111] bg-[#111] text-white hover:bg-[#333]"
-                      : "border-[#e5e5e5] bg-white text-[#111] hover:border-[#111]"
-                  }`}
-                  onClick={() => trackHomeClick(item.target)}
+              <Link
+                href="/card-service/rooms"
+                className="block rounded-2xl border border-[#111] bg-[#111] px-5 py-5 text-white no-underline transition-colors hover:bg-[#333]"
+                onClick={() => trackHomeClick("rooms")}
+              >
+                <span className="block text-[16px] font-bold">카드방 입장</span>
+                <span className="mt-1 block text-[13px] leading-[1.6] text-white/70">
+                  친구와 역할을 나눠 채팅으로 암기 답변을 검증해요.
+                </span>
+              </Link>
+
+              {isDeckStateLoading ? (
+                <button
+                  type="button"
+                  disabled
+                  className="block cursor-wait rounded-2xl border border-[#e5e5e5] bg-[#f7f7f7] px-5 py-5 text-left text-[#777]"
                 >
                   <span className="block text-[16px] font-bold">
-                    {item.title}
+                    덱 확인 중
                   </span>
-                  <span
-                    className={`mt-1 block text-[13px] leading-[1.6] ${
-                      item.primary ? "text-white/70" : "text-[#777]"
-                    }`}
-                  >
-                    {item.description}
+                  <span className="mt-1 block text-[13px] leading-[1.6] text-[#999]">
+                    저장된 덱이 있는지 확인하고 있어요.
+                  </span>
+                </button>
+              ) : shouldShowDeckListAction ? (
+                <Link
+                  href="/card-service/decks"
+                  className="block rounded-2xl border border-[#e5e5e5] bg-white px-5 py-5 text-[#111] no-underline transition-colors hover:border-[#111]"
+                  onClick={() => trackHomeClick("decks")}
+                >
+                  <span className="block text-[16px] font-bold">
+                    내 덱 보기
+                  </span>
+                  <span className="mt-1 block text-[13px] leading-[1.6] text-[#777]">
+                    {decksQuery.isError
+                      ? "덱 목록에서 저장된 카드를 다시 확인해요."
+                      : "기존 덱을 열어 카드를 추가하거나 혼자 복습해요."}
                   </span>
                 </Link>
-              ))}
-              <button
-                type="button"
-                onClick={openCreate}
-                className="block rounded-2xl border border-[#e5e5e5] bg-white px-5 py-5 text-left text-[#111] transition-colors hover:border-[#111]"
-              >
-                <span className="block text-[16px] font-bold">
-                  새 덱 만들기
-                </span>
-                <span className="mt-1 block text-[13px] leading-[1.6] text-[#777]">
-                  카드방에서 사용할 앞면/뒷면 덱을 먼저 준비해요.
-                </span>
-              </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={openCreate}
+                  className="block rounded-2xl border border-[#e5e5e5] bg-white px-5 py-5 text-left text-[#111] transition-colors hover:border-[#111]"
+                >
+                  <span className="block text-[16px] font-bold">
+                    새 덱 만들기
+                  </span>
+                  <span className="mt-1 block text-[13px] leading-[1.6] text-[#777]">
+                    카드방에서 사용할 앞면/뒷면 덱을 먼저 준비해요.
+                  </span>
+                </button>
+              )}
             </div>
           </div>
         </section>

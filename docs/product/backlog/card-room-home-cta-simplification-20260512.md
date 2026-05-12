@@ -55,3 +55,11 @@
 - `pnpm --filter @yeon/web typecheck`
 - `pnpm --filter @yeon/web build`
 - `git diff --check`
+
+## 구현 결과
+
+- `CardServiceHome`에서 기존 덱 목록 source of truth인 `useDeckList`를 사용해 홈 보조 CTA 문구를 결정한다.
+- `오늘의 시작`은 `카드방 입장`과 덱 상태 기반 보조 CTA, 총 2개만 렌더링한다.
+- 덱 조회 로딩 중에는 `덱 확인 중` disabled CTA를 표시한다.
+- 덱이 있거나 덱 조회 오류로 상태를 단정할 수 없으면 `내 덱 보기`를 표시한다.
+- 덱이 없으면 `새 덱 만들기`를 표시하고 기존 `CreateDeckDialog`를 연다.
