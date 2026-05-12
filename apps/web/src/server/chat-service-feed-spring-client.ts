@@ -107,6 +107,40 @@ export async function createChatServiceFeedPostInSpring(params: {
     "Spring backend 요청에 실패했습니다."
   ) as Promise<{ post: unknown }>;
 }
+
+export async function updateChatServiceFeedPostInSpring(params: {
+  currentProfileId: string;
+  postId: string;
+  body: string;
+}) {
+  return fetchSpring(
+    `/chat-service/feed/${params.postId}`,
+    {
+      method: "PATCH",
+      headers: {
+        [CHAT_PROFILE_HEADER]: params.currentProfileId,
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({ body: params.body }),
+    },
+    "Spring backend 요청에 실패했습니다."
+  ) as Promise<{ post: unknown }>;
+}
+
+export async function deleteChatServiceFeedPostInSpring(params: {
+  currentProfileId: string;
+  postId: string;
+}) {
+  return fetchSpring(
+    `/chat-service/feed/${params.postId}`,
+    {
+      method: "DELETE",
+      headers: { [CHAT_PROFILE_HEADER]: params.currentProfileId },
+    },
+    "Spring backend 요청에 실패했습니다."
+  ) as Promise<{ deleted: true; postId: string }>;
+}
+
 export async function fetchChatServiceFeedRepliesFromSpring(params: {
   currentProfileId?: string | null;
   postId: string;
