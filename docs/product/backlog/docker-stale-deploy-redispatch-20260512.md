@@ -66,3 +66,33 @@
 ### 사용자 방향
 
 CI/CD 분리는 별도 구조 개선 PR로 안전하게 진행한다. 이번 PR은 stale deploy 자동 보정만 적용한다.
+
+## 3차 실행: reusable build workflow 분리
+
+### 작업내용
+
+- 기존 `docker-image.yml`의 서비스별 이미지 빌드/manifest publish job을 아래 reusable workflow로 분리한다.
+  - `.github/workflows/docker-build-web.yml`
+  - `.github/workflows/docker-build-backend.yml`
+  - `.github/workflows/docker-build-race.yml`
+- `docker-image.yml`은 변경 범위 판별, stale main cancel/보정, 서비스별 reusable workflow 호출, 단일 `deploy_production`만 담당한다.
+- 운영 배포는 기존처럼 단일 `deploy_production` job과 Docker compose 락 성격을 유지한다.
+- `develop`은 프로젝트 정책상 중단 상태이므로 새 top-level trigger에서는 제외한다.
+
+### 논의 필요
+
+- 완전한 별도 workflow_run 기반 배포까지 분리하면 서비스별 build 완료 순서와 release 생성 순서가 꼬일 수 있어, 이번 차수에서는 reusable workflow 분리로 빌드 구현을 모듈화하고 top-level deploy orchestrator는 유지한다.
+
+### 선택지
+
+1. reusable workflow 분리 + 기존 top-level deploy orchestrator 유지
+2. workflow_run 기반 완전 분리
+3. 현행 단일 파일 유지
+
+### 추천
+
+1번. 빌드 구현은 서비스별 파일로 쪼개고, 운영 반영/release 기준은 기존 단일 top-level workflow 성공으로 유지해 배포 안정성을 보존한다.
+
+### 사용자 방향
+
+안전하게 진행한다. 대규모 위험 변경보다 서비스별 reusable workflow 분리를 먼저 적용한다.

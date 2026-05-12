@@ -1,0 +1,263 @@
+name: Docker Build Race Image
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+  RACE_IMAGE_REPOSITORY: yeon-race-server
+
+jobs:
+  build_race_amd64:
+    runs-on: ubuntu-latest
+    env:
+      DIGEST_DIR: ${{ github.workspace }}/.ci-digests/digests-race-amd64-${{ github.run_id }}-${{ github.run_attempt }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6.0.2
+
+      - name: Resolve lowercase image name
+        id: image
+        run: |
+          owner_lower="$(printf '%s' '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')"
+          echo "ref=${{ env.REGISTRY }}/${owner_lower}/${{ env.RACE_IMAGE_REPOSITORY }}" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4.0.0
+
+      - name: GHCR 로그인
+        uses: docker/login-action@v4.1.0
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v6.0.0
+        with:
+          images: ${{ steps.image.outputs.ref }}
+          tags: |
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+            type=raw,value=develop,enable=${{ github.ref == 'refs/heads/develop' }}
+            type=sha,format=short,prefix=sha-
+
+      - name: Build race-server amd64 image by digest
+        uses: docker/build-push-action@v7.1.0
+        id: build
+        with:
+          context: .
+          file: ./apps/race-server/Dockerfile
+          platforms: linux/amd64
+          outputs: type=image,name=${{ steps.image.outputs.ref }},push-by-digest=true,name-canonical=true,push=true
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=yeon-race-amd64
+          cache-to: type=gha,mode=max,scope=yeon-race-amd64
+
+      - name: Export amd64 digest
+        run: |
+          rm -rf "${DIGEST_DIR}"
+          mkdir -p "${DIGEST_DIR}"
+          digest="${{ steps.build.outputs.digest }}"
+          touch "${DIGEST_DIR}/${digest#sha256:}"
+
+      - name: Upload amd64 digest
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: digest-race-amd64
+          path: ${{ env.DIGEST_DIR }}/*
+          if-no-files-found: error
+          retention-days: 1
+
+  build_race_arm64:
+    runs-on: [self-hosted, Linux, ARM64]
+    env:
+      DIGEST_DIR: ${{ github.workspace }}/.ci-digests/digests-race-arm64-${{ github.run_id }}-${{ github.run_attempt }}
+      # BUILDX_LOCAL_CACHE 는 Pi runner 유저의 실제 $HOME 이 /home/runner 가 아닐 수 있어
+      # job-level env 에 하드코딩하지 않고 "Resolve BUILDX_LOCAL_CACHE" 스텝에서 $HOME 기준으로 해석한다.
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6.0.2
+
+      - name: Resolve lowercase image name
+        id: image
+        run: |
+          owner_lower="$(printf '%s' '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')"
+          echo "ref=${{ env.REGISTRY }}/${owner_lower}/${{ env.RACE_IMAGE_REPOSITORY }}" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4.0.0
+        with:
+          # Pi 고정 builder — 같은 BuildKit 데몬을 재사용해 --mount=type=cache(pnpm-store)가 run 간 보존된다.
+          driver: docker-container
+          name: yeon-race-arm64-builder
+
+      - name: GHCR 로그인
+        uses: docker/login-action@v4.1.0
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v6.0.0
+        with:
+          images: ${{ steps.image.outputs.ref }}
+          tags: |
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+            type=raw,value=develop,enable=${{ github.ref == 'refs/heads/develop' }}
+            type=sha,format=short,prefix=sha-
+
+      - name: 디스크·이미지 정리 (빌드 전)
+        run: |
+          docker image prune -f --filter "until=48h"
+          # builder prune은 pnpm-store 등 BuildKit 인라인 캐시도 지우므로 pre-build에서는 제거.
+          # 캐시 크기 관리는 post-build의 Buildx cache prune 스텝(until=168h)이 담당한다.
+
+      - name: Resolve BUILDX_LOCAL_CACHE
+        run: echo "BUILDX_LOCAL_CACHE=$HOME/.cache/buildx-yeon-race-arm64" >> "$GITHUB_ENV"
+
+      - name: Prepare local buildx cache dir
+        run: mkdir -p "${BUILDX_LOCAL_CACHE}"
+
+      - name: Build race-server arm64 image by digest
+        uses: docker/build-push-action@v7.1.0
+        id: build
+        with:
+          context: .
+          file: ./apps/race-server/Dockerfile
+          platforms: linux/arm64
+          outputs: type=image,name=${{ steps.image.outputs.ref }},push-by-digest=true,name-canonical=true,push=true
+          labels: ${{ steps.meta.outputs.labels }}
+          # provenance / sbom 은 cache export 를 무겁게 하고 여기선 쓰지 않으므로 off.
+          provenance: false
+          sbom: false
+          cache-from: |
+            type=local,src=${{ env.BUILDX_LOCAL_CACHE }}
+            type=registry,ref=ghcr.io/hyeonjun0527/yeon-race-server:buildcache-arm64
+          # local 은 Pi 디스크라 빠르므로 mode=max 로 모든 layer 보관, registry 는 cross-runner fallback 용이라 min 으로 충분.
+          cache-to: |
+            type=local,dest=${{ env.BUILDX_LOCAL_CACHE }},mode=max
+            type=registry,ref=ghcr.io/hyeonjun0527/yeon-race-server:buildcache-arm64,mode=min
+
+      - name: Export arm64 digest
+        run: |
+          rm -rf "${DIGEST_DIR}"
+          mkdir -p "${DIGEST_DIR}"
+          digest="${{ steps.build.outputs.digest }}"
+          touch "${DIGEST_DIR}/${digest#sha256:}"
+
+      - name: Upload arm64 digest
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: digest-race-arm64
+          path: ${{ env.DIGEST_DIR }}/*
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Buildx cache prune (race ARM64 local, 10GB 이하 유지)
+        if: always()
+        run: docker buildx prune -f --keep-storage 10GB --filter "until=168h" || true
+
+  publish_race_manifest:
+    needs:
+      - build_race_amd64
+      - build_race_arm64
+    runs-on: ubuntu-latest
+    env:
+      DIGEST_DIR: ${{ github.workspace }}/.ci-digests/digests-race-manifest-${{ github.run_id }}-${{ github.run_attempt }}
+
+    steps:
+      - name: Resolve lowercase image name
+        id: image
+        run: |
+          owner_lower="$(printf '%s' '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')"
+          echo "ref=${{ env.REGISTRY }}/${owner_lower}/${{ env.RACE_IMAGE_REPOSITORY }}" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4.0.0
+
+      - name: GHCR 로그인
+        uses: docker/login-action@v4.1.0
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v6.0.0
+        with:
+          images: ${{ steps.image.outputs.ref }}
+          tags: |
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+            type=raw,value=develop,enable=${{ github.ref == 'refs/heads/develop' }}
+            type=sha,format=short,prefix=sha-
+
+      - name: Download image digests
+        uses: actions/download-artifact@v8.0.1
+        with:
+          path: ${{ env.DIGEST_DIR }}
+          pattern: digest-race-*
+          merge-multiple: true
+
+      - name: Create and push multi-arch manifest
+        working-directory: ${{ env.DIGEST_DIR }}
+        env:
+          DOCKER_METADATA_OUTPUT_JSON: ${{ steps.meta.outputs.json }}
+          IMAGE: ${{ steps.image.outputs.ref }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+
+          all_entries=(*)
+          digest_files=()
+          for entry in "${all_entries[@]}"; do
+            [ -f "$entry" ] || continue
+            if [[ "$entry" =~ ^[0-9a-f]{64}$ ]]; then
+              digest_files+=("$entry")
+            fi
+          done
+
+          if [ "${#digest_files[@]}" -ne 2 ]; then
+            echo "race-server digest 파일 개수가 예상과 다릅니다: ${#digest_files[@]}개"
+            exit 1
+          fi
+
+          refs=()
+          for digest in "${digest_files[@]}"; do
+            ref="${IMAGE}@sha256:${digest}"
+            refs+=("$ref")
+            for i in 1 2 3; do
+              docker buildx imagetools inspect "$ref" >/dev/null 2>&1 && break
+              [ "$i" -eq 3 ] && { echo "race digest 확인 실패: $ref"; exit 1; }
+              echo "race digest 확인 실패 (${i}/3), 10초 후 재시도..."
+              sleep 10
+            done
+          done
+
+          mapfile -t tags < <(jq -r '.tags[]' <<< "$DOCKER_METADATA_OUTPUT_JSON")
+          if [ "${#tags[@]}" -eq 0 ]; then
+            echo "race manifest 태그가 비어 있습니다."
+            exit 1
+          fi
+
+          tag_args=()
+          for tag in "${tags[@]}"; do
+            tag_args+=(-t "$tag")
+          done
+
+          for i in 1 2 3; do
+            docker buildx imagetools create "${tag_args[@]}" "${refs[@]}" && break
+            [ "$i" -eq 3 ] && { echo "race manifest 생성 실패"; exit 1; }
+            wait_seconds=$((i * 20))
+            echo "race manifest 생성 실패 (${i}/3), ${wait_seconds}초 후 재시도..."
+            sleep "$wait_seconds"
+          done
