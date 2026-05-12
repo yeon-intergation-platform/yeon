@@ -14,9 +14,9 @@ vi.mock("../_shared", () => ({
 }));
 
 vi.mock("@/server/typing-decks-spring-client", async () => {
-  const actual = await vi.importActual<typeof import("@/server/typing-decks-spring-client")>(
-    "@/server/typing-decks-spring-client",
-  );
+  const actual = await vi.importActual<
+    typeof import("@/server/typing-decks-spring-client")
+  >("@/server/typing-decks-spring-client");
   return {
     ...actual,
     fetchTypingDecksFromSpring: (...args: unknown[]) =>
@@ -27,6 +27,7 @@ vi.mock("@/server/typing-decks-spring-client", async () => {
 });
 
 import { GET, POST } from "../route";
+import { TypingDecksSpringBackendHttpError } from "@/server/typing-decks-spring-client";
 
 describe("api/v1/typing-decks route spring", () => {
   beforeEach(() => {
@@ -58,14 +59,38 @@ describe("api/v1/typing-decks route spring", () => {
 
     const response = await GET(
       new NextRequest(
-        "http://localhost/api/v1/typing-decks?scope=all&languageTag=ko",
-      ),
+        "http://localhost/api/v1/typing-decks?scope=all&languageTag=ko"
+      )
     );
 
     expect(response.status).toBe(200);
     const body = (await response.json()) as { decks: Array<{ id: string }> };
     expect(body.decks[0]?.id).toBe("default-ko-azaleas");
     expect(body.decks.at(-1)?.id).toBe("tdk_user_1");
+  });
+
+  it("GET all은 Spring 실패를 Next DB fallback 없이 그대로 반환한다", async () => {
+    mockGetTypingDeckRequestContext.mockResolvedValue({
+      currentUser: { id: "user-1" },
+      isAdmin: false,
+    });
+    mockFetchTypingDecksFromSpring.mockRejectedValue(
+      new TypingDecksSpringBackendHttpError(
+        503,
+        "Spring backend 요청에 실패했습니다."
+      )
+    );
+
+    const response = await GET(
+      new NextRequest(
+        "http://localhost/api/v1/typing-decks?scope=all&languageTag=ko"
+      )
+    );
+
+    expect(response.status).toBe(503);
+    await expect(response.json()).resolves.toEqual({
+      message: "Spring backend 요청에 실패했습니다.",
+    });
   });
 
   it("POST는 spring 생성 결과를 201로 반환한다", async () => {
@@ -99,7 +124,7 @@ describe("api/v1/typing-decks route spring", () => {
           languageTag: "ko",
           visibility: "private",
         }),
-      }),
+      })
     );
 
     expect(response.status).toBe(201);
@@ -111,7 +136,7 @@ describe("api/v1/typing-decks route spring", () => {
         languageTag: "ko",
         visibility: "private",
       },
-      false,
+      false
     );
   });
 });
