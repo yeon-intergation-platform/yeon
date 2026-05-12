@@ -2082,3 +2082,29 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 84차 — member panel component feature 이동
+
+### 작업내용
+
+- `app/counseling-service/_components/member-panel.tsx`를 `features/counseling-record-workspace/components/member-panel.tsx`로 이동한다.
+- `MemberWithStatus` 타입 참조를 app hook re-export가 아니라 feature hook 원본으로 바꾼다.
+- app `_components/index.ts`는 기존 page import 안정성을 위해 feature component re-export만 담당하게 유지한다.
+- 수강생 리포트, 상담 기록 목록, 상태 표시, 새 상담 진입 동작은 변경하지 않는다.
+
+### 논의 필요
+
+- `sidebar.tsx` 자체를 feature component로 이동할지, 더 작은 섹션부터 분해할지.
+
+### 선택지
+
+1. 이번 차수는 member panel만 이동하고 sidebar는 후속 분해 대상으로 둔다.
+2. member panel 이동과 sidebar 이동을 한 PR로 묶는다.
+
+### 추천
+
+- 1번. sidebar는 아직 route 조립 상태와 상호작용이 많아 별도 차수로 다룬다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.
