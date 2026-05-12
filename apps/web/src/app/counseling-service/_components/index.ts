@@ -4,7 +4,7 @@ export { Sidebar } from "./sidebar";
 export { CenterPanel } from "./center-panel";
 export { AiPanel } from "@/features/counseling-record-workspace/components/ai-panel";
 export { LinkMemberModal } from "@/features/counseling-record-workspace/components/link-member-modal";
-export { MemberPanel } from "./member-panel";
+export { MemberPanel } from "@/features/counseling-record-workspace/components/member-panel";
 export { QuickMemoModal } from "./quick-memo-modal";
 export { InsightBanner } from "@/features/counseling-record-workspace/components/insight-banner";
 export { NewRecordEntryModal } from "./new-record-entry-modal";

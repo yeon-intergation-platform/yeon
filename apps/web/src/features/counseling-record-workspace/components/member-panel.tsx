@@ -1,7 +1,7 @@
 "use client";
 
 import type { RecordItem } from "@/features/counseling-record-workspace/lib/types";
-import type { MemberWithStatus } from "../_hooks";
+import type { MemberWithStatus } from "@/features/counseling-record-workspace/hooks/use-space-members";
 import { useMemberPanelModel } from "@/features/counseling-record-workspace/hooks/use-member-panel-model";
 import {
   formatDaysSince,
