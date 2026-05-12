@@ -72,28 +72,19 @@ export function CardServiceHome() {
       <main className="flex flex-col items-center px-5 py-5 md:px-10 md:py-5">
         <section className="w-full max-w-[980px]">
           <div className="max-w-[680px]">
-            <p className="text-[13px] font-bold uppercase tracking-[0.18em] text-[#888]">
-              Card Room
-            </p>
-            <h1 className="mt-3 text-[27px] font-black tracking-[-0.04em] text-[#111] md:text-[34px]">
-              캐릭터로 입장하는 카드 암기방
+            <h1 className="text-[27px] font-black tracking-[-0.04em] text-[#111] md:text-[34px]">
+              바로 시작하는 카드공부
             </h1>
             <p className="mt-3 text-[14px] leading-[1.75] text-[#666] md:text-[15px]">
-              타자방처럼 캐릭터를 고르고, 카드방에서 외우는 사람과 봐주는
-              사람으로 나눠 답을 확인하세요.
+              카드를 넘기기 전에 먼저 떠올리고, 친구와 함께 답을 확인해보세요.
+              혼자 복습하거나 카드방에서 함께 공부할 수 있어요.
             </p>
           </div>
         </section>
 
         <section className="mt-8 grid w-full max-w-[980px] overflow-hidden rounded-[28px] border border-[#e5e5e5] bg-white md:grid-cols-[430px_minmax(0,1fr)]">
           <div className="border-b border-[#e5e5e5] p-5 md:border-b-0 md:border-r md:p-6">
-            <h2 className="text-[16px] font-bold text-[#111]">
-              내 카드방 프로필
-            </h2>
-            <p className="mt-2 text-[13px] leading-[1.6] text-[#777]">
-              타자방과 같은 캐릭터 선택을 사용합니다. 선택한 캐릭터는 카드방
-              대기/학습 화면에 표시돼요.
-            </p>
+            <h2 className="text-[16px] font-bold text-[#111]">내 프로필</h2>
             <div className="mt-5 flex justify-center">
               <TypingProfileCard
                 profile={profile}
