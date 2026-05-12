@@ -100,7 +100,7 @@ public class GoogleDriveBrowserService {
 		}
 	}
 
-	private String getValidAccessToken(UUID userId) {
+	public String getValidAccessToken(UUID userId) {
 		var row = repository.findToken(userId);
 		if (row == null) {
 			throw new GoogleDriveBrowserServiceException(401, "GOOGLE_DRIVE_NOT_CONNECTED", "Google Drive가 연결되어 있지 않습니다.");

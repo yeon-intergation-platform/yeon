@@ -4,7 +4,6 @@ import {
   fetchSheetExportRowsFromSpring,
   type SpringSheetExportRow,
 } from "@/server/sheet-export-spring-client";
-import { getValidSheetsAccessToken } from "@/server/services/googledrive-service";
 import { ServiceError } from "@/server/services/service-error";
 
 export function extractSheetId(sheetUrl: string): string {
@@ -88,17 +87,8 @@ export async function importSpaceFromLinkedSheet(
   sheetId: string,
   userId: string
 ): Promise<SheetImportResult> {
-  const accessToken = await getValidSheetsAccessToken(userId);
-  if (!accessToken) {
-    throw new ServiceError(
-      401,
-      "Google 계정이 연결되어 있지 않습니다. 먼저 Google 계정을 연결해주세요."
-    );
-  }
-
   const result = await runSheetImportInSpring(spaceId, userId, {
     sheetId,
-    accessToken,
   });
 
   if (result.status === "blocked") {
@@ -159,17 +149,8 @@ export async function exportSpaceToSheet(
   sheetId: string,
   userId: string
 ): Promise<{ exported: number; lastSyncedAt: Date }> {
-  const accessToken = await getValidSheetsAccessToken(userId);
-  if (!accessToken) {
-    throw new ServiceError(
-      401,
-      "Google 계정이 연결되어 있지 않습니다. 먼저 Google 계정을 연결해주세요."
-    );
-  }
-
   const result = await runSheetExportInSpring(spaceId, userId, {
     sheetId,
-    accessToken,
   });
 
   return {

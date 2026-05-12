@@ -234,3 +234,35 @@
   - Spring이 텍스트 메모 생성, 음성 업로드 저장, DB insert, 전사 queue 시작을 소유한다.
   - Next `api/v1/counseling-records` POST route의 `createCounselingRecordAndQueueTranscription`, `createTextMemoRecord` 직접 호출을 제거했다.
   - `api/v1` route의 non-ServiceError `@/server/services/*` 직접 import 0개를 확인했다.
+
+## 8차 — Google Sheet export/import 토큰 조회 Spring 소유 전환
+
+### 작업내용
+
+- `sheet-export` export/import 실행 시 Next BFF가 `googledrive_tokens`를 조회하지 않도록 Spring이 사용자 ID 기준으로 Google access token을 조회·갱신한다.
+- `apps/web/src/server/sheet-export-bff.ts`에서 `getValidSheetsAccessToken` 의존성을 제거하고, route는 `sheetId`와 `userId` 전달만 담당한다.
+- Spring `SheetExportRunService`, `SheetExportImportRunService`가 `GoogleDriveBrowserService`의 token provider를 사용하게 한다.
+
+### 논의 필요
+
+- 기존 DTO의 `accessToken` 필드를 즉시 제거하면 이전 클라이언트와 테스트 영향이 생길 수 있다. 이번 차수에서는 요청 필드는 호환용으로 남기되 서버 내부 source of truth는 Spring token lookup으로 바꾼다.
+
+### 선택지
+
+1. DTO에서 `accessToken`을 삭제하고 모든 호출부를 즉시 정리한다.
+2. DTO 필드는 남겨 backward compatibility를 유지하되 무시하고 Spring DB token lookup을 사용한다.
+3. export/import 전체 Google Sheets 로직을 별도 Google Sheets service로 재분리한다.
+
+### 추천
+
+- 2번. 이번 PR의 목적은 Next DB runtime 제거이므로 공개 계약 변경 없이 Spring 내부 token ownership만 먼저 고정한다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.
+
+### 완료 기준
+
+- `apps/web/src/server/sheet-export-bff.ts`가 `@/server/services/googledrive-service`를 import하지 않는다.
+- export/import 실행은 Spring이 `X-Yeon-User-Id` 기준 token lookup/refresh를 수행한다.
+- 관련 backend/web 테스트와 typecheck/build가 통과한다.

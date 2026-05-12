@@ -18,6 +18,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import world.yeon.backend.googledrive_browser.service.GoogleDriveBrowserService;
 import world.yeon.backend.sheet_export.export_run.dto.RunSheetExportResponse;
 import world.yeon.backend.sheet_export.export_run.service.SheetExportRunService;
 import world.yeon.backend.sheet_export.import_evaluation.dto.SheetExportImportConflictResponse;
@@ -39,15 +40,17 @@ class SheetExportImportRunServiceTests {
 	@Mock private SheetExportImportEvaluationService evaluationService;
 	@Mock private SheetExportImportMutationService mutationService;
 	@Mock private SheetExportRunService exportRunService;
+	@Mock private GoogleDriveBrowserService googleDriveBrowserService;
 	private TestableSheetExportImportRunService service;
 
 	@BeforeEach
 	void setUp() {
-		service = new TestableSheetExportImportRunService(evaluationService, mutationService, exportRunService);
+		service = new TestableSheetExportImportRunService(evaluationService, mutationService, exportRunService, googleDriveBrowserService);
 	}
 
 	@Test
 	void blocked면mutation과reexport없이반환한다() {
+		when(googleDriveBrowserService.getValidAccessToken(OWNER_ID)).thenReturn("token-from-spring");
 		when(evaluationService.evaluate(eq("space_alpha"), any())).thenReturn(new SheetExportImportEvaluationResponse(
 			"blocked",
 			new SheetExportImportSummaryResponse(0, 0, 0, 0, 1),
@@ -60,11 +63,12 @@ class SheetExportImportRunServiceTests {
 		var result = service.run("space_alpha", OWNER_ID, new RunSheetImportRequest("sheet-1", "token-1"));
 		assertThat(result.status()).isEqualTo("blocked");
 		verify(mutationService, never()).apply(any(), any(), any());
-		verify(exportRunService, never()).run(any(), any());
+		verify(exportRunService, never()).run(any(), any(), any());
 	}
 
 	@Test
 	void applied면mutation후reexport한다() {
+		when(googleDriveBrowserService.getValidAccessToken(OWNER_ID)).thenReturn("token-from-spring");
 		when(evaluationService.evaluate(eq("space_alpha"), any())).thenReturn(new SheetExportImportEvaluationResponse(
 			"applied",
 			new SheetExportImportSummaryResponse(1, 1, 0, 0, 0),
@@ -77,22 +81,23 @@ class SheetExportImportRunServiceTests {
 			)),
 			List.of()
 		));
-		when(exportRunService.run(eq("space_alpha"), any())).thenReturn(new RunSheetExportResponse(2, OffsetDateTime.parse("2026-05-08T06:41:00Z")));
+		when(exportRunService.run(eq("space_alpha"), eq(OWNER_ID), any())).thenReturn(new RunSheetExportResponse(2, OffsetDateTime.parse("2026-05-08T06:41:00Z")));
 
 		var result = service.run("space_alpha", OWNER_ID, new RunSheetImportRequest("sheet-1", "token-1"));
 		assertThat(result.status()).isEqualTo("applied");
 		assertThat(result.lastSyncedAt()).isEqualTo(OffsetDateTime.parse("2026-05-08T06:41:00Z"));
 		verify(mutationService).apply(eq("space_alpha"), eq(OWNER_ID), any());
-		verify(exportRunService).run(eq("space_alpha"), any());
+		verify(exportRunService).run(eq("space_alpha"), eq(OWNER_ID), any());
 	}
 
 	private static final class TestableSheetExportImportRunService extends SheetExportImportRunService {
 		private TestableSheetExportImportRunService(
 			SheetExportImportEvaluationService evaluationService,
 			SheetExportImportMutationService mutationService,
-			SheetExportRunService exportRunService
+			SheetExportRunService exportRunService,
+			GoogleDriveBrowserService googleDriveBrowserService
 		) {
-			super(evaluationService, mutationService, exportRunService);
+			super(evaluationService, mutationService, exportRunService, googleDriveBrowserService);
 		}
 
 		@Override

@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import world.yeon.backend.googledrive_browser.service.GoogleDriveBrowserService;
 import world.yeon.backend.sheet_export.export_run.dto.RunSheetExportRequest;
 import world.yeon.backend.sheet_export.export_run.service.SheetExportRunService;
 import world.yeon.backend.sheet_export.import_evaluation.dto.SheetExportImportEvaluationRequest;
@@ -37,28 +38,29 @@ public class SheetExportImportRunService {
 	private final SheetExportImportEvaluationService evaluationService;
 	private final SheetExportImportMutationService mutationService;
 	private final SheetExportRunService exportRunService;
+	private final GoogleDriveBrowserService googleDriveBrowserService;
 	private final HttpClient httpClient = HttpClient.newHttpClient();
 	private final ObjectMapper objectMapper = new ObjectMapper().findAndRegisterModules();
 
 	public SheetExportImportRunService(
 		SheetExportImportEvaluationService evaluationService,
 		SheetExportImportMutationService mutationService,
-		SheetExportRunService exportRunService
+		SheetExportRunService exportRunService,
+		GoogleDriveBrowserService googleDriveBrowserService
 	) {
 		this.evaluationService = evaluationService;
 		this.mutationService = mutationService;
 		this.exportRunService = exportRunService;
+		this.googleDriveBrowserService = googleDriveBrowserService;
 	}
 
 	public RunSheetImportResponse run(String spaceId, java.util.UUID userId, RunSheetImportRequest request) {
 		if (request == null || request.sheetId() == null || request.sheetId().isBlank()) {
 			throw new IllegalArgumentException("sheetId는 필수입니다.");
 		}
-		if (request.accessToken() == null || request.accessToken().isBlank()) {
-			throw new IllegalArgumentException("accessToken은 필수입니다.");
-		}
+		String accessToken = googleDriveBrowserService.getValidAccessToken(userId);
 
-		List<List<String>> rows = readSheetValues(request.accessToken(), request.sheetId());
+		List<List<String>> rows = readSheetValues(accessToken, request.sheetId());
 		SheetExportImportEvaluationResponse evaluation = evaluationService.evaluate(
 			spaceId,
 			new SheetExportImportEvaluationRequest(request.sheetId(), rows)
@@ -82,7 +84,7 @@ public class SheetExportImportRunService {
 				toMutationItems(evaluation.plannedUpdates())
 			)
 		);
-		var exportResult = exportRunService.run(spaceId, new RunSheetExportRequest(request.sheetId(), request.accessToken()));
+		var exportResult = exportRunService.run(spaceId, userId, new RunSheetExportRequest(request.sheetId(), null));
 		return new RunSheetImportResponse(
 			"applied",
 			evaluation.summary(),

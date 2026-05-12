@@ -95,7 +95,7 @@ export type FinalizeSheetExportSyncResponse = {
 
 export type RunSheetExportInput = {
   sheetId: string;
-  accessToken: string;
+  accessToken?: string;
 };
 
 export type RunSheetExportResponse = {
@@ -105,7 +105,7 @@ export type RunSheetExportResponse = {
 
 export type RunSheetImportInput = {
   sheetId: string;
-  accessToken: string;
+  accessToken?: string;
 };
 
 export type RunSheetImportResponse = {
@@ -220,7 +220,9 @@ function resolveSpringBackendBaseUrl() {
     process.env.SPRING_BACKEND_BASE_URL?.trim() ??
     process.env.SPRING_BOOTSTRAP_BASE_URL?.trim();
 
-  return raw && raw.length > 0 ? raw.replace(/\/$/, "") : DEFAULT_BACKEND_BASE_URL;
+  return raw && raw.length > 0
+    ? raw.replace(/\/$/, "")
+    : DEFAULT_BACKEND_BASE_URL;
 }
 
 export class SheetExportSpringBackendHttpError extends Error {
@@ -243,7 +245,8 @@ function tryParseJson(raw: string) {
 
 function extractErrorMessage(parsed: unknown) {
   if (!parsed || typeof parsed !== "object") return null;
-  if ("message" in parsed && typeof parsed.message === "string") return parsed.message;
+  if ("message" in parsed && typeof parsed.message === "string")
+    return parsed.message;
   if (
     "error" in parsed &&
     parsed.error &&
@@ -258,7 +261,7 @@ function extractErrorMessage(parsed: unknown) {
 
 export async function fetchSheetExportRowsFromSpring(
   spaceId: string,
-  userId: string,
+  userId: string
 ): Promise<SpringSheetExportRowsResponse> {
   const response = await fetch(
     `${resolveSpringBackendBaseUrl()}/spaces/${spaceId}/sheet-export/rows`,
@@ -269,17 +272,20 @@ export async function fetchSheetExportRowsFromSpring(
         accept: "application/json",
         "X-Yeon-User-Id": userId,
         ...(process.env.SPRING_INTERNAL_TOKEN?.trim()
-          ? { [INTERNAL_TOKEN_HEADER]: process.env.SPRING_INTERNAL_TOKEN.trim() }
+          ? {
+              [INTERNAL_TOKEN_HEADER]: process.env.SPRING_INTERNAL_TOKEN.trim(),
+            }
           : {}),
       },
-    },
+    }
   );
 
   const raw = await response.text();
   const parsed = tryParseJson(raw);
 
   if (!response.ok) {
-    const message = extractErrorMessage(parsed) ?? "Spring backend 요청에 실패했습니다.";
+    const message =
+      extractErrorMessage(parsed) ?? "Spring backend 요청에 실패했습니다.";
     throw new SheetExportSpringBackendHttpError(response.status, message);
   }
 
@@ -289,7 +295,7 @@ export async function fetchSheetExportRowsFromSpring(
 export async function replaceSheetExportSnapshotsInSpring(
   spaceId: string,
   userId: string,
-  input: ReplaceSheetExportSnapshotsInput,
+  input: ReplaceSheetExportSnapshotsInput
 ): Promise<ReplaceSheetExportSnapshotsResponse> {
   const response = await fetch(
     `${resolveSpringBackendBaseUrl()}/spaces/${spaceId}/sheet-export/snapshots`,
@@ -301,18 +307,21 @@ export async function replaceSheetExportSnapshotsInSpring(
         "Content-Type": "application/json",
         "X-Yeon-User-Id": userId,
         ...(process.env.SPRING_INTERNAL_TOKEN?.trim()
-          ? { [INTERNAL_TOKEN_HEADER]: process.env.SPRING_INTERNAL_TOKEN.trim() }
+          ? {
+              [INTERNAL_TOKEN_HEADER]: process.env.SPRING_INTERNAL_TOKEN.trim(),
+            }
           : {}),
       },
       body: JSON.stringify(input),
-    },
+    }
   );
 
   const raw = await response.text();
   const parsed = tryParseJson(raw);
 
   if (!response.ok) {
-    const message = extractErrorMessage(parsed) ?? "Spring backend 요청에 실패했습니다.";
+    const message =
+      extractErrorMessage(parsed) ?? "Spring backend 요청에 실패했습니다.";
     throw new SheetExportSpringBackendHttpError(response.status, message);
   }
 
@@ -322,7 +331,7 @@ export async function replaceSheetExportSnapshotsInSpring(
 export async function evaluateSheetExportImportInSpring(
   spaceId: string,
   userId: string,
-  input: SpringSheetExportImportEvaluationInput,
+  input: SpringSheetExportImportEvaluationInput
 ): Promise<SpringSheetExportImportEvaluationResponse> {
   const response = await fetch(
     `${resolveSpringBackendBaseUrl()}/spaces/${spaceId}/sheet-export/import-evaluation`,
@@ -334,18 +343,21 @@ export async function evaluateSheetExportImportInSpring(
         "Content-Type": "application/json",
         "X-Yeon-User-Id": userId,
         ...(process.env.SPRING_INTERNAL_TOKEN?.trim()
-          ? { [INTERNAL_TOKEN_HEADER]: process.env.SPRING_INTERNAL_TOKEN.trim() }
+          ? {
+              [INTERNAL_TOKEN_HEADER]: process.env.SPRING_INTERNAL_TOKEN.trim(),
+            }
           : {}),
       },
       body: JSON.stringify(input),
-    },
+    }
   );
 
   const raw = await response.text();
   const parsed = tryParseJson(raw);
 
   if (!response.ok) {
-    const message = extractErrorMessage(parsed) ?? "Spring backend 요청에 실패했습니다.";
+    const message =
+      extractErrorMessage(parsed) ?? "Spring backend 요청에 실패했습니다.";
     throw new SheetExportSpringBackendHttpError(response.status, message);
   }
 
@@ -355,7 +367,7 @@ export async function evaluateSheetExportImportInSpring(
 export async function applySheetExportImportMutationInSpring(
   spaceId: string,
   userId: string,
-  input: SpringSheetExportImportMutationInput,
+  input: SpringSheetExportImportMutationInput
 ): Promise<SpringSheetExportImportMutationResponse> {
   const response = await fetch(
     `${resolveSpringBackendBaseUrl()}/spaces/${spaceId}/sheet-export/import-mutation`,
@@ -367,18 +379,21 @@ export async function applySheetExportImportMutationInSpring(
         "Content-Type": "application/json",
         "X-Yeon-User-Id": userId,
         ...(process.env.SPRING_INTERNAL_TOKEN?.trim()
-          ? { [INTERNAL_TOKEN_HEADER]: process.env.SPRING_INTERNAL_TOKEN.trim() }
+          ? {
+              [INTERNAL_TOKEN_HEADER]: process.env.SPRING_INTERNAL_TOKEN.trim(),
+            }
           : {}),
       },
       body: JSON.stringify(input),
-    },
+    }
   );
 
   const raw = await response.text();
   const parsed = tryParseJson(raw);
 
   if (!response.ok) {
-    const message = extractErrorMessage(parsed) ?? "Spring backend 요청에 실패했습니다.";
+    const message =
+      extractErrorMessage(parsed) ?? "Spring backend 요청에 실패했습니다.";
     throw new SheetExportSpringBackendHttpError(response.status, message);
   }
 
@@ -388,7 +403,7 @@ export async function applySheetExportImportMutationInSpring(
 export async function finalizeSheetExportSyncInSpring(
   spaceId: string,
   userId: string,
-  input: FinalizeSheetExportSyncInput,
+  input: FinalizeSheetExportSyncInput
 ): Promise<FinalizeSheetExportSyncResponse> {
   const response = await fetch(
     `${resolveSpringBackendBaseUrl()}/spaces/${spaceId}/sheet-export/sync`,
@@ -400,18 +415,21 @@ export async function finalizeSheetExportSyncInSpring(
         "Content-Type": "application/json",
         "X-Yeon-User-Id": userId,
         ...(process.env.SPRING_INTERNAL_TOKEN?.trim()
-          ? { [INTERNAL_TOKEN_HEADER]: process.env.SPRING_INTERNAL_TOKEN.trim() }
+          ? {
+              [INTERNAL_TOKEN_HEADER]: process.env.SPRING_INTERNAL_TOKEN.trim(),
+            }
           : {}),
       },
       body: JSON.stringify(input),
-    },
+    }
   );
 
   const raw = await response.text();
   const parsed = tryParseJson(raw);
 
   if (!response.ok) {
-    const message = extractErrorMessage(parsed) ?? "Spring backend 요청에 실패했습니다.";
+    const message =
+      extractErrorMessage(parsed) ?? "Spring backend 요청에 실패했습니다.";
     throw new SheetExportSpringBackendHttpError(response.status, message);
   }
 
@@ -421,7 +439,7 @@ export async function finalizeSheetExportSyncInSpring(
 export async function runSheetExportInSpring(
   spaceId: string,
   userId: string,
-  input: RunSheetExportInput,
+  input: RunSheetExportInput
 ): Promise<RunSheetExportResponse> {
   const response = await fetch(
     `${resolveSpringBackendBaseUrl()}/spaces/${spaceId}/sheet-export/export-run`,
@@ -433,18 +451,21 @@ export async function runSheetExportInSpring(
         "Content-Type": "application/json",
         "X-Yeon-User-Id": userId,
         ...(process.env.SPRING_INTERNAL_TOKEN?.trim()
-          ? { [INTERNAL_TOKEN_HEADER]: process.env.SPRING_INTERNAL_TOKEN.trim() }
+          ? {
+              [INTERNAL_TOKEN_HEADER]: process.env.SPRING_INTERNAL_TOKEN.trim(),
+            }
           : {}),
       },
       body: JSON.stringify(input),
-    },
+    }
   );
 
   const raw = await response.text();
   const parsed = tryParseJson(raw);
 
   if (!response.ok) {
-    const message = extractErrorMessage(parsed) ?? "Spring backend 요청에 실패했습니다.";
+    const message =
+      extractErrorMessage(parsed) ?? "Spring backend 요청에 실패했습니다.";
     throw new SheetExportSpringBackendHttpError(response.status, message);
   }
 
@@ -454,7 +475,7 @@ export async function runSheetExportInSpring(
 export async function runSheetImportInSpring(
   spaceId: string,
   userId: string,
-  input: RunSheetImportInput,
+  input: RunSheetImportInput
 ): Promise<RunSheetImportResponse> {
   const response = await fetch(
     `${resolveSpringBackendBaseUrl()}/spaces/${spaceId}/sheet-export/import-run`,
@@ -466,18 +487,21 @@ export async function runSheetImportInSpring(
         "Content-Type": "application/json",
         "X-Yeon-User-Id": userId,
         ...(process.env.SPRING_INTERNAL_TOKEN?.trim()
-          ? { [INTERNAL_TOKEN_HEADER]: process.env.SPRING_INTERNAL_TOKEN.trim() }
+          ? {
+              [INTERNAL_TOKEN_HEADER]: process.env.SPRING_INTERNAL_TOKEN.trim(),
+            }
           : {}),
       },
       body: JSON.stringify(input),
-    },
+    }
   );
 
   const raw = await response.text();
   const parsed = tryParseJson(raw);
 
   if (!response.ok) {
-    const message = extractErrorMessage(parsed) ?? "Spring backend 요청에 실패했습니다.";
+    const message =
+      extractErrorMessage(parsed) ?? "Spring backend 요청에 실패했습니다.";
     throw new SheetExportSpringBackendHttpError(response.status, message);
   }
 
@@ -486,7 +510,7 @@ export async function runSheetImportInSpring(
 
 export async function fetchSheetExportIntegrationFromSpring(
   spaceId: string,
-  userId: string,
+  userId: string
 ): Promise<GetSheetExportIntegrationResponse> {
   const response = await fetch(
     `${resolveSpringBackendBaseUrl()}/spaces/${spaceId}/sheet-export/integration`,
@@ -497,17 +521,20 @@ export async function fetchSheetExportIntegrationFromSpring(
         accept: "application/json",
         "X-Yeon-User-Id": userId,
         ...(process.env.SPRING_INTERNAL_TOKEN?.trim()
-          ? { [INTERNAL_TOKEN_HEADER]: process.env.SPRING_INTERNAL_TOKEN.trim() }
+          ? {
+              [INTERNAL_TOKEN_HEADER]: process.env.SPRING_INTERNAL_TOKEN.trim(),
+            }
           : {}),
       },
-    },
+    }
   );
 
   const raw = await response.text();
   const parsed = tryParseJson(raw);
 
   if (!response.ok) {
-    const message = extractErrorMessage(parsed) ?? "Spring backend 요청에 실패했습니다.";
+    const message =
+      extractErrorMessage(parsed) ?? "Spring backend 요청에 실패했습니다.";
     throw new SheetExportSpringBackendHttpError(response.status, message);
   }
 
@@ -517,7 +544,7 @@ export async function fetchSheetExportIntegrationFromSpring(
 export async function upsertSheetExportIntegrationInSpring(
   spaceId: string,
   userId: string,
-  input: UpsertSheetExportIntegrationInput,
+  input: UpsertSheetExportIntegrationInput
 ): Promise<UpsertSheetExportIntegrationResponse> {
   const response = await fetch(
     `${resolveSpringBackendBaseUrl()}/spaces/${spaceId}/sheet-export/integration`,
@@ -529,18 +556,21 @@ export async function upsertSheetExportIntegrationInSpring(
         "Content-Type": "application/json",
         "X-Yeon-User-Id": userId,
         ...(process.env.SPRING_INTERNAL_TOKEN?.trim()
-          ? { [INTERNAL_TOKEN_HEADER]: process.env.SPRING_INTERNAL_TOKEN.trim() }
+          ? {
+              [INTERNAL_TOKEN_HEADER]: process.env.SPRING_INTERNAL_TOKEN.trim(),
+            }
           : {}),
       },
       body: JSON.stringify(input),
-    },
+    }
   );
 
   const raw = await response.text();
   const parsed = tryParseJson(raw);
 
   if (!response.ok) {
-    const message = extractErrorMessage(parsed) ?? "Spring backend 요청에 실패했습니다.";
+    const message =
+      extractErrorMessage(parsed) ?? "Spring backend 요청에 실패했습니다.";
     throw new SheetExportSpringBackendHttpError(response.status, message);
   }
 
@@ -549,7 +579,7 @@ export async function upsertSheetExportIntegrationInSpring(
 
 export async function deleteSheetExportIntegrationInSpring(
   spaceId: string,
-  userId: string,
+  userId: string
 ): Promise<DeleteSheetExportIntegrationResponse> {
   const response = await fetch(
     `${resolveSpringBackendBaseUrl()}/spaces/${spaceId}/sheet-export/integration`,
@@ -560,17 +590,20 @@ export async function deleteSheetExportIntegrationInSpring(
         accept: "application/json",
         "X-Yeon-User-Id": userId,
         ...(process.env.SPRING_INTERNAL_TOKEN?.trim()
-          ? { [INTERNAL_TOKEN_HEADER]: process.env.SPRING_INTERNAL_TOKEN.trim() }
+          ? {
+              [INTERNAL_TOKEN_HEADER]: process.env.SPRING_INTERNAL_TOKEN.trim(),
+            }
           : {}),
       },
-    },
+    }
   );
 
   const raw = await response.text();
   const parsed = tryParseJson(raw);
 
   if (!response.ok) {
-    const message = extractErrorMessage(parsed) ?? "Spring backend 요청에 실패했습니다.";
+    const message =
+      extractErrorMessage(parsed) ?? "Spring backend 요청에 실패했습니다.";
     throw new SheetExportSpringBackendHttpError(response.status, message);
   }
 
