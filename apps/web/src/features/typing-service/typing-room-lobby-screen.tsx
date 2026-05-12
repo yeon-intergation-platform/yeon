@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { Crown, Search, Users, X } from "lucide-react";
 import {
@@ -21,14 +21,19 @@ import {
   TYPING_ROOM_MODE,
   TYPING_ROOM_TEXT_TYPE,
   TYPING_ROOM_VISIBILITY,
+  type TypingRoomCreateMessage,
   type TypingRoomSummary,
   type TypingRoomVisibility,
 } from "@yeon/race-shared";
 import {
+  resolveTypingRaceSeed,
   useSelectedTypingDeck,
   useTypingSettings,
+  type TypingRaceSeed,
 } from "./use-typing-settings";
 import { useTypingRoomLobby } from "./use-typing-room-lobby";
+import { usePlayerIdentity } from "./use-player-identity";
+import { useRaceRoom } from "./use-race-room";
 import { CharacterSprite } from "./character-sprite";
 import { findCharacter } from "./characters";
 import {
@@ -49,6 +54,14 @@ const FIXED_ROUND_COUNT = 1;
 const FIXED_MODE = TYPING_ROOM_MODE.FINISH;
 
 type LobbyFilter = "all" | "public" | "available";
+
+type LobbyCreateRoomRequest = TypingRoomCreateMessage & {
+  selectedDeckId: string;
+  selectedDeckVisibility: "default" | "public" | "private";
+  lobbyDeckTitle: string;
+  participantDeckTitle: string;
+  raceSeed?: TypingRaceSeed;
+};
 
 const FILTERS: { label: string; value: LobbyFilter }[] = [
   { label: "전체", value: "all" },
@@ -79,6 +92,7 @@ export function TypingRoomLobbyScreen() {
   const { state } = useTypingRoomLobby();
   const { settings } = useTypingSettings();
   const { profile } = useTypingProfile();
+  const playerId = usePlayerIdentity();
   const frameOverrides = useCharacterFrameOverrides();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [title, setTitle] = useState("");
@@ -87,6 +101,11 @@ export function TypingRoomLobbyScreen() {
   );
   const [selectedFilter, setSelectedFilter] = useState<LobbyFilter>("all");
   const [searchKeyword, setSearchKeyword] = useState("");
+  const [createRoomRequest, setCreateRoomRequest] =
+    useState<LobbyCreateRoomRequest | null>(null);
+  const [createError, setCreateError] = useState<string | null>(null);
+  const [isCreating, setIsCreating] = useState(false);
+  const hasHandledCreateSuccessRef = useRef(false);
   const fixedLanguage = settings.locale;
   const deckState = useSelectedTypingDeck(fixedLanguage);
   const roomDeckOptions = useMemo(
@@ -101,6 +120,15 @@ export function TypingRoomLobbyScreen() {
     [deckState.selectedDeck, deckState.selectedDeckId, roomDeckOptions]
   );
   const character = findCharacter(profile.characterId);
+
+  const createRace = useRaceRoom({
+    enabled: Boolean(createRoomRequest && playerId),
+    playerLabel: profile.nickname,
+    playerId,
+    characterId: profile.characterId,
+    locale: settings.locale,
+    createRoom: createRoomRequest,
+  });
 
   const generatedTitle = `${TYPING_ROOM_LANGUAGE_LABELS[fixedLanguage]} ${TYPING_ROOM_TEXT_TYPE_LABELS[FIXED_TEXT_TYPE]} 같이 치기`;
 
@@ -125,8 +153,55 @@ export function TypingRoomLobbyScreen() {
     });
   }, [rooms, searchKeyword, selectedFilter]);
 
-  const handleCreate = (event: FormEvent<HTMLFormElement>) => {
+  useEffect(() => {
+    if (!createRoomRequest || !createRace.roomId) return;
+    if (hasHandledCreateSuccessRef.current) return;
+
+    hasHandledCreateSuccessRef.current = true;
+    setIsCreating(false);
+    trackEvent("room_create_success", {
+      source: "typing_room_lobby",
+      room_id: createRace.roomId,
+      visibility: createRoomRequest.visibility,
+      language: createRoomRequest.language,
+      deck_id: createRoomRequest.selectedDeckId,
+      deck_title: createRoomRequest.participantDeckTitle,
+    });
+    router.push(`/typing-service/rooms/${createRace.roomId}`);
+  }, [createRace.roomId, createRoomRequest, router]);
+
+  useEffect(() => {
+    if (!createRoomRequest) return;
+    if (
+      createRace.connectionState !== "error" &&
+      createRace.connectionState !== "disconnected"
+    ) {
+      return;
+    }
+
+    setCreateError(
+      createRace.roomError ??
+        "타자방을 만들 수 없습니다. 잠시 후 다시 시도해주세요."
+    );
+    setCreateRoomRequest(null);
+    setIsCreating(false);
+    hasHandledCreateSuccessRef.current = false;
+  }, [createRace.connectionState, createRace.roomError, createRoomRequest]);
+
+  const handleCreate = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (isCreating) return;
+
+    if (!playerId) {
+      setCreateError(
+        "플레이어 정보를 준비하는 중입니다. 잠시 후 다시 시도해주세요."
+      );
+      return;
+    }
+
+    setCreateError(null);
+    setIsCreating(true);
+    hasHandledCreateSuccessRef.current = false;
     trackEvent("room_create_intent", {
       source: "typing_room_lobby",
       visibility,
@@ -134,18 +209,32 @@ export function TypingRoomLobbyScreen() {
       deck_id: selectedDeck.id,
       deck_title: selectedDeck.title,
     });
-    const params = new URLSearchParams({
+
+    const seedResult = await resolveTypingRaceSeed(selectedDeck, fixedLanguage);
+    if (!seedResult.ok) {
+      setCreateError(seedResult.message);
+      setIsCreating(false);
+      return;
+    }
+
+    setCreateRoomRequest({
       title: title.trim() || generatedTitle,
       visibility,
-      maxParticipants: String(FIXED_MAX_PARTICIPANTS),
+      maxParticipants: FIXED_MAX_PARTICIPANTS,
       textType: FIXED_TEXT_TYPE,
       language: fixedLanguage,
       difficulty: FIXED_DIFFICULTY,
-      roundCount: String(FIXED_ROUND_COUNT),
+      roundCount: FIXED_ROUND_COUNT,
       mode: FIXED_MODE,
       selectedDeckId: selectedDeck.id,
+      selectedDeckVisibility: selectedDeck.visibility,
+      lobbyDeckTitle:
+        selectedDeck.visibility === "private"
+          ? "비공개 덱"
+          : selectedDeck.title,
+      participantDeckTitle: selectedDeck.title,
+      raceSeed: seedResult.seed ?? undefined,
     });
-    router.push(`/typing-service/rooms/new?${params.toString()}`);
   };
 
   const openCreateModal = () => {
@@ -157,8 +246,9 @@ export function TypingRoomLobbyScreen() {
   };
 
   const closeCreateModal = useCallback(() => {
+    if (isCreating) return;
     setIsCreateModalOpen(false);
-  }, []);
+  }, [isCreating]);
 
   useEffect(() => {
     if (!isCreateModalOpen) return;
@@ -430,7 +520,8 @@ export function TypingRoomLobbyScreen() {
                 type="button"
                 onClick={closeCreateModal}
                 aria-label="방 만들기 닫기"
-                className="-mr-1 rounded-full p-1 text-[#444] transition-colors hover:bg-[#f5f5f5] hover:text-[#111]"
+                disabled={isCreating}
+                className="-mr-1 rounded-full p-1 text-[#444] transition-colors hover:bg-[#f5f5f5] hover:text-[#111] disabled:cursor-not-allowed disabled:opacity-40"
               >
                 <X size={28} strokeWidth={1.8} />
               </button>
@@ -444,6 +535,7 @@ export function TypingRoomLobbyScreen() {
                   onChange={(event) => setTitle(event.target.value)}
                   placeholder="예: 오늘의 타자 연습"
                   maxLength={40}
+                  disabled={isCreating}
                   className="h-[50px] rounded-lg px-4 text-[16px] font-medium"
                 />
               </label>
@@ -469,6 +561,7 @@ export function TypingRoomLobbyScreen() {
                         value={option}
                         checked={visibility === option}
                         onChange={() => setVisibility(option)}
+                        disabled={isCreating}
                         className="sr-only"
                       />
                       {TYPING_ROOM_VISIBILITY_LABELS[option]}
@@ -481,12 +574,19 @@ export function TypingRoomLobbyScreen() {
                 세부 설정은 방에 들어간 뒤 시작 전에 바꿀 수 있어요.
               </p>
 
+              {createError && (
+                <p className="rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-[13px] font-semibold leading-5 text-red-600">
+                  {createError}
+                </p>
+              )}
+
               <YeonButton
                 type="submit"
                 variant="primary"
-                className="h-[60px] rounded-lg px-4 text-[18px] shadow-[0_3px_10px_rgba(0,0,0,0.10)]"
+                disabled={isCreating}
+                className="h-[60px] rounded-lg px-4 text-[18px] shadow-[0_3px_10px_rgba(0,0,0,0.10)] disabled:cursor-not-allowed disabled:opacity-60"
               >
-                만들고 입장하기
+                {isCreating ? "타자방 만드는 중..." : "만들고 입장하기"}
               </YeonButton>
             </div>
           </form>
