@@ -266,3 +266,29 @@
 - `apps/web/src/server/sheet-export-bff.ts`가 `@/server/services/googledrive-service`를 import하지 않는다.
 - export/import 실행은 Spring이 `X-Yeon-User-Id` 기준 token lookup/refresh를 수행한다.
 - 관련 backend/web 테스트와 typecheck/build가 통과한다.
+
+## 9차 — web DB runtime dead code 제거
+
+### 작업내용
+- `apps/web/src/app/**` runtime에서 더 이상 참조하지 않는 Drizzle 기반 legacy service/repository/test 파일을 제거한다.
+- `apps/web/src/server/db/**`는 Flyway parity PR 전까지 스키마 대조 자료로 남기되, Next runtime import 0개 상태를 검증한다.
+- `@/server/db`, `drizzle-orm`, `pg`가 `apps/web/src` runtime에서 사용되지 않는지 audit한다.
+
+### 논의 필요
+- Drizzle migration 파일과 package dependency 제거는 Flyway parity 확인이 선행되어야 한다. 이번 차수는 runtime dead code 제거에 한정한다.
+
+### 선택지
+1. web Drizzle schema/migration/deps까지 즉시 전부 삭제한다.
+2. runtime dead code만 먼저 삭제하고 schema/migration/deps는 Flyway parity PR로 분리한다.
+3. 삭제 없이 lint 제외만 추가한다.
+
+### 추천
+- 2번. 데이터 스키마 source 전환은 별도 parity 검증이 필요하므로, 지금은 Next runtime에서 DB 소유권이 부활하지 않게 dead code부터 제거한다.
+
+### 사용자 방향
+- 추천 기준으로 진행한다.
+
+### 완료 기준
+- `apps/web/src/server/services`와 `apps/web/src/server/repositories`의 Drizzle 기반 legacy 파일이 제거된다.
+- `git grep "@/server/db\|drizzle-orm\|from \"pg\"\|from '''pg'''" -- apps/web/src` 결과가 `apps/web/src/server/db/**`만 남거나, runtime 파일 기준 0개다.
+- web typecheck/build가 통과한다.
