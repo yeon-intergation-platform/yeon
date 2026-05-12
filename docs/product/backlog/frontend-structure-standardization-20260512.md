@@ -1576,3 +1576,29 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 64차 — student management OAuth result toast feature component 이동
+
+### 작업내용
+
+- `app/counseling-service/student-management/layout.tsx` 내부의 OAuth 결과 토스트 구현을 `features/student-management/components/oauth-result-toast.tsx`로 이동한다.
+- route layout은 provider/route shell 조립에 집중하고, Google Drive/OneDrive 결과 토스트 UI는 feature component가 소유한다.
+- 기존 URL query 정리와 자동 dismiss 동작은 유지한다.
+
+### 논의 필요
+
+- student-management layout은 아직 route shell, sidebar 상태, modal, toast가 섞여 있다. 이번 차수는 독립적인 OAuth toast부터 분리해 layout 책임을 줄인다.
+
+### 선택지
+
+1. OAuth toast만 feature component로 이동한다.
+2. SidebarContent 전체를 feature shell component로 이동한다.
+3. create/import modal orchestration까지 한 번에 hook으로 분리한다.
+
+### 추천
+
+- 선택지 1. 독립 UI부터 이동해 회귀 위험을 낮추고 후속 layout 분해의 발판을 만든다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.
