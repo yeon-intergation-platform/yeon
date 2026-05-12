@@ -44,12 +44,10 @@ export function CommunityChatWidget({
     isSendingMessage,
     sendMessage,
     currentUserId,
-    activeRoomPeerNickname,
     activePresenceCount,
   } = useCommunityChat({
     pollIntervalMs: variant === "compact" ? 8000 : 5000,
   });
-
 
   const isCompact = variant === "compact";
   const isFeed = variant === "feed";
@@ -156,7 +154,9 @@ export function CommunityChatWidget({
     <motion.section
       {...compactContainerMotion}
       className={[
-        isFeed ? "border-0 bg-white" : "rounded-2xl border border-[#e5e5e5] bg-white",
+        isFeed
+          ? "border-0 bg-white"
+          : "rounded-2xl border border-[#e5e5e5] bg-white",
         isCompact
           ? isShellCollapsed
             ? "relative h-14 w-14 max-w-[calc(100vw-2rem)] overflow-hidden"
@@ -263,10 +263,9 @@ export function CommunityChatWidget({
                 <div className="space-y-1.5">
                   {visibleMessages.map((message) => {
                     const isMine =
-                      currentUserId !== null && message.senderId === currentUserId;
-                    const senderName = isMine
-                      ? "나"
-                      : activeRoomPeerNickname ?? "상대";
+                      currentUserId !== null &&
+                      message.senderId === currentUserId;
+                    const senderName = isMine ? "나" : message.senderNickname;
 
                     return (
                       <div

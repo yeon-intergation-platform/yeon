@@ -2,6 +2,7 @@ export * from "./auth";
 export * from "./card-decks";
 export * from "./card-rooms";
 export * from "./chat-service";
+export * from "./community-chat";
 export * from "./counseling-records";
 export * from "./contest";
 export * from "./error";
