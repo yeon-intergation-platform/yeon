@@ -2237,3 +2237,29 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 90차 — 타자 덱 화면 컴포넌트/컨테이너 경계 분리
+
+### 작업내용
+
+- `typing-decks-screen.tsx`에 함께 있던 덱 form/list/detail/passages presentational/feature 컴포넌트를 `typing-deck-components.tsx`로 이동한다.
+- `typing-decks-screen.tsx`는 라우트성 화면 조립, scope tab 상태, 선택 deck 상태, 목록 query 연결만 담당하게 줄인다.
+- 기존 외부 import 호환을 위해 `typing-decks-screen.tsx`에서 이동한 컴포넌트를 re-export한다.
+- UI/문구/API 동작은 변경하지 않는다.
+
+### 논의 필요
+
+- 덱 컴포넌트를 한 파일로 둘지, form/list/detail로 더 세분화할지 여부.
+
+### 선택지
+
+1. 이번 차수는 `typing-deck-components.tsx` 하나로 분리하고 re-export로 호환을 유지한다.
+2. 처음부터 form/list/detail 파일을 각각 만든다.
+
+### 추천
+
+- 1번. 타자 덱 화면은 외부에서 일부 컴포넌트를 import 중이므로 첫 차수는 호환성을 유지한 큰 경계 이동만 수행한다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.
