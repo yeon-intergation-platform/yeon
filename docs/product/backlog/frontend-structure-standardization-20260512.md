@@ -1264,3 +1264,29 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 52차 — center panel transcript details component 추출
+
+### 작업내용
+
+- `center-panel.tsx`에서 두 번 반복되는 전사 원문 details 렌더링을 feature component로 추출한다.
+- 전사 summary 계산과 segment row 표시 책임을 `TranscriptDetails`로 이동한다.
+- 부분 원문/완료 원문의 빈 상태 문구와 기본 open 동작은 기존과 동일하게 유지한다.
+
+### 논의 필요
+
+- transcript 표시와 audio player는 모두 center panel의 순수 표시 영역이다. 이번 차수는 중복이 있는 transcript details만 먼저 분리하고 audio player는 후속으로 둔다.
+
+### 선택지
+
+1. `TranscriptDetails`만 feature component로 추출한다.
+2. audio player까지 함께 추출한다.
+3. center panel 상태 분기 전체를 feature hook으로 분리한다.
+
+### 추천
+
+- 선택지 1. 중복 JSX와 summary 계산을 먼저 제거해 center panel의 표시 책임을 줄인다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.
