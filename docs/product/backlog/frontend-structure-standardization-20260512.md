@@ -1420,3 +1420,29 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 58차 — center panel empty state component 추출
+
+### 작업내용
+
+- `center-panel.tsx`의 selected 없음 상태 UI를 feature component로 추출한다.
+- app route component는 selected 상태에 따라 feature 상태 component를 선택하는 라우터 역할만 하도록 더 축소한다.
+- 빈 상태 문구와 레이아웃은 기존과 동일하게 유지한다.
+
+### 논의 필요
+
+- empty state는 작은 블록이지만 center panel 내부에서 마지막으로 남은 직접 JSX 상태다. 이번 차수에서 분리해 상태별 표시 책임을 feature layer로 통일한다.
+
+### 선택지
+
+1. `RecordEmptyState` component만 추출한다.
+2. `CenterPanel` 자체를 feature screen component로 이동한다.
+3. empty state는 작으므로 유지하고 다른 큰 파일로 이동한다.
+
+### 추천
+
+- 선택지 1. 작은 변경으로 center panel의 상태별 표시 책임을 완전히 feature component로 정리한다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.

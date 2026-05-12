@@ -1,6 +1,7 @@
 import styles from "../workspace.module.css";
 import type { RecordItem } from "../_lib/types";
 import type { RecordMemberMismatchWarning } from "../_lib/record-member-mismatch";
+import { RecordEmptyState } from "@/features/counseling-record-workspace/components/record-empty-state";
 import { RecordFailureState } from "@/features/counseling-record-workspace/components/record-failure-state";
 import { RecordPartialTranscriptState } from "@/features/counseling-record-workspace/components/record-partial-transcript-state";
 import { RecordProcessingState } from "@/features/counseling-record-workspace/components/record-processing-state";
@@ -52,20 +53,9 @@ export function CenterPanel({
   /* 기록 목록은 있지만 아직 선택하지 않은 상태 */
   if (!selected) {
     return (
-      <div
+      <RecordEmptyState
         className={`flex-1 flex flex-col overflow-hidden ${styles.centerFadeIn}`}
-      >
-        <div className="flex-1 flex items-center justify-center min-h-0">
-          <div className="flex flex-col items-center gap-4 text-center max-w-[360px]">
-            <p className="text-base font-medium">
-              좌측 목록에서 기록을 선택하세요
-            </p>
-            <p className="m-0 text-sm leading-relaxed text-text-secondary">
-              기록을 클릭하면 전사 원문과 AI 분석 결과를 확인할 수 있습니다.
-            </p>
-          </div>
-        </div>
-      </div>
+      />
     );
   }
 
