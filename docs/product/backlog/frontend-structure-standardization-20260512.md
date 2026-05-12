@@ -2338,3 +2338,29 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 94차 — 카드방 header/chat view와 label 상수 분리
+
+### 작업내용
+
+- `card-room-screen.tsx`에 함께 있던 카드방 header JSX와 채팅 panel JSX를 별도 view 파일로 분리한다.
+- 카드방 status/role label 상수는 `card-room-labels.ts`로 분리해 참여자/헤더가 같은 source of truth를 보게 한다.
+- `card-room-screen.tsx`는 입장, realtime 연결, 현재 카드/권한 파생, 채팅 draft orchestration 중심으로 줄인다.
+- UI 문구, Spring/race-server API 동작은 변경하지 않는다.
+
+### 논의 필요
+
+- 참여자 panel과 카드 진행 panel까지 같은 차수에서 분리할지 여부.
+
+### 선택지
+
+1. 이번 차수는 header/chat/label만 분리한다.
+2. 참여자 panel과 카드 진행 panel까지 한 번에 분리한다.
+
+### 추천
+
+- 1번. 카드방은 realtime 상태와 사용자 액션이 많으므로 먼저 독립성이 높은 header/chat 경계부터 분리한다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.

@@ -1,8 +1,6 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { Send } from "lucide-react";
 import {
   CARD_ROOM_RESULT,
   CARD_ROOM_ROLE,
@@ -17,22 +15,11 @@ import {
   useCardRoomConnection,
   useCardRoomProfile,
 } from "./hooks";
+import { CardRoomChatPanel } from "./card-room-chat-panel";
+import { CardRoomHeader } from "./card-room-header";
+import { CARD_ROOM_ROLE_LABELS } from "./card-room-labels";
 
 type CardRoomScreenProps = { roomId: string };
-
-const STATUS_LABELS = {
-  waiting: "대기중",
-  answering: "답변 중",
-  passed: "OK",
-  given_up: "포기",
-  revealed: "정답 공개",
-  finished: "완료",
-} as const;
-
-const ROLE_LABELS = {
-  MEMORIZER: "외우는 사람",
-  CHECKER: "봐주는 사람",
-} as const;
 
 export function CardRoomScreen({ roomId }: CardRoomScreenProps) {
   const { profile, guestId, loaded: profileLoaded } = useCardRoomProfile();
@@ -113,53 +100,13 @@ export function CardRoomScreen({ roomId }: CardRoomScreenProps) {
     <div className="min-h-screen bg-white text-[#111]">
       <CommonProductHeader activeService="card" />
       <main className="px-4 py-5 md:px-8 md:py-6">
-        <header className="rounded-3xl border border-[#e5e5e5] bg-white p-4 md:p-5">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="rounded-full border border-[#e5e5e5] bg-[#fafafa] px-3 py-1 text-[12px] font-bold text-[#666]">
-                  #{roomId}
-                </span>
-                <span className="rounded-full border border-[#d9ead3] bg-[#eef8ea] px-3 py-1 text-[12px] font-bold text-[#2f7d32]">
-                  {state ? STATUS_LABELS[state.status] : room.connectionState}
-                </span>
-              </div>
-              <h1 className="mt-3 text-[24px] font-black tracking-[-0.04em] md:text-[30px]">
-                {state?.title ?? "카드방 입장 중"}
-              </h1>
-              <p className="mt-2 text-[14px] font-medium text-[#666]">
-                {state
-                  ? `${state.deckTitle} · ${Math.min(state.currentCardIndex + 1, state.cards.length)} / ${state.cards.length} · 현재 역할 ${myParticipant ? ROLE_LABELS[myParticipant.role] : "입장 중"}`
-                  : "Spring 카드방 상태를 불러오는 중입니다."}
-              </p>
-            </div>
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-              {myParticipant ? (
-                <div className="inline-flex rounded-xl border border-[#e5e5e5] bg-[#fafafa] p-1">
-                  {(
-                    [CARD_ROOM_ROLE.MEMORIZER, CARD_ROOM_ROLE.CHECKER] as const
-                  ).map((role) => (
-                    <button
-                      key={role}
-                      type="button"
-                      onClick={() => room.sendRole(role)}
-                      data-active={myParticipant.role === role}
-                      className="rounded-lg px-3 py-2 text-[12px] font-bold text-[#666] data-[active=true]:bg-[#111] data-[active=true]:text-white"
-                    >
-                      {ROLE_LABELS[role]}
-                    </button>
-                  ))}
-                </div>
-              ) : null}
-              <Link
-                href="/card-service/rooms"
-                className="inline-flex h-10 items-center justify-center rounded-xl border border-[#e5e5e5] px-4 text-[13px] font-bold text-[#666] no-underline transition-colors hover:border-[#111] hover:text-[#111]"
-              >
-                로비로
-              </Link>
-            </div>
-          </div>
-        </header>
+        <CardRoomHeader
+          roomId={roomId}
+          state={state}
+          connectionState={room.connectionState}
+          myRole={myParticipant?.role ?? null}
+          onRoleChange={room.sendRole}
+        />
 
         {joinError || room.error ? (
           <p className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-[13px] font-bold text-red-700">
@@ -210,7 +157,7 @@ export function CardRoomScreen({ roomId }: CardRoomScreenProps) {
                             {participant.nickname}
                           </p>
                           <p className="mt-0.5 text-[11px] text-[#777]">
-                            {ROLE_LABELS[participant.role]}
+                            {CARD_ROOM_ROLE_LABELS[participant.role]}
                           </p>
                         </div>
                       );
@@ -308,59 +255,14 @@ export function CardRoomScreen({ roomId }: CardRoomScreenProps) {
             </div>
           </section>
 
-          <section
-            className={`${mobileTab === "card" ? "hidden lg:flex" : "flex"} min-h-[560px] flex-col rounded-3xl border border-[#e5e5e5] bg-white`}
-          >
-            <div className="border-b border-[#e5e5e5] p-4">
-              <h2 className="text-[16px] font-bold text-[#111]">답변 채팅</h2>
-              <p className="mt-1 text-[13px] text-[#777]">
-                메시지는 race-server를 통해 브로드캐스트되고 Spring 카드방
-                메시지로 저장됩니다.
-              </p>
-            </div>
-            <div
-              className="flex-1 space-y-3 overflow-y-auto p-4"
-              aria-live="polite"
-            >
-              {state?.messages.map((message) => {
-                const mine = message.senderParticipantId === participantId;
-                return (
-                  <div
-                    key={message.id}
-                    className={`rounded-2xl px-4 py-3 ${mine ? "ml-auto max-w-[78%] bg-[#111] text-white" : message.messageType === "system" ? "mx-auto max-w-[88%] border border-[#e5e5e5] bg-[#fafafa] text-center text-[#666]" : "mr-auto max-w-[78%] border border-[#e5e5e5] bg-white text-[#111]"}`}
-                  >
-                    <p className="text-[11px] font-bold opacity-70">
-                      {message.senderNickname ?? "시스템"}
-                    </p>
-                    <p className="mt-1 text-[14px] leading-[1.6]">
-                      {message.content}
-                    </p>
-                  </div>
-                );
-              })}
-            </div>
-            <form
-              className="flex gap-2 border-t border-[#e5e5e5] p-4"
-              onSubmit={(event) => {
-                event.preventDefault();
-                submitChat();
-              }}
-            >
-              <input
-                value={chatDraft}
-                onChange={(event) => setChatDraft(event.target.value)}
-                placeholder="답변을 입력하세요"
-                className="h-12 min-w-0 flex-1 rounded-xl border border-[#d9d9d9] px-4 text-[14px] outline-none focus:border-[#111]"
-              />
-              <button
-                type="submit"
-                className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-[#111] text-white transition-colors hover:bg-[#333]"
-                aria-label="채팅 보내기"
-              >
-                <Send size={18} />
-              </button>
-            </form>
-          </section>
+          <CardRoomChatPanel
+            mobileTab={mobileTab}
+            messages={state?.messages ?? []}
+            participantId={participantId}
+            chatDraft={chatDraft}
+            onChatDraftChange={setChatDraft}
+            onSubmitChat={submitChat}
+          />
         </section>
       </main>
     </div>
