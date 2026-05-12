@@ -1043,10 +1043,30 @@ jobs:
           fi
 
           image_tag="sha-${GITHUB_SHA::7}"
+          latest_tag="latest"
           echo "배포 이미지 태그: ${image_tag}"
-          export YEON_WEB_IMAGE="ghcr.io/${owner_lower}/yeon-web-app:${image_tag}"
-          export YEON_RACE_SERVER_IMAGE="ghcr.io/${owner_lower}/yeon-race-server:${image_tag}"
-          export YEON_BACKEND_IMAGE="ghcr.io/${owner_lower}/yeon-backend:${image_tag}"
+
+          if [[ "${{ needs.detect_changes.outputs.web }}" == "true" ]]; then
+            export YEON_WEB_IMAGE="ghcr.io/${owner_lower}/yeon-web-app:${image_tag}"
+          else
+            export YEON_WEB_IMAGE="ghcr.io/${owner_lower}/yeon-web-app:${latest_tag}"
+          fi
+
+          if [[ "${{ needs.detect_changes.outputs.backend }}" == "true" ]]; then
+            export YEON_BACKEND_IMAGE="ghcr.io/${owner_lower}/yeon-backend:${image_tag}"
+          else
+            export YEON_BACKEND_IMAGE="ghcr.io/${owner_lower}/yeon-backend:${latest_tag}"
+          fi
+
+          if [[ "${{ needs.detect_changes.outputs.race }}" == "true" ]]; then
+            export YEON_RACE_SERVER_IMAGE="ghcr.io/${owner_lower}/yeon-race-server:${image_tag}"
+          else
+            export YEON_RACE_SERVER_IMAGE="ghcr.io/${owner_lower}/yeon-race-server:${latest_tag}"
+          fi
+
+          echo "web image: ${YEON_WEB_IMAGE}"
+          echo "backend image: ${YEON_BACKEND_IMAGE}"
+          echo "race image: ${YEON_RACE_SERVER_IMAGE}"
           for i in 1 2 3; do
             docker compose -f "${COMPOSE_FILE}" pull "${services[@]}" && break
             [ "$i" -eq 3 ] && exit 1
@@ -1167,6 +1187,10 @@ jobs:
           else
             export YEON_RACE_SERVER_IMAGE="ghcr.io/${owner_lower}/yeon-race-server:${latest_tag}"
           fi
+
+          echo "web image: ${YEON_WEB_IMAGE}"
+          echo "backend image: ${YEON_BACKEND_IMAGE}"
+          echo "race image: ${YEON_RACE_SERVER_IMAGE}"
 
           # Pi 네트워크 대응: pull 실패 시 최대 3회 재시도
           for i in 1 2 3; do
