@@ -21,7 +21,7 @@ vi.mock("@/server/sheet-export-spring-client", () => ({
   },
 }));
 
-vi.mock("@/server/services/google-sheets-export-service", () => ({
+vi.mock("@/server/sheet-export-bff", () => ({
   exportSpaceToSheet,
 }));
 
@@ -32,7 +32,10 @@ describe("POST /api/v1/spaces/[spaceId]/sheet-export/sync", () => {
   });
 
   test("Spring integration lookup 뒤 export service를 호출한다", async () => {
-    requireAuthenticatedUser.mockResolvedValue({ currentUser: { id: "user-1" }, response: null });
+    requireAuthenticatedUser.mockResolvedValue({
+      currentUser: { id: "user-1" },
+      response: null,
+    });
     fetchSheetExportIntegrationFromSpring.mockResolvedValue({
       integration: { sheetId: "sheet123" },
     });
@@ -43,16 +46,26 @@ describe("POST /api/v1/spaces/[spaceId]/sheet-export/sync", () => {
 
     const { POST } = await import("../route");
     const response = await POST(
-      new Request("http://localhost/api/v1/spaces/space_alpha/sheet-export/sync", {
-        method: "POST",
-      }) as never,
-      { params: Promise.resolve({ spaceId: "space_alpha" }) },
+      new Request(
+        "http://localhost/api/v1/spaces/space_alpha/sheet-export/sync",
+        {
+          method: "POST",
+        }
+      ) as never,
+      { params: Promise.resolve({ spaceId: "space_alpha" }) }
     );
     const body = await response.json();
 
     expect(response.status).toBe(200);
-    expect(fetchSheetExportIntegrationFromSpring).toHaveBeenCalledWith("space_alpha", "user-1");
-    expect(exportSpaceToSheet).toHaveBeenCalledWith("space_alpha", "sheet123", "user-1");
+    expect(fetchSheetExportIntegrationFromSpring).toHaveBeenCalledWith(
+      "space_alpha",
+      "user-1"
+    );
+    expect(exportSpaceToSheet).toHaveBeenCalledWith(
+      "space_alpha",
+      "sheet123",
+      "user-1"
+    );
     expect(body).toEqual({
       exported: 12,
       lastSyncedAt: "2026-05-08T02:03:04.000Z",
@@ -60,15 +73,23 @@ describe("POST /api/v1/spaces/[spaceId]/sheet-export/sync", () => {
   });
 
   test("integration이 없으면 404를 반환한다", async () => {
-    requireAuthenticatedUser.mockResolvedValue({ currentUser: { id: "user-1" }, response: null });
-    fetchSheetExportIntegrationFromSpring.mockResolvedValue({ integration: null });
+    requireAuthenticatedUser.mockResolvedValue({
+      currentUser: { id: "user-1" },
+      response: null,
+    });
+    fetchSheetExportIntegrationFromSpring.mockResolvedValue({
+      integration: null,
+    });
 
     const { POST } = await import("../route");
     const response = await POST(
-      new Request("http://localhost/api/v1/spaces/space_alpha/sheet-export/sync", {
-        method: "POST",
-      }) as never,
-      { params: Promise.resolve({ spaceId: "space_alpha" }) },
+      new Request(
+        "http://localhost/api/v1/spaces/space_alpha/sheet-export/sync",
+        {
+          method: "POST",
+        }
+      ) as never,
+      { params: Promise.resolve({ spaceId: "space_alpha" }) }
     );
     const body = await response.json();
 

@@ -21,7 +21,7 @@ vi.mock("@/server/sheet-export-spring-client", () => ({
   },
 }));
 
-vi.mock("@/server/services/google-sheets-export-service", () => ({
+vi.mock("@/server/sheet-export-bff", () => ({
   importSpaceFromLinkedSheet,
 }));
 
@@ -32,52 +32,87 @@ describe("POST /api/v1/spaces/[spaceId]/sheet-export/import", () => {
   });
 
   test("Spring integration lookup 뒤 import service를 호출한다", async () => {
-    requireAuthenticatedUser.mockResolvedValue({ currentUser: { id: "user-1" }, response: null });
+    requireAuthenticatedUser.mockResolvedValue({
+      currentUser: { id: "user-1" },
+      response: null,
+    });
     fetchSheetExportIntegrationFromSpring.mockResolvedValue({
       integration: { sheetId: "sheet123" },
     });
     importSpaceFromLinkedSheet.mockResolvedValue({
       status: "applied",
-      summary: { created: 1, updated: 2, unchanged: 3, skipped: 0, conflicts: 0 },
+      summary: {
+        created: 1,
+        updated: 2,
+        unchanged: 3,
+        skipped: 0,
+        conflicts: 0,
+      },
       conflicts: [],
       lastSyncedAt: new Date("2026-05-08T01:02:03.000Z"),
     });
 
     const { POST } = await import("../route");
     const response = await POST(
-      new Request("http://localhost/api/v1/spaces/space_alpha/sheet-export/import", {
-        method: "POST",
-      }) as never,
-      { params: Promise.resolve({ spaceId: "space_alpha" }) },
+      new Request(
+        "http://localhost/api/v1/spaces/space_alpha/sheet-export/import",
+        {
+          method: "POST",
+        }
+      ) as never,
+      { params: Promise.resolve({ spaceId: "space_alpha" }) }
     );
     const body = await response.json();
 
     expect(response.status).toBe(200);
-    expect(fetchSheetExportIntegrationFromSpring).toHaveBeenCalledWith("space_alpha", "user-1");
-    expect(importSpaceFromLinkedSheet).toHaveBeenCalledWith("space_alpha", "sheet123", "user-1");
+    expect(fetchSheetExportIntegrationFromSpring).toHaveBeenCalledWith(
+      "space_alpha",
+      "user-1"
+    );
+    expect(importSpaceFromLinkedSheet).toHaveBeenCalledWith(
+      "space_alpha",
+      "sheet123",
+      "user-1"
+    );
     expect(body).toEqual({
       status: "applied",
-      summary: { created: 1, updated: 2, unchanged: 3, skipped: 0, conflicts: 0 },
+      summary: {
+        created: 1,
+        updated: 2,
+        unchanged: 3,
+        skipped: 0,
+        conflicts: 0,
+      },
       conflicts: [],
       lastSyncedAt: "2026-05-08T01:02:03.000Z",
     });
   });
 
   test("integration이 없으면 404를 반환한다", async () => {
-    requireAuthenticatedUser.mockResolvedValue({ currentUser: { id: "user-1" }, response: null });
-    fetchSheetExportIntegrationFromSpring.mockResolvedValue({ integration: null });
+    requireAuthenticatedUser.mockResolvedValue({
+      currentUser: { id: "user-1" },
+      response: null,
+    });
+    fetchSheetExportIntegrationFromSpring.mockResolvedValue({
+      integration: null,
+    });
 
     const { POST } = await import("../route");
     const response = await POST(
-      new Request("http://localhost/api/v1/spaces/space_alpha/sheet-export/import", {
-        method: "POST",
-      }) as never,
-      { params: Promise.resolve({ spaceId: "space_alpha" }) },
+      new Request(
+        "http://localhost/api/v1/spaces/space_alpha/sheet-export/import",
+        {
+          method: "POST",
+        }
+      ) as never,
+      { params: Promise.resolve({ spaceId: "space_alpha" }) }
     );
     const body = await response.json();
 
     expect(response.status).toBe(404);
-    expect(body).toEqual({ message: "연동된 시트가 없어 수강생 데이터를 가져올 수 없습니다." });
+    expect(body).toEqual({
+      message: "연동된 시트가 없어 수강생 데이터를 가져올 수 없습니다.",
+    });
     expect(importSpaceFromLinkedSheet).not.toHaveBeenCalled();
   });
 });
