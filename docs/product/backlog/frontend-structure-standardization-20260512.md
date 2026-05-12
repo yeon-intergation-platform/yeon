@@ -882,3 +882,28 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 37차: counseling records viewState selector 분리
+
+### 작업내용
+
+- `use-records` 내부의 `CounselingWorkspaceViewState` 계산을 feature hook/selector로 분리한다.
+- `use-records`는 서버 query, 상세 fetch, polling, local state 조합만 담당하게 한다.
+- loading/empty/recording/processing/ready 전환 조건은 기존과 동일하게 유지한다.
+
+### 논의 필요
+
+- viewState 타입 자체를 app `_lib/types`에서 feature 타입으로 즉시 이동할지 여부.
+
+### 선택지
+
+1. 계산 로직만 먼저 feature hook으로 이동하고 타입 이동은 app `_lib` 흡수 차수에서 처리한다.
+2. viewState 타입까지 즉시 feature로 이동한다.
+
+### 추천
+
+- 1번. 현재 페이지/컴포넌트가 app `_lib/types`를 넓게 참조하므로 타입 이동은 별도 차수가 안전하다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.
