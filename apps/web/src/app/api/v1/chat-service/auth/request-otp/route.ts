@@ -5,7 +5,10 @@ import {
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
-import { requestChatServiceOtp } from "@/server/services/chat-service/auth-service";
+import {
+  ChatServiceAuthSpringBackendHttpError,
+  requestChatServiceOtpInSpring,
+} from "@/server/chat-service-auth-spring-client";
 import { ServiceError } from "@/server/services/service-error";
 
 import {
@@ -22,14 +25,17 @@ export async function POST(request: NextRequest) {
       return jsonChatServiceError("전화번호 입력값이 올바르지 않습니다.", 400);
     }
 
-    const response = await requestChatServiceOtp(parsedBody.data.phoneNumber);
+    const response = await requestChatServiceOtpInSpring(parsedBody.data);
 
     return NextResponse.json(
       chatServiceRequestOtpResponseSchema.parse(response),
-      { status: 201 },
+      { status: 201 }
     );
   } catch (error) {
     if (error instanceof ServiceError) {
+      return jsonChatServiceError(error.message, error.status);
+    }
+    if (error instanceof ChatServiceAuthSpringBackendHttpError) {
       return jsonChatServiceError(error.message, error.status);
     }
 

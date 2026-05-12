@@ -2,11 +2,10 @@ import { errorResponseSchema } from "@yeon/api-contract/error";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
-import {
-  CHAT_SERVICE_SESSION_COOKIE_NAME,
-  getChatServiceAuthByToken,
-} from "@/server/services/chat-service/auth-service";
+import { getChatServiceAuthByToken } from "@/server/services/chat-service/auth-service";
 import { ServiceError } from "@/server/services/service-error";
+
+export const CHAT_SERVICE_SESSION_COOKIE_NAME = "chat-service-session";
 
 export function jsonChatServiceError(message: string, status: number) {
   return NextResponse.json(errorResponseSchema.parse({ message }), { status });
