@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
-import { Search, Users } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Search, Users, X } from "lucide-react";
 import { CommonProductHeader } from "@/components/product-shell/product-header";
 import { CharacterSprite } from "@/features/typing-service/character-sprite";
 import { findCharacter } from "@/features/typing-service/characters";
 import { useCharacterFrameOverrides } from "@/features/typing-service/use-character-frame-overrides";
 import { useTypingSettings } from "@/features/typing-service/use-typing-settings";
+import { CardRoomCreateForm } from "./card-room-create-screen";
 import { useCardRoomList, useCardRoomProfile } from "./hooks";
 
 const FILTERS = [
@@ -21,12 +22,40 @@ type LobbyFilter = (typeof FILTERS)[number]["value"];
 export function CardRoomLobbyScreen() {
   const [selectedFilter, setSelectedFilter] = useState<LobbyFilter>("all");
   const [searchKeyword, setSearchKeyword] = useState("");
-  const { profile } = useCardRoomProfile();
+  const [isCreateModalOpen, setCreateModalOpen] = useState(false);
+  const { profile, loaded: profileLoaded } = useCardRoomProfile();
   const { settings } = useTypingSettings();
   const frameOverrides = useCharacterFrameOverrides();
   const character = findCharacter(profile.characterId);
   const roomsQuery = useCardRoomList();
   const rooms = roomsQuery.data ?? [];
+
+  const openCreateModal = useCallback(() => {
+    setCreateModalOpen(true);
+  }, []);
+
+  const closeCreateModal = useCallback(() => {
+    setCreateModalOpen(false);
+  }, []);
+
+  useEffect(() => {
+    if (!isCreateModalOpen) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      closeCreateModal();
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [closeCreateModal, isCreateModalOpen]);
 
   const filteredRooms = useMemo(() => {
     const keyword = searchKeyword.trim().toLowerCase();
@@ -60,21 +89,25 @@ export function CardRoomLobbyScreen() {
           </div>
           <div className="flex items-center gap-4 rounded-2xl border border-[#e5e5e5] bg-[#fafafa] px-4 py-3">
             <div className="flex h-[72px] w-[72px] items-end justify-center overflow-hidden rounded-xl bg-white">
-              <CharacterSprite
-                character={character}
-                maxHeight={68}
-                sequenceOverride={frameOverrides[character.id]}
-              />
+              {profileLoaded ? (
+                <CharacterSprite
+                  character={character}
+                  maxHeight={68}
+                  sequenceOverride={frameOverrides[character.id]}
+                />
+              ) : null}
             </div>
             <div>
               <p className="text-[13px] font-semibold text-[#666]">
                 입장 캐릭터
               </p>
               <p className="mt-1 text-[16px] font-bold text-[#111]">
-                {profile.nickname} · {character.label[settings.locale]}
+                {profileLoaded
+                  ? `${profile.nickname} · ${character.label[settings.locale]}`
+                  : "프로필 불러오는 중"}
               </p>
               <Link
-                href="/card-service/rooms/new"
+                href="/card-service"
                 className="mt-2 inline-flex text-[12px] font-semibold text-[#666] underline underline-offset-4"
               >
                 캐릭터 바꾸기
@@ -112,12 +145,13 @@ export function CardRoomLobbyScreen() {
                   className="h-[50px] w-full rounded-lg border border-[#d7d7d7] bg-white pl-12 pr-4 text-[16px] font-medium text-[#111] outline-none placeholder:text-[#aaa] focus:border-[#111]"
                 />
               </label>
-              <Link
-                href="/card-service/rooms/new"
+              <button
+                type="button"
+                onClick={openCreateModal}
                 className="inline-flex h-[50px] items-center justify-center rounded-lg bg-[#111] px-8 text-[16px] font-bold text-white no-underline transition-opacity hover:opacity-90"
               >
                 방 만들기
-              </Link>
+              </button>
             </div>
           </div>
 
@@ -143,12 +177,13 @@ export function CardRoomLobbyScreen() {
                 <p className="mt-3 text-[16px] font-medium leading-6 text-[#666]">
                   내 덱 또는 게스트 덱 스냅샷으로 첫 카드방을 만들어 보세요.
                 </p>
-                <Link
-                  href="/card-service/rooms/new"
+                <button
+                  type="button"
+                  onClick={openCreateModal}
                   className="mt-8 rounded-lg bg-[#050505] px-8 py-4 text-[17px] font-bold text-white no-underline transition-colors hover:bg-[#222]"
                 >
                   카드방 만들기
-                </Link>
+                </button>
               </div>
             ) : (
               <div className="grid gap-3 p-4 md:p-5">
@@ -194,6 +229,51 @@ export function CardRoomLobbyScreen() {
           </div>
         </section>
       </main>
+
+      {isCreateModalOpen ? (
+        <div
+          className="fixed inset-0 z-[80] flex items-center justify-center px-4 py-6"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="create-card-room-title"
+        >
+          <button
+            type="button"
+            aria-label="카드방 만들기 닫기"
+            onClick={closeCreateModal}
+            className="absolute inset-0 bg-[rgba(0,0,0,0.36)]"
+          />
+          <div className="relative z-10 max-h-[calc(100vh-3rem)] w-full max-w-[560px] overflow-y-auto rounded-[28px] bg-white shadow-[0_24px_80px_rgba(0,0,0,0.22)]">
+            <div className="flex items-start justify-between gap-4 border-b border-[#e5e5e5] px-6 py-5">
+              <div>
+                <h2
+                  id="create-card-room-title"
+                  className="text-[22px] font-black tracking-[-0.04em] text-[#111]"
+                >
+                  카드방 만들기
+                </h2>
+                <p className="mt-2 text-[13px] font-medium leading-5 text-[#666]">
+                  현재 덱 내용을 고정해 함께 확인할 카드방을 만듭니다.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={closeCreateModal}
+                aria-label="카드방 만들기 닫기"
+                className="-mr-1 rounded-full p-1 text-[#444] transition-colors hover:bg-[#f5f5f5] hover:text-[#111]"
+              >
+                <X size={28} strokeWidth={1.8} />
+              </button>
+            </div>
+            <div className="p-5 md:p-6">
+              <CardRoomCreateForm
+                onCancel={closeCreateModal}
+                submitLabel="카드방 만들고 입장하기"
+              />
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
