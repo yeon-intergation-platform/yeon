@@ -2,6 +2,7 @@ import type {
   FieldType,
   SpaceField,
   SpaceTab,
+  SpaceTemplateDetail,
   SpaceTemplateSummary,
 } from "./types";
 import { resolveApiHrefForCurrentPath } from "@/lib/app-route-paths";
@@ -27,13 +28,13 @@ export async function apiFetch<T>(url: string, init?: RequestInit): Promise<T> {
 
 export async function fetchSpaceTabs(spaceId: string) {
   return apiFetch<{ tabs: SpaceTab[] }>(
-    `/api/v1/spaces/${spaceId}/member-tabs`,
+    `/api/v1/spaces/${spaceId}/member-tabs`
   );
 }
 
 export async function patchSpace(
   spaceId: string,
-  input: { name?: string; startDate?: string | null; endDate?: string | null },
+  input: { name?: string; startDate?: string | null; endDate?: string | null }
 ) {
   return apiFetch<{ space: Space }>(`/api/v1/spaces/${spaceId}`, {
     method: "PATCH",
@@ -43,13 +44,19 @@ export async function patchSpace(
 
 export async function fetchSpaceFields(spaceId: string, tabId: string) {
   return apiFetch<{ fields: SpaceField[] }>(
-    `/api/v1/spaces/${spaceId}/member-tabs/${tabId}/fields`,
+    `/api/v1/spaces/${spaceId}/member-tabs/${tabId}/fields`
   );
 }
 
 export async function fetchSpaceTemplates() {
   return apiFetch<{ templates: SpaceTemplateSummary[] }>(
-    "/api/v1/space-templates",
+    "/api/v1/space-templates"
+  );
+}
+
+export async function fetchSpaceTemplateDetail(templateId: string) {
+  return apiFetch<{ template: SpaceTemplateDetail }>(
+    `/api/v1/space-templates/${templateId}`
   );
 }
 
@@ -63,7 +70,7 @@ export async function createSpaceTab(spaceId: string, name: string) {
 export async function patchSpaceTab(
   spaceId: string,
   tabId: string,
-  input: { name?: string; isVisible?: boolean },
+  input: { name?: string; isVisible?: boolean }
 ) {
   return apiFetch(`/api/v1/spaces/${spaceId}/member-tabs/${tabId}`, {
     method: "PATCH",
@@ -94,14 +101,14 @@ export async function createSpaceField(
   spaceId: string,
   tabId: string,
   name: string,
-  fieldType: FieldType,
+  fieldType: FieldType
 ) {
   return apiFetch<{ field: SpaceField }>(
     `/api/v1/spaces/${spaceId}/member-tabs/${tabId}/fields`,
     {
       method: "POST",
       body: JSON.stringify({ name, fieldType }),
-    },
+    }
   );
 }
 
@@ -121,41 +128,41 @@ export async function updateSpaceField(
     options?: { value: string; color: string }[] | null;
     displayOrder?: number;
     tabId?: string;
-  },
+  }
 ) {
   return apiFetch<{ field: SpaceField }>(
     `/api/v1/spaces/${spaceId}/member-fields/${fieldId}`,
     {
       method: "PATCH",
       body: JSON.stringify(input),
-    },
+    }
   );
 }
 
 export async function reorderSpaceFields(
   spaceId: string,
   tabId: string,
-  order: string[],
+  order: string[]
 ) {
   return apiFetch(
     `/api/v1/spaces/${spaceId}/member-tabs/${tabId}/fields/reorder`,
     {
       method: "PATCH",
       body: JSON.stringify({ order }),
-    },
+    }
   );
 }
 
 export async function updateSpaceTemplate(
   templateId: string,
-  input: { name?: string; description?: string | null },
+  input: { name?: string; description?: string | null }
 ) {
   return apiFetch<{ template: SpaceTemplateSummary }>(
     `/api/v1/space-templates/${templateId}`,
     {
       method: "PATCH",
       body: JSON.stringify(input),
-    },
+    }
   );
 }
 
@@ -170,20 +177,20 @@ export async function duplicateSpaceTemplate(templateId: string) {
     `/api/v1/space-templates/${templateId}/duplicate`,
     {
       method: "POST",
-    },
+    }
   );
 }
 
 export async function snapshotSpaceTemplate(
   spaceId: string,
-  input: { name: string; description?: string | null },
+  input: { name: string; description?: string | null }
 ) {
   return apiFetch<{ template: SpaceTemplateSummary }>(
     `/api/v1/spaces/${spaceId}/snapshot-template`,
     {
       method: "POST",
       body: JSON.stringify(input),
-    },
+    }
   );
 }
 

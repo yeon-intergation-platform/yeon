@@ -705,3 +705,28 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 30차: space template preview fetch boundary 정리
+
+### 작업내용
+
+- `space-template-preview-modal.tsx`의 직접 `fetch()` 호출을 제거한다.
+- 템플릿 상세 조회는 `space-settings-api.ts`의 `apiFetch` wrapper를 통해 수행한다.
+- preview modal query key는 기존 key shape을 유지하고 상세 미리보기 UI/오류 문구는 유지한다.
+
+### 논의 필요
+
+- space-settings query key factory를 별도 파일로 즉시 분리할지 여부.
+
+### 선택지
+
+1. 이번 차수는 직접 fetch 제거만 하고 query key factory 분리는 후속 space-settings 구조 정리에서 다룬다.
+2. space-settings query key factory까지 즉시 분리한다.
+
+### 추천
+
+- 1번. 큰 `space-settings-content.tsx` 분해 전에 작은 네트워크 경계부터 닫는다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.
