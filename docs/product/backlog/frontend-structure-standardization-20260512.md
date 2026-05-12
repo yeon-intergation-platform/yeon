@@ -1135,3 +1135,28 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 47차 — sidebar unlinked records section component 추출
+
+### 작업내용
+
+- `sidebar.tsx`의 미분류 상담 기록 섹션 전체를 feature component로 추출한다.
+- parent sidebar는 visible order/index와 selection handler를 props로 넘기고, 섹션 제목/카운트/항목 반복은 feature component가 담당한다.
+
+### 논의 필요
+
+- context menu/drag/select state machine 자체는 아직 sidebar에 남아 있다. 이번 차수는 JSX 섹션 추출만 하고 상태 머신 분리는 후속 차수로 둔다.
+
+### 선택지
+
+1. 미분류 섹션 전체만 추출한다.
+2. 수강생 섹션까지 함께 추출한다.
+3. selection/drag/context menu hook까지 같이 분리한다.
+
+### 추천
+
+- 선택지 1. 이미 분리한 `UnlinkedRecordListItem`을 감싸는 작은 섹션 컴포넌트로 sidebar 크기와 책임을 더 줄인다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.
