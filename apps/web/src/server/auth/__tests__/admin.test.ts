@@ -1,54 +1,16 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { AuthUserDto } from "@yeon/api-contract/auth";
 
-const { dbResponses, dbChain, dbCalls } = vi.hoisted(() => {
-  const dbResponses: unknown[] = [];
-  const dbCalls: string[] = [];
-  const proxy: unknown = new Proxy({} as Record<string | symbol, unknown>, {
-    get(_target, prop) {
-      if (prop === "then") {
-        return (resolve: (value: unknown) => void) =>
-          Promise.resolve(dbResponses.shift() ?? []).then(resolve);
-      }
-      if (prop === "catch" || prop === "finally") return undefined;
-      return () => {
-        dbCalls.push(String(prop));
-        return proxy;
-      };
-    },
-  });
-  return { dbResponses, dbChain: proxy, dbCalls };
-});
+const mockCheckAdminInSpring = vi.fn();
 
-vi.mock("@/server/db", () => ({ getDb: () => dbChain }));
-vi.mock("@/server/db/schema", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/server/db/schema")>();
-  return {
-    ...actual,
-    users: {
-      id: "id",
-      role: "role",
-      updatedAt: "updatedAt",
-    },
-  };
-});
-vi.mock("drizzle-orm", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("drizzle-orm")>();
-  return {
-    ...actual,
-    eq: (left: unknown, right: unknown) => ({ left, right }),
-  };
-});
+vi.mock("@/server/root-auth-spring-client", () => ({
+  checkAdminInSpring: (...args: unknown[]) => mockCheckAdminInSpring(...args),
+}));
 vi.mock("@/server/auth/session", () => ({
   getCurrentAuthUser: vi.fn(),
 }));
 
-import {
-  USER_ROLES,
-  isAdminUser,
-  isSeedAdminEmail,
-  parseAdminSeedEmails,
-} from "../admin";
+import { isAdminUser, isSeedAdminEmail, parseAdminSeedEmails } from "../admin";
 
 const ORIGINAL_YEON_ADMIN_EMAILS = process.env.YEON_ADMIN_EMAILS;
 const ORIGINAL_ADMIN_EMAILS = process.env.ADMIN_EMAILS;
@@ -65,8 +27,7 @@ const authUser: AuthUserDto = {
 describe("server/auth/admin", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    dbResponses.length = 0;
-    dbCalls.length = 0;
+    mockCheckAdminInSpring.mockResolvedValue(false);
     delete process.env.YEON_ADMIN_EMAILS;
     delete process.env.ADMIN_EMAILS;
   });
@@ -87,9 +48,7 @@ describe("server/auth/admin", () => {
 
   it("normalizes comma-separated first-admin seed emails", () => {
     expect(
-      Array.from(
-        parseAdminSeedEmails(" Owner@Yeon.World, admin@yeon.world ,,"),
-      ),
+      Array.from(parseAdminSeedEmails(" Owner@Yeon.World, admin@yeon.world ,,"))
     ).toEqual(["owner@yeon.world", "admin@yeon.world"]);
   });
 
@@ -100,26 +59,13 @@ describe("server/auth/admin", () => {
     expect(isSeedAdminEmail("other@yeon.world")).toBe(false);
   });
 
-  it("allows users whose DB role is admin", async () => {
-    dbResponses.push([{ role: USER_ROLES.admin }]);
+  it("Spring admin 판정 결과를 반환한다", async () => {
+    mockCheckAdminInSpring.mockResolvedValue(true);
 
     await expect(isAdminUser(authUser)).resolves.toBe(true);
-    expect(dbCalls).not.toContain("update");
-  });
-
-  it("promotes the configured first-admin email when DB role is still user", async () => {
-    process.env.YEON_ADMIN_EMAILS = "owner@yeon.world";
-    dbResponses.push([{ role: USER_ROLES.user }]);
-    dbResponses.push(undefined);
-
-    await expect(isAdminUser(authUser)).resolves.toBe(true);
-    expect(dbCalls).toContain("update");
-  });
-
-  it("rejects non-seeded users without admin role", async () => {
-    dbResponses.push([{ role: USER_ROLES.user }]);
-
-    await expect(isAdminUser(authUser)).resolves.toBe(false);
-    expect(dbCalls).not.toContain("update");
+    expect(mockCheckAdminInSpring).toHaveBeenCalledWith({
+      userId: authUser.id,
+      email: authUser.email,
+    });
   });
 });
