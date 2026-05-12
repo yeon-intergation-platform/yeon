@@ -2440,3 +2440,28 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 98차 — 커뮤니티 feed component 파일 역할 분리
+
+### 작업내용
+
+- `community-feed-components.tsx`에 모여 있던 게시글 카드, 댓글 item, 작성/수정 form, category/time formatter를 역할별 파일로 분리한다.
+- 기존 import 경로는 re-export bridge로 유지해 `community-page.tsx`의 동작 연결을 바꾸지 않는다.
+- 게시글 작성/수정/삭제, 댓글 열기/작성/삭제, 카테고리 badge와 시간 표시 문구는 변경하지 않는다.
+
+### 논의 필요
+
+- re-export bridge를 즉시 제거하고 호출부 import를 세부 파일로 바꿀지 여부.
+
+### 선택지
+
+1. 이번 차수는 bridge를 유지해 호출부 churn 없이 내부 파일만 분리한다.
+2. 호출부 import까지 세부 파일로 즉시 바꾼다.
+
+### 추천
+
+- 1번. 커뮤니티 feed는 이미 React Query 전환 직후라 호출부 변경을 최소화하고 구조 경계만 먼저 만든다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.
