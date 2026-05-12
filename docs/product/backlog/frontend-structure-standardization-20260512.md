@@ -1957,3 +1957,28 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 79차 — link member modal controller hook 분리
+
+### 작업내용
+
+- `link-member-modal.tsx`의 space/member query, 선택 상태, 검색 상태, 연결/해제/생성 mutation을 feature hook으로 이동한다.
+- app component는 modal layout, existing/new tab, list/form 렌더링만 담당하게 줄인다.
+- 기존 localStorage 마지막 스페이스 선택, mismatch warning, 연결/해제 완료 콜백 동작은 유지한다.
+
+### 논의 필요
+
+- existing member list와 new member form을 별도 presentational component로 즉시 분리할지 여부.
+
+### 선택지
+
+1. 이번 차수는 controller hook만 분리하고 list/form 컴포넌트 분리는 후속으로 둔다.
+2. controller hook과 list/form component를 동시에 분리한다.
+
+### 추천
+
+- 1번. 데이터 소유권과 mutation 경계를 먼저 feature hook으로 옮긴 뒤, UI 분해는 별도 차수에서 더 안전하게 진행한다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.

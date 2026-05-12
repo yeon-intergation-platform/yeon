@@ -1,32 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { X, Loader2, Search, UserPlus, Users } from "lucide-react";
-import {
-  counselingWorkspaceFetchJson,
-  counselingWorkspaceFetchJsonOr,
-  counselingWorkspaceFetchVoid,
-} from "@/features/counseling-record-workspace/api/counseling-workspace-fetch";
-import { counselingWorkspaceQueryKeys } from "@/features/counseling-record-workspace/api/counseling-workspace-query-keys";
-import { resolveApiHrefForCurrentPath } from "@/lib/app-route-paths";
-
-import { detectRecordMemberMismatch } from "@/features/counseling-record-workspace/lib/record-member-mismatch";
 import type { RecordItem } from "@/features/counseling-record-workspace/lib/types";
-
-const LAST_SPACE_KEY = "yeon_last_space_id";
-
-interface Space {
-  id: string;
-  name: string;
-}
-
-interface Member {
-  id: string;
-  name: string;
-  email?: string | null;
-  status: string;
-}
+import { useLinkMemberModalController } from "@/features/counseling-record-workspace/hooks/use-link-member-modal-controller";
 
 interface LinkMemberModalProps {
   recordId: string;
@@ -45,134 +21,35 @@ export function LinkMemberModal({
   onClose,
   onLinked,
 }: LinkMemberModalProps) {
-  const [mode, setMode] = useState<"existing" | "new">("existing");
-  const [selectedSpaceId, setSelectedSpaceId] = useState<string>("");
-  const [query, setQuery] = useState("");
-  const [selectedMemberId, setSelectedMemberId] = useState<string | null>(
-    currentMemberId
-  );
-  const [newName, setNewName] = useState(studentName || "");
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const { data: spacesData, isPending: spacesLoading } = useQuery({
-    queryKey: counselingWorkspaceQueryKeys.spaces(),
-    queryFn: async () =>
-      counselingWorkspaceFetchJsonOr<{ spaces: Space[] }>(
-        resolveApiHrefForCurrentPath("/api/v1/spaces"),
-        { spaces: [] }
-      ),
-  });
-  const spaces = spacesData ? spacesData.spaces : ([] as Space[]);
-
-  // spaces 로드 완료 시 localStorage 기반으로 초기 spaceId 설정
-  useEffect(() => {
-    if (!spacesData || spaces.length === 0) return;
-    const lastId = localStorage.getItem(LAST_SPACE_KEY);
-    const defaultId =
-      lastId && spaces.some((s) => s.id === lastId)
-        ? lastId
-        : (spaces[0]?.id ?? "");
-    setSelectedSpaceId(defaultId);
-  }, [spacesData, spaces]);
-
-  const { data: membersData, isPending: membersLoading } = useQuery({
-    queryKey: counselingWorkspaceQueryKeys.spaceMembers(selectedSpaceId),
-    queryFn: async () =>
-      counselingWorkspaceFetchJsonOr<{ members: Member[] }>(
-        resolveApiHrefForCurrentPath(
-          `/api/v1/spaces/${selectedSpaceId}/members`
-        ),
-        { members: [] }
-      ),
-    enabled: !!selectedSpaceId,
-  });
-  const members = membersData ? membersData.members : ([] as Member[]);
-
-  const filteredMembers = query.trim()
-    ? members.filter((m) =>
-        m.name.toLowerCase().includes(query.trim().toLowerCase())
-      )
-    : members;
-
-  const mismatchWarning = detectRecordMemberMismatch(
+  const {
+    mode,
+    setMode,
+    selectedSpaceId,
+    setSelectedSpaceId,
+    query,
+    setQuery,
+    selectedMemberId,
+    setSelectedMemberId,
+    newName,
+    setNewName,
+    submitting,
+    error,
+    spacesLoading,
+    spaces,
+    membersLoading,
+    filteredMembers,
+    mismatchWarning,
+    handleLinkExisting,
+    handleCreateAndLink,
+    handleUnlink,
+  } = useLinkMemberModalController({
+    recordId,
     record,
-    members,
-    mode === "existing" ? selectedMemberId : currentMemberId
-  );
-
-  const patchMember = async (memberId: string | null) => {
-    await counselingWorkspaceFetchVoid(
-      resolveApiHrefForCurrentPath(`/api/v1/counseling-records/${recordId}`),
-      {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ memberId }),
-      },
-      "연결에 실패했습니다."
-    );
-  };
-
-  const handleLinkExisting = async () => {
-    if (!selectedMemberId) return;
-    setError(null);
-    setSubmitting(true);
-    try {
-      await patchMember(selectedMemberId);
-      if (selectedSpaceId)
-        localStorage.setItem(LAST_SPACE_KEY, selectedSpaceId);
-      onLinked(selectedMemberId);
-      onClose();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "오류가 발생했습니다.");
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const handleCreateAndLink = async () => {
-    if (!newName.trim() || !selectedSpaceId) return;
-    setError(null);
-    setSubmitting(true);
-    try {
-      /* 수강생 생성 */
-      const { member } = await counselingWorkspaceFetchJson<{ member: Member }>(
-        resolveApiHrefForCurrentPath(
-          `/api/v1/spaces/${selectedSpaceId}/members`
-        ),
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name: newName.trim() }),
-        },
-        "수강생을 등록하지 못했습니다."
-      );
-
-      /* 상담 기록에 연결 */
-      await patchMember(member.id);
-      localStorage.setItem(LAST_SPACE_KEY, selectedSpaceId);
-      onLinked(member.id);
-      onClose();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "오류가 발생했습니다.");
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const handleUnlink = async () => {
-    setError(null);
-    setSubmitting(true);
-    try {
-      await patchMember(null);
-      onLinked(null);
-      onClose();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "오류가 발생했습니다.");
-    } finally {
-      setSubmitting(false);
-    }
-  };
+    studentName,
+    currentMemberId,
+    onClose,
+    onLinked,
+  });
 
   return (
     <div
