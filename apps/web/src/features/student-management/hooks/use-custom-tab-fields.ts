@@ -3,6 +3,8 @@
 import type { QueryClient } from "@tanstack/react-query";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { FieldType, SelectOption } from "../../space-settings/types";
+import { studentManagementFetchJson } from "./student-management-fetch";
+import { studentManagementQueryKeys } from "./student-management-query-keys";
 
 export interface FieldDef {
   id: string;
@@ -31,7 +33,7 @@ export interface CustomTabFieldsQueryData {
 
 export function applyUpdatedFieldValues(
   current: CustomTabFieldsQueryData | undefined,
-  updatedValues: FieldValue[],
+  updatedValues: FieldValue[]
 ) {
   if (!current || updatedValues.length === 0) {
     return current;
@@ -40,8 +42,8 @@ export function applyUpdatedFieldValues(
   const nextValues = current.values.filter(
     (item) =>
       !updatedValues.some(
-        (updated) => updated.fieldDefinitionId === item.fieldDefinitionId,
-      ),
+        (updated) => updated.fieldDefinitionId === item.fieldDefinitionId
+      )
   );
 
   return {
@@ -53,46 +55,41 @@ export function applyUpdatedFieldValues(
 export function patchFieldValuesInCache(
   queryClient: QueryClient,
   queryKey: ReturnType<typeof customTabFieldsQueryKey>,
-  updatedValues: FieldValue[],
+  updatedValues: FieldValue[]
 ) {
   queryClient.setQueryData<CustomTabFieldsQueryData | undefined>(
     queryKey,
-    (current) => applyUpdatedFieldValues(current, updatedValues),
+    (current) => applyUpdatedFieldValues(current, updatedValues)
   );
 }
 
 export async function saveMemberFieldValues(
   spaceId: string,
   memberId: string,
-  values: Array<{ fieldDefinitionId: string; value: unknown }>,
+  values: Array<{ fieldDefinitionId: string; value: unknown }>
 ) {
-  const res = await fetch(
+  return studentManagementFetchJson<{ values?: FieldValue[] }>(
     `/api/v1/spaces/${spaceId}/members/${memberId}/field-values`,
     {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ values }),
     },
+    "필드 값을 저장하지 못했습니다."
   );
-
-  if (!res.ok) {
-    throw new Error("필드 값을 저장하지 못했습니다.");
-  }
-
-  return res.json() as Promise<{ values?: FieldValue[] }>;
 }
 
 export function customTabFieldsQueryKey(
   spaceId: string,
   memberId: string,
-  tabId: string,
+  tabId: string
 ) {
-  return ["custom-tab-fields", spaceId, memberId, tabId] as const;
+  return studentManagementQueryKeys.customTabFields(spaceId, memberId, tabId);
 }
 
 export function resolveValue(
   fieldType: FieldType,
-  fv: FieldValue | undefined,
+  fv: FieldValue | undefined
 ): unknown {
   if (!fv) return null;
   switch (fieldType) {
@@ -111,7 +108,7 @@ export function resolveValue(
 export function useCustomTabFields(
   spaceId: string,
   memberId: string,
-  tabId: string,
+  tabId: string
 ) {
   const queryClient = useQueryClient();
   const enabled = !!spaceId && !!memberId && !!tabId;
@@ -120,17 +117,12 @@ export function useCustomTabFields(
   const { data, isPending } = useQuery({
     queryKey,
     enabled,
-    queryFn: async () => {
-      const res = await fetch(
+    queryFn: () =>
+      studentManagementFetchJson<CustomTabFieldsQueryData>(
         `/api/v1/spaces/${spaceId}/member-tabs/${tabId}/fields?memberId=${memberId}`,
-      );
-
-      if (!res.ok) {
-        throw new Error("커스텀 필드를 불러오지 못했습니다.");
-      }
-
-      return res.json() as Promise<CustomTabFieldsQueryData>;
-    },
+        { method: "GET" },
+        "커스텀 필드를 불러오지 못했습니다."
+      ),
   });
 
   async function saveValue(fieldId: string, value: string | null) {

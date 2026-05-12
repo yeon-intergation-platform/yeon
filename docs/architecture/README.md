@@ -5,6 +5,7 @@
 - `system-overview.md` — 전체 시스템 구조
 - `platform-route-ownership.md` — 플랫폼 라우트 소유권과 접근 정책
 - `web-server-state.md` — `apps/web` 서버 상태와 TanStack Query 표준
+- `web-server-state-querykey-inventory-20260512.md` — React Query raw key inventory와 정리 순서
 - `spring-backend-bootstrap-boundary.md` — `apps/backend` 시작 위치와 초기 역할 경계
 - `spring-backend-core-runtime-tech-stack.md` — Spring bootstrap app 코어 런타임 SSOT
 - `spring-backend-jdk-gradle-ratification.md` — Spring bootstrap toolchain baseline SSOT

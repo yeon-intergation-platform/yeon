@@ -5,6 +5,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { usePathname, useRouter } from "next/navigation";
 import { useStudentManagement } from "../student-management-provider";
 import type { Member } from "../types";
+import { studentManagementFetchJson } from "./student-management-fetch";
+import { studentManagementQueryKeys } from "./student-management-query-keys";
 import { resolveApiHrefForCurrentPath } from "@/lib/app-route-paths";
 import { createPatchedHref } from "@/lib/route-state/search-params";
 
@@ -33,18 +35,18 @@ export function useMemberDetail({ memberId }: UseMemberDetailParams) {
   const [activeTab, setActiveTabState] = useState(readActiveTabFromUrl);
 
   const contextMember: Member | undefined = members.find(
-    (m) => m.id === memberId,
+    (m) => m.id === memberId
   );
   const cachedMember = useMemo(() => {
     const cachedMemberLists = queryClient.getQueriesData<{ members: Member[] }>(
       {
-        queryKey: ["members"],
-      },
+        queryKey: studentManagementQueryKeys.membersRoot(),
+      }
     );
 
     for (const [, payload] of cachedMemberLists) {
       const matchedMember = payload?.members.find(
-        (member) => member.id === memberId,
+        (member) => member.id === memberId
       );
       if (matchedMember) {
         return matchedMember;
@@ -57,13 +59,17 @@ export function useMemberDetail({ memberId }: UseMemberDetailParams) {
 
   // context에 없으면 API에서 직접 fetch (직접 URL 접근 시)
   const { data: memberData } = useQuery({
-    queryKey: ["member", memberId],
+    queryKey: studentManagementQueryKeys.member(memberId),
     queryFn: async () => {
-      const res = await fetch(
-        resolveApiHrefForCurrentPath(`/api/v1/members/${memberId}`),
-      );
-      if (!res.ok) return null;
-      return res.json() as Promise<{ member: Member }>;
+      try {
+        return await studentManagementFetchJson<{ member: Member }>(
+          resolveApiHrefForCurrentPath(`/api/v1/members/${memberId}`),
+          { method: "GET" },
+          "수강생 정보를 불러오지 못했습니다."
+        );
+      } catch {
+        return null;
+      }
     },
     enabled: !contextMember,
     initialData: cachedMember ? { member: cachedMember } : undefined,
@@ -87,7 +93,7 @@ export function useMemberDetail({ memberId }: UseMemberDetailParams) {
     const syncActiveTabFromUrl = () => {
       const nextActiveTab = readActiveTabFromUrl();
       setActiveTabState((current) =>
-        current === nextActiveTab ? current : nextActiveTab,
+        current === nextActiveTab ? current : nextActiveTab
       );
     };
 
@@ -128,7 +134,7 @@ export function useMemberDetail({ memberId }: UseMemberDetailParams) {
 
       router.replace(nextHref);
     },
-    [getCurrentSearchParams, pathname, router],
+    [getCurrentSearchParams, pathname, router]
   );
 
   return {

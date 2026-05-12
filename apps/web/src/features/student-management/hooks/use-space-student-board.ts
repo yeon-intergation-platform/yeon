@@ -10,6 +10,8 @@ import type {
   UpdatePublicCheckSessionBody,
   UpdateStudentBoardBody,
 } from "@yeon/api-contract";
+import { studentManagementFetchJson } from "./student-management-fetch";
+import { studentManagementQueryKeys } from "./student-management-query-keys";
 import { resolveApiHrefForCurrentPath } from "@/lib/app-route-paths";
 
 const UUID_PATTERN =
@@ -21,37 +23,33 @@ function isUuidLike(value: string | null | undefined) {
 
 export function useSpaceStudentBoard(
   spaceId: string | null,
-  historyPeriod: StudentBoardHistoryPeriod,
+  historyPeriod: StudentBoardHistoryPeriod
 ) {
   const queryClient = useQueryClient();
   const enabled = isUuidLike(spaceId);
 
   const boardQuery = useQuery({
-    queryKey: ["student-board", spaceId, historyPeriod],
+    queryKey: studentManagementQueryKeys.studentBoard(spaceId, historyPeriod),
     enabled,
     queryFn: async () => {
       const params = new URLSearchParams({ historyPeriod });
-      const response = await fetch(
+      return studentManagementFetchJson<StudentBoardResponse>(
         resolveApiHrefForCurrentPath(
-          `/api/v1/spaces/${spaceId}/student-board?${params.toString()}`,
+          `/api/v1/spaces/${spaceId}/student-board?${params.toString()}`
         ),
+        { method: "GET" },
+        "학생 보드를 불러오지 못했습니다."
       );
-      if (!response.ok) {
-        const payload = (await response.json().catch(() => null)) as {
-          message?: string;
-        } | null;
-        throw new Error(payload?.message || "학생 보드를 불러오지 못했습니다.");
-      }
-
-      return (await response.json()) as StudentBoardResponse;
     },
   });
 
   const invalidateBoard = () =>
     Promise.all([
-      queryClient.invalidateQueries({ queryKey: ["student-board", spaceId] }),
       queryClient.invalidateQueries({
-        queryKey: ["member-student-board", spaceId],
+        queryKey: studentManagementQueryKeys.studentBoardRoot(spaceId),
+      }),
+      queryClient.invalidateQueries({
+        queryKey: studentManagementQueryKeys.memberStudentBoardRoot(spaceId),
       }),
     ]);
 
@@ -60,52 +58,32 @@ export function useSpaceStudentBoard(
       memberId: string;
       body: UpdateStudentBoardBody;
     }) => {
-      const response = await fetch(
+      return studentManagementFetchJson<StudentBoardResponse>(
         resolveApiHrefForCurrentPath(
-          `/api/v1/spaces/${spaceId}/student-board/${params.memberId}`,
+          `/api/v1/spaces/${spaceId}/student-board/${params.memberId}`
         ),
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(params.body),
         },
+        "학생 보드 상태를 저장하지 못했습니다."
       );
-
-      if (!response.ok) {
-        const payload = (await response.json().catch(() => null)) as {
-          message?: string;
-        } | null;
-        throw new Error(
-          payload?.message || "학생 보드 상태를 저장하지 못했습니다.",
-        );
-      }
-
-      return (await response.json()) as StudentBoardResponse;
     },
     onSuccess: () => invalidateBoard(),
   });
 
   const createSession = useMutation({
     mutationFn: async (body: CreatePublicCheckSessionBody) => {
-      const response = await fetch(
+      return studentManagementFetchJson<{ session: unknown }>(
         resolveApiHrefForCurrentPath(`/api/v1/spaces/${spaceId}/student-board`),
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(body),
         },
+        "체크인 세션을 생성하지 못했습니다."
       );
-
-      if (!response.ok) {
-        const payload = (await response.json().catch(() => null)) as {
-          message?: string;
-        } | null;
-        throw new Error(
-          payload?.message || "체크인 세션을 생성하지 못했습니다.",
-        );
-      }
-
-      return (await response.json()) as { session: unknown };
     },
     onSuccess: invalidateBoard,
   });
@@ -115,27 +93,17 @@ export function useSpaceStudentBoard(
       sessionId: string;
       body: UpdatePublicCheckSessionBody;
     }) => {
-      const response = await fetch(
+      return studentManagementFetchJson<unknown>(
         resolveApiHrefForCurrentPath(
-          `/api/v1/spaces/${spaceId}/public-check-sessions/${params.sessionId}`,
+          `/api/v1/spaces/${spaceId}/public-check-sessions/${params.sessionId}`
         ),
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(params.body),
         },
+        "체크인 세션을 수정하지 못했습니다."
       );
-
-      if (!response.ok) {
-        const payload = (await response.json().catch(() => null)) as {
-          message?: string;
-        } | null;
-        throw new Error(
-          payload?.message || "체크인 세션을 수정하지 못했습니다.",
-        );
-      }
-
-      return response.json();
     },
     onSuccess: invalidateBoard,
   });
@@ -158,31 +126,26 @@ export function useSpaceStudentBoard(
 export function useMemberStudentBoard(
   spaceId: string | null,
   memberId: string | null,
-  period: StudentBoardHistoryPeriod,
+  period: StudentBoardHistoryPeriod
 ) {
   const enabled = isUuidLike(spaceId) && isUuidLike(memberId);
 
   return useQuery({
-    queryKey: ["member-student-board", spaceId, memberId, period],
+    queryKey: studentManagementQueryKeys.memberStudentBoard(
+      spaceId,
+      memberId,
+      period
+    ),
     enabled,
     queryFn: async () => {
       const params = new URLSearchParams({ period });
-      const response = await fetch(
+      return studentManagementFetchJson<MemberStudentBoardResponse>(
         resolveApiHrefForCurrentPath(
-          `/api/v1/spaces/${spaceId}/members/${memberId}/board-history?${params.toString()}`,
+          `/api/v1/spaces/${spaceId}/members/${memberId}/board-history?${params.toString()}`
         ),
+        { method: "GET" },
+        "학생 출석·과제 이력을 불러오지 못했습니다."
       );
-
-      if (!response.ok) {
-        const payload = (await response.json().catch(() => null)) as {
-          message?: string;
-        } | null;
-        throw new Error(
-          payload?.message || "학생 출석·과제 이력을 불러오지 못했습니다.",
-        );
-      }
-
-      return (await response.json()) as MemberStudentBoardResponse;
     },
   });
 }
@@ -190,28 +153,22 @@ export function useMemberStudentBoard(
 export function usePublicCheckLocationSearch(
   spaceId: string | null,
   query: string,
-  enabled: boolean,
+  enabled: boolean
 ) {
   return useQuery({
-    queryKey: ["public-check-location-search", spaceId, query],
+    queryKey: studentManagementQueryKeys.publicCheckLocationSearch(
+      spaceId,
+      query
+    ),
     enabled: enabled && isUuidLike(spaceId) && query.trim().length >= 2,
     retry: false,
     queryFn: async () => {
       const params = new URLSearchParams({ query });
-      const response = await fetch(
+      return studentManagementFetchJson<PublicCheckLocationSearchResponse>(
         `/api/v1/spaces/${spaceId}/public-check-locations?${params.toString()}`,
+        { method: "GET" },
+        "위치 검색 결과를 불러오지 못했습니다."
       );
-
-      if (!response.ok) {
-        const payload = (await response.json().catch(() => null)) as {
-          message?: string;
-        } | null;
-        throw new Error(
-          payload?.message || "위치 검색 결과를 불러오지 못했습니다.",
-        );
-      }
-
-      return (await response.json()) as PublicCheckLocationSearchResponse;
     },
   });
 }

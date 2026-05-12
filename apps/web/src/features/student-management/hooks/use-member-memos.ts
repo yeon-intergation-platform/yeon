@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import type { ActivityLog, Memo } from "../types";
+import { studentManagementFetchJson } from "./student-management-fetch";
+import { studentManagementQueryKeys } from "./student-management-query-keys";
 
 interface UseMemberMemosParams {
   spaceId: string | null;
@@ -35,22 +37,19 @@ export function useMemberMemos({ spaceId, memberId }: UseMemberMemosParams) {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
+  const memosQueryKey = studentManagementQueryKeys.memberMemos(
+    spaceId,
+    memberId
+  );
+
   const { data, isPending, error } = useQuery({
-    queryKey: ["member-memos", spaceId, memberId],
-    queryFn: async () => {
-      const res = await fetch(
+    queryKey: memosQueryKey,
+    queryFn: () =>
+      studentManagementFetchJson<{ logs: ActivityLog[]; totalCount: number }>(
         `/api/v1/spaces/${spaceId}/members/${memberId}/activity-logs?type=coaching-note&limit=100`,
-      );
-
-      if (!res.ok) {
-        const payload = (await res.json().catch(() => null)) as {
-          message?: string;
-        } | null;
-        throw new Error(payload?.message || "메모를 불러오지 못했습니다.");
-      }
-
-      return res.json() as Promise<{ logs: ActivityLog[]; totalCount: number }>;
-    },
+        { method: "GET" },
+        "메모를 불러오지 못했습니다."
+      ),
     enabled: !!spaceId && !!memberId,
   });
 
@@ -76,7 +75,7 @@ export function useMemberMemos({ spaceId, memberId }: UseMemberMemosParams) {
     setSaveError(null);
 
     try {
-      const res = await fetch(
+      const payload = await studentManagementFetchJson<{ log?: ActivityLog }>(
         `/api/v1/spaces/${spaceId}/members/${memberId}/activity-logs`,
         {
           method: "POST",
@@ -85,29 +84,21 @@ export function useMemberMemos({ spaceId, memberId }: UseMemberMemosParams) {
           },
           body: JSON.stringify({ text: newMemoText.trim() }),
         },
+        "메모를 저장하지 못했습니다."
       );
-
-      if (!res.ok) {
-        const data = (await res.json().catch(() => null)) as {
-          message?: string;
-        } | null;
-        throw new Error(data?.message || "메모를 저장하지 못했습니다.");
-      }
-
-      const payload = (await res.json()) as { log?: ActivityLog };
 
       setNewMemoText("");
 
       if (!payload.log) {
         await queryClient.invalidateQueries({
-          queryKey: ["member-memos", spaceId, memberId],
+          queryKey: memosQueryKey,
         });
         return;
       }
 
       queryClient.setQueryData<
         { logs: ActivityLog[]; totalCount: number } | undefined
-      >(["member-memos", spaceId, memberId], (current) => {
+      >(memosQueryKey, (current) => {
         if (!current) {
           return {
             logs: [payload.log!],
@@ -124,7 +115,7 @@ export function useMemberMemos({ spaceId, memberId }: UseMemberMemosParams) {
       setSaveError(
         caughtError instanceof Error
           ? caughtError.message
-          : "메모를 저장하지 못했습니다.",
+          : "메모를 저장하지 못했습니다."
       );
     } finally {
       setIsSaving(false);

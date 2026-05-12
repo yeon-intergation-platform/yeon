@@ -20,6 +20,8 @@ import {
 import { useSpaceSidebarActions } from "./_hooks/use-space-sidebar-actions";
 import { useSpaceSidebarSelection } from "./_hooks/use-space-sidebar-selection";
 import { StudentManagementProvider } from "@/features/student-management";
+import { studentManagementFetchJson } from "@/features/student-management/hooks/student-management-fetch";
+import { studentManagementQueryKeys } from "@/features/student-management/hooks/student-management-query-keys";
 import { useStudentManagement } from "@/features/student-management/student-management-provider";
 import { StudentSpaceCreateModal } from "@/features/student-management/components/space-create-modal";
 import { CounselingSpaceGate } from "@/features/counseling-service-shell/counseling-space-gate";
@@ -154,22 +156,22 @@ function SidebarContent({ children }: { children: React.ReactNode }) {
   const { studentSidebarCollapsed } = useCounselingSidebarLayout();
   const isStudentDetailRoute =
     /^\/counseling-service\/student-management\/[^/]+$/.test(
-      normalizedPathname,
+      normalizedPathname
     ) &&
     normalizedPathname !==
       "/counseling-service/student-management/members/new" &&
     normalizedPathname !== "/counseling-service/student-management/check-board";
 
   function resetDetailRouteIfNeeded(
-    nextSpaceId: string | null = selectedSpaceId,
+    nextSpaceId: string | null = selectedSpaceId
   ) {
     if (isStudentDetailRoute) {
       router.replace(
         createPatchedHref(
           resolveAppHref("/counseling-service/student-management"),
           new URLSearchParams(window.location.search),
-          { spaceId: nextSpaceId },
-        ),
+          { spaceId: nextSpaceId }
+        )
       );
     }
   }
@@ -216,7 +218,7 @@ function SidebarContent({ children }: { children: React.ReactNode }) {
   });
   const contextMenuRef = useClickOutside<HTMLDivElement>(
     () => setContextMenu(null),
-    !!contextMenu,
+    !!contextMenu
   );
   const {
     data: localDraftsData,
@@ -224,18 +226,13 @@ function SidebarContent({ children }: { children: React.ReactNode }) {
     error: localDraftsQueryError,
     refetch: refetchLocalDrafts,
   } = useQuery({
-    queryKey: ["student-management", "local-import-drafts"],
-    queryFn: async () => {
-      const res = await fetch(
+    queryKey: studentManagementQueryKeys.localImportDrafts(),
+    queryFn: () =>
+      studentManagementFetchJson<{ drafts: LocalImportDraftSummary[] }>(
         resolveApiHref("/api/v1/integrations/local/drafts?limit=100"),
-      );
-      if (!res.ok) {
-        const text = await res.text().catch(() => "");
-        throw new Error(text || "임시 가져오기 초안을 불러오지 못했습니다.");
-      }
-
-      return res.json() as Promise<{ drafts: LocalImportDraftSummary[] }>;
-    },
+        { method: "GET" },
+        "임시 가져오기 초안을 불러오지 못했습니다."
+      ),
   });
   const localDrafts = localDraftsData?.drafts ?? [];
   const localDraftCount = localDrafts.length;
@@ -254,7 +251,7 @@ function SidebarContent({ children }: { children: React.ReactNode }) {
         draftId,
       });
     },
-    [updateCreateModalRouteState],
+    [updateCreateModalRouteState]
   );
   const localDraftsError =
     localDraftsQueryError instanceof Error
@@ -288,7 +285,7 @@ function SidebarContent({ children }: { children: React.ReactNode }) {
 
   useSidebarToggleVisibility(
     "students",
-    studentLayoutUiPolicy.canToggleSidebar,
+    studentLayoutUiPolicy.canToggleSidebar
   );
 
   return (
@@ -307,8 +304,8 @@ function SidebarContent({ children }: { children: React.ReactNode }) {
                   createPatchedHref(
                     resolveAppHref("/counseling-service/student-management"),
                     new URLSearchParams(window.location.search),
-                    { spaceId: selectedSpaceId },
-                  ),
+                    { spaceId: selectedSpaceId }
+                  )
                 )
               }
               type="button"
@@ -326,11 +323,11 @@ function SidebarContent({ children }: { children: React.ReactNode }) {
                 router.push(
                   createPatchedHref(
                     resolveAppHref(
-                      "/counseling-service/student-management/check-board",
+                      "/counseling-service/student-management/check-board"
                     ),
                     new URLSearchParams(window.location.search),
-                    { spaceId: selectedSpaceId },
-                  ),
+                    { spaceId: selectedSpaceId }
+                  )
                 )
               }
               type="button"
@@ -737,7 +734,9 @@ function SidebarContent({ children }: { children: React.ReactNode }) {
             }
             refetchSpaces();
             refetchMembers();
-            void queryClient.invalidateQueries({ queryKey: ["members"] });
+            void queryClient.invalidateQueries({
+              queryKey: studentManagementQueryKeys.membersRoot(),
+            });
             void refetchLocalDrafts();
           }}
         />
@@ -847,7 +846,7 @@ function SidebarContent({ children }: { children: React.ReactNode }) {
                 onClick={() =>
                   void handleRenameSpace(
                     renameTarget.spaceId,
-                    renameTarget.spaceName,
+                    renameTarget.spaceName
                   )
                 }
                 disabled={
