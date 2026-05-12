@@ -1832,3 +1832,28 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 74차 — counseling AI panel feature component 이동
+
+### 작업내용
+
+- `app/counseling-service/_components/ai-panel.tsx`를 `features/counseling-record-workspace/components/ai-panel.tsx`로 이동한다.
+- icon 의존성은 app `_components/icons`가 아니라 `features/counseling-service-shell/icons`를 직접 참조하게 한다.
+- app `_components/index.ts`는 feature component를 재수출해 기존 페이지 조립 import는 유지한다.
+
+### 논의 필요
+
+- app `_components/index.ts` 재수출 shim도 즉시 제거하고 page import를 feature별 direct import로 바꿀지 여부.
+
+### 선택지
+
+1. 이번 차수는 component 파일 소유권 이동만 하고, page import 대수술은 후속으로 둔다.
+2. page import까지 모두 feature direct import로 전환한다.
+
+### 추천
+
+- 1번. 566줄 component 이동과 page import 정리는 충돌 위험이 다르므로 분리한다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.
