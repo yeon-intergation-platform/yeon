@@ -100,6 +100,38 @@ public class ChatServiceFeedRepository {
 		return findFeedPost(id);
 	}
 
+	public FeedPostRow updateFeedPostBody(UUID postId, UUID authorId, String body) {
+		entityManager.createNativeQuery("""
+			update public.chat_service_feed_posts
+			set body = :body
+			where id = :postId and author_id = :authorId
+		""")
+			.setParameter("postId", postId)
+			.setParameter("authorId", authorId)
+			.setParameter("body", body)
+			.executeUpdate();
+		return findFeedPost(postId);
+	}
+
+	public void deleteReplies(UUID postId) {
+		entityManager.createNativeQuery("""
+			delete from public.chat_service_feed_posts
+			where reply_to_post_id = :postId
+		""")
+			.setParameter("postId", postId)
+			.executeUpdate();
+	}
+
+	public int deleteFeedPost(UUID postId, UUID authorId) {
+		return entityManager.createNativeQuery("""
+			delete from public.chat_service_feed_posts
+			where id = :postId and author_id = :authorId
+		""")
+			.setParameter("postId", postId)
+			.setParameter("authorId", authorId)
+			.executeUpdate();
+	}
+
 	private String baseSelect() {
 		return """
 			select

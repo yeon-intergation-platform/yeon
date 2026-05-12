@@ -8,10 +8,10 @@ import { z } from "zod";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
-import { deleteChatServiceFeedPost } from "@/server/services/chat-service/feed-service";
 import {
   ChatServiceFeedSpringBackendHttpError,
   createChatServiceFeedPostInSpring,
+  deleteChatServiceFeedPostInSpring,
   fetchChatServiceFeedRepliesFromSpring,
 } from "@/server/chat-service-feed-spring-client";
 import { getOrCreateChatServiceGuestProfile } from "@/server/services/chat-service/common";
@@ -164,14 +164,17 @@ export async function DELETE(request: NextRequest) {
       return profile.id;
     })();
 
-    const response = await deleteChatServiceFeedPost(
-      profileId,
-      parsedBody.data.replyId
-    );
+    const response = await deleteChatServiceFeedPostInSpring({
+      currentProfileId: profileId,
+      postId: parsedBody.data.replyId,
+    });
 
     return NextResponse.json(response);
   } catch (error) {
     if (error instanceof ServiceError) {
+      return jsonChatServiceError(error.message, error.status);
+    }
+    if (error instanceof ChatServiceFeedSpringBackendHttpError) {
       return jsonChatServiceError(error.message, error.status);
     }
 

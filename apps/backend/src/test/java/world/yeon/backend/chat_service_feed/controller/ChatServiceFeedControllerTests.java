@@ -4,6 +4,8 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -60,6 +62,21 @@ class ChatServiceFeedControllerTests {
 			.andExpect(jsonPath("$.post.body").value("본문"));
 	}
 
+	@Test void 피드수정응답을반환한다() throws Exception {
+		when(service.update(eq(CURRENT_PROFILE_ID), eq(POST_ID), eq("수정 본문"))).thenReturn(new ChatServiceFeedMutationResponse(samplePost("수정 본문")));
+		mockMvc.perform(patch("/chat-service/feed/{postId}", POST_ID).contentType(MediaType.APPLICATION_JSON).content("{\"body\":\"수정 본문\"}").header("X-Yeon-Chat-Profile-Id", CURRENT_PROFILE_ID).header("X-Yeon-Internal-Token", "test-internal-token"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.post.body").value("수정 본문"));
+	}
+
+	@Test void 피드삭제응답을반환한다() throws Exception {
+		when(service.delete(eq(CURRENT_PROFILE_ID), eq(POST_ID))).thenReturn(new ChatServiceFeedDeleteResponse(true, POST_ID));
+		mockMvc.perform(delete("/chat-service/feed/{postId}", POST_ID).header("X-Yeon-Chat-Profile-Id", CURRENT_PROFILE_ID).header("X-Yeon-Internal-Token", "test-internal-token"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.deleted").value(true))
+			.andExpect(jsonPath("$.postId").value(POST_ID.toString()));
+	}
+
 	@Test void 서비스오류를반환한다() throws Exception {
 		when(service.create(eq(CURRENT_PROFILE_ID), eq("본문"), eq(null))).thenThrow(new ChatServiceFeedServiceException(400, "CHAT_SERVICE_FEED_CREATE_FAILED", "피드 글을 생성하지 못했습니다."));
 		mockMvc.perform(post("/chat-service/feed").contentType(MediaType.APPLICATION_JSON).content("{\"body\":\"본문\"}").header("X-Yeon-Chat-Profile-Id", CURRENT_PROFILE_ID).header("X-Yeon-Internal-Token", "test-internal-token"))
@@ -68,6 +85,10 @@ class ChatServiceFeedControllerTests {
 	}
 
 	private ChatServiceFeedPostResponse samplePost() {
-		return new ChatServiceFeedPostResponse(POST_ID, "본문", null, 1, new ChatServiceFeedProfileSummaryResponse(CURRENT_PROFILE_ID, "닉", "20세", "서울", null, "소개", 900), OffsetDateTime.parse("2026-05-08T10:00:00Z"));
+		return samplePost("본문");
+	}
+
+	private ChatServiceFeedPostResponse samplePost(String body) {
+		return new ChatServiceFeedPostResponse(POST_ID, body, null, 1, new ChatServiceFeedProfileSummaryResponse(CURRENT_PROFILE_ID, "닉", "20세", "서울", null, "소개", 900), OffsetDateTime.parse("2026-05-08T10:00:00Z"));
 	}
 }

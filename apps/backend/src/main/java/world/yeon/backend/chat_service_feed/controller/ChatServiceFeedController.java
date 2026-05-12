@@ -5,13 +5,16 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import world.yeon.backend.chat_service_feed.dto.ChatServiceFeedDeleteResponse;
 import world.yeon.backend.chat_service_feed.dto.ChatServiceFeedListResponse;
 import world.yeon.backend.chat_service_feed.dto.ChatServiceFeedMutationResponse;
 import world.yeon.backend.chat_service_feed.dto.ChatServiceFeedRepliesResponse;
@@ -59,6 +62,23 @@ public class ChatServiceFeedController {
 		@RequestBody CreateFeedPostRequest request
 	) {
 		return service.create(currentProfileId, request.body(), postId);
+	}
+
+	@PatchMapping("/chat-service/feed/{postId}")
+	public ChatServiceFeedMutationResponse update(
+		@RequestHeader("X-Yeon-Chat-Profile-Id") UUID currentProfileId,
+		@PathVariable UUID postId,
+		@RequestBody CreateFeedPostRequest request
+	) {
+		return service.update(currentProfileId, postId, request.body());
+	}
+
+	@DeleteMapping("/chat-service/feed/{postId}")
+	public ChatServiceFeedDeleteResponse delete(
+		@RequestHeader("X-Yeon-Chat-Profile-Id") UUID currentProfileId,
+		@PathVariable UUID postId
+	) {
+		return service.delete(currentProfileId, postId);
 	}
 
 	@ExceptionHandler(ChatServiceFeedServiceException.class)

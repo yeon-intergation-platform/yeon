@@ -7,9 +7,10 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
 import {
-  deleteChatServiceFeedPost,
-  updateChatServiceFeedPost,
-} from "@/server/services/chat-service/feed-service";
+  ChatServiceFeedSpringBackendHttpError,
+  deleteChatServiceFeedPostInSpring,
+  updateChatServiceFeedPostInSpring,
+} from "@/server/chat-service-feed-spring-client";
 import { getOrCreateChatServiceGuestProfile } from "@/server/services/chat-service/common";
 import { ServiceError } from "@/server/services/service-error";
 
@@ -63,15 +64,18 @@ export async function PATCH(request: NextRequest, { params }: FeedPostParams) {
 
     const profileId = await resolveFeedProfileId(request, parsedBody.data);
     const { postId } = await params;
-    const response = await updateChatServiceFeedPost(
-      profileId,
+    const response = await updateChatServiceFeedPostInSpring({
+      currentProfileId: profileId,
       postId,
-      parsedBody.data.body
-    );
+      body: parsedBody.data.body,
+    });
 
     return NextResponse.json(response);
   } catch (error) {
     if (error instanceof ServiceError) {
+      return jsonChatServiceError(error.message, error.status);
+    }
+    if (error instanceof ChatServiceFeedSpringBackendHttpError) {
       return jsonChatServiceError(error.message, error.status);
     }
 
@@ -91,11 +95,17 @@ export async function DELETE(request: NextRequest, { params }: FeedPostParams) {
 
     const profileId = await resolveFeedProfileId(request, parsedBody.data);
     const { postId } = await params;
-    const response = await deleteChatServiceFeedPost(profileId, postId);
+    const response = await deleteChatServiceFeedPostInSpring({
+      currentProfileId: profileId,
+      postId,
+    });
 
     return NextResponse.json(response);
   } catch (error) {
     if (error instanceof ServiceError) {
+      return jsonChatServiceError(error.message, error.status);
+    }
+    if (error instanceof ChatServiceFeedSpringBackendHttpError) {
       return jsonChatServiceError(error.message, error.status);
     }
 
