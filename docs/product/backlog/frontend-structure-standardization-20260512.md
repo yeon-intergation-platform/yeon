@@ -1628,3 +1628,29 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 66차 — cloud import entry header component 추출
+
+### 작업내용
+
+- `features/cloud-import/components/cloud-import-inline.tsx`의 비작업공간 진입 header JSX를 `CloudImportEntryHeader` component로 추출한다.
+- 저장 작업 버튼, 로컬 파일 선택 CTA, 샘플 데이터 다운로드 링크는 기존 동작과 문구를 유지한다.
+- `CloudImportInline`은 import flow 상태와 workspace 렌더링 조립에 집중하도록 줄인다.
+
+### 논의 필요
+
+- `cloud-import-inline.tsx`는 719줄로 여전히 entry header, provider browser, local/cloud preview workspace를 함께 가진다. 이번 차수는 상태 로직을 건드리지 않는 presentation 추출로 회귀 위험을 낮춘다.
+
+### 선택지
+
+1. entry header UI만 component로 추출한다.
+2. provider tab/file browser까지 함께 추출한다.
+3. preview workspace 중복을 먼저 component로 추출한다.
+
+### 추천
+
+- 선택지 1. 상태 변경 없이 독립 JSX를 줄여 후속 browser/preview 분리의 충돌 면적을 낮춘다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.
