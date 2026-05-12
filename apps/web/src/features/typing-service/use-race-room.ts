@@ -401,7 +401,7 @@ export function useRaceRoom(options: UseRaceRoomOptions): UseRaceRoomResult {
       connectionState,
       snapshot,
       roomSnapshot,
-      results: roomSnapshot?.results.length ? roomSnapshot.results : results,
+      results: roomSnapshot ? roomSnapshot.results : results,
       prompt,
       countdownRemaining:
         snapshot?.countdownRemaining ?? TYPING_RACE_DEFAULTS.countdownSeconds,

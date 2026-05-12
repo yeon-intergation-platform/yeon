@@ -31,7 +31,8 @@ export function CommunityChatWidget({
   className,
 }: CommunityChatWidgetProps) {
   const [messageBody, setMessageBody] = useState("");
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isBodyCollapsed, setIsBodyCollapsed] = useState(false);
+  const [isShellCollapsed, setIsShellCollapsed] = useState(false);
   const messageInputRef = useRef<HTMLInputElement | null>(null);
   const messageListRef = useRef<HTMLDivElement | null>(null);
   const shouldReduceMotion = useReducedMotion();
@@ -60,7 +61,7 @@ export function CommunityChatWidget({
         initial: false,
         animate: shouldReduceMotion
           ? undefined
-          : isCollapsed
+          : isShellCollapsed
             ? {
                 width: COMPACT_CHAT_COLLAPSED_SIZE,
                 height: COMPACT_CHAT_COLLAPSED_SIZE,
@@ -96,14 +97,22 @@ export function CommunityChatWidget({
   const compactToggleButton = isCompact ? (
     <motion.button
       type="button"
-      onClick={() => setIsCollapsed((value) => !value)}
-      aria-label={isCollapsed ? "채팅 열기" : "채팅 접기"}
-      aria-expanded={!isCollapsed}
+      onClick={() => {
+        if (isBodyCollapsed || isShellCollapsed) {
+          setIsShellCollapsed(false);
+          setIsBodyCollapsed(false);
+          return;
+        }
+
+        setIsBodyCollapsed(true);
+      }}
+      aria-label={isShellCollapsed ? "채팅 열기" : "채팅 접기"}
+      aria-expanded={!isBodyCollapsed}
       initial={false}
       animate={
         shouldReduceMotion
           ? undefined
-          : isCollapsed
+          : isShellCollapsed
             ? {
                 width: COMPACT_CHAT_COLLAPSED_SIZE,
                 height: COMPACT_CHAT_COLLAPSED_SIZE,
@@ -115,14 +124,14 @@ export function CommunityChatWidget({
       transition={{ type: "spring", stiffness: 520, damping: 34 }}
       className={[
         "absolute z-10 inline-flex items-center justify-center rounded-full bg-white text-[#555] transition-colors hover:text-[#111]",
-        isCollapsed
+        isShellCollapsed
           ? "right-0 top-0 h-14 w-14 border border-[#e5e5e5] hover:border-[#111]"
           : "right-3 top-3 h-9 w-9 border-0 shadow-none",
       ].join(" ")}
     >
       <AnimatePresence mode="wait" initial={false}>
         <motion.span
-          key={isCollapsed ? "chat-open-icon" : "chat-close-icon"}
+          key={isShellCollapsed ? "chat-open-icon" : "chat-close-icon"}
           initial={
             shouldReduceMotion
               ? false
@@ -137,7 +146,7 @@ export function CommunityChatWidget({
           transition={{ duration: 0.12, ease: "easeOut" }}
           className="inline-flex"
         >
-          {isCollapsed ? <MessageCircle size={24} /> : <X size={18} />}
+          {isShellCollapsed ? <MessageCircle size={24} /> : <X size={18} />}
         </motion.span>
       </AnimatePresence>
     </motion.button>
@@ -149,7 +158,7 @@ export function CommunityChatWidget({
       className={[
         isFeed ? "border-0 bg-white" : "rounded-2xl border border-[#e5e5e5] bg-white",
         isCompact
-          ? isCollapsed
+          ? isShellCollapsed
             ? "relative h-14 w-14 max-w-[calc(100vw-2rem)] overflow-hidden"
             : "relative w-[656px] max-w-[calc(100vw-2rem)] overflow-hidden"
           : "w-full",
@@ -182,8 +191,15 @@ export function CommunityChatWidget({
         </div>
       ) : null}
 
-      <AnimatePresence initial={false}>
-        {!isCompact || !isCollapsed ? (
+      <AnimatePresence
+        initial={false}
+        onExitComplete={() => {
+          if (isCompact && isBodyCollapsed) {
+            setIsShellCollapsed(true);
+          }
+        }}
+      >
+        {!isCompact || !isBodyCollapsed ? (
           <motion.div
             key="chat-widget-body"
             initial={
