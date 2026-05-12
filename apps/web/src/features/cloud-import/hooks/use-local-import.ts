@@ -26,6 +26,13 @@ import {
 } from "./import-helpers";
 import { answerLocalPreviewQuestion } from "./local-preview-assistant";
 import { applyLocalPreviewRefinement } from "./local-preview-refinement";
+import {
+  commitLocalImport,
+  deleteImportDraft,
+  loadImportDraftSnapshot,
+  requestLocalImportAnalysis,
+  saveImportDraftPreview,
+} from "./cloud-import-fetch";
 import { resetImportState } from "./import-state-reset";
 import { useImportDraftRecovery } from "./use-import-draft-recovery";
 import { useAppRoute } from "@/lib/app-route-context";
@@ -63,14 +70,14 @@ export interface UseLocalImportReturn extends ImportHook {
 export function useLocalImport(
   onImportComplete?: (result: ImportCommitResult) => void,
   initialDraftId?: string | null,
-  onDraftDiscarded?: () => void,
+  onDraftDiscarded?: () => void
 ): UseLocalImportReturn {
   const { resolveApiHref } = useAppRoute();
   const rawFileRef = useRef<File | null>(null);
   const objectUrlRef = useRef<string | null>(null);
   const analyzeAbortRef = useRef<AbortController | null>(null);
   const previewSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
-    null,
+    null
   );
 
   const [selectedFile, setSelectedFile] = useState<DriveFile | null>(null);
@@ -81,11 +88,11 @@ export function useLocalImport(
   >(null);
   const [processingProgress, setProcessingProgress] = useState(0);
   const [processingMessage, setProcessingMessage] = useState<string | null>(
-    null,
+    null
   );
   const [streamingText, setStreamingText] = useState<string | null>(null);
   const [editablePreview, setEditablePreview] = useState<ImportPreview | null>(
-    null,
+    null
   );
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
@@ -128,24 +135,20 @@ export function useLocalImport(
       setProcessingProgress(snapshot.processingProgress);
       setProcessingMessage(snapshot.processingMessage);
       setStreamingText(
-        snapshot.status === "analyzing" ? snapshot.processingMessage : null,
+        snapshot.status === "analyzing" ? snapshot.processingMessage : null
       );
     },
-    [],
+    []
   );
 
-  const loadDraft = useCallback(async (targetDraftId: string) => {
-    const res = await fetch(
-      resolveApiHref(`/api/v1/integrations/local/drafts/${targetDraftId}`),
-    );
-    if (!res.ok) {
-      throw new Error(
-        await res.text().catch(() => "가져오기 초안을 불러오지 못했습니다."),
-      );
-    }
-
-    return (await res.json()) as LocalImportDraftSnapshot;
-  }, []);
+  const loadDraft = useCallback(
+    (targetDraftId: string) =>
+      loadImportDraftSnapshot<LocalImportDraftSnapshot>(
+        resolveApiHref,
+        targetDraftId
+      ),
+    [resolveApiHref]
+  );
 
   const {
     draftId,
@@ -203,10 +206,10 @@ export function useLocalImport(
           setProcessingProgress,
           setProcessingMessage,
         },
-        { clearProcessingState: true },
+        { clearProcessingState: true }
       );
     },
-    [clearStoredDraftId],
+    [clearStoredDraftId]
   );
 
   const analyzeSelectedFile = useCallback(async () => {
@@ -225,20 +228,12 @@ export function useLocalImport(
       setProcessingMessage(queuedState.message);
       setStreamingText(null);
 
-      const formData = new FormData();
-      if (rawFileRef.current) {
-        formData.append("file", rawFileRef.current);
-      }
-      if (draftId) {
-        formData.append("draftId", draftId);
-      }
-
       const analysisResult = await runImportAnalysisRequest({
         request: () =>
-          fetch(resolveApiHref("/api/v1/integrations/local/analyze"), {
-            method: "POST",
-            headers: { Accept: "text/event-stream" },
-            body: formData,
+          requestLocalImportAnalysis({
+            resolveApiHref,
+            file: rawFileRef.current,
+            draftId,
             signal: controller.signal,
           }),
         signal: controller.signal,
@@ -261,12 +256,12 @@ export function useLocalImport(
       });
       pushMessage(
         "ai",
-        `파일 분석이 완료됐습니다! ${summaryText(analysisResult.preview)}을 찾았습니다. 수정이 필요하면 말씀해 주세요.`,
+        `파일 분석이 완료됐습니다! ${summaryText(analysisResult.preview)}을 찾았습니다. 수정이 필요하면 말씀해 주세요.`
       );
     } catch (err) {
       if ((err as Error).name === "AbortError") return;
       setError(
-        err instanceof Error ? err.message : "파일 분석에 실패했습니다.",
+        err instanceof Error ? err.message : "파일 분석에 실패했습니다."
       );
     } finally {
       if (analyzeAbortRef.current === controller) {
@@ -275,7 +270,7 @@ export function useLocalImport(
         analyzeAbortRef.current = null;
       }
     }
-  }, [draftId, markFreshDraft, pushMessage]);
+  }, [draftId, markFreshDraft, pushMessage, resolveApiHref]);
 
   const updatePreview = useCallback(
     (updated: ImportPreview) => {
@@ -289,19 +284,14 @@ export function useLocalImport(
       }
 
       previewSaveTimerRef.current = setTimeout(() => {
-        void fetch(
-          resolveApiHref(`/api/v1/integrations/local/drafts/${draftId}`),
-          {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(updated),
-          },
-        ).catch(() => {
-          // 자동 저장 실패는 다음 입력 기회에서 재시도
-        });
+        void saveImportDraftPreview(resolveApiHref, draftId, updated).catch(
+          () => {
+            // 자동 저장 실패는 다음 입력 기회에서 재시도
+          }
+        );
       }, 400);
     },
-    [clearRecoveryNotice, draftId],
+    [clearRecoveryNotice, draftId, resolveApiHref]
   );
 
   const confirmImport = useCallback(async () => {
@@ -310,24 +300,11 @@ export function useLocalImport(
     try {
       setImporting(true);
       setError(null);
-      const res = await fetch(
-        resolveApiHref("/api/v1/integrations/local/import"),
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            draftId: draftId ?? undefined,
-            preview: editablePreview,
-          }),
-        },
+      const data = await commitLocalImport(
+        resolveApiHref,
+        draftId,
+        editablePreview
       );
-
-      if (!res.ok) {
-        const text = await res.text().catch(() => "");
-        throw new Error(text || "가져오기에 실패했습니다.");
-      }
-
-      const data = (await res.json()) as ImportCommitResult;
       setImportResult(data.created);
       clearStoredDraftId();
       onImportComplete?.(data);
@@ -336,7 +313,13 @@ export function useLocalImport(
     } finally {
       setImporting(false);
     }
-  }, [clearStoredDraftId, draftId, editablePreview, onImportComplete]);
+  }, [
+    clearStoredDraftId,
+    draftId,
+    editablePreview,
+    onImportComplete,
+    resolveApiHref,
+  ]);
 
   const selectFileForPreview = useCallback((_file: DriveFile) => {
     setEditablePreview(null);
@@ -366,7 +349,7 @@ export function useLocalImport(
       {
         clearSelectedFile: true,
         clearLocalPreviewUrl: true,
-      },
+      }
     );
   }, [clearStoredDraftId]);
 
@@ -394,21 +377,16 @@ export function useLocalImport(
       {
         clearSelectedFile: true,
         clearLocalPreviewUrl: true,
-      },
+      }
     );
 
     if (!currentDraftId) return;
 
-    await fetch(
-      resolveApiHref(`/api/v1/integrations/local/drafts/${currentDraftId}`),
-      {
-        method: "DELETE",
-      },
-    ).catch(() => {
+    await deleteImportDraft(resolveApiHref, currentDraftId).catch(() => {
       // 초안 삭제 실패는 조용히 무시하고 UI 상태만 정리
     });
     onDraftDiscarded?.();
-  }, [clearStoredDraftId, draftId, onDraftDiscarded]);
+  }, [clearStoredDraftId, draftId, onDraftDiscarded, resolveApiHref]);
 
   const refineWithInstruction = useCallback(
     async (instruction: string) => {
@@ -421,7 +399,7 @@ export function useLocalImport(
 
       const localAnswer = answerLocalPreviewQuestion(
         editablePreview,
-        trimmedInstruction,
+        trimmedInstruction
       );
 
       if (localAnswer) {
@@ -431,7 +409,7 @@ export function useLocalImport(
 
       const localRefinement = applyLocalPreviewRefinement(
         editablePreview,
-        trimmedInstruction,
+        trimmedInstruction
       );
 
       if (localRefinement) {
@@ -452,13 +430,10 @@ export function useLocalImport(
           }
 
           previewSaveTimerRef.current = setTimeout(() => {
-            void fetch(
-              resolveApiHref(`/api/v1/integrations/local/drafts/${draftId}`),
-              {
-                method: "PATCH",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(localRefinement.preview),
-              },
+            void saveImportDraftPreview(
+              resolveApiHref,
+              draftId,
+              localRefinement.preview
             ).catch(() => {
               // 자동 저장 실패는 다음 입력 기회에서 재시도
             });
@@ -483,22 +458,14 @@ export function useLocalImport(
         setProcessingMessage(queuedState.message);
         setStreamingText(null);
 
-        const formData = new FormData();
-        if (rawFileRef.current) {
-          formData.append("file", rawFileRef.current);
-        }
-        if (draftId) {
-          formData.append("draftId", draftId);
-        }
-        formData.append("instruction", trimmedInstruction);
-        formData.append("previousResult", JSON.stringify(prevPreview));
-
         const analysisResult = await runImportAnalysisRequest({
           request: () =>
-            fetch(resolveApiHref("/api/v1/integrations/local/analyze"), {
-              method: "POST",
-              headers: { Accept: "text/event-stream" },
-              body: formData,
+            requestLocalImportAnalysis({
+              resolveApiHref,
+              file: rawFileRef.current,
+              draftId,
+              instruction: trimmedInstruction,
+              previousResult: prevPreview,
               signal: controller.signal,
             }),
           signal: controller.signal,
@@ -522,7 +489,7 @@ export function useLocalImport(
         pushMessage(
           "ai",
           analysisResult.assistantMessage?.trim() ||
-            diffText(prevPreview, analysisResult.preview),
+            diffText(prevPreview, analysisResult.preview)
         );
       } catch (err) {
         if ((err as Error).name === "AbortError") return;
@@ -544,7 +511,8 @@ export function useLocalImport(
       editablePreview,
       markFreshDraft,
       pushMessage,
-    ],
+      resolveApiHref,
+    ]
   );
 
   const fileProxyUrl =
