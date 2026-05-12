@@ -4,11 +4,11 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
 import { getAuthSessionTokenFromRequest } from "@/server/auth/request-session-token";
+import { clearAuthSessionCookie } from "@/server/auth/session";
 import {
-  clearAuthSessionCookie,
-  deleteAuthSessionByToken,
-  getAuthUserBySessionToken,
-} from "@/server/auth/session";
+  deleteRootAuthSessionInSpring,
+  fetchRootAuthSessionFromSpring,
+} from "@/server/auth-session-spring-client";
 
 function jsonError(message: string, status: number) {
   return NextResponse.json(errorResponseSchema.parse({ message }), { status });
@@ -17,22 +17,19 @@ function jsonError(message: string, status: number) {
 export async function GET(request: NextRequest) {
   try {
     const sessionToken = getAuthSessionTokenFromRequest(request);
-    const user = sessionToken
-      ? await getAuthUserBySessionToken(sessionToken.token)
-      : null;
+    const session = sessionToken
+      ? await fetchRootAuthSessionFromSpring(sessionToken.token)
+      : authSessionResponseSchema.parse({ authenticated: false, user: null });
     const response = NextResponse.json(
-      authSessionResponseSchema.parse({
-        authenticated: !!user,
-        user,
-      }),
+      authSessionResponseSchema.parse(session),
       {
         headers: {
           "cache-control": "no-store",
         },
-      },
+      }
     );
 
-    if (sessionToken?.source === "cookie" && !user) {
+    if (sessionToken?.source === "cookie" && !session.authenticated) {
       clearAuthSessionCookie(response);
     }
 
@@ -48,7 +45,7 @@ export async function DELETE(request: NextRequest) {
     const sessionToken = getAuthSessionTokenFromRequest(request);
 
     if (sessionToken) {
-      await deleteAuthSessionByToken(sessionToken.token);
+      await deleteRootAuthSessionInSpring(sessionToken.token);
     }
 
     const response = NextResponse.json(
@@ -60,7 +57,7 @@ export async function DELETE(request: NextRequest) {
         headers: {
           "cache-control": "no-store",
         },
-      },
+      }
     );
 
     clearAuthSessionCookie(response);

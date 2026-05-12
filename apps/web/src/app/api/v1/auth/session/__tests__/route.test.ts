@@ -1,17 +1,20 @@
 import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const mockGetAuthUserBySessionToken = vi.fn();
-const mockDeleteAuthSessionByToken = vi.fn();
+const mockFetchRootAuthSessionFromSpring = vi.fn();
+const mockDeleteRootAuthSessionInSpring = vi.fn();
 const mockClearAuthSessionCookie = vi.fn();
 
 vi.mock("@/server/auth/session", () => ({
-  getAuthUserBySessionToken: (...args: unknown[]) =>
-    mockGetAuthUserBySessionToken(...args),
-  deleteAuthSessionByToken: (...args: unknown[]) =>
-    mockDeleteAuthSessionByToken(...args),
   clearAuthSessionCookie: (...args: unknown[]) =>
     mockClearAuthSessionCookie(...args),
+}));
+
+vi.mock("@/server/auth-session-spring-client", () => ({
+  fetchRootAuthSessionFromSpring: (...args: unknown[]) =>
+    mockFetchRootAuthSessionFromSpring(...args),
+  deleteRootAuthSessionInSpring: (...args: unknown[]) =>
+    mockDeleteRootAuthSessionInSpring(...args),
 }));
 
 import { DELETE, GET } from "../route";
@@ -20,7 +23,7 @@ describe("api/v1/auth/session route", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockClearAuthSessionCookie.mockImplementation(
-      (response: Response) => response,
+      (response: Response) => response
     );
   });
 
@@ -38,7 +41,10 @@ describe("api/v1/auth/session route", () => {
   });
 
   it("GET은 세션이 있지만 사용자 조회 실패면 쿠키 정리를 요청한다", async () => {
-    mockGetAuthUserBySessionToken.mockResolvedValue(null);
+    mockFetchRootAuthSessionFromSpring.mockResolvedValue({
+      authenticated: false,
+      user: null,
+    });
     const request = new NextRequest("http://localhost/api/v1/auth/session", {
       headers: { cookie: "yeon.session=stale-token" },
     });
@@ -46,7 +52,9 @@ describe("api/v1/auth/session route", () => {
     const response = await GET(request);
 
     expect(response.status).toBe(200);
-    expect(mockGetAuthUserBySessionToken).toHaveBeenCalledWith("stale-token");
+    expect(mockFetchRootAuthSessionFromSpring).toHaveBeenCalledWith(
+      "stale-token"
+    );
     expect(mockClearAuthSessionCookie).toHaveBeenCalledTimes(1);
     await expect(response.json()).resolves.toEqual({
       authenticated: false,
@@ -55,13 +63,16 @@ describe("api/v1/auth/session route", () => {
   });
 
   it("GET은 bearer 세션으로 사용자를 조회하고 쿠키를 정리하지 않는다", async () => {
-    mockGetAuthUserBySessionToken.mockResolvedValue({
-      avatarUrl: null,
-      displayName: "사용자",
-      email: "user@example.com",
-      id: "11111111-1111-4111-8111-111111111111",
-      lastLoginAt: "2026-04-30T00:00:00.000Z",
-      providers: ["dev"],
+    mockFetchRootAuthSessionFromSpring.mockResolvedValue({
+      authenticated: true,
+      user: {
+        avatarUrl: null,
+        displayName: "사용자",
+        email: "user@example.com",
+        id: "11111111-1111-4111-8111-111111111111",
+        lastLoginAt: "2026-04-30T00:00:00.000Z",
+        providers: ["dev"],
+      },
     });
     const request = new NextRequest("http://localhost/api/v1/auth/session", {
       headers: {
@@ -73,7 +84,9 @@ describe("api/v1/auth/session route", () => {
     const response = await GET(request);
 
     expect(response.status).toBe(200);
-    expect(mockGetAuthUserBySessionToken).toHaveBeenCalledWith("bearer-token");
+    expect(mockFetchRootAuthSessionFromSpring).toHaveBeenCalledWith(
+      "bearer-token"
+    );
     expect(mockClearAuthSessionCookie).not.toHaveBeenCalled();
     await expect(response.json()).resolves.toEqual({
       authenticated: true,
@@ -89,7 +102,10 @@ describe("api/v1/auth/session route", () => {
   });
 
   it("GET은 stale bearer 세션이면 쿠키 정리를 요청하지 않는다", async () => {
-    mockGetAuthUserBySessionToken.mockResolvedValue(null);
+    mockFetchRootAuthSessionFromSpring.mockResolvedValue({
+      authenticated: false,
+      user: null,
+    });
     const request = new NextRequest("http://localhost/api/v1/auth/session", {
       headers: {
         authorization: "Bearer stale-bearer-token",
@@ -100,8 +116,8 @@ describe("api/v1/auth/session route", () => {
     const response = await GET(request);
 
     expect(response.status).toBe(200);
-    expect(mockGetAuthUserBySessionToken).toHaveBeenCalledWith(
-      "stale-bearer-token",
+    expect(mockFetchRootAuthSessionFromSpring).toHaveBeenCalledWith(
+      "stale-bearer-token"
     );
     expect(mockClearAuthSessionCookie).not.toHaveBeenCalled();
     await expect(response.json()).resolves.toEqual({
@@ -118,7 +134,9 @@ describe("api/v1/auth/session route", () => {
 
     const response = await DELETE(request);
 
-    expect(mockDeleteAuthSessionByToken).toHaveBeenCalledWith("valid-token");
+    expect(mockDeleteRootAuthSessionInSpring).toHaveBeenCalledWith(
+      "valid-token"
+    );
     expect(mockClearAuthSessionCookie).toHaveBeenCalledTimes(1);
     await expect(response.json()).resolves.toEqual({
       authenticated: false,
@@ -137,7 +155,9 @@ describe("api/v1/auth/session route", () => {
 
     const response = await DELETE(request);
 
-    expect(mockDeleteAuthSessionByToken).toHaveBeenCalledWith("bearer-token");
+    expect(mockDeleteRootAuthSessionInSpring).toHaveBeenCalledWith(
+      "bearer-token"
+    );
     expect(mockClearAuthSessionCookie).toHaveBeenCalledTimes(1);
     await expect(response.json()).resolves.toEqual({
       authenticated: false,
@@ -146,7 +166,7 @@ describe("api/v1/auth/session route", () => {
   });
 
   it("DELETE는 삭제 중 예외가 나면 500을 반환한다", async () => {
-    mockDeleteAuthSessionByToken.mockRejectedValue(new Error("db error"));
+    mockDeleteRootAuthSessionInSpring.mockRejectedValue(new Error("db error"));
     const request = new NextRequest("http://localhost/api/v1/auth/session", {
       method: "DELETE",
       headers: { cookie: "yeon.session=valid-token" },
