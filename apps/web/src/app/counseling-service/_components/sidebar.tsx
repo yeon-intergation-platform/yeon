@@ -11,6 +11,7 @@ import { useCounselingSidebarLayout } from "@/features/counseling-service-shell/
 import { useAppRoute } from "@/lib/app-route-context";
 import type { MemberItemActions } from "@/features/counseling-record-workspace/components/sidebar-member-list-item";
 import { SidebarMembersSection } from "@/features/counseling-record-workspace/components/sidebar-members-section";
+import { SidebarSpaceSelector } from "@/features/counseling-record-workspace/components/sidebar-space-selector";
 import { UnlinkedRecordsSection } from "@/features/counseling-record-workspace/components/sidebar-unlinked-records-section";
 
 export interface SidebarProps {
@@ -798,100 +799,21 @@ export function Sidebar({
       tabIndex={0}
       onKeyDown={handleSidebarKeyDown}
     >
-      {/* 스페이스 셀렉터 */}
-      <div className="px-3 pt-3 pb-2 border-b border-border">
-        <div className="relative min-w-0 flex-1" ref={spaceRef}>
-          <button
-            className="w-full flex items-center justify-between gap-2 px-3 py-[7px] rounded-md bg-surface-3 border border-border-light text-sm font-medium text-text hover:bg-surface-4 transition-colors cursor-pointer"
-            onClick={() => setShowSpaceDropdown((p) => !p)}
-          >
-            <span className="truncate">
-              {currentSpace?.name ?? "스페이스 선택"}
-            </span>
-            <svg
-              width="12"
-              height="12"
-              viewBox="0 0 12 12"
-              fill="none"
-              className={`flex-shrink-0 text-text-dim transition-transform duration-150 ${showSpaceDropdown ? "rotate-180" : ""}`}
-            >
-              <path
-                d="M2 4l4 4 4-4"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </button>
-
-          {showSpaceDropdown && (
-            <div className="scrollbar-subtle absolute top-[calc(100%+4px)] left-0 right-0 bg-surface-3 border border-border-light rounded-md py-1 z-50 shadow-[0_8px_24px_rgba(0,0,0,0.35)] max-h-48 overflow-y-auto">
-              {spaces.length === 0 ? (
-                <div className="px-3 py-2 text-xs text-text-dim">
-                  스페이스 없음
-                </div>
-              ) : (
-                spaces.map((space) => (
-                  <button
-                    key={space.id}
-                    className={`w-full px-3 py-[7px] text-left text-sm transition-colors cursor-pointer font-[inherit] border-none ${
-                      space.id === currentSpace?.id
-                        ? "bg-surface-4"
-                        : selection.kind === "space" &&
-                            selectedIdSet.has(space.id)
-                          ? "bg-accent-dim"
-                          : "bg-transparent hover:bg-surface-4"
-                    } ${
-                      space.id === currentSpace?.id
-                        ? "text-accent"
-                        : "text-text"
-                    }`}
-                    onDragStart={(event) => {
-                      event.preventDefault();
-                    }}
-                    onClick={(event) =>
-                      handleSelectableClick({
-                        event,
-                        kind: "space",
-                        id: space.id,
-                        index: spaces.findIndex((item) => item.id === space.id),
-                        orderedIds: spaces.map((item) => item.id),
-                        onDefault: () => {
-                          onSpaceChange(space.id);
-                          clearSelection();
-                          setShowSpaceDropdown(false);
-                        },
-                      })
-                    }
-                    onContextMenu={(event) =>
-                      openContextMenu(event, {
-                        kind: "space",
-                        id: space.id,
-                        label: space.name,
-                        index: spaces.findIndex((item) => item.id === space.id),
-                      })
-                    }
-                  >
-                    {space.name}
-                  </button>
-                ))
-              )}
-              <div className="border-t border-border mt-1 pt-1">
-                <button
-                  className="w-full px-3 py-[7px] text-left text-xs text-accent hover:bg-surface-4 transition-colors cursor-pointer font-[inherit] border-none bg-transparent"
-                  onClick={() => {
-                    setShowSpaceDropdown(false);
-                    setShowCreateSpace(true);
-                  }}
-                >
-                  + 새 스페이스 만들기
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
+      <SidebarSpaceSelector
+        rootRef={spaceRef}
+        spaces={spaces}
+        currentSpace={currentSpace}
+        isOpen={showSpaceDropdown}
+        isSpaceSelection={selection.kind === "space"}
+        selectedIdSet={selectedIdSet}
+        onToggleOpen={() => setShowSpaceDropdown((p) => !p)}
+        onClose={() => setShowSpaceDropdown(false)}
+        onOpenCreateSpace={() => setShowCreateSpace(true)}
+        onSpaceChange={onSpaceChange}
+        onClearSelection={clearSelection}
+        onHandleSelectableClick={handleSelectableClick}
+        onOpenContextMenu={openContextMenu}
+      />
 
       {selection.ids.length > 0 && (
         <div className="border-t border-border px-3 py-2 text-[11px] text-text-secondary bg-surface-2/80">

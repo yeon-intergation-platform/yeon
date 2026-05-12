@@ -1186,3 +1186,29 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 49차 — sidebar space selector component 추출
+
+### 작업내용
+
+- `sidebar.tsx`의 스페이스 선택 버튼/드롭다운/새 스페이스 CTA 렌더링을 feature component로 추출한다.
+- parent sidebar는 selection/context menu 상태와 action handler만 유지한다.
+- 스페이스 선택, multi-select, context menu, 새 스페이스 모달 열기 동작은 변경하지 않는다.
+
+### 논의 필요
+
+- 스페이스 selector는 click-outside ref와 selection handler에 의존한다. 이번 차수는 ref/action을 props로 넘기는 presentational 추출만 하고, selection state machine hook 분리는 후속으로 둔다.
+
+### 선택지
+
+1. `SidebarSpaceSelector` component만 추출한다.
+2. context menu와 space selector를 함께 추출한다.
+3. sidebar selection hook까지 한 번에 분리한다.
+
+### 추천
+
+- 선택지 1. UI 경계를 먼저 분리해 sidebar 파일 크기를 줄이고 selection 로직 변경 위험을 피한다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.
