@@ -604,3 +604,28 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 26차: counseling file upload fetch wrapper 정리
+
+### 작업내용
+
+- `app/counseling-service/_hooks/use-file-upload.ts`의 FormData 업로드 직접 `fetch()` 호출을 제거한다.
+- 파일 업로드 요청은 `counselingWorkspaceFetchJson` wrapper를 사용해 credentials/error parsing 정책을 상담 워크스페이스 기준으로 통일한다.
+- 임시 레코드 생성, 업로드 완료 변환, 오류 표시, 오디오 길이 읽기 흐름은 유지한다.
+
+### 논의 필요
+
+- `use-file-upload` 자체를 feature layer로 즉시 이동할지 여부.
+
+### 선택지
+
+1. 이번 차수는 fetch boundary만 닫고 hook 이동은 후속 app boundary 정리에서 다룬다.
+2. 파일 업로드 hook을 feature layer로 즉시 이동한다.
+
+### 추천
+
+- 1번. 업로드 네트워크 경계 정리와 app route hook 이동을 분리해 업로드 회귀 면적을 줄인다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.
