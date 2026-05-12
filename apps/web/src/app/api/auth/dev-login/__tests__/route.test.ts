@@ -3,22 +3,18 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockIsDevLoginAllowed = vi.fn();
 const mockVerifyDevLoginRequestSecret = vi.fn();
-const mockResolveDevLoginUserId = vi.fn();
-const mockCreateDevLoginUser = vi.fn();
-const mockCreateAuthSession = vi.fn();
+const mockCreateDevLoginSession = vi.fn();
 const mockApplyAuthSessionCookie = vi.fn();
 
 vi.mock("@/server/auth/dev-login", () => ({
   isDevLoginAllowed: (...args: unknown[]) => mockIsDevLoginAllowed(...args),
   verifyDevLoginRequestSecret: (...args: unknown[]) =>
     mockVerifyDevLoginRequestSecret(...args),
-  createDevLoginUser: (...args: unknown[]) => mockCreateDevLoginUser(...args),
-  resolveDevLoginUserId: (...args: unknown[]) =>
-    mockResolveDevLoginUserId(...args),
+  createDevLoginSession: (...args: unknown[]) =>
+    mockCreateDevLoginSession(...args),
 }));
 
 vi.mock("@/server/auth/session", () => ({
-  createAuthSession: (...args: unknown[]) => mockCreateAuthSession(...args),
   applyAuthSessionCookie: (...args: unknown[]) =>
     mockApplyAuthSessionCookie(...args),
 }));
@@ -30,13 +26,12 @@ describe("api/auth/dev-login route", () => {
     vi.clearAllMocks();
     mockIsDevLoginAllowed.mockReturnValue(true);
     mockVerifyDevLoginRequestSecret.mockReturnValue(true);
-    mockCreateDevLoginUser.mockResolvedValue("new-dev-user-id");
-    mockCreateAuthSession.mockResolvedValue({
+    mockCreateDevLoginSession.mockResolvedValue({
       sessionToken: "dev-session-token",
       expiresAt: new Date("2026-04-13T10:00:00.000Z"),
     });
     mockApplyAuthSessionCookie.mockImplementation(
-      (response: Response) => response,
+      (response: Response) => response
     );
   });
 
@@ -44,64 +39,63 @@ describe("api/auth/dev-login route", () => {
     mockIsDevLoginAllowed.mockReturnValue(false);
 
     const response = await GET(
-      new NextRequest("http://localhost/api/auth/dev-login"),
+      new NextRequest("https://yeon.world/api/auth/dev-login")
     );
 
     expect(response.status).toBe(404);
     expect(mockIsDevLoginAllowed).toHaveBeenCalled();
   });
 
-  it("account가 없으면 기본 개발자 계정으로 상담 서비스에 리다이렉트한다", async () => {
-    mockResolveDevLoginUserId.mockResolvedValue("default-user-id");
-
+  it("account가 없으면 Spring dev-login 세션으로 루트 경로에 리다이렉트한다", async () => {
     const response = await GET(
-      new NextRequest("http://localhost/api/auth/dev-login"),
+      new NextRequest("https://yeon.world/api/auth/dev-login")
     );
 
     expect(mockIsDevLoginAllowed).toHaveBeenCalled();
-    expect(mockResolveDevLoginUserId).toHaveBeenCalledWith(null);
-    expect(mockCreateAuthSession).toHaveBeenCalledWith("default-user-id");
+    expect(mockCreateDevLoginSession).toHaveBeenCalledWith({
+      accountKey: null,
+      create: false,
+    });
     expect(mockApplyAuthSessionCookie).toHaveBeenCalledTimes(1);
     expect(response.status).toBe(307);
-    expect(response.headers.get("location")).toBe("http://localhost/");
+    expect(response.headers.get("location")).toBe("https://yeon.world/");
   });
 
-  it("선택한 account가 있으면 해당 계정으로 next 경로에 리다이렉트한다", async () => {
-    mockResolveDevLoginUserId.mockResolvedValue("selected-user-id");
-
+  it("선택한 account가 있으면 Spring에 선택값을 넘기고 next 경로에 리다이렉트한다", async () => {
     const response = await GET(
       new NextRequest(
-        "http://localhost/api/auth/dev-login?account=user-1&next=%2Fhome%3Ftab%3Drecords",
-      ),
+        "https://yeon.world/api/auth/dev-login?account=user-1&next=%2Fhome%3Ftab%3Drecords"
+      )
     );
 
-    expect(mockIsDevLoginAllowed).toHaveBeenCalled();
-    expect(mockResolveDevLoginUserId).toHaveBeenCalledWith("user-1");
-    expect(mockCreateAuthSession).toHaveBeenCalledWith("selected-user-id");
-    expect(response.headers.get("location")).toBe("http://localhost/");
+    expect(mockCreateDevLoginSession).toHaveBeenCalledWith({
+      accountKey: "user-1",
+      create: false,
+    });
+    expect(response.headers.get("location")).toBe("https://yeon.world/");
   });
 
-  it("create=1이면 새 계정을 만든 뒤 즉시 로그인한다", async () => {
+  it("create=1이면 Spring에 계정 생성 세션을 요청한다", async () => {
     const response = await GET(
       new NextRequest(
-        "http://localhost/api/auth/dev-login?create=1&next=%2Fhome%3Ftab%3Dspaces",
-      ),
+        "https://yeon.world/api/auth/dev-login?create=1&next=%2Fhome%3Ftab%3Dspaces"
+      )
     );
 
-    expect(mockIsDevLoginAllowed).toHaveBeenCalled();
-    expect(mockCreateDevLoginUser).toHaveBeenCalledTimes(1);
-    expect(mockResolveDevLoginUserId).not.toHaveBeenCalled();
-    expect(mockCreateAuthSession).toHaveBeenCalledWith("new-dev-user-id");
-    expect(response.headers.get("location")).toBe("http://localhost/");
+    expect(mockCreateDevLoginSession).toHaveBeenCalledWith({
+      accountKey: null,
+      create: true,
+    });
+    expect(response.headers.get("location")).toBe("https://yeon.world/");
   });
 
-  it("선택한 account를 찾지 못하면 404 오류를 반환한다", async () => {
-    mockResolveDevLoginUserId.mockResolvedValue(null);
+  it("Spring이 선택한 account를 찾지 못하면 404 오류를 반환한다", async () => {
+    mockCreateDevLoginSession.mockRejectedValue(new Error("not found"));
 
     const response = await GET(
       new NextRequest(
-        "http://localhost/api/auth/dev-login?account=missing-user",
-      ),
+        "https://yeon.world/api/auth/dev-login?account=missing-user"
+      )
     );
 
     expect(mockIsDevLoginAllowed).toHaveBeenCalled();
@@ -115,13 +109,11 @@ describe("api/auth/dev-login route", () => {
     mockVerifyDevLoginRequestSecret.mockReturnValue(false);
 
     const response = await GET(
-      new NextRequest("http://localhost/api/auth/dev-login"),
+      new NextRequest("https://yeon.world/api/auth/dev-login")
     );
 
     expect(response.status).toBe(404);
     expect(mockVerifyDevLoginRequestSecret).toHaveBeenCalled();
-    expect(mockResolveDevLoginUserId).not.toHaveBeenCalled();
-    expect(mockCreateDevLoginUser).not.toHaveBeenCalled();
-    expect(mockCreateAuthSession).not.toHaveBeenCalled();
+    expect(mockCreateDevLoginSession).not.toHaveBeenCalled();
   });
 });

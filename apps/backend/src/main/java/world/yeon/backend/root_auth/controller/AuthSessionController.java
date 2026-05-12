@@ -6,9 +6,11 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
-import world.yeon.backend.root_auth.dto.AuthSessionResponse;
+import world.yeon.backend.root_auth.dto.*;
 import world.yeon.backend.root_auth.service.AuthSessionService;
 import world.yeon.backend.root_auth.service.AuthSessionServiceException;
 
@@ -30,6 +32,31 @@ public class AuthSessionController {
 	@DeleteMapping("/auth/session")
 	public AuthSessionResponse deleteSession(@RequestHeader(name = SESSION_TOKEN_HEADER, required = false) String sessionToken) {
 		return service.deleteSession(sessionToken);
+	}
+
+	@PostMapping("/auth/session")
+	public RootAuthSessionCreateResponse createSession(@RequestBody RootAuthSessionCreateRequest request) {
+		return service.createSessionForUser(request == null ? null : request.userId());
+	}
+
+	@PostMapping("/auth/social/complete")
+	public RootAuthSessionCreateResponse completeSocialAuth(@RequestBody SocialAuthCompleteRequest request) {
+		return service.completeSocialAuth(request);
+	}
+
+	@GetMapping("/auth/dev-login/options")
+	public DevLoginOptionsResponse listDevLoginOptions() {
+		return service.listDevLoginOptions();
+	}
+
+	@PostMapping("/auth/dev-login/session")
+	public RootAuthSessionCreateResponse createDevLoginSession(@RequestBody DevLoginSessionRequest request) {
+		return service.createDevLoginSession(request);
+	}
+
+	@PostMapping("/auth/admin/check")
+	public AdminCheckResponse checkAdmin(@RequestBody AdminCheckRequest request) {
+		return service.checkAdmin(request);
 	}
 
 	@ExceptionHandler(AuthSessionServiceException.class)

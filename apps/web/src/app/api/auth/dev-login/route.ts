@@ -7,15 +7,11 @@ import {
   normalizeAuthRedirectPath,
 } from "@/server/auth/constants";
 import {
-  createDevLoginUser,
+  createDevLoginSession,
   isDevLoginAllowed,
-  resolveDevLoginUserId,
   verifyDevLoginRequestSecret,
 } from "@/server/auth/dev-login";
-import {
-  createAuthSession,
-  applyAuthSessionCookie,
-} from "@/server/auth/session";
+import { applyAuthSessionCookie } from "@/server/auth/session";
 
 export const runtime = "nodejs";
 
@@ -34,18 +30,20 @@ export async function GET(request: NextRequest) {
     : DEFAULT_POST_LOGIN_PATH;
   const shouldCreateAccount =
     request.nextUrl.searchParams.get("create") === "1";
-  const userId = shouldCreateAccount
-    ? await createDevLoginUser()
-    : await resolveDevLoginUserId(request.nextUrl.searchParams.get("account"));
 
-  if (!userId) {
+  let session: { sessionToken: string; expiresAt: Date };
+  try {
+    session = await createDevLoginSession({
+      accountKey: request.nextUrl.searchParams.get("account"),
+      create: shouldCreateAccount,
+    });
+  } catch (error) {
+    console.error("dev-login Spring 세션 생성 실패", error);
     return jsonError("선택한 테스트 계정을 찾지 못했습니다.", 404);
   }
 
-  const session = await createAuthSession(userId);
-
   const response = NextResponse.redirect(
-    new URL(nextPath, getAppOrigin(request.nextUrl.origin)),
+    new URL(nextPath, getAppOrigin(request.nextUrl.origin))
   );
 
   applyAuthSessionCookie(response, session);

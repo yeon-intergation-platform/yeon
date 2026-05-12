@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { upsertSocialLogin } from "@/server/services/auth-service";
-
 import {
   type AuthErrorCode,
   AuthFlowError,
@@ -20,21 +18,20 @@ import {
   createOAuthStateCookieValue,
   consumeOAuthStateCookieValue,
 } from "./oauth-state";
-import { createAuthSession, applyAuthSessionCookie } from "./session";
-import {
-  buildSocialAuthorizationUrl,
-  fetchSocialIdentityProfile,
-} from "./social-providers";
+import { completeSocialAuthInSpring } from "@/server/root-auth-spring-client";
+
+import { applyAuthSessionCookie } from "./session";
+import { buildSocialAuthorizationUrl } from "./social-providers";
 
 function redirectWithinApp(request: NextRequest, path: string) {
   return NextResponse.redirect(
-    new URL(path, getAppOrigin(request.nextUrl.origin)),
+    new URL(path, getAppOrigin(request.nextUrl.origin))
   );
 }
 
 function applyOAuthStateCookie(
   response: NextResponse,
-  cookieValue?: string | null,
+  cookieValue?: string | null
 ) {
   if (!cookieValue) {
     response.cookies.set({
@@ -70,7 +67,7 @@ function redirectToAuthError(
     reason: AuthErrorCode;
     nextPath?: string | null;
     oauthStateCookieValue?: string | null;
-  },
+  }
 ) {
   const response = redirectWithinApp(
     request,
@@ -78,7 +75,7 @@ function redirectToAuthError(
       provider: options.provider,
       reason: options.reason,
       nextPath: options.nextPath,
-    }),
+    })
   );
 
   if (options.oauthStateCookieValue !== undefined) {
@@ -90,7 +87,7 @@ function redirectToAuthError(
 
 export async function startSocialAuth(
   request: NextRequest,
-  provider: SocialProvider,
+  provider: SocialProvider
 ) {
   const requestedNextPath = request.nextUrl.searchParams.get("next");
 
@@ -132,7 +129,7 @@ export async function startSocialAuth(
 
 export async function completeSocialAuth(
   request: NextRequest,
-  provider: SocialProvider,
+  provider: SocialProvider
 ) {
   const requestState = request.nextUrl.searchParams.get("state");
   const oauthState = consumeOAuthStateCookieValue({
@@ -186,17 +183,15 @@ export async function completeSocialAuth(
   }
 
   try {
-    const profile = await fetchSocialIdentityProfile({
+    const session = await completeSocialAuthInSpring({
       provider,
       code,
       codeVerifier: oauthState.matchedEntry.codeVerifier,
-      originFallback: request.nextUrl.origin,
+      appOrigin: request.nextUrl.origin,
     });
-    const authUser = await upsertSocialLogin(profile);
-    const session = await createAuthSession(authUser.id);
     const response = redirectWithinApp(
       request,
-      oauthState.matchedEntry.nextPath,
+      oauthState.matchedEntry.nextPath
     );
 
     applyOAuthStateCookie(response, oauthState.nextCookieValue);
