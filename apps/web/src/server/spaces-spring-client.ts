@@ -1,14 +1,19 @@
-import type { CreateSpaceBody, UpdateSpaceBody } from "@yeon/api-contract/spaces";
+import type {
+  CreateSpaceBody,
+  UpdateSpaceBody,
+} from "@yeon/api-contract/spaces";
+import { buildSpringBffHeaders } from "@/server/spring-bff-client";
 
 const DEFAULT_BACKEND_BASE_URL = "http://127.0.0.1:8081";
-const INTERNAL_TOKEN_HEADER = "X-Yeon-Internal-Token";
 
 function resolveSpringBackendBaseUrl() {
   const raw =
     process.env.SPRING_BACKEND_BASE_URL?.trim() ??
     process.env.SPRING_BOOTSTRAP_BASE_URL?.trim();
 
-  return raw && raw.length > 0 ? raw.replace(/\/$/, "") : DEFAULT_BACKEND_BASE_URL;
+  return raw && raw.length > 0
+    ? raw.replace(/\/$/, "")
+    : DEFAULT_BACKEND_BASE_URL;
 }
 
 export class SpacesSpringBackendHttpError extends Error {
@@ -62,16 +67,9 @@ function extractErrorMessage(parsed: unknown) {
 
 async function fetchJson(path: string, userId: string, init?: RequestInit) {
   const response = await fetch(`${resolveSpringBackendBaseUrl()}${path}`, {
-    cache: "no-store",
-    headers: {
-      accept: "application/json",
-      "X-Yeon-User-Id": userId,
-      ...(process.env.SPRING_INTERNAL_TOKEN?.trim()
-        ? { [INTERNAL_TOKEN_HEADER]: process.env.SPRING_INTERNAL_TOKEN.trim() }
-        : {}),
-      ...(init?.headers ?? {}),
-    },
     ...init,
+    cache: "no-store",
+    headers: buildSpringBffHeaders(init?.headers, { userId }),
   });
 
   const raw = await response.text();
@@ -80,7 +78,7 @@ async function fetchJson(path: string, userId: string, init?: RequestInit) {
   if (!response.ok) {
     throw new SpacesSpringBackendHttpError(
       response.status,
-      extractErrorMessage(parsed) ?? "Spring backend 요청에 실패했습니다.",
+      extractErrorMessage(parsed) ?? "Spring backend 요청에 실패했습니다."
     );
   }
 
@@ -91,7 +89,10 @@ export async function fetchSpacesFromSpring(userId: string) {
   return fetchJson("/spaces", userId) as Promise<{ spaces: SpringSpace[] }>;
 }
 
-export async function createSpaceInSpring(userId: string, body: CreateSpaceBody) {
+export async function createSpaceInSpring(
+  userId: string,
+  body: CreateSpaceBody
+) {
   return fetchJson("/spaces", userId, {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -100,13 +101,15 @@ export async function createSpaceInSpring(userId: string, body: CreateSpaceBody)
 }
 
 export async function fetchSpaceFromSpring(userId: string, spaceId: string) {
-  return fetchJson(`/spaces/${spaceId}`, userId) as Promise<{ space: SpringSpace }>;
+  return fetchJson(`/spaces/${spaceId}`, userId) as Promise<{
+    space: SpringSpace;
+  }>;
 }
 
 export async function updateSpaceInSpring(
   userId: string,
   spaceId: string,
-  body: UpdateSpaceBody,
+  body: UpdateSpaceBody
 ) {
   return fetchJson(`/spaces/${spaceId}`, userId, {
     method: "PATCH",
