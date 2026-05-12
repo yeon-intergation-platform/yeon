@@ -1160,3 +1160,29 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 48차 — sidebar members section component 추출 및 record memo signature 보강
+
+### 작업내용
+
+- `sidebar.tsx`의 수강생 섹션 제목/카운트/빈 상태/목록 반복 렌더링을 feature component로 추출한다.
+- `MemberListItem` memo 비교가 중간 상담 기록 변경을 놓치지 않도록 member record signature를 명시 props로 전달한다.
+- sidebar는 selection/drag/context menu 상태와 action wiring만 유지한다.
+
+### 논의 필요
+
+- 수강생 섹션 추출과 memo signature 보강은 같은 렌더 경계에 있어 함께 처리하는 것이 안전하다. selection/drag/context menu 상태 머신 분리는 후속 차수로 둔다.
+
+### 선택지
+
+1. 수강생 섹션만 feature component로 추출하고 memo signature를 함께 보강한다.
+2. sidebar selection/context menu hook까지 한 번에 분리한다.
+3. `MemberListItem` comparator만 수정하고 섹션 추출은 보류한다.
+
+### 추천
+
+- 선택지 1. presentational boundary를 넓히면서 stale record 표시 위험을 같이 줄인다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.

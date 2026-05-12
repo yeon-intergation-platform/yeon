@@ -19,6 +19,7 @@ function fmtDaysSince(days: number | null): string {
 interface MemberListItemProps {
   member: MemberWithStatus;
   memberRecords: RecordItem[];
+  memberRecordsSignature: string;
   isMultiSelected: boolean;
   isActive: boolean;
   isExpanded: boolean;
@@ -58,6 +59,7 @@ export const MemberListItem = memo(
   function MemberListItem({
     member,
     memberRecords,
+    memberRecordsSignature: _memberRecordsSignature,
     isMultiSelected,
     isActive,
     isExpanded,
@@ -172,13 +174,7 @@ export const MemberListItem = memo(
     prev.isActive === next.isActive &&
     prev.isExpanded === next.isExpanded &&
     prev.selectedRecordId === next.selectedRecordId &&
-    // memberRecords는 records 폴링마다 새 배열 → length + 경계 ID로 비교
-    (prev.memberRecords === next.memberRecords ||
-      (prev.memberRecords.length === next.memberRecords.length &&
-        (prev.memberRecords.length === 0 ||
-          (prev.memberRecords[0].id === next.memberRecords[0].id &&
-            prev.memberRecords.at(-1)!.id ===
-              next.memberRecords.at(-1)!.id)))) &&
+    prev.memberRecordsSignature === next.memberRecordsSignature &&
     prev.recordMultiSelectedSet === next.recordMultiSelectedSet &&
     prev.actions === next.actions
 );
