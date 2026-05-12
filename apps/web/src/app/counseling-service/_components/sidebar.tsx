@@ -13,7 +13,7 @@ import {
   MemberListItem,
   type MemberItemActions,
 } from "@/features/counseling-record-workspace/components/sidebar-member-list-item";
-import { UnlinkedRecordListItem } from "@/features/counseling-record-workspace/components/sidebar-unlinked-record-list-item";
+import { UnlinkedRecordsSection } from "@/features/counseling-record-workspace/components/sidebar-unlinked-records-section";
 
 export interface SidebarProps {
   records: RecordItem[];
@@ -950,65 +950,20 @@ export function Sidebar({
           )}
         </div>
 
-        {/* 미분류 섹션 */}
-        {unlinkedRecords.length > 0 && (
-          <div className="px-2 py-2 border-t border-border">
-            <div className="flex items-center justify-between px-2 py-1 mb-0.5">
-              <span className="text-[10px] font-semibold text-text-dim uppercase tracking-widest">
-                미분류
-              </span>
-              <span className="text-[10px] text-text-dim">
-                {unlinkedRecords.length}
-              </span>
-            </div>
-
-            {unlinkedRecords.map((rec) => (
-              <UnlinkedRecordListItem
-                key={rec.id}
-                record={rec}
-                isSelected={
-                  selection.kind === "record" && selectedIdSet.has(rec.id)
-                }
-                isActive={rec.id === selectedId}
-                onMouseDown={(event) =>
-                  beginDragSelection({
-                    event,
-                    kind: "record",
-                    id: rec.id,
-                    orderedIds: visibleRecordOrderIds,
-                  })
-                }
-                onMouseEnter={(event) =>
-                  extendDragSelection({
-                    event,
-                    kind: "record",
-                    id: rec.id,
-                    index: visibleRecordIndexById.get(rec.id) ?? 0,
-                    orderedIds: visibleRecordOrderIds,
-                  })
-                }
-                onClick={(event) =>
-                  handleSelectableClick({
-                    event,
-                    kind: "record",
-                    id: rec.id,
-                    index: visibleRecordIndexById.get(rec.id) ?? 0,
-                    orderedIds: visibleRecordOrder.map((item) => item.id),
-                    onDefault: () => onSelect(rec.id),
-                  })
-                }
-                onContextMenu={(event) =>
-                  openContextMenu(event, {
-                    kind: "record",
-                    id: rec.id,
-                    label: rec.title,
-                    index: visibleRecordIndexById.get(rec.id) ?? 0,
-                  })
-                }
-              />
-            ))}
-          </div>
-        )}
+        <UnlinkedRecordsSection
+          records={unlinkedRecords}
+          selectedId={selectedId}
+          selectedIdSet={selectedIdSet}
+          isRecordSelection={selection.kind === "record"}
+          visibleRecordOrderIds={visibleRecordOrderIds}
+          visibleRecordOrder={visibleRecordOrder}
+          visibleRecordIndexById={visibleRecordIndexById}
+          onBeginDragSelection={beginDragSelection}
+          onExtendDragSelection={extendDragSelection}
+          onHandleSelectableClick={handleSelectableClick}
+          onOpenContextMenu={openContextMenu}
+          onSelect={onSelect}
+        />
       </div>
 
       {showCreateSpace && (
