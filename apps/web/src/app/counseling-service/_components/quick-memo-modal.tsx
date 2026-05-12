@@ -5,6 +5,7 @@ import { X } from "lucide-react";
 import type { CounselingRecordDetail } from "@yeon/api-contract/counseling-records";
 import type { RecordItem } from "../_lib/types";
 import { resolveApiHrefForCurrentPath } from "@/lib/app-route-paths";
+import { counselingWorkspaceFetchJson } from "../_hooks/counseling-workspace-fetch";
 
 interface QuickMemoModalProps {
   onClose: () => void;
@@ -51,20 +52,16 @@ export function QuickMemoModal({
         form.append("memberId", defaultMemberId);
       }
 
-      const res = await fetch(
+      const data = await counselingWorkspaceFetchJson<{
+        record: CounselingRecordDetail;
+      }>(
         resolveApiHrefForCurrentPath("/api/v1/counseling-records"),
         {
           method: "POST",
           body: form,
         },
+        "메모를 저장하지 못했습니다."
       );
-
-      if (!res.ok) {
-        const text = await res.text().catch(() => "");
-        throw new Error(text || "저장에 실패했습니다.");
-      }
-
-      const data = (await res.json()) as { record: CounselingRecordDetail };
       const item = data.record;
 
       const record: RecordItem = {
