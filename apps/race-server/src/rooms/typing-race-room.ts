@@ -9,6 +9,7 @@ import {
   TYPING_SPEED_STYLE,
   TYPING_ROOM_DIFFICULTY,
   TYPING_ROOM_LANGUAGE,
+  TYPING_ROOM_LIFECYCLE,
   TYPING_ROOM_MODE,
   TYPING_ROOM_STATUS,
   TYPING_ROOM_TEXT_TYPE,
@@ -38,6 +39,7 @@ import {
   type TypingResultSnapshot,
   type TypingRoomCreateMessage,
   type TypingRoomLanguage,
+  type TypingRoomLifecycle,
   type TypingRoomMode,
   type TypingRoomTextType,
   type TypingRoomDifficulty,
@@ -441,6 +443,8 @@ export class TypingRaceRoom extends Room {
 
   private readonly clientParticipantIds = new Map<string, string>();
 
+  private readonly explicitLeavingClientIds = new Set<string>();
+
   private readonly participantCleanupTimers = new Map<
     string,
     { clear: () => void }
@@ -457,6 +461,8 @@ export class TypingRaceRoom extends Room {
   );
 
   private status: TypingRoomStatus = TYPING_ROOM_STATUS.COUNTDOWN;
+
+  private lifecycle: TypingRoomLifecycle = TYPING_ROOM_LIFECYCLE.ACTIVE;
 
   private stage: TypingRaceStage = TYPING_RACE_STAGE.COUNTDOWN;
 
@@ -520,6 +526,10 @@ export class TypingRaceRoom extends Room {
       this.addChat(client, message as RoomChatMessage);
     });
 
+    this.onMessage(RACE_EVENTS.ROOM_LEAVE, (client) => {
+      this.leaveExplicitly(client);
+    });
+
     this.onMessage(RACE_EVENTS.ROOM_START, (client, message) => {
       this.startFromLobby(client, message as RoomStartMessage | undefined);
     });
@@ -543,6 +553,24 @@ export class TypingRaceRoom extends Room {
   onJoin(client: Client, options: MatchJoinMessage) {
     const participantId = this.normalizeParticipantId(client, options);
     const isKnownParticipant = this.participants.has(participantId);
+
+    if (this.lifecycle === TYPING_ROOM_LIFECYCLE.CLOSED) {
+      client.send(RACE_EVENTS.ROOM_ERROR, { message: "이미 닫힌 방입니다." });
+      client.leave();
+      return;
+    }
+
+    if (this.lifecycle === TYPING_ROOM_LIFECYCLE.EMPTY_GRACE) {
+      if (!isKnownParticipant) {
+        client.send(RACE_EVENTS.ROOM_ERROR, {
+          message: "재접속 대기 중인 방입니다.",
+        });
+        client.leave();
+        return;
+      }
+      this.lifecycle = TYPING_ROOM_LIFECYCLE.ACTIVE;
+      void this.setPrivate(false);
+    }
 
     if (
       this.lobbyMode &&
@@ -577,11 +605,17 @@ export class TypingRaceRoom extends Room {
       : null;
     this.clientParticipantIds.delete(client.sessionId);
 
+    if (this.explicitLeavingClientIds.delete(client.sessionId)) {
+      this.refreshLifecycle();
+      return;
+    }
+
     if (this.lobbyMode && participant) {
       this.scheduleParticipantCleanup(participant.id);
       this.appendSystemMessage(
         `${participant.label}님과의 연결이 잠시 끊겼습니다.`
       );
+      this.refreshLifecycle();
       this.syncState();
       return;
     }
@@ -597,6 +631,10 @@ export class TypingRaceRoom extends Room {
     const participantId = this.normalizeParticipantId(client, message);
     this.clientParticipantIds.set(client.sessionId, participantId);
     this.clearParticipantCleanup(participantId);
+    this.lifecycle = TYPING_ROOM_LIFECYCLE.ACTIVE;
+    if (this.lobbyMode) {
+      void this.setPrivate(false);
+    }
 
     const existing = this.participants.get(participantId);
     if (existing) {
@@ -669,10 +707,25 @@ export class TypingRaceRoom extends Room {
     this.participantCleanupTimers.set(participantId, timer);
   }
 
+  private leaveExplicitly(client: Client) {
+    const participantId = this.getParticipantId(client);
+    this.explicitLeavingClientIds.add(client.sessionId);
+    this.clientParticipantIds.delete(client.sessionId);
+
+    if (participantId) {
+      this.removeParticipant(participantId);
+    }
+
+    this.refreshLifecycle();
+    this.syncState();
+    client.leave();
+  }
+
   private removeParticipant(participantId: string) {
     const participant = this.participants.get(participantId);
     if (!participant) return;
 
+    this.clearParticipantCleanup(participantId);
     this.participants.delete(participantId);
     if (this.hostId === participantId) {
       this.hostId = this.participants.keys().next().value ?? null;
@@ -686,9 +739,23 @@ export class TypingRaceRoom extends Room {
       this.appendSystemMessage(`${participant.label}님이 퇴장했습니다.`);
       if (this.participants.size === 0) {
         this.status = TYPING_ROOM_STATUS.CLOSED;
-        this.disconnect();
+        this.lifecycle = TYPING_ROOM_LIFECYCLE.CLOSED;
+        void this.setPrivate(true);
+        void this.disconnect();
       }
     }
+  }
+
+  private refreshLifecycle() {
+    if (!this.lobbyMode || this.lifecycle === TYPING_ROOM_LIFECYCLE.CLOSED) {
+      return;
+    }
+
+    this.lifecycle =
+      this.clientParticipantIds.size > 0
+        ? TYPING_ROOM_LIFECYCLE.ACTIVE
+        : TYPING_ROOM_LIFECYCLE.EMPTY_GRACE;
+    void this.setPrivate(this.lifecycle !== TYPING_ROOM_LIFECYCLE.ACTIVE);
   }
 
   private appendChatMessage(message: TypingRoomChatMessage) {
@@ -1224,7 +1291,11 @@ export class TypingRaceRoom extends Room {
       roomId: this.roomId,
       roomCode: this.roomCode,
       status: this.status,
-      currentParticipants: this.participants.size,
+      lifecycle: this.lifecycle,
+      currentParticipants:
+        this.lifecycle === TYPING_ROOM_LIFECYCLE.EMPTY_GRACE
+          ? 0
+          : this.participants.size,
       hostLabel: this.hostId
         ? this.participants.get(this.hostId)?.label
         : undefined,
