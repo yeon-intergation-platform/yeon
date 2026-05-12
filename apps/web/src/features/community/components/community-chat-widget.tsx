@@ -52,6 +52,7 @@ export function CommunityChatWidget({
   const isCompact = variant === "compact";
   const isFeed = variant === "feed";
   const canSendMessage = !isSendingMessage;
+  const shouldShowCollapsedShell = isShellCollapsed && isBodyCollapsed;
   const visibleMessages = useMemo(() => messages, [messages]);
   const showNicknameInput = false;
   const compactContainerMotion = isCompact
@@ -59,7 +60,7 @@ export function CommunityChatWidget({
         initial: false,
         animate: shouldReduceMotion
           ? undefined
-          : isShellCollapsed
+          : shouldShowCollapsedShell
             ? {
                 width: COMPACT_CHAT_COLLAPSED_SIZE,
                 height: COMPACT_CHAT_COLLAPSED_SIZE,
@@ -104,13 +105,13 @@ export function CommunityChatWidget({
 
         setIsBodyCollapsed(true);
       }}
-      aria-label={isShellCollapsed ? "채팅 열기" : "채팅 접기"}
+      aria-label={shouldShowCollapsedShell ? "채팅 열기" : "채팅 접기"}
       aria-expanded={!isBodyCollapsed}
       initial={false}
       animate={
         shouldReduceMotion
           ? undefined
-          : isShellCollapsed
+          : shouldShowCollapsedShell
             ? {
                 width: COMPACT_CHAT_COLLAPSED_SIZE,
                 height: COMPACT_CHAT_COLLAPSED_SIZE,
@@ -122,14 +123,14 @@ export function CommunityChatWidget({
       transition={{ type: "spring", stiffness: 520, damping: 34 }}
       className={[
         "absolute z-10 inline-flex items-center justify-center rounded-full bg-white text-[#555] transition-colors hover:text-[#111]",
-        isShellCollapsed
+        shouldShowCollapsedShell
           ? "right-0 top-0 h-14 w-14 border border-[#e5e5e5] hover:border-[#111]"
           : "right-3 top-3 h-9 w-9 border-0 shadow-none",
       ].join(" ")}
     >
       <AnimatePresence mode="wait" initial={false}>
         <motion.span
-          key={isShellCollapsed ? "chat-open-icon" : "chat-close-icon"}
+          key={shouldShowCollapsedShell ? "chat-open-icon" : "chat-close-icon"}
           initial={
             shouldReduceMotion
               ? false
@@ -144,7 +145,11 @@ export function CommunityChatWidget({
           transition={{ duration: 0.12, ease: "easeOut" }}
           className="inline-flex"
         >
-          {isShellCollapsed ? <MessageCircle size={24} /> : <X size={18} />}
+          {shouldShowCollapsedShell ? (
+            <MessageCircle size={24} />
+          ) : (
+            <X size={18} />
+          )}
         </motion.span>
       </AnimatePresence>
     </motion.button>
@@ -158,7 +163,7 @@ export function CommunityChatWidget({
           ? "border-0 bg-white"
           : "rounded-2xl border border-[#e5e5e5] bg-white",
         isCompact
-          ? isShellCollapsed
+          ? shouldShowCollapsedShell
             ? "relative h-14 w-14 max-w-[calc(100vw-2rem)] overflow-hidden"
             : "relative w-[656px] max-w-[calc(100vw-2rem)] overflow-hidden"
           : "w-full",
@@ -204,17 +209,23 @@ export function CommunityChatWidget({
             key="chat-widget-body"
             initial={
               isCompact && !shouldReduceMotion
-                ? { opacity: 0, y: -8, scale: 0.985, filter: "blur(2px)" }
+                ? { opacity: 0, height: 0, filter: "blur(2px)" }
                 : false
             }
-            animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
+            animate={{ opacity: 1, height: "auto", filter: "blur(0px)" }}
             exit={
               isCompact && !shouldReduceMotion
-                ? { opacity: 0, y: -10, scale: 0.985, filter: "blur(2px)" }
+                ? {
+                    opacity: 0,
+                    height: 0,
+                    paddingTop: 0,
+                    paddingBottom: 0,
+                    filter: "blur(2px)",
+                  }
                 : undefined
             }
             transition={{
-              duration: shouldReduceMotion ? 0 : 0.16,
+              duration: shouldReduceMotion ? 0 : 0.18,
               ease: "easeOut",
             }}
             className={[
