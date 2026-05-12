@@ -1,9 +1,9 @@
-import type { SpaceSelectionState } from "./space-sidebar-types";
+import type { SpaceSelectionState } from "@/features/student-management/types/space-sidebar-types";
 
 export function createRangeSelection(
   orderedIds: string[],
   anchorId: string,
-  targetIndex: number,
+  targetIndex: number
 ): SpaceSelectionState {
   const anchorIndex = orderedIds.indexOf(anchorId);
   const resolvedAnchorIndex = anchorIndex >= 0 ? anchorIndex : targetIndex;
@@ -18,7 +18,7 @@ export function createRangeSelection(
 
 export function syncSelectionWithSelectedSpace(
   prev: SpaceSelectionState,
-  selectedSpaceId: string | null,
+  selectedSpaceId: string | null
 ): SpaceSelectionState {
   if (!selectedSpaceId) {
     return prev;
@@ -33,7 +33,7 @@ export function syncSelectionWithSelectedSpace(
 
 export function pruneSpaceSelection(
   prev: SpaceSelectionState,
-  validIds: Set<string>,
+  validIds: Set<string>
 ): SpaceSelectionState {
   const nextIds = prev.ids.filter((id) => validIds.has(id));
   const nextAnchorId =

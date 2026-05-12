@@ -11,7 +11,7 @@ import type {
   CreateModalState,
   SpaceDialogTarget,
   SpaceSelectionState,
-} from "../_lib/space-sidebar-types";
+} from "@/features/student-management/types/space-sidebar-types";
 
 interface UseSpaceSidebarActionsParams {
   selectedSpaceId: string | null;
