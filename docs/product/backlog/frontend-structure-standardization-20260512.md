@@ -429,3 +429,28 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 19차: AI chat fetch boundary 정리
+
+### 작업내용
+
+- `app/counseling-service/_hooks/use-ai-chat.ts`에 남아 있는 채팅 SSE와 자동 분석 직접 `fetch()` 호출을 제거한다.
+- SSE 응답은 `counselingWorkspaceFetchResponse`, 자동 분석 JSON 응답은 `counselingWorkspaceFetchJson` wrapper를 사용해 credentials/error parsing 정책을 통일한다.
+- 스트리밍 메시지 누적, abort, 자동 분석 실패 로깅, UI feedback 흐름은 유지한다.
+
+### 논의 필요
+
+- SSE 스트림 파서(`readSseStream`)까지 별도 helper 파일로 즉시 이동할지 여부.
+
+### 선택지
+
+1. 이번 차수는 네트워크 boundary만 닫고 SSE parser 분리는 후속 hook 분해에서 다룬다.
+2. `readSseStream`을 별도 `ai-chat-stream.ts`로 즉시 분리한다.
+
+### 추천
+
+- 1번. 직접 fetch 제거와 스트림 파서 이동을 분리해 AI 채팅 회귀 면적을 줄인다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.

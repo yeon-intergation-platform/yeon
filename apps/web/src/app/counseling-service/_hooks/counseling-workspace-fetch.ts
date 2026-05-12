@@ -39,6 +39,20 @@ export async function counselingWorkspaceFetchJsonOr<T>(
   return (await response.json()) as T;
 }
 
+export async function counselingWorkspaceFetchResponse(
+  input: RequestInfo | URL,
+  init: RequestInit,
+  fallbackErrorMessage: string
+): Promise<Response> {
+  const response = await fetch(input, { credentials: "include", ...init });
+
+  if (!response.ok) {
+    throw new Error(await readErrorMessage(response, fallbackErrorMessage));
+  }
+
+  return response;
+}
+
 export async function counselingWorkspaceFetchVoid(
   input: RequestInfo | URL,
   init: RequestInit,

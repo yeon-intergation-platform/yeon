@@ -3,6 +3,10 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import type { CounselingChatRequest } from "@yeon/api-contract/counseling-records";
 import { resolveApiHrefForCurrentPath } from "@/lib/app-route-paths";
+import {
+  counselingWorkspaceFetchJson,
+  counselingWorkspaceFetchResponse,
+} from "./counseling-workspace-fetch";
 import type { AiMessage, AnalysisResult, AttachedImage } from "../_lib/types";
 
 interface UseAiChatParams {
@@ -13,7 +17,7 @@ interface UseAiChatParams {
   useWebSearch: boolean;
   onUpdateMessages: (
     id: string,
-    updater: (prev: AiMessage[]) => AiMessage[],
+    updater: (prev: AiMessage[]) => AiMessage[]
   ) => void;
   onUpdateAnalysisResult: (id: string, result: AnalysisResult) => void;
 }
@@ -21,7 +25,7 @@ interface UseAiChatParams {
 /** SSE 스트림에서 텍스트 청크를 누적해 반환 */
 async function readSseStream(
   reader: ReadableStreamDefaultReader<Uint8Array>,
-  onChunk: (text: string) => void,
+  onChunk: (text: string) => void
 ): Promise<void> {
   const decoder = new TextDecoder();
   let buffer = "";
@@ -110,10 +114,10 @@ export function useAiChat({
       setTimeout(
         () => {
           setImages((prev) =>
-            prev.map((i) => (i.id === img.id ? { ...i, loading: false } : i)),
+            prev.map((i) => (i.id === img.id ? { ...i, loading: false } : i))
           );
         },
-        400 + Math.random() * 200,
+        400 + Math.random() * 200
       );
     });
   }, []);
@@ -130,7 +134,7 @@ export function useAiChat({
     async (
       recordId: string,
       messages: AiMessage[],
-      options: { useWebSearch: boolean },
+      options: { useWebSearch: boolean }
     ) => {
       const apiMessages = messages
         .filter((m) => m.role === "user" || m.role === "assistant")
@@ -170,9 +174,9 @@ export function useAiChat({
         return updated;
       });
 
-      const res = await fetch(
+      const response = await counselingWorkspaceFetchResponse(
         resolveApiHrefForCurrentPath(
-          `/api/v1/counseling-records/${recordId}/chat`,
+          `/api/v1/counseling-records/${recordId}/chat`
         ),
         {
           method: "POST",
@@ -180,14 +184,14 @@ export function useAiChat({
           body: JSON.stringify(payload),
           signal: abortRef.current.signal,
         },
+        "AI 응답에 실패했습니다."
       );
 
-      if (!res.ok || !res.body) {
-        const text = await res.text().catch(() => "");
-        throw new Error(text || "AI 응답에 실패했습니다.");
+      if (!response.body) {
+        throw new Error("AI 응답에 실패했습니다.");
       }
 
-      const reader = res.body.getReader();
+      const reader = response.body.getReader();
       let accumulated = "";
 
       await readSseStream(reader, (chunk) => {
@@ -212,7 +216,7 @@ export function useAiChat({
         throw new Error("AI 응답이 비어 있습니다.");
       }
     },
-    [onUpdateMessages],
+    [onUpdateMessages]
   );
 
   // 레코드 전환 시 이전 ID를 추적 (analysisAttemptedRef는 세션 내 유지 — 삭제 안 함)
@@ -238,19 +242,17 @@ export function useAiChat({
     analyzeAbortRef.current = controller;
     setAnalyzing(true);
 
-    // eslint-disable-next-line no-restricted-syntax
-    fetch(
+    counselingWorkspaceFetchJson<{ analysisResult: AnalysisResult }>(
       resolveApiHrefForCurrentPath(
-        `/api/v1/counseling-records/${capturedId}/analyze`,
+        `/api/v1/counseling-records/${capturedId}/analyze`
       ),
       {
         method: "POST",
         signal: controller.signal,
       },
+      "AI 분석을 시작하지 못했습니다."
     )
-      .then(async (res) => {
-        if (!res.ok) throw new Error("분석 실패");
-        const data = (await res.json()) as { analysisResult: AnalysisResult };
+      .then((data) => {
         onUpdateAnalysisResult(capturedId, data.analysisResult);
       })
       .catch((err) => {
@@ -403,7 +405,7 @@ export function useAiChat({
           abortRef.current = null;
         });
     },
-    [onUpdateMessages, selectedId, sendToApi, streaming, useWebSearch],
+    [onUpdateMessages, selectedId, sendToApi, streaming, useWebSearch]
   );
 
   return {
