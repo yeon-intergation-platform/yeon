@@ -11,7 +11,7 @@ describe("getCounselingWorkspaceUiPolicy", () => {
         viewStateKind: "empty",
         hasSelectedMember: false,
         selectedRecordStatus: null,
-      }),
+      })
     ).toMatchObject({
       surface: "space-gate",
       showSidebar: false,
@@ -28,7 +28,7 @@ describe("getCounselingWorkspaceUiPolicy", () => {
         viewStateKind: "recording",
         hasSelectedMember: false,
         selectedRecordStatus: null,
-      }),
+      })
     ).toMatchObject({
       surface: "recording",
       showSidebar: false,
@@ -44,7 +44,7 @@ describe("getCounselingWorkspaceUiPolicy", () => {
         viewStateKind: "empty",
         hasSelectedMember: false,
         selectedRecordStatus: null,
-      }),
+      })
     ).toMatchObject({
       surface: "empty",
       showSidebar: false,
@@ -61,7 +61,7 @@ describe("getCounselingWorkspaceUiPolicy", () => {
         viewStateKind: "ready",
         hasSelectedMember: false,
         selectedRecordStatus: "ready",
-      }),
+      })
     ).toMatchObject({
       surface: "workspace",
       showSidebar: true,
@@ -79,7 +79,7 @@ describe("getCounselingWorkspaceUiPolicy", () => {
         viewStateKind: "ready",
         hasSelectedMember: true,
         selectedRecordStatus: "ready",
-      }),
+      })
     ).toMatchObject({
       surface: "workspace",
       showSidebar: true,
