@@ -76,6 +76,23 @@ export async function loadCloudDriveFiles(
   return payload.files;
 }
 
+export async function loadLocalImportDrafts<T>(
+  resolveApiHref: ResolveApiHref,
+  limit: number
+): Promise<T> {
+  const response = await fetch(
+    resolveApiHref(`/api/v1/integrations/local/drafts?limit=${limit}`)
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      await readErrorText(response, "가져오기 작업 목록을 불러오지 못했습니다.")
+    );
+  }
+
+  return (await response.json()) as T;
+}
+
 export async function loadPreviewBlob(uri: string): Promise<Blob> {
   const response = await fetch(uri);
   if (!response.ok) throw new Error("파일을 불러올 수 없습니다.");

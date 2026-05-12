@@ -279,3 +279,28 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 13차: cloud-import inline draft fetch boundary 분리
+
+### 작업내용
+
+- `features/cloud-import/components/cloud-import-inline.tsx`의 저장된 draft 목록 조회와 목록 삭제 직접 `fetch()`를 제거한다.
+- draft 목록 조회는 `loadLocalImportDrafts`, 삭제는 기존 `deleteImportDraft` wrapper를 사용한다.
+- 1400줄급 컴포넌트 분해 전, HTTP boundary부터 닫아 후속 container/view 분리 회귀 면적을 줄인다.
+
+### 논의 필요
+
+- 저장된 draft 모달 상태 자체를 별도 hook으로 즉시 분리할지 여부.
+
+### 선택지
+
+1. 이번 차수는 fetch boundary만 닫고 saved-drafts modal state hook 분리는 후속 PR로 둔다.
+2. `useSavedImportDraftsModal`까지 즉시 분리한다.
+
+### 추천
+
+- 1번. 직접 fetch 제거와 god component 분해는 각각 회귀 포인트가 달라 PR을 나눈다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.
