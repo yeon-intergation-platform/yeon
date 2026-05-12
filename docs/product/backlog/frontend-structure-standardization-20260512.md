@@ -832,3 +832,28 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 35차: counseling records API helper boundary 정리
+
+### 작업내용
+
+- `use-records` 안에 남은 상담 기록 목록/상세/채팅 초기화 API 호출을 `features/counseling-record-workspace/api` helper로 이동한다.
+- `use-records`는 TanStack Query 상태 조합, 로컬 override/temp record 병합, polling 판단만 담당하게 한다.
+- 기존 query key, polling 주기, 상세 prefetch/fetch, 채팅 초기화 동작은 유지한다.
+
+### 논의 필요
+
+- `use-records` 자체를 이번 차수에 feature hooks로 이동할지 여부.
+
+### 선택지
+
+1. API endpoint 지식만 먼저 feature api로 이동하고 `use-records` 이동/분해는 후속 차수로 남긴다.
+2. `use-records`까지 즉시 feature hook으로 이동한다.
+
+### 추천
+
+- 1번. `use-records`는 서버 목록, 상세 캐시, 임시 레코드, local override, viewState를 함께 들고 있어 단순 위치 이동보다 책임 분해가 먼저 필요하다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.
