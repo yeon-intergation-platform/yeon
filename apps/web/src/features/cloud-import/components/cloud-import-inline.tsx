@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 import {
   ArrowLeft,
   ChevronRight,
@@ -23,12 +22,9 @@ import {
 } from "../cloud-provider-config";
 import type { CloudProvider } from "../types";
 import type { ImportCommitResult } from "../types";
-import {
-  deleteImportDraft,
-  loadLocalImportDrafts,
-} from "../hooks/cloud-import-fetch";
 import { useCloudImport } from "../hooks/use-cloud-import";
 import { useLocalImport } from "../hooks/use-local-import";
+import { useSavedImportDraftsModal } from "../hooks/use-saved-import-drafts-modal";
 import { FilePreview } from "./file-preview";
 import { FileGrid } from "./cloud-import-file-grid";
 import { ImportRightPanel } from "./import-right-panel";
@@ -38,7 +34,6 @@ import {
   getDraftRowSummary,
   getDraftStatusBadgeClass,
   getDraftStatusLabel,
-  type LocalImportDraftListItem,
 } from "../cloud-import-draft-display";
 import {
   IMPORT_WORKSPACE_DEFAULT_RATIO,
@@ -56,15 +51,12 @@ import {
   IMPORT_WORKSPACE_STACKED_MIN_RATIO,
   IMPORT_WORKSPACE_STACKED_RESIZER_HEIGHT,
   IMPORT_WORKSPACE_STACKED_SPLIT_STORAGE_KEY,
-  LOADING_FEEDBACK_DELAY_MS,
   getExpandedBottomPanelHeight,
 } from "../cloud-import-layout-constants";
-import { cloudImportQueryKeys } from "../cloud-import-query-keys";
 import {
   SPACE_FULL_TEST_DATA,
   SPACE_LITE_TEST_DATA,
 } from "@/lib/test-data-downloads";
-import { resolveApiHrefForCurrentPath } from "@/lib/app-route-paths";
 
 interface CloudImportInlineProps {
   onClose: () => void;
@@ -99,17 +91,6 @@ export function CloudImportInline({
     DEFAULT_CLOUD_PROVIDER
   );
   const [isDragging, setIsDragging] = useState(false);
-  const [showSavedDraftsModal, setShowSavedDraftsModal] = useState(false);
-  const [isSavedDraftsRefreshPending, setIsSavedDraftsRefreshPending] =
-    useState(false);
-  const [deletingDraftIds, setDeletingDraftIds] = useState<string[]>([]);
-  const [
-    shouldShowSavedDraftsRefreshLoading,
-    setShouldShowSavedDraftsRefreshLoading,
-  ] = useState(false);
-  const [visibleDeletingDraftIds, setVisibleDeletingDraftIds] = useState<
-    string[]
-  >([]);
   const [desktopSplitRatio, setDesktopSplitRatio] = useState(
     IMPORT_WORKSPACE_DEFAULT_RATIO
   );
@@ -126,12 +107,6 @@ export function CloudImportInline({
   const dragCounterRef = useRef(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const previewWorkspaceRef = useRef<HTMLDivElement | null>(null);
-  const savedDraftsRefreshDelayTimerRef = useRef<ReturnType<
-    typeof setTimeout
-  > | null>(null);
-  const deletingDraftDelayTimersRef = useRef(
-    new Map<string, ReturnType<typeof setTimeout>>()
-  );
   const desktopSplitRatioRef = useRef(IMPORT_WORKSPACE_DEFAULT_RATIO);
   const stackedSplitRatioRef = useRef(IMPORT_WORKSPACE_STACKED_DEFAULT_RATIO);
   const resizeStateRef = useRef<{
@@ -404,66 +379,14 @@ export function CloudImportInline({
   );
   const activeHook = activeProvider === "onedrive" ? onedrive : googledrive;
   const activeProviderLabel = getCloudProviderLabel(activeProvider);
-  const {
-    data: localDraftsData,
-    isPending: localDraftsLoading,
-    error: localDraftsQueryError,
-    refetch: refetchLocalDrafts,
-  } = useQuery({
-    queryKey: cloudImportQueryKeys.localDraftsModal(),
-    queryFn: () =>
-      loadLocalImportDrafts<{ drafts: LocalImportDraftListItem[] }>(
-        resolveApiHrefForCurrentPath,
-        20
-      ),
+  const savedDraftsModal = useSavedImportDraftsModal({
+    localImport,
+    onDraftDiscarded,
   });
-  const localDrafts = localDraftsData ? localDraftsData.drafts : [];
-  const localDraftsError =
-    localDraftsQueryError instanceof Error
-      ? localDraftsQueryError.message
-      : localDraftsQueryError
-        ? "가져오기 작업 목록을 불러오지 못했습니다."
-        : null;
-
-  useEffect(() => {
-    return () => {
-      if (savedDraftsRefreshDelayTimerRef.current) {
-        clearTimeout(savedDraftsRefreshDelayTimerRef.current);
-      }
-      deletingDraftDelayTimersRef.current.forEach((timer) => {
-        clearTimeout(timer);
-      });
-      deletingDraftDelayTimersRef.current.clear();
-    };
-  }, []);
-
-  const openSavedDrafts = useCallback(() => {
-    setShowSavedDraftsModal(true);
-    void refetchLocalDrafts();
-  }, [refetchLocalDrafts]);
-
-  const refreshSavedDrafts = useCallback(async () => {
-    if (isSavedDraftsRefreshPending) {
-      return;
-    }
-
-    setIsSavedDraftsRefreshPending(true);
-    savedDraftsRefreshDelayTimerRef.current = setTimeout(() => {
-      setShouldShowSavedDraftsRefreshLoading(true);
-      savedDraftsRefreshDelayTimerRef.current = null;
-    }, LOADING_FEEDBACK_DELAY_MS);
-
-    try {
-      await refetchLocalDrafts();
-    } finally {
-      if (savedDraftsRefreshDelayTimerRef.current) {
-        clearTimeout(savedDraftsRefreshDelayTimerRef.current);
-        savedDraftsRefreshDelayTimerRef.current = null;
-      }
-      setShouldShowSavedDraftsRefreshLoading(false);
-      setIsSavedDraftsRefreshPending(false);
-    }
-  }, [isSavedDraftsRefreshPending, refetchLocalDrafts]);
+  const localDrafts = savedDraftsModal.drafts;
+  const openSavedDrafts = savedDraftsModal.open;
+  const refetchLocalDrafts = savedDraftsModal.refetch;
+  const savedDraftsModalIsLoading = savedDraftsModal.isLoading;
 
   const openFilePicker = useCallback(() => {
     fileInputRef.current?.click();
@@ -523,58 +446,6 @@ export function CloudImportInline({
     if (!localImport.currentDraftId) return;
     void refetchLocalDrafts();
   }, [localImport.currentDraftId, refetchLocalDrafts]);
-
-  const openLocalDraft = useCallback(
-    async (draftId: string) => {
-      await localImport.restoreDraftById(draftId);
-      setShowSavedDraftsModal(false);
-      void refetchLocalDrafts();
-    },
-    [localImport, refetchLocalDrafts]
-  );
-
-  const discardDraftFromList = useCallback(
-    async (draftId: string) => {
-      if (deletingDraftIds.includes(draftId)) {
-        return;
-      }
-
-      setDeletingDraftIds((prev) => [...prev, draftId]);
-      const delayTimer = setTimeout(() => {
-        setVisibleDeletingDraftIds((prev) =>
-          prev.includes(draftId) ? prev : [...prev, draftId]
-        );
-        deletingDraftDelayTimersRef.current.delete(draftId);
-      }, LOADING_FEEDBACK_DELAY_MS);
-      deletingDraftDelayTimersRef.current.set(draftId, delayTimer);
-
-      try {
-        if (localImport.currentDraftId === draftId) {
-          await localImport.discardDraft?.();
-        } else {
-          await deleteImportDraft(resolveApiHrefForCurrentPath, draftId).catch(
-            () => {
-              // 목록 새로고침으로 상태를 다시 맞춘다.
-            }
-          );
-        }
-
-        onDraftDiscarded?.();
-        void refetchLocalDrafts();
-      } finally {
-        const pendingTimer = deletingDraftDelayTimersRef.current.get(draftId);
-        if (pendingTimer) {
-          clearTimeout(pendingTimer);
-          deletingDraftDelayTimersRef.current.delete(draftId);
-        }
-        setDeletingDraftIds((prev) => prev.filter((id) => id !== draftId));
-        setVisibleDeletingDraftIds((prev) =>
-          prev.filter((id) => id !== draftId)
-        );
-      }
-    },
-    [deletingDraftIds, localImport, onDraftDiscarded, refetchLocalDrafts]
-  );
 
   const switchProvider = (p: CloudProvider) => {
     if (p === activeProvider) return;
@@ -837,12 +708,12 @@ export function CloudImportInline({
             </div>
           ) : null}
 
-          {showSavedDraftsModal && (
+          {savedDraftsModal.isOpen && (
             <div
               className="absolute inset-0 z-40 flex items-start justify-center bg-[rgba(0,0,0,0.56)] p-4 md:p-6"
               onClick={(event) => {
                 if (event.target === event.currentTarget) {
-                  setShowSavedDraftsModal(false);
+                  savedDraftsModal.close();
                 }
               }}
             >
@@ -862,18 +733,18 @@ export function CloudImportInline({
                       type="button"
                       className="shrink-0 rounded-[6px] border border-border bg-transparent px-2.5 py-1 text-[12px] font-medium text-text-secondary transition-colors hover:bg-surface-3 hover:text-text disabled:cursor-wait disabled:opacity-70 disabled:hover:bg-transparent disabled:hover:text-text-secondary"
                       onClick={() => {
-                        void refreshSavedDrafts();
+                        void savedDraftsModal.refresh();
                       }}
-                      disabled={isSavedDraftsRefreshPending}
+                      disabled={savedDraftsModal.isRefreshPending}
                     >
-                      {shouldShowSavedDraftsRefreshLoading
+                      {savedDraftsModal.shouldShowRefreshLoading
                         ? "새로고침 중..."
                         : "새로고침"}
                     </button>
                     <button
                       type="button"
                       className="flex h-8 w-8 items-center justify-center rounded-lg border border-transparent bg-transparent text-text-dim transition-colors hover:border-border hover:bg-surface-3 hover:text-text"
-                      onClick={() => setShowSavedDraftsModal(false)}
+                      onClick={() => savedDraftsModal.close()}
                       aria-label="저장된 가져오기 작업 닫기"
                     >
                       <X size={16} />
@@ -882,22 +753,23 @@ export function CloudImportInline({
                 </div>
 
                 <div className="min-h-0 overflow-y-auto px-5 py-4">
-                  {localDraftsLoading ? (
+                  {savedDraftsModalIsLoading ? (
                     <div className="rounded-lg border border-border bg-surface px-3 py-3 text-[12px] text-text-dim">
                       가져오기 작업을 불러오는 중...
                     </div>
-                  ) : localDraftsError ? (
+                  ) : savedDraftsModal.errorMessage ? (
                     <div className="rounded-lg border border-red/20 bg-red/10 px-3 py-3 text-[12px] text-red">
-                      {localDraftsError}
+                      {savedDraftsModal.errorMessage}
                     </div>
                   ) : localDrafts.length > 0 ? (
                     <div className="grid gap-3">
                       {localDrafts.map((draft) => {
-                        const isDeletingDraft = deletingDraftIds.includes(
-                          draft.id
-                        );
+                        const isDeletingDraft =
+                          savedDraftsModal.deletingDraftIds.includes(draft.id);
                         const shouldShowDeletingDraftLoading =
-                          visibleDeletingDraftIds.includes(draft.id);
+                          savedDraftsModal.visibleDeletingDraftIds.includes(
+                            draft.id
+                          );
 
                         return (
                           <div
@@ -941,7 +813,7 @@ export function CloudImportInline({
                                     type="button"
                                     className="inline-flex min-h-9 items-center gap-1.5 rounded-xl bg-accent px-3.5 py-2 text-[12px] font-semibold text-white shadow-[0_10px_24px_rgba(232,99,10,0.22)] transition-[opacity,box-shadow,background-color] duration-150 hover:bg-[var(--accent-hover)] hover:opacity-100 hover:shadow-[0_14px_28px_rgba(232,99,10,0.28)]"
                                     onClick={() => {
-                                      void openLocalDraft(draft.id);
+                                      void savedDraftsModal.openDraft(draft.id);
                                     }}
                                   >
                                     <RotateCcw size={12} />
@@ -951,7 +823,9 @@ export function CloudImportInline({
                                     type="button"
                                     className="inline-flex min-h-9 items-center gap-1.5 rounded-xl border border-border bg-surface-2/70 px-3.5 py-2 text-[12px] font-medium text-text-secondary transition-[background-color,border-color,color,opacity] duration-150 hover:border-border-light hover:bg-surface-3 hover:text-text disabled:cursor-wait disabled:opacity-70 disabled:hover:border-border disabled:hover:bg-surface-2/70 disabled:hover:text-text-secondary"
                                     onClick={() => {
-                                      void discardDraftFromList(draft.id);
+                                      void savedDraftsModal.discardDraft(
+                                        draft.id
+                                      );
                                     }}
                                     disabled={isDeletingDraft}
                                   >

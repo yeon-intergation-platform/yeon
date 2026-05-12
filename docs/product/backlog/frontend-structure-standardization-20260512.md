@@ -304,3 +304,28 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 14차: cloud-import saved drafts 상태 hook 분리
+
+### 작업내용
+
+- `cloud-import-inline.tsx`에 남아 있는 저장된 가져오기 작업 모달의 query/refetch/delete/timer 상태를 전용 hook으로 분리한다.
+- `use-saved-import-drafts-modal.ts`가 draft 목록 조회, 수동 새로고침 지연 로딩, 삭제 지연 로딩, draft 열기/삭제 액션을 소유하게 한다.
+- `cloud-import-inline.tsx`는 entry controls와 모달 렌더링만 담당하게 하여 God component 책임을 줄인다.
+
+### 논의 필요
+
+- 저장된 draft 모달 JSX까지 별도 presentational component로 즉시 이동할지 여부.
+
+### 선택지
+
+1. 이번 차수는 상태/액션 hook만 분리하고 JSX 분리는 후속 PR로 둔다.
+2. hook과 함께 `SavedImportDraftsModal` 컴포넌트까지 즉시 분리한다.
+
+### 추천
+
+- 1번. 상태 전이와 JSX 이동을 한 번에 하면 회귀 지점이 커지므로 먼저 상태 소유권을 분리한다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.
