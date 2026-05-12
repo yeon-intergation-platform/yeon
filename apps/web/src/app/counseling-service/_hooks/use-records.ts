@@ -6,11 +6,7 @@ import type {
   CounselingRecordListItem,
   CounselingRecordDetail,
 } from "@yeon/api-contract/counseling-records";
-import type {
-  RecordItem,
-  CounselingWorkspaceViewState,
-  AiMessage,
-} from "../_lib/types";
+import type { RecordItem, AiMessage } from "../_lib/types";
 import { getProcessingChecklistStep } from "../_lib/processing-progress";
 import {
   clearCounselingRecordChat,
@@ -19,10 +15,10 @@ import {
 } from "@/features/counseling-record-workspace/api/counseling-records-api";
 import { counselingWorkspaceQueryKeys } from "@/features/counseling-record-workspace/api/counseling-workspace-query-keys";
 import { useCounselingRecordLocalState } from "@/features/counseling-record-workspace/hooks/use-counseling-record-local-state";
+import { useCounselingRecordsViewState } from "@/features/counseling-record-workspace/hooks/use-counseling-records-view-state";
 import { useMergedRecords } from "./use-merged-records";
 import {
   detailToRecordPatch,
-  isPartialTranscriptReady,
   needsBackgroundPolling,
 } from "../_lib/record-state-adapters";
 
@@ -242,17 +238,13 @@ export function useRecords(selectedRecordId: string | null) {
   );
 
   // viewState — isRecording은 명시 상태, processing은 selected에서 파생
-  const viewState = useMemo((): CounselingWorkspaceViewState => {
-    if (isRecording) return { kind: "recording" };
-    if (isPending) return { kind: "loading" };
-    if (records.length === 0) return { kind: "empty" };
-    if (
-      selected?.status === "processing" &&
-      !isPartialTranscriptReady(selected)
-    )
-      return { kind: "processing", step: processingStep };
-    return { kind: "ready", records };
-  }, [isRecording, processingStep, isPending, records, selected]);
+  const viewState = useCounselingRecordsViewState({
+    isRecording,
+    isPending,
+    records,
+    selected,
+    processingStep,
+  });
 
   const startRecording = useCallback(() => {
     setIsRecording(true);
