@@ -2364,3 +2364,28 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 95차 — 카드방 참여자/학습 panel view 분리
+
+### 작업내용
+
+- `card-room-screen.tsx`에 남은 참여자 panel과 카드 진행 panel JSX를 별도 view 파일로 분리한다.
+- `card-room-screen.tsx`는 입장, realtime connection, 현재 참여자/카드 파생, 모바일 탭 orchestration 중심으로 줄인다.
+- 참여자 표시, 정답 공개, OK/포기, 다음 카드 동작은 변경하지 않는다.
+
+### 논의 필요
+
+- 모바일 탭 UI까지 별도 컴포넌트로 분리할지 여부.
+
+### 선택지
+
+1. 이번 차수는 참여자/학습 panel만 분리하고 모바일 탭은 container에 유지한다.
+2. 모바일 탭까지 별도 view로 분리한다.
+
+### 추천
+
+- 1번. 모바일 탭은 container의 `mobileTab` 상태와 직접 맞물리므로 먼저 도메인 panel view만 분리한다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.
