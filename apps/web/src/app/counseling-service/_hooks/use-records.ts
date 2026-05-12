@@ -16,8 +16,8 @@ import { getProcessingChecklistStep } from "../_lib/processing-progress";
 import {
   counselingWorkspaceFetchJson,
   counselingWorkspaceFetchVoid,
-} from "./counseling-workspace-fetch";
-import { counselingWorkspaceQueryKeys } from "./counseling-workspace-query-keys";
+} from "@/features/counseling-record-workspace/api/counseling-workspace-fetch";
+import { counselingWorkspaceQueryKeys } from "@/features/counseling-record-workspace/api/counseling-workspace-query-keys";
 import { resolveApiHrefForCurrentPath } from "@/lib/app-route-paths";
 import { useMergedRecords } from "./use-merged-records";
 import {

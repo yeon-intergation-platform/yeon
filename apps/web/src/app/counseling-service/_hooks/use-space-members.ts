@@ -2,8 +2,8 @@
 
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { counselingWorkspaceFetchJsonOr } from "./counseling-workspace-fetch";
-import { counselingWorkspaceQueryKeys } from "./counseling-workspace-query-keys";
+import { counselingWorkspaceFetchJsonOr } from "@/features/counseling-record-workspace/api/counseling-workspace-fetch";
+import { counselingWorkspaceQueryKeys } from "@/features/counseling-record-workspace/api/counseling-workspace-query-keys";
 import { resolveApiHrefForCurrentPath } from "@/lib/app-route-paths";
 import type { RecordItem } from "../_lib/types";
 
