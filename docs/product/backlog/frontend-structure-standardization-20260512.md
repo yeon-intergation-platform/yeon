@@ -354,3 +354,28 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 16차: quick memo fetch boundary 정리
+
+### 작업내용
+
+- `app/counseling-service/_components/quick-memo-modal.tsx`에 남아 있는 직접 `fetch()` 호출을 제거한다.
+- 텍스트 메모 저장 요청은 기존 `counselingWorkspaceFetchJson` wrapper를 사용해 credentials/error parsing 정책을 통일한다.
+- 메모 입력/저장 UI와 `RecordItem` 변환 흐름은 유지한다.
+
+### 논의 필요
+
+- `RecordItem` 변환 로직까지 별도 adapter로 즉시 분리할지 여부.
+
+### 선택지
+
+1. 이번 차수는 네트워크 boundary만 닫고 변환 adapter 분리는 후속 `useRecords` 정리와 묶는다.
+2. 메모 저장 응답 변환까지 `quick-memo-adapter.ts`로 즉시 분리한다.
+
+### 추천
+
+- 1번. 직접 fetch 제거 범위를 작게 유지하고, record 변환 SSOT는 후속 상담 기록 상태 정리에서 함께 다룬다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.
