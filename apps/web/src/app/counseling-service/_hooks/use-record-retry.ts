@@ -1,5 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { buildCounselingClientRequestId } from "../_lib/client-request-id";
+import { resolveApiHrefForCurrentPath } from "@/lib/app-route-paths";
+import {
+  counselingWorkspaceFetchJson,
+  counselingWorkspaceFetchVoid,
+} from "./counseling-workspace-fetch";
 import type { CounselingRecordDetail } from "@yeon/api-contract/counseling-records";
 import type { RecordItem } from "../_lib/types";
 
@@ -23,23 +28,6 @@ function canRetryTranscription(selected: RecordItem | null) {
       (selected.status === "processing" &&
         selected.processingStage === "partial_transcript_ready"))
   );
-}
-
-async function readErrorMessage(res: Response, fallbackMessage: string) {
-  const contentType = res.headers.get("content-type") ?? "";
-
-  if (contentType.includes("application/json")) {
-    const data = (await res.json().catch(() => null)) as {
-      message?: string;
-    } | null;
-
-    if (typeof data?.message === "string" && data.message.trim()) {
-      return data.message;
-    }
-  }
-
-  const text = await res.text().catch(() => "");
-  return text || fallbackMessage;
 }
 
 export function useRecordRetry({
@@ -78,26 +66,20 @@ export function useRecordRetry({
     setRetryFailedRecordPending(true);
     setRetryFeedback({ message: null, tone: "idle" });
     try {
-      const res = await fetch(
-        `/api/v1/counseling-records/${currentRecord.id}/transcribe`,
+      const data = await counselingWorkspaceFetchJson<{
+        record: CounselingRecordDetail;
+      }>(
+        resolveApiHrefForCurrentPath(
+          `/api/v1/counseling-records/${currentRecord.id}/transcribe`
+        ),
         {
           method: "POST",
           headers: {
             "X-Client-Request-Id": buildCounselingClientRequestId(),
           },
         },
+        "과거 실패 기록 재분석을 다시 시작하지 못했습니다."
       );
-
-      if (!res.ok) {
-        throw new Error(
-          await readErrorMessage(
-            res,
-            "과거 실패 기록 재분석을 다시 시작하지 못했습니다.",
-          ),
-        );
-      }
-
-      const data = (await res.json()) as { record: CounselingRecordDetail };
       applyRecordDetail(data.record);
       boostPolling();
       setRetryFeedback({
@@ -132,21 +114,18 @@ export function useRecordRetry({
     setRetryFailedAnalysisPending(true);
     setRetryFeedback({ message: null, tone: "idle" });
     try {
-      const res = await fetch(
-        `/api/v1/counseling-records/${selected.id}/analyze`,
+      await counselingWorkspaceFetchVoid(
+        resolveApiHrefForCurrentPath(
+          `/api/v1/counseling-records/${selected.id}/analyze`
+        ),
         {
           method: "POST",
           headers: {
             "X-Client-Request-Id": buildCounselingClientRequestId(),
           },
         },
+        "AI 분석을 다시 시작하지 못했습니다."
       );
-
-      if (!res.ok) {
-        throw new Error(
-          await readErrorMessage(res, "AI 분석을 다시 시작하지 못했습니다."),
-        );
-      }
 
       markAnalysisRetryStart(selected.id);
       boostPolling();
@@ -182,6 +161,6 @@ export function useRecordRetry({
       retryFailedRecord,
       retryFailedAnalysis,
     }),
-    [retryFailedAnalysis, retryFailedRecord, retryFeedback, retryPending],
+    [retryFailedAnalysis, retryFailedRecord, retryFeedback, retryPending]
   );
 }
