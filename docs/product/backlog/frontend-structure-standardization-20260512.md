@@ -857,3 +857,28 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 36차: counseling records local state hook 분리
+
+### 작업내용
+
+- `use-records`에 남아 있는 `localOverrides`/`tempRecords` 조작 로직을 `features/counseling-record-workspace/hooks`의 전용 local state hook으로 분리한다.
+- `use-records`는 서버 query, 상세 fetch, polling, viewState 조립에 집중하게 한다.
+- 업로드 실패, 메시지 갱신, 분석 재시작, 수강생 연결 변경, 상세 patch 적용 동작은 유지한다.
+
+### 논의 필요
+
+- `use-records` 전체를 feature hook으로 즉시 이동할지 여부.
+
+### 선택지
+
+1. local override/temp record reducer 성격만 먼저 feature hook으로 이동하고 전체 hook 이동은 다음 차수로 남긴다.
+2. `use-records` 전체를 feature hook으로 이동한다.
+
+### 추천
+
+- 1번. 현재 훅은 route type과 viewState가 얽혀 있어 한 번에 이동하면 회귀 범위가 크다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.
