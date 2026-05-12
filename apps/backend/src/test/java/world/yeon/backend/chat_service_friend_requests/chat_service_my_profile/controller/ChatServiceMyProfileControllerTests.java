@@ -1,4 +1,4 @@
-package world.yeon.backend.chat_service_my_profile.controller;
+package world.yeon.backend.chat_service_friend_requests.chat_service_my_profile.controller;
 
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
@@ -15,6 +15,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import world.yeon.backend.chat_service_my_profile.controller.ChatServiceMyProfileController;
 import world.yeon.backend.chat_service_my_profile.dto.*;
 import world.yeon.backend.chat_service_my_profile.service.ChatServiceMyProfileService;
 import world.yeon.backend.chat_service_my_profile.service.ChatServiceMyProfileServiceException;
