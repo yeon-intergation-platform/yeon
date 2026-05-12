@@ -1,0 +1,5 @@
+package world.yeon.backend.counseling_record_mutation.dto;
+
+import world.yeon.backend.counseling_record_details.dto.CounselingRecordTranscriptSegmentResponse;
+
+public record UpdateTranscriptSegmentResponse(CounselingRecordTranscriptSegmentResponse segment) {}

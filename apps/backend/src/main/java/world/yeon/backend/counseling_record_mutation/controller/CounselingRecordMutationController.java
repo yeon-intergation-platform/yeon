@@ -10,8 +10,12 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
+import world.yeon.backend.counseling_record_mutation.dto.BulkUpdateSpeakerRequest;
+import world.yeon.backend.counseling_record_mutation.dto.BulkUpdateSpeakerResponse;
 import world.yeon.backend.counseling_record_mutation.dto.LinkCounselingRecordRequest;
 import world.yeon.backend.counseling_record_mutation.dto.MutationOkResponse;
+import world.yeon.backend.counseling_record_mutation.dto.UpdateTranscriptSegmentRequest;
+import world.yeon.backend.counseling_record_mutation.dto.UpdateTranscriptSegmentResponse;
 import world.yeon.backend.counseling_record_mutation.service.CounselingRecordMutationService;
 import world.yeon.backend.counseling_record_mutation.service.CounselingRecordMutationServiceException;
 
@@ -38,6 +42,34 @@ public class CounselingRecordMutationController {
 		@PathVariable String recordId
 	) {
 		return service.deleteRecord(userId, recordId);
+	}
+
+	@PatchMapping("/counseling-records/{recordId}/segments/{segmentId}")
+	public UpdateTranscriptSegmentResponse updateSegment(
+		@RequestHeader("X-Yeon-User-Id") UUID userId,
+		@PathVariable String recordId,
+		@PathVariable String segmentId,
+		@RequestBody UpdateTranscriptSegmentRequest request
+	) {
+		return service.updateSegment(userId, recordId, segmentId, request);
+	}
+
+	@PatchMapping("/counseling-records/{recordId}/segments/bulk")
+	public BulkUpdateSpeakerResponse bulkUpdateSpeaker(
+		@RequestHeader("X-Yeon-User-Id") UUID userId,
+		@PathVariable String recordId,
+		@RequestBody BulkUpdateSpeakerRequest request
+	) {
+		if (request == null) {
+			throw new IllegalArgumentException("요청 본문이 필요합니다.");
+		}
+		return service.bulkUpdateSpeaker(
+			userId,
+			recordId,
+			request.fromSpeakerLabel(),
+			request.toSpeakerLabel(),
+			request.toSpeakerTone()
+		);
 	}
 
 	@ExceptionHandler(CounselingRecordMutationServiceException.class)

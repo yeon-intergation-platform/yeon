@@ -5,7 +5,10 @@ import {
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
-import { updateTranscriptSegment } from "@/server/services/counseling-records-service";
+import {
+  CounselingRecordMutationSpringBackendHttpError,
+  updateTranscriptSegmentInSpring,
+} from "@/server/counseling-record-mutation-spring-client";
 import { ServiceError } from "@/server/services/service-error";
 
 import { jsonError, requireAuthenticatedUser } from "../../../_shared";
@@ -43,16 +46,19 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
   }
 
   try {
-    const segment = await updateTranscriptSegment(
+    const result = await updateTranscriptSegmentInSpring(
       currentUser.id,
       recordId,
       segmentId,
-      parsed.data,
+      parsed.data
     );
 
-    return NextResponse.json(updateSegmentResponseSchema.parse({ segment }));
+    return NextResponse.json(updateSegmentResponseSchema.parse(result));
   } catch (error) {
-    if (error instanceof ServiceError) {
+    if (
+      error instanceof ServiceError ||
+      error instanceof CounselingRecordMutationSpringBackendHttpError
+    ) {
       return jsonError(error.message, error.status);
     }
 
