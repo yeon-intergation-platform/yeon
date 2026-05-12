@@ -2,13 +2,13 @@
 
 import { Suspense, useCallback, useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { useSpaceSidebarActions } from "./_hooks/use-space-sidebar-actions";
 import { useSpaceSidebarSelection } from "./_hooks/use-space-sidebar-selection";
 import { StudentManagementProvider } from "@/features/student-management";
-import { studentManagementFetchJson } from "@/features/student-management/hooks/student-management-fetch";
 import { studentManagementQueryKeys } from "@/features/student-management/hooks/student-management-query-keys";
 import { useStudentManagement } from "@/features/student-management/student-management-provider";
+import { useStudentManagementLocalDrafts } from "@/features/student-management/hooks/use-student-management-local-drafts";
 import { OAuthResultToast } from "@/features/student-management/components/oauth-result-toast";
 import { StudentSpaceCreateModal } from "@/features/student-management/components/space-create-modal";
 import { CounselingSpaceGate } from "@/features/counseling-service-shell/counseling-space-gate";
@@ -22,7 +22,6 @@ import {
   SpaceSettingsDrawerHost,
   useSpaceSettingsDrawer,
 } from "@/features/space-settings";
-import type { LocalImportDraftSummary } from "./_lib/space-sidebar-types";
 import { getStudentManagementLayoutUiPolicy } from "./_lib/student-management-layout-ui-policy";
 import {
   StudentManagementDeleteSpaceDialog,
@@ -50,8 +49,7 @@ function SidebarContent({ children }: { children: React.ReactNode }) {
   const queryClient = useQueryClient();
   const router = useRouter();
   const pathname = usePathname();
-  const { normalizeAppPathname, resolveApiHref, resolveAppHref } =
-    useAppRoute();
+  const { normalizeAppPathname, resolveAppHref } = useAppRoute();
   const normalizedPathname = normalizeAppPathname(pathname);
 
   const noSpaces = !spacesLoading && spaces.length === 0;
@@ -128,21 +126,11 @@ function SidebarContent({ children }: { children: React.ReactNode }) {
     !!contextMenu
   );
   const {
-    data: localDraftsData,
-    isPending: localDraftsLoading,
-    error: localDraftsQueryError,
-    refetch: refetchLocalDrafts,
-  } = useQuery({
-    queryKey: studentManagementQueryKeys.localImportDrafts(),
-    queryFn: () =>
-      studentManagementFetchJson<{ drafts: LocalImportDraftSummary[] }>(
-        resolveApiHref("/api/v1/integrations/local/drafts?limit=100"),
-        { method: "GET" },
-        "임시 가져오기 초안을 불러오지 못했습니다."
-      ),
-  });
-  const localDrafts = localDraftsData?.drafts ?? [];
-  const localDraftCount = localDrafts.length;
+    localDraftCount,
+    localDraftsLoading,
+    localDraftsError,
+    refetchLocalDrafts,
+  } = useStudentManagementLocalDrafts();
   const { openSpaceSettings } = useSpaceSettingsDrawer();
   const handleCreateModalRouteStateChange = useCallback(
     ({
@@ -160,13 +148,6 @@ function SidebarContent({ children }: { children: React.ReactNode }) {
     },
     [updateCreateModalRouteState]
   );
-  const localDraftsError =
-    localDraftsQueryError instanceof Error
-      ? localDraftsQueryError.message
-      : localDraftsQueryError
-        ? "임시 가져오기 초안을 불러오지 못했습니다."
-        : null;
-
   useEffect(() => {
     setMobileSpaceDrawerOpen(false);
   }, [pathname, selectedSpaceId]);

@@ -1782,3 +1782,28 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 72차 — student management local drafts query hook 분리
+
+### 작업내용
+
+- `student-management/layout.tsx` 내부의 local import drafts React Query 호출을 feature hook으로 이동한다.
+- layout은 hook 결과만 받아 sidebar/modal에 전달하고, API href/query key/fetch wrapper 조립은 feature layer가 소유하게 한다.
+- 기존 local draft count, loading, error, refetch 동작은 유지한다.
+
+### 논의 필요
+
+- student-management app `_lib`에 남은 sidebar type 전체를 feature로 이동할지 여부.
+
+### 선택지
+
+1. 이번 차수는 local drafts query hook만 분리하고 sidebar type 이동은 후속으로 둔다.
+2. sidebar type과 action hook까지 한 번에 feature로 이동한다.
+
+### 추천
+
+- 1번. layout 과밀도를 낮추되 route/sidebar 선택 상태 리스크는 분리한다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.
