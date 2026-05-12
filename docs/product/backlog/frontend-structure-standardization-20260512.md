@@ -2389,3 +2389,29 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 96차 — 타자방 대기 header/participants/chat view 분리
+
+### 작업내용
+
+- `typing-room-screen.tsx`에 남은 대기방 header, 참여자 panel, 채팅 panel JSX를 별도 feature view 파일로 분리한다.
+- `typing-room-screen.tsx`는 방 생성/입장, seed 준비, realtime room orchestration, 설정 변경, 라우팅/퇴장 처리 중심으로 줄인다.
+- 방 설정 panel은 seed/덱/host 권한 변경 props가 커서 다음 차수 후보로 남기고, 이번 차수는 독립성이 높은 표시/입력 view부터 분리한다.
+- 초대/준비/시작/채팅 전송 동작과 UI 문구는 변경하지 않는다.
+
+### 논의 필요
+
+- 방 설정 panel까지 같은 차수에서 분리할지 여부.
+
+### 선택지
+
+1. 이번 차수는 header/participants/chat view만 분리한다.
+2. 방 설정 panel까지 한 번에 분리한다.
+
+### 추천
+
+- 1번. 방 설정 panel은 덱 seed 재계산과 room setting payload가 강하게 결합되어 있어 별도 차수에서 타입 경계를 잡는 편이 안전하다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.

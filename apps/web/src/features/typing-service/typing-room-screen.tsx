@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ChangeEvent, MouseEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, Crown, Play, Send } from "lucide-react";
 import {
   TYPING_ROOM_DIFFICULTY,
   TYPING_ROOM_LANGUAGE,
@@ -19,14 +18,15 @@ import {
   type TypingRoomVisibility,
   type RoomSettingsUpdateMessage,
 } from "@yeon/race-shared";
-import { CharacterSprite } from "./character-sprite";
-import { findCharacter } from "./characters";
 import { useCharacterFrameOverrides } from "./use-character-frame-overrides";
 import { usePlayerIdentity } from "./use-player-identity";
 import { useRaceRoom } from "./use-race-room";
 import { useTypingProfile } from "./use-typing-profile";
 import { TypingRaceMultiplayerScreen } from "./typing-race-multiplayer-screen";
 import { TypingServiceHeader } from "./typing-service-header";
+import { TypingRoomChatPanel } from "./typing-room-chat-panel";
+import { TypingRoomParticipantsPanel } from "./typing-room-participants-panel";
+import { TypingRoomWaitingHeader } from "./typing-room-waiting-header";
 import {
   TYPING_ROOM_DIFFICULTY_LABELS,
   TYPING_ROOM_LANGUAGE_LABELS,
@@ -377,6 +377,17 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
     chatDraft.length <= MAX_LOBBY_CHAT_LENGTH
   );
 
+  const onChatDraftChange = useCallback((value: string) => {
+    setChatDraft(value);
+    if (value.length > MAX_LOBBY_CHAT_LENGTH) {
+      setChatError(
+        `채팅은 최대 ${MAX_LOBBY_CHAT_LENGTH}자까지 보낼 수 있어요.`
+      );
+      return;
+    }
+    setChatError(null);
+  }, []);
+
   const onChatSubmit = useCallback(() => {
     if (!chatDraft.trim()) {
       return;
@@ -556,7 +567,6 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
   }, [room?.maxParticipants, room?.participants]);
 
   const messages = useMemo(() => room?.messages ?? [], [room?.messages]);
-  const hasMessages = messages.length > 0;
   const waitingStateLabel =
     room?.status === TYPING_ROOM_STATUS.WAITING ? "대기중" : room?.status;
 
@@ -612,142 +622,32 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
       onClickCapture={onRoomNavigationClickCapture}
     >
       <TypingServiceHeader active="rooms" title="타자방" />
-      {copyError && (
-        <p className="mx-4 mt-2 rounded-md border border-red-100 bg-red-50 p-2 text-[12px] text-red-600 md:mx-8">
-          {copyError}
-        </p>
-      )}
 
       <main className="grid gap-3 px-4 py-3 md:px-8 md:py-4">
-        <button
-          type="button"
-          onClick={onLeaveRoom}
-          disabled={isLeavingRoom}
-          className="inline-flex w-fit items-center gap-2 text-[13px] font-semibold text-[#666] no-underline transition-colors hover:text-[#111]"
-        >
-          <ArrowLeft size={15} />
-          {isLeavingRoom ? "나가는 중..." : "타자방 나가기"}
-        </button>
-
-        <header className="rounded-2xl border border-[#e5e5e5] bg-white p-3 md:p-4">
-          <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(280px,420px)]">
-            <div>
-              <p className="text-[12px] font-semibold text-[#666]">
-                {waitingStateLabel} ·{" "}
-                {TYPING_ROOM_VISIBILITY_LABELS[room.visibility]} ·{" "}
-                {room.currentParticipants}/{room.maxParticipants}
-              </p>
-              <h1 className="mt-1 text-[22px] font-semibold tracking-[-0.03em] md:text-[26px]">
-                {room.title}
-              </h1>
-              <p className="mt-1 text-[12px] text-[#666]">{room.roomCode}</p>
-            </div>
-            <div className="flex h-full flex-col items-start justify-end gap-3 lg:items-end lg:text-right">
-              <p className="text-[12px] font-semibold text-[#666]">
-                참여자 {room.currentParticipants} / {room.maxParticipants}
-              </p>
-              <p className="max-w-[420px] text-[12px] leading-5 text-[#666]">
-                {roomSummary}
-              </p>
-
-              {race.roomError && (
-                <div className="rounded-lg border border-red-100 bg-red-50 px-4 py-2 text-[12px] text-red-600">
-                  {race.roomError}
-                </div>
-              )}
-
-              <div className="flex flex-wrap gap-2 lg:justify-end">
-                <button
-                  type="button"
-                  onClick={copyInvite}
-                  className="rounded-xl border border-[#e5e5e5] px-3 py-2 text-[12px] font-semibold text-[#111] transition-colors hover:border-[#111] hover:bg-[#fafafa]"
-                >
-                  {copied ? "초대 링크 복사됨" : "초대"}
-                </button>
-                {isHost ? (
-                  <button
-                    type="button"
-                    onClick={onStart}
-                    disabled={!room.canStart}
-                    className="inline-flex items-center gap-2 rounded-xl bg-[#111] px-4 py-2 text-[13px] font-semibold text-white transition-colors hover:bg-[#333] disabled:cursor-not-allowed disabled:bg-[#f1f1f1] disabled:text-[#aaa]"
-                  >
-                    <Play size={14} />
-                    시작하기
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => race.sendReady(!isReady)}
-                    className={`rounded-xl px-4 py-2 text-[13px] font-semibold transition-colors ${
-                      isReady
-                        ? "border border-[#e5e5e5] bg-[#fafafa] text-[#666] hover:border-[#ddd]"
-                        : "bg-[#111] text-white hover:bg-[#333]"
-                    }`}
-                  >
-                    {isReady ? "준비 취소" : "준비하기"}
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
-        </header>
+        <TypingRoomWaitingHeader
+          room={room}
+          roomSummary={roomSummary}
+          waitingStateLabel={waitingStateLabel ?? "대기중"}
+          copyError={copyError}
+          copied={copied}
+          isHost={isHost}
+          isReady={isReady}
+          isLeavingRoom={isLeavingRoom}
+          roomError={race.roomError}
+          onLeaveRoom={onLeaveRoom}
+          onCopyInvite={copyInvite}
+          onStart={onStart}
+          onToggleReady={() => race.sendReady(!isReady)}
+        />
 
         <section className="grid gap-3 xl:grid-cols-[minmax(260px,320px)_minmax(360px,420px)_minmax(0,1fr)] xl:items-start">
           <div className="contents">
-            <section className="rounded-2xl border border-[#e5e5e5] bg-white p-3 xl:order-2">
-              <h2 className="mb-3 text-[14px] font-bold">참여자</h2>
-              <div className="grid grid-cols-2 gap-3">
-                {participants.map((participant, index) => {
-                  const character = participant
-                    ? findCharacter(participant.characterId)
-                    : null;
-
-                  return (
-                    <div
-                      key={participant?.id ?? `empty-${index}`}
-                      className="min-h-[148px] rounded-2xl border border-[#e5e5e5] bg-[#fafafa] p-2.5"
-                    >
-                      {participant && character ? (
-                        <div className="flex h-full flex-col justify-between gap-2">
-                          <div className="flex items-center justify-between gap-2">
-                            <span
-                              className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${participant.isReady ? "border border-[#d9ead3] bg-[#eef8ea] text-[#2f7d32]" : "border border-[#e5e5e5] bg-white text-[#999]"}`}
-                            >
-                              {participant.isReady ? "준비완료" : "대기중"}
-                            </span>
-                            {participant.role === "host" ? (
-                              <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[#b7791f]">
-                                <Crown size={13} /> 방장
-                              </span>
-                            ) : null}
-                          </div>
-                          <div className="flex h-[72px] items-end justify-center overflow-hidden rounded-xl bg-white px-2 py-1">
-                            <CharacterSprite
-                              character={character}
-                              maxHeight={68}
-                              sequenceOverride={frameOverrides[character.id]}
-                            />
-                          </div>
-                          <div className="min-w-0 text-center">
-                            <p className="truncate text-[14px] font-semibold">
-                              {participant.label}
-                              {participant.id === me?.id ? " (나)" : ""}
-                            </p>
-                            <p className="mt-0.5 text-[11px] text-[#888]">
-                              {character.label[settings.locale]}
-                            </p>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="flex h-full min-h-[120px] items-center justify-center rounded-xl border border-dashed border-[#ddd] bg-white text-[13px] font-semibold text-[#aaa]">
-                          빈자리
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </section>
+            <TypingRoomParticipantsPanel
+              participants={participants}
+              myParticipantId={me?.id ?? null}
+              locale={settings.locale}
+              frameOverrides={frameOverrides}
+            />
 
             <section className="rounded-2xl border border-[#e5e5e5] bg-white p-3 xl:order-1">
               <h2 className="mb-3 text-[14px] font-bold">방 설정</h2>
@@ -968,67 +868,14 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
             </section>
           </div>
 
-          <section className="rounded-2xl border border-[#e5e5e5] bg-white p-3 xl:order-3">
-            <h2 className="mb-3 text-[14px] font-bold">채팅</h2>
-            <div className="h-[260px] overflow-y-auto rounded-xl border border-[#e5e5e5] bg-[#fafafa] p-3 md:h-[320px] xl:h-[300px]">
-              {!hasMessages && (
-                <p className="text-[12px] leading-5 text-[#aaa]">
-                  아직 메시지가 없습니다.
-                </p>
-              )}
-              {messages.map((message) => (
-                <div key={message.id} className="mb-2 text-[12px]">
-                  {message.messageType === "system" ? (
-                    <p className="text-[#999]">
-                      <span className="font-semibold">[시스템]</span>{" "}
-                      {message.content}
-                    </p>
-                  ) : (
-                    <p>
-                      <span className="font-semibold">
-                        {message.senderLabel ?? "참가자"}:
-                      </span>{" "}
-                      {message.content}
-                    </p>
-                  )}
-                </div>
-              ))}
-            </div>
-            <div className="mt-3 flex gap-2">
-              <input
-                value={chatDraft}
-                onChange={(event) => {
-                  setChatDraft(event.target.value);
-                  if (event.target.value.length > MAX_LOBBY_CHAT_LENGTH) {
-                    setChatError(
-                      `채팅은 최대 ${MAX_LOBBY_CHAT_LENGTH}자까지 보낼 수 있어요.`
-                    );
-                  } else {
-                    setChatError(null);
-                  }
-                }}
-                placeholder="메시지 입력"
-                className="h-9 flex-1 rounded-lg border border-[#d7d7d7] px-3 text-[13px]"
-                onKeyDown={(event) => {
-                  if (event.key === "Enter" && !event.shiftKey) {
-                    event.preventDefault();
-                    onChatSubmit();
-                  }
-                }}
-              />
-              <button
-                type="button"
-                onClick={onChatSubmit}
-                disabled={!canSendChat}
-                className="inline-flex shrink-0 items-center justify-center rounded-lg bg-[#111] px-3 text-[13px] font-semibold text-white transition-colors hover:bg-[#333] disabled:cursor-not-allowed disabled:bg-[#ddd] disabled:text-[#999]"
-              >
-                <Send size={14} />
-              </button>
-            </div>
-            {chatError && (
-              <p className="mt-2 text-[12px] text-[#d33]">{chatError}</p>
-            )}
-          </section>
+          <TypingRoomChatPanel
+            messages={messages}
+            chatDraft={chatDraft}
+            chatError={chatError}
+            canSendChat={canSendChat}
+            onChatDraftChange={onChatDraftChange}
+            onChatSubmit={onChatSubmit}
+          />
         </section>
       </main>
     </div>
