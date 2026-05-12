@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { renderHook, act, waitFor } from "@testing-library/react";
-import { useRecordRetry } from "../use-record-retry";
+import { useRecordRetry } from "@/features/counseling-record-workspace/hooks/use-record-retry";
 import type { RecordItem } from "../../_lib/types";
 
 function makeSelectedRecord(overrides: Partial<RecordItem> = {}): RecordItem {
@@ -57,8 +57,8 @@ describe("useRecordRetry", () => {
         {
           status: 200,
           headers: { "Content-Type": "application/json" },
-        },
-      ),
+        }
+      )
     );
 
     const { result } = renderHook(() =>
@@ -68,7 +68,7 @@ describe("useRecordRetry", () => {
         boostPolling,
         markAnalysisRetryStart,
         selectRecord,
-      }),
+      })
     );
 
     await act(async () => {
@@ -90,7 +90,7 @@ describe("useRecordRetry", () => {
       new Response("", {
         status: 200,
         headers: { "Content-Type": "application/json" },
-      }),
+      })
     );
 
     const { result } = renderHook(() =>
@@ -104,7 +104,7 @@ describe("useRecordRetry", () => {
         boostPolling,
         markAnalysisRetryStart,
         selectRecord,
-      }),
+      })
     );
 
     await act(async () => {
@@ -126,7 +126,7 @@ describe("useRecordRetry", () => {
       new Response(JSON.stringify({ message: "재시도 실패" }), {
         status: 500,
         headers: { "Content-Type": "application/json" },
-      }),
+      })
     );
 
     const { result } = renderHook(() =>
@@ -136,7 +136,7 @@ describe("useRecordRetry", () => {
         boostPolling,
         markAnalysisRetryStart,
         selectRecord,
-      }),
+      })
     );
 
     await act(async () => {
@@ -147,7 +147,7 @@ describe("useRecordRetry", () => {
       expect(result.current.retryFeedback).toEqual({
         message: "재시도 실패",
         tone: "error",
-      }),
+      })
     );
   });
 });

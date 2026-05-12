@@ -3,6 +3,7 @@ import type {
   CounselingRecordListItem,
 } from "@yeon/api-contract/counseling-records";
 import { resolveApiHrefForCurrentPath } from "@/lib/app-route-paths";
+import { buildCounselingClientRequestId } from "@/app/counseling-service/_lib/client-request-id";
 import {
   counselingWorkspaceFetchJson,
   counselingWorkspaceFetchVoid,
@@ -51,5 +52,35 @@ export function uploadCounselingRecordAudio(
       body: formData,
     },
     fallbackErrorMessage
+  );
+}
+
+export function retryCounselingRecordTranscription(recordId: string) {
+  return counselingWorkspaceFetchJson<CounselingRecordDetailResponse>(
+    resolveApiHrefForCurrentPath(
+      `/api/v1/counseling-records/${recordId}/transcribe`
+    ),
+    {
+      method: "POST",
+      headers: {
+        "X-Client-Request-Id": buildCounselingClientRequestId(),
+      },
+    },
+    "과거 실패 기록 재분석을 다시 시작하지 못했습니다."
+  );
+}
+
+export function retryCounselingRecordAnalysis(recordId: string) {
+  return counselingWorkspaceFetchVoid(
+    resolveApiHrefForCurrentPath(
+      `/api/v1/counseling-records/${recordId}/analyze`
+    ),
+    {
+      method: "POST",
+      headers: {
+        "X-Client-Request-Id": buildCounselingClientRequestId(),
+      },
+    },
+    "AI 분석을 다시 시작하지 못했습니다."
   );
 }

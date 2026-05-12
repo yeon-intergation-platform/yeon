@@ -11,6 +11,6 @@ export { useSpaceMembers } from "@/features/counseling-record-workspace/hooks/us
 export type { Space } from "@/features/counseling-record-workspace/hooks/use-current-space";
 export type { MemberWithStatus } from "@/features/counseling-record-workspace/hooks/use-space-members";
 
-export { useRecordRetry } from "./use-record-retry";
+export { useRecordRetry } from "@/features/counseling-record-workspace/hooks/use-record-retry";
 export { useWorkspaceSelection } from "@/features/counseling-record-workspace/hooks/use-workspace-selection";
 export { useRecordEntry } from "@/features/counseling-record-workspace/hooks/use-record-entry";

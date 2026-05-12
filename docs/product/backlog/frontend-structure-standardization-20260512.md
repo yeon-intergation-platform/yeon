@@ -957,3 +957,28 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 40차: counseling record retry hook feature 이동
+
+### 작업내용
+
+- `use-record-retry`를 `features/counseling-record-workspace/hooks`로 이동한다.
+- 전사 재시도/분석 재시도 POST 호출을 `counseling-records-api.ts` helper로 분리한다.
+- app `_hooks/index.ts`는 기존 사용처 호환 re-export만 유지한다.
+
+### 논의 필요
+
+- 재시도 hook의 `RecordItem` 타입 의존까지 이번 차수에 제거할지 여부.
+
+### 선택지
+
+1. hook/API boundary 이동을 먼저 하고 `RecordItem` 타입 이동은 후속 차수로 남긴다.
+2. 타입 이동까지 함께 한다.
+
+### 추천
+
+- 1번. `RecordItem`은 아직 app 컴포넌트 전반에 넓게 연결되어 있어 별도 차수에서 이동한다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.
