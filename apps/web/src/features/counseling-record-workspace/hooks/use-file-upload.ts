@@ -6,11 +6,11 @@ import {
   isAcceptedAudioFile,
   readAudioDurationMs,
 } from "@/lib/audio-file";
-import type { RecordItem } from "@/app/counseling-service/_lib/types";
+import type { RecordItem } from "@/features/counseling-record-workspace/lib/types";
 import {
   createTimestamp,
   fmtDurationMs,
-} from "@/app/counseling-service/_lib/utils";
+} from "@/features/counseling-record-workspace/lib/utils";
 import { uploadCounselingRecordAudio } from "@/features/counseling-record-workspace/api/counseling-records-api";
 
 interface UseFileUploadParams {

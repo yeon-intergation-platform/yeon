@@ -2,12 +2,12 @@
 
 import { useState, useRef, useCallback } from "react";
 import { uploadCounselingRecordAudio } from "@/features/counseling-record-workspace/api/counseling-records-api";
-import type { RecordItem } from "@/app/counseling-service/_lib/types";
+import type { RecordItem } from "@/features/counseling-record-workspace/lib/types";
 import {
   fmtDuration,
   fmtDurationMs,
   createTimestamp,
-} from "@/app/counseling-service/_lib/utils";
+} from "@/features/counseling-record-workspace/lib/utils";
 
 interface UseRecordingParams {
   /** 녹음 중단 즉시 호출 — 임시 레코드로 processing 상태로 즉시 전환 */

@@ -10,7 +10,7 @@ import type {
   AiMessage,
   AnalysisResult,
   AttachedImage,
-} from "@/app/counseling-service/_lib/types";
+} from "@/features/counseling-record-workspace/lib/types";
 
 interface UseAiChatParams {
   selectedId: string | null;
