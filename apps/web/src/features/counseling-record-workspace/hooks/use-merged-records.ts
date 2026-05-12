@@ -3,8 +3,8 @@
 import { useMemo } from "react";
 import type { CounselingRecordListItem } from "@yeon/api-contract/counseling-records";
 
-import type { RecordItem } from "../_lib/types";
-import { mergeRecordSources } from "../_lib/record-state-adapters";
+import type { RecordItem } from "@/app/counseling-service/_lib/types";
+import { mergeRecordSources } from "@/app/counseling-service/_lib/record-state-adapters";
 
 export function useMergedRecords({
   serverItems,

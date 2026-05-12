@@ -16,7 +16,7 @@ import {
 import { counselingWorkspaceQueryKeys } from "@/features/counseling-record-workspace/api/counseling-workspace-query-keys";
 import { useCounselingRecordLocalState } from "@/features/counseling-record-workspace/hooks/use-counseling-record-local-state";
 import { useCounselingRecordsViewState } from "@/features/counseling-record-workspace/hooks/use-counseling-records-view-state";
-import { useMergedRecords } from "./use-merged-records";
+import { useMergedRecords } from "@/features/counseling-record-workspace/hooks/use-merged-records";
 import {
   detailToRecordPatch,
   needsBackgroundPolling,
