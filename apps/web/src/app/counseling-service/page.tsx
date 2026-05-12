@@ -21,7 +21,10 @@ import {
 import { detectRecordMemberMismatch } from "@/features/counseling-record-workspace/lib/record-member-mismatch";
 import { counselingWorkspaceFetchVoid } from "@/features/counseling-record-workspace/api/counseling-workspace-fetch";
 import { getCounselingWorkspaceUiPolicy } from "./_lib/counseling-workspace-ui-policy";
-import { exportRecordDocx, exportMemberReportDocx } from "./_lib/export-docx";
+import {
+  exportRecordDocx,
+  exportMemberReportDocx,
+} from "@/features/counseling-record-workspace/lib/export-docx";
 import {
   EmptyState,
   RecordingState,

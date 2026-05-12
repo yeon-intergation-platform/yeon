@@ -3,7 +3,7 @@
 import { useState } from "react";
 import type { RecordItem } from "../_lib/types";
 import type { MemberWithStatus } from "../_hooks";
-import { exportMemberReportDocx } from "../_lib/export-docx";
+import { exportMemberReportDocx } from "@/features/counseling-record-workspace/lib/export-docx";
 
 export interface MemberPanelProps {
   member: MemberWithStatus;
