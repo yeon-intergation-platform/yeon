@@ -1,6 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type DragEvent,
+} from "react";
 import {
   ArrowLeft,
   ChevronRight,
@@ -25,6 +32,7 @@ import type { ImportCommitResult } from "../types";
 import { useCloudImport } from "../hooks/use-cloud-import";
 import { useLocalImport } from "../hooks/use-local-import";
 import { useSavedImportDraftsModal } from "../hooks/use-saved-import-drafts-modal";
+import { useCloudImportWorkspaceSplit } from "../hooks/use-cloud-import-workspace-split";
 import { FilePreview } from "./file-preview";
 import { FileGrid } from "./cloud-import-file-grid";
 import { ImportRightPanel } from "./import-right-panel";
@@ -35,24 +43,6 @@ import {
   getDraftStatusBadgeClass,
   getDraftStatusLabel,
 } from "../cloud-import-draft-display";
-import {
-  IMPORT_WORKSPACE_DEFAULT_RATIO,
-  IMPORT_WORKSPACE_DESKTOP_MEDIA_QUERY,
-  IMPORT_WORKSPACE_MAX_RATIO,
-  IMPORT_WORKSPACE_MIN_LEFT_PANE_PX,
-  IMPORT_WORKSPACE_MIN_RATIO,
-  IMPORT_WORKSPACE_MIN_RIGHT_PANE_PX,
-  IMPORT_WORKSPACE_MIN_BOTTOM_PANE_PX,
-  IMPORT_WORKSPACE_MIN_TOP_PANE_PX,
-  IMPORT_WORKSPACE_RESIZER_WIDTH,
-  IMPORT_WORKSPACE_SPLIT_STORAGE_KEY,
-  IMPORT_WORKSPACE_STACKED_DEFAULT_RATIO,
-  IMPORT_WORKSPACE_STACKED_MAX_RATIO,
-  IMPORT_WORKSPACE_STACKED_MIN_RATIO,
-  IMPORT_WORKSPACE_STACKED_RESIZER_HEIGHT,
-  IMPORT_WORKSPACE_STACKED_SPLIT_STORAGE_KEY,
-  getExpandedBottomPanelHeight,
-} from "../cloud-import-layout-constants";
 import {
   SPACE_FULL_TEST_DATA,
   SPACE_LITE_TEST_DATA,
@@ -91,284 +81,9 @@ export function CloudImportInline({
     DEFAULT_CLOUD_PROVIDER
   );
   const [isDragging, setIsDragging] = useState(false);
-  const [desktopSplitRatio, setDesktopSplitRatio] = useState(
-    IMPORT_WORKSPACE_DEFAULT_RATIO
-  );
-  const [stackedSplitRatio, setStackedSplitRatio] = useState(
-    IMPORT_WORKSPACE_STACKED_DEFAULT_RATIO
-  );
-  const [isDesktopSplitDragging, setIsDesktopSplitDragging] = useState(false);
-  const [isStackedSplitDragging, setIsStackedSplitDragging] = useState(false);
-  const [isDesktopViewport, setIsDesktopViewport] = useState(
-    () =>
-      typeof window !== "undefined" &&
-      window.matchMedia(IMPORT_WORKSPACE_DESKTOP_MEDIA_QUERY).matches
-  );
   const dragCounterRef = useRef(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const previewWorkspaceRef = useRef<HTMLDivElement | null>(null);
-  const desktopSplitRatioRef = useRef(IMPORT_WORKSPACE_DEFAULT_RATIO);
-  const stackedSplitRatioRef = useRef(IMPORT_WORKSPACE_STACKED_DEFAULT_RATIO);
-  const resizeStateRef = useRef<{
-    startClientX: number;
-    startRatio: number;
-    availableWidth: number;
-  } | null>(null);
-  const stackedResizeStateRef = useRef<{
-    startClientY: number;
-    startRatio: number;
-    availableHeight: number;
-  } | null>(null);
-
-  const clampDesktopSplitRatio = useCallback((ratio: number) => {
-    const containerWidth =
-      previewWorkspaceRef.current?.getBoundingClientRect().width ?? 0;
-    const availableWidth = Math.max(
-      containerWidth - IMPORT_WORKSPACE_RESIZER_WIDTH,
-      1
-    );
-
-    if (!containerWidth) {
-      return Math.min(
-        IMPORT_WORKSPACE_MAX_RATIO,
-        Math.max(IMPORT_WORKSPACE_MIN_RATIO, ratio)
-      );
-    }
-
-    const minRatio = Math.max(
-      IMPORT_WORKSPACE_MIN_RATIO,
-      IMPORT_WORKSPACE_MIN_LEFT_PANE_PX / availableWidth
-    );
-    const maxRatio = Math.min(
-      IMPORT_WORKSPACE_MAX_RATIO,
-      1 - IMPORT_WORKSPACE_MIN_RIGHT_PANE_PX / availableWidth
-    );
-
-    if (minRatio >= maxRatio) {
-      return Math.min(
-        IMPORT_WORKSPACE_MAX_RATIO,
-        Math.max(IMPORT_WORKSPACE_MIN_RATIO, ratio)
-      );
-    }
-
-    return Math.min(maxRatio, Math.max(minRatio, ratio));
-  }, []);
-
-  const clampStackedSplitRatio = useCallback((ratio: number) => {
-    const containerHeight =
-      previewWorkspaceRef.current?.getBoundingClientRect().height ?? 0;
-    const availableHeight = Math.max(
-      containerHeight - IMPORT_WORKSPACE_STACKED_RESIZER_HEIGHT,
-      1
-    );
-
-    if (!containerHeight) {
-      return Math.min(
-        IMPORT_WORKSPACE_STACKED_MAX_RATIO,
-        Math.max(IMPORT_WORKSPACE_STACKED_MIN_RATIO, ratio)
-      );
-    }
-
-    const minRatio = Math.max(
-      IMPORT_WORKSPACE_STACKED_MIN_RATIO,
-      IMPORT_WORKSPACE_MIN_TOP_PANE_PX / availableHeight
-    );
-    const maxRatio = Math.min(
-      IMPORT_WORKSPACE_STACKED_MAX_RATIO,
-      1 - IMPORT_WORKSPACE_MIN_BOTTOM_PANE_PX / availableHeight
-    );
-
-    if (minRatio >= maxRatio) {
-      return Math.min(
-        IMPORT_WORKSPACE_STACKED_MAX_RATIO,
-        Math.max(IMPORT_WORKSPACE_STACKED_MIN_RATIO, ratio)
-      );
-    }
-
-    return Math.min(maxRatio, Math.max(minRatio, ratio));
-  }, []);
-
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-
-    const mediaQuery = window.matchMedia(IMPORT_WORKSPACE_DESKTOP_MEDIA_QUERY);
-    const syncViewport = () => {
-      setIsDesktopViewport(mediaQuery.matches);
-    };
-
-    syncViewport();
-    mediaQuery.addEventListener("change", syncViewport);
-
-    return () => {
-      mediaQuery.removeEventListener("change", syncViewport);
-    };
-  }, []);
-
-  useEffect(() => {
-    const savedRatio = window.localStorage.getItem(
-      IMPORT_WORKSPACE_SPLIT_STORAGE_KEY
-    );
-
-    if (!savedRatio) return;
-
-    const parsed = Number(savedRatio);
-    if (!Number.isFinite(parsed)) return;
-
-    setDesktopSplitRatio(clampDesktopSplitRatio(parsed));
-  }, [clampDesktopSplitRatio]);
-
-  useEffect(() => {
-    const savedRatio = window.localStorage.getItem(
-      IMPORT_WORKSPACE_STACKED_SPLIT_STORAGE_KEY
-    );
-
-    if (!savedRatio) return;
-
-    const parsed = Number(savedRatio);
-    if (!Number.isFinite(parsed)) return;
-
-    setStackedSplitRatio(clampStackedSplitRatio(parsed));
-  }, [clampStackedSplitRatio]);
-
-  useEffect(() => {
-    desktopSplitRatioRef.current = desktopSplitRatio;
-  }, [desktopSplitRatio]);
-
-  useEffect(() => {
-    stackedSplitRatioRef.current = stackedSplitRatio;
-  }, [stackedSplitRatio]);
-
-  const buildExpandedPreviewShellGridTemplate = useCallback((ratio: number) => {
-    return `minmax(${IMPORT_WORKSPACE_MIN_LEFT_PANE_PX}px, ${ratio}fr) ${IMPORT_WORKSPACE_RESIZER_WIDTH}px minmax(${IMPORT_WORKSPACE_MIN_RIGHT_PANE_PX}px, ${Math.max(0.05, 1 - ratio)}fr)`;
-  }, []);
-
-  const applyExpandedPreviewShellRatio = useCallback(
-    (ratio: number) => {
-      if (!expanded || !previewWorkspaceRef.current) return;
-      previewWorkspaceRef.current.style.gridTemplateColumns =
-        buildExpandedPreviewShellGridTemplate(ratio);
-    },
-    [buildExpandedPreviewShellGridTemplate, expanded]
-  );
-
-  useEffect(() => {
-    window.localStorage.setItem(
-      IMPORT_WORKSPACE_SPLIT_STORAGE_KEY,
-      desktopSplitRatio.toFixed(4)
-    );
-  }, [desktopSplitRatio]);
-
-  useEffect(() => {
-    window.localStorage.setItem(
-      IMPORT_WORKSPACE_STACKED_SPLIT_STORAGE_KEY,
-      stackedSplitRatio.toFixed(4)
-    );
-  }, [stackedSplitRatio]);
-
-  useEffect(() => {
-    applyExpandedPreviewShellRatio(desktopSplitRatio);
-  }, [applyExpandedPreviewShellRatio, desktopSplitRatio]);
-
-  useEffect(() => {
-    if (!expanded) return;
-
-    const syncRatiosToViewport = () => {
-      setDesktopSplitRatio((currentRatio) =>
-        clampDesktopSplitRatio(currentRatio)
-      );
-      setStackedSplitRatio((currentRatio) =>
-        clampStackedSplitRatio(currentRatio)
-      );
-    };
-
-    syncRatiosToViewport();
-    window.addEventListener("resize", syncRatiosToViewport);
-
-    return () => {
-      window.removeEventListener("resize", syncRatiosToViewport);
-    };
-  }, [clampDesktopSplitRatio, clampStackedSplitRatio, expanded]);
-
-  useEffect(() => {
-    if (!isDesktopSplitDragging) return;
-
-    const handlePointerMove = (event: PointerEvent) => {
-      const resizeState = resizeStateRef.current;
-      if (!resizeState) return;
-
-      const deltaX = event.clientX - resizeState.startClientX;
-      const nextRatio =
-        resizeState.startRatio + deltaX / resizeState.availableWidth;
-      const clampedRatio = clampDesktopSplitRatio(nextRatio);
-      desktopSplitRatioRef.current = clampedRatio;
-      applyExpandedPreviewShellRatio(clampedRatio);
-    };
-
-    const stopDragging = () => {
-      resizeStateRef.current = null;
-      setIsDesktopSplitDragging(false);
-      setDesktopSplitRatio(desktopSplitRatioRef.current);
-      document.body.style.cursor = "";
-      document.body.style.userSelect = "";
-    };
-
-    window.addEventListener("pointermove", handlePointerMove);
-    window.addEventListener("pointerup", stopDragging);
-    window.addEventListener("pointercancel", stopDragging);
-    document.body.style.cursor = "col-resize";
-    document.body.style.userSelect = "none";
-
-    return () => {
-      window.removeEventListener("pointermove", handlePointerMove);
-      window.removeEventListener("pointerup", stopDragging);
-      window.removeEventListener("pointercancel", stopDragging);
-      document.body.style.cursor = "";
-      document.body.style.userSelect = "";
-    };
-  }, [
-    applyExpandedPreviewShellRatio,
-    clampDesktopSplitRatio,
-    isDesktopSplitDragging,
-  ]);
-
-  useEffect(() => {
-    if (!isStackedSplitDragging) return;
-
-    const handlePointerMove = (event: PointerEvent) => {
-      const resizeState = stackedResizeStateRef.current;
-      if (!resizeState) return;
-
-      const deltaY = event.clientY - resizeState.startClientY;
-      const nextRatio =
-        resizeState.startRatio + deltaY / resizeState.availableHeight;
-      const clampedRatio = clampStackedSplitRatio(nextRatio);
-      stackedSplitRatioRef.current = clampedRatio;
-      setStackedSplitRatio(clampedRatio);
-    };
-
-    const stopDragging = () => {
-      stackedResizeStateRef.current = null;
-      setIsStackedSplitDragging(false);
-      document.body.style.cursor = "";
-      document.body.style.userSelect = "";
-    };
-
-    window.addEventListener("pointermove", handlePointerMove);
-    window.addEventListener("pointerup", stopDragging);
-    window.addEventListener("pointercancel", stopDragging);
-    document.body.style.cursor = "row-resize";
-    document.body.style.userSelect = "none";
-
-    return () => {
-      window.removeEventListener("pointermove", handlePointerMove);
-      window.removeEventListener("pointerup", stopDragging);
-      window.removeEventListener("pointercancel", stopDragging);
-      document.body.style.cursor = "";
-      document.body.style.userSelect = "";
-    };
-  }, [clampStackedSplitRatio, isStackedSplitDragging]);
+  const workspaceSplit = useCloudImportWorkspaceSplit({ expanded });
 
   const onedrive = useCloudImport("onedrive", onImportComplete);
   const googledrive = useCloudImport("googledrive", onImportComplete);
@@ -457,23 +172,23 @@ export function CloudImportInline({
     activeHook.navigateToBreadcrumbIndex(index);
   };
 
-  const handleDragEnter = (e: React.DragEvent) => {
+  const handleDragEnter = (e: DragEvent) => {
     e.preventDefault();
     dragCounterRef.current += 1;
     if (dragCounterRef.current === 1) setIsDragging(true);
   };
 
-  const handleDragLeave = (e: React.DragEvent) => {
+  const handleDragLeave = (e: DragEvent) => {
     e.preventDefault();
     dragCounterRef.current -= 1;
     if (dragCounterRef.current === 0) setIsDragging(false);
   };
 
-  const handleDragOver = (e: React.DragEvent) => {
+  const handleDragOver = (e: DragEvent) => {
     e.preventDefault();
   };
 
-  const handleDrop = (e: React.DragEvent) => {
+  const handleDrop = (e: DragEvent) => {
     e.preventDefault();
     dragCounterRef.current = 0;
     setIsDragging(false);
@@ -481,7 +196,7 @@ export function CloudImportInline({
     if (file) localImport.selectLocalFile(file);
   };
 
-  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileInputChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) localImport.selectLocalFile(file);
     e.target.value = "";
@@ -490,111 +205,12 @@ export function CloudImportInline({
   const isLocalMode = localImport.selectedFile !== null;
   const hasSelectedFile = activeHook.selectedFile !== null;
   const isWorkspaceMode = isLocalMode || hasSelectedFile;
-  const localBottomPanelHeight = getExpandedBottomPanelHeight(
+  const localReviewPaneStyle = workspaceSplit.getReviewPaneStyle(
     Boolean(localImport.editablePreview)
   );
-  const cloudBottomPanelHeight = getExpandedBottomPanelHeight(
+  const cloudReviewPaneStyle = workspaceSplit.getReviewPaneStyle(
     Boolean(activeHook.editablePreview)
   );
-  const expandedPreviewShellClassName = expanded
-    ? "flex-col lg:grid"
-    : "flex-col";
-  const expandedPreviewShellStyle = expanded
-    ? {
-        gridTemplateColumns:
-          buildExpandedPreviewShellGridTemplate(desktopSplitRatio),
-      }
-    : undefined;
-  const isExpandedStackedLayout = expanded && !isDesktopViewport;
-  const previewPaneClassName = `flex min-h-0 min-w-0 flex-col overflow-hidden bg-surface ${
-    isExpandedStackedLayout
-      ? "shrink-0 grow-0 border-b-0"
-      : "flex-1 border-b border-border lg:border-b-0 lg:border-r-0"
-  }`;
-  const previewPaneStyle = isExpandedStackedLayout
-    ? {
-        flexBasis: `${(stackedSplitRatio * 100).toFixed(2)}%`,
-      }
-    : undefined;
-  const localReviewPaneStyle = !expanded
-    ? { height: localBottomPanelHeight }
-    : isExpandedStackedLayout
-      ? {
-          flexBasis: `${((1 - stackedSplitRatio) * 100).toFixed(2)}%`,
-        }
-      : undefined;
-  const cloudReviewPaneStyle = !expanded
-    ? { height: cloudBottomPanelHeight }
-    : isExpandedStackedLayout
-      ? {
-          flexBasis: `${((1 - stackedSplitRatio) * 100).toFixed(2)}%`,
-        }
-      : undefined;
-  const expandedReviewPaneClassName = isExpandedStackedLayout
-    ? "shrink-0 grow-0 min-h-0 px-4 py-4 sm:px-6"
-    : expanded
-      ? "shrink-0 max-h-[min(52vh,520px)] px-6 py-4 max-md:px-4 lg:h-full lg:max-h-none lg:min-h-0"
-      : "flex-[2] px-5 py-4";
-
-  const startDesktopSplitResize = (
-    event: React.PointerEvent<HTMLDivElement>
-  ) => {
-    if (!expanded || !previewWorkspaceRef.current) return;
-
-    const workspaceWidth =
-      previewWorkspaceRef.current.getBoundingClientRect().width;
-    resizeStateRef.current = {
-      startClientX: event.clientX,
-      startRatio: desktopSplitRatioRef.current,
-      availableWidth: Math.max(
-        workspaceWidth - IMPORT_WORKSPACE_RESIZER_WIDTH,
-        1
-      ),
-    };
-    setIsDesktopSplitDragging(true);
-  };
-
-  const startStackedSplitResize = (
-    event: React.PointerEvent<HTMLDivElement>
-  ) => {
-    if (!expanded || !previewWorkspaceRef.current) return;
-
-    const workspaceHeight =
-      previewWorkspaceRef.current.getBoundingClientRect().height;
-    stackedResizeStateRef.current = {
-      startClientY: event.clientY,
-      startRatio: stackedSplitRatioRef.current,
-      availableHeight: Math.max(
-        workspaceHeight - IMPORT_WORKSPACE_STACKED_RESIZER_HEIGHT,
-        1
-      ),
-    };
-    setIsStackedSplitDragging(true);
-  };
-
-  const nudgeDesktopSplit = (delta: number) => {
-    setDesktopSplitRatio((currentRatio) =>
-      clampDesktopSplitRatio(currentRatio + delta)
-    );
-  };
-
-  const nudgeStackedSplit = (delta: number) => {
-    setStackedSplitRatio((currentRatio) =>
-      clampStackedSplitRatio(currentRatio + delta)
-    );
-  };
-
-  const resetDesktopSplit = () => {
-    setDesktopSplitRatio(
-      clampDesktopSplitRatio(IMPORT_WORKSPACE_DEFAULT_RATIO)
-    );
-  };
-
-  const resetStackedSplit = () => {
-    setStackedSplitRatio(
-      clampStackedSplitRatio(IMPORT_WORKSPACE_STACKED_DEFAULT_RATIO)
-    );
-  };
 
   useEffect(() => {
     onWorkspaceModeChange?.(isWorkspaceMode);
@@ -857,11 +473,14 @@ export function CloudImportInline({
       {/* 로컬 프리뷰 모드 */}
       {isLocalMode && localImport.fileProxyUrl ? (
         <div
-          ref={expanded ? previewWorkspaceRef : undefined}
-          className={`flex min-h-0 min-w-0 flex-1 overflow-hidden ${expandedPreviewShellClassName}`}
-          style={expandedPreviewShellStyle}
+          ref={expanded ? workspaceSplit.previewWorkspaceRef : undefined}
+          className={`flex min-h-0 min-w-0 flex-1 overflow-hidden ${workspaceSplit.expandedPreviewShellClassName}`}
+          style={workspaceSplit.expandedPreviewShellStyle}
         >
-          <div className={previewPaneClassName} style={previewPaneStyle}>
+          <div
+            className={workspaceSplit.previewPaneClassName}
+            style={workspaceSplit.previewPaneStyle}
+          >
             <div className="flex items-center gap-2.5 px-3.5 py-2.5 border-b border-border flex-shrink-0 bg-surface">
               <button
                 type="button"
@@ -883,40 +502,36 @@ export function CloudImportInline({
               />
             </div>
           </div>
-          {isExpandedStackedLayout && (
+          {workspaceSplit.isExpandedStackedLayout && (
             <div
               role="separator"
               aria-orientation="horizontal"
               aria-label="가져오기 레이아웃 높이 조절"
               tabIndex={0}
               className="group flex h-5 shrink-0 cursor-row-resize items-center justify-center bg-transparent"
-              onPointerDown={startStackedSplitResize}
-              onDoubleClick={resetStackedSplit}
+              onPointerDown={workspaceSplit.startStackedSplitResize}
+              onDoubleClick={workspaceSplit.resetStackedSplit}
               onKeyDown={(event) => {
                 if (event.key === "ArrowUp") {
                   event.preventDefault();
-                  nudgeStackedSplit(-0.02);
+                  workspaceSplit.nudgeStackedSplit(-0.02);
                 }
                 if (event.key === "ArrowDown") {
                   event.preventDefault();
-                  nudgeStackedSplit(0.02);
+                  workspaceSplit.nudgeStackedSplit(0.02);
                 }
                 if (event.key === "Home") {
                   event.preventDefault();
-                  setStackedSplitRatio(
-                    clampStackedSplitRatio(IMPORT_WORKSPACE_STACKED_MIN_RATIO)
-                  );
+                  workspaceSplit.setStackedSplitToMin();
                 }
                 if (event.key === "End") {
                   event.preventDefault();
-                  setStackedSplitRatio(
-                    clampStackedSplitRatio(IMPORT_WORKSPACE_STACKED_MAX_RATIO)
-                  );
+                  workspaceSplit.setStackedSplitToMax();
                 }
               }}
             >
               <span
-                className={`h-1.5 w-14 rounded-full transition-colors ${isStackedSplitDragging ? "bg-accent-border" : "bg-border group-hover:bg-accent-border"}`}
+                className={`h-1.5 w-14 rounded-full transition-colors ${workspaceSplit.isStackedSplitDragging ? "bg-accent-border" : "bg-border group-hover:bg-accent-border"}`}
               />
             </div>
           )}
@@ -926,29 +541,25 @@ export function CloudImportInline({
               aria-orientation="vertical"
               aria-label="가져오기 레이아웃 크기 조절"
               tabIndex={0}
-              className={`hidden lg:flex lg:min-h-0 lg:items-stretch lg:justify-center cursor-col-resize transition-colors duration-150 ${isDesktopSplitDragging ? "bg-accent-border" : "bg-border hover:bg-accent-border"}`}
-              onPointerDown={startDesktopSplitResize}
-              onDoubleClick={resetDesktopSplit}
+              className={`hidden lg:flex lg:min-h-0 lg:items-stretch lg:justify-center cursor-col-resize transition-colors duration-150 ${workspaceSplit.isDesktopSplitDragging ? "bg-accent-border" : "bg-border hover:bg-accent-border"}`}
+              onPointerDown={workspaceSplit.startDesktopSplitResize}
+              onDoubleClick={workspaceSplit.resetDesktopSplit}
               onKeyDown={(event) => {
                 if (event.key === "ArrowLeft") {
                   event.preventDefault();
-                  nudgeDesktopSplit(-0.02);
+                  workspaceSplit.nudgeDesktopSplit(-0.02);
                 }
                 if (event.key === "ArrowRight") {
                   event.preventDefault();
-                  nudgeDesktopSplit(0.02);
+                  workspaceSplit.nudgeDesktopSplit(0.02);
                 }
                 if (event.key === "Home") {
                   event.preventDefault();
-                  setDesktopSplitRatio(
-                    clampDesktopSplitRatio(IMPORT_WORKSPACE_MIN_RATIO)
-                  );
+                  workspaceSplit.setDesktopSplitToMin();
                 }
                 if (event.key === "End") {
                   event.preventDefault();
-                  setDesktopSplitRatio(
-                    clampDesktopSplitRatio(IMPORT_WORKSPACE_MAX_RATIO)
-                  );
+                  workspaceSplit.setDesktopSplitToMax();
                 }
               }}
             >
@@ -956,7 +567,7 @@ export function CloudImportInline({
             </div>
           )}
           <div
-            className={`flex min-h-0 flex-col overflow-hidden bg-surface ${expandedReviewPaneClassName}`}
+            className={`flex min-h-0 flex-col overflow-hidden bg-surface ${workspaceSplit.expandedReviewPaneClassName}`}
             style={localReviewPaneStyle}
           >
             <ImportRightPanel hook={localImport} onClose={onClose} />
@@ -965,11 +576,14 @@ export function CloudImportInline({
       ) : hasSelectedFile && activeHook.fileProxyUrl ? (
         /* 클라우드 프리뷰 모드 */
         <div
-          ref={expanded ? previewWorkspaceRef : undefined}
-          className={`flex min-h-0 min-w-0 flex-1 overflow-hidden ${expandedPreviewShellClassName}`}
-          style={expandedPreviewShellStyle}
+          ref={expanded ? workspaceSplit.previewWorkspaceRef : undefined}
+          className={`flex min-h-0 min-w-0 flex-1 overflow-hidden ${workspaceSplit.expandedPreviewShellClassName}`}
+          style={workspaceSplit.expandedPreviewShellStyle}
         >
-          <div className={previewPaneClassName} style={previewPaneStyle}>
+          <div
+            className={workspaceSplit.previewPaneClassName}
+            style={workspaceSplit.previewPaneStyle}
+          >
             <div className="flex items-center gap-2.5 px-3.5 py-2.5 border-b border-border flex-shrink-0 bg-surface">
               <button
                 type="button"
@@ -991,40 +605,36 @@ export function CloudImportInline({
               />
             </div>
           </div>
-          {isExpandedStackedLayout && (
+          {workspaceSplit.isExpandedStackedLayout && (
             <div
               role="separator"
               aria-orientation="horizontal"
               aria-label="가져오기 레이아웃 높이 조절"
               tabIndex={0}
               className="group flex h-5 shrink-0 cursor-row-resize items-center justify-center bg-transparent"
-              onPointerDown={startStackedSplitResize}
-              onDoubleClick={resetStackedSplit}
+              onPointerDown={workspaceSplit.startStackedSplitResize}
+              onDoubleClick={workspaceSplit.resetStackedSplit}
               onKeyDown={(event) => {
                 if (event.key === "ArrowUp") {
                   event.preventDefault();
-                  nudgeStackedSplit(-0.02);
+                  workspaceSplit.nudgeStackedSplit(-0.02);
                 }
                 if (event.key === "ArrowDown") {
                   event.preventDefault();
-                  nudgeStackedSplit(0.02);
+                  workspaceSplit.nudgeStackedSplit(0.02);
                 }
                 if (event.key === "Home") {
                   event.preventDefault();
-                  setStackedSplitRatio(
-                    clampStackedSplitRatio(IMPORT_WORKSPACE_STACKED_MIN_RATIO)
-                  );
+                  workspaceSplit.setStackedSplitToMin();
                 }
                 if (event.key === "End") {
                   event.preventDefault();
-                  setStackedSplitRatio(
-                    clampStackedSplitRatio(IMPORT_WORKSPACE_STACKED_MAX_RATIO)
-                  );
+                  workspaceSplit.setStackedSplitToMax();
                 }
               }}
             >
               <span
-                className={`h-1.5 w-14 rounded-full transition-colors ${isStackedSplitDragging ? "bg-accent-border" : "bg-border group-hover:bg-accent-border"}`}
+                className={`h-1.5 w-14 rounded-full transition-colors ${workspaceSplit.isStackedSplitDragging ? "bg-accent-border" : "bg-border group-hover:bg-accent-border"}`}
               />
             </div>
           )}
@@ -1034,29 +644,25 @@ export function CloudImportInline({
               aria-orientation="vertical"
               aria-label="가져오기 레이아웃 크기 조절"
               tabIndex={0}
-              className={`hidden lg:flex lg:min-h-0 lg:items-stretch lg:justify-center cursor-col-resize transition-colors duration-150 ${isDesktopSplitDragging ? "bg-accent-border" : "bg-border hover:bg-accent-border"}`}
-              onPointerDown={startDesktopSplitResize}
-              onDoubleClick={resetDesktopSplit}
+              className={`hidden lg:flex lg:min-h-0 lg:items-stretch lg:justify-center cursor-col-resize transition-colors duration-150 ${workspaceSplit.isDesktopSplitDragging ? "bg-accent-border" : "bg-border hover:bg-accent-border"}`}
+              onPointerDown={workspaceSplit.startDesktopSplitResize}
+              onDoubleClick={workspaceSplit.resetDesktopSplit}
               onKeyDown={(event) => {
                 if (event.key === "ArrowLeft") {
                   event.preventDefault();
-                  nudgeDesktopSplit(-0.02);
+                  workspaceSplit.nudgeDesktopSplit(-0.02);
                 }
                 if (event.key === "ArrowRight") {
                   event.preventDefault();
-                  nudgeDesktopSplit(0.02);
+                  workspaceSplit.nudgeDesktopSplit(0.02);
                 }
                 if (event.key === "Home") {
                   event.preventDefault();
-                  setDesktopSplitRatio(
-                    clampDesktopSplitRatio(IMPORT_WORKSPACE_MIN_RATIO)
-                  );
+                  workspaceSplit.setDesktopSplitToMin();
                 }
                 if (event.key === "End") {
                   event.preventDefault();
-                  setDesktopSplitRatio(
-                    clampDesktopSplitRatio(IMPORT_WORKSPACE_MAX_RATIO)
-                  );
+                  workspaceSplit.setDesktopSplitToMax();
                 }
               }}
             >
@@ -1064,7 +670,7 @@ export function CloudImportInline({
             </div>
           )}
           <div
-            className={`flex min-h-0 flex-col overflow-hidden bg-surface ${expandedReviewPaneClassName}`}
+            className={`flex min-h-0 flex-col overflow-hidden bg-surface ${workspaceSplit.expandedReviewPaneClassName}`}
             style={cloudReviewPaneStyle}
           >
             <ImportRightPanel hook={activeHook} onClose={onClose} />
