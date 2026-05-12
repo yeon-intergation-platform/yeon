@@ -404,3 +404,28 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 18차: record retry fetch boundary 정리
+
+### 작업내용
+
+- `app/counseling-service/_hooks/use-record-retry.ts`에 남아 있는 전사/분석 재시도 직접 `fetch()` 호출을 제거한다.
+- 전사 재시도는 `counselingWorkspaceFetchJson`, 분석 재시도는 `counselingWorkspaceFetchVoid` wrapper를 사용해 credentials/error parsing 정책을 통일한다.
+- 재시도 pending/feedback, polling boost, detail 적용 흐름은 유지한다.
+
+### 논의 필요
+
+- 재시도 mutation을 TanStack Query `useMutation`으로 즉시 전환할지 여부.
+
+### 선택지
+
+1. 이번 차수는 네트워크 boundary만 닫고 pending/feedback 상태 구조는 유지한다.
+2. 재시도 액션을 `useMutation` 기반으로 전환해 server-state 패턴까지 맞춘다.
+
+### 추천
+
+- 1번. 직접 fetch 제거와 mutation 구조 변경을 분리해 상담 기록 재시도 흐름의 회귀 면적을 줄인다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.
