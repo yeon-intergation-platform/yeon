@@ -1982,3 +1982,28 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 80차 — member panel model hook 분리
+
+### 작업내용
+
+- `member-panel.tsx` 내부의 member records 정렬, 최신 기록/처리중 여부/status/indicator 파생값과 리포트 내보내기 상태를 feature hook으로 이동한다.
+- app component는 수강생 패널 UI 렌더링만 담당하도록 줄인다.
+- 날짜/기간 표시 포맷 함수는 feature lib로 이동해 재사용 가능한 순수 함수로 둔다.
+
+### 논의 필요
+
+- member panel 자체를 feature component로 즉시 이동할지 여부.
+
+### 선택지
+
+1. 이번 차수는 model hook/lib만 이동하고 component 소유권 이동은 후속으로 둔다.
+2. hook/lib 이동과 동시에 component 파일도 feature로 이동한다.
+
+### 추천
+
+- 1번. app `_components/index.ts` 호환 구조가 아직 남아 있어, 먼저 내부 feature 로직을 제거한 뒤 파일 이동을 별도 차수로 분리한다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.
