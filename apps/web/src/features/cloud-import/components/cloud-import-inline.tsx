@@ -23,6 +23,10 @@ import {
 } from "../cloud-provider-config";
 import type { CloudProvider } from "../types";
 import type { ImportCommitResult } from "../types";
+import {
+  deleteImportDraft,
+  loadLocalImportDrafts,
+} from "../hooks/cloud-import-fetch";
 import { useCloudImport } from "../hooks/use-cloud-import";
 import { useLocalImport } from "../hooks/use-local-import";
 import { FilePreview } from "./file-preview";
@@ -407,18 +411,11 @@ export function CloudImportInline({
     refetch: refetchLocalDrafts,
   } = useQuery({
     queryKey: cloudImportQueryKeys.localDraftsModal(),
-    queryFn: async () => {
-      const res = await fetch(
-        resolveApiHrefForCurrentPath(
-          "/api/v1/integrations/local/drafts?limit=20"
-        )
-      );
-      if (!res.ok) {
-        const text = await res.text().catch(() => "");
-        throw new Error(text || "가져오기 작업 목록을 불러오지 못했습니다.");
-      }
-      return res.json() as Promise<{ drafts: LocalImportDraftListItem[] }>;
-    },
+    queryFn: () =>
+      loadLocalImportDrafts<{ drafts: LocalImportDraftListItem[] }>(
+        resolveApiHrefForCurrentPath,
+        20
+      ),
   });
   const localDrafts = localDraftsData ? localDraftsData.drafts : [];
   const localDraftsError =
@@ -555,16 +552,11 @@ export function CloudImportInline({
         if (localImport.currentDraftId === draftId) {
           await localImport.discardDraft?.();
         } else {
-          await fetch(
-            resolveApiHrefForCurrentPath(
-              `/api/v1/integrations/local/drafts/${draftId}`
-            ),
-            {
-              method: "DELETE",
+          await deleteImportDraft(resolveApiHrefForCurrentPath, draftId).catch(
+            () => {
+              // 목록 새로고침으로 상태를 다시 맞춘다.
             }
-          ).catch(() => {
-            // 목록 새로고침으로 상태를 다시 맞춘다.
-          });
+          );
         }
 
         onDraftDiscarded?.();
