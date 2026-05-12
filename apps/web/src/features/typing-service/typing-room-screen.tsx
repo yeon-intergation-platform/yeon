@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { ChangeEvent } from "react";
+import type { ChangeEvent, MouseEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, Crown, Play, Send } from "lucide-react";
 import {
@@ -449,6 +449,49 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
     router.push("/typing-service/rooms");
   }, [isLeavingRoom, race, router]);
 
+  const onRoomNavigationClickCapture = useCallback(
+    (event: MouseEvent<HTMLDivElement>) => {
+      if (
+        event.defaultPrevented ||
+        event.button !== 0 ||
+        event.metaKey ||
+        event.ctrlKey ||
+        event.shiftKey ||
+        event.altKey
+      ) {
+        return;
+      }
+
+      if (!(event.target instanceof Element)) return;
+      const anchor = event.target.closest("a[href]");
+      if (!(anchor instanceof HTMLAnchorElement)) return;
+      if (anchor.target || anchor.hasAttribute("download")) return;
+
+      const href = anchor.getAttribute("href");
+      if (!href || href.startsWith("#")) return;
+
+      const destination = new URL(anchor.href, window.location.href);
+      if (destination.origin !== window.location.origin) return;
+      if (
+        destination.pathname === window.location.pathname &&
+        destination.search === window.location.search &&
+        destination.hash === window.location.hash
+      ) {
+        return;
+      }
+
+      event.preventDefault();
+      if (isLeavingRoom) return;
+
+      const nextPath = `${destination.pathname}${destination.search}${destination.hash}`;
+      setIsLeavingRoom(true);
+      void race.leaveRoom().finally(() => {
+        router.push(nextPath);
+      });
+    },
+    [isLeavingRoom, race, router]
+  );
+
   const deckOptions = useMemo<TypingDeckOption[]>(() => {
     const language = room?.language ?? createRoomOptions.language;
     const options = deckState.decks.filter(
@@ -605,7 +648,10 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
   }
 
   return (
-    <div className="min-h-screen bg-white text-[#111]">
+    <div
+      className="min-h-screen bg-white text-[#111]"
+      onClickCapture={onRoomNavigationClickCapture}
+    >
       <TypingServiceHeader active="rooms" title="타자방" />
       {copyError && (
         <p className="mx-4 mt-2 rounded-md border border-red-100 bg-red-50 p-2 text-[12px] text-red-600 md:mx-8">
