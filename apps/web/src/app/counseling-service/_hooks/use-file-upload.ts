@@ -12,6 +12,7 @@ import { resolveApiHrefForCurrentPath } from "@/lib/app-route-paths";
 
 import type { RecordItem } from "../_lib/types";
 import { createTimestamp, fmtDurationMs } from "../_lib/utils";
+import { counselingWorkspaceFetchJson } from "./counseling-workspace-fetch";
 
 interface UseFileUploadParams {
   onFileUpload: (record: RecordItem) => void;
@@ -101,20 +102,16 @@ export function useFileUpload({
           formData.append("audioDurationMs", String(audioDurationMs));
         }
 
-        const res = await fetch(
+        const data = await counselingWorkspaceFetchJson<{
+          record: CounselingRecordDetail;
+        }>(
           resolveApiHrefForCurrentPath("/api/v1/counseling-records"),
           {
             method: "POST",
             body: formData,
-          }
+          },
+          "업로드에 실패했습니다."
         );
-
-        if (!res.ok) {
-          const text = await res.text().catch(() => "");
-          throw new Error(text || "업로드에 실패했습니다.");
-        }
-
-        const data = (await res.json()) as { record: CounselingRecordDetail };
         const item = data.record;
 
         const record: RecordItem = {
