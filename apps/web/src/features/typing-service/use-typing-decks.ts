@@ -8,18 +8,23 @@ import type {
   TypingDeckDetailResponse,
   TypingDeckDto,
   TypingDeckLanguageTag,
-  TypingDeckListResponse,
   TypingDeckListScope as TypingDeckScope,
   TypingDeckPassageDto,
-  TypingDeckResponse,
   TypingDeckVisibility,
   TypingPassageDifficulty,
-  TypingDeckPassageResponse,
   TypingPassageTextType,
   UpdateTypingDeckBody,
   UpdateTypingDeckPassageBody,
 } from "@yeon/api-contract/typing-decks";
 
+import {
+  loadTypingDeckDetail,
+  loadTypingDeckList,
+  requestTypingDeck,
+  requestTypingDeckPassage,
+  typingServiceFetchJson,
+  typingServiceFetchVoid,
+} from "./typing-service-fetch";
 export type {
   CreateTypingDeckBody,
   CreateTypingDeckPassageBody,
@@ -53,42 +58,6 @@ export const TYPING_DECK_VISIBILITY_OPTIONS: Array<{
   { value: "private", label: "비공개" },
   { value: "public", label: "공개" },
 ];
-
-async function ensureOk(
-  res: Response,
-  fallbackErrorMessage: string
-): Promise<void> {
-  if (res.ok) return;
-  const text = await res.text().catch(() => "");
-  try {
-    const parsed = text ? (JSON.parse(text) as { message?: string }) : null;
-    throw new Error(parsed?.message || fallbackErrorMessage);
-  } catch (error) {
-    if (error instanceof Error) {
-      throw error;
-    }
-    throw new Error(fallbackErrorMessage);
-  }
-}
-
-async function typingDecksFetchJson<T>(
-  input: RequestInfo | URL,
-  init: RequestInit,
-  fallbackErrorMessage: string
-): Promise<T> {
-  const res = await fetch(input, { credentials: "include", ...init });
-  await ensureOk(res, fallbackErrorMessage);
-  return (await res.json()) as T;
-}
-
-async function typingDecksFetchVoid(
-  input: RequestInfo | URL,
-  init: RequestInit,
-  fallbackErrorMessage: string
-): Promise<void> {
-  const res = await fetch(input, { credentials: "include", ...init });
-  await ensureOk(res, fallbackErrorMessage);
-}
 
 export function typingDecksRootQueryKey() {
   return ["typing-decks"] as const;
@@ -131,11 +100,7 @@ export function useTypingDecks(scope: TypingDeckScope, adminMode = false) {
       if (adminMode) {
         params.set("admin", "1");
       }
-      return typingDecksFetchJson<TypingDeckListResponse>(
-        `/api/v1/typing-decks?${params.toString()}`,
-        { method: "GET" },
-        "타자 덱 목록을 불러오지 못했습니다."
-      );
+      return loadTypingDeckList(`/api/v1/typing-decks?${params.toString()}`);
     },
   });
 }
@@ -147,10 +112,8 @@ export function useTypingDeckDetail(deckId: string | null, adminMode = false) {
       if (!deckId) {
         throw new Error("덱을 선택해주세요.");
       }
-      return typingDecksFetchJson<TypingDeckDetailResponse>(
-        withAdminQuery(`/api/v1/typing-decks/${deckId}`, adminMode),
-        { method: "GET" },
-        "타자 덱을 불러오지 못했습니다."
+      return loadTypingDeckDetail(
+        withAdminQuery(`/api/v1/typing-decks/${deckId}`, adminMode)
       );
     },
     enabled: Boolean(deckId),
@@ -177,7 +140,7 @@ export function useCreateTypingDeck(adminMode = false) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (body: CreateTypingDeckBody) => {
-      const data = await typingDecksFetchJson<TypingDeckResponse>(
+      const data = await requestTypingDeck(
         withAdminQuery("/api/v1/typing-decks", adminMode),
         {
           method: "POST",
@@ -196,7 +159,7 @@ export function useUpdateTypingDeck(deckId: string, adminMode = false) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (body: UpdateTypingDeckBody) => {
-      const data = await typingDecksFetchJson<TypingDeckResponse>(
+      const data = await requestTypingDeck(
         withAdminQuery(`/api/v1/typing-decks/${deckId}`, adminMode),
         {
           method: "PATCH",
@@ -215,7 +178,7 @@ export function useDeleteTypingDeck(adminMode = false) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (deckId: string) => {
-      await typingDecksFetchVoid(
+      await typingServiceFetchVoid(
         withAdminQuery(`/api/v1/typing-decks/${deckId}`, adminMode),
         { method: "DELETE" },
         "타자 덱을 삭제하지 못했습니다."
@@ -230,7 +193,7 @@ export function useCreateTypingDeckPassage(deckId: string, adminMode = false) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (body: CreateTypingDeckPassageBody) => {
-      const data = await typingDecksFetchJson<TypingDeckPassageResponse>(
+      const data = await requestTypingDeckPassage(
         withAdminQuery(`/api/v1/typing-decks/${deckId}/passages`, adminMode),
         {
           method: "POST",
@@ -252,7 +215,7 @@ export function useBulkCreateTypingDeckPassages(
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (body: CreateTypingDeckPassagesBody) => {
-      const data = await typingDecksFetchJson<{
+      const data = await typingServiceFetchJson<{
         passages: TypingDeckPassageDto[];
       }>(
         withAdminQuery(
@@ -279,7 +242,7 @@ export function useUpdateTypingDeckPassage(deckId: string, adminMode = false) {
       passageId: string;
       body: UpdateTypingDeckPassageBody;
     }) => {
-      const data = await typingDecksFetchJson<TypingDeckPassageResponse>(
+      const data = await requestTypingDeckPassage(
         withAdminQuery(
           `/api/v1/typing-decks/${deckId}/passages/${params.passageId}`,
           adminMode
@@ -301,7 +264,7 @@ export function useDeleteTypingDeckPassage(deckId: string, adminMode = false) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (passageId: string) => {
-      await typingDecksFetchVoid(
+      await typingServiceFetchVoid(
         withAdminQuery(
           `/api/v1/typing-decks/${deckId}/passages/${passageId}`,
           adminMode
