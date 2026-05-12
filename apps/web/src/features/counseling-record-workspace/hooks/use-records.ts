@@ -1,34 +1,23 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef, useMemo } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import type {
-  CounselingRecordListItem,
-  CounselingRecordDetail,
-} from "@yeon/api-contract/counseling-records";
+import { useCallback, useMemo, useRef, useState } from "react";
+import type { CounselingRecordDetail } from "@yeon/api-contract/counseling-records";
 import type {
   RecordItem,
   AiMessage,
 } from "@/features/counseling-record-workspace/lib/types";
 import { getProcessingChecklistStep } from "@/features/counseling-record-workspace/lib/processing-progress";
-import {
-  clearCounselingRecordChat,
-  fetchCounselingRecordDetail,
-  fetchCounselingRecords,
-} from "@/features/counseling-record-workspace/api/counseling-records-api";
-import { counselingWorkspaceQueryKeys } from "@/features/counseling-record-workspace/api/counseling-workspace-query-keys";
+import { clearCounselingRecordChat } from "@/features/counseling-record-workspace/api/counseling-records-api";
 import { useCounselingRecordLocalState } from "@/features/counseling-record-workspace/hooks/use-counseling-record-local-state";
 import { useCounselingRecordsViewState } from "@/features/counseling-record-workspace/hooks/use-counseling-records-view-state";
 import { useMergedRecords } from "@/features/counseling-record-workspace/hooks/use-merged-records";
+import { useCounselingRecordServerRecords } from "@/features/counseling-record-workspace/hooks/use-counseling-record-server-records";
 import {
   detailToRecordPatch,
   needsBackgroundPolling,
 } from "@/features/counseling-record-workspace/lib/record-state-adapters";
 
-const POLL_INTERVAL_MS = 3000;
-const BOOSTED_POLL_INTERVAL_MS = 1000;
 const BOOSTED_POLL_WINDOW_MS = 15000;
-const EMPTY_SERVER_ITEMS: CounselingRecordListItem[] = [];
 
 // ---------------------------------------------------------------------------
 // selectedRecordId를 외부에서 받는 순수 데이터 훅
@@ -36,8 +25,6 @@ const EMPTY_SERVER_ITEMS: CounselingRecordListItem[] = [];
 // ---------------------------------------------------------------------------
 
 export function useRecords(selectedRecordId: string | null) {
-  const queryClient = useQueryClient();
-
   const {
     localOverrides,
     tempRecords,
@@ -57,24 +44,15 @@ export function useRecords(selectedRecordId: string | null) {
   const [transcriptLoading, setTranscriptLoading] = useState(false);
   const [pollBoostUntil, setPollBoostUntil] = useState<number>(0);
 
-  // 서버 목록 쿼리
-  const { data: serverData, isPending } = useQuery({
-    queryKey: counselingWorkspaceQueryKeys.records(),
-    queryFn: fetchCounselingRecords,
-    refetchInterval: (query) => {
-      const items = query.state.data?.records || [];
-      if (!items.some((record) => needsBackgroundPolling(record))) {
-        return false;
-      }
-
-      return Date.now() < pollBoostUntil
-        ? BOOSTED_POLL_INTERVAL_MS
-        : POLL_INTERVAL_MS;
-    },
-  });
+  const {
+    serverItems,
+    isPending,
+    fetchDetail: fetchServerDetail,
+    cacheRecordDetail,
+    invalidateRecords,
+  } = useCounselingRecordServerRecords({ pollBoostUntil });
 
   // 병합된 records (서버 + 로컬 오버라이드 + 임시 레코드)
-  const serverItems = serverData?.records ?? EMPTY_SERVER_ITEMS;
   const records = useMergedRecords({
     serverItems,
     localOverrides,
@@ -91,31 +69,6 @@ export function useRecords(selectedRecordId: string | null) {
   const recordsRef = useRef(records);
   recordsRef.current = records;
 
-  // 서버에서 processing → ready 전환 감지 (이전 데이터와 비교)
-  const prevServerDataRef = useRef<{
-    records: CounselingRecordListItem[];
-  } | null>(null);
-  useEffect(() => {
-    if (!serverData) return;
-
-    const prev = prevServerDataRef.current;
-    prevServerDataRef.current = serverData;
-
-    if (!prev) return;
-
-    const readyTransitioned = serverData.records.filter((item) => {
-      const existing = prev.records.find((p) => p.id === item.id);
-      return existing?.status === "processing" && item.status !== "processing";
-    });
-
-    for (const item of readyTransitioned) {
-      queryClient.prefetchQuery({
-        queryKey: counselingWorkspaceQueryKeys.record(item.id),
-        queryFn: () => fetchCounselingRecordDetail(item.id),
-      });
-    }
-  }, [serverData, queryClient]);
-
   const processingStep = useMemo(() => {
     if (selected?.status !== "processing") {
       return 0;
@@ -131,12 +84,7 @@ export function useRecords(selectedRecordId: string | null) {
     async (id: string) => {
       setTranscriptLoading(true);
       try {
-        const data = await queryClient.fetchQuery({
-          queryKey: counselingWorkspaceQueryKeys.record(id),
-          queryFn: () => fetchCounselingRecordDetail(id),
-          staleTime: 30_000,
-        });
-
+        const data = await fetchServerDetail(id);
         const detailPatch = detailToRecordPatch(data.record);
 
         patchRecord(id, detailPatch);
@@ -146,7 +94,7 @@ export function useRecords(selectedRecordId: string | null) {
         setTranscriptLoading(false);
       }
     },
-    [patchRecord, queryClient]
+    [fetchServerDetail, patchRecord]
   );
 
   // ── ensureDetail: selectRecord의 데이터 전용 후속 (선택 상태 변경 없음) ──
@@ -171,34 +119,28 @@ export function useRecords(selectedRecordId: string | null) {
   const addReadyRecord = useCallback(
     (record: RecordItem) => {
       addReadyRecordState(record);
-      queryClient.invalidateQueries({
-        queryKey: counselingWorkspaceQueryKeys.records(),
-      });
+      invalidateRecords();
       // 선택은 호출자가 selection.selectRecord(record.id)로 처리
     },
-    [addReadyRecordState, queryClient]
+    [addReadyRecordState, invalidateRecords]
   );
 
   const replaceRecord = useCallback(
     (tempId: string, realRecord: RecordItem) => {
       replaceRecordState(tempId, realRecord);
-      queryClient.invalidateQueries({
-        queryKey: counselingWorkspaceQueryKeys.records(),
-      });
+      invalidateRecords();
       // 선택 ID 교체는 호출자가 selection.replaceSelectedRecordId(tempId, realRecord.id)로 처리
     },
-    [queryClient, replaceRecordState]
+    [invalidateRecords, replaceRecordState]
   );
 
   const removeRecord = useCallback(
     (id: string) => {
       removeRecordState(id);
-      queryClient.invalidateQueries({
-        queryKey: counselingWorkspaceQueryKeys.records(),
-      });
+      invalidateRecords();
       // 선택 해제는 호출자가 selection.clearRecordIfSelected(id)로 처리
     },
-    [queryClient, removeRecordState]
+    [invalidateRecords, removeRecordState]
   );
 
   const clearMessages = useCallback(
@@ -226,18 +168,14 @@ export function useRecords(selectedRecordId: string | null) {
     (detail: CounselingRecordDetail) => {
       const patch = detailToRecordPatch(detail);
       patchRecord(detail.id, patch);
-      queryClient.setQueryData(counselingWorkspaceQueryKeys.record(detail.id), {
-        record: detail,
-      });
-      queryClient.invalidateQueries({
-        queryKey: counselingWorkspaceQueryKeys.records(),
-      });
+      cacheRecordDetail(detail);
+      invalidateRecords();
       if (needsBackgroundPolling(detail)) {
         boostPolling();
       }
       // 선택 변경은 호출자가 필요하면 selection.selectRecord(detail.id)로 처리
     },
-    [boostPolling, patchRecord, queryClient]
+    [boostPolling, cacheRecordDetail, invalidateRecords, patchRecord]
   );
 
   // viewState — isRecording은 명시 상태, processing은 selected에서 파생

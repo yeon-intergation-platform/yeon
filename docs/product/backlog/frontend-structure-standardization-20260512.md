@@ -1680,3 +1680,29 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 68차 — useRecords server query boundary 분리
+
+### 작업내용
+
+- `useRecords` 안의 서버 목록 query, polling interval, processing→ready prefetch, detail fetch/cache update를 `useCounselingRecordServerRecords` hook으로 분리한다.
+- `useRecords`는 서버 원본 hook 결과와 로컬 override/temp state 병합 및 recorder/view orchestration에 집중하게 한다.
+- 기존 records query key, polling boost, detail patch 적용 동작은 유지한다.
+
+### 논의 필요
+
+- `useRecords`는 이미 줄었지만 서버 원본 query와 로컬 override 병합을 같은 hook에서 직접 소유한다. 서버 원본 경계를 hook으로 분리해야 이후 temp/edit draft 상태를 독립적으로 정리하기 쉬워진다.
+
+### 선택지
+
+1. 서버 query/detail cache boundary만 별도 hook으로 분리한다.
+2. local override/temp record까지 한 번에 reducer로 재설계한다.
+3. view state 계산만 더 분리한다.
+
+### 추천
+
+- 선택지 1. 서버 원본 소유권을 먼저 분리해 회귀 위험을 낮추고, 후속에서 local override reducer화를 진행한다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.
