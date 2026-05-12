@@ -11,17 +11,20 @@ export type CardRoomLocalProfile = {
 };
 
 function randomId() {
-  if (typeof crypto !== "undefined" && crypto.randomUUID) return crypto.randomUUID();
+  if (typeof crypto !== "undefined" && crypto.randomUUID)
+    return crypto.randomUUID();
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
 }
 
 function readProfile(): CardRoomLocalProfile {
-  if (typeof localStorage === "undefined") return { nickname: "Guest", characterId: "guga" };
+  if (typeof localStorage === "undefined")
+    return { nickname: "Guest", characterId: "guga" };
   const raw = localStorage.getItem(PROFILE_KEY);
   if (raw) {
     try {
       const parsed = JSON.parse(raw) as Partial<CardRoomLocalProfile>;
-      if (parsed.nickname && parsed.characterId) return { nickname: parsed.nickname, characterId: parsed.characterId };
+      if (parsed.nickname && parsed.characterId)
+        return { nickname: parsed.nickname, characterId: parsed.characterId };
     } catch {
       localStorage.removeItem(PROFILE_KEY);
     }
@@ -39,19 +42,30 @@ function readGuestId() {
 }
 
 export function useCardRoomProfile() {
-  const [profile, setProfileState] = useState<CardRoomLocalProfile>(() => ({ nickname: "Guest", characterId: "guga" }));
+  const [profile, setProfileState] = useState<CardRoomLocalProfile>(() => ({
+    nickname: "Guest",
+    characterId: "guga",
+  }));
   const [guestId, setGuestId] = useState("guest-browser");
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     setProfileState(readProfile());
     setGuestId(readGuestId());
+    setLoaded(true);
   }, []);
 
   const setProfile = (next: CardRoomLocalProfile) => {
-    const normalized = { nickname: next.nickname.trim().slice(0, 40) || "Guest", characterId: next.characterId || "guga" };
+    const normalized = {
+      nickname: next.nickname.trim().slice(0, 40) || "Guest",
+      characterId: next.characterId || "guga",
+    };
     setProfileState(normalized);
     localStorage.setItem(PROFILE_KEY, JSON.stringify(normalized));
   };
 
-  return useMemo(() => ({ profile, guestId, setProfile }), [profile, guestId]);
+  return useMemo(
+    () => ({ profile, guestId, loaded, setProfile }),
+    [profile, guestId, loaded]
+  );
 }
