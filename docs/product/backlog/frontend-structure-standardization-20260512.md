@@ -1008,3 +1008,28 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 42차 — merged records hook feature 이동
+
+### 작업내용
+
+- `use-merged-records`를 `features/counseling-record-workspace/hooks`로 이동한다.
+- app `_hooks/index.ts`는 기존 import 호환 re-export만 유지한다.
+
+### 논의 필요
+
+- `RecordItem` 타입과 `record-state-adapters`는 아직 app `_lib`에 남아 있다. `use-records`와 함께 상태/model 원천을 옮기는 차수에서 별도 정리한다.
+
+### 선택지
+
+1. 훅 위치만 feature로 이동하고 model/adapters 이동은 후속 차수로 남긴다.
+2. `RecordItem`과 adapters까지 함께 feature model로 옮긴다.
+3. `use-records`까지 즉시 같이 이동한다.
+
+### 추천
+
+- 선택지 1. 작은 훅 이동으로 app `_hooks` 표면을 줄이고, 원천 타입 이동은 `use-records` 정리와 묶는다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.
