@@ -1,4 +1,8 @@
-import { DownloadIcon, MicIcon, UploadIcon } from "./icons";
+import {
+  DownloadIcon,
+  MicIcon,
+  UploadIcon,
+} from "@/features/counseling-service-shell/icons";
 import { AUDIO_SAMPLE_TEST_DATA } from "@/lib/test-data-downloads";
 
 export interface EmptyStateProps {

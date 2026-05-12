@@ -1,4 +1,4 @@
-export { EmptyState } from "./empty-state";
+export { EmptyState } from "@/features/counseling-record-workspace/components/empty-state";
 export { RecordingState } from "./recording-state";
 export { Sidebar } from "./sidebar";
 export { CenterPanel } from "./center-panel";
@@ -6,5 +6,5 @@ export { AiPanel } from "@/features/counseling-record-workspace/components/ai-pa
 export { LinkMemberModal } from "./link-member-modal";
 export { MemberPanel } from "./member-panel";
 export { QuickMemoModal } from "./quick-memo-modal";
-export { InsightBanner } from "./insight-banner";
+export { InsightBanner } from "@/features/counseling-record-workspace/components/insight-banner";
 export { NewRecordEntryModal } from "./new-record-entry-modal";
