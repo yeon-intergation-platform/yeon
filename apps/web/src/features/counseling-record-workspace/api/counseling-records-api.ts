@@ -39,3 +39,17 @@ export function clearCounselingRecordChat(recordId: string) {
     "채팅 기록을 초기화하지 못했습니다."
   );
 }
+
+export function uploadCounselingRecordAudio(
+  formData: FormData,
+  fallbackErrorMessage: string
+) {
+  return counselingWorkspaceFetchJson<CounselingRecordDetailResponse>(
+    resolveApiHrefForCurrentPath("/api/v1/counseling-records"),
+    {
+      method: "POST",
+      body: formData,
+    },
+    fallbackErrorMessage
+  );
+}

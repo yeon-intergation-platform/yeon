@@ -1,7 +1,7 @@
 export { counselingWorkspaceQueryKeys } from "@/features/counseling-record-workspace/api/counseling-workspace-query-keys";
 export { useRecords } from "./use-records";
-export { useRecording } from "./use-recording";
-export { useFileUpload } from "./use-file-upload";
+export { useRecording } from "@/features/counseling-record-workspace/hooks/use-recording";
+export { useFileUpload } from "@/features/counseling-record-workspace/hooks/use-file-upload";
 export { useAudioPlayer } from "@/features/counseling-record-workspace/hooks/use-audio-player";
 export { useAiChat } from "./use-ai-chat";
 export { useAiPanel } from "@/features/counseling-record-workspace/hooks/use-ai-panel";

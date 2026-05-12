@@ -932,3 +932,28 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 39차: counseling recording/file-upload hook feature 이동
+
+### 작업내용
+
+- `use-file-upload`, `use-recording`을 `features/counseling-record-workspace/hooks`로 이동한다.
+- 오디오 업로드 POST 호출을 `features/counseling-record-workspace/api/counseling-records-api.ts` helper로 분리한다.
+- app `_hooks/index.ts`는 기존 사용처 호환을 위한 re-export만 유지한다.
+
+### 논의 필요
+
+- `RecordItem` 타입까지 이번 차수에 feature 타입으로 이동할지 여부.
+
+### 선택지
+
+1. 훅과 API helper만 먼저 이동하고 `RecordItem` 타입 이동은 app `_lib/types` 흡수 차수에서 처리한다.
+2. `RecordItem` 타입과 관련 컴포넌트 import까지 즉시 feature로 이동한다.
+
+### 추천
+
+- 1번. `RecordItem`은 page/sidebar/center/ai-panel 전반에 넓게 퍼져 있어 타입 이동은 별도 PR로 검증하는 편이 안전하다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.
