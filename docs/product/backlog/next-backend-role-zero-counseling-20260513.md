@@ -147,3 +147,23 @@
   - `_shared.ts`가 세션 토큰 추출 후 Spring auth session 응답으로 profile을 구성한다.
   - `getChatServiceAuthByToken` 직접 DB 조회 import를 제거했다.
   - web typecheck/build 및 chat-service route targeted Vitest 통과.
+
+## 4차 - 상담 목록 조회 Next-side scheduling 제거
+
+### 4차 세부 - list route 처리 스케줄링 책임 제거 (완료)
+
+- 작업내용
+  - `GET /api/v1/counseling-records`가 Spring list 결과를 반환한 뒤 Next-side `ensureCounselingRecordProcessingScheduledForListItems`를 호출하지 않게 한다.
+  - processing 상태 복구/스케줄링 책임은 Spring list/detail/transcription service로 이동한다.
+- 논의 필요
+  - 기존 processing record 자동 재시작 정책은 Spring transcription 이관 단계에서 최종 보강한다.
+- 선택지
+  - A. 목록 route의 Next scheduler 호출만 먼저 제거
+  - B. POST audio/transcribe까지 한 번에 이관
+- 추천
+  - A. 조회 route에서 발생하는 Next 백그라운드 부작용부터 제거한다.
+- 사용자 방향
+  - 추천 기준으로 진행.
+- 완료 근거
+  - Spring list 결과 반환 뒤 Next-side `ensureCounselingRecordProcessingScheduledForListItems` 호출을 제거했다.
+  - web typecheck/build 및 diff/skill/SSOT 검증 통과.
