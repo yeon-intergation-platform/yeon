@@ -1,8 +1,9 @@
+import { chatServiceSessionResponseSchema } from "@yeon/api-contract/chat-service";
 import { errorResponseSchema } from "@yeon/api-contract/error";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
-import { getChatServiceAuthByToken } from "@/server/services/chat-service/auth-service";
+import { fetchChatServiceSessionFromSpring } from "@/server/chat-service-auth-spring-client";
 import { ServiceError } from "@/server/services/service-error";
 
 export const CHAT_SERVICE_SESSION_COOKIE_NAME = "chat-service-session";
@@ -21,32 +22,39 @@ export function getChatServiceSessionToken(request: NextRequest) {
   return request.cookies.get(CHAT_SERVICE_SESSION_COOKIE_NAME)?.value ?? null;
 }
 
-export async function requireChatServiceAuth(request: NextRequest) {
+async function resolveChatServiceSession(request: NextRequest) {
   const sessionToken = getChatServiceSessionToken(request);
-  const auth = await getChatServiceAuthByToken(sessionToken);
 
-  if (!auth || !sessionToken) {
-    throw new ServiceError(401, "chat-service 로그인이 필요합니다.");
+  if (!sessionToken) {
+    return null;
   }
 
-  return {
-    sessionToken,
-    profile: auth.profile,
-  };
-}
+  const sessionState = chatServiceSessionResponseSchema.parse(
+    await fetchChatServiceSessionFromSpring(sessionToken)
+  );
 
-export async function getOptionalChatServiceAuth(request: NextRequest) {
-  const sessionToken = getChatServiceSessionToken(request);
-  const auth = await getChatServiceAuthByToken(sessionToken);
-
-  if (!auth || !sessionToken) {
+  if (!sessionState.authenticated || !sessionState.session) {
     return null;
   }
 
   return {
     sessionToken,
-    profile: auth.profile,
+    profile: sessionState.session.user,
   };
+}
+
+export async function requireChatServiceAuth(request: NextRequest) {
+  const auth = await resolveChatServiceSession(request);
+
+  if (!auth) {
+    throw new ServiceError(401, "chat-service 로그인이 필요합니다.");
+  }
+
+  return auth;
+}
+
+export async function getOptionalChatServiceAuth(request: NextRequest) {
+  return resolveChatServiceSession(request);
 }
 
 export async function parseJsonBody(request: NextRequest) {
