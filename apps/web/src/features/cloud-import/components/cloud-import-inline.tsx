@@ -7,12 +7,7 @@ import {
   ChevronRight,
   CloudCog,
   Download,
-  File,
   FileClock,
-  FileSpreadsheet,
-  FileText,
-  Folder,
-  ImageIcon,
   LayoutGrid,
   List,
   Loader2,
@@ -26,121 +21,45 @@ import {
   DEFAULT_CLOUD_PROVIDER,
   getCloudProviderLabel,
 } from "../cloud-provider-config";
-import type { CloudProvider, DriveFile } from "../types";
+import type { CloudProvider } from "../types";
 import type { ImportCommitResult } from "../types";
-import { isSelectableKind } from "../file-kind";
 import { useCloudImport } from "../hooks/use-cloud-import";
 import { useLocalImport } from "../hooks/use-local-import";
 import { FilePreview } from "./file-preview";
+import { FileGrid } from "./cloud-import-file-grid";
 import { ImportRightPanel } from "./import-right-panel";
+import {
+  formatUpdatedAt,
+  getDraftFileExtensionLabel,
+  getDraftRowSummary,
+  getDraftStatusBadgeClass,
+  getDraftStatusLabel,
+  type LocalImportDraftListItem,
+} from "../cloud-import-draft-display";
+import {
+  IMPORT_WORKSPACE_DEFAULT_RATIO,
+  IMPORT_WORKSPACE_DESKTOP_MEDIA_QUERY,
+  IMPORT_WORKSPACE_MAX_RATIO,
+  IMPORT_WORKSPACE_MIN_LEFT_PANE_PX,
+  IMPORT_WORKSPACE_MIN_RATIO,
+  IMPORT_WORKSPACE_MIN_RIGHT_PANE_PX,
+  IMPORT_WORKSPACE_MIN_BOTTOM_PANE_PX,
+  IMPORT_WORKSPACE_MIN_TOP_PANE_PX,
+  IMPORT_WORKSPACE_RESIZER_WIDTH,
+  IMPORT_WORKSPACE_SPLIT_STORAGE_KEY,
+  IMPORT_WORKSPACE_STACKED_DEFAULT_RATIO,
+  IMPORT_WORKSPACE_STACKED_MAX_RATIO,
+  IMPORT_WORKSPACE_STACKED_MIN_RATIO,
+  IMPORT_WORKSPACE_STACKED_RESIZER_HEIGHT,
+  IMPORT_WORKSPACE_STACKED_SPLIT_STORAGE_KEY,
+  LOADING_FEEDBACK_DELAY_MS,
+  getExpandedBottomPanelHeight,
+} from "../cloud-import-layout-constants";
 import {
   SPACE_FULL_TEST_DATA,
   SPACE_LITE_TEST_DATA,
 } from "@/lib/test-data-downloads";
 import { resolveApiHrefForCurrentPath } from "@/lib/app-route-paths";
-
-function formatSize(bytes: number): string {
-  if (bytes === 0) return "-";
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
-
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("ko-KR", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
-}
-
-type LocalImportDraftListItem = {
-  id: string;
-  status:
-    | "uploaded"
-    | "analyzing"
-    | "analyzed"
-    | "edited"
-    | "imported"
-    | "error";
-  selectedFile: DriveFile;
-  error: string | null;
-  processingMessage: string | null;
-  updatedAt: string;
-  expiresAt: string;
-};
-
-function formatUpdatedAt(iso: string) {
-  return new Date(iso).toLocaleString("ko-KR", {
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
-function getDraftStatusLabel(status: LocalImportDraftListItem["status"]) {
-  switch (status) {
-    case "uploaded":
-      return "업로드 완료";
-    case "analyzing":
-      return "분석 중";
-    case "analyzed":
-      return "분석 완료";
-    case "edited":
-      return "수정 중";
-    case "error":
-      return "오류";
-    default:
-      return "임시초안";
-  }
-}
-
-function getDraftStatusBadgeClass(status: LocalImportDraftListItem["status"]) {
-  switch (status) {
-    case "analyzed":
-      return "border-accent-border bg-accent-dim/70 text-accent";
-    case "analyzing":
-      return "border-[rgba(125,211,252,0.24)] bg-[rgba(56,189,248,0.1)] text-[rgb(125,211,252)]";
-    case "edited":
-      return "border-[rgba(196,181,253,0.24)] bg-[rgba(139,92,246,0.1)] text-[rgb(216,180,254)]";
-    case "error":
-      return "border-red/30 bg-red/10 text-red";
-    default:
-      return "border-border bg-surface-2/80 text-text-secondary";
-  }
-}
-
-function getDraftFileExtensionLabel(fileName: string) {
-  const extensionIndex = fileName.lastIndexOf(".");
-
-  if (extensionIndex < 0 || extensionIndex === fileName.length - 1) {
-    return "FILE";
-  }
-
-  return fileName.slice(extensionIndex + 1).toUpperCase();
-}
-
-function getDraftRowSummary(draft: LocalImportDraftListItem) {
-  if (draft.error) {
-    return draft.status === "error"
-      ? "오류가 발생한 작업입니다. 다시 열어 확인하거나 삭제할 수 있습니다."
-      : "상태 확인이 필요한 작업입니다. 다시 열어 이어서 진행해 주세요.";
-  }
-
-  switch (draft.status) {
-    case "uploaded":
-      return "업로드한 파일입니다. 분석을 시작할 수 있습니다.";
-    case "analyzing":
-      return "분석 중이던 작업입니다. 결과를 이어서 확인할 수 있습니다.";
-    case "analyzed":
-      return "분석 결과가 저장되어 있습니다. 검토 후 가져올 수 있습니다.";
-    case "edited":
-      return "수정 중이던 초안입니다. 이어서 마무리할 수 있습니다.";
-    default:
-      return "가져오기 작업을 이어서 확인할 수 있습니다.";
-  }
-}
 
 interface CloudImportInlineProps {
   onClose: () => void;
@@ -160,30 +79,6 @@ export interface CloudImportEntryControls {
   openFilePicker: () => void;
 }
 
-function getExpandedBottomPanelHeight(hasEditablePreview: boolean) {
-  return hasEditablePreview
-    ? "clamp(320px, 42vh, 520px)"
-    : "clamp(220px, 28vh, 320px)";
-}
-
-const IMPORT_WORKSPACE_SPLIT_STORAGE_KEY = "yeon:import-workspace:split-ratio";
-const IMPORT_WORKSPACE_DEFAULT_RATIO = 0.58;
-const IMPORT_WORKSPACE_MIN_RATIO = 0.32;
-const IMPORT_WORKSPACE_MAX_RATIO = 0.72;
-const IMPORT_WORKSPACE_RESIZER_WIDTH = 12;
-const IMPORT_WORKSPACE_MIN_LEFT_PANE_PX = 480;
-const IMPORT_WORKSPACE_MIN_RIGHT_PANE_PX = 380;
-const IMPORT_WORKSPACE_STACKED_SPLIT_STORAGE_KEY =
-  "yeon:import-workspace:stacked-split-ratio";
-const IMPORT_WORKSPACE_STACKED_DEFAULT_RATIO = 0.54;
-const IMPORT_WORKSPACE_STACKED_MIN_RATIO = 0.34;
-const IMPORT_WORKSPACE_STACKED_MAX_RATIO = 0.72;
-const IMPORT_WORKSPACE_STACKED_RESIZER_HEIGHT = 20;
-const IMPORT_WORKSPACE_MIN_TOP_PANE_PX = 240;
-const IMPORT_WORKSPACE_MIN_BOTTOM_PANE_PX = 280;
-const IMPORT_WORKSPACE_DESKTOP_MEDIA_QUERY = "(min-width: 1024px)";
-const LOADING_FEEDBACK_DELAY_MS = 300;
-
 export function CloudImportInline({
   onClose,
   onImportComplete,
@@ -196,7 +91,7 @@ export function CloudImportInline({
   onWorkspaceModeChange,
 }: CloudImportInlineProps) {
   const [activeProvider, setActiveProvider] = useState<CloudProvider>(
-    DEFAULT_CLOUD_PROVIDER,
+    DEFAULT_CLOUD_PROVIDER
   );
   const [isDragging, setIsDragging] = useState(false);
   const [showSavedDraftsModal, setShowSavedDraftsModal] = useState(false);
@@ -211,17 +106,17 @@ export function CloudImportInline({
     string[]
   >([]);
   const [desktopSplitRatio, setDesktopSplitRatio] = useState(
-    IMPORT_WORKSPACE_DEFAULT_RATIO,
+    IMPORT_WORKSPACE_DEFAULT_RATIO
   );
   const [stackedSplitRatio, setStackedSplitRatio] = useState(
-    IMPORT_WORKSPACE_STACKED_DEFAULT_RATIO,
+    IMPORT_WORKSPACE_STACKED_DEFAULT_RATIO
   );
   const [isDesktopSplitDragging, setIsDesktopSplitDragging] = useState(false);
   const [isStackedSplitDragging, setIsStackedSplitDragging] = useState(false);
   const [isDesktopViewport, setIsDesktopViewport] = useState(
     () =>
       typeof window !== "undefined" &&
-      window.matchMedia(IMPORT_WORKSPACE_DESKTOP_MEDIA_QUERY).matches,
+      window.matchMedia(IMPORT_WORKSPACE_DESKTOP_MEDIA_QUERY).matches
   );
   const dragCounterRef = useRef(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -230,7 +125,7 @@ export function CloudImportInline({
     typeof setTimeout
   > | null>(null);
   const deletingDraftDelayTimersRef = useRef(
-    new Map<string, ReturnType<typeof setTimeout>>(),
+    new Map<string, ReturnType<typeof setTimeout>>()
   );
   const desktopSplitRatioRef = useRef(IMPORT_WORKSPACE_DEFAULT_RATIO);
   const stackedSplitRatioRef = useRef(IMPORT_WORKSPACE_STACKED_DEFAULT_RATIO);
@@ -250,29 +145,29 @@ export function CloudImportInline({
       previewWorkspaceRef.current?.getBoundingClientRect().width ?? 0;
     const availableWidth = Math.max(
       containerWidth - IMPORT_WORKSPACE_RESIZER_WIDTH,
-      1,
+      1
     );
 
     if (!containerWidth) {
       return Math.min(
         IMPORT_WORKSPACE_MAX_RATIO,
-        Math.max(IMPORT_WORKSPACE_MIN_RATIO, ratio),
+        Math.max(IMPORT_WORKSPACE_MIN_RATIO, ratio)
       );
     }
 
     const minRatio = Math.max(
       IMPORT_WORKSPACE_MIN_RATIO,
-      IMPORT_WORKSPACE_MIN_LEFT_PANE_PX / availableWidth,
+      IMPORT_WORKSPACE_MIN_LEFT_PANE_PX / availableWidth
     );
     const maxRatio = Math.min(
       IMPORT_WORKSPACE_MAX_RATIO,
-      1 - IMPORT_WORKSPACE_MIN_RIGHT_PANE_PX / availableWidth,
+      1 - IMPORT_WORKSPACE_MIN_RIGHT_PANE_PX / availableWidth
     );
 
     if (minRatio >= maxRatio) {
       return Math.min(
         IMPORT_WORKSPACE_MAX_RATIO,
-        Math.max(IMPORT_WORKSPACE_MIN_RATIO, ratio),
+        Math.max(IMPORT_WORKSPACE_MIN_RATIO, ratio)
       );
     }
 
@@ -284,29 +179,29 @@ export function CloudImportInline({
       previewWorkspaceRef.current?.getBoundingClientRect().height ?? 0;
     const availableHeight = Math.max(
       containerHeight - IMPORT_WORKSPACE_STACKED_RESIZER_HEIGHT,
-      1,
+      1
     );
 
     if (!containerHeight) {
       return Math.min(
         IMPORT_WORKSPACE_STACKED_MAX_RATIO,
-        Math.max(IMPORT_WORKSPACE_STACKED_MIN_RATIO, ratio),
+        Math.max(IMPORT_WORKSPACE_STACKED_MIN_RATIO, ratio)
       );
     }
 
     const minRatio = Math.max(
       IMPORT_WORKSPACE_STACKED_MIN_RATIO,
-      IMPORT_WORKSPACE_MIN_TOP_PANE_PX / availableHeight,
+      IMPORT_WORKSPACE_MIN_TOP_PANE_PX / availableHeight
     );
     const maxRatio = Math.min(
       IMPORT_WORKSPACE_STACKED_MAX_RATIO,
-      1 - IMPORT_WORKSPACE_MIN_BOTTOM_PANE_PX / availableHeight,
+      1 - IMPORT_WORKSPACE_MIN_BOTTOM_PANE_PX / availableHeight
     );
 
     if (minRatio >= maxRatio) {
       return Math.min(
         IMPORT_WORKSPACE_STACKED_MAX_RATIO,
-        Math.max(IMPORT_WORKSPACE_STACKED_MIN_RATIO, ratio),
+        Math.max(IMPORT_WORKSPACE_STACKED_MIN_RATIO, ratio)
       );
     }
 
@@ -333,7 +228,7 @@ export function CloudImportInline({
 
   useEffect(() => {
     const savedRatio = window.localStorage.getItem(
-      IMPORT_WORKSPACE_SPLIT_STORAGE_KEY,
+      IMPORT_WORKSPACE_SPLIT_STORAGE_KEY
     );
 
     if (!savedRatio) return;
@@ -346,7 +241,7 @@ export function CloudImportInline({
 
   useEffect(() => {
     const savedRatio = window.localStorage.getItem(
-      IMPORT_WORKSPACE_STACKED_SPLIT_STORAGE_KEY,
+      IMPORT_WORKSPACE_STACKED_SPLIT_STORAGE_KEY
     );
 
     if (!savedRatio) return;
@@ -375,20 +270,20 @@ export function CloudImportInline({
       previewWorkspaceRef.current.style.gridTemplateColumns =
         buildExpandedPreviewShellGridTemplate(ratio);
     },
-    [buildExpandedPreviewShellGridTemplate, expanded],
+    [buildExpandedPreviewShellGridTemplate, expanded]
   );
 
   useEffect(() => {
     window.localStorage.setItem(
       IMPORT_WORKSPACE_SPLIT_STORAGE_KEY,
-      desktopSplitRatio.toFixed(4),
+      desktopSplitRatio.toFixed(4)
     );
   }, [desktopSplitRatio]);
 
   useEffect(() => {
     window.localStorage.setItem(
       IMPORT_WORKSPACE_STACKED_SPLIT_STORAGE_KEY,
-      stackedSplitRatio.toFixed(4),
+      stackedSplitRatio.toFixed(4)
     );
   }, [stackedSplitRatio]);
 
@@ -401,10 +296,10 @@ export function CloudImportInline({
 
     const syncRatiosToViewport = () => {
       setDesktopSplitRatio((currentRatio) =>
-        clampDesktopSplitRatio(currentRatio),
+        clampDesktopSplitRatio(currentRatio)
       );
       setStackedSplitRatio((currentRatio) =>
-        clampStackedSplitRatio(currentRatio),
+        clampStackedSplitRatio(currentRatio)
       );
     };
 
@@ -500,7 +395,7 @@ export function CloudImportInline({
   const localImport = useLocalImport(
     onImportComplete,
     initialLocalDraftId,
-    onDraftDiscarded,
+    onDraftDiscarded
   );
   const activeHook = activeProvider === "onedrive" ? onedrive : googledrive;
   const activeProviderLabel = getCloudProviderLabel(activeProvider);
@@ -514,8 +409,8 @@ export function CloudImportInline({
     queryFn: async () => {
       const res = await fetch(
         resolveApiHrefForCurrentPath(
-          "/api/v1/integrations/local/drafts?limit=20",
-        ),
+          "/api/v1/integrations/local/drafts?limit=20"
+        )
       );
       if (!res.ok) {
         const text = await res.text().catch(() => "");
@@ -637,7 +532,7 @@ export function CloudImportInline({
       setShowSavedDraftsModal(false);
       void refetchLocalDrafts();
     },
-    [localImport, refetchLocalDrafts],
+    [localImport, refetchLocalDrafts]
   );
 
   const discardDraftFromList = useCallback(
@@ -649,7 +544,7 @@ export function CloudImportInline({
       setDeletingDraftIds((prev) => [...prev, draftId]);
       const delayTimer = setTimeout(() => {
         setVisibleDeletingDraftIds((prev) =>
-          prev.includes(draftId) ? prev : [...prev, draftId],
+          prev.includes(draftId) ? prev : [...prev, draftId]
         );
         deletingDraftDelayTimersRef.current.delete(draftId);
       }, LOADING_FEEDBACK_DELAY_MS);
@@ -661,11 +556,11 @@ export function CloudImportInline({
         } else {
           await fetch(
             resolveApiHrefForCurrentPath(
-              `/api/v1/integrations/local/drafts/${draftId}`,
+              `/api/v1/integrations/local/drafts/${draftId}`
             ),
             {
               method: "DELETE",
-            },
+            }
           ).catch(() => {
             // 목록 새로고침으로 상태를 다시 맞춘다.
           });
@@ -681,11 +576,11 @@ export function CloudImportInline({
         }
         setDeletingDraftIds((prev) => prev.filter((id) => id !== draftId));
         setVisibleDeletingDraftIds((prev) =>
-          prev.filter((id) => id !== draftId),
+          prev.filter((id) => id !== draftId)
         );
       }
     },
-    [deletingDraftIds, localImport, onDraftDiscarded, refetchLocalDrafts],
+    [deletingDraftIds, localImport, onDraftDiscarded, refetchLocalDrafts]
   );
 
   const switchProvider = (p: CloudProvider) => {
@@ -732,10 +627,10 @@ export function CloudImportInline({
   const hasSelectedFile = activeHook.selectedFile !== null;
   const isWorkspaceMode = isLocalMode || hasSelectedFile;
   const localBottomPanelHeight = getExpandedBottomPanelHeight(
-    Boolean(localImport.editablePreview),
+    Boolean(localImport.editablePreview)
   );
   const cloudBottomPanelHeight = getExpandedBottomPanelHeight(
-    Boolean(activeHook.editablePreview),
+    Boolean(activeHook.editablePreview)
   );
   const expandedPreviewShellClassName = expanded
     ? "flex-col lg:grid"
@@ -778,7 +673,7 @@ export function CloudImportInline({
       : "flex-[2] px-5 py-4";
 
   const startDesktopSplitResize = (
-    event: React.PointerEvent<HTMLDivElement>,
+    event: React.PointerEvent<HTMLDivElement>
   ) => {
     if (!expanded || !previewWorkspaceRef.current) return;
 
@@ -789,14 +684,14 @@ export function CloudImportInline({
       startRatio: desktopSplitRatioRef.current,
       availableWidth: Math.max(
         workspaceWidth - IMPORT_WORKSPACE_RESIZER_WIDTH,
-        1,
+        1
       ),
     };
     setIsDesktopSplitDragging(true);
   };
 
   const startStackedSplitResize = (
-    event: React.PointerEvent<HTMLDivElement>,
+    event: React.PointerEvent<HTMLDivElement>
   ) => {
     if (!expanded || !previewWorkspaceRef.current) return;
 
@@ -807,7 +702,7 @@ export function CloudImportInline({
       startRatio: stackedSplitRatioRef.current,
       availableHeight: Math.max(
         workspaceHeight - IMPORT_WORKSPACE_STACKED_RESIZER_HEIGHT,
-        1,
+        1
       ),
     };
     setIsStackedSplitDragging(true);
@@ -815,25 +710,25 @@ export function CloudImportInline({
 
   const nudgeDesktopSplit = (delta: number) => {
     setDesktopSplitRatio((currentRatio) =>
-      clampDesktopSplitRatio(currentRatio + delta),
+      clampDesktopSplitRatio(currentRatio + delta)
     );
   };
 
   const nudgeStackedSplit = (delta: number) => {
     setStackedSplitRatio((currentRatio) =>
-      clampStackedSplitRatio(currentRatio + delta),
+      clampStackedSplitRatio(currentRatio + delta)
     );
   };
 
   const resetDesktopSplit = () => {
     setDesktopSplitRatio(
-      clampDesktopSplitRatio(IMPORT_WORKSPACE_DEFAULT_RATIO),
+      clampDesktopSplitRatio(IMPORT_WORKSPACE_DEFAULT_RATIO)
     );
   };
 
   const resetStackedSplit = () => {
     setStackedSplitRatio(
-      clampStackedSplitRatio(IMPORT_WORKSPACE_STACKED_DEFAULT_RATIO),
+      clampStackedSplitRatio(IMPORT_WORKSPACE_STACKED_DEFAULT_RATIO)
     );
   };
 
@@ -1006,7 +901,7 @@ export function CloudImportInline({
                     <div className="grid gap-3">
                       {localDrafts.map((draft) => {
                         const isDeletingDraft = deletingDraftIds.includes(
-                          draft.id,
+                          draft.id
                         );
                         const shouldShowDeletingDraftLoading =
                           visibleDeletingDraftIds.includes(draft.id);
@@ -1030,7 +925,7 @@ export function CloudImportInline({
                                       </p>
                                       <span className="hidden shrink-0 rounded-full border border-border bg-surface-2/80 px-2 py-0.5 text-[10px] font-semibold tracking-[0.08em] text-text-dim sm:inline-flex">
                                         {getDraftFileExtensionLabel(
-                                          draft.selectedFile.name,
+                                          draft.selectedFile.name
                                         )}
                                       </span>
                                     </div>
@@ -1142,13 +1037,13 @@ export function CloudImportInline({
                 if (event.key === "Home") {
                   event.preventDefault();
                   setStackedSplitRatio(
-                    clampStackedSplitRatio(IMPORT_WORKSPACE_STACKED_MIN_RATIO),
+                    clampStackedSplitRatio(IMPORT_WORKSPACE_STACKED_MIN_RATIO)
                   );
                 }
                 if (event.key === "End") {
                   event.preventDefault();
                   setStackedSplitRatio(
-                    clampStackedSplitRatio(IMPORT_WORKSPACE_STACKED_MAX_RATIO),
+                    clampStackedSplitRatio(IMPORT_WORKSPACE_STACKED_MAX_RATIO)
                   );
                 }
               }}
@@ -1179,13 +1074,13 @@ export function CloudImportInline({
                 if (event.key === "Home") {
                   event.preventDefault();
                   setDesktopSplitRatio(
-                    clampDesktopSplitRatio(IMPORT_WORKSPACE_MIN_RATIO),
+                    clampDesktopSplitRatio(IMPORT_WORKSPACE_MIN_RATIO)
                   );
                 }
                 if (event.key === "End") {
                   event.preventDefault();
                   setDesktopSplitRatio(
-                    clampDesktopSplitRatio(IMPORT_WORKSPACE_MAX_RATIO),
+                    clampDesktopSplitRatio(IMPORT_WORKSPACE_MAX_RATIO)
                   );
                 }
               }}
@@ -1250,13 +1145,13 @@ export function CloudImportInline({
                 if (event.key === "Home") {
                   event.preventDefault();
                   setStackedSplitRatio(
-                    clampStackedSplitRatio(IMPORT_WORKSPACE_STACKED_MIN_RATIO),
+                    clampStackedSplitRatio(IMPORT_WORKSPACE_STACKED_MIN_RATIO)
                   );
                 }
                 if (event.key === "End") {
                   event.preventDefault();
                   setStackedSplitRatio(
-                    clampStackedSplitRatio(IMPORT_WORKSPACE_STACKED_MAX_RATIO),
+                    clampStackedSplitRatio(IMPORT_WORKSPACE_STACKED_MAX_RATIO)
                   );
                 }
               }}
@@ -1287,13 +1182,13 @@ export function CloudImportInline({
                 if (event.key === "Home") {
                   event.preventDefault();
                   setDesktopSplitRatio(
-                    clampDesktopSplitRatio(IMPORT_WORKSPACE_MIN_RATIO),
+                    clampDesktopSplitRatio(IMPORT_WORKSPACE_MIN_RATIO)
                   );
                 }
                 if (event.key === "End") {
                   event.preventDefault();
                   setDesktopSplitRatio(
-                    clampDesktopSplitRatio(IMPORT_WORKSPACE_MAX_RATIO),
+                    clampDesktopSplitRatio(IMPORT_WORKSPACE_MAX_RATIO)
                   );
                 }
               }}
@@ -1500,215 +1395,5 @@ export function CloudImportInline({
         </div>
       )}
     </div>
-  );
-}
-
-/* ── File Grid ── */
-
-interface FileGridProps {
-  files: DriveFile[];
-  loading: boolean;
-  viewMode: "grid" | "list";
-  onSelectFile: (file: DriveFile) => void;
-  onNavigateFolder: (id: string, name: string) => void;
-}
-
-type FileKind = DriveFile["fileKind"];
-
-function getListRowClasses(fileKind: FileKind): string {
-  switch (fileKind) {
-    case "folder":
-      return "text-text-secondary cursor-pointer opacity-100 hover:bg-accent-dim hover:text-accent";
-    case "spreadsheet":
-      return "text-text cursor-pointer opacity-100 hover:bg-[rgba(34,197,94,0.06)] hover:text-green";
-    case "csv":
-      return "text-text cursor-pointer opacity-100 hover:bg-[rgba(34,197,94,0.06)] hover:text-green";
-    case "txt":
-      return "text-text cursor-pointer opacity-100 hover:bg-accent-dim hover:text-text-secondary";
-    case "pdf":
-      return "text-text cursor-pointer opacity-100 hover:bg-[rgba(239,68,68,0.06)] hover:text-red";
-    case "image":
-      return "text-text cursor-pointer opacity-100 hover:bg-[rgba(6,182,212,0.06)] hover:text-cyan";
-    default:
-      return "";
-  }
-}
-
-function getCardClasses(fileKind: FileKind): string {
-  switch (fileKind) {
-    case "folder":
-      return "text-text-secondary cursor-pointer opacity-100 hover:border-accent-border hover:bg-accent-dim hover:text-accent";
-    case "spreadsheet":
-      return "text-text cursor-pointer opacity-100 hover:border-green hover:bg-[rgba(34,197,94,0.06)]";
-    case "csv":
-      return "text-text cursor-pointer opacity-100 hover:border-green hover:bg-[rgba(34,197,94,0.06)]";
-    case "txt":
-      return "text-text cursor-pointer opacity-100 hover:border-accent-border hover:bg-accent-dim";
-    case "pdf":
-      return "text-text cursor-pointer opacity-100 hover:border-red hover:bg-[rgba(239,68,68,0.06)]";
-    case "image":
-      return "text-text cursor-pointer opacity-100 hover:border-cyan hover:bg-[rgba(6,182,212,0.06)]";
-    default:
-      return "";
-  }
-}
-
-function getIconColor(fileKind: FileKind): string {
-  switch (fileKind) {
-    case "folder":
-      return "text-accent";
-    case "spreadsheet":
-      return "text-green";
-    case "csv":
-      return "text-green";
-    case "txt":
-      return "text-text-secondary";
-    case "pdf":
-      return "text-red";
-    case "image":
-      return "text-cyan";
-    default:
-      return "text-inherit";
-  }
-}
-
-function FileKindIcon({ file, size }: { file: DriveFile; size: number }) {
-  switch (file.fileKind) {
-    case "folder":
-      return <Folder size={size} />;
-    case "spreadsheet":
-      return <FileSpreadsheet size={size} />;
-    case "csv":
-      return <FileSpreadsheet size={size} />;
-    case "txt":
-      return <FileText size={size} />;
-    case "pdf":
-      return <FileText size={size} />;
-    case "image":
-      return <ImageIcon size={size} />;
-    default:
-      return <File size={size} />;
-  }
-}
-
-function FileGrid({
-  files,
-  loading,
-  viewMode,
-  onSelectFile,
-  onNavigateFolder,
-}: FileGridProps) {
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center gap-2 py-10 text-text-dim text-[13px]">
-        <Loader2 size={20} className="animate-spin" />
-        <span>파일 목록을 불러오는 중...</span>
-      </div>
-    );
-  }
-
-  if (files.length === 0) {
-    return (
-      <div className="text-center py-10 text-text-dim text-[13px]">
-        파일이 없습니다.
-      </div>
-    );
-  }
-
-  const selectable = (file: DriveFile) => isSelectableKind(file.fileKind);
-
-  if (viewMode === "list") {
-    return (
-      <ul className="list-none p-0 m-0 flex flex-col gap-0.5">
-        {files.map((file) => (
-          <li key={file.id}>
-            <button
-              className={`grid items-center gap-2.5 px-2.5 py-2 rounded-[6px] border-0 bg-transparent text-[13px] w-full text-left transition-[background] duration-[120ms] ${
-                !file.isFolder && !selectable(file)
-                  ? "text-text-dim cursor-not-allowed opacity-50"
-                  : getListRowClasses(file.fileKind)
-              }`}
-              style={{
-                gridTemplateColumns:
-                  "20px minmax(100px, 40%) max-content max-content",
-              }}
-              onClick={() => {
-                if (file.isFolder) onNavigateFolder(file.id, file.name);
-                else if (selectable(file)) onSelectFile(file);
-              }}
-              disabled={!file.isFolder && !selectable(file)}
-              type="button"
-            >
-              <span
-                className={`flex items-center flex-shrink-0 ${getIconColor(file.fileKind)}`}
-              >
-                <FileKindIcon file={file} size={16} />
-              </span>
-              <span className="flex-1 font-medium overflow-hidden text-ellipsis whitespace-nowrap text-text">
-                {file.name}
-              </span>
-              <span className="text-xs text-text-dim whitespace-nowrap flex-shrink-0">
-                {file.isFolder ? "폴더" : formatSize(file.size)}
-              </span>
-              <span className="text-xs text-text-dim whitespace-nowrap flex-shrink-0 min-w-[80px] text-right">
-                {formatDate(file.lastModifiedAt)}
-              </span>
-            </button>
-          </li>
-        ))}
-      </ul>
-    );
-  }
-
-  return (
-    <ul
-      className="list-none p-0 m-0 grid gap-2"
-      style={{ gridTemplateColumns: "repeat(auto-fill, minmax(148px, 1fr))" }}
-    >
-      {files.map((file) => (
-        <li key={file.id}>
-          <button
-            className={`flex flex-col items-start gap-1.5 px-3 pt-3.5 pb-3 rounded-lg border border-border bg-[var(--surface2,var(--surface))] text-[13px] w-full text-left transition-[border-color,background,color] duration-150 ${
-              !file.isFolder && !selectable(file)
-                ? "text-text-dim cursor-not-allowed opacity-50"
-                : getCardClasses(file.fileKind)
-            }`}
-            onClick={() => {
-              if (file.isFolder) {
-                onNavigateFolder(file.id, file.name);
-              } else if (selectable(file)) {
-                onSelectFile(file);
-              }
-            }}
-            disabled={!file.isFolder && !selectable(file)}
-            type="button"
-            title={
-              selectable(file)
-                ? "클릭하여 미리보기"
-                : file.isFolder
-                  ? "폴더 열기"
-                  : "지원하지 않는 파일 형식"
-            }
-          >
-            <div className={`flex items-center ${getIconColor(file.fileKind)}`}>
-              <FileKindIcon file={file} size={28} />
-            </div>
-            <span className="text-[13px] font-medium text-text overflow-hidden text-ellipsis whitespace-nowrap w-full">
-              {file.name}
-            </span>
-            <span className="text-[11px] text-text-dim whitespace-nowrap overflow-hidden text-ellipsis w-full">
-              {file.isFolder ? "폴더" : formatSize(file.size)}
-              {" · "}
-              {formatDate(file.lastModifiedAt)}
-            </span>
-            {selectable(file) && (
-              <span className="mt-0.5 text-[11px] font-medium text-green">
-                클릭하여 선택
-              </span>
-            )}
-          </button>
-        </li>
-      ))}
-    </ul>
   );
 }
