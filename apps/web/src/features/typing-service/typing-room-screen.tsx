@@ -211,6 +211,7 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
   const [chatDraft, setChatDraft] = useState("");
   const [chatError, setChatError] = useState<string | null>(null);
   const [useDefaultFallback, setUseDefaultFallback] = useState(false);
+  const [isLeavingRoom, setIsLeavingRoom] = useState(false);
   const trackedRoomEntryRef = useRef<string | null>(null);
   const hasTrackedRoomCreateSuccessRef = useRef(false);
 
@@ -440,6 +441,14 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
     selectedDeck,
   ]);
 
+  const onLeaveRoom = useCallback(async () => {
+    if (isLeavingRoom) return;
+
+    setIsLeavingRoom(true);
+    await race.leaveRoom();
+    router.push("/typing-service/rooms");
+  }, [isLeavingRoom, race, router]);
+
   const deckOptions = useMemo<TypingDeckOption[]>(() => {
     const language = room?.language ?? createRoomOptions.language;
     const options = deckState.decks.filter(
@@ -605,13 +614,15 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
       )}
 
       <main className="grid gap-3 px-4 py-3 md:px-8 md:py-4">
-        <Link
-          href="/typing-service/rooms"
+        <button
+          type="button"
+          onClick={onLeaveRoom}
+          disabled={isLeavingRoom}
           className="inline-flex w-fit items-center gap-2 text-[13px] font-semibold text-[#666] no-underline transition-colors hover:text-[#111]"
         >
           <ArrowLeft size={15} />
-          타자방 나가기
-        </Link>
+          {isLeavingRoom ? "나가는 중..." : "타자방 나가기"}
+        </button>
 
         <header className="rounded-2xl border border-[#e5e5e5] bg-white p-3 md:p-4">
           <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(280px,420px)]">

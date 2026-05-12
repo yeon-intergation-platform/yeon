@@ -29,6 +29,15 @@ export const TYPING_ROOM_STATUS = {
 export type TypingRoomStatus =
   (typeof TYPING_ROOM_STATUS)[keyof typeof TYPING_ROOM_STATUS];
 
+export const TYPING_ROOM_LIFECYCLE = {
+  ACTIVE: "active",
+  EMPTY_GRACE: "empty_grace",
+  CLOSED: "closed",
+} as const;
+
+export type TypingRoomLifecycle =
+  (typeof TYPING_ROOM_LIFECYCLE)[keyof typeof TYPING_ROOM_LIFECYCLE];
+
 export const TYPING_ROOM_VISIBILITY = {
   PUBLIC: "public",
   PRIVATE: "private",
@@ -136,6 +145,7 @@ export const RACE_EVENTS = {
   ROOM_START: "room.start",
   ROOM_SETTINGS: "room.settings",
   ROOM_CHAT: "room.chat",
+  ROOM_LEAVE: "room.leave",
   ROOM_ERROR: "room.error",
   RACE_READY: "race.ready",
   RACE_SEED: "race.seed",
@@ -204,6 +214,7 @@ export type TypingRoomSummary = TypingRoomSettings & {
   roomId: string;
   roomCode: string;
   status: TypingRoomStatus;
+  lifecycle: TypingRoomLifecycle;
   currentParticipants: number;
   hostLabel?: string;
   createdAt: number;

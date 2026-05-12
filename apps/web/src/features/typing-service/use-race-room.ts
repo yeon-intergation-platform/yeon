@@ -57,10 +57,12 @@ export type UseRaceRoomResult = {
   sendStart: (payload?: RoomStartMessage) => void;
   sendChat: (content: string) => void;
   sendRoomSettings: (payload: RoomSettingsUpdateMessage) => void;
+  leaveRoom: () => Promise<void>;
   rejoin: () => void;
 };
 
 const DEFAULT_SERVER_URL = "ws://localhost:2567";
+const EXPLICIT_LEAVE_FLUSH_DELAY_MS = 80;
 
 const ROOM_ERROR_MESSAGES = {
   started: "이미 시작된 방입니다.",
@@ -271,7 +273,7 @@ export function useRaceRoom(options: UseRaceRoomOptions): UseRaceRoomResult {
       .then((room) => {
         if (cancelled) {
           try {
-            room.leave();
+            void room.leave(false);
           } catch {
             /* ignore */
           }
@@ -334,7 +336,7 @@ export function useRaceRoom(options: UseRaceRoomOptions): UseRaceRoomResult {
       roomRef.current = null;
       if (room) {
         try {
-          room.leave();
+          void room.leave(false);
         } catch {
           /* ignore */
         }
@@ -383,6 +385,33 @@ export function useRaceRoom(options: UseRaceRoomOptions): UseRaceRoomResult {
     roomRef.current?.send(RACE_EVENTS.ROOM_SETTINGS, payload);
   }, []);
 
+  const leaveRoom = useCallback(async () => {
+    const room = roomRef.current;
+    roomRef.current = null;
+    setRoomError(null);
+
+    if (!room) {
+      setConnectionState("disconnected");
+      return;
+    }
+
+    try {
+      room.send(RACE_EVENTS.ROOM_LEAVE, {});
+      await new Promise((resolve) =>
+        globalThis.setTimeout(resolve, EXPLICIT_LEAVE_FLUSH_DELAY_MS)
+      );
+      await room.leave(true);
+    } catch {
+      try {
+        await room.leave(false);
+      } catch {
+        /* ignore */
+      }
+    } finally {
+      setConnectionState("disconnected");
+    }
+  }, []);
+
   const rejoin = useCallback(() => {
     // connectionState를 즉시 "connecting"으로 리셋 (retry flip-back 방지)
     setConnectionState("connecting");
@@ -415,6 +444,7 @@ export function useRaceRoom(options: UseRaceRoomOptions): UseRaceRoomResult {
       sendStart,
       sendChat,
       sendRoomSettings,
+      leaveRoom,
       rejoin,
     }),
     [
@@ -432,6 +462,7 @@ export function useRaceRoom(options: UseRaceRoomOptions): UseRaceRoomResult {
       sendStart,
       sendChat,
       sendRoomSettings,
+      leaveRoom,
       rejoin,
     ]
   );

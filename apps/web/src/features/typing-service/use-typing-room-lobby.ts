@@ -4,6 +4,7 @@ import { useCallback, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   TYPING_RACE_ROOM_NAME,
+  TYPING_ROOM_LIFECYCLE,
   TYPING_ROOM_STATUS,
   TYPING_ROOM_VISIBILITY,
   type TypingRoomSummary,
@@ -30,9 +31,12 @@ export type TypingRoomLobbyState =
 
 function toSummary(room: AvailableTypingRoom): TypingRoomSummary | null {
   if (!room.metadata) return null;
+  const lifecycle = room.metadata.lifecycle ?? TYPING_ROOM_LIFECYCLE.ACTIVE;
+
   return {
     ...room.metadata,
     roomId: room.roomId,
+    lifecycle,
     currentParticipants: room.clients,
     maxParticipants: room.maxClients,
   };
@@ -47,6 +51,8 @@ async function fetchTypingRooms() {
     .map(toSummary)
     .filter((room): room is TypingRoomSummary => Boolean(room))
     .filter((room) => room.status === TYPING_ROOM_STATUS.WAITING)
+    .filter((room) => room.lifecycle === TYPING_ROOM_LIFECYCLE.ACTIVE)
+    .filter((room) => room.currentParticipants > 0)
     .filter((room) => room.visibility === TYPING_ROOM_VISIBILITY.PUBLIC)
     .sort((a, b) => b.createdAt - a.createdAt);
 }
