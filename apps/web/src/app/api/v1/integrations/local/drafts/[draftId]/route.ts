@@ -1,3 +1,4 @@
+import { z } from "zod";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
@@ -5,7 +6,6 @@ import {
   jsonError,
   requireAuthenticatedUser,
 } from "@/app/api/v1/counseling-records/_shared";
-import { importPreviewBodySchema } from "@/server/services/import-preview-service";
 import {
   deleteImportDraftInSpring,
   fetchImportDraftFromSpring,
@@ -15,7 +15,29 @@ import {
 
 export const runtime = "nodejs";
 
-export async function GET(request: NextRequest, { params }: { params: Promise<{ draftId: string }> }) {
+const localImportStudentSchema = z.object({
+  name: z.string().min(1),
+  email: z.string().nullish(),
+  phone: z.string().nullish(),
+  status: z.string().nullish(),
+  customFields: z.record(z.string(), z.string().nullish()).nullish(),
+});
+
+const localImportCohortSchema = z.object({
+  name: z.string().min(1),
+  startDate: z.string().nullish(),
+  endDate: z.string().nullish(),
+  students: z.array(localImportStudentSchema),
+});
+
+const importPreviewBodySchema = z.object({
+  cohorts: z.array(localImportCohortSchema).min(1),
+});
+
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ draftId: string }> }
+) {
   const { currentUser, response } = await requireAuthenticatedUser(request);
   if (!currentUser) return response;
   const { draftId } = await params;
@@ -23,31 +45,48 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const draft = await fetchImportDraftFromSpring(currentUser.id, draftId);
     return NextResponse.json(draft);
   } catch (error) {
-    if (error instanceof ImportDraftsSpringBackendHttpError) return jsonError(error.message, error.status);
+    if (error instanceof ImportDraftsSpringBackendHttpError)
+      return jsonError(error.message, error.status);
     console.error(error);
     return jsonError("가져오기 초안을 불러오지 못했습니다.", 500);
   }
 }
 
-export async function PATCH(request: NextRequest, { params }: { params: Promise<{ draftId: string }> }) {
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ draftId: string }> }
+) {
   const { currentUser, response } = await requireAuthenticatedUser(request);
   if (!currentUser) return response;
   let body: unknown;
-  try { body = await request.json(); } catch { return jsonError("요청 본문이 올바른 JSON 형식이 아닙니다.", 400); }
+  try {
+    body = await request.json();
+  } catch {
+    return jsonError("요청 본문이 올바른 JSON 형식이 아닙니다.", 400);
+  }
   const parsed = importPreviewBodySchema.safeParse(body);
-  if (!parsed.success) return jsonError("요청 데이터가 올바르지 않습니다.", 400);
+  if (!parsed.success)
+    return jsonError("요청 데이터가 올바르지 않습니다.", 400);
   const { draftId } = await params;
   try {
-    const result = await patchImportDraftPreviewInSpring(currentUser.id, draftId, { preview: parsed.data, status: 'edited' });
+    const result = await patchImportDraftPreviewInSpring(
+      currentUser.id,
+      draftId,
+      { preview: parsed.data, status: "edited" }
+    );
     return NextResponse.json(result);
   } catch (error) {
-    if (error instanceof ImportDraftsSpringBackendHttpError) return jsonError(error.message, error.status);
+    if (error instanceof ImportDraftsSpringBackendHttpError)
+      return jsonError(error.message, error.status);
     console.error(error);
     return jsonError("가져오기 초안을 저장하지 못했습니다.", 500);
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: Promise<{ draftId: string }> }) {
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ draftId: string }> }
+) {
   const { currentUser, response } = await requireAuthenticatedUser(request);
   if (!currentUser) return response;
   const { draftId } = await params;
@@ -55,7 +94,8 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     const result = await deleteImportDraftInSpring(currentUser.id, draftId);
     return NextResponse.json(result);
   } catch (error) {
-    if (error instanceof ImportDraftsSpringBackendHttpError) return jsonError(error.message, error.status);
+    if (error instanceof ImportDraftsSpringBackendHttpError)
+      return jsonError(error.message, error.status);
     console.error(error);
     return jsonError("가져오기 초안을 삭제하지 못했습니다.", 500);
   }

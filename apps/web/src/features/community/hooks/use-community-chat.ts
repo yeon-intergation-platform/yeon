@@ -7,10 +7,9 @@ import {
   sendPresenceHeartbeat,
 } from "../community-presence";
 import {
-  chatServiceApi,
-  type ChatServiceMessage,
-  type ChatServiceRoom,
-} from "../chat-service-api";
+  communityChatApi,
+  type CommunityChatMessage,
+} from "../community-chat-api";
 
 type ErrorState = string | null;
 
@@ -18,12 +17,13 @@ type UseCommunityChatOptions = {
   pollIntervalMs?: number;
 };
 
+const DEFAULT_GUEST_NICKNAME = "익명이";
+
 export function useCommunityChat({
   pollIntervalMs = 6000,
 }: UseCommunityChatOptions = {}) {
-  const [messages, setMessages] = useState<ChatServiceMessage[]>([]);
-  const [activeRoom, setActiveRoom] = useState<ChatServiceRoom | null>(null);
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [messages, setMessages] = useState<CommunityChatMessage[]>([]);
+  const [currentSenderId, setCurrentSenderId] = useState<string | null>(null);
   const [isMessagesLoading, setIsMessagesLoading] = useState(true);
   const [messageError, setMessageError] = useState<ErrorState>(null);
   const [isSendingMessage, setIsSendingMessage] = useState(false);
@@ -40,29 +40,8 @@ export function useCommunityChat({
     setMessageError(null);
 
     try {
-      const sessionResponse = await chatServiceApi.getSession();
-      const userId = sessionResponse.session?.user.id ?? null;
-      setCurrentUserId(userId);
-
-      if (!sessionResponse.authenticated || !userId) {
-        setActiveRoom(null);
-        setMessages([]);
-        setMessageError("채팅은 채팅 서비스 로그인 후 사용할 수 있습니다.");
-        return;
-      }
-
-      const roomsResponse = await chatServiceApi.listRooms();
-      const selectedRoom = roomsResponse.rooms[0] ?? null;
-      setActiveRoom(selectedRoom);
-
-      if (!selectedRoom) {
-        setMessages([]);
-        setMessageError("열린 채팅방이 없습니다. 친구 채팅방을 만든 뒤 이용해주세요.");
-        return;
-      }
-
-      const roomResponse = await chatServiceApi.getRoom(selectedRoom.id);
-      setMessages(roomResponse.messages);
+      const response = await communityChatApi.listMessages();
+      setMessages(response.messages);
     } catch (error) {
       if (error instanceof Error) {
         setMessageError(error.message);
@@ -76,11 +55,8 @@ export function useCommunityChat({
   }, []);
 
   useEffect(() => {
-    void loadMessages();
-  }, [loadMessages]);
-
-  useEffect(() => {
     const sessionId = readPresenceSessionId();
+    setCurrentSenderId(`guest:${sessionId}`);
     let isDisposed = false;
 
     const updatePresence = async () => {
@@ -106,13 +82,16 @@ export function useCommunityChat({
   }, []);
 
   useEffect(() => {
+    void loadMessages();
+  }, [loadMessages]);
+
+  useEffect(() => {
     const intervalId = window.setInterval(() => {
       void loadMessages();
     }, pollIntervalMs);
 
     return () => window.clearInterval(intervalId);
   }, [loadMessages, pollIntervalMs]);
-
 
   const sendMessage = useCallback(
     async (message: string) => {
@@ -122,17 +101,19 @@ export function useCommunityChat({
         return;
       }
 
-      if (!activeRoom) {
-        setMessageError("전송할 채팅방이 없습니다. 채팅방을 만든 뒤 이용해주세요.");
-        throw new Error("전송할 채팅방이 없습니다.");
-      }
-
+      const guestSessionId = readPresenceSessionId();
+      setCurrentSenderId(`guest:${guestSessionId}`);
       setMessageError(null);
       setIsSendingMessage(true);
 
       try {
-        const response = await chatServiceApi.sendMessage(activeRoom.id, trimmed);
+        const response = await communityChatApi.sendMessage({
+          body: trimmed,
+          guestSessionId,
+          guestNickname: DEFAULT_GUEST_NICKNAME,
+        });
         setMessages((current) => [...current, response.message]);
+        setCurrentSenderId(response.message.senderId);
         await loadMessages();
       } catch (error) {
         if (error instanceof Error) {
@@ -145,7 +126,7 @@ export function useCommunityChat({
         setIsSendingMessage(false);
       }
     },
-    [activeRoom, loadMessages]
+    [loadMessages]
   );
 
   return {
@@ -154,8 +135,7 @@ export function useCommunityChat({
     messageError,
     isSendingMessage,
     sendMessage,
-    currentUserId,
-    activeRoomPeerNickname: activeRoom?.peer.nickname ?? null,
+    currentUserId: currentSenderId,
     activePresenceCount,
   };
 }

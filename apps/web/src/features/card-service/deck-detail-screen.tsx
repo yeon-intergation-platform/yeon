@@ -45,15 +45,48 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
   const [isDeleteOpen, setDeleteOpen] = useState(false);
   const [isEditorOpen, setEditorOpen] = useState(false);
   const [isExportOpen, setExportOpen] = useState(false);
+  const [editingCardId, setEditingCardId] = useState<string | null>(null);
+  const [editingCardDirty, setEditingCardDirty] = useState(false);
   const detailQuery = useDeckDetail(deckId);
   const state = toViewState(detailQuery);
 
   const openCardEditor = (source = "detail_header") => {
+    if (
+      editingCardDirty &&
+      !window.confirm(
+        "수정 중인 카드 내용이 있습니다. 카드 추가를 열면 현재 편집을 닫습니다. 계속할까요?"
+      )
+    ) {
+      return;
+    }
+    setEditingCardId(null);
+    setEditingCardDirty(false);
     setEditorOpen(true);
     trackEvent(analyticsEvents.cardAddOpen, {
       deck_id: deckId,
       source,
     });
+  };
+
+  const requestInlineEdit = (itemId: string) => {
+    if (editingCardId === itemId) return true;
+    if (
+      editingCardDirty &&
+      !window.confirm(
+        "수정 중인 카드 내용이 있습니다. 저장하지 않고 다른 카드를 수정할까요?"
+      )
+    ) {
+      return false;
+    }
+    setEditorOpen(false);
+    setEditingCardId(itemId);
+    setEditingCardDirty(false);
+    return true;
+  };
+
+  const closeInlineEdit = () => {
+    setEditingCardId(null);
+    setEditingCardDirty(false);
   };
 
   return (
@@ -125,7 +158,7 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
                       아직 카드가 없습니다.
                     </p>
                     <p className="mt-3 text-[14px] leading-6 text-[#888] md:text-[15px]">
-                      카드 추가 버튼을 눌러 첫 카드부터 중앙 모달에서 바로
+                      카드 추가 버튼을 눌러 첫 카드부터 질문과 답변을
                       작성해보세요.
                     </p>
                     <button
@@ -146,6 +179,14 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
                           deckId={state.deck.id}
                           index={index + 1}
                           item={item}
+                          isEditing={editingCardId === item.id}
+                          onRequestEdit={requestInlineEdit}
+                          onCloseEdit={closeInlineEdit}
+                          onDirtyChange={(itemId, dirty) => {
+                            if (editingCardId === itemId) {
+                              setEditingCardDirty(dirty);
+                            }
+                          }}
                         />
                       </li>
                     ))}
