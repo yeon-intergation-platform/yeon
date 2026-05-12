@@ -77,8 +77,8 @@ public class CardRoomService {
 
   @Transactional
   public CardRoomParticipantResponse updateParticipant(String roomId, String participantId, UpdateCardRoomParticipantRequest request) {
-    requireRoom(roomId);
-    var participant = requireParticipant(participantId);
+    var room = requireRoom(roomId);
+    var participant = requireParticipantInRoom(room, participantId);
     CardRoomProfileRequest profile = request == null ? null : request.profile();
     String role = request == null ? null : (request.role() == null ? null : normalizeRole(request.role(), participant.role()));
     repository.updateParticipant(participant.internalId(), profile == null ? null : normalizeText(profile.nickname(), 40, "닉네임을 입력해 주세요."), profile == null ? null : normalizeText(profile.characterId(), 80, "캐릭터를 선택해 주세요."), role, request == null ? null : request.isReady());
@@ -88,7 +88,7 @@ public class CardRoomService {
   @Transactional
   public CardRoomResponse leaveRoom(String roomId, String participantId) {
     var room = requireRoom(roomId);
-    var participant = requireParticipant(participantId);
+    var participant = requireParticipantInRoom(room, participantId);
     repository.leaveParticipant(participant.internalId(), OffsetDateTime.now(ZoneOffset.UTC));
     return new CardRoomResponse(detail(room.publicId()), null);
   }
@@ -96,7 +96,7 @@ public class CardRoomService {
   @Transactional
   public CardRoomResponse reveal(String roomId, String participantId) {
     var room = requireRoom(roomId);
-    requireParticipant(participantId);
+    requireParticipantInRoom(room, participantId);
     repository.updateStatus(room.internalId(), "revealed", room.currentCardIndex(), OffsetDateTime.now(ZoneOffset.UTC));
     return new CardRoomResponse(detail(roomId), null);
   }
@@ -104,7 +104,7 @@ public class CardRoomService {
   @Transactional
   public CardRoomResponse next(String roomId, String participantId) {
     var room = requireRoom(roomId);
-    requireParticipant(participantId);
+    requireParticipantInRoom(room, participantId);
     int nextIndex = room.currentCardIndex() + 1;
     int cardCount = repository.listCards(room.internalId()).size();
     String nextStatus = nextIndex >= cardCount ? "finished" : "answering";
@@ -115,7 +115,7 @@ public class CardRoomService {
   @Transactional
   public CardRoomMessagesResponse addMessage(String roomId, String participantId, CreateCardRoomMessageRequest request) {
     var room = requireRoom(roomId);
-    var participant = requireParticipant(participantId);
+    var participant = requireParticipantInRoom(room, participantId);
     String content = normalizeText(request == null ? null : request.content(), 500, "메시지를 입력해 주세요.");
     repository.insertMessage(newPublicId("crmmsg"), room.internalId(), participant.internalId(), content, "user", OffsetDateTime.now(ZoneOffset.UTC));
     return new CardRoomMessagesResponse(detail(roomId).messages());
@@ -124,7 +124,7 @@ public class CardRoomService {
   @Transactional
   public CardRoomResultResponse submitResult(String roomId, String participantId, SubmitCardRoomResultRequest request) {
     var room = requireRoom(roomId);
-    var participant = requireParticipant(participantId);
+    var participant = requireParticipantInRoom(room, participantId);
     var card = repository.findCard(request == null ? null : request.cardId());
     if (card == null || !card.roomId().equals(room.internalId())) throw new CardRoomServiceException(404, "CARD_NOT_FOUND", "카드를 찾지 못했습니다.");
     String result = normalizeResult(request.result());
@@ -146,6 +146,7 @@ public class CardRoomService {
 
   private RoomRow requireRoom(String roomId) { var room = repository.findRoom(roomId); if (room == null) throw new CardRoomServiceException(404, "ROOM_NOT_FOUND", "카드방을 찾지 못했습니다."); return room; }
   private ParticipantRow requireParticipant(String participantId) { var p = repository.findParticipant(participantId); if (p == null) throw new CardRoomServiceException(404, "PARTICIPANT_NOT_FOUND", "참가자를 찾지 못했습니다."); return p; }
+  private ParticipantRow requireParticipantInRoom(RoomRow room, String participantId) { var participant = requireParticipant(participantId); if (!participant.roomId().equals(room.internalId())) throw new CardRoomServiceException(403, "PARTICIPANT_ROOM_MISMATCH", "참가자가 해당 카드방에 속해 있지 않습니다."); return participant; }
   private String nextRole(Long roomId) { return repository.listParticipants(roomId).stream().anyMatch(p -> "CHECKER".equals(p.role())) ? "MEMORIZER" : "CHECKER"; }
   private CardRoomProfileRequest normalizeProfile(CardRoomProfileRequest profile) { if (profile == null) throw new CardRoomServiceException(400, "PROFILE_REQUIRED", "카드방 프로필이 필요합니다."); return new CardRoomProfileRequest(normalizeText(profile.nickname(), 40, "닉네임을 입력해 주세요."), normalizeText(profile.characterId(), 80, "캐릭터를 선택해 주세요.")); }
   private String normalizeText(String value, int max, String message) { if (value == null || value.trim().isBlank()) throw new CardRoomServiceException(400, "INVALID_TEXT", message); return value.trim().substring(0, Math.min(value.trim().length(), max)); }
