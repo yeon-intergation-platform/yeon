@@ -1368,3 +1368,29 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 56차 — center panel partial transcript state component 추출
+
+### 작업내용
+
+- `center-panel.tsx`의 partial transcript ready 상태 UI를 feature component로 추출한다.
+- header, audio player, 누락 구간 retry CTA, retry feedback, partial transcript details 표시를 component 내부로 이동한다.
+- 누락 구간 재시도 동작, 진행률 표시, 부분 원문 빈 상태 문구는 기존과 동일하게 유지한다.
+
+### 논의 필요
+
+- partial 상태는 processing이지만 일반 processing과 다른 복구 액션을 갖는다. 일반 processing component와 합치지 않고 별도 component로 유지해 상태 의미를 분명히 한다.
+
+### 선택지
+
+1. `RecordPartialTranscriptState` component를 별도로 추출한다.
+2. `RecordProcessingState`에 variant prop으로 통합한다.
+3. ready/partial 공통 header까지 한 번에 추출한다.
+
+### 추천
+
+- 선택지 1. 상태 의미와 retry 액션 경계를 명확히 유지하면서 center panel의 큰 JSX 블록을 제거한다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.
