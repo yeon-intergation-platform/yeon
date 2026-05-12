@@ -8,7 +8,7 @@ describe("getStudentManagementLayoutUiPolicy", () => {
       getStudentManagementLayoutUiPolicy({
         spacesLoading: true,
         spaceCount: 0,
-      }),
+      })
     ).toMatchObject({
       surface: "workspace",
       showStudentShell: true,
@@ -21,7 +21,7 @@ describe("getStudentManagementLayoutUiPolicy", () => {
       getStudentManagementLayoutUiPolicy({
         spacesLoading: false,
         spaceCount: 0,
-      }),
+      })
     ).toMatchObject({
       surface: "space-gate",
       showStudentShell: false,
@@ -34,7 +34,7 @@ describe("getStudentManagementLayoutUiPolicy", () => {
       getStudentManagementLayoutUiPolicy({
         spacesLoading: false,
         spaceCount: 3,
-      }),
+      })
     ).toMatchObject({
       surface: "workspace",
       showStudentShell: true,

@@ -1882,3 +1882,28 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 76차 — student management layout policy/utils feature 이동
+
+### 작업내용
+
+- `app/counseling-service/student-management/_lib`에 남아 있는 순수 layout policy와 sidebar selection util을 `features/student-management/lib`로 이동한다.
+- layout, selection hook, unit test import를 feature lib SSOT로 갱신한다.
+- route/app 계층에는 화면 조립만 남기고 순수 규칙/상태 유틸 소유권을 feature로 정리한다.
+
+### 논의 필요
+
+- app `_hooks/use-space-sidebar-selection.ts` 자체까지 feature hook으로 이동할지 여부.
+
+### 선택지
+
+1. 이번 차수는 순수 lib 이동만 수행하고 route hook 이동은 후속으로 둔다.
+2. lib와 selection hook을 동시에 feature로 이동한다.
+
+### 추천
+
+- 1번. 순수 함수 이동은 회귀 위험이 낮지만 selection hook은 URL/route 선택 상태와 결합되어 있어 별도 검증 단위로 분리한다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.

@@ -22,7 +22,7 @@ import {
   SpaceSettingsDrawerHost,
   useSpaceSettingsDrawer,
 } from "@/features/space-settings";
-import { getStudentManagementLayoutUiPolicy } from "./_lib/student-management-layout-ui-policy";
+import { getStudentManagementLayoutUiPolicy } from "@/features/student-management/lib/student-management-layout-ui-policy";
 import {
   StudentManagementDeleteSpaceDialog,
   StudentManagementMobileSpaceActionSheet,

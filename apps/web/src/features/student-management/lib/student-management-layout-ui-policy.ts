@@ -12,7 +12,7 @@ type StudentManagementLayoutUiPolicyParams = {
 };
 
 export function getStudentManagementLayoutUiPolicy(
-  params: StudentManagementLayoutUiPolicyParams,
+  params: StudentManagementLayoutUiPolicyParams
 ): StudentManagementLayoutUiPolicy {
   const hasNoSpaces = !params.spacesLoading && params.spaceCount === 0;
 

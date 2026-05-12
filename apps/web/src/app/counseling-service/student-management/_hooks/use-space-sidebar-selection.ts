@@ -6,7 +6,7 @@ import {
   createRangeSelection,
   pruneSpaceSelection,
   syncSelectionWithSelectedSpace,
-} from "../_lib/space-sidebar-utils";
+} from "@/features/student-management/lib/space-sidebar-utils";
 import type {
   SpaceContextMenuState,
   SpaceSelectionState,
