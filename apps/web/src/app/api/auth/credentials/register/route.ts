@@ -3,14 +3,13 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
 import { AuthFlowError } from "@/server/auth/auth-errors";
-import { registerCredentialAccount } from "@/server/auth/credentials/register-service";
 import {
   getClientIp,
   respondWithAuthError,
   respondWithInvalidInput,
   respondWithServerError,
 } from "@/server/auth/credentials/route-helpers";
-import { isEmailSendRateLimited } from "@/server/auth/rate-limit";
+import { registerCredentialInSpring } from "@/server/credential-auth-spring-client";
 
 export const runtime = "nodejs";
 
@@ -31,25 +30,18 @@ export async function POST(request: NextRequest) {
     return respondWithInvalidInput(message);
   }
 
-  const ipAddress = getClientIp(request);
-
-  if (isEmailSendRateLimited(ipAddress)) {
-    return NextResponse.json(
-      { message: "요청이 너무 많습니다. 잠시 후 다시 시도해 주세요." },
-      { status: 429 },
-    );
-  }
-
   try {
-    const result = await registerCredentialAccount(parsed.data, {
-      originFallback: request.nextUrl.origin,
+    const result = await registerCredentialInSpring({
+      ...parsed.data,
+      ipAddress: getClientIp(request),
+      appOrigin: request.nextUrl.origin,
     });
     return NextResponse.json(result, { status: 200 });
   } catch (error) {
     if (error instanceof AuthFlowError) {
       return respondWithAuthError(error);
     }
-    console.error("일반 가입 처리 중 오류", error);
+    console.error("일반 가입 Spring 처리 중 오류", error);
     return respondWithServerError();
   }
 }

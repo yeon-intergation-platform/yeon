@@ -2,13 +2,14 @@ import { credentialResendVerificationBodySchema } from "@yeon/api-contract/crede
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
-import { resendVerificationEmail } from "@/server/auth/credentials/resend-verification-service";
+import { AuthFlowError } from "@/server/auth/auth-errors";
 import {
   getClientIp,
+  respondWithAuthError,
   respondWithInvalidInput,
   respondWithServerError,
 } from "@/server/auth/credentials/route-helpers";
-import { isEmailSendRateLimited } from "@/server/auth/rate-limit";
+import { resendCredentialVerificationInSpring } from "@/server/credential-auth-spring-client";
 
 export const runtime = "nodejs";
 
@@ -29,23 +30,18 @@ export async function POST(request: NextRequest) {
     return respondWithInvalidInput(message);
   }
 
-  const ipAddress = getClientIp(request);
-
-  if (isEmailSendRateLimited(ipAddress)) {
-    return NextResponse.json(
-      { message: "요청이 너무 많습니다. 잠시 후 다시 시도해 주세요." },
-      { status: 429 },
-    );
-  }
-
   try {
-    await resendVerificationEmail({
+    await resendCredentialVerificationInSpring({
       email: parsed.data.email,
-      originFallback: request.nextUrl.origin,
+      ipAddress: getClientIp(request),
+      appOrigin: request.nextUrl.origin,
     });
     return new NextResponse(null, { status: 204 });
   } catch (error) {
-    console.error("인증 메일 재발송 요청 처리 중 오류", error);
+    if (error instanceof AuthFlowError) {
+      return respondWithAuthError(error);
+    }
+    console.error("인증 메일 Spring 재발송 요청 처리 중 오류", error);
     return respondWithServerError();
   }
 }

@@ -4,25 +4,25 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
 import { AuthFlowError } from "@/server/auth/auth-errors";
-import { setCredentialPasswordForUser } from "@/server/auth/credentials/set-password-service";
 import {
   respondWithAuthError,
   respondWithInvalidInput,
   respondWithServerError,
 } from "@/server/auth/credentials/route-helpers";
-import { getCurrentAuthUser } from "@/server/auth/session";
+import { getAuthSessionTokenFromRequest } from "@/server/auth/request-session-token";
+import { setCredentialPasswordInSpring } from "@/server/credential-auth-spring-client";
 
 export const runtime = "nodejs";
 
 export async function POST(request: NextRequest) {
-  const user = await getCurrentAuthUser();
+  const sessionToken = getAuthSessionTokenFromRequest(request);
 
-  if (!user) {
+  if (!sessionToken) {
     return NextResponse.json(
       errorResponseSchema.parse({
         message: "로그인 후 이용해 주세요.",
       }),
-      { status: 401 },
+      { status: 401 }
     );
   }
 
@@ -43,16 +43,16 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    await setCredentialPasswordForUser({
-      userId: user.id,
-      newPassword: parsed.data.password,
+    await setCredentialPasswordInSpring({
+      sessionToken: sessionToken.token,
+      body: { password: parsed.data.password },
     });
     return new NextResponse(null, { status: 204 });
   } catch (error) {
     if (error instanceof AuthFlowError) {
       return respondWithAuthError(error);
     }
-    console.error("비밀번호 추가 처리 중 오류", error);
+    console.error("비밀번호 추가 Spring 처리 중 오류", error);
     return respondWithServerError();
   }
 }
