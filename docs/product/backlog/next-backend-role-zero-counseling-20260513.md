@@ -26,6 +26,25 @@
 
 ## 2차 - 상담 분석/채팅/재전사 streaming Spring 이관
 
+### 2차 세부 - 상담 기록 분석 Spring 이관 (완료)
+
+- 작업내용
+  - `POST /api/v1/counseling-records/[recordId]/analyze`의 분석 상태 전이, OpenAI JSON 분석, 결과 저장을 Spring으로 이동한다.
+  - Next route는 인증 후 Spring JSON 응답 검증/전달만 유지한다.
+- 논의 필요
+  - 긴 원문 section 요약 최적화는 Spring 분석 소유권 이관 뒤 별도 고도화로 둔다.
+- 선택지
+  - A. analyze 단독 PR로 이관
+  - B. transcribe까지 묶기
+- 추천
+  - A. 분석 상태 전이와 AI JSON 저장 경계를 단독 검증한다.
+- 사용자 방향
+  - 추천 기준으로 진행.
+- 완료 근거
+  - Spring `POST /counseling-records/{recordId}/analyze`가 분석 상태 전이, OpenAI JSON 분석, 결과/오류 저장을 소유한다.
+  - Next analyze route는 인증 후 Spring 응답을 `analyzeRecordResponseSchema`로 검증해 전달한다.
+  - backend controller test, web typecheck/build 통과.
+
 ### 2차 세부 - 상담 AI 채팅 Spring 이관 (완료)
 
 - 작업내용
