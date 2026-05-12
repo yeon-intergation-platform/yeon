@@ -1085,3 +1085,28 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 45차 — sidebar member list item component 추출
+
+### 작업내용
+
+- 1000줄급 `sidebar.tsx`에서 memoized `MemberListItem` presentational component를 feature component 파일로 추출한다.
+- sidebar 본문은 선택/드래그 상태 조립과 렌더 조립만 유지한다.
+
+### 논의 필요
+
+- sidebar 전체를 한 번에 분해하면 selection/drag/context menu 상태가 얽혀 위험하다. 이번 차수는 순수 표시 항목 추출만 한다.
+
+### 선택지
+
+1. `MemberListItem`만 feature component로 추출한다.
+2. 멤버 섹션 전체를 한 번에 추출한다.
+3. sidebar 전체를 feature component로 이동한다.
+
+### 추천
+
+- 선택지 1. memo 비교 조건과 actions contract를 보존하면서 파일 크기와 책임을 먼저 줄인다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.
