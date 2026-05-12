@@ -1446,3 +1446,29 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 59차 — record member mismatch 판정 feature lib 이동
+
+### 작업내용
+
+- `app/counseling-service/_lib/record-member-mismatch.ts`의 mismatch warning 타입/판정 로직을 `features/counseling-record-workspace/lib`로 이동한다.
+- 실제 사용처(`page.tsx`, `link-member-modal.tsx`, `center-panel.tsx`)는 feature lib를 직접 참조하도록 변경한다.
+- 기존 app `_lib` 경로는 호환 re-export로 유지해 단계적 정리를 가능하게 한다.
+
+### 논의 필요
+
+- link modal과 page가 같은 판정 로직을 공유한다. app route 아래에 남기면 feature SSOT가 흐려지므로 feature lib를 원본으로 삼는다.
+
+### 선택지
+
+1. feature lib 이동 + app 경로 re-export 유지.
+2. app 경로를 즉시 삭제한다.
+3. mismatch warning UI까지 함께 별도 component로 분리한다.
+
+### 추천
+
+- 선택지 1. 사용 경로를 feature로 정렬하면서 기존 import 호환성을 유지해 회귀 위험을 낮춘다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.
