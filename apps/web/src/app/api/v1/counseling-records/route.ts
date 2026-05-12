@@ -8,7 +8,6 @@ import { NextResponse } from "next/server";
 import {
   createCounselingRecordAndQueueTranscription,
   createTextMemoRecord,
-  ensureCounselingRecordProcessingScheduledForListItems,
 } from "@/server/services/counseling-records-service";
 import {
   CounselingRecordListSpringBackendHttpError,
@@ -85,12 +84,7 @@ export async function GET(request: NextRequest) {
         unlinked,
         limit: listOptions.limit,
         before: listOptions.beforeCreatedAt?.toISOString(),
-      }),
-    );
-
-    ensureCounselingRecordProcessingScheduledForListItems(
-      currentUser.id,
-      payload.records,
+      })
     );
 
     return NextResponse.json(payload);
@@ -141,7 +135,7 @@ export async function POST(request: NextRequest) {
       });
       return NextResponse.json(
         counselingRecordDetailResponseSchema.parse({ record }),
-        { status: 201 },
+        { status: 201 }
       );
     } catch (error) {
       if (error instanceof ServiceError)
@@ -177,7 +171,7 @@ export async function POST(request: NextRequest) {
       counselingRecordDetailResponseSchema.parse({ record }),
       {
         status: 201,
-      },
+      }
     );
   } catch (error) {
     if (error instanceof ServiceError) {
