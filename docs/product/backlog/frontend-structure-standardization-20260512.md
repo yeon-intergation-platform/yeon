@@ -1290,3 +1290,29 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 53차 — center panel audio player component 추출
+
+### 작업내용
+
+- `center-panel.tsx`의 오디오 플레이어 JSX와 seek 비율 계산을 feature component로 추출한다.
+- partial transcript/ready 상태에서 같은 재생 UI를 재사용하고, 텍스트 메모 fallback 문구는 ready 상태에서만 유지한다.
+- 재생 상태, 시간 표시, seek handler 동작은 기존과 동일하게 유지한다.
+
+### 논의 필요
+
+- audio element 제어 상태는 상위 hook/page가 이미 소유한다. 이번 차수는 UI/이벤트 계산만 component로 이동하고 재생 상태 source of truth는 변경하지 않는다.
+
+### 선택지
+
+1. `RecordAudioPlayer` presentational component만 추출한다.
+2. audio playback state hook까지 함께 feature로 이동한다.
+3. center panel ready/partial 분기 전체를 component로 분리한다.
+
+### 추천
+
+- 선택지 1. 중복 UI와 이벤트 계산만 먼저 제거해 center panel 책임을 줄이고 재생 상태 변경 위험은 피한다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.
