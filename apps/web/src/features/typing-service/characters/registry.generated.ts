@@ -239,23 +239,6 @@ export const TYPING_CHARACTERS: readonly CharacterDef[] = [
     }
   },
   {
-    "id": "meizon",
-    "label": {
-      "ko": "메이존",
-      "en": "Meizon"
-    },
-    "sprite": "/sprites/characters/meizon/run.png",
-    "frameWidth": 192,
-    "frameHeight": 208,
-    "frameCount": 8,
-    "frameCols": 8,
-    "fps": 9,
-    "credit": {
-      "source": "Codex digital pet (사용자 부여 공개 배포 허가, 2026-05-03)",
-      "license": "approved"
-    }
-  },
-  {
     "id": "merry",
     "label": {
       "ko": "메리",
