@@ -1,5 +1,6 @@
 "use client";
 
+import { YeonButton, YeonSurface } from "@/components/yeon-ui";
 import { analyticsEvents, trackEvent } from "@/lib/analytics";
 import { useTypingProfile } from "./use-typing-profile";
 import { TypingProfileCard } from "./typing-profile-card";
@@ -32,12 +33,9 @@ export function TypingServiceHome({
         title={t("appName")}
         controls={
           showCharacterAdminLink ? (
-            <a
-              href="/admin/typing-characters"
-              className="rounded-xl border border-[#e5e5e5] bg-white px-3 py-2 text-[12px] font-semibold text-[#666] no-underline transition-colors hover:border-[#aaa] hover:text-[#111]"
-            >
+            <YeonButton as="a" href="/admin/typing-characters" size="sm">
               캐릭터 프레임 설정
-            </a>
+            </YeonButton>
           ) : null
         }
       />
@@ -54,7 +52,10 @@ export function TypingServiceHome({
           </div>
         </section>
 
-        <section className="mt-8 grid w-full max-w-[980px] overflow-hidden rounded-[28px] border border-[#e5e5e5] bg-white md:grid-cols-[430px_minmax(0,1fr)]">
+        <YeonSurface
+          as="section"
+          className="mt-8 grid w-full max-w-[980px] overflow-hidden rounded-[28px] md:grid-cols-[430px_minmax(0,1fr)]"
+        >
           <div className="border-b border-[#e5e5e5] p-5 md:border-b-0 md:border-r md:p-6">
             <h2 className="text-[16px] font-bold text-[#111]">내 프로필</h2>
             <div className="mt-5 flex justify-center">
@@ -73,43 +74,49 @@ export function TypingServiceHome({
             <h2 className="text-[16px] font-bold text-[#111]">오늘의 시작</h2>
 
             <div className="mt-5 grid gap-4">
-              <a
+              <YeonButton
+                as="a"
                 href="/typing-service/rooms"
-                className="block rounded-2xl border border-[#111] bg-[#111] px-5 py-5 text-white no-underline transition-colors hover:bg-[#333]"
+                variant="primary"
+                className="block rounded-2xl px-5 py-5 text-left"
                 onClick={() => handleCtaClick("rooms")}
               >
                 <span className="block text-[16px] font-bold">타자방 입장</span>
                 <span className="mt-1 block text-[13px] leading-[1.6] text-white/70">
                   친구들과 실시간으로 연습하기
                 </span>
-              </a>
-              <a
+              </YeonButton>
+              <YeonButton
+                as="a"
                 href="/typing-service/decks"
-                className="block rounded-2xl border border-[#e5e5e5] bg-white px-5 py-5 text-[#111] no-underline transition-colors hover:border-[#111]"
+                variant="secondary"
+                className="block rounded-2xl px-5 py-5 text-left"
                 onClick={() => handleCtaClick("decks")}
               >
                 <span className="block text-[16px] font-bold">
                   연습 덱 관리
                 </span>
-                <span className="mt-1 block text-[13px] leading-[1.6] text-[#777]">
+                <span className="mt-1 block text-[13px] leading-[1.6] text-[#666]">
                   내가 연습할 문장 관리
                 </span>
-              </a>
-              <a
+              </YeonButton>
+              <YeonButton
+                as="a"
                 href="/typing-service/play"
-                className="block rounded-2xl border border-[#e5e5e5] bg-white px-5 py-5 text-[#111] no-underline transition-colors hover:border-[#111]"
+                variant="secondary"
+                className="block rounded-2xl px-5 py-5 text-left"
                 onClick={() => handleCtaClick("play")}
               >
                 <span className="block text-[16px] font-bold">
                   {t("joinRace")}
                 </span>
-                <span className="mt-1 block text-[13px] leading-[1.6] text-[#777]">
+                <span className="mt-1 block text-[13px] leading-[1.6] text-[#666]">
                   다른 사용자와 속도 경쟁
                 </span>
-              </a>
+              </YeonButton>
             </div>
           </div>
-        </section>
+        </YeonSurface>
       </main>
     </div>
   );

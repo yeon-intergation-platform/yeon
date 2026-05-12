@@ -28,6 +28,14 @@ import {
   parseBulkTypingPassageImportInput,
   TYPING_PASSAGE_BULK_IMPORT_MAX_ITEMS,
 } from "./utils/bulk-typing-passage-import-parser";
+import {
+  YeonBadge,
+  YeonButton,
+  YeonField,
+  YeonSurface,
+  getYeonSurfaceClassName,
+  joinClassNames,
+} from "@/components/yeon-ui";
 import { analyticsEvents, trackEvent } from "@/lib/analytics";
 
 const BULK_PASSAGE_TEMPLATE = `[[PASSAGE]]
@@ -148,7 +156,7 @@ export function TypingDeckForm({
   return (
     <form
       onSubmit={handleSubmit}
-      className="rounded-2xl border border-[#e5e5e5] bg-white p-5"
+      className={getYeonSurfaceClassName({ className: "p-5" })}
     >
       <div className="flex items-start justify-between gap-3">
         <div>
@@ -159,34 +167,30 @@ export function TypingDeckForm({
             제목, 언어 태그, 공개 범위를 정한 뒤 문단을 추가하세요.
           </p>
         </div>
-        {isDefaultDeck ? (
-          <span className="rounded-full bg-[#f3f3f3] px-3 py-1 text-[12px] font-semibold text-[#666]">
-            읽기 전용
-          </span>
-        ) : null}
+        {isDefaultDeck ? <YeonBadge>읽기 전용</YeonBadge> : null}
       </div>
 
       <div className="mt-5 grid gap-4">
         <label className="flex flex-col gap-2">
           <span className="text-[13px] font-medium text-[#555]">덱 제목</span>
-          <input
+          <YeonField
             value={title}
             onChange={(event) => setTitle(event.target.value)}
             disabled={isDefaultDeck}
             maxLength={120}
-            className="rounded-xl border border-[#e5e5e5] px-3 py-2 text-[14px] outline-none focus:border-[#111] disabled:bg-[#f8f8f8]"
             placeholder="예: 아침 워밍업 문장"
           />
         </label>
         <label className="flex flex-col gap-2">
           <span className="text-[13px] font-medium text-[#555]">설명</span>
-          <textarea
+          <YeonField
+            as="textarea"
             value={description ?? ""}
             onChange={(event) => setDescription(event.target.value)}
             disabled={isDefaultDeck}
             rows={3}
             maxLength={2000}
-            className="resize-y rounded-xl border border-[#e5e5e5] px-3 py-2 text-[14px] leading-6 outline-none focus:border-[#111] disabled:bg-[#f8f8f8]"
+            className="resize-y leading-6"
             placeholder="어떤 연습에 쓰는 덱인지 적어주세요."
           />
         </label>
@@ -195,39 +199,39 @@ export function TypingDeckForm({
             <span className="text-[13px] font-medium text-[#555]">
               언어 태그
             </span>
-            <select
+            <YeonField
+              as="select"
               value={languageTag}
               onChange={(event) =>
                 setLanguageTag(event.target.value as TypingDeckLanguageTag)
               }
               disabled={isDefaultDeck}
-              className="rounded-xl border border-[#e5e5e5] px-3 py-2 text-[14px] outline-none focus:border-[#111] disabled:bg-[#f8f8f8]"
             >
               {TYPING_DECK_LANGUAGE_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>
                   {option.label}
                 </option>
               ))}
-            </select>
+            </YeonField>
           </label>
           <label className="flex flex-col gap-2">
             <span className="text-[13px] font-medium text-[#555]">
               공개 범위
             </span>
-            <select
+            <YeonField
+              as="select"
               value={visibility}
               onChange={(event) =>
                 setVisibility(event.target.value as TypingDeckVisibility)
               }
               disabled={isDefaultDeck}
-              className="rounded-xl border border-[#e5e5e5] px-3 py-2 text-[14px] outline-none focus:border-[#111] disabled:bg-[#f8f8f8]"
             >
               {TYPING_DECK_VISIBILITY_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>
                   {option.label}
                 </option>
               ))}
-            </select>
+            </YeonField>
           </label>
         </div>
       </div>
@@ -239,17 +243,13 @@ export function TypingDeckForm({
       ) : null}
 
       <div className="mt-5 flex justify-end">
-        <button
-          type="submit"
-          disabled={!canSubmit}
-          className="rounded-xl bg-[#111] px-4 py-2 text-[13px] font-semibold text-white transition-colors hover:bg-[#333] disabled:opacity-50"
-        >
+        <YeonButton type="submit" disabled={!canSubmit} variant="primary">
           {mutation.isPending
             ? "저장 중..."
             : mode === "create"
               ? "덱 만들기"
               : "덱 저장"}
-        </button>
+        </YeonButton>
       </div>
     </form>
   );
@@ -268,14 +268,14 @@ export function TypingDeckList({
 }: TypingDeckListProps) {
   if (decks.length === 0) {
     return (
-      <div className="rounded-2xl border border-dashed border-[#dcdcdc] p-8 text-center">
+      <YeonSurface variant="empty" className="p-8">
         <p className="text-[14px] font-semibold text-[#111]">
           표시할 덱이 없습니다.
         </p>
-        <p className="mt-2 text-[13px] text-[#777]">
+        <p className="mt-2 text-[13px] text-[#666]">
           내 덱 탭에서 새 덱을 만들거나 공개 덱을 둘러보세요.
         </p>
-      </div>
+      </YeonSurface>
     );
   }
 
@@ -286,11 +286,14 @@ export function TypingDeckList({
           <button
             type="button"
             onClick={() => onSelectDeck(deck.id)}
-            className={`w-full rounded-2xl border p-4 text-left transition-colors ${
-              selectedDeckId === deck.id
-                ? "border-[#111] bg-[#fafafa]"
-                : "border-[#e5e5e5] bg-white hover:border-[#111]"
-            }`}
+            className={joinClassNames(
+              getYeonSurfaceClassName({
+                variant: selectedDeckId === deck.id ? "panel" : "card",
+                className:
+                  "w-full p-4 text-left transition-colors hover:border-[#111]",
+              }),
+              selectedDeckId === deck.id && "border-[#111]"
+            )}
           >
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
@@ -301,15 +304,15 @@ export function TypingDeckList({
                   {deck.description || "설명이 없습니다."}
                 </p>
               </div>
-              <span className="shrink-0 rounded-full bg-[#f3f3f3] px-2.5 py-1 text-[12px] font-semibold text-[#666]">
+              <YeonBadge className="shrink-0">
                 {typingDeckBadge(deck)}
-              </span>
+              </YeonBadge>
             </div>
-            <div className="mt-3 flex flex-wrap gap-2 text-[12px] text-[#777]">
-              <span className="rounded-full border border-[#e8e8e8] px-2 py-0.5">
+            <div className="mt-3 flex flex-wrap gap-2 text-[12px] text-[#666]">
+              <span className="rounded-full border border-[#e5e5e5] px-2 py-0.5">
                 {typingDeckLanguageLabel(deck.languageTag)}
               </span>
-              <span className="rounded-full border border-[#e8e8e8] px-2 py-0.5">
+              <span className="rounded-full border border-[#e5e5e5] px-2 py-0.5">
                 문단 {deck.passageCount ?? 0}개
               </span>
             </div>
@@ -377,59 +380,60 @@ export function TypingDeckPassageEditor({
   return (
     <form
       onSubmit={handleSubmit}
-      className="rounded-2xl border border-[#e5e5e5] bg-white p-5"
+      className={getYeonSurfaceClassName({ className: "p-5" })}
     >
       <div className="flex items-center justify-between gap-3">
         <h3 className="text-[16px] font-semibold text-[#111]">
           {editingPassage ? "문단 수정" : "문단 직접 추가"}
         </h3>
         {editingPassage ? (
-          <button
+          <YeonButton
             type="button"
             onClick={onCancelEdit}
-            className="text-[13px] font-semibold text-[#666] hover:text-[#111]"
+            variant="ghost"
+            className="px-0 py-0"
           >
             취소
-          </button>
+          </YeonButton>
         ) : null}
       </div>
       <div className="mt-4 grid gap-3">
-        <input
+        <YeonField
           value={title}
           onChange={(event) => setTitle(event.target.value)}
           placeholder="문단 제목 (선택)"
-          className="rounded-xl border border-[#e5e5e5] px-3 py-2 text-[14px] outline-none focus:border-[#111]"
         />
-        <textarea
+        <YeonField
+          as="textarea"
           value={prompt}
           onChange={(event) => setPrompt(event.target.value)}
           rows={6}
           placeholder="타이핑할 문장을 입력하세요."
-          className="resize-y rounded-xl border border-[#e5e5e5] px-3 py-2 text-[14px] leading-6 outline-none focus:border-[#111]"
+          className="resize-y leading-6"
         />
         <div className="grid gap-3 sm:grid-cols-2">
-          <select
+          <YeonField
+            as="select"
             value={textType}
             onChange={(event) =>
               setTextType(event.target.value as TypingPassageTextType)
             }
-            className="rounded-xl border border-[#e5e5e5] px-3 py-2 text-[14px] outline-none focus:border-[#111]"
           >
             <option value="short">짧은 글</option>
             <option value="long">긴 글</option>
             <option value="code">코드</option>
-          </select>
-          <select
+          </YeonField>
+          <YeonField
+            as="select"
             value={difficulty}
             onChange={(event) =>
               setDifficulty(event.target.value as TypingPassageDifficulty)
             }
-            className="rounded-xl border border-[#e5e5e5] px-3 py-2 text-[14px] outline-none focus:border-[#111]"
           >
             <option value="easy">쉬움</option>
             <option value="normal">보통</option>
             <option value="hard">어려움</option>
-          </select>
+          </YeonField>
         </div>
       </div>
       {mutation.error ? (
@@ -438,17 +442,13 @@ export function TypingDeckPassageEditor({
         </p>
       ) : null}
       <div className="mt-4 flex justify-end">
-        <button
-          type="submit"
-          disabled={!canSubmit}
-          className="rounded-xl bg-[#111] px-4 py-2 text-[13px] font-semibold text-white transition-colors hover:bg-[#333] disabled:opacity-50"
-        >
+        <YeonButton type="submit" disabled={!canSubmit} variant="primary">
           {mutation.isPending
             ? "저장 중..."
             : editingPassage
               ? "수정 저장"
               : "문단 추가"}
-        </button>
+        </YeonButton>
       </div>
     </form>
   );
@@ -502,7 +502,7 @@ export function TypingDeckBulkPassageImportForm({
   return (
     <form
       onSubmit={handleSubmit}
-      className="rounded-2xl border border-[#e5e5e5] bg-white p-5"
+      className={getYeonSurfaceClassName({ className: "p-5" })}
     >
       <div className="rounded-xl border border-[#e5e5e5] bg-[#fafafa] p-4 text-[13px] leading-6 text-[#555]">
         <p className="font-semibold text-[#111]">
@@ -522,12 +522,13 @@ export function TypingDeckBulkPassageImportForm({
         <span className="text-[13px] font-medium text-[#555]">
           AI 형식 붙여넣기
         </span>
-        <textarea
+        <YeonField
+          as="textarea"
           value={rawText}
           onChange={(event) => setRawText(event.target.value)}
           rows={12}
           placeholder={BULK_PASSAGE_TEMPLATE}
-          className="resize-y rounded-xl border border-[#e5e5e5] px-3 py-2 font-mono text-[13px] leading-5 text-[#111] outline-none focus:border-[#111]"
+          className="resize-y font-mono text-[13px] leading-5"
         />
       </label>
 
@@ -583,15 +584,11 @@ export function TypingDeckBulkPassageImportForm({
       ) : null}
 
       <div className="mt-4 flex justify-end">
-        <button
-          type="submit"
-          disabled={!canSubmit}
-          className="rounded-xl bg-[#111] px-4 py-2 text-[13px] font-semibold text-white transition-colors hover:bg-[#333] disabled:opacity-50"
-        >
+        <YeonButton type="submit" disabled={!canSubmit} variant="primary">
           {bulkCreate.isPending
             ? "추가 중..."
             : `${parseResult.passages.length || 0}개 추가`}
-        </button>
+        </YeonButton>
       </div>
     </form>
   );
@@ -616,26 +613,23 @@ export function TypingDeckPassageList({
 
   if (passages.length === 0) {
     return (
-      <div className="rounded-2xl border border-dashed border-[#dcdcdc] p-8 text-center">
+      <YeonSurface variant="empty" className="p-8">
         <p className="text-[14px] font-semibold text-[#111]">
           아직 문단이 없습니다.
         </p>
         {!readonly ? (
-          <p className="mt-2 text-[13px] text-[#777]">
+          <p className="mt-2 text-[13px] text-[#666]">
             직접 추가하거나 AI 붙여넣기로 여러 문단을 넣어보세요.
           </p>
         ) : null}
-      </div>
+      </YeonSurface>
     );
   }
 
   return (
     <ul className="flex flex-col gap-3">
       {passages.map((passage, index) => (
-        <li
-          key={passage.id}
-          className="rounded-2xl border border-[#e5e5e5] bg-white p-4"
-        >
+        <YeonSurface as="li" key={passage.id} className="p-4">
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-[12px] font-semibold text-[#888]">
@@ -647,20 +641,21 @@ export function TypingDeckPassageList({
             </div>
             {!readonly ? (
               <div className="flex shrink-0 gap-2">
-                <button
+                <YeonButton
                   type="button"
                   onClick={() => onEdit(passage)}
-                  className="rounded-lg border border-[#e5e5e5] px-3 py-1.5 text-[12px] font-semibold text-[#555] hover:border-[#111] hover:text-[#111]"
+                  size="sm"
                 >
                   수정
-                </button>
-                <button
+                </YeonButton>
+                <YeonButton
                   type="button"
                   onClick={() => deletePassage.mutate(passage.id)}
-                  className="rounded-lg border border-red-200 px-3 py-1.5 text-[12px] font-semibold text-red-600 hover:bg-red-50"
+                  variant="danger"
+                  size="sm"
                 >
                   삭제
-                </button>
+                </YeonButton>
               </div>
             ) : null}
           </div>
@@ -668,10 +663,10 @@ export function TypingDeckPassageList({
             {passage.prompt}
           </p>
           <div className="mt-3 flex flex-wrap gap-2 text-[12px] text-[#777]">
-            <span className="rounded-full border border-[#e8e8e8] px-2 py-0.5">
+            <span className="rounded-full border border-[#e5e5e5] px-2 py-0.5">
               {passage.textType}
             </span>
-            <span className="rounded-full border border-[#e8e8e8] px-2 py-0.5">
+            <span className="rounded-full border border-[#e5e5e5] px-2 py-0.5">
               {passage.difficulty}
             </span>
           </div>
@@ -680,7 +675,7 @@ export function TypingDeckPassageList({
               {deletePassage.error.message}
             </p>
           ) : null}
-        </li>
+        </YeonSurface>
       ))}
     </ul>
   );
@@ -714,16 +709,14 @@ export function TypingDeckDetailPanel({
 
   return (
     <div className="space-y-5">
-      <section className="rounded-2xl border border-[#e5e5e5] bg-[#fafafa] p-5">
+      <YeonSurface as="section" variant="panel" className="p-5">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <div className="flex flex-wrap items-center gap-2">
               <h2 className="text-[22px] font-semibold text-[#111]">
                 {deck.title}
               </h2>
-              <span className="rounded-full bg-white px-2.5 py-1 text-[12px] font-semibold text-[#666]">
-                {typingDeckBadge(deck)}
-              </span>
+              <YeonBadge>{typingDeckBadge(deck)}</YeonBadge>
             </div>
             <p className="mt-2 text-[13px] leading-6 text-[#666]">
               {deck.description || "설명이 없습니다."}
@@ -734,13 +727,13 @@ export function TypingDeckDetailPanel({
             </p>
           </div>
           {!readonly ? (
-            <button
+            <YeonButton
               type="button"
               onClick={() => deleteDeck.mutate(deck.id)}
-              className="rounded-xl border border-red-200 px-4 py-2 text-[13px] font-semibold text-red-600 transition-colors hover:bg-red-50"
+              variant="danger"
             >
               {deleteDeck.isPending ? "삭제 중..." : "덱 삭제"}
-            </button>
+            </YeonButton>
           ) : null}
         </div>
         {deleteDeck.error ? (
@@ -748,7 +741,7 @@ export function TypingDeckDetailPanel({
             {deleteDeck.error.message}
           </p>
         ) : null}
-      </section>
+      </YeonSurface>
 
       <TypingDeckForm mode="edit" deck={deck} adminMode={adminMode} />
 
@@ -756,9 +749,7 @@ export function TypingDeckDetailPanel({
         <div>
           <div className="mb-3 flex items-center justify-between">
             <h3 className="text-[18px] font-semibold text-[#111]">문단 목록</h3>
-            <span className="rounded-full bg-[#f3f3f3] px-2.5 py-1 text-[12px] font-semibold text-[#666]">
-              {passages.length}
-            </span>
+            <YeonBadge>{passages.length}</YeonBadge>
           </div>
           <TypingDeckPassageList
             deckId={deck.id}
@@ -828,19 +819,13 @@ export function TypingDecksScreen({
           </a>
           <div className="flex flex-wrap items-center justify-end gap-2">
             {showAdminEntry && !adminMode ? (
-              <a
-                href="/admin/typing-decks"
-                className="rounded-xl bg-[#111] px-4 py-2 text-[13px] font-semibold text-white no-underline transition-colors hover:bg-[#333]"
-              >
+              <YeonButton as="a" href="/admin/typing-decks" variant="primary">
                 관리자
-              </a>
+              </YeonButton>
             ) : null}
-            <a
-              href="/typing-service/rooms"
-              className="rounded-xl border border-[#e5e5e5] px-4 py-2 text-[13px] font-semibold text-[#111] no-underline transition-colors hover:border-[#111] hover:bg-[#fafafa]"
-            >
+            <YeonButton as="a" href="/typing-service/rooms">
               타자방으로
-            </a>
+            </YeonButton>
           </div>
         </div>
       </header>
@@ -863,7 +848,7 @@ export function TypingDecksScreen({
 
         <div className="mt-8 grid gap-6 lg:grid-cols-[380px_minmax(0,1fr)] lg:items-start">
           <aside className="space-y-5 lg:sticky lg:top-5">
-            <div className="rounded-2xl border border-[#e5e5e5] bg-white p-4">
+            <YeonSurface className="p-4">
               <div
                 className={`grid gap-2 ${adminMode ? "grid-cols-4" : "grid-cols-3"}`}
               >
@@ -889,7 +874,7 @@ export function TypingDecksScreen({
               <p className="mt-3 text-[12px] leading-5 text-[#777]">
                 {scopeTabs.find((tab) => tab.value === scope)?.help}
               </p>
-            </div>
+            </YeonSurface>
 
             {decksQuery.isPending ? (
               <p className="text-[14px] text-[#888]">목록을 불러오는 중...</p>
@@ -921,7 +906,10 @@ export function TypingDecksScreen({
                 adminMode={adminMode}
               />
             ) : (
-              <div className="flex min-h-[520px] items-center justify-center rounded-3xl border border-dashed border-[#dcdcdc] bg-[#fafafa] p-10 text-center">
+              <YeonSurface
+                variant="empty"
+                className="flex min-h-[520px] items-center justify-center rounded-3xl bg-[#fafafa] p-10"
+              >
                 <div>
                   <p className="text-[18px] font-semibold text-[#111]">
                     덱을 선택하세요.
@@ -931,7 +919,7 @@ export function TypingDecksScreen({
                     추가, AI 붙여넣기 패널을 사용할 수 있습니다.
                   </p>
                 </div>
-              </div>
+              </YeonSurface>
             )}
           </section>
         </div>
