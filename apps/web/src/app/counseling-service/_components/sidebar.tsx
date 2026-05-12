@@ -3,8 +3,8 @@
 import { useRouter } from "next/navigation";
 import { memo, useEffect, useMemo, useRef, useState } from "react";
 import type { RecordItem } from "../_lib/types";
-import type { Space } from "../_hooks/use-current-space";
-import type { MemberWithStatus } from "../_hooks/use-space-members";
+import type { Space } from "../_hooks";
+import type { MemberWithStatus } from "../_hooks";
 import { useClickOutside } from "@/lib/hooks/use-click-outside";
 import { CreateSpaceModal } from "./create-space-modal";
 import { useCounselingSidebarLayout } from "@/features/counseling-service-shell/counseling-sidebar-layout-context";
@@ -85,7 +85,7 @@ interface MemberItemActions {
     e: React.MouseEvent,
     id: string,
     index: number,
-    name: string,
+    name: string
   ) => void;
   onMemberMouseDown: (e: React.MouseEvent, id: string) => void;
   onMemberMouseEnter: (e: React.MouseEvent, id: string, index: number) => void;
@@ -93,7 +93,7 @@ interface MemberItemActions {
     e: React.MouseEvent,
     id: string,
     name: string,
-    index: number,
+    index: number
   ) => void;
   onRecordClick: (e: React.MouseEvent, id: string, index: number) => void;
   onRecordMouseDown: (e: React.MouseEvent, id: string) => void;
@@ -102,7 +102,7 @@ interface MemberItemActions {
     e: React.MouseEvent,
     id: string,
     title: string,
-    index: number,
+    index: number
   ) => void;
 }
 
@@ -132,7 +132,7 @@ const MemberListItem = memo(
             actions.onMemberMouseEnter(
               e,
               member.id,
-              0 /* index resolved in parent */,
+              0 /* index resolved in parent */
             )
           }
           onClick={(e) => actions.onMemberClick(e, member.id, 0, member.name)}
@@ -232,7 +232,7 @@ const MemberListItem = memo(
             prev.memberRecords.at(-1)!.id ===
               next.memberRecords.at(-1)!.id)))) &&
     prev.recordMultiSelectedSet === next.recordMultiSelectedSet &&
-    prev.actions === next.actions,
+    prev.actions === next.actions
 );
 
 export function Sidebar({
@@ -266,7 +266,7 @@ export function Sidebar({
     ids: [],
   });
   const [deletingContextId, setDeletingContextId] = useState<string | null>(
-    null,
+    null
   );
   const lastSelectedIdRef = useRef<{
     space: string | null;
@@ -282,11 +282,11 @@ export function Sidebar({
 
   const spaceRef = useClickOutside<HTMLDivElement>(
     () => setShowSpaceDropdown(false),
-    showSpaceDropdown,
+    showSpaceDropdown
   );
   const contextMenuRef = useClickOutside<HTMLDivElement>(
     () => setContextMenu(null),
-    !!contextMenu,
+    !!contextMenu
   );
 
   const getMemberRecords = (memberId: string) =>
@@ -305,25 +305,25 @@ export function Sidebar({
       }),
       ...unlinkedRecords,
     ],
-    [expandedMemberId, members, records],
+    [expandedMemberId, members, records]
   );
 
   const visibleRecordIndexById = useMemo(
     () =>
       new Map(visibleRecordOrder.map((record, index) => [record.id, index])),
-    [visibleRecordOrder],
+    [visibleRecordOrder]
   );
   const spaceOrderIds = useMemo(
     () => spaces.map((space) => space.id),
-    [spaces],
+    [spaces]
   );
   const memberOrderIds = useMemo(
     () => members.map((member) => member.id),
-    [members],
+    [members]
   );
   const visibleRecordOrderIds = useMemo(
     () => visibleRecordOrder.map((record) => record.id),
-    [visibleRecordOrder],
+    [visibleRecordOrder]
   );
 
   const selectedIdSet = useMemo(() => new Set(selection.ids), [selection.ids]);
@@ -334,7 +334,7 @@ export function Sidebar({
     for (const member of members) {
       map.set(
         member.id,
-        records.filter((r) => r.memberId === member.id),
+        records.filter((r) => r.memberId === member.id)
       );
     }
     return map;
@@ -346,7 +346,7 @@ export function Sidebar({
       selection.kind === "record"
         ? selectedIdSet
         : (new Set<string>() as ReadonlySet<string>),
-    [selection.kind, selectedIdSet],
+    [selection.kind, selectedIdSet]
   );
 
   // ── ref 기반 안정 핸들러 (MemberListItem에 전달) ──────────────
@@ -461,7 +461,7 @@ export function Sidebar({
         a.openContextMenu(e, { kind: "record", id, label, index });
       },
     }),
-    [], // deps 없음 — ref 기반이므로 항상 최신값 사용, 참조 영구 고정
+    [] // deps 없음 — ref 기반이므로 항상 최신값 사용, 참조 영구 고정
   );
 
   useEffect(() => {
@@ -508,7 +508,7 @@ export function Sidebar({
 
     if (contextMenu?.kind === selection.kind) {
       const nextContextIds = contextMenu.ids.filter((id) =>
-        orderedIds.includes(id),
+        orderedIds.includes(id)
       );
       if (nextContextIds.length === 0) {
         setContextMenu(null);
@@ -626,7 +626,7 @@ export function Sidebar({
       clearSelection();
     } catch (error) {
       window.alert(
-        error instanceof Error ? error.message : "삭제 처리에 실패했습니다.",
+        error instanceof Error ? error.message : "삭제 처리에 실패했습니다."
       );
     } finally {
       setDeletingContextId(null);
@@ -682,7 +682,7 @@ export function Sidebar({
       updateSelection(
         activeKind,
         orderedIds,
-        orderedIds.at(-1) ?? orderedIds[0],
+        orderedIds.at(-1) ?? orderedIds[0]
       );
     }
   }
@@ -744,7 +744,7 @@ export function Sidebar({
   function updateSelection(
     kind: "space" | "member" | "record",
     ids: string[],
-    anchorId: string,
+    anchorId: string
   ) {
     setSelection({ kind, ids });
     lastSelectedIdRef.current[kind] = anchorId;
@@ -831,7 +831,7 @@ export function Sidebar({
       id: string;
       label: string;
       index: number;
-    },
+    }
   ) {
     event.preventDefault();
     event.stopPropagation();
@@ -916,8 +916,8 @@ export function Sidebar({
         action: () => {
           router.push(
             resolveAppHref(
-              `/counseling-service/student-management/${contextMenu.primaryId}`,
-            ),
+              `/counseling-service/student-management/${contextMenu.primaryId}`
+            )
           );
           setContextMenu(null);
         },

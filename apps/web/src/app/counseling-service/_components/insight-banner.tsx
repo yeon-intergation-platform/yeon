@@ -1,7 +1,7 @@
 "use client";
 
 import { AlertTriangle, X } from "lucide-react";
-import type { MemberWithStatus } from "../_hooks/use-space-members";
+import type { MemberWithStatus } from "../_hooks";
 import { useCounselingInsightBannerDismissals } from "../_hooks";
 
 interface InsightBannerProps {

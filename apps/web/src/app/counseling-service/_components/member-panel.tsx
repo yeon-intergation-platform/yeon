@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { RecordItem } from "../_lib/types";
-import type { MemberWithStatus } from "../_hooks/use-space-members";
+import type { MemberWithStatus } from "../_hooks";
 import { exportMemberReportDocx } from "../_lib/export-docx";
 
 export interface MemberPanelProps {
@@ -56,11 +56,11 @@ export function MemberPanel({
     .filter((r) => r.memberId === member.id)
     .sort(
       (a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
   const latestRecord = memberRecords[0] ?? null;
   const hasProcessingRecord = memberRecords.some(
-    (record) => record.status === "processing",
+    (record) => record.status === "processing"
   );
   const statusText = hasProcessingRecord
     ? "상담 분석 진행중"
