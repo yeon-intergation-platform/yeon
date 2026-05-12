@@ -1,3 +1,4 @@
+export { counselingWorkspaceQueryKeys } from "./counseling-workspace-query-keys";
 export { useRecords } from "./use-records";
 export { useRecording } from "./use-recording";
 export { useFileUpload } from "./use-file-upload";

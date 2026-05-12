@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { Suspense, useState, useCallback, useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
+  counselingWorkspaceQueryKeys,
   useRecords,
   useRecording,
   useFileUpload,
@@ -82,7 +83,7 @@ function CounselingServiceWorkspaceInner() {
   // ── 멤버 ──────────────────────────────────────────────────────
   const { members, loading: membersLoading } = useSpaceMembers(
     currentSpaceId,
-    records.records,
+    records.records
   );
 
   // ── selectedMember 파생 (page.tsx에서 직접 계산) ───────────────
@@ -93,7 +94,7 @@ function CounselingServiceWorkspaceInner() {
   // ── 오디오 ─────────────────────────────────────────────────────
   const selectedAudioUrl = records.selected?.audioUrl ?? null;
   const selectedTotalSeconds = Math.round(
-    (records.selected?.durationMs ?? 0) / 1000,
+    (records.selected?.durationMs ?? 0) / 1000
   );
   const audio = useAudioPlayer(selectedAudioUrl, selectedTotalSeconds);
   resetAudioRef.current = audio.reset;
@@ -162,7 +163,7 @@ function CounselingServiceWorkspaceInner() {
 
     entry.handleOpenNewRecordEntry(
       searchParams.get("memberId"),
-      searchParams.get("studentName") ?? "",
+      searchParams.get("studentName") ?? ""
     );
 
     window.history.replaceState(
@@ -171,7 +172,7 @@ function CounselingServiceWorkspaceInner() {
       createPatchedHref(window.location.pathname, searchParams, {
         newRecordEntry: null,
         studentName: null,
-      }),
+      })
     );
 
     autoEntryHandledRef.current = true;
@@ -217,7 +218,7 @@ function CounselingServiceWorkspaceInner() {
       selection.clearAll();
       setCurrentSpaceId(spaceId);
     },
-    [currentSpaceId, selection.clearAll, setCurrentSpaceId],
+    [currentSpaceId, selection.clearAll, setCurrentSpaceId]
   );
 
   const redirectToStudentManagementSpace = useCallback(
@@ -226,11 +227,11 @@ function CounselingServiceWorkspaceInner() {
         createPatchedHref(
           resolveAppHref("/counseling-service/student-management"),
           new URLSearchParams(),
-          { spaceId },
-        ),
+          { spaceId }
+        )
       );
     },
-    [resolveAppHref, router],
+    [resolveAppHref, router]
   );
 
   const handleSpaceCreated = useCallback(
@@ -239,7 +240,7 @@ function CounselingServiceWorkspaceInner() {
       addSpace(space);
       redirectToStudentManagementSpace(space.id);
     },
-    [addSpace, redirectToStudentManagementSpace, selection.clearAll],
+    [addSpace, redirectToStudentManagementSpace, selection.clearAll]
   );
 
   const handleImportedSpaceCreated = useCallback(
@@ -253,7 +254,7 @@ function CounselingServiceWorkspaceInner() {
       setShowSpaceGateModal(null);
       redirectToStudentManagementSpace(spaceId);
     },
-    [redirectToStudentManagementSpace, selection.clearAll],
+    [redirectToStudentManagementSpace, selection.clearAll]
   );
 
   // ── 삭제 핸들러 ───────────────────────────────────────────────
@@ -263,7 +264,7 @@ function CounselingServiceWorkspaceInner() {
         resolveApiHref(`/api/v1/counseling-records/${recordId}`),
         {
           method: "DELETE",
-        },
+        }
       );
       if (!res.ok) {
         const text = await res.text().catch(() => "");
@@ -272,7 +273,7 @@ function CounselingServiceWorkspaceInner() {
       records.removeRecord(recordId);
       selection.clearRecordIfSelected(recordId);
     },
-    [records, selection],
+    [records, selection]
   );
 
   const handleDeleteMember = useCallback(
@@ -282,7 +283,7 @@ function CounselingServiceWorkspaceInner() {
       }
       const res = await fetch(
         resolveApiHref(`/api/v1/spaces/${currentSpaceId}/members/${memberId}`),
-        { method: "DELETE" },
+        { method: "DELETE" }
       );
       if (!res.ok) {
         const text = await res.text().catch(() => "");
@@ -290,11 +291,13 @@ function CounselingServiceWorkspaceInner() {
       }
       selection.clearMemberIfSelected(memberId);
       await queryClient.invalidateQueries({
-        queryKey: ["space-members", currentSpaceId],
+        queryKey: counselingWorkspaceQueryKeys.spaceMembers(currentSpaceId),
       });
-      await queryClient.invalidateQueries({ queryKey: ["counseling-records"] });
+      await queryClient.invalidateQueries({
+        queryKey: counselingWorkspaceQueryKeys.records(),
+      });
     },
-    [currentSpaceId, queryClient, selection],
+    [currentSpaceId, queryClient, selection]
   );
 
   const handleDeleteSpace = useCallback(
@@ -310,9 +313,11 @@ function CounselingServiceWorkspaceInner() {
       if (currentSpaceId === spaceId) {
         selection.clearAll();
       }
-      await queryClient.invalidateQueries({ queryKey: ["counseling-records"] });
+      await queryClient.invalidateQueries({
+        queryKey: counselingWorkspaceQueryKeys.records(),
+      });
     },
-    [currentSpaceId, queryClient, removeSpace, selection.clearAll],
+    [currentSpaceId, queryClient, removeSpace, selection.clearAll]
   );
 
   // ── 내보내기 핸들러 ────────────────────────────────────────────
@@ -322,7 +327,7 @@ function CounselingServiceWorkspaceInner() {
       if (!target) throw new Error("내보낼 상담 기록을 찾지 못했습니다.");
       await exportRecordDocx(target);
     },
-    [records.records],
+    [records.records]
   );
 
   const handleExportMember = useCallback(
@@ -331,14 +336,14 @@ function CounselingServiceWorkspaceInner() {
       if (!target) throw new Error("내보낼 수강생을 찾지 못했습니다.");
       await exportMemberReportDocx(target, records.records);
     },
-    [members, records.records],
+    [members, records.records]
   );
 
   // ── 패널 표시 결정 ─────────────────────────────────────────────
   const selectedRecordMismatchWarning = detectRecordMemberMismatch(
     records.selected,
     members,
-    records.selected?.memberId ?? null,
+    records.selected?.memberId ?? null
   );
 
   const workspaceUiPolicy = getCounselingWorkspaceUiPolicy({
@@ -470,7 +475,7 @@ function CounselingServiceWorkspaceInner() {
                 onOpenNewRecordEntry={() =>
                   entry.handleOpenNewRecordEntry(
                     selectedMember.id,
-                    selectedMember.name,
+                    selectedMember.name
                   )
                 }
               />
@@ -484,7 +489,7 @@ function CounselingServiceWorkspaceInner() {
                   members={members}
                   onHighlightWarning={() => {
                     const target = members.find(
-                      (m) => m.indicator === "warning",
+                      (m) => m.indicator === "warning"
                     );
                     if (target) selection.handleSelectMember(target.id);
                   }}

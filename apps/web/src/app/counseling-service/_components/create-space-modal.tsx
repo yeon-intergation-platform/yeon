@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { X, FolderPlus, FileUp, LayoutTemplate, Eye } from "lucide-react";
+import { counselingWorkspaceQueryKeys } from "../_hooks/counseling-workspace-query-keys";
 import type { Space } from "../_hooks/use-current-space";
 import { CloudImportInline } from "@/features/cloud-import/components/cloud-import-inline";
 import { SpaceTemplatePreviewModal } from "@/features/space-settings/components/space-template-preview-modal";
@@ -45,19 +46,19 @@ export function CreateSpaceModal({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [templateLoadError, setTemplateLoadError] = useState<string | null>(
-    null,
+    null
   );
 
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(
-    null,
+    null
   );
   const [previewOpen, setPreviewOpen] = useState(false);
 
   const { data: templatesData, isPending: templatesLoading } = useQuery({
-    queryKey: ["space-templates"],
+    queryKey: counselingWorkspaceQueryKeys.spaceTemplates(),
     queryFn: async () => {
       const r = await fetch(
-        resolveApiHrefForCurrentPath("/api/v1/space-templates"),
+        resolveApiHrefForCurrentPath("/api/v1/space-templates")
       );
       if (!r.ok) {
         setTemplateLoadError("템플릿 목록을 불러오지 못했습니다.");
@@ -105,13 +106,13 @@ export function CreateSpaceModal({
       if (selectedTemplateId) {
         await fetch(
           resolveApiHrefForCurrentPath(
-            `/api/v1/spaces/${data.space.id}/apply-template`,
+            `/api/v1/spaces/${data.space.id}/apply-template`
           ),
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ templateId: selectedTemplateId }),
-          },
+          }
         ).catch(() => {});
       }
 
@@ -119,7 +120,7 @@ export function CreateSpaceModal({
       onClose();
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "스페이스를 만들지 못했습니다.",
+        err instanceof Error ? err.message : "스페이스를 만들지 못했습니다."
       );
     } finally {
       setSaving(false);
