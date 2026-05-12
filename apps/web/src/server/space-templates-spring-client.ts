@@ -1,12 +1,15 @@
+import { buildSpringBffHeaders } from "@/server/spring-bff-client";
+
 const DEFAULT_BACKEND_BASE_URL = "http://127.0.0.1:8081";
-const INTERNAL_TOKEN_HEADER = "X-Yeon-Internal-Token";
 
 function resolveSpringBackendBaseUrl() {
   const raw =
     process.env.SPRING_BACKEND_BASE_URL?.trim() ??
     process.env.SPRING_BOOTSTRAP_BASE_URL?.trim();
 
-  return raw && raw.length > 0 ? raw.replace(/\/$/, "") : DEFAULT_BACKEND_BASE_URL;
+  return raw && raw.length > 0
+    ? raw.replace(/\/$/, "")
+    : DEFAULT_BACKEND_BASE_URL;
 }
 
 export class SpringBackendHttpError extends Error {
@@ -23,7 +26,10 @@ export async function fetchSpaceTemplatesFromSpring(userId: string) {
   return fetchJsonFromSpring("/space-templates", userId);
 }
 
-export async function createSpaceTemplateInSpring(userId: string, body: unknown) {
+export async function createSpaceTemplateInSpring(
+  userId: string,
+  body: unknown
+) {
   return fetchJsonFromSpring("/space-templates", userId, {
     method: "POST",
     body: JSON.stringify(body),
@@ -35,7 +41,7 @@ export async function createSpaceTemplateInSpring(userId: string, body: unknown)
 
 export async function fetchSpaceTemplateDetailFromSpring(
   templateId: string,
-  userId: string,
+  userId: string
 ) {
   return fetchJsonFromSpring(`/space-templates/${templateId}`, userId);
 }
@@ -43,7 +49,7 @@ export async function fetchSpaceTemplateDetailFromSpring(
 export async function updateSpaceTemplateInSpring(
   templateId: string,
   userId: string,
-  body: { name?: string; description?: string | null },
+  body: { name?: string; description?: string | null }
 ) {
   return fetchJsonFromSpring(`/space-templates/${templateId}`, userId, {
     method: "PATCH",
@@ -56,7 +62,7 @@ export async function updateSpaceTemplateInSpring(
 
 export async function deleteSpaceTemplateInSpring(
   templateId: string,
-  userId: string,
+  userId: string
 ) {
   await fetchJsonFromSpring(`/space-templates/${templateId}`, userId, {
     method: "DELETE",
@@ -65,17 +71,21 @@ export async function deleteSpaceTemplateInSpring(
 
 export async function duplicateSpaceTemplateInSpring(
   templateId: string,
-  userId: string,
+  userId: string
 ) {
-  return fetchJsonFromSpring(`/space-templates/${templateId}/duplicate`, userId, {
-    method: "POST",
-  });
+  return fetchJsonFromSpring(
+    `/space-templates/${templateId}/duplicate`,
+    userId,
+    {
+      method: "POST",
+    }
+  );
 }
 
 export async function snapshotSpaceTemplateInSpring(
   spaceId: string,
   userId: string,
-  body: { name: string; description?: string | null },
+  body: { name: string; description?: string | null }
 ) {
   return fetchJsonFromSpring(`/spaces/${spaceId}/snapshot-template`, userId, {
     method: "POST",
@@ -89,7 +99,7 @@ export async function snapshotSpaceTemplateInSpring(
 export async function applySpaceTemplateInSpring(
   spaceId: string,
   userId: string,
-  body: { templateId: string },
+  body: { templateId: string }
 ) {
   return fetchJsonFromSpring(`/spaces/${spaceId}/apply-template`, userId, {
     method: "POST",
@@ -107,27 +117,21 @@ async function fetchJsonFromSpring(
     method?: string;
     body?: string;
     headers?: Record<string, string>;
-  },
+  }
 ) {
   const response = await fetch(`${resolveSpringBackendBaseUrl()}${path}`, {
     cache: "no-store",
     method: init?.method,
     body: init?.body,
-    headers: {
-      accept: "application/json",
-      "X-Yeon-User-Id": userId,
-      ...init?.headers,
-      ...(process.env.SPRING_INTERNAL_TOKEN?.trim()
-        ? { [INTERNAL_TOKEN_HEADER]: process.env.SPRING_INTERNAL_TOKEN.trim() }
-        : {}),
-    },
+    headers: buildSpringBffHeaders(init?.headers, { userId }),
   });
 
   const body = await response.text();
   const parsed = tryParseJson(body);
 
   if (!response.ok) {
-    const message = extractErrorMessage(parsed) ?? "Spring backend 요청에 실패했습니다.";
+    const message =
+      extractErrorMessage(parsed) ?? "Spring backend 요청에 실패했습니다.";
     throw new SpringBackendHttpError(response.status, message);
   }
 
