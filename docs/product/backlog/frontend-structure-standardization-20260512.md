@@ -504,3 +504,28 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 22차: student member new page fetch wrapper 정리
+
+### 작업내용
+
+- `app/counseling-service/student-management/members/new/page.tsx`의 직접 `fetch()` 호출을 제거한다.
+- 수강생 생성 요청은 `studentManagementFetchJson` wrapper를 사용해 credentials/error parsing 정책을 student-management 기준으로 통일한다.
+- 생성 성공 후 `refetchMembers()`와 목록 이동 동작은 유지한다.
+
+### 논의 필요
+
+- 수강생 생성 form을 feature 컴포넌트/훅으로 즉시 이동할지 여부.
+
+### 선택지
+
+1. 이번 차수는 fetch boundary만 닫고 app route 내부 form 이동은 후속 app boundary 정리에서 다룬다.
+2. form submit hook까지 `features/student-management`로 즉시 이동한다.
+
+### 추천
+
+- 1번. 직접 fetch 제거와 app route 이동을 분리해 생성 폼 회귀 면적을 줄인다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.

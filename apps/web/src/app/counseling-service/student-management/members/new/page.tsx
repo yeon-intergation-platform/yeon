@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
+import { studentManagementFetchJson } from "@/features/student-management/hooks/student-management-fetch";
 import { useStudentManagement } from "@/features/student-management/student-management-provider";
 import { useAppRoute } from "@/lib/app-route-context";
 import { createPatchedHref } from "@/lib/route-state/search-params";
@@ -27,7 +28,7 @@ export default function MemberNewPage() {
   const studentManagementHref = createPatchedHref(
     resolveAppHref("/counseling-service/student-management"),
     new URLSearchParams(),
-    { spaceId: selectedSpaceId },
+    { spaceId: selectedSpaceId }
   );
 
   async function handleSubmit(e: React.FormEvent) {
@@ -45,7 +46,7 @@ export default function MemberNewPage() {
     setError(null);
 
     try {
-      const res = await fetch(
+      await studentManagementFetchJson<unknown>(
         resolveApiHref(`/api/v1/spaces/${selectedSpaceId}/members`),
         {
           method: "POST",
@@ -57,18 +58,14 @@ export default function MemberNewPage() {
             status: status || null,
           }),
         },
+        "수강생을 추가하지 못했습니다."
       );
-
-      if (!res.ok) {
-        const data = (await res.json().catch(() => ({}))) as { error?: string };
-        throw new Error(data.error ?? `오류가 발생했습니다. (${res.status})`);
-      }
 
       refetchMembers();
       router.push(studentManagementHref);
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "수강생을 추가하지 못했습니다.",
+        err instanceof Error ? err.message : "수강생을 추가하지 못했습니다."
       );
     } finally {
       setSubmitting(false);
