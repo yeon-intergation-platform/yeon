@@ -2465,3 +2465,28 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 99차 — 커뮤니티 실시간 채팅 widget view 분리
+
+### 작업내용
+
+- `community-chat-widget.tsx`에 섞인 header, message list, input form, formatter를 별도 component/helper로 분리한다.
+- 채팅 hook, collapse animation state, submit 후 focus 흐름은 widget container에 유지한다.
+- 익명 닉네임 표시, 접속자 숫자 표시, 빈 상태 문구, 입력 placeholder와 전송 동작은 변경하지 않는다.
+
+### 논의 필요
+
+- compact collapse toggle animation까지 별도 컴포넌트로 분리할지 여부.
+
+### 선택지
+
+1. 이번 차수는 header/list/form/formatter만 분리하고 compact animation shell은 container에 유지한다.
+2. compact toggle까지 별도 view로 분리한다.
+
+### 추천
+
+- 1번. framer-motion collapse 상태는 widget shell과 강하게 결합되어 있으므로 먼저 독립적인 view 조각부터 분리한다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.
