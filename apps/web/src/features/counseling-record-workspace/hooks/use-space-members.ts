@@ -5,7 +5,6 @@ import { useQuery } from "@tanstack/react-query";
 import { counselingWorkspaceFetchJsonOr } from "@/features/counseling-record-workspace/api/counseling-workspace-fetch";
 import { counselingWorkspaceQueryKeys } from "@/features/counseling-record-workspace/api/counseling-workspace-query-keys";
 import { resolveApiHrefForCurrentPath } from "@/lib/app-route-paths";
-import type { RecordItem } from "../_lib/types";
 
 export interface SpaceMember {
   id: string;
@@ -36,9 +35,14 @@ function computeIndicator(
   return "none";
 }
 
+type SpaceMemberRecord = {
+  memberId: string | null;
+  createdAt: string;
+};
+
 export function useSpaceMembers(
   spaceId: string | null,
-  records: RecordItem[]
+  records: SpaceMemberRecord[]
 ): {
   members: MemberWithStatus[];
   loading: boolean;

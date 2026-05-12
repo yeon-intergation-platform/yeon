@@ -782,3 +782,28 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 33차: counseling workspace route hook 일부 feature 이동
+
+### 작업내용
+
+- `app/counseling-service/_hooks`에 남아 있는 독립 워크스페이스 훅 중 `use-current-space`, `use-space-members`, `use-counseling-insight-banner-dismissals`를 `features/counseling-record-workspace/hooks`로 이동한다.
+- app route `_hooks/index.ts`는 기존 import 호환을 위한 re-export만 유지한다.
+- `use-space-members`는 app `_lib/types`에 의존하지 않도록 필요한 record shape만 feature hook 내부 타입으로 좁힌다.
+
+### 논의 필요
+
+- `use-records`와 녹음/파일 업로드 계열 훅까지 같은 차수에 함께 이동할지 여부.
+
+### 선택지
+
+1. 독립 훅 3개만 먼저 이동하고, `use-records` 계열은 상태 분해 차수에서 별도 처리한다.
+2. app `_hooks` 전체를 한 번에 feature로 이동한다.
+
+### 추천
+
+- 1번. `use-records`는 서버 원본/임시 레코드/로컬 override가 얽혀 있어 단순 이동보다 분해 설계가 먼저 필요하다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.

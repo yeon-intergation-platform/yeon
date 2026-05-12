@@ -8,7 +8,7 @@ import {
   counselingWorkspaceFetchVoid,
 } from "@/features/counseling-record-workspace/api/counseling-workspace-fetch";
 import { counselingWorkspaceQueryKeys } from "@/features/counseling-record-workspace/api/counseling-workspace-query-keys";
-import type { Space } from "../_hooks/use-current-space";
+import type { Space } from "../_hooks";
 import { CloudImportInline } from "@/features/cloud-import/components/cloud-import-inline";
 import { SpaceTemplatePreviewModal } from "@/features/space-settings/components/space-template-preview-modal";
 import { resolveApiHrefForCurrentPath } from "@/lib/app-route-paths";

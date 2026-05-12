@@ -5,11 +5,11 @@ export { useFileUpload } from "./use-file-upload";
 export { useAudioPlayer } from "./use-audio-player";
 export { useAiChat } from "./use-ai-chat";
 export { useAiPanel } from "./use-ai-panel";
-export { useCurrentSpace } from "./use-current-space";
-export { useCounselingInsightBannerDismissals } from "./use-counseling-insight-banner-dismissals";
-export { useSpaceMembers } from "./use-space-members";
-export type { Space } from "./use-current-space";
-export type { MemberWithStatus } from "./use-space-members";
+export { useCurrentSpace } from "@/features/counseling-record-workspace/hooks/use-current-space";
+export { useCounselingInsightBannerDismissals } from "@/features/counseling-record-workspace/hooks/use-counseling-insight-banner-dismissals";
+export { useSpaceMembers } from "@/features/counseling-record-workspace/hooks/use-space-members";
+export type { Space } from "@/features/counseling-record-workspace/hooks/use-current-space";
+export type { MemberWithStatus } from "@/features/counseling-record-workspace/hooks/use-space-members";
 
 export { useRecordRetry } from "./use-record-retry";
 export { useWorkspaceSelection } from "./use-workspace-selection";

@@ -12,7 +12,7 @@ import {
   ShadingType,
 } from "docx";
 import type { RecordItem, AnalysisResult, TranscriptSegment } from "./types";
-import type { MemberWithStatus } from "../_hooks/use-space-members";
+import type { MemberWithStatus } from "../_hooks";
 
 function fmtDate(iso: string) {
   return new Date(iso).toLocaleDateString("ko-KR", {
@@ -59,7 +59,7 @@ function subHeading(text: string): Paragraph {
 
 function bodyParagraph(
   text: string,
-  options?: { bold?: boolean; color?: string },
+  options?: { bold?: boolean; color?: string }
 ): Paragraph {
   return new Paragraph({
     children: [
@@ -95,12 +95,12 @@ function buildAnalysisSection(analysis: AnalysisResult): Paragraph[] {
   if (analysis.member.name) {
     paragraphs.push(subHeading("수강생 정보"));
     paragraphs.push(
-      bodyParagraph(`이름: ${analysis.member.name}`, { bold: true }),
+      bodyParagraph(`이름: ${analysis.member.name}`, { bold: true })
     );
     paragraphs.push(bodyParagraph(`감정/태도: ${analysis.member.emotion}`));
     if (analysis.member.traits.length > 0) {
       paragraphs.push(
-        bodyParagraph(`특성: ${analysis.member.traits.join(", ")}`),
+        bodyParagraph(`특성: ${analysis.member.traits.join(", ")}`)
       );
     }
   }
@@ -110,12 +110,12 @@ function buildAnalysisSection(analysis: AnalysisResult): Paragraph[] {
     paragraphs.push(subHeading("주요 이슈"));
     analysis.issues.forEach((issue, i) => {
       paragraphs.push(
-        bodyParagraph(`${i + 1}. ${issue.title}`, { bold: true }),
+        bodyParagraph(`${i + 1}. ${issue.title}`, { bold: true })
       );
       paragraphs.push(bodyParagraph(issue.detail));
       if (issue.timestamp) {
         paragraphs.push(
-          bodyParagraph(`시각: ${issue.timestamp}`, { color: "888888" }),
+          bodyParagraph(`시각: ${issue.timestamp}`, { color: "888888" })
         );
       }
     });
@@ -134,7 +134,7 @@ function buildAnalysisSection(analysis: AnalysisResult): Paragraph[] {
   if (analysis.actions.nextSession.length > 0) {
     paragraphs.push(bodyParagraph("다음 상담 방향", { bold: true }));
     analysis.actions.nextSession.forEach((a) =>
-      paragraphs.push(bulletParagraph(a)),
+      paragraphs.push(bulletParagraph(a))
     );
   }
 
@@ -142,7 +142,7 @@ function buildAnalysisSection(analysis: AnalysisResult): Paragraph[] {
   if (analysis.keywords.length > 0) {
     paragraphs.push(subHeading("키워드"));
     paragraphs.push(
-      bodyParagraph(analysis.keywords.map((k) => `#${k}`).join("  ")),
+      bodyParagraph(analysis.keywords.map((k) => `#${k}`).join("  "))
     );
   }
 
@@ -171,7 +171,7 @@ function buildTranscriptSection(segments: TranscriptSegment[]): Paragraph[] {
           new TextRun({ text: seg.text, size: 20 }),
         ],
         spacing: { after: 60 },
-      }),
+      })
     );
   });
 
@@ -203,7 +203,7 @@ export async function exportRecordDocx(record: RecordItem): Promise<void> {
       ],
       heading: HeadingLevel.HEADING_1,
       spacing: { after: 200 },
-    }),
+    })
   );
 
   // 메타 정보 테이블
@@ -241,9 +241,9 @@ export async function exportRecordDocx(record: RecordItem): Promise<void> {
                 width: { size: 80, type: WidthType.PERCENTAGE },
               }),
             ],
-          }),
+          })
       ),
-    }),
+    })
   );
 
   paragraphs.push(new Paragraph({ text: "", spacing: { after: 200 } }));
@@ -254,7 +254,7 @@ export async function exportRecordDocx(record: RecordItem): Promise<void> {
   } else {
     paragraphs.push(sectionHeading("AI 분석 결과"));
     paragraphs.push(
-      bodyParagraph("분석 결과가 없습니다.", { color: "888888" }),
+      bodyParagraph("분석 결과가 없습니다.", { color: "888888" })
     );
   }
 
@@ -274,13 +274,13 @@ export async function exportRecordDocx(record: RecordItem): Promise<void> {
 
 export async function exportMemberReportDocx(
   member: MemberWithStatus,
-  records: RecordItem[],
+  records: RecordItem[]
 ): Promise<void> {
   const memberRecords = records
     .filter((r) => r.memberId === member.id && r.status === "ready")
     .sort(
       (a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
 
   const paragraphs: (Paragraph | Table)[] = [];
@@ -298,7 +298,7 @@ export async function exportMemberReportDocx(
       ],
       heading: HeadingLevel.HEADING_1,
       spacing: { after: 200 },
-    }),
+    })
   );
 
   // 상태 요약
@@ -403,7 +403,7 @@ export async function exportMemberReportDocx(
           ],
         }),
       ],
-    }),
+    })
   );
 
   paragraphs.push(new Paragraph({ text: "", spacing: { after: 200 } }));
@@ -413,7 +413,7 @@ export async function exportMemberReportDocx(
 
   if (memberRecords.length === 0) {
     paragraphs.push(
-      bodyParagraph("상담 기록이 없습니다.", { color: "888888" }),
+      bodyParagraph("상담 기록이 없습니다.", { color: "888888" })
     );
   } else {
     memberRecords.forEach((rec, i) => {
@@ -429,7 +429,7 @@ export async function exportMemberReportDocx(
           ],
           heading: HeadingLevel.HEADING_3,
           spacing: { before: 200, after: 80 },
-        }),
+        })
       );
       paragraphs.push(
         new Paragraph({
@@ -459,7 +459,7 @@ export async function exportMemberReportDocx(
               : []),
           ],
           spacing: { after: 80 },
-        }),
+        })
       );
 
       if (rec.analysisResult) {
@@ -468,7 +468,7 @@ export async function exportMemberReportDocx(
         if (rec.analysisResult.actions.nextSession.length > 0) {
           paragraphs.push(bodyParagraph("다음 상담 방향", { bold: true }));
           rec.analysisResult.actions.nextSession.forEach((a) =>
-            paragraphs.push(bulletParagraph(a)),
+            paragraphs.push(bulletParagraph(a))
           );
         }
       } else if (rec.aiSummary) {
@@ -487,6 +487,6 @@ export async function exportMemberReportDocx(
   const safeTitle = member.name.replace(/[/\\:*?"<>|]/g, "_");
   downloadBlob(
     blob,
-    `${safeTitle}_리포트_${fmtDate(new Date().toISOString())}.docx`,
+    `${safeTitle}_리포트_${fmtDate(new Date().toISOString())}.docx`
   );
 }
