@@ -5,27 +5,35 @@ import { NextResponse } from "next/server";
 
 import { resolveAppHrefForBasePath } from "@/lib/app-route-paths";
 import { DEFAULT_COUNSELING_SERVICE_HREF } from "@/lib/platform-services";
-import {
-  createCloudImportDraft,
-  markImportDraftAnalyzing,
-  saveImportDraftError,
-  saveImportDraftPreview,
-  saveImportDraftProcessingState,
-  getImportDraftSource,
-} from "@/server/services/import-drafts-service";
-import { importPreviewBodySchema } from "@/server/services/import-preview-service";
-import type {
-  FieldSchemaHint,
-  ImportPreview,
-  RefineContext,
-} from "@/server/services/file-analysis-service";
-import { analyzeBuffer } from "@/server/services/file-analysis-service";
-import { createImportSSEStream } from "@/server/services/import-stream";
 import { ServiceError } from "@/server/services/service-error";
-import type { FileKind } from "@/features/cloud-import/file-kind";
-import { detectFileKind } from "@/features/cloud-import/file-kind";
 import { jsonError } from "@/app/api/v1/counseling-records/_shared";
-import { ImportCommitSpringBackendHttpError, runImportCommitInSpring } from "@/server/import-commit-spring-client";
+import {
+  ImportCommitSpringBackendHttpError,
+  runImportCommitInSpring,
+} from "@/server/import-commit-spring-client";
+import {
+  LocalImportAnalysisSpringBackendHttpError,
+  runLocalImportAnalyzeInSpring,
+} from "@/server/local-import-analysis-spring-client";
+
+const localImportStudentSchema = z.object({
+  name: z.string().min(1),
+  email: z.string().nullish(),
+  phone: z.string().nullish(),
+  status: z.string().nullish(),
+  customFields: z.record(z.string(), z.string().nullish()).nullish(),
+});
+
+const localImportCohortSchema = z.object({
+  name: z.string().min(1),
+  startDate: z.string().nullish(),
+  endDate: z.string().nullish(),
+  students: z.array(localImportStudentSchema),
+});
+
+const importPreviewBodySchema = z.object({
+  cohorts: z.array(localImportCohortSchema),
+});
 
 const importRequestSchema = z.object({
   draftId: z.string().min(1).optional(),
@@ -41,6 +49,7 @@ const cloudAnalyzeRequestSchema = z.object({
   lastModifiedAt: z.string().optional(),
   instruction: z.string().optional(),
   previousResult: z.unknown().optional(),
+  spaceId: z.string().optional(),
 });
 
 type CloudProvider = "onedrive" | "googledrive";
@@ -61,21 +70,9 @@ interface HandleCloudAnalyzeRouteParams {
   downloadFile: (
     accessToken: string,
     fileId: string,
-    mimeType: string,
+    mimeType: string
   ) => Promise<Buffer>;
   requireMimeType: boolean;
-}
-
-interface ExecuteAnalyzeRouteParams {
-  request: NextRequest;
-  userId: string;
-  draftId: string;
-  buffer: Buffer;
-  fileName: string;
-  mimeType: string;
-  kind: FileKind;
-  refine?: RefineContext;
-  fieldHints?: FieldSchemaHint[];
 }
 
 interface HandleProviderStatusRouteParams<T extends Record<string, unknown>> {
@@ -101,7 +98,7 @@ interface HandleProviderFileProxyRouteParams {
   downloadFile: (
     accessToken: string,
     fileId: string,
-    mimeType: string,
+    mimeType: string
   ) => Promise<Buffer>;
   disconnectedMessage: string;
   logLabel: string;
@@ -126,20 +123,9 @@ type OAuthCallbackErrorCode =
   | "exchange_failed"
   | "save_failed";
 
-function buildRefineContext(
-  body: CloudAnalyzeRequest,
-): RefineContext | undefined {
-  return body.instruction?.trim() && body.previousResult
-    ? {
-        instruction: body.instruction.trim(),
-        previousResult: body.previousResult as ImportPreview,
-      }
-    : undefined;
-}
-
 function buildOAuthCookieName(
   providerKey: CloudProvider,
-  field: "state" | "user",
+  field: "state" | "user"
 ) {
   return `${providerKey}_oauth_${field}`;
 }
@@ -148,7 +134,7 @@ function buildOAuthRedirectTarget() {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
   const studentManagementPath = resolveAppHrefForBasePath(
     DEFAULT_COUNSELING_SERVICE_HREF,
-    "/counseling-service/student-management",
+    "/counseling-service/student-management"
   );
 
   return new URL(studentManagementPath, baseUrl).toString();
@@ -192,16 +178,16 @@ export async function handleOAuthStartRoute({
 
 export function createOAuthCallbackErrorResponse(
   providerKey: CloudProvider,
-  errorCode: OAuthCallbackErrorCode,
+  errorCode: OAuthCallbackErrorCode
 ) {
   return NextResponse.redirect(
-    `${buildOAuthRedirectTarget()}?${providerKey}_error=${errorCode}`,
+    `${buildOAuthRedirectTarget()}?${providerKey}_error=${errorCode}`
   );
 }
 
 export function createOAuthCallbackSuccessResponse(providerKey: CloudProvider) {
   const response = NextResponse.redirect(
-    `${buildOAuthRedirectTarget()}?${providerKey}_connected=true`,
+    `${buildOAuthRedirectTarget()}?${providerKey}_connected=true`
   );
   response.cookies.delete(buildOAuthCookieName(providerKey, "state"));
   response.cookies.delete(buildOAuthCookieName(providerKey, "user"));
@@ -217,10 +203,10 @@ export function resolveOAuthCallbackContext({
   const code = request.nextUrl.searchParams.get("code");
   const state = request.nextUrl.searchParams.get("state");
   const savedState = request.cookies.get(
-    buildOAuthCookieName(providerKey, "state"),
+    buildOAuthCookieName(providerKey, "state")
   )?.value;
   const userId = request.cookies.get(
-    buildOAuthCookieName(providerKey, "user"),
+    buildOAuthCookieName(providerKey, "user")
   )?.value;
 
   if (!code || !state || !savedState || !userId) {
@@ -241,7 +227,7 @@ export function resolveOAuthCallbackContext({
 async function parseJsonBody<T>(
   request: NextRequest,
   schema: z.ZodType<T>,
-  invalidDataMessage: string,
+  invalidDataMessage: string
 ): Promise<{ ok: true; data: T } | { ok: false; response: Response }> {
   let body: unknown;
 
@@ -276,7 +262,7 @@ export async function handleImportCommitRoute({
   const parsed = await parseJsonBody(
     request,
     importRequestSchema,
-    "요청 데이터가 올바르지 않습니다.",
+    "요청 데이터가 올바르지 않습니다."
   );
 
   if (!parsed.ok) {
@@ -379,109 +365,40 @@ export async function handleProviderFileProxyRoute({
   }
 }
 
-export async function executeAnalyzeRoute({
-  request,
-  userId,
-  draftId,
-  buffer,
-  fileName,
-  mimeType,
-  kind,
-  refine,
-  fieldHints,
-}: ExecuteAnalyzeRouteParams) {
-  try {
-    if (request.headers.get("accept")?.includes("text/event-stream")) {
-      await markImportDraftAnalyzing(userId, draftId);
-      return createImportSSEStream(
-        buffer,
-        fileName,
-        mimeType,
-        kind,
-        refine,
-        fieldHints,
-        {
-          extraHeaders: {
-            "x-import-draft-id": draftId,
-          },
-          onDone: (result) =>
-            saveImportDraftPreview({
-              userId,
-              draftId,
-              preview: result.preview,
-              status: "analyzed",
-            }),
-          onError: (message) =>
-            saveImportDraftError({
-              userId,
-              draftId,
-              message,
-            }),
-          onProgress: (progress) =>
-            saveImportDraftProcessingState({
-              userId,
-              draftId,
-              stage: progress.stage,
-              progress: progress.progress,
-              message: progress.message,
-            }),
-        },
-      );
-    }
-
-    await markImportDraftAnalyzing(userId, draftId);
-    const result = await analyzeBuffer(
-      buffer,
-      fileName,
-      mimeType,
-      kind,
-      refine,
-      fieldHints,
-      (progress) =>
-        saveImportDraftProcessingState({
-          userId,
-          draftId,
-          stage: progress.stage,
-          progress: progress.progress,
-          message: progress.message,
-        }),
-    );
-
-    await saveImportDraftPreview({
-      userId,
-      draftId,
-      preview: result.preview,
-      status: "analyzed",
-    });
-
-    return NextResponse.json({
-      draftId,
-      preview: result.preview,
-      assistantMessage: result.assistantMessage ?? null,
-    });
-  } catch (error) {
-    await saveImportDraftError({
-      userId,
-      draftId,
-      message:
-        error instanceof ServiceError
-          ? error.message
-          : "파일 분석에 실패했습니다.",
-    });
-
-    if (error instanceof ServiceError) {
-      return jsonError(error.message, error.status);
-    }
-
-    console.error(error);
-    return jsonError("파일 분석에 실패했습니다.", 500);
+function appendOptionalAnalyzeFields(
+  formData: FormData,
+  body: CloudAnalyzeRequest
+) {
+  const instruction = body.instruction?.trim();
+  if (instruction) {
+    formData.set("instruction", instruction);
   }
+  if (body.previousResult !== undefined) {
+    formData.set(
+      "previousResult",
+      typeof body.previousResult === "string"
+        ? body.previousResult
+        : JSON.stringify(body.previousResult)
+    );
+  }
+  if (body.spaceId?.trim()) {
+    formData.set("spaceId", body.spaceId.trim());
+  }
+}
+
+function buildCloudAnalyzeFile(
+  fileName: string,
+  mimeType: string,
+  buffer: Buffer
+) {
+  return new Blob([new Uint8Array(buffer)], {
+    type: mimeType || "application/octet-stream",
+  });
 }
 
 export async function handleCloudAnalyzeRoute({
   request,
   userId,
-  provider,
   providerLabel,
   getAccessToken,
   downloadFile,
@@ -490,43 +407,23 @@ export async function handleCloudAnalyzeRoute({
   const parsed = await parseJsonBody(
     request,
     cloudAnalyzeRequestSchema,
-    "draftId 또는 fileId가 필요합니다.",
+    "draftId 또는 fileId가 필요합니다."
   );
 
   if (!parsed.ok) {
     return parsed.response;
   }
 
-  let activeDraftId: string | null = null;
-
   try {
-    const accessToken = await getAccessToken(userId);
-
-    if (!accessToken) {
-      return jsonError(`${providerLabel}가 연결되어 있지 않습니다.`, 401);
-    }
-
-    let fileId: string;
-    let fileName: string;
-    let mimeType: string;
-    let kind: FileKind;
+    const formData = new FormData();
+    appendOptionalAnalyzeFields(formData, parsed.data);
 
     if (parsed.data.draftId) {
-      const draft = await getImportDraftSource(userId, parsed.data.draftId);
-
-      if (draft.provider !== provider) {
-        return jsonError(`${providerLabel} 초안만 복구할 수 있습니다.`, 400);
-      }
-
-      fileId = draft.selectedFile.id;
-      fileName = draft.selectedFile.name;
-      mimeType = draft.selectedFile.mimeType ?? "";
-      kind = draft.selectedFile.fileKind;
-      activeDraftId = draft.id;
+      formData.set("draftId", parsed.data.draftId);
     } else {
       const requestedFileId = parsed.data.fileId;
       const requestedFileName = parsed.data.fileName;
-      const requestedMimeType = parsed.data.mimeType;
+      const requestedMimeType = parsed.data.mimeType ?? "";
       const hasRequiredFields = requireMimeType
         ? Boolean(requestedFileId && requestedFileName && requestedMimeType)
         : Boolean(requestedFileId && requestedFileName);
@@ -536,62 +433,39 @@ export async function handleCloudAnalyzeRoute({
           requireMimeType
             ? "fileId, fileName, mimeType이 필요합니다."
             : "fileId와 fileName이 필요합니다.",
-          400,
+          400
         );
       }
 
-      fileId = requestedFileId ?? "";
-      fileName = requestedFileName ?? "";
-      mimeType = requestedMimeType ?? "";
-      kind = detectFileKind(fileName, mimeType);
+      const accessToken = await getAccessToken(userId);
 
-      const createdDraft = await createCloudImportDraft({
-        userId,
-        provider,
-        file: {
-          id: fileId,
-          name: fileName,
-          size: parsed.data.size ?? 0,
-          lastModifiedAt:
-            parsed.data.lastModifiedAt ?? new Date().toISOString(),
-          mimeType: mimeType || undefined,
-          isFolder: false,
-          isSpreadsheet: kind === "spreadsheet",
-          isImage: kind === "image",
-          fileKind: kind,
-        },
-      });
-      activeDraftId = createdDraft.id;
+      if (!accessToken) {
+        return jsonError(`${providerLabel}가 연결되어 있지 않습니다.`, 401);
+      }
+
+      const fileName = requestedFileName ?? "cloud-import";
+      const mimeType = requestedMimeType;
+      const buffer = await downloadFile(
+        accessToken,
+        requestedFileId ?? "",
+        mimeType
+      );
+      formData.set(
+        "file",
+        buildCloudAnalyzeFile(fileName, mimeType, buffer),
+        fileName
+      );
     }
 
-    if (!activeDraftId) {
-      return jsonError("초안 식별자를 확인하지 못했습니다.", 500);
-    }
-    const buffer = await downloadFile(accessToken, fileId, mimeType);
-    const refine = buildRefineContext(parsed.data);
-
-    return executeAnalyzeRoute({
-      request,
+    return await runLocalImportAnalyzeInSpring({
       userId,
-      draftId: activeDraftId,
-      buffer,
-      fileName,
-      mimeType,
-      kind,
-      refine,
+      formData,
+      accept: request.headers.get("accept"),
     });
   } catch (error) {
-    if (activeDraftId) {
-      await saveImportDraftError({
-        userId,
-        draftId: activeDraftId,
-        message:
-          error instanceof ServiceError
-            ? error.message
-            : "파일 분석에 실패했습니다.",
-      });
+    if (error instanceof LocalImportAnalysisSpringBackendHttpError) {
+      return jsonError(error.message, error.status);
     }
-
     if (error instanceof ServiceError) {
       return jsonError(error.message, error.status);
     }

@@ -167,3 +167,24 @@
 - 완료 근거
   - Spring list 결과 반환 뒤 Next-side `ensureCounselingRecordProcessingScheduledForListItems` 호출을 제거했다.
   - web typecheck/build 및 diff/skill/SSOT 검증 통과.
+
+## 5차 - cloud analyze 공용 helper Spring 분석 bridge 전환
+
+### 5차 세부 - integrations cloud analyze의 Next 파일 분석/초안 저장 제거 (완료)
+
+- 작업내용
+  - `handleCloudAnalyzeRoute`에서 Next `import-drafts-service`, `file-analysis-service`, `import-stream` 직접 호출을 제거한다.
+  - Cloud provider route는 Spring browser client로 파일 bytes를 받은 뒤 Spring `POST /integrations/local/analyze`에 multipart bridge만 수행한다.
+- 논의 필요
+  - Cloud 분석 결과 draft는 Spring local analyze가 생성/저장하는 draft id를 사용한다. provider별 draft 복구 검증은 Spring draft source 정책으로 통합한다.
+- 선택지
+  - A. cloud analyze helper만 Spring local analyze bridge로 전환
+  - B. OAuth/status/files/file proxy까지 한 번에 재설계
+- 추천
+  - A. 현재 남은 직접 파일 분석/초안 저장 역할을 먼저 제거한다.
+- 사용자 방향
+  - 추천 기준으로 진행.
+- 완료 근거
+  - `handleCloudAnalyzeRoute`에서 Next import draft 저장, 파일 분석, SSE stream 직접 호출을 제거했다.
+  - Cloud provider analyze route는 provider access token으로 파일 bytes를 받은 뒤 Spring `POST /integrations/local/analyze`에 multipart bridge만 수행한다.
+  - web typecheck/build 및 integrations targeted Vitest, diff/skill/SSOT 검증을 수행했다.
