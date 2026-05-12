@@ -13,6 +13,7 @@ import {
   MemberListItem,
   type MemberItemActions,
 } from "@/features/counseling-record-workspace/components/sidebar-member-list-item";
+import { UnlinkedRecordListItem } from "@/features/counseling-record-workspace/components/sidebar-unlinked-record-list-item";
 
 export interface SidebarProps {
   records: RecordItem[];
@@ -53,13 +54,6 @@ type DragSelectionState = {
   orderedIds: string[];
   anchorId: string;
 };
-
-function fmtMonthDay(iso: string): string {
-  const d = new Date(iso);
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${m}-${day}`;
-}
 
 export function Sidebar({
   records,
@@ -969,15 +963,13 @@ export function Sidebar({
             </div>
 
             {unlinkedRecords.map((rec) => (
-              <button
+              <UnlinkedRecordListItem
                 key={rec.id}
-                className={`w-full flex items-center gap-2 px-2 py-[7px] rounded-md text-left text-xs transition-colors cursor-pointer font-[inherit] border-none ${
+                record={rec}
+                isSelected={
                   selection.kind === "record" && selectedIdSet.has(rec.id)
-                    ? "bg-accent-dim border border-accent-border text-text"
-                    : rec.id === selectedId
-                      ? "bg-surface-3 border border-border-light text-text"
-                      : "bg-transparent text-text-dim hover:text-text hover:bg-surface-3"
-                }`}
+                }
+                isActive={rec.id === selectedId}
                 onMouseDown={(event) =>
                   beginDragSelection({
                     event,
@@ -1013,15 +1005,7 @@ export function Sidebar({
                     index: visibleRecordIndexById.get(rec.id) ?? 0,
                   })
                 }
-              >
-                <span className="text-[10px] text-text-dim flex-shrink-0 w-9 tabular-nums">
-                  {fmtMonthDay(rec.createdAt)}
-                </span>
-                <span className="truncate">{rec.title}</span>
-                {rec.status === "processing" && (
-                  <span className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-amber animate-pulse" />
-                )}
-              </button>
+              />
             ))}
           </div>
         )}
