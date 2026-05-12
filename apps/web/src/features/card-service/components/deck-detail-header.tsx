@@ -5,7 +5,6 @@ import { useState, type FormEvent } from "react";
 import type { CardDeckDto } from "@yeon/api-contract/card-decks";
 
 import { analyticsEvents, trackEvent } from "@/lib/analytics";
-import { PLATFORM_HOME_HREF } from "@/lib/platform-services";
 import { useUpdateDeck } from "../hooks";
 
 interface DeckDetailHeaderProps {
@@ -137,24 +136,11 @@ export function DeckDetailHeader({
               >
                 덱 삭제
               </button>
-              <Link
-                href={PLATFORM_HOME_HREF}
-                className="block px-3 py-2 text-left text-[#111] hover:bg-[#fafafa]"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                YEON
-              </Link>
             </div>
           ) : null}
         </div>
 
         <div className="hidden items-center gap-2 md:flex">
-          <Link
-            href={PLATFORM_HOME_HREF}
-            className="rounded-xl border border-[#e5e5e5] px-3 py-1.5 text-[13px] font-medium text-[#777] transition-colors hover:border-[#111] hover:text-[#111]"
-          >
-            YEON
-          </Link>
           <button
             type="button"
             onClick={onRequestExport}
