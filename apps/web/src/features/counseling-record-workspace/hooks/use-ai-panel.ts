@@ -1,10 +1,10 @@
 import { useState, useRef, useCallback } from "react";
-import type { AiModelType } from "../_lib/constants";
+import type { AiModelType } from "@/features/counseling-record-workspace/constants/ai-panel";
 import {
-  AI_PANEL_MIN_WIDTH,
-  AI_PANEL_MAX_WIDTH,
   AI_PANEL_DEFAULT_WIDTH,
-} from "../_lib/constants";
+  AI_PANEL_MAX_WIDTH,
+  AI_PANEL_MIN_WIDTH,
+} from "@/features/counseling-record-workspace/constants/ai-panel";
 
 interface UseAiPanelOptions {
   hasSelectedRecord: boolean;
@@ -58,7 +58,7 @@ export function useAiPanel({ hasSelectedRecord }: UseAiPanelOptions) {
       const delta = startX - ev.clientX;
       const newWidth = Math.min(
         AI_PANEL_MAX_WIDTH,
-        Math.max(AI_PANEL_MIN_WIDTH, startWidth + delta),
+        Math.max(AI_PANEL_MIN_WIDTH, startWidth + delta)
       );
       widthRef.current = newWidth;
       if (panelRef.current) {
