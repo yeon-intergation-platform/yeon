@@ -3,7 +3,7 @@
 import { type Editor } from "@tiptap/react";
 import { useCallback, useState } from "react";
 
-import { uploadCardDeckImage } from "../hooks/card-service-fetch";
+import { uploadCardDeckImage } from "../card-service-fetch";
 import {
   CARD_EDITOR_IMAGE_DEFAULT_WIDTH,
   CARD_EDITOR_MAX_IMAGE_COUNT,

@@ -19,7 +19,7 @@ import {
 
 import { resolveRaceServerUrl } from "@/features/typing-service/use-race-room";
 
-import { cardServiceFetchJson } from "./card-service-fetch";
+import { cardServiceFetchJson } from "../card-service-fetch";
 
 export const cardRoomsQueryKey = () => ["card-rooms"] as const;
 

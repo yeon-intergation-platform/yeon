@@ -23,9 +23,8 @@ import { useIsAuthenticated } from "../auth-context";
 import {
   cardServiceFetchJson,
   cardServiceFetchVoid,
-} from "./card-service-fetch";
-import { cardDeckDetailQueryKey } from "./use-deck-detail";
-import { cardDecksQueryKey } from "./use-deck-list";
+} from "../card-service-fetch";
+import { cardServiceQueryKeys } from "../card-service-query-keys";
 
 function invalidateDeckAndList(
   queryClient: ReturnType<typeof useQueryClient>,
@@ -33,10 +32,10 @@ function invalidateDeckAndList(
   deckId: string
 ) {
   void queryClient.invalidateQueries({
-    queryKey: cardDeckDetailQueryKey(isAuthenticated, deckId),
+    queryKey: cardServiceQueryKeys.deckDetail(isAuthenticated, deckId),
   });
   void queryClient.invalidateQueries({
-    queryKey: cardDecksQueryKey(isAuthenticated),
+    queryKey: cardServiceQueryKeys.decks(isAuthenticated),
   });
 }
 
@@ -178,7 +177,7 @@ export function useUpdateCardStudyPreference(deckId: string) {
     },
     onSuccess: () =>
       void queryClient.invalidateQueries({
-        queryKey: cardDeckDetailQueryKey(isAuthenticated, deckId),
+        queryKey: cardServiceQueryKeys.deckDetail(isAuthenticated, deckId),
       }),
   });
 }

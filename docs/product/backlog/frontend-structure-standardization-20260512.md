@@ -679,3 +679,29 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 29차: card-service fetch/query key boundary 정리
+
+### 작업내용
+
+- `features/card-service/hooks`의 덱 목록/상세/생성/게스트 이관 직접 `fetch()` 호출을 제거한다.
+- 서버 요청과 오류 파싱은 `card-service-fetch.ts`로 분리한다.
+- card deck query key는 hook 파일이 아닌 `card-service-query-keys.ts` factory로 고정한다.
+- 게스트 덱 fallback, 생성 후 invalidate, 이관 후 로컬 guest 정리 흐름은 유지한다.
+
+### 논의 필요
+
+- card-service 전체를 TanStack Query 서비스 factory 구조로 더 세분화할지 여부.
+
+### 선택지
+
+1. 이번 차수는 네트워크/query key boundary만 닫고 guest store 구조는 유지한다.
+2. guest store와 서버 fetch까지 하나의 repository abstraction으로 즉시 통합한다.
+
+### 추천
+
+- 1번. 서버/게스트 분기 동작을 건드리지 않고 직접 fetch 확산과 query key 위치만 먼저 정리한다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.
