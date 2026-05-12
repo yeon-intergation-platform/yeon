@@ -43,7 +43,6 @@ export function CommunityChatWidget({
     messageError,
     isSendingMessage,
     sendMessage,
-    currentUserId,
     activePresenceCount,
   } = useCommunityChat({
     pollIntervalMs: variant === "compact" ? 8000 : 5000,
@@ -272,18 +271,13 @@ export function CommunityChatWidget({
               ) : (
                 <div className="space-y-1.5">
                   {visibleMessages.map((message) => {
-                    const isMine =
-                      currentUserId !== null &&
-                      message.senderId === currentUserId;
-                    const senderName = isMine ? "나" : message.senderNickname;
-
                     return (
                       <div
                         key={message.id}
                         className="grid grid-cols-[78px_48px_minmax(0,1fr)] items-baseline gap-2 text-[13px] leading-[1.55]"
                       >
                         <span className="truncate font-semibold text-[#555]">
-                          {senderName}
+                          {message.senderNickname}
                         </span>
                         <span className="font-mono text-[10px] text-[#999]">
                           {formatMessageTime(message.createdAt)}
