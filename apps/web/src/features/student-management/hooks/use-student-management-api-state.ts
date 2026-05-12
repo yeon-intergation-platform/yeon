@@ -5,6 +5,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import type { Member, Space } from "../types";
+import { studentManagementFetchJson } from "./student-management-fetch";
+import { studentManagementQueryKeys } from "./student-management-query-keys";
 import { createPatchedHref } from "@/lib/route-state/search-params";
 import { useAppRoute } from "@/lib/app-route-context";
 
@@ -32,15 +34,13 @@ export function useStudentManagementApiState() {
     isPending: spacesLoading,
     error: spacesQueryError,
   } = useQuery({
-    queryKey: ["spaces"],
-    queryFn: async () => {
-      const res = await fetch(resolveApiHref("/api/v1/spaces"));
-      if (!res.ok) {
-        const text = await res.text().catch(() => "");
-        throw new Error(text || "스페이스 목록을 불러오지 못했습니다.");
-      }
-      return res.json() as Promise<{ spaces: Space[] }>;
-    },
+    queryKey: studentManagementQueryKeys.spaces(),
+    queryFn: () =>
+      studentManagementFetchJson<{ spaces: Space[] }>(
+        resolveApiHref("/api/v1/spaces"),
+        { method: "GET" },
+        "스페이스 목록을 불러오지 못했습니다."
+      ),
   });
 
   const spaces = spacesData ? spacesData.spaces : [];
@@ -54,13 +54,13 @@ export function useStudentManagementApiState() {
   const normalizedPathname = normalizeAppPathname(pathname);
   const currentSearchParams = useMemo(
     () => new URLSearchParams(searchParams.toString()),
-    [searchParams],
+    [searchParams]
   );
   const spaceIdFromQuery = currentSearchParams.get("spaceId");
   const pendingSpaceIdRef = useRef<string | null>(null);
   const lastSelectedSpaceIdRef = useRef<string | null>(null);
   const [optimisticSpaceId, setOptimisticSpaceId] = useState<string | null>(
-    null,
+    null
   );
   const shouldDeferDefaultSpaceSelection =
     isStudentDetailPath(normalizedPathname) &&
@@ -71,7 +71,7 @@ export function useStudentManagementApiState() {
       spaceIdFromQuery
         ? (spaces.find((space) => space.id === spaceIdFromQuery) ?? null)
         : null,
-    [spaceIdFromQuery, spaces],
+    [spaceIdFromQuery, spaces]
   );
 
   const replaceSearchState = useCallback(
@@ -79,7 +79,7 @@ export function useStudentManagementApiState() {
       const nextUrl = createPatchedHref(pathname, currentSearchParams, patch);
       router.replace(nextUrl);
     },
-    [currentSearchParams, pathname, router],
+    [currentSearchParams, pathname, router]
   );
 
   useEffect(() => {
@@ -94,7 +94,7 @@ export function useStudentManagementApiState() {
     lastSelectedSpaceIdRef.current = currentQuerySpaceId;
 
     setOptimisticSpaceId((current) =>
-      current === currentQuerySpaceId ? null : current,
+      current === currentQuerySpaceId ? null : current
     );
   }, [matchedSpaceFromQuery]);
 
@@ -148,7 +148,7 @@ export function useStudentManagementApiState() {
       setOptimisticSpaceId(id);
       replaceSearchState({ spaceId: id });
     },
-    [replaceSearchState, selectedSpaceId],
+    [replaceSearchState, selectedSpaceId]
   );
 
   useEffect(() => {
@@ -176,17 +176,13 @@ export function useStudentManagementApiState() {
     isPending: membersPending,
     error: membersQueryError,
   } = useQuery({
-    queryKey: ["members", selectedSpaceId],
-    queryFn: async () => {
-      const res = await fetch(
+    queryKey: studentManagementQueryKeys.members(selectedSpaceId),
+    queryFn: () =>
+      studentManagementFetchJson<{ members: Member[] }>(
         resolveApiHref(`/api/v1/spaces/${selectedSpaceId}/members`),
-      );
-      if (!res.ok) {
-        const text = await res.text().catch(() => "");
-        throw new Error(text || "수강생 목록을 불러오지 못했습니다.");
-      }
-      return res.json() as Promise<{ members: Member[] }>;
-    },
+        { method: "GET" },
+        "수강생 목록을 불러오지 못했습니다."
+      ),
     enabled: !!selectedSpaceId,
   });
 
@@ -200,41 +196,45 @@ export function useStudentManagementApiState() {
         : null;
 
   const refetchSpaces = useCallback(() => {
-    void queryClient.invalidateQueries({ queryKey: ["spaces"] });
+    void queryClient.invalidateQueries({
+      queryKey: studentManagementQueryKeys.spaces(),
+    });
   }, [queryClient]);
 
   const refetchMembers = useCallback(() => {
-    void queryClient.invalidateQueries({ queryKey: ["members"] });
+    void queryClient.invalidateQueries({
+      queryKey: studentManagementQueryKeys.membersRoot(),
+    });
   }, [queryClient]);
 
   const patchMemberInCaches = useCallback(
     (memberId: string, patch: Partial<Member>) => {
       queryClient.setQueriesData<{ members: Member[] }>(
-        { queryKey: ["members"] },
+        { queryKey: studentManagementQueryKeys.membersRoot() },
         (current) => {
           if (!current) return current;
 
           return {
             ...current,
             members: current.members.map((member) =>
-              member.id === memberId ? { ...member, ...patch } : member,
+              member.id === memberId ? { ...member, ...patch } : member
             ),
           };
-        },
+        }
       );
 
       queryClient.setQueryData<{ member: Member } | undefined>(
-        ["member", memberId],
+        studentManagementQueryKeys.member(memberId),
         (current) => {
           if (!current) return current;
           return {
             ...current,
             member: { ...current.member, ...patch },
           };
-        },
+        }
       );
     },
-    [queryClient],
+    [queryClient]
   );
 
   return {

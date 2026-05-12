@@ -2,6 +2,8 @@
 
 import { useCallback, useState } from "react";
 
+import { studentManagementFetchVoid } from "./student-management-fetch";
+
 interface UseBulkMemberDeleteParams {
   selectedSpaceId: string | null;
   selectedIds: Set<string>;
@@ -29,7 +31,7 @@ export function useBulkMemberDelete({
       }
 
       const confirmed = window.confirm(
-        `선택한 수강생 ${deleteIds.length}명을 삭제할까요? 이 작업은 되돌릴 수 없습니다.`,
+        `선택한 수강생 ${deleteIds.length}명을 삭제할까요? 이 작업은 되돌릴 수 없습니다.`
       );
 
       if (!confirmed) {
@@ -40,7 +42,7 @@ export function useBulkMemberDelete({
       setDeleteError(null);
 
       try {
-        const res = await fetch(
+        await studentManagementFetchVoid(
           `/api/v1/spaces/${selectedSpaceId}/members/bulk-delete`,
           {
             method: "POST",
@@ -49,29 +51,21 @@ export function useBulkMemberDelete({
             },
             body: JSON.stringify({ memberIds: deleteIds }),
           },
+          "수강생을 일괄 삭제하지 못했습니다."
         );
-
-        if (!res.ok) {
-          const payload = (await res.json().catch(() => null)) as {
-            message?: string;
-          } | null;
-          throw new Error(
-            payload?.message || "수강생을 일괄 삭제하지 못했습니다.",
-          );
-        }
 
         onDeleted();
       } catch (caughtError) {
         setDeleteError(
           caughtError instanceof Error
             ? caughtError.message
-            : "수강생을 일괄 삭제하지 못했습니다.",
+            : "수강생을 일괄 삭제하지 못했습니다."
         );
       } finally {
         setIsDeletingSelected(false);
       }
     },
-    [isDeletingSelected, onDeleted, selectedIds, selectedSpaceId],
+    [isDeletingSelected, onDeleted, selectedIds, selectedSpaceId]
   );
 
   return {

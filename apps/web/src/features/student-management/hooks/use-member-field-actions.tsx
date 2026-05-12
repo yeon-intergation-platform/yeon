@@ -18,6 +18,7 @@ import {
 } from "./use-custom-tab-fields";
 import { useStudentManagement } from "../student-management-provider";
 import type { MemberFieldActionTarget } from "../member-field-edit-policy";
+import { studentManagementQueryKeys } from "./student-management-query-keys";
 
 type ContextMenuState = {
   target: MemberFieldActionTarget;
@@ -48,7 +49,7 @@ export function useMemberFieldActions({
   const queryClient = useQueryClient();
   const { patchMemberInCaches } = useStudentManagement();
   const [contextMenu, setContextMenu] = React.useState<ContextMenuState | null>(
-    null,
+    null
   );
   const [editTarget, setEditTarget] =
     React.useState<MemberFieldActionTarget | null>(null);
@@ -104,7 +105,7 @@ export function useMemberFieldActions({
           target.field.id,
           {
             name,
-          },
+          }
         );
 
         if (queryKey) {
@@ -115,10 +116,10 @@ export function useMemberFieldActions({
               return {
                 ...current,
                 fields: current.fields.map((item) =>
-                  item.id === field.id ? { ...item, name: field.name } : item,
+                  item.id === field.id ? { ...item, name: field.name } : item
                 ),
               };
-            },
+            }
           );
         }
       }
@@ -132,7 +133,7 @@ export function useMemberFieldActions({
           const { member: updatedMember } = await updateSpaceMember(
             member.spaceId,
             member.id,
-            payload,
+            payload
           );
 
           patchMemberInCaches(member.id, {
@@ -145,7 +146,7 @@ export function useMemberFieldActions({
           const response = await saveMemberFieldValues(
             member.spaceId,
             member.id,
-            [{ fieldDefinitionId: target.field.id, value }],
+            [{ fieldDefinitionId: target.field.id, value }]
           );
           const updatedValues = Array.isArray(response.values)
             ? response.values
@@ -155,7 +156,7 @@ export function useMemberFieldActions({
             patchFieldValuesInCache(
               queryClient,
               queryKey as ReturnType<typeof customTabFieldsQueryKey>,
-              updatedValues,
+              updatedValues
             );
           }
         }
@@ -163,7 +164,9 @@ export function useMemberFieldActions({
 
       if (queryKey) {
         await queryClient.invalidateQueries({
-          queryKey: ["custom-tab-fields", member.spaceId],
+          queryKey: studentManagementQueryKeys.customTabFieldsRoot(
+            member.spaceId
+          ),
         });
       }
     },
@@ -185,18 +188,20 @@ export function useMemberFieldActions({
             return {
               ...current,
               fields: current.fields.filter(
-                (item) => item.id !== target.field.id,
+                (item) => item.id !== target.field.id
               ),
               values: current.values.filter(
-                (item) => item.fieldDefinitionId !== target.field.id,
+                (item) => item.fieldDefinitionId !== target.field.id
               ),
             };
-          },
+          }
         );
       }
 
       await queryClient.invalidateQueries({
-        queryKey: ["custom-tab-fields", member.spaceId],
+        queryKey: studentManagementQueryKeys.customTabFieldsRoot(
+          member.spaceId
+        ),
       });
 
       setDeleteTarget(null);
@@ -206,7 +211,7 @@ export function useMemberFieldActions({
 
   function openFieldMenu(
     target: MemberFieldActionTarget,
-    position: { x: number; y: number },
+    position: { x: number; y: number }
   ) {
     setContextMenu({
       target,

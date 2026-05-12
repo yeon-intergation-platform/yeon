@@ -12,6 +12,8 @@ import {
   createDefaultStudentReportSettings,
   type StudentReportRecordScope,
 } from "../report-builder";
+import { studentManagementFetchJson } from "../hooks/student-management-fetch";
+import { studentManagementQueryKeys } from "../hooks/student-management-query-keys";
 import { useMemberCounselingRecords } from "../hooks/use-member-counseling-records";
 import type { Member } from "../types";
 import { fmtDate } from "../utils";
@@ -32,7 +34,7 @@ const RECORD_SCOPE_OPTIONS: Array<{
 
 export function TabReport({ member }: TabReportProps) {
   const [settings, setSettings] = useState(() =>
-    createDefaultStudentReportSettings(member.name),
+    createDefaultStudentReportSettings(member.name)
   );
   const [saveToast, setSaveToast] = useState<string | null>(null);
 
@@ -51,40 +53,39 @@ export function TabReport({ member }: TabReportProps) {
   const selectedRecords = useMemo(() => {
     const sorted = [...allRecords].sort(
       (a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
     return settings.recordScope === "all"
       ? sorted
       : sorted.slice(0, settings.recordScope);
   }, [allRecords, settings.recordScope]);
 
+  const selectedRecordIds = useMemo(
+    () => selectedRecords.map((record) => record.id),
+    [selectedRecords]
+  );
+
   const detailsQuery = useQuery({
-    queryKey: [
-      "member-report-record-details",
+    queryKey: studentManagementQueryKeys.memberReportRecordDetails(
       member.id,
-      selectedRecords.map((record) => record.id).join(","),
-    ],
-    enabled: selectedRecords.length > 0,
+      selectedRecordIds
+    ),
+    enabled: selectedRecordIds.length > 0,
     queryFn: async () => {
-      const res = await fetch(
-        resolveApiHrefForCurrentPath("/api/v1/counseling-records/details"),
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            recordIds: selectedRecords.map((record) => record.id),
-          }),
-        },
-      );
-
-      if (!res.ok) {
-        throw new Error("상담 상세를 불러오지 못했습니다.");
-      }
-
       const parsed = bulkCounselingRecordDetailsResponseSchema.parse(
-        await res.json(),
+        await studentManagementFetchJson<unknown>(
+          resolveApiHrefForCurrentPath("/api/v1/counseling-records/details"),
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              recordIds: selectedRecordIds,
+            }),
+          },
+          "상담 상세를 불러오지 못했습니다."
+        )
       );
 
       return parsed.records.reduce<Record<string, CounselingRecordDetail>>(
@@ -92,7 +93,7 @@ export function TabReport({ member }: TabReportProps) {
           acc[item.id] = item;
           return acc;
         },
-        {},
+        {}
       );
     },
   });
@@ -105,7 +106,7 @@ export function TabReport({ member }: TabReportProps) {
         detailsById: detailsQuery.data,
         settings,
       }),
-    [allRecords, member, detailsQuery.data, settings],
+    [allRecords, member, detailsQuery.data, settings]
   );
 
   const latestRecord = selectedRecords[0] ?? null;

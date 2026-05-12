@@ -6,6 +6,8 @@ import {
   ensureStudentBoardSystemTab,
   SYNTHETIC_STUDENT_BOARD_TAB_ID,
 } from "@/lib/member-system-tabs";
+import { studentManagementFetchJson } from "./student-management-fetch";
+import { studentManagementQueryKeys } from "./student-management-query-keys";
 import { resolveApiHrefForCurrentPath } from "@/lib/app-route-paths";
 
 export interface DynamicTab {
@@ -22,7 +24,7 @@ function toVisibleTabs(data: DynamicTab[] | undefined) {
 }
 
 export function memberTabsQueryKey(spaceId: string | null) {
-  return ["member-tabs", spaceId] as const;
+  return studentManagementQueryKeys.memberTabs(spaceId);
 }
 
 export function useDynamicMemberTabs(spaceId: string | null) {
@@ -33,14 +35,11 @@ export function useDynamicMemberTabs(spaceId: string | null) {
     queryKey,
     enabled: !!spaceId,
     queryFn: async () => {
-      const res = await fetch(
+      const data = await studentManagementFetchJson<{ tabs: DynamicTab[] }>(
         resolveApiHrefForCurrentPath(`/api/v1/spaces/${spaceId}/member-tabs`),
+        { method: "GET" },
+        "탭 목록을 불러오지 못했습니다."
       );
-      if (!res.ok) {
-        throw new Error("탭 목록을 불러오지 못했습니다.");
-      }
-
-      const data = (await res.json()) as { tabs: DynamicTab[] };
       return ensureStudentBoardSystemTab(
         data.tabs.filter((t) => t.isVisible),
         () => ({
@@ -50,7 +49,7 @@ export function useDynamicMemberTabs(spaceId: string | null) {
           systemKey: "student_board",
           isVisible: true,
           displayOrder: 1,
-        }),
+        })
       );
     },
   });
