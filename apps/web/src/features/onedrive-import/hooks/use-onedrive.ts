@@ -2,35 +2,21 @@
 
 import { useCallback, useState } from "react";
 import { resolveApiHrefForCurrentPath } from "@/lib/app-route-paths";
+import type { ImportPreview, ImportResult, OneDriveFile } from "../types";
+import {
+  analyzeOneDriveFile,
+  importOneDrivePreview,
+  loadOneDriveConnectionStatus,
+  loadOneDriveFiles,
+} from "./onedrive-import-fetch";
 
-export interface OneDriveFile {
-  id: string;
-  name: string;
-  size: number;
-  lastModifiedAt: string;
-  mimeType?: string;
-}
-
-export interface ImportStudent {
-  name: string;
-  email?: string | null;
-  phone?: string | null;
-  status?: string | null;
-}
-
-export interface ImportCohort {
-  name: string;
-  students: ImportStudent[];
-}
-
-export interface ImportPreview {
-  cohorts: ImportCohort[];
-}
-
-export interface ImportResult {
-  spaces: number;
-  members: number;
-}
+export type {
+  ImportCohort,
+  ImportPreview,
+  ImportResult,
+  ImportStudent,
+  OneDriveFile,
+} from "../types";
 
 export function useOnedrive(onImportComplete?: () => void) {
   const [connected, setConnected] = useState(false);
@@ -41,7 +27,7 @@ export function useOnedrive(onImportComplete?: () => void) {
   const [analyzing, setAnalyzing] = useState(false);
   const [preview, setPreview] = useState<ImportPreview | null>(null);
   const [editablePreview, setEditablePreview] = useState<ImportPreview | null>(
-    null,
+    null
   );
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
@@ -52,12 +38,11 @@ export function useOnedrive(onImportComplete?: () => void) {
   const checkStatus = useCallback(async () => {
     try {
       setConnecting(true);
-      const res = await fetch(
-        resolveApiHrefForCurrentPath("/api/v1/integrations/onedrive/status"),
+      const connectedStatus = await loadOneDriveConnectionStatus(
+        resolveApiHrefForCurrentPath("/api/v1/integrations/onedrive/status")
       );
-      if (!res.ok) return;
-      const data = (await res.json()) as { connected: boolean };
-      setConnected(data.connected);
+      if (connectedStatus === null) return;
+      setConnected(connectedStatus);
     } catch {
       // 무시: 연결 상태 확인 실패는 치명적이지 않음
     } finally {
@@ -67,7 +52,7 @@ export function useOnedrive(onImportComplete?: () => void) {
 
   const connectOneDrive = useCallback(() => {
     window.location.href = resolveApiHrefForCurrentPath(
-      "/api/v1/integrations/onedrive/auth",
+      "/api/v1/integrations/onedrive/auth"
     );
   }, []);
 
@@ -77,18 +62,13 @@ export function useOnedrive(onImportComplete?: () => void) {
       setError(null);
       const url = folderId
         ? resolveApiHrefForCurrentPath(
-            `/api/v1/integrations/onedrive/files?folderId=${folderId}`,
+            `/api/v1/integrations/onedrive/files?folderId=${folderId}`
           )
         : resolveApiHrefForCurrentPath("/api/v1/integrations/onedrive/files");
-      const res = await fetch(url);
-      if (!res.ok) {
-        throw new Error("파일 목록을 불러오지 못했습니다.");
-      }
-      const data = (await res.json()) as { files: OneDriveFile[] };
-      setFiles(data.files);
+      setFiles(await loadOneDriveFiles(url));
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "파일 목록을 불러오지 못했습니다.",
+        err instanceof Error ? err.message : "파일 목록을 불러오지 못했습니다."
       );
     } finally {
       setFilesLoading(false);
@@ -99,26 +79,17 @@ export function useOnedrive(onImportComplete?: () => void) {
     try {
       setAnalyzing(true);
       setError(null);
-      const res = await fetch(
+      const data = await analyzeOneDriveFile(
         resolveApiHrefForCurrentPath("/api/v1/integrations/onedrive/analyze"),
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ fileId }),
-        },
+        fileId
       );
-      if (!res.ok) {
-        const text = await res.text().catch(() => "");
-        throw new Error(text || "파일 분석에 실패했습니다.");
-      }
-      const data = (await res.json()) as ImportPreview;
       setPreview(data);
       setEditablePreview(structuredClone(data));
       setShowFileBrowser(false);
       setShowPreview(true);
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "파일 분석에 실패했습니다.",
+        err instanceof Error ? err.message : "파일 분석에 실패했습니다."
       );
     } finally {
       setAnalyzing(false);
@@ -130,7 +101,7 @@ export function useOnedrive(onImportComplete?: () => void) {
       setSelectedFile(file);
       analyzeFile(file.id);
     },
-    [analyzeFile],
+    [analyzeFile]
   );
 
   const updatePreview = useCallback((updated: ImportPreview) => {
@@ -143,22 +114,11 @@ export function useOnedrive(onImportComplete?: () => void) {
     try {
       setImporting(true);
       setError(null);
-      const res = await fetch(
+      const created = await importOneDrivePreview(
         resolveApiHrefForCurrentPath("/api/v1/integrations/onedrive/import"),
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(editablePreview),
-        },
+        editablePreview
       );
-      if (!res.ok) {
-        const text = await res.text().catch(() => "");
-        throw new Error(text || "가져오기에 실패했습니다.");
-      }
-      const data = (await res.json()) as {
-        created: { spaces: number; members: number };
-      };
-      setImportResult(data.created);
+      setImportResult(created);
       onImportComplete?.();
     } catch (err) {
       setError(err instanceof Error ? err.message : "가져오기에 실패했습니다.");
