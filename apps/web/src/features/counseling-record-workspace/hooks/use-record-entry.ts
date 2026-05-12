@@ -1,13 +1,14 @@
 "use client";
 
 import { useState, useCallback, useRef } from "react";
-import type { RecordItem } from "../_lib/types";
 
 // ---------------------------------------------------------------------------
 // 이 훅의 유일한 책임: 녹음 / 파일 업로드 / 텍스트 메모 진입 flow 관리
 // ---------------------------------------------------------------------------
 
-interface RecordEntryDeps {
+type ReadyRecordBase = { id: string };
+
+interface RecordEntryDeps<TRecord extends ReadyRecordBase> {
   /** 선택 해제 (녹음·업로드 시작 시 기존 선택을 지운다) */
   clearSelection: () => void;
   /** member 선택 (녹음 취소 시 복귀용) */
@@ -21,7 +22,7 @@ interface RecordEntryDeps {
   /** useRecords.cancelRecording */
   cancelRecording: () => void;
   /** useRecords.addReadyRecord */
-  addReadyRecord: (record: RecordItem) => void;
+  addReadyRecord: (record: TRecord) => void;
   /** useRecording.start */
   recordingStart: () => void;
   /** useRecording.stop */
@@ -32,7 +33,9 @@ interface RecordEntryDeps {
   openFilePicker: () => void;
 }
 
-export function useRecordEntry(deps: RecordEntryDeps) {
+export function useRecordEntry<TRecord extends ReadyRecordBase>(
+  deps: RecordEntryDeps<TRecord>
+) {
   // ── 모달 상태 ─────────────────────────────────────────────────
   const [newRecordEntryOpen, setNewRecordEntryOpen] = useState(false);
   const [quickMemoOpen, setQuickMemoOpen] = useState(false);
@@ -56,7 +59,7 @@ export function useRecordEntry(deps: RecordEntryDeps) {
       deps.startRecording();
       deps.recordingStart();
     },
-    [deps.clearSelection, deps.startRecording, deps.recordingStart],
+    [deps.clearSelection, deps.startRecording, deps.recordingStart]
   );
 
   const handleStopRecording = useCallback(() => {
@@ -86,7 +89,7 @@ export function useRecordEntry(deps: RecordEntryDeps) {
       entryMemberContextRef.current = { memberId, studentName };
       setNewRecordEntryOpen(true);
     },
-    [],
+    []
   );
 
   const handleChooseRecordingEntry = useCallback(() => {
@@ -111,13 +114,13 @@ export function useRecordEntry(deps: RecordEntryDeps) {
   }, []);
 
   const handleQuickMemoCreated = useCallback(
-    (rec: RecordItem) => {
+    (rec: TRecord) => {
       quickMemoOriginMemberIdRef.current = null;
       deps.addReadyRecord(rec);
       // selectRecord가 member → record로 원자적 전환 (member 자동 해제)
       deps.selectRecord(rec.id);
     },
-    [deps.addReadyRecord, deps.selectRecord],
+    [deps.addReadyRecord, deps.selectRecord]
   );
 
   const handleNewRecordEntryClose = useCallback(() => {

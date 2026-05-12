@@ -807,3 +807,28 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 34차: counseling workspace client-state hook feature 이동
+
+### 작업내용
+
+- `use-audio-player`, `use-workspace-selection`, `use-record-entry`를 `features/counseling-record-workspace/hooks`로 이동한다.
+- app `_hooks/index.ts`는 기존 사용처 호환 re-export만 유지한다.
+- feature hook이 app `_lib/types`에 의존하지 않도록 필요한 record shape 타입만 hook 내부에 둔다.
+
+### 논의 필요
+
+- `use-records` 본체를 이번 차수에 함께 이동할지 여부.
+
+### 선택지
+
+1. 독립 클라이언트 상태 훅만 먼저 이동하고 `use-records`는 서버 원본/임시 레코드/local override 분해 차수로 남긴다.
+2. `use-records`까지 feature로 단순 이동한다.
+
+### 추천
+
+- 1번. `use-records`는 단순 위치 이동만으로는 source of truth 문제가 해결되지 않아 별도 분해가 필요하다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.
