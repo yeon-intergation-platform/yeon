@@ -579,3 +579,28 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 25차: cloud profile picker file fetch helper 정리
+
+### 작업내용
+
+- `features/student-management/components/cloud-profile-picker.tsx`의 클라우드 파일 다운로드 직접 `fetch()` 호출을 제거한다.
+- Blob 응답은 `studentManagementFetchBlob` helper로 통일해 credentials/error 정책을 student-management fetch boundary에 모은다.
+- 파일 선택 가능 확장자, File 생성, provider별 URL 조합, 오류 표시 흐름은 유지한다.
+
+### 논의 필요
+
+- 클라우드 파일 URL 조립을 별도 profile-import API 파일로 즉시 이동할지 여부.
+
+### 선택지
+
+1. 이번 차수는 blob fetch boundary만 닫고 URL 조립 이동은 후속 feature 구조 정리에서 다룬다.
+2. URL 조립까지 `profile-import-fetch.ts`로 즉시 이동한다.
+
+### 추천
+
+- 1번. 직접 fetch 제거를 우선하고 cloud import hook과 profile picker의 결합은 별도 차수에서 다룬다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.

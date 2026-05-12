@@ -17,6 +17,7 @@ import {
   getCloudProviderLabel,
 } from "@/features/cloud-import/cloud-provider-config";
 import { useCloudImport } from "@/features/cloud-import/hooks/use-cloud-import";
+import { studentManagementFetchBlob } from "@/features/student-management/hooks/student-management-fetch";
 import type { CloudProvider, DriveFile } from "@/features/cloud-import/types";
 import { resolveApiHrefForCurrentPath } from "@/lib/app-route-paths";
 
@@ -83,22 +84,24 @@ function FileBrowser({ provider, onFilePicked }: FileBrowserProps) {
             : ""
         }`;
 
-        const res = await fetch(proxyUrl);
-        if (!res.ok) throw new Error("파일을 가져오지 못했습니다.");
-        const blob = await res.blob();
+        const blob = await studentManagementFetchBlob(
+          proxyUrl,
+          {},
+          "파일을 가져오지 못했습니다."
+        );
         const file = new File([blob], driveFile.name, {
           type: driveFile.mimeType ?? "text/plain",
         });
         onFilePicked(file);
       } catch (err) {
         setFetchError(
-          err instanceof Error ? err.message : "파일을 가져오지 못했습니다.",
+          err instanceof Error ? err.message : "파일을 가져오지 못했습니다."
         );
       } finally {
         setFetching(false);
       }
     },
-    [provider, onFilePicked],
+    [provider, onFilePicked]
   );
 
   if (hook.connecting) {
@@ -252,7 +255,7 @@ export function CloudProfilePicker({
   onClose,
 }: CloudProfilePickerProps) {
   const [activeProvider, setActiveProvider] = useState<CloudProvider>(
-    DEFAULT_CLOUD_PROVIDER,
+    DEFAULT_CLOUD_PROVIDER
   );
 
   return (
