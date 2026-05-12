@@ -1472,3 +1472,29 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 60차 — 상담 기록 DOCX 내보내기 feature lib 이동
+
+### 작업내용
+
+- `app/counseling-service/_lib/export-docx.ts`의 DOCX 생성/다운로드 로직을 `features/counseling-record-workspace/lib/export-docx.ts`로 이동한다.
+- 실제 사용처(`page.tsx`, `member-panel.tsx`)는 feature lib를 직접 참조하도록 변경한다.
+- 기존 app `_lib` 경로는 호환 re-export로 유지한다.
+
+### 논의 필요
+
+- DOCX 내보내기는 route 조립이 아니라 상담 기록 워크스페이스 기능 로직이다. app `_lib`에 남기면 feature SSOT 정리가 끝나지 않는다.
+
+### 선택지
+
+1. feature lib 이동 + app 경로 re-export 유지.
+2. app 경로를 즉시 삭제한다.
+3. DOCX builder를 record/member report별 파일로 한 번 더 분리한다.
+
+### 추천
+
+- 선택지 1. 실제 import 경로를 feature로 정렬하면서 기존 경로 호환성을 유지한다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.
