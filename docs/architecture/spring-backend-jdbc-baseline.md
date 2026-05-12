@@ -14,12 +14,9 @@
 - driver: `org.postgresql:postgresql`
 - 활성화 방식: 공통 datasource 설정을 사용하고, 환경 구분은 `dev.local` / `staging` / `prod` profile로 한다.
 - env key:
-  - `DATABASE_URL` 또는 `BACKEND_DATABASE_URL` (`postgresql://...`)
+  - `DATABASE_URL` (`postgresql://user:password@host:port/database`)
   - Spring 내부에서 JDBC URL로 변환한다.
-  - 아래 `BACKEND_JDBC_DATABASE_*` 키는 테스트/레거시 호환용 fallback이다.
-  - `BACKEND_JDBC_DATABASE_URL`
-  - `BACKEND_JDBC_DATABASE_USERNAME` (선택)
-  - `BACKEND_JDBC_DATABASE_PASSWORD` (선택)
+  - backend 전용 `BACKEND_DATABASE_URL`, `BACKEND_JDBC_DATABASE_URL`, `BACKEND_JDBC_DATABASE_USERNAME`, `BACKEND_JDBC_DATABASE_PASSWORD` fallback은 사용하지 않는다.
 
 ## 이유
 

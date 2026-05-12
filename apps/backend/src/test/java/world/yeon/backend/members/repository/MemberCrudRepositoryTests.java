@@ -28,7 +28,7 @@ class MemberCrudRepositoryTests {
 	@Autowired private MemberCrudRepository repository;
 	@Autowired private JdbcTemplate jdbcTemplate;
 	@DynamicPropertySource static void registerDatabaseProps(DynamicPropertyRegistry registry) {
-		registry.add("BACKEND_JDBC_DATABASE_URL", postgres::getJdbcUrl); registry.add("BACKEND_JDBC_DATABASE_USERNAME", postgres::getUsername); registry.add("BACKEND_JDBC_DATABASE_PASSWORD", postgres::getPassword);
+		registry.add("DATABASE_URL", () -> "postgresql://" + postgres.getUsername() + ":" + postgres.getPassword() + "@" + postgres.getHost() + ":" + postgres.getFirstMappedPort() + "/" + postgres.getDatabaseName());
 	}
 	@BeforeEach void setUpFixture() {
 		jdbcTemplate.execute("create table if not exists public.users (id uuid primary key, email varchar(320) not null unique, display_name varchar(80), created_at timestamptz not null default now(), updated_at timestamptz not null default now(), role varchar(32) not null default 'user')");

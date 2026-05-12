@@ -43,9 +43,7 @@ class SpaceTemplateReadRepositoryTests {
 
 	@DynamicPropertySource
 	static void registerDatabaseProps(DynamicPropertyRegistry registry) {
-		registry.add("BACKEND_JDBC_DATABASE_URL", postgres::getJdbcUrl);
-		registry.add("BACKEND_JDBC_DATABASE_USERNAME", postgres::getUsername);
-		registry.add("BACKEND_JDBC_DATABASE_PASSWORD", postgres::getPassword);
+		registry.add("DATABASE_URL", () -> "postgresql://" + postgres.getUsername() + ":" + postgres.getPassword() + "@" + postgres.getHost() + ":" + postgres.getFirstMappedPort() + "/" + postgres.getDatabaseName());
 	}
 
 	@BeforeEach
