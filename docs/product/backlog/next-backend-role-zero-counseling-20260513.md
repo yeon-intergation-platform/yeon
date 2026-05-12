@@ -188,3 +188,26 @@
   - `handleCloudAnalyzeRoute`에서 Next import draft 저장, 파일 분석, SSE stream 직접 호출을 제거했다.
   - Cloud provider analyze route는 provider access token으로 파일 bytes를 받은 뒤 Spring `POST /integrations/local/analyze`에 multipart bridge만 수행한다.
   - web typecheck/build 및 integrations targeted Vitest, diff/skill/SSOT 검증을 수행했다.
+
+## 6차 - 상담 재전사 Spring bridge 전환
+
+### 6차 세부 - transcribe route의 Next 전사 스케줄러 제거 (완료)
+
+- 작업내용
+  - Spring에 `POST /counseling-records/{recordId}/transcribe` API를 추가한다.
+  - Spring이 재전사 가능 여부 검증, processing 상태 전환, 원본 음성 다운로드, OpenAI STT 호출, transcript 저장을 소유한다.
+  - Next `api/v1/counseling-records/[recordId]/transcribe` route는 인증과 Spring response bridge만 수행한다.
+- 논의 필요
+  - 긴 음성 분할 전사는 Spring 완전 이관 후속 단계에서 보강한다. 우선 직접 STT 가능한 일반 업로드 재전사를 Spring으로 이동한다.
+- 선택지
+  - A. transcribe route만 Spring bridge로 먼저 전환
+  - B. create audio upload와 transcribe를 한 번에 완전 이관
+- 추천
+  - A. 남은 직접 서비스 import를 줄이기 위해 재전사 경계를 먼저 Spring으로 고정한다.
+- 사용자 방향
+  - 추천 기준으로 진행.
+- 완료 근거
+  - Spring `POST /counseling-records/{recordId}/transcribe` API를 추가했다.
+  - Next transcribe route의 `retryCounselingRecordTranscription` 직접 호출을 Spring client 호출로 교체했다.
+  - 일반 직접 STT 가능한 업로드의 재전사 상태 전환, 원본 음성 다운로드, OpenAI STT 호출, transcript 저장을 Spring으로 이동했다.
+  - 긴 음성 분할 전사는 후속 보강 대상으로 남겼다.

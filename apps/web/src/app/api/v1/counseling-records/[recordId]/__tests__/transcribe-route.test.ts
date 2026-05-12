@@ -1,10 +1,8 @@
 import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { ServiceError } from "@/server/services/service-error";
-
 const mockRequireAuthenticatedUser = vi.fn();
-const mockRetryCounselingRecordTranscription = vi.fn();
+const mockRetryCounselingRecordTranscriptionInSpring = vi.fn();
 
 vi.mock("../../_shared", () => ({
   jsonError: (message: string, status: number) =>
@@ -17,10 +15,20 @@ vi.mock("@yeon/api-contract/counseling-records", () => ({
     parse: (value: unknown) => value,
   },
 }));
-vi.mock("@/server/services/counseling-records-service", () => ({
-  retryCounselingRecordTranscription: (...args: unknown[]) =>
-    mockRetryCounselingRecordTranscription(...args),
+vi.mock("@/server/counseling-record-transcription-spring-client", () => ({
+  CounselingRecordTranscriptionSpringBackendHttpError: class CounselingRecordTranscriptionSpringBackendHttpError extends Error {
+    constructor(
+      public status: number,
+      message: string
+    ) {
+      super(message);
+    }
+  },
+  retryCounselingRecordTranscriptionInSpring: (...args: unknown[]) =>
+    mockRetryCounselingRecordTranscriptionInSpring(...args),
 }));
+
+import { CounselingRecordTranscriptionSpringBackendHttpError } from "@/server/counseling-record-transcription-spring-client";
 
 import { POST } from "../transcribe/route";
 
@@ -34,28 +42,28 @@ describe("transcribe route", () => {
       currentUser: null,
       response: Response.json(
         { message: "로그인이 필요합니다." },
-        { status: 401 },
+        { status: 401 }
       ),
     });
 
     const response = await POST(
       new NextRequest(
         "http://localhost/api/v1/counseling-records/record-1/transcribe",
-        { method: "POST" },
+        { method: "POST" }
       ),
-      { params: Promise.resolve({ recordId: "record-1" }) },
+      { params: Promise.resolve({ recordId: "record-1" }) }
     );
 
     expect(response.status).toBe(401);
   });
 
-  it("성공 시 record detail payload를 반환한다", async () => {
+  it("성공 시 Spring record detail payload를 반환한다", async () => {
     mockRequireAuthenticatedUser.mockResolvedValue({
       currentUser: { id: "user-1" },
       response: null,
     });
-    mockRetryCounselingRecordTranscription.mockResolvedValue({
-      id: "record-1",
+    mockRetryCounselingRecordTranscriptionInSpring.mockResolvedValue({
+      record: { id: "record-1" },
     });
 
     const response = await POST(
@@ -64,34 +72,39 @@ describe("transcribe route", () => {
         {
           method: "POST",
           headers: { "x-client-request-id": "req-1" },
-        },
+        }
       ),
-      { params: Promise.resolve({ recordId: "record-1" }) },
+      { params: Promise.resolve({ recordId: "record-1" }) }
     );
 
-    expect(mockRetryCounselingRecordTranscription).toHaveBeenCalledWith(
-      { id: "user-1" },
-      "record-1",
-      "req-1",
+    expect(mockRetryCounselingRecordTranscriptionInSpring).toHaveBeenCalledWith(
+      {
+        userId: "user-1",
+        recordId: "record-1",
+        clientRequestId: "req-1",
+      }
     );
     expect(response.status).toBe(200);
   });
 
-  it("ServiceError면 그대로 반환한다", async () => {
+  it("Spring 오류면 그대로 반환한다", async () => {
     mockRequireAuthenticatedUser.mockResolvedValue({
       currentUser: { id: "user-1" },
       response: null,
     });
-    mockRetryCounselingRecordTranscription.mockRejectedValue(
-      new ServiceError(409, "이미 처리 중입니다."),
+    mockRetryCounselingRecordTranscriptionInSpring.mockRejectedValue(
+      new CounselingRecordTranscriptionSpringBackendHttpError(
+        409,
+        "이미 처리 중입니다."
+      )
     );
 
     const response = await POST(
       new NextRequest(
         "http://localhost/api/v1/counseling-records/record-1/transcribe",
-        { method: "POST" },
+        { method: "POST" }
       ),
-      { params: Promise.resolve({ recordId: "record-1" }) },
+      { params: Promise.resolve({ recordId: "record-1" }) }
     );
 
     expect(response.status).toBe(409);

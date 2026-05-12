@@ -2,8 +2,11 @@ import { counselingRecordDetailResponseSchema } from "@yeon/api-contract/counsel
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
-import { retryCounselingRecordTranscription } from "@/server/services/counseling-records-service";
 import { ServiceError } from "@/server/services/service-error";
+import {
+  CounselingRecordTranscriptionSpringBackendHttpError,
+  retryCounselingRecordTranscriptionInSpring,
+} from "@/server/counseling-record-transcription-spring-client";
 
 import { jsonError, requireAuthenticatedUser } from "../../_shared";
 
@@ -25,16 +28,19 @@ export async function POST(request: NextRequest, context: RouteContext) {
   const { recordId } = await context.params;
 
   try {
-    const record = await retryCounselingRecordTranscription(
-      currentUser,
+    const payload = await retryCounselingRecordTranscriptionInSpring({
+      userId: currentUser.id,
       recordId,
-      request.headers.get("x-client-request-id"),
-    );
+      clientRequestId: request.headers.get("x-client-request-id"),
+    });
 
     return NextResponse.json(
-      counselingRecordDetailResponseSchema.parse({ record }),
+      counselingRecordDetailResponseSchema.parse(payload)
     );
   } catch (error) {
+    if (error instanceof CounselingRecordTranscriptionSpringBackendHttpError) {
+      return jsonError(error.message, error.status);
+    }
     if (error instanceof ServiceError) {
       return jsonError(error.message, error.status);
     }
