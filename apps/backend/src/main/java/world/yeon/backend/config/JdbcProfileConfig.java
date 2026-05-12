@@ -23,21 +23,7 @@ public class JdbcProfileConfig {
 	}
 
 	private JdbcConnectionProperties resolveConnection(Environment environment) {
-		String backendDatabaseUrl = read(environment, "BACKEND_DATABASE_URL");
-		if (backendDatabaseUrl == null) {
-			backendDatabaseUrl = read(environment, "DATABASE_URL");
-		}
-
-		if (backendDatabaseUrl != null) {
-			return parseDatabaseUrl(backendDatabaseUrl);
-		}
-
-		String jdbcUrl = require(environment, "BACKEND_JDBC_DATABASE_URL");
-		return new JdbcConnectionProperties(
-			jdbcUrl,
-			read(environment, "BACKEND_JDBC_DATABASE_USERNAME"),
-			read(environment, "BACKEND_JDBC_DATABASE_PASSWORD")
-		);
+		return parseDatabaseUrl(require(environment, "DATABASE_URL"));
 	}
 
 	private JdbcConnectionProperties parseDatabaseUrl(String databaseUrl) {

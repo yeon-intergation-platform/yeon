@@ -84,8 +84,8 @@ function resolveLocalDatabaseUrl() {
   return null;
 }
 
-function toJdbcDatabaseEnv(databaseUrl) {
-  return databaseUrl ? { BACKEND_DATABASE_URL: databaseUrl } : {};
+function toDatabaseEnv(databaseUrl) {
+  return databaseUrl ? { DATABASE_URL: databaseUrl } : {};
 }
 
 function getPidCommandLine(pid) {
@@ -340,12 +340,9 @@ async function resolveServices() {
     defaultLocalSpringInternalToken;
   const springProfilesActive =
     process.env.SPRING_PROFILES_ACTIVE?.trim() || defaultLocalSpringProfile;
-  const backendJdbcEnv = {
-    ...toJdbcDatabaseEnv(process.env.DATABASE_URL || resolveLocalDatabaseUrl()),
-    ...(process.env.BACKEND_DATABASE_URL
-      ? { BACKEND_DATABASE_URL: process.env.BACKEND_DATABASE_URL }
-      : {}),
-  };
+  const databaseEnv = toDatabaseEnv(
+    process.env.DATABASE_URL || resolveLocalDatabaseUrl()
+  );
 
   services.push({
     name: "web",
@@ -359,7 +356,7 @@ async function resolveServices() {
       SPRING_BOOTSTRAP_BASE_URL: springBackendBaseUrl,
       SPRING_INTERNAL_TOKEN: springInternalToken,
       SPRING_PROFILES_ACTIVE: springProfilesActive,
-      ...backendJdbcEnv,
+      ...databaseEnv,
     },
     assignedPort: webPort,
     interactive: false,
@@ -375,7 +372,7 @@ async function resolveServices() {
       ...backendRunner.env,
       SPRING_INTERNAL_TOKEN: springInternalToken,
       SPRING_PROFILES_ACTIVE: springProfilesActive,
-      ...backendJdbcEnv,
+      ...databaseEnv,
     },
     assignedPort: backendPort,
     interactive: false,
