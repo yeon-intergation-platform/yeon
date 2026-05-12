@@ -1342,3 +1342,29 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 55차 — center panel processing state component 추출
+
+### 작업내용
+
+- `center-panel.tsx`의 일반 processing 상태 header/body/checklist UI를 feature component로 추출한다.
+- processing checklist 계산은 기존 feature lib `processing-progress`를 사용한다.
+- 처리 단계 문구, spinner, checklist 표시 규칙은 기존과 동일하게 유지한다.
+
+### 논의 필요
+
+- partial transcript ready 상태는 retry/action UI와 transcript details가 결합되어 있어 별도 후속으로 둔다. 이번 차수는 순수 일반 processing 표시만 분리한다.
+
+### 선택지
+
+1. `RecordProcessingState` component만 추출한다.
+2. partial transcript ready 상태까지 함께 추출한다.
+3. center panel 전체 상태 분기를 한 번에 feature screen으로 이동한다.
+
+### 추천
+
+- 선택지 1. 일반 processing 표시만 먼저 이동해 app route의 상태별 JSX를 안전하게 줄인다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.
