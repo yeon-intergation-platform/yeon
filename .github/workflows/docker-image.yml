@@ -30,7 +30,8 @@ permissions:
 
 concurrency:
   group: docker-image-${{ github.ref }}
-  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+  # 최신 main만 빌드/배포한다. 이전 main run은 긴 Docker 빌드를 계속하지 않도록 취소한다.
+  cancel-in-progress: true
 
 env:
   REGISTRY: ghcr.io
@@ -46,11 +47,35 @@ jobs:
       web: ${{ steps.scope.outputs.web }}
       backend: ${{ steps.scope.outputs.backend }}
       race: ${{ steps.scope.outputs.race }}
+      should_run: ${{ steps.fresh_main.outputs.should_run }}
     steps:
       - name: Checkout
         uses: actions/checkout@v6.0.2
         with:
           fetch-depth: 0
+
+      - name: 최신 main 빌드 여부 확인
+        id: fresh_main
+        run: |
+          set -eu
+
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" || "${{ github.ref }}" != "refs/heads/main" ]]; then
+            echo "should_run=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          git fetch --no-tags --depth=1 origin main
+          latest_main_sha="$(git rev-parse FETCH_HEAD)"
+          echo "latest_main_sha=${latest_main_sha}"
+          echo "current_sha=${GITHUB_SHA}"
+
+          if [ "${latest_main_sha}" != "${GITHUB_SHA}" ]; then
+            echo "현재 run은 최신 main이 아니므로 Docker 빌드와 운영 배포를 모두 스킵합니다."
+            echo "should_run=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "should_run=true" >> "$GITHUB_OUTPUT"
 
       - name: 변경 범위 판별
         id: scope
@@ -58,6 +83,14 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -eu
+
+          if [[ "${{ steps.fresh_main.outputs.should_run }}" != "true" ]]; then
+            echo "최신 main이 아닌 run이므로 변경 서비스를 모두 false로 표시합니다."
+            echo "web=false" >> "$GITHUB_OUTPUT"
+            echo "backend=false" >> "$GITHUB_OUTPUT"
+            echo "race=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
 
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
             echo "web=true" >> "$GITHUB_OUTPUT"
