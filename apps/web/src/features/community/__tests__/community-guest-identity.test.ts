@@ -3,6 +3,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   createRandomCommunityGuestNickname,
   readCommunityGuestNickname,
+  resolveCommunityGuestNickname,
+  writeCommunityGuestNickname,
 } from "../community-guest-identity";
 
 function stubWindowLocalStorage(initialNickname?: string) {
@@ -49,5 +51,24 @@ describe("community guest identity", () => {
 
     expect(readCommunityGuestNickname()).toBe("익명1234");
     expect(localStorage.setItem).not.toHaveBeenCalled();
+  });
+
+  it("커뮤니티에서 설정한 닉네임을 저장하고 채팅 닉네임으로 재사용한다", () => {
+    const localStorage = stubWindowLocalStorage();
+
+    writeCommunityGuestNickname("  상담익명  ");
+
+    expect(localStorage.setItem).toHaveBeenCalledWith(
+      "yeon-community-guest-nickname",
+      "상담익명"
+    );
+    expect(readCommunityGuestNickname()).toBe("상담익명");
+    expect(resolveCommunityGuestNickname()).toBe("상담익명");
+  });
+
+  it("전달받은 닉네임이 있으면 저장소 값보다 우선한다", () => {
+    stubWindowLocalStorage("익명1234");
+
+    expect(resolveCommunityGuestNickname("  새닉네임  ")).toBe("새닉네임");
   });
 });

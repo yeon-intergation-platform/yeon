@@ -3,7 +3,10 @@
 import { useCallback, useMemo, useState } from "react";
 
 import { chatServiceApi, type ChatServiceFeedPost } from "../chat-service-api";
-import { readCommunityGuestNickname } from "../community-guest-identity";
+import {
+  readCommunityGuestNickname,
+  writeCommunityGuestNickname,
+} from "../community-guest-identity";
 
 type ErrorState = string | null;
 
@@ -55,10 +58,15 @@ export function useCommunityFeed(options: UseCommunityFeedOptions = {}) {
   const [isRepliesLoading, setIsRepliesLoading] = useState<LoadingByPost>({});
   const [replyErrors, setReplyErrors] = useState<ErrorByPost>({});
   const [replyDeleteErrors, setReplyDeleteErrors] = useState<ErrorByPost>({});
-  const [guestNickname, setGuestNickname] = useState(
+  const [guestNickname, setGuestNicknameState] = useState(
     readCommunityGuestNickname
   );
   const [guestPassword, setGuestPassword] = useState("");
+
+  const setGuestNickname = useCallback((nickname: string) => {
+    setGuestNicknameState(nickname);
+    writeCommunityGuestNickname(nickname);
+  }, []);
 
   const actorPayload = useMemo(() => {
     const currentActor = toFeedActorPayload({ guestNickname, guestPassword });

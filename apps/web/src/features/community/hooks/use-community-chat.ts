@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { readCommunityGuestNickname } from "../community-guest-identity";
+import { resolveCommunityGuestNickname } from "../community-guest-identity";
 import {
   readPresenceSessionId,
   sendPresenceHeartbeat,
@@ -16,13 +16,14 @@ type ErrorState = string | null;
 
 type UseCommunityChatOptions = {
   pollIntervalMs?: number;
+  guestNickname?: string;
 };
 
 export function useCommunityChat({
   pollIntervalMs = 6000,
+  guestNickname,
 }: UseCommunityChatOptions = {}) {
   const [messages, setMessages] = useState<CommunityChatMessage[]>([]);
-  const [currentSenderId, setCurrentSenderId] = useState<string | null>(null);
   const [isMessagesLoading, setIsMessagesLoading] = useState(true);
   const [messageError, setMessageError] = useState<ErrorState>(null);
   const [isSendingMessage, setIsSendingMessage] = useState(false);
@@ -55,7 +56,6 @@ export function useCommunityChat({
 
   useEffect(() => {
     const sessionId = readPresenceSessionId();
-    setCurrentSenderId(`guest:${sessionId}`);
     let isDisposed = false;
 
     const updatePresence = async () => {
@@ -101,7 +101,6 @@ export function useCommunityChat({
       }
 
       const guestSessionId = readPresenceSessionId();
-      setCurrentSenderId(`guest:${guestSessionId}`);
       setMessageError(null);
       setIsSendingMessage(true);
 
@@ -109,10 +108,9 @@ export function useCommunityChat({
         const response = await communityChatApi.sendMessage({
           body: trimmed,
           guestSessionId,
-          guestNickname: readCommunityGuestNickname(),
+          guestNickname: resolveCommunityGuestNickname(guestNickname),
         });
         setMessages((current) => [...current, response.message]);
-        setCurrentSenderId(response.message.senderId);
         await loadMessages();
       } catch (error) {
         if (error instanceof Error) {
@@ -125,7 +123,7 @@ export function useCommunityChat({
         setIsSendingMessage(false);
       }
     },
-    [loadMessages]
+    [guestNickname, loadMessages]
   );
 
   return {
@@ -134,7 +132,6 @@ export function useCommunityChat({
     messageError,
     isSendingMessage,
     sendMessage,
-    currentUserId: currentSenderId,
     activePresenceCount,
   };
 }

@@ -22,6 +22,31 @@ export function createRandomCommunityGuestNickname() {
   return `${COMMUNITY_GUEST_NICKNAME_PREFIX}${createRandomFourDigitSuffix()}`;
 }
 
+export function writeCommunityGuestNickname(nickname: string) {
+  const normalizedNickname = nickname.trim();
+  if (!normalizedNickname) {
+    return;
+  }
+
+  try {
+    window.localStorage.setItem(
+      COMMUNITY_GUEST_NICKNAME_STORAGE_KEY,
+      normalizedNickname
+    );
+  } catch {
+    // localStorage 접근 불가 환경에서는 현재 입력값만 사용한다.
+  }
+}
+
+export function resolveCommunityGuestNickname(nickname?: string | null) {
+  const normalizedNickname = nickname?.trim();
+  if (normalizedNickname) {
+    return normalizedNickname;
+  }
+
+  return readCommunityGuestNickname();
+}
+
 export function readCommunityGuestNickname() {
   if (typeof window === "undefined") {
     return createRandomCommunityGuestNickname();
@@ -37,10 +62,7 @@ export function readCommunityGuestNickname() {
     }
 
     const createdNickname = createRandomCommunityGuestNickname();
-    window.localStorage.setItem(
-      COMMUNITY_GUEST_NICKNAME_STORAGE_KEY,
-      createdNickname
-    );
+    writeCommunityGuestNickname(createdNickname);
     return createdNickname;
   } catch {
     return createRandomCommunityGuestNickname();
