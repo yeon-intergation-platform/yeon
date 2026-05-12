@@ -5,6 +5,7 @@ import {
   type QueryClient,
   useMutation,
   useQuery,
+  useQueries,
   useQueryClient,
 } from "@tanstack/react-query";
 
@@ -18,7 +19,6 @@ import { communityQueryKeys } from "./community-query-keys";
 type ErrorState = string | null;
 
 type ReplyDrafts = Record<string, string>;
-type RepliesByPost = Record<string, ChatServiceFeedPost[]>;
 
 type LoadingByPost = Record<string, boolean>;
 type ErrorByPost = Record<string, ErrorState>;
@@ -46,6 +46,9 @@ type UseCommunityFeedOptions = {
 
 type FeedPostsResponse = Awaited<
   ReturnType<typeof chatServiceApi.listFeedPosts>
+>;
+type FeedRepliesResponse = Awaited<
+  ReturnType<typeof chatServiceApi.listFeedReplies>
 >;
 
 function getErrorMessage(error: unknown, fallback: string) {
@@ -95,9 +98,10 @@ export function useCommunityFeed(options: UseCommunityFeedOptions = {}) {
   const [isDeletingReply, setIsDeletingReply] = useState<LoadingByPost>({});
   const [postErrors, setPostErrors] = useState<ErrorByPost>({});
   const [expandedReplies, setExpandedReplies] = useState<ExpandedByPost>({});
-  const [repliesByPost, setRepliesByPost] = useState<RepliesByPost>({});
-  const [isRepliesLoading, setIsRepliesLoading] = useState<LoadingByPost>({});
-  const [replyErrors, setReplyErrors] = useState<ErrorByPost>({});
+  const [replyQueryPostIds, setReplyQueryPostIds] = useState<ExpandedByPost>(
+    {}
+  );
+  const [replyLocalErrors, setReplyLocalErrors] = useState<ErrorByPost>({});
   const [replyDeleteErrors, setReplyDeleteErrors] = useState<ErrorByPost>({});
   const [guestNickname, setGuestNicknameState] = useState(
     readCommunityGuestNickname
@@ -178,6 +182,57 @@ export function useCommunityFeed(options: UseCommunityFeedOptions = {}) {
     },
   });
 
+  const activeReplyPostIds = useMemo(
+    () =>
+      Object.entries(replyQueryPostIds)
+        .filter(([, active]) => active)
+        .map(([postId]) => postId),
+    [replyQueryPostIds]
+  );
+
+  const replyQueries = useQueries({
+    queries: activeReplyPostIds.map((postId) => ({
+      queryKey: communityQueryKeys.feedReplies(postId),
+      queryFn: () => chatServiceApi.listFeedReplies(postId),
+    })),
+  });
+
+  const repliesByPost = useMemo(() => {
+    return activeReplyPostIds.reduce<Record<string, ChatServiceFeedPost[]>>(
+      (accumulator, postId, index) => {
+        const response = replyQueries[index].data;
+        accumulator[postId] = response ? response.replies : [];
+        return accumulator;
+      },
+      {}
+    );
+  }, [activeReplyPostIds, replyQueries]);
+
+  const isRepliesLoading = useMemo(() => {
+    return activeReplyPostIds.reduce<LoadingByPost>(
+      (accumulator, postId, index) => {
+        accumulator[postId] = replyQueries[index].isLoading;
+        return accumulator;
+      },
+      {}
+    );
+  }, [activeReplyPostIds, replyQueries]);
+
+  const replyErrors = useMemo(() => {
+    return activeReplyPostIds.reduce<ErrorByPost>(
+      (accumulator, postId, index) => {
+        const queryError = replyQueries[index].error;
+        accumulator[postId] =
+          replyLocalErrors[postId] ??
+          (queryError
+            ? getErrorMessage(queryError, "댓글 목록을 불러오지 못했습니다.")
+            : null);
+        return accumulator;
+      },
+      {}
+    );
+  }, [activeReplyPostIds, replyLocalErrors, replyQueries]);
+
   const loadPosts = useCallback(async () => {
     setPostsLocalError(null);
     await refetchPosts();
@@ -206,37 +261,24 @@ export function useCommunityFeed(options: UseCommunityFeedOptions = {}) {
     [createPostMutation, resolveActorPayload]
   );
 
-  const loadReplies = useCallback(async (postId: string) => {
-    setIsRepliesLoading((previous) => ({
-      ...previous,
-      [postId]: true,
-    }));
-    setReplyErrors((previous) => ({
-      ...previous,
-      [postId]: null,
-    }));
+  const loadReplies = useCallback(
+    async (postId: string) => {
+      setReplyLocalErrors((previous) => ({
+        ...previous,
+        [postId]: null,
+      }));
+      setReplyQueryPostIds((previous) => ({
+        ...previous,
+        [postId]: true,
+      }));
 
-    try {
-      const response = await chatServiceApi.listFeedReplies(postId);
-      setRepliesByPost((previous) => ({
-        ...previous,
-        [postId]: response.replies,
-      }));
-    } catch (error) {
-      setReplyErrors((previous) => ({
-        ...previous,
-        [postId]:
-          error instanceof Error
-            ? error.message
-            : "댓글 목록을 불러오지 못했습니다.",
-      }));
-    } finally {
-      setIsRepliesLoading((previous) => ({
-        ...previous,
-        [postId]: false,
-      }));
-    }
-  }, []);
+      await queryClient.prefetchQuery<FeedRepliesResponse>({
+        queryKey: communityQueryKeys.feedReplies(postId),
+        queryFn: () => chatServiceApi.listFeedReplies(postId),
+      });
+    },
+    [queryClient]
+  );
 
   const setReplyDraft = useCallback((postId: string, value: string) => {
     setReplyDrafts((previous) => ({
@@ -251,7 +293,7 @@ export function useCommunityFeed(options: UseCommunityFeedOptions = {}) {
         const next = { ...previous, [postId]: !previous[postId] };
 
         if (next[postId]) {
-          loadReplies(postId);
+          void loadReplies(postId);
         }
 
         return next;
@@ -264,7 +306,7 @@ export function useCommunityFeed(options: UseCommunityFeedOptions = {}) {
     async (postId: string, actor?: FeedActorInput) => {
       const draft = (replyDrafts[postId] ?? "").trim();
       if (!draft) {
-        setReplyErrors((previous) => ({
+        setReplyLocalErrors((previous) => ({
           ...previous,
           [postId]: "답글 내용을 입력해주세요.",
         }));
@@ -275,7 +317,7 @@ export function useCommunityFeed(options: UseCommunityFeedOptions = {}) {
         ...previous,
         [postId]: true,
       }));
-      setReplyErrors((previous) => ({
+      setReplyLocalErrors((previous) => ({
         ...previous,
         [postId]: null,
       }));
@@ -297,9 +339,11 @@ export function useCommunityFeed(options: UseCommunityFeedOptions = {}) {
               : post
           )
         );
-        await loadReplies(postId);
+        await queryClient.invalidateQueries({
+          queryKey: communityQueryKeys.feedReplies(postId),
+        });
       } catch (error) {
-        setReplyErrors((previous) => ({
+        setReplyLocalErrors((previous) => ({
           ...previous,
           [postId]:
             error instanceof Error
@@ -314,7 +358,7 @@ export function useCommunityFeed(options: UseCommunityFeedOptions = {}) {
         }));
       }
     },
-    [loadReplies, queryClient, replyDrafts, resolveActorPayload]
+    [queryClient, replyDrafts, resolveActorPayload]
   );
 
   const updatePost = useCallback(
@@ -417,7 +461,9 @@ export function useCommunityFeed(options: UseCommunityFeedOptions = {}) {
               : post
           )
         );
-        await loadReplies(postId);
+        await queryClient.invalidateQueries({
+          queryKey: communityQueryKeys.feedReplies(postId),
+        });
       } catch (error) {
         setReplyDeleteErrors((previous) => ({
           ...previous,
@@ -434,7 +480,7 @@ export function useCommunityFeed(options: UseCommunityFeedOptions = {}) {
         }));
       }
     },
-    [loadReplies, queryClient, resolveActorPayload]
+    [queryClient, resolveActorPayload]
   );
 
   const clear = useCallback(() => {
@@ -446,12 +492,11 @@ export function useCommunityFeed(options: UseCommunityFeedOptions = {}) {
     );
     setPostsLocalError(null);
     setReplyDrafts({});
-    setRepliesByPost({});
     setExpandedReplies({});
-    setReplyErrors({});
+    setReplyQueryPostIds({});
+    setReplyLocalErrors({});
     setReplyDeleteErrors({});
     setPostErrors({});
-    setIsRepliesLoading({});
     setIsSubmittingReply({});
     setIsUpdatingPost({});
     setIsDeletingPost({});
