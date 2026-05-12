@@ -1212,3 +1212,29 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 50차 — sidebar context menu component 추출
+
+### 작업내용
+
+- `sidebar.tsx`의 context menu DOM 렌더링과 action icon 표시를 feature component로 추출한다.
+- parent sidebar는 context action 목록 생성, delete 진행 상태, click-outside ref 연결만 유지한다.
+- context menu action 실행, 삭제 disabled 표시, 위치 계산은 기존 동작을 유지한다.
+
+### 논의 필요
+
+- action 목록 생성 로직은 라우팅/export/delete handler에 의존한다. 이번 차수는 순수 메뉴 렌더링만 추출하고 action factory/hook 분리는 후속으로 둔다.
+
+### 선택지
+
+1. `SidebarContextMenu` 렌더링 component만 추출한다.
+2. context action 생성 로직까지 feature hook으로 분리한다.
+3. sidebar selection/context menu 상태를 한 번에 hook으로 분리한다.
+
+### 추천
+
+- 선택지 1. context menu UI 경계를 먼저 분리해 sidebar의 JSX 책임을 줄인다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.

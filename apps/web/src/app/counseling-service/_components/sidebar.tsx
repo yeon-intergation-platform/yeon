@@ -9,6 +9,10 @@ import { useClickOutside } from "@/lib/hooks/use-click-outside";
 import { CreateSpaceModal } from "./create-space-modal";
 import { useCounselingSidebarLayout } from "@/features/counseling-service-shell/counseling-sidebar-layout-context";
 import { useAppRoute } from "@/lib/app-route-context";
+import {
+  SidebarContextMenu,
+  type SidebarContextMenuAction,
+} from "@/features/counseling-record-workspace/components/sidebar-context-menu";
 import type { MemberItemActions } from "@/features/counseling-record-workspace/components/sidebar-member-list-item";
 import { SidebarMembersSection } from "@/features/counseling-record-workspace/components/sidebar-members-section";
 import { SidebarSpaceSelector } from "@/features/counseling-record-workspace/components/sidebar-space-selector";
@@ -683,21 +687,10 @@ export function Sidebar({
   }
 
   const contextActions = useMemo(() => {
-    if (!contextMenu)
-      return [] as Array<{
-        key: string;
-        label: string;
-        destructive?: boolean;
-        action: () => Promise<void> | void;
-      }>;
+    if (!contextMenu) return [] as SidebarContextMenuAction[];
 
     const single = contextMenu.ids.length === 1;
-    const actions: Array<{
-      key: string;
-      label: string;
-      destructive?: boolean;
-      action: () => Promise<void> | void;
-    }> = [];
+    const actions: SidebarContextMenuAction[] = [];
 
     if (contextMenu.kind === "space" && single) {
       actions.push({
@@ -866,45 +859,14 @@ export function Sidebar({
       )}
 
       {contextMenu && (
-        <div
-          ref={contextMenuRef}
-          className="fixed min-w-[168px] rounded-md border border-border-light bg-surface-3 py-1 shadow-[0_12px_32px_rgba(0,0,0,0.42)] z-[120]"
-          style={{ left: contextMenu.x, top: contextMenu.y }}
-        >
-          {contextActions.map((action, index) => (
-            <button
-              key={action.key}
-              type="button"
-              className={`flex w-full items-center gap-2 px-3 py-2 bg-transparent border-none text-left text-[12px] font-medium cursor-pointer hover:bg-surface-4 disabled:opacity-50 ${
-                action.destructive ? "text-red" : "text-text"
-              } ${index > 0 && action.destructive ? "border-t border-border" : ""}`}
-              onClick={() => void action.action()}
-              disabled={
-                action.key === "delete" &&
-                deletingContextId === contextMenu.primaryId
-              }
-            >
-              <span>
-                {action.key === "delete"
-                  ? "🗑"
-                  : action.key === "open-space" ||
-                      action.key === "open-member" ||
-                      action.key === "open-record"
-                    ? "📂"
-                    : action.key === "goto-student-management" ||
-                        action.key === "open-member-management"
-                      ? "👥"
-                      : action.key.includes("export")
-                        ? "📄"
-                        : "•"}
-              </span>
-              {action.key === "delete" &&
-              deletingContextId === contextMenu.primaryId
-                ? "삭제 중..."
-                : action.label}
-            </button>
-          ))}
-        </div>
+        <SidebarContextMenu
+          menuRef={contextMenuRef}
+          x={contextMenu.x}
+          y={contextMenu.y}
+          primaryId={contextMenu.primaryId}
+          deletingPrimaryId={deletingContextId}
+          actions={contextActions}
+        />
       )}
 
       {/* 하단 버튼 */}
