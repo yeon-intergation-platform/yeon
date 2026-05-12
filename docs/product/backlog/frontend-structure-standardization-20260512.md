@@ -529,3 +529,28 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 23차: student-management space sidebar action fetch wrapper 정리
+
+### 작업내용
+
+- `app/counseling-service/student-management/_hooks/use-space-sidebar-actions.ts`의 스페이스 삭제/이름 변경 직접 `fetch()` 호출을 제거한다.
+- 삭제/수정 요청은 `studentManagementFetchVoid` wrapper를 사용해 credentials/error parsing 정책을 student-management 기준으로 통일한다.
+- 선택 스페이스 초기화, 상세 route reset, 목록 refetch, context menu 정리 동작은 유지한다.
+
+### 논의 필요
+
+- `use-space-sidebar-actions` 자체를 `features/student-management`로 즉시 이동할지 여부.
+
+### 선택지
+
+1. 이번 차수는 fetch boundary만 닫고 hook 이동은 후속 app boundary 정리에서 다룬다.
+2. sidebar action hook을 feature layer로 즉시 이동한다.
+
+### 추천
+
+- 1번. 직접 fetch 제거와 app route hook 이동을 분리해 사이드바 회귀 면적을 줄인다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.
