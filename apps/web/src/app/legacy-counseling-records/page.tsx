@@ -3,7 +3,6 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { NON_INDEXABLE_ROBOTS } from "@/lib/seo";
-import { CounselingRecordWorkspace } from "@/features/counseling-record-workspace";
 import {
   AUTH_SESSION_COOKIE_NAME,
   buildAuthSessionCleanupHref,
@@ -32,9 +31,9 @@ export default async function CounselingRecordsPage() {
     redirect(
       sessionToken
         ? buildAuthSessionCleanupHref(getLoginRedirectHref())
-        : getLoginRedirectHref(),
+        : getLoginRedirectHref()
     );
   }
 
-  return <CounselingRecordWorkspace />;
+  redirect("/counseling-service");
 }

@@ -6,12 +6,12 @@ import type { CounselingRecordDetail } from "@yeon/api-contract/counseling-recor
 import {
   AUDIO_UPLOAD_ERROR_MESSAGE,
   isAcceptedAudioFile,
+  readAudioDurationMs,
 } from "@/lib/audio-file";
 import { resolveApiHrefForCurrentPath } from "@/lib/app-route-paths";
 
 import type { RecordItem } from "../_lib/types";
 import { createTimestamp, fmtDurationMs } from "../_lib/utils";
-import { readAudioDurationMs } from "@/features/counseling-record-workspace/utils";
 
 interface UseFileUploadParams {
   onFileUpload: (record: RecordItem) => void;
@@ -106,7 +106,7 @@ export function useFileUpload({
           {
             method: "POST",
             body: formData,
-          },
+          }
         );
 
         if (!res.ok) {
@@ -159,14 +159,14 @@ export function useFileUpload({
       onFileUpload,
       onUploadComplete,
       onUploadError,
-    ],
+    ]
   );
 
   const uploadPreparedFile = useCallback(
     async (file: File) => {
       await processFile(file);
     },
-    [processFile],
+    [processFile]
   );
 
   const handleInputChange = useCallback(
@@ -177,7 +177,7 @@ export function useFileUpload({
       }
       e.target.value = "";
     },
-    [processFile],
+    [processFile]
   );
 
   const hasFiles = useCallback((e: React.DragEvent) => {
@@ -191,7 +191,7 @@ export function useFileUpload({
       dragCountRef.current += 1;
       if (dragCountRef.current === 1) setIsDragging(true);
     },
-    [hasFiles],
+    [hasFiles]
   );
 
   const handleDragLeave = useCallback(
@@ -204,7 +204,7 @@ export function useFileUpload({
         setIsDragging(false);
       }
     },
-    [isDragging],
+    [isDragging]
   );
 
   const handleDragOver = useCallback(
@@ -213,7 +213,7 @@ export function useFileUpload({
       e.preventDefault();
       e.dataTransfer.dropEffect = "copy";
     },
-    [hasFiles],
+    [hasFiles]
   );
 
   const handleDrop = useCallback(
@@ -229,7 +229,7 @@ export function useFileUpload({
         setError(AUDIO_UPLOAD_ERROR_MESSAGE);
       }
     },
-    [processFile, hasFiles],
+    [processFile, hasFiles]
   );
 
   return {
