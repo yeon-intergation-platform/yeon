@@ -1602,3 +1602,29 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 65차 — counseling sidebar selection state hook 추출
+
+### 작업내용
+
+- `app/counseling-service/_components/sidebar.tsx`에 섞여 있는 multi-select, shift/drag selection, context menu, delete confirmation 상태머신을 feature hook으로 추출한다.
+- route app component는 sidebar 렌더링과 feature hook wiring만 담당하게 줄인다.
+- space/member/record ordered id와 label resolver, delete/export/open action은 기존 props를 그대로 사용해 동작은 유지한다.
+
+### 논의 필요
+
+- 현재 sidebar는 887줄이며, UI 렌더링과 선택 상태 전이, context menu, 삭제 처리까지 한 파일에서 소유한다. selection 상태는 counseling record workspace의 재사용 가능한 interaction 규칙이므로 app route 아래에 남기면 후속 변경마다 상태 오염 가능성이 커진다.
+
+### 선택지
+
+1. selection/context menu/delete orchestration만 `useCounselingSidebarSelection` hook으로 추출한다.
+2. sidebar 전체를 feature component로 한 번에 이동한다.
+3. 먼저 presentational section만 더 쪼갠다.
+
+### 추천
+
+- 선택지 1. 상태 전이 source of truth를 먼저 격리해 리뷰 가능한 단위로 만들고, 렌더링 컴포넌트 이동은 후속 차수로 진행한다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.
