@@ -4,7 +4,7 @@ import { renderHook, act, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createElement } from "react";
 import type { ReactNode } from "react";
-import { useRecords } from "../use-records";
+import { useRecords } from "@/features/counseling-record-workspace/hooks/use-records";
 import type { RecordItem } from "../../_lib/types";
 
 /* ── fetch 모킹 ── */
@@ -13,7 +13,7 @@ function mockFetch(responses: Record<string, unknown>) {
   vi.spyOn(global, "fetch").mockImplementation(async (input) => {
     const url = typeof input === "string" ? input : (input as Request).url;
     const match = Object.entries(responses).find(([pattern]) =>
-      url.includes(pattern),
+      url.includes(pattern)
     );
     const body = match ? match[1] : { records: [] };
     return new Response(JSON.stringify(body), {
@@ -83,7 +83,7 @@ function createWrapper() {
     return createElement(
       QueryClientProvider,
       { client: queryClient },
-      children,
+      children
     );
   };
 }
@@ -107,7 +107,7 @@ describe("초기 상태", () => {
     });
 
     await waitFor(() =>
-      expect(result.current.viewState.kind).not.toBe("loading"),
+      expect(result.current.viewState.kind).not.toBe("loading")
     );
 
     expect(result.current.viewState.kind).toBe("empty");
@@ -124,7 +124,7 @@ describe("초기 상태", () => {
     });
 
     await waitFor(() =>
-      expect(result.current.viewState.kind).not.toBe("loading"),
+      expect(result.current.viewState.kind).not.toBe("loading")
     );
 
     expect(result.current.viewState.kind).toBe("ready");
@@ -154,7 +154,7 @@ describe("recording state", () => {
     });
 
     await waitFor(() =>
-      expect(result.current.viewState.kind).not.toBe("loading"),
+      expect(result.current.viewState.kind).not.toBe("loading")
     );
 
     act(() => {
@@ -172,11 +172,11 @@ describe("recording state", () => {
       {
         wrapper: createWrapper(),
         initialProps: { selectedId: null as string | null },
-      },
+      }
     );
 
     await waitFor(() =>
-      expect(result.current.viewState.kind).not.toBe("loading"),
+      expect(result.current.viewState.kind).not.toBe("loading")
     );
 
     act(() => {
@@ -212,7 +212,7 @@ describe("addProcessingRecord", () => {
     });
 
     await waitFor(() =>
-      expect(result.current.viewState.kind).not.toBe("loading"),
+      expect(result.current.viewState.kind).not.toBe("loading")
     );
 
     const tempRec = makeTempRecord();
@@ -231,11 +231,11 @@ describe("addProcessingRecord", () => {
       {
         wrapper: createWrapper(),
         initialProps: { selectedId: null as string | null },
-      },
+      }
     );
 
     await waitFor(() =>
-      expect(result.current.viewState.kind).not.toBe("loading"),
+      expect(result.current.viewState.kind).not.toBe("loading")
     );
 
     const tempRec = makeTempRecord();
@@ -257,7 +257,7 @@ describe("addProcessingRecord", () => {
     });
 
     await waitFor(() =>
-      expect(result.current.viewState.kind).not.toBe("loading"),
+      expect(result.current.viewState.kind).not.toBe("loading")
     );
 
     const tempRec = makeTempRecord();
@@ -267,7 +267,7 @@ describe("addProcessingRecord", () => {
     });
 
     const count = result.current.records.filter(
-      (r) => r.id === "temp-001",
+      (r) => r.id === "temp-001"
     ).length;
     expect(count).toBe(1);
   });
@@ -284,7 +284,7 @@ describe("replaceRecord", () => {
     });
 
     await waitFor(() =>
-      expect(result.current.viewState.kind).not.toBe("loading"),
+      expect(result.current.viewState.kind).not.toBe("loading")
     );
 
     const tempRec = makeTempRecord({ id: "temp-xyz" });
@@ -313,7 +313,7 @@ describe("markUploadError", () => {
     });
 
     await waitFor(() =>
-      expect(result.current.viewState.kind).not.toBe("loading"),
+      expect(result.current.viewState.kind).not.toBe("loading")
     );
 
     const tempRec = makeTempRecord({ id: "temp-fail" });
@@ -442,7 +442,7 @@ describe("removeRecord", () => {
     });
 
     await waitFor(() =>
-      expect(result.current.viewState.kind).not.toBe("loading"),
+      expect(result.current.viewState.kind).not.toBe("loading")
     );
 
     const tempRec = makeTempRecord({ id: "temp-del" });
@@ -465,7 +465,7 @@ describe("removeRecord", () => {
     });
 
     await waitFor(() =>
-      expect(result.current.viewState.kind).not.toBe("loading"),
+      expect(result.current.viewState.kind).not.toBe("loading")
     );
 
     const tempRec = makeTempRecord({ id: "temp-last" });

@@ -1033,3 +1033,29 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 43차 — records data hook feature 이동
+
+### 작업내용
+
+- `use-records`를 `features/counseling-record-workspace/hooks`로 이동한다.
+- app `_hooks/index.ts`는 기존 import 호환 re-export만 유지한다.
+- 기존 `use-records` 테스트는 feature hook import를 검증하도록 경로를 바꾼다.
+
+### 논의 필요
+
+- `RecordItem`, `AiMessage`, `processing-progress`, `record-state-adapters`는 아직 app `_lib`에 남아 있다. 이번 차수에서 모두 옮기면 import 영향 범위가 커지므로 별도 model/lib 이동 차수로 분리한다.
+
+### 선택지
+
+1. `use-records` 구현만 feature hook으로 이동하고 app `_lib` 의존은 명시적 임시 의존으로 둔다.
+2. `RecordItem`과 adapters까지 한 번에 feature로 이동한다.
+3. sidebar/center-panel 분해 전까지 hook 이동을 보류한다.
+
+### 추천
+
+- 선택지 1. 실제 app `_hooks` 구현을 먼저 제거해 route layer를 얇게 만들고, model/lib 이동은 다음 작은 PR에서 전수 사용처를 확인한다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.
