@@ -26,6 +26,26 @@
 
 ## 2차 - 상담 분석/채팅/재전사 streaming Spring 이관
 
+### 2차 세부 - 상담 AI 채팅 Spring 이관 (완료)
+
+- 작업내용
+  - `POST /api/v1/counseling-records/[recordId]/chat`의 상담 상세 조회, OpenAI chat/web-search 호출, assistant_messages 저장을 Spring으로 이동한다.
+  - `DELETE /api/v1/counseling-records/[recordId]/chat`의 assistant_messages 초기화도 Spring으로 이동한다.
+  - Next route는 인증, 요청 검증, Spring SSE/JSON bridge만 유지한다.
+- 논의 필요
+  - 웹 검색 모드는 기존처럼 Responses API 실패 시 일반 AI 응답으로 fallback한다.
+- 선택지
+  - A. chat만 단독 PR로 이관
+  - B. analyze/transcribe까지 한 PR에 묶기
+- 추천
+  - A. 스트리밍과 DB append 경계가 있으므로 chat 단독 PR로 검증한다.
+- 사용자 방향
+  - 추천 기준으로 진행.
+- 완료 근거
+  - Spring `POST/DELETE /counseling-records/{recordId}/chat`가 OpenAI chat/web-search, assistant_messages append/clear를 소유한다.
+  - Next chat route는 인증/검증 후 Spring SSE/JSON bridge만 수행한다.
+  - backend controller test, web typecheck/build, diff/skill/SSOT 검증을 수행했다.
+
 - 작업내용
   - `analyze`, `chat`, `transcribe`, `analyze-trend` route의 OpenAI/STT/search/streaming 소유를 Spring service로 옮긴다.
   - Next route는 SSE bridge와 request/response adapter만 유지한다.
