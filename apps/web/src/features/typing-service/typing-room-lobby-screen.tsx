@@ -6,6 +6,14 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import { Crown, Search, Users, X } from "lucide-react";
+import {
+  YeonBadge,
+  YeonButton,
+  YeonField,
+  YeonSurface,
+  getYeonSurfaceClassName,
+  joinClassNames,
+} from "@/components/yeon-ui";
 import { TypingServiceHeader } from "./typing-service-header";
 import { trackEvent } from "@/lib/analytics";
 import {
@@ -155,28 +163,31 @@ export function TypingRoomLobbyScreen() {
               실시간으로 함께 타자를 치고 실력을 겨루는 공간입니다.
             </p>
           </div>
-          <button
+          <YeonButton
             type="button"
             onClick={openCreateModal}
-            className="hidden min-w-[176px] rounded-lg bg-[#050505] px-8 py-5 text-[17px] font-bold text-white shadow-[0_3px_10px_rgba(0,0,0,0.10)] transition-colors hover:bg-[#222] md:inline-flex md:items-center md:justify-center"
+            variant="primary"
+            size="xl"
+            className="hidden min-w-[176px] rounded-lg shadow-[0_3px_10px_rgba(0,0,0,0.10)] md:inline-flex"
           >
             방 만들기
-          </button>
+          </YeonButton>
         </section>
 
         <section className="border-t border-[#e5e5e5] px-6 py-6 md:px-10">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="flex gap-3 overflow-x-auto pb-1 md:pb-0">
               {FILTERS.map((filter) => (
-                <button
+                <YeonButton
                   key={filter.value}
                   type="button"
                   onClick={() => setSelectedFilter(filter.value)}
                   data-active={selectedFilter === filter.value}
-                  className="h-[50px] shrink-0 rounded-full border border-[#d9d9d9] bg-white px-7 text-[16px] font-semibold text-[#111] transition-colors hover:border-[#111] data-[active=true]:border-[#050505] data-[active=true]:bg-[#050505] data-[active=true]:text-white"
+                  variant="pill"
+                  className="h-[50px] shrink-0 px-7 text-[16px] data-[active=true]:border-[#111] data-[active=true]:bg-[#111] data-[active=true]:text-white"
                 >
                   {filter.label}
-                </button>
+                </YeonButton>
               ))}
             </div>
 
@@ -186,16 +197,16 @@ export function TypingRoomLobbyScreen() {
                 size={22}
                 className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#666]"
               />
-              <input
+              <YeonField
                 value={searchKeyword}
                 onChange={(event) => setSearchKeyword(event.target.value)}
                 placeholder="방 검색"
-                className="h-[50px] w-full rounded-lg border border-[#d7d7d7] bg-white pl-12 pr-4 text-[16px] font-medium text-[#111] outline-none placeholder:text-[#aaa] focus:border-[#111]"
+                className="h-[50px] rounded-lg pl-12 pr-4 text-[16px] font-medium"
               />
             </label>
           </div>
 
-          <div className="mt-7 min-h-[520px] rounded-2xl border border-[#d9d9d9] bg-white">
+          <YeonSurface className="mt-7 min-h-[520px]">
             {state.kind === "loading" && (
               <div className="flex min-h-[520px] items-center justify-center text-[16px] font-medium text-[#666]">
                 열린 타자방을 불러오는 중입니다.
@@ -235,17 +246,19 @@ export function TypingRoomLobbyScreen() {
                     ? "다른 키워드로 검색하거나 첫 방을 만들어 보세요."
                     : "첫 방을 만들어 친구와 함께 시작해보세요."}
                 </p>
-                <button
+                <YeonButton
                   type="button"
                   onClick={
                     state.kind === "ready"
                       ? () => setSearchKeyword("")
                       : openCreateModal
                   }
-                  className="mt-8 rounded-lg bg-[#050505] px-8 py-4 text-[17px] font-bold text-white shadow-[0_3px_10px_rgba(0,0,0,0.10)] transition-colors hover:bg-[#222]"
+                  variant="primary"
+                  size="xl"
+                  className="mt-8 rounded-lg shadow-[0_3px_10px_rgba(0,0,0,0.10)]"
                 >
                   {state.kind === "ready" ? "검색 초기화" : "첫 방 만들기"}
-                </button>
+                </YeonButton>
               </div>
             )}
 
@@ -259,7 +272,13 @@ export function TypingRoomLobbyScreen() {
                       key={room.roomId}
                       href={`/typing-service/rooms/${room.roomId}`}
                       aria-label={`${room.title} 입장, ${occupancy.seatLabel}`}
-                      className="group grid gap-5 rounded-2xl border border-[#e5e5e5] bg-[#fafafa] p-5 no-underline transition-colors hover:border-[#111] hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#111] md:grid-cols-[1fr_auto]"
+                      className={joinClassNames(
+                        getYeonSurfaceClassName({
+                          variant: "panel",
+                          className:
+                            "group grid gap-5 p-5 no-underline transition-colors hover:border-[#111] hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#111] md:grid-cols-[1fr_auto]",
+                        })
+                      )}
                       onClick={() =>
                         trackEvent("room_join_click", {
                           source: "typing_room_lobby",
@@ -272,12 +291,12 @@ export function TypingRoomLobbyScreen() {
                     >
                       <div>
                         <div className="flex flex-wrap items-center gap-2">
-                          <span className="rounded-full border border-[#d9ead3] bg-[#eef8ea] px-2.5 py-1 text-[11px] font-bold text-[#2f7d32]">
+                          <YeonBadge variant="success" className="text-[11px]">
                             {TYPING_ROOM_STATUS_LABELS[room.status]}
-                          </span>
-                          <span className="rounded-full border border-[#e5e5e5] bg-white px-2.5 py-1 text-[11px] font-bold text-[#111]">
+                          </YeonBadge>
+                          <YeonBadge className="text-[11px] text-[#111]">
                             {occupancy.seatLabel}
-                          </span>
+                          </YeonBadge>
                           <span className="font-mono text-[12px] text-[#aaa]">
                             #{room.roomCode}
                           </span>
@@ -310,7 +329,7 @@ export function TypingRoomLobbyScreen() {
                           <Users size={14} /> {room.currentParticipants} /{" "}
                           {room.maxParticipants}
                         </span>
-                        <span className="rounded-xl bg-[#111] px-4 py-2 text-[13px] font-bold text-white transition-colors group-hover:bg-[#333]">
+                        <span className="rounded-xl bg-[#111] px-4 py-2 text-[13px] font-bold text-white transition-opacity group-hover:opacity-90">
                           입장하기
                         </span>
                       </div>
@@ -319,17 +338,18 @@ export function TypingRoomLobbyScreen() {
                 })}
               </div>
             )}
-          </div>
+          </YeonSurface>
         </section>
       </main>
 
-      <button
+      <YeonButton
         type="button"
         onClick={openCreateModal}
-        className="fixed bottom-5 right-5 z-30 rounded-full bg-[#050505] px-6 py-4 text-[15px] font-bold text-white shadow-lg md:hidden"
+        variant="primary"
+        className="fixed bottom-5 right-5 z-30 rounded-full px-6 py-4 text-[15px] shadow-lg md:hidden"
       >
         방 만들기
-      </button>
+      </YeonButton>
 
       {isCreateModalOpen && (
         <div
@@ -340,7 +360,10 @@ export function TypingRoomLobbyScreen() {
         >
           <form
             onSubmit={handleCreate}
-            className="w-full max-w-[456px] rounded-xl border border-[#d2d2d2] bg-white p-7 shadow-[0_18px_60px_rgba(0,0,0,0.16)]"
+            className={getYeonSurfaceClassName({
+              className:
+                "w-full max-w-[456px] rounded-xl p-7 shadow-[0_18px_60px_rgba(0,0,0,0.16)]",
+            })}
           >
             <div className="flex items-center justify-between gap-4">
               <h2
@@ -362,12 +385,12 @@ export function TypingRoomLobbyScreen() {
             <div className="mt-7 grid gap-6">
               <label className="grid gap-3 text-[15px] font-bold text-[#111]">
                 방 제목
-                <input
+                <YeonField
                   value={title}
                   onChange={(event) => setTitle(event.target.value)}
                   placeholder="예: 오늘의 타자 연습"
                   maxLength={40}
-                  className="h-[50px] rounded-lg border border-[#d7d7d7] bg-white px-4 text-[16px] font-medium text-[#111] outline-none placeholder:text-[#aaa] focus:border-[#111]"
+                  className="h-[50px] rounded-lg px-4 text-[16px] font-medium"
                 />
               </label>
 
@@ -404,12 +427,13 @@ export function TypingRoomLobbyScreen() {
                 세부 설정은 방에 들어간 뒤 시작 전에 바꿀 수 있어요.
               </p>
 
-              <button
+              <YeonButton
                 type="submit"
-                className="h-[60px] rounded-lg bg-[#050505] px-4 text-[18px] font-bold text-white shadow-[0_3px_10px_rgba(0,0,0,0.10)] transition-colors hover:bg-[#222]"
+                variant="primary"
+                className="h-[60px] rounded-lg px-4 text-[18px] shadow-[0_3px_10px_rgba(0,0,0,0.10)]"
               >
                 만들고 입장하기
-              </button>
+              </YeonButton>
             </div>
           </form>
         </div>
