@@ -20,7 +20,7 @@ type FeedActor = {
   guestPassword: string;
 };
 
-type FeedActorInput = Partial<FeedActor>;
+export type FeedActorInput = Partial<FeedActor>;
 
 function toFeedActorPayload(input: FeedActorInput) {
   return {
@@ -58,6 +58,18 @@ export function useCommunityFeed() {
       : {};
   }, [guestNickname, guestPassword]);
 
+  const resolveActorPayload = useCallback(
+    (actor?: FeedActorInput) => {
+      if (!actor) return actorPayload;
+
+      const currentActor = toFeedActorPayload(actor);
+      return currentActor.guestNickname && currentActor.guestPassword
+        ? currentActor
+        : actorPayload;
+    },
+    [actorPayload]
+  );
+
   const loadPosts = useCallback(async () => {
     setIsPostsLoading(true);
     setPostsError(null);
@@ -78,7 +90,7 @@ export function useCommunityFeed() {
   }, []);
 
   const createPost = useCallback(
-    async (body: string) => {
+    async (body: string, actor?: FeedActorInput) => {
       const trimmedBody = body.trim();
       if (!trimmedBody) {
         setPostsError("글 내용을 입력해주세요.");
@@ -89,7 +101,10 @@ export function useCommunityFeed() {
       setPostsError(null);
 
       try {
-        await chatServiceApi.createFeedPost(trimmedBody, actorPayload);
+        await chatServiceApi.createFeedPost(
+          trimmedBody,
+          resolveActorPayload(actor)
+        );
         await loadPosts();
       } catch (error) {
         if (error instanceof Error) {
@@ -102,7 +117,7 @@ export function useCommunityFeed() {
         setIsCreatingPost(false);
       }
     },
-    [actorPayload, loadPosts]
+    [loadPosts, resolveActorPayload]
   );
 
   const loadReplies = useCallback(async (postId: string) => {
@@ -160,7 +175,7 @@ export function useCommunityFeed() {
   );
 
   const submitReply = useCallback(
-    async (postId: string) => {
+    async (postId: string, actor?: FeedActorInput) => {
       const draft = (replyDrafts[postId] ?? "").trim();
       if (!draft) {
         setReplyErrors((previous) => ({
@@ -180,7 +195,11 @@ export function useCommunityFeed() {
       }));
 
       try {
-        await chatServiceApi.createFeedReply(postId, draft, actorPayload);
+        await chatServiceApi.createFeedReply(
+          postId,
+          draft,
+          resolveActorPayload(actor)
+        );
         setReplyDrafts((previous) => ({
           ...previous,
           [postId]: "",
@@ -202,11 +221,11 @@ export function useCommunityFeed() {
         }));
       }
     },
-    [actorPayload, loadPosts, loadReplies, replyDrafts]
+    [loadPosts, loadReplies, replyDrafts, resolveActorPayload]
   );
 
   const updatePost = useCallback(
-    async (postId: string, body: string) => {
+    async (postId: string, body: string, actor?: FeedActorInput) => {
       const trimmedBody = body.trim();
       if (!trimmedBody) {
         setPostErrors((previous) => ({
@@ -226,7 +245,11 @@ export function useCommunityFeed() {
       }));
 
       try {
-        await chatServiceApi.updateFeedPost(postId, trimmedBody, actorPayload);
+        await chatServiceApi.updateFeedPost(
+          postId,
+          trimmedBody,
+          resolveActorPayload(actor)
+        );
         await loadPosts();
       } catch (error) {
         setPostErrors((previous) => ({
@@ -242,11 +265,11 @@ export function useCommunityFeed() {
         }));
       }
     },
-    [actorPayload, loadPosts]
+    [loadPosts, resolveActorPayload]
   );
 
   const deletePost = useCallback(
-    async (postId: string) => {
+    async (postId: string, actor?: FeedActorInput) => {
       setIsDeletingPost((previous) => ({
         ...previous,
         [postId]: true,
@@ -257,7 +280,7 @@ export function useCommunityFeed() {
       }));
 
       try {
-        await chatServiceApi.deleteFeedPost(postId, actorPayload);
+        await chatServiceApi.deleteFeedPost(postId, resolveActorPayload(actor));
         await loadPosts();
       } catch (error) {
         setPostErrors((previous) => ({
@@ -273,11 +296,11 @@ export function useCommunityFeed() {
         }));
       }
     },
-    [actorPayload, loadPosts]
+    [loadPosts, resolveActorPayload]
   );
 
   const deleteReply = useCallback(
-    async (postId: string, replyId: string) => {
+    async (postId: string, replyId: string, actor?: FeedActorInput) => {
       setIsDeletingReply((previous) => ({
         ...previous,
         [replyId]: true,
@@ -288,7 +311,11 @@ export function useCommunityFeed() {
       }));
 
       try {
-        await chatServiceApi.deleteFeedReply(postId, replyId, actorPayload);
+        await chatServiceApi.deleteFeedReply(
+          postId,
+          replyId,
+          resolveActorPayload(actor)
+        );
         await Promise.all([loadReplies(postId), loadPosts()]);
       } catch (error) {
         setReplyDeleteErrors((previous) => ({
@@ -306,7 +333,7 @@ export function useCommunityFeed() {
         }));
       }
     },
-    [actorPayload, loadPosts, loadReplies]
+    [loadPosts, loadReplies, resolveActorPayload]
   );
 
   const clear = useCallback(() => {

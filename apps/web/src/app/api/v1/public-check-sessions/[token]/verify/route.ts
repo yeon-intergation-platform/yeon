@@ -6,7 +6,7 @@ import {
 } from "@yeon/api-contract";
 
 import { jsonError } from "@/app/api/v1/counseling-records/_shared";
-import { applyRememberedPublicCheckIdentityCookie } from "@/server/services/public-check-device-cookie";
+import { applyRememberedPublicCheckIdentityCookie } from "@/server/public-check-device-cookie-bff";
 import {
   PublicCheckRuntimeSpringBackendHttpError,
   verifyPublicCheckIdentityInSpring,
@@ -36,7 +36,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
   try {
     const outcome = await verifyPublicCheckIdentityInSpring(token, parsed.data);
     const response = NextResponse.json(
-      verifyPublicCheckIdentityResultSchema.parse(outcome.result),
+      verifyPublicCheckIdentityResultSchema.parse(outcome.result)
     );
 
     if (outcome.rememberedMemberId) {
