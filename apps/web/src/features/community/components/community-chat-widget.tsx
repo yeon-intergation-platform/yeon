@@ -181,15 +181,10 @@ export function CommunityChatWidget({
               <h2 className="whitespace-nowrap text-[16px] font-black tracking-[-0.02em] text-[#0f1419]">
                 실시간 채팅
               </h2>
-              {isFeed ? (
-                <p className="mt-0.5 text-[12px] font-semibold text-[#536471]">
-                  채팅은 피드 글과 별도로 흘러갑니다
-                </p>
-              ) : null}
             </div>
             <div className="flex items-center gap-2">
               <span className="text-[11px] font-semibold text-[#999]">
-                {messages.length}개
+                접속 {activePresenceCount}명
               </span>
             </div>
           </div>
@@ -270,7 +265,11 @@ export function CommunityChatWidget({
                 <p className="text-[12px] text-red-600">{messageError}</p>
               ) : null}
 
-              {!isMessagesLoading && visibleMessages.length === 0 ? null : (
+              {!isMessagesLoading && visibleMessages.length === 0 ? (
+                <p className="px-1 py-8 text-center text-[13px] font-semibold text-[#777]">
+                  아직 채팅이 없습니다. 첫 메시지를 남겨보세요.
+                </p>
+              ) : (
                 <div className="space-y-1.5">
                   {visibleMessages.map((message) => {
                     const isMine =
