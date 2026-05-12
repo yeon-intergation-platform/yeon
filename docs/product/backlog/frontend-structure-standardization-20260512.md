@@ -1550,3 +1550,29 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 63차 — cloud import saved drafts modal component 추출
+
+### 작업내용
+
+- `cloud-import-inline.tsx`에 inline으로 들어 있던 저장된 가져오기 작업 모달 UI를 `CloudImportSavedDraftsModal` component로 추출한다.
+- modal 상태/액션은 기존 `useSavedImportDraftsModal` 반환값을 그대로 전달하고, presentation만 분리한다.
+- entry header, 파일 브라우저, 프리뷰 workspace 동작은 변경하지 않는다.
+
+### 논의 필요
+
+- split hook 추출 후에도 저장 초안 모달 JSX가 component 본문을 크게 차지한다. 상태 hook은 이미 별도이므로 UI component 분리는 낮은 위험으로 파일 크기를 줄일 수 있다.
+
+### 선택지
+
+1. 저장 초안 모달 UI만 component로 추출한다.
+2. entry header까지 함께 추출한다.
+3. 파일 브라우저까지 한 번에 추출한다.
+
+### 추천
+
+- 선택지 1. 상태와 액션을 건드리지 않고 presentation만 분리해 회귀 위험을 낮춘다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.
