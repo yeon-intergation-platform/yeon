@@ -29,10 +29,12 @@ import {
 
 export type TypingRaceMultiplayerScreenProps = {
   race: UseRaceRoomResult;
+  onRestart?: () => void;
 };
 
 export function TypingRaceMultiplayerScreen({
   race,
+  onRestart,
 }: TypingRaceMultiplayerScreenProps) {
   const { profile, loaded: profileLoaded } = useTypingProfile();
   const { settings } = useTypingSettings();
@@ -218,6 +220,10 @@ export function TypingRaceMultiplayerScreen({
 
   const handleRestart = () => {
     resetRaceState();
+    if (onRestart) {
+      onRestart();
+      return;
+    }
     race.rejoin();
   };
 

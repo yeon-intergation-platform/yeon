@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   TYPING_ROOM_LANGUAGE,
   type TypingRoomCreateMessage,
@@ -28,6 +28,8 @@ export function TypingRacePlayScreen() {
   const t = createTranslator(settings.locale);
   const playerId = usePlayerIdentity();
   const [fallbackToSolo, setFallbackToSolo] = useState(false);
+  const [seedRefreshToken, setSeedRefreshToken] = useState(0);
+  const lastSeedPassageIdRef = useRef<string | null>(null);
   const [seedState, setSeedState] = useState<
     | { kind: "idle" | "loading" }
     | { kind: "ready"; seed: TypingRaceSeed | null }
@@ -38,22 +40,38 @@ export function TypingRacePlayScreen() {
     let cancelled = false;
     setSeedState({ kind: "loading" });
 
-    resolveTypingRaceSeed(deckState.selectedDeck, settings.locale).then(
-      (result) => {
-        if (cancelled) return;
-        if (result.ok) {
-          setSeedState({ kind: "ready", seed: result.seed });
-          return;
-        }
-        setSeedState({ kind: "error", message: result.message });
-        setFallbackToSolo(true);
+    async function loadSeed() {
+      const result = await resolveTypingRaceSeed(
+        deckState.selectedDeck,
+        settings.locale,
+        { excludedPassageId: lastSeedPassageIdRef.current }
+      );
+      const shouldRetrySameRemoteSeed =
+        result.ok &&
+        result.seed?.seedToken &&
+        result.seed.passageId === lastSeedPassageIdRef.current;
+      const finalResult = shouldRetrySameRemoteSeed
+        ? await resolveTypingRaceSeed(deckState.selectedDeck, settings.locale, {
+            excludedPassageId: lastSeedPassageIdRef.current,
+          })
+        : result;
+
+      if (cancelled) return;
+      if (finalResult.ok) {
+        lastSeedPassageIdRef.current = finalResult.seed?.passageId ?? null;
+        setSeedState({ kind: "ready", seed: finalResult.seed });
+        return;
       }
-    );
+      setSeedState({ kind: "error", message: finalResult.message });
+      setFallbackToSolo(true);
+    }
+
+    loadSeed();
 
     return () => {
       cancelled = true;
     };
-  }, [deckState.selectedDeck, settings.locale]);
+  }, [deckState.selectedDeck, seedRefreshToken, settings.locale]);
 
   const quickRoom = useMemo<TypingRoomCreateMessage | null>(
     () =>
@@ -114,9 +132,13 @@ export function TypingRacePlayScreen() {
     }
   }, [race.connectionState]);
 
-  const retryMultiplayer = () => {
+  const refreshQuickRaceSeed = useCallback(() => {
     setFallbackToSolo(false);
-    race.rejoin();
+    setSeedRefreshToken((value) => value + 1);
+  }, []);
+
+  const retryMultiplayer = () => {
+    refreshQuickRaceSeed();
   };
 
   if (fallbackToSolo) {
@@ -143,5 +165,7 @@ export function TypingRacePlayScreen() {
     );
   }
 
-  return <TypingRaceMultiplayerScreen race={race} />;
+  return (
+    <TypingRaceMultiplayerScreen race={race} onRestart={refreshQuickRaceSeed} />
+  );
 }

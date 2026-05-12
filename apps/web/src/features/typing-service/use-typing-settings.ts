@@ -242,11 +242,16 @@ function normalizeRaceSeed(
 
 function localRaceSeed(
   deck: TypingDeckOption,
-  languageTag: TypingDeckLanguageTag
+  languageTag: TypingDeckLanguageTag,
+  excludedPassageId?: string | null
 ): TypingRaceSeed {
   const passages = localPassagesFor(languageTag);
+  const candidates =
+    passages.length > 1 && excludedPassageId
+      ? passages.filter((passage) => passage.id !== excludedPassageId)
+      : passages;
   const passage =
-    passages[Math.floor(Math.random() * passages.length)] ?? passages[0]!;
+    candidates[Math.floor(Math.random() * candidates.length)] ?? passages[0]!;
   return {
     passageId: passage.id,
     prompt: passage.prompt,
@@ -518,11 +523,16 @@ export function useTypingDeckPassages(
 
 export async function resolveTypingRaceSeed(
   deck: TypingDeckOption | null,
-  languageTag: TypingDeckLanguageTag
+  languageTag: TypingDeckLanguageTag,
+  options?: { excludedPassageId?: string | null }
 ): Promise<ResolveTypingRaceSeedResult> {
   if (!deck) return { ok: true, seed: null, deck: null };
   if (isLocalDefaultDeckId(deck.id))
-    return { ok: true, seed: localRaceSeed(deck, languageTag), deck };
+    return {
+      ok: true,
+      seed: localRaceSeed(deck, languageTag, options?.excludedPassageId),
+      deck,
+    };
 
   try {
     const payload = await fetchJson(
