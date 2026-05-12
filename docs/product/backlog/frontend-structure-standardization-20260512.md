@@ -2032,3 +2032,53 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 82차 — link member modal component feature 이동
+
+### 작업내용
+
+- `app/counseling-service/_components/link-member-modal.tsx`를 `features/counseling-record-workspace/components/link-member-modal.tsx`로 이동한다.
+- app `_components/index.ts`는 feature component re-export만 담당하게 유지해 기존 page 조립 경로의 변경 폭을 줄인다.
+- 수강생 연결/해제/새 등록, mismatch warning, 검색/스페이스 선택 동작은 변경하지 않는다.
+
+### 논의 필요
+
+- `member-panel`도 같은 방식으로 즉시 feature component로 이동할지 여부.
+
+### 선택지
+
+1. 이번 차수는 link member modal만 이동하고 member panel은 후속 PR로 둔다.
+2. link member modal과 member panel을 한 번에 이동한다.
+
+### 추천
+
+- 1번. 파일 이동은 import 경계와 회귀 범위를 작게 유지하기 위해 한 컴포넌트씩 검증한다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.
+
+## 83차 — 프론트 구조 표준 공식 문서와 에이전트 스킬 고정
+
+### 작업내용
+
+- `docs/architecture/web-frontend-structure.md`를 추가해 app route boundary, feature boundary, server state, 상태 소유권, God component/hook 분해 기준을 팀 규칙으로 명세한다.
+- `.claude/commands/frontend-structure-conventions.md`를 추가해 AI 에이전트가 같은 기준을 실행 체크리스트로 사용하게 한다.
+- `bin/sync-skills.sh`로 Codex wrapper를 생성해 Claude/Codex 양쪽 스킬 표준을 맞춘다.
+
+### 논의 필요
+
+- 이 규칙을 `docs/agent-rules`로도 복제할지 여부.
+
+### 선택지
+
+1. 공식 SSOT는 `docs/architecture/web-frontend-structure.md` 하나로 두고, 스킬은 이를 참조한다.
+2. `docs/agent-rules/frontend-structure.md`에도 같은 내용을 복제한다.
+
+### 추천
+
+- 1번. 구조 규칙은 architecture 문서가 SSOT이고, agent-rules/skill은 포인터로 유지해야 drift가 줄어든다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.

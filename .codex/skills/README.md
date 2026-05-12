@@ -71,6 +71,7 @@ These are generated under `.codex/skills/SHARED/` from `.claude/commands` or `.c
 
 - `ai-call-wrapper`
 - `drizzle-migration-workflow`
+- `frontend-structure-conventions`
 - `guest-auth-branching`
 - `race-server-conventions`
 - `route-state-contract`
