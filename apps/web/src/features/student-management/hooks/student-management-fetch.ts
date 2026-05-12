@@ -8,8 +8,9 @@ export async function studentManagementFetchJson<T>(
   if (!response.ok) {
     const payload = (await response.json().catch(() => null)) as {
       message?: string;
+      error?: string;
     } | null;
-    throw new Error(payload?.message || fallbackErrorMessage);
+    throw new Error(payload?.message || payload?.error || fallbackErrorMessage);
   }
 
   return (await response.json()) as T;
@@ -25,7 +26,8 @@ export async function studentManagementFetchVoid(
   if (!response.ok) {
     const payload = (await response.json().catch(() => null)) as {
       message?: string;
+      error?: string;
     } | null;
-    throw new Error(payload?.message || fallbackErrorMessage);
+    throw new Error(payload?.message || payload?.error || fallbackErrorMessage);
   }
 }
