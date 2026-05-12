@@ -14,26 +14,20 @@ import {
 } from "./components/community-guest-identity-confirm-modal";
 import { CommunityChatWidget } from "./components/community-chat-widget";
 import { useCommunityFeed } from "./hooks/use-community-feed";
+import {
+  COMMUNITY_CATEGORIES,
+  WRITABLE_CATEGORIES,
+  parseCommunityPost,
+  serializeCommunityPost,
+  type CommunityCategory,
+  type WritableCommunityCategory,
+} from "./community-post-format";
 
-const COMMUNITY_CATEGORIES = [
-  "전체",
-  "잡담",
-  "타자친구 모집",
-  "카드친구 모집",
-  "관리자에게 아무말/조언",
-] as const;
-
-type CommunityCategory = (typeof COMMUNITY_CATEGORIES)[number];
-type WritableCommunityCategory = Exclude<CommunityCategory, "전체">;
 type PendingGuestIdentityAction = {
   actionLabel: string;
   run: (identity: CommunityGuestIdentity) => Promise<void>;
   resolve: (completed: boolean) => void;
 } | null;
-
-const WRITABLE_CATEGORIES = COMMUNITY_CATEGORIES.filter(
-  (category): category is WritableCommunityCategory => category !== "전체"
-);
 
 function getCategoryBadgeClassName(category: WritableCommunityCategory) {
   switch (category) {
@@ -70,32 +64,6 @@ function formatRelativeTime(isoDate: string) {
   if (diffHours < 24) return `${diffHours}시간 전`;
 
   return formatKoreanDateTime(isoDate);
-}
-
-function serializeCommunityPost(input: {
-  category: WritableCommunityCategory;
-  title: string;
-  content: string;
-}) {
-  return `[${input.category}] ${input.title.trim()}\n${input.content.trim()}`;
-}
-
-export function parseCommunityPost(post: Pick<ChatServiceFeedPost, "body">) {
-  const normalizedBody = post.body.trim();
-  const match = normalizedBody.match(/^\[(.+?)\]\s*(.+?)(?:\n([\s\S]*))?$/);
-  const matchedCategory = match?.[1];
-  const category = WRITABLE_CATEGORIES.includes(
-    matchedCategory as WritableCommunityCategory
-  )
-    ? (matchedCategory as WritableCommunityCategory)
-    : "잡담";
-  const title = match?.[2]?.trim() || normalizedBody.split("\n")[0] || "글";
-  const content =
-    match?.[3]?.trim() ||
-    normalizedBody.split("\n").slice(1).join("\n").trim() ||
-    normalizedBody;
-
-  return { category, title, content };
 }
 
 function CategoryBadge({ category }: { category: WritableCommunityCategory }) {

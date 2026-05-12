@@ -35,6 +35,14 @@ public class ChatServiceFeedController {
 		return service.list(currentProfileId);
 	}
 
+	@GetMapping("/chat-service/feed/{postId}")
+	public ChatServiceFeedMutationResponse get(
+		@RequestHeader(value = "X-Yeon-Chat-Profile-Id", required = false) UUID currentProfileId,
+		@PathVariable UUID postId
+	) {
+		return service.get(currentProfileId, postId);
+	}
+
 	@PostMapping("/chat-service/feed")
 	@ResponseStatus(HttpStatus.CREATED)
 	public ChatServiceFeedMutationResponse create(

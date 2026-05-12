@@ -10,8 +10,9 @@ import {
   persistCommunityGuestIdentityConfirmDismissed,
   type CommunityGuestIdentity,
 } from "./components/community-guest-identity-confirm-modal";
-import { parseCommunityPost } from "./community-page";
+import { parseCommunityPost } from "./community-post-format";
 import { useCommunityFeed } from "./hooks/use-community-feed";
+import { type ChatServiceFeedPost } from "./chat-service-api";
 
 function formatKoreanDateTime(isoDate: string) {
   return new Intl.DateTimeFormat("ko-KR", {
@@ -26,7 +27,13 @@ type PendingGuestIdentityAction = {
   resolve: (completed: boolean) => void;
 } | null;
 
-export function CommunityPostDetailPage({ postId }: { postId: string }) {
+export function CommunityPostDetailPage({
+  postId,
+  initialPost,
+}: {
+  postId: string;
+  initialPost: ChatServiceFeedPost;
+}) {
   const {
     posts,
     isPostsLoading,
@@ -45,14 +52,13 @@ export function CommunityPostDetailPage({ postId }: { postId: string }) {
     isDeletingReply,
     replyDeleteErrors,
     postErrors,
-    loadPosts,
     loadReplies,
     setReplyDraft,
     submitReply,
     updatePost,
     deletePost,
     deleteReply,
-  } = useCommunityFeed();
+  } = useCommunityFeed({ initialPosts: [initialPost] });
   const [isEditing, setIsEditing] = useState(false);
   const [editDraft, setEditDraft] = useState("");
   const [pendingGuestIdentityAction, setPendingGuestIdentityAction] =
@@ -63,10 +69,6 @@ export function CommunityPostDetailPage({ postId }: { postId: string }) {
     [postId, posts]
   );
   const replies = repliesByPost[postId] ?? [];
-
-  useEffect(() => {
-    void loadPosts();
-  }, [loadPosts]);
 
   useEffect(() => {
     if (post) {

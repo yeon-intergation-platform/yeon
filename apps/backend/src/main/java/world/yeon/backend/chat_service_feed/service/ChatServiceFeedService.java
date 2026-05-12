@@ -31,6 +31,17 @@ public class ChatServiceFeedService {
 	}
 
 	@Transactional(readOnly = true)
+	public ChatServiceFeedMutationResponse get(UUID currentProfileId, UUID postId) {
+		var blocked = listBlockedRelationIds(currentProfileId);
+		var row = repository.findFeedPost(postId);
+		if (row == null || row.replyToPostId() != null || blocked.contains(row.authorId())) {
+			throw new ChatServiceFeedServiceException(404, "CHAT_SERVICE_FEED_NOT_FOUND", "피드 글을 찾지 못했습니다.");
+		}
+		var replyCounts = repository.listReplyCounts(java.util.List.of(row.id()), blocked);
+		return toMutationResponse(row, replyCounts.getOrDefault(row.id(), 0));
+	}
+
+	@Transactional(readOnly = true)
 	public ChatServiceFeedRepliesResponse listReplies(UUID currentProfileId, UUID postId) {
 		var blocked = listBlockedRelationIds(currentProfileId);
 		var rows = repository.listReplies(postId);
