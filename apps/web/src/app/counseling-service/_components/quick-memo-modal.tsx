@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { X } from "lucide-react";
 import type { CounselingRecordDetail } from "@yeon/api-contract/counseling-records";
-import type { RecordItem } from "../_lib/types";
+import type { RecordItem } from "@/features/counseling-record-workspace/lib/types";
 import { resolveApiHrefForCurrentPath } from "@/lib/app-route-paths";
 import { counselingWorkspaceFetchJson } from "@/features/counseling-record-workspace/api/counseling-workspace-fetch";
 

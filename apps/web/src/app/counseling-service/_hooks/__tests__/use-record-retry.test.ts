@@ -2,7 +2,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { renderHook, act, waitFor } from "@testing-library/react";
 import { useRecordRetry } from "@/features/counseling-record-workspace/hooks/use-record-retry";
-import type { RecordItem } from "../../_lib/types";
+import type { RecordItem } from "@/features/counseling-record-workspace/lib/types";
 
 function makeSelectedRecord(overrides: Partial<RecordItem> = {}): RecordItem {
   return {

@@ -1706,3 +1706,29 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 69차 — counseling-service app \_lib shim 제거
+
+### 작업내용
+
+- `app/counseling-service/_lib/*`에 남아 있는 feature lib 재수출 shim을 제거한다.
+- 실제 구현 SSOT는 `features/counseling-record-workspace/lib`와 `constants`에만 남긴다.
+- 현재 참조가 없는 shim만 삭제해 route 동작은 변경하지 않는다.
+
+### 논의 필요
+
+- `_lib` 파일들은 구현 중복은 아니지만 app 경로에 같은 이름의 lib가 남아 있어 중복 SSOT처럼 보인다. 참조가 없다면 제거하는 편이 구조 감사와 후속 변경에 안전하다.
+
+### 선택지
+
+1. 참조 없는 `_lib` shim을 삭제한다.
+2. 호환성을 위해 shim을 계속 둔다.
+3. deprecation comment만 추가한다.
+
+### 추천
+
+- 선택지 1. 현재 참조가 없으므로 삭제해 app 내부 feature lib 표면을 줄인다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.

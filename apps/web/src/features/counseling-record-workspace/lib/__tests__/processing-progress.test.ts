@@ -6,13 +6,13 @@ describe("getProcessingChecklistStep", () => {
   it("백엔드 processingStage를 체크리스트 step으로 변환한다", () => {
     expect(getProcessingChecklistStep({ processingStage: "queued" })).toBe(0);
     expect(
-      getProcessingChecklistStep({ processingStage: "transcribing" }),
+      getProcessingChecklistStep({ processingStage: "transcribing" })
     ).toBe(2);
     expect(
-      getProcessingChecklistStep({ processingStage: "resolving_speakers" }),
+      getProcessingChecklistStep({ processingStage: "resolving_speakers" })
     ).toBe(3);
     expect(getProcessingChecklistStep({ processingStage: "completed" })).toBe(
-      5,
+      5
     );
   });
 
@@ -21,7 +21,7 @@ describe("getProcessingChecklistStep", () => {
       getProcessingChecklistStep({
         processingStage: "analyzing",
         analysisStatus: "ready",
-      }),
+      })
     ).toBe(5);
   });
 });
