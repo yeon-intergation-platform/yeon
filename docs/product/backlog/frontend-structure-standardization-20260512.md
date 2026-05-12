@@ -2490,7 +2490,6 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
-
 ## 100차 — 타자 덱 관리 컴포넌트 역할 분리
 
 ### 작업내용
@@ -2515,3 +2514,55 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 101차 — 프론트 규칙 SSOT ↔ Codex Skill wrapper 추적성 점검
+
+### 작업내용
+
+- `.claude/commands/frontend-structure-conventions.md`와 `.claude/commands/tanstack-query-conventions.md`를 단일 진실원천으로 두고, 현재 `.codex/skills/SHARED/frontend-structure-conventions/SKILL.md`, `.codex/skills/SHARED/tanstack-query-conventions/SKILL.md`가 이를 정확히 참조하는지 점검한다.
+- 룰 변경이 필요한 경우 **wrapper는 수정하지 않고**, SSOT 문서를 갱신한 뒤 `bin/sync-skills.sh`로 `.codex/skills` 동기화 상태를 점검한다.
+- 작업 결과만 `docs/product/backlog`와 `ai-log`에 남겨 다음 세션에서 `git diff` 충돌 없이 바로 이어서 진행할 수 있게 한다.
+- 현재 단계에서는 코드/로직 변경 없이 규칙 추적성 문서 갱신과 백로그/로그만 완료한다.
+
+### 논의 필요
+
+- 규칙 SSOT 변경이 필요한지, 아니면 현재 문서 상태를 유지하고 추적성 점검만 할지 여부.
+
+### 선택지
+
+1. 이번 차수에서 규칙 문서만 점검하고 종료한다.
+2. 규칙 갱신 포인트까지 확인 후 즉시 다음 차수에서 코드 전환 작업을 시작한다.
+
+### 추천
+
+- 1번. 현재는 규칙 추적성만 정리해 다음 세션의 착수 기준점을 고정하고, 코드 전환은 별도 차수로 둔다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.
+
+## 102차 — 다음 전개 후보 선별: 학생관리/타자방/카드방 대형 파일 1개씩 분해
+
+### 작업내용
+
+- `student-management` 핵심 화면(예: `student-check-board-panel.tsx`), `typing-service`, `card-room` 경량 후보 중 한 파일만 1차 분해 대상으로 선정한다.
+- 1차 분해 기준은 `앱 route`와 `feature container/view` 경계 분리, `queryKey`/`fetch` 경계 분리 후 상태 오너십이 명확해지는 순으로 정한다.
+- 다음 세션에서 1개 파일을 대상으로 `route bridge`만 남기고 God component를 나눠서 PR을 만든다.
+
+### 논의 필요
+
+- 1차 분해 대상을 학생관리 `student-check-board-panel`로 할지, typing/카드방 패널 파일 중 최신 회귀 위험이 낮은 항목부터 할지.
+
+### 선택지
+
+1. 학생관리 `student-check-board-panel.tsx`부터 정리한다.
+2. typing-service/카드방 경량 후보 중 최신 회귀 위험이 낮은 항목부터 정리한다.
+
+### 추천
+
+- 학생관리 우선. 최근 백로그에서 `백엔드 경계`와 `클라이언트 상태 경계`가 다시 얽히기 쉬운 구간이라 우선 정리한다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.
+
