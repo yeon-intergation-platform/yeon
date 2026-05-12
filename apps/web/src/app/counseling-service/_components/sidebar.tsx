@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { RecordItem } from "@/features/counseling-record-workspace/lib/types";
 import type { Space } from "../_hooks";
 import type { MemberWithStatus } from "../_hooks";
@@ -9,15 +9,13 @@ import { useClickOutside } from "@/lib/hooks/use-click-outside";
 import { CreateSpaceModal } from "./create-space-modal";
 import { useCounselingSidebarLayout } from "@/features/counseling-service-shell/counseling-sidebar-layout-context";
 import { useAppRoute } from "@/lib/app-route-context";
-import {
-  SidebarContextMenu,
-  type SidebarContextMenuAction,
-} from "@/features/counseling-record-workspace/components/sidebar-context-menu";
-import type { MemberItemActions } from "@/features/counseling-record-workspace/components/sidebar-member-list-item";
+import { SidebarContextMenu } from "@/features/counseling-record-workspace/components/sidebar-context-menu";
 import { SidebarMembersSection } from "@/features/counseling-record-workspace/components/sidebar-members-section";
 import { SidebarSpaceSelector } from "@/features/counseling-record-workspace/components/sidebar-space-selector";
 import { UnlinkedRecordsSection } from "@/features/counseling-record-workspace/components/sidebar-unlinked-records-section";
 import { useCounselingSidebarSelection } from "@/features/counseling-record-workspace/hooks/use-counseling-sidebar-selection";
+import { useCounselingSidebarContextMenuActions } from "@/features/counseling-record-workspace/hooks/use-counseling-sidebar-context-menu-actions";
+import { useCounselingSidebarMemberItemActions } from "@/features/counseling-record-workspace/hooks/use-counseling-sidebar-member-item-actions";
 
 export interface SidebarProps {
   records: RecordItem[];
@@ -74,8 +72,9 @@ export function Sidebar({
 
   const unlinkedRecords = records.filter((r) => r.memberId === null);
 
-  const toggleMember = (id: string) =>
+  const toggleMember = useCallback((id: string) => {
     setExpandedMemberId((prev) => (prev === id ? null : id));
+  }, []);
 
   const visibleRecordOrder = useMemo(
     () => [
@@ -181,120 +180,20 @@ export function Sidebar({
     [selection.kind, selectedIdSet]
   );
 
-  // ── ref 기반 안정 핸들러 (MemberListItem에 전달) ──────────────
-  const sidebarActionsRef = useRef({
-    handleSelectableClick: (() => {}) as typeof handleSelectableClick,
-    beginDragSelection: (() => {}) as typeof beginDragSelection,
-    extendDragSelection: (() => {}) as typeof extendDragSelection,
-    openContextMenu: (() => {}) as typeof handleOpenContextMenu,
-    onSelectMember,
-    onSelect,
-    setExpandedMemberId,
-    memberOrderIds,
-    visibleRecordOrderIds,
-    visibleRecordOrder,
-    visibleRecordIndexById,
-    members,
-  });
-  // render마다 최신값으로 갱신 — ref이므로 자식 re-render를 유발하지 않음
-  sidebarActionsRef.current = {
-    handleSelectableClick,
+  const memberItemActions = useCounselingSidebarMemberItemActions({
     beginDragSelection,
     extendDragSelection,
-    openContextMenu: handleOpenContextMenu,
-    onSelectMember,
-    onSelect,
-    setExpandedMemberId,
+    handleSelectableClick,
     memberOrderIds,
     visibleRecordOrderIds,
     visibleRecordOrder,
     visibleRecordIndexById,
     members,
-  };
-
-  // 안정 actions 객체 — useCallback으로 참조 고정, 내부에서 ref.current 사용
-  const memberItemActions = useMemo<MemberItemActions>(
-    () => ({
-      onMemberClick: (e, id, _index, _name) => {
-        const a = sidebarActionsRef.current;
-        const index = a.members.findIndex((m) => m.id === id);
-        a.handleSelectableClick({
-          event: e,
-          kind: "member",
-          id,
-          index,
-          orderedIds: a.memberOrderIds,
-          onDefault: () => {
-            a.onSelectMember(id);
-            a.setExpandedMemberId(id);
-          },
-        });
-      },
-      onMemberMouseDown: (e, id) => {
-        const a = sidebarActionsRef.current;
-        a.beginDragSelection({
-          event: e,
-          kind: "member",
-          id,
-          orderedIds: a.memberOrderIds,
-        });
-      },
-      onMemberMouseEnter: (e, id, _index) => {
-        const a = sidebarActionsRef.current;
-        const index = a.members.findIndex((m) => m.id === id);
-        a.extendDragSelection({
-          event: e,
-          kind: "member",
-          id,
-          index,
-          orderedIds: a.memberOrderIds,
-        });
-      },
-      onMemberContextMenu: (e, id, label, _index) => {
-        const a = sidebarActionsRef.current;
-        const index = a.members.findIndex((m) => m.id === id);
-        a.openContextMenu(e, { kind: "member", id, label, index });
-      },
-      onRecordClick: (e, id, _index) => {
-        const a = sidebarActionsRef.current;
-        const index = a.visibleRecordIndexById.get(id) ?? 0;
-        a.handleSelectableClick({
-          event: e,
-          kind: "record",
-          id,
-          index,
-          orderedIds: a.visibleRecordOrder.map((r) => r.id),
-          onDefault: () => a.onSelect(id),
-        });
-      },
-      onRecordMouseDown: (e, id) => {
-        const a = sidebarActionsRef.current;
-        a.beginDragSelection({
-          event: e,
-          kind: "record",
-          id,
-          orderedIds: a.visibleRecordOrderIds,
-        });
-      },
-      onRecordMouseEnter: (e, id, _index) => {
-        const a = sidebarActionsRef.current;
-        const index = a.visibleRecordIndexById.get(id) ?? 0;
-        a.extendDragSelection({
-          event: e,
-          kind: "record",
-          id,
-          index,
-          orderedIds: a.visibleRecordOrderIds,
-        });
-      },
-      onRecordContextMenu: (e, id, label, _index) => {
-        const a = sidebarActionsRef.current;
-        const index = a.visibleRecordIndexById.get(id) ?? 0;
-        a.openContextMenu(e, { kind: "record", id, label, index });
-      },
-    }),
-    [] // deps 없음 — ref 기반이므로 항상 최신값 사용, 참조 영구 고정
-  );
+    onSelectMember,
+    onSelectRecord: onSelect,
+    setExpandedMemberId,
+    onOpenContextMenu: handleOpenContextMenu,
+  });
 
   useEffect(() => {
     if (!sidebarCollapsed) {
@@ -303,103 +202,50 @@ export function Sidebar({
 
     setShowSpaceDropdown(false);
     closeContextMenu();
-  }, [sidebarCollapsed]);
+  }, [closeContextMenu, sidebarCollapsed]);
 
-  const contextActions = useMemo(() => {
-    if (!contextMenu) return [] as SidebarContextMenuAction[];
+  const handleOpenSpace = useCallback(
+    (spaceId: string) => {
+      onSpaceChange(spaceId);
+      setShowSpaceDropdown(false);
+    },
+    [onSpaceChange]
+  );
 
-    const single = contextMenu.ids.length === 1;
-    const actions: SidebarContextMenuAction[] = [];
+  const handleOpenMember = useCallback(
+    (memberId: string) => {
+      onSelectMember(memberId);
+      toggleMember(memberId);
+    },
+    [onSelectMember, toggleMember]
+  );
 
-    if (contextMenu.kind === "space" && single) {
-      actions.push({
-        key: "open-space",
-        label: "열기",
-        action: () => {
-          onSpaceChange(contextMenu.primaryId);
-          setShowSpaceDropdown(false);
-          closeContextMenu();
-        },
-      });
-      actions.push({
-        key: "goto-student-management",
-        label: "수강생 관리로 이동",
-        action: () => {
-          router.push(resolveAppHref("/counseling-service/student-management"));
-          closeContextMenu();
-        },
-      });
-    }
+  const handleOpenStudentManagement = useCallback(() => {
+    router.push(resolveAppHref("/counseling-service/student-management"));
+  }, [resolveAppHref, router]);
 
-    if (contextMenu.kind === "member" && single) {
-      actions.push({
-        key: "open-member",
-        label: "열기",
-        action: () => {
-          onSelectMember(contextMenu.primaryId);
-          toggleMember(contextMenu.primaryId);
-          closeContextMenu();
-        },
-      });
-      actions.push({
-        key: "open-member-management",
-        label: "수강생 관리에서 열기",
-        action: () => {
-          router.push(
-            resolveAppHref(
-              `/counseling-service/student-management/${contextMenu.primaryId}`
-            )
-          );
-          closeContextMenu();
-        },
-      });
-      actions.push({
-        key: "export-member-report",
-        label: "리포트 내보내기",
-        action: async () => {
-          await onExportMember(contextMenu.primaryId);
-          closeContextMenu();
-        },
-      });
-    }
+  const handleOpenMemberManagement = useCallback(
+    (memberId: string) => {
+      router.push(
+        resolveAppHref(`/counseling-service/student-management/${memberId}`)
+      );
+    },
+    [resolveAppHref, router]
+  );
 
-    if (contextMenu.kind === "record" && single) {
-      actions.push({
-        key: "open-record",
-        label: "열기",
-        action: () => {
-          onSelect(contextMenu.primaryId);
-          closeContextMenu();
-        },
-      });
-      actions.push({
-        key: "export-record-docx",
-        label: "DOCX 내보내기",
-        action: async () => {
-          await onExportRecord(contextMenu.primaryId);
-          closeContextMenu();
-        },
-      });
-    }
-
-    actions.push({
-      key: "delete",
-      label: contextDeleteLabel,
-      destructive: true,
-      action: () => handleContextDelete(),
-    });
-
-    return actions;
-  }, [
-    contextDeleteLabel,
+  const contextActions = useCounselingSidebarContextMenuActions({
     contextMenu,
+    contextDeleteLabel,
+    onOpenSpace: handleOpenSpace,
+    onOpenMember: handleOpenMember,
+    onOpenRecord: onSelect,
+    onOpenStudentManagement: handleOpenStudentManagement,
+    onOpenMemberManagement: handleOpenMemberManagement,
     onExportMember,
     onExportRecord,
-    onSelect,
-    onSelectMember,
-    onSpaceChange,
-    router,
-  ]);
+    onDelete: handleContextDelete,
+    onCloseContextMenu: closeContextMenu,
+  });
 
   if (sidebarCollapsed) {
     return null;
