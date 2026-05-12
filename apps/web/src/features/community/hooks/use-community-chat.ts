@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+import { readCommunityGuestNickname } from "../community-guest-identity";
 import {
   readPresenceSessionId,
   sendPresenceHeartbeat,
@@ -16,8 +17,6 @@ type ErrorState = string | null;
 type UseCommunityChatOptions = {
   pollIntervalMs?: number;
 };
-
-const DEFAULT_GUEST_NICKNAME = "익명이";
 
 export function useCommunityChat({
   pollIntervalMs = 6000,
@@ -110,7 +109,7 @@ export function useCommunityChat({
         const response = await communityChatApi.sendMessage({
           body: trimmed,
           guestSessionId,
-          guestNickname: DEFAULT_GUEST_NICKNAME,
+          guestNickname: readCommunityGuestNickname(),
         });
         setMessages((current) => [...current, response.message]);
         setCurrentSenderId(response.message.senderId);
