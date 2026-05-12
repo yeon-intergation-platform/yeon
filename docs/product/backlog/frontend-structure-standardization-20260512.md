@@ -1110,3 +1110,28 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 46차 — sidebar unlinked record item component 추출
+
+### 작업내용
+
+- `sidebar.tsx`의 미분류 상담 기록 button 렌더링을 feature component로 추출한다.
+- sidebar는 selection/drag/context menu 핸들러 연결만 유지한다.
+
+### 논의 필요
+
+- 미분류 섹션 전체를 추출할 수도 있지만, 상태 계산과 order map 의존이 있어 이번 차수는 항목 컴포넌트만 분리한다.
+
+### 선택지
+
+1. `UnlinkedRecordListItem`만 추출한다.
+2. 미분류 섹션 전체를 추출한다.
+3. sidebar context menu 상태까지 hook으로 분리한다.
+
+### 추천
+
+- 선택지 1. 안전한 presentational 추출로 sidebar 크기를 계속 줄인다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.
