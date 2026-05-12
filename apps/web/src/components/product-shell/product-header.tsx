@@ -1,10 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { useState, type ComponentPropsWithoutRef, type ReactNode } from "react";
-import { CircleUserRound, Settings } from "lucide-react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type ComponentPropsWithoutRef,
+  type ReactNode,
+} from "react";
+import { CircleUserRound, LogOut, Settings, UserRound } from "lucide-react";
 
 import { TypingBgmButton } from "@/features/typing-service/typing-bgm-button";
+import { useLogout } from "@/lib/use-logout";
 
 type ProductHeaderProps = {
   children: ReactNode;
@@ -152,14 +159,78 @@ export function ProductHeaderProfileButton({
 }: {
   href?: string;
 }) {
+  const [open, setOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement | null>(null);
+  const { logout, isLoggingOut } = useLogout();
+
+  useEffect(() => {
+    if (!open) return;
+
+    function handlePointerDown(event: PointerEvent) {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setOpen(false);
+      }
+    }
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [open]);
+
   return (
-    <Link
-      href={href}
-      aria-label="내정보"
-      title="내정보"
-      className="flex shrink-0 items-center justify-center rounded-lg border border-[#e5e5e5] bg-white p-2 text-[#888] no-underline transition-colors hover:border-[#aaa] hover:text-[#111]"
-    >
-      <CircleUserRound size={16} />
-    </Link>
+    <div ref={menuRef} className="relative shrink-0">
+      <button
+        type="button"
+        aria-label="내정보 메뉴"
+        title="내정보"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        onClick={() => setOpen((value) => !value)}
+        className="flex items-center justify-center rounded-lg border border-[#e5e5e5] bg-white p-2 text-[#888] transition-colors hover:border-[#aaa] hover:text-[#111]"
+      >
+        <CircleUserRound size={16} />
+      </button>
+
+      {open ? (
+        <div
+          role="menu"
+          aria-label="내정보 메뉴"
+          className="absolute right-0 top-full z-50 mt-2 w-40 overflow-hidden rounded-xl border border-[#e5e5e5] bg-white py-1 text-[13px] text-[#333] shadow-lg"
+        >
+          <Link
+            href={href}
+            role="menuitem"
+            className="flex items-center gap-2 px-3 py-2 text-[#333] no-underline transition-colors hover:bg-[#f7f7f7]"
+            onClick={() => setOpen(false)}
+          >
+            <UserRound size={14} />
+            내정보보기
+          </Link>
+          <button
+            type="button"
+            role="menuitem"
+            className="flex w-full items-center gap-2 border-0 bg-transparent px-3 py-2 text-left text-[13px] text-[#c2410c] transition-colors hover:bg-[#fff7ed] disabled:cursor-not-allowed disabled:opacity-60"
+            onClick={() => {
+              setOpen(false);
+              void logout();
+            }}
+            disabled={isLoggingOut}
+          >
+            <LogOut size={14} />
+            {isLoggingOut ? "로그아웃 중..." : "로그아웃"}
+          </button>
+        </div>
+      ) : null}
+    </div>
   );
 }
