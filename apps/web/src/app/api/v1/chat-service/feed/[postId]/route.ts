@@ -11,7 +11,10 @@ import {
   deleteChatServiceFeedPostInSpring,
   updateChatServiceFeedPostInSpring,
 } from "@/server/chat-service-feed-spring-client";
-import { getOrCreateChatServiceGuestProfile } from "@/server/services/chat-service/common";
+import {
+  ChatServiceAuthSpringBackendHttpError,
+  resolveChatServiceGuestProfileInSpring,
+} from "@/server/chat-service-auth-spring-client";
 import { ServiceError } from "@/server/services/service-error";
 
 import {
@@ -45,7 +48,7 @@ async function resolveFeedProfileId(
     );
   }
 
-  const profile = await getOrCreateChatServiceGuestProfile({
+  const profile = await resolveChatServiceGuestProfileInSpring({
     guestNickname: actor.guestNickname,
     guestPassword: actor.guestPassword,
   });
@@ -78,6 +81,9 @@ export async function PATCH(request: NextRequest, { params }: FeedPostParams) {
     if (error instanceof ChatServiceFeedSpringBackendHttpError) {
       return jsonChatServiceError(error.message, error.status);
     }
+    if (error instanceof ChatServiceAuthSpringBackendHttpError) {
+      return jsonChatServiceError(error.message, error.status);
+    }
 
     console.error(error);
     return jsonChatServiceError("글을 수정하지 못했습니다.", 500);
@@ -106,6 +112,9 @@ export async function DELETE(request: NextRequest, { params }: FeedPostParams) {
       return jsonChatServiceError(error.message, error.status);
     }
     if (error instanceof ChatServiceFeedSpringBackendHttpError) {
+      return jsonChatServiceError(error.message, error.status);
+    }
+    if (error instanceof ChatServiceAuthSpringBackendHttpError) {
       return jsonChatServiceError(error.message, error.status);
     }
 

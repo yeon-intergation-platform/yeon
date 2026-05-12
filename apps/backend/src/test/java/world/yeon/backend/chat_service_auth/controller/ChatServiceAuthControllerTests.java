@@ -47,6 +47,13 @@ class ChatServiceAuthControllerTests {
 			.andExpect(jsonPath("$.authenticated").value(true));
 	}
 
+	@Test void guestProfile응답을반환한다() throws Exception {
+		when(service.resolveGuestProfile(eq("익명"), eq("1234"))).thenReturn(new ChatServiceSessionUserResponse(UUID.fromString("11111111-1111-4111-8111-111111111111"), "익명", "익명", "익명", null, "", 1000));
+		mockMvc.perform(post("/chat-service/auth/guest-profile").contentType("application/json").content("{\"guestNickname\":\"익명\",\"guestPassword\":\"1234\"}").header("X-Yeon-Internal-Token", "test-internal-token"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.nickname").value("익명"));
+	}
+
 	@Test void 서비스오류를반환한다() throws Exception {
 		when(service.requestOtp(eq("01012345678"))).thenThrow(new ChatServiceAuthServiceException(400, "CHAT_SERVICE_PHONE_INVALID", "전화번호 형식이 올바르지 않습니다."));
 		mockMvc.perform(post("/chat-service/auth/request-otp").contentType("application/json").content("{\"phoneNumber\":\"01012345678\"}").header("X-Yeon-Internal-Token", "test-internal-token"))
