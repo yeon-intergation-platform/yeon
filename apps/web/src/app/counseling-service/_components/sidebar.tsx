@@ -9,10 +9,8 @@ import { useClickOutside } from "@/lib/hooks/use-click-outside";
 import { CreateSpaceModal } from "./create-space-modal";
 import { useCounselingSidebarLayout } from "@/features/counseling-service-shell/counseling-sidebar-layout-context";
 import { useAppRoute } from "@/lib/app-route-context";
-import {
-  MemberListItem,
-  type MemberItemActions,
-} from "@/features/counseling-record-workspace/components/sidebar-member-list-item";
+import type { MemberItemActions } from "@/features/counseling-record-workspace/components/sidebar-member-list-item";
+import { SidebarMembersSection } from "@/features/counseling-record-workspace/components/sidebar-members-section";
 import { UnlinkedRecordsSection } from "@/features/counseling-record-workspace/components/sidebar-unlinked-records-section";
 
 export interface SidebarProps {
@@ -905,50 +903,19 @@ export function Sidebar({
 
       {/* 스크롤 영역 */}
       <div className="scrollbar-subtle flex-1 overflow-y-auto">
-        {/* 수강생 섹션 */}
-        <div className="px-2 py-2">
-          <div
-            className="flex items-center justify-between px-2 py-1 mb-0.5"
-            data-tutorial="members-section"
-          >
-            <span className="text-[10px] font-semibold text-text-dim uppercase tracking-widest">
-              수강생
-            </span>
-            {!membersLoading && (
-              <span className="text-[10px] text-text-dim">
-                {members.length}명
-              </span>
-            )}
-          </div>
-
-          {membersLoading ? (
-            <div className="px-3 py-3 text-xs text-text-dim text-center">
-              불러오는 중…
-            </div>
-          ) : members.length === 0 ? (
-            <div className="px-3 py-3 text-xs text-text-dim">
-              {currentSpace
-                ? "등록된 수강생이 없습니다"
-                : "스페이스를 선택하세요"}
-            </div>
-          ) : (
-            members.map((member) => (
-              <MemberListItem
-                key={member.id}
-                member={member}
-                memberRecords={memberRecordsMap.get(member.id)!}
-                isMultiSelected={
-                  selection.kind === "member" && selectedIdSet.has(member.id)
-                }
-                isActive={member.id === selectedMemberId}
-                isExpanded={expandedMemberId === member.id}
-                selectedRecordId={selectedId}
-                recordMultiSelectedSet={recordMultiSelectedSet}
-                actions={memberItemActions}
-              />
-            ))
-          )}
-        </div>
+        <SidebarMembersSection
+          members={members}
+          membersLoading={membersLoading}
+          hasCurrentSpace={currentSpace !== null}
+          memberRecordsMap={memberRecordsMap}
+          isMemberSelection={selection.kind === "member"}
+          selectedIdSet={selectedIdSet}
+          selectedMemberId={selectedMemberId}
+          expandedMemberId={expandedMemberId}
+          selectedRecordId={selectedId}
+          recordMultiSelectedSet={recordMultiSelectedSet}
+          actions={memberItemActions}
+        />
 
         <UnlinkedRecordsSection
           records={unlinkedRecords}
