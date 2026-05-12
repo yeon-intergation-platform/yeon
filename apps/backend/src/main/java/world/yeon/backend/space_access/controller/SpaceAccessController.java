@@ -2,7 +2,6 @@ package world.yeon.backend.space_access.controller;
 
 import java.util.NoSuchElementException;
 import java.util.UUID;
-import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -15,7 +14,6 @@ import world.yeon.backend.space_access.service.SpaceAccessService;
 
 @Validated
 @RestController
-@Profile("jdbc")
 public class SpaceAccessController {
 	private final SpaceAccessService service;
 	public SpaceAccessController(SpaceAccessService service) { this.service = service; }

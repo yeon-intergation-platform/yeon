@@ -21,7 +21,7 @@ import world.yeon.backend.public_check_locations.service.PublicCheckLocationServ
 import world.yeon.backend.public_check_locations.service.PublicCheckLocationServiceException;
 
 @WebMvcTest(PublicCheckLocationController.class)
-@ActiveProfiles("jdbc")
+@ActiveProfiles("dev.local")
 @TestPropertySource(properties = "SPRING_INTERNAL_TOKEN=test-internal-token")
 class PublicCheckLocationControllerTests {
 	private static final UUID OWNER_ID = UUID.fromString("00000000-0000-0000-0000-000000000962");

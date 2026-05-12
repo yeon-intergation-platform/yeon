@@ -3,7 +3,6 @@ package world.yeon.backend.member_fields.reorder.controller;
 import java.util.NoSuchElementException;
 import java.util.UUID;
 
-import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -22,7 +21,6 @@ import world.yeon.backend.member_fields.reorder.service.MemberFieldReorderServic
 
 @Validated
 @RestController
-@Profile("jdbc")
 @RequestMapping("/spaces/{spaceId}/member-tabs/{tabId}/fields/reorder")
 public class MemberFieldReorderController {
 

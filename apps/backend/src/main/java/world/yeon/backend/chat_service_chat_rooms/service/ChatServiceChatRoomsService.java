@@ -5,7 +5,6 @@ import static world.yeon.backend.chat_service_chat_rooms.mapper.ChatServiceChatR
 import static world.yeon.backend.chat_service_chat_rooms.mapper.ChatServiceChatRoomsMapper.toMutationResponse;
 
 import java.util.UUID;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import world.yeon.backend.chat_service_chat_rooms.dto.ChatServiceChatMessageMutationResponse;
@@ -14,7 +13,6 @@ import world.yeon.backend.chat_service_chat_rooms.dto.ChatServiceChatRoomListRes
 import world.yeon.backend.chat_service_chat_rooms.repository.ChatServiceChatRoomsRepository;
 
 @Service
-@Profile("jdbc")
 public class ChatServiceChatRoomsService {
 	private final ChatServiceChatRoomsRepository repository;
 

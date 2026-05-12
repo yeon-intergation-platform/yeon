@@ -7,11 +7,9 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.UUID;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Repository;
 
 @Repository
-@Profile("jdbc")
 public class ChatServiceMyProfileRepository {
 	public record ProfileRow(UUID id, String phoneNumber, String nickname, String ageLabel, String regionLabel, String avatarUrl, String bio, int points, boolean notificationsEnabled) {}
 	public record SummaryRow(UUID id, String nickname, String ageLabel, String regionLabel, String avatarUrl, String bio, int points) {}

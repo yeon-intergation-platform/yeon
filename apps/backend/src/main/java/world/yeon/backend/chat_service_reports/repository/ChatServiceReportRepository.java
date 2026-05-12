@@ -7,11 +7,9 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.UUID;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Repository;
 
 @Repository
-@Profile("jdbc")
 public class ChatServiceReportRepository {
 	public record MessageRoomRow(UUID roomId, UUID userAId, UUID userBId) {}
 	public record ReportRow(UUID id, String targetType, String targetId, String reason, String status, OffsetDateTime createdAt) {}

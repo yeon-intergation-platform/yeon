@@ -3,7 +3,6 @@ package world.yeon.backend.student_board_write.service;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.UUID;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import world.yeon.backend.student_board_read.dto.StudentBoardReadResponse;
 import world.yeon.backend.student_board_read.service.StudentBoardReadService;
@@ -11,7 +10,6 @@ import world.yeon.backend.student_board_write.dto.UpdateStudentBoardRequest;
 import world.yeon.backend.student_board_write.repository.StudentBoardWriteRepository;
 
 @Service
-@Profile("jdbc")
 public class StudentBoardWriteService {
 	private static final String SOURCE_MANUAL = "manual";
 	private final StudentBoardWriteRepository repository;

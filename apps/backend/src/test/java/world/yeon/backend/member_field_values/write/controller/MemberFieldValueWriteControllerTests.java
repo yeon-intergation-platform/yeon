@@ -24,7 +24,7 @@ import world.yeon.backend.member_field_values.write.service.MemberFieldValueWrit
 import world.yeon.backend.member_field_values.write.service.MemberFieldValueWriteServiceException;
 
 @WebMvcTest(MemberFieldValueWriteController.class)
-@ActiveProfiles("jdbc")
+@ActiveProfiles("dev.local")
 @TestPropertySource(properties = "SPRING_INTERNAL_TOKEN=test-internal-token")
 class MemberFieldValueWriteControllerTests {
 

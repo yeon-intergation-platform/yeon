@@ -6,7 +6,6 @@ import java.time.format.DateTimeParseException;
 import java.util.NoSuchElementException;
 import java.util.UUID;
 import java.util.UUID;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import world.yeon.backend.public_check_sessions.dto.CreatePublicCheckSessionRequest;
 import world.yeon.backend.public_check_sessions.dto.CreatePublicCheckSessionResponse;
@@ -16,7 +15,6 @@ import world.yeon.backend.public_check_sessions.dto.UpdatePublicCheckSessionResp
 import world.yeon.backend.public_check_sessions.repository.PublicCheckSessionRepository;
 
 @Service
-@Profile("jdbc")
 public class PublicCheckSessionService {
 	private final PublicCheckSessionRepository repository;
 

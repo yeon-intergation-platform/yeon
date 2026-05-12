@@ -7,7 +7,6 @@ import java.time.ZoneOffset;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import world.yeon.backend.activity_logs.dto.ActivityLogResponse;
 import world.yeon.backend.activity_logs.dto.CreateActivityLogRequest;
@@ -16,7 +15,6 @@ import world.yeon.backend.activity_logs.dto.GetActivityLogsResponse;
 import world.yeon.backend.activity_logs.repository.ActivityLogRepository;
 
 @Service
-@Profile("jdbc")
 public class ActivityLogService {
 	public static final String MEMBER_MEMO_LOG_TYPE = "coaching-note";
 

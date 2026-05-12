@@ -24,7 +24,7 @@ import world.yeon.backend.sheet_export.import_evaluation.dto.SheetExportImportSu
 import world.yeon.backend.sheet_export.import_evaluation.service.SheetExportImportEvaluationService;
 
 @WebMvcTest(SheetExportImportEvaluationController.class)
-@ActiveProfiles("jdbc")
+@ActiveProfiles("dev.local")
 @TestPropertySource(properties = "SPRING_INTERNAL_TOKEN=test-internal-token")
 class SheetExportImportEvaluationControllerTests {
 	@Autowired private MockMvc mockMvc;

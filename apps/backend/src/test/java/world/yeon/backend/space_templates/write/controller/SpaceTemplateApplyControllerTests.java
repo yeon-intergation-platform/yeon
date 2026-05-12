@@ -22,7 +22,7 @@ import world.yeon.backend.space_templates.write.dto.ApplySpaceTemplateRequest;
 import world.yeon.backend.space_templates.write.service.SpaceTemplateWriteService;
 
 @WebMvcTest(SpaceTemplateApplyController.class)
-@ActiveProfiles("jdbc")
+@ActiveProfiles("dev.local")
 class SpaceTemplateApplyControllerTests {
 
 	@Autowired

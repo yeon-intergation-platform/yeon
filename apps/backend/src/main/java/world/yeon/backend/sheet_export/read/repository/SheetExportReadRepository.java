@@ -10,7 +10,6 @@ import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.List;
 
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Repository;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -19,7 +18,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.EntityManager;
 
 @Repository
-@Profile("jdbc")
 public class SheetExportReadRepository {
 
 	public record MemberRow(

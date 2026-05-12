@@ -10,14 +10,12 @@ import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.List;
 
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import jakarta.persistence.EntityManager;
 
 @Repository
-@Profile("jdbc")
 public class SheetExportIntegrationRepository {
 
 	public record IntegrationRow(

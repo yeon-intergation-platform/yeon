@@ -15,7 +15,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import world.yeon.backend.googledrive_browser.dto.GoogleDriveFileResponse;
 import world.yeon.backend.googledrive_browser.dto.GoogleDriveFilesResponse;
@@ -23,7 +22,6 @@ import world.yeon.backend.googledrive_browser.dto.GoogleDriveStatusResponse;
 import world.yeon.backend.googledrive_browser.repository.GoogleDriveBrowserRepository;
 
 @Service
-@Profile("jdbc")
 public class GoogleDriveBrowserService {
 	private static final String TOKEN_URL = "https://oauth2.googleapis.com/token";
 	private static final String TOKEN_INFO_URL = "https://oauth2.googleapis.com/tokeninfo";

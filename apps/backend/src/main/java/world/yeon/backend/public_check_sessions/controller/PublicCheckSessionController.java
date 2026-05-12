@@ -2,7 +2,6 @@ package world.yeon.backend.public_check_sessions.controller;
 
 import java.util.NoSuchElementException;
 import java.util.UUID;
-import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -22,7 +21,6 @@ import world.yeon.backend.public_check_sessions.service.PublicCheckSessionServic
 
 @Validated
 @RestController
-@Profile("jdbc")
 public class PublicCheckSessionController {
 	private final PublicCheckSessionService service;
 

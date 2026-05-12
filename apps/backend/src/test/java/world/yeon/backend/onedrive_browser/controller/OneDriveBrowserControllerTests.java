@@ -23,7 +23,7 @@ import world.yeon.backend.onedrive_browser.service.OneDriveBrowserService;
 import world.yeon.backend.onedrive_browser.service.OneDriveBrowserServiceException;
 
 @WebMvcTest(OneDriveBrowserController.class)
-@ActiveProfiles("jdbc")
+@ActiveProfiles("dev.local")
 @TestPropertySource(properties = "SPRING_INTERNAL_TOKEN=test-internal-token")
 class OneDriveBrowserControllerTests {
 	private static final UUID USER_ID = UUID.fromString("00000000-0000-0000-0000-000000000986");

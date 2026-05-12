@@ -2,13 +2,11 @@ package world.yeon.backend.import_drafts.service;
 
 import java.util.List;
 import java.util.UUID;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import world.yeon.backend.import_drafts.dto.*;
 import world.yeon.backend.import_drafts.repository.ImportDraftRepository;
 
 @Service
-@Profile("jdbc")
 public class ImportDraftService {
 	private static final List<String> VALID_STATUSES = List.of("uploaded","analyzing","analyzed","edited","imported","error");
 	private static final List<String> VALID_PROVIDERS = List.of("local","onedrive","googledrive");

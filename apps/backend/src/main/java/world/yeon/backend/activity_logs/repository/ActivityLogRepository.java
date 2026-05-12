@@ -15,12 +15,10 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 @Repository
-@Profile("jdbc")
 public class ActivityLogRepository {
 
 	public record OwnedMemberRow(

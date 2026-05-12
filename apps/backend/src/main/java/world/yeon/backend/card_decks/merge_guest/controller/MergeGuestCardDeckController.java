@@ -1,7 +1,6 @@
 package world.yeon.backend.card_decks.merge_guest.controller;
 
 import java.util.UUID;
-import org.springframework.context.annotation.Profile;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -17,7 +16,6 @@ import world.yeon.backend.card_decks.merge_guest.service.MergeGuestCardDeckServi
 
 @Validated
 @RestController
-@Profile("jdbc")
 public class MergeGuestCardDeckController {
 	private final MergeGuestCardDeckService service;
 

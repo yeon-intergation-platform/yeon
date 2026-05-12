@@ -1,0 +1,10 @@
+
+> @yeon/mobile@0.0.0 dev /home/osuma/coding_stuffs/yeon/apps/mobile
+> expo start -- --port 8081
+
+[90menv: load .env[39m
+[90menv: export EXPO_PUBLIC_API_BASE_URL[39m
+[90mStarting project at /home/osuma/coding_stuffs/yeon/apps/mobile[39m
+[2mStarting Metro Bundler[22m
+Waiting on [4mhttp://localhost:8081[24m
+Logs for your project will appear below.

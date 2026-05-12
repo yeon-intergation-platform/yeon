@@ -1,7 +1,6 @@
 package world.yeon.backend.chat_service_auth.controller;
 
 import java.util.UUID;
-import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -10,7 +9,6 @@ import world.yeon.backend.chat_service_auth.service.ChatServiceAuthService;
 import world.yeon.backend.chat_service_auth.service.ChatServiceAuthServiceException;
 
 @RestController
-@Profile("jdbc")
 public class ChatServiceAuthController {
 	private final ChatServiceAuthService service;
 

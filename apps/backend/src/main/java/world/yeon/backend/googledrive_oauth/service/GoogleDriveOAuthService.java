@@ -9,13 +9,11 @@ import java.nio.charset.StandardCharsets;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.UUID;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import world.yeon.backend.googledrive_oauth.dto.GoogleDriveOAuthUrlResponse;
 import world.yeon.backend.googledrive_oauth.repository.GoogleDriveOAuthRepository;
 
 @Service
-@Profile("jdbc")
 public class GoogleDriveOAuthService {
 	private static final String AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth";
 	private static final String TOKEN_URL = "https://oauth2.googleapis.com/token";

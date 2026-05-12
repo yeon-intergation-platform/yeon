@@ -2,14 +2,12 @@ package world.yeon.backend.member_counseling_records.service;
 
 import java.time.OffsetDateTime;
 import java.util.UUID;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import world.yeon.backend.member_counseling_records.dto.MemberCounselingRecordItemResponse;
 import world.yeon.backend.member_counseling_records.dto.MemberCounselingRecordsResponse;
 import world.yeon.backend.member_counseling_records.repository.MemberCounselingRecordRepository;
 
 @Service
-@Profile("jdbc")
 public class MemberCounselingRecordService {
 	private final MemberCounselingRecordRepository repository;
 

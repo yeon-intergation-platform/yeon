@@ -9,13 +9,11 @@ import java.nio.charset.StandardCharsets;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.UUID;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import world.yeon.backend.onedrive_oauth.dto.OneDriveOAuthUrlResponse;
 import world.yeon.backend.onedrive_oauth.repository.OneDriveOAuthRepository;
 
 @Service
-@Profile("jdbc")
 public class OneDriveOAuthService {
 	private static final String AUTH_URL = "https://login.microsoftonline.com/common/oauth2/v2.0/authorize";
 	private static final String TOKEN_URL = "https://login.microsoftonline.com/common/oauth2/v2.0/token";

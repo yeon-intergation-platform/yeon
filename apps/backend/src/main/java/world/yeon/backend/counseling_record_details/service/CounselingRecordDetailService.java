@@ -10,7 +10,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import world.yeon.backend.counseling_record_details.dto.CounselingRecordAssistantMessageResponse;
 import world.yeon.backend.counseling_record_details.dto.CounselingRecordDetailItemResponse;
@@ -22,7 +21,6 @@ import world.yeon.backend.counseling_record_details.dto.CounselingRecordTrendSou
 import world.yeon.backend.counseling_record_details.repository.CounselingRecordDetailRepository;
 
 @Service
-@Profile("jdbc")
 public class CounselingRecordDetailService {
 	private static final String AUDIO_UPLOAD = "audio_upload";
 	private static final String TEXT_MEMO = "text_memo";

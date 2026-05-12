@@ -13,13 +13,11 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import world.yeon.backend.life_os.dto.*;
 import world.yeon.backend.life_os.repository.LifeOsRepository;
 
 @Service
-@Profile("jdbc")
 public class LifeOsService {
 	private static final String[] CATEGORIES = {"deep_work","learning","admin","meeting","rest","meal","movement","exercise","social","other"};
 	private static final Set<String> ACTIVE_CATEGORIES = Set.of("deep_work","learning","admin","meeting","exercise");

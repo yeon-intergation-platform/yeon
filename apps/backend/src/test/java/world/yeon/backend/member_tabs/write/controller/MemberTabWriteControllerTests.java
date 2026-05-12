@@ -29,7 +29,7 @@ import world.yeon.backend.member_tabs.write.dto.UpdateMemberTabRequest;
 import world.yeon.backend.member_tabs.write.service.MemberTabWriteService;
 
 @WebMvcTest(MemberTabWriteController.class)
-@ActiveProfiles("jdbc")
+@ActiveProfiles("dev.local")
 @TestPropertySource(properties = "SPRING_INTERNAL_TOKEN=test-internal-token")
 class MemberTabWriteControllerTests {
 

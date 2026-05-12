@@ -29,7 +29,7 @@ import world.yeon.backend.sheet_export.read.dto.SheetExportPayloadResponse;
 import world.yeon.backend.sheet_export.snapshot.dto.SheetExportSnapshotItemResponse;
 
 @WebMvcTest(SheetExportImportContextController.class)
-@ActiveProfiles("jdbc")
+@ActiveProfiles("dev.local")
 @TestPropertySource(properties = "SPRING_INTERNAL_TOKEN=test-internal-token")
 class SheetExportImportContextControllerTests {
 

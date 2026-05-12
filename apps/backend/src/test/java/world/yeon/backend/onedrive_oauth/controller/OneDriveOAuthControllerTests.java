@@ -22,7 +22,7 @@ import world.yeon.backend.onedrive_oauth.service.OneDriveOAuthService;
 import world.yeon.backend.onedrive_oauth.service.OneDriveOAuthServiceException;
 
 @WebMvcTest(OneDriveOAuthController.class)
-@ActiveProfiles("jdbc")
+@ActiveProfiles("dev.local")
 @TestPropertySource(properties = "SPRING_INTERNAL_TOKEN=test-internal-token")
 class OneDriveOAuthControllerTests {
 	private static final UUID USER_ID = UUID.fromString("00000000-0000-0000-0000-000000000988");

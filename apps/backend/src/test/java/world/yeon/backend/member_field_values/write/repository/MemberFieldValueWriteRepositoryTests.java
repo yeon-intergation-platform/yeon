@@ -18,7 +18,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 @SpringBootTest
-@ActiveProfiles("jdbc")
+@ActiveProfiles("dev.local")
 @Testcontainers
 class MemberFieldValueWriteRepositoryTests {
 

@@ -6,7 +6,6 @@ import static world.yeon.backend.chat_service_feed.mapper.ChatServiceFeedMapper.
 
 import java.util.Set;
 import java.util.UUID;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import world.yeon.backend.chat_service_feed.dto.ChatServiceFeedDeleteResponse;
@@ -16,7 +15,6 @@ import world.yeon.backend.chat_service_feed.dto.ChatServiceFeedRepliesResponse;
 import world.yeon.backend.chat_service_feed.repository.ChatServiceFeedRepository;
 
 @Service
-@Profile("jdbc")
 public class ChatServiceFeedService {
 	private final ChatServiceFeedRepository repository;
 

@@ -14,7 +14,6 @@ import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import world.yeon.backend.onedrive_browser.dto.OneDriveFileResponse;
 import world.yeon.backend.onedrive_browser.dto.OneDriveFilesResponse;
@@ -22,7 +21,6 @@ import world.yeon.backend.onedrive_browser.dto.OneDriveStatusResponse;
 import world.yeon.backend.onedrive_browser.repository.OneDriveBrowserRepository;
 
 @Service
-@Profile("jdbc")
 public class OneDriveBrowserService {
 	private static final String TOKEN_URL = "https://login.microsoftonline.com/common/oauth2/v2.0/token";
 	private static final String GRAPH_URL = "https://graph.microsoft.com/v1.0";

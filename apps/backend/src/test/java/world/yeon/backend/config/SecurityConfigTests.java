@@ -13,19 +13,38 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.context.annotation.Import;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
 @Import(SecurityConfigTests.SecuritySmokeController.class)
 @TestPropertySource(properties = "SPRING_INTERNAL_TOKEN=test-internal-token")
+@Testcontainers
 class SecurityConfigTests {
+
+	@Container
+	static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:17")
+		.withDatabaseName("yeon_backend_test")
+		.withUsername("yeon_test")
+		.withPassword("yeon_test");
 
 	private final HttpClient httpClient = HttpClient.newHttpClient();
 
 	@LocalServerPort
 	private int port;
+
+	@DynamicPropertySource
+	static void registerDatabaseProps(DynamicPropertyRegistry registry) {
+		registry.add("BACKEND_JDBC_DATABASE_URL", postgres::getJdbcUrl);
+		registry.add("BACKEND_JDBC_DATABASE_USERNAME", postgres::getUsername);
+		registry.add("BACKEND_JDBC_DATABASE_PASSWORD", postgres::getPassword);
+	}
 
 	@Test
 	void healthEndpoint는인증없이접근할수있다() throws IOException, InterruptedException {

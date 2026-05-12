@@ -6,7 +6,6 @@ import static world.yeon.backend.chat_service_ask.mapper.ChatServiceAskMapper.to
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
 import java.util.UUID;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import world.yeon.backend.chat_service_ask.dto.ChatServiceAskListResponse;
@@ -14,7 +13,6 @@ import world.yeon.backend.chat_service_ask.dto.ChatServiceAskMutationResponse;
 import world.yeon.backend.chat_service_ask.repository.ChatServiceAskRepository;
 
 @Service
-@Profile("jdbc")
 public class ChatServiceAskService {
 	private final ChatServiceAskRepository repository;
 	private final ObjectMapper objectMapper = new ObjectMapper();

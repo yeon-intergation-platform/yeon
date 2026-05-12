@@ -5,7 +5,6 @@ import java.time.ZoneOffset;
 import java.util.NoSuchElementException;
 import java.util.UUID;
 
-import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -17,7 +16,6 @@ import world.yeon.backend.sheet_export.integration.dto.UpsertSheetExportIntegrat
 import world.yeon.backend.sheet_export.integration.repository.SheetExportIntegrationRepository;
 
 @Service
-@Profile("jdbc")
 public class SheetExportIntegrationService {
 
 	private static final String PUBLIC_ID_PREFIX = "sgi_";

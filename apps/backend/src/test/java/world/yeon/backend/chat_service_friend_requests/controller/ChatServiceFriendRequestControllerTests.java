@@ -20,7 +20,7 @@ import world.yeon.backend.chat_service_friend_requests.service.ChatServiceFriend
 import world.yeon.backend.chat_service_friend_requests.service.ChatServiceFriendRequestServiceException;
 
 @WebMvcTest(ChatServiceFriendRequestController.class)
-@ActiveProfiles("jdbc")
+@ActiveProfiles("dev.local")
 @TestPropertySource(properties = "SPRING_INTERNAL_TOKEN=test-internal-token")
 class ChatServiceFriendRequestControllerTests {
 	private static final UUID CURRENT_PROFILE_ID = UUID.fromString("11111111-1111-4111-8111-111111111111");

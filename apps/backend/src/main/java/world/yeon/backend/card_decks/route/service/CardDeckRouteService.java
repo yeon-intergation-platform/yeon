@@ -7,14 +7,12 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import world.yeon.backend.card_decks.route.dto.*;
 import world.yeon.backend.card_decks.route.repository.CardDeckRouteRepository;
 
 @Service
-@Profile("jdbc")
 public class CardDeckRouteService {
 	private static final SecureRandom RANDOM = new SecureRandom();
 	private static final Base64.Encoder BASE64_URL = Base64.getUrlEncoder().withoutPadding();

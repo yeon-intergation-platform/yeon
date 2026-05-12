@@ -1,12 +1,10 @@
 package world.yeon.backend.counseling_record_audio.service;
 
 import java.util.UUID;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import world.yeon.backend.counseling_record_audio.repository.CounselingRecordAudioRepository;
 
 @Service
-@Profile("jdbc")
 public class CounselingRecordAudioService {
 	private static final String AUDIO_UPLOAD = "audio_upload";
 	private static final String TEXT_MEMO = "text_memo";

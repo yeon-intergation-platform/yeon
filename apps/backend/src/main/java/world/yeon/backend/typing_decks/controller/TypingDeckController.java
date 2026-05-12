@@ -2,7 +2,6 @@ package world.yeon.backend.typing_decks.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import java.util.UUID;
-import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -34,7 +33,6 @@ import world.yeon.backend.typing_decks.service.TypingDeckServiceException;
 
 @Validated
 @RestController
-@Profile("jdbc")
 @RequestMapping("/typing-decks")
 public class TypingDeckController {
 	private final TypingDeckService service;

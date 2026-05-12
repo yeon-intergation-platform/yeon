@@ -21,7 +21,7 @@ import world.yeon.backend.member_tabs.reset.dto.OkResponse;
 import world.yeon.backend.member_tabs.reset.service.MemberTabResetService;
 
 @WebMvcTest(MemberTabResetController.class)
-@ActiveProfiles("jdbc")
+@ActiveProfiles("dev.local")
 @TestPropertySource(properties = "SPRING_INTERNAL_TOKEN=test-internal-token")
 class MemberTabResetControllerTests {
 

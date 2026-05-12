@@ -24,7 +24,7 @@ import world.yeon.backend.sheet_export.export_run.service.SheetExportRunService;
 import world.yeon.backend.sheet_export.export_run.service.SheetExportRunServiceException;
 
 @WebMvcTest(SheetExportRunController.class)
-@ActiveProfiles("jdbc")
+@ActiveProfiles("dev.local")
 @TestPropertySource(properties = "SPRING_INTERNAL_TOKEN=test-internal-token")
 class SheetExportRunControllerTests {
 

@@ -4,13 +4,11 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.UUID;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import world.yeon.backend.home_insight_banners.dto.*;
 import world.yeon.backend.home_insight_banners.repository.HomeInsightBannerRepository;
 
 @Service
-@Profile("jdbc")
 public class HomeInsightBannerService {
 	private static final long HIDE_DURATION_MS = 1000L * 60 * 60 * 3;
 	private static final List<String> BANNER_KEYS = List.of("counseling_none", "counseling_warning");

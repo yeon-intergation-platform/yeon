@@ -21,7 +21,7 @@ import world.yeon.backend.card_decks.route.service.CardDeckRouteService;
 import world.yeon.backend.card_decks.route.service.CardDeckRouteServiceException;
 
 @WebMvcTest(CardDeckRouteController.class)
-@ActiveProfiles("jdbc")
+@ActiveProfiles("dev.local")
 @TestPropertySource(properties = "SPRING_INTERNAL_TOKEN=test-internal-token")
 class CardDeckRouteControllerTests {
 	private static final UUID USER_ID = UUID.fromString("00000000-0000-0000-0000-000000000984");

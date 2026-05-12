@@ -28,7 +28,7 @@ import world.yeon.backend.sheet_export.read.dto.SheetExportRowsResponse;
 import world.yeon.backend.sheet_export.read.service.SheetExportReadService;
 
 @WebMvcTest(SheetExportReadController.class)
-@ActiveProfiles("jdbc")
+@ActiveProfiles("dev.local")
 @TestPropertySource(properties = "SPRING_INTERNAL_TOKEN=test-internal-token")
 class SheetExportReadControllerTests {
 

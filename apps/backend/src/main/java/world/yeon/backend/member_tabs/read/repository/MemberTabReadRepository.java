@@ -3,14 +3,12 @@ package world.yeon.backend.member_tabs.read.repository;
 import java.math.BigInteger;
 import java.util.List;
 
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Repository;
 
 import jakarta.persistence.EntityManager;
 import world.yeon.backend.member_tabs.read.model.MemberTabDefinitionEntity;
 
 @Repository
-@Profile("jdbc")
 public class MemberTabReadRepository {
 
 	private final EntityManager entityManager;

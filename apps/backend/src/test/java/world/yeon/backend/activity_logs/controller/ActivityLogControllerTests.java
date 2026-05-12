@@ -26,7 +26,7 @@ import world.yeon.backend.activity_logs.dto.GetActivityLogsResponse;
 import world.yeon.backend.activity_logs.service.ActivityLogService;
 
 @WebMvcTest(ActivityLogController.class)
-@ActiveProfiles("jdbc")
+@ActiveProfiles("dev.local")
 @TestPropertySource(properties = "SPRING_INTERNAL_TOKEN=test-internal-token")
 class ActivityLogControllerTests {
 	private static final UUID OWNER_ID = UUID.fromString("00000000-0000-0000-0000-000000000922");

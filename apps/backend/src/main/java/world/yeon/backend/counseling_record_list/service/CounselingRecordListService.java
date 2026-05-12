@@ -4,14 +4,12 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import world.yeon.backend.counseling_record_list.dto.CounselingRecordListItemResponse;
 import world.yeon.backend.counseling_record_list.dto.CounselingRecordListResponse;
 import world.yeon.backend.counseling_record_list.repository.CounselingRecordListRepository;
 
 @Service
-@Profile("jdbc")
 public class CounselingRecordListService {
 	private static final String AUDIO_UPLOAD = "audio_upload";
 	private static final String TEXT_MEMO = "text_memo";

@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,7 +18,6 @@ import world.yeon.backend.member_fields.write.dto.UpdateMemberFieldRequest;
 import world.yeon.backend.member_fields.write.repository.MemberFieldWriteRepository;
 
 @Service
-@Profile("jdbc")
 public class MemberFieldWriteService {
 
 	private static final Set<String> VALID_FIELD_TYPES = Set.of(

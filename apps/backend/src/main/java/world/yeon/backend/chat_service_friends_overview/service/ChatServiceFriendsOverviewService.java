@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import world.yeon.backend.chat_service_friends_overview.dto.ChatServiceFriendCardResponse;
 import world.yeon.backend.chat_service_friends_overview.dto.ChatServiceFriendsOverviewResponse;
@@ -15,7 +14,6 @@ import world.yeon.backend.chat_service_friends_overview.dto.ChatServiceProfileSu
 import world.yeon.backend.chat_service_friends_overview.repository.ChatServiceFriendsOverviewRepository;
 
 @Service
-@Profile("jdbc")
 public class ChatServiceFriendsOverviewService {
 	private final ChatServiceFriendsOverviewRepository repository;
 

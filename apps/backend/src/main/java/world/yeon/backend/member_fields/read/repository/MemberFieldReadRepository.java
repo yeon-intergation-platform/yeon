@@ -3,14 +3,12 @@ package world.yeon.backend.member_fields.read.repository;
 import java.math.BigInteger;
 import java.util.List;
 
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Repository;
 
 import jakarta.persistence.EntityManager;
 import world.yeon.backend.member_fields.read.model.MemberFieldDefinitionEntity;
 
 @Repository
-@Profile("jdbc")
 public class MemberFieldReadRepository {
 
 	public record TabLookup(Long tabInternalId, Long spaceInternalId) {

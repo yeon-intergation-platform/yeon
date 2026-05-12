@@ -10,7 +10,7 @@
 - `spring-backend-bootstrap-preflight-checklist.md` — Spring bootstrap 생성 직전 점검표
 - `spring-backend-initializr-spec.md` — Spring Initializr 생성 입력값 SSOT
 - `spring-backend-starter-adoption-plan.md` — 초기 제외 starter의 단계별 도입 계획
-- `spring-backend-jdbc-baseline.md` — JDBC profile 기반 datasource baseline
+- `spring-backend-jdbc-baseline.md` — dev.local/staging/prod datasource baseline
 - `spring-backend-flyway-baseline.md` — Spring 전용 schema Flyway baseline
 - `spring-backend-jpa-baseline.md` — 더미 entity/repository 기반 JPA baseline
 - `spring-backend-testcontainers-baseline.md` — 로컬 DB 독립형 persistence smoke baseline
@@ -85,19 +85,15 @@
 
 - `spring-member-field-values-write-skeleton-file-plan.md` — member-field-values write 구현 차수와 write set 계획.
 
-
 - `spring-member-field-values-route-read-pilot-inventory.md` — members route field-values GET의 현재 Next direct read inventory.
 
 - `spring-member-field-values-route-read-api-contract.md` — members route field-values GET 내부 계약과 Next translation 규칙.
 
-
 - `spring-google-sheets-field-values-pilot-inventory.md` — google-sheets export/import service에 남은 field-values direct 의존 inventory.
-
 
 - `spring-google-sheets-integration-boundary-inventory.md` — google-sheets integration service의 남은 Next ownership과 extraction 순서 inventory.
 
 - `spring-google-sheets-export-read-package-plan.md` — google-sheets 다음 extraction lane인 export row builder Spring read 패키지/계층 설계.
-
 
 - `spring-google-sheets-export-read-api-contract.md` — google-sheets export row builder 내부 API 계약과 Next translation 규칙.
 

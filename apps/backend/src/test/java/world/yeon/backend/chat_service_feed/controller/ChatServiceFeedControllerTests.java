@@ -26,7 +26,7 @@ import world.yeon.backend.chat_service_feed.service.ChatServiceFeedService;
 import world.yeon.backend.chat_service_feed.service.ChatServiceFeedServiceException;
 
 @WebMvcTest(ChatServiceFeedController.class)
-@ActiveProfiles("jdbc")
+@ActiveProfiles("dev.local")
 @TestPropertySource(properties = "SPRING_INTERNAL_TOKEN=test-internal-token")
 class ChatServiceFeedControllerTests {
 	private static final UUID CURRENT_PROFILE_ID = UUID.fromString("11111111-1111-4111-8111-111111111111");

@@ -1,7 +1,6 @@
 package world.yeon.backend.spaces.controller;
 
 import java.util.UUID;
-import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -24,7 +23,6 @@ import world.yeon.backend.spaces.service.SpaceServiceException;
 
 @Validated
 @RestController
-@Profile("jdbc")
 public class SpaceController {
 	private final SpaceService service;
 

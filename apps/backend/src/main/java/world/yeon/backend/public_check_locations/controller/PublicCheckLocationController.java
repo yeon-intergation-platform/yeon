@@ -1,7 +1,6 @@
 package world.yeon.backend.public_check_locations.controller;
 
 import java.util.UUID;
-import org.springframework.context.annotation.Profile;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -16,7 +15,6 @@ import world.yeon.backend.public_check_locations.service.PublicCheckLocationServ
 
 @Validated
 @RestController
-@Profile("jdbc")
 public class PublicCheckLocationController {
 	private final PublicCheckLocationService service;
 

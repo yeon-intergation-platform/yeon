@@ -10,7 +10,6 @@ import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.List;
 
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,7 +19,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.EntityManager;
 
 @Repository
-@Profile("jdbc")
 public class SheetExportSnapshotRepository {
 
 	public record IntegrationRow(

@@ -13,13 +13,11 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import world.yeon.backend.import_commit.dto.*;
 import world.yeon.backend.import_commit.repository.ImportCommitRepository;
 
 @Service
-@Profile("jdbc")
 public class ImportCommitService {
 	private static final List<Object[]> DEFAULT_SYSTEM_TABS = List.of(
 		new Object[]{"overview", "개요", 0},

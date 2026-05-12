@@ -22,7 +22,7 @@ import world.yeon.backend.googledrive_oauth.service.GoogleDriveOAuthService;
 import world.yeon.backend.googledrive_oauth.service.GoogleDriveOAuthServiceException;
 
 @WebMvcTest(GoogleDriveOAuthController.class)
-@ActiveProfiles("jdbc")
+@ActiveProfiles("dev.local")
 @TestPropertySource(properties = "SPRING_INTERNAL_TOKEN=test-internal-token")
 class GoogleDriveOAuthControllerTests {
 	private static final UUID USER_ID = UUID.fromString("00000000-0000-0000-0000-000000000987");

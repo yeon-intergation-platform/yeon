@@ -1,6 +1,5 @@
 package world.yeon.backend.public_check_runtime.controller;
 
-import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -12,7 +11,6 @@ import world.yeon.backend.public_check_runtime.service.PublicCheckRuntimeService
 
 @Validated
 @RestController
-@Profile("jdbc")
 public class PublicCheckRuntimeController {
 	private final PublicCheckRuntimeService service;
 

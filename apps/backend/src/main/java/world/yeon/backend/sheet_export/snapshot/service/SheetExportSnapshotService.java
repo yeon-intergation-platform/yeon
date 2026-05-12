@@ -7,7 +7,6 @@ import java.util.HexFormat;
 import java.util.List;
 import java.util.NoSuchElementException;
 
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -24,7 +23,6 @@ import world.yeon.backend.sheet_export.sync.dto.FinalizeSheetExportSyncResponse;
 import world.yeon.backend.sheet_export.snapshot.repository.SheetExportSnapshotRepository.SnapshotReplaceRow;
 
 @Service
-@Profile("jdbc")
 public class SheetExportSnapshotService {
 
 	private final SheetExportSnapshotRepository repository;

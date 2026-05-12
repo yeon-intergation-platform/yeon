@@ -17,7 +17,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 @SpringBootTest
-@ActiveProfiles("jdbc")
+@ActiveProfiles("dev.local")
 @Testcontainers
 class UserRepositoryTests {
 	@Container static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:17").withDatabaseName("yeon_backend_test").withUsername("yeon_test").withPassword("yeon_test");

@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -20,7 +19,6 @@ import world.yeon.backend.sheet_export.read.dto.SheetExportRowsResponse;
 import world.yeon.backend.sheet_export.read.repository.SheetExportReadRepository;
 
 @Service
-@Profile("jdbc")
 public class SheetExportReadService {
 
 	private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");

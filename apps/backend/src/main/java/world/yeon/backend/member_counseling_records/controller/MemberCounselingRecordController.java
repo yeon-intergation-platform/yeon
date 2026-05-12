@@ -2,7 +2,6 @@ package world.yeon.backend.member_counseling_records.controller;
 
 import java.time.OffsetDateTime;
 import java.util.UUID;
-import org.springframework.context.annotation.Profile;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -12,7 +11,6 @@ import world.yeon.backend.member_counseling_records.dto.MemberCounselingRecordsR
 import world.yeon.backend.member_counseling_records.service.MemberCounselingRecordService;
 
 @RestController
-@Profile("jdbc")
 public class MemberCounselingRecordController {
 	private final MemberCounselingRecordService service;
 

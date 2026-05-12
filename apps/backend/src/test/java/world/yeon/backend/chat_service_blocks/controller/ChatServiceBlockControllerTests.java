@@ -22,7 +22,7 @@ import world.yeon.backend.chat_service_blocks.service.ChatServiceBlockService;
 import world.yeon.backend.chat_service_blocks.service.ChatServiceBlockServiceException;
 
 @WebMvcTest(ChatServiceBlockController.class)
-@ActiveProfiles("jdbc")
+@ActiveProfiles("dev.local")
 @TestPropertySource(properties = "SPRING_INTERNAL_TOKEN=test-internal-token")
 class ChatServiceBlockControllerTests {
 	private static final UUID CURRENT_PROFILE_ID = UUID.fromString("11111111-1111-4111-8111-111111111111");

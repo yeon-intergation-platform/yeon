@@ -17,7 +17,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import world.yeon.backend.space_access.service.SpaceAccessService;
 
 @WebMvcTest(SpaceAccessController.class)
-@ActiveProfiles("jdbc")
+@ActiveProfiles("dev.local")
 @TestPropertySource(properties = "SPRING_INTERNAL_TOKEN=test-internal-token")
 class SpaceAccessControllerTests {
 	private static final UUID OWNER_ID = UUID.fromString("00000000-0000-0000-0000-000000000972");

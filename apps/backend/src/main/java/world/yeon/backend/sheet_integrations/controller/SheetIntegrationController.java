@@ -3,7 +3,6 @@ package world.yeon.backend.sheet_integrations.controller;
 import java.util.NoSuchElementException;
 import java.util.UUID;
 
-import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -25,7 +24,6 @@ import world.yeon.backend.sheet_integrations.service.SheetIntegrationServiceExce
 
 @Validated
 @RestController
-@Profile("jdbc")
 @RequestMapping("/spaces/{spaceId}/sheet-integrations")
 public class SheetIntegrationController {
 

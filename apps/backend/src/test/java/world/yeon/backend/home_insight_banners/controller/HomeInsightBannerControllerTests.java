@@ -21,7 +21,7 @@ import world.yeon.backend.home_insight_banners.dto.*;
 import world.yeon.backend.home_insight_banners.service.HomeInsightBannerService;
 
 @WebMvcTest(HomeInsightBannerController.class)
-@ActiveProfiles("jdbc")
+@ActiveProfiles("dev.local")
 @TestPropertySource(properties = "SPRING_INTERNAL_TOKEN=test-internal-token")
 class HomeInsightBannerControllerTests {
 	private static final UUID USER_ID = UUID.fromString("00000000-0000-0000-0000-000000000982");

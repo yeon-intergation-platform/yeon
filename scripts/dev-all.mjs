@@ -24,6 +24,7 @@ let shuttingDown = false;
 let sawFailure = false;
 const webLockPath = join(rootDir, "apps", "web", ".next", "dev", "lock");
 const defaultLocalSpringInternalToken = "local-dev-internal-token";
+const defaultLocalSpringProfile = "dev.local";
 
 const portSources = {
   web: ["WEB_PORT", "PORT"],
@@ -52,6 +53,39 @@ function attachLines(service, stream, streamName) {
 
 function fileExists(path) {
   return existsSync(path);
+}
+
+function readDotenv(path) {
+  if (!existsSync(path)) return {};
+  return Object.fromEntries(
+    readFileSync(path, "utf8")
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter((line) => line && !line.startsWith("#") && line.includes("="))
+      .map((line) => {
+        const [key, ...valueParts] = line.split("=");
+        const rawValue = valueParts.join("=");
+        return [key.trim(), rawValue.trim().replace(/^['"]|['"]$/g, "")];
+      })
+  );
+}
+
+function resolveLocalDatabaseUrl() {
+  const envFiles = [
+    readDotenv(join(rootDir, ".env")),
+    readDotenv(join(rootDir, ".env.local")),
+    readDotenv(join(rootDir, "apps", "web", ".env")),
+    readDotenv(join(rootDir, "apps", "web", ".env.local")),
+  ];
+
+  for (const envFile of envFiles) {
+    if (envFile.DATABASE_URL) return envFile.DATABASE_URL;
+  }
+  return null;
+}
+
+function toJdbcDatabaseEnv(databaseUrl) {
+  return databaseUrl ? { BACKEND_DATABASE_URL: databaseUrl } : {};
 }
 
 function getPidCommandLine(pid) {
@@ -304,6 +338,14 @@ async function resolveServices() {
   const springInternalToken =
     process.env.SPRING_INTERNAL_TOKEN?.trim() ||
     defaultLocalSpringInternalToken;
+  const springProfilesActive =
+    process.env.SPRING_PROFILES_ACTIVE?.trim() || defaultLocalSpringProfile;
+  const backendJdbcEnv = {
+    ...toJdbcDatabaseEnv(process.env.DATABASE_URL || resolveLocalDatabaseUrl()),
+    ...(process.env.BACKEND_DATABASE_URL
+      ? { BACKEND_DATABASE_URL: process.env.BACKEND_DATABASE_URL }
+      : {}),
+  };
 
   services.push({
     name: "web",
@@ -316,6 +358,8 @@ async function resolveServices() {
       SPRING_BACKEND_BASE_URL: springBackendBaseUrl,
       SPRING_BOOTSTRAP_BASE_URL: springBackendBaseUrl,
       SPRING_INTERNAL_TOKEN: springInternalToken,
+      SPRING_PROFILES_ACTIVE: springProfilesActive,
+      ...backendJdbcEnv,
     },
     assignedPort: webPort,
     interactive: false,
@@ -330,6 +374,8 @@ async function resolveServices() {
     env: {
       ...backendRunner.env,
       SPRING_INTERNAL_TOKEN: springInternalToken,
+      SPRING_PROFILES_ACTIVE: springProfilesActive,
+      ...backendJdbcEnv,
     },
     assignedPort: backendPort,
     interactive: false,

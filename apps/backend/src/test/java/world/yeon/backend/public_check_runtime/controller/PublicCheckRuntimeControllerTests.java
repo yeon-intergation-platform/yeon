@@ -20,7 +20,7 @@ import world.yeon.backend.public_check_runtime.dto.*;
 import world.yeon.backend.public_check_runtime.service.PublicCheckRuntimeService;
 
 @WebMvcTest(PublicCheckRuntimeController.class)
-@ActiveProfiles("jdbc")
+@ActiveProfiles("dev.local")
 @TestPropertySource(properties = "SPRING_INTERNAL_TOKEN=test-internal-token")
 class PublicCheckRuntimeControllerTests {
 	@Autowired private MockMvc mockMvc;

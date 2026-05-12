@@ -20,7 +20,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import world.yeon.backend.member_fields.bootstrap_overview.support.DefaultOverviewFields;
 
 @SpringBootTest
-@ActiveProfiles("jdbc")
+@ActiveProfiles("dev.local")
 @Testcontainers
 class MemberFieldOverviewBootstrapRepositoryTests {
 

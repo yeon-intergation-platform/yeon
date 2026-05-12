@@ -28,7 +28,7 @@ import world.yeon.backend.chat_service_chat_rooms.service.ChatServiceChatRoomsSe
 import world.yeon.backend.chat_service_chat_rooms.service.ChatServiceChatRoomsServiceException;
 
 @WebMvcTest(ChatServiceChatRoomsController.class)
-@ActiveProfiles("jdbc")
+@ActiveProfiles("dev.local")
 @TestPropertySource(properties = "SPRING_INTERNAL_TOKEN=test-internal-token")
 class ChatServiceChatRoomsControllerTests {
 	private static final UUID CURRENT_PROFILE_ID = UUID.fromString("11111111-1111-4111-8111-111111111111");

@@ -9,12 +9,10 @@ import java.time.OffsetDateTime;
 import java.time.ZonedDateTime;
 import java.util.UUID;
 import java.util.List;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 @Repository
-@Profile("jdbc")
 public class StudentBoardWriteRepository {
 
 	public record OwnedMemberContextRow(Long spaceInternalId, Long memberInternalId) {}

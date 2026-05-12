@@ -3,14 +3,12 @@ package world.yeon.backend.chat_service_my_profile.service;
 import static world.yeon.backend.chat_service_my_profile.mapper.ChatServiceMyProfileMapper.*;
 
 import java.util.UUID;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import world.yeon.backend.chat_service_my_profile.dto.*;
 import world.yeon.backend.chat_service_my_profile.repository.ChatServiceMyProfileRepository;
 
 @Service
-@Profile("jdbc")
 public class ChatServiceMyProfileService {
 	private final ChatServiceMyProfileRepository repository;
 

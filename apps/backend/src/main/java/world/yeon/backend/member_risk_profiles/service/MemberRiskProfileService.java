@@ -12,7 +12,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import java.util.regex.Pattern;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import world.yeon.backend.member_risk_profiles.dto.MemberRiskProfileRequestItem;
 import world.yeon.backend.member_risk_profiles.dto.MemberRiskProfileResponseItem;
@@ -21,7 +20,6 @@ import world.yeon.backend.member_risk_profiles.dto.MemberRiskProfilesResponse;
 import world.yeon.backend.member_risk_profiles.repository.MemberRiskProfileRepository;
 
 @Service
-@Profile("jdbc")
 public class MemberRiskProfileService {
 	private static final Pattern[] HIGH_RISK_PATTERNS = new Pattern[]{
 		Pattern.compile("중도[\\s-]*포기"), Pattern.compile("이탈"), Pattern.compile("그만두"), Pattern.compile("번아웃"),

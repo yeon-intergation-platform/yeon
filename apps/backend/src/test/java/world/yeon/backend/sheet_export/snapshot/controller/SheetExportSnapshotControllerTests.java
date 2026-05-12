@@ -31,7 +31,7 @@ import world.yeon.backend.sheet_export.snapshot.dto.SheetExportSnapshotsResponse
 import world.yeon.backend.sheet_export.snapshot.service.SheetExportSnapshotService;
 
 @WebMvcTest(SheetExportSnapshotController.class)
-@ActiveProfiles("jdbc")
+@ActiveProfiles("dev.local")
 @TestPropertySource(properties = "SPRING_INTERNAL_TOKEN=test-internal-token")
 class SheetExportSnapshotControllerTests {
 

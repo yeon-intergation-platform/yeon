@@ -4,7 +4,6 @@ import jakarta.persistence.PersistenceException;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.UUID;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import world.yeon.backend.users.dto.CreateUserRequest;
 import world.yeon.backend.users.dto.CreateUserResponse;
@@ -13,7 +12,6 @@ import world.yeon.backend.users.dto.UserResponse;
 import world.yeon.backend.users.repository.UserRepository;
 
 @Service
-@Profile("jdbc")
 public class UserService {
 	private final UserRepository repository;
 

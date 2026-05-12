@@ -23,7 +23,7 @@ import world.yeon.backend.member_fields.reorder.dto.OkResponse;
 import world.yeon.backend.member_fields.reorder.service.MemberFieldReorderService;
 
 @WebMvcTest(MemberFieldReorderController.class)
-@ActiveProfiles("jdbc")
+@ActiveProfiles("dev.local")
 @TestPropertySource(properties = "SPRING_INTERNAL_TOKEN=test-internal-token")
 class MemberFieldReorderControllerTests {
 

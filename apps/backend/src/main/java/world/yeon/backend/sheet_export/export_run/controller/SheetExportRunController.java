@@ -3,7 +3,6 @@ package world.yeon.backend.sheet_export.export_run.controller;
 import java.util.NoSuchElementException;
 import java.util.UUID;
 
-import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -22,7 +21,6 @@ import world.yeon.backend.sheet_export.export_run.service.SheetExportRunServiceE
 
 @Validated
 @RestController
-@Profile("jdbc")
 @RequestMapping("/spaces/{spaceId}/sheet-export/export-run")
 public class SheetExportRunController {
 

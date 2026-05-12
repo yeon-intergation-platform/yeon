@@ -20,7 +20,7 @@ import world.yeon.backend.import_commit.dto.*;
 import world.yeon.backend.import_commit.service.ImportCommitService;
 
 @WebMvcTest(ImportCommitController.class)
-@ActiveProfiles("jdbc")
+@ActiveProfiles("dev.local")
 @TestPropertySource(properties = "SPRING_INTERNAL_TOKEN=test-internal-token")
 class ImportCommitControllerTests {
 	private static final UUID OWNER_ID = UUID.fromString("00000000-0000-0000-0000-000000000961");

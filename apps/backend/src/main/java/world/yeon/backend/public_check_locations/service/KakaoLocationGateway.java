@@ -10,11 +10,9 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 @Component
-@Profile("jdbc")
 public class KakaoLocationGateway {
 	private static final String BASE_URL = "https://dapi.kakao.com/v2/local/search";
 	private static final int MAX_RESULTS = 6;

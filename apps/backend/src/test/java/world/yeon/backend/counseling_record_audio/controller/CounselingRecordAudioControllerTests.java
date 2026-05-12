@@ -18,7 +18,7 @@ import world.yeon.backend.counseling_record_audio.service.CounselingRecordAudioS
 import world.yeon.backend.counseling_record_audio.service.CounselingRecordAudioServiceException;
 
 @WebMvcTest(CounselingRecordAudioController.class)
-@ActiveProfiles("jdbc")
+@ActiveProfiles("dev.local")
 @TestPropertySource(properties = "SPRING_INTERNAL_TOKEN=test-internal-token")
 class CounselingRecordAudioControllerTests {
 	private static final UUID USER_ID = UUID.fromString("00000000-0000-0000-0000-000000000992");

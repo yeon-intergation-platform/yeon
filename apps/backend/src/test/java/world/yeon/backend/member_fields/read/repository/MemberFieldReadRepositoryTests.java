@@ -20,7 +20,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import world.yeon.backend.member_fields.read.model.MemberFieldDefinitionEntity;
 
 @SpringBootTest
-@ActiveProfiles("jdbc")
+@ActiveProfiles("dev.local")
 @Testcontainers
 class MemberFieldReadRepositoryTests {
 

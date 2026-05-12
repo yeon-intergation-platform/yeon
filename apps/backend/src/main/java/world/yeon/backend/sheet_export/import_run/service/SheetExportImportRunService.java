@@ -10,7 +10,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -31,7 +30,6 @@ import world.yeon.backend.sheet_export.import_run.dto.RunSheetImportRequest;
 import world.yeon.backend.sheet_export.import_run.dto.RunSheetImportResponse;
 
 @Service
-@Profile("jdbc")
 public class SheetExportImportRunService {
 
 	private static final String SHEETS_URL = "https://sheets.googleapis.com/v4/spreadsheets";

@@ -3,7 +3,6 @@ package world.yeon.backend.member_field_values.write.repository;
 import java.math.BigInteger;
 import java.util.List;
 
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,7 +12,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.EntityManager;
 
 @Repository
-@Profile("jdbc")
 public class MemberFieldValueWriteRepository {
 
 	public record DefinitionRow(Long definitionInternalId, String definitionPublicId, String fieldType, String fieldName) {

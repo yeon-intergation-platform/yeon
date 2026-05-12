@@ -5,11 +5,9 @@ import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
 import java.util.List;
 import java.util.UUID;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Repository;
 
 @Repository
-@Profile("jdbc")
 public class CounselingRecordMutationRepository {
 	public record OwnedRecordRow(Long internalId, String publicId, String recordSource, String audioStoragePath) {}
 	public record OwnedMemberRow(Long internalId, Long spaceInternalId, String spacePublicId) {}

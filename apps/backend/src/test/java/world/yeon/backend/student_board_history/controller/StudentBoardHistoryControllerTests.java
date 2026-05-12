@@ -21,7 +21,7 @@ import world.yeon.backend.student_board_history.dto.StudentBoardHistoryItemRespo
 import world.yeon.backend.student_board_history.service.StudentBoardHistoryService;
 
 @WebMvcTest(StudentBoardHistoryController.class)
-@ActiveProfiles("jdbc")
+@ActiveProfiles("dev.local")
 @TestPropertySource(properties = "SPRING_INTERNAL_TOKEN=test-internal-token")
 class StudentBoardHistoryControllerTests {
 	private static final UUID OWNER_ID = UUID.fromString("00000000-0000-0000-0000-000000000932");

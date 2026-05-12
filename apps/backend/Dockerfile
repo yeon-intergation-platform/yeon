@@ -21,7 +21,7 @@ RUN --mount=type=cache,target=/root/.gradle \
 
 FROM eclipse-temurin:21-jre-jammy AS runner
 
-ENV SPRING_PROFILES_ACTIVE=jdbc
+ENV SPRING_PROFILES_ACTIVE=prod
 
 WORKDIR /app
 

@@ -1,7 +1,6 @@
 package world.yeon.backend.chat_service_friends_overview.controller;
 
 import java.util.UUID;
-import org.springframework.context.annotation.Profile;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
@@ -9,7 +8,6 @@ import world.yeon.backend.chat_service_friends_overview.dto.ChatServiceFriendsOv
 import world.yeon.backend.chat_service_friends_overview.service.ChatServiceFriendsOverviewService;
 
 @RestController
-@Profile("jdbc")
 public class ChatServiceFriendsOverviewController {
 	private final ChatServiceFriendsOverviewService service;
 

@@ -1,14 +1,12 @@
 package world.yeon.backend.counseling_record_students.service;
 
 import java.util.UUID;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import world.yeon.backend.counseling_record_students.dto.CounselingRecordStudentSummariesResponse;
 import world.yeon.backend.counseling_record_students.dto.CounselingRecordStudentSummaryResponse;
 import world.yeon.backend.counseling_record_students.repository.CounselingRecordStudentRepository;
 
 @Service
-@Profile("jdbc")
 public class CounselingRecordStudentService {
 	private final CounselingRecordStudentRepository repository;
 

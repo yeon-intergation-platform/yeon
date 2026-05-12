@@ -1,7 +1,6 @@
 package world.yeon.backend.chat_service_chat_open.controller;
 
 import java.util.UUID;
-import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -15,7 +14,6 @@ import world.yeon.backend.chat_service_chat_open.service.ChatServiceChatOpenServ
 import world.yeon.backend.chat_service_chat_open.service.ChatServiceChatOpenServiceException;
 
 @RestController
-@Profile("jdbc")
 public class ChatServiceChatOpenController {
 	private final ChatServiceChatOpenService service;
 

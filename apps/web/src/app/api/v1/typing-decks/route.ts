@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import {
   createTypingDeckBodySchema,
   typingDeckListQuerySchema,
+  type TypingDeckListQuery,
 } from "@yeon/api-contract/typing-decks";
 
 import {
@@ -14,6 +15,7 @@ import {
   listDefaultTypingDecks,
   shouldPrependDefaultTypingDecks,
 } from "@/server/typing-deck-defaults";
+import { listTypingDecks as listTypingDecksFromNextDb } from "@/server/services/typing-decks-service";
 import { ServiceError } from "@/server/services/service-error";
 
 import {
@@ -24,9 +26,26 @@ import {
 
 export const runtime = "nodejs";
 
+async function listTypingDecksWithNextDbFallback(
+  request: NextRequest,
+  query: TypingDeckListQuery
+) {
+  const { currentUser, isAdmin } = await getTypingDeckRequestContext(request);
+  if (query.scope === "mine" && !currentUser) {
+    return { decks: [] };
+  }
+
+  const decks = await listTypingDecksFromNextDb(
+    currentUser?.id ?? null,
+    query,
+    { adminMode: isAdmin }
+  );
+  return { decks };
+}
+
 export async function GET(request: NextRequest) {
   const parsedQuery = typingDeckListQuerySchema.safeParse(
-    Object.fromEntries(request.nextUrl.searchParams.entries()),
+    Object.fromEntries(request.nextUrl.searchParams.entries())
   );
   if (!parsedQuery.success) {
     return jsonError("목록 요청 형식이 올바르지 않습니다.", 400);
@@ -56,7 +75,19 @@ export async function GET(request: NextRequest) {
       return jsonError(error.message, error.status);
     }
     if (error instanceof TypingDecksSpringBackendHttpError) {
-      return jsonError(error.message, error.status);
+      try {
+        const fallback = await listTypingDecksWithNextDbFallback(
+          request,
+          parsedQuery.data
+        );
+        return NextResponse.json(fallback);
+      } catch (fallbackError) {
+        if (fallbackError instanceof ServiceError) {
+          return jsonError(fallbackError.message, fallbackError.status);
+        }
+        console.error(fallbackError);
+        return jsonError("타자 덱 목록을 불러오지 못했습니다.", 500);
+      }
     }
     console.error(error);
     return jsonError("타자 덱 목록을 불러오지 못했습니다.", 500);
@@ -81,7 +112,7 @@ export async function POST(request: NextRequest) {
     const created = await createTypingDeckInSpring(
       currentUser?.id ?? null,
       parsed.data,
-      isAdmin,
+      isAdmin
     );
     return NextResponse.json(created, { status: 201 });
   } catch (error) {

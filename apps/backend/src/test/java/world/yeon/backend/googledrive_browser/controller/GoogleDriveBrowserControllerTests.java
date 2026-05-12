@@ -23,7 +23,7 @@ import world.yeon.backend.googledrive_browser.service.GoogleDriveBrowserService;
 import world.yeon.backend.googledrive_browser.service.GoogleDriveBrowserServiceException;
 
 @WebMvcTest(GoogleDriveBrowserController.class)
-@ActiveProfiles("jdbc")
+@ActiveProfiles("dev.local")
 @TestPropertySource(properties = "SPRING_INTERNAL_TOKEN=test-internal-token")
 class GoogleDriveBrowserControllerTests {
 	private static final UUID USER_ID = UUID.fromString("00000000-0000-0000-0000-000000000985");

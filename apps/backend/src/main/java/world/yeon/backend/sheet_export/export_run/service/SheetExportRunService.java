@@ -12,7 +12,6 @@ import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -27,7 +26,6 @@ import world.yeon.backend.sheet_export.snapshot.service.SheetExportSnapshotServi
 import world.yeon.backend.sheet_export.sync.dto.FinalizeSheetExportSyncRequest;
 
 @Service
-@Profile("jdbc")
 public class SheetExportRunService {
 
 	private static final String SHEETS_URL = "https://sheets.googleapis.com/v4/spreadsheets";

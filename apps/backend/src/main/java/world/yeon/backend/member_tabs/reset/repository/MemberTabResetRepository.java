@@ -2,7 +2,6 @@ package world.yeon.backend.member_tabs.reset.repository;
 
 import java.util.List;
 
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -10,7 +9,6 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 
 @Repository
-@Profile("jdbc")
 public class MemberTabResetRepository {
 
 	@PersistenceContext

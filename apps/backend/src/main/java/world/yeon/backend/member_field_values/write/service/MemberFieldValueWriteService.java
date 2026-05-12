@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,7 +16,6 @@ import world.yeon.backend.member_field_values.write.dto.MemberFieldValuesMutatio
 import world.yeon.backend.member_field_values.write.repository.MemberFieldValueWriteRepository;
 
 @Service
-@Profile("jdbc")
 public class MemberFieldValueWriteService {
 
 	private record ValueColumns(String valueText, String valueNumber, Boolean valueBoolean, String valueJson) {

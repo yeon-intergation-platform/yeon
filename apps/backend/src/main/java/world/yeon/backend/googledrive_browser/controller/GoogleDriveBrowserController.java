@@ -1,7 +1,6 @@
 package world.yeon.backend.googledrive_browser.controller;
 
 import java.util.UUID;
-import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -19,7 +18,6 @@ import world.yeon.backend.googledrive_browser.service.GoogleDriveBrowserServiceE
 
 @Validated
 @RestController
-@Profile("jdbc")
 public class GoogleDriveBrowserController {
 	private final GoogleDriveBrowserService service;
 

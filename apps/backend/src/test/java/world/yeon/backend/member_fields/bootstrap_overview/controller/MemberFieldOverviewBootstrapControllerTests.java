@@ -21,7 +21,7 @@ import world.yeon.backend.member_fields.bootstrap_overview.dto.OkResponse;
 import world.yeon.backend.member_fields.bootstrap_overview.service.MemberFieldOverviewBootstrapService;
 
 @WebMvcTest(MemberFieldOverviewBootstrapController.class)
-@ActiveProfiles("jdbc")
+@ActiveProfiles("dev.local")
 @TestPropertySource(properties = "SPRING_INTERNAL_TOKEN=test-internal-token")
 class MemberFieldOverviewBootstrapControllerTests {
 

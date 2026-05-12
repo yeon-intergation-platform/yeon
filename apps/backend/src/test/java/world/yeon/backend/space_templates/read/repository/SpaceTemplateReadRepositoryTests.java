@@ -20,7 +20,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import world.yeon.backend.space_templates.read.model.SpaceTemplateEntity;
 
 @SpringBootTest
-@ActiveProfiles("jdbc")
+@ActiveProfiles("dev.local")
 @Testcontainers
 class SpaceTemplateReadRepositoryTests {
 
