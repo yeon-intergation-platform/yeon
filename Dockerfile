@@ -53,7 +53,8 @@ RUN --mount=type=cache,id=next-cache,target=/app/apps/web/.next/cache \
     pnpm --filter @yeon/web build
 
 # ── Stage 4: production runner ───────────────────────────────────────────────
-FROM node:22-bookworm-slim AS runner
+# shell/package-manager 없는 distroless Node 런타임만 남겨 pull 용량을 줄인다.
+FROM gcr.io/distroless/nodejs22-debian12:nonroot AS runner
 
 ENV NODE_ENV=production
 ENV PORT=3000
@@ -66,19 +67,14 @@ WORKDIR /app
 # runner image 빌드가 3분+ 걸린다. 음성 chunk 분할(libmp3lame 인코딩)과 duration 확인(ffprobe)
 # 두 용도만 쓰므로 mwader/static-ffmpeg 의 statically-linked binary 를 그대로 복사한다.
 # 버전은 major.minor 고정 — 상담 전사 기능이 의존하는 codec (mp3/aac/wav 디코더, libmp3lame 인코더)은
-# 이 태그가 모두 포함한다. 만약 특수 codec 이 추가로 필요해지면 apt 설치 방식으로 되돌린다.
+# 이 태그가 모두 포함한다. 만약 특수 codec 이 추가로 필요해지면 별도 runtime image 를 재검토한다.
 COPY --from=mwader/static-ffmpeg:7.0 /ffmpeg /usr/local/bin/ffmpeg
 COPY --from=mwader/static-ffmpeg:7.0 /ffprobe /usr/local/bin/ffprobe
 
-RUN groupadd --system --gid 1001 nodejs \
-    && useradd --system --uid 1001 --gid nodejs nextjs
-
-COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/static ./apps/web/.next/static
-COPY --from=builder --chown=nextjs:nodejs /app/apps/web/public ./apps/web/public
-
-USER nextjs
+COPY --from=builder --chown=65532:65532 /app/apps/web/.next/standalone ./
+COPY --from=builder --chown=65532:65532 /app/apps/web/.next/static ./apps/web/.next/static
+COPY --from=builder --chown=65532:65532 /app/apps/web/public ./apps/web/public
 
 EXPOSE 3000
 
-CMD ["node", "apps/web/server.js"]
+CMD ["apps/web/server.js"]
