@@ -229,3 +229,28 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 11차: cloud-import hook fetch boundary 분리
+
+### 작업내용
+
+- `features/cloud-import/hooks/use-cloud-import.ts`와 `use-local-import.ts`에 남아 있는 직접 `fetch()` 호출을 제거한다.
+- 클라우드 연결 상태, 파일 목록, SSE 분석 요청, 가져오기 commit, 초안 load/save/delete 호출을 `cloud-import-fetch.ts`로 이동한다.
+- hook은 UI 상태 전이, abort controller, cache, draft recovery 조립만 담당하게 한다.
+
+### 논의 필요
+
+- SSE 분석 요청까지 wrapper가 소유할지, `runImportAnalysisRequest` 호출부가 fetch request를 직접 유지할지.
+
+### 선택지
+
+1. wrapper가 `Response`를 반환하는 request 함수까지 소유하고 hook은 상태 전이만 담당한다.
+2. SSE fetch는 hook에 남기고 일반 JSON/void 호출만 wrapper로 이동한다.
+
+### 추천
+
+- 1번. 직접 `fetch()` 제거 목표와 서비스별 HTTP boundary 표준화에 맞춰 SSE request 생성도 wrapper로 모은다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.

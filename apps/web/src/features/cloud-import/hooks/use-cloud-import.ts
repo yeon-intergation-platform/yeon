@@ -26,6 +26,15 @@ import {
 } from "./import-helpers";
 import { answerLocalPreviewQuestion } from "./local-preview-assistant";
 import { applyLocalPreviewRefinement } from "./local-preview-refinement";
+import {
+  commitCloudImport,
+  deleteImportDraft,
+  loadCloudConnectionStatus,
+  loadCloudDriveFiles,
+  loadImportDraftSnapshot,
+  requestCloudImportAnalysis,
+  saveImportDraftPreview,
+} from "./cloud-import-fetch";
 import { normalizeCloudDriveFiles } from "./cloud-file-normalizers";
 import { resetImportState } from "./import-state-reset";
 import { useImportDraftRecovery } from "./use-import-draft-recovery";
@@ -92,7 +101,7 @@ function readFolderCache(provider: CloudProvider): Map<string, DriveFile[]> {
 
 function writeFolderCache(
   provider: CloudProvider,
-  cache: Map<string, DriveFile[]>,
+  cache: Map<string, DriveFile[]>
 ) {
   try {
     const payload = { ts: Date.now(), data: Object.fromEntries(cache) };
@@ -104,7 +113,7 @@ function writeFolderCache(
 
 export function useCloudImport(
   provider: CloudProvider,
-  onImportComplete?: (result: ImportCommitResult) => void,
+  onImportComplete?: (result: ImportCommitResult) => void
 ) {
   const { resolveApiHref } = useAppRoute();
   const base = resolveApiHref(API_BASE[provider]);
@@ -120,11 +129,11 @@ export function useCloudImport(
   >(null);
   const [processingProgress, setProcessingProgress] = useState(0);
   const [processingMessage, setProcessingMessage] = useState<string | null>(
-    null,
+    null
   );
   const [streamingText, setStreamingText] = useState<string | null>(null);
   const [editablePreview, setEditablePreview] = useState<ImportPreview | null>(
-    null,
+    null
   );
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
@@ -133,13 +142,13 @@ export function useCloudImport(
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const folderCacheRef = useRef<Map<string, DriveFile[]>>(
-    readFolderCache(provider),
+    readFolderCache(provider)
   );
   const loadSeqRef = useRef(0);
   const loadAbortRef = useRef<AbortController | null>(null);
   const analyzeAbortRef = useRef<AbortController | null>(null);
   const previewSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
-    null,
+    null
   );
   const folderStackRef = useRef(folderStack);
   folderStackRef.current = folderStack;
@@ -170,27 +179,21 @@ export function useCloudImport(
       setProcessingProgress(snapshot.processingProgress);
       setProcessingMessage(snapshot.processingMessage);
       setStreamingText(
-        snapshot.status === "analyzing" ? snapshot.processingMessage : null,
+        snapshot.status === "analyzing" ? snapshot.processingMessage : null
       );
     },
-    [],
+    []
   );
 
   const loadDraft = useCallback(
     async (targetDraftId: string) => {
-      const res = await fetch(
-        resolveApiHref(`/api/v1/integrations/local/drafts/${targetDraftId}`),
+      const snapshot = await loadImportDraftSnapshot<CloudImportDraftSnapshot>(
+        resolveApiHref,
+        targetDraftId
       );
-      if (!res.ok) {
-        throw new Error(
-          await res.text().catch(() => "가져오기 초안을 불러오지 못했습니다."),
-        );
-      }
-
-      const snapshot = (await res.json()) as CloudImportDraftSnapshot;
       return snapshot.provider === provider ? snapshot : null;
     },
-    [provider],
+    [provider, resolveApiHref]
   );
 
   const {
@@ -211,10 +214,9 @@ export function useCloudImport(
   const checkStatus = useCallback(async () => {
     try {
       setConnecting(true);
-      const res = await fetch(`${base}/status`);
-      if (!res.ok) return;
-      const data = (await res.json()) as { connected: boolean };
-      setConnected(data.connected);
+      const connectedStatus = await loadCloudConnectionStatus(base);
+      if (connectedStatus == null) return;
+      setConnected(connectedStatus);
     } catch {
       // 연결 상태 확인 실패는 치명적이지 않음
     } finally {
@@ -241,24 +243,23 @@ export function useCloudImport(
       try {
         if (!cached) setFilesLoading(true);
         setError(null);
-        const url = folderId
-          ? `${base}/files?folderId=${folderId}`
-          : `${base}/files`;
-        const res = await fetch(url, { signal: abortController.signal });
-        if (!res.ok) throw new Error("파일 목록을 불러오지 못했습니다.");
-        const data = (await res.json()) as { files: unknown[] };
+        const filesPayload = await loadCloudDriveFiles(
+          base,
+          folderId,
+          abortController.signal
+        );
 
         if (seq !== loadSeqRef.current) return;
 
         const normalized = normalizeCloudDriveFiles(
           provider,
-          data.files as Array<{
+          filesPayload as Array<{
             id: string;
             name: string;
             size: number;
             lastModifiedAt: string;
             mimeType?: string;
-          }>,
+          }>
         );
 
         folderCacheRef.current.set(cacheKey, normalized);
@@ -277,14 +278,14 @@ export function useCloudImport(
           setError(
             err instanceof Error
               ? err.message
-              : "파일 목록을 불러오지 못했습니다.",
+              : "파일 목록을 불러오지 못했습니다."
           );
         }
       } finally {
         if (seq === loadSeqRef.current) setFilesLoading(false);
       }
     },
-    [base, provider],
+    [base, provider]
   );
 
   const navigateToFolder = useCallback(
@@ -294,7 +295,7 @@ export function useCloudImport(
       setEditablePreview(null);
       loadFiles(id);
     },
-    [loadFiles],
+    [loadFiles]
   );
 
   const navigateBack = useCallback(() => {
@@ -317,7 +318,7 @@ export function useCloudImport(
       setEditablePreview(null);
       loadFiles(targetId);
     },
-    [loadFiles],
+    [loadFiles]
   );
 
   const selectFileForPreview = useCallback(
@@ -335,7 +336,7 @@ export function useCloudImport(
         setChatMessages,
       });
     },
-    [clearStoredDraftId, selectedFile?.id],
+    [clearStoredDraftId, selectedFile?.id]
   );
 
   const analyzeSelectedFile = useCallback(async () => {
@@ -353,20 +354,10 @@ export function useCloudImport(
       setStreamingText(null);
       const analysisResult = await runImportAnalysisRequest({
         request: () =>
-          fetch(`${base}/analyze`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Accept: "text/event-stream",
-            },
-            body: JSON.stringify({
-              draftId: draftId ?? undefined,
-              fileId: selectedFile.id,
-              fileName: selectedFile.name,
-              mimeType: selectedFile.mimeType,
-              size: selectedFile.size,
-              lastModifiedAt: selectedFile.lastModifiedAt,
-            }),
+          requestCloudImportAnalysis({
+            baseHref: base,
+            draftId,
+            file: selectedFile,
             signal: controller.signal,
           }),
         signal: controller.signal,
@@ -389,12 +380,12 @@ export function useCloudImport(
       });
       pushMessage(
         "ai",
-        `파일 분석이 완료됐습니다! ${summaryText(analysisResult.preview)}을 찾았습니다. 수정이 필요하면 말씀해 주세요.`,
+        `파일 분석이 완료됐습니다! ${summaryText(analysisResult.preview)}을 찾았습니다. 수정이 필요하면 말씀해 주세요.`
       );
     } catch (err) {
       if ((err as Error).name === "AbortError") return;
       setError(
-        err instanceof Error ? err.message : "파일 분석에 실패했습니다.",
+        err instanceof Error ? err.message : "파일 분석에 실패했습니다."
       );
     } finally {
       if (analyzeAbortRef.current === controller) {
@@ -418,19 +409,14 @@ export function useCloudImport(
       }
 
       previewSaveTimerRef.current = setTimeout(() => {
-        void fetch(
-          resolveApiHref(`/api/v1/integrations/local/drafts/${draftId}`),
-          {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(updated),
-          },
-        ).catch(() => {
-          // 자동 저장 실패는 다음 입력 기회에서 재시도
-        });
+        void saveImportDraftPreview(resolveApiHref, draftId, updated).catch(
+          () => {
+            // 자동 저장 실패는 다음 입력 기회에서 재시도
+          }
+        );
       }, 400);
     },
-    [clearRecoveryNotice, draftId],
+    [clearRecoveryNotice, draftId, resolveApiHref]
   );
 
   const confirmImport = useCallback(async () => {
@@ -438,19 +424,7 @@ export function useCloudImport(
     try {
       setImporting(true);
       setError(null);
-      const res = await fetch(`${base}/import`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          draftId: draftId ?? undefined,
-          preview: editablePreview,
-        }),
-      });
-      if (!res.ok) {
-        const text = await res.text().catch(() => "");
-        throw new Error(text || "가져오기에 실패했습니다.");
-      }
-      const data = (await res.json()) as ImportCommitResult;
+      const data = await commitCloudImport(base, draftId, editablePreview);
       setImportResult(data.created);
       clearStoredDraftId();
       onImportComplete?.(data);
@@ -473,7 +447,7 @@ export function useCloudImport(
         setError,
         setChatMessages,
       },
-      { clearSelectedFile: true },
+      { clearSelectedFile: true }
     );
   }, [clearStoredDraftId]);
 
@@ -492,20 +466,15 @@ export function useCloudImport(
         setError,
         setChatMessages,
       },
-      { clearSelectedFile: true },
+      { clearSelectedFile: true }
     );
 
     if (!currentDraftId) return;
 
-    await fetch(
-      resolveApiHref(`/api/v1/integrations/local/drafts/${currentDraftId}`),
-      {
-        method: "DELETE",
-      },
-    ).catch(() => {
+    await deleteImportDraft(resolveApiHref, currentDraftId).catch(() => {
       // 초안 삭제 실패는 조용히 무시하고 UI 상태만 정리
     });
-  }, [clearStoredDraftId, draftId]);
+  }, [clearStoredDraftId, draftId, resolveApiHref]);
 
   const refineWithInstruction = useCallback(
     async (instruction: string) => {
@@ -517,7 +486,7 @@ export function useCloudImport(
 
       const localAnswer = answerLocalPreviewQuestion(
         editablePreview,
-        trimmedInstruction,
+        trimmedInstruction
       );
 
       if (localAnswer) {
@@ -527,7 +496,7 @@ export function useCloudImport(
 
       const localRefinement = applyLocalPreviewRefinement(
         editablePreview,
-        trimmedInstruction,
+        trimmedInstruction
       );
 
       if (localRefinement) {
@@ -548,13 +517,10 @@ export function useCloudImport(
           }
 
           previewSaveTimerRef.current = setTimeout(() => {
-            void fetch(
-              resolveApiHref(`/api/v1/integrations/local/drafts/${draftId}`),
-              {
-                method: "PATCH",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(localRefinement.preview),
-              },
+            void saveImportDraftPreview(
+              resolveApiHref,
+              draftId,
+              localRefinement.preview
             ).catch(() => {
               // 자동 저장 실패는 다음 입력 기회에서 재시도
             });
@@ -579,22 +545,12 @@ export function useCloudImport(
         setStreamingText(null);
         const analysisResult = await runImportAnalysisRequest({
           request: () =>
-            fetch(`${base}/analyze`, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Accept: "text/event-stream",
-              },
-              body: JSON.stringify({
-                draftId: draftId ?? undefined,
-                fileId: selectedFile.id,
-                fileName: selectedFile.name,
-                mimeType: selectedFile.mimeType,
-                size: selectedFile.size,
-                lastModifiedAt: selectedFile.lastModifiedAt,
-                instruction: trimmedInstruction,
-                previousResult: prevPreview,
-              }),
+            requestCloudImportAnalysis({
+              baseHref: base,
+              draftId,
+              file: selectedFile,
+              instruction: trimmedInstruction,
+              previousResult: prevPreview,
               signal: controller.signal,
             }),
           signal: controller.signal,
@@ -618,7 +574,7 @@ export function useCloudImport(
         pushMessage(
           "ai",
           analysisResult.assistantMessage?.trim() ||
-            diffText(prevPreview, analysisResult.preview),
+            diffText(prevPreview, analysisResult.preview)
         );
       } catch (err) {
         if ((err as Error).name === "AbortError") return;
@@ -642,7 +598,8 @@ export function useCloudImport(
       selectedFile,
       editablePreview,
       pushMessage,
-    ],
+      resolveApiHref,
+    ]
   );
 
   const resetState = useCallback(() => {
@@ -665,7 +622,7 @@ export function useCloudImport(
       {
         clearSelectedFile: true,
         clearProcessingState: true,
-      },
+      }
     );
     folderCacheRef.current.clear();
     localStorage.removeItem(storageCacheKey(provider));
