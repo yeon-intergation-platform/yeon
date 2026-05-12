@@ -1084,7 +1084,23 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6.0.2
 
+      - name: 최신 main 배포 여부 확인
+        id: fresh_main
+        run: |
+          set -eu
+          git fetch --no-tags --depth=1 origin main
+          latest_main_sha="$(git rev-parse FETCH_HEAD)"
+          echo "latest_main_sha=${latest_main_sha}"
+          echo "current_sha=${GITHUB_SHA}"
+          if [ "${latest_main_sha}" != "${GITHUB_SHA}" ]; then
+            echo "현재 run은 최신 main이 아니므로 운영 배포를 스킵합니다."
+            echo "deploy=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "deploy=true" >> "$GITHUB_OUTPUT"
+
       - name: GHCR 로그인
+        if: steps.fresh_main.outputs.deploy == 'true'
         uses: docker/login-action@v4.1.0
         with:
           registry: ${{ env.REGISTRY }}
@@ -1092,6 +1108,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Check deploy prerequisites
+        if: steps.fresh_main.outputs.deploy == 'true'
         run: |
           set -eu
           install -d "${DEPLOY_DIR}"
@@ -1102,11 +1119,13 @@ jobs:
           docker network inspect yeon-db-edge >/dev/null 2>&1 || docker network create yeon-db-edge
 
       - name: Sync compose file
+        if: steps.fresh_main.outputs.deploy == 'true'
         run: |
           set -eu
           install -m 644 "${COMPOSE_FILE}" "${DEPLOY_DIR}/${COMPOSE_FILE}"
 
       - name: Deploy on Raspberry Pi
+        if: steps.fresh_main.outputs.deploy == 'true'
         run: |
           set -eu
           owner_lower="$(printf '%s' "${GITHUB_REPOSITORY_OWNER}" | tr '[:upper:]' '[:lower:]')"
@@ -1128,10 +1147,27 @@ jobs:
           fi
 
           image_tag="sha-${GITHUB_SHA::7}"
+          latest_tag="latest"
           echo "배포 이미지 태그: ${image_tag}"
-          export YEON_WEB_IMAGE="ghcr.io/${owner_lower}/yeon-web-app:${image_tag}"
-          export YEON_RACE_SERVER_IMAGE="ghcr.io/${owner_lower}/yeon-race-server:${image_tag}"
-          export YEON_BACKEND_IMAGE="ghcr.io/${owner_lower}/yeon-backend:${image_tag}"
+
+          if [[ "${{ needs.detect_changes.outputs.web }}" == "true" ]]; then
+            export YEON_WEB_IMAGE="ghcr.io/${owner_lower}/yeon-web-app:${image_tag}"
+          else
+            export YEON_WEB_IMAGE="ghcr.io/${owner_lower}/yeon-web-app:${latest_tag}"
+          fi
+
+          if [[ "${{ needs.detect_changes.outputs.backend }}" == "true" ]]; then
+            export YEON_BACKEND_IMAGE="ghcr.io/${owner_lower}/yeon-backend:${image_tag}"
+          else
+            export YEON_BACKEND_IMAGE="ghcr.io/${owner_lower}/yeon-backend:${latest_tag}"
+          fi
+
+          if [[ "${{ needs.detect_changes.outputs.race }}" == "true" ]]; then
+            export YEON_RACE_SERVER_IMAGE="ghcr.io/${owner_lower}/yeon-race-server:${image_tag}"
+          else
+            export YEON_RACE_SERVER_IMAGE="ghcr.io/${owner_lower}/yeon-race-server:${latest_tag}"
+          fi
+
           # Pi 네트워크 대응: pull 실패 시 최대 3회 재시도
           for i in 1 2 3; do
             docker compose -f "${COMPOSE_FILE}" pull "${services[@]}" && break
@@ -1144,7 +1180,7 @@ jobs:
           docker compose -f "${COMPOSE_FILE}" up -d --wait "${services[@]}"
 
       - name: Run DB migrations
-        if: needs.detect_changes.outputs.backend == 'true'
+        if: steps.fresh_main.outputs.deploy == 'true' && needs.detect_changes.outputs.backend == 'true'
         run: |
           set -eu
           DEPLOY_DIR="${DEPLOY_DIR}" COMPOSE_FILE="${COMPOSE_FILE}" bash scripts/migrate.sh
