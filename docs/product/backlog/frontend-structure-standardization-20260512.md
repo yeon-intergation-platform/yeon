@@ -730,3 +730,29 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 31차: typing-service fetch/query key boundary 정리
+
+### 작업내용
+
+- `typing-service` hook 내부 직접 `fetch()` 호출을 제거한다.
+- 타자 덱, 캐릭터 프레임, 로비 조회, race seed 요청은 `typing-service-fetch.ts` helper로 이동한다.
+- 캐릭터 프레임/로비 query key는 `typing-service-query-keys.ts` factory로 이동한다.
+- 기존 덱 query key 값, optimistic frame override 저장, 로비 필터링, race seed fallback 흐름은 유지한다.
+
+### 논의 필요
+
+- `use-typing-decks.ts`의 deck query key factory까지 별도 파일로 완전 이동할지 여부.
+
+### 선택지
+
+1. 이번 차수는 직접 fetch 제거와 frame/lobby key factory 이동을 우선하고 deck key export는 기존 호환을 유지한다.
+2. typing-service query key 전체를 한 번에 재배치한다.
+
+### 추천
+
+- 1번. typing-service 화면 범위가 넓으므로 fetch boundary를 먼저 닫고 key export 이동은 후속 감사에서 다룬다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.

@@ -9,6 +9,7 @@ import type {
 } from "@yeon/race-shared";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { TYPING_PASSAGES, type TypingPassage } from "./typing-content";
+import { requestTypingRaceSeed } from "./typing-service-fetch";
 import { useTypingDeckDetail, useTypingDecks } from "./use-typing-decks";
 
 export type TypingLocale = "ko" | "en";
@@ -262,19 +263,6 @@ function localRaceSeed(
     participantDeckTitle: deck.title,
     languageTag,
   };
-}
-
-async function fetchJson(url: string, init?: RequestInit) {
-  const response = await fetch(url, {
-    ...init,
-    headers: {
-      Accept: "application/json",
-      ...(init?.body ? { "Content-Type": "application/json" } : {}),
-      ...init?.headers,
-    },
-  });
-  if (!response.ok) throw new Error(`HTTP ${response.status}`);
-  return response.json() as Promise<unknown>;
 }
 
 export function getSpeedUnit(locale: TypingLocale) {
@@ -535,12 +523,9 @@ export async function resolveTypingRaceSeed(
     };
 
   try {
-    const payload = await fetchJson(
+    const payload = await requestTypingRaceSeed(
       `/api/v1/typing-decks/${encodeURIComponent(deck.id)}/race-seed`,
-      {
-        method: "POST",
-        body: JSON.stringify({ languageTag }),
-      }
+      languageTag
     );
     const seed = normalizeRaceSeed(payload, deck, languageTag);
     if (!seed) throw new Error("Invalid race seed response");
