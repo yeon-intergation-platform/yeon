@@ -29,6 +29,8 @@ import {
   useTypingSettings,
 } from "./use-typing-settings";
 import { useTypingRoomLobby } from "./use-typing-room-lobby";
+import { CharacterSprite } from "./character-sprite";
+import { findCharacter } from "./characters";
 import {
   TYPING_ROOM_DIFFICULTY_LABELS,
   TYPING_ROOM_LANGUAGE_LABELS,
@@ -37,6 +39,8 @@ import {
   TYPING_ROOM_TEXT_TYPE_LABELS,
   TYPING_ROOM_VISIBILITY_LABELS,
 } from "./typing-room-labels";
+import { useCharacterFrameOverrides } from "./use-character-frame-overrides";
+import { useTypingProfile } from "./use-typing-profile";
 
 const FIXED_MAX_PARTICIPANTS = 4;
 const FIXED_TEXT_TYPE = TYPING_ROOM_TEXT_TYPE.SHORT;
@@ -74,6 +78,8 @@ export function TypingRoomLobbyScreen() {
   const router = useRouter();
   const { state } = useTypingRoomLobby();
   const { settings } = useTypingSettings();
+  const { profile } = useTypingProfile();
+  const frameOverrides = useCharacterFrameOverrides();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [visibility, setVisibility] = useState<TypingRoomVisibility>(
@@ -94,6 +100,7 @@ export function TypingRoomLobbyScreen() {
       deckState.selectedDeck,
     [deckState.selectedDeck, deckState.selectedDeckId, roomDeckOptions]
   );
+  const character = findCharacter(profile.characterId);
 
   const generatedTitle = `${TYPING_ROOM_LANGUAGE_LABELS[fixedLanguage]} ${TYPING_ROOM_TEXT_TYPE_LABELS[FIXED_TEXT_TYPE]} 같이 치기`;
 
@@ -154,7 +161,7 @@ export function TypingRoomLobbyScreen() {
       <TypingServiceHeader active="rooms" title="YEON 타자방" />
 
       <main>
-        <section className="flex min-h-[174px] items-center justify-between px-6 py-10 md:px-10">
+        <section className="flex min-h-[174px] flex-col gap-6 px-6 py-10 md:flex-row md:items-center md:justify-between md:px-10">
           <div>
             <h1 className="text-[48px] font-black leading-none tracking-[-0.06em] text-[#111] md:text-[56px]">
               타자방
@@ -163,15 +170,29 @@ export function TypingRoomLobbyScreen() {
               실시간으로 함께 타자를 치고 실력을 겨루는 공간입니다.
             </p>
           </div>
-          <YeonButton
-            type="button"
-            onClick={openCreateModal}
-            variant="primary"
-            size="xl"
-            className="hidden min-w-[176px] rounded-lg shadow-[0_3px_10px_rgba(0,0,0,0.10)] md:inline-flex"
-          >
-            방 만들기
-          </YeonButton>
+          <div className="flex items-center gap-4 rounded-2xl border border-[#e5e5e5] bg-[#fafafa] px-4 py-3">
+            <div className="flex h-[72px] w-[72px] items-end justify-center overflow-hidden rounded-xl bg-white">
+              <CharacterSprite
+                character={character}
+                maxHeight={68}
+                sequenceOverride={frameOverrides[character.id]}
+              />
+            </div>
+            <div>
+              <p className="text-[13px] font-semibold text-[#666]">
+                입장 캐릭터
+              </p>
+              <p className="mt-1 text-[16px] font-bold text-[#111]">
+                {profile.nickname} · {character.label[settings.locale]}
+              </p>
+              <Link
+                href="/typing-service"
+                className="mt-2 inline-flex text-[12px] font-semibold text-[#666] underline underline-offset-4"
+              >
+                캐릭터 바꾸기
+              </Link>
+            </div>
+          </div>
         </section>
 
         <section className="border-t border-[#e5e5e5] px-6 py-6 md:px-10">
@@ -191,19 +212,29 @@ export function TypingRoomLobbyScreen() {
               ))}
             </div>
 
-            <label className="relative block w-full md:w-[336px]">
-              <Search
-                aria-hidden="true"
-                size={22}
-                className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#666]"
-              />
-              <YeonField
-                value={searchKeyword}
-                onChange={(event) => setSearchKeyword(event.target.value)}
-                placeholder="방 검색"
-                className="h-[50px] rounded-lg pl-12 pr-4 text-[16px] font-medium"
-              />
-            </label>
+            <div className="flex flex-col gap-3 md:flex-row md:items-center">
+              <label className="relative block w-full md:w-[336px]">
+                <Search
+                  aria-hidden="true"
+                  size={22}
+                  className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#666]"
+                />
+                <YeonField
+                  value={searchKeyword}
+                  onChange={(event) => setSearchKeyword(event.target.value)}
+                  placeholder="방 검색"
+                  className="h-[50px] rounded-lg pl-12 pr-4 text-[16px] font-medium"
+                />
+              </label>
+              <YeonButton
+                type="button"
+                onClick={openCreateModal}
+                variant="primary"
+                className="hidden h-[50px] rounded-lg px-8 text-[16px] font-bold md:inline-flex"
+              >
+                방 만들기
+              </YeonButton>
+            </div>
           </div>
 
           <YeonSurface className="mt-7 min-h-[520px]">
