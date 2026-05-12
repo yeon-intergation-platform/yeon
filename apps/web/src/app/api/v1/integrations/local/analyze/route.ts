@@ -3,22 +3,10 @@ import {
   jsonError,
   requireAuthenticatedUser,
 } from "@/app/api/v1/counseling-records/_shared";
-import type {
-  FieldSchemaHint,
-  ImportPreview,
-  RefineContext,
-} from "@/server/services/file-analysis-service";
 import {
-  createLocalImportDraft,
-  getImportDraftBuffer,
-  saveImportDraftError,
-} from "@/server/services/import-drafts-service";
-import { executeAnalyzeRoute } from "@/app/api/v1/integrations/_shared";
-import type { FileKind } from "@/features/cloud-import/file-kind";
-import { detectFileKind } from "@/features/cloud-import/file-kind";
-import { ServiceError } from "@/server/services/service-error";
-import { getOverviewTab } from "@/server/services/member-tabs-service";
-import { getFieldsForTab } from "@/server/services/member-fields-service";
+  LocalImportAnalysisSpringBackendHttpError,
+  runLocalImportAnalyzeInSpring,
+} from "@/server/local-import-analysis-spring-client";
 
 export const runtime = "nodejs";
 
@@ -33,116 +21,14 @@ export async function POST(request: NextRequest) {
     return jsonError("multipart form 데이터를 읽을 수 없습니다.", 400);
   }
 
-  const file = formData.get("file");
-  const draftIdRaw = formData.get("draftId");
-  const requestedDraftId =
-    typeof draftIdRaw === "string" && draftIdRaw.trim()
-      ? draftIdRaw.trim()
-      : null;
-
-  const instruction = formData.get("instruction");
-  const previousResultRaw = formData.get("previousResult");
-  let refine: RefineContext | undefined;
-  if (
-    typeof instruction === "string" &&
-    instruction.trim() &&
-    typeof previousResultRaw === "string"
-  ) {
-    try {
-      const previousResult = JSON.parse(previousResultRaw) as ImportPreview;
-      refine = { instruction: instruction.trim(), previousResult };
-    } catch {
-      // 파싱 실패 시 refinement 없이 진행
-    }
-  }
-
-  // 커스텀 필드 힌트 (spaceId 제공 시)
-  const spaceId = formData.get("spaceId");
-  let fieldHints: FieldSchemaHint[] | undefined;
-  if (typeof spaceId === "string" && spaceId.trim()) {
-    try {
-      const overviewTab = await getOverviewTab(spaceId.trim());
-      if (overviewTab) {
-        const fields = await getFieldsForTab(
-          overviewTab.publicId,
-          spaceId.trim(),
-        );
-        fieldHints = fields.map((f) => ({
-          name: f.name,
-          fieldType: f.fieldType,
-        }));
-      }
-    } catch {
-      // 필드 힌트 조회 실패 시 무시하고 진행
-    }
-  }
-
-  let activeDraftId: string | null = null;
-
   try {
-    let buffer: Buffer;
-    let fileName: string;
-    let mimeType: string;
-    let kind: FileKind;
-
-    if (requestedDraftId) {
-      const draft = await getImportDraftBuffer(
-        currentUser.id,
-        requestedDraftId,
-      );
-      buffer = draft.buffer;
-      fileName = draft.row.sourceFileName;
-      mimeType = draft.row.sourceMimeType ?? "";
-      kind = draft.row.sourceFileKind as FileKind;
-      activeDraftId = draft.row.publicId;
-    } else if (file instanceof Blob) {
-      fileName = (file as File).name;
-      mimeType = file.type;
-      buffer = Buffer.from(await file.arrayBuffer());
-      kind = detectFileKind(fileName, mimeType);
-
-      const createdDraft = await createLocalImportDraft({
-        userId: currentUser.id,
-        fileName,
-        mimeType,
-        fileKind: kind,
-        byteSize: buffer.byteLength,
-        lastModifiedAt:
-          file instanceof File ? new Date(file.lastModified) : null,
-        buffer,
-      });
-      activeDraftId = createdDraft.id;
-    } else {
-      return jsonError("file 또는 draftId 필드가 필요합니다.", 400);
-    }
-
-    if (!activeDraftId) {
-      return jsonError("초안 식별자를 확인하지 못했습니다.", 500);
-    }
-
-    return executeAnalyzeRoute({
-      request,
+    return await runLocalImportAnalyzeInSpring({
       userId: currentUser.id,
-      draftId: activeDraftId,
-      buffer,
-      fileName,
-      mimeType,
-      kind,
-      refine,
-      fieldHints,
+      formData,
+      accept: request.headers.get("accept"),
     });
   } catch (error) {
-    if (activeDraftId) {
-      await saveImportDraftError({
-        userId: currentUser.id,
-        draftId: activeDraftId,
-        message:
-          error instanceof ServiceError
-            ? error.message
-            : "파일 분석에 실패했습니다.",
-      });
-    }
-    if (error instanceof ServiceError) {
+    if (error instanceof LocalImportAnalysisSpringBackendHttpError) {
       return jsonError(error.message, error.status);
     }
     console.error(error);
