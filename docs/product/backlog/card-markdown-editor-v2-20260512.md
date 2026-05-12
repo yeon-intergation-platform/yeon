@@ -203,3 +203,11 @@
 - 모바일 작성 화면에서도 preview 접근 경로가 있다.
 - 실패 메시지는 한국어로 정확히 나오되, 툴바 표면은 아이콘 중심이다.
 - `pnpm --filter @yeon/web lint`, `pnpm --filter @yeon/web typecheck`, `pnpm --filter @yeon/web build`가 통과한다.
+
+## 구현 결과
+
+- 1차: 에디터 이미지 유틸, 업로드 훅, 이미지 확장, 아이콘 툴바를 분리했다.
+- 2차: 파일 선택, 드래그앤드롭, 이미지 붙여넣기, Clipboard API fallback이 동일한 이미지 삽입 경로를 사용하게 했다.
+- 3차: 이미지 width clamp를 200~800px로 통일하고 resize node view를 별도 확장으로 분리했다.
+- 4차: 데스크톱에서는 editor 오른쪽에 preview를 붙이고, 모바일에서는 작성/미리보기 전환 탭을 제공했다.
+- 5차: 이미지 유틸 단위 테스트를 추가했다.

@@ -11,8 +11,8 @@ interface MarkdownContentProps {
 }
 
 const baseTextClass = "whitespace-pre-wrap break-words";
-const CARD_HTML_IMAGE_MIN_WIDTH = 160;
-const CARD_HTML_IMAGE_MAX_WIDTH = 900;
+const CARD_HTML_IMAGE_MIN_WIDTH = 200;
+const CARD_HTML_IMAGE_MAX_WIDTH = 800;
 const CARD_HTML_IMAGE_DEFAULT_WIDTH = 480;
 
 function looksLikeHtml(value: string) {
