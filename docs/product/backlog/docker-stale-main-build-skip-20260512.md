@@ -25,3 +25,29 @@
 ### 사용자 방향
 
 - 기능만 잘 돌아가면 되므로 전부 main에 머지한다. stale run은 배포뿐 아니라 빌드도 스킵하는 방향으로 수정한다.
+
+## 2차
+
+### 작업내용
+
+- 단순 workflow-level `cancel-in-progress: true`가 queued된 이전 run과 섞일 때 최신 run까지 취소할 수 있는 위험을 제거한다.
+- main workflow concurrency는 기존처럼 main을 자동 취소하지 않게 되돌린다.
+- 대신 최신 main run의 preflight 단계에서 GitHub Actions API로 같은 workflow의 stale main run만 명시적으로 취소한다.
+
+### 논의 필요
+
+- GitHub API 취소 권한을 위해 workflow `actions: write` 권한을 부여할지.
+
+### 선택지
+
+- A. workflow-level concurrency 취소를 유지한다.
+- B. 최신 main run에서 stale run만 API로 선별 취소한다.
+- C. 취소 없이 detect_changes 조기 스킵만 유지한다.
+
+### 추천
+
+- B. 최신 run이 주도적으로 이전 run만 취소하므로 빌드 낭비를 줄이면서 최신 배포가 취소되는 역전 위험을 낮춘다.
+
+### 사용자 방향
+
+- 빌드 낭비를 줄이되 기능/배포가 잘 돌아가는 방향을 우선한다.
