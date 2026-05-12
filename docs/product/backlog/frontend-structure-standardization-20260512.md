@@ -2313,3 +2313,28 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 93차 — 카드 행 보기/편집 view 분리
+
+### 작업내용
+
+- `card-row.tsx`에 함께 있던 보기 모드 JSX와 편집 모드 JSX를 `card-row-views.tsx`로 분리한다.
+- `card-row.tsx`는 dirty 계산, 저장/삭제 mutation, 터치 삭제 reveal, 편집 orchestration만 담당하게 줄인다.
+- 카드 보기/편집 UI 문구와 저장/삭제 동작은 변경하지 않는다.
+
+### 논의 필요
+
+- 보기/편집 view를 한 파일로 둘지, 각각 별도 파일로 나눌지 여부.
+
+### 선택지
+
+1. 이번 차수는 `card-row-views.tsx` 하나로 분리한다.
+2. `card-row-read-view.tsx`와 `card-row-edit-view.tsx`로 즉시 나눈다.
+
+### 추천
+
+- 1번. 카드 행 내부 상태와 props 연결이 많으므로 첫 차수는 import churn을 줄이는 단일 view 파일로 분리한다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.
