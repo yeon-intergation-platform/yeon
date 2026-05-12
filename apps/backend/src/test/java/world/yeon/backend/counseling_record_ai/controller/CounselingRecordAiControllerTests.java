@@ -4,13 +4,16 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.request;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.UUID;
@@ -35,6 +38,27 @@ class CounselingRecordAiControllerTests {
 
 	@Autowired private MockMvc mockMvc;
 	@MockitoBean private CounselingRecordAiService service;
+
+	@Test void 상담기록분석결과를반환한다() throws Exception {
+		when(service.runRecordAnalysis(eq(USER_ID), eq("cr-1"))).thenReturn(new ObjectMapper().readTree("""
+			{
+			  "summary":"요약",
+			  "member":{"name":null,"traits":[],"emotion":"안정"},
+			  "issues":[],
+			  "actions":{"mentor":[],"member":[],"nextSession":[]},
+			  "keywords":[],
+			  "riskAssessment":{"level":"low","basis":"근거","signals":[]}
+			}
+		"""));
+
+		mockMvc.perform(
+			post("/counseling-records/cr-1/analyze")
+				.header("X-Yeon-User-Id", USER_ID.toString())
+				.header("X-Yeon-Internal-Token", "test-internal-token")
+		)
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.analysisResult.summary").value("요약"));
+	}
 
 	@Test void 상담채팅스트림을반환한다() throws Exception {
 		doAnswer(invocation -> {

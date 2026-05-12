@@ -1,5 +1,9 @@
 package world.yeon.backend.counseling_record_ai.controller;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.UUID;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -26,6 +30,38 @@ public class CounselingRecordAiController {
 
 	public CounselingRecordAiController(CounselingRecordAiService service) {
 		this.service = service;
+	}
+
+	@PostMapping(path = "/counseling-records/{recordId}/analyze")
+	public Map<String, Object> analyzeRecord(
+		@RequestHeader("X-Yeon-User-Id") UUID userId,
+		@PathVariable String recordId
+	) throws java.io.IOException {
+		JsonNode result = service.runRecordAnalysis(userId, recordId);
+		return Map.of("analysisResult", toPlainJson(result));
+	}
+
+	private static Object toPlainJson(JsonNode node) {
+		if (node == null || node.isNull()) {
+			return null;
+		}
+		if (node.isObject()) {
+			Map<String, Object> values = new LinkedHashMap<>();
+			node.fields().forEachRemaining(entry -> values.put(entry.getKey(), toPlainJson(entry.getValue())));
+			return values;
+		}
+		if (node.isArray()) {
+			ArrayList<Object> values = new ArrayList<>();
+			node.forEach(item -> values.add(toPlainJson(item)));
+			return values;
+		}
+		if (node.isBoolean()) {
+			return node.booleanValue();
+		}
+		if (node.isNumber()) {
+			return node.numberValue();
+		}
+		return node.asText();
 	}
 
 	@PostMapping(path = "/counseling-records/{recordId}/chat", produces = MediaType.TEXT_EVENT_STREAM_VALUE)

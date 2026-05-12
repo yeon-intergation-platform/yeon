@@ -2,8 +2,10 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
 import { analyzeRecordResponseSchema } from "@yeon/api-contract/counseling-records";
-import { runAnalysisForRecord } from "@/server/services/counseling-records-service";
-import { ServiceError } from "@/server/services/service-error";
+import {
+  analyzeCounselingRecordFromSpring,
+  CounselingRecordChatSpringBackendHttpError,
+} from "@/server/counseling-record-chat-spring-client";
 
 import { jsonError, requireAuthenticatedUser } from "../../_shared";
 
@@ -25,13 +27,14 @@ export async function POST(request: NextRequest, context: RouteContext) {
   const { recordId } = await context.params;
 
   try {
-    const result = await runAnalysisForRecord(currentUser.id, recordId);
-
-    return NextResponse.json(
-      analyzeRecordResponseSchema.parse({ analysisResult: result }),
+    const result = await analyzeCounselingRecordFromSpring(
+      currentUser.id,
+      recordId
     );
+
+    return NextResponse.json(analyzeRecordResponseSchema.parse(result));
   } catch (error) {
-    if (error instanceof ServiceError) {
+    if (error instanceof CounselingRecordChatSpringBackendHttpError) {
       return jsonError(error.message, error.status);
     }
 

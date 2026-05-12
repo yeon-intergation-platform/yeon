@@ -56,6 +56,33 @@ public class CounselingRecordAiService {
 		this.environment = environment;
 	}
 
+
+	public JsonNode runRecordAnalysis(UUID userId, String recordPublicId) throws IOException {
+		CounselingRecordDetailItemResponse detail = detailService.getDetail(userId, recordPublicId);
+		if (!"ready".equals(detail.status()) || detail.transcriptSegments().isEmpty()) {
+			throw new CounselingRecordAiServiceException(400, "COUNSELING_RECORD_NOT_READY", "전사가 완료된 레코드만 분석할 수 있습니다.");
+		}
+		if (detail.analysisResult() != null && "ready".equals(detail.analysisStatus())) {
+			return detail.analysisResult();
+		}
+		if ("processing".equals(detail.analysisStatus())) {
+			throw new CounselingRecordAiServiceException(409, "COUNSELING_ANALYSIS_PROCESSING", "AI 분석이 이미 진행 중입니다. 잠시 후 새로고침해 주세요.");
+		}
+
+		repository.markAnalysisProcessing(userId, recordPublicId);
+		try {
+			JsonNode result = requestAnalysisResult(detail);
+			repository.saveAnalysisResult(userId, recordPublicId, objectMapper.writeValueAsString(result));
+			return result;
+		} catch (CounselingRecordAiServiceException error) {
+			repository.saveAnalysisError(userId, recordPublicId, error.getMessage());
+			throw error;
+		} catch (Exception error) {
+			repository.saveAnalysisError(userId, recordPublicId, "AI 분석에 실패했습니다.");
+			throw error;
+		}
+	}
+
 	public void streamRecordChat(UUID userId, String recordPublicId, CounselingChatRequest request, OutputStream outputStream) throws IOException {
 		validateChatRequest(request);
 		CounselingChatMessageRequest lastMessage = request.messages().getLast();
@@ -114,6 +141,119 @@ public class CounselingRecordAiService {
 
 		HttpResponse<java.io.InputStream> response = requestChatCompletionStream(body, "추이 분석 AI가 응답하지 못했습니다.");
 		transformOpenAiStream(response.body(), outputStream);
+	}
+
+
+	private JsonNode requestAnalysisResult(CounselingRecordDetailItemResponse detail) throws IOException {
+		Map<String, Object> body = new LinkedHashMap<>();
+		body.put("model", resolveAiChatModel());
+		body.put("temperature", 0.2);
+		body.put("response_format", Map.of("type", "json_object"));
+		body.put("messages", List.of(
+			Map.of("role", "system", "content", buildAnalysisSystemPrompt(detail)),
+			Map.of("role", "user", "content", "위 상담 기록을 분석하여 JSON으로 반환하세요.")
+		));
+
+		try {
+			HttpRequest request = HttpRequest.newBuilder(URI.create(OPENAI_CHAT_COMPLETIONS_URL))
+				.header("content-type", "application/json")
+				.header("authorization", "Bearer " + resolveOpenAiApiKey())
+				.POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(body)))
+				.build();
+			HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+			if (response.statusCode() < 200 || response.statusCode() >= 300) {
+				throw new CounselingRecordAiServiceException(
+					response.statusCode() >= 500 ? 502 : response.statusCode(),
+					"OPENAI_ANALYSIS_FAILED",
+					extractOpenAiErrorMessage(response.body(), "AI 분석에 실패했습니다.")
+				);
+			}
+			String raw = objectMapper.readTree(response.body()).path("choices").path(0).path("message").path("content").asText(null);
+			if (raw == null || raw.isBlank()) {
+				throw new CounselingRecordAiServiceException(502, "OPENAI_ANALYSIS_EMPTY", "AI 분석 응답이 비어 있습니다.");
+			}
+			JsonNode result = objectMapper.readTree(raw);
+			validateAnalysisResult(result);
+			return result;
+		} catch (InterruptedException error) {
+			Thread.currentThread().interrupt();
+			throw new CounselingRecordAiServiceException(500, "OPENAI_ANALYSIS_INTERRUPTED", "AI 분석 호출이 중단되었습니다.");
+		}
+	}
+
+	private void validateAnalysisResult(JsonNode result) {
+		if (!result.hasNonNull("summary") || !result.has("member") || !result.has("issues") || !result.has("actions") || !result.has("keywords")) {
+			throw new CounselingRecordAiServiceException(502, "OPENAI_ANALYSIS_SCHEMA_INVALID", "AI 분석 응답이 예상 스키마와 다릅니다.");
+		}
+	}
+
+	private String buildAnalysisSystemPrompt(CounselingRecordDetailItemResponse detail) {
+		String transcriptBlock = buildTranscriptBlock(detail.transcriptSegments());
+		String diarizationGuide = hasDiarization(detail.transcriptSegments()) ? "" : "\n화자 분리가 수행되지 않아 전체가 하나의 원문으로 제공됩니다. 대화 맥락을 바탕으로 멘토와 수강생의 발화를 추론하세요.";
+		return """
+			당신은 부트캠프/교육 프로그램 상담 기록 분석 전문 AI입니다.
+
+			## 역할
+			멘토/운영자가 업로드한 상담 녹음의 전사 원문을 분석하여 구조화된 JSON으로 반환합니다.
+			항상 원문에 근거하고, 원문에 없는 내용을 지어내지 않습니다.
+			대상은 20~30대 성인 수강생입니다.
+			%s
+
+			## 현재 상담 기록
+			- 수강생: %s
+			- 상담 제목: %s
+			- 상담 유형: %s
+			- 기록 일시: %s
+
+			## 상담 원문 전사
+			%s
+
+			## 응답 규칙
+			- 한국어로 작성합니다.
+			- 원문 인용 시 타임스탬프를 포함합니다 (예: "[01:23]").
+			- 반드시 아래 JSON 스키마를 따릅니다:
+
+			{
+			  "summary": "3-4문장의 핵심 요약",
+			  "member": {
+			    "name": "원문에서 파악된 수강생 이름 (없으면 null)",
+			    "traits": ["성격", "학습 스타일", "현재 상황 등 관찰 특징"],
+			    "emotion": "상담 중 드러난 감정/태도 변화 요약"
+			  },
+			  "issues": [
+			    {
+			      "title": "이슈 제목",
+			      "detail": "상세 설명 (원문 인용 포함)",
+			      "timestamp": "관련 타임스탬프 (없으면 null)"
+			    }
+			  ],
+			  "actions": {
+			    "mentor": ["멘토가 취해야 할 구체적 행동"],
+			    "member": ["수강생에게 권하는 다음 단계"],
+			    "nextSession": ["후속 상담에서 확인할 사항"]
+			  },
+			  "keywords": ["상담 핵심 키워드 3-5개"],
+			  "riskAssessment": {
+			    "level": "low | medium | high",
+			    "basis": "왜 이 위험도로 판단했는지 원문 근거 기반 1-2문장 요약",
+			    "signals": ["반복 결석", "과제 지연", "자신감 저하" 같은 핵심 위험 신호 1-3개]
+			  }
+			}
+
+			## 위험도 분류 기준
+			- low: 현재 큰 이탈 위험은 낮고 관찰 중심으로 충분합니다.
+			- medium: 반복 확인이 필요한 경고 신호가 있으며 후속 상담/추적이 필요합니다.
+			- high: 이탈, 중도 포기, 심한 정서 저하, 지속적 수행 붕괴처럼 즉시 개입이 필요한 상태입니다.
+			- riskAssessment는 반드시 포함합니다.
+			- basis와 signals는 반드시 상담 원문에 근거해야 합니다.
+			""".formatted(
+			diarizationGuide,
+			detail.studentName() == null || detail.studentName().isBlank() ? "(미지정)" : detail.studentName(),
+			detail.sessionTitle(),
+			detail.counselingType(),
+			detail.createdAt(),
+			transcriptBlock
+		).stripIndent();
 	}
 
 	private void validateChatRequest(CounselingChatRequest request) {

@@ -119,3 +119,34 @@ export async function clearCounselingRecordChatFromSpring(
 
   return parsed as { ok: true };
 }
+
+export async function analyzeCounselingRecordFromSpring(
+  userId: string,
+  recordId: string
+) {
+  const response = await fetch(
+    `${resolveSpringBackendBaseUrl()}/counseling-records/${encodeURIComponent(recordId)}/analyze`,
+    {
+      cache: "no-store",
+      method: "POST",
+      headers: buildSpringBffHeaders(
+        {
+          accept: "application/json",
+        },
+        { userId }
+      ),
+    }
+  );
+
+  const raw = await response.text();
+  const parsed = raw ? tryParseJson(raw) : null;
+
+  if (!response.ok) {
+    throw new CounselingRecordChatSpringBackendHttpError(
+      response.status,
+      extractErrorMessage(parsed) ?? "Spring backend 요청에 실패했습니다."
+    );
+  }
+
+  return parsed as { analysisResult: unknown };
+}
