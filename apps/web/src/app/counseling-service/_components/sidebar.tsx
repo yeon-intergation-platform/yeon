@@ -6,7 +6,7 @@ import type { RecordItem } from "@/features/counseling-record-workspace/lib/type
 import type { Space } from "../_hooks";
 import type { MemberWithStatus } from "../_hooks";
 import { useClickOutside } from "@/lib/hooks/use-click-outside";
-import { CreateSpaceModal } from "./create-space-modal";
+import { CreateSpaceModal } from "@/features/counseling-record-workspace/components/create-space-modal";
 import { useCounselingSidebarLayout } from "@/features/counseling-service-shell/counseling-sidebar-layout-context";
 import { useAppRoute } from "@/lib/app-route-context";
 import { SidebarContextMenu } from "@/features/counseling-record-workspace/components/sidebar-context-menu";

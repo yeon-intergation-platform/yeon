@@ -2007,3 +2007,28 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 81차 — create space modal component feature 이동
+
+### 작업내용
+
+- `app/counseling-service/_components/create-space-modal.tsx`를 `features/counseling-record-workspace/components/create-space-modal.tsx`로 이동한다.
+- `Sidebar`는 app 상대 import 대신 feature component를 직접 사용한다.
+- 스페이스 생성/템플릿/파일 가져오기 동작은 변경하지 않고 app `_components`의 feature 소유 UI를 줄인다.
+
+### 논의 필요
+
+- `link-member-modal`, `member-panel`도 같은 방식으로 즉시 feature component로 이동할지 여부.
+
+### 선택지
+
+1. 이번 차수는 create-space modal만 이동하고 나머지는 후속으로 둔다.
+2. 관련 modal/panel 파일을 한 번에 feature component로 이동한다.
+
+### 추천
+
+- 1번. 파일 이동은 import 경계 충돌 가능성이 있어 한 컴포넌트씩 PR 단위로 검증한다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.
