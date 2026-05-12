@@ -34,6 +34,37 @@ export function isAcceptedAudioFile(file: {
   }
 
   return FALLBACK_AUDIO_EXTENSIONS.some((extension) =>
-    normalizedName.endsWith(extension),
+    normalizedName.endsWith(extension)
   );
+}
+
+export async function readAudioDurationMs(file: File) {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  return new Promise<number | null>((resolve) => {
+    const objectUrl = URL.createObjectURL(file);
+    const audioElement = document.createElement("audio");
+    const cleanup = () => {
+      URL.revokeObjectURL(objectUrl);
+      audioElement.removeAttribute("src");
+    };
+
+    audioElement.preload = "metadata";
+    audioElement.onloadedmetadata = () => {
+      const durationSeconds = audioElement.duration;
+      cleanup();
+      resolve(
+        Number.isFinite(durationSeconds) && durationSeconds > 0
+          ? Math.round(durationSeconds * 1000)
+          : null
+      );
+    };
+    audioElement.onerror = () => {
+      cleanup();
+      resolve(null);
+    };
+    audioElement.src = objectUrl;
+  });
 }
