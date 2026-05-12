@@ -6,8 +6,11 @@ import type {
   CounselingRecordListItem,
   CounselingRecordDetail,
 } from "@yeon/api-contract/counseling-records";
-import type { RecordItem, AiMessage } from "../_lib/types";
-import { getProcessingChecklistStep } from "../_lib/processing-progress";
+import type {
+  RecordItem,
+  AiMessage,
+} from "@/app/counseling-service/_lib/types";
+import { getProcessingChecklistStep } from "@/app/counseling-service/_lib/processing-progress";
 import {
   clearCounselingRecordChat,
   fetchCounselingRecordDetail,
@@ -20,7 +23,7 @@ import { useMergedRecords } from "@/features/counseling-record-workspace/hooks/u
 import {
   detailToRecordPatch,
   needsBackgroundPolling,
-} from "../_lib/record-state-adapters";
+} from "@/app/counseling-service/_lib/record-state-adapters";
 
 const POLL_INTERVAL_MS = 3000;
 const BOOSTED_POLL_INTERVAL_MS = 1000;
