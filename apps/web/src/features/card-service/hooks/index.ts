@@ -12,3 +12,5 @@ export {
 } from "./use-card-mutations";
 export { useDeckPlayState } from "./use-deck-play-state";
 export { useMergeGuestDecks } from "./use-merge-guest";
+export { useCardRoomProfile } from "./use-card-room-profile";
+export { useCardRoomList, useCardRoomConnection, createCardRoom, joinCardRoom } from "./use-card-room";
