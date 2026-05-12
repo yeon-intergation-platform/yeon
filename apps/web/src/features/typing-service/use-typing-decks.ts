@@ -25,6 +25,7 @@ import {
   typingServiceFetchJson,
   typingServiceFetchVoid,
 } from "./typing-service-fetch";
+import { typingServiceQueryKeys } from "./typing-service-query-keys";
 export type {
   CreateTypingDeckBody,
   CreateTypingDeckPassageBody,
@@ -59,31 +60,11 @@ export const TYPING_DECK_VISIBILITY_OPTIONS: Array<{
   { value: "public", label: "공개" },
 ];
 
-export function typingDecksRootQueryKey() {
-  return ["typing-decks"] as const;
-}
-
-export function typingDecksQueryKey(scope: TypingDeckScope, adminMode = false) {
-  return [
-    ...typingDecksRootQueryKey(),
-    scope,
-    adminMode ? "admin" : "user",
-  ] as const;
-}
-
-export function typingDeckDetailRootQueryKey(deckId: string | null) {
-  return ["typing-deck", deckId] as const;
-}
-
-export function typingDeckDetailQueryKey(
-  deckId: string | null,
-  adminMode = false
-) {
-  return [
-    ...typingDeckDetailRootQueryKey(deckId),
-    adminMode ? "admin" : "user",
-  ] as const;
-}
+export const typingDecksRootQueryKey = typingServiceQueryKeys.deckLists;
+export const typingDecksQueryKey = typingServiceQueryKeys.deckList;
+export const typingDeckDetailRootQueryKey =
+  typingServiceQueryKeys.deckDetailRoot;
+export const typingDeckDetailQueryKey = typingServiceQueryKeys.deckDetail;
 
 function withAdminQuery(path: string, adminMode: boolean) {
   if (!adminMode) {

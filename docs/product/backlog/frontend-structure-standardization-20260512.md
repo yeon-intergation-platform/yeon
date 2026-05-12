@@ -2134,3 +2134,28 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 86차 — typing service deck query key factory 통합
+
+### 작업내용
+
+- `use-typing-decks.ts` 안에 남아 있던 typing deck query key factory를 `typing-service-query-keys.ts`의 `typingServiceQueryKeys`로 흡수한다.
+- 기존 export 이름은 compatibility alias로 유지해 호출부 변경 없이 service query key SSOT만 통합한다.
+- 덱 목록/상세 key shape, admin/user scope, invalidation 범위는 변경하지 않는다.
+
+### 논의 필요
+
+- 기존 alias export를 바로 제거할지 여부.
+
+### 선택지
+
+1. 이번 차수는 alias를 유지하고 내부 SSOT만 통합한다.
+2. 모든 호출부를 `typingServiceQueryKeys.*`로 즉시 변경하고 alias를 제거한다.
+
+### 추천
+
+- 1번. 호출부 확산 없이 service key SSOT만 먼저 통일하고, alias 제거는 후속 대청소에서 진행한다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.
