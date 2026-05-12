@@ -7,6 +7,11 @@ import { resolveApiHrefForCurrentPath } from "@/lib/app-route-paths";
 import { FIELD_TYPE_LABELS } from "../types";
 import type { SpaceTemplateDetail } from "../types";
 
+const spaceSettingsQueryKeys = {
+  templateDetail: (templateId: string | null) =>
+    ["space-settings", "template-detail", templateId] as const,
+};
+
 interface SpaceTemplatePreviewModalProps {
   templateId: string | null;
   open: boolean;
@@ -19,10 +24,10 @@ export function SpaceTemplatePreviewModal({
   onClose,
 }: SpaceTemplatePreviewModalProps) {
   const { data, isPending, error } = useQuery({
-    queryKey: ["space-template-detail", templateId],
+    queryKey: spaceSettingsQueryKeys.templateDetail(templateId),
     queryFn: async () => {
       const response = await fetch(
-        resolveApiHrefForCurrentPath(`/api/v1/space-templates/${templateId}`),
+        resolveApiHrefForCurrentPath(`/api/v1/space-templates/${templateId}`)
       );
       if (!response.ok) {
         const text = await response.text().catch(() => "");
@@ -139,7 +144,7 @@ export function SpaceTemplatePreviewModal({
                           .slice()
                           .sort(
                             (left, right) =>
-                              left.displayOrder - right.displayOrder,
+                              left.displayOrder - right.displayOrder
                           )
                           .map((field) => (
                             <div

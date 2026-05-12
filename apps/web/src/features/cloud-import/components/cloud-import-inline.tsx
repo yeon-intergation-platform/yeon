@@ -55,6 +55,7 @@ import {
   LOADING_FEEDBACK_DELAY_MS,
   getExpandedBottomPanelHeight,
 } from "../cloud-import-layout-constants";
+import { cloudImportQueryKeys } from "../cloud-import-query-keys";
 import {
   SPACE_FULL_TEST_DATA,
   SPACE_LITE_TEST_DATA,
@@ -405,7 +406,7 @@ export function CloudImportInline({
     error: localDraftsQueryError,
     refetch: refetchLocalDrafts,
   } = useQuery({
-    queryKey: ["local-import-drafts", "modal"],
+    queryKey: cloudImportQueryKeys.localDraftsModal(),
     queryFn: async () => {
       const res = await fetch(
         resolveApiHrefForCurrentPath(
