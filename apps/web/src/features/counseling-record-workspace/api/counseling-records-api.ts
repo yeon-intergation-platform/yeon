@@ -4,7 +4,7 @@ import type {
   CounselingChatRequest,
 } from "@yeon/api-contract/counseling-records";
 import { resolveApiHrefForCurrentPath } from "@/lib/app-route-paths";
-import { buildCounselingClientRequestId } from "@/app/counseling-service/_lib/client-request-id";
+import { buildCounselingClientRequestId } from "@/features/counseling-record-workspace/lib/client-request-id";
 import {
   counselingWorkspaceFetchJson,
   counselingWorkspaceFetchResponse,

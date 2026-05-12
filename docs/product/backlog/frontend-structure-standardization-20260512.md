@@ -1059,3 +1059,29 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 44차 — counseling record model/lib feature 원천화
+
+### 작업내용
+
+- 상담 기록 feature hook이 참조하는 `types`, `utils`, `processing-progress`, `record-state-adapters`, `client-request-id`를 `features/counseling-record-workspace/lib`로 이동한다.
+- 기존 app `_lib` 경로는 페이지/컴포넌트 호환을 위해 re-export wrapper만 유지한다.
+- feature 내부 import가 app `_lib`를 직접 참조하지 않도록 바꾼다.
+
+### 논의 필요
+
+- app `_components`가 아직 `_lib` wrapper를 통해 같은 model을 사용한다. 컴포넌트 이동/분해 전까지 호환 wrapper는 유지한다.
+
+### 선택지
+
+1. 원천 파일을 feature lib로 옮기고 app `_lib`는 re-export wrapper로 둔다.
+2. 모든 app component import까지 feature lib로 한 번에 바꾼다.
+3. sidebar 분해 후 model 이동을 진행한다.
+
+### 추천
+
+- 선택지 1. source of truth는 feature로 고정하되, 대형 컴포넌트 리팩토링 전 호환 import는 유지한다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.

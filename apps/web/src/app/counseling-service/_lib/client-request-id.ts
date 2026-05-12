@@ -1,3 +1,1 @@
-export function buildCounselingClientRequestId() {
-  return `counseling-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-}
+export { buildCounselingClientRequestId } from "@/features/counseling-record-workspace/lib/client-request-id";

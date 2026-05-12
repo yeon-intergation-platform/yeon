@@ -4,7 +4,7 @@ import {
   retryCounselingRecordTranscription,
 } from "@/features/counseling-record-workspace/api/counseling-records-api";
 import type { CounselingRecordDetail } from "@yeon/api-contract/counseling-records";
-import type { RecordItem } from "@/app/counseling-service/_lib/types";
+import type { RecordItem } from "@/features/counseling-record-workspace/lib/types";
 
 type RetryFeedback = {
   message: string | null;
