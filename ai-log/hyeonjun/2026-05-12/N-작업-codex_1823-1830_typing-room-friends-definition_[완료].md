@@ -1,0 +1,21 @@
+# 타자방 친구/DM/초대 기능·화면 정의
+
+- 시작: 18:23
+- 범위: 타자방 친구 추가, 친구 관리, 친구 DM, 친구 초대 기능정의서/화면정의서
+- 제약: 현재 브랜치 유지, PR/머지 금지, 백엔드 source of truth는 Spring
+- 확인한 현재 구현:
+  - Spring에 chat-service 친구 요청/overview/DM open 일부가 이미 존재한다.
+  - 현재 친구 요청은 첫 액션 pending, 반대 방향 액션 때 accepted가 되는 구조다.
+  - 타자방 participant는 local typing player id 중심이며 chat profile id가 snapshot에 없다.
+  - 타자방 초대는 현재 링크 복사 중심이다.
+- 계획: 기존 chat-service 친구 모델을 재사용하는 Spring 중심 기능정의서와 화면정의서를 문서화한다.
+- 산출물:
+  - `docs/projects/typing-race/typing-room-friends-feature-definition.md`
+  - `docs/projects/typing-race/typing-room-friends-screen-definition.md`
+  - `docs/product/backlog/typing-room-friends-spring-plan-20260512.md`
+  - `docs/projects/typing-race/typing-room-lobby-screen-definition.md` F-08 상세 문서 연결
+- 완료: 18:30
+- 검증:
+  - `git diff --check -- <작성 문서 pathspec>` 통과
+  - `bash bin/sync-skills.sh --check` 통과
+  - `bash bin/verify-ssot.sh --project-only` 통과
