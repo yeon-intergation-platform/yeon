@@ -1,4 +1,4 @@
-import { type Client, Room } from "colyseus";
+import { type Client, Room } from "@colyseus/core";
 import {
   CARD_ROOM_EVENTS,
   toCardRoomRealtimeState,
@@ -14,8 +14,12 @@ const DEFAULT_BACKEND_BASE_URL = "http://127.0.0.1:8081";
 const MAX_CHAT_MESSAGE_LENGTH = 500;
 
 function backendBaseUrl() {
-  const raw = process.env.SPRING_BACKEND_BASE_URL?.trim() || process.env.SPRING_BOOTSTRAP_BASE_URL?.trim();
-  return raw && raw.length > 0 ? raw.replace(/\/$/, "") : DEFAULT_BACKEND_BASE_URL;
+  const raw =
+    process.env.SPRING_BACKEND_BASE_URL?.trim() ||
+    process.env.SPRING_BOOTSTRAP_BASE_URL?.trim();
+  return raw && raw.length > 0
+    ? raw.replace(/\/$/, "")
+    : DEFAULT_BACKEND_BASE_URL;
 }
 
 function springHeaders(participantId?: string) {
@@ -29,7 +33,10 @@ function springHeaders(participantId?: string) {
 async function readJson<T>(path: string, init: RequestInit = {}) {
   const response = await fetch(`${backendBaseUrl()}${path}`, {
     ...init,
-    headers: { ...springHeaders(), ...(init.headers as Record<string, string> | undefined) },
+    headers: {
+      ...springHeaders(),
+      ...(init.headers as Record<string, string> | undefined),
+    },
   });
   const text = await response.text();
   const parsed = text ? JSON.parse(text) : null;
@@ -49,37 +56,69 @@ export class CardRoom extends Room {
     this.cardRoomId = cardRoomId;
     await this.refreshState();
 
-    this.onMessage(CARD_ROOM_EVENTS.CHAT, async (client, payload: CardRoomChatMessage) => {
-      await this.withParticipant(client, async (participantId) => {
-        const content = payload.content?.trim().slice(0, MAX_CHAT_MESSAGE_LENGTH);
-        if (!content) return;
-        await this.spring(`/api/v1/card-rooms/${this.cardRoomId}/messages`, participantId, { method: "POST", body: JSON.stringify({ content }) });
-      });
-    });
+    this.onMessage(
+      CARD_ROOM_EVENTS.CHAT,
+      async (client, payload: CardRoomChatMessage) => {
+        await this.withParticipant(client, async (participantId) => {
+          const content = payload.content
+            ?.trim()
+            .slice(0, MAX_CHAT_MESSAGE_LENGTH);
+          if (!content) return;
+          await this.spring(
+            `/api/v1/card-rooms/${this.cardRoomId}/messages`,
+            participantId,
+            { method: "POST", body: JSON.stringify({ content }) }
+          );
+        });
+      }
+    );
 
-    this.onMessage(CARD_ROOM_EVENTS.READY, async (client, payload: CardRoomReadyMessage) => {
-      await this.patchParticipant(client, { isReady: Boolean(payload.isReady) });
-    });
+    this.onMessage(
+      CARD_ROOM_EVENTS.READY,
+      async (client, payload: CardRoomReadyMessage) => {
+        await this.patchParticipant(client, {
+          isReady: Boolean(payload.isReady),
+        });
+      }
+    );
 
-    this.onMessage(CARD_ROOM_EVENTS.ROLE, async (client, payload: CardRoomRoleMessage) => {
-      await this.patchParticipant(client, { role: payload.role });
-    });
+    this.onMessage(
+      CARD_ROOM_EVENTS.ROLE,
+      async (client, payload: CardRoomRoleMessage) => {
+        await this.patchParticipant(client, { role: payload.role });
+      }
+    );
 
     this.onMessage(CARD_ROOM_EVENTS.REVEAL, async (client) => {
       await this.withParticipant(client, async (participantId) => {
-        await this.spring(`/api/v1/card-rooms/${this.cardRoomId}/reveal`, participantId, { method: "POST" });
+        await this.spring(
+          `/api/v1/card-rooms/${this.cardRoomId}/reveal`,
+          participantId,
+          { method: "POST" }
+        );
       });
     });
 
-    this.onMessage(CARD_ROOM_EVENTS.RESULT, async (client, payload: CardRoomResultMessage) => {
-      await this.withParticipant(client, async (participantId) => {
-        await this.spring(`/api/v1/card-rooms/${this.cardRoomId}/results`, participantId, { method: "POST", body: JSON.stringify(payload) });
-      });
-    });
+    this.onMessage(
+      CARD_ROOM_EVENTS.RESULT,
+      async (client, payload: CardRoomResultMessage) => {
+        await this.withParticipant(client, async (participantId) => {
+          await this.spring(
+            `/api/v1/card-rooms/${this.cardRoomId}/results`,
+            participantId,
+            { method: "POST", body: JSON.stringify(payload) }
+          );
+        });
+      }
+    );
 
     this.onMessage(CARD_ROOM_EVENTS.NEXT, async (client) => {
       await this.withParticipant(client, async (participantId) => {
-        await this.spring(`/api/v1/card-rooms/${this.cardRoomId}/next`, participantId, { method: "POST" });
+        await this.spring(
+          `/api/v1/card-rooms/${this.cardRoomId}/next`,
+          participantId,
+          { method: "POST" }
+        );
       });
     });
   }
@@ -96,21 +135,35 @@ export class CardRoom extends Room {
 
   private async patchParticipant(client: Client, payload: object) {
     await this.withParticipant(client, async (participantId) => {
-      await this.spring(`/api/v1/card-rooms/${this.cardRoomId}/participants/${participantId}`, participantId, { method: "PATCH", body: JSON.stringify(payload) });
+      await this.spring(
+        `/api/v1/card-rooms/${this.cardRoomId}/participants/${participantId}`,
+        participantId,
+        { method: "PATCH", body: JSON.stringify(payload) }
+      );
     });
   }
 
-  private async withParticipant(client: Client, task: (participantId: string) => Promise<void>) {
+  private async withParticipant(
+    client: Client,
+    task: (participantId: string) => Promise<void>
+  ) {
     const participantId = this.participants.get(client.sessionId);
     if (!participantId) {
-      client.send(CARD_ROOM_EVENTS.ERROR, { message: "참가자 상태를 찾지 못했습니다." });
+      client.send(CARD_ROOM_EVENTS.ERROR, {
+        message: "참가자 상태를 찾지 못했습니다.",
+      });
       return;
     }
     try {
       await task(participantId);
       await this.refreshState();
     } catch (error) {
-      client.send(CARD_ROOM_EVENTS.ERROR, { message: error instanceof Error ? error.message : "카드방 요청에 실패했습니다." });
+      client.send(CARD_ROOM_EVENTS.ERROR, {
+        message:
+          error instanceof Error
+            ? error.message
+            : "카드방 요청에 실패했습니다.",
+      });
     }
   }
 
@@ -126,7 +179,9 @@ export class CardRoom extends Room {
 
   private async refreshState() {
     if (!this.cardRoomId) return;
-    const response = await readJson<CardRoomResponse>(`/api/v1/card-rooms/${this.cardRoomId}`);
+    const response = await readJson<CardRoomResponse>(
+      `/api/v1/card-rooms/${this.cardRoomId}`
+    );
     const state = toCardRoomRealtimeState(response.room);
     this.setState(state as never);
     this.broadcast(CARD_ROOM_EVENTS.STATE, state);
