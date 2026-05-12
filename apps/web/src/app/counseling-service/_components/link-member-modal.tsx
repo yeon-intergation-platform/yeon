@@ -7,8 +7,8 @@ import {
   counselingWorkspaceFetchJson,
   counselingWorkspaceFetchJsonOr,
   counselingWorkspaceFetchVoid,
-} from "../_hooks/counseling-workspace-fetch";
-import { counselingWorkspaceQueryKeys } from "../_hooks/counseling-workspace-query-keys";
+} from "@/features/counseling-record-workspace/api/counseling-workspace-fetch";
+import { counselingWorkspaceQueryKeys } from "@/features/counseling-record-workspace/api/counseling-workspace-query-keys";
 import { resolveApiHrefForCurrentPath } from "@/lib/app-route-paths";
 
 import { detectRecordMemberMismatch } from "../_lib/record-member-mismatch";

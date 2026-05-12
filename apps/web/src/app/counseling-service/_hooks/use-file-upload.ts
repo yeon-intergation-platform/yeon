@@ -12,7 +12,7 @@ import { resolveApiHrefForCurrentPath } from "@/lib/app-route-paths";
 
 import type { RecordItem } from "../_lib/types";
 import { createTimestamp, fmtDurationMs } from "../_lib/utils";
-import { counselingWorkspaceFetchJson } from "./counseling-workspace-fetch";
+import { counselingWorkspaceFetchJson } from "@/features/counseling-record-workspace/api/counseling-workspace-fetch";
 
 interface UseFileUploadParams {
   onFileUpload: (record: RecordItem) => void;

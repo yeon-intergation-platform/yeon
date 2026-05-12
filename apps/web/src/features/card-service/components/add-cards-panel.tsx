@@ -47,6 +47,7 @@ export function AddCardsPanel({ deckId, onClose }: AddCardsPanelProps) {
       title="카드 추가"
       description={modeDescription}
       onClose={handleRequestClose}
+      widthClassName="max-w-[1180px]"
     >
       <div className="flex rounded-2xl bg-[#f3f3f3] p-1 text-[14px] font-semibold">
         <button

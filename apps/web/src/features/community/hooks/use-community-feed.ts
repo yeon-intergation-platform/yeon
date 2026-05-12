@@ -3,6 +3,7 @@
 import { useCallback, useMemo, useState } from "react";
 
 import { chatServiceApi, type ChatServiceFeedPost } from "../chat-service-api";
+import { readCommunityGuestNickname } from "../community-guest-identity";
 
 type ErrorState = string | null;
 
@@ -54,7 +55,9 @@ export function useCommunityFeed(options: UseCommunityFeedOptions = {}) {
   const [isRepliesLoading, setIsRepliesLoading] = useState<LoadingByPost>({});
   const [replyErrors, setReplyErrors] = useState<ErrorByPost>({});
   const [replyDeleteErrors, setReplyDeleteErrors] = useState<ErrorByPost>({});
-  const [guestNickname, setGuestNickname] = useState("익명이");
+  const [guestNickname, setGuestNickname] = useState(
+    readCommunityGuestNickname
+  );
   const [guestPassword, setGuestPassword] = useState("");
 
   const actorPayload = useMemo(() => {

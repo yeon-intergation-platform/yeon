@@ -4,7 +4,7 @@ import { resolveApiHrefForCurrentPath } from "@/lib/app-route-paths";
 import {
   counselingWorkspaceFetchJson,
   counselingWorkspaceFetchVoid,
-} from "./counseling-workspace-fetch";
+} from "@/features/counseling-record-workspace/api/counseling-workspace-fetch";
 import type { CounselingRecordDetail } from "@yeon/api-contract/counseling-records";
 import type { RecordItem } from "../_lib/types";
 

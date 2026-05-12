@@ -6,7 +6,7 @@ import { resolveApiHrefForCurrentPath } from "@/lib/app-route-paths";
 import {
   counselingWorkspaceFetchJson,
   counselingWorkspaceFetchResponse,
-} from "./counseling-workspace-fetch";
+} from "@/features/counseling-record-workspace/api/counseling-workspace-fetch";
 import type { AiMessage, AnalysisResult, AttachedImage } from "../_lib/types";
 
 interface UseAiChatParams {

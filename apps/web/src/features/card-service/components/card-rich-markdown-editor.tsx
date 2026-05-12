@@ -29,6 +29,7 @@ interface CardRichMarkdownEditorProps {
   onChange: (nextValue: string) => void;
   placeholder?: string;
   helperText?: string;
+  density?: "question" | "answer";
   disabled?: boolean;
   onUploadingChange?: (isUploading: boolean) => void;
 }
@@ -59,16 +60,37 @@ function isMeaningfulCardEditorContent(value: string) {
   );
 }
 
-function CardEditorPreview({ label, value }: { label: string; value: string }) {
+const CARD_EDITOR_HEIGHT_CLASS = {
+  question: {
+    editor: "min-h-[280px] md:min-h-[320px]",
+    preview: "min-h-[280px] md:min-h-[320px]",
+  },
+  answer: {
+    editor: "min-h-[360px] md:min-h-[420px]",
+    preview: "min-h-[360px] md:min-h-[420px]",
+  },
+} as const;
+
+function CardEditorPreview({
+  label,
+  value,
+  previewHeightClassName,
+}: {
+  label: string;
+  value: string;
+  previewHeightClassName: string;
+}) {
   const hasContent = isMeaningfulCardEditorContent(value);
 
   return (
-    <aside className="rounded-2xl border border-[#e8e8e8] bg-[#fafafa] p-4">
-      <div className="mb-3 flex items-center justify-between gap-3">
+    <aside className="flex h-full flex-col rounded-2xl border border-[#e8e8e8] bg-[#fafafa] p-3 md:p-4">
+      <div className="mb-3 flex items-center justify-between gap-3 px-1">
         <p className="text-[13px] font-semibold text-[#111]">미리보기</p>
         <p className="truncate text-[12px] font-medium text-[#888]">{label}</p>
       </div>
-      <div className="min-h-[180px] rounded-2xl border border-[#eeeeee] bg-white p-4">
+      <div
+        className={`flex-1 rounded-2xl border border-[#eeeeee] bg-white p-5 shadow-[0_10px_30px_rgba(17,17,17,0.04)] md:p-6 ${previewHeightClassName}`}
+      >
         {hasContent ? (
           <MarkdownContent>{value}</MarkdownContent>
         ) : (
@@ -87,6 +109,7 @@ export function CardRichMarkdownEditor({
   onChange,
   placeholder,
   helperText,
+  density = "question",
   disabled = false,
   onUploadingChange,
 }: CardRichMarkdownEditorProps) {
@@ -101,6 +124,7 @@ export function CardRichMarkdownEditor({
     handleImageFiles,
     handleClipboardPaste,
   } = useCardEditorImageUpload();
+  const heightClassName = CARD_EDITOR_HEIGHT_CLASS[density];
 
   useEffect(() => {
     onUploadingChange?.(isUploading);
@@ -134,8 +158,7 @@ export function CardRichMarkdownEditor({
     onTransaction: () => setToolbarTick((prev) => prev + 1),
     editorProps: {
       attributes: {
-        class:
-          "card-rich-editor-content min-h-[220px] rounded-b-2xl border-x border-b border-[#e5e5e5] bg-white px-4 py-4 text-[15px] leading-7 text-[#111] outline-none md:text-[16px]",
+        class: `card-rich-editor-content ${heightClassName.editor} rounded-b-2xl border-x border-b border-[#e5e5e5] bg-white px-4 py-5 text-[15px] leading-7 text-[#111] outline-none md:px-5 md:text-[16px]`,
         spellcheck: "true",
         "aria-label": label,
       },
@@ -229,7 +252,6 @@ export function CardRichMarkdownEditor({
     orderedList: editor?.isActive("orderedList"),
     blockquote: editor?.isActive("blockquote"),
   };
-
   const editorPanel = (
     <div className="min-w-0 rounded-2xl bg-white">
       <CardEditorToolbar
@@ -261,7 +283,7 @@ export function CardRichMarkdownEditor({
         onRedo={withEditor((instance) => instance.chain().focus().redo().run())}
       />
 
-      <EditorContent editor={editor} />
+      <EditorContent editor={editor} className={heightClassName.editor} />
 
       <input
         ref={fileInputRef}
@@ -331,12 +353,16 @@ export function CardRichMarkdownEditor({
         </button>
       </div>
 
-      <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(280px,0.85fr)] lg:gap-4">
+      <div className="lg:grid lg:grid-cols-[minmax(0,1.35fr)_minmax(320px,1fr)] lg:items-stretch lg:gap-5">
         <div className={mobilePane === "edit" ? "block" : "hidden lg:block"}>
           {editorPanel}
         </div>
         <div className={mobilePane === "preview" ? "block" : "hidden lg:block"}>
-          <CardEditorPreview label={label} value={value} />
+          <CardEditorPreview
+            label={label}
+            value={value}
+            previewHeightClassName={heightClassName.preview}
+          />
         </div>
       </div>
 

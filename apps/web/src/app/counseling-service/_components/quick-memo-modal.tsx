@@ -5,7 +5,7 @@ import { X } from "lucide-react";
 import type { CounselingRecordDetail } from "@yeon/api-contract/counseling-records";
 import type { RecordItem } from "../_lib/types";
 import { resolveApiHrefForCurrentPath } from "@/lib/app-route-paths";
-import { counselingWorkspaceFetchJson } from "../_hooks/counseling-workspace-fetch";
+import { counselingWorkspaceFetchJson } from "@/features/counseling-record-workspace/api/counseling-workspace-fetch";
 
 interface QuickMemoModalProps {
   onClose: () => void;
