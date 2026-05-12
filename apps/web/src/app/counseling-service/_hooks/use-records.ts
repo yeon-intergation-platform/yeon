@@ -17,6 +17,10 @@ import type {
 } from "../_lib/types";
 import { getProcessingChecklistStep } from "../_lib/processing-progress";
 import { fmtRelativeDate, fmtDurationMs } from "../_lib/utils";
+import {
+  counselingWorkspaceFetchJson,
+  counselingWorkspaceFetchVoid,
+} from "./counseling-workspace-fetch";
 import { counselingWorkspaceQueryKeys } from "./counseling-workspace-query-keys";
 import { resolveApiHrefForCurrentPath } from "@/lib/app-route-paths";
 import { normalizeCounselingTranscriptSegments } from "@/lib/counseling-transcript-display";
@@ -149,13 +153,12 @@ export function useRecords(selectedRecordId: string | null) {
   // 서버 목록 쿼리
   const { data: serverData, isPending } = useQuery({
     queryKey: counselingWorkspaceQueryKeys.records(),
-    queryFn: async () => {
-      const res = await fetch(
-        resolveApiHrefForCurrentPath("/api/v1/counseling-records")
-      );
-      if (!res.ok) throw new Error("목록 조회 실패");
-      return res.json() as Promise<{ records: CounselingRecordListItem[] }>;
-    },
+    queryFn: async () =>
+      counselingWorkspaceFetchJson<{ records: CounselingRecordListItem[] }>(
+        resolveApiHrefForCurrentPath("/api/v1/counseling-records"),
+        {},
+        "상담 기록 목록을 조회하지 못했습니다."
+      ),
     refetchInterval: (query) => {
       const items = query.state.data?.records || [];
       if (!items.some((record) => needsBackgroundPolling(record))) {
@@ -217,16 +220,14 @@ export function useRecords(selectedRecordId: string | null) {
     for (const item of readyTransitioned) {
       queryClient.prefetchQuery({
         queryKey: counselingWorkspaceQueryKeys.record(item.id),
-        queryFn: async () => {
-          // eslint-disable-next-line no-restricted-syntax
-          const res = await fetch(
+        queryFn: async () =>
+          counselingWorkspaceFetchJson<{ record: CounselingRecordDetail }>(
             resolveApiHrefForCurrentPath(
               `/api/v1/counseling-records/${item.id}`
-            )
-          );
-          if (!res.ok) throw new Error("상세 조회 실패");
-          return res.json() as Promise<{ record: CounselingRecordDetail }>;
-        },
+            ),
+            {},
+            "상담 기록 상세를 조회하지 못했습니다."
+          ),
       });
     }
   }, [serverData, queryClient]);
@@ -248,13 +249,12 @@ export function useRecords(selectedRecordId: string | null) {
       try {
         const data = await queryClient.fetchQuery({
           queryKey: counselingWorkspaceQueryKeys.record(id),
-          queryFn: async () => {
-            const res = await fetch(
-              resolveApiHrefForCurrentPath(`/api/v1/counseling-records/${id}`)
-            );
-            if (!res.ok) throw new Error("상세 조회 실패");
-            return res.json() as Promise<{ record: CounselingRecordDetail }>;
-          },
+          queryFn: async () =>
+            counselingWorkspaceFetchJson<{ record: CounselingRecordDetail }>(
+              resolveApiHrefForCurrentPath(`/api/v1/counseling-records/${id}`),
+              {},
+              "상담 기록 상세를 조회하지 못했습니다."
+            ),
           staleTime: 30_000,
         });
 
@@ -405,16 +405,11 @@ export function useRecords(selectedRecordId: string | null) {
   );
 
   const clearMessages = useCallback(async (id: string) => {
-    const response = await fetch(
+    await counselingWorkspaceFetchVoid(
       resolveApiHrefForCurrentPath(`/api/v1/counseling-records/${id}/chat`),
-      {
-        method: "DELETE",
-      }
+      { method: "DELETE" },
+      "채팅 기록을 초기화하지 못했습니다."
     );
-
-    if (!response.ok) {
-      throw new Error("채팅 기록을 초기화하지 못했습니다.");
-    }
 
     setLocalOverrides((prev) => {
       const next = new Map(prev);

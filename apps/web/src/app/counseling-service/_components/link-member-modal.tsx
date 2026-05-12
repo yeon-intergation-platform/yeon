@@ -3,6 +3,11 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { X, Loader2, Search, UserPlus, Users } from "lucide-react";
+import {
+  counselingWorkspaceFetchJson,
+  counselingWorkspaceFetchJsonOr,
+  counselingWorkspaceFetchVoid,
+} from "../_hooks/counseling-workspace-fetch";
 import { counselingWorkspaceQueryKeys } from "../_hooks/counseling-workspace-query-keys";
 import { resolveApiHrefForCurrentPath } from "@/lib/app-route-paths";
 
@@ -52,11 +57,11 @@ export function LinkMemberModal({
 
   const { data: spacesData, isPending: spacesLoading } = useQuery({
     queryKey: counselingWorkspaceQueryKeys.spaces(),
-    queryFn: async () => {
-      const res = await fetch(resolveApiHrefForCurrentPath("/api/v1/spaces"));
-      if (!res.ok) return { spaces: [] as Space[] };
-      return res.json() as Promise<{ spaces: Space[] }>;
-    },
+    queryFn: async () =>
+      counselingWorkspaceFetchJsonOr<{ spaces: Space[] }>(
+        resolveApiHrefForCurrentPath("/api/v1/spaces"),
+        { spaces: [] }
+      ),
   });
   const spaces = spacesData ? spacesData.spaces : ([] as Space[]);
 
@@ -73,15 +78,13 @@ export function LinkMemberModal({
 
   const { data: membersData, isPending: membersLoading } = useQuery({
     queryKey: counselingWorkspaceQueryKeys.spaceMembers(selectedSpaceId),
-    queryFn: async () => {
-      const res = await fetch(
+    queryFn: async () =>
+      counselingWorkspaceFetchJsonOr<{ members: Member[] }>(
         resolveApiHrefForCurrentPath(
           `/api/v1/spaces/${selectedSpaceId}/members`
-        )
-      );
-      if (!res.ok) return { members: [] as Member[] };
-      return res.json() as Promise<{ members: Member[] }>;
-    },
+        ),
+        { members: [] }
+      ),
     enabled: !!selectedSpaceId,
   });
   const members = membersData ? membersData.members : ([] as Member[]);
@@ -99,15 +102,15 @@ export function LinkMemberModal({
   );
 
   const patchMember = async (memberId: string | null) => {
-    const res = await fetch(
+    await counselingWorkspaceFetchVoid(
       resolveApiHrefForCurrentPath(`/api/v1/counseling-records/${recordId}`),
       {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ memberId }),
-      }
+      },
+      "연결에 실패했습니다."
     );
-    if (!res.ok) throw new Error("연결에 실패했습니다.");
   };
 
   const handleLinkExisting = async () => {
@@ -133,7 +136,7 @@ export function LinkMemberModal({
     setSubmitting(true);
     try {
       /* 수강생 생성 */
-      const createRes = await fetch(
+      const { member } = await counselingWorkspaceFetchJson<{ member: Member }>(
         resolveApiHrefForCurrentPath(
           `/api/v1/spaces/${selectedSpaceId}/members`
         ),
@@ -141,10 +144,9 @@ export function LinkMemberModal({
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ name: newName.trim() }),
-        }
+        },
+        "수강생을 등록하지 못했습니다."
       );
-      if (!createRes.ok) throw new Error("수강생 등록에 실패했습니다.");
-      const { member } = (await createRes.json()) as { member: Member };
 
       /* 상담 기록에 연결 */
       await patchMember(member.id);

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { counselingWorkspaceFetchJson } from "./counseling-workspace-fetch";
 import { counselingWorkspaceQueryKeys } from "./counseling-workspace-query-keys";
 import { resolveApiHrefForCurrentPath } from "@/lib/app-route-paths";
 
@@ -34,11 +35,12 @@ export function useCurrentSpace() {
 
   const { data, isLoading: loading } = useQuery({
     queryKey: counselingWorkspaceQueryKeys.spaces(),
-    queryFn: async () => {
-      const res = await fetch(resolveApiHrefForCurrentPath("/api/v1/spaces"));
-      if (!res.ok) throw new Error("스페이스 조회 실패");
-      return res.json() as Promise<{ spaces: Space[] }>;
-    },
+    queryFn: async () =>
+      counselingWorkspaceFetchJson<{ spaces: Space[] }>(
+        resolveApiHrefForCurrentPath("/api/v1/spaces"),
+        {},
+        "스페이스를 조회하지 못했습니다."
+      ),
     staleTime: 30_000,
   });
 
@@ -100,9 +102,12 @@ export function useCurrentSpace() {
 
   const addSpace = useCallback(
     (space: Space) => {
-      queryClient.setQueryData<{ spaces: Space[] }>(["spaces"], (old) => ({
-        spaces: [...(old ? old.spaces : []), space],
-      }));
+      queryClient.setQueryData<{ spaces: Space[] }>(
+        counselingWorkspaceQueryKeys.spaces(),
+        (old) => ({
+          spaces: [...(old ? old.spaces : []), space],
+        })
+      );
       setCurrentSpaceIdState(space.id);
       if (typeof window !== "undefined")
         localStorage.setItem(STORAGE_KEY, space.id);
@@ -112,20 +117,23 @@ export function useCurrentSpace() {
 
   const removeSpace = useCallback(
     (spaceId: string) => {
-      queryClient.setQueryData<{ spaces: Space[] }>(["spaces"], (old) => {
-        const currentSpaces = old ? old.spaces : [];
-        const nextSpaces = currentSpaces.filter(
-          (space) => space.id !== spaceId
-        );
-        return { spaces: nextSpaces };
-      });
+      queryClient.setQueryData<{ spaces: Space[] }>(
+        counselingWorkspaceQueryKeys.spaces(),
+        (old) => {
+          const currentSpaces = old ? old.spaces : [];
+          const nextSpaces = currentSpaces.filter(
+            (space) => space.id !== spaceId
+          );
+          return { spaces: nextSpaces };
+        }
+      );
 
       setCurrentSpaceIdState((prev) => {
         if (prev !== spaceId) return prev;
 
-        const cachedSpaces = queryClient.getQueryData<{ spaces: Space[] }>([
-          "spaces",
-        ]);
+        const cachedSpaces = queryClient.getQueryData<{ spaces: Space[] }>(
+          counselingWorkspaceQueryKeys.spaces()
+        );
         const nextSpaces = (cachedSpaces ? cachedSpaces.spaces : []).filter(
           (space) => space.id !== spaceId
         );

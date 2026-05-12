@@ -3,6 +3,10 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { X, FolderPlus, FileUp, LayoutTemplate, Eye } from "lucide-react";
+import {
+  counselingWorkspaceFetchJson,
+  counselingWorkspaceFetchVoid,
+} from "../_hooks/counseling-workspace-fetch";
 import { counselingWorkspaceQueryKeys } from "../_hooks/counseling-workspace-query-keys";
 import type { Space } from "../_hooks/use-current-space";
 import { CloudImportInline } from "@/features/cloud-import/components/cloud-import-inline";
@@ -57,15 +61,20 @@ export function CreateSpaceModal({
   const { data: templatesData, isPending: templatesLoading } = useQuery({
     queryKey: counselingWorkspaceQueryKeys.spaceTemplates(),
     queryFn: async () => {
-      const r = await fetch(
-        resolveApiHrefForCurrentPath("/api/v1/space-templates")
-      );
-      if (!r.ok) {
+      try {
+        const data = await counselingWorkspaceFetchJson<{
+          templates: TemplateOption[];
+        }>(
+          resolveApiHrefForCurrentPath("/api/v1/space-templates"),
+          {},
+          "템플릿 목록을 불러오지 못했습니다."
+        );
+        setTemplateLoadError(null);
+        return data;
+      } catch {
         setTemplateLoadError("템플릿 목록을 불러오지 못했습니다.");
         return { templates: [] as TemplateOption[] };
       }
-      setTemplateLoadError(null);
-      return r.json() as Promise<{ templates: TemplateOption[] }>;
     },
     enabled: step.kind === "template",
   });
@@ -87,24 +96,23 @@ export function CreateSpaceModal({
     setSaving(true);
     setError(null);
     try {
-      const res = await fetch(resolveApiHrefForCurrentPath("/api/v1/spaces"), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: trimmed,
-          description: description.trim() || null,
-          startDate: startDate || null,
-          endDate: endDate || null,
-        }),
-      });
-      if (!res.ok) {
-        const text = await res.text().catch(() => "");
-        throw new Error(text || "스페이스를 만들지 못했습니다.");
-      }
-      const data = (await res.json()) as { space: Space };
+      const data = await counselingWorkspaceFetchJson<{ space: Space }>(
+        resolveApiHrefForCurrentPath("/api/v1/spaces"),
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: trimmed,
+            description: description.trim() || null,
+            startDate: startDate || null,
+            endDate: endDate || null,
+          }),
+        },
+        "스페이스를 만들지 못했습니다."
+      );
 
       if (selectedTemplateId) {
-        await fetch(
+        await counselingWorkspaceFetchVoid(
           resolveApiHrefForCurrentPath(
             `/api/v1/spaces/${data.space.id}/apply-template`
           ),
@@ -112,7 +120,8 @@ export function CreateSpaceModal({
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ templateId: selectedTemplateId }),
-          }
+          },
+          "스페이스 템플릿을 적용하지 못했습니다."
         ).catch(() => {});
       }
 
