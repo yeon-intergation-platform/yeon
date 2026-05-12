@@ -3,136 +3,33 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type {
-  CounselingChatMessage,
   CounselingRecordListItem,
   CounselingRecordDetail,
 } from "@yeon/api-contract/counseling-records";
-import { analysisResultSchema } from "@yeon/api-contract/counseling-records";
 import type {
   RecordItem,
   CounselingWorkspaceViewState,
   AiMessage,
   AnalysisResult,
-  TranscriptSegment,
 } from "../_lib/types";
 import { getProcessingChecklistStep } from "../_lib/processing-progress";
-import { fmtRelativeDate, fmtDurationMs } from "../_lib/utils";
 import {
   counselingWorkspaceFetchJson,
   counselingWorkspaceFetchVoid,
 } from "./counseling-workspace-fetch";
 import { counselingWorkspaceQueryKeys } from "./counseling-workspace-query-keys";
 import { resolveApiHrefForCurrentPath } from "@/lib/app-route-paths";
-import { normalizeCounselingTranscriptSegments } from "@/lib/counseling-transcript-display";
+import { useMergedRecords } from "./use-merged-records";
+import {
+  detailToRecordPatch,
+  isPartialTranscriptReady,
+  needsBackgroundPolling,
+} from "../_lib/record-state-adapters";
 
 const POLL_INTERVAL_MS = 3000;
 const BOOSTED_POLL_INTERVAL_MS = 1000;
 const BOOSTED_POLL_WINDOW_MS = 15000;
-const PARTIAL_TRANSCRIPT_READY_STAGE = "partial_transcript_ready";
-
-function mapAssistantMessages(messages: CounselingChatMessage[]): AiMessage[] {
-  return messages.map((message) => ({
-    role: message.role,
-    text: message.content,
-    createdAt: message.createdAt,
-  }));
-}
-
-function listItemToRecordItem(item: CounselingRecordListItem): RecordItem {
-  return {
-    id: item.id,
-    spaceId: item.spaceId ?? null,
-    memberId: item.memberId ?? null,
-    createdAt: item.createdAt,
-    title: item.sessionTitle || "제목 없음",
-    status: item.status,
-    errorMessage:
-      item.status === "error" ? (item.errorMessage ?? "알 수 없는 오류") : null,
-    meta: `${item.studentName || "수강생 미지정"} · ${fmtRelativeDate(item.createdAt)}`,
-    duration: fmtDurationMs(item.audioDurationMs),
-    durationMs: item.audioDurationMs ?? 0,
-    studentName: item.studentName || "",
-    type: item.counselingType || "",
-    recordSource: item.recordSource,
-    audioUrl: null,
-    transcript: [],
-    aiSummary: item.preview || "",
-    aiMessages: [],
-    aiMessagesLoaded: false,
-    analysisResult: null,
-    processingStage: item.processingStage,
-    processingProgress: item.processingProgress,
-    processingMessage: item.processingMessage,
-    analysisStatus: item.analysisStatus,
-    analysisProgress: item.analysisProgress,
-  };
-}
-
-function detailToTranscript(
-  detail: CounselingRecordDetail
-): TranscriptSegment[] {
-  return normalizeCounselingTranscriptSegments(detail.transcriptSegments);
-}
-
-function detailToRecordPatch(
-  detail: CounselingRecordDetail
-): Partial<RecordItem> {
-  const rawAnalysis = detail.analysisResult;
-  const parsedAnalysis =
-    rawAnalysis != null ? analysisResultSchema.safeParse(rawAnalysis) : null;
-  const analysisResult = parsedAnalysis?.success ? parsedAnalysis.data : null;
-
-  return {
-    spaceId: detail.spaceId ?? null,
-    memberId: detail.memberId ?? null,
-    createdAt: detail.createdAt,
-    title: detail.sessionTitle || "제목 없음",
-    status: detail.status,
-    errorMessage:
-      detail.status === "error"
-        ? (detail.errorMessage ?? "알 수 없는 오류")
-        : null,
-    meta: `${detail.studentName || "수강생 미지정"} · ${fmtRelativeDate(detail.createdAt)}`,
-    duration: fmtDurationMs(detail.audioDurationMs),
-    durationMs: detail.audioDurationMs ?? 0,
-    studentName: detail.studentName || "",
-    type: detail.counselingType || "",
-    recordSource: detail.recordSource,
-    audioUrl: detail.audioUrl || null,
-    transcript: detailToTranscript(detail),
-    aiSummary: detail.preview || "",
-    aiMessages: mapAssistantMessages(detail.assistantMessages),
-    aiMessagesLoaded: true,
-    analysisResult,
-    processingStage: detail.processingStage,
-    processingProgress: detail.processingProgress,
-    processingMessage: detail.processingMessage,
-    analysisStatus: detail.analysisStatus,
-    analysisProgress: detail.analysisProgress,
-  };
-}
-
-function isPartialTranscriptReady(record: {
-  status: RecordItem["status"];
-  processingStage?: RecordItem["processingStage"];
-}) {
-  return (
-    record.status === "processing" &&
-    record.processingStage === PARTIAL_TRANSCRIPT_READY_STAGE
-  );
-}
-
-function needsBackgroundPolling(record: {
-  status: RecordItem["status"];
-  processingStage?: RecordItem["processingStage"];
-  analysisStatus?: RecordItem["analysisStatus"];
-}) {
-  return (
-    (record.status === "processing" &&
-      record.processingStage !== PARTIAL_TRANSCRIPT_READY_STAGE) ||
-    ["queued", "processing"].includes(record.analysisStatus ?? "")
-  );
-}
+const EMPTY_SERVER_ITEMS: CounselingRecordListItem[] = [];
 
 // ---------------------------------------------------------------------------
 // selectedRecordId를 외부에서 받는 순수 데이터 훅
@@ -172,23 +69,12 @@ export function useRecords(selectedRecordId: string | null) {
   });
 
   // 병합된 records (서버 + 로컬 오버라이드 + 임시 레코드)
-  const records = useMemo(() => {
-    const serverItems = serverData ? serverData.records : [];
-    const serverMerged = serverItems.map(listItemToRecordItem).map((r) => {
-      const overrides = localOverrides.get(r.id);
-      if (!overrides) return r;
-      return { ...r, ...overrides };
-    });
-
-    const serverIds = new Set(serverItems.map((item) => item.id));
-    const preserved = tempRecords.filter(
-      (t) =>
-        !serverIds.has(t.id) &&
-        (t.id.startsWith("temp-") || t.status === "processing")
-    );
-
-    return [...preserved, ...serverMerged];
-  }, [serverData, localOverrides, tempRecords]);
+  const serverItems = serverData?.records ?? EMPTY_SERVER_ITEMS;
+  const records = useMergedRecords({
+    serverItems,
+    localOverrides,
+    tempRecords,
+  });
 
   // selected: 외부에서 받은 selectedRecordId로 파생
   const selected = useMemo(
@@ -258,28 +144,12 @@ export function useRecords(selectedRecordId: string | null) {
           staleTime: 30_000,
         });
 
-        const transcript = detailToTranscript(data.record);
-        const audioUrl = data.record.audioUrl || null;
-        const rawAnalysis = data.record.analysisResult;
-        const parsedAnalysis =
-          rawAnalysis != null
-            ? analysisResultSchema.safeParse(rawAnalysis)
-            : null;
-        const analysisResult = parsedAnalysis?.success
-          ? parsedAnalysis.data
-          : null;
+        const detailPatch = detailToRecordPatch(data.record);
 
         setLocalOverrides((prev) => {
           const next = new Map(prev);
           const existing = next.get(id) ?? {};
-          next.set(id, {
-            ...existing,
-            transcript,
-            audioUrl,
-            analysisResult,
-            aiMessages: mapAssistantMessages(data.record.assistantMessages),
-            aiMessagesLoaded: true,
-          });
+          next.set(id, { ...existing, ...detailPatch });
           return next;
         });
       } catch {
