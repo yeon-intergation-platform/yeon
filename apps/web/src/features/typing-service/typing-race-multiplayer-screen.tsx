@@ -146,6 +146,16 @@ export function TypingRaceMultiplayerScreen({
   ]);
 
   useEffect(() => {
+    if (race.stage !== TYPING_RACE_STAGE.COUNTDOWN) return;
+    setInput("");
+    setStartedAt(null);
+    setElapsedSeconds(0);
+    setMistakeCount(0);
+    finishSentRef.current = false;
+    lastSentProgressRef.current = 0;
+  }, [prompt, race.roomId, race.stage]);
+
+  useEffect(() => {
     let active = true;
     if (!engineContainerRef.current) return;
     // 프로필 hydrate 전에 마운트하면 default 캐릭터로 잘못 시작 → 깜빡임 방지.
