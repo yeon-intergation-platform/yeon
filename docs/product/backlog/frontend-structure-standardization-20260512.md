@@ -1394,3 +1394,29 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 57차 — center panel ready state component 추출
+
+### 작업내용
+
+- `center-panel.tsx`의 ready 상태 UI를 feature component로 추출한다.
+- record header, 수강생 연결 CTA, mismatch warning, audio player, analyzing banner, analysis cards, transcript details를 component 내부로 이동한다.
+- 수강생 연결, 오디오 재생/seek, 분석/원문 표시 동작은 기존과 동일하게 유지한다.
+
+### 논의 필요
+
+- mismatch warning 판정은 아직 app route lib에서 생성된다. 이번 차수는 ready state 표시만 이동하고, mismatch detection 로직 이동은 page/link modal 의존성을 정리하는 후속 차수로 둔다.
+
+### 선택지
+
+1. `RecordReadyState` component만 추출한다.
+2. mismatch warning detection까지 feature lib로 이동한다.
+3. center panel 전체를 feature screen component로 이동한다.
+
+### 추천
+
+- 선택지 1. ready 상태의 큰 JSX를 먼저 제거해 center panel을 상태 라우터에 가깝게 만든다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.
