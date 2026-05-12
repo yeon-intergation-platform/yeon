@@ -3,7 +3,7 @@
 import { useState, useRef, useCallback } from "react";
 import type { CounselingRecordDetail } from "@yeon/api-contract/counseling-records";
 import { resolveApiHrefForCurrentPath } from "@/lib/app-route-paths";
-import { counselingWorkspaceFetchJson } from "./counseling-workspace-fetch";
+import { counselingWorkspaceFetchJson } from "@/features/counseling-record-workspace/api/counseling-workspace-fetch";
 import type { RecordItem } from "../_lib/types";
 import { fmtDuration, fmtDurationMs, createTimestamp } from "../_lib/utils";
 

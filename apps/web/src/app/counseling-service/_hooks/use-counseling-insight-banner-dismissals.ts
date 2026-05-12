@@ -13,7 +13,7 @@ import {
   homeInsightBannerStateResponseSchema,
 } from "@yeon/api-contract";
 import { resolveApiHrefForCurrentPath } from "@/lib/app-route-paths";
-import { counselingWorkspaceFetchJson } from "./counseling-workspace-fetch";
+import { counselingWorkspaceFetchJson } from "@/features/counseling-record-workspace/api/counseling-workspace-fetch";
 
 const counselingInsightBannerQueryKeys = {
   dismissals: () => ["counseling-insight-banner-dismissals"] as const,

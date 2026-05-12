@@ -654,3 +654,28 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 28차: counseling workspace api/query key feature boundary 정리
+
+### 작업내용
+
+- `app/counseling-service/_hooks` 아래에 있던 상담 워크스페이스 fetch helper와 query key factory를 `features/counseling-record-workspace/api`로 이동한다.
+- app route 내부 hook/component는 feature API boundary를 import하도록 바꾼다.
+- 기존 화면 상태, API path, query key 값, error parsing 정책은 유지한다.
+
+### 논의 필요
+
+- app 내부 hook/component 전체를 이번 차수에 함께 feature layer로 이동할지 여부.
+
+### 선택지
+
+1. 이번 차수는 API/query key SSOT만 feature layer로 이동하고 hook/component 이동은 후속 차수로 나눈다.
+2. 상담 워크스페이스 hook/component 전체를 즉시 feature layer로 이동한다.
+
+### 추천
+
+- 1번. 네트워크/캐시 경계부터 실제 사용 경로의 SSOT를 고정해 회귀 면적을 줄인다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.

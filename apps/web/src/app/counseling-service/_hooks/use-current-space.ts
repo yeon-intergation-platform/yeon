@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { counselingWorkspaceFetchJson } from "./counseling-workspace-fetch";
-import { counselingWorkspaceQueryKeys } from "./counseling-workspace-query-keys";
+import { counselingWorkspaceFetchJson } from "@/features/counseling-record-workspace/api/counseling-workspace-fetch";
+import { counselingWorkspaceQueryKeys } from "@/features/counseling-record-workspace/api/counseling-workspace-query-keys";
 import { resolveApiHrefForCurrentPath } from "@/lib/app-route-paths";
 
 const STORAGE_KEY = "yeon_current_space_id";
