@@ -7,7 +7,7 @@ import { Pencil, Users } from "lucide-react";
 import type {
   SpaceContextMenuState,
   SpaceDialogTarget,
-} from "../_lib/space-sidebar-types";
+} from "@/features/student-management/types/space-sidebar-types";
 
 interface StudentManagementMobileSpaceActionSheetProps {
   target: SpaceDialogTarget | null;

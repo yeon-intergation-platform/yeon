@@ -1807,3 +1807,28 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 73차 — student management sidebar type feature 이동
+
+### 작업내용
+
+- `app/counseling-service/student-management/_lib/space-sidebar-types.ts`의 sidebar 상태 타입을 feature layer로 이동한다.
+- app 하위 component/hook/lib는 feature type을 직접 참조하도록 바꾼다.
+- 동작 코드는 변경하지 않고 app `_lib`의 feature 소유 타입 중복을 제거한다.
+
+### 논의 필요
+
+- sidebar utils/action/selection hook까지 같은 차수에서 feature로 이동할지 여부.
+
+### 선택지
+
+1. 이번 차수는 타입 이동만 수행하고, utils/action hook 이동은 후속으로 둔다.
+2. 타입, utils, hook을 한 번에 feature로 이동한다.
+
+### 추천
+
+- 1번. 타입 이동은 안전한 경계 정리이고, hook 이동은 route/reset 동작 리스크가 있어 분리한다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.

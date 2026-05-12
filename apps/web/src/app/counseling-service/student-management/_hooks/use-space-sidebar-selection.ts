@@ -10,7 +10,7 @@ import {
 import type {
   SpaceContextMenuState,
   SpaceSelectionState,
-} from "../_lib/space-sidebar-types";
+} from "@/features/student-management/types/space-sidebar-types";
 
 interface SpaceListItem {
   id: string;
@@ -43,7 +43,7 @@ export function useSpaceSidebarSelection({
 
   useEffect(() => {
     setSpaceSelection((prev) =>
-      syncSelectionWithSelectedSpace(prev, selectedSpaceId),
+      syncSelectionWithSelectedSpace(prev, selectedSpaceId)
     );
   }, [selectedSpaceId]);
 
@@ -56,7 +56,7 @@ export function useSpaceSidebarSelection({
     (
       event: React.MouseEvent<HTMLButtonElement>,
       spaceId: string,
-      index: number,
+      index: number
     ) => {
       if (event.shiftKey) {
         const orderedIds = spaces.map((item) => item.id);
@@ -79,14 +79,14 @@ export function useSpaceSidebarSelection({
       setSelectedSpaceId,
       spaceSelection.anchorId,
       spaces,
-    ],
+    ]
   );
 
   const handleSpaceContextMenu = useCallback(
     (
       event: React.MouseEvent<HTMLButtonElement>,
       spaceId: string,
-      spaceName: string,
+      spaceName: string
     ) => {
       event.preventDefault();
       setSpaceSelection((prev) => {
@@ -102,7 +102,7 @@ export function useSpaceSidebarSelection({
         y: event.clientY,
       });
     },
-    [],
+    []
   );
 
   return {

@@ -15,7 +15,7 @@ import type { Space } from "@/features/student-management/types";
 import type {
   SpaceSelectionState,
   SpaceDialogTarget,
-} from "../_lib/space-sidebar-types";
+} from "@/features/student-management/types/space-sidebar-types";
 
 type SpaceClickHandler = (
   event: MouseEvent<HTMLButtonElement>,
