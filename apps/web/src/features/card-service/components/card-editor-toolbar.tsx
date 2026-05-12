@@ -41,7 +41,7 @@ function CardEditorToolbarButton({
       aria-label={label}
       aria-pressed={typeof active === "boolean" ? active : undefined}
       title={label}
-      className={`flex h-9 w-9 items-center justify-center rounded-xl border text-[#111] transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
+      className={`flex h-10 w-10 items-center justify-center rounded-xl border text-[#111] transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
         active
           ? "border-[#111] bg-[#111] text-white"
           : "border-[#e5e5e5] bg-white hover:border-[#cfcfcf] hover:bg-[#f7f7f7]"
@@ -93,7 +93,7 @@ export function CardEditorToolbar({
   onRedo,
 }: CardEditorToolbarProps) {
   return (
-    <div className="flex flex-wrap gap-2 rounded-t-2xl border border-[#e5e5e5] bg-[#fafafa] p-2">
+    <div className="flex min-h-[64px] flex-wrap content-start items-center gap-x-2 gap-y-2.5 rounded-t-2xl border border-[#e5e5e5] bg-[#fafafa] p-3 md:min-h-[72px] md:gap-x-2.5 md:gap-y-3">
       <CardEditorToolbarButton
         label="실행 취소"
         icon={Undo2}
@@ -106,7 +106,7 @@ export function CardEditorToolbar({
         disabled={!canUseToolbar || !canRedo}
         onClick={onRedo}
       />
-      <span className="mx-1 hidden h-9 w-px bg-[#e5e5e5] sm:block" />
+      <span className="mx-1 hidden h-10 w-px bg-[#e5e5e5] sm:block" />
       <CardEditorToolbarButton
         label="굵게"
         icon={Bold}

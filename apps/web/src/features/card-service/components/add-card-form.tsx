@@ -165,7 +165,7 @@ export function AddCardForm({
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-      <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-6">
         <div className="rounded-2xl border border-[#ececec] bg-white p-4 md:p-5">
           <CardRichMarkdownEditor
             label="카드 질문"
@@ -173,6 +173,7 @@ export function AddCardForm({
             onChange={setFrontText}
             placeholder="질문 또는 앞면 내용을 작성하고 이미지는 문장 사이에 붙여넣으세요."
             helperText="이미지는 드래그앤드롭, 붙여넣기, 이미지 버튼으로 본문 안에 삽입됩니다."
+            density="question"
             onUploadingChange={(isUploadingFront) =>
               setUploadingSides((prev) => ({
                 ...prev,
@@ -188,6 +189,7 @@ export function AddCardForm({
             onChange={setBackText}
             placeholder="답변 또는 본문을 작성하세요."
             helperText="삽입한 이미지는 크기 조절 후 저장하면 본문과 함께 유지됩니다."
+            density="answer"
             onUploadingChange={(isUploadingBack) =>
               setUploadingSides((prev) => ({ ...prev, back: isUploadingBack }))
             }
