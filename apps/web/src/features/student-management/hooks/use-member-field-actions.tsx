@@ -10,7 +10,6 @@ import {
 import { updateSpaceMember } from "../member-field-actions-api";
 import type { Member } from "../types";
 import {
-  customTabFieldsQueryKey,
   patchFieldValuesInCache,
   saveMemberFieldValues,
   type CustomTabFieldsQueryData,
@@ -155,7 +154,9 @@ export function useMemberFieldActions({
           if (queryKey) {
             patchFieldValuesInCache(
               queryClient,
-              queryKey as ReturnType<typeof customTabFieldsQueryKey>,
+              queryKey as ReturnType<
+                typeof studentManagementQueryKeys.customTabFields
+              >,
               updatedValues
             );
           }

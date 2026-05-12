@@ -19,9 +19,9 @@ import {
 } from "../member-field-edit-policy";
 import {
   useCustomTabFields,
-  customTabFieldsQueryKey,
   type FieldDef,
 } from "../hooks/use-custom-tab-fields";
+import { studentManagementQueryKeys } from "../hooks/student-management-query-keys";
 import type { Member, Memo } from "../types";
 import { useMemberFieldActions } from "../hooks/use-member-field-actions";
 import { fmtDate, fmtRelative } from "../utils";
@@ -254,7 +254,7 @@ function LegacyGuardianFieldsSection({
   const { fields, loading } = useCustomTabFields(
     spaceId,
     memberId,
-    guardianTabId ?? "",
+    guardianTabId ?? ""
   );
 
   if (!guardianTabId || loading || fields.length === 0) {
@@ -273,7 +273,7 @@ function LegacyGuardianFieldsSection({
 }
 
 function isOverviewSourceField(
-  field: FieldDef,
+  field: FieldDef
 ): field is FieldDef & { sourceKey: OverviewFieldSourceKey } {
   return (
     typeof field.sourceKey === "string" &&
@@ -294,10 +294,14 @@ export function TabMemberOverview({
   const overviewQuery = useCustomTabFields(
     member.spaceId,
     member.id,
-    overviewTabId ?? "",
+    overviewTabId ?? ""
   );
   const overviewQueryKey = overviewTabId
-    ? customTabFieldsQueryKey(member.spaceId, member.id, overviewTabId)
+    ? studentManagementQueryKeys.customTabFields(
+        member.spaceId,
+        member.id,
+        overviewTabId
+      )
     : null;
   const fieldActions = useMemberFieldActions({
     member,
@@ -312,7 +316,7 @@ export function TabMemberOverview({
   const counselingCount = member.counselingRecordCount ?? 0;
   const lastCounselingAt = member.lastCounselingAt ?? null;
   const [editingFieldId, setEditingFieldId] = React.useState<string | null>(
-    null,
+    null
   );
   const [editingValue, setEditingValue] = React.useState("");
   const [inlineErrorMessage, setInlineErrorMessage] = React.useState<
@@ -395,7 +399,7 @@ export function TabMemberOverview({
       setInlineErrorMessage(
         error instanceof Error
           ? error.message
-          : "기본 정보를 저장하지 못했습니다.",
+          : "기본 정보를 저장하지 못했습니다."
       );
     } finally {
       setSavingFieldId(null);
@@ -550,7 +554,7 @@ export function TabMemberOverview({
                     clickMode={
                       presentation.actionTarget &&
                       isInlineEditableMemberActionTarget(
-                        presentation.actionTarget,
+                        presentation.actionTarget
                       )
                         ? "text"
                         : "button"
@@ -562,7 +566,7 @@ export function TabMemberOverview({
 
                       if (
                         isInlineEditableMemberActionTarget(
-                          presentation.actionTarget,
+                          presentation.actionTarget
                         )
                       ) {
                         beginInlineEdit(presentation.actionTarget);
@@ -597,7 +601,7 @@ export function TabMemberOverview({
               })}
             </Section>
           );
-        },
+        }
       )}
 
       {!memosLoading && !memosError && latestMemo ? (
@@ -647,11 +651,11 @@ export function TabMemberOverview({
                   valueFieldType: field.fieldType,
                   valueOptions: getFieldChoiceOptions(
                     field.fieldType,
-                    field.options,
+                    field.options
                   ),
                   valueScope: "fieldValue",
                 },
-                position,
+                position
               )
             }
           />

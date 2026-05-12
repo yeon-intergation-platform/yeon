@@ -137,7 +137,6 @@ function SidebarContent({ children }: { children: React.ReactNode }) {
     setSelectedSpaceId,
     refetchSpaces,
     members,
-    refetchMembers,
   } = useStudentManagement();
   const queryClient = useQueryClient();
   const router = useRouter();
@@ -419,10 +418,12 @@ function SidebarContent({ children }: { children: React.ReactNode }) {
               resetDetailRouteIfNeeded(importedSpaceId);
             }
             refetchSpaces();
-            refetchMembers();
-            void queryClient.invalidateQueries({
-              queryKey: studentManagementQueryKeys.membersRoot(),
-            });
+            for (const spaceId of result.spaceIds) {
+              void queryClient.invalidateQueries({
+                queryKey: studentManagementQueryKeys.members(spaceId),
+                exact: true,
+              });
+            }
             void refetchLocalDrafts();
           }}
         />

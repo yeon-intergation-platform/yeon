@@ -202,26 +202,33 @@ export function useStudentManagementApiState() {
   }, [queryClient]);
 
   const refetchMembers = useCallback(() => {
+    if (!selectedSpaceId) {
+      return;
+    }
+
     void queryClient.invalidateQueries({
-      queryKey: studentManagementQueryKeys.membersRoot(),
+      queryKey: studentManagementQueryKeys.members(selectedSpaceId),
+      exact: true,
     });
-  }, [queryClient]);
+  }, [queryClient, selectedSpaceId]);
 
   const patchMemberInCaches = useCallback(
     (memberId: string, patch: Partial<Member>) => {
-      queryClient.setQueriesData<{ members: Member[] }>(
-        { queryKey: studentManagementQueryKeys.membersRoot() },
-        (current) => {
-          if (!current) return current;
+      if (selectedSpaceId) {
+        queryClient.setQueryData<{ members: Member[] } | undefined>(
+          studentManagementQueryKeys.members(selectedSpaceId),
+          (current) => {
+            if (!current) return current;
 
-          return {
-            ...current,
-            members: current.members.map((member) =>
-              member.id === memberId ? { ...member, ...patch } : member
-            ),
-          };
-        }
-      );
+            return {
+              ...current,
+              members: current.members.map((member) =>
+                member.id === memberId ? { ...member, ...patch } : member
+              ),
+            };
+          }
+        );
+      }
 
       queryClient.setQueryData<{ member: Member } | undefined>(
         studentManagementQueryKeys.member(memberId),
@@ -234,7 +241,7 @@ export function useStudentManagementApiState() {
         }
       );
     },
-    [queryClient]
+    [queryClient, selectedSpaceId]
   );
 
   return {

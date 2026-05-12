@@ -5,10 +5,8 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { X } from "lucide-react";
 import { createSpaceField } from "../../space-settings/space-settings-api";
 import { FIELD_TYPE_LABELS, type FieldType } from "../../space-settings/types";
-import {
-  customTabFieldsQueryKey,
-  type CustomTabFieldsQueryData,
-} from "../hooks/use-custom-tab-fields";
+import type { CustomTabFieldsQueryData } from "../hooks/use-custom-tab-fields";
+import { studentManagementQueryKeys } from "../hooks/student-management-query-keys";
 
 interface AddCustomFieldModalProps {
   spaceId: string;
@@ -43,7 +41,11 @@ export function AddCustomFieldModal({
       return createSpaceField(spaceId, tabId, name, fieldType);
     },
     onSuccess: async ({ field }) => {
-      const queryKey = customTabFieldsQueryKey(spaceId, memberId, tabId);
+      const queryKey = studentManagementQueryKeys.customTabFields(
+        spaceId,
+        memberId,
+        tabId
+      );
 
       queryClient.setQueryData<CustomTabFieldsQueryData | undefined>(
         queryKey,
@@ -67,7 +69,7 @@ export function AddCustomFieldModal({
             ...current,
             fields: nextFields,
           };
-        },
+        }
       );
 
       await queryClient.invalidateQueries({
