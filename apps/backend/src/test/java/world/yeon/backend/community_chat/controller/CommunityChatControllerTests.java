@@ -34,25 +34,24 @@ class CommunityChatControllerTests {
 	@Autowired private MockMvc mockMvc;
 	@MockitoBean private CommunityChatService service;
 
-	@Test void 공개채팅목록을반환한다() throws Exception {
+	@Test void 공개채팅목록은내부토큰없이반환한다() throws Exception {
 		when(service.listMessages()).thenReturn(new CommunityChatMessagesResponse(List.of(
 			new CommunityChatMessageResponse(MESSAGE_ID, "guest:presence-1", "익명이", "안녕", CREATED_AT)
 		)));
 
-		mockMvc.perform(get("/api/v1/community-chat/messages").header("X-Yeon-Internal-Token", "test-internal-token"))
+		mockMvc.perform(get("/api/v1/community-chat/messages"))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.messages[0].senderNickname").value("익명이"))
 			.andExpect(jsonPath("$.messages[0].body").value("안녕"));
 	}
 
-	@Test void 비회원메시지를전송한다() throws Exception {
+	@Test void 비회원메시지는내부토큰없이전송한다() throws Exception {
 		var request = new SendCommunityChatMessageRequest("안녕", "presence-1", "익명이", "익명이");
 		when(service.send(isNull(), eq(request))).thenReturn(new CommunityChatMessageMutationResponse(
 			new CommunityChatMessageResponse(MESSAGE_ID, "guest:presence-1", "익명이", "안녕", CREATED_AT)
 		));
 
 		mockMvc.perform(post("/api/v1/community-chat/messages")
-				.header("X-Yeon-Internal-Token", "test-internal-token")
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("{\"body\":\"안녕\",\"guestSessionId\":\"presence-1\",\"guestNickname\":\"익명이\",\"senderNickname\":\"익명이\"}"))
 			.andExpect(status().isCreated())
@@ -66,7 +65,6 @@ class CommunityChatControllerTests {
 		));
 
 		mockMvc.perform(post("/api/v1/community-chat/messages")
-				.header("X-Yeon-Internal-Token", "test-internal-token")
 				.header("X-Yeon-User-Id", USER_ID.toString())
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("{\"body\":\"안녕\",\"senderNickname\":\"현준\"}"))
@@ -79,7 +77,6 @@ class CommunityChatControllerTests {
 		when(service.send(isNull(), eq(request))).thenThrow(new CommunityChatServiceException(400, "COMMUNITY_CHAT_INVALID", "메시지를 입력해 주세요."));
 
 		mockMvc.perform(post("/api/v1/community-chat/messages")
-				.header("X-Yeon-Internal-Token", "test-internal-token")
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("{\"body\":\"\",\"guestSessionId\":\"presence-1\",\"guestNickname\":\"익명이\",\"senderNickname\":\"익명이\"}"))
 			.andExpect(status().isBadRequest())
