@@ -329,3 +329,28 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 15차: public-check route hook feature boundary 이동
+
+### 작업내용
+
+- `app/check/[token]/_hooks/use-public-check.ts`에 남아 있던 public-check server-state hook을 `features/public-check/hooks/use-public-check.ts`로 이동한다.
+- 세션 조회/본인 확인/체크인 제출 HTTP 호출을 `public-check-api.ts`로 분리하고, route page는 feature hook만 조립한다.
+- public-check query key를 `publicCheckQueryKeys.session()` factory로 고정해 route 내부 raw key 의존을 제거한다.
+
+### 논의 필요
+
+- 위치 권한 요청(`navigator.geolocation`)까지 API wrapper로 이동할지 여부.
+
+### 선택지
+
+1. 위치 권한은 브라우저 UI 상태에 가까우므로 hook에 유지하고, 네트워크 boundary만 API wrapper로 이동한다.
+2. 위치 권한 요청도 submit API 함수 내부로 이동해 mutation 호출부를 더 얇게 만든다.
+
+### 추천
+
+- 1번. 권한 요청은 브라우저 상호작용과 에러 피드백에 직접 연결되므로 hook이 소유하고, HTTP 요청만 service API boundary로 분리한다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.

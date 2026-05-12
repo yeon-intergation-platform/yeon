@@ -14,7 +14,7 @@ import {
   usePublicCheckSession,
   useSubmitPublicCheck,
   useVerifyPublicCheck,
-} from "./_hooks/use-public-check";
+} from "@/features/public-check/hooks/use-public-check";
 
 function resolveEntryMode(value: string | null): PublicCheckEntry {
   return value === "location" ? "location" : "qr";
