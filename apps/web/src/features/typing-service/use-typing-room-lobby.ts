@@ -10,6 +10,11 @@ import {
 } from "@yeon/race-shared";
 import { resolveRaceServerUrl } from "./use-race-room";
 
+const typingRoomLobbyQueryKeys = {
+  publicWaitingRooms: () =>
+    ["typing-service", "room-lobby", "public-waiting"] as const,
+};
+
 type AvailableTypingRoom = {
   roomId: string;
   clients: number;
@@ -37,7 +42,7 @@ async function fetchTypingRooms() {
   const endpoint = resolveRaceServerUrl().replace(/^ws/, "http");
   const response = await fetch(`${endpoint}/rooms/${TYPING_RACE_ROOM_NAME}`);
   if (!response.ok) throw new Error(`HTTP ${response.status}`);
-  const availableRooms = await response.json() as AvailableTypingRoom[];
+  const availableRooms = (await response.json()) as AvailableTypingRoom[];
   return availableRooms
     .map(toSummary)
     .filter((room): room is TypingRoomSummary => Boolean(room))
@@ -48,14 +53,15 @@ async function fetchTypingRooms() {
 
 export function useTypingRoomLobby() {
   const roomsQuery = useQuery({
-    queryKey: ["typing-room-lobby"],
+    queryKey: typingRoomLobbyQueryKeys.publicWaitingRooms(),
     queryFn: fetchTypingRooms,
     refetchInterval: 2500,
   });
 
   const state = useMemo<TypingRoomLobbyState>(() => {
     if (roomsQuery.isPending) return { kind: "loading" };
-    if (roomsQuery.isError) return { kind: "error", message: "타자방 서버에 연결할 수 없어요." };
+    if (roomsQuery.isError)
+      return { kind: "error", message: "타자방 서버에 연결할 수 없어요." };
     return roomsQuery.data.length > 0
       ? { kind: "ready", rooms: roomsQuery.data }
       : { kind: "empty" };

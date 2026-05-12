@@ -5,6 +5,7 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 import { useQuery } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { detectFileKind } from "../file-kind";
+import { cloudImportQueryKeys } from "../cloud-import-query-keys";
 
 interface FilePreviewProps {
   uri: string;
@@ -26,17 +27,17 @@ function needsHeicConversion(fileName: string): boolean {
 function assertSpreadsheetPreviewRowsAreBounded(rows: string[][]) {
   if (rows.length > MAX_SPREADSHEET_PREVIEW_ROWS) {
     throw new Error(
-      `스프레드시트 미리보기는 최대 ${MAX_SPREADSHEET_PREVIEW_ROWS}행까지만 지원합니다.`,
+      `스프레드시트 미리보기는 최대 ${MAX_SPREADSHEET_PREVIEW_ROWS}행까지만 지원합니다.`
     );
   }
 
   const maxColumnCount = rows.reduce(
     (max, row) => Math.max(max, row.length),
-    0,
+    0
   );
   if (maxColumnCount > MAX_SPREADSHEET_PREVIEW_COLUMNS) {
     throw new Error(
-      `스프레드시트 미리보기는 최대 ${MAX_SPREADSHEET_PREVIEW_COLUMNS}열까지만 지원합니다.`,
+      `스프레드시트 미리보기는 최대 ${MAX_SPREADSHEET_PREVIEW_COLUMNS}열까지만 지원합니다.`
     );
   }
 }
@@ -109,7 +110,7 @@ function HeicPreview({ uri, fileName }: { uri: string; fileName: string }) {
       } catch (err) {
         if (!cancelled)
           setError(
-            err instanceof Error ? err.message : "HEIC 변환에 실패했습니다.",
+            err instanceof Error ? err.message : "HEIC 변환에 실패했습니다."
           );
       } finally {
         if (!cancelled) setLoading(false);
@@ -158,7 +159,7 @@ function SpreadsheetPreview({ uri }: { uri: string }) {
     isPending: loading,
     error,
   } = useQuery({
-    queryKey: ["file-preview-spreadsheet", uri],
+    queryKey: cloudImportQueryKeys.filePreviewSpreadsheet(uri),
     queryFn: async () => {
       const res = await fetch(uri);
       if (!res.ok) throw new Error("파일을 불러올 수 없습니다.");
@@ -170,7 +171,7 @@ function SpreadsheetPreview({ uri }: { uri: string }) {
       const wb = XLSX.read(new Uint8Array(buffer), { type: "array" });
       if (wb.SheetNames.length > 30) {
         throw new Error(
-          "스프레드시트 미리보기는 최대 30개 시트까지만 지원합니다.",
+          "스프레드시트 미리보기는 최대 30개 시트까지만 지원합니다."
         );
       }
       const ws = wb.Sheets[wb.SheetNames[0]];
@@ -219,7 +220,7 @@ function CsvPreview({ uri }: { uri: string }) {
     isPending: loading,
     error,
   } = useQuery({
-    queryKey: ["file-preview-csv", uri],
+    queryKey: cloudImportQueryKeys.filePreviewCsv(uri),
     queryFn: async () => {
       const res = await fetch(uri);
       if (!res.ok) throw new Error("파일을 불러올 수 없습니다.");
@@ -261,7 +262,7 @@ function TxtPreview({ uri }: { uri: string }) {
     isPending: loading,
     error,
   } = useQuery({
-    queryKey: ["file-preview-txt", uri],
+    queryKey: cloudImportQueryKeys.filePreviewTxt(uri),
     queryFn: async () => {
       const res = await fetch(uri);
       if (!res.ok) throw new Error("파일을 불러올 수 없습니다.");
@@ -336,7 +337,7 @@ function normalizePreviewRows(rows: string[][]) {
 function getColumnTrackFromCells(cells: string[]) {
   const longestLength = cells.reduce(
     (maxLength, cell) => Math.max(maxLength, cell.trim().length),
-    0,
+    0
   );
   const estimatedWidth = longestLength * 8 + 44;
   const clampedWidth = Math.min(320, Math.max(120, estimatedWidth));
@@ -348,7 +349,7 @@ function VirtualizedGridPreview({ rows }: { rows: string[][] }) {
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const { headerRow, bodyRows, columnCount } = useMemo(
     () => normalizePreviewRows(rows),
-    [rows],
+    [rows]
   );
   const gridTemplateColumns = useMemo(() => {
     if (columnCount === 0) {
@@ -359,7 +360,7 @@ function VirtualizedGridPreview({ rows }: { rows: string[][] }) {
       getColumnTrackFromCells([
         headerRow[index] ?? "",
         ...bodyRows.map((row) => row[index] ?? ""),
-      ]),
+      ])
     ).join(" ");
   }, [bodyRows, columnCount, headerRow]);
   const rowVirtualizer = useVirtualizer({

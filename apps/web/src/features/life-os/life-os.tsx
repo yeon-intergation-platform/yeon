@@ -27,6 +27,10 @@ type LifeOsViewState =
   | { kind: "error"; message: string }
   | { kind: "ready"; draft: LifeOsDraft };
 
+const lifeOsQueryKeys = {
+  day: (localDate: string) => ["life-os", "day", localDate] as const,
+};
+
 function getTodayLocalDate() {
   return new Intl.DateTimeFormat("en-CA", {
     timeZone: "Asia/Seoul",
@@ -38,7 +42,7 @@ function getTodayLocalDate() {
 
 function toDraft(
   day?: LifeOsDayDto | null,
-  localDate = getTodayLocalDate(),
+  localDate = getTodayLocalDate()
 ): LifeOsDraft {
   return {
     localDate: day?.localDate ?? localDate,
@@ -107,7 +111,7 @@ function DayBlock({
   onEntryChange: (
     hour: number,
     field: "goalText" | "actionText",
-    value: string,
+    value: string
   ) => void;
 }) {
   return (
@@ -170,13 +174,13 @@ export function LifeOsScreen() {
   const [draft, setDraft] = useState(() => toDraft(null, selectedDate));
 
   const dayQuery = useQuery({
-    queryKey: ["life-os", "day", selectedDate],
+    queryKey: lifeOsQueryKeys.day(selectedDate),
     queryFn: () => fetchLifeOsDay(selectedDate),
   });
   const saveMutation = useMutation({
     mutationFn: saveLifeOsDay,
     onSuccess(day) {
-      queryClient.setQueryData(["life-os", "day", day.localDate], day);
+      queryClient.setQueryData(lifeOsQueryKeys.day(day.localDate), day);
       setDraft(toDraft(day, day.localDate));
     },
   });
@@ -219,12 +223,12 @@ export function LifeOsScreen() {
   function handleEntryChange(
     hour: number,
     field: "goalText" | "actionText",
-    value: string,
+    value: string
   ) {
     setDraft((current) => ({
       ...current,
       entries: current.entries.map((entry) =>
-        entry.hour === hour ? { ...entry, [field]: value } : entry,
+        entry.hour === hour ? { ...entry, [field]: value } : entry
       ),
     }));
   }
