@@ -31,3 +31,21 @@ export async function studentManagementFetchVoid(
     throw new Error(payload?.message || payload?.error || fallbackErrorMessage);
   }
 }
+
+export async function studentManagementFetchBlob(
+  input: RequestInfo | URL,
+  init: RequestInit,
+  fallbackErrorMessage: string
+): Promise<Blob> {
+  const response = await fetch(input, { credentials: "include", ...init });
+
+  if (!response.ok) {
+    const payload = (await response.json().catch(() => null)) as {
+      message?: string;
+      error?: string;
+    } | null;
+    throw new Error(payload?.message || payload?.error || fallbackErrorMessage);
+  }
+
+  return response.blob();
+}
