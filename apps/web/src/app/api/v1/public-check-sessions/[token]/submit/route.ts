@@ -10,7 +10,7 @@ import {
   applyRememberedPublicCheckIdentityCookie,
   clearRememberedPublicCheckIdentityCookie,
   getRememberedPublicCheckIdentities,
-} from "@/server/services/public-check-device-cookie";
+} from "@/server/public-check-device-cookie-bff";
 import {
   PublicCheckRuntimeSpringBackendHttpError,
   submitPublicCheckInSpring,
@@ -41,18 +41,18 @@ export async function POST(request: NextRequest, context: RouteContext) {
     const outcome = await submitPublicCheckInSpring(token, {
       ...parsed.data,
       remembered: getRememberedPublicCheckIdentities(request).map(
-        (identity) => `${identity.spaceId}:${identity.memberId}`,
+        (identity) => `${identity.spaceId}:${identity.memberId}`
       ),
     });
     const response = NextResponse.json(
-      submitPublicCheckResultSchema.parse(outcome.result),
+      submitPublicCheckResultSchema.parse(outcome.result)
     );
 
     if (outcome.shouldClearRememberedIdentity) {
       clearRememberedPublicCheckIdentityCookie(
         response,
         request,
-        outcome.spaceId,
+        outcome.spaceId
       );
     }
 

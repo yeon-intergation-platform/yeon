@@ -9,7 +9,7 @@ import { jsonError } from "@/app/api/v1/counseling-records/_shared";
 import {
   clearRememberedPublicCheckIdentityCookie,
   getRememberedPublicCheckIdentities,
-} from "@/server/services/public-check-device-cookie";
+} from "@/server/public-check-device-cookie-bff";
 import {
   fetchPublicCheckSessionFromSpring,
   PublicCheckRuntimeSpringBackendHttpError,
@@ -24,7 +24,7 @@ type RouteContext = {
 export async function GET(request: NextRequest, context: RouteContext) {
   const { token } = await context.params;
   const parsedEntry = publicCheckEntrySchema.safeParse(
-    request.nextUrl.searchParams.get("entry"),
+    request.nextUrl.searchParams.get("entry")
   );
 
   try {
@@ -35,7 +35,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
         remembered: getRememberedPublicCheckIdentities(request),
       });
     const response = NextResponse.json(
-      publicCheckSessionPublicSchema.parse(session),
+      publicCheckSessionPublicSchema.parse(session)
     );
 
     if (shouldClearRememberedIdentity) {
