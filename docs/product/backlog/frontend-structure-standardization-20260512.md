@@ -454,3 +454,28 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 20차: insight banner dismissals fetch/query key boundary 정리
+
+### 작업내용
+
+- `app/counseling-service/_hooks/use-counseling-insight-banner-dismissals.ts`에 남아 있는 직접 `fetch()` 호출을 제거한다.
+- 인사이트 배너 상태 조회/닫기 요청은 기존 `counselingWorkspaceFetchJson` wrapper를 사용해 credentials/error parsing 정책을 통일한다.
+- 배너 dismissals query key를 `counselingInsightBannerQueryKeys.dismissals()` factory로 고정한다.
+
+### 논의 필요
+
+- 인사이트 배너 hook을 `features/counseling-service-shell`로 즉시 이동할지 여부.
+
+### 선택지
+
+1. 이번 차수는 fetch/query key boundary만 닫고 feature layer 이동은 후속 app boundary 정리에서 다룬다.
+2. hook 파일을 feature layer로 즉시 이동한다.
+
+### 추천
+
+- 1번. 직접 fetch와 query key 표준화 범위를 작게 유지하고, app 내부 feature 이동은 별도 PR로 관리한다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.

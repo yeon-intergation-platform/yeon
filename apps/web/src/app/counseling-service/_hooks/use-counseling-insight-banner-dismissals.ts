@@ -13,10 +13,11 @@ import {
   homeInsightBannerStateResponseSchema,
 } from "@yeon/api-contract";
 import { resolveApiHrefForCurrentPath } from "@/lib/app-route-paths";
+import { counselingWorkspaceFetchJson } from "./counseling-workspace-fetch";
 
-const COUNSELING_INSIGHT_BANNER_DISMISSALS_QUERY_KEY = [
-  "counseling-insight-banner-dismissals",
-] as const;
+const counselingInsightBannerQueryKeys = {
+  dismissals: () => ["counseling-insight-banner-dismissals"] as const,
+};
 
 function toTimestamp(value: string | null) {
   if (!value) {
@@ -29,7 +30,7 @@ function toTimestamp(value: string | null) {
 
 function applyDismissalToState(
   current: HomeInsightBannerStateResponse | undefined,
-  nextDismissal: HomeInsightBannerDismissal,
+  nextDismissal: HomeInsightBannerDismissal
 ): HomeInsightBannerStateResponse {
   const existing = current ? current.dismissals : [];
   const nextDismissals = new Map<
@@ -48,20 +49,13 @@ export function useCounselingInsightBannerDismissals() {
   const queryClient = useQueryClient();
   const [nowTimestamp, setNowTimestamp] = useState(() => Date.now());
   const query = useQuery({
-    queryKey: COUNSELING_INSIGHT_BANNER_DISMISSALS_QUERY_KEY,
+    queryKey: counselingInsightBannerQueryKeys.dismissals(),
     queryFn: async () => {
-      const response = await fetch(
+      const payload = await counselingWorkspaceFetchJson<unknown>(
         resolveApiHrefForCurrentPath("/api/v1/home/insight-banners"),
+        {},
+        "상담 인사이트 배너 상태를 불러오지 못했습니다."
       );
-      const payload = (await response.json().catch(() => null)) as
-        | ({ message?: string } & Partial<HomeInsightBannerStateResponse>)
-        | null;
-
-      if (!response.ok) {
-        throw new Error(
-          payload?.message || "상담 인사이트 배너 상태를 불러오지 못했습니다.",
-        );
-      }
 
       return homeInsightBannerStateResponseSchema.parse(payload);
     },
@@ -80,16 +74,16 @@ export function useCounselingInsightBannerDismissals() {
           toTimestamp(dismissal.hiddenUntil),
         ])
         .filter(
-          (entry): entry is [HomeInsightBannerKey, number] => entry[1] !== null,
-        ),
+          (entry): entry is [HomeInsightBannerKey, number] => entry[1] !== null
+        )
     );
   }, [dismissals]);
 
   useEffect(() => {
     const nextVisibleAt = Math.min(
       ...Array.from(hiddenUntilByBanner.values()).filter(
-        (hiddenUntil) => hiddenUntil > nowTimestamp,
-      ),
+        (hiddenUntil) => hiddenUntil > nowTimestamp
+      )
     );
 
     if (!Number.isFinite(nextVisibleAt)) {
@@ -100,7 +94,7 @@ export function useCounselingInsightBannerDismissals() {
       () => {
         setNowTimestamp(Date.now());
       },
-      Math.max(0, nextVisibleAt - nowTimestamp) + 50,
+      Math.max(0, nextVisibleAt - nowTimestamp) + 50
     );
 
     return () => window.clearTimeout(timeout);
@@ -108,31 +102,25 @@ export function useCounselingInsightBannerDismissals() {
 
   const dismissMutation = useMutation({
     mutationFn: async (
-      bannerKey: HomeInsightBannerKey,
+      bannerKey: HomeInsightBannerKey
     ): Promise<DismissHomeInsightBannerResponse> => {
-      const response = await fetch(
+      const payload = await counselingWorkspaceFetchJson<unknown>(
         resolveApiHrefForCurrentPath("/api/v1/home/insight-banners"),
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ bannerKey }),
         },
+        "배너를 닫지 못했습니다."
       );
-      const payload = (await response.json().catch(() => null)) as
-        | ({ message?: string } & Partial<DismissHomeInsightBannerResponse>)
-        | null;
-
-      if (!response.ok) {
-        throw new Error(payload?.message || "배너를 닫지 못했습니다.");
-      }
 
       return dismissHomeInsightBannerResponseSchema.parse(payload);
     },
     onSuccess: (result) => {
       setNowTimestamp(Date.now());
       queryClient.setQueryData<HomeInsightBannerStateResponse | undefined>(
-        COUNSELING_INSIGHT_BANNER_DISMISSALS_QUERY_KEY,
-        (current) => applyDismissalToState(current, result.dismissal),
+        counselingInsightBannerQueryKeys.dismissals(),
+        (current) => applyDismissalToState(current, result.dismissal)
       );
     },
   });
