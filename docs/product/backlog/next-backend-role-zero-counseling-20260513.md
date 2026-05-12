@@ -126,3 +126,24 @@
 - 완료 근거
   - Spring `POST /counseling-records/analyze-trend` SSE API와 Next Spring bridge 전환을 구현했다.
   - backend controller test, web typecheck/build, diff/skill/SSOT 검증을 수행했다.
+
+## 3차 - chat-service 세션 인증 Spring bridge 정리
+
+### 3차 세부 - chat-service 공용 인증 조회 Spring 이관 (완료)
+
+- 작업내용
+  - `apps/web/src/app/api/v1/chat-service/_shared.ts`의 `getChatServiceAuthByToken` 직접 호출을 제거한다.
+  - chat-service route 공용 인증은 Spring `GET /chat-service/auth/session` 응답을 검증해 사용한다.
+- 논의 필요
+  - 세션 쿠키/Authorization Bearer 추출은 Next BFF 경계 역할이므로 유지한다.
+- 선택지
+  - A. `_shared.ts` 인증 조회만 단독 PR로 이관
+  - B. chat-service 전체 route를 한 번에 재검토
+- 추천
+  - A. 이미 대부분 Spring client를 쓰는 route들의 공용 DB 세션 조회만 먼저 제거한다.
+- 사용자 방향
+  - 추천 기준으로 진행.
+- 완료 근거
+  - `_shared.ts`가 세션 토큰 추출 후 Spring auth session 응답으로 profile을 구성한다.
+  - `getChatServiceAuthByToken` 직접 DB 조회 import를 제거했다.
+  - web typecheck/build 및 chat-service route targeted Vitest 통과.
