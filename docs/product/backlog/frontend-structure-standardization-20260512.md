@@ -1238,3 +1238,29 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 51차 — center panel analysis cards component 추출
+
+### 작업내용
+
+- `center-panel.tsx` 안의 AI 분석 결과 카드 렌더링을 `features/counseling-record-workspace/components`로 추출한다.
+- center panel은 선택 record 상태 분기와 레이아웃 조립만 유지하고, 분석 결과 표시 책임을 feature component로 이동한다.
+- 분석 결과 데이터 구조와 표시 문구/스타일은 변경하지 않는다.
+
+### 논의 필요
+
+- center panel에는 transcript, audio player, error/processing state까지 아직 남아 있다. 이번 차수는 순수 분석 카드만 분리하고 나머지는 후속 차수로 둔다.
+
+### 선택지
+
+1. `AnalysisCards`만 feature component로 추출한다.
+2. transcript details와 audio player까지 함께 추출한다.
+3. center panel 전체를 feature screen component로 이동한다.
+
+### 추천
+
+- 선택지 1. 순수 표시 컴포넌트를 먼저 이동해 app route component 크기와 책임을 안전하게 줄인다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.
