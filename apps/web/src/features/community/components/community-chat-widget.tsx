@@ -9,6 +9,7 @@ import { useCommunityChat } from "../hooks/use-community-chat";
 type CommunityChatWidgetProps = {
   variant?: "full" | "compact" | "feed";
   className?: string;
+  guestNickname?: string;
 };
 
 function formatMessageTime(isoDate: string) {
@@ -29,6 +30,7 @@ const COMPACT_CHAT_COLLAPSED_SIZE = 56;
 export function CommunityChatWidget({
   variant = "full",
   className,
+  guestNickname,
 }: CommunityChatWidgetProps) {
   const [messageBody, setMessageBody] = useState("");
   const [isBodyCollapsed, setIsBodyCollapsed] = useState(false);
@@ -46,6 +48,7 @@ export function CommunityChatWidget({
     activePresenceCount,
   } = useCommunityChat({
     pollIntervalMs: variant === "compact" ? 8000 : 5000,
+    guestNickname,
   });
 
   const isCompact = variant === "compact";

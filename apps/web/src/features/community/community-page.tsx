@@ -615,7 +615,7 @@ export function CommunityPage() {
           </header>
 
           <div className="border-b border-[#e5e7eb]" aria-label="실시간 채팅">
-            <CommunityChatWidget variant="feed" />
+            <CommunityChatWidget variant="feed" guestNickname={guestNickname} />
           </div>
 
           <div className="space-y-4 border-b border-[#e5e7eb] px-5 py-4 sm:px-6">

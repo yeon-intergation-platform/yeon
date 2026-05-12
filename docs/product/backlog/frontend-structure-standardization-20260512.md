@@ -756,3 +756,29 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 32차: community chat anonymous identity/fetch boundary 정리
+
+### 작업내용
+
+- 실시간 채팅 hook이 `senderId`/`guestSessionId` 같은 ID성 값을 UI 반환 상태로 보관하지 않게 한다.
+- `/community` 글쓰기 행에서 설정한 닉네임을 localStorage SSOT에 저장하고 실시간 채팅 전송에도 같은 닉네임을 사용하게 한다.
+- community presence heartbeat 직접 `fetch()` 호출을 API boundary 파일로 이동한다.
+- 기존 채팅 polling, presence count 표시, compact widget 동작은 유지한다.
+
+### 논의 필요
+
+- 커뮤니티 채팅 전체를 이번 차수에 TanStack Query polling/mutation으로 전환할지 여부.
+
+### 선택지
+
+1. 이번 차수는 익명성 누출 가능성과 fetch boundary만 닫고, 채팅 React Query 전환은 후속 차수로 나눈다.
+2. 채팅 list/send/presence를 모두 React Query로 즉시 전환한다.
+
+### 추천
+
+- 1번. 익명성은 즉시 닫되, 실시간 채팅 polling 구조 변경은 회귀 면적이 커서 별도 차수로 검증한다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.
