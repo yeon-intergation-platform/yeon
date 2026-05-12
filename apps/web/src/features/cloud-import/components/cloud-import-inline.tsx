@@ -8,17 +8,8 @@ import {
   type ChangeEvent,
   type DragEvent,
 } from "react";
+import { Upload } from "lucide-react";
 import {
-  ArrowLeft,
-  ChevronRight,
-  CloudCog,
-  LayoutGrid,
-  List,
-  Loader2,
-  Upload,
-} from "lucide-react";
-import {
-  CLOUD_PROVIDER_ORDER,
   DEFAULT_CLOUD_PROVIDER,
   getCloudProviderLabel,
 } from "../cloud-provider-config";
@@ -28,11 +19,10 @@ import { useCloudImport } from "../hooks/use-cloud-import";
 import { useLocalImport } from "../hooks/use-local-import";
 import { useSavedImportDraftsModal } from "../hooks/use-saved-import-drafts-modal";
 import { useCloudImportWorkspaceSplit } from "../hooks/use-cloud-import-workspace-split";
-import { FilePreview } from "./file-preview";
-import { FileGrid } from "./cloud-import-file-grid";
-import { ImportRightPanel } from "./import-right-panel";
 import { CloudImportSavedDraftsModal } from "./cloud-import-saved-drafts-modal";
 import { CloudImportEntryHeader } from "./cloud-import-entry-header";
+import { CloudImportFileBrowser } from "./cloud-import-file-browser";
+import { CloudImportPreviewWorkspace } from "./cloud-import-preview-workspace";
 
 interface CloudImportInlineProps {
   onClose: () => void;
@@ -151,11 +141,6 @@ export function CloudImportInline({
     setActiveProvider(p);
   };
 
-  const handleBreadcrumbClick = (index: number) => {
-    if (index === activeHook.folderStack.length - 1) return;
-    activeHook.navigateToBreadcrumbIndex(index);
-  };
-
   const handleDragEnter = (e: DragEvent) => {
     e.preventDefault();
     dragCounterRef.current += 1;
@@ -189,13 +174,6 @@ export function CloudImportInline({
   const isLocalMode = localImport.selectedFile !== null;
   const hasSelectedFile = activeHook.selectedFile !== null;
   const isWorkspaceMode = isLocalMode || hasSelectedFile;
-  const localReviewPaneStyle = workspaceSplit.getReviewPaneStyle(
-    Boolean(localImport.editablePreview)
-  );
-  const cloudReviewPaneStyle = workspaceSplit.getReviewPaneStyle(
-    Boolean(activeHook.editablePreview)
-  );
-
   useEffect(() => {
     onWorkspaceModeChange?.(isWorkspaceMode);
   }, [isWorkspaceMode, onWorkspaceModeChange]);
@@ -247,400 +225,26 @@ export function CloudImportInline({
 
       {/* 로컬 프리뷰 모드 */}
       {isLocalMode && localImport.fileProxyUrl ? (
-        <div
-          ref={expanded ? workspaceSplit.previewWorkspaceRef : undefined}
-          className={`flex min-h-0 min-w-0 flex-1 overflow-hidden ${workspaceSplit.expandedPreviewShellClassName}`}
-          style={workspaceSplit.expandedPreviewShellStyle}
-        >
-          <div
-            className={workspaceSplit.previewPaneClassName}
-            style={workspaceSplit.previewPaneStyle}
-          >
-            <div className="flex items-center gap-2.5 px-3.5 py-2.5 border-b border-border flex-shrink-0 bg-surface">
-              <button
-                type="button"
-                className="flex items-center gap-1 px-2 py-1 rounded-[5px] border border-border bg-transparent text-text-secondary text-xs font-medium cursor-pointer whitespace-nowrap flex-shrink-0 transition-[background,color] duration-[120ms] hover:bg-[var(--surface3)] hover:text-text"
-                onClick={localImport.deselectFile}
-              >
-                <ArrowLeft size={13} />
-                목록으로
-              </button>
-              <span className="text-[13px] font-medium text-text overflow-hidden text-ellipsis whitespace-nowrap">
-                {localImport.selectedFile?.name}
-              </span>
-            </div>
-            <div className="min-h-0 min-w-0 flex-1 overflow-hidden p-0">
-              <FilePreview
-                uri={localImport.fileProxyUrl}
-                mimeType={localImport.selectedFile?.mimeType ?? ""}
-                fileName={localImport.selectedFile?.name ?? ""}
-              />
-            </div>
-          </div>
-          {workspaceSplit.isExpandedStackedLayout && (
-            <div
-              role="separator"
-              aria-orientation="horizontal"
-              aria-label="가져오기 레이아웃 높이 조절"
-              tabIndex={0}
-              className="group flex h-5 shrink-0 cursor-row-resize items-center justify-center bg-transparent"
-              onPointerDown={workspaceSplit.startStackedSplitResize}
-              onDoubleClick={workspaceSplit.resetStackedSplit}
-              onKeyDown={(event) => {
-                if (event.key === "ArrowUp") {
-                  event.preventDefault();
-                  workspaceSplit.nudgeStackedSplit(-0.02);
-                }
-                if (event.key === "ArrowDown") {
-                  event.preventDefault();
-                  workspaceSplit.nudgeStackedSplit(0.02);
-                }
-                if (event.key === "Home") {
-                  event.preventDefault();
-                  workspaceSplit.setStackedSplitToMin();
-                }
-                if (event.key === "End") {
-                  event.preventDefault();
-                  workspaceSplit.setStackedSplitToMax();
-                }
-              }}
-            >
-              <span
-                className={`h-1.5 w-14 rounded-full transition-colors ${workspaceSplit.isStackedSplitDragging ? "bg-accent-border" : "bg-border group-hover:bg-accent-border"}`}
-              />
-            </div>
-          )}
-          {expanded && (
-            <div
-              role="separator"
-              aria-orientation="vertical"
-              aria-label="가져오기 레이아웃 크기 조절"
-              tabIndex={0}
-              className={`hidden lg:flex lg:min-h-0 lg:items-stretch lg:justify-center cursor-col-resize transition-colors duration-150 ${workspaceSplit.isDesktopSplitDragging ? "bg-accent-border" : "bg-border hover:bg-accent-border"}`}
-              onPointerDown={workspaceSplit.startDesktopSplitResize}
-              onDoubleClick={workspaceSplit.resetDesktopSplit}
-              onKeyDown={(event) => {
-                if (event.key === "ArrowLeft") {
-                  event.preventDefault();
-                  workspaceSplit.nudgeDesktopSplit(-0.02);
-                }
-                if (event.key === "ArrowRight") {
-                  event.preventDefault();
-                  workspaceSplit.nudgeDesktopSplit(0.02);
-                }
-                if (event.key === "Home") {
-                  event.preventDefault();
-                  workspaceSplit.setDesktopSplitToMin();
-                }
-                if (event.key === "End") {
-                  event.preventDefault();
-                  workspaceSplit.setDesktopSplitToMax();
-                }
-              }}
-            >
-              <div className="my-3 w-px rounded-full bg-[rgba(255,255,255,0.18)]" />
-            </div>
-          )}
-          <div
-            className={`flex min-h-0 flex-col overflow-hidden bg-surface ${workspaceSplit.expandedReviewPaneClassName}`}
-            style={localReviewPaneStyle}
-          >
-            <ImportRightPanel hook={localImport} onClose={onClose} />
-          </div>
-        </div>
+        <CloudImportPreviewWorkspace
+          expanded={expanded}
+          hook={localImport}
+          workspaceSplit={workspaceSplit}
+          onClose={onClose}
+        />
       ) : hasSelectedFile && activeHook.fileProxyUrl ? (
-        /* 클라우드 프리뷰 모드 */
-        <div
-          ref={expanded ? workspaceSplit.previewWorkspaceRef : undefined}
-          className={`flex min-h-0 min-w-0 flex-1 overflow-hidden ${workspaceSplit.expandedPreviewShellClassName}`}
-          style={workspaceSplit.expandedPreviewShellStyle}
-        >
-          <div
-            className={workspaceSplit.previewPaneClassName}
-            style={workspaceSplit.previewPaneStyle}
-          >
-            <div className="flex items-center gap-2.5 px-3.5 py-2.5 border-b border-border flex-shrink-0 bg-surface">
-              <button
-                type="button"
-                className="flex items-center gap-1 px-2 py-1 rounded-[5px] border border-border bg-transparent text-text-secondary text-xs font-medium cursor-pointer whitespace-nowrap flex-shrink-0 transition-[background,color] duration-[120ms] hover:bg-[var(--surface3)] hover:text-text"
-                onClick={activeHook.deselectFile}
-              >
-                <ArrowLeft size={13} />
-                목록으로
-              </button>
-              <span className="text-[13px] font-medium text-text overflow-hidden text-ellipsis whitespace-nowrap">
-                {activeHook.selectedFile?.name}
-              </span>
-            </div>
-            <div className="min-h-0 min-w-0 flex-1 overflow-hidden p-0">
-              <FilePreview
-                uri={activeHook.fileProxyUrl}
-                mimeType={activeHook.selectedFile?.mimeType ?? ""}
-                fileName={activeHook.selectedFile?.name ?? ""}
-              />
-            </div>
-          </div>
-          {workspaceSplit.isExpandedStackedLayout && (
-            <div
-              role="separator"
-              aria-orientation="horizontal"
-              aria-label="가져오기 레이아웃 높이 조절"
-              tabIndex={0}
-              className="group flex h-5 shrink-0 cursor-row-resize items-center justify-center bg-transparent"
-              onPointerDown={workspaceSplit.startStackedSplitResize}
-              onDoubleClick={workspaceSplit.resetStackedSplit}
-              onKeyDown={(event) => {
-                if (event.key === "ArrowUp") {
-                  event.preventDefault();
-                  workspaceSplit.nudgeStackedSplit(-0.02);
-                }
-                if (event.key === "ArrowDown") {
-                  event.preventDefault();
-                  workspaceSplit.nudgeStackedSplit(0.02);
-                }
-                if (event.key === "Home") {
-                  event.preventDefault();
-                  workspaceSplit.setStackedSplitToMin();
-                }
-                if (event.key === "End") {
-                  event.preventDefault();
-                  workspaceSplit.setStackedSplitToMax();
-                }
-              }}
-            >
-              <span
-                className={`h-1.5 w-14 rounded-full transition-colors ${workspaceSplit.isStackedSplitDragging ? "bg-accent-border" : "bg-border group-hover:bg-accent-border"}`}
-              />
-            </div>
-          )}
-          {expanded && (
-            <div
-              role="separator"
-              aria-orientation="vertical"
-              aria-label="가져오기 레이아웃 크기 조절"
-              tabIndex={0}
-              className={`hidden lg:flex lg:min-h-0 lg:items-stretch lg:justify-center cursor-col-resize transition-colors duration-150 ${workspaceSplit.isDesktopSplitDragging ? "bg-accent-border" : "bg-border hover:bg-accent-border"}`}
-              onPointerDown={workspaceSplit.startDesktopSplitResize}
-              onDoubleClick={workspaceSplit.resetDesktopSplit}
-              onKeyDown={(event) => {
-                if (event.key === "ArrowLeft") {
-                  event.preventDefault();
-                  workspaceSplit.nudgeDesktopSplit(-0.02);
-                }
-                if (event.key === "ArrowRight") {
-                  event.preventDefault();
-                  workspaceSplit.nudgeDesktopSplit(0.02);
-                }
-                if (event.key === "Home") {
-                  event.preventDefault();
-                  workspaceSplit.setDesktopSplitToMin();
-                }
-                if (event.key === "End") {
-                  event.preventDefault();
-                  workspaceSplit.setDesktopSplitToMax();
-                }
-              }}
-            >
-              <div className="my-3 w-px rounded-full bg-[rgba(255,255,255,0.18)]" />
-            </div>
-          )}
-          <div
-            className={`flex min-h-0 flex-col overflow-hidden bg-surface ${workspaceSplit.expandedReviewPaneClassName}`}
-            style={cloudReviewPaneStyle}
-          >
-            <ImportRightPanel hook={activeHook} onClose={onClose} />
-          </div>
-        </div>
+        <CloudImportPreviewWorkspace
+          expanded={expanded}
+          hook={activeHook}
+          workspaceSplit={workspaceSplit}
+          onClose={onClose}
+        />
       ) : (
-        /* 파일 브라우저 모드 */
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-          {/* Provider 탭 */}
-          <div className="flex gap-0 border-b border-border flex-shrink-0">
-            {CLOUD_PROVIDER_ORDER.map((provider) => (
-              <button
-                key={provider}
-                className={`flex-1 px-4 py-2.5 text-[13px] font-medium bg-transparent border-0 border-b-2 cursor-pointer transition-[color,border-color] duration-150 ${
-                  activeProvider === provider
-                    ? "text-accent border-b-accent font-semibold"
-                    : "text-text-dim border-b-transparent hover:text-text"
-                }`}
-                onClick={() => switchProvider(provider)}
-                type="button"
-              >
-                {getCloudProviderLabel(provider)}
-              </button>
-            ))}
-          </div>
-
-          {/* OAuth 미연결 */}
-          {!activeHook.connecting && !activeHook.connected && (
-            <div className="flex min-h-0 flex-1 flex-col items-center justify-center px-5 py-10 text-center">
-              <CloudCog
-                size={32}
-                style={{ color: "var(--text-dim)", marginBottom: 8 }}
-              />
-              <p
-                style={{
-                  fontSize: 14,
-                  fontWeight: 600,
-                  color: "var(--text)",
-                  marginBottom: 4,
-                }}
-              >
-                {activeProviderLabel} 연결이 필요합니다
-              </p>
-              <p
-                style={{
-                  fontSize: 13,
-                  color: "var(--text-dim)",
-                  marginBottom: 16,
-                }}
-              >
-                클라우드 드라이브를 연결하면 파일을 바로 가져올 수 있습니다.
-              </p>
-              <button
-                className="flex items-center gap-1.5 px-4 py-2 rounded-[6px] text-[13px] font-medium border-0 bg-accent text-white cursor-pointer transition-opacity duration-150 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
-                onClick={activeHook.connectDrive}
-                type="button"
-              >
-                연결하기
-              </button>
-            </div>
-          )}
-
-          {/* 연결 확인 중 */}
-          {activeHook.connecting && (
-            <div className="flex min-h-0 flex-1 items-center justify-center gap-2 py-10 text-text-dim text-[13px]">
-              <Loader2 size={20} className="animate-spin" />
-              <span>연결 상태 확인 중...</span>
-            </div>
-          )}
-
-          {/* 연결 완료: 파일 브라우저 */}
-          {activeHook.connected && !activeHook.connecting && (
-            <>
-              {/* 브레드크럼 */}
-              <div
-                className="scrollbar-subtle flex items-center px-5 py-2.5 text-[13px] text-text-dim border-b border-border flex-shrink-0 overflow-x-auto"
-                style={{ justifyContent: "space-between" }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 2,
-                    overflow: "hidden",
-                  }}
-                >
-                  {activeHook.folderStack.length > 1 && (
-                    <button
-                      className="bg-transparent border-0 px-1 py-0.5 rounded text-[13px] text-text-secondary cursor-pointer whitespace-nowrap hover:bg-[var(--surface3)] hover:text-text"
-                      onClick={activeHook.navigateBack}
-                      type="button"
-                      style={{ display: "flex", alignItems: "center", gap: 2 }}
-                    >
-                      <ArrowLeft size={14} />
-                    </button>
-                  )}
-                  {activeHook.folderStack.map((entry, i) => (
-                    <span
-                      key={i}
-                      style={{ display: "flex", alignItems: "center" }}
-                    >
-                      {i > 0 && (
-                        <ChevronRight
-                          size={12}
-                          className="text-text-dim flex-shrink-0"
-                        />
-                      )}
-                      <button
-                        className="bg-transparent border-0 px-1 py-0.5 rounded text-[13px] text-text-secondary cursor-pointer whitespace-nowrap hover:bg-[var(--surface3)] hover:text-text"
-                        onClick={() => handleBreadcrumbClick(i)}
-                        type="button"
-                        style={{
-                          fontWeight:
-                            i === activeHook.folderStack.length - 1 ? 600 : 400,
-                        }}
-                      >
-                        {entry.name}
-                      </button>
-                    </span>
-                  ))}
-                </div>
-                <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
-                  <button
-                    type="button"
-                    onClick={() => activeHook.setViewMode("grid")}
-                    style={{
-                      padding: "4px 6px",
-                      border: "1px solid var(--border)",
-                      borderRadius: 4,
-                      background:
-                        activeHook.viewMode === "grid"
-                          ? "var(--accent)"
-                          : "transparent",
-                      color:
-                        activeHook.viewMode === "grid"
-                          ? "#fff"
-                          : "var(--text-dim)",
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                    }}
-                    title="그리드 보기"
-                  >
-                    <LayoutGrid size={14} />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => activeHook.setViewMode("list")}
-                    style={{
-                      padding: "4px 6px",
-                      border: "1px solid var(--border)",
-                      borderRadius: 4,
-                      background:
-                        activeHook.viewMode === "list"
-                          ? "var(--accent)"
-                          : "transparent",
-                      color:
-                        activeHook.viewMode === "list"
-                          ? "#fff"
-                          : "var(--text-dim)",
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                    }}
-                    title="목록 보기"
-                  >
-                    <List size={14} />
-                  </button>
-                </div>
-              </div>
-
-              {/* 에러 */}
-              {activeHook.error && (
-                <div className="px-5">
-                  <div className="px-3 py-2.5 rounded-[6px] bg-[rgba(239,68,68,0.1)] text-red text-[13px] mb-3">
-                    {activeHook.error}
-                  </div>
-                </div>
-              )}
-
-              {/* 파일 그리드 */}
-              <div className="flex min-h-0 min-w-0 flex-1 overflow-hidden bg-surface">
-                <div className="scrollbar-subtle min-h-0 min-w-0 flex-1 overflow-auto px-5 py-4">
-                  <FileGrid
-                    files={activeHook.files}
-                    loading={activeHook.filesLoading}
-                    viewMode={activeHook.viewMode}
-                    onSelectFile={activeHook.selectFileForPreview}
-                    onNavigateFolder={activeHook.navigateToFolder}
-                  />
-                </div>
-              </div>
-            </>
-          )}
-        </div>
+        <CloudImportFileBrowser
+          activeProvider={activeProvider}
+          activeProviderLabel={activeProviderLabel}
+          activeHook={activeHook}
+          onSwitchProvider={switchProvider}
+        />
       )}
     </div>
   );
