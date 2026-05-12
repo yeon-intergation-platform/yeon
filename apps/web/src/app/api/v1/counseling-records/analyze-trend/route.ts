@@ -3,12 +3,10 @@ import type { NextRequest } from "next/server";
 
 import {
   CounselingRecordTrendSpringBackendHttpError,
-  fetchCounselingRecordTrendSourcesFromSpring,
+  streamCounselingRecordTrendAnalysisFromSpring,
 } from "@/server/counseling-record-trend-spring-client";
-import { streamTrendAnalysis } from "@/server/services/counseling-ai-service";
-import { ServiceError } from "@/server/services/service-error";
 
-import { jsonError, requireAuthenticatedUser, withHandler } from "../_shared";
+import { jsonError, requireAuthenticatedUser } from "../_shared";
 
 export const runtime = "nodejs";
 
@@ -34,32 +32,15 @@ export async function POST(request: NextRequest) {
   if (!parsed.success) {
     return jsonError(
       parsed.error.issues[0]?.message ?? "잘못된 요청입니다.",
-      400,
+      400
     );
   }
 
-  const { recordIds } = parsed.data;
-
-  return withHandler(async () => {
-    let records;
-    try {
-      records = await fetchCounselingRecordTrendSourcesFromSpring(
-        currentUser.id,
-        { recordIds },
-      );
-    } catch (error) {
-      if (error instanceof CounselingRecordTrendSpringBackendHttpError) {
-        throw new ServiceError(error.status, error.message);
-      }
-      throw error;
-    }
-
-    if (records.records.length === 0) {
-      return jsonError("분석할 기록이 없습니다.", 400);
-    }
-
-    const studentName = records.records[0].studentName;
-    const stream = await streamTrendAnalysis(studentName, records.records);
+  try {
+    const stream = await streamCounselingRecordTrendAnalysisFromSpring(
+      currentUser.id,
+      parsed.data
+    );
 
     return new Response(stream, {
       headers: {
@@ -68,5 +49,12 @@ export async function POST(request: NextRequest) {
         Connection: "keep-alive",
       },
     });
-  });
+  } catch (error) {
+    if (error instanceof CounselingRecordTrendSpringBackendHttpError) {
+      return jsonError(error.message, error.status);
+    }
+
+    console.error("counseling-trend-analysis-bridge-error", error);
+    return jsonError("추이 분석 요청을 처리하지 못했습니다.", 500);
+  }
 }

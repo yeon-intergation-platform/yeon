@@ -68,3 +68,22 @@
   - A. Next backend role 0% 목표에는 runtime 제거가 필요하므로 사용처 0개 단위로 삭제한다.
 - 사용자 방향
   - 추천 기준으로 진행한다.
+
+## 2차 세부 - 추이 분석 streaming Spring 이관 (완료)
+
+- 작업내용
+  - Spring에 `POST /counseling-records/analyze-trend` SSE API를 추가한다.
+  - Spring이 record source 조회, 수강생 일치 검증, OpenAI streaming 호출, SSE event 변환을 소유한다.
+  - Next `api/v1/counseling-records/analyze-trend` route는 request validation + Spring SSE bridge만 수행한다.
+- 논의 필요
+  - 없음. 기존 사용자 가시 response stream 형식(`data: { content }`, `data: [DONE]`)을 유지한다.
+- 선택지
+  - A. 추이 분석 streaming만 먼저 이관한다.
+  - B. chat/analyze/transcribe까지 한 번에 이관한다.
+- 추천
+  - A. streaming 경계 하나를 먼저 Spring에 고정하고 검증한다.
+- 사용자 방향
+  - 추천 기준으로 진행한다.
+- 완료 근거
+  - Spring `POST /counseling-records/analyze-trend` SSE API와 Next Spring bridge 전환을 구현했다.
+  - backend controller test, web typecheck/build, diff/skill/SSOT 검증을 수행했다.
