@@ -1316,3 +1316,29 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 54차 — center panel failure state component 추출
+
+### 작업내용
+
+- `center-panel.tsx`의 실패 상태 header/body/retry UI를 feature component로 추출한다.
+- 실패 표시 판정 로직을 app route `_lib`에서 feature lib로 이동하고, 기존 app import 경로는 re-export로 유지한다.
+- 재전사/AI 분석 재시도 분기, retry feedback, 실패 문구는 기존 동작 그대로 유지한다.
+
+### 논의 필요
+
+- 실패 상태는 UI와 실패 판정 로직이 함께 묶여 있어 app route에 남기면 상담 워크스페이스 이중화가 계속된다. 이번 차수는 feature component/lib로 이동하되, 기존 테스트 import 경로는 깨지지 않게 유지한다.
+
+### 선택지
+
+1. `RecordFailureState` component와 failure presentation lib를 feature layer로 이동한다.
+2. failure 상태와 processing 상태를 함께 분리한다.
+3. `center-panel.tsx` 전체 상태 분기를 한 번에 feature screen으로 이동한다.
+
+### 추천
+
+- 선택지 1. 실패 상태만 먼저 분리해 retry 동작 변경 위험을 낮추고 app route의 feature 로직을 줄인다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.
