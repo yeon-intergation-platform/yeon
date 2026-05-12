@@ -53,6 +53,29 @@ class SecurityConfigTests {
 	}
 
 	@Test
+	void communityChatMessages는인증없이조회할수있다() throws IOException, InterruptedException {
+		HttpResponse<String> response = sendGet("/api/v1/community-chat/messages");
+
+		assertThat(response.statusCode()).isEqualTo(200);
+	}
+
+	@Test
+	void communityChatMessages는인증없이전송할수있다()
+		throws IOException, InterruptedException {
+		HttpRequest request = HttpRequest.newBuilder()
+			.uri(URI.create("http://127.0.0.1:" + port + "/api/v1/community-chat/messages"))
+			.header("accept", "application/json")
+			.header("content-type", "application/json")
+			.POST(HttpRequest.BodyPublishers.ofString("{\"body\":\"안녕\",\"guestSessionId\":\"security-smoke-guest\",\"guestNickname\":\"익명이\"}"))
+			.build();
+
+		HttpResponse<String> response =
+			httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+		assertThat(response.statusCode()).isEqualTo(201);
+	}
+
+	@Test
 	void actuatorRoot는인증없이는차단된다() throws IOException, InterruptedException {
 		HttpResponse<String> response = sendGet("/actuator");
 

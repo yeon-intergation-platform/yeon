@@ -27,6 +27,7 @@ public class SecurityConfig {
 			)
 			.authorizeHttpRequests((authorize) -> authorize
 				.requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
+				.requestMatchers("/api/v1/community-chat/messages", "/api/v1/community-chat/messages/**").permitAll()
 				.anyRequest().authenticated())
 			.build();
 	}
