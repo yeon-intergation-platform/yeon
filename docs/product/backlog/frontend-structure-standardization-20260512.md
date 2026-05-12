@@ -1498,3 +1498,29 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 61차 — 상담 워크스페이스 UI 정책 feature lib 이동
+
+### 작업내용
+
+- `app/counseling-service/_lib/counseling-workspace-ui-policy.ts`의 surface/sidebar/tutorial 정책 판정 로직을 `features/counseling-record-workspace/lib`로 이동한다.
+- `page.tsx` 실제 사용처는 feature lib를 직접 참조하도록 변경한다.
+- 기존 app `_lib` 경로는 호환 re-export로 유지하고, 정책 테스트도 feature lib 옆으로 이동한다.
+
+### 논의 필요
+
+- UI 정책은 route 조립 코드가 아니라 상담 기록 워크스페이스 상태에서 파생되는 feature 규칙이다. app `_lib`에 남으면 page.tsx가 feature 규칙의 소유자가 되는 구조적 냄새가 남는다.
+
+### 선택지
+
+1. feature lib 이동 + app 경로 re-export 유지 + 테스트 이동.
+2. app 경로를 즉시 삭제한다.
+3. 정책을 page hook으로 흡수한다.
+
+### 추천
+
+- 선택지 1. 정책 SSOT를 feature에 두되 기존 경로 호환성을 유지해 단계적 정리를 이어간다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.
