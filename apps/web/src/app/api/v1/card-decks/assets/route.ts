@@ -3,10 +3,9 @@ import { NextResponse } from "next/server";
 
 import { jsonError } from "@/app/api/v1/counseling-records/_shared";
 import {
-  uploadCardDeckImage,
-  validateCardDeckImageFile,
-} from "@/server/services/card-deck-image-storage";
-import { ServiceError } from "@/server/services/service-error";
+  CardDeckAssetsSpringBackendHttpError,
+  uploadCardDeckAssetToSpring,
+} from "@/server/card-deck-assets-spring-client";
 
 export const runtime = "nodejs";
 
@@ -24,15 +23,10 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    validateCardDeckImageFile(file);
-    const buffer = Buffer.from(await file.arrayBuffer());
-    const uploaded = await uploadCardDeckImage({
-      buffer,
-      mimeType: file.type,
-    });
+    const uploaded = await uploadCardDeckAssetToSpring(file);
     return NextResponse.json(uploaded, { status: 201 });
   } catch (error) {
-    if (error instanceof ServiceError) {
+    if (error instanceof CardDeckAssetsSpringBackendHttpError) {
       return jsonError(error.message, error.status);
     }
     console.error(error);
