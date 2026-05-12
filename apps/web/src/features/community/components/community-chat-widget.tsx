@@ -181,10 +181,15 @@ export function CommunityChatWidget({
                 실시간 채팅
               </h2>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-[11px] font-semibold text-[#999]">
-                접속 {activePresenceCount}명
-              </span>
+            <div
+              className="flex items-center gap-2 text-[18px] font-black text-[#6f6f6f]"
+              aria-label={`현재 접속 ${activePresenceCount}명`}
+            >
+              <span
+                className="h-4 w-4 rounded-full bg-[#59b47c]"
+                aria-hidden="true"
+              />
+              <span>{activePresenceCount}</span>
             </div>
           </div>
         </div>
