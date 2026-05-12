@@ -90,12 +90,30 @@ async function typingDecksFetchVoid(
   await ensureOk(res, fallbackErrorMessage);
 }
 
-export function typingDecksQueryKey(scope: TypingDeckScope) {
-  return ["typing-decks", scope] as const;
+export function typingDecksRootQueryKey() {
+  return ["typing-decks"] as const;
 }
 
-export function typingDeckDetailQueryKey(deckId: string | null) {
+export function typingDecksQueryKey(scope: TypingDeckScope, adminMode = false) {
+  return [
+    ...typingDecksRootQueryKey(),
+    scope,
+    adminMode ? "admin" : "user",
+  ] as const;
+}
+
+export function typingDeckDetailRootQueryKey(deckId: string | null) {
   return ["typing-deck", deckId] as const;
+}
+
+export function typingDeckDetailQueryKey(
+  deckId: string | null,
+  adminMode = false
+) {
+  return [
+    ...typingDeckDetailRootQueryKey(deckId),
+    adminMode ? "admin" : "user",
+  ] as const;
 }
 
 function withAdminQuery(path: string, adminMode: boolean) {
@@ -107,7 +125,7 @@ function withAdminQuery(path: string, adminMode: boolean) {
 
 export function useTypingDecks(scope: TypingDeckScope, adminMode = false) {
   return useQuery({
-    queryKey: [...typingDecksQueryKey(scope), { adminMode }] as const,
+    queryKey: typingDecksQueryKey(scope, adminMode),
     queryFn: async () => {
       const params = new URLSearchParams({ scope });
       if (adminMode) {
@@ -124,7 +142,7 @@ export function useTypingDecks(scope: TypingDeckScope, adminMode = false) {
 
 export function useTypingDeckDetail(deckId: string | null, adminMode = false) {
   return useQuery({
-    queryKey: [...typingDeckDetailQueryKey(deckId), { adminMode }] as const,
+    queryKey: typingDeckDetailQueryKey(deckId, adminMode),
     queryFn: async () => {
       if (!deckId) {
         throw new Error("덱을 선택해주세요.");
@@ -142,7 +160,7 @@ export function useTypingDeckDetail(deckId: string | null, adminMode = false) {
 function invalidateAllDeckLists(
   queryClient: ReturnType<typeof useQueryClient>
 ) {
-  void queryClient.invalidateQueries({ queryKey: ["typing-decks"] });
+  void queryClient.invalidateQueries({ queryKey: typingDecksRootQueryKey() });
 }
 
 function invalidateDeck(
@@ -150,7 +168,7 @@ function invalidateDeck(
   deckId: string
 ) {
   void queryClient.invalidateQueries({
-    queryKey: typingDeckDetailQueryKey(deckId),
+    queryKey: typingDeckDetailRootQueryKey(deckId),
   });
   invalidateAllDeckLists(queryClient);
 }
