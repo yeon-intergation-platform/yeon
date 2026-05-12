@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import { Crown, Search, Users, X } from "lucide-react";
 import {
@@ -156,6 +156,29 @@ export function TypingRoomLobbyScreen() {
     });
   };
 
+  const closeCreateModal = useCallback(() => {
+    setIsCreateModalOpen(false);
+  }, []);
+
+  useEffect(() => {
+    if (!isCreateModalOpen) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      closeCreateModal();
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [closeCreateModal, isCreateModalOpen]);
+
   return (
     <div className="min-h-screen bg-white text-[#111]">
       <TypingServiceHeader active="rooms" title="YEON 타자방" />
@@ -252,13 +275,7 @@ export function TypingRoomLobbyScreen() {
 
             {(state.kind === "empty" ||
               (state.kind === "ready" && filteredRooms[0] === undefined)) && (
-              <div
-                className={`flex min-h-[520px] flex-col items-center px-6 text-center ${
-                  isCreateModalOpen
-                    ? "justify-start pt-[330px] pb-20"
-                    : "justify-center py-20"
-                }`}
-              >
+              <div className="flex min-h-[520px] flex-col items-center justify-center px-6 py-20 text-center">
                 <Image
                   src="/illustrations/typing-empty-keyboard.png"
                   alt=""
@@ -384,16 +401,22 @@ export function TypingRoomLobbyScreen() {
 
       {isCreateModalOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-start justify-center bg-transparent px-4 pt-[168px] md:pt-[244px]"
+          className="fixed inset-0 z-[80] flex items-center justify-center px-4 py-6"
           role="dialog"
           aria-modal="true"
           aria-labelledby="create-typing-room-title"
         >
+          <button
+            type="button"
+            aria-label="방 만들기 닫기"
+            onClick={closeCreateModal}
+            className="absolute inset-0 bg-[rgba(0,0,0,0.36)]"
+          />
           <form
             onSubmit={handleCreate}
             className={getYeonSurfaceClassName({
               className:
-                "w-full max-w-[456px] rounded-xl p-7 shadow-[0_18px_60px_rgba(0,0,0,0.16)]",
+                "relative z-10 max-h-[calc(100vh-3rem)] w-full max-w-[456px] overflow-y-auto rounded-xl p-7 shadow-[0_24px_80px_rgba(0,0,0,0.22)]",
             })}
           >
             <div className="flex items-center justify-between gap-4">
@@ -405,7 +428,7 @@ export function TypingRoomLobbyScreen() {
               </h2>
               <button
                 type="button"
-                onClick={() => setIsCreateModalOpen(false)}
+                onClick={closeCreateModal}
                 aria-label="방 만들기 닫기"
                 className="-mr-1 rounded-full p-1 text-[#444] transition-colors hover:bg-[#f5f5f5] hover:text-[#111]"
               >
