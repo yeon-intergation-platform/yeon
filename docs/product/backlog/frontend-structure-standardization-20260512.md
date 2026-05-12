@@ -629,3 +629,28 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 27차: onedrive import fetch boundary 정리
+
+### 작업내용
+
+- `features/onedrive-import/hooks/use-onedrive.ts`의 OneDrive 상태/파일/분석/가져오기 직접 `fetch()` 호출을 제거한다.
+- 네트워크 요청과 오류 파싱은 `onedrive-import-fetch.ts` wrapper로 분리한다.
+- 연결 상태 확인 실패 무시, 파일 목록 표시, 분석 preview, import 완료 callback 흐름은 유지한다.
+
+### 논의 필요
+
+- legacy `onedrive-import` UI를 `features/cloud-import` 통합 화면으로 즉시 흡수할지 여부.
+
+### 선택지
+
+1. 이번 차수는 fetch boundary만 닫고 UI 통합/삭제는 후속 feature 경계 정리에서 다룬다.
+2. legacy OneDrive UI를 즉시 제거하고 cloud import 화면만 남긴다.
+
+### 추천
+
+- 1번. 네트워크 경계 정리를 먼저 끝내고 실제 사용 여부/통합은 별도 감사에서 결정한다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.
