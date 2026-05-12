@@ -2,7 +2,7 @@ export { EmptyState } from "./empty-state";
 export { RecordingState } from "./recording-state";
 export { Sidebar } from "./sidebar";
 export { CenterPanel } from "./center-panel";
-export { AiPanel } from "./ai-panel";
+export { AiPanel } from "@/features/counseling-record-workspace/components/ai-panel";
 export { LinkMemberModal } from "./link-member-modal";
 export { MemberPanel } from "./member-panel";
 export { QuickMemoModal } from "./quick-memo-modal";

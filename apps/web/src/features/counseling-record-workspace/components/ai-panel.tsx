@@ -21,7 +21,7 @@ import {
   GlobeIcon,
   ChevronDownIcon,
   SendIcon,
-} from "./icons";
+} from "@/features/counseling-service-shell/icons";
 
 function formatMessageTime(value?: string) {
   if (!value) {
