@@ -1,11 +1,21 @@
 import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { CounselingRecordCreateSpringBackendHttpError } from "@/server/counseling-record-create-spring-client";
 import { CounselingRecordListSpringBackendHttpError } from "@/server/counseling-record-list-spring-client";
 
 const mockRequireAuthenticatedUser = vi.fn();
 const mockFetchCounselingRecordListFromSpring = vi.fn();
-const mockEnsureCounselingRecordProcessingScheduledForListItems = vi.fn();
+const mockCreateCounselingRecordInSpring = vi.fn();
+
+vi.mock("@yeon/api-contract/counseling-records", () => ({
+  counselingRecordDetailResponseSchema: {
+    parse: (value: unknown) => value,
+  },
+  listCounselingRecordsResponseSchema: {
+    parse: (value: unknown) => value,
+  },
+}));
 
 vi.mock("../_shared", () => ({
   jsonError: (message: string, status: number) =>
@@ -25,14 +35,18 @@ vi.mock("@/server/counseling-record-list-spring-client", async () => {
   };
 });
 
-vi.mock("@/server/services/counseling-records-service", () => ({
-  createCounselingRecordAndQueueTranscription: vi.fn(),
-  createTextMemoRecord: vi.fn(),
-  ensureCounselingRecordProcessingScheduledForListItems: (...args: unknown[]) =>
-    mockEnsureCounselingRecordProcessingScheduledForListItems(...args),
-}));
+vi.mock("@/server/counseling-record-create-spring-client", async () => {
+  const actual = await vi.importActual<
+    typeof import("@/server/counseling-record-create-spring-client")
+  >("@/server/counseling-record-create-spring-client");
+  return {
+    ...actual,
+    createCounselingRecordInSpring: (...args: unknown[]) =>
+      mockCreateCounselingRecordInSpring(...args),
+  };
+});
 
-import { GET } from "../route";
+import { GET, POST } from "../route";
 
 describe("counseling-records route", () => {
   beforeEach(() => {
@@ -42,17 +56,20 @@ describe("counseling-records route", () => {
   it("비인증이면 guard 응답을 그대로 반환한다", async () => {
     mockRequireAuthenticatedUser.mockResolvedValue({
       currentUser: null,
-      response: Response.json({ message: "로그인이 필요합니다." }, { status: 401 }),
+      response: Response.json(
+        { message: "로그인이 필요합니다." },
+        { status: 401 }
+      ),
     });
 
     const response = await GET(
-      new NextRequest("http://localhost/api/v1/counseling-records"),
+      new NextRequest("http://localhost/api/v1/counseling-records")
     );
 
     expect(response.status).toBe(401);
   });
 
-  it("Spring 목록 응답을 반환하고 scheduling helper를 호출한다", async () => {
+  it("Spring 목록 응답을 반환한다", async () => {
     mockRequireAuthenticatedUser.mockResolvedValue({
       currentUser: { id: "user-1" },
       response: null,
@@ -100,8 +117,8 @@ describe("counseling-records route", () => {
 
     const response = await GET(
       new NextRequest(
-        "http://localhost/api/v1/counseling-records?spaceId=space-1&limit=20&before=2026-05-08T00:00:00.000Z",
-      ),
+        "http://localhost/api/v1/counseling-records?spaceId=space-1&limit=20&before=2026-05-08T00:00:00.000Z"
+      )
     );
 
     expect(mockFetchCounselingRecordListFromSpring).toHaveBeenCalledWith({
@@ -111,32 +128,91 @@ describe("counseling-records route", () => {
       limit: 20,
       before: "2026-05-08T00:00:00.000Z",
     });
-    expect(mockEnsureCounselingRecordProcessingScheduledForListItems).toHaveBeenCalledWith(
-      "user-1",
-      expect.any(Array),
-    );
     expect(response.status).toBe(200);
   });
 
-  it("Spring 오류를 그대로 반환한다", async () => {
+  it("Spring 목록 오류를 그대로 반환한다", async () => {
     mockRequireAuthenticatedUser.mockResolvedValue({
       currentUser: { id: "user-1" },
       response: null,
     });
     mockFetchCounselingRecordListFromSpring.mockRejectedValue(
-      new CounselingRecordListSpringBackendHttpError(
-        403,
-        "권한이 없습니다.",
-      ),
+      new CounselingRecordListSpringBackendHttpError(403, "권한이 없습니다.")
     );
 
     const response = await GET(
-      new NextRequest("http://localhost/api/v1/counseling-records?unlinked=true"),
+      new NextRequest(
+        "http://localhost/api/v1/counseling-records?unlinked=true"
+      )
     );
 
     expect(response.status).toBe(403);
     await expect(response.json()).resolves.toEqual({
       message: "권한이 없습니다.",
     });
+  });
+
+  it("텍스트 메모 생성은 Spring으로 전달한다", async () => {
+    mockRequireAuthenticatedUser.mockResolvedValue({
+      currentUser: {
+        id: "user-1",
+        email: "user@example.com",
+        displayName: "멘토",
+      },
+      response: null,
+    });
+    mockCreateCounselingRecordInSpring.mockResolvedValue({
+      record: { id: "cr-1" },
+    });
+
+    const formData = new FormData();
+    formData.set("recordType", "text_memo");
+    formData.set("sessionTitle", "메모");
+    formData.set("content", "내용");
+
+    const response = await POST(
+      new NextRequest("http://localhost/api/v1/counseling-records", {
+        method: "POST",
+        body: formData,
+        headers: { "x-client-request-id": "req-1" },
+      })
+    );
+
+    expect(mockCreateCounselingRecordInSpring).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: "user-1",
+        userEmail: "user@example.com",
+        userDisplayName: "멘토",
+        clientRequestId: "req-1",
+      })
+    );
+    expect(response.status).toBe(201);
+  });
+
+  it("Spring 생성 오류를 그대로 반환한다", async () => {
+    mockRequireAuthenticatedUser.mockResolvedValue({
+      currentUser: { id: "user-1" },
+      response: null,
+    });
+    mockCreateCounselingRecordInSpring.mockRejectedValue(
+      new CounselingRecordCreateSpringBackendHttpError(
+        400,
+        "업로드할 음성 파일이 필요합니다."
+      )
+    );
+
+    const formData = new FormData();
+    formData.set("recordType", "text_memo");
+    formData.set("sessionTitle", "메모");
+    formData.set("content", "내용");
+
+    const response = await POST(
+      new NextRequest("http://localhost/api/v1/counseling-records", {
+        method: "POST",
+        body: formData,
+      })
+    );
+
+    expect(response.status).toBe(400);
   });
 });

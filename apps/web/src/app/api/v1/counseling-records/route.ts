@@ -6,10 +6,6 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
 import {
-  createCounselingRecordAndQueueTranscription,
-  createTextMemoRecord,
-} from "@/server/services/counseling-records-service";
-import {
   CounselingRecordListSpringBackendHttpError,
   fetchCounselingRecordListFromSpring,
 } from "@/server/counseling-record-list-spring-client";
@@ -18,6 +14,10 @@ import {
   isAcceptedAudioFile,
 } from "@/lib/audio-file";
 import { ServiceError } from "@/server/services/service-error";
+import {
+  CounselingRecordCreateSpringBackendHttpError,
+  createCounselingRecordInSpring,
+} from "@/server/counseling-record-create-spring-client";
 
 import { jsonError, requireAuthenticatedUser } from "./_shared";
 
@@ -89,6 +89,9 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(payload);
   } catch (error) {
+    if (error instanceof CounselingRecordCreateSpringBackendHttpError) {
+      return jsonError(error.message, error.status);
+    }
     if (error instanceof ServiceError) {
       return jsonError(error.message, error.status);
     }
@@ -125,19 +128,21 @@ export async function POST(request: NextRequest) {
     if (!content) return jsonError("메모 내용을 입력해 주세요.", 400);
 
     try {
-      const record = await createTextMemoRecord({
-        currentUser,
-        sessionTitle,
-        content,
-        studentName: String(formData.get("studentName") ?? ""),
-        memberId: parseOptionalMemberId(formData.get("memberId")),
-        counselingType: String(formData.get("counselingType") ?? ""),
+      const payload = await createCounselingRecordInSpring({
+        userId: currentUser.id,
+        userEmail: currentUser.email,
+        userDisplayName: currentUser.displayName,
+        formData,
+        clientRequestId: request.headers.get("x-client-request-id"),
       });
       return NextResponse.json(
-        counselingRecordDetailResponseSchema.parse({ record }),
+        counselingRecordDetailResponseSchema.parse(payload),
         { status: 201 }
       );
     } catch (error) {
+      if (error instanceof CounselingRecordCreateSpringBackendHttpError) {
+        return jsonError(error.message, error.status);
+      }
       if (error instanceof ServiceError)
         return jsonError(error.message, error.status);
       console.error(error);
@@ -156,19 +161,20 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const record = await createCounselingRecordAndQueueTranscription({
-      currentUser,
-      file: fileEntry,
-      studentName: String(formData.get("studentName") ?? ""),
-      memberId: parseOptionalMemberId(formData.get("memberId")),
-      sessionTitle: String(formData.get("sessionTitle") ?? ""),
-      counselingType: String(formData.get("counselingType") ?? ""),
-      audioDurationMs: parseOptionalDurationMs(formData.get("audioDurationMs")),
+    // Validation above keeps the BFF boundary explicit; Spring owns persistence and transcription scheduling.
+    parseOptionalMemberId(formData.get("memberId"));
+    parseOptionalDurationMs(formData.get("audioDurationMs"));
+
+    const payload = await createCounselingRecordInSpring({
+      userId: currentUser.id,
+      userEmail: currentUser.email,
+      userDisplayName: currentUser.displayName,
+      formData,
       clientRequestId: request.headers.get("x-client-request-id"),
     });
 
     return NextResponse.json(
-      counselingRecordDetailResponseSchema.parse({ record }),
+      counselingRecordDetailResponseSchema.parse(payload),
       {
         status: 201,
       }
