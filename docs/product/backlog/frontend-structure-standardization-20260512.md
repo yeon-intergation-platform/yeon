@@ -379,3 +379,28 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 17차: recording upload fetch boundary 정리
+
+### 작업내용
+
+- `app/counseling-service/_hooks/use-recording.ts`에 남아 있는 녹음 업로드 직접 `fetch()` 호출을 제거한다.
+- 녹음 업로드 요청은 기존 `counselingWorkspaceFetchJson` wrapper를 사용해 credentials/error parsing 정책을 통일한다.
+- 녹음 시작/중단, 임시 processing record 생성, 업로드 완료 후 실제 record 교체 흐름은 유지한다.
+
+### 논의 필요
+
+- 녹음 업로드 응답 → `RecordItem` 변환 로직까지 별도 adapter로 즉시 분리할지 여부.
+
+### 선택지
+
+1. 이번 차수는 네트워크 boundary만 닫고 변환 adapter 분리는 후속 `useRecords`/record adapter 정리와 묶는다.
+2. 녹음 업로드 응답 변환까지 `recording-record-adapter.ts`로 즉시 분리한다.
+
+### 추천
+
+- 1번. 녹음 생명주기와 변환 책임을 한 번에 흔들지 않고 직접 fetch 제거부터 완료한다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.
