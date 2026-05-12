@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { MessageCircle, X } from "lucide-react";
 
 import { useCommunityChat } from "../hooks/use-community-chat";
@@ -23,6 +23,9 @@ function trimDisplayText(value: string) {
   return value.trim();
 }
 
+const COMPACT_CHAT_EXPANDED_WIDTH = 656;
+const COMPACT_CHAT_COLLAPSED_SIZE = 56;
+
 export function CommunityChatWidget({
   variant = "full",
   className,
@@ -31,6 +34,7 @@ export function CommunityChatWidget({
   const [nicknameDraft, setNicknameDraft] = useState("");
   const [isCollapsed, setIsCollapsed] = useState(false);
   const messageInputRef = useRef<HTMLInputElement | null>(null);
+  const shouldReduceMotion = useReducedMotion();
 
   const {
     messages,
@@ -56,31 +60,93 @@ export function CommunityChatWidget({
   const canSendMessage = !isSendingMessage;
   const visibleMessages = isFeed ? messages.slice(-3) : messages;
   const showNicknameInput = !isFeed;
+  const compactContainerMotion = isCompact
+    ? {
+        initial: false,
+        animate: shouldReduceMotion
+          ? undefined
+          : isCollapsed
+            ? {
+                width: COMPACT_CHAT_COLLAPSED_SIZE,
+                height: COMPACT_CHAT_COLLAPSED_SIZE,
+                borderRadius: COMPACT_CHAT_COLLAPSED_SIZE / 2,
+                boxShadow: "0 8px 24px rgba(17,19,24,0.14)",
+              }
+            : {
+                width: COMPACT_CHAT_EXPANDED_WIDTH,
+                height: "auto",
+                borderRadius: 16,
+                boxShadow: "0 8px 30px rgba(17,19,24,0.12)",
+              },
+        transition: shouldReduceMotion
+          ? { duration: 0 }
+          : {
+              width: { type: "spring", stiffness: 420, damping: 36 },
+              height: { duration: 0.22, ease: "easeOut" },
+              borderRadius: { duration: 0.2, ease: "easeOut" },
+              boxShadow: { duration: 0.18, ease: "easeOut" },
+            },
+      }
+    : {};
   const compactToggleButton = isCompact ? (
-    <button
+    <motion.button
       type="button"
       onClick={() => setIsCollapsed((value) => !value)}
       aria-label={isCollapsed ? "채팅 열기" : "채팅 접기"}
       aria-expanded={!isCollapsed}
+      initial={false}
+      animate={
+        shouldReduceMotion
+          ? undefined
+          : isCollapsed
+            ? {
+                width: COMPACT_CHAT_COLLAPSED_SIZE,
+                height: COMPACT_CHAT_COLLAPSED_SIZE,
+                top: 0,
+                right: 0,
+              }
+            : { width: 36, height: 36, top: 12, right: 12 }
+      }
+      transition={{ type: "spring", stiffness: 520, damping: 34 }}
       className={[
-        "inline-flex items-center justify-center rounded-full bg-white text-[#555] shadow-[0_8px_24px_rgba(17,19,24,0.14)] transition-colors hover:text-[#111]",
+        "absolute z-10 inline-flex items-center justify-center rounded-full bg-white text-[#555] transition-colors hover:text-[#111]",
         isCollapsed
-          ? "h-14 w-14 border border-[#e5e5e5] hover:border-[#111]"
-          : "absolute right-3 top-3 z-10 h-9 w-9 border-0 shadow-none",
+          ? "right-0 top-0 h-14 w-14 border border-[#e5e5e5] hover:border-[#111]"
+          : "right-3 top-3 h-9 w-9 border-0 shadow-none",
       ].join(" ")}
     >
-      {isCollapsed ? <MessageCircle size={24} /> : <X size={18} />}
-    </button>
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.span
+          key={isCollapsed ? "chat-open-icon" : "chat-close-icon"}
+          initial={
+            shouldReduceMotion
+              ? false
+              : { opacity: 0, rotate: -12, scale: 0.85 }
+          }
+          animate={{ opacity: 1, rotate: 0, scale: 1 }}
+          exit={
+            shouldReduceMotion
+              ? undefined
+              : { opacity: 0, rotate: 12, scale: 0.85 }
+          }
+          transition={{ duration: 0.12, ease: "easeOut" }}
+          className="inline-flex"
+        >
+          {isCollapsed ? <MessageCircle size={24} /> : <X size={18} />}
+        </motion.span>
+      </AnimatePresence>
+    </motion.button>
   ) : null;
 
   return (
-    <section
+    <motion.section
+      {...compactContainerMotion}
       className={[
         "rounded-2xl border border-[#e5e5e5] bg-white",
         isCompact
           ? isCollapsed
-            ? "w-fit border-0 bg-transparent shadow-none"
-            : "relative w-[656px] max-w-[calc(100vw-2rem)] shadow-[0_8px_30px_rgba(17,19,24,0.12)]"
+            ? "relative h-14 w-14 max-w-[calc(100vw-2rem)] overflow-hidden"
+            : "relative w-[656px] max-w-[calc(100vw-2rem)] overflow-hidden"
           : "w-full",
         className,
       ]
@@ -110,10 +176,21 @@ export function CommunityChatWidget({
         {!isCompact || !isCollapsed ? (
           <motion.div
             key="chat-widget-body"
-            initial={isCompact ? { height: 0, opacity: 0 } : false}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={isCompact ? { height: 0, opacity: 0 } : undefined}
-            transition={{ duration: 0.18, ease: "easeOut" }}
+            initial={
+              isCompact && !shouldReduceMotion
+                ? { opacity: 0, y: -8, scale: 0.985, filter: "blur(2px)" }
+                : false
+            }
+            animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
+            exit={
+              isCompact && !shouldReduceMotion
+                ? { opacity: 0, y: -10, scale: 0.985, filter: "blur(2px)" }
+                : undefined
+            }
+            transition={{
+              duration: shouldReduceMotion ? 0 : 0.16,
+              ease: "easeOut",
+            }}
             className={[
               "space-y-2 overflow-hidden border-t border-[#f0f0f0] px-4 pb-3 pt-2.5",
               isCompact
@@ -233,6 +310,6 @@ export function CommunityChatWidget({
           </motion.div>
         ) : null}
       </AnimatePresence>
-    </section>
+    </motion.section>
   );
 }
