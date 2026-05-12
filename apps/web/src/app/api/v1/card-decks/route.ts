@@ -11,7 +11,6 @@ import {
   createCardDeckInSpring,
   fetchCardDecksFromSpring,
 } from "@/server/card-decks-spring-client";
-import { listCardDecks as listCardDecksFromNextDb } from "@/server/services/card-decks-service";
 
 export const runtime = "nodejs";
 
@@ -24,13 +23,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(decks);
   } catch (error) {
     if (error instanceof CardDecksSpringBackendHttpError) {
-      try {
-        const decks = await listCardDecksFromNextDb(currentUser.id);
-        return NextResponse.json({ decks });
-      } catch (fallbackError) {
-        console.error(fallbackError);
-        return jsonError("덱 목록을 불러오지 못했습니다.", 500);
-      }
+      return jsonError(error.message, error.status);
     }
     console.error(error);
     return jsonError("덱 목록을 불러오지 못했습니다.", 500);
