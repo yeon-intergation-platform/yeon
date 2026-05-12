@@ -6,6 +6,11 @@ import { useQuery } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { detectFileKind } from "../file-kind";
 import { cloudImportQueryKeys } from "../cloud-import-query-keys";
+import {
+  loadPreviewArrayBuffer,
+  loadPreviewBlob,
+  loadPreviewText,
+} from "../hooks/cloud-import-fetch";
 
 interface FilePreviewProps {
   uri: string;
@@ -94,10 +99,7 @@ function HeicPreview({ uri, fileName }: { uri: string; fileName: string }) {
 
     (async () => {
       try {
-        // eslint-disable-next-line no-restricted-syntax
-        const res = await fetch(uri);
-        if (!res.ok) throw new Error("파일을 불러올 수 없습니다.");
-        const blob = await res.blob();
+        const blob = await loadPreviewBlob(uri);
         const heic2any = (await import("heic2any")).default;
         const result = await heic2any({
           blob,
@@ -161,12 +163,11 @@ function SpreadsheetPreview({ uri }: { uri: string }) {
   } = useQuery({
     queryKey: cloudImportQueryKeys.filePreviewSpreadsheet(uri),
     queryFn: async () => {
-      const res = await fetch(uri);
-      if (!res.ok) throw new Error("파일을 불러올 수 없습니다.");
-      const buffer = await res.arrayBuffer();
-      if (buffer.byteLength > MAX_SPREADSHEET_PREVIEW_BYTES) {
-        throw new Error("스프레드시트 미리보기는 최대 8MB까지만 지원합니다.");
-      }
+      const buffer = await loadPreviewArrayBuffer(
+        uri,
+        MAX_SPREADSHEET_PREVIEW_BYTES,
+        "스프레드시트 미리보기는 최대 8MB까지만 지원합니다."
+      );
       const XLSX = await import("xlsx");
       const wb = XLSX.read(new Uint8Array(buffer), { type: "array" });
       if (wb.SheetNames.length > 30) {
@@ -222,9 +223,7 @@ function CsvPreview({ uri }: { uri: string }) {
   } = useQuery({
     queryKey: cloudImportQueryKeys.filePreviewCsv(uri),
     queryFn: async () => {
-      const res = await fetch(uri);
-      if (!res.ok) throw new Error("파일을 불러올 수 없습니다.");
-      const text = await res.text();
+      const text = await loadPreviewText(uri);
       const lines = text.split("\n").filter((l) => l.trim());
       return lines.map((line) => line.split(",").map((cell) => cell.trim()));
     },
@@ -264,9 +263,7 @@ function TxtPreview({ uri }: { uri: string }) {
   } = useQuery({
     queryKey: cloudImportQueryKeys.filePreviewTxt(uri),
     queryFn: async () => {
-      const res = await fetch(uri);
-      if (!res.ok) throw new Error("파일을 불러올 수 없습니다.");
-      return res.text();
+      return loadPreviewText(uri);
     },
   });
 

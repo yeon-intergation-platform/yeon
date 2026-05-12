@@ -254,3 +254,28 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 12차: cloud file preview fetch boundary 분리
+
+### 작업내용
+
+- `features/cloud-import/components/file-preview.tsx`에 남아 있는 직접 `fetch()` 호출을 제거한다.
+- HEIC blob, spreadsheet arrayBuffer, CSV/TXT text load를 `cloud-import-fetch.ts` preview helper로 이동한다.
+- 파일 파싱, 행/열 제한, 가상 스크롤 UI는 기존 컴포넌트 책임으로 유지한다.
+
+### 논의 필요
+
+- spreadsheet 파싱 자체도 wrapper로 이동할지 여부.
+
+### 선택지
+
+1. 이번 차수는 네트워크 boundary만 분리하고 파싱/렌더링은 컴포넌트에 둔다.
+2. XLSX 파싱과 row 제한까지 별도 parser로 분리한다.
+
+### 추천
+
+- 1번. fetch 표준화 PR의 회귀 범위를 줄이고, parser 분리는 후속 구조 분해에서 다룬다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.
