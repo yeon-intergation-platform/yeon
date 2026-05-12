@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect } from "vitest";
 import { renderHook, act } from "@testing-library/react";
-import { useAiPanel } from "../use-ai-panel";
+import { useAiPanel } from "@/features/counseling-record-workspace/hooks/use-ai-panel";
 
 describe("useAiPanel", () => {
   it("기록이 선택되지 않으면 패널이 강제로 닫히고 다시 선택되면 기존 열린 상태를 복원한다", () => {
@@ -10,7 +10,7 @@ describe("useAiPanel", () => {
         useAiPanel({ hasSelectedRecord }),
       {
         initialProps: { hasSelectedRecord: true },
-      },
+      }
     );
 
     expect(result.current.collapsed).toBe(false);
@@ -40,7 +40,7 @@ describe("useAiPanel", () => {
         useAiPanel({ hasSelectedRecord }),
       {
         initialProps: { hasSelectedRecord: true },
-      },
+      }
     );
 
     act(() => {

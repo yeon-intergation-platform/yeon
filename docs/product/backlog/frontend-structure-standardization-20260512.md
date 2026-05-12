@@ -907,3 +907,28 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 38차: counseling AI panel client hook feature 이동
+
+### 작업내용
+
+- `use-ai-panel`을 `features/counseling-record-workspace/hooks`로 이동한다.
+- AI panel 모델/폭/quick chip 상수는 feature constants로 옮기고 app `_lib/constants.ts`는 호환 re-export만 유지한다.
+- app `_hooks/index.ts`는 기존 사용처 호환을 위해 feature hook을 re-export한다.
+
+### 논의 필요
+
+- `ai-panel.tsx` 컴포넌트 자체도 이번 차수에 feature component로 옮길지 여부.
+
+### 선택지
+
+1. 독립 hook/constants만 먼저 feature로 이동하고 UI 컴포넌트 이동은 sidebar/center-panel 분해 차수에서 진행한다.
+2. `ai-panel.tsx`까지 즉시 feature component로 이동한다.
+
+### 추천
+
+- 1번. UI 컴포넌트는 app `_lib/types`와 주변 레이아웃 의존이 있어 hook/constants부터 이동하는 편이 안전하다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.
