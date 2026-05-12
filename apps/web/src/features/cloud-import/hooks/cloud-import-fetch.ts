@@ -76,6 +76,34 @@ export async function loadCloudDriveFiles(
   return payload.files;
 }
 
+export async function loadPreviewBlob(uri: string): Promise<Blob> {
+  const response = await fetch(uri);
+  if (!response.ok) throw new Error("파일을 불러올 수 없습니다.");
+  return response.blob();
+}
+
+export async function loadPreviewArrayBuffer(
+  uri: string,
+  maxBytes: number,
+  maxBytesErrorMessage: string
+): Promise<ArrayBuffer> {
+  const response = await fetch(uri);
+  if (!response.ok) throw new Error("파일을 불러올 수 없습니다.");
+
+  const buffer = await response.arrayBuffer();
+  if (buffer.byteLength > maxBytes) {
+    throw new Error(maxBytesErrorMessage);
+  }
+
+  return buffer;
+}
+
+export async function loadPreviewText(uri: string): Promise<string> {
+  const response = await fetch(uri);
+  if (!response.ok) throw new Error("파일을 불러올 수 없습니다.");
+  return response.text();
+}
+
 export async function requestCloudImportAnalysis(params: {
   baseHref: string;
   draftId: string | null;
