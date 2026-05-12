@@ -1,11 +1,11 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
-import { getCurrentAdminUser } from "@/server/auth/admin";
+import { getCurrentAuthUser } from "@/server/auth/session";
 import {
-  deleteCharacterFrameOverride,
-  upsertCharacterFrameOverride,
-} from "@/server/repositories/typing-character-frame-overrides-repository";
+  TypingCharacterFramesSpringBackendHttpError,
+  updateTypingCharacterFrameOverrideInSpring,
+} from "@/server/typing-character-frames-spring-client";
 import type { FrameSlot } from "@/features/typing-service/frame-slot";
 
 export const runtime = "nodejs";
@@ -14,8 +14,8 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ characterId: string }> }
 ) {
-  const admin = await getCurrentAdminUser();
-  if (!admin) {
+  const currentUser = await getCurrentAuthUser();
+  if (!currentUser) {
     return NextResponse.json(
       { error: "관리자 권한이 필요합니다." },
       { status: 403 }
@@ -35,18 +35,19 @@ export async function PUT(
   }
 
   try {
-    if (!body.frameSlots || body.frameSlots.length === 0) {
-      await deleteCharacterFrameOverride(characterId);
-      return NextResponse.json({ override: null });
-    }
-
-    const override = await upsertCharacterFrameOverride(
+    const result = await updateTypingCharacterFrameOverrideInSpring({
+      userId: currentUser.id,
       characterId,
-      body.frameSlots,
-      admin.id
-    );
-    return NextResponse.json({ override });
+      frameSlots: body.frameSlots ?? null,
+    });
+    return NextResponse.json(result);
   } catch (error) {
+    if (error instanceof TypingCharacterFramesSpringBackendHttpError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.status }
+      );
+    }
     console.error(error);
     return NextResponse.json(
       { error: "프레임 오버라이드를 저장하지 못했습니다." },
