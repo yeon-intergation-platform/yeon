@@ -10,7 +10,6 @@ import type {
   RecordItem,
   CounselingWorkspaceViewState,
   AiMessage,
-  AnalysisResult,
 } from "../_lib/types";
 import { getProcessingChecklistStep } from "../_lib/processing-progress";
 import {
@@ -19,6 +18,7 @@ import {
   fetchCounselingRecords,
 } from "@/features/counseling-record-workspace/api/counseling-records-api";
 import { counselingWorkspaceQueryKeys } from "@/features/counseling-record-workspace/api/counseling-workspace-query-keys";
+import { useCounselingRecordLocalState } from "@/features/counseling-record-workspace/hooks/use-counseling-record-local-state";
 import { useMergedRecords } from "./use-merged-records";
 import {
   detailToRecordPatch,
@@ -39,10 +39,21 @@ const EMPTY_SERVER_ITEMS: CounselingRecordListItem[] = [];
 export function useRecords(selectedRecordId: string | null) {
   const queryClient = useQueryClient();
 
-  const [localOverrides, setLocalOverrides] = useState<
-    Map<string, Partial<RecordItem>>
-  >(new Map());
-  const [tempRecords, setTempRecords] = useState<RecordItem[]>([]);
+  const {
+    localOverrides,
+    tempRecords,
+    patchRecord,
+    addProcessingRecord,
+    addReadyRecord: addReadyRecordState,
+    replaceRecord: replaceRecordState,
+    removeRecordState,
+    markUploadError,
+    updateMessages,
+    clearMessages: clearLocalMessages,
+    markAnalysisRetryStart: markAnalysisRetryStartState,
+    updateAnalysisResult,
+    updateMemberId,
+  } = useCounselingRecordLocalState<RecordItem, AiMessage>();
   const [isRecording, setIsRecording] = useState(false);
   const [transcriptLoading, setTranscriptLoading] = useState(false);
   const [pollBoostUntil, setPollBoostUntil] = useState<number>(0);
@@ -129,19 +140,14 @@ export function useRecords(selectedRecordId: string | null) {
 
         const detailPatch = detailToRecordPatch(data.record);
 
-        setLocalOverrides((prev) => {
-          const next = new Map(prev);
-          const existing = next.get(id) ?? {};
-          next.set(id, { ...existing, ...detailPatch });
-          return next;
-        });
+        patchRecord(id, detailPatch);
       } catch {
         // detail 로드 실패는 무시
       } finally {
         setTranscriptLoading(false);
       }
     },
-    [queryClient]
+    [patchRecord, queryClient]
   );
 
   // ── ensureDetail: selectRecord의 데이터 전용 후속 (선택 상태 변경 없음) ──
@@ -163,110 +169,46 @@ export function useRecords(selectedRecordId: string | null) {
     [fetchDetail]
   );
 
-  const addProcessingRecord = useCallback((record: RecordItem) => {
-    setTempRecords((prev) => {
-      if (prev.some((r) => r.id === record.id)) return prev;
-      return [record, ...prev];
-    });
-    // 선택은 호출자가 selection.selectRecord(record.id)로 처리
-  }, []);
-
   const addReadyRecord = useCallback(
     (record: RecordItem) => {
-      setTempRecords((prev) => {
-        if (prev.some((r) => r.id === record.id)) return prev;
-        return [record, ...prev];
-      });
+      addReadyRecordState(record);
       queryClient.invalidateQueries({
         queryKey: counselingWorkspaceQueryKeys.records(),
       });
       // 선택은 호출자가 selection.selectRecord(record.id)로 처리
     },
-    [queryClient]
+    [addReadyRecordState, queryClient]
   );
 
   const replaceRecord = useCallback(
     (tempId: string, realRecord: RecordItem) => {
-      setTempRecords((prev) =>
-        prev.map((r) => (r.id === tempId ? realRecord : r))
-      );
+      replaceRecordState(tempId, realRecord);
       queryClient.invalidateQueries({
         queryKey: counselingWorkspaceQueryKeys.records(),
       });
       // 선택 ID 교체는 호출자가 selection.replaceSelectedRecordId(tempId, realRecord.id)로 처리
     },
-    [queryClient]
+    [queryClient, replaceRecordState]
   );
 
   const removeRecord = useCallback(
     (id: string) => {
-      setTempRecords((prev) => prev.filter((r) => r.id !== id));
-      setLocalOverrides((prev) => {
-        const next = new Map(prev);
-        next.delete(id);
-        return next;
-      });
+      removeRecordState(id);
       queryClient.invalidateQueries({
         queryKey: counselingWorkspaceQueryKeys.records(),
       });
       // 선택 해제는 호출자가 selection.clearRecordIfSelected(id)로 처리
     },
-    [queryClient]
+    [queryClient, removeRecordState]
   );
 
-  const markUploadError = useCallback((id: string, message: string) => {
-    setTempRecords((prev) =>
-      prev.map((r) =>
-        r.id === id
-          ? {
-              ...r,
-              aiSummary: `업로드 실패: ${message}`,
-              status: "error" as const,
-              errorMessage: message,
-            }
-          : r
-      )
-    );
-    setLocalOverrides((prev) => {
-      const next = new Map(prev);
-      const existing = next.get(id) ?? {};
-      next.set(id, {
-        ...existing,
-        aiSummary: `업로드 실패: ${message}`,
-        status: "error" as const,
-        errorMessage: message,
-      });
-      return next;
-    });
-  }, []);
-
-  const updateMessages = useCallback(
-    (id: string, updater: (prev: AiMessage[]) => AiMessage[]) => {
-      setLocalOverrides((prev) => {
-        const next = new Map(prev);
-        const existing = next.get(id) ?? {};
-        const currentMessages = (existing.aiMessages as AiMessage[]) || [];
-        next.set(id, {
-          ...existing,
-          aiMessages: updater(currentMessages),
-          aiMessagesLoaded: true,
-        });
-        return next;
-      });
+  const clearMessages = useCallback(
+    async (id: string) => {
+      await clearCounselingRecordChat(id);
+      clearLocalMessages(id);
     },
-    []
+    [clearLocalMessages]
   );
-
-  const clearMessages = useCallback(async (id: string) => {
-    await clearCounselingRecordChat(id);
-
-    setLocalOverrides((prev) => {
-      const next = new Map(prev);
-      const existing = next.get(id) ?? {};
-      next.set(id, { ...existing, aiMessages: [], aiMessagesLoaded: true });
-      return next;
-    });
-  }, []);
 
   const boostPolling = useCallback(() => {
     setPollBoostUntil(Date.now() + BOOSTED_POLL_WINDOW_MS);
@@ -274,53 +216,17 @@ export function useRecords(selectedRecordId: string | null) {
 
   const markAnalysisRetryStart = useCallback(
     (id: string) => {
-      setLocalOverrides((prev) => {
-        const next = new Map(prev);
-        const existing = next.get(id) ?? {};
-        next.set(id, {
-          ...existing,
-          analysisStatus: "processing",
-          analysisProgress: 0,
-          processingMessage: "AI 분석을 다시 준비하고 있습니다.",
-        });
-        return next;
-      });
+      markAnalysisRetryStartState(id);
       boostPolling();
       // 선택은 호출자가 이미 해당 record를 보고 있을 때만 호출
     },
-    [boostPolling]
+    [boostPolling, markAnalysisRetryStartState]
   );
-
-  const updateAnalysisResult = useCallback(
-    (id: string, result: AnalysisResult) => {
-      setLocalOverrides((prev) => {
-        const next = new Map(prev);
-        const existing = next.get(id) ?? {};
-        next.set(id, { ...existing, analysisResult: result });
-        return next;
-      });
-    },
-    []
-  );
-
-  const updateMemberId = useCallback((id: string, memberId: string | null) => {
-    setLocalOverrides((prev) => {
-      const next = new Map(prev);
-      const existing = next.get(id) ?? {};
-      next.set(id, { ...existing, memberId });
-      return next;
-    });
-  }, []);
 
   const applyRecordDetail = useCallback(
     (detail: CounselingRecordDetail) => {
       const patch = detailToRecordPatch(detail);
-      setLocalOverrides((prev) => {
-        const next = new Map(prev);
-        const existing = next.get(detail.id) ?? {};
-        next.set(detail.id, { ...existing, ...patch });
-        return next;
-      });
+      patchRecord(detail.id, patch);
       queryClient.setQueryData(counselingWorkspaceQueryKeys.record(detail.id), {
         record: detail,
       });
@@ -332,7 +238,7 @@ export function useRecords(selectedRecordId: string | null) {
       }
       // 선택 변경은 호출자가 필요하면 selection.selectRecord(detail.id)로 처리
     },
-    [boostPolling, queryClient]
+    [boostPolling, patchRecord, queryClient]
   );
 
   // viewState — isRecording은 명시 상태, processing은 selected에서 파생
