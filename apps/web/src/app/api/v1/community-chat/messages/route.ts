@@ -12,12 +12,29 @@ import {
   sendCommunityChatMessageToSpring,
 } from "@/server/community-chat-spring-client";
 
+const COMMUNITY_CHAT_LIST_ERROR_MESSAGE =
+  "커뮤니티 채팅을 불러오지 못했습니다.";
+const COMMUNITY_CHAT_SEND_ERROR_MESSAGE =
+  "커뮤니티 채팅 메시지를 전송하지 못했습니다.";
+
 function jsonError(message: string, status: number) {
   return NextResponse.json({ message }, { status });
 }
 
 async function readJson(request: Request) {
   return request.json().catch(() => null) as Promise<unknown>;
+}
+
+async function getOptionalCommunityChatUser() {
+  try {
+    return await getCurrentAuthUser();
+  } catch (error) {
+    console.warn(
+      "커뮤니티 채팅 사용자 세션 조회에 실패해 게스트로 처리합니다.",
+      error
+    );
+    return null;
+  }
 }
 
 export async function GET() {
@@ -28,11 +45,11 @@ export async function GET() {
     );
   } catch (error) {
     if (error instanceof CommunityChatSpringBackendHttpError) {
-      return jsonError(error.message, error.status);
+      return jsonError(COMMUNITY_CHAT_LIST_ERROR_MESSAGE, error.status);
     }
 
     console.error(error);
-    return jsonError("커뮤니티 채팅을 불러오지 못했습니다.", 500);
+    return jsonError(COMMUNITY_CHAT_LIST_ERROR_MESSAGE, 500);
   }
 }
 
@@ -45,7 +62,7 @@ export async function POST(request: Request) {
       return jsonError("채팅 메시지 입력값이 올바르지 않습니다.", 400);
     }
 
-    const currentUser = await getCurrentAuthUser();
+    const currentUser = await getOptionalCommunityChatUser();
     const senderNickname =
       currentUser?.displayName?.trim() ||
       currentUser?.email.split("@")[0]?.trim() ||
@@ -65,10 +82,10 @@ export async function POST(request: Request) {
     );
   } catch (error) {
     if (error instanceof CommunityChatSpringBackendHttpError) {
-      return jsonError(error.message, error.status);
+      return jsonError(COMMUNITY_CHAT_SEND_ERROR_MESSAGE, error.status);
     }
 
     console.error(error);
-    return jsonError("커뮤니티 채팅 메시지를 전송하지 못했습니다.", 500);
+    return jsonError(COMMUNITY_CHAT_SEND_ERROR_MESSAGE, 500);
   }
 }
