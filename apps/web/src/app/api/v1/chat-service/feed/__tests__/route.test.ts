@@ -7,7 +7,7 @@ const mockGetOptionalChatServiceAuth = vi.fn();
 const mockParseJsonBody = vi.fn();
 const mockFetchChatServiceFeedFromSpring = vi.fn();
 const mockCreateChatServiceFeedPostInSpring = vi.fn();
-const mockGetOrCreateChatServiceGuestProfile = vi.fn();
+const mockResolveChatServiceGuestProfileInSpring = vi.fn();
 
 vi.mock("@/app/api/v1/chat-service/_shared", () => ({
   getOptionalChatServiceAuth: (...args: unknown[]) =>
@@ -31,9 +31,16 @@ vi.mock("@/server/chat-service-feed-spring-client", () => ({
     mockFetchChatServiceFeedFromSpring(...args),
 }));
 
-vi.mock("@/server/services/chat-service/common", () => ({
-  getOrCreateChatServiceGuestProfile: (...args: unknown[]) =>
-    mockGetOrCreateChatServiceGuestProfile(...args),
+vi.mock("@/server/chat-service-auth-spring-client", () => ({
+  ChatServiceAuthSpringBackendHttpError: class ChatServiceAuthSpringBackendHttpError extends Error {
+    status: number;
+    constructor(status: number, message: string) {
+      super(message);
+      this.status = status;
+    }
+  },
+  resolveChatServiceGuestProfileInSpring: (...args: unknown[]) =>
+    mockResolveChatServiceGuestProfileInSpring(...args),
 }));
 
 import { GET, POST } from "../route";
@@ -112,7 +119,9 @@ describe("chat-service feed route", () => {
       guestNickname: "ㅇㅇ",
       guestPassword: "1234",
     });
-    mockGetOrCreateChatServiceGuestProfile.mockResolvedValue({ id: profileId });
+    mockResolveChatServiceGuestProfileInSpring.mockResolvedValue({
+      id: profileId,
+    });
     mockCreateChatServiceFeedPostInSpring.mockResolvedValue(postResponse);
 
     const response = await POST(
@@ -122,7 +131,7 @@ describe("chat-service feed route", () => {
     );
 
     expect(response.status).toBe(201);
-    expect(mockGetOrCreateChatServiceGuestProfile).toHaveBeenCalledWith({
+    expect(mockResolveChatServiceGuestProfileInSpring).toHaveBeenCalledWith({
       guestNickname: "ㅇㅇ",
       guestPassword: "1234",
     });

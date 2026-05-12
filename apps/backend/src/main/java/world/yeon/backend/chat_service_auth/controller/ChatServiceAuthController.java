@@ -32,6 +32,11 @@ public class ChatServiceAuthController {
 		return service.getSession(sessionToken);
 	}
 
+	@PostMapping("/chat-service/auth/guest-profile")
+	public ChatServiceSessionUserResponse resolveGuestProfile(@RequestBody GuestProfileRequest request) {
+		return service.resolveGuestProfile(request.guestNickname(), request.guestPassword());
+	}
+
 	@DeleteMapping("/chat-service/auth/session")
 	public ChatServiceSessionStateResponse logout(@RequestHeader(value = "X-Yeon-Chat-Session-Token", required = false) String sessionToken) {
 		return service.logout(sessionToken);
@@ -44,5 +49,6 @@ public class ChatServiceAuthController {
 
 	public record RequestOtpRequest(String phoneNumber) {}
 	public record VerifyOtpRequest(UUID challengeId, String phoneNumber, String code) {}
+	public record GuestProfileRequest(String guestNickname, String guestPassword) {}
 	public record ErrorResponse(String code, String message) {}
 }

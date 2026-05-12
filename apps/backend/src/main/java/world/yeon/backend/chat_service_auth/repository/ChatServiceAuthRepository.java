@@ -71,6 +71,19 @@ public class ChatServiceAuthRepository {
 		return toProfileRow(row);
 	}
 
+	public ProfileRow createGuestProfile(UUID id, String phoneNumber, String nickname) {
+		Object row = entityManager.createNativeQuery("""
+			insert into public.chat_service_profiles (id, phone_number, nickname, age_label, region_label, bio, points)
+			values (:id, :phoneNumber, :nickname, '익명', '익명', '', 1000)
+			returning id, phone_number, nickname, age_label, region_label, avatar_url, bio, points
+		""")
+			.setParameter("id", id)
+			.setParameter("phoneNumber", phoneNumber)
+			.setParameter("nickname", nickname)
+			.getSingleResult();
+		return toProfileRow(row);
+	}
+
 	public SessionRow insertSession(UUID id, UUID profileId, String sessionTokenHash, OffsetDateTime expiresAt) {
 		Object row = entityManager.createNativeQuery("""
 			insert into public.chat_service_auth_sessions (id, profile_id, session_token_hash, expires_at)

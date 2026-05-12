@@ -13,6 +13,8 @@ import world.yeon.backend.chat_service_auth.repository.ChatServiceAuthRepository
 public class ChatServiceAuthService {
 	private static final long OTP_TTL_MS = 5 * 60 * 1000L;
 	private static final long SESSION_TTL_MS = 30L * 24 * 60 * 60 * 1000;
+	private static final String GUEST_PHONE_PREFIX = "guest:";
+	private static final int GUEST_PHONE_KEY_LENGTH = 14;
 	private final ChatServiceAuthRepository repository;
 
 	public ChatServiceAuthService(ChatServiceAuthRepository repository) {
@@ -82,6 +84,18 @@ public class ChatServiceAuthService {
 		return new ChatServiceSessionStateResponse(false, null);
 	}
 
+	@Transactional
+	public ChatServiceSessionUserResponse resolveGuestProfile(String guestNicknameInput, String guestPasswordInput) {
+		String guestNickname = normalizeGuestValue(guestNicknameInput, "닉네임");
+		String guestPassword = normalizeGuestValue(guestPasswordInput, "비밀번호");
+		String phoneNumber = buildGuestPhoneNumber(guestNickname, guestPassword);
+		var profile = repository.findProfileByPhone(phoneNumber);
+		if (profile == null) {
+			profile = repository.createGuestProfile(UUID.randomUUID(), phoneNumber, guestNickname);
+		}
+		return toUser(profile);
+	}
+
 	private ChatServiceSessionUserResponse toUser(ChatServiceAuthRepository.ProfileRow profile) {
 		return new ChatServiceSessionUserResponse(profile.id(), profile.nickname(), profile.ageLabel(), profile.regionLabel(), profile.avatarUrl(), profile.bio(), profile.points());
 	}
@@ -93,6 +107,20 @@ public class ChatServiceAuthService {
 	private boolean isBypassEnabled() { return true; }
 	private String createOtpCode() { return "123456"; }
 	private String createNickname(String phoneNumber) { return "유저" + phoneNumber.substring(phoneNumber.length()-4); }
+	private String normalizeGuestValue(String input, String label) {
+		if (input == null) {
+			throw new ChatServiceAuthServiceException(400, "CHAT_SERVICE_GUEST_INVALID", label + "을 입력해 주세요.");
+		}
+		String normalized = input.trim();
+		if (normalized.isEmpty()) {
+			throw new ChatServiceAuthServiceException(400, "CHAT_SERVICE_GUEST_INVALID", label + "을 입력해 주세요.");
+		}
+		return normalized;
+	}
+	private String buildGuestPhoneNumber(String guestNickname, String guestPassword) {
+		String key = hash(guestNickname + "\u0000" + guestPassword).substring(0, GUEST_PHONE_KEY_LENGTH);
+		return GUEST_PHONE_PREFIX + key;
+	}
 	private String hash(String value) {
 		try {
 			return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(value.getBytes(java.nio.charset.StandardCharsets.UTF_8)));

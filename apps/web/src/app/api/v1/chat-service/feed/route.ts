@@ -13,7 +13,10 @@ import {
   createChatServiceFeedPostInSpring,
   fetchChatServiceFeedFromSpring,
 } from "@/server/chat-service-feed-spring-client";
-import { getOrCreateChatServiceGuestProfile } from "@/server/services/chat-service/common";
+import {
+  ChatServiceAuthSpringBackendHttpError,
+  resolveChatServiceGuestProfileInSpring,
+} from "@/server/chat-service-auth-spring-client";
 
 import {
   jsonChatServiceError,
@@ -38,7 +41,7 @@ async function resolveFeedProfileId(
     );
   }
 
-  const profile = await getOrCreateChatServiceGuestProfile({
+  const profile = await resolveChatServiceGuestProfileInSpring({
     guestNickname: parsedBody.guestNickname,
     guestPassword: parsedBody.guestPassword,
   });
@@ -57,6 +60,9 @@ export async function GET(request: NextRequest) {
       return jsonChatServiceError(error.message, error.status);
     }
     if (error instanceof ChatServiceFeedSpringBackendHttpError) {
+      return jsonChatServiceError(error.message, error.status);
+    }
+    if (error instanceof ChatServiceAuthSpringBackendHttpError) {
       return jsonChatServiceError(error.message, error.status);
     }
 
@@ -91,6 +97,9 @@ export async function POST(request: NextRequest) {
       return jsonChatServiceError(error.message, error.status);
     }
     if (error instanceof ChatServiceFeedSpringBackendHttpError) {
+      return jsonChatServiceError(error.message, error.status);
+    }
+    if (error instanceof ChatServiceAuthSpringBackendHttpError) {
       return jsonChatServiceError(error.message, error.status);
     }
 
