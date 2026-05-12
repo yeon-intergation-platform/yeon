@@ -3,7 +3,6 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
 import { AuthFlowError } from "@/server/auth/auth-errors";
-import { loginWithCredential } from "@/server/auth/credentials/login-service";
 import {
   getClientIp,
   respondWithAuthError,
@@ -11,6 +10,7 @@ import {
   respondWithServerError,
 } from "@/server/auth/credentials/route-helpers";
 import { applyAuthSessionCookie } from "@/server/auth/session";
+import { loginCredentialWebInSpring } from "@/server/credential-auth-spring-client";
 
 export const runtime = "nodejs";
 
@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
   const ipAddress = getClientIp(request);
 
   try {
-    const result = await loginWithCredential({
+    const result = await loginCredentialWebInSpring({
       email: parsed.data.email,
       password: parsed.data.password,
       ipAddress,
@@ -43,12 +43,12 @@ export async function POST(request: NextRequest) {
     const response = NextResponse.json(
       {
         userId: result.userId,
-        expiresAt: result.session.expiresAt.toISOString(),
+        expiresAt: result.expiresAt,
       },
       {
         headers: { "cache-control": "no-store" },
         status: 200,
-      },
+      }
     );
 
     return applyAuthSessionCookie(response, result.session);

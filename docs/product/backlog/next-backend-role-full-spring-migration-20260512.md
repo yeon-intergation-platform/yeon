@@ -66,6 +66,7 @@
 - credential login/register/email verification/resend/reset request/reset confirm/set password/mobile login을 Spring으로 이동한다.
 - password hash, verification token, password reset token, email 발송 경계를 Spring 서비스로 재정의한다.
 - Next route는 form payload 검증과 쿠키/redirect bridge만 유지한다.
+- 2-1 슬라이스는 credential web/mobile login과 auth session create를 Spring으로 먼저 이동한다.
 
 ### 논의 필요
 

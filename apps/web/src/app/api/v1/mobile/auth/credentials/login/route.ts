@@ -3,13 +3,13 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
 import { AuthFlowError } from "@/server/auth/auth-errors";
-import { loginWithCredential } from "@/server/auth/credentials/login-service";
 import {
   getClientIp,
   respondWithAuthError,
   respondWithInvalidInput,
   respondWithServerError,
 } from "@/server/auth/credentials/route-helpers";
+import { loginCredentialMobileInSpring } from "@/server/credential-auth-spring-client";
 
 export const runtime = "nodejs";
 
@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
   const ipAddress = getClientIp(request);
 
   try {
-    const result = await loginWithCredential({
+    const result = await loginCredentialMobileInSpring({
       email: parsed.data.email,
       password: parsed.data.password,
       ipAddress,
@@ -42,13 +42,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         userId: result.userId,
-        expiresAt: result.session.expiresAt.toISOString(),
-        sessionToken: result.session.sessionToken,
+        expiresAt: result.expiresAt,
+        sessionToken: result.sessionToken,
       },
       {
         headers: { "cache-control": "no-store" },
         status: 200,
-      },
+      }
     );
   } catch (error) {
     if (error instanceof AuthFlowError) {
