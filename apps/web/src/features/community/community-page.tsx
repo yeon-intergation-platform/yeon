@@ -5,6 +5,12 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 
 import { CommonProductHeader } from "@/components/product-shell/product-header";
 import { type ChatServiceFeedPost } from "./chat-service-api";
+import {
+  CommunityGuestIdentityConfirmModal,
+  isCommunityGuestIdentityConfirmDismissed,
+  persistCommunityGuestIdentityConfirmDismissed,
+  type CommunityGuestIdentity,
+} from "./components/community-guest-identity-confirm-modal";
 import { CommunityChatWidget } from "./components/community-chat-widget";
 import { useCommunityFeed } from "./hooks/use-community-feed";
 
@@ -18,6 +24,11 @@ const COMMUNITY_CATEGORIES = [
 
 type CommunityCategory = (typeof COMMUNITY_CATEGORIES)[number];
 type WritableCommunityCategory = Exclude<CommunityCategory, "전체">;
+type PendingGuestIdentityAction = {
+  actionLabel: string;
+  run: (identity: CommunityGuestIdentity) => Promise<void>;
+  resolve: (completed: boolean) => void;
+} | null;
 
 const WRITABLE_CATEGORIES = COMMUNITY_CATEGORIES.filter(
   (category): category is WritableCommunityCategory => category !== "전체"
@@ -281,9 +292,9 @@ function FeedPostItem(props: {
   onToggleReplies: () => void;
   onChangeReplyDraft: (postId: string, value: string) => void;
   onSubmitReply: (postId: string) => Promise<void>;
-  onUpdatePost: (postId: string, body: string) => Promise<void>;
-  onDeletePost: (postId: string) => Promise<void>;
-  onDeleteReply: (postId: string, replyId: string) => Promise<void>;
+  onUpdatePost: (postId: string, body: string) => Promise<boolean>;
+  onDeletePost: (postId: string) => Promise<boolean>;
+  onDeleteReply: (postId: string, replyId: string) => Promise<boolean>;
 }) {
   const {
     post,
@@ -324,8 +335,10 @@ function FeedPostItem(props: {
           onChange={setEditDraft}
           onCancel={() => setIsEditing(false)}
           onSubmit={async () => {
-            await onUpdatePost(post.id, editDraft);
-            setIsEditing(false);
+            const completed = await onUpdatePost(post.id, editDraft);
+            if (completed) {
+              setIsEditing(false);
+            }
           }}
         />
       ) : (
@@ -578,6 +591,8 @@ export function CommunityPage() {
     useState<WritableCommunityCategory>("잡담");
   const [postTitle, setPostTitle] = useState("");
   const [postContent, setPostContent] = useState("");
+  const [pendingGuestIdentityAction, setPendingGuestIdentityAction] =
+    useState<PendingGuestIdentityAction>(null);
 
   useEffect(() => {
     void loadPosts();
@@ -612,10 +627,32 @@ export function CommunityPage() {
       content: postContent,
     });
 
-    void createPost(body).then(() => {
+    void runWithGuestIdentityConfirm("글을 작성", (identity) =>
+      createPost(body, identity)
+    ).then((completed) => {
+      if (!completed) return;
       setPostTitle("");
       setPostContent("");
       setIsWriteOpen(false);
+    });
+  };
+
+  const runWithGuestIdentityConfirm = (
+    actionLabel: string,
+    run: (identity: CommunityGuestIdentity) => Promise<void>
+  ) => {
+    const currentIdentity = { guestNickname, guestPassword };
+
+    if (isCommunityGuestIdentityConfirmDismissed()) {
+      return run(currentIdentity).then(() => true);
+    }
+
+    return new Promise<boolean>((resolve) => {
+      setPendingGuestIdentityAction({
+        actionLabel,
+        run,
+        resolve,
+      });
     });
   };
 
@@ -633,7 +670,7 @@ export function CommunityPage() {
               작성자 정보
             </h2>
             <p className="mt-2 text-[12px] leading-[1.6] text-[#777]">
-              비회원 글 수정/삭제와 댓글 삭제에 사용됩니다.
+              비회원 글 작성/수정/삭제와 댓글 작성/삭제에 사용됩니다.
             </p>
             <FeedGuestIdentityForm
               className="mt-3"
@@ -723,16 +760,28 @@ export function CommunityPage() {
                     setReplyDraft(postId, value);
                   }}
                   onSubmitReply={async (postId) => {
-                    await submitReply(postId);
+                    await runWithGuestIdentityConfirm(
+                      "댓글을 작성",
+                      (identity) => submitReply(postId, identity)
+                    );
                   }}
                   onUpdatePost={async (postId, body) => {
-                    await updatePost(postId, body);
+                    return runWithGuestIdentityConfirm(
+                      "글을 수정",
+                      (identity) => updatePost(postId, body, identity)
+                    );
                   }}
                   onDeletePost={async (postId) => {
-                    await deletePost(postId);
+                    return runWithGuestIdentityConfirm(
+                      "글을 삭제",
+                      (identity) => deletePost(postId, identity)
+                    );
                   }}
                   onDeleteReply={async (postId, replyId) => {
-                    await deleteReply(postId, replyId);
+                    return runWithGuestIdentityConfirm(
+                      "댓글을 삭제",
+                      (identity) => deleteReply(postId, replyId, identity)
+                    );
                   }}
                 />
               ))}
@@ -788,6 +837,33 @@ export function CommunityPage() {
           </aside>
         </section>
       </main>
+
+      <CommunityGuestIdentityConfirmModal
+        isOpen={pendingGuestIdentityAction !== null}
+        actionLabel={pendingGuestIdentityAction?.actionLabel ?? "수정/삭제"}
+        guestNickname={guestNickname}
+        guestPassword={guestPassword}
+        onClose={() => {
+          pendingGuestIdentityAction?.resolve(false);
+          setPendingGuestIdentityAction(null);
+        }}
+        onConfirm={(identity, options) => {
+          setGuestNickname(identity.guestNickname);
+          setGuestPassword(identity.guestPassword);
+
+          const pending = pendingGuestIdentityAction;
+          setPendingGuestIdentityAction(null);
+          void pending
+            ?.run(identity)
+            .then(() => {
+              if (options.dismiss) {
+                persistCommunityGuestIdentityConfirmDismissed();
+              }
+              pending.resolve(true);
+            })
+            .catch(() => pending.resolve(false));
+        }}
+      />
     </div>
   );
 }
