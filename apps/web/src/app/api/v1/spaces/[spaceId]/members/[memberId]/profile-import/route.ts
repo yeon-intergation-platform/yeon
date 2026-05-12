@@ -1,17 +1,64 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
-import { fetchMemberInSpaceFromSpring, MembersSpringBackendHttpError } from "@/server/members-spring-client";
+import {
+  fetchMemberInSpaceFromSpring,
+  MembersSpringBackendHttpError,
+} from "@/server/members-spring-client";
 import { ServiceError } from "@/server/services/service-error";
-import { jsonError, requireAuthenticatedUser } from "@/app/api/v1/counseling-records/_shared";
+import {
+  jsonError,
+  requireAuthenticatedUser,
+} from "@/app/api/v1/counseling-records/_shared";
 
 export const runtime = "nodejs";
-const OPENAI_CHAT_COMPLETIONS_URL = "https://api.openai.com/v1/chat/completions";
+const OPENAI_CHAT_COMPLETIONS_URL =
+  "https://api.openai.com/v1/chat/completions";
 const AI_MODEL = "gpt-4.1-mini";
 const MAX_FILE_SIZE = 1 * 1024 * 1024;
-export interface ProfileSuggestions { name?: string | null; email?: string | null; phone?: string | null; status?: "active" | "withdrawn" | "graduated" | null; initialRiskLevel?: "low" | "medium" | "high" | null; confidence: Record<string, "high" | "medium" | "low">; rawContext?: string; }
-async function extractTextFromFile(file: File){ return (await file.text()).slice(0, 8000); }
-async function analyzeProfileFromText(fileText:string,currentMember:{name:string;email?:string|null;phone?:string|null;}): Promise<ProfileSuggestions> { const apiKey=process.env.OPENAI_API_KEY; if(!apiKey) throw new ServiceError(500,'AI 서비스가 설정되지 않았습니다.'); const systemPrompt=`당신은 교육 프로그램 수강생 정보를 파일에서 추출하는 AI입니다.
+const SUPPORTED_PROFILE_IMPORT_FILE_TYPES = [
+  "text/csv",
+  "text/plain",
+  "application/csv",
+  "text/tab-separated-values",
+] as const;
+
+export interface ProfileSuggestions {
+  name?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  status?: "active" | "withdrawn" | "graduated" | null;
+  initialRiskLevel?: "low" | "medium" | "high" | null;
+  confidence: Record<string, "high" | "medium" | "low">;
+  rawContext?: string;
+}
+
+async function extractTextFromFile(file: File) {
+  return (await file.text()).slice(0, 8000);
+}
+
+function isSupportedProfileImportFile(file: File) {
+  return (
+    SUPPORTED_PROFILE_IMPORT_FILE_TYPES.includes(
+      file.type as (typeof SUPPORTED_PROFILE_IMPORT_FILE_TYPES)[number]
+    ) ||
+    file.name.endsWith(".csv") ||
+    file.name.endsWith(".txt") ||
+    file.name.endsWith(".tsv")
+  );
+}
+
+async function analyzeProfileFromText(
+  fileText: string,
+  currentMember: { name: string; email?: string | null; phone?: string | null }
+): Promise<ProfileSuggestions> {
+  const apiKey = process.env.OPENAI_API_KEY;
+
+  if (!apiKey) {
+    throw new ServiceError(500, "AI 서비스가 설정되지 않았습니다.");
+  }
+
+  const systemPrompt = `당신은 교육 프로그램 수강생 정보를 파일에서 추출하는 AI입니다.
 주어진 파일 내용을 분석하여 수강생 프로필 필드를 JSON으로 반환하세요.
 
 추출할 필드:
@@ -41,7 +88,115 @@ async function analyzeProfileFromText(fileText:string,currentMember:{name:string
   "rawContext": "추출 근거가 된 원문 (최대 200자)"
 }
 
-찾을 수 없는 필드는 null로 설정하세요. JSON 외 다른 텍스트는 절대 포함하지 마세요.`; const userPrompt=`다음 파일 내용에서 수강생 프로필을 추출해주세요:
+찾을 수 없는 필드는 null로 설정하세요. JSON 외 다른 텍스트는 절대 포함하지 마세요.`;
+  const userPrompt = `다음 파일 내용에서 수강생 프로필을 추출해주세요:
 
-${fileText}`; const res = await fetch(OPENAI_CHAT_COMPLETIONS_URL,{ method:'POST', headers:{ 'Content-Type':'application/json', Authorization:`Bearer ${apiKey}` }, body:JSON.stringify({ model:AI_MODEL, messages:[{role:'system',content:systemPrompt},{role:'user',content:userPrompt}], temperature:0.1, max_tokens:500 })}); if(!res.ok) throw new ServiceError(502,'AI 분석 요청에 실패했습니다.'); const data = await res.json() as { choices:{ message:{ content:string } }[] }; try { return JSON.parse(data.choices?.[0]?.message?.content?.trim() ?? '') as ProfileSuggestions; } catch { throw new ServiceError(502,'AI 응답을 파싱하지 못했습니다.'); } }
-export async function POST(request: NextRequest,{ params }: { params: Promise<{ spaceId: string; memberId: string }> }) { const { currentUser, response } = await requireAuthenticatedUser(request); if (!currentUser) return response; const { spaceId, memberId } = await params; let member; try { ({ member } = await fetchMemberInSpaceFromSpring(spaceId, memberId, currentUser.id)); } catch (error) { if (error instanceof MembersSpringBackendHttpError) return jsonError(error.message, error.status); return jsonError('수강생 정보를 불러오지 못했습니다.', 500); } let formData: FormData; try { formData = await request.formData(); } catch { return jsonError('파일을 읽지 못했습니다.', 400); } const file = formData.get('file'); if (!(file instanceof File)) return jsonError('파일이 포함되지 않았습니다.', 400); if (file.size > MAX_FILE_SIZE) return jsonError('파일 크기는 1MB 이하여야 합니다.', 400); const supportedTypes=['text/csv','text/plain','application/csv','text/tab-separated-values']; const isSupported = supportedTypes.includes(file.type) || file.name.endsWith('.csv') || file.name.endsWith('.txt') || file.name.endsWith('.tsv'); if (!isSupported) return jsonError('CSV 또는 텍스트 파일만 지원합니다.', 400); let fileText:string; try { fileText = await extractTextFromFile(file); } catch { return jsonError('파일 내용을 읽지 못했습니다.', 400); } if (!fileText.trim()) return jsonError('파일이 비어 있습니다.', 400); try { const suggestions = await analyzeProfileFromText(fileText,{ name:member.name, email:member.email, phone:member.phone }); return NextResponse.json({ suggestions }); } catch (error) { if (error instanceof ServiceError) return jsonError(error.message, error.status); console.error(error); return jsonError('AI 분석에 실패했습니다.', 500); } }
+${fileText}`;
+  const res = await fetch(OPENAI_CHAT_COMPLETIONS_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: AI_MODEL,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      temperature: 0.1,
+      max_tokens: 500,
+    }),
+  });
+
+  if (!res.ok) {
+    throw new ServiceError(502, "AI 분석 요청에 실패했습니다.");
+  }
+
+  const data = (await res.json()) as {
+    choices: { message: { content: string } }[];
+  };
+
+  try {
+    return JSON.parse(
+      data.choices?.[0]?.message?.content?.trim() ?? ""
+    ) as ProfileSuggestions;
+  } catch {
+    throw new ServiceError(502, "AI 응답을 파싱하지 못했습니다.");
+  }
+}
+
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ spaceId: string; memberId: string }> }
+) {
+  const { currentUser, response } = await requireAuthenticatedUser(request);
+  if (!currentUser) return response;
+
+  const { spaceId, memberId } = await params;
+  let member;
+
+  try {
+    ({ member } = await fetchMemberInSpaceFromSpring(
+      spaceId,
+      memberId,
+      currentUser.id
+    ));
+  } catch (error) {
+    if (error instanceof MembersSpringBackendHttpError) {
+      return jsonError(error.message, error.status);
+    }
+
+    return jsonError("수강생 정보를 불러오지 못했습니다.", 500);
+  }
+
+  let formData: FormData;
+
+  try {
+    formData = await request.formData();
+  } catch {
+    return jsonError("파일을 읽지 못했습니다.", 400);
+  }
+
+  const file = formData.get("file");
+
+  if (!(file instanceof File)) {
+    return jsonError("파일이 포함되지 않았습니다.", 400);
+  }
+
+  if (file.size > MAX_FILE_SIZE) {
+    return jsonError("파일 크기는 1MB 이하여야 합니다.", 400);
+  }
+
+  if (!isSupportedProfileImportFile(file)) {
+    return jsonError("CSV 또는 텍스트 파일만 지원합니다.", 400);
+  }
+
+  let fileText: string;
+
+  try {
+    fileText = await extractTextFromFile(file);
+  } catch {
+    return jsonError("파일 내용을 읽지 못했습니다.", 400);
+  }
+
+  if (!fileText.trim()) {
+    return jsonError("파일이 비어 있습니다.", 400);
+  }
+
+  try {
+    const suggestions = await analyzeProfileFromText(fileText, {
+      name: member.name,
+      email: member.email,
+      phone: member.phone,
+    });
+    return NextResponse.json({ suggestions });
+  } catch (error) {
+    if (error instanceof ServiceError) {
+      return jsonError(error.message, error.status);
+    }
+
+    console.error(error);
+    return jsonError("AI 분석에 실패했습니다.", 500);
+  }
+}
