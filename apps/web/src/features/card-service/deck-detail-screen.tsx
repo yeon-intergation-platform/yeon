@@ -50,7 +50,7 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
   const detailQuery = useDeckDetail(deckId);
   const state = toViewState(detailQuery);
 
-  const openCardEditor = (source = "detail_header") => {
+  const openCardEditor = (source = "card_list_header") => {
     if (
       editingCardDirty &&
       !window.confirm(
@@ -118,16 +118,6 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
 
         {state.kind === "ready" ? (
           <>
-            <button
-              type="button"
-              onClick={() => {
-                openCardEditor();
-              }}
-              className="inline-flex items-center justify-center rounded-[18px] bg-[#111] px-4 py-2 text-[14px] font-semibold text-white transition-colors hover:bg-[#333]"
-            >
-              + 카드 추가
-            </button>
-
             <div className="space-y-6">
               <DeckDetailHeader
                 deck={state.deck}
@@ -145,10 +135,19 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
                       {state.items.length}
                     </span>
                   </div>
-                  <div className="flex items-center gap-3">
+                  <div className="flex w-full items-center justify-between gap-3 sm:w-auto sm:justify-end">
                     <span className="shrink-0 text-[15px] text-[#666] md:text-[14px] md:text-[#888]">
                       전체 {state.items.length}
                     </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        openCardEditor();
+                      }}
+                      className="inline-flex items-center justify-center rounded-[18px] bg-[#111] px-4 py-2 text-[14px] font-semibold text-white transition-colors hover:bg-[#333]"
+                    >
+                      + 카드 추가
+                    </button>
                   </div>
                 </div>
 
