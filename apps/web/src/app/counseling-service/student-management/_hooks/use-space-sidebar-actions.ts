@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
 import type { StudentSpaceCreateStep } from "@/features/student-management/components/space-create-modal";
-import { resolveApiHrefForCurrentPath } from "@/lib/app-route-paths";
+import { studentManagementFetchVoid } from "@/features/student-management/hooks/student-management-fetch";
 import { createPatchedHref, isOneOf } from "@/lib/route-state/search-params";
 
 import type {
@@ -84,17 +84,17 @@ export function useSpaceSidebarActions({
       setCurrentSearch(nextSearch);
       router.replace(nextHref);
     },
-    [currentSearch, getCurrentSearchParams, pathname, router],
+    [currentSearch, getCurrentSearchParams, pathname, router]
   );
   const [spaceActionError, setSpaceActionError] = useState<string | null>(null);
   const [deletingSpaceId, setDeletingSpaceId] = useState<string | null>(null);
   const [renamingSpaceId, setRenamingSpaceId] = useState<string | null>(null);
   const [renameTarget, setRenameTarget] = useState<SpaceDialogTarget | null>(
-    null,
+    null
   );
   const [renameValue, setRenameValue] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<SpaceDialogTarget | null>(
-    null,
+    null
   );
 
   const createModalState = useMemo<CreateModalState>(() => {
@@ -118,7 +118,7 @@ export function useSpaceSidebarActions({
   const openCreateModal = useCallback(
     (
       initialStep: StudentSpaceCreateStep,
-      initialLocalDraftId?: string | null,
+      initialLocalDraftId?: string | null
     ) => {
       setSpaceActionError(null);
       setSpaceSelection({ ids: [], anchorId: null });
@@ -129,7 +129,7 @@ export function useSpaceSidebarActions({
         draftId: initialLocalDraftId ?? null,
       });
     },
-    [replaceCreateModalRoute, setSpaceSelection],
+    [replaceCreateModalRoute, setSpaceSelection]
   );
 
   const closeCreateModal = useCallback(() => {
@@ -154,50 +154,25 @@ export function useSpaceSidebarActions({
         draftId: patch.draftId,
       });
     },
-    [replaceCreateModalRoute],
+    [replaceCreateModalRoute]
   );
-
-  const readSpaceActionErrorMessage = useCallback(async (res: Response) => {
-    const contentType = res.headers.get("content-type") ?? "";
-
-    if (contentType.includes("application/json")) {
-      const data = (await res.json().catch(() => null)) as {
-        message?: string;
-      } | null;
-
-      if (typeof data?.message === "string" && data.message.trim()) {
-        return data.message;
-      }
-    }
-
-    const text = await res.text().catch(() => "");
-    return text || "스페이스를 삭제하지 못했습니다.";
-  }, []);
 
   const deleteSpaceById = useCallback(
     async (spaceId: string) => {
-      const res = await fetch(
-        resolveApiHrefForCurrentPath(`/api/v1/spaces/${spaceId}`),
+      await studentManagementFetchVoid(
+        `/api/v1/spaces/${spaceId}`,
         {
           method: "DELETE",
         },
+        "스페이스를 삭제하지 못했습니다."
       );
-
-      if (!res.ok) {
-        throw new Error(await readSpaceActionErrorMessage(res));
-      }
 
       if (selectedSpaceId === spaceId) {
         setSelectedSpaceId(null);
         resetDetailRouteIfNeeded(null);
       }
     },
-    [
-      readSpaceActionErrorMessage,
-      resetDetailRouteIfNeeded,
-      selectedSpaceId,
-      setSelectedSpaceId,
-    ],
+    [resetDetailRouteIfNeeded, selectedSpaceId, setSelectedSpaceId]
   );
 
   const handleDeleteSpace = useCallback(
@@ -218,16 +193,14 @@ export function useSpaceSidebarActions({
         await refetchSpaces();
       } catch (err) {
         setSpaceActionError(
-          err instanceof Error
-            ? err.message
-            : "스페이스를 삭제하지 못했습니다.",
+          err instanceof Error ? err.message : "스페이스를 삭제하지 못했습니다."
         );
       } finally {
         setDeletingSpaceId(null);
         setDeleteTarget(null);
       }
     },
-    [deleteSpaceById, deletingSpaceId, refetchSpaces, setSpaceSelection],
+    [deleteSpaceById, deletingSpaceId, refetchSpaces, setSpaceSelection]
   );
 
   const openRenameDialog = useCallback(
@@ -236,7 +209,7 @@ export function useSpaceSidebarActions({
       setRenameValue(target.spaceName);
       closeContextMenu();
     },
-    [closeContextMenu],
+    [closeContextMenu]
   );
 
   const openDeleteDialog = useCallback(
@@ -244,7 +217,7 @@ export function useSpaceSidebarActions({
       setDeleteTarget(target);
       closeContextMenu();
     },
-    [closeContextMenu],
+    [closeContextMenu]
   );
 
   const handleRenameSpace = useCallback(
@@ -263,25 +236,22 @@ export function useSpaceSidebarActions({
       setSpaceActionError(null);
 
       try {
-        const res = await fetch(
-          resolveApiHrefForCurrentPath(`/api/v1/spaces/${spaceId}`),
+        await studentManagementFetchVoid(
+          `/api/v1/spaces/${spaceId}`,
           {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ name: trimmedName }),
           },
+          "스페이스 이름을 수정하지 못했습니다."
         );
-
-        if (!res.ok) {
-          throw new Error(await readSpaceActionErrorMessage(res));
-        }
 
         await refetchSpaces();
       } catch (err) {
         setSpaceActionError(
           err instanceof Error
             ? err.message
-            : "스페이스 이름을 수정하지 못했습니다.",
+            : "스페이스 이름을 수정하지 못했습니다."
         );
       } finally {
         setRenamingSpaceId(null);
@@ -292,11 +262,10 @@ export function useSpaceSidebarActions({
     [
       closeContextMenu,
       deletingSpaceId,
-      readSpaceActionErrorMessage,
       refetchSpaces,
       renameValue,
       renamingSpaceId,
-    ],
+    ]
   );
 
   return {
