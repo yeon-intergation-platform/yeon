@@ -1,21 +1,12 @@
-import { randomUUID } from "node:crypto";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
+import { counselingChatRequestSchema } from "@yeon/api-contract/counseling-records";
 import {
-  counselingChatRequestSchema,
-  type CounselingChatMessage,
-} from "@yeon/api-contract/counseling-records";
-import { getCounselingRecordDetail } from "@/server/services/counseling-records-service";
-import {
-  appendCounselingRecordAssistantMessages,
-  clearCounselingRecordAssistantMessages,
-} from "@/server/services/counseling-records-service";
-import {
-  streamCounselingAiChat,
-  streamWebSearchAiChat,
-} from "@/server/services/counseling-ai-service";
-import { ServiceError } from "@/server/services/service-error";
+  clearCounselingRecordChatFromSpring,
+  CounselingRecordChatSpringBackendHttpError,
+  streamCounselingRecordChatFromSpring,
+} from "@/server/counseling-record-chat-spring-client";
 
 import { jsonError, requireAuthenticatedUser } from "../../_shared";
 
@@ -26,76 +17,6 @@ type RouteContext = {
     recordId: string;
   }>;
 };
-
-async function persistAssistantMessageFromStream(params: {
-  stream: ReadableStream<Uint8Array>;
-  userId: string;
-  recordId: string;
-}) {
-  const reader = params.stream.getReader();
-  const decoder = new TextDecoder();
-  let buffer = "";
-  let accumulated = "";
-
-  try {
-    while (true) {
-      const { done, value } = await reader.read();
-
-      if (done) {
-        break;
-      }
-
-      buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split("\n");
-      buffer = lines.pop() ?? "";
-
-      for (const line of lines) {
-        const trimmed = line.trim();
-
-        if (!trimmed.startsWith("data: ")) {
-          continue;
-        }
-
-        const payload = trimmed.slice(6);
-
-        if (payload === "[DONE]") {
-          continue;
-        }
-
-        try {
-          const parsed = JSON.parse(payload) as { content?: string };
-
-          if (parsed.content) {
-            accumulated += parsed.content;
-          }
-        } catch {
-          // ignore malformed stream chunks
-        }
-      }
-    }
-
-    const content = accumulated.trim();
-
-    if (!content) {
-      return;
-    }
-
-    const assistantMessage: CounselingChatMessage = {
-      id: randomUUID(),
-      role: "assistant",
-      content,
-      createdAt: new Date().toISOString(),
-    };
-
-    await appendCounselingRecordAssistantMessages(
-      params.userId,
-      params.recordId,
-      [assistantMessage],
-    );
-  } finally {
-    reader.releaseLock();
-  }
-}
 
 export async function POST(request: NextRequest, context: RouteContext) {
   const { currentUser, response } = await requireAuthenticatedUser(request);
@@ -127,46 +48,13 @@ export async function POST(request: NextRequest, context: RouteContext) {
   }
 
   try {
-    const detail = await getCounselingRecordDetail(currentUser.id, recordId);
-    const userMessage: CounselingChatMessage = {
-      id: randomUUID(),
-      role: "user",
-      content: lastMessage.content.trim(),
-      createdAt: new Date().toISOString(),
-    };
-
-    await appendCounselingRecordAssistantMessages(currentUser.id, recordId, [
-      userMessage,
-    ]);
-
-    const upstream = parsed.data.useWebSearch
-      ? await streamWebSearchAiChat(parsed.data.messages)
-      : await streamCounselingAiChat(
-          {
-            studentName: detail.studentName,
-            sessionTitle: detail.sessionTitle,
-            counselingType: detail.counselingType,
-            createdAt: detail.createdAt,
-          },
-          detail.transcriptSegments.map((segment) => ({
-            speakerLabel: segment.speakerLabel,
-            text: segment.text,
-            startMs: segment.startMs ?? 0,
-          })),
-          parsed.data.messages,
-        );
-
-    const [clientStream, persistenceStream] = upstream.tee();
-
-    void persistAssistantMessageFromStream({
-      stream: persistenceStream,
-      userId: currentUser.id,
+    const stream = await streamCounselingRecordChatFromSpring(
+      currentUser.id,
       recordId,
-    }).catch((error) => {
-      console.error("counseling-ai-chat-persist-error", error);
-    });
+      parsed.data
+    );
 
-    return new Response(clientStream, {
+    return new Response(stream, {
       headers: {
         "Content-Type": "text/event-stream",
         "Cache-Control": "no-cache",
@@ -174,7 +62,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
       },
     });
   } catch (error) {
-    if (error instanceof ServiceError) {
+    if (error instanceof CounselingRecordChatSpringBackendHttpError) {
       return jsonError(error.message, error.status);
     }
 
@@ -193,10 +81,10 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
   const { recordId } = await context.params;
 
   try {
-    await clearCounselingRecordAssistantMessages(currentUser.id, recordId);
+    await clearCounselingRecordChatFromSpring(currentUser.id, recordId);
     return NextResponse.json({ ok: true });
   } catch (error) {
-    if (error instanceof ServiceError) {
+    if (error instanceof CounselingRecordChatSpringBackendHttpError) {
       return jsonError(error.message, error.status);
     }
 
