@@ -1,98 +1,59 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import type { UseQueryResult } from "@tanstack/react-query";
-import type { CardDeckDto } from "@yeon/api-contract/card-decks";
+import Link from "next/link";
+import { useState } from "react";
 import { analyticsEvents, trackEvent } from "@/lib/analytics";
 import {
   CommonProductHeader,
   ProductHeaderSettingsButton,
 } from "@/components/product-shell/product-header";
-import { countGuestCardDecks } from "@/lib/guest-card-service-store";
+import { TypingProfileCard } from "@/features/typing-service/typing-profile-card";
+import { useTypingProfile } from "@/features/typing-service/use-typing-profile";
+import { useTypingSettings } from "@/features/typing-service/use-typing-settings";
 
 import { useIsAuthenticated } from "./auth-context";
-import {
-  CardServiceSettingsDialog,
-  CreateDeckDialog,
-  DeckList,
-  EmptyDecksScreen,
-  MergeGuestDialog,
-} from "./components";
-import { useDeckList } from "./hooks";
-import type { CardServiceHomeViewState } from "./types";
+import { CardServiceSettingsDialog, CreateDeckDialog } from "./components";
 
-function toViewState(
-  query: UseQueryResult<CardDeckDto[]>
-): CardServiceHomeViewState {
-  if (query.isPending) {
-    return { kind: "loading" };
-  }
-  if (query.isError) {
-    return { kind: "error", message: "덱 목록을 불러오지 못했습니다." };
-  }
-  if (!query.data || query.data.length === 0) {
-    return { kind: "empty" };
-  }
-  return { kind: "ready", decks: query.data };
-}
+const CARD_HOME_CTA_ITEMS = [
+  {
+    href: "/card-service/rooms",
+    title: "카드방 입장",
+    description: "친구와 역할을 나눠 채팅으로 암기 답변을 검증해요.",
+    target: "rooms",
+    primary: true,
+  },
+  {
+    href: "/card-service/decks",
+    title: "내 덱 보기",
+    description: "기존 덱을 열어 카드를 추가하거나 혼자 복습해요.",
+    target: "decks",
+    primary: false,
+  },
+] as const;
 
 export function CardServiceHome() {
   const [isCreateOpen, setCreateOpen] = useState(false);
   const [isSettingsOpen, setSettingsOpen] = useState(false);
-  const [guestDeckCount, setGuestDeckCount] = useState<number | null>(null);
-  const [isMergeDialogOpen, setMergeDialogOpen] = useState(false);
   const isAuthenticated = useIsAuthenticated();
-  const decksQuery = useDeckList();
-  const state = toViewState(decksQuery);
+  const { profile, updateProfile, loaded } = useTypingProfile();
+  const { settings } = useTypingSettings();
 
-  const refreshGuestDeckCount = useCallback(async () => {
-    try {
-      const count = await countGuestCardDecks();
-      return count;
-    } catch (error) {
-      console.error("guest 덱 개수를 확인하지 못했습니다.", error);
-      return null;
-    }
-  }, []);
+  const trackHomeClick = (target: string) => {
+    trackEvent(analyticsEvents.cardDeckOpen, {
+      source: "card_room_home",
+      target,
+      authenticated: isAuthenticated,
+      has_profile: loaded,
+      character_id: profile.characterId,
+    });
+  };
 
-  useEffect(() => {
-    if (!isAuthenticated) {
-      setGuestDeckCount(null);
-      setMergeDialogOpen(false);
-      return;
-    }
-    let cancelled = false;
-    void (async () => {
-      const count = await refreshGuestDeckCount();
-      if (cancelled) {
-        return;
-      }
-      setGuestDeckCount(count);
-      if (count !== null && count > 0) {
-        setMergeDialogOpen(true);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [isAuthenticated, refreshGuestDeckCount]);
-
-  async function handleMergeDialogClose() {
-    setMergeDialogOpen(false);
-    const count = await refreshGuestDeckCount();
-    setGuestDeckCount(count);
-  }
-
-  const showManualMergeButton =
-    isAuthenticated &&
-    !isMergeDialogOpen &&
-    guestDeckCount !== null &&
-    guestDeckCount > 0;
-  const openCreate = (source: string) => {
+  const openCreate = () => {
     setCreateOpen(true);
     trackEvent(analyticsEvents.cardDeckCreateOpen, {
-      source,
+      source: "card_room_home",
       authenticated: isAuthenticated,
+      character_id: profile.characterId,
     });
   };
 
@@ -100,26 +61,6 @@ export function CardServiceHome() {
     <div className="min-h-screen bg-white text-[#111]">
       <CommonProductHeader
         activeService="card"
-        rightExtras={
-          <>
-            {showManualMergeButton ? (
-              <button
-                type="button"
-                onClick={() => {
-                  setMergeDialogOpen(true);
-                  trackEvent(analyticsEvents.cardDeckOpen, {
-                    source: "merge_guest_prompt",
-                    authenticated: isAuthenticated,
-                    guest_deck_count: guestDeckCount,
-                  });
-                }}
-                className="rounded-xl border border-[rgba(17,19,24,0.12)] bg-[rgba(232,99,10,0.08)] px-3 py-2 text-[12px] font-semibold text-[#a3430a] transition-colors hover:bg-[rgba(232,99,10,0.16)]"
-              >
-                게스트 덱 {guestDeckCount}개 계정에 추가
-              </button>
-            ) : null}
-          </>
-        }
         settingsControl={
           <ProductHeaderSettingsButton
             onClick={() => setSettingsOpen(true)}
@@ -128,48 +69,82 @@ export function CardServiceHome() {
         }
       />
 
-      <main className="mx-auto max-w-[1400px] px-6 py-12 md:px-12">
-        <section className="max-w-[820px]">
-          <h1 className="mt-4 text-[28px] font-black tracking-[-0.04em] text-[#111] md:text-[34px]">
-            덱을 만들고 바로 복습하세요
-          </h1>
-          <p className="mt-4 max-w-[720px] text-[14px] leading-[1.8] text-[#666] md:text-[15px]">
-            필요한 덱을 선택하거나 새로 만들어 바로 시작해보세요.
-          </p>
+      <main className="flex flex-col items-center px-5 py-5 md:px-10 md:py-5">
+        <section className="w-full max-w-[980px]">
+          <div className="max-w-[680px]">
+            <p className="text-[13px] font-bold uppercase tracking-[0.18em] text-[#888]">
+              Card Room
+            </p>
+            <h1 className="mt-3 text-[27px] font-black tracking-[-0.04em] text-[#111] md:text-[34px]">
+              캐릭터로 입장하는 카드 암기방
+            </h1>
+            <p className="mt-3 text-[14px] leading-[1.75] text-[#666] md:text-[15px]">
+              타자방처럼 캐릭터를 고르고, 카드방에서 외우는 사람과 봐주는
+              사람으로 나눠 답을 확인하세요.
+            </p>
+          </div>
         </section>
 
-        <section className="mt-10">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <h2 className="text-[22px] font-semibold text-[#111]">
-                {isAuthenticated ? "내 덱" : "로그인 없이 만드는 덱"}
-              </h2>
-              <p className="mt-2 text-[13px] leading-[1.7] text-[#666]">
-                덱을 열어 카드를 추가하고 바로 복습을 시작할 수 있습니다.
-                {!isAuthenticated
-                  ? " 지금 만든 덱은 이 기기에만 저장되며, 로그인하면 계정으로 옮겨 계속 학습할 수 있어요."
-                  : " 만든 덱과 카드를 열어 바로 복습 흐름으로 이어갈 수 있어요."}
-              </p>
+        <section className="mt-8 grid w-full max-w-[980px] overflow-hidden rounded-[28px] border border-[#e5e5e5] bg-white md:grid-cols-[430px_minmax(0,1fr)]">
+          <div className="border-b border-[#e5e5e5] p-5 md:border-b-0 md:border-r md:p-6">
+            <h2 className="text-[16px] font-bold text-[#111]">
+              내 카드방 프로필
+            </h2>
+            <p className="mt-2 text-[13px] leading-[1.6] text-[#777]">
+              타자방과 같은 캐릭터 선택을 사용합니다. 선택한 캐릭터는 카드방
+              대기/학습 화면에 표시돼요.
+            </p>
+            <div className="mt-5 flex justify-center">
+              <TypingProfileCard
+                profile={profile}
+                onNicknameChange={(nickname) => updateProfile({ nickname })}
+                onCharacterChange={(characterId) =>
+                  updateProfile({ characterId })
+                }
+                locale={settings.locale}
+              />
             </div>
-            <button
-              type="button"
-              onClick={() => openCreate("deck_section")}
-              className="inline-flex h-11 shrink-0 items-center justify-center rounded-xl bg-[#111] px-5 text-[13px] font-semibold text-white transition-colors hover:bg-[#333]"
-            >
-              + 새 덱
-            </button>
           </div>
-          <div className="mt-6">
-            {state.kind === "loading" ? (
-              <p className="text-[14px] text-[#888]">불러오는 중...</p>
-            ) : null}
-            {state.kind === "error" ? (
-              <p className="text-[14px] text-red-600">{state.message}</p>
-            ) : null}
-            {state.kind === "empty" ? (
-              <EmptyDecksScreen onCreate={() => openCreate("empty_state")} />
-            ) : null}
-            {state.kind === "ready" ? <DeckList decks={state.decks} /> : null}
+
+          <div className="p-5 md:p-6">
+            <h2 className="text-[16px] font-bold text-[#111]">오늘의 시작</h2>
+            <div className="mt-5 grid gap-4">
+              {CARD_HOME_CTA_ITEMS.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`block rounded-2xl border px-5 py-5 no-underline transition-colors ${
+                    item.primary
+                      ? "border-[#111] bg-[#111] text-white hover:bg-[#333]"
+                      : "border-[#e5e5e5] bg-white text-[#111] hover:border-[#111]"
+                  }`}
+                  onClick={() => trackHomeClick(item.target)}
+                >
+                  <span className="block text-[16px] font-bold">
+                    {item.title}
+                  </span>
+                  <span
+                    className={`mt-1 block text-[13px] leading-[1.6] ${
+                      item.primary ? "text-white/70" : "text-[#777]"
+                    }`}
+                  >
+                    {item.description}
+                  </span>
+                </Link>
+              ))}
+              <button
+                type="button"
+                onClick={openCreate}
+                className="block rounded-2xl border border-[#e5e5e5] bg-white px-5 py-5 text-left text-[#111] transition-colors hover:border-[#111]"
+              >
+                <span className="block text-[16px] font-bold">
+                  새 덱 만들기
+                </span>
+                <span className="mt-1 block text-[13px] leading-[1.6] text-[#777]">
+                  카드방에서 사용할 앞면/뒷면 덱을 먼저 준비해요.
+                </span>
+              </button>
+            </div>
           </div>
         </section>
       </main>
@@ -180,15 +155,6 @@ export function CardServiceHome() {
 
       {isSettingsOpen ? (
         <CardServiceSettingsDialog onClose={() => setSettingsOpen(false)} />
-      ) : null}
-
-      {isMergeDialogOpen && guestDeckCount !== null && guestDeckCount > 0 ? (
-        <MergeGuestDialog
-          guestDeckCount={guestDeckCount}
-          onClose={() => {
-            void handleMergeDialogClose();
-          }}
-        />
       ) : null}
     </div>
   );
