@@ -8,11 +8,12 @@ import { z } from "zod";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
+import { deleteChatServiceFeedPost } from "@/server/services/chat-service/feed-service";
 import {
-  createChatServiceFeedPost,
-  deleteChatServiceFeedPost,
-  listChatServiceFeedReplies,
-} from "@/server/services/chat-service/feed-service";
+  ChatServiceFeedSpringBackendHttpError,
+  createChatServiceFeedPostInSpring,
+  fetchChatServiceFeedRepliesFromSpring,
+} from "@/server/chat-service-feed-spring-client";
 import { getOrCreateChatServiceGuestProfile } from "@/server/services/chat-service/common";
 import { ServiceError } from "@/server/services/service-error";
 
@@ -76,13 +77,19 @@ export async function GET(request: NextRequest, { params }: FeedReplyParams) {
   try {
     const auth = await getOptionalChatServiceAuth(request);
     const { postId } = await params;
-    const response = await listChatServiceFeedReplies(auth?.profile.id, postId);
+    const response = await fetchChatServiceFeedRepliesFromSpring({
+      currentProfileId: auth?.profile.id,
+      postId,
+    });
 
     return NextResponse.json(
       chatServiceListFeedRepliesResponseSchema.parse(response)
     );
   } catch (error) {
     if (error instanceof ServiceError) {
+      return jsonChatServiceError(error.message, error.status);
+    }
+    if (error instanceof ChatServiceFeedSpringBackendHttpError) {
       return jsonChatServiceError(error.message, error.status);
     }
 
@@ -102,11 +109,11 @@ export async function POST(request: NextRequest, { params }: FeedReplyParams) {
 
     const profileId = await resolveFeedProfileId(request, parsedBody.data);
     const { postId } = await params;
-    const response = await createChatServiceFeedPost(
-      profileId,
-      parsedBody.data.body,
-      postId
-    );
+    const response = await createChatServiceFeedPostInSpring({
+      currentProfileId: profileId,
+      body: parsedBody.data.body,
+      replyToPostId: postId,
+    });
 
     return NextResponse.json(
       chatServiceCreateFeedPostResponseSchema.parse(response),
@@ -116,6 +123,9 @@ export async function POST(request: NextRequest, { params }: FeedReplyParams) {
     );
   } catch (error) {
     if (error instanceof ServiceError) {
+      return jsonChatServiceError(error.message, error.status);
+    }
+    if (error instanceof ChatServiceFeedSpringBackendHttpError) {
       return jsonChatServiceError(error.message, error.status);
     }
 
