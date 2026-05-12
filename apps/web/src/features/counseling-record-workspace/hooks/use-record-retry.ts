@@ -1,12 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { buildCounselingClientRequestId } from "../_lib/client-request-id";
-import { resolveApiHrefForCurrentPath } from "@/lib/app-route-paths";
 import {
-  counselingWorkspaceFetchJson,
-  counselingWorkspaceFetchVoid,
-} from "@/features/counseling-record-workspace/api/counseling-workspace-fetch";
+  retryCounselingRecordAnalysis,
+  retryCounselingRecordTranscription,
+} from "@/features/counseling-record-workspace/api/counseling-records-api";
 import type { CounselingRecordDetail } from "@yeon/api-contract/counseling-records";
-import type { RecordItem } from "../_lib/types";
+import type { RecordItem } from "@/app/counseling-service/_lib/types";
 
 type RetryFeedback = {
   message: string | null;
@@ -66,20 +64,7 @@ export function useRecordRetry({
     setRetryFailedRecordPending(true);
     setRetryFeedback({ message: null, tone: "idle" });
     try {
-      const data = await counselingWorkspaceFetchJson<{
-        record: CounselingRecordDetail;
-      }>(
-        resolveApiHrefForCurrentPath(
-          `/api/v1/counseling-records/${currentRecord.id}/transcribe`
-        ),
-        {
-          method: "POST",
-          headers: {
-            "X-Client-Request-Id": buildCounselingClientRequestId(),
-          },
-        },
-        "과거 실패 기록 재분석을 다시 시작하지 못했습니다."
-      );
+      const data = await retryCounselingRecordTranscription(currentRecord.id);
       applyRecordDetail(data.record);
       boostPolling();
       setRetryFeedback({
@@ -114,18 +99,7 @@ export function useRecordRetry({
     setRetryFailedAnalysisPending(true);
     setRetryFeedback({ message: null, tone: "idle" });
     try {
-      await counselingWorkspaceFetchVoid(
-        resolveApiHrefForCurrentPath(
-          `/api/v1/counseling-records/${selected.id}/analyze`
-        ),
-        {
-          method: "POST",
-          headers: {
-            "X-Client-Request-Id": buildCounselingClientRequestId(),
-          },
-        },
-        "AI 분석을 다시 시작하지 못했습니다."
-      );
+      await retryCounselingRecordAnalysis(selected.id);
 
       markAnalysisRetryStart(selected.id);
       boostPolling();
