@@ -1732,3 +1732,53 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 70차 — cloud import preview workspace component 추출
+
+### 작업내용
+
+- `cloud-import-inline.tsx`에 중복으로 남아 있는 로컬/클라우드 preview workspace UI를 별도 feature component로 추출한다.
+- preview pane header, 파일 preview, stacked/desktop split separator, right panel 배치를 하나의 공용 컴포넌트로 통일한다.
+- import 상태 훅과 API 동작은 변경하지 않고 God component의 view 책임만 낮춘다.
+
+### 논의 필요
+
+- cloud/local import hook 타입을 완전한 공용 interface로 승격할지 여부.
+
+### 선택지
+
+1. 이번 차수는 preview workspace에 필요한 최소 prop surface만 정의하고, hook 타입 통합은 후속으로 둔다.
+2. cloud/local import hook 반환 타입까지 공용 contract로 재설계한다.
+
+### 추천
+
+- 1번. 현재 목표는 구조 품질 개선이므로 동작 리스크가 큰 hook contract 재설계는 분리한다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.
+
+## 71차 — cloud import file browser component 추출
+
+### 작업내용
+
+- `cloud-import-inline.tsx`에 남아 있는 provider tab, OAuth 연결 상태, breadcrumb, grid/list toggle, 파일 목록 UI를 `CloudImportFileBrowser`로 추출한다.
+- `CloudImportInline`은 import hook 조립, drag/drop, workspace mode 전환만 담당하도록 줄인다.
+- cloud provider hook 동작과 API 호출은 변경하지 않는다.
+
+### 논의 필요
+
+- cloud browser toolbar의 inline style을 이번 차수에서 전부 Tailwind로 바꿀지 여부.
+
+### 선택지
+
+1. 이번 차수는 component 경계만 나누고 스타일 변경은 최소화한다.
+2. component 추출과 동시에 toolbar 스타일도 전부 Tailwind로 변환한다.
+
+### 추천
+
+- 1번. 시각 회귀 위험을 낮추기 위해 구조 분리와 스타일 정리는 분리한다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.
