@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { LifeOsDayDto } from "@yeon/api-contract/life-os";
-import { LIFE_OS_API_PATHS } from "@yeon/api-contract/life-os";
 
 import styles from "./life-os.module.css";
 import {
@@ -12,6 +11,7 @@ import {
   LIFE_OS_ROWS,
 } from "./constants";
 import type { LifeOsHourEntry } from "./types";
+import { fetchLifeOsDay, saveLifeOsDay } from "./life-os-fetch";
 import { buildLifeOsReport, computeLifeOsDailyMetrics } from "./utils";
 
 type LifeOsDraft = {
@@ -59,28 +59,6 @@ function normalizeEntries(entries: LifeOsHourEntry[]) {
     ...emptyEntry,
     ...byHour.get(emptyEntry.hour),
   }));
-}
-
-async function fetchLifeOsDay(localDate: string) {
-  const response = await fetch(LIFE_OS_API_PATHS.dayByDate(localDate));
-  if (!response.ok) {
-    throw new Error("Life OS 기록을 불러오지 못했습니다.");
-  }
-  const data = (await response.json()) as { day: LifeOsDayDto };
-  return data.day;
-}
-
-async function saveLifeOsDay(draft: LifeOsDraft) {
-  const response = await fetch(LIFE_OS_API_PATHS.dayByDate(draft.localDate), {
-    method: "PUT",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify(draft),
-  });
-  if (!response.ok) {
-    throw new Error("Life OS 기록을 저장하지 못했습니다.");
-  }
-  const data = (await response.json()) as { day: LifeOsDayDto };
-  return data.day;
 }
 
 function toViewState(params: {
