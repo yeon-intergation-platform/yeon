@@ -129,3 +129,28 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 7차: life-os fetch wrapper 분리
+
+### 작업내용
+
+- `features/life-os/life-os.tsx`에 직접 정의된 day 조회/저장 fetch 함수를 서비스 전용 wrapper로 이동한다.
+- Life OS 화면 컴포넌트는 React Query 조립과 UI 상태만 담당하게 한다.
+- API path와 응답 파싱, 에러 메시지는 `life-os-fetch.ts`가 소유한다.
+
+### 논의 필요
+
+- Life OS query key factory를 화면 파일에 둘지 별도 파일로 승격할지.
+
+### 선택지
+
+1. 이번 차수는 fetch wrapper만 분리하고 query key는 기존 로컬 helper를 유지한다.
+2. query key helper도 별도 파일로 이동한다.
+
+### 추천
+
+- 1번. query key raw literal은 이미 제거되어 있으므로 이번 차수는 fetch boundary 축소에 집중한다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.
