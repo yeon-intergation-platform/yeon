@@ -1,8 +1,8 @@
 "use client";
 
 import { AlertTriangle, X } from "lucide-react";
-import type { MemberWithStatus } from "../_hooks";
-import { useCounselingInsightBannerDismissals } from "../_hooks";
+import type { MemberWithStatus } from "@/features/counseling-record-workspace/hooks/use-space-members";
+import { useCounselingInsightBannerDismissals } from "@/features/counseling-record-workspace/hooks/use-counseling-insight-banner-dismissals";
 
 interface InsightBannerProps {
   members: MemberWithStatus[];

@@ -1857,3 +1857,28 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 75차 — counseling 단순 표시 컴포넌트 feature 이동
+
+### 작업내용
+
+- app `_components`에 남아 있는 단순 표시 컴포넌트 중 `EmptyState`, `InsightBanner`를 feature component로 이동한다.
+- app icon shim과 app hook index 의존을 제거하고 feature/shared SSOT를 직접 참조한다.
+- app `_components/index.ts`는 기존 page 조립 import를 유지하기 위해 feature component를 재수출한다.
+
+### 논의 필요
+
+- CSS module을 참조하는 `CenterPanel`, `RecordingState`까지 같은 방식으로 이동할지 여부.
+
+### 선택지
+
+1. 이번 차수는 CSS module 의존이 없는 단순 표시 컴포넌트만 이동한다.
+2. CSS module도 feature로 이동하면서 관련 컴포넌트를 함께 이동한다.
+
+### 추천
+
+- 1번. CSS module 이동은 화면 애니메이션/스타일 회귀 가능성이 있어 별도 차수로 둔다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.
