@@ -2490,3 +2490,28 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 100차 — 타자 덱 관리 컴포넌트 역할 분리
+
+### 작업내용
+
+- `typing-deck-components.tsx`에 모여 있던 덱 form/list, 문단 editor/list, bulk import, detail panel, label helper를 역할별 feature 파일로 분리한다.
+- 기존 `typing-decks-screen.tsx`와 외부 import 경로는 `typing-deck-components.tsx` re-export bridge로 유지한다.
+- 덱 생성/수정/삭제, 문단 추가/수정/삭제, bulk import parsing/preview 동작과 문구는 변경하지 않는다.
+
+### 논의 필요
+
+- re-export bridge를 제거하고 호출부 import를 세부 파일로 바꿀지 여부.
+
+### 선택지
+
+1. 이번 차수는 bridge를 유지하고 내부 파일만 분리한다.
+2. 호출부 import까지 세부 파일 기준으로 즉시 바꾼다.
+
+### 추천
+
+- 1번. 타자 덱 화면은 admin route와 사용자 route가 같은 export seam을 공유하므로 먼저 파일 책임만 나누고 공개 seam은 안정적으로 유지한다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.
