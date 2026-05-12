@@ -533,7 +533,6 @@ export function CommunityPage() {
     guestPassword,
     setGuestNickname,
     setGuestPassword,
-    loadPosts,
     createPost,
     toggleReplies,
     setReplyDraft,
@@ -552,10 +551,6 @@ export function CommunityPage() {
   const [postContent, setPostContent] = useState("");
   const [pendingGuestIdentityAction, setPendingGuestIdentityAction] =
     useState<PendingGuestIdentityAction>(null);
-
-  useEffect(() => {
-    void loadPosts();
-  }, [loadPosts]);
 
   const filteredPosts = useMemo(() => {
     if (selectedCategory === "전체") return posts;

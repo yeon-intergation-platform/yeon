@@ -1,12 +1,19 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
+import {
+  type QueryClient,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 
 import { chatServiceApi, type ChatServiceFeedPost } from "../chat-service-api";
 import {
   readCommunityGuestNickname,
   writeCommunityGuestNickname,
 } from "../community-guest-identity";
+import { communityQueryKeys } from "./community-query-keys";
 
 type ErrorState = string | null;
 
@@ -37,15 +44,49 @@ type UseCommunityFeedOptions = {
   initialPosts?: ChatServiceFeedPost[];
 };
 
+type FeedPostsResponse = Awaited<
+  ReturnType<typeof chatServiceApi.listFeedPosts>
+>;
+
+function getErrorMessage(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message : fallback;
+}
+
+function updateFeedPostsCache(
+  queryClient: QueryClient,
+  update: (posts: ChatServiceFeedPost[]) => ChatServiceFeedPost[]
+) {
+  queryClient.setQueryData<FeedPostsResponse>(
+    communityQueryKeys.feedPosts(),
+    (current) => {
+      if (!current) return current;
+
+      return {
+        ...current,
+        posts: update(current.posts),
+      };
+    }
+  );
+}
+
 export function useCommunityFeed(options: UseCommunityFeedOptions = {}) {
-  const [posts, setPosts] = useState<ChatServiceFeedPost[]>(() => {
-    if (!options.initialPosts) return [];
-    return options.initialPosts;
+  const queryClient = useQueryClient();
+  const initialFeedPosts = options.initialPosts
+    ? { posts: options.initialPosts }
+    : undefined;
+  const {
+    data: postsData,
+    error: postsQueryError,
+    isLoading: isPostsQueryLoading,
+    refetch: refetchPosts,
+  } = useQuery({
+    queryKey: communityQueryKeys.feedPosts(),
+    queryFn: chatServiceApi.listFeedPosts,
+    initialData: initialFeedPosts,
   });
-  const [isPostsLoading, setIsPostsLoading] = useState(false);
-  const [postsError, setPostsError] = useState<ErrorState>(null);
+  const posts = postsData ? postsData.posts : [];
+  const [postsLocalError, setPostsLocalError] = useState<ErrorState>(null);
   const [replyDrafts, setReplyDrafts] = useState<ReplyDrafts>({});
-  const [isCreatingPost, setIsCreatingPost] = useState(false);
   const [isSubmittingReply, setIsSubmittingReply] = useState<SubmittingByPost>(
     {}
   );
@@ -88,54 +129,81 @@ export function useCommunityFeed(options: UseCommunityFeedOptions = {}) {
     [actorPayload]
   );
 
-  const loadPosts = useCallback(async () => {
-    setIsPostsLoading(true);
-    setPostsError(null);
+  const createPostMutation = useMutation({
+    mutationFn: ({
+      body,
+      actor,
+    }: {
+      body: string;
+      actor: ReturnType<typeof resolveActorPayload>;
+    }) => chatServiceApi.createFeedPost(body, actor),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: communityQueryKeys.feedPosts(),
+      });
+    },
+  });
 
-    try {
-      const response = await chatServiceApi.listFeedPosts();
-      setPosts(response.posts);
-    } catch (error) {
-      if (error instanceof Error) {
-        setPostsError(error.message);
-      } else {
-        setPostsError("커뮤니티 글을 불러오지 못했습니다.");
-      }
-      setPosts([]);
-    } finally {
-      setIsPostsLoading(false);
-    }
-  }, []);
+  const updatePostMutation = useMutation({
+    mutationFn: ({
+      postId,
+      body,
+      actor,
+    }: {
+      postId: string;
+      body: string;
+      actor: ReturnType<typeof resolveActorPayload>;
+    }) => chatServiceApi.updateFeedPost(postId, body, actor),
+    onSuccess: (response, variables) => {
+      updateFeedPostsCache(queryClient, (currentPosts) =>
+        currentPosts.map((post) =>
+          post.id === variables.postId ? response.post : post
+        )
+      );
+    },
+  });
+
+  const deletePostMutation = useMutation({
+    mutationFn: ({
+      postId,
+      actor,
+    }: {
+      postId: string;
+      actor: ReturnType<typeof resolveActorPayload>;
+    }) => chatServiceApi.deleteFeedPost(postId, actor),
+    onSuccess: (_response, variables) => {
+      updateFeedPostsCache(queryClient, (currentPosts) =>
+        currentPosts.filter((post) => post.id !== variables.postId)
+      );
+    },
+  });
+
+  const loadPosts = useCallback(async () => {
+    setPostsLocalError(null);
+    await refetchPosts();
+  }, [refetchPosts]);
 
   const createPost = useCallback(
     async (body: string, actor?: FeedActorInput) => {
       const trimmedBody = body.trim();
       if (!trimmedBody) {
-        setPostsError("글 내용을 입력해주세요.");
+        setPostsLocalError("글 내용을 입력해주세요.");
         return;
       }
 
-      setIsCreatingPost(true);
-      setPostsError(null);
+      setPostsLocalError(null);
 
       try {
-        await chatServiceApi.createFeedPost(
-          trimmedBody,
-          resolveActorPayload(actor)
-        );
-        await loadPosts();
+        await createPostMutation.mutateAsync({
+          body: trimmedBody,
+          actor: resolveActorPayload(actor),
+        });
       } catch (error) {
-        if (error instanceof Error) {
-          setPostsError(error.message);
-        } else {
-          setPostsError("글 작성에 실패했습니다.");
-        }
+        setPostsLocalError(getErrorMessage(error, "글 작성에 실패했습니다."));
         throw error;
-      } finally {
-        setIsCreatingPost(false);
       }
     },
-    [loadPosts, resolveActorPayload]
+    [createPostMutation, resolveActorPayload]
   );
 
   const loadReplies = useCallback(async (postId: string) => {
@@ -222,8 +290,8 @@ export function useCommunityFeed(options: UseCommunityFeedOptions = {}) {
           ...previous,
           [postId]: "",
         }));
-        setPosts((previous) =>
-          previous.map((post) =>
+        updateFeedPostsCache(queryClient, (currentPosts) =>
+          currentPosts.map((post) =>
             post.id === postId
               ? { ...post, replyCount: post.replyCount + 1 }
               : post
@@ -246,7 +314,7 @@ export function useCommunityFeed(options: UseCommunityFeedOptions = {}) {
         }));
       }
     },
-    [loadReplies, replyDrafts, resolveActorPayload]
+    [loadReplies, queryClient, replyDrafts, resolveActorPayload]
   );
 
   const updatePost = useCallback(
@@ -270,14 +338,11 @@ export function useCommunityFeed(options: UseCommunityFeedOptions = {}) {
       }));
 
       try {
-        const response = await chatServiceApi.updateFeedPost(
+        await updatePostMutation.mutateAsync({
           postId,
-          trimmedBody,
-          resolveActorPayload(actor)
-        );
-        setPosts((previous) =>
-          previous.map((post) => (post.id === postId ? response.post : post))
-        );
+          body: trimmedBody,
+          actor: resolveActorPayload(actor),
+        });
       } catch (error) {
         setPostErrors((previous) => ({
           ...previous,
@@ -292,7 +357,7 @@ export function useCommunityFeed(options: UseCommunityFeedOptions = {}) {
         }));
       }
     },
-    [resolveActorPayload]
+    [resolveActorPayload, updatePostMutation]
   );
 
   const deletePost = useCallback(
@@ -307,8 +372,10 @@ export function useCommunityFeed(options: UseCommunityFeedOptions = {}) {
       }));
 
       try {
-        await chatServiceApi.deleteFeedPost(postId, resolveActorPayload(actor));
-        setPosts((previous) => previous.filter((post) => post.id !== postId));
+        await deletePostMutation.mutateAsync({
+          postId,
+          actor: resolveActorPayload(actor),
+        });
       } catch (error) {
         setPostErrors((previous) => ({
           ...previous,
@@ -323,7 +390,7 @@ export function useCommunityFeed(options: UseCommunityFeedOptions = {}) {
         }));
       }
     },
-    [resolveActorPayload]
+    [deletePostMutation, resolveActorPayload]
   );
 
   const deleteReply = useCallback(
@@ -343,8 +410,8 @@ export function useCommunityFeed(options: UseCommunityFeedOptions = {}) {
           replyId,
           resolveActorPayload(actor)
         );
-        setPosts((previous) =>
-          previous.map((post) =>
+        updateFeedPostsCache(queryClient, (currentPosts) =>
+          currentPosts.map((post) =>
             post.id === postId
               ? { ...post, replyCount: Math.max(0, post.replyCount - 1) }
               : post
@@ -367,12 +434,17 @@ export function useCommunityFeed(options: UseCommunityFeedOptions = {}) {
         }));
       }
     },
-    [loadReplies, resolveActorPayload]
+    [loadReplies, queryClient, resolveActorPayload]
   );
 
   const clear = useCallback(() => {
-    setPosts([]);
-    setPostsError(null);
+    queryClient.setQueryData<FeedPostsResponse>(
+      communityQueryKeys.feedPosts(),
+      {
+        posts: [],
+      }
+    );
+    setPostsLocalError(null);
     setReplyDrafts({});
     setRepliesByPost({});
     setExpandedReplies({});
@@ -384,13 +456,19 @@ export function useCommunityFeed(options: UseCommunityFeedOptions = {}) {
     setIsUpdatingPost({});
     setIsDeletingPost({});
     setIsDeletingReply({});
-  }, []);
+  }, [queryClient]);
+
+  const postsError =
+    postsLocalError ??
+    (postsQueryError
+      ? getErrorMessage(postsQueryError, "커뮤니티 글을 불러오지 못했습니다.")
+      : null);
 
   return {
     posts,
-    isPostsLoading,
+    isPostsLoading: isPostsQueryLoading,
     postsError,
-    isCreatingPost,
+    isCreatingPost: createPostMutation.isPending,
     expandedReplies,
     repliesByPost,
     isRepliesLoading,
