@@ -12,9 +12,13 @@ import {
   ChevronUp,
   Cloud,
 } from "lucide-react";
+import {
+  importProfileSuggestions,
+  loadImportedMember,
+  saveImportedProfileFields,
+} from "../hooks/profile-import-fetch";
 import type { Member } from "../types";
 import { CloudProfilePicker } from "./cloud-profile-picker";
-import { resolveApiHrefForCurrentPath } from "@/lib/app-route-paths";
 
 interface ProfileSuggestions {
   name?: string | null;
@@ -66,7 +70,7 @@ function formatValue(field: string, value: string | null | undefined): string {
 
 function currentValue(
   member: Member,
-  field: string,
+  field: string
 ): string | null | undefined {
   if (field === "name") return member.name;
   if (field === "email") return member.email;
@@ -93,7 +97,7 @@ export function ProfileImportPanel({
   const [phase, setPhase] = useState<Phase>("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [suggestions, setSuggestions] = useState<ProfileSuggestions | null>(
-    null,
+    null
   );
   const [checkedFields, setCheckedFields] = useState<Set<string>>(new Set());
   const [showCloudPicker, setShowCloudPicker] = useState(false);
@@ -119,29 +123,12 @@ export function ProfileImportPanel({
       setErrorMessage(null);
       setSuggestions(null);
       setCheckedFields(new Set());
-
-      const form = new FormData();
-      form.append("file", file);
-
       try {
-        const res = await fetch(
-          resolveApiHrefForCurrentPath(
-            `/api/v1/spaces/${member.spaceId}/members/${member.id}/profile-import`,
-          ),
-          { method: "POST", body: form },
+        const s = await importProfileSuggestions(
+          member.spaceId,
+          member.id,
+          file
         );
-
-        const data = (await res.json()) as
-          | { suggestions: ProfileSuggestions }
-          | { error: string };
-
-        if (!res.ok || "error" in data) {
-          throw new Error(
-            "error" in data ? data.error : "AI 분석에 실패했습니다.",
-          );
-        }
-
-        const s = data.suggestions;
         setSuggestions(s);
 
         /* 신뢰도 high인 필드는 기본 체크 */
@@ -165,12 +152,12 @@ export function ProfileImportPanel({
         setPhase("review");
       } catch (err: unknown) {
         setErrorMessage(
-          err instanceof Error ? err.message : "분석에 실패했습니다.",
+          err instanceof Error ? err.message : "분석에 실패했습니다."
         );
         setPhase("error");
       }
     },
-    [member.spaceId, member.id],
+    [member.spaceId, member.id]
   );
 
   const handleDrop = useCallback(
@@ -180,7 +167,7 @@ export function ProfileImportPanel({
       const file = e.dataTransfer.files[0];
       if (file) void handleFile(file);
     },
-    [handleFile],
+    [handleFile]
   );
 
   const handleSave = useCallback(async () => {
@@ -197,31 +184,9 @@ export function ProfileImportPanel({
     }
 
     try {
-      const res = await fetch(
-        resolveApiHrefForCurrentPath(
-          `/api/v1/spaces/${member.spaceId}/members/${member.id}`,
-        ),
-        {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(patch),
-        },
-      );
+      await saveImportedProfileFields(member.spaceId, member.id, patch);
 
-      if (!res.ok) {
-        const data = (await res.json()) as { error?: string };
-        throw new Error(data.error ?? "저장에 실패했습니다.");
-      }
-
-      const memberRes = await fetch(
-        resolveApiHrefForCurrentPath(`/api/v1/members/${member.id}`),
-      );
-
-      if (!memberRes.ok) {
-        throw new Error("저장된 수강생 정보를 다시 불러오지 못했습니다.");
-      }
-
-      const memberPayload = (await memberRes.json()) as { member: Member };
+      const memberPayload = await loadImportedMember(member.id);
 
       setPhase("done");
       onSaved?.(memberPayload.member);
@@ -236,7 +201,7 @@ export function ProfileImportPanel({
       }, 2000);
     } catch (err: unknown) {
       setErrorMessage(
-        err instanceof Error ? err.message : "저장에 실패했습니다.",
+        err instanceof Error ? err.message : "저장에 실패했습니다."
       );
       setPhase("error");
     }

@@ -204,3 +204,28 @@
 ### 사용자 방향
 
 - 추천 기준으로 진행한다.
+
+## 10차: profile-import panel fetch wrapper 분리
+
+### 작업내용
+
+- `features/student-management/components/profile-import-panel.tsx`에 남아 있는 직접 `fetch()` 호출을 제거한다.
+- AI 프로필 분석, 프로필 PATCH 저장, 저장 후 member reload를 `profile-import-fetch.ts`로 이동한다.
+- student-management fetch wrapper가 `message`와 `error` 응답 필드를 모두 한국어 fallback 전에 읽도록 보강한다.
+
+### 논의 필요
+
+- 프로필 자동완성 전용 응답 타입을 컴포넌트 파일에 둘지 API wrapper 파일로 승격할지.
+
+### 선택지
+
+1. 이번 차수에서 wrapper 파일에 전용 타입을 두고 컴포넌트는 UI 표시용 타입만 유지한다.
+2. 공용 contract 패키지로 즉시 승격한다.
+
+### 추천
+
+- 1번. API 스키마 자체를 변경하지 않는 구조 정리이므로 contract 승격은 별도 API 표준화 작업에서 다룬다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.
