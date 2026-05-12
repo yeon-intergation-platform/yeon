@@ -6,7 +6,6 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.UUID;
 
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,7 +17,6 @@ import world.yeon.backend.member_tabs.write.dto.UpdateMemberTabRequest;
 import world.yeon.backend.member_tabs.write.repository.MemberTabWriteRepository;
 
 @Service
-@Profile("jdbc")
 public class MemberTabWriteService {
 
 	private static final Set<String> PROTECTED_SYSTEM_KEYS = Set.of(

@@ -1,7 +1,6 @@
 package world.yeon.backend.chat_service_friend_requests.controller;
 
 import java.util.UUID;
-import org.springframework.context.annotation.Profile;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -13,7 +12,6 @@ import world.yeon.backend.chat_service_friend_requests.service.ChatServiceFriend
 import world.yeon.backend.chat_service_friend_requests.service.ChatServiceFriendRequestServiceException;
 
 @RestController
-@Profile("jdbc")
 public class ChatServiceFriendRequestController {
 	private final ChatServiceFriendRequestService service;
 

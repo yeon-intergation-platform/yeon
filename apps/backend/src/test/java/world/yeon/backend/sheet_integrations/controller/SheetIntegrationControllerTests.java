@@ -29,7 +29,7 @@ import world.yeon.backend.sheet_integrations.dto.SyncSheetIntegrationResponse;
 import world.yeon.backend.sheet_integrations.service.SheetIntegrationService;
 
 @WebMvcTest(SheetIntegrationController.class)
-@ActiveProfiles("jdbc")
+@ActiveProfiles("dev.local")
 @TestPropertySource(properties = "SPRING_INTERNAL_TOKEN=test-internal-token")
 class SheetIntegrationControllerTests {
 

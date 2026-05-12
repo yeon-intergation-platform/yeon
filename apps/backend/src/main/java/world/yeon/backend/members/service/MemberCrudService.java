@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.UUID;
 
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 
 import world.yeon.backend.members.dto.BulkDeleteMembersRequest;
@@ -23,7 +22,6 @@ import world.yeon.backend.members.dto.UpdateMemberResponse;
 import world.yeon.backend.members.repository.MemberCrudRepository;
 
 @Service
-@Profile("jdbc")
 public class MemberCrudService {
 
 	private final MemberCrudRepository repository;

@@ -1,7 +1,6 @@
 package world.yeon.backend.counseling_record_mutation.controller;
 
 import java.util.UUID;
-import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -17,7 +16,6 @@ import world.yeon.backend.counseling_record_mutation.service.CounselingRecordMut
 import world.yeon.backend.counseling_record_mutation.service.CounselingRecordMutationServiceException;
 
 @RestController
-@Profile("jdbc")
 public class CounselingRecordMutationController {
 	private final CounselingRecordMutationService service;
 

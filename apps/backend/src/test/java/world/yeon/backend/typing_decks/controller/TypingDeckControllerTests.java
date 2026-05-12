@@ -32,7 +32,7 @@ import world.yeon.backend.typing_decks.service.TypingDeckService;
 import world.yeon.backend.typing_decks.service.TypingDeckServiceException;
 
 @WebMvcTest(TypingDeckController.class)
-@ActiveProfiles("jdbc")
+@ActiveProfiles("dev.local")
 @TestPropertySource(properties = "SPRING_INTERNAL_TOKEN=test-internal-token")
 class TypingDeckControllerTests {
 	private static final UUID OWNER_ID = UUID.fromString("00000000-0000-0000-0000-000000000982");

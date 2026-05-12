@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -20,7 +19,6 @@ import world.yeon.backend.sheet_export.read.dto.SheetExportPayloadResponse;
 import world.yeon.backend.sheet_export.snapshot.dto.SheetExportSnapshotItemResponse;
 
 @Service
-@Profile("jdbc")
 public class SheetExportImportContextService {
 
 	private final SheetExportImportContextRepository repository;

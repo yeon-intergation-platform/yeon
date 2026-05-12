@@ -1,7 +1,6 @@
 package world.yeon.backend.chat_service_reports.controller;
 
 import java.util.UUID;
-import org.springframework.context.annotation.Profile;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -13,7 +12,6 @@ import world.yeon.backend.chat_service_reports.service.ChatServiceReportService;
 import world.yeon.backend.chat_service_reports.service.ChatServiceReportServiceException;
 
 @RestController
-@Profile("jdbc")
 public class ChatServiceReportController {
 	private final ChatServiceReportService service;
 

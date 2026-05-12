@@ -21,7 +21,7 @@ import world.yeon.backend.chat_service_friends_overview.dto.ChatServiceProfileSu
 import world.yeon.backend.chat_service_friends_overview.service.ChatServiceFriendsOverviewService;
 
 @WebMvcTest(ChatServiceFriendsOverviewController.class)
-@ActiveProfiles("jdbc")
+@ActiveProfiles("dev.local")
 @TestPropertySource(properties = "SPRING_INTERNAL_TOKEN=test-internal-token")
 class ChatServiceFriendsOverviewControllerTests {
 	private static final UUID CURRENT_PROFILE_ID = UUID.fromString("11111111-1111-4111-8111-111111111111");

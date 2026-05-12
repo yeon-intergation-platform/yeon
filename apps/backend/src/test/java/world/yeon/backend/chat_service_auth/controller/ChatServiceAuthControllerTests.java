@@ -20,7 +20,7 @@ import world.yeon.backend.chat_service_auth.service.ChatServiceAuthService;
 import world.yeon.backend.chat_service_auth.service.ChatServiceAuthServiceException;
 
 @WebMvcTest(ChatServiceAuthController.class)
-@ActiveProfiles("jdbc")
+@ActiveProfiles("dev.local")
 @TestPropertySource(properties = "SPRING_INTERNAL_TOKEN=test-internal-token")
 class ChatServiceAuthControllerTests {
 	@Autowired MockMvc mockMvc;

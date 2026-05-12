@@ -3,7 +3,6 @@ package world.yeon.backend.member_field_values.read.repository;
 import java.math.BigInteger;
 import java.util.List;
 
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Repository;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -12,7 +11,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.EntityManager;
 
 @Repository
-@Profile("jdbc")
 public class MemberFieldValueReadRepository {
 
 	public record TabLookup(Long tabInternalId, Long spaceInternalId) {

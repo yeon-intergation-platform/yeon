@@ -22,7 +22,7 @@ import world.yeon.backend.import_drafts.dto.*;
 import world.yeon.backend.import_drafts.service.ImportDraftService;
 
 @WebMvcTest(ImportDraftController.class)
-@ActiveProfiles("jdbc")
+@ActiveProfiles("dev.local")
 @TestPropertySource(properties = "SPRING_INTERNAL_TOKEN=test-internal-token")
 class ImportDraftControllerTests {
 	private static final UUID OWNER_ID = UUID.fromString("00000000-0000-0000-0000-000000000951");

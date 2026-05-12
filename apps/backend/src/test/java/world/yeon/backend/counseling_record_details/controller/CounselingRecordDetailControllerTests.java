@@ -27,7 +27,7 @@ import world.yeon.backend.counseling_record_details.service.CounselingRecordDeta
 import world.yeon.backend.counseling_record_details.service.CounselingRecordDetailServiceException;
 
 @WebMvcTest(CounselingRecordDetailController.class)
-@ActiveProfiles("jdbc")
+@ActiveProfiles("dev.local")
 @TestPropertySource(properties = "SPRING_INTERNAL_TOKEN=test-internal-token")
 class CounselingRecordDetailControllerTests {
 	private static final UUID USER_ID = UUID.fromString("00000000-0000-0000-0000-000000000991");

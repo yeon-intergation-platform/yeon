@@ -2,7 +2,6 @@ package world.yeon.backend.member_fields.read.service;
 
 import java.util.NoSuchElementException;
 
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 
 import world.yeon.backend.member_fields.read.dto.MemberFieldListResponse;
@@ -10,7 +9,6 @@ import world.yeon.backend.member_fields.read.mapper.MemberFieldReadMapper;
 import world.yeon.backend.member_fields.read.repository.MemberFieldReadRepository;
 
 @Service
-@Profile("jdbc")
 public class MemberFieldReadService {
 
 	private final MemberFieldReadRepository repository;

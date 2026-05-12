@@ -2,7 +2,6 @@ package world.yeon.backend.space_templates.write.repository;
 
 import java.util.List;
 
-import org.springframework.context.annotation.Profile;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 
@@ -10,7 +9,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Repository
-@Profile("jdbc")
 public class SpaceTemplateSnapshotQueryRepository {
 
 	private static final TypeReference<List<OptionRow>> OPTION_LIST_TYPE = new TypeReference<>() {

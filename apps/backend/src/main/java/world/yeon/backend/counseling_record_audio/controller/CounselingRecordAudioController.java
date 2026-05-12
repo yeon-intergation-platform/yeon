@@ -1,7 +1,6 @@
 package world.yeon.backend.counseling_record_audio.controller;
 
 import java.util.UUID;
-import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,7 +13,6 @@ import world.yeon.backend.counseling_record_audio.service.CounselingRecordAudioS
 import world.yeon.backend.counseling_record_audio.service.CounselingRecordAudioServiceException;
 
 @RestController
-@Profile("jdbc")
 public class CounselingRecordAudioController {
 	private final CounselingRecordAudioService service;
 

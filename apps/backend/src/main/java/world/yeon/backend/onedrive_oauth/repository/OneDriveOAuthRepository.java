@@ -5,12 +5,10 @@ import jakarta.persistence.PersistenceContext;
 import java.sql.Timestamp;
 import java.time.OffsetDateTime;
 import java.util.UUID;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 @Repository
-@Profile("jdbc")
 public class OneDriveOAuthRepository {
 	@PersistenceContext
 	private EntityManager entityManager;

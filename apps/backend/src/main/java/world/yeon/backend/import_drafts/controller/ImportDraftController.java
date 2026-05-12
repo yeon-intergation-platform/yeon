@@ -2,7 +2,6 @@ package world.yeon.backend.import_drafts.controller;
 
 import java.util.List;
 import java.util.UUID;
-import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -13,7 +12,6 @@ import world.yeon.backend.import_drafts.service.ImportDraftServiceException;
 
 @Validated
 @RestController
-@Profile("jdbc")
 public class ImportDraftController {
 	private final ImportDraftService service;
 	public ImportDraftController(ImportDraftService service) { this.service = service; }

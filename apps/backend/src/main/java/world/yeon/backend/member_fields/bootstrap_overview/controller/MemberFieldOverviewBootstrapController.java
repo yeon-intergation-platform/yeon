@@ -3,7 +3,6 @@ package world.yeon.backend.member_fields.bootstrap_overview.controller;
 import java.util.NoSuchElementException;
 import java.util.UUID;
 
-import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -19,7 +18,6 @@ import world.yeon.backend.member_fields.bootstrap_overview.service.MemberFieldOv
 
 @Validated
 @RestController
-@Profile("jdbc")
 @RequestMapping("/spaces/{spaceId}/member-tabs/{tabId}/bootstrap-overview-fields")
 public class MemberFieldOverviewBootstrapController {
 

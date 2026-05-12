@@ -23,7 +23,7 @@ import world.yeon.backend.member_risk_profiles.dto.MemberRiskProfilesResponse;
 import world.yeon.backend.member_risk_profiles.service.MemberRiskProfileService;
 
 @WebMvcTest(MemberRiskProfileController.class)
-@ActiveProfiles("jdbc")
+@ActiveProfiles("dev.local")
 @TestPropertySource(properties = "SPRING_INTERNAL_TOKEN=test-internal-token")
 class MemberRiskProfileControllerTests {
 	private static final UUID OWNER_ID = UUID.fromString("00000000-0000-0000-0000-000000000972");

@@ -2,7 +2,6 @@ package world.yeon.backend.card_decks.route.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import java.util.UUID;
-import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -13,7 +12,6 @@ import world.yeon.backend.card_decks.route.service.CardDeckRouteServiceException
 
 @Validated
 @RestController
-@Profile("jdbc")
 public class CardDeckRouteController {
 	private final CardDeckRouteService service;
 

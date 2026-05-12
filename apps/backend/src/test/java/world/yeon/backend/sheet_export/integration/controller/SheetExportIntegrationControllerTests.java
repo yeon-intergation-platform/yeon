@@ -28,7 +28,7 @@ import world.yeon.backend.sheet_export.integration.dto.UpsertSheetExportIntegrat
 import world.yeon.backend.sheet_export.integration.service.SheetExportIntegrationService;
 
 @WebMvcTest(SheetExportIntegrationController.class)
-@ActiveProfiles("jdbc")
+@ActiveProfiles("dev.local")
 @TestPropertySource(properties = "SPRING_INTERNAL_TOKEN=test-internal-token")
 class SheetExportIntegrationControllerTests {
 

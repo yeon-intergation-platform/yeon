@@ -11,7 +11,6 @@ import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import world.yeon.backend.typing_decks.dto.CreateTypingDeckPassageRequest;
@@ -32,7 +31,6 @@ import world.yeon.backend.typing_decks.dto.UpdateTypingDeckRequest;
 import world.yeon.backend.typing_decks.repository.TypingDeckRepository;
 
 @Service
-@Profile("jdbc")
 public class TypingDeckService {
 	private static final Set<String> LANGUAGE_TAGS = Set.of("ko", "en", "mixed", "code");
 	private static final Set<String> VISIBILITIES = Set.of("public", "private");

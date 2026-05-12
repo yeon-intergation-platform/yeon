@@ -30,7 +30,7 @@ import world.yeon.backend.spaces.service.SpaceService;
 import world.yeon.backend.spaces.service.SpaceServiceException;
 
 @WebMvcTest(SpaceController.class)
-@ActiveProfiles("jdbc")
+@ActiveProfiles("dev.local")
 @TestPropertySource(properties = "SPRING_INTERNAL_TOKEN=test-internal-token")
 class SpaceControllerTests {
 	private static final UUID OWNER_ID = UUID.fromString("00000000-0000-0000-0000-000000000942");

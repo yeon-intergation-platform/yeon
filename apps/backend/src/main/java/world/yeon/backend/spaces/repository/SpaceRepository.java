@@ -11,13 +11,11 @@ import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 import world.yeon.backend.member_fields.bootstrap_overview.support.DefaultOverviewFields;
 
 @Repository
-@Profile("jdbc")
 public class SpaceRepository {
 	public record SpaceRow(
 		Long internalId,

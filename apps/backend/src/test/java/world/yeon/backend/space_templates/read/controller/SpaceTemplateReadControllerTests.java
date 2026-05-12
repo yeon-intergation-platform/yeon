@@ -24,7 +24,7 @@ import world.yeon.backend.space_templates.read.dto.SpaceTemplateSummaryResponse;
 import world.yeon.backend.space_templates.read.service.SpaceTemplateReadService;
 
 @WebMvcTest(SpaceTemplateReadController.class)
-@ActiveProfiles("jdbc")
+@ActiveProfiles("dev.local")
 class SpaceTemplateReadControllerTests {
 
 	private static final UUID OWNER_ID =

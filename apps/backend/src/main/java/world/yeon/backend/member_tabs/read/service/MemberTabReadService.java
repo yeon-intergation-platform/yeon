@@ -2,7 +2,6 @@ package world.yeon.backend.member_tabs.read.service;
 
 import java.util.NoSuchElementException;
 
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 
 import world.yeon.backend.member_tabs.read.dto.MemberTabListResponse;
@@ -10,7 +9,6 @@ import world.yeon.backend.member_tabs.read.mapper.MemberTabReadMapper;
 import world.yeon.backend.member_tabs.read.repository.MemberTabReadRepository;
 
 @Service
-@Profile("jdbc")
 public class MemberTabReadService {
 
 	private final MemberTabReadRepository repository;

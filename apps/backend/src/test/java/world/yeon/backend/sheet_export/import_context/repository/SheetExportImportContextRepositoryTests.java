@@ -17,7 +17,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 @SpringBootTest
-@ActiveProfiles("jdbc")
+@ActiveProfiles("dev.local")
 @Testcontainers
 class SheetExportImportContextRepositoryTests {
 	private static final UUID OWNER_ID = UUID.fromString("00000000-0000-0000-0000-000000000796");

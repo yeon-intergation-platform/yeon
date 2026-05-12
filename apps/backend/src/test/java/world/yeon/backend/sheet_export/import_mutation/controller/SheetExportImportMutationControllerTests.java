@@ -24,7 +24,7 @@ import world.yeon.backend.sheet_export.import_mutation.service.SheetExportImport
 import world.yeon.backend.sheet_export.import_mutation.service.SheetExportImportMutationServiceException;
 
 @WebMvcTest(SheetExportImportMutationController.class)
-@ActiveProfiles("jdbc")
+@ActiveProfiles("dev.local")
 @TestPropertySource(properties = "SPRING_INTERNAL_TOKEN=test-internal-token")
 class SheetExportImportMutationControllerTests {
 

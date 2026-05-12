@@ -20,7 +20,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import world.yeon.backend.member_tabs.read.model.MemberTabDefinitionEntity;
 
 @SpringBootTest
-@ActiveProfiles("jdbc")
+@ActiveProfiles("dev.local")
 @Testcontainers
 class MemberTabWriteRepositoryTests {
 

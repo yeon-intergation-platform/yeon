@@ -3,7 +3,6 @@ package world.yeon.backend.member_fields.write.repository;
 import java.math.BigInteger;
 import java.util.List;
 
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -12,7 +11,6 @@ import jakarta.persistence.PersistenceContext;
 import world.yeon.backend.member_fields.read.model.MemberFieldDefinitionEntity;
 
 @Repository
-@Profile("jdbc")
 public class MemberFieldWriteRepository {
 
 	public record TabLookup(Long tabInternalId, Long spaceInternalId) {}

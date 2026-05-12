@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -29,7 +28,6 @@ import world.yeon.backend.sheet_export.read.dto.SheetExportPayloadResponse;
 import world.yeon.backend.sheet_export.snapshot.dto.SheetExportSnapshotItemResponse;
 
 @Service
-@Profile("jdbc")
 public class SheetExportImportEvaluationService {
 
 	private static final String MEMBER_ID_COLUMN = "__yeon_member_id";

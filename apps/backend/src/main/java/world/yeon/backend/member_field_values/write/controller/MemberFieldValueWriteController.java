@@ -2,7 +2,6 @@ package world.yeon.backend.member_field_values.write.controller;
 
 import java.util.UUID;
 
-import org.springframework.context.annotation.Profile;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -21,7 +20,6 @@ import world.yeon.backend.member_field_values.write.service.MemberFieldValueWrit
 
 @Validated
 @RestController
-@Profile("jdbc")
 @RequestMapping("/spaces/{spaceId}/members/{memberId}/field-values")
 public class MemberFieldValueWriteController {
 

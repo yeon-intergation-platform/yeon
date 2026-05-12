@@ -24,7 +24,7 @@ import world.yeon.backend.member_field_values.read.dto.MemberFieldValueListRespo
 import world.yeon.backend.member_field_values.read.service.MemberFieldValueReadService;
 
 @WebMvcTest(MemberFieldValueReadController.class)
-@ActiveProfiles("jdbc")
+@ActiveProfiles("dev.local")
 @TestPropertySource(properties = "SPRING_INTERNAL_TOKEN=test-internal-token")
 class MemberFieldValueReadControllerTests {
 

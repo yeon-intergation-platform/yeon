@@ -26,7 +26,7 @@ import world.yeon.backend.users.service.UserService;
 import world.yeon.backend.users.service.UserServiceException;
 
 @WebMvcTest(UserController.class)
-@ActiveProfiles("jdbc")
+@ActiveProfiles("dev.local")
 @TestPropertySource(properties = "SPRING_INTERNAL_TOKEN=test-internal-token")
 class UserControllerTests {
 	private static final UUID OWNER_ID = UUID.fromString("00000000-0000-0000-0000-000000000931");

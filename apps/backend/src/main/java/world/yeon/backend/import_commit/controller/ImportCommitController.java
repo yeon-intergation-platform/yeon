@@ -1,7 +1,6 @@
 package world.yeon.backend.import_commit.controller;
 
 import java.util.UUID;
-import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -17,7 +16,6 @@ import world.yeon.backend.import_commit.service.ImportCommitServiceException;
 
 @Validated
 @RestController
-@Profile("jdbc")
 public class ImportCommitController {
 	private final ImportCommitService service;
 	public ImportCommitController(ImportCommitService service) { this.service = service; }

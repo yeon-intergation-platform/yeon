@@ -13,6 +13,9 @@ export function cardDecksQueryKey(isAuthenticated: boolean) {
 
 async function fetchCardDecks(): Promise<CardDeckDto[]> {
   const res = await fetch("/api/v1/card-decks", { credentials: "include" });
+  if (res.status === 401) {
+    return listGuestDecks();
+  }
   if (!res.ok) {
     throw new Error("덱 목록을 불러오지 못했습니다.");
   }

@@ -1,7 +1,6 @@
 package world.yeon.backend.home_insight_banners.controller;
 
 import java.util.UUID;
-import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -11,7 +10,6 @@ import world.yeon.backend.home_insight_banners.service.HomeInsightBannerService;
 
 @Validated
 @RestController
-@Profile("jdbc")
 public class HomeInsightBannerController {
 	private final HomeInsightBannerService service;
 	public HomeInsightBannerController(HomeInsightBannerService service) { this.service = service; }

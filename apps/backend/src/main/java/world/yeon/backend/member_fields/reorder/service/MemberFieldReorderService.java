@@ -3,7 +3,6 @@ package world.yeon.backend.member_fields.reorder.service;
 import java.util.List;
 import java.util.NoSuchElementException;
 
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -11,7 +10,6 @@ import world.yeon.backend.member_fields.reorder.dto.OkResponse;
 import world.yeon.backend.member_fields.reorder.repository.MemberFieldReorderRepository;
 
 @Service
-@Profile("jdbc")
 public class MemberFieldReorderService {
 
 	private final MemberFieldReorderRepository repository;

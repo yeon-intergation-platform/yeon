@@ -1,7 +1,6 @@
 package world.yeon.backend.activity_logs.controller;
 
 import java.util.UUID;
-import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -21,7 +20,6 @@ import world.yeon.backend.activity_logs.service.ActivityLogServiceException;
 
 @Validated
 @RestController
-@Profile("jdbc")
 public class ActivityLogController {
 	private final ActivityLogService service;
 

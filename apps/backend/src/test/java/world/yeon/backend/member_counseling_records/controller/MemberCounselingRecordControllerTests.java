@@ -20,7 +20,7 @@ import world.yeon.backend.member_counseling_records.dto.MemberCounselingRecordsR
 import world.yeon.backend.member_counseling_records.service.MemberCounselingRecordService;
 
 @WebMvcTest(MemberCounselingRecordController.class)
-@ActiveProfiles("jdbc")
+@ActiveProfiles("dev.local")
 @TestPropertySource(properties = "SPRING_INTERNAL_TOKEN=test-internal-token")
 class MemberCounselingRecordControllerTests {
 	private static final UUID USER_ID = UUID.fromString("00000000-0000-0000-0000-000000000990");

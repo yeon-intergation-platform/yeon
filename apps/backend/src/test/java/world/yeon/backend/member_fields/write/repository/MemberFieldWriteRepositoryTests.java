@@ -23,7 +23,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import world.yeon.backend.member_fields.read.model.MemberFieldDefinitionEntity;
 
 @SpringBootTest
-@ActiveProfiles("jdbc")
+@ActiveProfiles("dev.local")
 @Testcontainers
 class MemberFieldWriteRepositoryTests {
 

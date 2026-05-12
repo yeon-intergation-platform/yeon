@@ -1,7 +1,6 @@
 package world.yeon.backend.chat_service_blocks.service;
 
 import java.util.UUID;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import world.yeon.backend.chat_service_blocks.dto.ChatServiceBlockProfilesResponse;
@@ -9,7 +8,6 @@ import world.yeon.backend.chat_service_blocks.dto.ChatServiceProfileSummaryRespo
 import world.yeon.backend.chat_service_blocks.repository.ChatServiceBlockRepository;
 
 @Service
-@Profile("jdbc")
 public class ChatServiceBlockService {
 	private final ChatServiceBlockRepository repository;
 

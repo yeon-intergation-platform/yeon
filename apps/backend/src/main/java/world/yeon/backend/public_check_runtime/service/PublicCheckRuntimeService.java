@@ -4,13 +4,11 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.UUID;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import world.yeon.backend.public_check_runtime.dto.*;
 import world.yeon.backend.public_check_runtime.repository.PublicCheckRuntimeRepository;
 
 @Service
-@Profile("jdbc")
 public class PublicCheckRuntimeService {
 	private final PublicCheckRuntimeRepository repository;
 

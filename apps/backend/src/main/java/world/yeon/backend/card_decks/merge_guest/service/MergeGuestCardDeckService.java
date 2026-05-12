@@ -6,7 +6,6 @@ import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import world.yeon.backend.card_decks.merge_guest.dto.MergeGuestCardDeckItemRequest;
 import world.yeon.backend.card_decks.merge_guest.dto.MergeGuestCardDeckRequest;
@@ -15,7 +14,6 @@ import world.yeon.backend.card_decks.merge_guest.dto.MergeGuestResponse;
 import world.yeon.backend.card_decks.merge_guest.repository.MergeGuestCardDeckRepository;
 
 @Service
-@Profile("jdbc")
 public class MergeGuestCardDeckService {
 	private final MergeGuestCardDeckRepository repository;
 

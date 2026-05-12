@@ -15,7 +15,6 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.UUID;
 
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -32,7 +31,6 @@ import world.yeon.backend.sheet_integrations.dto.SyncSheetIntegrationResponse;
 import world.yeon.backend.sheet_integrations.repository.SheetIntegrationRepository;
 
 @Service
-@Profile("jdbc")
 public class SheetIntegrationService {
 
 	private static final String SHEETS_URL = "https://sheets.googleapis.com/v4/spreadsheets";

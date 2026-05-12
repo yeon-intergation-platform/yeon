@@ -5,7 +5,6 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.UUID;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import world.yeon.backend.spaces.dto.CreateSpaceRequest;
@@ -17,7 +16,6 @@ import world.yeon.backend.spaces.dto.UpdateSpaceRequest;
 import world.yeon.backend.spaces.repository.SpaceRepository;
 
 @Service
-@Profile("jdbc")
 public class SpaceService {
 	private final SpaceRepository repository;
 

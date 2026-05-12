@@ -21,7 +21,7 @@ import world.yeon.backend.counseling_record_mutation.service.CounselingRecordMut
 import world.yeon.backend.counseling_record_mutation.service.CounselingRecordMutationServiceException;
 
 @WebMvcTest(CounselingRecordMutationController.class)
-@ActiveProfiles("jdbc")
+@ActiveProfiles("dev.local")
 @TestPropertySource(properties = "SPRING_INTERNAL_TOKEN=test-internal-token")
 class CounselingRecordMutationControllerTests {
 	private static final UUID USER_ID = UUID.fromString("00000000-0000-0000-0000-000000000993");

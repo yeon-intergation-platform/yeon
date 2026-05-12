@@ -22,7 +22,7 @@ import world.yeon.backend.members.dto.*;
 import world.yeon.backend.members.service.MemberCrudService;
 
 @WebMvcTest(MemberCrudController.class)
-@ActiveProfiles("jdbc")
+@ActiveProfiles("dev.local")
 @TestPropertySource(properties = "SPRING_INTERNAL_TOKEN=test-internal-token")
 class MemberCrudControllerTests {
 	private static final UUID OWNER_ID = UUID.fromString("00000000-0000-0000-0000-000000000912");

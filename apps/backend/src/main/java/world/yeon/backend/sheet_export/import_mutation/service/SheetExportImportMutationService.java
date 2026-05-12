@@ -3,7 +3,6 @@ package world.yeon.backend.sheet_export.import_mutation.service;
 import java.util.List;
 import java.util.UUID;
 
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,7 +16,6 @@ import world.yeon.backend.sheet_export.import_mutation.dto.SheetExportImportMuta
 import world.yeon.backend.sheet_export.import_mutation.repository.SheetExportImportMutationRepository;
 
 @Service
-@Profile("jdbc")
 public class SheetExportImportMutationService {
 
 	private final SheetExportImportMutationRepository repository;

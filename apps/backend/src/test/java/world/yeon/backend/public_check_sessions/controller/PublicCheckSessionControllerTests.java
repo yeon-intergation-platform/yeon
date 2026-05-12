@@ -26,7 +26,7 @@ import world.yeon.backend.public_check_sessions.dto.UpdatePublicCheckSessionResp
 import world.yeon.backend.public_check_sessions.service.PublicCheckSessionService;
 
 @WebMvcTest(PublicCheckSessionController.class)
-@ActiveProfiles("jdbc")
+@ActiveProfiles("dev.local")
 @TestPropertySource(properties = "SPRING_INTERNAL_TOKEN=test-internal-token")
 class PublicCheckSessionControllerTests {
 	private static final UUID OWNER_ID = UUID.fromString("00000000-0000-0000-0000-000000000942");

@@ -5,11 +5,9 @@ import jakarta.persistence.PersistenceContext;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Repository;
 
 @Repository
-@Profile("jdbc")
 public class ChatServiceFriendsOverviewRepository {
 	public record ProfileRow(UUID id, String nickname, String ageLabel, String regionLabel, String avatarUrl, String bio, int points) {}
 	public record FriendLinkRow(UUID requesterId, UUID addresseeId, String status) {}

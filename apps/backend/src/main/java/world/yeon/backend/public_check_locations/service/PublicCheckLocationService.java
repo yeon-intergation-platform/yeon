@@ -6,14 +6,12 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import world.yeon.backend.public_check_locations.dto.PublicCheckLocationResultResponse;
 import world.yeon.backend.public_check_locations.dto.PublicCheckLocationSearchResponse;
 import world.yeon.backend.public_check_locations.repository.PublicCheckLocationRepository;
 
 @Service
-@Profile("jdbc")
 public class PublicCheckLocationService {
 	private static final int MAX_RESULTS = 6;
 

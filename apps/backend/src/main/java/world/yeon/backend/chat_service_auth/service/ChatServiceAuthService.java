@@ -4,14 +4,12 @@ import java.security.MessageDigest;
 import java.time.OffsetDateTime;
 import java.util.HexFormat;
 import java.util.UUID;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import world.yeon.backend.chat_service_auth.dto.*;
 import world.yeon.backend.chat_service_auth.repository.ChatServiceAuthRepository;
 
 @Service
-@Profile("jdbc")
 public class ChatServiceAuthService {
 	private static final long OTP_TTL_MS = 5 * 60 * 1000L;
 	private static final long SESSION_TTL_MS = 30L * 24 * 60 * 60 * 1000;

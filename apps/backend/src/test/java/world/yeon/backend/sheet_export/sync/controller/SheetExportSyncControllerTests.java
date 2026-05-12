@@ -29,7 +29,7 @@ import world.yeon.backend.sheet_export.sync.dto.FinalizeSheetExportSyncRequest;
 import world.yeon.backend.sheet_export.sync.dto.FinalizeSheetExportSyncResponse;
 
 @WebMvcTest(SheetExportSyncController.class)
-@ActiveProfiles("jdbc")
+@ActiveProfiles("dev.local")
 @TestPropertySource(properties = "SPRING_INTERNAL_TOKEN=test-internal-token")
 class SheetExportSyncControllerTests {
 

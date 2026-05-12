@@ -27,7 +27,7 @@ import world.yeon.backend.member_fields.write.service.MemberFieldWriteService;
 import world.yeon.backend.member_fields.write.service.MemberFieldWriteServiceException;
 
 @WebMvcTest(MemberFieldWriteController.class)
-@ActiveProfiles("jdbc")
+@ActiveProfiles("dev.local")
 @TestPropertySource(properties = "SPRING_INTERNAL_TOKEN=test-internal-token")
 class MemberFieldWriteControllerTests {
 	private static final UUID OWNER_ID = UUID.fromString("00000000-0000-0000-0000-000000000783");

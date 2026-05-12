@@ -24,7 +24,7 @@ import world.yeon.backend.member_tabs.read.dto.MemberTabListResponse;
 import world.yeon.backend.member_tabs.read.service.MemberTabReadService;
 
 @WebMvcTest(MemberTabReadController.class)
-@ActiveProfiles("jdbc")
+@ActiveProfiles("dev.local")
 @TestPropertySource(properties = "SPRING_INTERNAL_TOKEN=test-internal-token")
 class MemberTabReadControllerTests {
 

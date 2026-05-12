@@ -2,7 +2,6 @@ package world.yeon.backend.chat_service_reports.service;
 
 import java.util.Set;
 import java.util.UUID;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import world.yeon.backend.chat_service_reports.dto.ChatServiceCreateReportResponse;
@@ -10,7 +9,6 @@ import world.yeon.backend.chat_service_reports.dto.ChatServiceReportResponse;
 import world.yeon.backend.chat_service_reports.repository.ChatServiceReportRepository;
 
 @Service
-@Profile("jdbc")
 public class ChatServiceReportService {
 	private static final Set<String> TARGET_TYPES = Set.of("feed_post", "ask_post", "profile", "chat_message");
 	private final ChatServiceReportRepository repository;

@@ -9,12 +9,10 @@ import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 @Repository
-@Profile("jdbc")
 public class CardDeckRouteRepository {
 	public record CardDeckRow(Long internalId, String publicId, String ownerUserId, String title, String description, OffsetDateTime createdAt, OffsetDateTime updatedAt) {}
 	public record CardDeckListRow(Long internalId, String publicId, String ownerUserId, String title, String description, OffsetDateTime createdAt, OffsetDateTime updatedAt, int itemCount) {}

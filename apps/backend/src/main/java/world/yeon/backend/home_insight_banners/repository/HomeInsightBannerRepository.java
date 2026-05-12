@@ -9,12 +9,10 @@ import java.time.OffsetDateTime;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.UUID;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 @Repository
-@Profile("jdbc")
 public class HomeInsightBannerRepository {
 	public record DismissalRow(String bannerKey, OffsetDateTime hiddenUntil) {}
 	private final EntityManager entityManager;

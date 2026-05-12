@@ -9,7 +9,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import world.yeon.backend.student_board_history.dto.MemberStudentBoardHistoryResponse;
 import world.yeon.backend.student_board_history.dto.StudentBoardDailyCellResponse;
@@ -17,7 +16,6 @@ import world.yeon.backend.student_board_history.dto.StudentBoardHistoryItemRespo
 import world.yeon.backend.student_board_history.repository.StudentBoardHistoryRepository;
 
 @Service
-@Profile("jdbc")
 public class StudentBoardHistoryService {
 	private static final DateTimeFormatter DATE_KEY_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 	private static final Map<String, Integer> HISTORY_PERIOD_DAY_COUNT = Map.of(

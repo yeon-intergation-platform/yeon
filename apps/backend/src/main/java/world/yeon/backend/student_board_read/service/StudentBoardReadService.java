@@ -10,7 +10,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.UUID;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import world.yeon.backend.student_board_read.dto.PublicCheckSessionSummaryResponse;
 import world.yeon.backend.student_board_read.dto.StudentBoardDailyCellResponse;
@@ -19,7 +18,6 @@ import world.yeon.backend.student_board_read.dto.StudentBoardRowResponse;
 import world.yeon.backend.student_board_read.repository.StudentBoardReadRepository;
 
 @Service
-@Profile("jdbc")
 public class StudentBoardReadService {
 	private static final DateTimeFormatter DATE_KEY_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 	private static final Map<String, Integer> HISTORY_PERIOD_DAY_COUNT = Map.of(

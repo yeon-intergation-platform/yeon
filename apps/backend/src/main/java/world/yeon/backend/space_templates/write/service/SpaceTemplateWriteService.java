@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.UUID;
 
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,7 +23,6 @@ import world.yeon.backend.space_templates.write.repository.SpaceTemplateSnapshot
 import world.yeon.backend.space_templates.write.repository.SpaceTemplateWriteRepository;
 
 @Service
-@Profile("jdbc")
 public class SpaceTemplateWriteService {
 
 	private final SpaceTemplateWriteRepository repository;

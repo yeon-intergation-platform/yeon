@@ -2,7 +2,6 @@ package world.yeon.backend.student_board_read.controller;
 
 import java.util.NoSuchElementException;
 import java.util.UUID;
-import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -18,7 +17,6 @@ import world.yeon.backend.student_board_read.service.StudentBoardReadServiceExce
 
 @Validated
 @RestController
-@Profile("jdbc")
 public class StudentBoardReadController {
 	private final StudentBoardReadService service;
 

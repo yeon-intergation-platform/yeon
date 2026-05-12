@@ -3,7 +3,6 @@ package world.yeon.backend.counseling_record_audio.service;
 import java.io.IOException;
 import java.net.URI;
 import java.util.Set;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
@@ -15,45 +14,39 @@ import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 
 @Component
-@Profile("jdbc")
 public class CounselingRecordAudioStorage {
 	private static final Set<Integer> RETRYABLE_STATUS_CODES = Set.of(408, 425, 429, 500, 502, 503, 504);
 	private static final String REGION = "auto";
-	private final S3Client client;
+	private final String accountId;
+	private final String accessKeyId;
+	private final String secretAccessKey;
+	private final String endpoint;
 	private final String bucketName;
+	private S3Client client;
 
 	public CounselingRecordAudioStorage() {
-		String accountId = requireEnv("R2_ACCOUNT_ID", "R2 저장소 연결");
-		String accessKeyId = requireEnv("R2_ACCESS_KEY_ID", "R2 업로드 인증");
-		String secretAccessKey = requireEnv("R2_SECRET_ACCESS_KEY", "R2 업로드 인증");
-		this.bucketName = requireEnv("R2_BUCKET_NAME", "R2 저장 버킷");
-		String endpoint = trimToNull(System.getenv("R2_ENDPOINT"));
-		if (endpoint == null) {
-			endpoint = "https://" + accountId + ".r2.cloudflarestorage.com";
+		this.accountId = trimToNull(System.getenv("R2_ACCOUNT_ID"));
+		this.accessKeyId = trimToNull(System.getenv("R2_ACCESS_KEY_ID"));
+		this.secretAccessKey = trimToNull(System.getenv("R2_SECRET_ACCESS_KEY"));
+		this.bucketName = trimToNull(System.getenv("R2_BUCKET_NAME"));
+		String configuredEndpoint = trimToNull(System.getenv("R2_ENDPOINT"));
+		if (configuredEndpoint == null && accountId != null) {
+			configuredEndpoint = "https://" + accountId + ".r2.cloudflarestorage.com";
 		}
-
-		this.client = S3Client.builder()
-			.endpointOverride(URI.create(endpoint))
-			.region(software.amazon.awssdk.regions.Region.of(REGION))
-			.credentialsProvider(
-				StaticCredentialsProvider.create(
-					AwsBasicCredentials.create(accessKeyId, secretAccessKey)
-				)
-			)
-			.forcePathStyle(true)
-			.build();
+		this.endpoint = configuredEndpoint;
 	}
 
 	public AudioObject read(String objectKey, String rangeHeader) {
 		for (int attempt = 1; attempt <= 3; attempt += 1) {
 			try {
+				S3Client storageClient = client();
 				GetObjectRequest.Builder builder = GetObjectRequest.builder()
 					.bucket(bucketName)
 					.key(objectKey);
 				if (rangeHeader != null && !rangeHeader.isBlank()) {
 					builder.range(rangeHeader);
 				}
-				ResponseBytes<GetObjectResponse> response = client.getObjectAsBytes(builder.build());
+				ResponseBytes<GetObjectResponse> response = storageClient.getObjectAsBytes(builder.build());
 				return new AudioObject(
 					response.asByteArray(),
 					response.response().contentLength(),
@@ -80,7 +73,8 @@ public class CounselingRecordAudioStorage {
 	public void delete(String objectKey) {
 		for (int attempt = 1; attempt <= 3; attempt += 1) {
 			try {
-				client.deleteObject(builder -> builder.bucket(bucketName).key(objectKey));
+				S3Client storageClient = client();
+				storageClient.deleteObject(builder -> builder.bucket(bucketName).key(objectKey));
 				return;
 			} catch (AwsServiceException error) {
 				if (attempt == 3 || !RETRYABLE_STATUS_CODES.contains(error.statusCode())) {
@@ -94,12 +88,33 @@ public class CounselingRecordAudioStorage {
 		}
 	}
 
-	private String requireEnv(String valueName, String context) {
-		String value = trimToNull(System.getenv(valueName));
+	private synchronized S3Client client() {
+		if (client != null) {
+			return client;
+		}
+		requireConfigured("R2_ACCOUNT_ID", accountId, "R2 저장소 연결");
+		requireConfigured("R2_ACCESS_KEY_ID", accessKeyId, "R2 업로드 인증");
+		requireConfigured("R2_SECRET_ACCESS_KEY", secretAccessKey, "R2 업로드 인증");
+		requireConfigured("R2_BUCKET_NAME", bucketName, "R2 저장 버킷");
+		requireConfigured("R2_ENDPOINT", endpoint, "R2 저장소 연결");
+
+		client = S3Client.builder()
+			.endpointOverride(URI.create(endpoint))
+			.region(software.amazon.awssdk.regions.Region.of(REGION))
+			.credentialsProvider(
+				StaticCredentialsProvider.create(
+					AwsBasicCredentials.create(accessKeyId, secretAccessKey)
+				)
+			)
+			.forcePathStyle(true)
+			.build();
+		return client;
+	}
+
+	private void requireConfigured(String valueName, String value, String context) {
 		if (value == null) {
 			throw new IllegalStateException(valueName + " 환경변수가 없어 " + context + "을(를) 진행할 수 없습니다.");
 		}
-		return value;
 	}
 
 	private String trimToNull(String value) {

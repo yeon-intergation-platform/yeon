@@ -5,11 +5,9 @@ services:
     image: ${YEON_BACKEND_IMAGE:-ghcr.io/hyeonjun0527/yeon-backend:develop}
     restart: unless-stopped
     environment:
-      SPRING_PROFILES_ACTIVE: jdbc
+      SPRING_PROFILES_ACTIVE: staging
       SPRING_INTERNAL_TOKEN: ${SPRING_INTERNAL_TOKEN}
-      BACKEND_JDBC_DATABASE_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-yeon_develop}
-      BACKEND_JDBC_DATABASE_USERNAME: ${POSTGRES_USER:-yeon_develop}
-      BACKEND_JDBC_DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-change-me}
+      BACKEND_DATABASE_URL: ${DATABASE_URL}
       AUTH_SECRET: ${AUTH_SECRET}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}

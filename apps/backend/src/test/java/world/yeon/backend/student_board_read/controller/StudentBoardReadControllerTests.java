@@ -23,7 +23,7 @@ import world.yeon.backend.student_board_read.dto.StudentBoardRowResponse;
 import world.yeon.backend.student_board_read.service.StudentBoardReadService;
 
 @WebMvcTest(StudentBoardReadController.class)
-@ActiveProfiles("jdbc")
+@ActiveProfiles("dev.local")
 @TestPropertySource(properties = "SPRING_INTERNAL_TOKEN=test-internal-token")
 class StudentBoardReadControllerTests {
 	private static final UUID OWNER_ID = UUID.fromString("00000000-0000-0000-0000-000000000952");

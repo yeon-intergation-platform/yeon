@@ -3,14 +3,12 @@ package world.yeon.backend.sheet_export.import_mutation.repository;
 import java.math.BigInteger;
 import java.util.List;
 
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import jakarta.persistence.EntityManager;
 
 @Repository
-@Profile("jdbc")
 public class SheetExportImportMutationRepository {
 
 	private final EntityManager entityManager;

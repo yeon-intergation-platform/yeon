@@ -1,7 +1,6 @@
 package world.yeon.backend.member_risk_profiles.controller;
 
 import java.util.UUID;
-import org.springframework.context.annotation.Profile;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -15,7 +14,6 @@ import world.yeon.backend.member_risk_profiles.service.MemberRiskProfileService;
 
 @Validated
 @RestController
-@Profile("jdbc")
 public class MemberRiskProfileController {
 	private final MemberRiskProfileService service;
 

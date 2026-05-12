@@ -1,7 +1,6 @@
 package world.yeon.backend.chat_service_blocks.controller;
 
 import java.util.UUID;
-import org.springframework.context.annotation.Profile;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -14,7 +13,6 @@ import world.yeon.backend.chat_service_blocks.service.ChatServiceBlockService;
 import world.yeon.backend.chat_service_blocks.service.ChatServiceBlockServiceException;
 
 @RestController
-@Profile("jdbc")
 public class ChatServiceBlockController {
 	private final ChatServiceBlockService service;
 

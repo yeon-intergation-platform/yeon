@@ -1,0 +1,177 @@
+
+> @yeon/web@0.0.0 predev /home/osuma/coding_stuffs/yeon/apps/web
+> rm -f .next/dev/trace .next/dev/trace-turbopack && node ../../scripts/build-character-registry.mjs
+
+[character-registry] generated 24 characters → apps/web/src/features/typing-service/characters/registry.generated.ts
+
+> @yeon/web@0.0.0 dev /home/osuma/coding_stuffs/yeon/apps/web
+> drizzle-kit migrate --config=drizzle.config.ts && next dev --turbopack
+
+[90mReading config file '/home/osuma/coding_stuffs/yeon/apps/web/drizzle.config.ts'[39m
+[90mUsing 'pg' driver for database querying[39m
+[⣷] applying migrations...[2K[1G[[32m✓[39m] migrations applied successfully![1m[38;2;173;127;168m▲ Next.js 16.2.6[39m[22m (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://10.111.40.65:3000
+- Environments: .env
+[32m[1m✓[22m[39m Ready in 415ms
+- Experiments (use with caution):
+  · clientTraceMetadata
+  · optimizePackageImports
+
+ GET / [32m200[39m in 1197ms[2m (next.js: 199ms, proxy.ts: 172ms, application-code: 827ms)[22m
+[36m[browser][39m [33mYou have Reduced Motion enabled on your device. Animations may not appear as expected.. For more information and steps for solving, visit https://motion.dev/troubleshooting/reduced-motion-disabled[39m [2m(.next/dev/static/chunks/0yaq_next_dist_0xj_c5g._.js:2478:13)[22m
+ POST /api/v1/community-presence [32m200[39m in 158ms[2m (next.js: 107ms, proxy.ts: 31ms, application-code: 21ms)[22m
+ GET /typing-service [32m200[39m in 352ms[2m (next.js: 53ms, proxy.ts: 5ms, application-code: 294ms)[22m
+ POST /api/v1/community-presence [32m200[39m in 109ms[2m (next.js: 60ms, proxy.ts: 36ms, application-code: 13ms)[22m
+ POST /api/v1/community-presence [32m200[39m in 343ms[2m (next.js: 298ms, proxy.ts: 41ms, application-code: 4ms)[22m
+ GET /api/v1/typing-character-frames [32m200[39m in 463ms[2m (next.js: 330ms, proxy.ts: 44ms, application-code: 89ms)[22m
+ GET /api/v1/chat-service/feed [32m200[39m in 473ms[2m (next.js: 381ms, proxy.ts: 49ms, application-code: 43ms)[22m
+ GET /api/v1/typing-decks?scope=all [33m401[39m in 610ms[2m (next.js: 299ms, proxy.ts: 45ms, application-code: 267ms)[22m
+ GET /api/v1/typing-decks?scope=all [33m401[39m in 30ms[2m (next.js: 4ms, proxy.ts: 4ms, application-code: 22ms)[22m
+ GET /typing-service/decks [32m200[39m in 258ms[2m (next.js: 66ms, proxy.ts: 8ms, application-code: 184ms)[22m
+ GET /api/v1/chat-service/feed [32m200[39m in 40ms[2m (next.js: 3ms, proxy.ts: 16ms, application-code: 20ms)[22m
+ POST /api/v1/community-presence [32m200[39m in 56ms[2m (next.js: 27ms, proxy.ts: 13ms, application-code: 16ms)[22m
+ POST /api/v1/community-presence [32m200[39m in 99ms[2m (next.js: 43ms, proxy.ts: 47ms, application-code: 10ms)[22m
+ GET /api/v1/typing-decks?scope=default [32m200[39m in 115ms[2m (next.js: 56ms, proxy.ts: 50ms, application-code: 10ms)[22m
+ GET /api/v1/chat-service/feed [32m200[39m in 161ms[2m (next.js: 69ms, proxy.ts: 52ms, application-code: 39ms)[22m
+ GET /api/v1/typing-decks?scope=all [33m401[39m in 187ms[2m (next.js: 35ms, proxy.ts: 43ms, application-code: 109ms)[22m
+ GET /api/v1/typing-decks?scope=public [33m401[39m in 69ms[2m (next.js: 16ms, proxy.ts: 10ms, application-code: 44ms)[22m
+ GET /api/v1/typing-decks?scope=all [33m401[39m in 35ms[2m (next.js: 5ms, proxy.ts: 7ms, application-code: 23ms)[22m
+ GET /api/v1/typing-decks?scope=public [33m401[39m in 23ms[2m (next.js: 2ms, proxy.ts: 3ms, application-code: 17ms)[22m
+ GET /api/v1/typing-decks?scope=mine [33m401[39m in 56ms[2m (next.js: 16ms, proxy.ts: 8ms, application-code: 32ms)[22m
+ GET /api/v1/typing-decks?scope=mine [33m401[39m in 29ms[2m (next.js: 2ms, proxy.ts: 4ms, application-code: 23ms)[22m
+ GET /api/v1/chat-service/feed [32m200[39m in 15ms[2m (next.js: 2ms, proxy.ts: 3ms, application-code: 9ms)[22m
+ POST /api/v1/community-presence [32m200[39m in 12ms[2m (next.js: 4ms, proxy.ts: 4ms, application-code: 3ms)[22m
+ POST /api/v1/community-presence [32m200[39m in 17ms[2m (next.js: 9ms, proxy.ts: 5ms, application-code: 3ms)[22m
+ GET /api/v1/chat-service/feed [32m200[39m in 12ms[2m (next.js: 2ms, proxy.ts: 3ms, application-code: 6ms)[22m
+ POST /api/v1/community-presence [32m200[39m in 15ms[2m (next.js: 4ms, proxy.ts: 6ms, application-code: 5ms)[22m
+ POST /api/v1/community-presence [32m200[39m in 21ms[2m (next.js: 9ms, proxy.ts: 7ms, application-code: 4ms)[22m
+ GET /api/v1/chat-service/feed [32m200[39m in 14ms[2m (next.js: 2ms, proxy.ts: 4ms, application-code: 8ms)[22m
+ POST /api/v1/community-presence [32m200[39m in 12ms[2m (next.js: 4ms, proxy.ts: 4ms, application-code: 4ms)[22m
+ POST /api/v1/community-presence [32m200[39m in 22ms[2m (next.js: 15ms, proxy.ts: 4ms, application-code: 3ms)[22m
+ GET /api/v1/chat-service/feed [32m200[39m in 24ms[2m (next.js: 3ms, proxy.ts: 6ms, application-code: 14ms)[22m
+ POST /api/v1/community-presence [32m200[39m in 35ms[2m (next.js: 16ms, proxy.ts: 6ms, application-code: 14ms)[22m
+ POST /api/v1/community-presence [32m200[39m in 41ms[2m (next.js: 27ms, proxy.ts: 12ms, application-code: 2ms)[22m
+ GET /api/v1/chat-service/feed [32m200[39m in 48ms[2m (next.js: 28ms, proxy.ts: 12ms, application-code: 8ms)[22m
+ GET /community [32m200[39m in 160ms[2m (next.js: 48ms, proxy.ts: 5ms, application-code: 107ms)[22m
+ POST /api/v1/community-presence [32m200[39m in 72ms[2m (next.js: 32ms, proxy.ts: 32ms, application-code: 8ms)[22m
+ POST /api/v1/community-presence [32m200[39m in 88ms[2m (next.js: 46ms, proxy.ts: 34ms, application-code: 8ms)[22m
+ GET /api/v1/chat-service/feed [32m200[39m in 111ms[2m (next.js: 40ms, proxy.ts: 34ms, application-code: 37ms)[22m
+ GET /api/v1/chat-service/feed [32m200[39m in 36ms[2m (next.js: 7ms, proxy.ts: 10ms, application-code: 18ms)[22m
+ GET /card-service [32m200[39m in 320ms[2m (next.js: 49ms, proxy.ts: 4ms, application-code: 267ms)[22m
+ POST /api/v1/community-presence [32m200[39m in 88ms[2m (next.js: 48ms, proxy.ts: 31ms, application-code: 9ms)[22m
+ POST /api/v1/community-presence [32m200[39m in 184ms[2m (next.js: 141ms, proxy.ts: 38ms, application-code: 6ms)[22m
+ GET /api/v1/card-decks [33m401[39m in 241ms[2m (next.js: 144ms, proxy.ts: 43ms, application-code: 54ms)[22m
+ GET /api/v1/chat-service/feed [32m200[39m in 216ms[2m (next.js: 147ms, proxy.ts: 39ms, application-code: 29ms)[22m
+ GET /api/v1/card-decks [33m401[39m in 21ms[2m (next.js: 3ms, proxy.ts: 3ms, application-code: 15ms)[22m
+ GET /api/v1/chat-service/feed [32m200[39m in 23ms[2m (next.js: 4ms, proxy.ts: 6ms, application-code: 13ms)[22m
+ POST /api/v1/community-presence [32m200[39m in 14ms[2m (next.js: 6ms, proxy.ts: 3ms, application-code: 5ms)[22m
+ POST /api/v1/community-presence [32m200[39m in 16ms[2m (next.js: 3ms, proxy.ts: 10ms, application-code: 3ms)[22m
+ GET /api/v1/chat-service/feed [32m200[39m in 24ms[2m (next.js: 3ms, proxy.ts: 5ms, application-code: 17ms)[22m
+ POST /api/v1/community-presence [32m200[39m in 13ms[2m (next.js: 6ms, proxy.ts: 4ms, application-code: 3ms)[22m
+ POST /api/v1/community-presence [32m200[39m in 15ms[2m (next.js: 4ms, proxy.ts: 8ms, application-code: 2ms)[22m
+ GET /api/v1/chat-service/feed [32m200[39m in 11ms[2m (next.js: 2ms, proxy.ts: 2ms, application-code: 6ms)[22m
+ GET /typing-service [32m200[39m in 85ms[2m (next.js: 7ms, proxy.ts: 3ms, application-code: 75ms)[22m
+ POST /api/v1/community-presence [32m200[39m in 77ms[2m (next.js: 54ms, proxy.ts: 7ms, application-code: 16ms)[22m
+ POST /api/v1/community-presence [32m200[39m in 131ms[2m (next.js: 51ms, proxy.ts: 77ms, application-code: 3ms)[22m
+ GET /api/v1/typing-character-frames [32m200[39m in 155ms[2m (next.js: 51ms, proxy.ts: 73ms, application-code: 32ms)[22m
+ GET /api/v1/typing-decks?scope=all [33m401[39m in 172ms[2m (next.js: 54ms, proxy.ts: 73ms, application-code: 45ms)[22m
+ GET /api/v1/chat-service/feed [32m200[39m in 160ms[2m (next.js: 51ms, proxy.ts: 72ms, application-code: 36ms)[22m
+ GET /api/v1/typing-decks?scope=all [33m401[39m in 21ms[2m (next.js: 4ms, proxy.ts: 3ms, application-code: 13ms)[22m
+ GET /api/v1/chat-service/feed [32m200[39m in 16ms[2m (next.js: 3ms, proxy.ts: 5ms, application-code: 8ms)[22m
+ GET /typing-service/decks [32m200[39m in 115ms[2m (next.js: 3ms, proxy.ts: 4ms, application-code: 109ms)[22m
+ POST /api/v1/community-presence [32m200[39m in 65ms[2m (next.js: 36ms, proxy.ts: 22ms, application-code: 7ms)[22m
+ POST /api/v1/community-presence [32m200[39m in 80ms[2m (next.js: 48ms, proxy.ts: 25ms, application-code: 7ms)[22m
+ GET /api/v1/typing-decks?scope=default [32m200[39m in 92ms[2m (next.js: 55ms, proxy.ts: 28ms, application-code: 9ms)[22m
+ GET /api/v1/chat-service/feed [32m200[39m in 128ms[2m (next.js: 63ms, proxy.ts: 37ms, application-code: 27ms)[22m
+ GET /api/v1/typing-decks?scope=all [33m401[39m in 147ms[2m (next.js: 44ms, proxy.ts: 24ms, application-code: 79ms)[22m
+ GET /api/v1/typing-decks?scope=all [33m401[39m in 34ms[2m (next.js: 3ms, proxy.ts: 6ms, application-code: 25ms)[22m
+ GET /api/v1/typing-decks?scope=mine [33m401[39m in 26ms[2m (next.js: 5ms, proxy.ts: 5ms, application-code: 16ms)[22m
+ GET /api/v1/typing-decks?scope=public [33m401[39m in 29ms[2m (next.js: 6ms, proxy.ts: 6ms, application-code: 17ms)[22m
+ GET /api/v1/typing-decks?scope=public [33m401[39m in 26ms[2m (next.js: 6ms, proxy.ts: 4ms, application-code: 16ms)[22m
+ GET /api/v1/typing-decks?scope=mine [33m401[39m in 95ms[2m (next.js: 20ms, proxy.ts: 26ms, application-code: 48ms)[22m
+ GET /api/v1/typing-decks?scope=public [33m401[39m in 60ms[2m (next.js: 13ms, proxy.ts: 13ms, application-code: 34ms)[22m
+ GET /api/v1/card-decks [33m401[39m in 37ms[2m (next.js: 11ms, proxy.ts: 15ms, application-code: 10ms)[22m
+ GET /api/v1/typing-decks?scope=public [33m401[39m in 186ms[2m (next.js: 38ms, proxy.ts: 45ms, application-code: 103ms)[22m
+[36m[browser][39m [31mUncaught Error: Internal Next.js error: Router action dispatched before initialization.[39m
+[31m    at dispatchAppRouterAction (.next/dev/static/chunks/0yaq_next_dist_client_0dar_4-._.js:917:37)
+    at <unknown> (.next/dev/static/chunks/0yaq_next_dist_client_0dar_4-._.js:11824:61)
+    at startTransition (.next/dev/static/chunks/0yaq_next_dist_compiled_0k4uri1._.js:1280:31)
+    at Object.hmrRefresh (.next/dev/static/chunks/0yaq_next_dist_client_0dar_4-._.js:11823:40)
+    at <unknown> (.next/dev/static/chunks/0yaq_next_dist_client_0dar_4-._.js:13991:64)
+    at startTransition (.next/dev/static/chunks/0yaq_next_dist_compiled_0k4uri1._.js:1280:31)
+    at processMessage (.next/dev/static/chunks/0yaq_next_dist_client_0dar_4-._.js:13990:44)
+    at WebSocket.handleMessage (.next/dev/static/chunks/0yaq_next_dist_client_0dar_4-._.js:13359:52)[39m
+[36m[browser][39m [31mUncaught Error: Internal Next.js error: Router action dispatched before initialization.[39m
+[31m    at dispatchAppRouterAction (.next/dev/static/chunks/0yaq_next_dist_client_0dar_4-._.js:917:37)
+    at <unknown> (.next/dev/static/chunks/0yaq_next_dist_client_0dar_4-._.js:11824:61)
+    at startTransition (.next/dev/static/chunks/0yaq_next_dist_compiled_0k4uri1._.js:1280:31)
+    at Object.hmrRefresh (.next/dev/static/chunks/0yaq_next_dist_client_0dar_4-._.js:11823:40)
+    at <unknown> (.next/dev/static/chunks/0yaq_next_dist_client_0dar_4-._.js:13991:64)
+    at startTransition (.next/dev/static/chunks/0yaq_next_dist_compiled_0k4uri1._.js:1280:31)
+    at processMessage (.next/dev/static/chunks/0yaq_next_dist_client_0dar_4-._.js:13990:44)
+    at WebSocket.handleMessage (.next/dev/static/chunks/0yaq_next_dist_client_0dar_4-._.js:13359:52)[39m
+[36m[browser][39m [31mUncaught Error: Internal Next.js error: Router action dispatched before initialization.[39m
+[31m    at dispatchAppRouterAction (.next/dev/static/chunks/0yaq_next_dist_client_0dar_4-._.js:917:37)
+    at <unknown> (.next/dev/static/chunks/0yaq_next_dist_client_0dar_4-._.js:11824:61)
+    at startTransition (.next/dev/static/chunks/0yaq_next_dist_compiled_0k4uri1._.js:1280:31)
+    at Object.hmrRefresh (.next/dev/static/chunks/0yaq_next_dist_client_0dar_4-._.js:11823:40)
+    at <unknown> (.next/dev/static/chunks/0yaq_next_dist_client_0dar_4-._.js:13991:64)
+    at startTransition (.next/dev/static/chunks/0yaq_next_dist_compiled_0k4uri1._.js:1280:31)
+    at processMessage (.next/dev/static/chunks/0yaq_next_dist_client_0dar_4-._.js:13990:44)
+    at WebSocket.handleMessage (.next/dev/static/chunks/0yaq_next_dist_client_0dar_4-._.js:13359:52)[39m
+[36m[browser][39m [31mUncaught Error: Internal Next.js error: Router action dispatched before initialization.[39m
+[31m    at dispatchAppRouterAction (.next/dev/static/chunks/0yaq_next_dist_client_0dar_4-._.js:917:37)
+    at <unknown> (.next/dev/static/chunks/0yaq_next_dist_client_0dar_4-._.js:11824:61)
+    at startTransition (.next/dev/static/chunks/0yaq_next_dist_compiled_0k4uri1._.js:1280:31)
+    at Object.hmrRefresh (.next/dev/static/chunks/0yaq_next_dist_client_0dar_4-._.js:11823:40)
+    at <unknown> (.next/dev/static/chunks/0yaq_next_dist_client_0dar_4-._.js:13991:64)
+    at startTransition (.next/dev/static/chunks/0yaq_next_dist_compiled_0k4uri1._.js:1280:31)
+    at processMessage (.next/dev/static/chunks/0yaq_next_dist_client_0dar_4-._.js:13990:44)
+    at WebSocket.handleMessage (.next/dev/static/chunks/0yaq_next_dist_client_0dar_4-._.js:13359:52)[39m
+(node:1458299) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/osuma/coding_stuffs/yeon/apps/web/postcss.config.js is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /home/osuma/coding_stuffs/yeon/apps/web/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m[1m✓[22m[39m Compiled in 16.2s
+[36m[browser][39m [31mUncaught Error: Internal Next.js error: Router action dispatched before initialization.[39m
+[31m    at dispatchAppRouterAction (.next/dev/static/chunks/0yaq_next_dist_client_0dar_4-._.js:917:37)
+    at <unknown> (.next/dev/static/chunks/0yaq_next_dist_client_0dar_4-._.js:11824:61)
+    at startTransition (.next/dev/static/chunks/0yaq_next_dist_compiled_0k4uri1._.js:1280:31)
+    at Object.hmrRefresh (.next/dev/static/chunks/0yaq_next_dist_client_0dar_4-._.js:11823:40)
+    at <unknown> (.next/dev/static/chunks/0yaq_next_dist_client_0dar_4-._.js:13991:64)
+    at startTransition (.next/dev/static/chunks/0yaq_next_dist_compiled_0k4uri1._.js:1280:31)
+    at processMessage (.next/dev/static/chunks/0yaq_next_dist_client_0dar_4-._.js:13990:44)
+    at WebSocket.handleMessage (.next/dev/static/chunks/0yaq_next_dist_client_0dar_4-._.js:13359:52)[39m
+[36m[browser][39m [31mUncaught Error: Internal Next.js error: Router action dispatched before initialization.[39m
+[31m    at dispatchAppRouterAction (.next/dev/static/chunks/0yaq_next_dist_client_0dar_4-._.js:917:37)
+    at <unknown> (.next/dev/static/chunks/0yaq_next_dist_client_0dar_4-._.js:11824:61)
+    at startTransition (.next/dev/static/chunks/0yaq_next_dist_compiled_0k4uri1._.js:1280:31)
+    at Object.hmrRefresh (.next/dev/static/chunks/0yaq_next_dist_client_0dar_4-._.js:11823:40)
+    at <unknown> (.next/dev/static/chunks/0yaq_next_dist_client_0dar_4-._.js:13991:64)
+    at startTransition (.next/dev/static/chunks/0yaq_next_dist_compiled_0k4uri1._.js:1280:31)
+    at processMessage (.next/dev/static/chunks/0yaq_next_dist_client_0dar_4-._.js:13990:44)
+    at WebSocket.handleMessage (.next/dev/static/chunks/0yaq_next_dist_client_0dar_4-._.js:13359:52)[39m
+[36m[browser][39m [31mUncaught Error: Internal Next.js error: Router action dispatched before initialization.[39m
+[31m    at dispatchAppRouterAction (.next/dev/static/chunks/0yaq_next_dist_client_0dar_4-._.js:917:37)
+    at <unknown> (.next/dev/static/chunks/0yaq_next_dist_client_0dar_4-._.js:11824:61)
+    at startTransition (.next/dev/static/chunks/0yaq_next_dist_compiled_0k4uri1._.js:1280:31)
+    at Object.hmrRefresh (.next/dev/static/chunks/0yaq_next_dist_client_0dar_4-._.js:11823:40)
+    at <unknown> (.next/dev/static/chunks/0yaq_next_dist_client_0dar_4-._.js:13991:64)
+    at startTransition (.next/dev/static/chunks/0yaq_next_dist_compiled_0k4uri1._.js:1280:31)
+    at processMessage (.next/dev/static/chunks/0yaq_next_dist_client_0dar_4-._.js:13990:44)
+    at WebSocket.handleMessage (.next/dev/static/chunks/0yaq_next_dist_client_0dar_4-._.js:13359:52)[39m
+ GET /api/v1/typing-decks?scope=mine [32m200[39m in 2.1s[2m (next.js: 1608ms, proxy.ts: 382ms, application-code: 132ms)[22m
+ GET /api/v1/card-decks [33m401[39m in 2.4s[2m (next.js: 728ms, proxy.ts: 1687ms, application-code: 14ms)[22m
+ GET /api/v1/typing-decks?scope=public [32m200[39m in 909ms[2m (next.js: 727ms, proxy.ts: 72ms, application-code: 109ms)[22m
+[36m[browser][39m [31mUncaught Error: Internal Next.js error: Router action dispatched before initialization.[39m
+[31m    at dispatchAppRouterAction (.next/dev/static/chunks/0yaq_next_dist_client_0dar_4-._.js:917:37)
+    at <unknown> (.next/dev/static/chunks/0yaq_next_dist_client_0dar_4-._.js:11824:61)
+    at startTransition (.next/dev/static/chunks/0yaq_next_dist_compiled_0k4uri1._.js:1280:31)
+    at Object.hmrRefresh (.next/dev/static/chunks/0yaq_next_dist_client_0dar_4-._.js:11823:40)
+    at <unknown> (.next/dev/static/chunks/0yaq_next_dist_client_0dar_4-._.js:13991:64)
+    at startTransition (.next/dev/static/chunks/0yaq_next_dist_compiled_0k4uri1._.js:1280:31)
+    at processMessage (.next/dev/static/chunks/0yaq_next_dist_client_0dar_4-._.js:13990:44)
+    at WebSocket.handleMessage (.next/dev/static/chunks/0yaq_next_dist_client_0dar_4-._.js:13359:52)[39m
+ GET /typing-service/decks [32m200[39m in 4.0s[2m (next.js: 950ms, proxy.ts: 309ms, application-code: 2.7s)[22m
+ GET /card-service [32m200[39m in 1184ms[2m (next.js: 209ms, proxy.ts: 38ms, application-code: 937ms)[22m
