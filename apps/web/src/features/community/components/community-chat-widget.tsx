@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { MessageCircle, X } from "lucide-react";
 
@@ -31,9 +31,9 @@ export function CommunityChatWidget({
   className,
 }: CommunityChatWidgetProps) {
   const [messageBody, setMessageBody] = useState("");
-  const [nicknameDraft, setNicknameDraft] = useState("");
   const [isCollapsed, setIsCollapsed] = useState(false);
   const messageInputRef = useRef<HTMLInputElement | null>(null);
+  const messageListRef = useRef<HTMLDivElement | null>(null);
   const shouldReduceMotion = useReducedMotion();
 
   const {
@@ -42,24 +42,22 @@ export function CommunityChatWidget({
     messageError,
     isSendingMessage,
     sendMessage,
-    currentGuestNickname,
-    setGuestNickname,
+    currentUserId,
+    activeRoomPeerNickname,
     activePresenceCount,
   } = useCommunityChat({
     pollIntervalMs: variant === "compact" ? 8000 : 5000,
   });
 
-  useEffect(() => {
-    if (currentGuestNickname) {
-      setNicknameDraft(currentGuestNickname);
-    }
-  }, [currentGuestNickname]);
 
   const isCompact = variant === "compact";
   const isFeed = variant === "feed";
   const canSendMessage = !isSendingMessage;
-  const visibleMessages = isFeed ? messages.slice(-3) : messages;
-  const showNicknameInput = !isFeed;
+  const visibleMessages = useMemo(
+    () => (isFeed ? messages.slice(-3) : messages),
+    [isFeed, messages]
+  );
+  const showNicknameInput = false;
   const compactContainerMotion = isCompact
     ? {
         initial: false,
@@ -88,6 +86,16 @@ export function CommunityChatWidget({
             },
       }
     : {};
+
+  useEffect(() => {
+    const listElement = messageListRef.current;
+    if (!listElement) {
+      return;
+    }
+
+    listElement.scrollTop = listElement.scrollHeight;
+  }, [visibleMessages]);
+
   const compactToggleButton = isCompact ? (
     <motion.button
       type="button"
@@ -216,10 +224,11 @@ export function CommunityChatWidget({
             ) : null}
 
             <div
+              ref={messageListRef}
               className={[
                 "rounded-xl border border-[#eee] bg-[#fafafa] p-2.5",
-                isCompact ? "h-[220px]" : isFeed ? "h-[96px]" : "h-[360px]",
-                "overflow-y-auto",
+                isCompact ? "h-[240px]" : isFeed ? "h-[180px]" : "h-[420px]",
+                "overflow-y-auto overscroll-contain",
               ].join(" ")}
             >
               {isMessagesLoading ? (
@@ -234,8 +243,10 @@ export function CommunityChatWidget({
                 <div className="space-y-1.5">
                   {visibleMessages.map((message) => {
                     const isMine =
-                      currentGuestNickname !== null &&
-                      message.author.nickname === currentGuestNickname;
+                      currentUserId !== null && message.senderId === currentUserId;
+                    const senderName = isMine
+                      ? "나"
+                      : activeRoomPeerNickname ?? "상대";
 
                     return (
                       <div
@@ -243,7 +254,7 @@ export function CommunityChatWidget({
                         className="grid grid-cols-[72px_42px_minmax(0,1fr)] items-baseline gap-2 text-[12px] leading-[1.45]"
                       >
                         <span className="truncate font-semibold text-[#555]">
-                          {isMine ? "나" : message.author.nickname}
+                          {senderName}
                         </span>
                         <span className="font-mono text-[10px] text-[#999]">
                           {formatMessageTime(message.createdAt)}
@@ -266,13 +277,16 @@ export function CommunityChatWidget({
                   return;
                 }
 
-                setGuestNickname(nicknameDraft);
-                void sendMessage(trimmed).then(() => {
-                  setMessageBody("");
-                  window.requestAnimationFrame(() => {
+                void sendMessage(trimmed)
+                  .then(() => {
+                    setMessageBody("");
+                    window.requestAnimationFrame(() => {
+                      messageInputRef.current?.focus();
+                    });
+                  })
+                  .catch(() => {
                     messageInputRef.current?.focus();
                   });
-                });
               }}
               className={[
                 "grid gap-2",
@@ -283,21 +297,21 @@ export function CommunityChatWidget({
             >
               {showNicknameInput ? (
                 <input
-                  value={nicknameDraft}
-                  onChange={(event) => setNicknameDraft(event.target.value)}
+                  value=""
+                  onChange={() => {}}
                   placeholder="닉네임"
                   className="h-9 rounded-xl border border-[#ddd] px-3 text-[13px] outline-none focus:border-[#111]"
                   maxLength={40}
-                  disabled={!canSendMessage}
+                  disabled
                 />
               ) : null}
               <input
                 ref={messageInputRef}
                 value={messageBody}
                 onChange={(event) => setMessageBody(event.target.value)}
-                placeholder="메시지 입력"
+                placeholder={isFeed ? "채팅 메시지 입력" : "메시지 입력"}
                 className="h-9 rounded-xl border border-[#ddd] px-3 text-[13px] outline-none focus:border-[#111]"
-                maxLength={400}
+                maxLength={1000}
               />
               <button
                 type="submit"

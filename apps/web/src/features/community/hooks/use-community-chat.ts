@@ -6,7 +6,11 @@ import {
   readPresenceSessionId,
   sendPresenceHeartbeat,
 } from "../community-presence";
-import { chatServiceApi, type ChatServiceFeedPost } from "../chat-service-api";
+import {
+  chatServiceApi,
+  type ChatServiceMessage,
+  type ChatServiceRoom,
+} from "../chat-service-api";
 
 type ErrorState = string | null;
 
@@ -14,70 +18,16 @@ type UseCommunityChatOptions = {
   pollIntervalMs?: number;
 };
 
-type CommunityChatGuest = {
-  guestNickname: string;
-  guestPassword: string;
-};
-
-const COMMUNITY_CHAT_GUEST_STORAGE_KEY = "yeon-community-chat-guest";
-
-function createFallbackRandomId() {
-  return Math.random().toString(36).slice(2, 10);
-}
-
-function createCommunityChatGuest(): CommunityChatGuest {
-  const randomId =
-    globalThis.crypto && "randomUUID" in globalThis.crypto
-      ? globalThis.crypto.randomUUID().slice(0, 8)
-      : createFallbackRandomId();
-
-  return {
-    guestNickname: "익명이",
-    guestPassword: `guest-${randomId}-${Date.now()}`,
-  };
-}
-
-function readCommunityChatGuest(): CommunityChatGuest {
-  if (typeof window === "undefined") {
-    return createCommunityChatGuest();
-  }
-
-  const raw = window.localStorage.getItem(COMMUNITY_CHAT_GUEST_STORAGE_KEY);
-
-  if (raw) {
-    try {
-      const parsed = JSON.parse(raw) as Partial<CommunityChatGuest>;
-      if (parsed.guestNickname?.trim() && parsed.guestPassword?.trim()) {
-        return {
-          guestNickname: parsed.guestNickname.trim(),
-          guestPassword: parsed.guestPassword.trim(),
-        };
-      }
-    } catch {
-      window.localStorage.removeItem(COMMUNITY_CHAT_GUEST_STORAGE_KEY);
-    }
-  }
-
-  const created = createCommunityChatGuest();
-  window.localStorage.setItem(
-    COMMUNITY_CHAT_GUEST_STORAGE_KEY,
-    JSON.stringify(created)
-  );
-
-  return created;
-}
-
 export function useCommunityChat({
   pollIntervalMs = 6000,
 }: UseCommunityChatOptions = {}) {
-  const [guest, setGuest] = useState<CommunityChatGuest | null>(null);
-  const [messages, setMessages] = useState<ChatServiceFeedPost[]>([]);
+  const [messages, setMessages] = useState<ChatServiceMessage[]>([]);
+  const [activeRoom, setActiveRoom] = useState<ChatServiceRoom | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [isMessagesLoading, setIsMessagesLoading] = useState(true);
   const [messageError, setMessageError] = useState<ErrorState>(null);
   const [isSendingMessage, setIsSendingMessage] = useState(false);
   const [activePresenceCount, setActivePresenceCount] = useState(1);
-
-  const currentGuestNickname = guest?.guestNickname ?? null;
 
   const sortedMessages = useMemo(() => {
     return [...messages].sort(
@@ -90,8 +40,29 @@ export function useCommunityChat({
     setMessageError(null);
 
     try {
-      const response = await chatServiceApi.listFeedPosts();
-      setMessages(response.posts);
+      const sessionResponse = await chatServiceApi.getSession();
+      const userId = sessionResponse.session?.user.id ?? null;
+      setCurrentUserId(userId);
+
+      if (!sessionResponse.authenticated || !userId) {
+        setActiveRoom(null);
+        setMessages([]);
+        setMessageError("채팅은 채팅 서비스 로그인 후 사용할 수 있습니다.");
+        return;
+      }
+
+      const roomsResponse = await chatServiceApi.listRooms();
+      const selectedRoom = roomsResponse.rooms[0] ?? null;
+      setActiveRoom(selectedRoom);
+
+      if (!selectedRoom) {
+        setMessages([]);
+        setMessageError("열린 채팅방이 없습니다. 친구 채팅방을 만든 뒤 이용해주세요.");
+        return;
+      }
+
+      const roomResponse = await chatServiceApi.getRoom(selectedRoom.id);
+      setMessages(roomResponse.messages);
     } catch (error) {
       if (error instanceof Error) {
         setMessageError(error.message);
@@ -105,7 +76,6 @@ export function useCommunityChat({
   }, []);
 
   useEffect(() => {
-    setGuest(readCommunityChatGuest());
     void loadMessages();
   }, [loadMessages]);
 
@@ -143,25 +113,6 @@ export function useCommunityChat({
     return () => window.clearInterval(intervalId);
   }, [loadMessages, pollIntervalMs]);
 
-  const setGuestNickname = useCallback(
-    (nickname: string) => {
-      const trimmedNickname = nickname.trim();
-      const previous = guest ?? readCommunityChatGuest();
-      const next = {
-        ...previous,
-        guestNickname: trimmedNickname || previous.guestNickname,
-      };
-
-      setGuest(next);
-      if (typeof window !== "undefined") {
-        window.localStorage.setItem(
-          COMMUNITY_CHAT_GUEST_STORAGE_KEY,
-          JSON.stringify(next)
-        );
-      }
-    },
-    [guest]
-  );
 
   const sendMessage = useCallback(
     async (message: string) => {
@@ -171,16 +122,17 @@ export function useCommunityChat({
         return;
       }
 
-      const actor = guest ?? readCommunityChatGuest();
-      if (!guest) {
-        setGuest(actor);
+      if (!activeRoom) {
+        setMessageError("전송할 채팅방이 없습니다. 채팅방을 만든 뒤 이용해주세요.");
+        throw new Error("전송할 채팅방이 없습니다.");
       }
 
       setMessageError(null);
       setIsSendingMessage(true);
 
       try {
-        await chatServiceApi.createFeedPost(trimmed, actor);
+        const response = await chatServiceApi.sendMessage(activeRoom.id, trimmed);
+        setMessages((current) => [...current, response.message]);
         await loadMessages();
       } catch (error) {
         if (error instanceof Error) {
@@ -193,7 +145,7 @@ export function useCommunityChat({
         setIsSendingMessage(false);
       }
     },
-    [guest, loadMessages]
+    [activeRoom, loadMessages]
   );
 
   return {
@@ -202,8 +154,8 @@ export function useCommunityChat({
     messageError,
     isSendingMessage,
     sendMessage,
-    currentGuestNickname,
-    setGuestNickname,
+    currentUserId,
+    activeRoomPeerNickname: activeRoom?.peer.nickname ?? null,
     activePresenceCount,
   };
 }
