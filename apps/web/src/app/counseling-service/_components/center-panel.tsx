@@ -1,4 +1,3 @@
-import { useMemo } from "react";
 import { Loader2, Link2, Link2Off } from "lucide-react";
 import styles from "../workspace.module.css";
 import {
@@ -8,13 +7,9 @@ import {
 import { inferFailurePresentation } from "../_lib/failure-presentation";
 import type { RecordItem } from "../_lib/types";
 import type { RecordMemberMismatchWarning } from "../_lib/record-member-mismatch";
-import { fmtTime, fmtMs } from "../_lib/utils";
+import { fmtTime } from "../_lib/utils";
 import { AnalysisCards } from "@/features/counseling-record-workspace/components/analysis-cards";
-import { buildTranscriptDisplayBlocks } from "@/lib/counseling-transcript-display";
-
-const EMPTY_TRANSCRIPT_DISPLAY_BLOCKS: ReturnType<
-  typeof buildTranscriptDisplayBlocks
-> = [];
+import { TranscriptDetails } from "@/features/counseling-record-workspace/components/transcript-details";
 
 type RetryFeedback = {
   message: string | null;
@@ -59,20 +54,6 @@ export function CenterPanel({
   retryPending,
   retryFeedback,
 }: CenterPanelProps) {
-  const transcriptDisplayBlocks = useMemo(
-    () =>
-      selected
-        ? buildTranscriptDisplayBlocks(selected.transcript)
-        : EMPTY_TRANSCRIPT_DISPLAY_BLOCKS,
-    [selected]
-  );
-  const transcriptSummaryText =
-    selected && transcriptDisplayBlocks.length > 0
-      ? `화자 턴 ${transcriptDisplayBlocks.length}개 · ${selected.transcript.length}개 세그먼트`
-      : selected && selected.transcript.length > 0
-        ? `${selected.transcript.length}개 세그먼트`
-        : "";
-
   /* 기록 목록은 있지만 아직 선택하지 않은 상태 */
   if (!selected) {
     return (
@@ -284,41 +265,12 @@ export function CenterPanel({
             ) : null}
           </div>
 
-          <details className="mt-4" open>
-            <summary className="text-[13px] font-semibold text-text-secondary cursor-pointer select-none mb-3 hover:text-text transition-colors">
-              전사 원문 {transcriptSummaryText && `(${transcriptSummaryText})`}
-            </summary>
-            {transcriptLoading ? (
-              <div className="text-text-dim text-[13px] py-6">
-                전사 내용을 불러오는 중...
-              </div>
-            ) : selected.transcript.length === 0 ? (
-              <div className="text-text-dim text-[13px] py-6">
-                부분 원문이 아직 준비되지 않았습니다.
-              </div>
-            ) : (
-              selected.transcript.map((seg, i) => (
-                <div
-                  key={seg.id ?? i}
-                  className="flex gap-[10px] py-2 border-b border-[rgba(255,255,255,0.03)] text-[13px]"
-                >
-                  <span className="font-mono text-[10px] text-text-dim min-w-[38px] pt-[3px]">
-                    {fmtMs(seg.startMs)}
-                  </span>
-                  <span
-                    className={`text-[10px] font-semibold min-w-[32px] pt-[3px] ${
-                      seg.speakerTone === "teacher"
-                        ? "text-[#60a5fa]"
-                        : "text-green"
-                    }`}
-                  >
-                    {seg.speakerLabel}
-                  </span>
-                  <span className="flex-1 text-text">{seg.text}</span>
-                </div>
-              ))
-            )}
-          </details>
+          <TranscriptDetails
+            transcript={selected.transcript}
+            loading={transcriptLoading}
+            emptyMessage="부분 원문이 아직 준비되지 않았습니다."
+            defaultOpen
+          />
         </div>
       </div>
     );
@@ -507,42 +459,12 @@ export function CenterPanel({
             <AnalysisCards analysis={selected.analysisResult} />
           )}
 
-          {/* 전사 텍스트 */}
-          <details className="mt-4" open={!selected.analysisResult}>
-            <summary className="text-[13px] font-semibold text-text-secondary cursor-pointer select-none mb-3 hover:text-text transition-colors">
-              전사 원문 {transcriptSummaryText && `(${transcriptSummaryText})`}
-            </summary>
-            {transcriptLoading ? (
-              <div className="text-text-dim text-[13px] py-6">
-                전사 내용을 불러오는 중...
-              </div>
-            ) : selected.transcript.length === 0 ? (
-              <div className="text-text-dim text-[13px] py-6">
-                전사 내용이 없습니다.
-              </div>
-            ) : (
-              selected.transcript.map((seg, i) => (
-                <div
-                  key={seg.id ?? i}
-                  className="flex gap-[10px] py-2 border-b border-[rgba(255,255,255,0.03)] text-[13px]"
-                >
-                  <span className="font-mono text-[10px] text-text-dim min-w-[38px] pt-[3px]">
-                    {fmtMs(seg.startMs)}
-                  </span>
-                  <span
-                    className={`text-[10px] font-semibold min-w-[32px] pt-[3px] ${
-                      seg.speakerTone === "teacher"
-                        ? "text-[#60a5fa]"
-                        : "text-green"
-                    }`}
-                  >
-                    {seg.speakerLabel}
-                  </span>
-                  <span className="flex-1 text-text">{seg.text}</span>
-                </div>
-              ))
-            )}
-          </details>
+          <TranscriptDetails
+            transcript={selected.transcript}
+            loading={transcriptLoading}
+            emptyMessage="전사 내용이 없습니다."
+            defaultOpen={!selected.analysisResult}
+          />
         </div>
       </div>
     );
