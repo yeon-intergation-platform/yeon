@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { counselingWorkspaceFetchJsonOr } from "./counseling-workspace-fetch";
 import { counselingWorkspaceQueryKeys } from "./counseling-workspace-query-keys";
 import { resolveApiHrefForCurrentPath } from "@/lib/app-route-paths";
 import type { RecordItem } from "../_lib/types";
@@ -44,13 +45,11 @@ export function useSpaceMembers(
 } {
   const { data, isPending } = useQuery({
     queryKey: counselingWorkspaceQueryKeys.spaceMembers(spaceId),
-    queryFn: async () => {
-      const res = await fetch(
-        resolveApiHrefForCurrentPath(`/api/v1/spaces/${spaceId}/members`)
-      );
-      if (!res.ok) return { members: [] as SpaceMember[] };
-      return res.json() as Promise<{ members: SpaceMember[] }>;
-    },
+    queryFn: async () =>
+      counselingWorkspaceFetchJsonOr<{ members: SpaceMember[] }>(
+        resolveApiHrefForCurrentPath(`/api/v1/spaces/${spaceId}/members`),
+        { members: [] }
+      ),
     enabled: !!spaceId,
   });
 
