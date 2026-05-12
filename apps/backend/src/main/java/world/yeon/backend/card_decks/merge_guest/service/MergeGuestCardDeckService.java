@@ -47,8 +47,8 @@ public class MergeGuestCardDeckService {
 
 			List<Object[]> insertRows = new ArrayList<>();
 			for (MergeGuestCardDeckItemRequest item : items) {
-				String frontText = trimToNull(item.frontText(), 2000);
-				String backText = trimToNull(item.backText(), 2000);
+				String frontText = trimToNull(item.frontText(), 20000);
+				String backText = trimToNull(item.backText(), 20000);
 				if (frontText == null || backText == null) {
 					throw new MergeGuestCardDeckServiceException(
 						400,
