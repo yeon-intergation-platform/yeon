@@ -17,12 +17,8 @@ COPY . .
 RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
     pnpm dlx turbo@^2 prune @yeon/race-server --docker
 
-# ── Stage 2: install dependencies ───────────────────────────────────────────
+# ── Stage 2: install build dependencies ─────────────────────────────────────
 FROM base AS deps
-
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends git ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
@@ -32,15 +28,14 @@ COPY --from=pruner /app/out/pnpm-lock.yaml ./pnpm-lock.yaml
 RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
     pnpm install --frozen-lockfile
 
-# ── Stage 3: production deploy tree ─────────────────────────────────────────
-FROM deps AS deploy
+# ── Stage 3: JS runtime bundle ──────────────────────────────────────────────
+FROM deps AS builder
 
 WORKDIR /app
 
 COPY --from=pruner /app/out/full/ .
 
-RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
-    pnpm --filter @yeon/race-server deploy --prod --legacy /prod/race-server
+RUN pnpm --filter @yeon/race-server build
 
 # ── Stage 4: production runner ──────────────────────────────────────────────
 FROM gcr.io/distroless/nodejs22-debian12:nonroot AS runner
@@ -51,8 +46,8 @@ ENV NODE_ENV=production
 ENV PORT=2567
 ENV HOME=/tmp
 
-COPY --from=deploy --chown=65532:65532 /prod/race-server ./
+COPY --from=builder --chown=65532:65532 /app/apps/race-server/dist ./dist
 
 EXPOSE 2567
 
-CMD ["node_modules/tsx/dist/cli.mjs", "src/index.ts"]
+CMD ["dist/index.js"]

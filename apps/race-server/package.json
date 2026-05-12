@@ -5,19 +5,22 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "start": "tsx src/index.ts",
+    "start": "node dist/index.js",
     "lint": "eslint src --ext .ts",
-    "typecheck": "tsc -p tsconfig.json"
+    "typecheck": "tsc -p tsconfig.json",
+    "build": "esbuild src/index.ts --bundle --platform=node --format=esm --target=node22 --outfile=dist/index.js --banner:js=\"import { createRequire as __createRequire } from 'node:module';const require = __createRequire(import.meta.url);\""
   },
   "dependencies": {
+    "@colyseus/core": "^0.17.41",
+    "@colyseus/schema": "^4.0.20",
     "@colyseus/ws-transport": "^0.17.13",
-    "@yeon/race-shared": "workspace:*",
-    "colyseus": "^0.17.9",
-    "tsx": "^4.21.0"
+    "@yeon/race-shared": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^25.6.0",
     "@yeon/config": "workspace:*",
+    "esbuild": "^0.27.7",
+    "tsx": "^4.21.0",
     "typescript": "^6.0.2"
   }
 }

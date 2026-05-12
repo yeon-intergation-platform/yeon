@@ -49,7 +49,7 @@ import {
   type TypingRoomStatus,
   type TypingRoomSummary,
 } from "@yeon/race-shared";
-import { type Client, Room } from "colyseus";
+import { type Client, Room } from "@colyseus/core";
 import { createHmac, randomInt, timingSafeEqual } from "node:crypto";
 
 type RoomParticipant = {
