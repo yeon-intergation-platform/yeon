@@ -20,6 +20,10 @@ RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
 # ── Stage 2: install dependencies ───────────────────────────────────────────
 FROM base AS deps
 
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends git ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 
 COPY --from=pruner /app/out/json/ .
@@ -28,26 +32,27 @@ COPY --from=pruner /app/out/pnpm-lock.yaml ./pnpm-lock.yaml
 RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
     pnpm install --frozen-lockfile
 
-# ── Stage 3: production runner ──────────────────────────────────────────────
-FROM deps AS runner
+# ── Stage 3: production deploy tree ─────────────────────────────────────────
+FROM deps AS deploy
 
 WORKDIR /app
 
 COPY --from=pruner /app/out/full/ .
 
+RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
+    pnpm --filter @yeon/race-server deploy --prod --legacy /prod/race-server
+
+# ── Stage 4: production runner ──────────────────────────────────────────────
+FROM gcr.io/distroless/nodejs22-debian12:nonroot AS runner
+
+WORKDIR /app
+
 ENV NODE_ENV=production
 ENV PORT=2567
-ENV HOME=/home/race
-ENV COREPACK_HOME=/home/race/.cache/node/corepack
+ENV HOME=/tmp
 
-RUN groupadd --system --gid 1001 nodejs \
-    && useradd --system --uid 1001 --gid nodejs --home-dir /home/race --create-home race \
-    && mkdir -p /home/race/.cache/node/corepack \
-    && corepack prepare pnpm@10.33.0 --activate \
-    && chown -R race:nodejs /home/race
-
-USER race
+COPY --from=deploy --chown=65532:65532 /prod/race-server ./
 
 EXPOSE 2567
 
-CMD ["pnpm", "--filter", "@yeon/race-server", "start"]
+CMD ["node_modules/tsx/dist/cli.mjs", "src/index.ts"]

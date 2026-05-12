@@ -19,18 +19,16 @@ COPY apps/backend/src ./src
 RUN --mount=type=cache,target=/root/.gradle \
     ./gradlew --no-daemon bootJar
 
-FROM eclipse-temurin:21-jre-jammy AS runner
+FROM eclipse-temurin:21-jre-alpine AS runner
 
 ENV SPRING_PROFILES_ACTIVE=prod
 
 WORKDIR /app
 
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends curl \
-    && rm -rf /var/lib/apt/lists/*
+RUN apk add --no-cache curl
 
-RUN groupadd --system --gid 1001 spring \
-    && useradd --system --uid 1001 --gid spring spring
+RUN addgroup -S -g 1001 spring \
+    && adduser -S -u 1001 -G spring spring
 
 COPY --from=builder /app/build/libs/*.jar /app/app.jar
 
