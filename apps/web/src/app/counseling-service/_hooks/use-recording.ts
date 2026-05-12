@@ -3,6 +3,7 @@
 import { useState, useRef, useCallback } from "react";
 import type { CounselingRecordDetail } from "@yeon/api-contract/counseling-records";
 import { resolveApiHrefForCurrentPath } from "@/lib/app-route-paths";
+import { counselingWorkspaceFetchJson } from "./counseling-workspace-fetch";
 import type { RecordItem } from "../_lib/types";
 import { fmtDuration, fmtDurationMs, createTimestamp } from "../_lib/utils";
 
@@ -109,20 +110,16 @@ export function useRecording({
         }
         formData.append("audioDurationMs", String(elapsedRef.current * 1000));
 
-        const res = await fetch(
+        const data = await counselingWorkspaceFetchJson<{
+          record: CounselingRecordDetail;
+        }>(
           resolveApiHrefForCurrentPath("/api/v1/counseling-records"),
           {
             method: "POST",
             body: formData,
           },
+          "녹음 파일을 업로드하지 못했습니다."
         );
-
-        if (!res.ok) {
-          const text = await res.text().catch(() => "");
-          throw new Error(text || "업로드에 실패했습니다.");
-        }
-
-        const data = (await res.json()) as { record: CounselingRecordDetail };
         const item = data.record;
 
         const realRecord: RecordItem = {
@@ -172,7 +169,7 @@ export function useRecording({
         return p + 1;
       });
     }, 1000);
-  }, [onUploadComplete, onUploadError]);
+  }, [getDefaultRecordContext, onUploadComplete, onUploadError]);
 
   const stop = useCallback(() => {
     if (timerRef.current) {
