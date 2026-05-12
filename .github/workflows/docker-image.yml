@@ -22,6 +22,7 @@ on:
       - "apps/backend/**"
       - "apps/web/**"
       - "apps/race-server/**"
+      - "apps/mobile/**"
       - "packages/**"
   workflow_dispatch:
 
@@ -49,6 +50,7 @@ jobs:
       web: ${{ steps.scope.outputs.web }}
       backend: ${{ steps.scope.outputs.backend }}
       race: ${{ steps.scope.outputs.race }}
+      mobile: ${{ steps.scope.outputs.mobile }}
       should_run: ${{ steps.fresh_main.outputs.should_run }}
     steps:
       - name: Checkout
@@ -58,6 +60,8 @@ jobs:
 
       - name: 최신 main 빌드 여부 확인
         id: fresh_main
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -eu
 
@@ -72,8 +76,14 @@ jobs:
           echo "current_sha=${GITHUB_SHA}"
 
           if [ "${latest_main_sha}" != "${GITHUB_SHA}" ]; then
-            echo "현재 run은 최신 main이 아니므로 Docker 빌드와 운영 배포를 모두 스킵합니다."
+            echo "현재 run은 최신 main이 아니므로 성공 상태로 남기지 않고 자체 취소합니다."
             echo "should_run=false" >> "$GITHUB_OUTPUT"
+            curl -fsSL -X POST \
+              -H "Authorization: Bearer ${GH_TOKEN}" \
+              -H "Accept: application/vnd.github+json" \
+              -H "X-GitHub-Api-Version: 2022-11-28" \
+              "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/cancel" \
+              >/dev/null || echo "현재 run 자체 취소 요청 실패 또는 이미 종료됨"
             exit 0
           fi
 
@@ -118,8 +128,6 @@ jobs:
 
       - name: 변경 범위 판별
         id: scope
-        env:
-          GH_TOKEN: ${{ github.token }}
         run: |
           set -eu
 
@@ -128,13 +136,16 @@ jobs:
             echo "web=false" >> "$GITHUB_OUTPUT"
             echo "backend=false" >> "$GITHUB_OUTPUT"
             echo "race=false" >> "$GITHUB_OUTPUT"
+            echo "mobile=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "수동 실행은 전체 Docker 서비스와 mobile 검증을 최신 대상으로 표시합니다."
             echo "web=true" >> "$GITHUB_OUTPUT"
             echo "backend=true" >> "$GITHUB_OUTPUT"
             echo "race=true" >> "$GITHUB_OUTPUT"
+            echo "mobile=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
@@ -142,46 +153,39 @@ jobs:
             echo "web=true" >> "$GITHUB_OUTPUT"
             echo "backend=true" >> "$GITHUB_OUTPUT"
             echo "race=true" >> "$GITHUB_OUTPUT"
+            echo "mobile=true" >> "$GITHUB_OUTPUT"
           }
 
           base_sha="${{ github.event.before }}"
 
           if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
-            echo "main 배포는 마지막 성공한 main 배포 SHA부터 현재 SHA까지 누적 diff로 변경 범위를 판별합니다."
+            echo "main 배포는 마지막 운영 릴리즈 태그부터 현재 SHA까지 누적 diff로 변경 범위를 판별합니다."
+            git fetch --tags --force
+            latest_deploy_tag="$(git tag -l 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | head -n 1 || true)"
 
-            runs_api="${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/actions/workflows/docker-image.yml/runs?branch=main&event=push&status=success&per_page=20"
-            last_success_sha=""
-
-            if runs_payload="$(curl -fsSL \
-              -H "Authorization: Bearer ${GH_TOKEN}" \
-              -H "Accept: application/vnd.github+json" \
-              -H "X-GitHub-Api-Version: 2022-11-28" \
-              "$runs_api" 2>/dev/null)"; then
-              last_success_sha="$(jq -r --arg current "${GITHUB_SHA}" '.workflow_runs[] | select(.head_sha != $current) | .head_sha' <<< "$runs_payload" | head -n 1)"
-            else
-              echo "마지막 성공 배포 run 조회에 실패했습니다. 전체 서비스를 배포 대상으로 표시합니다."
+            if [ -z "$latest_deploy_tag" ]; then
+              echo "마지막 운영 릴리즈 태그를 찾지 못했습니다. 전체 서비스를 최신 대상으로 표시합니다."
               mark_all_changed
               exit 0
             fi
 
-            if [ -z "$last_success_sha" ] || [ "$last_success_sha" = "null" ]; then
-              echo "마지막 성공 배포 SHA를 찾지 못했습니다. 전체 서비스를 배포 대상으로 표시합니다."
+            base_sha="$(git rev-list -n 1 "$latest_deploy_tag" || true)"
+            if [ -z "$base_sha" ]; then
+              echo "릴리즈 태그의 기준 커밋을 확인할 수 없습니다: ${latest_deploy_tag}"
               mark_all_changed
               exit 0
             fi
-
-            base_sha="$last_success_sha"
-            echo "마지막 성공 배포 SHA: $base_sha"
+            echo "마지막 운영 릴리즈 태그: ${latest_deploy_tag} (${base_sha})"
           fi
 
           if ! git cat-file -e "${base_sha}^{commit}" 2>/dev/null; then
-            echo "기준 커밋을 확인할 수 없어 전체 서비스를 배포 대상으로 표시합니다: ${base_sha}"
+            echo "기준 커밋을 확인할 수 없어 전체 서비스를 최신 대상으로 표시합니다: ${base_sha}"
             mark_all_changed
             exit 0
           fi
 
           if ! git merge-base --is-ancestor "${base_sha}" "${GITHUB_SHA}"; then
-            echo "기준 커밋이 현재 커밋의 조상이 아니므로 전체 서비스를 배포 대상으로 표시합니다: ${base_sha}"
+            echo "기준 커밋이 현재 커밋의 조상이 아니므로 전체 서비스를 최신 대상으로 표시합니다: ${base_sha}"
             mark_all_changed
             exit 0
           fi
@@ -189,6 +193,7 @@ jobs:
           web="false"
           backend="false"
           race="false"
+          mobile="false"
 
           while IFS= read -r file; do
             case "$file" in
@@ -204,17 +209,35 @@ jobs:
                 race="true"
                 ;;
 
-              Dockerfile|.github/workflows/docker-image.yml|.github/workflows/docker-build-web.yml|.github/workflows/docker-build-backend.yml|.github/workflows/docker-build-race.yml|.dockerignore|.env.example|package.json|pnpm-lock.yaml|pnpm-workspace.yaml|turbo.json|compose.dev.yml|compose.prod.yml|scripts/migrate.sh)
+              apps/mobile/*)
+                mobile="true"
+                ;;
+
+              Dockerfile|.github/workflows/docker-image.yml|.github/workflows/docker-build-web.yml|.github/workflows/docker-build-backend.yml|.github/workflows/docker-build-race.yml|.dockerignore|.env.example|compose.dev.yml|compose.prod.yml|scripts/migrate.sh)
                 web="true"
                 backend="true"
                 race="true"
                 ;;
 
-              packages/api-contract/*|packages/api-client/*|packages/domain/*|packages/design-tokens/*|packages/utils/*)
+              package.json|pnpm-lock.yaml|pnpm-workspace.yaml|turbo.json)
                 web="true"
+                backend="true"
+                race="true"
+                mobile="true"
                 ;;
 
-              packages/config/*|packages/race-shared/*|packages/typing-race-engine/*)
+              packages/api-contract/*|packages/api-client/*|packages/domain/*|packages/design-tokens/*|packages/utils/*)
+                web="true"
+                mobile="true"
+                ;;
+
+              packages/config/*)
+                web="true"
+                race="true"
+                mobile="true"
+                ;;
+
+              packages/race-shared/*|packages/typing-race-engine/*)
                 web="true"
                 race="true"
                 ;;
@@ -226,10 +249,12 @@ jobs:
           echo "web=$web"
           echo "backend=$backend"
           echo "race=$race"
+          echo "mobile=$mobile"
 
           echo "web=$web" >> "$GITHUB_OUTPUT"
           echo "backend=$backend" >> "$GITHUB_OUTPUT"
           echo "race=$race" >> "$GITHUB_OUTPUT"
+          echo "mobile=$mobile" >> "$GITHUB_OUTPUT"
 
   build_web:
     if: github.ref == 'refs/heads/main' && needs.detect_changes.outputs.web == 'true'
@@ -249,6 +274,29 @@ jobs:
     uses: ./.github/workflows/docker-build-race.yml
     secrets: inherit
 
+  verify_mobile:
+    if: github.ref == 'refs/heads/main' && needs.detect_changes.outputs.mobile == 'true'
+    needs: detect_changes
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6.0.2
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6.0.7
+
+      - name: Setup Node
+        uses: actions/setup-node@v6.4.0
+        with:
+          node-version: "22"
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Mobile typecheck
+        run: pnpm --filter @yeon/mobile typecheck
+
   deploy_production:
     if: >
       always() &&
@@ -256,12 +304,14 @@ jobs:
       (needs.detect_changes.outputs.web == 'true' || needs.detect_changes.outputs.backend == 'true' || needs.detect_changes.outputs.race == 'true') &&
       (needs.detect_changes.outputs.web != 'true' || needs.build_web.result == 'success') &&
       (needs.detect_changes.outputs.race != 'true' || needs.build_race.result == 'success') &&
-      (needs.detect_changes.outputs.backend != 'true' || needs.build_backend.result == 'success')
+      (needs.detect_changes.outputs.backend != 'true' || needs.build_backend.result == 'success') &&
+      (needs.detect_changes.outputs.mobile != 'true' || needs.verify_mobile.result == 'success')
     needs:
       - detect_changes
       - build_web
       - build_race
       - build_backend
+      - verify_mobile
     runs-on: [self-hosted, Linux, ARM64]
     env:
       DEPLOY_DIR: /srv/yeon
@@ -278,6 +328,16 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
+
+          cancel_current_run() {
+            curl -fsSL -X POST \
+              -H "Authorization: Bearer ${GH_TOKEN}" \
+              -H "Accept: application/vnd.github+json" \
+              -H "X-GitHub-Api-Version: 2022-11-28" \
+              "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/cancel" \
+              >/dev/null || echo "현재 run 자체 취소 요청 실패 또는 이미 종료됨"
+          }
+
           git fetch --no-tags --depth=1 origin main
           latest_main_sha="$(git rev-parse FETCH_HEAD)"
           echo "latest_main_sha=${latest_main_sha}"
@@ -306,6 +366,7 @@ jobs:
             done
 
             if [ "${latest_run_exists}" = "true" ]; then
+              cancel_current_run
               exit 0
             fi
 
@@ -317,6 +378,7 @@ jobs:
               "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/actions/workflows/docker-image.yml/dispatches" \
               -d '{"ref":"main"}' \
               >/dev/null || echo "자동 보정 dispatch 요청 실패: 수동 확인이 필요합니다."
+            cancel_current_run
             exit 0
           fi
           echo "deploy=true" >> "$GITHUB_OUTPUT"
@@ -405,8 +467,115 @@ jobs:
           # --wait: 모든 서비스가 healthy 상태가 될 때까지 대기 후 반환
           docker compose -f "${COMPOSE_FILE}" up -d --wait "${services[@]}"
 
+          verify_image() {
+            service="$1"
+            expected_image="$2"
+            container_id="$(docker compose -f "${COMPOSE_FILE}" ps -q "$service")"
+            if [ -z "$container_id" ]; then
+              echo "::error::${service} 컨테이너를 찾지 못했습니다."
+              exit 1
+            fi
+
+            actual_image="$(docker inspect -f '{{.Config.Image}}' "$container_id")"
+            echo "${service} running image: ${actual_image}"
+            if [ "$actual_image" != "$expected_image" ]; then
+              echo "::error::${service} 이미지 불일치: expected=${expected_image}, actual=${actual_image}"
+              exit 1
+            fi
+          }
+
+          if [[ "${{ needs.detect_changes.outputs.backend }}" == "true" ]]; then
+            verify_image backend "${YEON_BACKEND_IMAGE}"
+          fi
+          if [[ "${{ needs.detect_changes.outputs.web }}" == "true" ]]; then
+            verify_image web "${YEON_WEB_IMAGE}"
+          fi
+          if [[ "${{ needs.detect_changes.outputs.race }}" == "true" ]]; then
+            verify_image race-server "${YEON_RACE_SERVER_IMAGE}"
+          fi
+
+          {
+            echo "main_sha=${GITHUB_SHA}"
+            echo "web_changed=${{ needs.detect_changes.outputs.web }}"
+            echo "backend_changed=${{ needs.detect_changes.outputs.backend }}"
+            echo "race_changed=${{ needs.detect_changes.outputs.race }}"
+            echo "mobile_changed=${{ needs.detect_changes.outputs.mobile }}"
+            echo "web_image=${YEON_WEB_IMAGE}"
+            echo "backend_image=${YEON_BACKEND_IMAGE}"
+            echo "race_image=${YEON_RACE_SERVER_IMAGE}"
+          } > "${DEPLOY_DIR}/.deploy-state"
+
       - name: Run DB migrations
         if: steps.fresh_main.outputs.deploy == 'true' && needs.detect_changes.outputs.backend == 'true'
         run: |
           set -eu
           DEPLOY_DIR="${DEPLOY_DIR}" COMPOSE_FILE="${COMPOSE_FILE}" bash scripts/migrate.sh
+
+  verify_latest_completion:
+    if: always() && github.ref == 'refs/heads/main'
+    needs:
+      - detect_changes
+      - build_web
+      - build_backend
+      - build_race
+      - verify_mobile
+      - deploy_production
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6.0.2
+        with:
+          fetch-depth: 0
+
+      - name: Verify workflow completion invariant
+        env:
+          WEB_CHANGED: ${{ needs.detect_changes.outputs.web }}
+          BACKEND_CHANGED: ${{ needs.detect_changes.outputs.backend }}
+          RACE_CHANGED: ${{ needs.detect_changes.outputs.race }}
+          MOBILE_CHANGED: ${{ needs.detect_changes.outputs.mobile }}
+          BUILD_WEB_RESULT: ${{ needs.build_web.result }}
+          BUILD_BACKEND_RESULT: ${{ needs.build_backend.result }}
+          BUILD_RACE_RESULT: ${{ needs.build_race.result }}
+          VERIFY_MOBILE_RESULT: ${{ needs.verify_mobile.result }}
+          DEPLOY_RESULT: ${{ needs.deploy_production.result }}
+        run: |
+          set -euo pipefail
+
+          git fetch --no-tags --depth=1 origin main
+          latest_main_sha="$(git rev-parse FETCH_HEAD)"
+          if [ "$latest_main_sha" != "$GITHUB_SHA" ]; then
+            echo "::error::최신 main이 아닌 run이 완료 상태로 남았습니다: current=${GITHUB_SHA}, latest=${latest_main_sha}"
+            exit 1
+          fi
+
+          fail_if_changed_not_success() {
+            name="$1"
+            changed="$2"
+            result="$3"
+            if [ "$changed" = "true" ] && [ "$result" != "success" ]; then
+              echo "::error::${name} 최신 보장 실패: changed=${changed}, result=${result}"
+              exit 1
+            fi
+          }
+
+          fail_if_changed_not_success web "$WEB_CHANGED" "$BUILD_WEB_RESULT"
+          fail_if_changed_not_success backend "$BACKEND_CHANGED" "$BUILD_BACKEND_RESULT"
+          fail_if_changed_not_success race-server "$RACE_CHANGED" "$BUILD_RACE_RESULT"
+          fail_if_changed_not_success mobile "$MOBILE_CHANGED" "$VERIFY_MOBILE_RESULT"
+
+          if [ "$WEB_CHANGED" = "true" ] || [ "$BACKEND_CHANGED" = "true" ] || [ "$RACE_CHANGED" = "true" ]; then
+            if [ "$DEPLOY_RESULT" != "success" ]; then
+              echo "::error::Docker 서비스 배포 최신 보장 실패: deploy_result=${DEPLOY_RESULT}"
+              exit 1
+            fi
+          fi
+
+          {
+            echo "## 최신성 보장 결과"
+            echo "- main: ${GITHUB_SHA}"
+            echo "- web: changed=${WEB_CHANGED}, build=${BUILD_WEB_RESULT}"
+            echo "- backend: changed=${BACKEND_CHANGED}, build=${BUILD_BACKEND_RESULT}"
+            echo "- race-server: changed=${RACE_CHANGED}, build=${BUILD_RACE_RESULT}"
+            echo "- mobile: changed=${MOBILE_CHANGED}, typecheck=${VERIFY_MOBILE_RESULT}"
+            echo "- deploy: ${DEPLOY_RESULT}"
+          } >> "$GITHUB_STEP_SUMMARY"
