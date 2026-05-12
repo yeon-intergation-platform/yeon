@@ -7,7 +7,6 @@ import {
   useRef,
   type MutableRefObject,
 } from "react";
-import type { RecordItem } from "../_lib/types";
 
 // ---------------------------------------------------------------------------
 // 선택 상태의 단일 source of truth (discriminated union)
@@ -16,6 +15,8 @@ import type { RecordItem } from "../_lib/types";
 // - setState 1회 = 원자적 전이 → 레이스 불가
 // - Next.js navigation hook 미사용 → transition re-render 없음
 // ---------------------------------------------------------------------------
+
+type SelectableRecord = { id: string };
 
 export type ActiveSelection =
   | { kind: "none" }
@@ -80,7 +81,7 @@ export function useWorkspaceSelection(deps: SelectionDeps) {
 
       window.history.replaceState(null, "", nextUrl);
     },
-    [],
+    []
   );
 
   // ── 선택 상태(memberId/recordId)만 URL 반영 ───────────────────
@@ -98,7 +99,7 @@ export function useWorkspaceSelection(deps: SelectionDeps) {
   // ── URL 초기화 (page.tsx에서 records 로드 후 호출) ──────────────
   const urlInitializedRef = useRef(false);
   const initFromUrl = useCallback(
-    (records: RecordItem[]) => {
+    (records: SelectableRecord[]) => {
       if (urlInitializedRef.current) return;
       if (typeof window === "undefined") {
         urlInitializedRef.current = true;
@@ -127,7 +128,7 @@ export function useWorkspaceSelection(deps: SelectionDeps) {
       }
       // recordId가 있지만 아직 로드 안 된 경우 → 호출자가 재시도
     },
-    [deps.ensureDetailRef, deps.resetAudioRef],
+    [deps.ensureDetailRef, deps.resetAudioRef]
   );
 
   // ── 선택 핸들러 ─────────────────────────────────────────────────
@@ -144,7 +145,7 @@ export function useWorkspaceSelection(deps: SelectionDeps) {
       deps.resetAudioRef.current();
       deps.ensureDetailRef.current(id);
     },
-    [deps.resetAudioRef, deps.ensureDetailRef],
+    [deps.resetAudioRef, deps.ensureDetailRef]
   );
 
   /** 사이드바 member 클릭 */
@@ -170,14 +171,14 @@ export function useWorkspaceSelection(deps: SelectionDeps) {
   /** 특정 member가 선택된 상태면 해제 */
   const clearMemberIfSelected = useCallback((memberId: string) => {
     setActive((prev) =>
-      prev.kind === "member" && prev.id === memberId ? { kind: "none" } : prev,
+      prev.kind === "member" && prev.id === memberId ? { kind: "none" } : prev
     );
   }, []);
 
   /** 특정 record가 선택된 상태면 해제 */
   const clearRecordIfSelected = useCallback((recordId: string) => {
     setActive((prev) =>
-      prev.kind === "record" && prev.id === recordId ? { kind: "none" } : prev,
+      prev.kind === "record" && prev.id === recordId ? { kind: "none" } : prev
     );
   }, []);
 
@@ -187,10 +188,10 @@ export function useWorkspaceSelection(deps: SelectionDeps) {
       setActive((prev) =>
         prev.kind === "record" && prev.id === oldId
           ? { kind: "record", id: newId }
-          : prev,
+          : prev
       );
     },
-    [],
+    []
   );
 
   return {

@@ -2,7 +2,7 @@ export { counselingWorkspaceQueryKeys } from "@/features/counseling-record-works
 export { useRecords } from "./use-records";
 export { useRecording } from "./use-recording";
 export { useFileUpload } from "./use-file-upload";
-export { useAudioPlayer } from "./use-audio-player";
+export { useAudioPlayer } from "@/features/counseling-record-workspace/hooks/use-audio-player";
 export { useAiChat } from "./use-ai-chat";
 export { useAiPanel } from "./use-ai-panel";
 export { useCurrentSpace } from "@/features/counseling-record-workspace/hooks/use-current-space";
@@ -12,5 +12,5 @@ export type { Space } from "@/features/counseling-record-workspace/hooks/use-cur
 export type { MemberWithStatus } from "@/features/counseling-record-workspace/hooks/use-space-members";
 
 export { useRecordRetry } from "./use-record-retry";
-export { useWorkspaceSelection } from "./use-workspace-selection";
-export { useRecordEntry } from "./use-record-entry";
+export { useWorkspaceSelection } from "@/features/counseling-record-workspace/hooks/use-workspace-selection";
+export { useRecordEntry } from "@/features/counseling-record-workspace/hooks/use-record-entry";

@@ -2,7 +2,7 @@ import { useState, useRef, useCallback, useEffect } from "react";
 
 export function useAudioPlayer(
   audioUrl: string | null,
-  fallbackTotalSeconds: number,
+  fallbackTotalSeconds: number
 ) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -85,7 +85,7 @@ export function useAudioPlayer(
       audio.currentTime = target;
       setPosition(Math.round(target));
     },
-    [duration],
+    [duration]
   );
 
   const reset = useCallback(() => {
