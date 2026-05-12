@@ -22,7 +22,11 @@ public final class ChatServiceFeedMapper {
 	}
 
 	public static ChatServiceFeedMutationResponse toMutationResponse(ChatServiceFeedRepository.FeedPostRow row) {
-		return new ChatServiceFeedMutationResponse(toPost(row, 0));
+		return toMutationResponse(row, 0);
+	}
+
+	public static ChatServiceFeedMutationResponse toMutationResponse(ChatServiceFeedRepository.FeedPostRow row, int replyCount) {
+		return new ChatServiceFeedMutationResponse(toPost(row, replyCount));
 	}
 
 	private static List<ChatServiceFeedPostResponse> toVisiblePosts(List<ChatServiceFeedRepository.FeedPostRow> rows, Set<java.util.UUID> blockedRelationIds, Map<java.util.UUID, Integer> replyCountMap) {

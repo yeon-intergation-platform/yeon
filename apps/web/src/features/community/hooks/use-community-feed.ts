@@ -29,8 +29,15 @@ function toFeedActorPayload(input: FeedActorInput) {
   };
 }
 
-export function useCommunityFeed() {
-  const [posts, setPosts] = useState<ChatServiceFeedPost[]>([]);
+type UseCommunityFeedOptions = {
+  initialPosts?: ChatServiceFeedPost[];
+};
+
+export function useCommunityFeed(options: UseCommunityFeedOptions = {}) {
+  const [posts, setPosts] = useState<ChatServiceFeedPost[]>(() => {
+    if (!options.initialPosts) return [];
+    return options.initialPosts;
+  });
   const [isPostsLoading, setIsPostsLoading] = useState(false);
   const [postsError, setPostsError] = useState<ErrorState>(null);
   const [replyDrafts, setReplyDrafts] = useState<ReplyDrafts>({});
@@ -204,7 +211,14 @@ export function useCommunityFeed() {
           ...previous,
           [postId]: "",
         }));
-        await Promise.all([loadReplies(postId), loadPosts()]);
+        setPosts((previous) =>
+          previous.map((post) =>
+            post.id === postId
+              ? { ...post, replyCount: post.replyCount + 1 }
+              : post
+          )
+        );
+        await loadReplies(postId);
       } catch (error) {
         setReplyErrors((previous) => ({
           ...previous,
@@ -221,7 +235,7 @@ export function useCommunityFeed() {
         }));
       }
     },
-    [loadPosts, loadReplies, replyDrafts, resolveActorPayload]
+    [loadReplies, replyDrafts, resolveActorPayload]
   );
 
   const updatePost = useCallback(
@@ -245,12 +259,14 @@ export function useCommunityFeed() {
       }));
 
       try {
-        await chatServiceApi.updateFeedPost(
+        const response = await chatServiceApi.updateFeedPost(
           postId,
           trimmedBody,
           resolveActorPayload(actor)
         );
-        await loadPosts();
+        setPosts((previous) =>
+          previous.map((post) => (post.id === postId ? response.post : post))
+        );
       } catch (error) {
         setPostErrors((previous) => ({
           ...previous,
@@ -265,7 +281,7 @@ export function useCommunityFeed() {
         }));
       }
     },
-    [loadPosts, resolveActorPayload]
+    [resolveActorPayload]
   );
 
   const deletePost = useCallback(
@@ -281,7 +297,7 @@ export function useCommunityFeed() {
 
       try {
         await chatServiceApi.deleteFeedPost(postId, resolveActorPayload(actor));
-        await loadPosts();
+        setPosts((previous) => previous.filter((post) => post.id !== postId));
       } catch (error) {
         setPostErrors((previous) => ({
           ...previous,
@@ -296,7 +312,7 @@ export function useCommunityFeed() {
         }));
       }
     },
-    [loadPosts, resolveActorPayload]
+    [resolveActorPayload]
   );
 
   const deleteReply = useCallback(
@@ -316,7 +332,14 @@ export function useCommunityFeed() {
           replyId,
           resolveActorPayload(actor)
         );
-        await Promise.all([loadReplies(postId), loadPosts()]);
+        setPosts((previous) =>
+          previous.map((post) =>
+            post.id === postId
+              ? { ...post, replyCount: Math.max(0, post.replyCount - 1) }
+              : post
+          )
+        );
+        await loadReplies(postId);
       } catch (error) {
         setReplyDeleteErrors((previous) => ({
           ...previous,
@@ -333,7 +356,7 @@ export function useCommunityFeed() {
         }));
       }
     },
-    [loadPosts, loadReplies, resolveActorPayload]
+    [loadReplies, resolveActorPayload]
   );
 
   const clear = useCallback(() => {

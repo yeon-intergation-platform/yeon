@@ -41,6 +41,14 @@ class ChatServiceFeedControllerTests {
 			.andExpect(jsonPath("$.posts[0].body").value("본문"));
 	}
 
+	@Test void 피드상세응답을반환한다() throws Exception {
+		when(service.get(eq(CURRENT_PROFILE_ID), eq(POST_ID))).thenReturn(new ChatServiceFeedMutationResponse(samplePost()));
+		mockMvc.perform(get("/chat-service/feed/{postId}", POST_ID).header("X-Yeon-Chat-Profile-Id", CURRENT_PROFILE_ID).header("X-Yeon-Internal-Token", "test-internal-token"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.post.body").value("본문"))
+			.andExpect(jsonPath("$.post.replyCount").value(1));
+	}
+
 	@Test void 비로그인피드목록도응답한다() throws Exception {
 		when(service.list(isNull())).thenReturn(new ChatServiceFeedListResponse(List.of(samplePost())));
 		mockMvc.perform(get("/chat-service/feed").header("X-Yeon-Internal-Token", "test-internal-token"))

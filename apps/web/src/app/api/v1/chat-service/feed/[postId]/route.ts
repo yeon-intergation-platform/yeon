@@ -1,5 +1,6 @@
 import {
   chatServiceDeleteFeedPostBodySchema,
+  chatServiceFeedPostActionResponseSchema,
   chatServiceUpdateFeedPostBodySchema,
 } from "@yeon/api-contract/chat-service";
 import { z } from "zod";
@@ -9,6 +10,7 @@ import { NextResponse } from "next/server";
 import {
   ChatServiceFeedSpringBackendHttpError,
   deleteChatServiceFeedPostInSpring,
+  fetchChatServiceFeedPostFromSpring,
   updateChatServiceFeedPostInSpring,
 } from "@/server/chat-service-feed-spring-client";
 import {
@@ -28,6 +30,34 @@ type FeedPostParams = {
     postId: string;
   }>;
 };
+
+export async function GET(request: NextRequest, { params }: FeedPostParams) {
+  try {
+    const auth = await getOptionalChatServiceAuth(request);
+    const { postId } = await params;
+    const response = await fetchChatServiceFeedPostFromSpring({
+      currentProfileId: auth?.profile.id,
+      postId,
+    });
+
+    return NextResponse.json(
+      chatServiceFeedPostActionResponseSchema.parse(response)
+    );
+  } catch (error) {
+    if (error instanceof ServiceError) {
+      return jsonChatServiceError(error.message, error.status);
+    }
+    if (error instanceof ChatServiceFeedSpringBackendHttpError) {
+      return jsonChatServiceError(error.message, error.status);
+    }
+    if (error instanceof ChatServiceAuthSpringBackendHttpError) {
+      return jsonChatServiceError(error.message, error.status);
+    }
+
+    console.error(error);
+    return jsonChatServiceError("글을 불러오지 못했습니다.", 500);
+  }
+}
 
 async function resolveFeedProfileId(
   request: NextRequest,

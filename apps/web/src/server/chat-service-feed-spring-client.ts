@@ -86,6 +86,20 @@ export async function fetchChatServiceFeedFromSpring(
     "Spring backend 요청에 실패했습니다."
   ) as Promise<{ posts: unknown[] }>;
 }
+export async function fetchChatServiceFeedPostFromSpring(params: {
+  currentProfileId?: string | null;
+  postId: string;
+}) {
+  return fetchSpring(
+    `/chat-service/feed/${params.postId}`,
+    {
+      method: "GET",
+      headers: withOptionalProfileHeader(params.currentProfileId),
+    },
+    "Spring backend 요청에 실패했습니다."
+  ) as Promise<{ post: unknown }>;
+}
+
 export async function createChatServiceFeedPostInSpring(params: {
   currentProfileId: string;
   body: string;

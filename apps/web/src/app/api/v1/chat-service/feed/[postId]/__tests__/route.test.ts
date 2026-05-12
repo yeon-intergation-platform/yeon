@@ -5,6 +5,7 @@ import { ServiceError } from "@/server/services/service-error";
 
 const mockGetOptionalChatServiceAuth = vi.fn();
 const mockParseJsonBody = vi.fn();
+const mockFetchChatServiceFeedPostFromSpring = vi.fn();
 const mockUpdateChatServiceFeedPostInSpring = vi.fn();
 const mockDeleteChatServiceFeedPostInSpring = vi.fn();
 const mockResolveChatServiceGuestProfileInSpring = vi.fn();
@@ -27,6 +28,8 @@ vi.mock("@/server/chat-service-feed-spring-client", () => ({
   },
   deleteChatServiceFeedPostInSpring: (...args: unknown[]) =>
     mockDeleteChatServiceFeedPostInSpring(...args),
+  fetchChatServiceFeedPostFromSpring: (...args: unknown[]) =>
+    mockFetchChatServiceFeedPostFromSpring(...args),
   updateChatServiceFeedPostInSpring: (...args: unknown[]) =>
     mockUpdateChatServiceFeedPostInSpring(...args),
 }));
@@ -43,7 +46,7 @@ vi.mock("@/server/chat-service-auth-spring-client", () => ({
     mockResolveChatServiceGuestProfileInSpring(...args),
 }));
 
-import { DELETE, PATCH } from "../route";
+import { DELETE, GET, PATCH } from "../route";
 
 const profileId = "11111111-1111-4111-8111-111111111111";
 const postId = "33333333-3333-4333-8333-333333333333";
@@ -70,6 +73,27 @@ const postResponse = {
 
 describe("chat-service feed post route", () => {
   beforeEach(() => vi.clearAllMocks());
+
+  it("feed 글 상세를 Spring에서 조회한다", async () => {
+    mockGetOptionalChatServiceAuth.mockResolvedValue({
+      profile: { id: profileId },
+    });
+    mockFetchChatServiceFeedPostFromSpring.mockResolvedValue(postResponse);
+
+    const response = await GET(
+      new NextRequest(`http://localhost/api/v1/chat-service/feed/${postId}`, {
+        method: "GET",
+      }),
+      params
+    );
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual(postResponse);
+    expect(mockFetchChatServiceFeedPostFromSpring).toHaveBeenCalledWith({
+      currentProfileId: profileId,
+      postId,
+    });
+  });
 
   it("로그인 profile로 feed 글을 수정한다", async () => {
     mockGetOptionalChatServiceAuth.mockResolvedValue({
