@@ -3,9 +3,10 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
 import {
-  getChatServiceSessionState,
-  logoutChatServiceSession,
-} from "@/server/services/chat-service/auth-service";
+  ChatServiceAuthSpringBackendHttpError,
+  fetchChatServiceSessionFromSpring,
+  logoutChatServiceSessionInSpring,
+} from "@/server/chat-service-auth-spring-client";
 import { ServiceError } from "@/server/services/service-error";
 
 import {
@@ -16,13 +17,16 @@ import {
 
 export async function GET(request: NextRequest) {
   try {
-    const response = await getChatServiceSessionState(
-      getChatServiceSessionToken(request),
+    const response = await fetchChatServiceSessionFromSpring(
+      getChatServiceSessionToken(request)
     );
 
     return NextResponse.json(chatServiceSessionResponseSchema.parse(response));
   } catch (error) {
     if (error instanceof ServiceError) {
+      return jsonChatServiceError(error.message, error.status);
+    }
+    if (error instanceof ChatServiceAuthSpringBackendHttpError) {
       return jsonChatServiceError(error.message, error.status);
     }
 
@@ -33,11 +37,11 @@ export async function GET(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    const response = await logoutChatServiceSession(
-      getChatServiceSessionToken(request),
+    const response = await logoutChatServiceSessionInSpring(
+      getChatServiceSessionToken(request)
     );
     const nextResponse = NextResponse.json(
-      chatServiceSessionResponseSchema.parse(response),
+      chatServiceSessionResponseSchema.parse(response)
     );
 
     clearChatServiceSessionCookie(nextResponse);
@@ -45,6 +49,9 @@ export async function DELETE(request: NextRequest) {
     return nextResponse;
   } catch (error) {
     if (error instanceof ServiceError) {
+      return jsonChatServiceError(error.message, error.status);
+    }
+    if (error instanceof ChatServiceAuthSpringBackendHttpError) {
       return jsonChatServiceError(error.message, error.status);
     }
 

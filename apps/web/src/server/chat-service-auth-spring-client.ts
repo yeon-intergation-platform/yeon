@@ -1,5 +1,6 @@
 const DEFAULT_BACKEND_BASE_URL = "http://127.0.0.1:8081";
 const INTERNAL_TOKEN_HEADER = "X-Yeon-Internal-Token";
+const CHAT_SESSION_TOKEN_HEADER = "X-Yeon-Chat-Session-Token";
 
 function resolveSpringBackendBaseUrl() {
   const raw =
@@ -86,4 +87,64 @@ export async function resolveChatServiceGuestProfileInSpring(params: {
     },
     "Spring backend 요청에 실패했습니다."
   ) as Promise<{ id: string }>;
+}
+
+export async function requestChatServiceOtpInSpring(params: {
+  phoneNumber: string;
+}) {
+  return fetchSpring(
+    "/chat-service/auth/request-otp",
+    {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(params),
+    },
+    "Spring backend 요청에 실패했습니다."
+  );
+}
+
+export async function verifyChatServiceOtpInSpring(params: {
+  challengeId: string;
+  phoneNumber: string;
+  code: string;
+}) {
+  return fetchSpring(
+    "/chat-service/auth/verify-otp",
+    {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(params),
+    },
+    "Spring backend 요청에 실패했습니다."
+  );
+}
+
+export async function fetchChatServiceSessionFromSpring(
+  sessionToken: string | null
+) {
+  return fetchSpring(
+    "/chat-service/auth/session",
+    {
+      method: "GET",
+      headers: sessionToken
+        ? { [CHAT_SESSION_TOKEN_HEADER]: sessionToken }
+        : {},
+    },
+    "Spring backend 요청에 실패했습니다."
+  );
+}
+
+export async function logoutChatServiceSessionInSpring(
+  sessionToken: string | null
+) {
+  return fetchSpring(
+    "/chat-service/auth/session",
+    {
+      method: "DELETE",
+      headers: sessionToken
+        ? { [CHAT_SESSION_TOKEN_HEADER]: sessionToken }
+        : {},
+    },
+    "Spring backend 요청에 실패했습니다."
+  );
 }
