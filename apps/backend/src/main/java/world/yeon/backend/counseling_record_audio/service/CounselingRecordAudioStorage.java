@@ -12,6 +12,8 @@ import software.amazon.awssdk.core.exception.SdkException;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.core.sync.RequestBody;
 
 @Component
 public class CounselingRecordAudioStorage {
@@ -68,6 +70,32 @@ public class CounselingRecordAudioStorage {
 			}
 		}
 		throw new CounselingRecordAudioServiceException(502, "AUDIO_STORAGE_ERROR", "상담 음성 다운로드에 실패했습니다.");
+	}
+
+	public void upload(String objectKey, byte[] bytes, String mimeType, String sha256) {
+		for (int attempt = 1; attempt <= 3; attempt += 1) {
+			try {
+				S3Client storageClient = client();
+				PutObjectRequest request = PutObjectRequest.builder()
+					.bucket(bucketName)
+					.key(objectKey)
+					.contentType(mimeType == null || mimeType.isBlank() ? "application/octet-stream" : mimeType)
+					.contentLength((long) bytes.length)
+					.checksumSHA256(sha256)
+					.build();
+				storageClient.putObject(request, RequestBody.fromBytes(bytes));
+				return;
+			} catch (AwsServiceException error) {
+				int statusCode = error.statusCode();
+				if (attempt == 3 || !RETRYABLE_STATUS_CODES.contains(statusCode)) {
+					throw new CounselingRecordAudioServiceException(502, "AUDIO_STORAGE_UPLOAD_ERROR", "상담 음성 업로드에 실패했습니다.");
+				}
+			} catch (SdkException error) {
+				if (attempt == 3) {
+					throw new CounselingRecordAudioServiceException(502, "AUDIO_STORAGE_UPLOAD_ERROR", "상담 음성 업로드에 실패했습니다.");
+				}
+			}
+		}
 	}
 
 	public void delete(String objectKey) {

@@ -211,3 +211,26 @@
   - Next transcribe route의 `retryCounselingRecordTranscription` 직접 호출을 Spring client 호출로 교체했다.
   - 일반 직접 STT 가능한 업로드의 재전사 상태 전환, 원본 음성 다운로드, OpenAI STT 호출, transcript 저장을 Spring으로 이동했다.
   - 긴 음성 분할 전사는 후속 보강 대상으로 남겼다.
+
+## 7차 - 상담 생성 Spring bridge 전환
+
+### 7차 세부 - counseling-records POST의 Next DB/업로드/스케줄러 제거 (완료)
+
+- 작업내용
+  - Spring에 `POST /counseling-records` multipart API를 추가한다.
+  - Spring이 텍스트 메모 생성, 음성 업로드 저장, DB insert, 전사 queue 시작을 소유한다.
+  - Next `api/v1/counseling-records` POST route는 요청 검증과 Spring response bridge만 수행한다.
+- 논의 필요
+  - 긴 음성 분할 전사는 Spring 재전사 후속 보강과 같은 축으로 다룬다.
+- 선택지
+  - A. POST 생성 route를 Spring bridge로 전환해 `api/v1` 직접 service import를 0개로 만든다.
+  - B. auth/root/mobile DB runtime까지 한 PR에 포함한다.
+- 추천
+  - A. `api/v1` route backend-role 0개 판정을 먼저 완료한다.
+- 사용자 방향
+  - 추천 기준으로 진행.
+- 완료 근거
+  - Spring `POST /counseling-records` multipart API를 추가했다.
+  - Spring이 텍스트 메모 생성, 음성 업로드 저장, DB insert, 전사 queue 시작을 소유한다.
+  - Next `api/v1/counseling-records` POST route의 `createCounselingRecordAndQueueTranscription`, `createTextMemoRecord` 직접 호출을 제거했다.
+  - `api/v1` route의 non-ServiceError `@/server/services/*` 직접 import 0개를 확인했다.

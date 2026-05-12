@@ -57,8 +57,12 @@ public class CounselingRecordTranscriptionService {
 		}
 
 		repository.markQueued(record, "partial_transcript_ready".equals(record.processingStage()));
-		CompletableFuture.runAsync(() -> runTranscription(userId, record.publicId(), clientRequestId));
+		queueTranscription(userId, record.publicId(), clientRequestId);
 		return detailService.getDetail(userId, recordPublicId);
+	}
+
+	public void queueTranscription(UUID userId, String recordPublicId, String clientRequestId) {
+		CompletableFuture.runAsync(() -> runTranscription(userId, recordPublicId, clientRequestId));
 	}
 
 	private CounselingRecordTranscriptionRepository.RecordRow requireRetryableRecord(UUID userId, String recordPublicId) {
