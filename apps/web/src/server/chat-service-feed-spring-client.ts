@@ -50,9 +50,10 @@ function withOptionalProfileHeader(currentProfileId?: string | null) {
 }
 
 async function fetchSpring(path: string, init: RequestInit, fallback: string) {
-  const response = await fetch(
-    new URL(`${resolveSpringBackendBaseUrl()}${path}`),
-    {
+  let response: Response;
+
+  try {
+    response = await fetch(new URL(`${resolveSpringBackendBaseUrl()}${path}`), {
       cache: "no-store",
       ...init,
       headers: {
@@ -64,8 +65,13 @@ async function fetchSpring(path: string, init: RequestInit, fallback: string) {
             }
           : {}),
       },
-    }
-  );
+    });
+  } catch {
+    throw new ChatServiceFeedSpringBackendHttpError(
+      503,
+      "Spring backend와 연결할 수 없습니다."
+    );
+  }
   const raw = await response.text();
   const parsed = tryParseJson(raw);
   if (!response.ok) {

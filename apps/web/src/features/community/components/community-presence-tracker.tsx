@@ -12,9 +12,18 @@ export function CommunityPresenceTracker() {
   useEffect(() => {
     const sessionId = readPresenceSessionId();
 
-    void sendPresenceHeartbeat(sessionId);
+    const heartbeat = async () => {
+      try {
+        await sendPresenceHeartbeat(sessionId);
+      } catch {
+        // 앱 부팅 직후/포트 미구동 구간에도 페이지 동작을 방해하지 않도록
+        // presence heartbeats는 실패를 무시합니다.
+      }
+    };
+
+    void heartbeat();
     const intervalId = window.setInterval(() => {
-      void sendPresenceHeartbeat(sessionId);
+      void heartbeat();
     }, 10_000);
 
     return () => {

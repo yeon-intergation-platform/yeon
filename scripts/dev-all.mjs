@@ -74,6 +74,10 @@ function resolveLocalDatabaseUrl() {
   const envFiles = [
     readDotenv(join(rootDir, ".env")),
     readDotenv(join(rootDir, ".env.local")),
+    readDotenv(join(rootDir, "apps", "backend", ".env")),
+    readDotenv(join(rootDir, "apps", "backend", ".env.local")),
+    readDotenv(join(rootDir, "apps", "web", ".env")),
+    readDotenv(join(rootDir, "apps", "web", ".env.local")),
   ];
 
   for (const envFile of envFiles) {
