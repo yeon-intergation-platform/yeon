@@ -53,6 +53,8 @@ import {
   MAX_LOBBY_CHAT_LENGTH,
 } from "./typing-room-options";
 import { trackEvent } from "@/lib/analytics";
+import { RoomVoiceCallPanel } from "@/features/room-voice-call/room-voice-call-panel";
+import { useRoomVoiceCall } from "@/features/room-voice-call/use-room-voice-call";
 
 type TypingRoomScreenProps = {
   roomId?: string;
@@ -313,6 +315,19 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
   const me =
     room?.participants.find((participant) => participant.id === race.mySeat) ??
     null;
+  const voiceParticipants = useMemo(
+    () =>
+      (room?.participants ?? []).map((participant) => ({
+        id: participant.id,
+        label: participant.label,
+      })),
+    [room?.participants]
+  );
+  const voiceCall = useRoomVoiceCall({
+    room: race.room,
+    localParticipantId: race.mySeat,
+    participants: voiceParticipants,
+  });
   const isHost = me?.role === "host";
   const isReady = Boolean(me?.isReady);
   const inviteUrl =
@@ -609,7 +624,7 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
   }
 
   if (room.status !== TYPING_ROOM_STATUS.WAITING) {
-    return <TypingRaceMultiplayerScreen race={race} />;
+    return <TypingRaceMultiplayerScreen race={race} voiceCall={voiceCall} />;
   }
 
   return (
@@ -637,25 +652,26 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
         />
 
         <section className="grid gap-3 xl:grid-cols-[minmax(260px,320px)_minmax(360px,420px)_minmax(0,1fr)] xl:items-start">
-          <div className="contents">
+          <div className="grid gap-3 xl:order-2">
             <TypingRoomParticipantsPanel
               participants={participants}
               myParticipantId={me?.id ?? null}
               locale={settings.locale}
               frameOverrides={frameOverrides}
             />
-
-            <TypingRoomSettingsPanel
-              room={room}
-              isHost={isHost}
-              selectedDeckId={selectedDeck.id}
-              roomDeckTitle={roomDeckTitle}
-              deckOptions={deckOptions}
-              settingsError={settingsError}
-              onSendSetting={sendSetting}
-              onDeckChange={onDeckChange}
-            />
+            <RoomVoiceCallPanel voiceCall={voiceCall} />
           </div>
+
+          <TypingRoomSettingsPanel
+            room={room}
+            isHost={isHost}
+            selectedDeckId={selectedDeck.id}
+            roomDeckTitle={roomDeckTitle}
+            deckOptions={deckOptions}
+            settingsError={settingsError}
+            onSendSetting={sendSetting}
+            onDeckChange={onDeckChange}
+          />
 
           <TypingRoomChatPanel
             messages={messages}

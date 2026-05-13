@@ -1,5 +1,6 @@
 import {
   RACE_EVENTS,
+  VOICE_EVENTS,
   TYPING_DECK_LANGUAGE_TAG,
   TYPING_DECK_VISIBILITY,
   TYPING_RACE_DEFAULTS,
@@ -31,6 +32,12 @@ import {
   type RaceProgressMessage,
   type RaceSeedMessage,
   type RoomReadyMessage,
+  type VoiceAnswerMessage,
+  type VoiceEndMessage,
+  type VoiceIceCandidateLike,
+  type VoiceIceCandidateMessage,
+  type VoiceMuteToggleMessage,
+  type VoiceOfferMessage,
   type TypingRaceLaneSnapshot,
   type TypingDeckLanguageTag,
   type TypingDeckVisibility,
@@ -53,6 +60,15 @@ import {
 } from "@yeon/race-shared";
 import { type Client, Room } from "@colyseus/core";
 import { createHmac, randomInt, timingSafeEqual } from "node:crypto";
+
+type ClockTimer = { clear: () => void };
+type JsonObject = Record<string, unknown>;
+type VoiceSession = {
+  participants: Set<string>;
+  timeout: ClockTimer | null;
+};
+
+const VOICE_SESSION_TIMEOUT_MS = 30_000;
 
 type RoomParticipant = {
   id: string;
@@ -185,6 +201,133 @@ const DEFAULT_ROOM_SETTINGS: TypingRoomSettings = {
 
 // 엔진 레인 수가 4개라 maxClients도 4로 제한 (LANE_Y_RATIOS 길이와 일치시켜 5번째 참여자 누락 방지)
 const MAX_PLAYERS_PER_ROOM = TYPING_RACE_DEFAULTS.lobbyMaxPlayers;
+
+function isNonEmptyString(value: unknown): value is string {
+  return typeof value === "string" && value.trim().length > 0;
+}
+
+function parseVoiceBase(
+  payload: unknown
+): Pick<VoiceOfferMessage, "sessionId" | "targetParticipantId"> | null {
+  const obj = payload as JsonObject | null;
+  if (!obj) return null;
+  if (
+    !isNonEmptyString(obj.sessionId) ||
+    !isNonEmptyString(obj.targetParticipantId)
+  ) {
+    return null;
+  }
+
+  return {
+    sessionId: obj.sessionId.trim(),
+    targetParticipantId: obj.targetParticipantId.trim(),
+  };
+}
+
+function parseVoiceOffer(
+  payload: unknown
+): Pick<VoiceOfferMessage, "sessionId" | "targetParticipantId" | "sdp"> | null {
+  const base = parseVoiceBase(payload);
+  if (!base) return null;
+  const obj = payload as JsonObject;
+  if (typeof obj.sdp !== "string" || !obj.sdp.trim()) {
+    return null;
+  }
+
+  return {
+    ...base,
+    sdp: obj.sdp,
+  };
+}
+
+function parseVoiceAnswer(
+  payload: unknown
+): Pick<
+  VoiceAnswerMessage,
+  "sessionId" | "targetParticipantId" | "sdp"
+> | null {
+  return parseVoiceOffer(payload);
+}
+
+function parseVoiceCandidate(
+  payload: unknown
+): Pick<
+  VoiceIceCandidateMessage,
+  "sessionId" | "targetParticipantId" | "candidate"
+> | null {
+  const base = parseVoiceBase(payload);
+  if (!base) return null;
+
+  const candidateObj = (payload as JsonObject | null)?.candidate;
+  if (!candidateObj || typeof candidateObj !== "object") {
+    return null;
+  }
+
+  if (!isNonEmptyString((candidateObj as JsonObject).candidate)) {
+    return null;
+  }
+
+  return {
+    ...base,
+    candidate: {
+      candidate: (candidateObj as JsonObject).candidate as string,
+      sdpMid:
+        typeof (candidateObj as JsonObject).sdpMid === "string"
+          ? ((candidateObj as JsonObject).sdpMid as string)
+          : null,
+      sdpMLineIndex:
+        typeof (candidateObj as JsonObject).sdpMLineIndex === "number"
+          ? ((candidateObj as JsonObject).sdpMLineIndex as number)
+          : null,
+      usernameFragment:
+        typeof (candidateObj as JsonObject).usernameFragment === "string"
+          ? ((candidateObj as JsonObject).usernameFragment as string)
+          : null,
+    },
+  };
+}
+
+function parseVoiceEnd(
+  payload: unknown
+): Pick<
+  VoiceEndMessage,
+  "sessionId" | "targetParticipantId" | "reason"
+> | null {
+  const base = parseVoiceBase(payload);
+  if (!base) return null;
+
+  const reason = (payload as JsonObject | null)?.reason;
+  return {
+    ...base,
+    reason:
+      reason === "hangup" ||
+      reason === "timeout" ||
+      reason === "rejected" ||
+      reason === "error" ||
+      reason === "network"
+        ? reason
+        : undefined,
+  };
+}
+
+function parseVoiceMute(
+  payload: unknown
+): Pick<
+  VoiceMuteToggleMessage,
+  "sessionId" | "targetParticipantId" | "muted"
+> | null {
+  const base = parseVoiceBase(payload);
+  if (!base) return null;
+  const muted = (payload as JsonObject | null)?.muted;
+  if (typeof muted !== "boolean") {
+    return null;
+  }
+
+  return {
+    ...base,
+    muted,
+  };
+}
 
 function clampOption(
   value: number | undefined,
@@ -440,6 +583,8 @@ export class TypingRaceRoom extends Room {
   maxClients: number = MAX_PLAYERS_PER_ROOM;
 
   private readonly participants = new Map<string, RoomParticipant>();
+  private readonly participantToVoiceSession = new Map<string, string>();
+  private readonly voiceSessions = new Map<string, VoiceSession>();
 
   private readonly clientParticipantIds = new Map<string, string>();
 
@@ -542,6 +687,22 @@ export class TypingRaceRoom extends Room {
       this.finishParticipant(client, message as RaceFinishMessage);
     });
 
+    this.onMessage(VOICE_EVENTS.OFFER, (client, payload) => {
+      this.onVoiceOffer(client, parseVoiceOffer(payload));
+    });
+    this.onMessage(VOICE_EVENTS.ANSWER, (client, payload) => {
+      this.onVoiceAnswer(client, parseVoiceAnswer(payload));
+    });
+    this.onMessage(VOICE_EVENTS.ICE_CANDIDATE, (client, payload) => {
+      this.onVoiceIceCandidate(client, parseVoiceCandidate(payload));
+    });
+    this.onMessage(VOICE_EVENTS.END, (client, payload) => {
+      this.onVoiceEnd(client, parseVoiceEnd(payload));
+    });
+    this.onMessage(VOICE_EVENTS.MUTE_TOGGLE, (client, payload) => {
+      this.onVoiceMuteToggle(client, parseVoiceMute(payload));
+    });
+
     this.setSimulationInterval(
       (deltaTime) => {
         this.tick(deltaTime);
@@ -604,6 +765,7 @@ export class TypingRaceRoom extends Room {
       ? this.participants.get(participantId)
       : null;
     this.clientParticipantIds.delete(client.sessionId);
+    this.cleanupVoiceSessionByParticipant(participantId, "network");
 
     if (this.explicitLeavingClientIds.delete(client.sessionId)) {
       this.refreshLifecycle();
@@ -715,6 +877,7 @@ export class TypingRaceRoom extends Room {
     if (participantId) {
       this.removeParticipant(participantId);
     }
+    this.cleanupVoiceSessionByParticipant(participantId, "hangup");
 
     this.refreshLifecycle();
     this.syncState();
@@ -744,6 +907,389 @@ export class TypingRaceRoom extends Room {
         void this.disconnect();
       }
     }
+  }
+
+  private onVoiceOffer(
+    client: Client,
+    payload:
+      | (Pick<VoiceOfferMessage, "sessionId" | "targetParticipantId"> & {
+          sdp: string;
+        })
+      | null
+  ) {
+    const senderParticipantId = this.getParticipantId(client);
+    if (!senderParticipantId || !payload) {
+      this.sendVoiceError(client, {
+        message: senderParticipantId
+          ? "통화 요청 형식이 올바르지 않습니다."
+          : "참가자 정보를 찾지 못했습니다.",
+      });
+      return;
+    }
+
+    if (senderParticipantId === payload.targetParticipantId) {
+      this.sendVoiceError(client, {
+        message: "통화 대상은 본인이 될 수 없습니다.",
+      });
+      return;
+    }
+
+    if (!this.isParticipantInRoom(payload.targetParticipantId)) {
+      this.sendVoiceError(client, {
+        sessionId: payload.sessionId,
+        targetParticipantId: payload.targetParticipantId,
+        message: "상대를 찾을 수 없습니다.",
+      });
+      return;
+    }
+
+    if (this.participantToVoiceSession.has(senderParticipantId)) {
+      this.sendVoiceError(client, {
+        sessionId: payload.sessionId,
+        targetParticipantId: payload.targetParticipantId,
+        message: "이미 통화 진행 중입니다.",
+      });
+      return;
+    }
+
+    const targetSession = this.participantToVoiceSession.get(
+      payload.targetParticipantId
+    );
+    if (targetSession) {
+      this.sendVoiceError(client, {
+        sessionId: payload.sessionId,
+        targetParticipantId: payload.targetParticipantId,
+        message: "상대가 통화 중입니다.",
+      });
+      return;
+    }
+
+    if (!isNonEmptyString(payload.sessionId)) {
+      this.sendVoiceError(client, {
+        message: "통화 세션 정보가 유효하지 않습니다.",
+      });
+      return;
+    }
+
+    const existingSession = this.voiceSessions.get(payload.sessionId);
+    if (existingSession && existingSession.participants.size > 0) {
+      this.sendVoiceError(client, {
+        sessionId: payload.sessionId,
+        targetParticipantId: payload.targetParticipantId,
+        message: "동일한 통화 요청이 이미 진행 중입니다.",
+      });
+      return;
+    }
+
+    this.ensureVoiceSession(
+      payload.sessionId,
+      senderParticipantId,
+      payload.targetParticipantId
+    );
+    this.refreshVoiceTimeout(payload.sessionId);
+    this.sendVoicePayloadToParticipant(
+      payload.targetParticipantId,
+      VOICE_EVENTS.OFFER,
+      {
+        sessionId: payload.sessionId,
+        fromParticipantId: senderParticipantId,
+        targetParticipantId: payload.targetParticipantId,
+        sdp: payload.sdp,
+      }
+    );
+  }
+
+  private onVoiceAnswer(
+    client: Client,
+    payload:
+      | (Pick<VoiceAnswerMessage, "sessionId" | "targetParticipantId"> & {
+          sdp: string;
+        })
+      | null
+  ) {
+    const senderParticipantId = this.getParticipantId(client);
+    if (!senderParticipantId || !payload) {
+      this.sendVoiceError(client, {
+        message: senderParticipantId
+          ? "통화 응답 형식이 올바르지 않습니다."
+          : "참가자 정보를 찾지 못했습니다.",
+      });
+      return;
+    }
+
+    const session = this.voiceSessions.get(payload.sessionId);
+    if (!session || !session.participants.has(senderParticipantId)) {
+      this.sendVoiceError(client, {
+        sessionId: payload.sessionId,
+        targetParticipantId: payload.targetParticipantId,
+        message: "통화 세션이 유효하지 않습니다.",
+      });
+      return;
+    }
+
+    const targetParticipantId = this.resolveVoiceTarget(
+      payload.sessionId,
+      senderParticipantId,
+      payload.targetParticipantId
+    );
+    if (!targetParticipantId) {
+      this.sendVoiceError(client, {
+        sessionId: payload.sessionId,
+        targetParticipantId: payload.targetParticipantId,
+        message: "통화 대상이 일치하지 않습니다.",
+      });
+      return;
+    }
+
+    this.clearVoiceTimeout(payload.sessionId);
+    this.sendVoicePayloadToParticipant(
+      targetParticipantId,
+      VOICE_EVENTS.ANSWER,
+      {
+        sessionId: payload.sessionId,
+        fromParticipantId: senderParticipantId,
+        targetParticipantId,
+        sdp: payload.sdp,
+      }
+    );
+  }
+
+  private onVoiceIceCandidate(
+    client: Client,
+    payload:
+      | (Pick<VoiceIceCandidateMessage, "sessionId" | "targetParticipantId"> & {
+          candidate: VoiceIceCandidateLike;
+        })
+      | null
+  ) {
+    const senderParticipantId = this.getParticipantId(client);
+    if (!senderParticipantId || !payload) return;
+
+    const session = this.voiceSessions.get(payload.sessionId);
+    if (!session || !session.participants.has(senderParticipantId)) return;
+
+    const targetParticipantId = this.resolveVoiceTarget(
+      payload.sessionId,
+      senderParticipantId,
+      payload.targetParticipantId
+    );
+    if (!targetParticipantId) return;
+
+    this.refreshVoiceTimeout(payload.sessionId);
+    this.sendVoicePayloadToParticipant(
+      targetParticipantId,
+      VOICE_EVENTS.ICE_CANDIDATE,
+      {
+        sessionId: payload.sessionId,
+        fromParticipantId: senderParticipantId,
+        targetParticipantId,
+        candidate: payload.candidate,
+      }
+    );
+  }
+
+  private onVoiceEnd(
+    client: Client,
+    payload:
+      | (Pick<VoiceEndMessage, "sessionId" | "targetParticipantId"> & {
+          reason?: VoiceEndMessage["reason"];
+        })
+      | null
+  ) {
+    const senderParticipantId = this.getParticipantId(client);
+    if (!senderParticipantId || !payload) return;
+
+    const session = this.voiceSessions.get(payload.sessionId);
+    if (!session || !session.participants.has(senderParticipantId)) return;
+
+    this.terminateVoiceSession(payload.sessionId, payload.reason ?? "hangup");
+  }
+
+  private onVoiceMuteToggle(
+    client: Client,
+    payload:
+      | (Pick<VoiceMuteToggleMessage, "sessionId" | "targetParticipantId"> & {
+          muted: boolean;
+        })
+      | null
+  ) {
+    const senderParticipantId = this.getParticipantId(client);
+    if (!senderParticipantId || !payload) return;
+
+    const session = this.voiceSessions.get(payload.sessionId);
+    if (!session || !session.participants.has(senderParticipantId)) return;
+
+    const targetParticipantId = this.resolveVoiceTarget(
+      payload.sessionId,
+      senderParticipantId,
+      payload.targetParticipantId
+    );
+    if (!targetParticipantId) return;
+
+    this.sendVoicePayloadToParticipant(
+      targetParticipantId,
+      VOICE_EVENTS.MUTE_TOGGLE,
+      {
+        sessionId: payload.sessionId,
+        fromParticipantId: senderParticipantId,
+        targetParticipantId,
+        muted: payload.muted,
+      }
+    );
+  }
+
+  private ensureVoiceSession(
+    sessionId: string,
+    firstParticipantId: string,
+    secondParticipantId: string
+  ) {
+    const existing = this.voiceSessions.get(sessionId);
+    if (existing) {
+      existing.participants.add(firstParticipantId);
+      existing.participants.add(secondParticipantId);
+      this.participantToVoiceSession.set(firstParticipantId, sessionId);
+      this.participantToVoiceSession.set(secondParticipantId, sessionId);
+      this.refreshVoiceTimeout(sessionId);
+      return;
+    }
+
+    const timeout = this.clock.setTimeout(() => {
+      this.terminateVoiceSession(sessionId, "timeout");
+    }, VOICE_SESSION_TIMEOUT_MS);
+
+    this.voiceSessions.set(sessionId, {
+      participants: new Set([firstParticipantId, secondParticipantId]),
+      timeout,
+    });
+    this.participantToVoiceSession.set(firstParticipantId, sessionId);
+    this.participantToVoiceSession.set(secondParticipantId, sessionId);
+  }
+
+  private refreshVoiceTimeout(sessionId: string) {
+    const state = this.voiceSessions.get(sessionId);
+    if (!state || !state.timeout) return;
+    state.timeout?.clear();
+    state.timeout = this.clock.setTimeout(() => {
+      this.terminateVoiceSession(sessionId, "timeout");
+    }, VOICE_SESSION_TIMEOUT_MS);
+  }
+
+  private clearVoiceTimeout(sessionId: string) {
+    const state = this.voiceSessions.get(sessionId);
+    if (!state) return;
+    state.timeout?.clear();
+    state.timeout = null;
+  }
+
+  private cleanupVoiceSessionByParticipant(
+    participantId: string | undefined | null,
+    reason: VoiceEndMessage["reason"]
+  ) {
+    if (!participantId) return;
+    const sessionId = this.participantToVoiceSession.get(participantId);
+    if (!sessionId) return;
+
+    const session = this.voiceSessions.get(sessionId);
+    if (!session) {
+      this.participantToVoiceSession.delete(participantId);
+      return;
+    }
+    this.sendVoiceEndToSession(sessionId, reason);
+    this.clearVoiceSession(sessionId);
+  }
+
+  private terminateVoiceSession(
+    sessionId: string,
+    reason: VoiceEndMessage["reason"]
+  ) {
+    const session = this.voiceSessions.get(sessionId);
+    if (!session) return;
+    this.sendVoiceEndToSession(sessionId, reason);
+    this.clearVoiceSession(sessionId);
+  }
+
+  private sendVoiceEndToSession(
+    sessionId: string,
+    reason: VoiceEndMessage["reason"]
+  ) {
+    const session = this.voiceSessions.get(sessionId);
+    if (!session) return;
+    for (const participantId of session.participants) {
+      const targetParticipantId = [...session.participants].find(
+        (id) => id !== participantId
+      );
+      if (!targetParticipantId) continue;
+      this.sendVoicePayloadToParticipant(participantId, VOICE_EVENTS.END, {
+        sessionId,
+        fromParticipantId: targetParticipantId,
+        targetParticipantId: participantId,
+        reason: reason ?? "hangup",
+      });
+    }
+  }
+
+  private clearVoiceSession(sessionId: string) {
+    const session = this.voiceSessions.get(sessionId);
+    if (!session) return;
+    session.timeout?.clear();
+    this.voiceSessions.delete(sessionId);
+    for (const participantId of session.participants) {
+      this.participantToVoiceSession.delete(participantId);
+    }
+  }
+
+  private resolveVoiceTarget(
+    sessionId: string,
+    senderParticipantId: string,
+    fallbackTargetParticipantId: string
+  ) {
+    const state = this.voiceSessions.get(sessionId);
+    if (!state) return null;
+    if (
+      state.participants.has(fallbackTargetParticipantId) &&
+      fallbackTargetParticipantId !== senderParticipantId
+    ) {
+      return fallbackTargetParticipantId;
+    }
+    return (
+      [...state.participants].find(
+        (participantId) => participantId !== senderParticipantId
+      ) ?? null
+    );
+  }
+
+  private getClientByParticipantId(participantId: string) {
+    const sessionId = [...this.clientParticipantIds.entries()].find(
+      ([, candidate]) => candidate === participantId
+    )?.[0];
+    return (
+      this.clients.find((client) => client.sessionId === sessionId) ?? null
+    );
+  }
+
+  private isParticipantInRoom(participantId: string) {
+    return this.participants.has(participantId);
+  }
+
+  private sendVoicePayloadToParticipant(
+    participantId: string,
+    event: (typeof VOICE_EVENTS)[keyof typeof VOICE_EVENTS],
+    payload: Record<string, unknown>
+  ) {
+    const targetClient = this.getClientByParticipantId(participantId);
+    if (!targetClient) return;
+    targetClient.send(event, payload);
+  }
+
+  private sendVoiceError(
+    client: Client,
+    payload: {
+      sessionId?: string;
+      targetParticipantId?: string;
+      message: string;
+    }
+  ) {
+    client.send(VOICE_EVENTS.ERROR, payload);
   }
 
   private refreshLifecycle() {

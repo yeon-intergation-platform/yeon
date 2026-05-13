@@ -158,6 +158,81 @@ export const RACE_EVENTS = {
   RACE_PING: "race.ping",
 } as const;
 
+export const VOICE_EVENTS = {
+  OFFER: "voice.offer",
+  ANSWER: "voice.answer",
+  ICE_CANDIDATE: "voice.ice-candidate",
+  END: "voice.end",
+  MUTE_TOGGLE: "voice.mute_toggle",
+  ERROR: "voice.error",
+} as const;
+
+export const VOICE_CALL_STATUS = {
+  IDLE: "idle",
+  CALLING: "calling",
+  RINGING: "ringing",
+  CONNECTING: "connecting",
+  CONNECTED: "connected",
+  FAILED: "failed",
+  ENDED: "ended",
+} as const;
+
+export type VoiceCallStatus =
+  (typeof VOICE_CALL_STATUS)[keyof typeof VOICE_CALL_STATUS];
+
+export type VoiceIceCandidateLike = {
+  candidate: string;
+  sdpMid?: string | null;
+  sdpMLineIndex?: number | null;
+  usernameFragment?: string | null;
+};
+
+export type VoiceSignalBase = {
+  sessionId: string;
+  fromParticipantId: string;
+  targetParticipantId: string;
+};
+
+export type VoiceOfferMessage = VoiceSignalBase & {
+  sdp: string;
+};
+
+export type VoiceAnswerMessage = VoiceSignalBase & {
+  sdp: string;
+};
+
+export type VoiceIceCandidateMessage = VoiceSignalBase & {
+  candidate: VoiceIceCandidateLike;
+};
+
+export type VoiceEndMessage = VoiceSignalBase & {
+  reason?: "hangup" | "timeout" | "rejected" | "error" | "network";
+};
+
+export type VoiceMuteToggleMessage = VoiceSignalBase & {
+  muted: boolean;
+};
+
+export type VoiceErrorMessage = {
+  sessionId?: string;
+  fromParticipantId?: string;
+  targetParticipantId?: string;
+  message: string;
+};
+
+export type VoiceCallParticipantState = {
+  participantId: string;
+  status: VoiceCallStatus;
+  sessionId: string | null;
+  targetParticipantId: string | null;
+  muted: boolean;
+};
+
+export type VoiceRoomState = {
+  participants: readonly VoiceCallParticipantState[];
+  activeSessionId: string | null;
+};
+
 export type TypingRaceLaneSnapshot = {
   id: string;
   label: string;

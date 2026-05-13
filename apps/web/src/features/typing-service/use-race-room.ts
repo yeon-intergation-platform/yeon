@@ -41,6 +41,7 @@ export type UseRaceRoomOptions = {
 };
 
 export type UseRaceRoomResult = {
+  room: Room | null;
   connectionState: RaceConnectionState;
   snapshot: TypingRaceSnapshot | null;
   roomSnapshot: TypingRoomSnapshot | null;
@@ -213,6 +214,7 @@ export function useRaceRoom(options: UseRaceRoomOptions): UseRaceRoomResult {
   const [roomSnapshot, setRoomSnapshot] = useState<TypingRoomSnapshot | null>(
     null
   );
+  const [room, setRoom] = useState<Room | null>(null);
   const [prompt, setPrompt] = useState<string | null>(null);
   const [results, setResults] = useState<readonly TypingResultSnapshot[]>([]);
   const [mySeat, setMySeat] = useState<string | null>(null);
@@ -242,6 +244,7 @@ export function useRaceRoom(options: UseRaceRoomOptions): UseRaceRoomResult {
     setMySeat(null);
     setConnectedRoomId(null);
     setRoomError(null);
+    setRoom(null);
 
     ensureSeatReservationCompat();
     const client = new Client(resolveRaceServerUrl());
@@ -281,6 +284,7 @@ export function useRaceRoom(options: UseRaceRoomOptions): UseRaceRoomResult {
         }
 
         roomRef.current = room;
+        setRoom(room);
         setMySeat(playerId);
         setConnectedRoomId(room.roomId);
         setConnectionState("connected");
@@ -334,6 +338,7 @@ export function useRaceRoom(options: UseRaceRoomOptions): UseRaceRoomResult {
       cancelled = true;
       const room = roomRef.current;
       roomRef.current = null;
+      setRoom(null);
       if (room) {
         try {
           void room.leave(false);
@@ -388,6 +393,7 @@ export function useRaceRoom(options: UseRaceRoomOptions): UseRaceRoomResult {
   const leaveRoom = useCallback(async () => {
     const room = roomRef.current;
     roomRef.current = null;
+    setRoom(null);
     setRoomError(null);
 
     if (!room) {
@@ -422,11 +428,13 @@ export function useRaceRoom(options: UseRaceRoomOptions): UseRaceRoomResult {
     setMySeat(null);
     setConnectedRoomId(null);
     setRoomError(null);
+    setRoom(null);
     setRejoinToken((v) => v + 1);
   }, []);
 
   return useMemo<UseRaceRoomResult>(
     () => ({
+      room,
       connectionState,
       snapshot,
       roomSnapshot,
@@ -448,6 +456,7 @@ export function useRaceRoom(options: UseRaceRoomOptions): UseRaceRoomResult {
       rejoin,
     }),
     [
+      room,
       connectionState,
       snapshot,
       roomSnapshot,
