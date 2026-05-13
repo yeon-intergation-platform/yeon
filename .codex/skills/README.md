@@ -73,6 +73,7 @@ These are generated under `.codex/skills/SHARED/` from `.claude/commands` or `.c
 - `drizzle-migration-workflow`
 - `frontend-structure-conventions`
 - `guest-auth-branching`
+- `make-3-agent-backlog-plan`
 - `race-server-conventions`
 - `route-state-contract`
 - `tanstack-query-conventions`
