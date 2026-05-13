@@ -33,7 +33,7 @@ description: |
 
 - 동시에, 아래 작업 실행 가이드를 반드시 함께 출력한다.
 
-```text
+````text
 권장: 작업 실행은 3개 워크트리에 에이전트 CLI 세션을 열고 분배한다.
 1) yeon-2: `cd ~/coding_stuffs/yeon-2 && codex`
 2) yeon-3: `cd ~/coding_stuffs/yeon-3 && codex`
@@ -42,7 +42,18 @@ description: |
 각 세션에 이번 요청의 작업내용(요구사항/범위/완료 기준/제약사항)을 동일하게 전달하고 실행한다.
 로컬 테스트 실행은 `yeon`(메인 워크트리)에서는 오직 개발자만 수행한다.
 에이전트는 각자의 세션(yeon-2/yeon-3/yeon-4)에서 테스트를 분담/진행한다.
-```
+각 세션은 작업 시작 시점에 `origin/main` 기준으로 클린 브랜치를 생성해서 시작해야 한다.
+
+예시:
+```text
+cd ~/coding_stuffs/yeon-2
+git fetch origin
+git checkout main
+git reset --hard origin/main
+git switch -c <issue-or-task-name>
+````
+
+````
 
 ## 입력 규칙
 
@@ -93,7 +104,7 @@ description: |
 ### 사용자 방향
 
 - 추천 기준
-```
+````
 
 ## 실행 규칙
 
