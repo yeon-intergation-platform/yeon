@@ -5,7 +5,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent } from "react";
-import { Crown, Search, Users, X } from "lucide-react";
+import { Crown, Search, Users } from "lucide-react";
 import {
   YeonBadge,
   YeonButton,
@@ -31,11 +31,13 @@ import {
   useTypingSettings,
   type TypingRaceSeed,
 } from "./use-typing-settings";
+import {
+  RoomCharacterSummaryCard,
+  RoomCreateDialog,
+} from "@/features/room-shared";
 import { useTypingRoomLobby } from "./use-typing-room-lobby";
 import { usePlayerIdentity } from "./use-player-identity";
 import { useRaceRoom } from "./use-race-room";
-import { CharacterSprite } from "./character-sprite";
-import { findCharacter } from "./characters";
 import {
   TYPING_ROOM_DIFFICULTY_LABELS,
   TYPING_ROOM_LANGUAGE_LABELS,
@@ -44,7 +46,6 @@ import {
   TYPING_ROOM_TEXT_TYPE_LABELS,
   TYPING_ROOM_VISIBILITY_LABELS,
 } from "./typing-room-labels";
-import { useCharacterFrameOverrides } from "./use-character-frame-overrides";
 import { useTypingProfile } from "./use-typing-profile";
 
 const FIXED_MAX_PARTICIPANTS = 4;
@@ -91,9 +92,8 @@ export function TypingRoomLobbyScreen() {
   const router = useRouter();
   const { state } = useTypingRoomLobby();
   const { settings } = useTypingSettings();
-  const { profile } = useTypingProfile();
+  const { profile, loaded: profileLoaded } = useTypingProfile();
   const playerId = usePlayerIdentity();
-  const frameOverrides = useCharacterFrameOverrides();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [visibility, setVisibility] = useState<TypingRoomVisibility>(
@@ -119,7 +119,6 @@ export function TypingRoomLobbyScreen() {
       deckState.selectedDeck,
     [deckState.selectedDeck, deckState.selectedDeckId, roomDeckOptions]
   );
-  const character = findCharacter(profile.characterId);
 
   const createRace = useRaceRoom({
     enabled: Boolean(createRoomRequest && playerId),
@@ -250,25 +249,6 @@ export function TypingRoomLobbyScreen() {
     setIsCreateModalOpen(false);
   }, [isCreating]);
 
-  useEffect(() => {
-    if (!isCreateModalOpen) return;
-
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== "Escape") return;
-      event.preventDefault();
-      closeCreateModal();
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [closeCreateModal, isCreateModalOpen]);
-
   return (
     <div className="min-h-screen bg-white text-[#111]">
       <TypingServiceHeader active="rooms" title="YEON 타자방" />
@@ -283,29 +263,13 @@ export function TypingRoomLobbyScreen() {
               실시간으로 함께 타자를 치고 실력을 겨루는 공간입니다.
             </p>
           </div>
-          <div className="flex items-center gap-4 rounded-2xl border border-[#e5e5e5] bg-[#fafafa] px-4 py-3">
-            <div className="flex h-[72px] w-[72px] items-end justify-center overflow-hidden rounded-xl bg-white">
-              <CharacterSprite
-                character={character}
-                maxHeight={68}
-                sequenceOverride={frameOverrides[character.id]}
-              />
-            </div>
-            <div>
-              <p className="text-[13px] font-semibold text-[#666]">
-                입장 캐릭터
-              </p>
-              <p className="mt-1 text-[16px] font-bold text-[#111]">
-                {profile.nickname} · {character.label[settings.locale]}
-              </p>
-              <Link
-                href="/typing-service"
-                className="mt-2 inline-flex text-[12px] font-semibold text-[#666] underline underline-offset-4"
-              >
-                캐릭터 바꾸기
-              </Link>
-            </div>
-          </div>
+          <RoomCharacterSummaryCard
+            loaded={profileLoaded}
+            nickname={profile.nickname}
+            characterId={profile.characterId}
+            locale={settings.locale}
+            changeHref="/typing-service"
+          />
         </section>
 
         <section className="border-t border-[#e5e5e5] px-6 py-6 md:px-10">
@@ -489,109 +453,84 @@ export function TypingRoomLobbyScreen() {
         방 만들기
       </YeonButton>
 
-      {isCreateModalOpen && (
-        <div
-          className="fixed inset-0 z-[80] flex items-center justify-center px-4 py-6"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="create-typing-room-title"
-        >
-          <button
-            type="button"
-            aria-label="방 만들기 닫기"
-            onClick={closeCreateModal}
-            className="absolute inset-0 bg-[rgba(0,0,0,0.36)]"
-          />
-          <form
-            onSubmit={handleCreate}
-            className={getYeonSurfaceClassName({
-              className:
-                "relative z-10 max-h-[calc(100vh-3rem)] w-full max-w-[456px] overflow-y-auto rounded-xl p-7 shadow-[0_24px_80px_rgba(0,0,0,0.22)]",
-            })}
+      <RoomCreateDialog
+        open={isCreateModalOpen}
+        titleId="create-typing-room-title"
+        title="방 만들기"
+        closeLabel="방 만들기 닫기"
+        onClose={closeCreateModal}
+        as="form"
+        onSubmit={handleCreate}
+        closeDisabled={isCreating}
+        panelClassName={getYeonSurfaceClassName({
+          className:
+            "relative z-10 max-h-[calc(100vh-3rem)] w-full max-w-[456px] overflow-y-auto rounded-xl shadow-[0_24px_80px_rgba(0,0,0,0.22)]",
+        })}
+        bodyClassName="p-7 pt-6"
+      >
+        <div className="grid gap-6">
+          <label className="grid gap-3 text-[15px] font-bold text-[#111]">
+            방 제목
+            <YeonField
+              value={title}
+              onChange={(event) => setTitle(event.target.value)}
+              placeholder="예: 오늘의 타자 연습"
+              maxLength={40}
+              disabled={isCreating}
+              className="h-[50px] rounded-lg px-4 text-[16px] font-medium"
+            />
+          </label>
+
+          <fieldset className="grid gap-3 text-[15px] font-bold text-[#111]">
+            <legend>공개 설정</legend>
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                TYPING_ROOM_VISIBILITY.PUBLIC,
+                TYPING_ROOM_VISIBILITY.PRIVATE,
+              ].map((option) => (
+                <label
+                  key={option}
+                  className={`flex h-[52px] cursor-pointer items-center justify-center rounded-lg border text-[16px] font-semibold transition-colors ${
+                    visibility === option
+                      ? "border-[#111] bg-white text-[#111] shadow-[inset_0_0_0_1px_#111]"
+                      : "border-[#d7d7d7] bg-white text-[#111] hover:border-[#111]"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="visibility"
+                    value={option}
+                    checked={visibility === option}
+                    onChange={() => setVisibility(option)}
+                    disabled={isCreating}
+                    className="sr-only"
+                  />
+                  {TYPING_ROOM_VISIBILITY_LABELS[option]}
+                </label>
+              ))}
+            </div>
+          </fieldset>
+
+          <p className="text-[14px] font-medium leading-6 text-[#777]">
+            세부 설정은 방에 들어간 뒤 시작 전에 바꿀 수 있어요.
+          </p>
+
+          {createError && (
+            <p className="rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-[13px] font-semibold leading-5 text-red-600">
+              {createError}
+            </p>
+          )}
+
+          <YeonButton
+            type="submit"
+            variant="primary"
+            disabled={isCreating}
+            className="h-[60px] rounded-lg px-4 text-[18px] shadow-[0_3px_10px_rgba(0,0,0,0.10)] disabled:cursor-not-allowed disabled:opacity-60"
           >
-            <div className="flex items-center justify-between gap-4">
-              <h2
-                id="create-typing-room-title"
-                className="text-[22px] font-bold tracking-[-0.03em] text-[#111]"
-              >
-                방 만들기
-              </h2>
-              <button
-                type="button"
-                onClick={closeCreateModal}
-                aria-label="방 만들기 닫기"
-                disabled={isCreating}
-                className="-mr-1 rounded-full p-1 text-[#444] transition-colors hover:bg-[#f5f5f5] hover:text-[#111] disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                <X size={28} strokeWidth={1.8} />
-              </button>
-            </div>
-
-            <div className="mt-7 grid gap-6">
-              <label className="grid gap-3 text-[15px] font-bold text-[#111]">
-                방 제목
-                <YeonField
-                  value={title}
-                  onChange={(event) => setTitle(event.target.value)}
-                  placeholder="예: 오늘의 타자 연습"
-                  maxLength={40}
-                  disabled={isCreating}
-                  className="h-[50px] rounded-lg px-4 text-[16px] font-medium"
-                />
-              </label>
-
-              <fieldset className="grid gap-3 text-[15px] font-bold text-[#111]">
-                <legend>공개 설정</legend>
-                <div className="grid grid-cols-2 gap-2">
-                  {[
-                    TYPING_ROOM_VISIBILITY.PUBLIC,
-                    TYPING_ROOM_VISIBILITY.PRIVATE,
-                  ].map((option) => (
-                    <label
-                      key={option}
-                      className={`flex h-[52px] cursor-pointer items-center justify-center rounded-lg border text-[16px] font-semibold transition-colors ${
-                        visibility === option
-                          ? "border-[#111] bg-white text-[#111] shadow-[inset_0_0_0_1px_#111]"
-                          : "border-[#d7d7d7] bg-white text-[#111] hover:border-[#111]"
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="visibility"
-                        value={option}
-                        checked={visibility === option}
-                        onChange={() => setVisibility(option)}
-                        disabled={isCreating}
-                        className="sr-only"
-                      />
-                      {TYPING_ROOM_VISIBILITY_LABELS[option]}
-                    </label>
-                  ))}
-                </div>
-              </fieldset>
-
-              <p className="text-[14px] font-medium leading-6 text-[#777]">
-                세부 설정은 방에 들어간 뒤 시작 전에 바꿀 수 있어요.
-              </p>
-
-              {createError && (
-                <p className="rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-[13px] font-semibold leading-5 text-red-600">
-                  {createError}
-                </p>
-              )}
-
-              <YeonButton
-                type="submit"
-                variant="primary"
-                disabled={isCreating}
-                className="h-[60px] rounded-lg px-4 text-[18px] shadow-[0_3px_10px_rgba(0,0,0,0.10)] disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {isCreating ? "타자방 만드는 중..." : "만들고 입장하기"}
-              </YeonButton>
-            </div>
-          </form>
+            {isCreating ? "타자방 만드는 중..." : "만들고 입장하기"}
+          </YeonButton>
         </div>
-      )}
+      </RoomCreateDialog>
     </div>
   );
 }

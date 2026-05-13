@@ -3,7 +3,7 @@
 import { Crown } from "lucide-react";
 import type { TypingRoomParticipantSnapshot } from "@yeon/race-shared";
 
-import { CharacterSprite } from "./character-sprite";
+import { RoomParticipantCard } from "@/features/room-shared";
 import { findCharacter } from "./characters";
 
 type TypingRoomParticipantsPanelProps = {
@@ -29,12 +29,25 @@ export function TypingRoomParticipantsPanel({
             : null;
 
           return (
-            <div
+            <RoomParticipantCard
               key={participant?.id ?? `empty-${index}`}
-              className="min-h-[148px] rounded-2xl border border-[#e5e5e5] bg-[#fafafa] p-2.5"
-            >
-              {participant && character ? (
-                <div className="flex h-full flex-col justify-between gap-2">
+              identityKey={participant?.id ?? `empty-${index}`}
+              title={
+                participant
+                  ? `${participant.label}${participant.id === myParticipantId ? " (나)" : ""}`
+                  : undefined
+              }
+              subtitle={character ? character.label[locale] : undefined}
+              characterId={participant?.characterId}
+              isCurrent={participant?.id === myParticipantId}
+              frameOverrides={frameOverrides}
+              className="min-h-[148px] p-2.5"
+              spriteBoxClassName="flex h-[72px] items-end justify-center overflow-hidden rounded-xl bg-white px-2 py-1"
+              spriteMaxHeight={68}
+              titleClassName="text-[14px] font-semibold"
+              subtitleClassName="text-[#888]"
+              badges={
+                participant ? (
                   <div className="flex items-center justify-between gap-2">
                     <span
                       className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${participant.isReady ? "border border-[#d9ead3] bg-[#eef8ea] text-[#2f7d32]" : "border border-[#e5e5e5] bg-white text-[#999]"}`}
@@ -47,29 +60,10 @@ export function TypingRoomParticipantsPanel({
                       </span>
                     ) : null}
                   </div>
-                  <div className="flex h-[72px] items-end justify-center overflow-hidden rounded-xl bg-white px-2 py-1">
-                    <CharacterSprite
-                      character={character}
-                      maxHeight={68}
-                      sequenceOverride={frameOverrides[character.id]}
-                    />
-                  </div>
-                  <div className="min-w-0 text-center">
-                    <p className="truncate text-[14px] font-semibold">
-                      {participant.label}
-                      {participant.id === myParticipantId ? " (나)" : ""}
-                    </p>
-                    <p className="mt-0.5 text-[11px] text-[#888]">
-                      {character.label[locale]}
-                    </p>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex h-full min-h-[120px] items-center justify-center rounded-xl border border-dashed border-[#ddd] bg-white text-[13px] font-semibold text-[#aaa]">
-                  빈자리
-                </div>
-              )}
-            </div>
+                ) : null
+              }
+              emptyLabel="빈자리"
+            />
           );
         })}
       </div>
