@@ -9,7 +9,7 @@ import {
   updateTypingDeckInSpring,
 } from "@/server/typing-decks-spring-client";
 import { getDefaultTypingDeckDetail } from "@/server/typing-deck-defaults";
-import { ServiceError } from "@/server/services/service-error";
+import { ServiceError } from "@/server/errors/service-error";
 
 import {
   getTypingDeckRequestContext,

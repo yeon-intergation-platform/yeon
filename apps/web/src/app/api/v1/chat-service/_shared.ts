@@ -4,7 +4,7 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
 import { fetchChatServiceSessionFromSpring } from "@/server/chat-service-auth-spring-client";
-import { ServiceError } from "@/server/services/service-error";
+import { ServiceError } from "@/server/errors/service-error";
 
 export const CHAT_SERVICE_SESSION_COOKIE_NAME = "chat-service-session";
 

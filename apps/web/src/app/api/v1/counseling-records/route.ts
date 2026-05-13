@@ -13,7 +13,7 @@ import {
   AUDIO_UPLOAD_ERROR_MESSAGE,
   isAcceptedAudioFile,
 } from "@/lib/audio-file";
-import { ServiceError } from "@/server/services/service-error";
+import { ServiceError } from "@/server/errors/service-error";
 import {
   CounselingRecordCreateSpringBackendHttpError,
   createCounselingRecordInSpring,

@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { ServiceError } from "@/server/services/service-error";
+import { ServiceError } from "@/server/errors/service-error";
 
 const mockGetAuthUserBySessionToken = vi.fn();
 const mockClearAuthSessionCookie = vi.fn();

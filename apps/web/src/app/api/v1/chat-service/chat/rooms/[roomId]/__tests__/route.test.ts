@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ChatServiceChatRoomsSpringBackendHttpError } from "@/server/chat-service-chat-rooms-spring-client";
-import { ServiceError } from "@/server/services/service-error";
+import { ServiceError } from "@/server/errors/service-error";
 
 const mockRequireChatServiceAuth = vi.fn();
 const mockFetchChatServiceRoomFromSpring = vi.fn();

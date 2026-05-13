@@ -8,7 +8,7 @@ import {
   clearAuthSessionCookie,
   getAuthUserBySessionToken,
 } from "@/server/auth/session";
-import { ServiceError } from "@/server/services/service-error";
+import { ServiceError } from "@/server/errors/service-error";
 
 export function jsonError(message: string, status: number) {
   return NextResponse.json(errorResponseSchema.parse({ message }), { status });

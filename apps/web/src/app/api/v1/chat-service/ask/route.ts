@@ -11,7 +11,7 @@ import {
   createChatServiceAskPostInSpring,
   fetchChatServiceAskPostsFromSpring,
 } from "@/server/chat-service-ask-spring-client";
-import { ServiceError } from "@/server/services/service-error";
+import { ServiceError } from "@/server/errors/service-error";
 
 import {
   jsonChatServiceError,

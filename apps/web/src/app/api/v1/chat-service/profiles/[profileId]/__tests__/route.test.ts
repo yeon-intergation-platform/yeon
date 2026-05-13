@@ -32,7 +32,7 @@ describe("chat-service profile route", () => {
   });
 
   it("비인증이면 shared 에러를 반환한다", async () => {
-    const { ServiceError } = await import("@/server/services/service-error");
+    const { ServiceError } = await import("@/server/errors/service-error");
     mockRequireChatServiceAuth.mockRejectedValue(new ServiceError(401, "chat-service 로그인이 필요합니다."));
 
     const response = await GET(

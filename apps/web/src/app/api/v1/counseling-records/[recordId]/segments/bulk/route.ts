@@ -9,7 +9,7 @@ import {
   bulkUpdateSpeakerInSpring,
   CounselingRecordMutationSpringBackendHttpError,
 } from "@/server/counseling-record-mutation-spring-client";
-import { ServiceError } from "@/server/services/service-error";
+import { ServiceError } from "@/server/errors/service-error";
 
 import { jsonError, requireAuthenticatedUser } from "../../../_shared";
 

@@ -7,7 +7,7 @@ import type { z } from "zod";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
-import { ServiceError } from "@/server/services/service-error";
+import { ServiceError } from "@/server/errors/service-error";
 import {
   ChatServiceFeedSpringBackendHttpError,
   createChatServiceFeedPostInSpring,

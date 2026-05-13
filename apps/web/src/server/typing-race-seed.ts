@@ -8,7 +8,7 @@ import {
   type TypingRaceSeedDto,
 } from "@yeon/api-contract/typing-decks";
 
-import { ServiceError } from "@/server/services/service-error";
+import { ServiceError } from "@/server/errors/service-error";
 
 const PRIVATE_DECK_LOBBY_TITLE = "비공개 덱";
 const TYPING_RACE_SEED_FALLBACK_SECRET =

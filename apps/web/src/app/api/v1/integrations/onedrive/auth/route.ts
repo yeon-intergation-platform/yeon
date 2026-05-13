@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server";
 import { requireAuthenticatedUser } from "@/app/api/v1/counseling-records/_shared";
 import { handleOAuthStartRoute } from "@/app/api/v1/integrations/_shared";
 import { CloudOAuthSpringBackendHttpError, fetchOneDriveOAuthUrlFromSpring } from "@/server/cloud-oauth-spring-client";
-import { ServiceError } from "@/server/services/service-error";
+import { ServiceError } from "@/server/errors/service-error";
 
 export const runtime = "nodejs";
 
