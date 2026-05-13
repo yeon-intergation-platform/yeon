@@ -58,7 +58,6 @@ Prefer pointers to copies. Do not paste long policies, command catalogs, or code
 ## How agents should work here
 
 - 멀티 워크트리 운영 규칙(요청 반영):
-
   - 기본 개발은 `yeon-2`, `yeon-3`, `yeon-4` 3개 워크트리를 사용한다.
   - `yeon` 워크트리는 작업용이 아니라 로컬 환경 확인/검증용으로 유지한다.
   - 요청이 올 때마다 3개 작업 워크트리를 순환 사용하고, 동일 브랜치 동시 충돌을 피하기 위해 `yeon-2/3/4` 이외 새 임시 워크트리 생성은 기본적으로 하지 않는다.
@@ -86,7 +85,20 @@ Implementation defaults:
 Verify before claiming completion. Choose the smallest checks that prove the change, then broaden when risk warrants it.
 
 - Code changes: run relevant lint and typecheck plus required tests based on the owning workspace scripts.
-- 웹/웹 빌드 변경은 기본적으로 CD 이미지 빌드(배포 파이프라인)에서 `build` 실패로 게이트를 수행하고, 로컬 커밋 훅에는 `pnpm --filter @yeon/web lint`/`typecheck`를 우선 적용한다.
+- 로컬에서 `pnpm build`는 아래 케이스에서만 기본 실행한다.
+  1. 배포하기 직전
+  2. main/dev 같은 중요 브랜치 합치기 직전
+  3. 라우팅 구조 변경
+  4. `next.config.js`, `tsconfig`, `package.json`, `pnpm-lock.yaml` 변경
+  5. 서버 컴포넌트/클라이언트 컴포넌트 경계 변경
+  6. import/export 구조 대규모 변경
+  7. 환경변수 사용 코드 변경
+  8. 이미지, 폰트, `dynamic import`, `middleware`, API route 변경
+  9. `Dockerfile` 또는 배포 설정 변경
+  10. “운영에서 깨질 수 있는 큰 리팩토링” 후
+
+- 버튼/문구 텍스트 수정, CSS/Tailwind class 약간 수정, 여백/색/폰트 수정, 단순 배치 변경, 로컬에서 즉시 시각 확인되는 소규모 UI 수정, README/주석/문서 수정은 기본적으로 `pnpm build` 필수 대상이 아니다.
+- 웹 빌드 변경이 필요한 경우 CD 이미지 빌드(배포 파이프라인)에서 `build` 게이트를 수행하고, 로컬 커밋 훅은 `pnpm --filter @yeon/web lint`/`typecheck` 중심으로 선검증한다.
 - Schema changes: load `yeon-project-context` DB/migration guidance before editing and run drift checks afterward.
 - Docs/rules/skills-only changes: at minimum run:
   - `git diff --check`
