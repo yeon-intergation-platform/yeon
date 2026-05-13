@@ -17,7 +17,6 @@ export default defineConfig({
         "e2e/**",
         ".next/**",
         "scripts/**",
-        "src/server/db/migrations/**",
         "**/*.d.ts",
         "next-env.d.ts",
         "node_modules/**",

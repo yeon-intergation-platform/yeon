@@ -1,1 +1,0 @@
-ALTER TABLE "card_deck_items" ADD COLUMN "image_storage_key" text;

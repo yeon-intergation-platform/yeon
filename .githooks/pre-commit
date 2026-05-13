@@ -78,12 +78,4 @@ pnpm lint
 echo "[pre-commit] pnpm typecheck"
 pnpm typecheck
 
-# --- 3) DB schema drift (staged DB 파일 있을 때만) ---
-staged_db_changes=$(git diff --cached --name-only --diff-filter=ACMR \
-  | grep -E '^apps/web/(src/server/db/(schema|migrations)|drizzle\.config)' \
-  || true)
-
-if [ -n "$staged_db_changes" ]; then
-  echo "[pre-commit] DB 파일 변경 감지 → pnpm db:check:drift"
-  pnpm db:check:drift
-fi
+# DB schema 변경은 apps/backend Spring Flyway가 소유한다.

@@ -113,12 +113,11 @@ type ViewState<T> =
 
 ## 6. DB / Migration
 
-`apps/web/src/server/db/schema/**` 수정 시 같은 commit에 migration SQL 포함.
+DB schema와 migration의 source of truth는 Spring backend Flyway다.
 
-- 생성: `pnpm --filter @yeon/web db:generate --name=<설명적 이름>`
-- 로컬 검증: `pnpm --filter @yeon/web db:check:drift`
-- `drizzle-kit push`는 일회성 로컬 실험에만 사용한다.
-- 운영 배포 migration은 idempotent 해야 한다.
+- 신규 DDL은 `apps/backend/src/main/resources/db/migration/`에 추가한다.
+- `apps/web`은 DB schema, Drizzle migration, DB drift check를 소유하지 않는다.
+- 운영 배포 migration은 Spring Boot/Flyway가 실행하며 idempotent 해야 한다.
   - `CREATE TABLE IF NOT EXISTS`
   - `ADD COLUMN IF NOT EXISTS`
   - `CREATE INDEX IF NOT EXISTS`
