@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import type { ClipboardEvent } from "react";
 import { RotateCcw } from "lucide-react";
 import {
   resolveTypingSpeedStyle,
@@ -21,6 +22,10 @@ import { useTypingProfile } from "./use-typing-profile";
 import { createTranslator, useTypingSettings } from "./use-typing-settings";
 import { TypingServiceHeader } from "./typing-service-header";
 import type { UseRaceRoomResult } from "./use-race-room";
+import {
+  applyTypingInputClamp,
+  getLockedInputLength,
+} from "./typing-input-utils";
 import {
   calculateAccuracy,
   calculateTypingSpeedMetrics,
@@ -58,6 +63,10 @@ export function TypingRaceMultiplayerScreen({
   const speedStyle = resolveTypingSpeedStyle(speedSource);
   const promptChars = useMemo(() => Array.from(prompt), [prompt]);
   const inputChars = useMemo(() => Array.from(input), [input]);
+  const lockedLength = useMemo(
+    () => getLockedInputLength(promptChars, inputChars),
+    [inputChars, promptChars]
+  );
 
   const progress = useMemo(() => getProgress(prompt, input), [prompt, input]);
   const accuracy = useMemo(
@@ -242,18 +251,26 @@ export function TypingRaceMultiplayerScreen({
   };
 
   const handleInputChange = (nextRawValue: string) => {
-    const nextInput = Array.from(nextRawValue)
-      .slice(0, promptChars.length)
-      .join("");
+    const { nextInput } = applyTypingInputClamp(
+      nextRawValue,
+      promptChars,
+      input
+    );
     const nextChars = Array.from(nextInput);
     let addedMistakes = 0;
+
     nextChars.forEach((char, index) => {
       if (inputChars[index] !== char && char !== promptChars[index]) {
         addedMistakes += 1;
       }
     });
+
     if (addedMistakes > 0) setMistakeCount((count) => count + addedMistakes);
     setInput(nextInput);
+  };
+
+  const handleClipboardBlock = (event: ClipboardEvent) => {
+    event.preventDefault();
   };
 
   const inCountdown = race.stage === TYPING_RACE_STAGE.COUNTDOWN;
@@ -454,6 +471,7 @@ export function TypingRaceMultiplayerScreen({
                 const isCurrent = index === inputChars.length;
                 const isMismatch = mismatches.includes(index);
                 const isMatched = typed === char;
+                const isLocked = index < lockedLength;
 
                 return (
                   <span
@@ -461,7 +479,7 @@ export function TypingRaceMultiplayerScreen({
                     className={
                       isMismatch
                         ? "bg-red-100 text-red-500"
-                        : isMatched
+                        : isMatched || isLocked
                           ? "text-[#111]"
                           : isCurrent
                             ? "bg-[#111] text-white"
@@ -478,6 +496,9 @@ export function TypingRaceMultiplayerScreen({
               ref={textareaRef}
               value={input}
               onChange={(e) => handleInputChange(e.target.value)}
+              onCopy={handleClipboardBlock}
+              onCut={handleClipboardBlock}
+              onPaste={handleClipboardBlock}
               disabled={inCountdown}
               rows={3}
               spellCheck={false}

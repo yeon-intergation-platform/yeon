@@ -102,7 +102,7 @@ export type TypingRoomMode =
 
 export const TYPING_RACE_DEFAULTS = {
   countdownSeconds: 10,
-  roomCountdownSeconds: 3,
+  roomCountdownSeconds: 10,
   minPlayers: 1,
   maxPlayers: 6,
   lobbyMaxPlayers: 4,

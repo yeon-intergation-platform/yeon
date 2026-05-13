@@ -67,11 +67,20 @@ async function fetchSpring<T>(
   init: SpringInit,
   fallbackMessage: string
 ): Promise<T> {
-  const response = await fetch(`${resolveSpringBackendBaseUrl()}${path}`, {
-    ...init,
-    cache: "no-store",
-    headers: buildSpringBffHeaders(init.headers, { userId: init.userId }),
-  });
+  let response: Response;
+
+  try {
+    response = await fetch(`${resolveSpringBackendBaseUrl()}${path}`, {
+      ...init,
+      cache: "no-store",
+      headers: buildSpringBffHeaders(init.headers, { userId: init.userId }),
+    });
+  } catch {
+    throw new CommunityChatSpringBackendHttpError(
+      503,
+      "Spring backend와 연결할 수 없습니다."
+    );
+  }
 
   const raw = await response.text();
   const parsed = tryParseJson(raw);
