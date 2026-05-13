@@ -85,8 +85,8 @@ Implementation defaults:
 
 Verify before claiming completion. Choose the smallest checks that prove the change, then broaden when risk warrants it.
 
-- Code changes: run relevant lint, typecheck, build, and tests based on the owning workspace scripts.
-- Web app changes: include `pnpm --filter @yeon/web build` when the change can affect production build behavior.
+- Code changes: run relevant lint and typecheck plus required tests based on the owning workspace scripts.
+- 웹/웹 빌드 변경은 기본적으로 CD 이미지 빌드(배포 파이프라인)에서 `build` 실패로 게이트를 수행하고, 로컬 커밋 훅에는 `pnpm --filter @yeon/web lint`/`typecheck`를 우선 적용한다.
 - Schema changes: load `yeon-project-context` DB/migration guidance before editing and run drift checks afterward.
 - Docs/rules/skills-only changes: at minimum run:
   - `git diff --check`
@@ -184,6 +184,7 @@ https://dev.yeon.world/counseling-service/api/v1/integrations/<provider>/auth/ca
 - root `package.json`의 `version`은 자동 운영 릴리즈 번호를 막거나 대체하는 기준으로 쓰지 않는다.
 - PR 생성/merge 명령을 수행한 뒤에는 머지 상태 재조회나 CI/CD/배포/릴리즈 완료 대기로 오래 멈추지 않는다. 후속 상태는 GitHub Actions 비동기 흐름에 맡기고, 필요한 URL만 남긴다.
 - 사후 동작 확인은 개발자가 이미 `pnpm dev:all`로 켜둔 `http://localhost:3000/`을 기준으로 한다. 에이전트가 직접 dev server를 기동하지 않는다.
+- 로컬 커밋 훅에서 `pnpm build`를 기본적으로 강제하지 않는다. `pnpm --filter @yeon/web lint`/`typecheck`로 선검증하고, 웹 빌드는 CD 이미지 빌드 단계에서 실패 게이트를 수행한다.
 
 ## Claude CLI / OMC skill 참고
 
