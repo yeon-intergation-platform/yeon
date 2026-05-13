@@ -5,7 +5,7 @@ import {
   requireAuthenticatedUser,
 } from "@/app/api/v1/counseling-records/_shared";
 import { buildSpaceExportData } from "@/server/sheet-export-bff";
-import { ServiceError } from "@/server/services/service-error";
+import { ServiceError } from "@/server/errors/service-error";
 
 export const runtime = "nodejs";
 

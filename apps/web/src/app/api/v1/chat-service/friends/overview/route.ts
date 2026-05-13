@@ -6,7 +6,7 @@ import {
   ChatServiceFriendsOverviewSpringBackendHttpError,
   fetchChatServiceFriendsOverviewFromSpring,
 } from "@/server/chat-service-friends-overview-spring-client";
-import { ServiceError } from "@/server/services/service-error";
+import { ServiceError } from "@/server/errors/service-error";
 
 import {
   jsonChatServiceError,

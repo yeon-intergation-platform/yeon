@@ -7,7 +7,7 @@ import {
   blockChatServiceProfileInSpring,
   unblockChatServiceProfileInSpring,
 } from "@/server/chat-service-block-spring-client";
-import { ServiceError } from "@/server/services/service-error";
+import { ServiceError } from "@/server/errors/service-error";
 
 import {
   jsonChatServiceError,

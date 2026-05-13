@@ -14,7 +14,7 @@ import {
   listDefaultTypingDecks,
   shouldPrependDefaultTypingDecks,
 } from "@/server/typing-deck-defaults";
-import { ServiceError } from "@/server/services/service-error";
+import { ServiceError } from "@/server/errors/service-error";
 
 import {
   getTypingDeckRequestContext,

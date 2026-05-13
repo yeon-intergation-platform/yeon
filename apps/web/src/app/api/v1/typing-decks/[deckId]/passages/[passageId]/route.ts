@@ -7,7 +7,7 @@ import {
   deleteTypingDeckPassageInSpring,
   updateTypingDeckPassageInSpring,
 } from "@/server/typing-decks-spring-client";
-import { ServiceError } from "@/server/services/service-error";
+import { ServiceError } from "@/server/errors/service-error";
 
 import {
   getTypingDeckRequestContext,

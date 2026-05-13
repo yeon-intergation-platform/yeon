@@ -10,7 +10,7 @@ import {
   SheetExportSpringBackendHttpError,
 } from "@/server/sheet-export-spring-client";
 import { exportSpaceToSheet } from "@/server/sheet-export-bff";
-import { ServiceError } from "@/server/services/service-error";
+import { ServiceError } from "@/server/errors/service-error";
 
 export const runtime = "nodejs";
 

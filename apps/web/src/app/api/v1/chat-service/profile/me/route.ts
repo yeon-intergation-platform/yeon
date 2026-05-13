@@ -13,7 +13,7 @@ import {
   fetchMyChatServiceProfileFromSpring,
   updateMyChatServiceProfileInSpring,
 } from "@/server/chat-service-my-profile-spring-client";
-import { ServiceError } from "@/server/services/service-error";
+import { ServiceError } from "@/server/errors/service-error";
 
 import {
   clearChatServiceSessionCookie,

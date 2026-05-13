@@ -13,7 +13,7 @@ import {
   importSpaceFromLinkedSheet,
   type SheetImportResult,
 } from "@/server/sheet-export-bff";
-import { ServiceError } from "@/server/services/service-error";
+import { ServiceError } from "@/server/errors/service-error";
 
 export const runtime = "nodejs";
 

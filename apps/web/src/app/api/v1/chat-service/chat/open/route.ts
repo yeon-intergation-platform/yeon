@@ -9,7 +9,7 @@ import {
   ChatServiceChatOpenSpringBackendHttpError,
   openChatServiceRoomInSpring,
 } from "@/server/chat-service-chat-open-spring-client";
-import { ServiceError } from "@/server/services/service-error";
+import { ServiceError } from "@/server/errors/service-error";
 
 import {
   jsonChatServiceError,

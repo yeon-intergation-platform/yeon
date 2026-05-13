@@ -17,7 +17,7 @@ import {
   ChatServiceAuthSpringBackendHttpError,
   resolveChatServiceGuestProfileInSpring,
 } from "@/server/chat-service-auth-spring-client";
-import { ServiceError } from "@/server/services/service-error";
+import { ServiceError } from "@/server/errors/service-error";
 
 import {
   getOptionalChatServiceAuth,

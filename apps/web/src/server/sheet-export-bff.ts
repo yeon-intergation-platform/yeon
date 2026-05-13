@@ -4,7 +4,7 @@ import {
   fetchSheetExportRowsFromSpring,
   type SpringSheetExportRow,
 } from "@/server/sheet-export-spring-client";
-import { ServiceError } from "@/server/services/service-error";
+import { ServiceError } from "@/server/errors/service-error";
 
 export function extractSheetId(sheetUrl: string): string {
   const match = sheetUrl.match(/\/spreadsheets\/d\/([a-zA-Z0-9_-]+)/);

@@ -1,62 +1,170 @@
-# Next 백엔드 역할 경계 감사
+# Next 백엔드 역할 경계 최종 감사
 
-기준: `origin/main` (`2026-05-12` 작업 시점)
+기준: `apps/web/src/app/api` 전수 스캔 (`2026-05-13`)
 
-## 결론
+## 1) 감사 요약
 
-- 현재 구현은 Spring 이관이 상당히 진행됐지만, Next가 아직 백엔드 역할을 맡는 구간이 남아 있다.
-- 새 기능을 계속 Next 서비스/DB 위에 얹으면 확장성 있는 구조가 아니라 마이그레이션 부채가 늘어난다.
-- 앞으로 신규 백엔드 역할의 source of truth는 Spring(`apps/backend`)이다. Next는 UI, 렌더링, 쿠키/헤더 브리지, Spring 호출 BFF까지만 담당한다.
+- `route.ts` 총 수: `140`
+- `@/server/db|drizzle-orm|pg|DATABASE_URL` 직접 참조: `0`
+- `@/server/auth/` 직접 참조: `21`
+- `@/server/services/service-error` 직접 참조: `0` (이관 완료)
+- `@/server/errors/service-error` 직접 참조: `37`
 
-## origin/main 실측
+- **허용 카테고리 집계**
+  - `cookie bridge`: 19
+  - `OAuth redirect bridge`: 6
+  - `file/stream adapter`: 21
+  - `Spring proxy/BFF`: 94
 
-- `apps/web/src/app/api/**/route.ts`: 130개
-- Spring client(`*-spring-client`)를 호출하는 route: 88개
-- `@/server/services`, `@/server/repositories`, `@/server/auth`를 직접 참조하는 route: 67개
-- `@/server/db`를 route에서 직접 참조하는 파일: 0개
+- **제거 필요 라우트: `0`**
 
-직접 Next 백엔드 역할이 남은 주요 영역:
+## 2) 라우트 단위 분류
 
-| 영역                    | route 수 | 판단                                                                                                                  |
-| ----------------------- | -------: | --------------------------------------------------------------------------------------------------------------------- |
-| `v1/chat-service`       |       18 | 일부 Spring 이관됨. feed guest CRUD, auth/session, chat room 일부가 Next 서비스에 남아 있어 확장 전 Spring 이관 필요. |
-| `api/auth`              |       14 | 루트 OAuth/credential/session 쿠키 흐름이 Next에 남아 있음. 인증 source of truth를 Spring으로 옮길 별도 계획 필요.    |
-| `v1/counseling-records` |        7 | Spring client와 Next AI/파일 처리 서비스가 혼재. 장기 상태와 권한은 Spring으로 고정해야 함.                           |
-| `v1/integrations`       |        6 | OAuth/파일 분석/임포트 브리지 성격이 강함. 외부 API 프록시와 도메인 쓰기 경계를 분리해야 함.                          |
-| `v1/typing-decks`       |        6 | Spring client와 기본 덱 fallback/시드 생성이 혼재. 기본 데이터 source of truth 정리가 필요.                           |
-| `v1/spaces`             |        5 | export/sync 일부가 Next 서비스에 남아 있음. Google Sheets 실행 로직은 Spring 이관 후보.                               |
-| `v1/card-decks`         |        3 | Spring 이관이 진행됐지만 이미지 asset/object storage와 auth bridge가 Next에 남아 있음.                                |
+| route | 분류 | 근거(대표 import) | 제거 필요 판정 |
+| --- | --- | --- | --- |
+| `apps/web/src/app/api/auth/credentials/login/route.ts` | cookie bridge | import { AuthFlowError } from "@/server/auth/auth-errors";<br>import { applyAuthSessionCookie } from "@/server/auth/session"; | 유지(허용) |
+| `apps/web/src/app/api/auth/credentials/register/route.ts` | cookie bridge | import { AuthFlowError } from "@/server/auth/auth-errors";<br>import { registerCredentialInSpring } from "@/server/credential-auth-spring-client"; | 유지(허용) |
+| `apps/web/src/app/api/auth/credentials/resend-verification/route.ts` | cookie bridge | import { AuthFlowError } from "@/server/auth/auth-errors";<br>import { resendCredentialVerificationInSpring } from "@/server/credential-auth-spring-client"; | 유지(허용) |
+| `apps/web/src/app/api/auth/credentials/reset-confirm/route.ts` | cookie bridge | import { AuthFlowError } from "@/server/auth/auth-errors";<br>import { confirmCredentialPasswordResetInSpring } from "@/server/credential-auth-spring-client"; | 유지(허용) |
+| `apps/web/src/app/api/auth/credentials/reset-request/route.ts` | cookie bridge | import { AuthFlowError } from "@/server/auth/auth-errors";<br>import { requestCredentialPasswordResetInSpring } from "@/server/credential-auth-spring-client"; | 유지(허용) |
+| `apps/web/src/app/api/auth/credentials/set-password/route.ts` | cookie bridge | import { AuthFlowError } from "@/server/auth/auth-errors";<br>import { getAuthSessionTokenFromRequest } from "@/server/auth/request-session-token"; | 유지(허용) |
+| `apps/web/src/app/api/auth/credentials/verify/route.ts` | cookie bridge | import { AuthFlowError } from "@/server/auth/auth-errors";<br>import { getAppOrigin } from "@/server/auth/constants"; | 유지(허용) |
+| `apps/web/src/app/api/auth/dev-login/route.ts` | cookie bridge | import { applyAuthSessionCookie } from "@/server/auth/session"; | 유지(허용) |
+| `apps/web/src/app/api/auth/google/callback/route.ts` | OAuth redirect bridge | import { socialProviders } from "@/server/auth/constants";<br>import { completeSocialAuth } from "@/server/auth/handlers"; | 유지(허용) |
+| `apps/web/src/app/api/auth/google/route.ts` | cookie bridge | import { socialProviders } from "@/server/auth/constants";<br>import { startSocialAuth } from "@/server/auth/handlers"; | 유지(허용) |
+| `apps/web/src/app/api/auth/kakao/callback/route.ts` | OAuth redirect bridge | import { socialProviders } from "@/server/auth/constants";<br>import { completeSocialAuth } from "@/server/auth/handlers"; | 유지(허용) |
+| `apps/web/src/app/api/auth/kakao/route.ts` | cookie bridge | import { socialProviders } from "@/server/auth/constants";<br>import { startSocialAuth } from "@/server/auth/handlers"; | 유지(허용) |
+| `apps/web/src/app/api/auth/logout/route.ts` | cookie bridge | import { clearAuthSessionCookie } from "@/server/auth/session";<br>import { deleteRootAuthSessionInSpring } from "@/server/auth-session-spring-client"; | 유지(허용) |
+| `apps/web/src/app/api/auth/session/cleanup/route.ts` | cookie bridge | import { clearAuthSessionCookie } from "@/server/auth/session";<br>import { deleteRootAuthSessionInSpring } from "@/server/auth-session-spring-client"; | 유지(허용) |
+| `apps/web/src/app/api/health/route.ts` | Spring proxy/BFF | - | 유지(허용) |
+| `apps/web/src/app/api/test/backend-bootstrap-health/route.ts` | Spring proxy/BFF | - | 유지(허용) |
+| `apps/web/src/app/api/test/sample-xlsx/route.ts` | Spring proxy/BFF | - | 유지(허용) |
+| `apps/web/src/app/api/test/space-import-sample/route.ts` | Spring proxy/BFF | - | 유지(허용) |
+| `apps/web/src/app/api/v1/auth/session/route.ts` | cookie bridge | import { getAuthSessionTokenFromRequest } from "@/server/auth/request-session-token";<br>import { clearAuthSessionCookie } from "@/server/auth/session"; | 유지(허용) |
+| `apps/web/src/app/api/v1/card-decks/[deckId]/items/[itemId]/review/route.ts` | Spring proxy/BFF | - | 유지(허용) |
+| `apps/web/src/app/api/v1/card-decks/[deckId]/items/[itemId]/route.ts` | Spring proxy/BFF | - | 유지(허용) |
+| `apps/web/src/app/api/v1/card-decks/[deckId]/items/bulk/route.ts` | Spring proxy/BFF | - | 유지(허용) |
+| `apps/web/src/app/api/v1/card-decks/[deckId]/items/route.ts` | Spring proxy/BFF | - | 유지(허용) |
+| `apps/web/src/app/api/v1/card-decks/[deckId]/route.ts` | Spring proxy/BFF | - | 유지(허용) |
+| `apps/web/src/app/api/v1/card-decks/assets/[...assetKey]/route.ts` | file/stream adapter | - | 유지(허용) |
+| `apps/web/src/app/api/v1/card-decks/assets/route.ts` | file/stream adapter | - | 유지(허용) |
+| `apps/web/src/app/api/v1/card-decks/merge-guest/route.ts` | cookie bridge | import { getCurrentAuthUser } from "@/server/auth/session"; | 유지(허용) |
+| `apps/web/src/app/api/v1/card-decks/route.ts` | Spring proxy/BFF | - | 유지(허용) |
+| `apps/web/src/app/api/v1/card-decks/study-preference/route.ts` | Spring proxy/BFF | - | 유지(허용) |
+| `apps/web/src/app/api/v1/card-rooms/[roomId]/messages/route.ts` | Spring proxy/BFF | import { CardRoomsSpringBackendHttpError, createCardRoomMessageInSpring } from "@/server/card-rooms-spring-client"; | 유지(허용) |
+| `apps/web/src/app/api/v1/card-rooms/[roomId]/next/route.ts` | Spring proxy/BFF | import { CardRoomsSpringBackendHttpError, nextCardRoomCardInSpring } from "@/server/card-rooms-spring-client"; | 유지(허용) |
+| `apps/web/src/app/api/v1/card-rooms/[roomId]/participants/[participantId]/route.ts` | Spring proxy/BFF | import { CardRoomsSpringBackendHttpError, leaveCardRoomInSpring, updateCardRoomParticipantInSpring } from "@/server/card-rooms-spring-client"; | 유지(허용) |
+| `apps/web/src/app/api/v1/card-rooms/[roomId]/participants/route.ts` | cookie bridge | import { getCurrentAuthUser } from "@/server/auth/session";<br>import { CardRoomsSpringBackendHttpError, joinCardRoomInSpring } from "@/server/card-rooms-spring-client"; | 유지(허용) |
+| `apps/web/src/app/api/v1/card-rooms/[roomId]/results/route.ts` | Spring proxy/BFF | import { CardRoomsSpringBackendHttpError, submitCardRoomResultInSpring } from "@/server/card-rooms-spring-client"; | 유지(허용) |
+| `apps/web/src/app/api/v1/card-rooms/[roomId]/reveal/route.ts` | Spring proxy/BFF | import { CardRoomsSpringBackendHttpError, revealCardRoomInSpring } from "@/server/card-rooms-spring-client"; | 유지(허용) |
+| `apps/web/src/app/api/v1/card-rooms/[roomId]/route.ts` | Spring proxy/BFF | import { CardRoomsSpringBackendHttpError, fetchCardRoomFromSpring } from "@/server/card-rooms-spring-client"; | 유지(허용) |
+| `apps/web/src/app/api/v1/card-rooms/route.ts` | cookie bridge | import { getCurrentAuthUser } from "@/server/auth/session";<br>import { CardRoomsSpringBackendHttpError, createCardRoomInSpring, fetchCardRoomsFromSpring } from "@/server/card-rooms-spring-client"; | 유지(허용) |
+| `apps/web/src/app/api/v1/chat-service/ask/[postId]/vote/route.ts` | Spring proxy/BFF | import { ServiceError } from "@/server/errors/service-error"; | 유지(허용) |
+| `apps/web/src/app/api/v1/chat-service/ask/route.ts` | Spring proxy/BFF | import { ServiceError } from "@/server/errors/service-error"; | 유지(허용) |
+| `apps/web/src/app/api/v1/chat-service/auth/request-otp/route.ts` | Spring proxy/BFF | import { ServiceError } from "@/server/errors/service-error"; | 유지(허용) |
+| `apps/web/src/app/api/v1/chat-service/auth/session/route.ts` | Spring proxy/BFF | import { ServiceError } from "@/server/errors/service-error"; | 유지(허용) |
+| `apps/web/src/app/api/v1/chat-service/auth/verify-otp/route.ts` | Spring proxy/BFF | import { ServiceError } from "@/server/errors/service-error"; | 유지(허용) |
+| `apps/web/src/app/api/v1/chat-service/chat/open/route.ts` | Spring proxy/BFF | import { ServiceError } from "@/server/errors/service-error"; | 유지(허용) |
+| `apps/web/src/app/api/v1/chat-service/chat/rooms/[roomId]/messages/route.ts` | Spring proxy/BFF | import { ServiceError } from "@/server/errors/service-error"; | 유지(허용) |
+| `apps/web/src/app/api/v1/chat-service/chat/rooms/[roomId]/route.ts` | Spring proxy/BFF | import { ServiceError } from "@/server/errors/service-error"; | 유지(허용) |
+| `apps/web/src/app/api/v1/chat-service/chat/rooms/route.ts` | Spring proxy/BFF | import { ServiceError } from "@/server/errors/service-error"; | 유지(허용) |
+| `apps/web/src/app/api/v1/chat-service/feed/[postId]/replies/route.ts` | Spring proxy/BFF | import { ServiceError } from "@/server/errors/service-error"; | 유지(허용) |
+| `apps/web/src/app/api/v1/chat-service/feed/[postId]/route.ts` | Spring proxy/BFF | import { ServiceError } from "@/server/errors/service-error"; | 유지(허용) |
+| `apps/web/src/app/api/v1/chat-service/feed/route.ts` | Spring proxy/BFF | import { ServiceError } from "@/server/errors/service-error"; | 유지(허용) |
+| `apps/web/src/app/api/v1/chat-service/friends/overview/route.ts` | Spring proxy/BFF | import { ServiceError } from "@/server/errors/service-error"; | 유지(허용) |
+| `apps/web/src/app/api/v1/chat-service/friends/requests/route.ts` | Spring proxy/BFF | import { ServiceError } from "@/server/errors/service-error"; | 유지(허용) |
+| `apps/web/src/app/api/v1/chat-service/profile/me/route.ts` | Spring proxy/BFF | import { ServiceError } from "@/server/errors/service-error"; | 유지(허용) |
+| `apps/web/src/app/api/v1/chat-service/profiles/[profileId]/block/route.ts` | Spring proxy/BFF | import { ServiceError } from "@/server/errors/service-error"; | 유지(허용) |
+| `apps/web/src/app/api/v1/chat-service/profiles/[profileId]/route.ts` | Spring proxy/BFF | import { ServiceError } from "@/server/errors/service-error"; | 유지(허용) |
+| `apps/web/src/app/api/v1/chat-service/reports/route.ts` | Spring proxy/BFF | import { ServiceError } from "@/server/errors/service-error"; | 유지(허용) |
+| `apps/web/src/app/api/v1/community-chat/messages/route.ts` | Spring proxy/BFF | - | 유지(허용) |
+| `apps/web/src/app/api/v1/community-presence/route.ts` | Spring proxy/BFF | - | 유지(허용) |
+| `apps/web/src/app/api/v1/counseling-records/[recordId]/analyze/route.ts` | file/stream adapter | - | 유지(허용) |
+| `apps/web/src/app/api/v1/counseling-records/[recordId]/audio/route.ts` | Spring proxy/BFF | - | 유지(허용) |
+| `apps/web/src/app/api/v1/counseling-records/[recordId]/chat/route.ts` | Spring proxy/BFF | - | 유지(허용) |
+| `apps/web/src/app/api/v1/counseling-records/[recordId]/route.ts` | Spring proxy/BFF | - | 유지(허용) |
+| `apps/web/src/app/api/v1/counseling-records/[recordId]/segments/[segmentId]/route.ts` | Spring proxy/BFF | import { ServiceError } from "@/server/errors/service-error"; | 유지(허용) |
+| `apps/web/src/app/api/v1/counseling-records/[recordId]/segments/bulk/route.ts` | Spring proxy/BFF | import { ServiceError } from "@/server/errors/service-error"; | 유지(허용) |
+| `apps/web/src/app/api/v1/counseling-records/[recordId]/transcribe/route.ts` | Spring proxy/BFF | import { ServiceError } from "@/server/errors/service-error"; | 유지(허용) |
+| `apps/web/src/app/api/v1/counseling-records/analyze-trend/route.ts` | Spring proxy/BFF | - | 유지(허용) |
+| `apps/web/src/app/api/v1/counseling-records/details/route.ts` | Spring proxy/BFF | - | 유지(허용) |
+| `apps/web/src/app/api/v1/counseling-records/route.ts` | Spring proxy/BFF | import { ServiceError } from "@/server/errors/service-error"; | 유지(허용) |
+| `apps/web/src/app/api/v1/counseling-records/students/route.ts` | Spring proxy/BFF | import { fetchCounselingRecordStudentsFromSpring, CounselingRecordStudentsSpringBackendHttpError } from "@/server/counseling-record-students-spring-client"; | 유지(허용) |
+| `apps/web/src/app/api/v1/home/insight-banners/route.ts` | Spring proxy/BFF | - | 유지(허용) |
+| `apps/web/src/app/api/v1/integrations/googledrive/analyze/route.ts` | file/stream adapter | import { downloadGoogleDriveFileFromSpring, GoogleDriveBrowserSpringBackendHttpError } from "@/server/googledrive-browser-spring-client";<br>import { ServiceError } from "@/server/errors/service-error"; | 유지(허용) |
+| `apps/web/src/app/api/v1/integrations/googledrive/auth/callback/route.ts` | OAuth redirect bridge | import { CloudOAuthSpringBackendHttpError, exchangeGoogleDriveOAuthCodeInSpring } from "@/server/cloud-oauth-spring-client"; | 유지(허용) |
+| `apps/web/src/app/api/v1/integrations/googledrive/auth/route.ts` | OAuth redirect bridge | import { CloudOAuthSpringBackendHttpError, fetchGoogleDriveOAuthUrlFromSpring } from "@/server/cloud-oauth-spring-client";<br>import { ServiceError } from "@/server/errors/service-error"; | 유지(허용) |
+| `apps/web/src/app/api/v1/integrations/googledrive/file/[fileId]/route.ts` | file/stream adapter | import { GoogleDriveBrowserSpringBackendHttpError, downloadGoogleDriveFileFromSpring } from "@/server/googledrive-browser-spring-client"; | 유지(허용) |
+| `apps/web/src/app/api/v1/integrations/googledrive/files/route.ts` | file/stream adapter | import { GoogleDriveBrowserSpringBackendHttpError, fetchGoogleDriveFilesFromSpring } from "@/server/googledrive-browser-spring-client"; | 유지(허용) |
+| `apps/web/src/app/api/v1/integrations/googledrive/import/route.ts` | file/stream adapter | - | 유지(허용) |
+| `apps/web/src/app/api/v1/integrations/googledrive/status/route.ts` | file/stream adapter | import { GoogleDriveBrowserSpringBackendHttpError, fetchGoogleDriveStatusFromSpring } from "@/server/googledrive-browser-spring-client"; | 유지(허용) |
+| `apps/web/src/app/api/v1/integrations/local/analyze/route.ts` | file/stream adapter | - | 유지(허용) |
+| `apps/web/src/app/api/v1/integrations/local/drafts/[draftId]/file/route.ts` | file/stream adapter | - | 유지(허용) |
+| `apps/web/src/app/api/v1/integrations/local/drafts/[draftId]/route.ts` | file/stream adapter | - | 유지(허용) |
+| `apps/web/src/app/api/v1/integrations/local/drafts/route.ts` | file/stream adapter | - | 유지(허용) |
+| `apps/web/src/app/api/v1/integrations/local/import/route.ts` | file/stream adapter | - | 유지(허용) |
+| `apps/web/src/app/api/v1/integrations/onedrive/analyze/route.ts` | file/stream adapter | import { downloadOneDriveFileFromSpring, OneDriveBrowserSpringBackendHttpError } from "@/server/onedrive-browser-spring-client";<br>import { ServiceError } from "@/server/errors/service-error"; | 유지(허용) |
+| `apps/web/src/app/api/v1/integrations/onedrive/auth/callback/route.ts` | OAuth redirect bridge | import { CloudOAuthSpringBackendHttpError, exchangeOneDriveOAuthCodeInSpring } from "@/server/cloud-oauth-spring-client"; | 유지(허용) |
+| `apps/web/src/app/api/v1/integrations/onedrive/auth/route.ts` | OAuth redirect bridge | import { CloudOAuthSpringBackendHttpError, fetchOneDriveOAuthUrlFromSpring } from "@/server/cloud-oauth-spring-client";<br>import { ServiceError } from "@/server/errors/service-error"; | 유지(허용) |
+| `apps/web/src/app/api/v1/integrations/onedrive/file/[fileId]/route.ts` | file/stream adapter | - | 유지(허용) |
+| `apps/web/src/app/api/v1/integrations/onedrive/files/route.ts` | file/stream adapter | - | 유지(허용) |
+| `apps/web/src/app/api/v1/integrations/onedrive/import/route.ts` | file/stream adapter | - | 유지(허용) |
+| `apps/web/src/app/api/v1/integrations/onedrive/status/route.ts` | file/stream adapter | - | 유지(허용) |
+| `apps/web/src/app/api/v1/life-os/days/[date]/route.ts` | Spring proxy/BFF | - | 유지(허용) |
+| `apps/web/src/app/api/v1/life-os/days/route.ts` | Spring proxy/BFF | - | 유지(허용) |
+| `apps/web/src/app/api/v1/life-os/reports/daily/route.ts` | Spring proxy/BFF | - | 유지(허용) |
+| `apps/web/src/app/api/v1/life-os/reports/weekly/route.ts` | Spring proxy/BFF | - | 유지(허용) |
+| `apps/web/src/app/api/v1/members/[memberId]/route.ts` | Spring proxy/BFF | import { fetchMemberRiskProfilesFromSpring, MemberRiskSpringBackendHttpError } from "@/server/member-risk-spring-client";<br>import { fetchOwnedMemberFromSpring, MembersSpringBackendHttpError } from "@/server/members-spring-client"; | 유지(허용) |
+| `apps/web/src/app/api/v1/mobile/auth/credentials/login/route.ts` | cookie bridge | import { AuthFlowError } from "@/server/auth/auth-errors";<br>import { loginCredentialMobileInSpring } from "@/server/credential-auth-spring-client"; | 유지(허용) |
+| `apps/web/src/app/api/v1/public-check-sessions/[token]/qr/route.ts` | Spring proxy/BFF | - | 유지(허용) |
+| `apps/web/src/app/api/v1/public-check-sessions/[token]/route.ts` | Spring proxy/BFF | - | 유지(허용) |
+| `apps/web/src/app/api/v1/public-check-sessions/[token]/submit/route.ts` | Spring proxy/BFF | - | 유지(허용) |
+| `apps/web/src/app/api/v1/public-check-sessions/[token]/verify/route.ts` | Spring proxy/BFF | import { applyRememberedPublicCheckIdentityCookie } from "@/server/public-check-device-cookie-bff"; | 유지(허용) |
+| `apps/web/src/app/api/v1/space-templates/[templateId]/duplicate/route.ts` | Spring proxy/BFF | - | 유지(허용) |
+| `apps/web/src/app/api/v1/space-templates/[templateId]/route.ts` | Spring proxy/BFF | - | 유지(허용) |
+| `apps/web/src/app/api/v1/space-templates/route.ts` | Spring proxy/BFF | - | 유지(허용) |
+| `apps/web/src/app/api/v1/spaces/[spaceId]/apply-template/route.ts` | Spring proxy/BFF | - | 유지(허용) |
+| `apps/web/src/app/api/v1/spaces/[spaceId]/export/csv/route.ts` | file/stream adapter | import { buildSpaceExportData } from "@/server/sheet-export-bff";<br>import { ServiceError } from "@/server/errors/service-error"; | 유지(허용) |
+| `apps/web/src/app/api/v1/spaces/[spaceId]/export/xlsx/route.ts` | file/stream adapter | import { buildSpaceExportData } from "@/server/sheet-export-bff";<br>import { ServiceError } from "@/server/errors/service-error"; | 유지(허용) |
+| `apps/web/src/app/api/v1/spaces/[spaceId]/member-fields/[fieldId]/route.ts` | Spring proxy/BFF | - | 유지(허용) |
+| `apps/web/src/app/api/v1/spaces/[spaceId]/member-tabs/[tabId]/fields/reorder/route.ts` | Spring proxy/BFF | - | 유지(허용) |
+| `apps/web/src/app/api/v1/spaces/[spaceId]/member-tabs/[tabId]/fields/route.ts` | Spring proxy/BFF | - | 유지(허용) |
+| `apps/web/src/app/api/v1/spaces/[spaceId]/member-tabs/[tabId]/route.ts` | Spring proxy/BFF | - | 유지(허용) |
+| `apps/web/src/app/api/v1/spaces/[spaceId]/member-tabs/reorder/route.ts` | Spring proxy/BFF | - | 유지(허용) |
+| `apps/web/src/app/api/v1/spaces/[spaceId]/member-tabs/reset/route.ts` | Spring proxy/BFF | - | 유지(허용) |
+| `apps/web/src/app/api/v1/spaces/[spaceId]/member-tabs/route.ts` | Spring proxy/BFF | - | 유지(허용) |
+| `apps/web/src/app/api/v1/spaces/[spaceId]/members/[memberId]/activity-logs/route.ts` | Spring proxy/BFF | - | 유지(허용) |
+| `apps/web/src/app/api/v1/spaces/[spaceId]/members/[memberId]/board-history/route.ts` | Spring proxy/BFF | import { fetchMemberStudentBoardHistoryFromSpring, StudentBoardHistorySpringBackendHttpError } from "@/server/student-board-history-spring-client"; | 유지(허용) |
+| `apps/web/src/app/api/v1/spaces/[spaceId]/members/[memberId]/counseling-records/route.ts` | Spring proxy/BFF | import { fetchMemberInSpaceFromSpring, MembersSpringBackendHttpError } from "@/server/members-spring-client";<br>import { fetchMemberCounselingRecordsFromSpring, MemberCounselingRecordsSpringBackendHttpError } from "@/server/member-counseling-records-spring-client"; | 유지(허용) |
+| `apps/web/src/app/api/v1/spaces/[spaceId]/members/[memberId]/field-values/route.ts` | Spring proxy/BFF | - | 유지(허용) |
+| `apps/web/src/app/api/v1/spaces/[spaceId]/members/[memberId]/profile-import/route.ts` | Spring proxy/BFF | import { ServiceError } from "@/server/errors/service-error"; | 유지(허용) |
+| `apps/web/src/app/api/v1/spaces/[spaceId]/members/[memberId]/route.ts` | Spring proxy/BFF | import { deleteMemberInSpring, MembersSpringBackendHttpError, updateMemberInSpring } from "@/server/members-spring-client"; | 유지(허용) |
+| `apps/web/src/app/api/v1/spaces/[spaceId]/members/bulk-delete/route.ts` | Spring proxy/BFF | import { bulkDeleteMembersInSpring, MembersSpringBackendHttpError } from "@/server/members-spring-client"; | 유지(허용) |
+| `apps/web/src/app/api/v1/spaces/[spaceId]/members/route.ts` | Spring proxy/BFF | import { fetchMemberRiskProfilesFromSpring, MemberRiskSpringBackendHttpError } from "@/server/member-risk-spring-client";<br>import { createMemberInSpring, fetchMembersFromSpring, MembersSpringBackendHttpError } from "@/server/members-spring-client"; | 유지(허용) |
+| `apps/web/src/app/api/v1/spaces/[spaceId]/public-check-locations/route.ts` | Spring proxy/BFF | - | 유지(허용) |
+| `apps/web/src/app/api/v1/spaces/[spaceId]/public-check-sessions/[sessionId]/route.ts` | Spring proxy/BFF | import { PublicCheckSessionsSpringBackendHttpError, updatePublicCheckSessionInSpring } from "@/server/public-check-sessions-spring-client"; | 유지(허용) |
+| `apps/web/src/app/api/v1/spaces/[spaceId]/route.ts` | Spring proxy/BFF | - | 유지(허용) |
+| `apps/web/src/app/api/v1/spaces/[spaceId]/sheet-export/import/route.ts` | file/stream adapter | import { ServiceError } from "@/server/errors/service-error"; | 유지(허용) |
+| `apps/web/src/app/api/v1/spaces/[spaceId]/sheet-export/route.ts` | Spring proxy/BFF | - | 유지(허용) |
+| `apps/web/src/app/api/v1/spaces/[spaceId]/sheet-export/sync/route.ts` | Spring proxy/BFF | import { exportSpaceToSheet } from "@/server/sheet-export-bff";<br>import { ServiceError } from "@/server/errors/service-error"; | 유지(허용) |
+| `apps/web/src/app/api/v1/spaces/[spaceId]/sheet-integrations/[integrationId]/sync/route.ts` | Spring proxy/BFF | - | 유지(허용) |
+| `apps/web/src/app/api/v1/spaces/[spaceId]/sheet-integrations/route.ts` | Spring proxy/BFF | - | 유지(허용) |
+| `apps/web/src/app/api/v1/spaces/[spaceId]/snapshot-template/route.ts` | Spring proxy/BFF | - | 유지(허용) |
+| `apps/web/src/app/api/v1/spaces/[spaceId]/student-board/[memberId]/route.ts` | Spring proxy/BFF | - | 유지(허용) |
+| `apps/web/src/app/api/v1/spaces/[spaceId]/student-board/route.ts` | Spring proxy/BFF | import { createPublicCheckSessionInSpring, PublicCheckSessionsSpringBackendHttpError } from "@/server/public-check-sessions-spring-client"; | 유지(허용) |
+| `apps/web/src/app/api/v1/spaces/route.ts` | Spring proxy/BFF | - | 유지(허용) |
+| `apps/web/src/app/api/v1/typing-character-frames/[characterId]/route.ts` | cookie bridge | import { getCurrentAuthUser } from "@/server/auth/session"; | 유지(허용) |
+| `apps/web/src/app/api/v1/typing-character-frames/route.ts` | Spring proxy/BFF | - | 유지(허용) |
+| `apps/web/src/app/api/v1/typing-decks/[deckId]/passages/[passageId]/route.ts` | Spring proxy/BFF | import { ServiceError } from "@/server/errors/service-error"; | 유지(허용) |
+| `apps/web/src/app/api/v1/typing-decks/[deckId]/passages/bulk/route.ts` | Spring proxy/BFF | import { ServiceError } from "@/server/errors/service-error"; | 유지(허용) |
+| `apps/web/src/app/api/v1/typing-decks/[deckId]/passages/route.ts` | Spring proxy/BFF | import { ServiceError } from "@/server/errors/service-error"; | 유지(허용) |
+| `apps/web/src/app/api/v1/typing-decks/[deckId]/race-seed/route.ts` | Spring proxy/BFF | import { createTypingRaceSeedFromDetail } from "@/server/typing-race-seed";<br>import { getDefaultTypingDeckDetail } from "@/server/typing-deck-defaults"; | 유지(허용) |
+| `apps/web/src/app/api/v1/typing-decks/[deckId]/route.ts` | Spring proxy/BFF | import { getDefaultTypingDeckDetail } from "@/server/typing-deck-defaults";<br>import { ServiceError } from "@/server/errors/service-error"; | 유지(허용) |
+| `apps/web/src/app/api/v1/typing-decks/route.ts` | Spring proxy/BFF | import { ServiceError } from "@/server/errors/service-error"; | 유지(허용) |
+| `apps/web/src/app/api/v1/users/route.ts` | cookie bridge | import { AUTH_SESSION_COOKIE_NAME } from "@/server/auth/constants"; | 유지(허용) |
 
-## 현재 기능별 확장성 판단
+## 3) auth/session/OAuth 점검
 
-### 커뮤니티 글/댓글 CRUD
-
-- 현재 구현: `apps/web/src/app/api/v1/chat-service/feed/**` route가 `apps/web/src/server/services/chat-service/feed-service.ts`와 `common.ts`를 직접 호출한다.
-- Spring 상태: `apps/backend/.../chat_service_feed`에 list/create/replies는 있으나, guest nickname/password 작성자 모델과 글 수정/삭제/댓글 삭제가 부족하다.
-- 판단: 사용자가 요구한 익명 글/댓글 CRUD는 제품 동작은 맞지만, 장기 도메인 구조로는 땜빵에 가깝다.
-- 보완 방향: guest actor, password hash, post ownership, update/delete/reply-delete를 Spring `chat_service_feed`에 추가한 뒤 Next route는 Spring client만 호출해야 한다.
-
-### 실시간 채팅 진입/위젯
-
-- 현재 구현: `/community`와 카드/타이핑 서비스 내부 위젯은 `CommunityChatWidget`을 재사용한다.
-- 판단: UI 컴포넌트 재사용 구조는 확장 가능하다.
-- 한계: 메시지 갱신은 polling 기반이며, “실시간” source of truth가 Next chat service와 Spring client로 혼재되어 있다.
-- 보완 방향: 채팅방/메시지 API는 Spring으로 고정하고, 실제 realtime 요구가 커지면 SSE/WebSocket은 Spring 또는 race-server처럼 별도 realtime 서비스에서 담당한다.
-
-### 카드/타이핑 서비스 내 채팅 배치
-
-- 현재 구현: `apps/web/src/app/card-service/layout.tsx`, `apps/web/src/app/typing-service/layout.tsx`에서 compact widget을 layout 공통으로 배치한다.
-- 판단: 화면별 중복 구현이 아니라 공통 위젯이라 UI 확장성은 괜찮다.
-- 한계: fixed overlay라 서비스 화면의 핵심 조작과 겹칠 수 있다. 페이지 내부 슬롯/패널 형태로 확장할 설계가 필요하다.
-
-### 카드/타이핑 도메인
-
-- 카드 덱 API는 Spring client 사용 비중이 높아져 확장성 방향은 맞다. 다만 asset storage와 일부 auth bridge가 Next에 남아 있다.
-- 타이핑 덱 API는 Spring client와 기본 덱 fallback이 혼재한다. 기본 덱/seed 생성의 source of truth를 Spring 또는 shared domain으로 확정해야 한다.
-
-## 신규 작업 규칙
-
-1. 새 DB 테이블, 새 도메인 service, 권한 판정, mutation API는 Spring에 만든다.
-2. Next route는 요청 파싱, 쿠키/헤더 브리지, Spring client 호출, 응답 schema parse만 담당한다.
-3. 기존 Next backend code를 수정해야 하면 “호환 유지”인지 “Spring 이관 전 임시 수정”인지 백로그에 명시한다.
-4. 커뮤니티/채팅 추가 기능은 먼저 `apps/backend`의 chat service 패키지에 계약을 추가하고, 그 다음 web route를 얇게 연결한다.
+- `api/auth/*` 계열: 쿠키 브릿지/리다이렉트 브리지 수행. `Next`는 토큰 발급, 세션 쿠키 주입/해제, OAuth 핸들러 위임까지 수행하나 인증/도메인 판정은 Spring 호출 단에서 수행.
+- `api/v1/auth/session`, `api/v1/mobile/auth/credentials/login`, `api/auth/logout`, `/api/auth/*/callback` 또한 `spring` 호출 기반으로 동작하는 경계 허용 라우트로 판정.
+- 제거 필요 항목: 없음

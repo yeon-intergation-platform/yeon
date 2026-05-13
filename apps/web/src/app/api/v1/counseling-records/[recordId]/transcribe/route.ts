@@ -2,7 +2,7 @@ import { counselingRecordDetailResponseSchema } from "@yeon/api-contract/counsel
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
-import { ServiceError } from "@/server/services/service-error";
+import { ServiceError } from "@/server/errors/service-error";
 import {
   CounselingRecordTranscriptionSpringBackendHttpError,
   retryCounselingRecordTranscriptionInSpring,

@@ -6,7 +6,7 @@ import {
   ChatServiceProfileSpringBackendHttpError,
   fetchChatServiceProfileFromSpring,
 } from "@/server/chat-service-profile-spring-client";
-import { ServiceError } from "@/server/services/service-error";
+import { ServiceError } from "@/server/errors/service-error";
 
 import {
   jsonChatServiceError,

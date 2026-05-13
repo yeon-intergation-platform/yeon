@@ -5,7 +5,7 @@ import {
   fetchMemberInSpaceFromSpring,
   MembersSpringBackendHttpError,
 } from "@/server/members-spring-client";
-import { ServiceError } from "@/server/services/service-error";
+import { ServiceError } from "@/server/errors/service-error";
 import {
   jsonError,
   requireAuthenticatedUser,

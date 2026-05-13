@@ -5,7 +5,7 @@ import { NextResponse } from "next/server";
 
 import { resolveAppHrefForBasePath } from "@/lib/app-route-paths";
 import { DEFAULT_COUNSELING_SERVICE_HREF } from "@/lib/platform-services";
-import { ServiceError } from "@/server/services/service-error";
+import { ServiceError } from "@/server/errors/service-error";
 import { jsonError } from "@/app/api/v1/counseling-records/_shared";
 import {
   ImportCommitSpringBackendHttpError,

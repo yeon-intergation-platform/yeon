@@ -6,7 +6,7 @@ import {
   ChatServiceChatRoomsSpringBackendHttpError,
   fetchChatServiceRoomFromSpring,
 } from "@/server/chat-service-chat-rooms-spring-client";
-import { ServiceError } from "@/server/services/service-error";
+import { ServiceError } from "@/server/errors/service-error";
 
 import {
   jsonChatServiceError,

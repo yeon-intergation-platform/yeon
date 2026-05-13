@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server";
 import { getAuthSessionTokenFromRequest } from "@/server/auth/request-session-token";
 import { getAuthUserBySessionToken } from "@/server/auth/session";
 import { isAdminUser } from "@/server/auth/admin";
-import { ServiceError } from "@/server/services/service-error";
+import { ServiceError } from "@/server/errors/service-error";
 
 import { jsonError } from "../counseling-records/_shared";
 
