@@ -74,8 +74,6 @@ function resolveLocalDatabaseUrl() {
   const envFiles = [
     readDotenv(join(rootDir, ".env")),
     readDotenv(join(rootDir, ".env.local")),
-    readDotenv(join(rootDir, "apps", "web", ".env")),
-    readDotenv(join(rootDir, "apps", "web", ".env.local")),
   ];
 
   for (const envFile of envFiles) {
@@ -356,7 +354,6 @@ async function resolveServices() {
       SPRING_BOOTSTRAP_BASE_URL: springBackendBaseUrl,
       SPRING_INTERNAL_TOKEN: springInternalToken,
       SPRING_PROFILES_ACTIVE: springProfilesActive,
-      ...databaseEnv,
     },
     assignedPort: webPort,
     interactive: false,

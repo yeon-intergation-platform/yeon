@@ -270,25 +270,68 @@
 ## 9차 — web DB runtime dead code 제거
 
 ### 작업내용
+
 - `apps/web/src/app/**` runtime에서 더 이상 참조하지 않는 Drizzle 기반 legacy service/repository/test 파일을 제거한다.
 - `apps/web/src/server/db/**`는 Flyway parity PR 전까지 스키마 대조 자료로 남기되, Next runtime import 0개 상태를 검증한다.
 - `@/server/db`, `drizzle-orm`, `pg`가 `apps/web/src` runtime에서 사용되지 않는지 audit한다.
 
 ### 논의 필요
+
 - Drizzle migration 파일과 package dependency 제거는 Flyway parity 확인이 선행되어야 한다. 이번 차수는 runtime dead code 제거에 한정한다.
 
 ### 선택지
+
 1. web Drizzle schema/migration/deps까지 즉시 전부 삭제한다.
 2. runtime dead code만 먼저 삭제하고 schema/migration/deps는 Flyway parity PR로 분리한다.
 3. 삭제 없이 lint 제외만 추가한다.
 
 ### 추천
+
 - 2번. 데이터 스키마 source 전환은 별도 parity 검증이 필요하므로, 지금은 Next runtime에서 DB 소유권이 부활하지 않게 dead code부터 제거한다.
 
 ### 사용자 방향
+
 - 추천 기준으로 진행한다.
 
 ### 완료 기준
+
 - `apps/web/src/server/services`와 `apps/web/src/server/repositories`의 Drizzle 기반 legacy 파일이 제거된다.
 - `git grep "@/server/db\|drizzle-orm\|from \"pg\"\|from '''pg'''" -- apps/web/src` 결과가 `apps/web/src/server/db/**`만 남거나, runtime 파일 기준 0개다.
 - web typecheck/build가 통과한다.
+
+## 10차 — web Drizzle/Flyway 최종 소유권 제거
+
+### 작업내용
+
+- `apps/web/src/server/db/**`, `apps/web/drizzle.config.ts`, web Drizzle drift 스크립트와 OAuth 토큰 암호화 백필 스크립트를 제거한다.
+- 기존 web Drizzle 최종 snapshot 기준 public schema parity를 Spring Flyway migration으로 보강한다.
+- root/web package script와 의존성에서 `drizzle-orm`, `drizzle-kit`, `pg`, `@types/pg`, `db:check:drift`를 제거한다.
+- GitHub Actions와 배포 스크립트에서 web Drizzle migration 실행 경로를 제거하고 Spring Boot/Flyway 시작 migration에만 의존한다.
+- web compose/env example에서 web 컨테이너의 `DATABASE_URL` 주입을 제거한다.
+
+### 논의 필요
+
+- 기존 운영 DB는 이미 Drizzle migration 이력을 가진 상태이므로 Flyway migration은 중복 실행에 안전해야 한다.
+- fresh DB는 Spring Flyway만으로 legacy public schema가 생성되어야 한다.
+
+### 선택지
+
+- A. web Drizzle 자산을 보관하고 drift만 중단한다.
+- B. Spring Flyway parity migration을 추가한 뒤 web Drizzle 자산과 runtime dependency를 제거한다.
+- C. backend 도메인별 Flyway migration으로 전부 수작업 재분리한 뒤 제거한다.
+
+### 추천
+
+- B. 현재 목표가 Next.js 백엔드 비중 0%이므로 web Drizzle 자산을 남기지 않는다. 단, 기존 운영 DB와 fresh DB 모두 안전하도록 idempotent Flyway parity migration을 둔다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행한다.
+
+### 완료 기준
+
+- Spring Flyway `V8__ensure_legacy_web_public_schema.sql`이 fresh DB에서 legacy public schema를 생성하고 재실행에도 실패하지 않는다.
+- `apps/web/src/server/db/**`, `apps/web/drizzle.config.ts`, web Drizzle drift/backfill scripts가 제거된다.
+- `apps/web` direct dependency/script에서 `drizzle-orm`, `drizzle-kit`, `pg`, `@types/pg`, `db:check:drift`가 제거된다.
+- web runtime, compose, `pnpm dev:all`이 web 프로세스에 `DATABASE_URL`을 넘기지 않는다.
+- web lint/typecheck/build와 backend Flyway smoke가 통과한다.

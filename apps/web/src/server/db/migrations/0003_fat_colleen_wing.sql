@@ -1,1 +1,0 @@
-ALTER TABLE "counseling_records" DROP COLUMN "grade_label";
