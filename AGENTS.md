@@ -57,6 +57,14 @@ Prefer pointers to copies. Do not paste long policies, command catalogs, or code
 
 ## How agents should work here
 
+- 멀티 워크트리 운영 규칙(요청 반영):
+
+  - 기본 개발은 `yeon-2`, `yeon-3`, `yeon-4` 3개 워크트리를 사용한다.
+  - `yeon` 워크트리는 작업용이 아니라 로컬 환경 확인/검증용으로 유지한다.
+  - 요청이 올 때마다 3개 작업 워크트리를 순환 사용하고, 동일 브랜치 동시 충돌을 피하기 위해 `yeon-2/3/4` 이외 새 임시 워크트리 생성은 기본적으로 하지 않는다.
+  - `yeon`의 `main`은 필요 시점마다 원격 `origin/main` 기준으로 최신화한다.
+  - `yeon` 기준의 모바일/웹 `.env` 및 `.env.example`는 작업 워크트리들과 동일 값을 공유한다.
+
 Before modifying files:
 
 1. Inspect work state with `git status --short --branch`.
