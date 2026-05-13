@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   CARD_ROOM_ROLE,
   CARD_ROOM_STATUS,
 } from "@yeon/api-contract/card-rooms";
 import { CommonProductHeader } from "@/components/product-shell/product-header";
+import { RoomVoiceCallPanel } from "@/features/room-voice-call/room-voice-call-panel";
+import { useRoomVoiceCall } from "@/features/room-voice-call/use-room-voice-call";
 import { useCharacterFrameOverrides } from "@/features/typing-service/use-character-frame-overrides";
 import {
   joinCardRoom,
@@ -57,6 +59,19 @@ export function CardRoomScreen({ roomId }: CardRoomScreenProps) {
   }, [guestId, profile, profileLoaded, roomId]);
 
   const state = room.state;
+  const voiceParticipants = useMemo(
+    () =>
+      (state?.participants ?? []).map((participant) => ({
+        id: participant.id,
+        label: participant.nickname,
+      })),
+    [state?.participants]
+  );
+  const voiceCall = useRoomVoiceCall({
+    room: room.room,
+    localParticipantId: participantId,
+    participants: voiceParticipants,
+  });
   const myParticipant =
     state?.participants.find(
       (participant) => participant.id === participantId
@@ -121,6 +136,7 @@ export function CardRoomScreen({ roomId }: CardRoomScreenProps) {
                   participantId={participantId}
                   frameOverrides={frameOverrides}
                 />
+                <RoomVoiceCallPanel voiceCall={voiceCall} />
                 <CardRoomStudyPanel
                   state={state}
                   currentCard={currentCard}

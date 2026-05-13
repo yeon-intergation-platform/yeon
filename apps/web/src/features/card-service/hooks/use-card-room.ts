@@ -79,6 +79,7 @@ export function useCardRoomConnection(
   participantId: string | null
 ) {
   const [state, setState] = useState<CardRoomRealtimeState | null>(null);
+  const [room, setRoom] = useState<Room | null>(null);
   const [connectionState, setConnectionState] = useState<
     "idle" | "connecting" | "connected" | "error" | "disconnected"
   >("idle");
@@ -102,6 +103,7 @@ export function useCardRoomConnection(
           return;
         }
         roomRef.current = room;
+        setRoom(room);
         setConnectionState("connected");
         if (room.state) setState(room.state as CardRoomRealtimeState);
         room.onMessage(CARD_ROOM_EVENTS.STATE, (next: CardRoomRealtimeState) =>
@@ -133,6 +135,7 @@ export function useCardRoomConnection(
       cancelled = true;
       roomRef.current?.leave();
       roomRef.current = null;
+      setRoom(null);
     };
   }, [roomId, participantId]);
 
@@ -165,6 +168,7 @@ export function useCardRoomConnection(
       state,
       connectionState,
       error,
+      room,
       sendChat,
       sendResult,
       sendReveal,
@@ -175,6 +179,7 @@ export function useCardRoomConnection(
       state,
       connectionState,
       error,
+      room,
       sendChat,
       sendResult,
       sendReveal,
