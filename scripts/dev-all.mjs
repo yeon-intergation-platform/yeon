@@ -24,6 +24,7 @@ let shuttingDown = false;
 let sawFailure = false;
 const webLockPath = join(rootDir, "apps", "web", ".next", "dev", "lock");
 const defaultLocalSpringInternalToken = "local-dev-internal-token";
+const defaultLocalAuthSecret = "local-dev-auth-secret";
 const defaultLocalSpringProfile = "dev.local";
 
 const portSources = {
@@ -70,20 +71,29 @@ function readDotenv(path) {
   );
 }
 
-function resolveLocalDatabaseUrl() {
-  const envFiles = [
-    readDotenv(join(rootDir, ".env")),
-    readDotenv(join(rootDir, ".env.local")),
-    readDotenv(join(rootDir, "apps", "backend", ".env")),
-    readDotenv(join(rootDir, "apps", "backend", ".env.local")),
-    readDotenv(join(rootDir, "apps", "web", ".env")),
-    readDotenv(join(rootDir, "apps", "web", ".env.local")),
-  ];
+const localEnvFilePaths = [
+  join(rootDir, ".env"),
+  join(rootDir, ".env.local"),
+  join(rootDir, "apps", "backend", ".env"),
+  join(rootDir, "apps", "backend", ".env.local"),
+  join(rootDir, "apps", "web", ".env"),
+  join(rootDir, "apps", "web", ".env.local"),
+];
 
-  for (const envFile of envFiles) {
-    if (envFile.DATABASE_URL) return envFile.DATABASE_URL;
+function resolveLocalEnvValue(name) {
+  const fromProcess = process.env[name]?.trim();
+  if (fromProcess) return fromProcess;
+
+  for (const envFilePath of localEnvFilePaths) {
+    const value = readDotenv(envFilePath)[name]?.trim();
+    if (value) return value;
   }
+
   return null;
+}
+
+function resolveLocalDatabaseUrl() {
+  return resolveLocalEnvValue("DATABASE_URL");
 }
 
 function toDatabaseEnv(databaseUrl) {
@@ -340,11 +350,11 @@ async function resolveServices() {
   const springInternalToken =
     process.env.SPRING_INTERNAL_TOKEN?.trim() ||
     defaultLocalSpringInternalToken;
+  const authSecret =
+    resolveLocalEnvValue("AUTH_SECRET") || defaultLocalAuthSecret;
   const springProfilesActive =
     process.env.SPRING_PROFILES_ACTIVE?.trim() || defaultLocalSpringProfile;
-  const databaseEnv = toDatabaseEnv(
-    process.env.DATABASE_URL || resolveLocalDatabaseUrl()
-  );
+  const databaseEnv = toDatabaseEnv(resolveLocalDatabaseUrl());
 
   services.push({
     name: "web",
@@ -356,6 +366,7 @@ async function resolveServices() {
       PORT: String(webPort),
       SPRING_BACKEND_BASE_URL: springBackendBaseUrl,
       SPRING_BOOTSTRAP_BASE_URL: springBackendBaseUrl,
+      AUTH_SECRET: authSecret,
       SPRING_INTERNAL_TOKEN: springInternalToken,
       SPRING_PROFILES_ACTIVE: springProfilesActive,
     },
@@ -371,6 +382,7 @@ async function resolveServices() {
     cwd: backendRunner.cwd,
     env: {
       ...backendRunner.env,
+      AUTH_SECRET: authSecret,
       SPRING_INTERNAL_TOKEN: springInternalToken,
       SPRING_PROFILES_ACTIVE: springProfilesActive,
       ...databaseEnv,
