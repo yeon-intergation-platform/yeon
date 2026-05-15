@@ -9,6 +9,7 @@ import {
   pressSpriteControlOnce,
   pressSpriteInputCode,
   releaseSpriteInputCode,
+  snapshotSpriteInputState,
   wasSpriteControlPressed,
 } from "./sprite-action-tool";
 import type {
@@ -124,6 +125,12 @@ export type SlimeInputState = SpriteInputState;
 
 export function createSlimeInputState(): SlimeInputState {
   return createSpriteInputState();
+}
+
+export function snapshotSlimeInputState(
+  input: SlimeInputState
+): SlimeInputState {
+  return snapshotSpriteInputState(input);
 }
 
 export function isSlimeControlCode(code: string) {

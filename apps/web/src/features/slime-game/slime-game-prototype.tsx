@@ -9,6 +9,7 @@ import {
   pressControlOnce,
   pressInputCode,
   releaseInputCode,
+  snapshotSlimeInputState,
 } from "./slime-game-domain";
 import type { SlimeControlId } from "./slime-game-domain";
 import { INITIAL_STATE, nextState } from "./slime-game-state";
@@ -52,11 +53,9 @@ export function SlimeGamePrototype() {
 
   const triggerControl = useCallback((controlId: SlimeControlId) => {
     pressControlOnce(inputRef.current, controlId);
-    setState((prev) => {
-      const next = nextState(prev, inputRef.current);
-      clearPressedControls(inputRef.current);
-      return next;
-    });
+    const inputSnapshot = snapshotSlimeInputState(inputRef.current);
+    clearPressedControls(inputRef.current);
+    setState((prev) => nextState(prev, inputSnapshot));
   }, []);
 
   return (
