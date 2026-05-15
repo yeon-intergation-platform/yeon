@@ -33,6 +33,9 @@ type Rect = {
 };
 
 const SAMPLE_SHEET = "/sprite-editor/walk-cycle-draft.png";
+const GUIDE_FRAME_COUNT = 16;
+const GUIDE_GUTTER_WIDTH = 4;
+const GUIDE_GUTTER_COLOR = "#ff00ff";
 const CHECKER_SIZE = 16;
 const DEFAULT_GUIDE: GuideConfig = {
   fps: 12,
@@ -100,6 +103,22 @@ function canvasToBlob(canvas: HTMLCanvasElement) {
       else reject(new Error("PNG 변환에 실패했습니다."));
     }, "image/png");
   });
+}
+
+async function loadImage(url: string) {
+  const image = new Image();
+  image.src = url;
+  await image.decode();
+  return image;
+}
+
+async function fileToImage(file: File) {
+  const url = URL.createObjectURL(file);
+  try {
+    return await loadImage(url);
+  } finally {
+    URL.revokeObjectURL(url);
+  }
 }
 
 function NumericField({
@@ -286,9 +305,7 @@ function detectSpriteFrameBounds(
 }
 
 async function imageUrlToCanvas(url: string, width: number, height: number) {
-  const image = new Image();
-  image.src = url;
-  await image.decode();
+  const image = await loadImage(url);
   const canvas = makeCanvas(width, height);
   const ctx = canvas.getContext("2d");
   if (!ctx) return canvas;
@@ -306,10 +323,87 @@ async function imageUrlToCanvas(url: string, width: number, height: number) {
   return canvas;
 }
 
+function drawImageFitToFrame(
+  ctx: CanvasRenderingContext2D,
+  image: CanvasImageSource,
+  source: Rect,
+  config: GuideConfig
+) {
+  const scale = Math.min(
+    config.frameWidth / source.width,
+    config.frameHeight / source.height,
+    1
+  );
+  const dw = Math.round(source.width * scale);
+  const dh = Math.round(source.height * scale);
+  const dx = Math.round((config.frameWidth - dw) / 2);
+  const dy = Math.max(0, Math.round(config.baselineY - dh));
+  ctx.drawImage(
+    image,
+    source.x,
+    source.y,
+    source.width,
+    source.height,
+    dx,
+    dy,
+    dw,
+    dh
+  );
+}
+
+function makeFrameItemFromCanvas(
+  canvas: HTMLCanvasElement,
+  index: number,
+  namePrefix: string
+): FrameItem {
+  return {
+    id: frameId(),
+    name: `${namePrefix}-${String(index + 1).padStart(2, "0")}.png`,
+    url: canvas.toDataURL("image/png"),
+    status: "unchecked",
+    note: "",
+  };
+}
+
+async function extractGuideSheetFrames(file: File, config: GuideConfig) {
+  const image = await fileToImage(file);
+  const expectedWidth =
+    GUIDE_FRAME_COUNT * config.frameWidth +
+    (GUIDE_FRAME_COUNT - 1) * GUIDE_GUTTER_WIDTH;
+
+  if (
+    image.naturalWidth !== expectedWidth ||
+    image.naturalHeight !== config.frameHeight
+  ) {
+    throw new Error(
+      `가이드 시트 크기는 ${expectedWidth}x${config.frameHeight}px 이어야 합니다. 현재: ${image.naturalWidth}x${image.naturalHeight}px`
+    );
+  }
+
+  return Array.from({ length: GUIDE_FRAME_COUNT }, (_, index) => {
+    const canvas = makeCanvas(config.frameWidth, config.frameHeight);
+    const ctx = canvas.getContext("2d");
+    if (ctx) {
+      ctx.imageSmoothingEnabled = false;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(
+        image,
+        index * (config.frameWidth + GUIDE_GUTTER_WIDTH),
+        0,
+        config.frameWidth,
+        config.frameHeight,
+        0,
+        0,
+        config.frameWidth,
+        config.frameHeight
+      );
+    }
+    return makeFrameItemFromCanvas(canvas, index, "guide-frame");
+  });
+}
+
 async function loadSampleSheetFrames(config: GuideConfig) {
-  const image = new Image();
-  image.src = SAMPLE_SHEET;
-  await image.decode();
+  const image = await loadImage(SAMPLE_SHEET);
 
   const sourceCanvas = makeCanvas(image.naturalWidth, image.naturalHeight);
   const sourceCtx = sourceCanvas.getContext("2d");
@@ -348,24 +442,14 @@ async function loadSampleSheetFrames(config: GuideConfig) {
         image.naturalHeight - sy,
         Math.round(sourceFrame.height + sourcePaddingY * 2)
       );
-      const scale = Math.min(
-        config.frameWidth / sw,
-        config.frameHeight / sh,
-        1
+      drawImageFitToFrame(
+        ctx,
+        image,
+        { x: sx, y: sy, width: sw, height: sh },
+        config
       );
-      const dw = Math.round(sw * scale);
-      const dh = Math.round(sh * scale);
-      const dx = Math.round((config.frameWidth - dw) / 2);
-      const dy = Math.max(0, Math.round(config.baselineY - dh));
-      ctx.drawImage(image, sx, sy, sw, sh, dx, dy, dw, dh);
     }
-    frames.push({
-      id: frameId(),
-      name: `sample-${String(index + 1).padStart(2, "0")}.png`,
-      url: canvas.toDataURL("image/png"),
-      status: "unchecked",
-      note: "",
-    });
+    frames.push(makeFrameItemFromCanvas(canvas, index, "sample"));
   }
 
   return frames;
@@ -420,6 +504,7 @@ export function SpriteFrameEditor() {
   const [copied, setCopied] = useState(false);
 
   const uploadInputRef = useRef<HTMLInputElement | null>(null);
+  const guideSheetInputRef = useRef<HTMLInputElement | null>(null);
   const replaceInputRef = useRef<HTMLInputElement | null>(null);
   const previewCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const initialSampleLoadedRef = useRef(false);
@@ -513,6 +598,32 @@ export function SpriteFrameEditor() {
       );
     },
     [selectedFrame, selectedIndex, updateSelectedFrame]
+  );
+
+  const handleGuideSheetImport = useCallback(
+    async (files: FileList | null) => {
+      const file = files?.[0];
+      if (!file) return;
+      try {
+        const guideFrames = await extractGuideSheetFrames(file, config);
+        setFrames(guideFrames);
+        setSelectedFrameId(guideFrames[0]?.id ?? null);
+        setMessage(
+          `${file.name}에서 magenta gutter를 제거하고 ${guideFrames.length}개 64x64 프레임을 추출했습니다.`
+        );
+      } catch (error) {
+        setMessage(
+          error instanceof Error
+            ? error.message
+            : "가이드 시트 import에 실패했습니다."
+        );
+      } finally {
+        if (guideSheetInputRef.current) {
+          guideSheetInputRef.current.value = "";
+        }
+      }
+    },
+    [config]
   );
 
   const moveSelected = useCallback(
@@ -641,11 +752,45 @@ export function SpriteFrameEditor() {
     );
   }, [config.frameHeight, config.frameWidth, frames]);
 
+  const exportGuideTemplate = useCallback(async () => {
+    const width =
+      GUIDE_FRAME_COUNT * config.frameWidth +
+      (GUIDE_FRAME_COUNT - 1) * GUIDE_GUTTER_WIDTH;
+    const template = makeCanvas(width, config.frameHeight);
+    const ctx = template.getContext("2d");
+    if (!ctx) return;
+    ctx.clearRect(0, 0, template.width, template.height);
+    ctx.fillStyle = GUIDE_GUTTER_COLOR;
+
+    for (let index = 1; index < GUIDE_FRAME_COUNT; index += 1) {
+      ctx.fillRect(
+        index * config.frameWidth + (index - 1) * GUIDE_GUTTER_WIDTH,
+        0,
+        GUIDE_GUTTER_WIDTH,
+        config.frameHeight
+      );
+    }
+
+    downloadBlob(
+      await canvasToBlob(template),
+      "ai_sprite_16x64_magenta_gutter_template.png"
+    );
+  }, [config.frameHeight, config.frameWidth]);
+
   const exportManifest = useCallback(() => {
     const manifest = {
       type: "ai-sprite-qa-manifest",
       frameWidth: config.frameWidth,
       frameHeight: config.frameHeight,
+      guideSheet: {
+        frameCount: GUIDE_FRAME_COUNT,
+        gutterWidth: GUIDE_GUTTER_WIDTH,
+        gutterColor: GUIDE_GUTTER_COLOR,
+        width:
+          GUIDE_FRAME_COUNT * config.frameWidth +
+          (GUIDE_FRAME_COUNT - 1) * GUIDE_GUTTER_WIDTH,
+        height: config.frameHeight,
+      },
       fps: config.fps,
       centerX: config.centerX,
       baselineY: config.baselineY,
@@ -738,7 +883,9 @@ export function SpriteFrameEditor() {
               <p className="mt-2 max-w-4xl text-[13px] leading-6 text-slate-300">
                 사람이 픽셀을 찍는 그림판이 아니라, AI가 만든 프레임들을
                 순서대로 재생하고 흔들리는 프레임을 표시한 뒤 Codex에게 따로
-                요청할 수정 큐 리포트를 정리하는 내부 QA 도구입니다.
+                요청할 수정 큐 리포트를 정리하는 내부 QA 도구입니다. 생성 규격은
+                64x64 프레임 16개와 4px magenta gutter(#ff00ff)를 기준으로
+                맞춥니다.
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -748,6 +895,20 @@ export function SpriteFrameEditor() {
                 className="rounded-xl bg-white px-4 py-2 text-[13px] font-black text-slate-950 hover:bg-cyan-100"
               >
                 프레임 다중 업로드
+              </button>
+              <button
+                type="button"
+                onClick={() => guideSheetInputRef.current?.click()}
+                className="rounded-xl border border-fuchsia-300/70 px-4 py-2 text-[13px] font-bold text-fuchsia-100 hover:bg-fuchsia-400/10"
+              >
+                magenta guide sheet import
+              </button>
+              <button
+                type="button"
+                onClick={() => void exportGuideTemplate()}
+                className="rounded-xl border border-fuchsia-300/70 px-4 py-2 text-[13px] font-bold text-fuchsia-100 hover:bg-fuchsia-400/10"
+              >
+                guide template export
               </button>
               <button
                 type="button"
@@ -779,6 +940,15 @@ export function SpriteFrameEditor() {
             multiple
             className="hidden"
             onChange={(event) => void handleUpload(event.target.files)}
+          />
+          <input
+            ref={guideSheetInputRef}
+            type="file"
+            accept="image/png,image/*"
+            className="hidden"
+            onChange={(event) =>
+              void handleGuideSheetImport(event.target.files)
+            }
           />
           <input
             ref={replaceInputRef}
