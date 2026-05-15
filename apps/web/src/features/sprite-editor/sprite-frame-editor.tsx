@@ -25,8 +25,8 @@ type GuideConfig = {
   boundingBoxHeight: number;
 };
 
-const SAMPLE_GUIDE_SHEET = "/sprite-editor/walk-guide-character-sample.png";
-const GUIDE_FRAME_COUNT = 16;
+const SAMPLE_GUIDE_SHEET = "/sprite-editor/slime-bounce-guide-sample.png";
+const GUIDE_FRAME_COUNT = 8;
 const GUIDE_GUTTER_WIDTH = 4;
 const GUIDE_GUTTER_COLOR = "#ff00ff";
 const CHECKER_SIZE = 16;
@@ -195,11 +195,11 @@ function makeFrameItemFromCanvas(
 function extractGuideSheetFramesFromImage(
   image: HTMLImageElement,
   config: GuideConfig,
-  namePrefix: string
+  namePrefix: string,
+  frameCount = GUIDE_FRAME_COUNT
 ) {
   const expectedWidth =
-    GUIDE_FRAME_COUNT * config.frameWidth +
-    (GUIDE_FRAME_COUNT - 1) * GUIDE_GUTTER_WIDTH;
+    frameCount * config.frameWidth + (frameCount - 1) * GUIDE_GUTTER_WIDTH;
 
   if (
     image.naturalWidth !== expectedWidth ||
@@ -210,7 +210,7 @@ function extractGuideSheetFramesFromImage(
     );
   }
 
-  return Array.from({ length: GUIDE_FRAME_COUNT }, (_, index) => {
+  return Array.from({ length: frameCount }, (_, index) => {
     const canvas = makeCanvas(config.frameWidth, config.frameHeight);
     const ctx = canvas.getContext("2d");
     if (ctx) {
@@ -239,7 +239,7 @@ async function extractGuideSheetFrames(file: File, config: GuideConfig) {
 
 async function loadSampleSheetFrames(config: GuideConfig) {
   const image = await loadImage(SAMPLE_GUIDE_SHEET);
-  return extractGuideSheetFramesFromImage(image, config, "sample-character");
+  return extractGuideSheetFramesFromImage(image, config, "slime-bounce");
 }
 
 function buildCodexHandoffReport({
@@ -560,7 +560,7 @@ export function SpriteFrameEditor() {
 
     downloadBlob(
       await canvasToBlob(template),
-      "ai_sprite_16x64_magenta_gutter_template.png"
+      "ai_sprite_8x64_magenta_gutter_template.png"
     );
   }, [config.frameHeight, config.frameWidth]);
 
@@ -624,7 +624,7 @@ export function SpriteFrameEditor() {
     setFrames(sampleFrames);
     setSelectedFrameId(sampleFrames[0]?.id ?? null);
     setMessage(
-      "magenta gutter 샘플 캐릭터 시트를 16개 QA 프레임으로 분해했습니다. 실제 작업에서는 같은 규격의 AI 생성 시트를 import하세요."
+      "magenta gutter 슬라임 샘플 시트를 8개 QA 프레임으로 분해했습니다. 재생해서 튀는 프레임을 검수하세요."
     );
   }, [config]);
 
@@ -670,9 +670,9 @@ export function SpriteFrameEditor() {
               <p className="mt-2 max-w-4xl text-[13px] leading-6 text-slate-300">
                 사람이 픽셀을 찍는 그림판이 아니라, AI가 만든 프레임들을
                 순서대로 재생하고 흔들리는 프레임을 표시한 뒤 Codex에게 따로
-                요청할 수정 큐 리포트를 정리하는 내부 QA 도구입니다. 생성 규격은
-                64x64 프레임 16개와 4px magenta gutter(#ff00ff)를 기준으로
-                맞춥니다.
+                요청할 수정 큐 리포트를 정리하는 내부 QA 도구입니다. 현재 샘플은
+                64x64 프레임 8개와 4px magenta gutter(#ff00ff)를 기준으로 맞춘
+                슬라임 바운스 스프라이트입니다.
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
