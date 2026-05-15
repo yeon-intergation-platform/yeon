@@ -9,6 +9,7 @@ export type SheetAsset = {
 
 export const SLIME_GAME_ASSETS = {
   slimeHero: "/slime-game/assets/slime_hero_sheet.png",
+  swordSlash: "/slime-game/assets/sword_slash_attack.svg",
   effects: "/slime-game/assets/effects_sheet.png",
   forestTiles: "/slime-game/assets/forest_tiles_sheet.png",
   props: "/slime-game/assets/props_sheet.png",
@@ -44,6 +45,17 @@ export const SHEET_ASSET_MANIFEST: SheetAsset[] = [
       "slash_arc는 slime_melee_01과 동시에 표시",
       "pink_projectile은 slime_cast_01에서 생성",
       "hit_spark/projectile_impact는 명중 지점에 표시",
+    ],
+  },
+  {
+    id: "sword_slash_attack",
+    title: "검 베기 공격 에셋",
+    src: SLIME_GAME_ASSETS.swordSlash,
+    cell: "320x220 / transparent svg",
+    purpose: "슬라임 attack action 시각 피드백",
+    evidence: [
+      "attack 상태에서 슬라임 앞쪽에 합성해 검을 휘두르는 모션으로 보이게 함",
+      "전투 판정이나 히트박스 source of truth가 아니라 시각 에셋으로만 사용",
     ],
   },
   {
