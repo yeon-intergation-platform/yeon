@@ -36,19 +36,19 @@ export type GameState = {
   effects: EffectBurst[];
 };
 
-export const WORLD_WIDTH = 760;
-export const WORLD_HEIGHT = 420;
-export const FLOOR_Y = 318;
-export const PLAYER_WIDTH = 54;
-export const PLAYER_HEIGHT = 48;
-export const ENEMY_WIDTH = 42;
-export const ENEMY_HEIGHT = 34;
-export const LADDER = { x: 172, y: 190, width: 34, height: 128 };
-export const PORTAL = { x: 650, y: 194, width: 72, height: 118 };
-export const COIN = { x: 345, y: 278, width: 28, height: 28 };
+export const WORLD_WIDTH = 1600;
+export const WORLD_HEIGHT = 900;
+export const FLOOR_Y = 540;
+export const PLAYER_WIDTH = 120;
+export const PLAYER_HEIGHT = 104;
+export const ENEMY_WIDTH = 92;
+export const ENEMY_HEIGHT = 86;
+export const LADDER = { x: 1290, y: 438, width: 64, height: 170 };
+export const PORTAL = { x: 1444, y: 410, width: 112, height: 178 };
+export const COIN = { x: 1108, y: 478, width: 34, height: 34 };
 
 export const INITIAL_STATE: GameState = {
-  x: 72,
+  x: 610,
   y: FLOOR_Y - PLAYER_HEIGHT,
   vx: 0,
   vy: 0,
@@ -56,7 +56,7 @@ export const INITIAL_STATE: GameState = {
   hp: 3,
   coins: 0,
   enemyHp: 2,
-  enemyX: 500,
+  enemyX: 900,
   enemyDirection: -1,
   tick: 0,
   attackCooldown: 0,
@@ -136,8 +136,8 @@ export function nextState(prev: GameState, keys: Keys): GameState {
   const wantsAttack = keys.KeyJ;
   const wantsCast = keys.KeyK;
 
-  let vx = (wantsRight ? 3 : 0) - (wantsLeft ? 3 : 0);
-  let vy = prev.vy + 0.6;
+  let vx = (wantsRight ? 6.4 : 0) - (wantsLeft ? 6.4 : 0);
+  let vy = prev.vy + 0.82;
   let y = prev.y;
   let x = prev.x;
   let facing = prev.facing;
@@ -156,20 +156,20 @@ export function nextState(prev: GameState, keys: Keys): GameState {
   if (vx < 0) facing = -1;
 
   if (onLadder && (wantsUp || wantsDown)) {
-    vy = (wantsDown ? 2 : 0) - (wantsUp ? 2 : 0);
-    vx *= 0.45;
+    vy = (wantsDown ? 4 : 0) - (wantsUp ? 4 : 0);
+    vx *= 0.35;
   } else if (wantsJump && y >= FLOOR_Y - PLAYER_HEIGHT - 1) {
-    vy = -10.5;
+    vy = -16.8;
   }
 
-  x = Math.max(24, Math.min(WORLD_WIDTH - 72, x + vx));
+  x = Math.max(64, Math.min(WORLD_WIDTH - PLAYER_WIDTH - 72, x + vx));
   y += vy;
   if (y > FLOOR_Y - PLAYER_HEIGHT) {
     y = FLOOR_Y - PLAYER_HEIGHT;
     vy = 0;
   }
-  if (y < 120) {
-    y = 120;
+  if (y < 210) {
+    y = 210;
     vy = 0;
   }
 
@@ -182,31 +182,32 @@ export function nextState(prev: GameState, keys: Keys): GameState {
   };
 
   if (enemyHp > 0) {
-    enemyX += enemyDirection * 1.1;
-    if (enemyX < 430 || enemyX > 590)
+    enemyX += enemyDirection * 2.15;
+    if (enemyX < 830 || enemyX > 1048) {
       enemyDirection = enemyDirection === 1 ? -1 : 1;
+    }
     if (overlaps(playerBox, enemyBox) && hurtCooldown === 0) {
       hp = Math.max(0, hp - 1);
-      hurtCooldown = 32;
-      effects.push({ kind: "spark", x: x + 20, y: y + 10, ttl: 20 });
+      hurtCooldown = 34;
+      effects.push({ kind: "spark", x: x + 68, y: y + 22, ttl: 22 });
     }
   }
 
   if (wantsAttack && attackCooldown === 0) {
     attackCooldown = 24;
     const hitBox = {
-      x: facing === 1 ? x + PLAYER_WIDTH - 4 : x - 34,
-      y: y + 12,
-      width: 38,
-      height: 28,
+      x: facing === 1 ? x + PLAYER_WIDTH - 12 : x - 84,
+      y: y + 18,
+      width: 106,
+      height: 72,
     };
-    effects.push({ kind: "slash", x: hitBox.x, y: hitBox.y - 10, ttl: 18 });
+    effects.push({ kind: "slash", x: hitBox.x, y: hitBox.y - 48, ttl: 18 });
     if (enemyHp > 0 && overlaps(hitBox, enemyBox)) {
       enemyHp = Math.max(0, enemyHp - 1);
       effects.push({
         kind: "spark",
-        x: enemyBox.x + 12,
-        y: enemyBox.y + 8,
+        x: enemyBox.x + 34,
+        y: enemyBox.y + 18,
         ttl: 18,
       });
     }
@@ -214,15 +215,15 @@ export function nextState(prev: GameState, keys: Keys): GameState {
 
   if (wantsCast && castCooldown === 0) {
     castCooldown = 28;
-    const projectileX = facing === 1 ? x + PLAYER_WIDTH : x - 24;
-    effects.push({ kind: "projectile", x: projectileX, y: y + 13, ttl: 28 });
-    const projectileBox = { x: projectileX, y: y + 13, width: 30, height: 20 };
+    const projectileX = facing === 1 ? x + PLAYER_WIDTH : x - 54;
+    effects.push({ kind: "projectile", x: projectileX, y: y + 34, ttl: 28 });
+    const projectileBox = { x: projectileX, y: y + 34, width: 74, height: 38 };
     if (enemyHp > 0 && overlaps(projectileBox, enemyBox)) {
       enemyHp = Math.max(0, enemyHp - 1);
       effects.push({
         kind: "spark",
-        x: enemyBox.x + 14,
-        y: enemyBox.y + 10,
+        x: enemyBox.x + 38,
+        y: enemyBox.y + 28,
         ttl: 18,
       });
     }
