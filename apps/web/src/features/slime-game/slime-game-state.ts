@@ -1,61 +1,110 @@
-export type Keys = Record<string, boolean>;
-export type SlimeMotion = "idle" | "walk";
+import {
+  SLIME_ACTIONS,
+  SLIME_MAX_X,
+  SLIME_STAGE,
+  getSlimeActionFrame,
+  isControlHeld,
+  wasControlPressed,
+} from "./slime-game-domain";
+import type { SlimeActionId, SlimeInputState } from "./slime-game-domain";
 
 export type GameState = {
   x: number;
+  groundOffset: number;
+  velocityY: number;
   facing: 1 | -1;
   tick: number;
-  motion: SlimeMotion;
+  action: SlimeActionId;
+  actionTick: number;
 };
-
-export const SPRITE_COLS = 8;
-export const SPRITE_ROWS = 3;
-export const SPRITE_SOURCE_WIDTH = 1881;
-export const SPRITE_SOURCE_HEIGHT = 836;
-export const SPRITE_CELL_WIDTH = SPRITE_SOURCE_WIDTH / SPRITE_COLS;
-export const SPRITE_CELL_HEIGHT = SPRITE_SOURCE_HEIGHT / SPRITE_ROWS;
-export const SPRITE_VIEW_WIDTH = 170;
-export const SPRITE_VIEW_HEIGHT = Math.round(
-  SPRITE_VIEW_WIDTH * (SPRITE_CELL_HEIGHT / SPRITE_CELL_WIDTH)
-);
-export const TRACK_WIDTH = 760;
-export const MIN_X = 24;
-export const MAX_X = TRACK_WIDTH - SPRITE_VIEW_WIDTH - 24;
-
-const MOVE_SPEED = 8.5;
-const WALK_FRAME_TICKS = 5;
-
-const WALK_FRAMES = [3, 4, 5, 6] as const;
 
 export const INITIAL_STATE: GameState = {
   x: 96,
+  groundOffset: 0,
+  velocityY: 0,
   facing: 1,
   tick: 0,
-  motion: "idle",
+  action: "idle",
+  actionTick: 0,
 };
 
-export function nextState(prev: GameState, keys: Keys): GameState {
-  const wantsLeft = keys.ArrowLeft || keys.KeyA;
-  const wantsRight = keys.ArrowRight || keys.KeyD;
-  const direction = (wantsRight ? 1 : 0) - (wantsLeft ? 1 : 0);
-  const x = clamp(prev.x + direction * MOVE_SPEED, MIN_X, MAX_X);
+export function nextState(prev: GameState, input: SlimeInputState): GameState {
+  const direction =
+    (isControlHeld(input, "moveRight") ? 1 : 0) -
+    (isControlHeld(input, "moveLeft") ? 1 : 0);
+  const x = clamp(
+    prev.x + direction * SLIME_STAGE.moveSpeed,
+    SLIME_STAGE.minX,
+    SLIME_MAX_X
+  );
+  const facing = direction === 0 ? prev.facing : direction > 0 ? 1 : -1;
+
+  let groundOffset = prev.groundOffset;
+  let velocityY = prev.velocityY;
+  const wasGrounded = groundOffset <= 0 && velocityY === 0;
+  if (wasControlPressed(input, "jump") && wasGrounded) {
+    velocityY = SLIME_STAGE.jumpVelocity;
+  }
+
+  groundOffset += velocityY;
+  if (groundOffset > 0 || velocityY > 0) {
+    velocityY -= SLIME_STAGE.gravity;
+  }
+  if (groundOffset <= 0) {
+    groundOffset = 0;
+    velocityY = 0;
+  }
+
+  const nextAction = chooseNextAction({
+    prev,
+    direction,
+    groundOffset,
+    velocityY,
+    wantsAttack: wasControlPressed(input, "attack"),
+  });
 
   return {
     x,
-    facing: direction === 0 ? prev.facing : direction > 0 ? 1 : -1,
+    groundOffset,
+    velocityY,
+    facing,
     tick: prev.tick + 1,
-    motion: direction === 0 ? "idle" : "walk",
+    action: nextAction,
+    actionTick: nextAction === prev.action ? prev.actionTick + 1 : 0,
   };
 }
 
 export function slimeFrame(state: GameState) {
-  if (state.motion === "walk") {
-    return WALK_FRAMES[
-      Math.floor(state.tick / WALK_FRAME_TICKS) % WALK_FRAMES.length
-    ];
+  return getSlimeActionFrame({
+    action: state.action,
+    actionTick: state.actionTick,
+    velocityY: state.velocityY,
+  });
+}
+
+function chooseNextAction({
+  prev,
+  direction,
+  groundOffset,
+  velocityY,
+  wantsAttack,
+}: {
+  prev: GameState;
+  direction: number;
+  groundOffset: number;
+  velocityY: number;
+  wantsAttack: boolean;
+}): SlimeActionId {
+  if (wantsAttack) return "attack";
+
+  const attackTicks = SLIME_ACTIONS.attack.durationTicks ?? 0;
+  if (prev.action === "attack" && prev.actionTick < attackTicks - 1) {
+    return "attack";
   }
 
-  return 0;
+  if (groundOffset > 0 || velocityY !== 0) return "jump";
+  if (direction !== 0) return "walk";
+  return "idle";
 }
 
 function clamp(value: number, min: number, max: number) {

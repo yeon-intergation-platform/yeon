@@ -2,32 +2,32 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import type { Keys } from "./slime-game-state";
+import {
+  clearPressedControls,
+  createSlimeInputState,
+  isSlimeControlCode,
+  pressControlOnce,
+  pressInputCode,
+  releaseInputCode,
+} from "./slime-game-domain";
+import type { SlimeControlId } from "./slime-game-domain";
 import { INITIAL_STATE, nextState } from "./slime-game-state";
 import { SlimeGameStage } from "./slime-game-stage";
 
-const MOVEMENT_KEYS = ["ArrowLeft", "ArrowRight", "KeyA", "KeyD"] as const;
-
 export function SlimeGamePrototype() {
   const [state, setState] = useState(INITIAL_STATE);
-  const keysRef = useRef<Keys>({});
+  const inputRef = useRef(createSlimeInputState());
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (
-        MOVEMENT_KEYS.includes(event.code as (typeof MOVEMENT_KEYS)[number])
-      ) {
-        event.preventDefault();
-        keysRef.current[event.code] = true;
-      }
+      if (!isSlimeControlCode(event.code)) return;
+      event.preventDefault();
+      pressInputCode(inputRef.current, event.code);
     };
     const handleKeyUp = (event: KeyboardEvent) => {
-      if (
-        MOVEMENT_KEYS.includes(event.code as (typeof MOVEMENT_KEYS)[number])
-      ) {
-        event.preventDefault();
-        keysRef.current[event.code] = false;
-      }
+      if (!isSlimeControlCode(event.code)) return;
+      event.preventDefault();
+      releaseInputCode(inputRef.current, event.code);
     };
     window.addEventListener("keydown", handleKeyDown);
     window.addEventListener("keyup", handleKeyUp);
@@ -39,19 +39,33 @@ export function SlimeGamePrototype() {
 
   useEffect(() => {
     const timer = window.setInterval(() => {
-      setState((prev) => nextState(prev, keysRef.current));
+      setState((prev) => nextState(prev, inputRef.current));
+      clearPressedControls(inputRef.current);
     }, 1000 / 30);
     return () => window.clearInterval(timer);
   }, []);
 
   const reset = useCallback(() => {
-    keysRef.current = {};
+    inputRef.current = createSlimeInputState();
     setState(INITIAL_STATE);
+  }, []);
+
+  const triggerControl = useCallback((controlId: SlimeControlId) => {
+    pressControlOnce(inputRef.current, controlId);
+    setState((prev) => {
+      const next = nextState(prev, inputRef.current);
+      clearPressedControls(inputRef.current);
+      return next;
+    });
   }, []);
 
   return (
     <main className="min-h-screen bg-neutral-950 text-neutral-50">
-      <SlimeGameStage state={state} onReset={reset} />
+      <SlimeGameStage
+        state={state}
+        onReset={reset}
+        onTriggerControl={triggerControl}
+      />
     </main>
   );
 }
