@@ -25,14 +25,7 @@ type GuideConfig = {
   boundingBoxHeight: number;
 };
 
-type Rect = {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-};
-
-const SAMPLE_SHEET = "/sprite-editor/walk-cycle-draft.png";
+const SAMPLE_GUIDE_SHEET = "/sprite-editor/walk-guide-character-sample.png";
 const GUIDE_FRAME_COUNT = 16;
 const GUIDE_GUTTER_WIDTH = 4;
 const GUIDE_GUTTER_COLOR = "#ff00ff";
@@ -166,144 +159,6 @@ function statusSummary(frames: FrameItem[]) {
   );
 }
 
-function isCharacterPixel(pixels: Uint8ClampedArray, offset: number) {
-  const r = pixels[offset] ?? 255;
-  const g = pixels[offset + 1] ?? 255;
-  const b = pixels[offset + 2] ?? 255;
-  const alpha = pixels[offset + 3] ?? 255;
-  const max = Math.max(r, g, b);
-  const min = Math.min(r, g, b);
-  const isCheckerBackground = alpha > 0 && max - min < 12 && min > 215;
-
-  return alpha > 10 && !isCheckerBackground;
-}
-
-function detectNonBackgroundBoundsFromPixels(
-  pixels: Uint8ClampedArray,
-  width: number,
-  height: number,
-  xStart = 0,
-  xEnd = width - 1
-): Rect {
-  let minX = width;
-  let minY = height;
-  let maxX = 0;
-  let maxY = 0;
-
-  for (let y = 0; y < height; y += 1) {
-    for (let x = xStart; x <= xEnd; x += 1) {
-      const offset = (y * width + x) * 4;
-      if (isCharacterPixel(pixels, offset)) {
-        minX = Math.min(minX, x);
-        minY = Math.min(minY, y);
-        maxX = Math.max(maxX, x);
-        maxY = Math.max(maxY, y);
-      }
-    }
-  }
-
-  if (minX > maxX || minY > maxY) {
-    return { x: 0, y: 0, width, height };
-  }
-
-  return {
-    x: minX,
-    y: minY,
-    width: maxX - minX + 1,
-    height: maxY - minY + 1,
-  };
-}
-
-function mergeRangesToFrameCount(
-  ranges: Array<{ start: number; end: number }>,
-  frameCount: number
-) {
-  const merged = [...ranges];
-
-  while (merged.length > frameCount) {
-    let smallestGapIndex = 0;
-    let smallestGap = Number.POSITIVE_INFINITY;
-
-    for (let index = 0; index < merged.length - 1; index += 1) {
-      const current = merged[index]!;
-      const next = merged[index + 1]!;
-      const gap = next.start - current.end;
-      if (gap < smallestGap) {
-        smallestGap = gap;
-        smallestGapIndex = index;
-      }
-    }
-
-    const current = merged[smallestGapIndex]!;
-    const next = merged[smallestGapIndex + 1]!;
-    merged.splice(smallestGapIndex, 2, {
-      start: current.start,
-      end: next.end,
-    });
-  }
-
-  return merged;
-}
-
-function detectSpriteFrameBounds(
-  ctx: CanvasRenderingContext2D,
-  width: number,
-  height: number,
-  frameCount: number
-): Rect[] {
-  const pixels = ctx.getImageData(0, 0, width, height).data;
-  const columnHasContent = Array.from({ length: width }, (_, x) => {
-    for (let y = 0; y < height; y += 1) {
-      if (isCharacterPixel(pixels, (y * width + x) * 4)) {
-        return true;
-      }
-    }
-    return false;
-  });
-  const ranges: Array<{ start: number; end: number }> = [];
-  let start: number | null = null;
-
-  columnHasContent.forEach((hasContent, x) => {
-    if (hasContent && start === null) {
-      start = x;
-    }
-    if ((!hasContent || x === width - 1) && start !== null) {
-      ranges.push({ start, end: hasContent && x === width - 1 ? x : x - 1 });
-      start = null;
-    }
-  });
-
-  const meaningfulRanges = mergeRangesToFrameCount(
-    ranges.filter((range) => range.end - range.start + 1 >= 8),
-    frameCount
-  );
-
-  if (meaningfulRanges.length !== frameCount) {
-    const contentBounds = detectNonBackgroundBoundsFromPixels(
-      pixels,
-      width,
-      height
-    );
-    const sourceWidth = contentBounds.width / frameCount;
-    return Array.from({ length: frameCount }, (_, index) => ({
-      x: Math.round(contentBounds.x + index * sourceWidth),
-      y: contentBounds.y,
-      width: Math.round(sourceWidth),
-      height: contentBounds.height,
-    }));
-  }
-
-  return meaningfulRanges.map((range) =>
-    detectNonBackgroundBoundsFromPixels(
-      pixels,
-      width,
-      height,
-      range.start,
-      range.end
-    )
-  );
-}
-
 async function imageUrlToCanvas(url: string, width: number, height: number) {
   const image = await loadImage(url);
   const canvas = makeCanvas(width, height);
@@ -323,34 +178,6 @@ async function imageUrlToCanvas(url: string, width: number, height: number) {
   return canvas;
 }
 
-function drawImageFitToFrame(
-  ctx: CanvasRenderingContext2D,
-  image: CanvasImageSource,
-  source: Rect,
-  config: GuideConfig
-) {
-  const scale = Math.min(
-    config.frameWidth / source.width,
-    config.frameHeight / source.height,
-    1
-  );
-  const dw = Math.round(source.width * scale);
-  const dh = Math.round(source.height * scale);
-  const dx = Math.round((config.frameWidth - dw) / 2);
-  const dy = Math.max(0, Math.round(config.baselineY - dh));
-  ctx.drawImage(
-    image,
-    source.x,
-    source.y,
-    source.width,
-    source.height,
-    dx,
-    dy,
-    dw,
-    dh
-  );
-}
-
 function makeFrameItemFromCanvas(
   canvas: HTMLCanvasElement,
   index: number,
@@ -365,8 +192,11 @@ function makeFrameItemFromCanvas(
   };
 }
 
-async function extractGuideSheetFrames(file: File, config: GuideConfig) {
-  const image = await fileToImage(file);
+function extractGuideSheetFramesFromImage(
+  image: HTMLImageElement,
+  config: GuideConfig,
+  namePrefix: string
+) {
   const expectedWidth =
     GUIDE_FRAME_COUNT * config.frameWidth +
     (GUIDE_FRAME_COUNT - 1) * GUIDE_GUTTER_WIDTH;
@@ -398,61 +228,18 @@ async function extractGuideSheetFrames(file: File, config: GuideConfig) {
         config.frameHeight
       );
     }
-    return makeFrameItemFromCanvas(canvas, index, "guide-frame");
+    return makeFrameItemFromCanvas(canvas, index, namePrefix);
   });
 }
 
+async function extractGuideSheetFrames(file: File, config: GuideConfig) {
+  const image = await fileToImage(file);
+  return extractGuideSheetFramesFromImage(image, config, "guide-frame");
+}
+
 async function loadSampleSheetFrames(config: GuideConfig) {
-  const image = await loadImage(SAMPLE_SHEET);
-
-  const sourceCanvas = makeCanvas(image.naturalWidth, image.naturalHeight);
-  const sourceCtx = sourceCanvas.getContext("2d");
-  sourceCtx?.drawImage(image, 0, 0);
-  const sourceBounds = sourceCtx
-    ? detectSpriteFrameBounds(
-        sourceCtx,
-        image.naturalWidth,
-        image.naturalHeight,
-        16
-      )
-    : Array.from({ length: 16 }, (_, index) => ({
-        x: Math.round((image.naturalWidth / 16) * index),
-        y: 0,
-        width: Math.round(image.naturalWidth / 16),
-        height: image.naturalHeight,
-      }));
-  const frames: FrameItem[] = [];
-
-  for (let index = 0; index < 16; index += 1) {
-    const sourceFrame = sourceBounds[index]!;
-    const canvas = makeCanvas(config.frameWidth, config.frameHeight);
-    const ctx = canvas.getContext("2d");
-    if (ctx) {
-      ctx.imageSmoothingEnabled = false;
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      const sourcePaddingX = Math.max(5, Math.round(sourceFrame.width * 0.14));
-      const sourcePaddingY = Math.max(5, Math.round(sourceFrame.height * 0.08));
-      const sx = Math.max(0, Math.round(sourceFrame.x - sourcePaddingX));
-      const sy = Math.max(0, Math.round(sourceFrame.y - sourcePaddingY));
-      const sw = Math.min(
-        image.naturalWidth - sx,
-        Math.round(sourceFrame.width + sourcePaddingX * 2)
-      );
-      const sh = Math.min(
-        image.naturalHeight - sy,
-        Math.round(sourceFrame.height + sourcePaddingY * 2)
-      );
-      drawImageFitToFrame(
-        ctx,
-        image,
-        { x: sx, y: sy, width: sw, height: sh },
-        config
-      );
-    }
-    frames.push(makeFrameItemFromCanvas(canvas, index, "sample"));
-  }
-
-  return frames;
+  const image = await loadImage(SAMPLE_GUIDE_SHEET);
+  return extractGuideSheetFramesFromImage(image, config, "sample-character");
 }
 
 function buildCodexHandoffReport({
@@ -837,7 +624,7 @@ export function SpriteFrameEditor() {
     setFrames(sampleFrames);
     setSelectedFrameId(sampleFrames[0]?.id ?? null);
     setMessage(
-      "샘플 시트를 16개 QA 프레임으로 분해했습니다. 실제 작업에서는 AI가 만든 프레임 이미지들을 여러 장 업로드하세요."
+      "magenta gutter 샘플 캐릭터 시트를 16개 QA 프레임으로 분해했습니다. 실제 작업에서는 같은 규격의 AI 생성 시트를 import하세요."
     );
   }, [config]);
 
