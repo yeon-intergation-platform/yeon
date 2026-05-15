@@ -45,6 +45,15 @@ export function createSpriteInputState(): SpriteInputState {
   return { held: {}, pressed: {} };
 }
 
+export function snapshotSpriteInputState(
+  input: SpriteInputState
+): SpriteInputState {
+  return {
+    held: { ...input.held },
+    pressed: { ...input.pressed },
+  };
+}
+
 export function isSpriteControlCode<
   ControlId extends string,
   Controls extends Record<ControlId, SpriteControlDefinition<ControlId>>,
