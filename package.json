@@ -22,7 +22,8 @@
     "typecheck:api-client": "pnpm --filter @yeon/api-client typecheck",
     "validate": "pnpm lint && pnpm typecheck",
     "version:bump": "node scripts/bump-version.mjs",
-    "release:verify": "node scripts/verify-release-version.mjs"
+    "release:verify": "node scripts/verify-release-version.mjs",
+    "sprite:alpha-key": "python3 scripts/sprites/alpha-key-sheet.py"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.0",
