@@ -40,8 +40,9 @@ export function SlimeGamePrototype() {
 
   useEffect(() => {
     const timer = window.setInterval(() => {
-      setState((prev) => nextState(prev, inputRef.current));
+      const inputSnapshot = snapshotSlimeInputState(inputRef.current);
       clearPressedControls(inputRef.current);
+      setState((prev) => nextState(prev, inputSnapshot));
     }, 1000 / 30);
     return () => window.clearInterval(timer);
   }, []);
