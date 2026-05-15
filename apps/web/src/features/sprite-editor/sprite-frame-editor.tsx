@@ -25,6 +25,13 @@ type GuideConfig = {
   boundingBoxHeight: number;
 };
 
+type Rect = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+};
+
 const SAMPLE_SHEET = "/sprite-editor/walk-cycle-draft.png";
 const CHECKER_SIZE = 16;
 const DEFAULT_GUIDE: GuideConfig = {
@@ -140,29 +147,34 @@ function statusSummary(frames: FrameItem[]) {
   );
 }
 
-function detectNonBackgroundBounds(
-  ctx: CanvasRenderingContext2D,
+function isCharacterPixel(pixels: Uint8ClampedArray, offset: number) {
+  const r = pixels[offset] ?? 255;
+  const g = pixels[offset + 1] ?? 255;
+  const b = pixels[offset + 2] ?? 255;
+  const alpha = pixels[offset + 3] ?? 255;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const isCheckerBackground = alpha > 0 && max - min < 12 && min > 215;
+
+  return alpha > 10 && !isCheckerBackground;
+}
+
+function detectNonBackgroundBoundsFromPixels(
+  pixels: Uint8ClampedArray,
   width: number,
-  height: number
-) {
-  const pixels = ctx.getImageData(0, 0, width, height).data;
+  height: number,
+  xStart = 0,
+  xEnd = width - 1
+): Rect {
   let minX = width;
   let minY = height;
   let maxX = 0;
   let maxY = 0;
 
   for (let y = 0; y < height; y += 1) {
-    for (let x = 0; x < width; x += 1) {
+    for (let x = xStart; x <= xEnd; x += 1) {
       const offset = (y * width + x) * 4;
-      const r = pixels[offset] ?? 255;
-      const g = pixels[offset + 1] ?? 255;
-      const b = pixels[offset + 2] ?? 255;
-      const alpha = pixels[offset + 3] ?? 255;
-      const max = Math.max(r, g, b);
-      const min = Math.min(r, g, b);
-      const isCheckerBackground = alpha > 0 && max - min < 12 && min > 215;
-
-      if (alpha > 10 && !isCheckerBackground) {
+      if (isCharacterPixel(pixels, offset)) {
         minX = Math.min(minX, x);
         minY = Math.min(minY, y);
         maxX = Math.max(maxX, x);
@@ -181,6 +193,96 @@ function detectNonBackgroundBounds(
     width: maxX - minX + 1,
     height: maxY - minY + 1,
   };
+}
+
+function mergeRangesToFrameCount(
+  ranges: Array<{ start: number; end: number }>,
+  frameCount: number
+) {
+  const merged = [...ranges];
+
+  while (merged.length > frameCount) {
+    let smallestGapIndex = 0;
+    let smallestGap = Number.POSITIVE_INFINITY;
+
+    for (let index = 0; index < merged.length - 1; index += 1) {
+      const current = merged[index]!;
+      const next = merged[index + 1]!;
+      const gap = next.start - current.end;
+      if (gap < smallestGap) {
+        smallestGap = gap;
+        smallestGapIndex = index;
+      }
+    }
+
+    const current = merged[smallestGapIndex]!;
+    const next = merged[smallestGapIndex + 1]!;
+    merged.splice(smallestGapIndex, 2, {
+      start: current.start,
+      end: next.end,
+    });
+  }
+
+  return merged;
+}
+
+function detectSpriteFrameBounds(
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  frameCount: number
+): Rect[] {
+  const pixels = ctx.getImageData(0, 0, width, height).data;
+  const columnHasContent = Array.from({ length: width }, (_, x) => {
+    for (let y = 0; y < height; y += 1) {
+      if (isCharacterPixel(pixels, (y * width + x) * 4)) {
+        return true;
+      }
+    }
+    return false;
+  });
+  const ranges: Array<{ start: number; end: number }> = [];
+  let start: number | null = null;
+
+  columnHasContent.forEach((hasContent, x) => {
+    if (hasContent && start === null) {
+      start = x;
+    }
+    if ((!hasContent || x === width - 1) && start !== null) {
+      ranges.push({ start, end: hasContent && x === width - 1 ? x : x - 1 });
+      start = null;
+    }
+  });
+
+  const meaningfulRanges = mergeRangesToFrameCount(
+    ranges.filter((range) => range.end - range.start + 1 >= 8),
+    frameCount
+  );
+
+  if (meaningfulRanges.length !== frameCount) {
+    const contentBounds = detectNonBackgroundBoundsFromPixels(
+      pixels,
+      width,
+      height
+    );
+    const sourceWidth = contentBounds.width / frameCount;
+    return Array.from({ length: frameCount }, (_, index) => ({
+      x: Math.round(contentBounds.x + index * sourceWidth),
+      y: contentBounds.y,
+      width: Math.round(sourceWidth),
+      height: contentBounds.height,
+    }));
+  }
+
+  return meaningfulRanges.map((range) =>
+    detectNonBackgroundBoundsFromPixels(
+      pixels,
+      width,
+      height,
+      range.start,
+      range.end
+    )
+  );
 }
 
 async function imageUrlToCanvas(url: string, width: number, height: number) {
@@ -212,37 +314,39 @@ async function loadSampleSheetFrames(config: GuideConfig) {
   const sourceCanvas = makeCanvas(image.naturalWidth, image.naturalHeight);
   const sourceCtx = sourceCanvas.getContext("2d");
   sourceCtx?.drawImage(image, 0, 0);
-  const contentBounds = sourceCtx
-    ? detectNonBackgroundBounds(
+  const sourceBounds = sourceCtx
+    ? detectSpriteFrameBounds(
         sourceCtx,
         image.naturalWidth,
-        image.naturalHeight
+        image.naturalHeight,
+        16
       )
-    : { x: 0, y: 0, width: image.naturalWidth, height: image.naturalHeight };
-  const sourceWidth = contentBounds.width / 16;
-  const sourceHeight = contentBounds.height;
-  const sourcePaddingX = Math.max(6, Math.round(sourceWidth * 0.16));
-  const sourcePaddingY = Math.max(4, Math.round(sourceHeight * 0.12));
+    : Array.from({ length: 16 }, (_, index) => ({
+        x: Math.round((image.naturalWidth / 16) * index),
+        y: 0,
+        width: Math.round(image.naturalWidth / 16),
+        height: image.naturalHeight,
+      }));
   const frames: FrameItem[] = [];
 
   for (let index = 0; index < 16; index += 1) {
+    const sourceFrame = sourceBounds[index]!;
     const canvas = makeCanvas(config.frameWidth, config.frameHeight);
     const ctx = canvas.getContext("2d");
     if (ctx) {
       ctx.imageSmoothingEnabled = false;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      const sx = Math.max(
-        0,
-        Math.round(contentBounds.x + index * sourceWidth - sourcePaddingX)
-      );
-      const sy = Math.max(0, contentBounds.y - sourcePaddingY);
+      const sourcePaddingX = Math.max(5, Math.round(sourceFrame.width * 0.14));
+      const sourcePaddingY = Math.max(5, Math.round(sourceFrame.height * 0.08));
+      const sx = Math.max(0, Math.round(sourceFrame.x - sourcePaddingX));
+      const sy = Math.max(0, Math.round(sourceFrame.y - sourcePaddingY));
       const sw = Math.min(
         image.naturalWidth - sx,
-        Math.round(sourceWidth + sourcePaddingX * 2)
+        Math.round(sourceFrame.width + sourcePaddingX * 2)
       );
       const sh = Math.min(
         image.naturalHeight - sy,
-        Math.round(sourceHeight + sourcePaddingY * 2)
+        Math.round(sourceFrame.height + sourcePaddingY * 2)
       );
       const scale = Math.min(
         config.frameWidth / sw,
