@@ -26,6 +26,12 @@ export function SlimeGameStage({
   const frame = slimeFrame(state);
   const action = SLIME_ACTIONS[state.action];
   const directionText = state.facing === 1 ? "right" : "left";
+  const isAttacking = state.action === "attack";
+  const attackProgress = Math.min(
+    1,
+    state.actionTick /
+      Math.max(1, (SLIME_ACTIONS.attack.durationTicks ?? 1) - 1)
+  );
 
   return (
     <section className="flex min-h-screen items-center justify-center px-6 py-10">
@@ -131,6 +137,14 @@ export function SlimeGameStage({
                 transformOrigin: "center bottom",
               }}
             />
+            {isAttacking ? (
+              <SwordAttackEffect
+                x={state.x}
+                groundOffset={state.groundOffset}
+                facing={state.facing}
+                progress={attackProgress}
+              />
+            ) : null}
             <div
               className="absolute h-3 rounded-full bg-lime-300/40 blur-sm transition-opacity"
               style={{
@@ -177,6 +191,43 @@ export function SlimeGameStage({
         </div>
       </div>
     </section>
+  );
+}
+
+function SwordAttackEffect({
+  x,
+  groundOffset,
+  facing,
+  progress,
+}: {
+  x: number;
+  groundOffset: number;
+  facing: 1 | -1;
+  progress: number;
+}) {
+  const rotation = -22 + progress * 54;
+  const lift = Math.sin(progress * Math.PI) * 12;
+  const scale = 0.92 + Math.sin(progress * Math.PI) * 0.16;
+
+  return (
+    <img
+      src={SLIME_GAME_ASSETS.swordSlash}
+      alt=""
+      aria-hidden="true"
+      data-testid="slime-sword-attack-effect"
+      className="pointer-events-none absolute z-10 select-none"
+      style={{
+        left: facing === 1 ? x + 112 : x - 190,
+        bottom: SLIME_STAGE.groundBottom + groundOffset + 42 + lift,
+        width: 248,
+        height: 171,
+        opacity: Math.max(0.32, 1 - progress * 0.2),
+        transform: `scaleX(${facing}) rotate(${rotation}deg) scale(${scale})`,
+        transformOrigin: facing === 1 ? "18% 78%" : "82% 78%",
+        filter:
+          "drop-shadow(0 12px 18px rgba(0,0,0,0.42)) drop-shadow(0 0 16px rgba(190,242,100,0.32))",
+      }}
+    />
   );
 }
 

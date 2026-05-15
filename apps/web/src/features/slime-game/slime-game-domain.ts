@@ -70,7 +70,7 @@ export const SLIME_ACTIONS = {
   attack: {
     id: "attack",
     label: "공격",
-    description: "히트박스 없는 sprite 프레임 테스트",
+    description: "검 베기 에셋 합성 테스트",
     frames: [10, 11, 12],
     frameTicks: 4,
     durationTicks: 16,
