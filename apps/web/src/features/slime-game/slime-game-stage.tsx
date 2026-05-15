@@ -12,7 +12,7 @@ import {
 } from "./slime-game-state";
 import { SpriteSheet } from "./sprite-sheet";
 
-const PREVIEW_FRAMES = [0, 1, 2, 3, 4, 5, 6] as const;
+const PREVIEW_FRAMES = [0, 3, 4, 5, 6] as const;
 
 export function SlimeGameStage({
   state,
@@ -108,7 +108,7 @@ export function SlimeGameStage({
             <div>
               <h2 className="text-base font-black text-white">프레임 확인</h2>
               <p className="mt-1 text-sm text-neutral-400">
-                idle은 0~2, walk는 3~6만 사용합니다. 초록 테두리가 현재
+                idle은 0번만, walk는 3~6만 사용합니다. 초록 테두리가 현재
                 프레임입니다.
               </p>
             </div>
@@ -116,7 +116,7 @@ export function SlimeGameStage({
               x {Math.round(state.x)}px
             </span>
           </div>
-          <div className="grid grid-cols-7 gap-3">
+          <div className="grid grid-cols-5 gap-3">
             {PREVIEW_FRAMES.map((previewFrame) => (
               <div
                 key={previewFrame}

@@ -22,12 +22,10 @@ export const TRACK_WIDTH = 760;
 export const MIN_X = 24;
 export const MAX_X = TRACK_WIDTH - SPRITE_VIEW_WIDTH - 24;
 
-const MOVE_SPEED = 5.5;
+const MOVE_SPEED = 8.5;
 const WALK_FRAME_TICKS = 5;
-const IDLE_FRAME_TICKS = 14;
 
 const WALK_FRAMES = [3, 4, 5, 6] as const;
-const IDLE_FRAMES = [0, 1, 0, 2] as const;
 
 export const INITIAL_STATE: GameState = {
   x: 96,
@@ -57,9 +55,7 @@ export function slimeFrame(state: GameState) {
     ];
   }
 
-  return IDLE_FRAMES[
-    Math.floor(state.tick / IDLE_FRAME_TICKS) % IDLE_FRAMES.length
-  ];
+  return 0;
 }
 
 function clamp(value: number, min: number, max: number) {
