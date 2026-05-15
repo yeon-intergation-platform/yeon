@@ -6,19 +6,7 @@ import type { Keys } from "./slime-game-state";
 import { INITIAL_STATE, nextState } from "./slime-game-state";
 import { SlimeGameStage } from "./slime-game-stage";
 
-const GAME_KEYS = [
-  "ArrowLeft",
-  "ArrowRight",
-  "ArrowUp",
-  "ArrowDown",
-  "Space",
-  "KeyA",
-  "KeyD",
-  "KeyW",
-  "KeyS",
-  "KeyJ",
-  "KeyK",
-];
+const MOVEMENT_KEYS = ["ArrowLeft", "ArrowRight", "KeyA", "KeyD"] as const;
 
 export function SlimeGamePrototype() {
   const [state, setState] = useState(INITIAL_STATE);
@@ -26,11 +14,20 @@ export function SlimeGamePrototype() {
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (GAME_KEYS.includes(event.code)) event.preventDefault();
-      keysRef.current[event.code] = true;
+      if (
+        MOVEMENT_KEYS.includes(event.code as (typeof MOVEMENT_KEYS)[number])
+      ) {
+        event.preventDefault();
+        keysRef.current[event.code] = true;
+      }
     };
     const handleKeyUp = (event: KeyboardEvent) => {
-      keysRef.current[event.code] = false;
+      if (
+        MOVEMENT_KEYS.includes(event.code as (typeof MOVEMENT_KEYS)[number])
+      ) {
+        event.preventDefault();
+        keysRef.current[event.code] = false;
+      }
     };
     window.addEventListener("keydown", handleKeyDown);
     window.addEventListener("keyup", handleKeyUp);
@@ -47,10 +44,13 @@ export function SlimeGamePrototype() {
     return () => window.clearInterval(timer);
   }, []);
 
-  const reset = useCallback(() => setState(INITIAL_STATE), []);
+  const reset = useCallback(() => {
+    keysRef.current = {};
+    setState(INITIAL_STATE);
+  }, []);
 
   return (
-    <main className="min-h-screen overflow-hidden bg-[#06162a] text-white">
+    <main className="min-h-screen bg-neutral-950 text-neutral-50">
       <SlimeGameStage state={state} onReset={reset} />
     </main>
   );
