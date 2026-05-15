@@ -11,7 +11,6 @@ type FrameItem = {
   url: string;
   status: FrameStatus;
   note: string;
-  revisionPrompt: string;
 };
 
 type GuideConfig = {
@@ -141,6 +140,49 @@ function statusSummary(frames: FrameItem[]) {
   );
 }
 
+function detectNonBackgroundBounds(
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height: number
+) {
+  const pixels = ctx.getImageData(0, 0, width, height).data;
+  let minX = width;
+  let minY = height;
+  let maxX = 0;
+  let maxY = 0;
+
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const offset = (y * width + x) * 4;
+      const r = pixels[offset] ?? 255;
+      const g = pixels[offset + 1] ?? 255;
+      const b = pixels[offset + 2] ?? 255;
+      const alpha = pixels[offset + 3] ?? 255;
+      const max = Math.max(r, g, b);
+      const min = Math.min(r, g, b);
+      const isCheckerBackground = alpha > 0 && max - min < 12 && min > 215;
+
+      if (alpha > 10 && !isCheckerBackground) {
+        minX = Math.min(minX, x);
+        minY = Math.min(minY, y);
+        maxX = Math.max(maxX, x);
+        maxY = Math.max(maxY, y);
+      }
+    }
+  }
+
+  if (minX > maxX || minY > maxY) {
+    return { x: 0, y: 0, width, height };
+  }
+
+  return {
+    x: minX,
+    y: minY,
+    width: maxX - minX + 1,
+    height: maxY - minY + 1,
+  };
+}
+
 async function imageUrlToCanvas(url: string, width: number, height: number) {
   const image = new Image();
   image.src = url;
@@ -167,30 +209,51 @@ async function loadSampleSheetFrames(config: GuideConfig) {
   image.src = SAMPLE_SHEET;
   await image.decode();
 
-  const columns = 4;
-  const sourceWidth = Math.floor(image.naturalWidth / 4);
-  const sourceHeight = Math.floor(image.naturalHeight / 4);
+  const sourceCanvas = makeCanvas(image.naturalWidth, image.naturalHeight);
+  const sourceCtx = sourceCanvas.getContext("2d");
+  sourceCtx?.drawImage(image, 0, 0);
+  const contentBounds = sourceCtx
+    ? detectNonBackgroundBounds(
+        sourceCtx,
+        image.naturalWidth,
+        image.naturalHeight
+      )
+    : { x: 0, y: 0, width: image.naturalWidth, height: image.naturalHeight };
+  const sourceWidth = contentBounds.width / 16;
+  const sourceHeight = contentBounds.height;
+  const sourcePaddingX = Math.max(6, Math.round(sourceWidth * 0.16));
+  const sourcePaddingY = Math.max(4, Math.round(sourceHeight * 0.12));
   const frames: FrameItem[] = [];
 
   for (let index = 0; index < 16; index += 1) {
-    const col = index % columns;
-    const row = Math.floor(index / columns);
     const canvas = makeCanvas(config.frameWidth, config.frameHeight);
     const ctx = canvas.getContext("2d");
     if (ctx) {
       ctx.imageSmoothingEnabled = false;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(
-        image,
-        col * sourceWidth,
-        row * sourceHeight,
-        sourceWidth,
-        sourceHeight,
+      const sx = Math.max(
         0,
-        0,
-        config.frameWidth,
-        config.frameHeight
+        Math.round(contentBounds.x + index * sourceWidth - sourcePaddingX)
       );
+      const sy = Math.max(0, contentBounds.y - sourcePaddingY);
+      const sw = Math.min(
+        image.naturalWidth - sx,
+        Math.round(sourceWidth + sourcePaddingX * 2)
+      );
+      const sh = Math.min(
+        image.naturalHeight - sy,
+        Math.round(sourceHeight + sourcePaddingY * 2)
+      );
+      const scale = Math.min(
+        config.frameWidth / sw,
+        config.frameHeight / sh,
+        1
+      );
+      const dw = Math.round(sw * scale);
+      const dh = Math.round(sh * scale);
+      const dx = Math.round((config.frameWidth - dw) / 2);
+      const dy = Math.max(0, Math.round(config.baselineY - dh));
+      ctx.drawImage(image, sx, sy, sw, sh, dx, dy, dw, dh);
     }
     frames.push({
       id: frameId(),
@@ -198,61 +261,44 @@ async function loadSampleSheetFrames(config: GuideConfig) {
       url: canvas.toDataURL("image/png"),
       status: "unchecked",
       note: "",
-      revisionPrompt: "",
     });
   }
 
   return frames;
 }
 
-function buildAiPrompt({
+function buildCodexHandoffReport({
   frames,
-  currentFrame,
-  currentIndex,
   config,
 }: {
   frames: FrameItem[];
-  currentFrame: FrameItem | null;
-  currentIndex: number;
   config: GuideConfig;
 }) {
-  if (!currentFrame) {
-    return "";
+  const needsFixFrames = frames
+    .map((frame, index) => ({ frame, index }))
+    .filter(({ frame }) => frame.status === "needs-fix");
+
+  if (needsFixFrames.length === 0) {
+    return "수정 필요로 표시된 프레임이 없습니다. 재생 검수 후 문제가 있는 프레임을 수정 필요로 표시하고 메모를 남기세요.";
   }
 
-  const previousName = frames[currentIndex - 1]?.name ?? "없음";
-  const nextName = frames[currentIndex + 1]?.name ?? "없음";
-  const issueNote =
-    currentFrame.note.trim() || "검수자가 표시한 문제를 기준으로 수정";
-
-  return `이 이미지는 2D 횡스크롤 웹 RPG용 AI 생성 스프라이트 애니메이션의 ${currentIndex + 1}번 프레임이다.
-
-목표:
-- 이 프레임만 다시 생성/수정한다.
-- 캐릭터 디자인, 색감, 장비, 방향, 실루엣은 나머지 프레임과 일관되게 유지한다.
-- 이전 프레임(${previousName})과 다음 프레임(${nextName}) 사이에서 자연스럽게 이어져야 한다.
-
-기술 기준:
-- 투명 배경 PNG
-- 출력 프레임 크기: ${config.frameWidth}x${config.frameHeight}px
-- 캐릭터는 오른쪽을 바라본다.
-- 몸 중심선은 x=${config.centerX} 근처를 유지한다.
-- 바닥/발 기준선은 y=${config.baselineY}에 맞춘다.
-- 캐릭터 바운딩 박스는 대략 x=${config.boundingBoxX}, y=${config.boundingBoxY}, w=${config.boundingBoxWidth}, h=${config.boundingBoxHeight} 안에 들어와야 한다.
-- 프레임 전체 크기, 캐릭터 키, 머리 크기, 무기/의상 디테일이 다른 프레임과 흔들리면 안 된다.
-
-수정해야 할 문제:
-${issueNote}
-
-검수 포인트:
-- 프레임 간 캐릭터 크기 흔들림 제거
-- 기준 위치 흔들림 제거
-- 포즈 연결 부자연스러움 수정
-- 스타일/색감 불일치 수정
-- 장비/의상 디테일 누락 복구
-- 애니메이션 재생 시 튀는 느낌 제거
-
-원본을 그대로 복사하지 말고, 같은 캐릭터의 같은 동작 시퀀스 안에서 이 프레임만 자연스럽게 보정해라.`;
+  return [
+    "AI 스프라이트 프레임 QA 리포트",
+    `총 프레임: ${frames.length}`,
+    `출력 기준: ${config.frameWidth}x${config.frameHeight}px, ${config.fps}fps`,
+    `중심선 x=${config.centerX}, 바닥선 y=${config.baselineY}`,
+    `기준 BBox x=${config.boundingBoxX}, y=${config.boundingBoxY}, w=${config.boundingBoxWidth}, h=${config.boundingBoxHeight}`,
+    "",
+    "수정 필요 프레임:",
+    ...needsFixFrames.map(({ frame, index }) => {
+      const previousName = frames[index - 1]?.name ?? "없음";
+      const nextName = frames[index + 1]?.name ?? "없음";
+      const note = frame.note.trim() || "검수 메모 없음";
+      return `- #${index + 1} ${frame.name} | 이전=${previousName} | 다음=${nextName} | 문제=${note}`;
+    }),
+    "",
+    "이 리포트는 사이트가 이미지를 다시 생성하기 위한 기능이 아니라, Codex 채팅에 별도로 첨부할 검수 데이터입니다.",
+  ].join("\n");
 }
 
 export function SpriteFrameEditor() {
@@ -284,15 +330,9 @@ export function SpriteFrameEditor() {
     [filter, frames]
   );
   const summary = useMemo(() => statusSummary(frames), [frames]);
-  const aiPrompt = useMemo(
-    () =>
-      buildAiPrompt({
-        frames,
-        currentFrame: selectedFrame,
-        currentIndex: selectedIndex,
-        config,
-      }),
-    [config, frames, selectedFrame, selectedIndex]
+  const codexHandoffReport = useMemo(
+    () => buildCodexHandoffReport({ frames, config }),
+    [config, frames]
   );
 
   const selectIndex = useCallback(
@@ -340,7 +380,6 @@ export function SpriteFrameEditor() {
           url: URL.createObjectURL(file),
           status: "unchecked" as FrameStatus,
           note: "",
-          revisionPrompt: "",
         }));
 
       setFrames((prev) => {
@@ -364,7 +403,6 @@ export function SpriteFrameEditor() {
         name: file.name,
         url,
         status: "unchecked",
-        revisionPrompt: "",
       });
       setMessage(
         `${selectedIndex + 1}번 프레임을 교체했습니다. 다시 재생 검수하세요.`
@@ -513,12 +551,21 @@ export function SpriteFrameEditor() {
         width: config.boundingBoxWidth,
         height: config.boundingBoxHeight,
       },
+      revisionQueue: frames
+        .map((frame, index) => ({
+          index: index + 1,
+          name: frame.name,
+          status: frame.status,
+          note: frame.note,
+          previousFrame: frames[index - 1]?.name ?? null,
+          nextFrame: frames[index + 1]?.name ?? null,
+        }))
+        .filter((frame) => frame.status === "needs-fix"),
       frames: frames.map((frame, index) => ({
         index: index + 1,
         name: frame.name,
         status: frame.status,
         note: frame.note,
-        revisionPrompt: frame.revisionPrompt,
       })),
     };
     downloadBlob(
@@ -529,13 +576,12 @@ export function SpriteFrameEditor() {
     );
   }, [config, frames]);
 
-  const copyPrompt = useCallback(async () => {
-    const prompt = selectedFrame?.revisionPrompt || aiPrompt;
-    if (!prompt) return;
-    await navigator.clipboard.writeText(prompt);
+  const copyCodexReport = useCallback(async () => {
+    if (!codexHandoffReport) return;
+    await navigator.clipboard.writeText(codexHandoffReport);
     setCopied(true);
     window.setTimeout(() => setCopied(false), 1200);
-  }, [aiPrompt, selectedFrame?.revisionPrompt]);
+  }, [codexHandoffReport]);
 
   const loadSample = useCallback(async () => {
     const sampleFrames = await loadSampleSheetFrames(config);
@@ -583,12 +629,12 @@ export function SpriteFrameEditor() {
                 AI sprite QA pipeline
               </p>
               <h1 className="mt-2 text-2xl font-black tracking-[-0.03em] text-white">
-                AI 생성 스프라이트 재생 검수·수정 요청 도구
+                AI 생성 스프라이트 재생 검수·수정 큐 도구
               </h1>
               <p className="mt-2 max-w-4xl text-[13px] leading-6 text-slate-300">
                 사람이 픽셀을 찍는 그림판이 아니라, AI가 만든 프레임들을
-                순서대로 재생하고 흔들리는 프레임을 표시한 뒤 Codex/image-gen에
-                다시 줄 수정 프롬프트를 만드는 내부 QA 도구입니다.
+                순서대로 재생하고 흔들리는 프레임을 표시한 뒤 Codex에게 따로
+                요청할 수정 큐 리포트를 정리하는 내부 QA 도구입니다.
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -618,7 +664,7 @@ export function SpriteFrameEditor() {
                 onClick={exportManifest}
                 className="rounded-xl border border-white/15 px-4 py-2 text-[13px] font-bold text-white hover:bg-white/10"
               >
-                QA JSON export
+                수정 큐 JSON export
               </button>
             </div>
           </div>
@@ -845,7 +891,7 @@ export function SpriteFrameEditor() {
             <div>
               <h2 className="text-[15px] font-black">현재 프레임 QA</h2>
               <p className="mt-1 text-[12px] text-slate-500">
-                문제를 기록하고 AI 수정 요청 프롬프트를 만듭니다.
+                문제를 기록하고 Codex에게 넘길 수정 큐를 정리합니다.
               </p>
             </div>
 
@@ -918,35 +964,25 @@ export function SpriteFrameEditor() {
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
                   <div className="mb-2 flex items-center justify-between gap-2">
                     <h3 className="text-[13px] font-black">
-                      AI 수정 요청 프롬프트
+                      Codex 수정 큐 리포트
                     </h3>
-                    <div className="flex gap-2">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          updateSelectedFrame({ revisionPrompt: aiPrompt })
-                        }
-                        className="rounded-lg bg-slate-200 px-3 py-1.5 text-[11px] font-bold text-slate-700"
-                      >
-                        템플릿 생성
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => void copyPrompt()}
-                        className="rounded-lg bg-slate-950 px-3 py-1.5 text-[11px] font-bold text-white"
-                      >
-                        {copied ? "복사됨" : "복사"}
-                      </button>
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => void copyCodexReport()}
+                      className="rounded-lg bg-slate-950 px-3 py-1.5 text-[11px] font-bold text-white"
+                    >
+                      {copied ? "복사됨" : "리포트 복사"}
+                    </button>
                   </div>
+                  <p className="mb-2 text-[11px] leading-5 text-slate-500">
+                    이 사이트는 외부 이미지 API를 호출하지 않습니다. 프레임
+                    수정은 Codex 채팅에서 별도로 요청하고, 여기서는 수정 필요
+                    프레임과 검수 메모만 정리합니다.
+                  </p>
                   <textarea
-                    value={selectedFrame.revisionPrompt || aiPrompt}
-                    onChange={(event) =>
-                      updateSelectedFrame({
-                        revisionPrompt: event.target.value,
-                      })
-                    }
-                    className="h-64 w-full resize-none rounded-xl border border-slate-200 bg-white p-3 text-[12px] leading-5 text-slate-700 outline-none"
+                    readOnly
+                    value={codexHandoffReport}
+                    className="h-56 w-full resize-none rounded-xl border border-slate-200 bg-white p-3 text-[12px] leading-5 text-slate-700 outline-none"
                   />
                 </div>
 
@@ -1007,7 +1043,7 @@ export function SpriteFrameEditor() {
               </>
             ) : (
               <p className="rounded-2xl bg-slate-50 p-4 text-[13px] text-slate-500">
-                프레임을 업로드하면 상태/메모/AI 수정 프롬프트를 만들 수
+                프레임을 업로드하면 상태/메모/Codex 수정 큐를 정리할 수
                 있습니다.
               </p>
             )}
