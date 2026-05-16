@@ -71,10 +71,7 @@ export function nextCombatState(
   prev: CombatState,
   input: SlimeInputState
 ): CombatState {
-  const direction =
-    (isControlHeld(input, "moveRight") ? 1 : 0) -
-    (isControlHeld(input, "moveLeft") ? 1 : 0);
-  const facing = direction === 0 ? prev.facing : direction > 0 ? 1 : -1;
+  const { direction, facing } = resolveDirectionAndFacing(prev.facing, input);
   const minX = 32;
   const maxX = SLIME_COMBAT_STAGE.width - SLIME_COMBAT_STAGE.playerWidth - 32;
   const x = clamp(
@@ -83,11 +80,15 @@ export function nextCombatState(
     maxX
   );
 
-  const wantsAttack = wasControlPressed(input, "attack");
+  const wantsAttack =
+    isControlHeld(input, "attack") || wasControlPressed(input, "attack");
   const attackDuration = SLIME_ACTIONS.attack.durationTicks ?? 1;
   const isContinuingAttack =
     prev.action === "attack" && prev.actionTick < attackDuration - 1;
-  const startsAttack = wantsAttack && !isContinuingAttack;
+  const startsAttack =
+    wantsAttack &&
+    (prev.action !== "attack" ||
+      (!isContinuingAttack && prev.actionTick >= attackDuration - 1));
   const action = startsAttack
     ? "attack"
     : isContinuingAttack
@@ -153,6 +154,34 @@ export function nextCombatState(
     ...draft,
     resolvedAttackSerial,
     lastResult,
+  };
+}
+
+function resolveDirectionAndFacing(
+  prevFacing: 1 | -1,
+  input: SlimeInputState
+): { direction: -1 | 0 | 1; facing: 1 | -1 } {
+  const moveLeftPressed = wasControlPressed(input, "moveLeft");
+  const moveRightPressed = wasControlPressed(input, "moveRight");
+  const moveLeftHeld = isControlHeld(input, "moveLeft");
+  const moveRightHeld = isControlHeld(input, "moveRight");
+
+  if (moveLeftHeld && moveRightHeld) {
+    if (moveRightPressed && !moveLeftPressed)
+      return { direction: 1, facing: 1 };
+    if (moveLeftPressed && !moveRightPressed)
+      return { direction: -1, facing: -1 };
+    return { direction: 0, facing: prevFacing };
+  }
+
+  const direction = ((moveRightHeld ? 1 : 0) - (moveLeftHeld ? 1 : 0)) as
+    | -1
+    | 0
+    | 1;
+
+  return {
+    direction,
+    facing: direction === 0 ? prevFacing : direction > 0 ? 1 : -1,
   };
 }
 

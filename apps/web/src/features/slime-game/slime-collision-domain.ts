@@ -28,6 +28,7 @@ export type CollisionState = {
   y: number;
   velocityX: number;
   velocityY: number;
+  jumpsUsed: number;
   facing: 1 | -1;
   grounded: boolean;
   lastSurfaceId: string | null;
@@ -38,8 +39,8 @@ export type CollisionState = {
 export const SLIME_COLLISION_STAGE = {
   width: 760,
   height: 380,
-  playerWidth: 72,
-  playerHeight: 76,
+  playerWidth: 68,
+  playerHeight: 72,
   moveSpeed: 6.4,
   jumpVelocity: -17,
   gravity: 1.1,
@@ -101,6 +102,7 @@ export const INITIAL_COLLISION_STATE: CollisionState = {
   y: 316 - SLIME_COLLISION_STAGE.playerHeight,
   velocityX: 0,
   velocityY: 0,
+  jumpsUsed: 0,
   facing: 1,
   grounded: true,
   lastSurfaceId: "ground",
@@ -112,15 +114,16 @@ export function nextCollisionState(
   prev: CollisionState,
   input: SlimeInputState
 ): CollisionState {
-  const direction =
-    (isControlHeld(input, "moveRight") ? 1 : 0) -
-    (isControlHeld(input, "moveLeft") ? 1 : 0);
-  const facing = direction === 0 ? prev.facing : direction > 0 ? 1 : -1;
+  const { direction, facing } = resolveDirectionAndFacing(prev.facing, input);
   const velocityX = direction * SLIME_COLLISION_STAGE.moveSpeed;
   let velocityY = prev.velocityY;
+  const wantsJump =
+    isControlHeld(input, "jump") || wasControlPressed(input, "jump");
 
-  if (wasControlPressed(input, "jump") && prev.grounded) {
+  let jumpsUsed = prev.grounded ? 0 : prev.jumpsUsed;
+  if (wantsJump && canStartJump(prev, velocityY, jumpsUsed)) {
     velocityY = SLIME_COLLISION_STAGE.jumpVelocity;
+    jumpsUsed = prev.grounded ? 1 : 2;
   }
 
   velocityY = Math.min(
@@ -147,6 +150,7 @@ export function nextCollisionState(
     facing,
     grounded: vertical.contacts.ground,
     lastSurfaceId: vertical.lastSurfaceId,
+    jumpsUsed: vertical.contacts.ground ? 0 : jumpsUsed,
     contacts: {
       ...horizontal.contacts,
       ground: vertical.contacts.ground,
@@ -223,6 +227,44 @@ function resolveHorizontal({
   }
 
   return { x: nextX, velocityX: nextVelocityX, contacts };
+}
+
+function resolveDirectionAndFacing(
+  prevFacing: 1 | -1,
+  input: SlimeInputState
+): { direction: -1 | 0 | 1; facing: 1 | -1 } {
+  const moveLeftPressed = wasControlPressed(input, "moveLeft");
+  const moveRightPressed = wasControlPressed(input, "moveRight");
+  const moveLeftHeld = isControlHeld(input, "moveLeft");
+  const moveRightHeld = isControlHeld(input, "moveRight");
+
+  if (moveLeftHeld && moveRightHeld) {
+    if (moveRightPressed && !moveLeftPressed)
+      return { direction: 1, facing: 1 };
+    if (moveLeftPressed && !moveRightPressed)
+      return { direction: -1, facing: -1 };
+    return { direction: 0, facing: prevFacing };
+  }
+
+  const direction = ((moveRightHeld ? 1 : 0) - (moveLeftHeld ? 1 : 0)) as
+    | -1
+    | 0
+    | 1;
+
+  return {
+    direction,
+    facing: direction === 0 ? prevFacing : direction > 0 ? 1 : -1,
+  };
+}
+
+function canStartJump(
+  state: CollisionState,
+  velocityY: number,
+  jumpsUsed: number
+) {
+  if (state.grounded) return true;
+  if (jumpsUsed >= 2) return false;
+  return velocityY >= 0;
 }
 
 function resolveVertical({
