@@ -221,7 +221,7 @@ function SwordAttackEffect({
         data-testid="slime-sword-attack-effect"
         className="pointer-events-none absolute z-10 select-none"
         style={{
-          left: facing === 1 ? x + 78 : x - 208,
+          left: facing === 1 ? x + 78 : x - 368,
           bottom: SLIME_STAGE.groundBottom + groundOffset + 56,
           width: 286,
           height: 330,

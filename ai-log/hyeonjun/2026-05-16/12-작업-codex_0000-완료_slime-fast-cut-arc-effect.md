@@ -36,3 +36,8 @@
 - Playwright(headless Chromium)로 `http://localhost:3000/slime-game`에서 `KeyJ` 입력 후 공격 레이어가 정확히 2개인지 확인했다.
 - 두 공격 레이어의 `src`가 각각 `/slime-game/assets/sword_tip_cut_arc.png`, `/slime-game/assets/sword_cut_blade.png`이고 `filter: none`임을 확인했다.
 - Playwright 스크린샷: `/tmp/slime-sword-higher-060.png`, `/tmp/slime-sword-higher-140.png`.
+
+## 왼쪽 공격 앵커 보정
+
+- 왼쪽 방향 공격에서 칼끝 호 이펙트가 손잡이/몸체 쪽에 붙어 보이던 문제를 확인했다.
+- 오른쪽 공격의 자연스러운 연출은 유지하고, 왼쪽 공격의 칼끝 호 이펙트 x 오프셋만 더 왼쪽으로 이동해 검끝 주변에 붙도록 조정했다.
