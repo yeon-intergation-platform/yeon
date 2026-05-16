@@ -2,7 +2,11 @@ import {
   SLIME_ACTIONS,
   SLIME_MAX_X,
   SLIME_STAGE,
+  canStartSlimeJump,
+  nextAttackCooldown,
   getSlimeActionFrame,
+  resolveSlimeAttackTransition,
+  resolveSlimeMoveDirectionAndFacing,
   isControlHeld,
   wasControlPressed,
 } from "./slime-game-domain";
@@ -17,6 +21,7 @@ export type GameState = {
   tick: number;
   action: SlimeActionId;
   actionTick: number;
+  attackCooldown: number;
 };
 
 export const INITIAL_STATE: GameState = {
@@ -28,10 +33,19 @@ export const INITIAL_STATE: GameState = {
   tick: 0,
   action: "idle",
   actionTick: 0,
+  attackCooldown: 0,
 };
 
 export function nextState(prev: GameState, input: SlimeInputState): GameState {
-  const { direction, facing } = resolveDirectionAndFacing(prev.facing, input);
+  const { direction, facing } = resolveSlimeMoveDirectionAndFacing(
+    prev.facing,
+    {
+      moveLeftPressed: wasControlPressed(input, "moveLeft"),
+      moveRightPressed: wasControlPressed(input, "moveRight"),
+      moveLeftHeld: isControlHeld(input, "moveLeft"),
+      moveRightHeld: isControlHeld(input, "moveRight"),
+    }
+  );
   const x = clamp(
     prev.x + direction * SLIME_STAGE.moveSpeed,
     SLIME_STAGE.minX,
@@ -39,14 +53,22 @@ export function nextState(prev: GameState, input: SlimeInputState): GameState {
   );
 
   let groundOffset = prev.groundOffset;
-  let jumpsUsed = isGrounded(prev) ? 0 : prev.jumpsUsed;
+  let jumpsUsed = isGroundedState(prev) ? 0 : prev.jumpsUsed;
   let velocityY = prev.velocityY;
   const wantsJump =
     isControlHeld(input, "jump") || wasControlPressed(input, "jump");
 
-  if (wantsJump && canStartJump({ prev, velocityY, jumpsUsed })) {
+  const isGrounded = isGroundedState(prev);
+  if (
+    wantsJump &&
+    canStartSlimeJump({
+      isGrounded,
+      velocityY,
+      jumpsUsed,
+    })
+  ) {
     velocityY = SLIME_STAGE.jumpVelocity;
-    jumpsUsed = isGrounded(prev) ? 1 : 2;
+    jumpsUsed = isGrounded ? 1 : 2;
   }
 
   groundOffset += velocityY;
@@ -65,7 +87,14 @@ export function nextState(prev: GameState, input: SlimeInputState): GameState {
     direction,
     groundOffset,
     velocityY,
-    wantsAttack: wasControlPressed(input, "attack"),
+    attackCooldownRemaining: prev.attackCooldown,
+    wantsAttack:
+      isControlHeld(input, "attack") || wasControlPressed(input, "attack"),
+  });
+  const attackCooldown = nextAttackCooldown({
+    prevAction: prev.action,
+    prevAttackCooldown: prev.attackCooldown,
+    startsAttack: nextAction.startsAttack,
   });
 
   return {
@@ -74,9 +103,10 @@ export function nextState(prev: GameState, input: SlimeInputState): GameState {
     velocityY,
     facing,
     tick: prev.tick + 1,
-    action: nextAction,
+    action: nextAction.action,
+    attackCooldown,
     jumpsUsed,
-    actionTick: nextAction === prev.action ? prev.actionTick + 1 : 0,
+    actionTick: nextAction.action === prev.action ? prev.actionTick + 1 : 0,
   };
 }
 
@@ -94,69 +124,37 @@ function chooseNextAction({
   groundOffset,
   velocityY,
   wantsAttack,
+  attackCooldownRemaining,
 }: {
   prev: GameState;
   direction: number;
   groundOffset: number;
   velocityY: number;
   wantsAttack: boolean;
-}): SlimeActionId {
-  if (wantsAttack) return "attack";
+  attackCooldownRemaining: number;
+}): { action: SlimeActionId; startsAttack: boolean } {
+  const attackTransition = resolveSlimeAttackTransition({
+    prevAction: prev.action,
+    prevActionTick: prev.actionTick,
+    wantsAttack,
+    attackDurationTicks: SLIME_ACTIONS.attack.durationTicks ?? 0,
+    attackCooldownRemaining,
+  });
 
-  const attackTicks = SLIME_ACTIONS.attack.durationTicks ?? 0;
-  if (prev.action === "attack" && prev.actionTick < attackTicks - 1) {
-    return "attack";
+  if (attackTransition.startsAttack || attackTransition.isContinuingAttack) {
+    return { action: "attack", startsAttack: true };
   }
 
-  if (groundOffset > 0 || velocityY !== 0) return "jump";
-  if (direction !== 0) return "walk";
-  return "idle";
-}
-
-function resolveDirectionAndFacing(
-  prevFacing: 1 | -1,
-  input: SlimeInputState
-): { direction: -1 | 0 | 1; facing: 1 | -1 } {
-  const moveLeftPressed = wasControlPressed(input, "moveLeft");
-  const moveRightPressed = wasControlPressed(input, "moveRight");
-  const moveLeftHeld = isControlHeld(input, "moveLeft");
-  const moveRightHeld = isControlHeld(input, "moveRight");
-
-  if (moveLeftHeld && moveRightHeld) {
-    if (moveRightPressed && !moveLeftPressed) {
-      return { direction: 1, facing: 1 };
-    }
-    if (moveLeftPressed && !moveRightPressed) {
-      return { direction: -1, facing: -1 };
-    }
-    return { direction: 0, facing: prevFacing };
+  if (groundOffset > 0 || velocityY !== 0) {
+    return { action: "jump", startsAttack: false };
   }
-
-  const direction = ((moveRightHeld ? 1 : 0) - (moveLeftHeld ? 1 : 0)) as
-    | -1
-    | 0
-    | 1;
-  return {
-    direction,
-    facing: direction === 0 ? prevFacing : direction > 0 ? 1 : -1,
-  };
+  if (direction !== 0) {
+    return { action: "walk", startsAttack: false };
+  }
+  return { action: "idle", startsAttack: false };
 }
 
-function canStartJump({
-  prev,
-  velocityY,
-  jumpsUsed,
-}: {
-  prev: GameState;
-  velocityY: number;
-  jumpsUsed: number;
-}) {
-  if (isGrounded(prev)) return true;
-  if (jumpsUsed >= 2) return false;
-  return velocityY <= 0;
-}
-
-function isGrounded(state: GameState) {
+function isGroundedState(state: GameState) {
   return state.groundOffset <= 0 && state.velocityY === 0;
 }
 

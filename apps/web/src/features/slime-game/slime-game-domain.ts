@@ -44,6 +44,10 @@ export const SLIME_MAX_X =
 
 export const SLIME_ACTION_IDS = ["idle", "walk", "jump", "attack"] as const;
 export type SlimeActionId = (typeof SLIME_ACTION_IDS)[number];
+const ATTACK_FRAMES = [10, 11, 12] as const;
+const ATTACK_FRAME_TICKS = 3;
+const ATTACK_DURATION_TICKS = ATTACK_FRAMES.length * ATTACK_FRAME_TICKS;
+export const SLIME_ATTACK_COOLDOWN_TICKS = 8 as const;
 
 export const SLIME_ACTIONS = {
   idle: {
@@ -52,6 +56,7 @@ export const SLIME_ACTIONS = {
     description: "0번 프레임 고정",
     frames: [0],
     frameTicks: 1,
+    playback: "loop",
   },
   walk: {
     id: "walk",
@@ -59,21 +64,24 @@ export const SLIME_ACTIONS = {
     description: "좌우 이동 loop",
     frames: [3, 4, 5, 6],
     frameTicks: 5,
+    playback: "loop",
   },
   jump: {
     id: "jump",
     label: "점프",
     description: "상승/하강 확인",
-    frames: [7, 8],
+    frames: [8],
     frameTicks: 6,
+    playback: "loop",
   },
   attack: {
     id: "attack",
     label: "공격",
     description: "빠른 검 베기와 칼끝 호 이펙트",
-    frames: [10, 11, 12],
-    frameTicks: 3,
-    durationTicks: 11,
+    frames: ATTACK_FRAMES,
+    frameTicks: ATTACK_FRAME_TICKS,
+    durationTicks: ATTACK_DURATION_TICKS,
+    playback: "loop",
   },
 } as const satisfies Record<
   SlimeActionId,
@@ -106,8 +114,8 @@ export const SLIME_CONTROLS = {
   attack: {
     id: "attack",
     label: "공격 테스트",
-    shortLabel: "J",
-    codes: ["KeyJ"],
+    shortLabel: "J / K",
+    codes: ["KeyJ", "KeyK"],
   },
 } as const satisfies Record<string, SpriteControlDefinition<string>>;
 
@@ -170,6 +178,104 @@ export function wasControlPressed(
   return wasSpriteControlPressed(SLIME_CONTROLS, input, controlId);
 }
 
+export type SlimeMoveInput = {
+  moveLeftPressed: boolean;
+  moveRightPressed: boolean;
+  moveLeftHeld: boolean;
+  moveRightHeld: boolean;
+};
+
+export function resolveSlimeMoveDirectionAndFacing(
+  prevFacing: 1 | -1,
+  moveInput: SlimeMoveInput
+): { direction: -1 | 0 | 1; facing: 1 | -1 } {
+  const { moveLeftPressed, moveRightPressed, moveLeftHeld, moveRightHeld } =
+    moveInput;
+
+  if (moveLeftHeld && moveRightHeld) {
+    if (moveRightPressed && !moveLeftPressed) {
+      return { direction: 1, facing: 1 };
+    }
+    if (moveLeftPressed && !moveRightPressed) {
+      return { direction: -1, facing: -1 };
+    }
+    return { direction: prevFacing, facing: prevFacing };
+  }
+
+  const direction = ((moveRightHeld ? 1 : 0) - (moveLeftHeld ? 1 : 0)) as
+    | -1
+    | 0
+    | 1;
+
+  return {
+    direction,
+    facing: direction === 0 ? prevFacing : direction > 0 ? 1 : -1,
+  };
+}
+
+export type SlimeAttackTransitionInput = {
+  prevAction: string;
+  prevActionTick: number;
+  wantsAttack: boolean;
+  attackDurationTicks: number;
+  attackCooldownRemaining: number;
+};
+
+export type SlimeAttackTransition = {
+  isContinuingAttack: boolean;
+  startsAttack: boolean;
+};
+
+export function resolveSlimeAttackTransition({
+  prevAction,
+  prevActionTick,
+  wantsAttack,
+  attackDurationTicks,
+  attackCooldownRemaining,
+}: SlimeAttackTransitionInput): SlimeAttackTransition {
+  const isContinuingAttack =
+    prevAction === "attack" && prevActionTick < attackDurationTicks - 1;
+  const startsAttack =
+    wantsAttack &&
+    attackCooldownRemaining <= 0 &&
+    (prevAction !== "attack" ||
+      (!isContinuingAttack && prevActionTick >= attackDurationTicks - 1));
+
+  return { isContinuingAttack, startsAttack };
+}
+
+export function nextAttackCooldown({
+  prevAction,
+  prevAttackCooldown,
+  startsAttack,
+}: {
+  prevAction: string;
+  prevAttackCooldown: number;
+  startsAttack: boolean;
+}) {
+  if (startsAttack) return SLIME_ATTACK_COOLDOWN_TICKS;
+  if (prevAction === "attack") return prevAttackCooldown;
+  return Math.max(0, prevAttackCooldown - 1);
+}
+
+export function canStartSlimeJump({
+  isGrounded,
+  velocityY,
+  jumpsUsed,
+  maxJumps = 2,
+  canStartCondition = (v) => v <= 0,
+}: {
+  isGrounded: boolean;
+  velocityY: number;
+  jumpsUsed: number;
+  maxJumps?: number;
+  canStartCondition?: (velocityY: number) => boolean;
+}) {
+  if (isGrounded) return true;
+  if (jumpsUsed >= maxJumps) return false;
+  return canStartCondition(velocityY);
+}
+
 export function getSlimeActionFrame({
   action,
   actionTick,
@@ -179,11 +285,10 @@ export function getSlimeActionFrame({
   actionTick: number;
   velocityY: number;
 }) {
-  if (action === "jump") return velocityY >= 0 ? 7 : 8;
-
+  void velocityY;
   return getSpriteActionFrame({
     definition: SLIME_ACTIONS[action],
     actionTick,
-    playback: action === "attack" ? "clamp" : "loop",
+    playback: SLIME_ACTIONS[action].playback,
   });
 }

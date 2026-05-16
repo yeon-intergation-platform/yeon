@@ -15,7 +15,7 @@ export const SLIME_GAME_ASSETS = {
   forestTiles: "/slime-game/assets/forest_tiles_sheet.png",
   props: "/slime-game/assets/props_sheet.png",
   portal: "/slime-game/assets/portal_sheet.png",
-  greenSlime: "/slime-game/assets/green_slime_enemy_sheet.png",
+  greenSlime: "/slime-game/assets/green_slime_enemy_sheet_clean.png",
   bat: "/slime-game/assets/bat_enemy_sheet.png",
   mushroom: "/slime-game/assets/mushroom_enemy_sheet.png",
   itemsUi: "/slime-game/assets/items_ui_sheet.png",
@@ -104,7 +104,7 @@ export const SHEET_ASSET_MANIFEST: SheetAsset[] = [
     id: "green_slime_enemy_sheet",
     title: "초록 슬라임 몬스터",
     src: SLIME_GAME_ASSETS.greenSlime,
-    cell: "48x48 / bottom-center",
+    cell: "7x2 / cleaned transparent frames / bottom-center",
     purpose: "초반 지상형 몬스터 AI",
     evidence: [
       "move/attack/hurt/dead가 순찰, 접촉 공격, 피격, 처치 상태에 매핑",

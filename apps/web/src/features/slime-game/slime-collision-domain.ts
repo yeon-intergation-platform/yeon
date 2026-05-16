@@ -1,6 +1,8 @@
 import {
   SLIME_SPRITE_SHEET,
   SLIME_SPRITE_VIEW_HEIGHT,
+  resolveSlimeMoveDirectionAndFacing,
+  canStartSlimeJump,
   isControlHeld,
   wasControlPressed,
 } from "./slime-game-domain";
@@ -39,8 +41,8 @@ export type CollisionState = {
 export const SLIME_COLLISION_STAGE = {
   width: 760,
   height: 380,
-  playerWidth: 68,
-  playerHeight: 72,
+  playerWidth: 66,
+  playerHeight: 70,
   moveSpeed: 6.4,
   jumpVelocity: -17,
   gravity: 1.1,
@@ -114,14 +116,30 @@ export function nextCollisionState(
   prev: CollisionState,
   input: SlimeInputState
 ): CollisionState {
-  const { direction, facing } = resolveDirectionAndFacing(prev.facing, input);
+  const { direction, facing } = resolveSlimeMoveDirectionAndFacing(
+    prev.facing,
+    {
+      moveLeftPressed: wasControlPressed(input, "moveLeft"),
+      moveRightPressed: wasControlPressed(input, "moveRight"),
+      moveLeftHeld: isControlHeld(input, "moveLeft"),
+      moveRightHeld: isControlHeld(input, "moveRight"),
+    }
+  );
   const velocityX = direction * SLIME_COLLISION_STAGE.moveSpeed;
   let velocityY = prev.velocityY;
   const wantsJump =
     isControlHeld(input, "jump") || wasControlPressed(input, "jump");
 
   let jumpsUsed = prev.grounded ? 0 : prev.jumpsUsed;
-  if (wantsJump && canStartJump(prev, velocityY, jumpsUsed)) {
+  if (
+    wantsJump &&
+    canStartSlimeJump({
+      isGrounded: prev.grounded,
+      velocityY,
+      jumpsUsed,
+      canStartCondition: (nextVelocityY) => nextVelocityY >= 0,
+    })
+  ) {
     velocityY = SLIME_COLLISION_STAGE.jumpVelocity;
     jumpsUsed = prev.grounded ? 1 : 2;
   }
@@ -227,44 +245,6 @@ function resolveHorizontal({
   }
 
   return { x: nextX, velocityX: nextVelocityX, contacts };
-}
-
-function resolveDirectionAndFacing(
-  prevFacing: 1 | -1,
-  input: SlimeInputState
-): { direction: -1 | 0 | 1; facing: 1 | -1 } {
-  const moveLeftPressed = wasControlPressed(input, "moveLeft");
-  const moveRightPressed = wasControlPressed(input, "moveRight");
-  const moveLeftHeld = isControlHeld(input, "moveLeft");
-  const moveRightHeld = isControlHeld(input, "moveRight");
-
-  if (moveLeftHeld && moveRightHeld) {
-    if (moveRightPressed && !moveLeftPressed)
-      return { direction: 1, facing: 1 };
-    if (moveLeftPressed && !moveRightPressed)
-      return { direction: -1, facing: -1 };
-    return { direction: 0, facing: prevFacing };
-  }
-
-  const direction = ((moveRightHeld ? 1 : 0) - (moveLeftHeld ? 1 : 0)) as
-    | -1
-    | 0
-    | 1;
-
-  return {
-    direction,
-    facing: direction === 0 ? prevFacing : direction > 0 ? 1 : -1,
-  };
-}
-
-function canStartJump(
-  state: CollisionState,
-  velocityY: number,
-  jumpsUsed: number
-) {
-  if (state.grounded) return true;
-  if (jumpsUsed >= 2) return false;
-  return velocityY >= 0;
 }
 
 function resolveVertical({
