@@ -205,30 +205,56 @@ function SwordAttackEffect({
   facing: 1 | -1;
   progress: number;
 }) {
-  const rotation = -22 + progress * 54;
-  const lift = Math.sin(progress * Math.PI) * 12;
-  const scale = 0.92 + Math.sin(progress * Math.PI) * 0.16;
+  const cutProgress = easeOutCubic(Math.min(1, progress / 0.68));
+  const arcProgress = Math.min(1, progress / 0.52);
+  const arcFade = Math.max(0, (progress - 0.58) / 0.42);
+  const snapLift = Math.sin(cutProgress * Math.PI) * 8;
+  const bladeRotation = -24 + cutProgress * 78;
+  const bladeSpeedScale = 1.02 + Math.sin(cutProgress * Math.PI) * 0.1;
 
   return (
-    <img
-      src={SLIME_GAME_ASSETS.swordSlash}
-      alt=""
-      aria-hidden="true"
-      data-testid="slime-sword-attack-effect"
-      className="pointer-events-none absolute z-10 select-none"
-      style={{
-        left: facing === 1 ? x + 112 : x - 190,
-        bottom: SLIME_STAGE.groundBottom + groundOffset + 42 + lift,
-        width: 248,
-        height: 171,
-        opacity: Math.max(0.32, 1 - progress * 0.2),
-        transform: `scaleX(${facing}) rotate(${rotation}deg) scale(${scale})`,
-        transformOrigin: facing === 1 ? "18% 78%" : "82% 78%",
-        filter:
-          "drop-shadow(0 12px 18px rgba(0,0,0,0.42)) drop-shadow(0 0 16px rgba(190,242,100,0.32))",
-      }}
-    />
+    <>
+      <img
+        src={SLIME_GAME_ASSETS.swordTipArc}
+        alt=""
+        aria-hidden="true"
+        data-testid="slime-sword-attack-effect"
+        className="pointer-events-none absolute z-10 select-none"
+        style={{
+          left: facing === 1 ? x + 78 : x - 208,
+          bottom: SLIME_STAGE.groundBottom + groundOffset + 56,
+          width: 286,
+          height: 330,
+          opacity: Math.max(0, 0.96 - arcFade * 0.96),
+          transform: `scaleX(${facing}) rotate(${lerp(-8, 2, arcProgress)}deg)`,
+          transformOrigin: facing === 1 ? "18% 82%" : "82% 82%",
+        }}
+      />
+      <img
+        src={SLIME_GAME_ASSETS.swordBlade}
+        alt=""
+        aria-hidden="true"
+        data-testid="slime-sword-attack-blade"
+        className="pointer-events-none absolute z-20 select-none"
+        style={{
+          left: facing === 1 ? x + 58 : x - 38,
+          bottom: SLIME_STAGE.groundBottom + groundOffset + 68 + snapLift,
+          width: 150,
+          height: 220,
+          transform: `scaleX(${facing}) rotate(${bladeRotation}deg) scale(${bladeSpeedScale})`,
+          transformOrigin: facing === 1 ? "44% 71%" : "56% 71%",
+        }}
+      />
+    </>
   );
+}
+
+function easeOutCubic(value: number) {
+  return 1 - Math.pow(1 - value, 3);
+}
+
+function lerp(start: number, end: number, value: number) {
+  return start + (end - start) * value;
 }
 
 function ActionFrameGroup({

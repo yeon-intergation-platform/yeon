@@ -9,7 +9,8 @@ export type SheetAsset = {
 
 export const SLIME_GAME_ASSETS = {
   slimeHero: "/slime-game/assets/slime_hero_sheet.png",
-  swordSlash: "/slime-game/assets/sword_slash_attack.svg",
+  swordBlade: "/slime-game/assets/sword_cut_blade.png",
+  swordTipArc: "/slime-game/assets/sword_tip_cut_arc.png",
   effects: "/slime-game/assets/effects_sheet.png",
   forestTiles: "/slime-game/assets/forest_tiles_sheet.png",
   props: "/slime-game/assets/props_sheet.png",
@@ -48,14 +49,25 @@ export const SHEET_ASSET_MANIFEST: SheetAsset[] = [
     ],
   },
   {
-    id: "sword_slash_attack",
-    title: "검 베기 공격 에셋",
-    src: SLIME_GAME_ASSETS.swordSlash,
-    cell: "320x220 / transparent svg",
-    purpose: "슬라임 attack action 시각 피드백",
+    id: "sword_cut_blade",
+    title: "검 본체 에셋",
+    src: SLIME_GAME_ASSETS.swordBlade,
+    cell: "628x922 / png",
+    purpose: "슬라임 attack action의 검 본체",
     evidence: [
-      "attack 상태에서 슬라임 앞쪽에 합성해 검을 휘두르는 모션으로 보이게 함",
-      "전투 판정이나 히트박스 source of truth가 아니라 시각 에셋으로만 사용",
+      "attack 상태에서 슬라임 손 앞쪽에 합성해 실제 검을 쥔 것처럼 보이게 함",
+      "칼끝 궤적 이펙트와 분리되어 검 디자인만 독립 수정 가능",
+    ],
+  },
+  {
+    id: "sword_tip_cut_arc",
+    title: "칼끝 베기 호 이펙트",
+    src: SLIME_GAME_ASSETS.swordTipArc,
+    cell: "814x937 / png",
+    purpose: "칼끝이 북쪽에서 동쪽으로 빠르게 이동한 궤적",
+    evidence: [
+      "attack progress 초반에만 강하게 표시해 빠르게 자르는 느낌을 만듦",
+      "검 본체와 분리된 시각 에셋이며 전투 판정 source of truth가 아님",
     ],
   },
   {
