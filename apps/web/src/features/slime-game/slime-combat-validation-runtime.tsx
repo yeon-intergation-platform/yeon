@@ -2,6 +2,7 @@
 
 import { SLIME_GAME_ASSETS } from "./asset-manifest";
 import {
+  GREEN_SLIME_COMBAT_SPRITE,
   INITIAL_COMBAT_STATE,
   SLIME_COMBAT_STAGE,
   combatFrame,
@@ -54,7 +55,7 @@ export function SlimeCombatValidationRuntime() {
               data-testid="slime-combat-attack"
               className="h-11 rounded-full border border-rose-300/25 bg-rose-300/10 px-5 text-sm font-bold text-rose-100 transition hover:bg-rose-300/15"
             >
-              J 공격 판정 테스트
+              J/K 공격 판정 테스트
             </button>
             <button
               type="button"
@@ -68,7 +69,7 @@ export function SlimeCombatValidationRuntime() {
         </header>
 
         <div className="grid gap-3 text-sm text-neutral-300 lg:grid-cols-5">
-          <StatusPill label="조작" value="A/D · ←/→ · J" />
+          <StatusPill label="조작" value="A/D · ←/→ · J/K" />
           <StatusPill
             label="active"
             value={isAttackActive ? "true" : "false"}
@@ -112,7 +113,7 @@ export function SlimeCombatValidationRuntime() {
               className="absolute z-20 drop-shadow-[0_18px_18px_rgba(0,0,0,0.45)]"
               style={{
                 left: state.x + SLIME_COMBAT_STAGE.playerWidth / 2 - 63,
-                top: state.y - 18,
+                top: SLIME_COMBAT_STAGE.groundY - 132,
                 width: 126,
                 height: 150,
                 transform: `scaleX(${state.facing})`,
@@ -122,7 +123,7 @@ export function SlimeCombatValidationRuntime() {
 
             <div
               data-testid="slime-combat-player-body"
-              className="absolute z-30 border-2 border-lime-300/80 bg-lime-300/10"
+              className="absolute z-30 border-2 border-lime-300/90 bg-transparent shadow-[0_0_0_1px_rgba(190,242,100,0.22)]"
               style={{
                 left: playerBody.x,
                 top: playerBody.y,
@@ -151,20 +152,27 @@ export function SlimeCombatValidationRuntime() {
             <div
               className="absolute z-20"
               style={{
-                left: state.enemy.x + SLIME_COMBAT_STAGE.enemyWidth / 2 - 44,
-                top: state.enemy.y - 34,
-                width: 88,
-                height: 88,
+                left:
+                  state.enemy.x +
+                  SLIME_COMBAT_STAGE.enemyWidth / 2 -
+                  GREEN_SLIME_COMBAT_SPRITE.width / 2,
+                top: SLIME_COMBAT_STAGE.groundY - GREEN_SLIME_COMBAT_SPRITE.height,
+                width: GREEN_SLIME_COMBAT_SPRITE.width,
+                height: GREEN_SLIME_COMBAT_SPRITE.height,
                 opacity: state.enemy.hp === 0 ? 0.35 : 1,
                 filter: state.enemy.hurtTick > 0 ? "brightness(1.7)" : "none",
               }}
             >
               <SpriteSheet
                 src={SLIME_GAME_ASSETS.greenSlime}
-                cols={4}
-                rows={2}
+                cols={GREEN_SLIME_COMBAT_SPRITE.cols}
+                rows={GREEN_SLIME_COMBAT_SPRITE.rows}
                 frame={
-                  state.enemy.hp === 0 ? 6 : state.enemy.hurtTick > 0 ? 4 : 0
+                  state.enemy.hp === 0
+                    ? GREEN_SLIME_COMBAT_SPRITE.deadFrame
+                    : state.enemy.hurtTick > 0
+                      ? GREEN_SLIME_COMBAT_SPRITE.hurtFrame
+                      : GREEN_SLIME_COMBAT_SPRITE.idleFrame
                 }
                 className="h-full w-full"
               />
@@ -172,7 +180,7 @@ export function SlimeCombatValidationRuntime() {
 
             <div
               data-testid="slime-combat-enemy-hurtbox"
-              className="absolute z-30 border-2 border-rose-300/80 bg-rose-300/10"
+              className="absolute z-30 border-2 border-rose-300/90 bg-transparent shadow-[0_0_0_1px_rgba(253,164,175,0.24)]"
               style={{
                 left: enemyHurtbox.x,
                 top: enemyHurtbox.y,
@@ -185,7 +193,7 @@ export function SlimeCombatValidationRuntime() {
               className="absolute z-40 h-3 overflow-hidden rounded-full border border-white/20 bg-black/40"
               style={{
                 left: state.enemy.x - 6,
-                top: state.enemy.y - 18,
+                top: state.enemy.y - 42,
                 width: state.enemy.maxHp,
               }}
             >

@@ -13,6 +13,7 @@ export type SpriteActionDefinition<ActionId extends string = string> = {
   frames: readonly number[];
   frameTicks: number;
   durationTicks?: number;
+  playback?: SpriteFramePlayback;
 };
 
 export type SpriteControlDefinition<ControlId extends string = string> = {
@@ -102,7 +103,7 @@ export function wasSpriteControlPressed<
 export function getSpriteActionFrame<ActionId extends string>({
   definition,
   actionTick,
-  playback = "loop",
+  playback = definition.playback ?? "loop",
 }: {
   definition: SpriteActionDefinition<ActionId>;
   actionTick: number;

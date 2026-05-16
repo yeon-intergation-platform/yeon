@@ -28,10 +28,13 @@ export function SlimeGameStage({
   const action = SLIME_ACTIONS[state.action];
   const directionText = state.facing === 1 ? "right" : "left";
   const isAttacking = state.action === "attack";
+  const attackDurationTicks = SLIME_ACTIONS.attack.durationTicks ?? 1;
+  const attackCycleTick = isAttacking
+    ? state.actionTick % Math.max(1, attackDurationTicks)
+    : 0;
   const attackProgress = Math.min(
     1,
-    state.actionTick /
-      Math.max(1, (SLIME_ACTIONS.attack.durationTicks ?? 1) - 1)
+    attackCycleTick / Math.max(1, attackDurationTicks - 1)
   );
 
   return (
@@ -80,7 +83,7 @@ export function SlimeGameStage({
           <div className="mb-4 grid gap-3 text-sm text-neutral-300 sm:grid-cols-5">
             <StatusPill label="이동" value="A/D 또는 ←/→" />
             <StatusPill label="점프" value="Space" />
-            <StatusPill label="공격" value="J" />
+            <StatusPill label="공격" value="J/K" />
             <StatusPill
               label="액션"
               value={`${action.label} (${action.id})`}

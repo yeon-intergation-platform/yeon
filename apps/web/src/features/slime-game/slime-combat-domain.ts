@@ -2,6 +2,9 @@ import { rectsOverlap } from "./slime-collision-domain";
 import {
   SLIME_ACTIONS,
   getSlimeActionFrame,
+  nextAttackCooldown,
+  resolveSlimeAttackTransition,
+  resolveSlimeMoveDirectionAndFacing,
   isControlHeld,
   wasControlPressed,
 } from "./slime-game-domain";
@@ -25,6 +28,7 @@ export type CombatState = {
   actionTick: number;
   attackSerial: number;
   resolvedAttackSerial: number;
+  attackCooldown: number;
   enemy: CombatEnemyState;
   lastResult: string;
   tick: number;
@@ -34,17 +38,27 @@ export const SLIME_COMBAT_STAGE = {
   width: 760,
   height: 360,
   groundY: 286,
-  playerWidth: 72,
-  playerHeight: 76,
+  playerWidth: 66,
+  playerHeight: 58,
   playerSpeed: 7.2,
-  enemyWidth: 64,
-  enemyHeight: 54,
+  enemyWidth: 74,
+  enemyHeight: 50,
   attackDamage: 25,
   attackActiveStartTick: 2,
   attackActiveEndTick: 6,
   attackHitboxWidth: 124,
   attackHitboxHeight: 50,
   attackHitboxYOffset: 16,
+} as const;
+
+export const GREEN_SLIME_COMBAT_SPRITE = {
+  cols: 7,
+  rows: 2,
+  width: 132,
+  height: 108,
+  idleFrame: 0,
+  hurtFrame: 11,
+  deadFrame: 12,
 } as const;
 
 export const INITIAL_COMBAT_STATE: CombatState = {
@@ -55,6 +69,7 @@ export const INITIAL_COMBAT_STATE: CombatState = {
   actionTick: 0,
   attackSerial: 0,
   resolvedAttackSerial: 0,
+  attackCooldown: 0,
   enemy: {
     id: "green-slime-1",
     x: 488,
@@ -71,10 +86,15 @@ export function nextCombatState(
   prev: CombatState,
   input: SlimeInputState
 ): CombatState {
-  const direction =
-    (isControlHeld(input, "moveRight") ? 1 : 0) -
-    (isControlHeld(input, "moveLeft") ? 1 : 0);
-  const facing = direction === 0 ? prev.facing : direction > 0 ? 1 : -1;
+  const { direction, facing } = resolveSlimeMoveDirectionAndFacing(
+    prev.facing,
+    {
+      moveLeftPressed: wasControlPressed(input, "moveLeft"),
+      moveRightPressed: wasControlPressed(input, "moveRight"),
+      moveLeftHeld: isControlHeld(input, "moveLeft"),
+      moveRightHeld: isControlHeld(input, "moveRight"),
+    }
+  );
   const minX = 32;
   const maxX = SLIME_COMBAT_STAGE.width - SLIME_COMBAT_STAGE.playerWidth - 32;
   const x = clamp(
@@ -83,11 +103,16 @@ export function nextCombatState(
     maxX
   );
 
-  const wantsAttack = wasControlPressed(input, "attack");
+  const wantsAttack =
+    isControlHeld(input, "attack") || wasControlPressed(input, "attack");
   const attackDuration = SLIME_ACTIONS.attack.durationTicks ?? 1;
-  const isContinuingAttack =
-    prev.action === "attack" && prev.actionTick < attackDuration - 1;
-  const startsAttack = wantsAttack && !isContinuingAttack;
+  const { isContinuingAttack, startsAttack } = resolveSlimeAttackTransition({
+    prevAction: prev.action,
+    prevActionTick: prev.actionTick,
+    wantsAttack,
+    attackDurationTicks: attackDuration,
+    attackCooldownRemaining: prev.attackCooldown,
+  });
   const action = startsAttack
     ? "attack"
     : isContinuingAttack
@@ -96,6 +121,11 @@ export function nextCombatState(
         ? "walk"
         : "idle";
   const attackSerial = startsAttack ? prev.attackSerial + 1 : prev.attackSerial;
+  const attackCooldown = nextAttackCooldown({
+    prevAction: prev.action,
+    prevAttackCooldown: prev.attackCooldown,
+    startsAttack,
+  });
   const actionTick =
     action === prev.action && !startsAttack ? prev.actionTick + 1 : 0;
   const enemy = {
@@ -111,6 +141,7 @@ export function nextCombatState(
     facing,
     action,
     actionTick,
+    attackCooldown,
     attackSerial,
     resolvedAttackSerial,
     enemy,

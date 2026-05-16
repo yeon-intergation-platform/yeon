@@ -1,6 +1,8 @@
 import {
   SLIME_SPRITE_SHEET,
   SLIME_SPRITE_VIEW_HEIGHT,
+  resolveSlimeMoveDirectionAndFacing,
+  canStartSlimeJump,
   isControlHeld,
   wasControlPressed,
 } from "./slime-game-domain";
@@ -28,6 +30,7 @@ export type CollisionState = {
   y: number;
   velocityX: number;
   velocityY: number;
+  jumpsUsed: number;
   facing: 1 | -1;
   grounded: boolean;
   lastSurfaceId: string | null;
@@ -38,8 +41,8 @@ export type CollisionState = {
 export const SLIME_COLLISION_STAGE = {
   width: 760,
   height: 380,
-  playerWidth: 72,
-  playerHeight: 76,
+  playerWidth: 66,
+  playerHeight: 70,
   moveSpeed: 6.4,
   jumpVelocity: -17,
   gravity: 1.1,
@@ -101,6 +104,7 @@ export const INITIAL_COLLISION_STATE: CollisionState = {
   y: 316 - SLIME_COLLISION_STAGE.playerHeight,
   velocityX: 0,
   velocityY: 0,
+  jumpsUsed: 0,
   facing: 1,
   grounded: true,
   lastSurfaceId: "ground",
@@ -112,15 +116,32 @@ export function nextCollisionState(
   prev: CollisionState,
   input: SlimeInputState
 ): CollisionState {
-  const direction =
-    (isControlHeld(input, "moveRight") ? 1 : 0) -
-    (isControlHeld(input, "moveLeft") ? 1 : 0);
-  const facing = direction === 0 ? prev.facing : direction > 0 ? 1 : -1;
+  const { direction, facing } = resolveSlimeMoveDirectionAndFacing(
+    prev.facing,
+    {
+      moveLeftPressed: wasControlPressed(input, "moveLeft"),
+      moveRightPressed: wasControlPressed(input, "moveRight"),
+      moveLeftHeld: isControlHeld(input, "moveLeft"),
+      moveRightHeld: isControlHeld(input, "moveRight"),
+    }
+  );
   const velocityX = direction * SLIME_COLLISION_STAGE.moveSpeed;
   let velocityY = prev.velocityY;
+  const wantsJump =
+    isControlHeld(input, "jump") || wasControlPressed(input, "jump");
 
-  if (wasControlPressed(input, "jump") && prev.grounded) {
+  let jumpsUsed = prev.grounded ? 0 : prev.jumpsUsed;
+  if (
+    wantsJump &&
+    canStartSlimeJump({
+      isGrounded: prev.grounded,
+      velocityY,
+      jumpsUsed,
+      canStartCondition: (nextVelocityY) => nextVelocityY >= 0,
+    })
+  ) {
     velocityY = SLIME_COLLISION_STAGE.jumpVelocity;
+    jumpsUsed = prev.grounded ? 1 : 2;
   }
 
   velocityY = Math.min(
@@ -147,6 +168,7 @@ export function nextCollisionState(
     facing,
     grounded: vertical.contacts.ground,
     lastSurfaceId: vertical.lastSurfaceId,
+    jumpsUsed: vertical.contacts.ground ? 0 : jumpsUsed,
     contacts: {
       ...horizontal.contacts,
       ground: vertical.contacts.ground,
