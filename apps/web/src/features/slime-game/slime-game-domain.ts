@@ -70,10 +70,10 @@ export const SLIME_ACTIONS = {
   attack: {
     id: "attack",
     label: "공격",
-    description: "검 베기 에셋 합성 테스트",
+    description: "빠른 검 베기와 칼끝 호 이펙트",
     frames: [10, 11, 12],
-    frameTicks: 4,
-    durationTicks: 16,
+    frameTicks: 3,
+    durationTicks: 11,
   },
 } as const satisfies Record<
   SlimeActionId,
