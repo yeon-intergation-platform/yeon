@@ -145,3 +145,23 @@ export function TypingProfileCard({
     </div>
   );
 }
+
+export function TypingProfileCardSkeleton() {
+  return (
+    <div className={TYPING_PROFILE_CARD_CLASS.root} aria-busy="true">
+      <div className={TYPING_PROFILE_CARD_CLASS.skeletonSpriteWrapper}>
+        <span className={TYPING_PROFILE_CARD_CLASS.skeletonText}>
+          프로필을 불러오는 중
+        </span>
+      </div>
+      <div className={TYPING_PROFILE_CARD_CLASS.skeletonNickname}>profile</div>
+      <div className={TYPING_PROFILE_CARD_CLASS.characterListWrapper}>
+        <div className={TYPING_PROFILE_CARD_CLASS.skeletonButtonRow}>
+          <span className={TYPING_PROFILE_CARD_CLASS.skeletonButton} />
+          <span className={TYPING_PROFILE_CARD_CLASS.skeletonButton} />
+          <span className={TYPING_PROFILE_CARD_CLASS.skeletonButton} />
+        </div>
+      </div>
+    </div>
+  );
+}

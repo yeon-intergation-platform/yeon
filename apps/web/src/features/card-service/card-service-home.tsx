@@ -7,7 +7,10 @@ import {
   CommonProductHeader,
   ProductHeaderSettingsButton,
 } from "@/components/product-shell/product-header";
-import { TypingProfileCard } from "@/features/typing-service/typing-profile-card";
+import {
+  TypingProfileCard,
+  TypingProfileCardSkeleton,
+} from "@/features/typing-service/typing-profile-card";
 import { useTypingProfile } from "@/features/typing-service/use-typing-profile";
 import { useTypingSettings } from "@/features/typing-service/use-typing-settings";
 
@@ -75,14 +78,18 @@ export function CardServiceHome() {
           <div className={CARD_SERVICE_HOME_CLASS.profilePanel}>
             <h2 className={CARD_SERVICE_HOME_CLASS.sectionTitle}>내 프로필</h2>
             <div className={CARD_SERVICE_HOME_CLASS.sectionBody}>
-              <TypingProfileCard
-                profile={profile}
-                onNicknameChange={(nickname) => updateProfile({ nickname })}
-                onCharacterChange={(characterId) =>
-                  updateProfile({ characterId })
-                }
-                locale={settings.locale}
-              />
+              {loaded ? (
+                <TypingProfileCard
+                  profile={profile}
+                  onNicknameChange={(nickname) => updateProfile({ nickname })}
+                  onCharacterChange={(characterId) =>
+                    updateProfile({ characterId })
+                  }
+                  locale={settings.locale}
+                />
+              ) : (
+                <TypingProfileCardSkeleton />
+              )}
             </div>
           </div>
 
