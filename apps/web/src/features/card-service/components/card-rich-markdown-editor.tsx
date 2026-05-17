@@ -38,6 +38,12 @@ import {
 } from "./card-editor-image-utils";
 import { normalizeCardEditorRichClipboardHtml } from "./card-editor-rich-clipboard-normalizer";
 import {
+  addColumnToSelectedCardEditorMarkdownTable,
+  addRowToSelectedCardEditorMarkdownTable,
+  isCardEditorSelectionInMarkdownTable,
+  normalizeSelectedCardEditorMarkdownTable,
+} from "./card-editor-table-edit-utils";
+import {
   convertCardEditorHtmlTableToMarkdownTable,
   convertCardEditorTabularTextToMarkdownTable,
   isCardEditorHtmlTableOnlyPaste,
@@ -443,6 +449,8 @@ export function CardRichMarkdownEditor({
     blockquote: editor?.isActive("blockquote"),
     codeBlock: editor?.isActive("codeBlock"),
   };
+  const isTableToolbarVisible =
+    canUseToolbar && isCardEditorSelectionInMarkdownTable(editor);
   const handleInsertTable = withEditor((instance) => {
     insertCardEditorMarkdownTable(
       instance,
@@ -451,6 +459,35 @@ export function CardRichMarkdownEditor({
       )
     );
   });
+  const tableEditBar = isTableToolbarVisible ? (
+    <div className="flex flex-wrap items-center gap-2 border-x border-[#e5e5e5] bg-[#fff] px-3 py-2 text-[12px] font-medium text-[#777] md:px-4">
+      <span className="mr-1 text-[#555]">표 편집</span>
+      <button
+        type="button"
+        className="rounded-lg border border-[#e5e5e5] bg-[#fafafa] px-2.5 py-1.5 text-[#333] transition-colors hover:border-[#cfcfcf] hover:bg-[#f2f2f2]"
+        onClick={withEditor(addRowToSelectedCardEditorMarkdownTable)}
+      >
+        행 추가
+      </button>
+      <button
+        type="button"
+        className="rounded-lg border border-[#e5e5e5] bg-[#fafafa] px-2.5 py-1.5 text-[#333] transition-colors hover:border-[#cfcfcf] hover:bg-[#f2f2f2]"
+        onClick={withEditor(addColumnToSelectedCardEditorMarkdownTable)}
+      >
+        열 추가
+      </button>
+      <button
+        type="button"
+        className="rounded-lg border border-[#e5e5e5] bg-[#fafafa] px-2.5 py-1.5 text-[#333] transition-colors hover:border-[#cfcfcf] hover:bg-[#f2f2f2]"
+        onClick={withEditor(normalizeSelectedCardEditorMarkdownTable)}
+      >
+        표 정렬
+      </button>
+      <span className="text-[#999]">
+        커서를 표 라인에 두면 사용할 수 있어요.
+      </span>
+    </div>
+  ) : null;
   const editorPanel = (
     <div className="min-w-0 rounded-2xl bg-white">
       <CardEditorToolbar
@@ -485,6 +522,8 @@ export function CardRichMarkdownEditor({
         onUndo={withEditor((instance) => instance.chain().focus().undo().run())}
         onRedo={withEditor((instance) => instance.chain().focus().redo().run())}
       />
+
+      {tableEditBar}
 
       <EditorContent editor={editor} className={heightClassName.editor} />
 

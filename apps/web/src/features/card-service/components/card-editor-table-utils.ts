@@ -4,7 +4,7 @@ export function normalizeCardEditorTableCell(value: string) {
   return value.replace(/\s+/g, " ").trim();
 }
 
-function splitMarkdownTableRow(line: string) {
+export function splitCardEditorMarkdownTableRow(line: string) {
   const trimmed = line.trim();
   if (!trimmed.includes("|")) {
     return [];
@@ -18,8 +18,8 @@ function splitMarkdownTableRow(line: string) {
   return withoutTrailingPipe.split("|").map(normalizeCardEditorTableCell);
 }
 
-function isMarkdownTableSeparatorRow(line: string) {
-  const cells = splitMarkdownTableRow(line);
+export function isCardEditorMarkdownTableSeparatorRow(line: string) {
+  const cells = splitCardEditorMarkdownTableRow(line);
 
   return (
     cells.length >= 2 &&
@@ -27,13 +27,16 @@ function isMarkdownTableSeparatorRow(line: string) {
   );
 }
 
-function isMarkdownTableBlock(lines: readonly string[]) {
-  if (lines.length < 2 || !isMarkdownTableSeparatorRow(lines[1] ?? "")) {
+export function isCardEditorMarkdownTableBlock(lines: readonly string[]) {
+  if (
+    lines.length < 2 ||
+    !isCardEditorMarkdownTableSeparatorRow(lines[1] ?? "")
+  ) {
     return false;
   }
 
-  const headerCells = splitMarkdownTableRow(lines[0] ?? "");
-  const separatorCells = splitMarkdownTableRow(lines[1] ?? "");
+  const headerCells = splitCardEditorMarkdownTableRow(lines[0] ?? "");
+  const separatorCells = splitCardEditorMarkdownTableRow(lines[1] ?? "");
 
   return (
     headerCells.length >= 2 && headerCells.length === separatorCells.length
@@ -53,17 +56,46 @@ function appendCells(
   });
 }
 
+export function createCardEditorMarkdownTableRow(cells: readonly string[]) {
+  return `| ${cells.map(normalizeCardEditorTableCell).join(" | ")} |`;
+}
+
+export function normalizeCardEditorMarkdownTableLines(
+  lines: readonly string[]
+) {
+  if (!isCardEditorMarkdownTableBlock(lines)) {
+    return undefined;
+  }
+
+  const parsedRows = lines.map(splitCardEditorMarkdownTableRow);
+  const columnCount = Math.max(...parsedRows.map((cells) => cells.length));
+  const normalizedRows = parsedRows.map((cells, rowIndex) =>
+    Array.from({ length: columnCount }, (_, cellIndex) => {
+      if (rowIndex === 1) return "---";
+      const cell = cells[cellIndex];
+      return cell === undefined ? "" : cell;
+    })
+  );
+
+  return normalizedRows.map(createCardEditorMarkdownTableRow);
+}
+
 function createTableElement(document: Document, lines: readonly string[]) {
   const table = document.createElement("table");
   const thead = document.createElement("thead");
   const tbody = document.createElement("tbody");
   const headerRow = document.createElement("tr");
 
-  appendCells(document, headerRow, "th", splitMarkdownTableRow(lines[0] ?? ""));
+  appendCells(
+    document,
+    headerRow,
+    "th",
+    splitCardEditorMarkdownTableRow(lines[0] ?? "")
+  );
   thead.appendChild(headerRow);
 
   lines.slice(2).forEach((line) => {
-    const cells = splitMarkdownTableRow(line);
+    const cells = splitCardEditorMarkdownTableRow(line);
     if (cells.length === 0) {
       return;
     }
@@ -103,13 +135,10 @@ export function convertCardEditorTabularTextToMarkdownTable(text: string) {
   const header = normalizedRows[0] === undefined ? [] : normalizedRows[0];
   const bodyRows = normalizedRows.slice(1);
   const separator = Array.from({ length: columnCount }, () => "---");
-  const toMarkdownRow = (cells: readonly string[]) =>
-    `| ${cells.join(" | ")} |`;
-
   return [
-    toMarkdownRow(header),
-    toMarkdownRow(separator),
-    ...bodyRows.map(toMarkdownRow),
+    createCardEditorMarkdownTableRow(header),
+    createCardEditorMarkdownTableRow(separator),
+    ...bodyRows.map(createCardEditorMarkdownTableRow),
   ].join("\n");
 }
 
@@ -216,7 +245,7 @@ export function renderCardEditorMarkdownTablesInHtml(html: string) {
       nextIndex += 1;
     }
 
-    if (isMarkdownTableBlock(lines)) {
+    if (isCardEditorMarkdownTableBlock(lines)) {
       const table = createTableElement(document, lines);
       paragraphElements[0]?.replaceWith(table);
       paragraphElements.slice(1).forEach((element) => element.remove());
