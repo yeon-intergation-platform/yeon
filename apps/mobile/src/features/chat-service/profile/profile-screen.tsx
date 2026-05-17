@@ -26,7 +26,9 @@ import { colors } from "../../../theme/colors";
 
 export function ProfileScreen() {
   const queryClient = useQueryClient();
-  const { logout, refreshSession, session } = useChatServiceSession();
+  const { logout, refreshSession, session, status } = useChatServiceSession();
+  const isSignedIn = status === "signed_in";
+  const sessionToken = session?.token ?? "";
   const [nickname, setNickname] = useState("");
   const [ageLabel, setAgeLabel] = useState("");
   const [regionLabel, setRegionLabel] = useState("");
@@ -34,9 +36,9 @@ export function ProfileScreen() {
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
 
   const profileQuery = useQuery({
-    enabled: Boolean(session?.token),
+    enabled: isSignedIn,
     queryFn: async () => {
-      return chatServiceApi.getMyChatServiceProfile(session!.token);
+      return chatServiceApi.getMyChatServiceProfile(sessionToken);
     },
     queryKey: chatServiceQueryKeys.profile,
   });
@@ -55,7 +57,7 @@ export function ProfileScreen() {
 
   const updateMutation = useMutation({
     mutationFn: async () => {
-      return chatServiceApi.updateMyChatServiceProfile(session!.token, {
+      return chatServiceApi.updateMyChatServiceProfile(sessionToken, {
         ageLabel: ageLabel.trim(),
         bio: bio.trim(),
         nickname: nickname.trim(),
@@ -73,10 +75,7 @@ export function ProfileScreen() {
 
   const unblockMutation = useMutation({
     mutationFn: async (profileId: string) => {
-      return chatServiceApi.unblockChatServiceProfile(
-        session!.token,
-        profileId,
-      );
+      return chatServiceApi.unblockChatServiceProfile(sessionToken, profileId);
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({
@@ -90,7 +89,7 @@ export function ProfileScreen() {
 
   const deleteMutation = useMutation({
     mutationFn: async () => {
-      return chatServiceApi.deleteMyChatServiceProfile(session!.token);
+      return chatServiceApi.deleteMyChatServiceProfile(sessionToken);
     },
     onSuccess: async () => {
       await logout();
@@ -316,7 +315,7 @@ export function ProfileScreen() {
                         style: "destructive",
                         text: "삭제",
                       },
-                    ],
+                    ]
                   );
                 }}
                 variant="danger"

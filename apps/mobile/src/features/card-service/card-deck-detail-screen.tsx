@@ -1,5 +1,4 @@
 import type { CardDeckItemDto } from "@yeon/api-contract/card-decks";
-import { ApiClientError } from "@yeon/api-client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type Href, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
@@ -18,17 +17,25 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { ActionButton } from "../../components/ui/action-button";
 import { StateBlock } from "../../components/ui/state-block";
 import { cardServiceApi } from "../../services/card-service/client";
 import { cardServiceQueryKeys } from "../../services/card-service/query-keys";
+import { parseAiCardInput } from "./card-input-parser";
 import {
-  clearPrimaryAuthSessionToken,
-  readPrimaryAuthSessionToken,
-} from "../../services/primary-auth/storage";
+  createGuestCard,
+  createGuestCards,
+  deleteGuestCard,
+  getGuestDeckDetail,
+  updateGuestCard,
+} from "../../services/card-service/storage";
 import { colors } from "../../theme/colors";
+import { CARD_SERVICE_TEXT } from "./card-service-copy";
+import {
+  CARD_SERVICE_MODE,
+  type CardServiceMode,
+  resolveCardServiceSession,
+} from "./card-service-session";
 
-const CARD_SERVICE_ROUTE = "/card-service" as Href;
 const CARD_SERVICE_DECK_PLAY_ROUTE =
   "/card-service/decks/[deckId]/play" as Href;
 
@@ -77,62 +84,18 @@ function formatDate(value?: string): string {
     .replace(/\.$/, ".");
 }
 
-function parseAiCardInput(input: string): ParsedCardInput[] {
-  const cards: ParsedCardInput[] = [];
-  const lines = input.replace(/\r\n/g, "\n").split("\n");
-  let frontLines: string[] = [];
-  let backLines: string[] = [];
-  let currentSection: "front" | "back" | null = null;
-
-  function flushCard() {
-    const frontText = frontLines.join("\n").trim();
-    const backText = backLines.join("\n").trim();
-    if (frontText && backText) {
-      cards.push({ backText, frontText });
-    }
-    frontLines = [];
-    backLines = [];
-    currentSection = null;
-  }
-
-  for (const line of lines) {
-    const marker = line.trim();
-    if (marker === "[[CARD]]") {
-      flushCard();
-      continue;
-    }
-    if (marker === "[[Q]]") {
-      if (frontLines.length > 0 || backLines.length > 0) {
-        flushCard();
-      }
-      currentSection = "front";
-      continue;
-    }
-    if (marker === "[[A]]") {
-      currentSection = "back";
-      continue;
-    }
-
-    if (currentSection === "front") {
-      frontLines.push(line);
-      continue;
-    }
-    if (currentSection === "back") {
-      backLines.push(line);
-    }
-  }
-
-  flushCard();
-  return cards;
+function getModeBadge(mode: CardServiceMode): string {
+  return mode === CARD_SERVICE_MODE.server
+    ? CARD_SERVICE_TEXT.detail.modeAuthenticatedLabel
+    : CARD_SERVICE_TEXT.detail.modeGuestLabel;
 }
 
 export function CardDeckDetailScreen({ deckId }: CardDeckDetailScreenProps) {
   const queryClient = useQueryClient();
   const router = useRouter();
+  const [mode, setMode] = useState<CardServiceMode>(CARD_SERVICE_MODE.guest);
+  const [isBooting, setBooting] = useState(true);
   const [sessionToken, setSessionToken] = useState<string | null>(null);
-  const [authStatus, setAuthStatus] = useState<
-    "booting" | "signed_out" | "signed_in"
-  >("booting");
   const [frontText, setFrontText] = useState("");
   const [backText, setBackText] = useState("");
   const [bulkText, setBulkText] = useState("");
@@ -141,69 +104,105 @@ export function CardDeckDetailScreen({ deckId }: CardDeckDetailScreenProps) {
   const [activeMenuItemId, setActiveMenuItemId] = useState<string | null>(null);
 
   const detailQuery = useQuery({
-    enabled:
-      authStatus === "signed_in" && Boolean(sessionToken) && Boolean(deckId),
-    queryFn: async () =>
-      cardServiceApi.getCardDeckDetail(deckId!, sessionToken!),
+    enabled: !isBooting && Boolean(deckId),
+    queryFn: async () => {
+      if (!deckId) {
+        throw new Error(CARD_SERVICE_TEXT.detail.missingDeckIdMessage);
+      }
+      if (mode === CARD_SERVICE_MODE.server && sessionToken) {
+        return cardServiceApi.getCardDeckDetail(deckId, sessionToken);
+      }
+      const guestDetail = await getGuestDeckDetail(deckId);
+      if (!guestDetail) {
+        throw new Error(CARD_SERVICE_TEXT.detail.missingDeckMessage);
+      }
+      return guestDetail;
+    },
     queryKey: deckId
-      ? cardServiceQueryKeys.deck(deckId, sessionToken)
-      : ["card-service", "deck", "missing"],
+      ? cardServiceQueryKeys.deck(deckId, mode === CARD_SERVICE_MODE.server)
+      : ["card-service", "deck", "missing", mode],
   });
+
   const createMutation = useMutation({
     mutationFn: async (params: ParsedCardInput) => {
-      if (!deckId || !sessionToken) {
-        throw new Error("로그인이 필요합니다.");
+      if (!deckId) {
+        throw new Error(CARD_SERVICE_TEXT.detail.missingDeckIdMessage);
       }
-      return cardServiceApi.createCardDeckItem(deckId, params, sessionToken);
+      if (mode === CARD_SERVICE_MODE.server && sessionToken) {
+        return cardServiceApi.createCardDeckItem(deckId, params, sessionToken);
+      }
+      return createGuestCard(deckId, params);
     },
     onSuccess: async () => {
       await invalidateDeck();
     },
   });
+
   const bulkCreateMutation = useMutation({
     mutationFn: async () => {
-      if (!deckId || !sessionToken) {
-        throw new Error("로그인이 필요합니다.");
+      if (!deckId) {
+        throw new Error(CARD_SERVICE_TEXT.detail.missingDeckIdMessage);
       }
       const cards = parseAiCardInput(bulkText);
       if (cards.length === 0) {
-        throw new Error("인식할 수 있는 카드가 없습니다.");
+        throw new Error(CARD_SERVICE_TEXT.detail.noParseResultMessage);
       }
-      for (const card of cards) {
-        await cardServiceApi.createCardDeckItem(deckId, card, sessionToken);
+
+      if (mode === CARD_SERVICE_MODE.server && sessionToken) {
+        for (const card of cards) {
+          await cardServiceApi.createCardDeckItem(deckId, card, sessionToken);
+        }
+      } else {
+        await createGuestCards(deckId, { items: cards });
       }
+
       return cards.length;
     },
     onSuccess: async (createdCount) => {
       setBulkText("");
       closeSheet();
       await invalidateDeck();
-      Alert.alert("추가 완료", `${createdCount}장의 카드를 추가했습니다.`);
+      Alert.alert(
+        CARD_SERVICE_TEXT.detail.addCompleteTitle,
+        `${createdCount}${CARD_SERVICE_TEXT.detail.addCompleteMessageSuffix}`
+      );
     },
   });
+
   const updateMutation = useMutation({
     mutationFn: async (params: ParsedCardInput & { itemId: string }) => {
-      if (!deckId || !sessionToken) {
-        throw new Error("로그인이 필요합니다.");
+      if (!deckId) {
+        throw new Error(CARD_SERVICE_TEXT.detail.missingDeckIdMessage);
       }
-      return cardServiceApi.updateCardDeckItem(
-        deckId,
-        params.itemId,
-        { backText: params.backText, frontText: params.frontText },
-        sessionToken,
-      );
+      if (mode === CARD_SERVICE_MODE.server && sessionToken) {
+        return cardServiceApi.updateCardDeckItem(
+          deckId,
+          params.itemId,
+          { backText: params.backText, frontText: params.frontText },
+          sessionToken
+        );
+      }
+      return updateGuestCard(params.itemId, {
+        backText: params.backText,
+        frontText: params.frontText,
+      });
     },
     onSuccess: async () => {
       closeSheet();
       await invalidateDeck();
     },
   });
+
   const deleteMutation = useMutation({
     mutationFn: async (itemId: string) => {
-      if (!deckId || !sessionToken) {
-        throw new Error("로그인이 필요합니다.");
+      if (!deckId) {
+        throw new Error(CARD_SERVICE_TEXT.detail.missingDeckIdMessage);
       }
-      await cardServiceApi.deleteCardDeckItem(deckId, itemId, sessionToken);
+      if (mode === CARD_SERVICE_MODE.server && sessionToken) {
+        await cardServiceApi.deleteCardDeckItem(deckId, itemId, sessionToken);
+        return;
+      }
+      await deleteGuestCard(itemId);
     },
     onSuccess: async () => {
       setActiveMenuItemId(null);
@@ -212,51 +211,30 @@ export function CardDeckDetailScreen({ deckId }: CardDeckDetailScreenProps) {
   });
 
   useEffect(() => {
-    void bootstrapAuth();
+    void bootstrapSession();
   }, []);
+
+  async function bootstrapSession() {
+    setBooting(true);
+    const resolved = await resolveCardServiceSession();
+    setMode(resolved.mode);
+    setSessionToken(resolved.sessionToken);
+    setBooting(false);
+  }
 
   async function invalidateDeck() {
     if (!deckId) {
       return;
     }
     await queryClient.invalidateQueries({
-      queryKey: cardServiceQueryKeys.deck(deckId, sessionToken),
+      queryKey: cardServiceQueryKeys.deck(
+        deckId,
+        mode === CARD_SERVICE_MODE.server
+      ),
     });
     await queryClient.invalidateQueries({
-      queryKey: cardServiceQueryKeys.decks(sessionToken),
+      queryKey: cardServiceQueryKeys.decks(mode === CARD_SERVICE_MODE.server),
     });
-  }
-
-  async function bootstrapAuth() {
-    try {
-      const storedToken = await readPrimaryAuthSessionToken();
-
-      if (!storedToken) {
-        setAuthStatus("signed_out");
-        return;
-      }
-
-      const response = await cardServiceApi.getAuthSession(storedToken);
-
-      if (!response.authenticated) {
-        await clearPrimaryAuthSessionToken();
-        setSessionToken(null);
-        setAuthStatus("signed_out");
-        return;
-      }
-
-      setSessionToken(storedToken);
-      setAuthStatus("signed_in");
-    } catch (error) {
-      if (
-        error instanceof ApiClientError &&
-        (error.status === 401 || error.status === 403)
-      ) {
-        await clearPrimaryAuthSessionToken();
-      }
-      setSessionToken(null);
-      setAuthStatus("signed_out");
-    }
   }
 
   function openCreateSheet() {
@@ -282,7 +260,10 @@ export function CardDeckDetailScreen({ deckId }: CardDeckDetailScreenProps) {
 
   async function handleCreateCard() {
     if (!frontText.trim() || !backText.trim()) {
-      Alert.alert("입력 필요", "질문과 답변을 모두 입력해 주세요.");
+      Alert.alert(
+        CARD_SERVICE_TEXT.shared.inputRequiredTitle,
+        CARD_SERVICE_TEXT.detail.updateRequiredHint
+      );
       return;
     }
     try {
@@ -293,8 +274,10 @@ export function CardDeckDetailScreen({ deckId }: CardDeckDetailScreenProps) {
       closeSheet();
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : "카드 추가에 실패했습니다.";
-      Alert.alert("오류", message);
+        error instanceof Error
+          ? error.message
+          : CARD_SERVICE_TEXT.detail.createErrorMessage;
+      Alert.alert(CARD_SERVICE_TEXT.state.errorTitle, message);
     }
   }
 
@@ -303,8 +286,10 @@ export function CardDeckDetailScreen({ deckId }: CardDeckDetailScreenProps) {
       await bulkCreateMutation.mutateAsync();
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : "카드 추가에 실패했습니다.";
-      Alert.alert("오류", message);
+        error instanceof Error
+          ? error.message
+          : CARD_SERVICE_TEXT.detail.createErrorMessage;
+      Alert.alert(CARD_SERVICE_TEXT.state.errorTitle, message);
     }
   }
 
@@ -313,7 +298,10 @@ export function CardDeckDetailScreen({ deckId }: CardDeckDetailScreenProps) {
       return;
     }
     if (!frontText.trim() || !backText.trim()) {
-      Alert.alert("입력 필요", "질문과 답변을 모두 입력해 주세요.");
+      Alert.alert(
+        CARD_SERVICE_TEXT.shared.inputRequiredTitle,
+        CARD_SERVICE_TEXT.detail.updateRequiredHint
+      );
       return;
     }
     try {
@@ -324,50 +312,45 @@ export function CardDeckDetailScreen({ deckId }: CardDeckDetailScreenProps) {
       });
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : "카드 수정에 실패했습니다.";
-      Alert.alert("오류", message);
+        error instanceof Error
+          ? error.message
+          : CARD_SERVICE_TEXT.detail.updateErrorMessage;
+      Alert.alert(CARD_SERVICE_TEXT.state.errorTitle, message);
     }
   }
 
   function handleDeleteCard(itemId: string) {
-    Alert.alert("카드 삭제", "이 카드를 삭제할까요?", [
-      { style: "cancel", text: "취소" },
-      {
-        onPress: async () => {
-          try {
-            await deleteMutation.mutateAsync(itemId);
-          } catch (error) {
-            const message =
-              error instanceof Error
-                ? error.message
-                : "카드 삭제에 실패했습니다.";
-            Alert.alert("오류", message);
-          }
+    Alert.alert(
+      CARD_SERVICE_TEXT.detail.deleteConfirmTitle,
+      CARD_SERVICE_TEXT.detail.deleteConfirmMessage,
+      [
+        { style: "cancel", text: CARD_SERVICE_TEXT.shared.closeLabel },
+        {
+          onPress: async () => {
+            try {
+              await deleteMutation.mutateAsync(itemId);
+            } catch (error) {
+              const message =
+                error instanceof Error
+                  ? error.message
+                  : CARD_SERVICE_TEXT.detail.deleteErrorMessage;
+              Alert.alert(CARD_SERVICE_TEXT.state.errorTitle, message);
+            }
+          },
+          style: "destructive",
+          text: CARD_SERVICE_TEXT.shared.deleteLabel,
         },
-        style: "destructive",
-        text: "삭제",
-      },
-    ]);
-  }
-
-  if (authStatus === "booting") {
-    return (
-      <View style={[styles.screen, styles.center]}>
-        <StateBlock loading message="세션을 확인하고 있습니다." title="로딩" />
-      </View>
+      ]
     );
   }
 
-  if (authStatus === "signed_out") {
+  if (isBooting) {
     return (
       <View style={[styles.screen, styles.center]}>
         <StateBlock
-          message="카드 서비스를 먼저 로그인한 뒤 다시 열어주세요."
-          title="로그인이 필요합니다"
-        />
-        <ActionButton
-          label="카드 서비스로 이동"
-          onPress={() => router.replace(CARD_SERVICE_ROUTE)}
+          loading
+          message={CARD_SERVICE_TEXT.state.bootLoadingMessage}
+          title={CARD_SERVICE_TEXT.state.loadingTitle}
         />
       </View>
     );
@@ -388,26 +371,33 @@ export function CardDeckDetailScreen({ deckId }: CardDeckDetailScreenProps) {
       <ScrollView contentContainerStyle={styles.content} style={styles.screen}>
         <View style={styles.mobileHeader}>
           <Pressable
-            accessibilityLabel="카드 덱 목록으로 돌아가기"
             accessibilityRole="button"
             onPress={() => router.back()}
             style={styles.headerIconButton}
           >
-            <Text style={styles.headerIconText}>←</Text>
+            <Text style={styles.headerIconText}>
+              {CARD_SERVICE_TEXT.play.headerBackLabel}
+            </Text>
           </Pressable>
           <View style={styles.headerTitleBox}>
             <Text numberOfLines={1} style={styles.deckTitle}>
-              {detail?.deck.title ?? "카드 덱"}
+              {detail?.deck.title ?? CARD_SERVICE_TEXT.detail.deckTitleFallback}
             </Text>
             <Text style={styles.deckMeta}>
-              카드 {cardCount}장 · 생성일 {formatDate(detail?.deck.createdAt)}
+              {`${getModeBadge(mode)} · ${CARD_SERVICE_TEXT.detail.metaCountLabel} ${cardCount}${CARD_SERVICE_TEXT.detail.metaSuffixCreatedAtLabel}`}
+              {formatDate(detail?.deck.createdAt)}
             </Text>
           </View>
           <Pressable
-            accessibilityLabel="덱 작업 더보기"
+            accessibilityLabel={
+              CARD_SERVICE_TEXT.detail.cardSettingsAccessibilityLabel
+            }
             accessibilityRole="button"
             onPress={() =>
-              Alert.alert("덱 설정", "모바일 덱 설정은 준비 중입니다.")
+              Alert.alert(
+                CARD_SERVICE_TEXT.detail.cardSettingsTitle,
+                CARD_SERVICE_TEXT.detail.cardSettingsPreparingMessage
+              )
             }
             style={styles.headerIconButton}
           >
@@ -430,34 +420,40 @@ export function CardDeckDetailScreen({ deckId }: CardDeckDetailScreenProps) {
             pressed && detail && cardCount > 0 ? styles.pressedButton : null,
           ]}
         >
-          <Text style={styles.playButtonLabel}>▶ 학습 시작</Text>
+          <Text style={styles.playButtonLabel}>
+            {CARD_SERVICE_TEXT.detail.playButtonLabel}
+          </Text>
         </Pressable>
 
         {detailQuery.isPending ? (
           <StateBlock
             loading
-            message="카드를 불러오는 중입니다."
-            title="로딩"
+            message={CARD_SERVICE_TEXT.state.loading}
+            title={CARD_SERVICE_TEXT.state.loadingTitle}
           />
         ) : detailQuery.isError ? (
           <StateBlock
             message={
               detailQuery.error instanceof Error
                 ? detailQuery.error.message
-                : "카드를 불러오지 못했습니다."
+                : CARD_SERVICE_TEXT.detail.errorMessage
             }
-            title="오류"
+            title={CARD_SERVICE_TEXT.state.errorTitle}
           />
         ) : detail && detail.items.length === 0 ? (
           <StateBlock
-            message="오른쪽 아래 + 버튼으로 첫 카드를 추가해 보세요."
-            title="카드가 없습니다"
+            message={CARD_SERVICE_TEXT.detail.emptyMessage}
+            title={CARD_SERVICE_TEXT.detail.emptyTitle}
           />
         ) : detail ? (
           <View style={styles.cardList}>
             <View style={styles.listHeader}>
-              <Text style={styles.sectionTitle}>카드 목록</Text>
-              <Text style={styles.sectionMeta}>전체 {detail.items.length}</Text>
+              <Text style={styles.sectionTitle}>
+                {CARD_SERVICE_TEXT.detail.itemLabel}
+              </Text>
+              <Text style={styles.sectionMeta}>
+                {CARD_SERVICE_TEXT.detail.allCardsLabel} {detail.items.length}
+              </Text>
             </View>
             {detail.items.map((item, index) => (
               <CompactCardRow
@@ -470,7 +466,7 @@ export function CardDeckDetailScreen({ deckId }: CardDeckDetailScreenProps) {
                 onEdit={openEditSheet}
                 onToggleMenu={() =>
                   setActiveMenuItemId((current) =>
-                    current === item.id ? null : item.id,
+                    current === item.id ? null : item.id
                   )
                 }
               />
@@ -480,7 +476,7 @@ export function CardDeckDetailScreen({ deckId }: CardDeckDetailScreenProps) {
       </ScrollView>
 
       <Pressable
-        accessibilityLabel="새 카드 추가"
+        accessibilityLabel={CARD_SERVICE_TEXT.detail.addCardAccessibilityLabel}
         accessibilityRole="button"
         onPress={openCreateSheet}
         style={styles.fab}
@@ -498,7 +494,12 @@ export function CardDeckDetailScreen({ deckId }: CardDeckDetailScreenProps) {
           behavior={Platform.OS === "ios" ? "padding" : undefined}
           style={styles.modalRoot}
         >
-          <Pressable style={styles.backdrop} onPress={closeSheet} />
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={CARD_SERVICE_TEXT.shared.closeModalLabel}
+            style={styles.backdrop}
+            onPress={closeSheet}
+          />
           <View style={styles.sheet}>
             <View style={styles.sheetHandle} />
             <View style={styles.sheetTabs}>
@@ -518,7 +519,7 @@ export function CardDeckDetailScreen({ deckId }: CardDeckDetailScreenProps) {
                       styles.sheetTabTextActive,
                   ]}
                 >
-                  직접 입력
+                  {CARD_SERVICE_TEXT.detail.sheetManualLabel}
                 </Text>
               </Pressable>
               <Pressable
@@ -538,7 +539,7 @@ export function CardDeckDetailScreen({ deckId }: CardDeckDetailScreenProps) {
                     sheetState.kind === "edit" && styles.disabledTabText,
                   ]}
                 >
-                  AI 형식 붙여넣기
+                  {CARD_SERVICE_TEXT.detail.sheetBulkLabel}
                 </Text>
               </Pressable>
             </View>
@@ -551,20 +552,22 @@ export function CardDeckDetailScreen({ deckId }: CardDeckDetailScreenProps) {
               sheetMode === SHEET_MODES.manual ? (
                 <>
                   <Text style={styles.sheetTitle}>
-                    {sheetState.kind === "edit" ? "카드 편집" : "카드 추가"}
+                    {sheetState.kind === "edit"
+                      ? CARD_SERVICE_TEXT.detail.sheetEditTitle
+                      : CARD_SERVICE_TEXT.detail.sheetCreateLabel}
                   </Text>
                   <LabeledTextarea
-                    label="질문"
+                    label={CARD_SERVICE_TEXT.detail.questionLabel}
                     maxLength={2000}
                     onChangeText={setFrontText}
-                    placeholder="질문을 Markdown으로 입력하세요"
+                    placeholder={CARD_SERVICE_TEXT.detail.questionHint}
                     value={frontText}
                   />
                   <LabeledTextarea
-                    label="답변"
+                    label={CARD_SERVICE_TEXT.detail.answerLabel}
                     maxLength={2000}
                     onChangeText={setBackText}
-                    placeholder="답변을 Markdown으로 입력하세요"
+                    placeholder={CARD_SERVICE_TEXT.detail.answerHint}
                     value={backText}
                   />
                   <Pressable
@@ -584,27 +587,26 @@ export function CardDeckDetailScreen({ deckId }: CardDeckDetailScreenProps) {
                     <Text style={styles.sheetPrimaryLabel}>
                       {sheetState.kind === "edit"
                         ? updateMutation.isPending
-                          ? "저장 중..."
-                          : "수정 저장"
+                          ? CARD_SERVICE_TEXT.detail.submitEditBusyLabel
+                          : CARD_SERVICE_TEXT.detail.submitEditLabel
                         : createMutation.isPending
-                          ? "추가 중..."
-                          : "카드 추가"}
+                          ? CARD_SERVICE_TEXT.detail.submitBusyLabel
+                          : CARD_SERVICE_TEXT.detail.submitCreateLabel}
                     </Text>
                   </Pressable>
                 </>
               ) : (
                 <>
-                  <Text style={styles.sheetTitle}>AI 형식 붙여넣기</Text>
+                  <Text style={styles.sheetTitle}>
+                    {CARD_SERVICE_TEXT.detail.sheetBulkLabel}
+                  </Text>
                   <Text style={styles.sheetHelp}>
-                    마커가 한 줄 전체가 [[Q]], [[A]], [[CARD]]일 때만 카드로
-                    인식합니다.
+                    {CARD_SERVICE_TEXT.detail.bulkHelp}
                   </Text>
                   <TextInput
                     multiline
                     onChangeText={setBulkText}
-                    placeholder={
-                      "[[Q]]\n문제\n[[A]]\n정답\n[[CARD]]\n[[Q]]\n문제\n[[A]]\n정답"
-                    }
+                    placeholder={CARD_SERVICE_TEXT.detail.bulkPlaceholder}
                     placeholderTextColor={colors.textMuted}
                     style={[styles.textarea, styles.bulkTextarea]}
                     textAlignVertical="top"
@@ -622,8 +624,8 @@ export function CardDeckDetailScreen({ deckId }: CardDeckDetailScreenProps) {
                   >
                     <Text style={styles.sheetPrimaryLabel}>
                       {bulkCreateMutation.isPending
-                        ? "추가 중..."
-                        : "미리보기 후 추가"}
+                        ? CARD_SERVICE_TEXT.detail.submitBusyLabel
+                        : CARD_SERVICE_TEXT.detail.bulkSaveLabel}
                     </Text>
                   </Pressable>
                 </>
@@ -726,11 +728,14 @@ function CompactCardRow({
           onPress={() => onDelete(item.id)}
           style={styles.deleteButton}
         >
-          <Text style={styles.deleteButtonLabel}>삭제</Text>
+          <Text style={styles.deleteButtonLabel}>
+            {CARD_SERVICE_TEXT.shared.deleteLabel}
+          </Text>
         </Pressable>
       </View>
       <Pressable
         accessibilityRole="button"
+        accessibilityLabel={`${CARD_SERVICE_TEXT.shared.openCardLabel}: ${item.frontText}`}
         onPress={() => {
           if (isDeleteRevealed) {
             setDeleteRevealed(false);
@@ -750,16 +755,21 @@ function CompactCardRow({
         </View>
         <View style={styles.itemContent}>
           <View style={styles.qaLine}>
-            <Text style={styles.qaBadge}>질문</Text>
+            <Text style={styles.qaBadge}>
+              {CARD_SERVICE_TEXT.detail.questionLabel}
+            </Text>
             <Text style={styles.questionText}>{item.frontText}</Text>
           </View>
           <View style={styles.qaLine}>
-            <Text style={styles.qaBadge}>답변</Text>
+            <Text style={styles.qaBadge}>
+              {CARD_SERVICE_TEXT.detail.answerLabel}
+            </Text>
             <Text style={styles.answerText}>{item.backText}</Text>
           </View>
         </View>
         <Pressable
           accessibilityRole="button"
+          accessibilityLabel={CARD_SERVICE_TEXT.shared.openCardMenuLabel}
           onPress={(event) => {
             event.stopPropagation();
             onToggleMenu();
@@ -771,15 +781,26 @@ function CompactCardRow({
       </Pressable>
       {isMenuOpen ? (
         <View style={styles.rowMenu}>
-          <Pressable onPress={() => onEdit(item)} style={styles.rowMenuButton}>
-            <Text style={styles.rowMenuText}>편집</Text>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={CARD_SERVICE_TEXT.shared.editLabel}
+            onPress={() => onEdit(item)}
+            style={styles.rowMenuButton}
+          >
+            <Text style={styles.rowMenuText}>
+              {CARD_SERVICE_TEXT.shared.editLabel}
+            </Text>
           </Pressable>
           <Pressable
             disabled={isBusy}
+            accessibilityLabel={CARD_SERVICE_TEXT.shared.deleteLabel}
+            accessibilityRole="button"
             onPress={() => onDelete(item.id)}
             style={styles.rowMenuButton}
           >
-            <Text style={styles.rowMenuDangerText}>삭제</Text>
+            <Text style={styles.rowMenuDangerText}>
+              {CARD_SERVICE_TEXT.shared.deleteLabel}
+            </Text>
           </Pressable>
         </View>
       ) : null}
@@ -816,16 +837,16 @@ const styles = StyleSheet.create({
   },
   deckMeta: {
     color: colors.textMuted,
-    fontSize: 15,
+    fontSize: 12,
     lineHeight: 22,
-    marginTop: 6,
+    marginTop: 4,
     textAlign: "center",
   },
   deckTitle: {
     color: colors.text,
-    fontSize: 25,
+    fontSize: 22,
     fontWeight: "800",
-    lineHeight: 32,
+    lineHeight: 30,
     textAlign: "center",
   },
   deleteButton: {
@@ -880,9 +901,9 @@ const styles = StyleSheet.create({
   },
   headerIconText: {
     color: colors.text,
-    fontSize: 32,
+    fontSize: 24,
     fontWeight: "300",
-    lineHeight: 36,
+    lineHeight: 28,
   },
   headerTitleBox: {
     flex: 1,
@@ -916,7 +937,7 @@ const styles = StyleSheet.create({
   },
   inputLabel: {
     color: colors.text,
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: "800",
   },
   itemCard: {
@@ -972,11 +993,11 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     justifyContent: "center",
     marginTop: 34,
-    minHeight: 88,
+    minHeight: 56,
   },
   playButtonLabel: {
     color: colors.white,
-    fontSize: 27,
+    fontSize: 16,
     fontWeight: "800",
   },
   pressedButton: {
@@ -987,7 +1008,7 @@ const styles = StyleSheet.create({
     borderRadius: 7,
     borderWidth: 1,
     color: colors.text,
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: "600",
     overflow: "hidden",
     paddingHorizontal: 8,
@@ -1002,9 +1023,9 @@ const styles = StyleSheet.create({
   questionText: {
     color: colors.text,
     flex: 1,
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "500",
-    lineHeight: 26,
+    lineHeight: 24,
   },
   rowMenu: {
     alignSelf: "flex-end",
@@ -1036,11 +1057,11 @@ const styles = StyleSheet.create({
   },
   sectionMeta: {
     color: colors.textMuted,
-    fontSize: 17,
+    fontSize: 13,
   },
   sectionTitle: {
     color: colors.text,
-    fontSize: 26,
+    fontSize: 22,
     fontWeight: "800",
   },
   sheet: {
@@ -1073,11 +1094,11 @@ const styles = StyleSheet.create({
     backgroundColor: colors.black,
     borderRadius: 10,
     justifyContent: "center",
-    minHeight: 66,
+    minHeight: 52,
   },
   sheetPrimaryLabel: {
     color: colors.white,
-    fontSize: 22,
+    fontSize: 16,
     fontWeight: "800",
   },
   sheetTab: {
@@ -1094,7 +1115,7 @@ const styles = StyleSheet.create({
   },
   sheetTabText: {
     color: colors.textMuted,
-    fontSize: 18,
+    fontSize: 14,
     fontWeight: "800",
   },
   sheetTabTextActive: {
@@ -1105,7 +1126,7 @@ const styles = StyleSheet.create({
   },
   sheetTitle: {
     color: colors.text,
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: "900",
   },
   swipeShell: {
@@ -1118,7 +1139,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     color: colors.text,
-    fontSize: 17,
+    fontSize: 16,
     minHeight: 136,
     paddingHorizontal: 18,
     paddingVertical: 16,

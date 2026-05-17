@@ -1,4 +1,3 @@
-import { ApiClientError } from "@yeon/api-client";
 import {
   CARD_REVIEW_DIFFICULTIES,
   CARD_STUDY_MODES,
@@ -11,15 +10,22 @@ import { useEffect, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { ActionButton } from "../../components/ui/action-button";
 import { StateBlock } from "../../components/ui/state-block";
 import { cardServiceApi } from "../../services/card-service/client";
 import { cardServiceQueryKeys } from "../../services/card-service/query-keys";
 import {
-  clearPrimaryAuthSessionToken,
-  readPrimaryAuthSessionToken,
-} from "../../services/primary-auth/storage";
+  getGuestCardStudyMode,
+  getGuestDeckDetail,
+  reviewGuestCard,
+  setGuestCardStudyMode,
+} from "../../services/card-service/storage";
 import { colors } from "../../theme/colors";
+import { CARD_SERVICE_TEXT } from "./card-service-copy";
+import {
+  CARD_SERVICE_MODE,
+  type CardServiceMode,
+  resolveCardServiceSession,
+} from "./card-service-session";
 
 const CARD_SERVICE_ROUTE = "/card-service" as Href;
 
@@ -27,37 +33,62 @@ interface CardDeckPlayScreenProps {
   deckId?: string;
 }
 
+function getModeBadge(mode: CardServiceMode): string {
+  return mode === CARD_SERVICE_MODE.server
+    ? CARD_SERVICE_TEXT.play.modeAuthenticatedLabel
+    : CARD_SERVICE_TEXT.play.modeGuestLabel;
+}
+
 export function CardDeckPlayScreen({ deckId }: CardDeckPlayScreenProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const [mode, setMode] = useState<CardServiceMode>(CARD_SERVICE_MODE.guest);
+  const [isBooting, setBooting] = useState(true);
   const [sessionToken, setSessionToken] = useState<string | null>(null);
-  const [authStatus, setAuthStatus] = useState<
-    "booting" | "signed_out" | "signed_in"
-  >("booting");
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isAnswerVisible, setAnswerVisible] = useState(false);
   const [studyMode, setStudyMode] = useState<CardStudyMode>(
-    CARD_STUDY_MODES.flashcard,
+    CARD_STUDY_MODES.flashcard
   );
 
   const detailQuery = useQuery({
-    enabled:
-      authStatus === "signed_in" && Boolean(sessionToken) && Boolean(deckId),
-    queryFn: async () =>
-      cardServiceApi.getCardDeckDetail(deckId!, sessionToken!),
+    enabled: !isBooting && Boolean(deckId),
+    queryFn: async () => {
+      if (!deckId) {
+        throw new Error(CARD_SERVICE_TEXT.detail.missingDeckIdMessage);
+      }
+
+      if (mode === CARD_SERVICE_MODE.server && sessionToken) {
+        return cardServiceApi.getCardDeckDetail(deckId, sessionToken);
+      }
+
+      const guestDetail = await getGuestDeckDetail(deckId);
+      if (!guestDetail) {
+        throw new Error(CARD_SERVICE_TEXT.shared.notFoundMessage);
+      }
+      const studyMode = await getGuestCardStudyMode();
+      return {
+        ...guestDetail,
+        studyMode,
+      };
+    },
     queryKey: deckId
-      ? cardServiceQueryKeys.deck(deckId, sessionToken)
-      : ["card-service", "deck", "missing"],
+      ? cardServiceQueryKeys.deck(deckId, mode === CARD_SERVICE_MODE.server)
+      : ["card-service", "deck", "missing", mode],
   });
 
   const studyModeMutation = useMutation({
     mutationFn: async (nextMode: CardStudyMode) => {
+      if (!detailQuery.data || mode === CARD_SERVICE_MODE.guest) {
+        await setGuestCardStudyMode(nextMode);
+        return { studyMode: nextMode };
+      }
       if (!sessionToken) {
-        throw new Error("로그인이 필요합니다.");
+        throw new Error(CARD_SERVICE_TEXT.detail.loginRequiredMessage);
       }
       return cardServiceApi.updateCardStudyPreference(
         { studyMode: nextMode },
-        sessionToken,
+        sessionToken
       );
     },
   });
@@ -67,20 +98,27 @@ export function CardDeckPlayScreen({ deckId }: CardDeckPlayScreenProps) {
       difficulty: CardReviewDifficulty;
       itemId: string;
     }) => {
-      if (!deckId || !sessionToken) {
-        throw new Error("로그인이 필요합니다.");
+      if (!deckId) {
+        throw new Error(CARD_SERVICE_TEXT.detail.missingDeckIdMessage);
       }
-      return cardServiceApi.reviewCardDeckItem(
-        deckId,
-        params.itemId,
-        { difficulty: params.difficulty },
-        sessionToken,
-      );
+      if (mode === CARD_SERVICE_MODE.server && sessionToken) {
+        return cardServiceApi.reviewCardDeckItem(
+          deckId,
+          params.itemId,
+          { difficulty: params.difficulty },
+          sessionToken
+        );
+      }
+
+      return reviewGuestCard(params.itemId, params.difficulty);
     },
     onSuccess: async () => {
       if (deckId) {
         await queryClient.invalidateQueries({
-          queryKey: cardServiceQueryKeys.deck(deckId, sessionToken),
+          queryKey: cardServiceQueryKeys.deck(
+            deckId,
+            mode === CARD_SERVICE_MODE.server
+          ),
         });
       }
       setCurrentIndex(0);
@@ -89,7 +127,7 @@ export function CardDeckPlayScreen({ deckId }: CardDeckPlayScreenProps) {
   });
 
   useEffect(() => {
-    void bootstrapAuth();
+    void bootstrapSession();
   }, []);
 
   useEffect(() => {
@@ -103,41 +141,22 @@ export function CardDeckPlayScreen({ deckId }: CardDeckPlayScreenProps) {
     }
   }, [currentIndex, detailQuery.data]);
 
-  async function bootstrapAuth() {
-    try {
-      const storedToken = await readPrimaryAuthSessionToken();
-      if (!storedToken) {
-        setAuthStatus("signed_out");
-        return;
-      }
-
-      const response = await cardServiceApi.getAuthSession(storedToken);
-      if (!response.authenticated) {
-        await clearPrimaryAuthSessionToken();
-        setSessionToken(null);
-        setAuthStatus("signed_out");
-        return;
-      }
-
-      setSessionToken(storedToken);
-      setAuthStatus("signed_in");
-    } catch (error) {
-      if (
-        error instanceof ApiClientError &&
-        (error.status === 401 || error.status === 403)
-      ) {
-        await clearPrimaryAuthSessionToken();
-      }
-      setSessionToken(null);
-      setAuthStatus("signed_out");
-    }
+  async function bootstrapSession() {
+    setBooting(true);
+    const resolved = await resolveCardServiceSession();
+    setMode(resolved.mode);
+    setSessionToken(resolved.sessionToken);
+    setBooting(false);
   }
 
   function moveNext() {
     if (!detailQuery.data || detailQuery.data.items.length === 0) {
       return;
     }
-    setCurrentIndex((prev) => (prev + 1) % detailQuery.data.items.length);
+    if (currentIndex + 1 >= detailQuery.data.items.length) {
+      return;
+    }
+    setCurrentIndex((prev) => prev + 1);
     setAnswerVisible(false);
   }
 
@@ -145,13 +164,17 @@ export function CardDeckPlayScreen({ deckId }: CardDeckPlayScreenProps) {
     if (!detailQuery.data || detailQuery.data.items.length === 0) {
       return;
     }
-    setCurrentIndex((prev) =>
-      prev === 0 ? detailQuery.data.items.length - 1 : prev - 1,
-    );
+    if (currentIndex <= 0) {
+      return;
+    }
+    setCurrentIndex((prev) => prev - 1);
     setAnswerVisible(false);
   }
 
   const currentCard = detailQuery.data?.items[currentIndex] ?? null;
+  const detail = detailQuery.data;
+  const canMovePrev = currentIndex > 0;
+  const canMoveNext = detail ? currentIndex < detail.items.length - 1 : false;
 
   function handleStudyModeChange(nextMode: CardStudyMode) {
     setStudyMode(nextMode);
@@ -165,30 +188,17 @@ export function CardDeckPlayScreen({ deckId }: CardDeckPlayScreenProps) {
     reviewMutation.mutate({ difficulty, itemId: currentCard.id });
   }
 
-  if (authStatus === "booting") {
-    return (
-      <View style={[styles.screen, styles.center]}>
-        <StateBlock loading message="세션을 확인하고 있습니다." title="로딩" />
-      </View>
-    );
-  }
-
-  if (authStatus === "signed_out") {
+  if (isBooting) {
     return (
       <View style={[styles.screen, styles.center]}>
         <StateBlock
-          message="카드 서비스를 먼저 로그인한 뒤 다시 열어주세요."
-          title="로그인이 필요합니다"
-        />
-        <ActionButton
-          label="카드 서비스로 이동"
-          onPress={() => router.replace(CARD_SERVICE_ROUTE)}
+          loading
+          message={CARD_SERVICE_TEXT.state.bootLoadingMessage}
+          title={CARD_SERVICE_TEXT.state.loadingTitle}
         />
       </View>
     );
   }
-
-  const detail = detailQuery.data;
 
   return (
     <SafeAreaView edges={["top"]} style={styles.screen}>
@@ -196,44 +206,63 @@ export function CardDeckPlayScreen({ deckId }: CardDeckPlayScreenProps) {
         <View style={styles.header}>
           <Pressable
             accessibilityRole="button"
+            accessibilityLabel={CARD_SERVICE_TEXT.shared.backLabel}
             onPress={() => router.back()}
             style={styles.headerButton}
           >
-            <Text style={styles.headerButtonText}>←</Text>
+            <Text style={styles.headerButtonText}>
+              {CARD_SERVICE_TEXT.play.headerBackLabel}
+            </Text>
           </Pressable>
           <View style={styles.titleBox}>
             <Text numberOfLines={1} style={styles.title}>
-              {detail?.deck.title ?? "학습"}
+              {detail?.deck.title ?? CARD_SERVICE_TEXT.play.titleFallback}
             </Text>
             <Text style={styles.subtitle}>
               {detail ? `${currentIndex + 1} / ${detail.items.length}` : ""}
             </Text>
+            <Text style={styles.subtitle}>{getModeBadge(mode)}</Text>
           </View>
-          <View style={styles.headerButton} />
+          <Pressable
+            accessibilityLabel={CARD_SERVICE_TEXT.play.homeLabel}
+            accessibilityRole="button"
+            onPress={() => router.replace(CARD_SERVICE_ROUTE)}
+            style={styles.headerButton}
+          >
+            <Text style={styles.headerButtonText}>
+              {CARD_SERVICE_TEXT.play.homeLabel}
+            </Text>
+          </Pressable>
         </View>
 
         {detailQuery.isPending ? (
           <StateBlock
             loading
-            message="학습 카드를 불러오는 중입니다."
-            title="로딩"
+            message={CARD_SERVICE_TEXT.state.loading}
+            title={CARD_SERVICE_TEXT.state.loadingTitle}
           />
         ) : detailQuery.isError ? (
           <StateBlock
             message={
               detailQuery.error instanceof Error
                 ? detailQuery.error.message
-                : "학습 카드를 불러오지 못했습니다."
+                : CARD_SERVICE_TEXT.play.errorMessage
             }
-            title="오류"
+            title={CARD_SERVICE_TEXT.state.errorTitle}
           />
         ) : !currentCard ? (
-          <StateBlock message="학습할 카드가 없습니다." title="빈 덱" />
+          <StateBlock
+            message={CARD_SERVICE_TEXT.play.emptyMessage}
+            title={CARD_SERVICE_TEXT.play.emptyTitle}
+          />
         ) : (
           <>
             <View style={styles.modeTabs}>
               <Pressable
                 accessibilityRole="button"
+                accessibilityLabel={
+                  CARD_SERVICE_TEXT.play.studyModeFlashcardLabel
+                }
                 onPress={() =>
                   handleStudyModeChange(CARD_STUDY_MODES.flashcard)
                 }
@@ -250,11 +279,12 @@ export function CardDeckPlayScreen({ deckId }: CardDeckPlayScreenProps) {
                       styles.modeTabTextActive,
                   ]}
                 >
-                  플래시카드
+                  {CARD_SERVICE_TEXT.play.studyModeFlashcardLabel}
                 </Text>
               </Pressable>
               <Pressable
                 accessibilityRole="button"
+                accessibilityLabel={CARD_SERVICE_TEXT.play.studyModeReviewLabel}
                 onPress={() => handleStudyModeChange(CARD_STUDY_MODES.review)}
                 style={[
                   styles.modeTab,
@@ -268,7 +298,7 @@ export function CardDeckPlayScreen({ deckId }: CardDeckPlayScreenProps) {
                       styles.modeTabTextActive,
                   ]}
                 >
-                  복습 모드
+                  {CARD_SERVICE_TEXT.play.studyModeReviewLabel}
                 </Text>
               </Pressable>
             </View>
@@ -284,11 +314,18 @@ export function CardDeckPlayScreen({ deckId }: CardDeckPlayScreenProps) {
               <>
                 <Pressable
                   accessibilityRole="button"
+                  accessibilityLabel={
+                    isAnswerVisible
+                      ? CARD_SERVICE_TEXT.play.flipQuestionLabel
+                      : CARD_SERVICE_TEXT.play.flipAnswerLabel
+                  }
                   onPress={() => setAnswerVisible((prev) => !prev)}
                   style={styles.studyCard}
                 >
                   <Text style={styles.cardLabel}>
-                    {isAnswerVisible ? "답변" : "질문"}
+                    {isAnswerVisible
+                      ? CARD_SERVICE_TEXT.play.flipAnswerLabel
+                      : CARD_SERVICE_TEXT.play.flipQuestionLabel}
                   </Text>
                   <ScrollView contentContainerStyle={styles.cardScrollContent}>
                     <Text style={styles.cardText}>
@@ -298,24 +335,44 @@ export function CardDeckPlayScreen({ deckId }: CardDeckPlayScreenProps) {
                     </Text>
                   </ScrollView>
                   <Text style={styles.cardHint}>
-                    탭해서 {isAnswerVisible ? "질문" : "답변"} 보기
+                    {CARD_SERVICE_TEXT.play.flipHint}
+                    {isAnswerVisible
+                      ? CARD_SERVICE_TEXT.play.flipQuestionLabel
+                      : CARD_SERVICE_TEXT.play.flipAnswerLabel}
+                    {CARD_SERVICE_TEXT.play.flipHintPostfix}
                   </Text>
                 </Pressable>
 
                 <View style={styles.controls}>
                   <Pressable
                     accessibilityRole="button"
+                    accessibilityLabel={CARD_SERVICE_TEXT.play.prevLabel}
                     onPress={movePrev}
-                    style={styles.secondaryButton}
+                    disabled={!canMovePrev}
+                    style={({ pressed }) => [
+                      styles.secondaryButton,
+                      !canMovePrev && styles.disabledButton,
+                      pressed && canMovePrev ? styles.pressedButton : null,
+                    ]}
                   >
-                    <Text style={styles.secondaryButtonText}>이전</Text>
+                    <Text style={styles.secondaryButtonText}>
+                      {CARD_SERVICE_TEXT.play.prevLabel}
+                    </Text>
                   </Pressable>
                   <Pressable
                     accessibilityRole="button"
+                    accessibilityLabel={CARD_SERVICE_TEXT.play.nextLabel}
                     onPress={moveNext}
-                    style={styles.primaryButton}
+                    disabled={!canMoveNext}
+                    style={({ pressed }) => [
+                      styles.primaryButton,
+                      !canMoveNext && styles.disabledButton,
+                      pressed && canMoveNext ? styles.pressedButton : null,
+                    ]}
                   >
-                    <Text style={styles.primaryButtonText}>다음 카드</Text>
+                    <Text style={styles.primaryButtonText}>
+                      {CARD_SERVICE_TEXT.play.nextLabel}
+                    </Text>
                   </Pressable>
                 </View>
               </>
@@ -341,27 +398,31 @@ function ReviewModeCard({
   return (
     <View style={styles.reviewCard}>
       <ScrollView contentContainerStyle={styles.reviewScrollContent}>
-        <Text style={styles.cardLabel}>문제</Text>
+        <Text style={styles.cardLabel}>
+          {CARD_SERVICE_TEXT.play.reviewModeQuestionLabel}
+        </Text>
         <Text style={styles.reviewQuestion}>{frontText}</Text>
-        <Text style={[styles.cardLabel, styles.reviewAnswerLabel]}>정답</Text>
+        <Text style={[styles.cardLabel, styles.reviewAnswerLabel]}>
+          {CARD_SERVICE_TEXT.play.reviewModeAnswerLabel}
+        </Text>
         <Text style={styles.reviewAnswer}>{backText}</Text>
       </ScrollView>
       <View style={styles.reviewButtons}>
         <ReviewButton
           disabled={isSaving}
-          label="어려움 · 1일 후"
+          label={CARD_SERVICE_TEXT.play.reviewHardLabel}
           onPress={() => onReview(CARD_REVIEW_DIFFICULTIES.hard)}
           tone="hard"
         />
         <ReviewButton
           disabled={isSaving}
-          label="좋음 · 3일 후"
+          label={CARD_SERVICE_TEXT.play.reviewGoodLabel}
           onPress={() => onReview(CARD_REVIEW_DIFFICULTIES.good)}
           tone="good"
         />
         <ReviewButton
           disabled={isSaving}
-          label="쉬움 · 4일 후"
+          label={CARD_SERVICE_TEXT.play.reviewEasyLabel}
           onPress={() => onReview(CARD_REVIEW_DIFFICULTIES.easy)}
           tone="easy"
         />
@@ -384,6 +445,7 @@ function ReviewButton({
   return (
     <Pressable
       accessibilityRole="button"
+      accessibilityLabel={label}
       disabled={disabled}
       onPress={onPress}
       style={[
@@ -393,7 +455,7 @@ function ReviewButton({
       ]}
     >
       <Text style={styles.reviewButtonText}>
-        {disabled ? "저장 중..." : label}
+        {disabled ? CARD_SERVICE_TEXT.play.reviewSavingLabel : label}
       </Text>
     </Pressable>
   );
@@ -433,6 +495,9 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 24,
   },
+  pressedButton: {
+    opacity: 0.9,
+  },
   controls: {
     flexDirection: "row",
     gap: 12,
@@ -454,7 +519,7 @@ const styles = StyleSheet.create({
   },
   headerButtonText: {
     color: colors.text,
-    fontSize: 32,
+    fontSize: 20,
     fontWeight: "300",
   },
   modeTab: {
@@ -488,7 +553,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     flex: 1,
     justifyContent: "center",
-    minHeight: 58,
+    minHeight: 56,
   },
   primaryButtonText: {
     color: colors.white,
@@ -499,9 +564,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.black,
     borderRadius: 16,
     color: colors.white,
-    fontSize: 18,
+    fontSize: 16,
     lineHeight: 28,
-    marginTop: 10,
+    marginTop: 8,
     padding: 18,
   },
   reviewAnswerLabel: {
@@ -544,9 +609,9 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: 1,
     color: colors.text,
-    fontSize: 18,
+    fontSize: 16,
     lineHeight: 28,
-    marginTop: 10,
+    marginTop: 8,
     padding: 18,
   },
   reviewScrollContent: {
@@ -563,7 +628,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     flex: 1,
     justifyContent: "center",
-    minHeight: 58,
+    minHeight: 56,
   },
   secondaryButtonText: {
     color: colors.text,
@@ -572,7 +637,7 @@ const styles = StyleSheet.create({
   },
   studyCard: {
     borderColor: colors.borderStrong,
-    borderRadius: 24,
+    borderRadius: 20,
     borderWidth: 1,
     flex: 1,
     padding: 24,
@@ -585,7 +650,7 @@ const styles = StyleSheet.create({
   },
   title: {
     color: colors.text,
-    fontSize: 21,
+    fontSize: 17,
     fontWeight: "900",
     textAlign: "center",
   },

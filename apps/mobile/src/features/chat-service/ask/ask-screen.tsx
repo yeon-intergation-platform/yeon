@@ -28,22 +28,24 @@ const defaultPollOptions = ["", ""];
 export function AskScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { session } = useChatServiceSession();
+  const { session, status } = useChatServiceSession();
   const [question, setQuestion] = useState("");
   const [kind, setKind] = useState<ChatServiceAskKind>("question");
   const [options, setOptions] = useState<string[]>(defaultPollOptions);
+  const isSignedIn = status === "signed_in";
+  const sessionToken = session?.token ?? "";
 
   const askQuery = useQuery({
-    enabled: Boolean(session?.token),
+    enabled: isSignedIn,
     queryFn: async () => {
-      return chatServiceApi.listChatServiceAskPosts(session!.token);
+      return chatServiceApi.listChatServiceAskPosts(sessionToken);
     },
     queryKey: chatServiceQueryKeys.ask,
   });
 
   const createMutation = useMutation({
     mutationFn: async () => {
-      return chatServiceApi.createChatServiceAskPost(session!.token, {
+      return chatServiceApi.createChatServiceAskPost(sessionToken, {
         kind,
         options:
           kind === "poll"
@@ -72,7 +74,7 @@ export function AskScreen() {
       postId: string;
       optionIndex: number;
     }) => {
-      return chatServiceApi.voteChatServiceAskPost(session!.token, postId, {
+      return chatServiceApi.voteChatServiceAskPost(sessionToken, postId, {
         optionIndex,
       });
     },
@@ -85,7 +87,7 @@ export function AskScreen() {
 
   const reportMutation = useMutation({
     mutationFn: async (postId: string) => {
-      return chatServiceApi.createChatServiceReport(session!.token, {
+      return chatServiceApi.createChatServiceReport(sessionToken, {
         reason: "에스크 게시글 신고",
         targetId: postId,
         targetType: "ask_post",
@@ -95,7 +97,7 @@ export function AskScreen() {
 
   const blockMutation = useMutation({
     mutationFn: async (profileId: string) => {
-      return chatServiceApi.blockChatServiceProfile(session!.token, profileId);
+      return chatServiceApi.blockChatServiceProfile(sessionToken, profileId);
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({
@@ -198,8 +200,8 @@ export function AskScreen() {
                 onChangeText={(next) => {
                   setOptions((current) =>
                     current.map((value, currentIndex) =>
-                      currentIndex === index ? next : value,
-                    ),
+                      currentIndex === index ? next : value
+                    )
                   );
                 }}
                 placeholder={`선택지 ${index + 1}`}

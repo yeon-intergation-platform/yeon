@@ -14,12 +14,14 @@ import { colors } from "../../../theme/colors";
 
 export function ChatListScreen() {
   const router = useRouter();
-  const { session } = useChatServiceSession();
+  const { session, status } = useChatServiceSession();
+  const isSignedIn = status === "signed_in";
+  const sessionToken = session?.token ?? "";
 
   const roomsQuery = useQuery({
-    enabled: Boolean(session?.token),
+    enabled: isSignedIn,
     queryFn: async () => {
-      return chatServiceApi.listChatServiceRooms(session!.token);
+      return chatServiceApi.listChatServiceRooms(sessionToken);
     },
     queryKey: chatServiceQueryKeys.rooms,
   });

@@ -32,6 +32,8 @@ import {
   chatServiceGetChatRoomResponseSchema,
   chatServiceGetProfileResponseSchema,
   chatServiceGetMyProfileResponseSchema,
+  chatServiceGuestProfileRequestSchema,
+  chatServiceGuestProfileResponseSchema,
   chatServiceListAskPostsResponseSchema,
   chatServiceListChatRoomsResponseSchema,
   chatServiceListFeedRepliesResponseSchema,
@@ -107,7 +109,7 @@ import {
 export class ApiClientError extends Error {
   constructor(
     public readonly status: number,
-    message: string,
+    message: string
   ) {
     super(message);
     this.name = "ApiClientError";
@@ -155,7 +157,25 @@ async function parseErrorResponse(response: Response) {
   return null;
 }
 
+const CHAT_SERVICE_GUEST_SESSION_PREFIX = "guest:";
+
+function parseGuestProfileId(sessionToken?: string) {
+  if (!sessionToken?.startsWith(CHAT_SERVICE_GUEST_SESSION_PREFIX)) {
+    return null;
+  }
+
+  return sessionToken.slice(CHAT_SERVICE_GUEST_SESSION_PREFIX.length);
+}
+
 function createChatServiceHeaders(sessionToken?: string): HeadersInit {
+  const guestProfileId = parseGuestProfileId(sessionToken);
+
+  if (guestProfileId) {
+    return {
+      "X-Yeon-Chat-Profile-Id": guestProfileId,
+    };
+  }
+
   if (!sessionToken) {
     return {};
   }
@@ -313,7 +333,7 @@ export function createApiClient(options: ApiClientOptions = {}) {
     updateCardDeck(
       deckId: string,
       body: UpdateCardDeckBody,
-      sessionToken?: string,
+      sessionToken?: string
     ) {
       const parsedBody = updateCardDeckBodySchema.parse(body);
 
@@ -336,7 +356,7 @@ export function createApiClient(options: ApiClientOptions = {}) {
     createCardDeckItem(
       deckId: string,
       body: CreateCardDeckItemBody,
-      sessionToken?: string,
+      sessionToken?: string
     ) {
       const parsedBody = createCardDeckItemBodySchema.parse(body);
 
@@ -354,7 +374,7 @@ export function createApiClient(options: ApiClientOptions = {}) {
       deckId: string,
       itemId: string,
       body: UpdateCardDeckItemBody,
-      sessionToken?: string,
+      sessionToken?: string
     ) {
       const parsedBody = updateCardDeckItemBodySchema.parse(body);
 
@@ -385,7 +405,7 @@ export function createApiClient(options: ApiClientOptions = {}) {
     },
     updateCardStudyPreference(
       body: UpdateCardStudyPreferenceBody,
-      sessionToken?: string,
+      sessionToken?: string
     ) {
       const parsedBody = updateCardStudyPreferenceBodySchema.parse(body);
 
@@ -403,7 +423,7 @@ export function createApiClient(options: ApiClientOptions = {}) {
       deckId: string,
       itemId: string,
       body: ReviewCardDeckItemBody,
-      sessionToken?: string,
+      sessionToken?: string
     ) {
       const parsedBody = reviewCardDeckItemBodySchema.parse(body);
 
@@ -419,7 +439,7 @@ export function createApiClient(options: ApiClientOptions = {}) {
     },
     listTypingDecks(
       query: TypingDeckListQuery = { scope: "all", includeDefaults: false },
-      sessionToken?: string,
+      sessionToken?: string
     ) {
       return request({
         path: `/api/v1/typing-decks${toQueryString({
@@ -458,7 +478,7 @@ export function createApiClient(options: ApiClientOptions = {}) {
     updateTypingDeck(
       deckId: string,
       body: UpdateTypingDeckBody,
-      sessionToken?: string,
+      sessionToken?: string
     ) {
       const parsedBody = updateTypingDeckBodySchema.parse(body);
 
@@ -481,7 +501,7 @@ export function createApiClient(options: ApiClientOptions = {}) {
     createTypingDeckPassage(
       deckId: string,
       body: CreateTypingDeckPassageBody,
-      sessionToken?: string,
+      sessionToken?: string
     ) {
       const parsedBody = createTypingDeckPassageBodySchema.parse(body);
 
@@ -498,7 +518,7 @@ export function createApiClient(options: ApiClientOptions = {}) {
     createTypingDeckPassages(
       deckId: string,
       body: CreateTypingDeckPassagesBody,
-      sessionToken?: string,
+      sessionToken?: string
     ) {
       const parsedBody = createTypingDeckPassagesBodySchema.parse(body);
 
@@ -516,7 +536,7 @@ export function createApiClient(options: ApiClientOptions = {}) {
       deckId: string,
       passageId: string,
       body: UpdateTypingDeckPassageBody,
-      sessionToken?: string,
+      sessionToken?: string
     ) {
       const parsedBody = updateTypingDeckPassageBodySchema.parse(body);
 
@@ -533,20 +553,20 @@ export function createApiClient(options: ApiClientOptions = {}) {
     deleteTypingDeckPassage(
       deckId: string,
       passageId: string,
-      sessionToken?: string,
+      sessionToken?: string
     ) {
       return requestNoContent(
         `/api/v1/typing-decks/${deckId}/passages/${passageId}`,
         {
           method: "DELETE",
           headers: createAuthSessionHeaders(sessionToken),
-        },
+        }
       );
     },
     createTypingRaceSeed(
       deckId: string,
       body: CreateTypingRaceSeedBody = {},
-      sessionToken?: string,
+      sessionToken?: string
     ) {
       const parsedBody = createTypingRaceSeedBodySchema.parse(body);
 
@@ -603,7 +623,7 @@ export function createApiClient(options: ApiClientOptions = {}) {
     getLifeOsWeeklyReport(
       periodStart: string,
       periodEnd: string,
-      sessionToken?: string,
+      sessionToken?: string
     ) {
       return request({
         path: LIFE_OS_API_PATHS.weeklyReport(periodStart, periodEnd),
@@ -653,6 +673,24 @@ export function createApiClient(options: ApiClientOptions = {}) {
         },
       });
     },
+    resolveChatServiceGuestProfile(body: {
+      guestNickname: string;
+      guestPassword: string;
+    }) {
+      const parsedBody = chatServiceGuestProfileRequestSchema.parse(body);
+
+      return request({
+        path: "/api/v1/chat-service/auth/guest-profile",
+        schema: chatServiceGuestProfileResponseSchema,
+        init: {
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+          },
+          body: JSON.stringify(parsedBody),
+        },
+      });
+    },
     getChatServiceSession(sessionToken?: string) {
       return request({
         path: "/api/v1/chat-service/auth/session",
@@ -683,7 +721,7 @@ export function createApiClient(options: ApiClientOptions = {}) {
     },
     createChatServiceFeedPost(
       sessionToken: string,
-      body: ChatServiceCreateFeedPostBody,
+      body: ChatServiceCreateFeedPostBody
     ) {
       const parsedBody = chatServiceCreateFeedPostBodySchema.parse(body);
 
@@ -709,7 +747,7 @@ export function createApiClient(options: ApiClientOptions = {}) {
     replyToChatServiceFeedPost(
       sessionToken: string,
       postId: string,
-      body: ChatServiceCreateFeedPostBody,
+      body: ChatServiceCreateFeedPostBody
     ) {
       const parsedBody = chatServiceCreateFeedPostBodySchema.parse(body);
 
@@ -734,7 +772,7 @@ export function createApiClient(options: ApiClientOptions = {}) {
     },
     createChatServiceAskPost(
       sessionToken: string,
-      body: ChatServiceCreateAskPostBody,
+      body: ChatServiceCreateAskPostBody
     ) {
       const parsedBody = chatServiceCreateAskPostBodySchema.parse(body);
 
@@ -751,7 +789,7 @@ export function createApiClient(options: ApiClientOptions = {}) {
     voteChatServiceAskPost(
       sessionToken: string,
       postId: string,
-      body: ChatServiceVoteAskPostBody,
+      body: ChatServiceVoteAskPostBody
     ) {
       const parsedBody = chatServiceVoteAskPostBodySchema.parse(body);
 
@@ -776,7 +814,7 @@ export function createApiClient(options: ApiClientOptions = {}) {
     },
     sendChatServiceFriendRequest(
       sessionToken: string,
-      body: ChatServiceSendFriendRequestBody,
+      body: ChatServiceSendFriendRequestBody
     ) {
       const parsedBody = chatServiceSendFriendRequestBodySchema.parse(body);
 
@@ -824,7 +862,7 @@ export function createApiClient(options: ApiClientOptions = {}) {
     sendChatServiceMessage(
       sessionToken: string,
       roomId: string,
-      body: ChatServiceSendChatMessageBody,
+      body: ChatServiceSendChatMessageBody
     ) {
       const parsedBody = chatServiceSendChatMessageBodySchema.parse(body);
 
@@ -858,7 +896,7 @@ export function createApiClient(options: ApiClientOptions = {}) {
     },
     updateMyChatServiceProfile(
       sessionToken: string,
-      body: ChatServiceUpdateMyProfileBody,
+      body: ChatServiceUpdateMyProfileBody
     ) {
       const parsedBody = chatServiceUpdateMyProfileBodySchema.parse(body);
 
@@ -884,7 +922,7 @@ export function createApiClient(options: ApiClientOptions = {}) {
     },
     createChatServiceReport(
       sessionToken: string,
-      body: ChatServiceCreateReportBody,
+      body: ChatServiceCreateReportBody
     ) {
       const parsedBody = chatServiceCreateReportBodySchema.parse(body);
 

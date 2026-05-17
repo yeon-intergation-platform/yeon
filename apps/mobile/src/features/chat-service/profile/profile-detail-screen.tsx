@@ -18,21 +18,23 @@ export function ProfileDetailScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { profileId: rawProfileId } = useLocalSearchParams();
-  const { session } = useChatServiceSession();
+  const { session, status } = useChatServiceSession();
+  const isSignedIn = status === "signed_in";
+  const sessionToken = session?.token ?? "";
   const profileId = parseOptionalString(rawProfileId) ?? "";
 
   const profileQuery = useQuery({
-    enabled: Boolean(session?.token && profileId),
+    enabled: isSignedIn && Boolean(profileId),
     queryFn: async () => {
-      return chatServiceApi.getChatServiceProfile(session!.token, profileId);
+      return chatServiceApi.getChatServiceProfile(sessionToken, profileId);
     },
     queryKey: chatServiceQueryKeys.publicProfile(profileId),
   });
 
   const overviewQuery = useQuery({
-    enabled: Boolean(session?.token && profileId),
+    enabled: isSignedIn && Boolean(profileId),
     queryFn: async () => {
-      return chatServiceApi.getChatServiceFriendsOverview(session!.token);
+      return chatServiceApi.getChatServiceFriendsOverview(sessionToken);
     },
     queryKey: chatServiceQueryKeys.friends,
   });
@@ -41,7 +43,7 @@ export function ProfileDetailScreen() {
 
   const friendMutation = useMutation({
     mutationFn: async () => {
-      return chatServiceApi.sendChatServiceFriendRequest(session!.token, {
+      return chatServiceApi.sendChatServiceFriendRequest(sessionToken, {
         targetProfileId: profileId,
       });
     },
@@ -54,7 +56,7 @@ export function ProfileDetailScreen() {
 
   const dmMutation = useMutation({
     mutationFn: async () => {
-      return chatServiceApi.openChatServiceRoom(session!.token, {
+      return chatServiceApi.openChatServiceRoom(sessionToken, {
         targetProfileId: profileId,
       });
     },
@@ -76,7 +78,7 @@ export function ProfileDetailScreen() {
 
   const blockMutation = useMutation({
     mutationFn: async () => {
-      return chatServiceApi.blockChatServiceProfile(session!.token, profileId);
+      return chatServiceApi.blockChatServiceProfile(sessionToken, profileId);
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({
@@ -93,10 +95,7 @@ export function ProfileDetailScreen() {
 
   const unblockMutation = useMutation({
     mutationFn: async () => {
-      return chatServiceApi.unblockChatServiceProfile(
-        session!.token,
-        profileId,
-      );
+      return chatServiceApi.unblockChatServiceProfile(sessionToken, profileId);
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({
@@ -113,7 +112,7 @@ export function ProfileDetailScreen() {
 
   const reportMutation = useMutation({
     mutationFn: async () => {
-      return chatServiceApi.createChatServiceReport(session!.token, {
+      return chatServiceApi.createChatServiceReport(sessionToken, {
         reason: reportDraft,
         targetId: profileId,
         targetType: "profile",
@@ -144,7 +143,7 @@ export function ProfileDetailScreen() {
         "대화 오픈",
         response.room.unlockedByPayment
           ? `${CHAT_SERVICE_DM_UNLOCK_AMOUNT}원이 차감되고 대화방이 열렸습니다.`
-          : "이미 열린 대화방으로 이동합니다.",
+          : "이미 열린 대화방으로 이동합니다."
       );
       router.push(`/chat/${response.room.id}`);
     } catch (error) {
@@ -271,7 +270,7 @@ export function ProfileDetailScreen() {
                         },
                         text: "열기",
                       },
-                    ],
+                    ]
                   );
                 }}
                 variant="secondary"

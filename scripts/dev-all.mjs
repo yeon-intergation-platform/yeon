@@ -31,6 +31,7 @@ const portSources = {
   web: ["WEB_PORT", "PORT"],
   backend: ["BACKEND_PORT", "SERVER_PORT", "PORT"],
   mobile: ["MOBILE_PORT", "EXPO_DEV_SERVER_PORT", "PORT"],
+  mobileCard: ["MOBILE_CARD_PORT"],
   race: ["RACE_SERVER_PORT", "PORT"],
 };
 
@@ -356,6 +357,11 @@ async function resolveServices() {
     usedPorts
   );
   usedPorts.add(mobilePort);
+  const cardMobilePort = await findAvailablePort(
+    resolveInitialPort("mobileCard", 8082),
+    usedPorts
+  );
+  usedPorts.add(cardMobilePort);
   const racePort = await findAvailablePort(
     resolveInitialPort("race", 2567),
     usedPorts
@@ -413,7 +419,7 @@ async function resolveServices() {
   });
 
   services.push({
-    name: "mobile",
+    name: "mobile-anonymous",
     color: "\x1b[36m",
     command,
     args: [
@@ -426,10 +432,33 @@ async function resolveServices() {
     ],
     cwd: rootDir,
     env: {
+      EXPO_PUBLIC_MOBILE_VARIANT: "anonymous",
       EXPO_DEV_SERVER_PORT: String(mobilePort),
       PORT: String(mobilePort),
     },
     assignedPort: mobilePort,
+    interactive: false,
+  });
+
+  services.push({
+    name: "mobile-card",
+    color: "\x1b[36m",
+    command,
+    args: [
+      "--filter",
+      "@yeon/mobile",
+      "dev",
+      "--",
+      "--port",
+      String(cardMobilePort),
+    ],
+    cwd: rootDir,
+    env: {
+      EXPO_PUBLIC_MOBILE_VARIANT: "card",
+      EXPO_DEV_SERVER_PORT: String(cardMobilePort),
+      PORT: String(cardMobilePort),
+    },
+    assignedPort: cardMobilePort,
     interactive: false,
   });
 

@@ -1,7 +1,7 @@
 export const cardServiceQueryKeys = {
   all: ["card-service"] as const,
-  deck: (deckId: string, sessionToken?: string | null) =>
-    ["card-service", "deck", deckId, sessionToken] as const,
-  decks: (sessionToken?: string | null) =>
-    ["card-service", "decks", sessionToken] as const,
+  deck: (deckId: string, isSignedIn: boolean) =>
+    ["card-service", "deck", isSignedIn ? "server" : "guest", deckId] as const,
+  decks: (isSignedIn: boolean) =>
+    ["card-service", "decks", isSignedIn ? "server" : "guest"] as const,
 };
