@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { SHARED_FEATURE_CLASS } from "@/features/shared-style-constants";
+import { TYPING_SERVICE_COMMON_CLASS } from "./typing-service-common.const";
 
 import { YeonBadge, YeonButton, YeonSurface } from "@/components/yeon-ui";
 import {
@@ -29,11 +31,17 @@ export function TypingDeckDetailPanel({
     useState<TypingDeckPassageDto | null>(null);
 
   if (detailQuery.isPending) {
-    return <p className="text-[14px] text-[#888]">덱을 불러오는 중...</p>;
+    return (
+      <p className={TYPING_SERVICE_COMMON_CLASS.panelMetaText}>
+        덱을 불러오는 중...
+      </p>
+    );
   }
   if (detailQuery.isError || !detailQuery.data) {
     return (
-      <p className="text-[14px] text-red-600">덱을 불러오지 못했습니다.</p>
+      <p className={TYPING_SERVICE_COMMON_CLASS.textError}>
+        덱을 불러오지 못했습니다.
+      </p>
     );
   }
 
@@ -46,16 +54,18 @@ export function TypingDeckDetailPanel({
       <YeonSurface as="section" variant="panel" className="p-5">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <div className="flex flex-wrap items-center gap-2">
-              <h2 className="text-[22px] font-semibold text-[#111]">
+            <div className={SHARED_FEATURE_CLASS.wrapItemsCenterGap2}>
+              <h2 className={SHARED_FEATURE_CLASS.headingText22Emphasis}>
                 {deck.title}
               </h2>
               <YeonBadge>{typingDeckBadge(deck)}</YeonBadge>
             </div>
-            <p className="mt-2 text-[13px] leading-6 text-[#666]">
+            <p
+              className={`mt-2 leading-6 ${SHARED_FEATURE_CLASS.text13Neutral}`}
+            >
               {deck.description || "설명이 없습니다."}
             </p>
-            <p className="mt-2 text-[12px] text-[#888]">
+            <p className={`mt-2 ${SHARED_FEATURE_CLASS.text12Soft}`}>
               {typingDeckLanguageLabel(deck.languageTag)} · 문단{" "}
               {passages.length}개
             </p>
@@ -71,7 +81,7 @@ export function TypingDeckDetailPanel({
           ) : null}
         </div>
         {deleteDeck.error ? (
-          <p className="mt-3 text-[13px] text-red-600">
+          <p className={TYPING_SERVICE_COMMON_CLASS.textErrorWithSpacing}>
             {deleteDeck.error.message}
           </p>
         ) : null}
@@ -82,7 +92,9 @@ export function TypingDeckDetailPanel({
       <section className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_420px] lg:items-start">
         <div>
           <div className="mb-3 flex items-center justify-between">
-            <h3 className="text-[18px] font-semibold text-[#111]">문단 목록</h3>
+            <h3 className={TYPING_SERVICE_COMMON_CLASS.panelBodyTitle}>
+              문단 목록
+            </h3>
             <YeonBadge>{passages.length}</YeonBadge>
           </div>
           <TypingDeckPassageList

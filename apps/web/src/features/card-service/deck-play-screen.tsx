@@ -1,5 +1,8 @@
 "use client";
 
+import { SHARED_FEATURE_CLASS } from "@/features/shared-style-constants";
+import { CARD_SERVICE_COMMON_CLASS } from "./card-service-common.const";
+
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import type { UseQueryResult } from "@tanstack/react-query";
@@ -58,18 +61,18 @@ export function DeckPlayScreen({ deckId }: DeckPlayScreenProps) {
   const state = toViewState(detailQuery);
 
   return (
-    <div className="min-h-screen bg-white text-[#111]">
+    <div className={SHARED_FEATURE_CLASS.pageSurface}>
       <header className="border-b border-[#e5e5e5] px-6 py-3 md:px-12">
         <div className="mx-auto flex max-w-[1200px] items-center justify-between">
           <Link
             href={`/card-service/decks/${deckId}`}
-            className="text-[14px] text-[#666] no-underline hover:text-[#111]"
+            className={`${SHARED_FEATURE_CLASS.text14Neutral} no-underline hover:text-[#111]`}
           >
             ← 덱으로
           </Link>
           <Link
             href={PLATFORM_HOME_HREF}
-            className="text-[14px] font-semibold text-[#111] no-underline hover:opacity-70"
+            className={`${CARD_SERVICE_COMMON_CLASS.panelTextEmphasis} no-underline hover:opacity-70`}
           >
             YEON 카드 · 실행
           </Link>
@@ -78,11 +81,13 @@ export function DeckPlayScreen({ deckId }: DeckPlayScreenProps) {
 
       <main className="mx-auto flex max-w-[1200px] flex-col items-center px-6 py-12 md:px-12">
         {state.kind === "loading" ? (
-          <p className="text-[14px] text-[#888]">불러오는 중...</p>
+          <p className={SHARED_FEATURE_CLASS.text14Soft}>불러오는 중...</p>
         ) : null}
 
         {state.kind === "error" ? (
-          <p className="text-[14px] text-red-600">{state.message}</p>
+          <p className={CARD_SERVICE_COMMON_CLASS.errorTextMd}>
+            {state.message}
+          </p>
         ) : null}
 
         {state.kind === "empty" ? (
@@ -111,8 +116,8 @@ function EmptyPlayScreen({
 }) {
   return (
     <div className="flex flex-col items-center text-center">
-      <h2 className="text-[18px] font-semibold text-[#111]">{deck.title}</h2>
-      <p className="mt-3 text-[14px] text-[#666]">
+      <h2 className={CARD_SERVICE_COMMON_CLASS.panelBodyTitle}>{deck.title}</h2>
+      <p className={`mt-3 ${CARD_SERVICE_COMMON_CLASS.mutedErrorTextMd}`}>
         아직 카드가 없습니다. 덱에 카드를 먼저 추가해주세요.
       </p>
       <Link
@@ -171,8 +176,8 @@ function ReadyPlayBody({
     <div className="flex w-full flex-col items-center gap-6">
       <div className="flex w-full max-w-[760px] flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
-          <h2 className="text-[16px] font-semibold text-[#111]">{deckTitle}</h2>
-          <p className="mt-1 text-[12px] text-[#888]">
+          <h2 className={SHARED_FEATURE_CLASS.text16Emphasis}>{deckTitle}</h2>
+          <p className={`mt-1 ${SHARED_FEATURE_CLASS.text12Soft}`}>
             {studyMode === CARD_STUDY_MODES.review
               ? "문제와 정답을 함께 확인하고 난이도로 다음 복습일을 저장합니다."
               : "카드를 클릭하거나 Space·Enter를 눌러 뒤집을 수 있어요."}
@@ -197,7 +202,7 @@ function ReadyPlayBody({
           <button
             type="button"
             onClick={play.handleToggleShuffle}
-            className="rounded-xl border border-[#e5e5e5] px-4 py-2 text-[13px] text-[#111] hover:border-[#111]"
+            className={`rounded-xl border border-[#e5e5e5] px-4 py-2 ${SHARED_FEATURE_CLASS.text13Primary} hover:border-[#111]`}
           >
             {play.isShuffled ? "섞기 해제" : "섞기"}
           </button>
@@ -231,7 +236,7 @@ function ReadyPlayBody({
       )}
 
       {reviewMutation.error || studyModeMutation.error ? (
-        <p className="text-[13px] text-red-600">
+        <p className={CARD_SERVICE_COMMON_CLASS.errorTextSm}>
           {(reviewMutation.error ?? studyModeMutation.error)?.message}
         </p>
       ) : null}

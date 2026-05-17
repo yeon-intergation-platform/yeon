@@ -1,5 +1,7 @@
 "use client";
 
+import { SHARED_FEATURE_CLASS } from "@/features/shared-style-constants";
+
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   TYPING_ROOM_LANGUAGE,
@@ -153,10 +155,12 @@ export function TypingRacePlayScreen() {
 
   if (race.connectionState !== "connected" || !race.prompt) {
     return (
-      <div className="min-h-screen bg-white text-[#111]">
+      <div className={SHARED_FEATURE_CLASS.pageSurface}>
         <TypingServiceHeader active="race" title="YEON 레이스" />
         <div className="flex min-h-[calc(100vh-76px)] items-center justify-center">
-          <div className="flex flex-col items-center gap-3 font-mono text-[13px] text-[#888]">
+          <div
+            className={`flex flex-col items-center gap-3 font-mono ${SHARED_FEATURE_CLASS.text13Soft}`}
+          >
             <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#e5e5e5] border-t-[#111]" />
             <span>{t("connectingToServer")}</span>
           </div>

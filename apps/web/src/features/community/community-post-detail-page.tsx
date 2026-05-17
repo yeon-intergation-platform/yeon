@@ -1,5 +1,7 @@
 "use client";
 
+import { SHARED_FEATURE_CLASS } from "@/features/shared-style-constants";
+
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
@@ -99,13 +101,13 @@ export function CommunityPostDetailPage({
   };
 
   return (
-    <div className="min-h-screen bg-white text-[#111]">
+    <div className={SHARED_FEATURE_CLASS.pageSurface}>
       <CommonProductHeader activeService="community" />
 
       <main className="mx-auto max-w-[900px] px-4 py-6 md:px-8">
         <Link
           href="/community"
-          className="text-[13px] font-semibold text-[#666] no-underline hover:text-[#111]"
+          className={`no-underline hover:text-[#111] ${SHARED_FEATURE_CLASS.text13EmphasisMuted}`}
         >
           ← 커뮤니티로 돌아가기
         </Link>
@@ -121,10 +123,12 @@ export function CommunityPostDetailPage({
         {post && parsedPost ? (
           <article className="mt-4 rounded-2xl border border-[#e7e7e7] bg-white p-5">
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <span className="rounded-full border border-[#e5e5e5] bg-[#fafafa] px-3 py-1 text-[12px] font-semibold text-[#555]">
+              <span
+                className={`rounded-full border border-[#e5e5e5] bg-[#fafafa] px-3 py-1 ${SHARED_FEATURE_CLASS.text12EmphasisMuted}`}
+              >
                 {parsedPost.category}
               </span>
-              <p className="text-[12px] text-[#777]">
+              <p className={SHARED_FEATURE_CLASS.text12Subtle}>
                 {post.author.nickname} · {formatKoreanDateTime(post.createdAt)}
               </p>
             </div>
@@ -185,7 +189,7 @@ export function CommunityPostDetailPage({
               <button
                 type="button"
                 onClick={() => setIsEditing(true)}
-                className="text-[12px] font-semibold text-[#555] underline-offset-4 hover:underline"
+                className={`${SHARED_FEATURE_CLASS.text12EmphasisMuted} underline-offset-4 hover:underline`}
               >
                 수정
               </button>
@@ -266,7 +270,9 @@ export function CommunityPostDetailPage({
 
             <div className="mt-4 space-y-2">
               {isRepliesLoading[post.id] ? (
-                <p className="text-[12px] text-[#777]">댓글을 불러오는 중...</p>
+                <p className={SHARED_FEATURE_CLASS.text12Subtle}>
+                  댓글을 불러오는 중...
+                </p>
               ) : null}
               {replies.map((reply) => (
                 <div
@@ -274,7 +280,9 @@ export function CommunityPostDetailPage({
                   className="rounded-xl border border-[#ededed] bg-[#fafafa] p-3"
                 >
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <p className="text-[12px] font-semibold text-[#555]">
+                    <p
+                      className={`${SHARED_FEATURE_CLASS.text12EmphasisMuted}`}
+                    >
                       {reply.author.nickname}
                     </p>
                     <p className="text-[11px] text-[#999]">

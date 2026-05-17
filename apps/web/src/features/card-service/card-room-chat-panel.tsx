@@ -2,6 +2,7 @@
 
 import type { FormEvent } from "react";
 import { Send } from "lucide-react";
+import { SHARED_FEATURE_CLASS } from "@/features/shared-style-constants";
 import type { CardRoomRealtimeState } from "@yeon/race-shared";
 
 type CardRoomChatPanelProps = {
@@ -32,7 +33,7 @@ export function CardRoomChatPanel({
     >
       <div className="border-b border-[#e5e5e5] p-4">
         <h2 className="text-[16px] font-bold text-[#111]">답변 채팅</h2>
-        <p className="mt-1 text-[13px] text-[#777]">
+        <p className={`mt-1 ${SHARED_FEATURE_CLASS.text13Subtle}`}>
           메시지는 race-server를 통해 브로드캐스트되고 Spring 카드방 메시지로
           저장됩니다.
         </p>

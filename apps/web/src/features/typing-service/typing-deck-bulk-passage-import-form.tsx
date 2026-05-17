@@ -12,6 +12,8 @@ import {
   parseBulkTypingPassageImportInput,
   TYPING_PASSAGE_BULK_IMPORT_MAX_ITEMS,
 } from "./utils/bulk-typing-passage-import-parser";
+import { TYPING_SERVICE_COMMON_CLASS } from "./typing-service-common.const";
+import { SHARED_FEATURE_CLASS } from "@/features/shared-style-constants";
 
 const BULK_PASSAGE_TEMPLATE = `[[PASSAGE]]
 [[TITLE]]
@@ -132,7 +134,9 @@ export function TypingDeckBulkPassageImportForm({
 
       {hasPreviewPassages ? (
         <div className="mt-4 rounded-xl border border-[#e5e5e5] p-4">
-          <h4 className="text-[14px] font-semibold text-[#111]">미리보기</h4>
+          <h4 className={TYPING_SERVICE_COMMON_CLASS.panelTextEmphasis}>
+            미리보기
+          </h4>
           <ul className="mt-3 flex flex-col gap-3">
             {previewPassages.map((passage, index) => (
               <li
@@ -149,7 +153,7 @@ export function TypingDeckBulkPassageImportForm({
             ))}
           </ul>
           {hiddenPreviewCount > 0 ? (
-            <p className="mt-3 text-[13px] text-[#888]">
+            <p className={`mt-3 ${SHARED_FEATURE_CLASS.text13Soft}`}>
               외 {hiddenPreviewCount}개 문단은 추가 시 함께 저장됩니다.
             </p>
           ) : null}

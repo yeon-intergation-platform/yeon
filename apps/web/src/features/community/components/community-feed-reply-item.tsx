@@ -2,6 +2,7 @@
 
 import { type ChatServiceFeedPost } from "../chat-service-api";
 import { formatCommunityRelativeTime } from "./community-feed-meta";
+import { SHARED_FEATURE_CLASS } from "@/features/shared-style-constants";
 
 export function FeedReplyItem(props: {
   reply: ChatServiceFeedPost;
@@ -13,7 +14,9 @@ export function FeedReplyItem(props: {
 
   return (
     <div className="rounded-2xl bg-[#f9fafb] px-4 py-3">
-      <div className="flex flex-wrap items-center gap-2 text-[13px] text-[#6b7280]">
+      <div
+        className={`flex flex-wrap items-center gap-2 ${SHARED_FEATURE_CLASS.text13Secondary}`}
+      >
         <span className="font-bold text-[#111827]">
           {reply.author.nickname}
         </span>

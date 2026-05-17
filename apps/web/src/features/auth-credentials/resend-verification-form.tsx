@@ -7,6 +7,7 @@ import {
   credentialResendVerification,
   getCredentialErrorMessage,
 } from "@/lib/credential-client";
+import { AUTH_CREDENTIALS_COMMON_CLASS } from "./auth-credentials-common.const";
 
 type ResendViewState =
   | { kind: "idle" }
@@ -39,7 +40,7 @@ export function ResendVerificationForm({
     } catch (error) {
       const message = getCredentialErrorMessage(
         error,
-        "요청 처리에 실패했습니다. 잠시 후 다시 시도해 주세요.",
+        "요청 처리에 실패했습니다. 잠시 후 다시 시도해 주세요."
       );
       setState({ kind: "error", message });
     }
@@ -55,8 +56,8 @@ export function ResendVerificationForm({
           인증 메일을 다시 보냈습니다.
         </p>
         <p className="m-0">
-          받은 편지함을 확인해 주세요. 스팸함도 함께 살펴보시면 좋아요.
-          메일이 도착하지 않으면 잠시 후 한 번 더 요청할 수 있습니다.
+          받은 편지함을 확인해 주세요. 스팸함도 함께 살펴보시면 좋아요. 메일이
+          도착하지 않으면 잠시 후 한 번 더 요청할 수 있습니다.
         </p>
       </div>
     );
@@ -74,17 +75,14 @@ export function ResendVerificationForm({
           required
           value={email}
           onChange={(event) => setEmail(event.target.value)}
-          className="h-12 rounded-[14px] border border-white/[0.12] bg-[rgba(255,255,255,0.04)] px-4 text-[15px] text-[#f8f7f3] outline-none transition-colors duration-150 placeholder:text-white/40 focus:border-[#e8630a]"
+          className={AUTH_CREDENTIALS_COMMON_CLASS.inputTextBase}
           placeholder="you@yeon.world"
           disabled={isSubmitting}
         />
       </label>
 
       {state.kind === "error" ? (
-        <p
-          role="alert"
-          className="m-0 text-[13px] leading-[1.55] text-[#ffb38a]"
-        >
+        <p role="alert" className={AUTH_CREDENTIALS_COMMON_CLASS.errorText13}>
           {state.message}
         </p>
       ) : null}

@@ -28,6 +28,8 @@ import {
   LOBBY_MAX_PARTICIPANT_OPTIONS,
   LOBBY_ROUND_COUNT_OPTIONS,
 } from "./typing-room-options";
+import { TYPING_SERVICE_COMMON_CLASS } from "./typing-service-common.const";
+import { SHARED_FEATURE_CLASS } from "../shared-style-constants";
 import type { TypingDeckOption } from "./use-typing-settings";
 
 type TypingRoomSettingsPanelProps = {
@@ -41,6 +43,9 @@ type TypingRoomSettingsPanelProps = {
   onDeckChange: (event: ChangeEvent<HTMLSelectElement>) => void;
 };
 
+const SETTINGS_FIELD_CLASS = `${SHARED_FEATURE_CLASS.text12EmphasisNeutral} grid gap-1`;
+const SETTINGS_SELECT_CLASS = "h-9 rounded-lg border border-[#d7d7d7] px-2";
+
 export function TypingRoomSettingsPanel({
   room,
   isHost,
@@ -53,9 +58,9 @@ export function TypingRoomSettingsPanel({
 }: TypingRoomSettingsPanelProps) {
   return (
     <section className="rounded-2xl border border-[#e5e5e5] bg-white p-3 xl:order-1">
-      <h2 className="mb-3 text-[14px] font-bold">방 설정</h2>
+      <h2 className={TYPING_SERVICE_COMMON_CLASS.panelSubheading}>방 설정</h2>
       <div className="grid grid-cols-2 gap-2">
-        <label className="grid gap-1 text-[12px] font-semibold text-[#666]">
+        <label className={SETTINGS_FIELD_CLASS}>
           공개 여부
           {isHost ? (
             <select
@@ -65,7 +70,7 @@ export function TypingRoomSettingsPanel({
                   visibility: event.target.value as TypingRoomVisibility,
                 })
               }
-              className="h-9 rounded-lg border border-[#d7d7d7] px-2"
+              className={SETTINGS_SELECT_CLASS}
             >
               {Object.values(TYPING_ROOM_VISIBILITY).map((value) => (
                 <option key={value} value={value}>
@@ -74,13 +79,13 @@ export function TypingRoomSettingsPanel({
               ))}
             </select>
           ) : (
-            <p className="rounded-lg border border-[#e5e5e5] bg-[#fafafa] px-3 py-2">
+            <p className={SHARED_FEATURE_CLASS.mutedInputPanel}>
               {TYPING_ROOM_VISIBILITY_LABELS[room.visibility]}
             </p>
           )}
         </label>
 
-        <label className="grid gap-1 text-[12px] font-semibold text-[#666]">
+        <label className={SETTINGS_FIELD_CLASS}>
           최대 인원
           {isHost ? (
             <select
@@ -90,7 +95,7 @@ export function TypingRoomSettingsPanel({
                   maxParticipants: Number(event.target.value),
                 })
               }
-              className="h-9 rounded-lg border border-[#d7d7d7] px-2"
+              className={SETTINGS_SELECT_CLASS}
             >
               {LOBBY_MAX_PARTICIPANT_OPTIONS.map((value) => (
                 <option
@@ -103,13 +108,13 @@ export function TypingRoomSettingsPanel({
               ))}
             </select>
           ) : (
-            <p className="rounded-lg border border-[#e5e5e5] bg-[#fafafa] px-3 py-2">
+            <p className={SHARED_FEATURE_CLASS.mutedInputPanel}>
               최대 {room.maxParticipants}명
             </p>
           )}
         </label>
 
-        <label className="grid gap-1 text-[12px] font-semibold text-[#666]">
+        <label className={SETTINGS_FIELD_CLASS}>
           언어
           {isHost ? (
             <select
@@ -119,7 +124,7 @@ export function TypingRoomSettingsPanel({
                   language: event.target.value as TypingRoomLanguage,
                 })
               }
-              className="h-9 rounded-lg border border-[#d7d7d7] px-2"
+              className={SETTINGS_SELECT_CLASS}
             >
               {[
                 TYPING_ROOM_LANGUAGE.KO,
@@ -132,13 +137,13 @@ export function TypingRoomSettingsPanel({
               ))}
             </select>
           ) : (
-            <p className="rounded-lg border border-[#e5e5e5] bg-[#fafafa] px-3 py-2">
+            <p className={SHARED_FEATURE_CLASS.mutedInputPanel}>
               {TYPING_ROOM_LANGUAGE_LABELS[room.language]}
             </p>
           )}
         </label>
 
-        <label className="grid gap-1 text-[12px] font-semibold text-[#666]">
+        <label className={SETTINGS_FIELD_CLASS}>
           문장 길이
           {isHost ? (
             <select
@@ -148,7 +153,7 @@ export function TypingRoomSettingsPanel({
                   textType: event.target.value as TypingRoomTextType,
                 })
               }
-              className="h-9 rounded-lg border border-[#d7d7d7] px-2"
+              className={SETTINGS_SELECT_CLASS}
             >
               {Object.values(TYPING_ROOM_TEXT_TYPE).map((value) => (
                 <option key={value} value={value}>
@@ -157,13 +162,13 @@ export function TypingRoomSettingsPanel({
               ))}
             </select>
           ) : (
-            <p className="rounded-lg border border-[#e5e5e5] bg-[#fafafa] px-3 py-2">
+            <p className={SHARED_FEATURE_CLASS.mutedInputPanel}>
               {TYPING_ROOM_TEXT_TYPE_LABELS[room.textType]}
             </p>
           )}
         </label>
 
-        <label className="grid gap-1 text-[12px] font-semibold text-[#666]">
+        <label className={SETTINGS_FIELD_CLASS}>
           난이도
           {isHost ? (
             <select
@@ -173,7 +178,7 @@ export function TypingRoomSettingsPanel({
                   difficulty: event.target.value as TypingRoomDifficulty,
                 })
               }
-              className="h-9 rounded-lg border border-[#d7d7d7] px-2"
+              className={SETTINGS_SELECT_CLASS}
             >
               {Object.values(TYPING_ROOM_DIFFICULTY).map((value) => (
                 <option key={value} value={value}>
@@ -182,13 +187,13 @@ export function TypingRoomSettingsPanel({
               ))}
             </select>
           ) : (
-            <p className="rounded-lg border border-[#e5e5e5] bg-[#fafafa] px-3 py-2">
+            <p className={SHARED_FEATURE_CLASS.mutedInputPanel}>
               {TYPING_ROOM_DIFFICULTY_LABELS[room.difficulty]}
             </p>
           )}
         </label>
 
-        <label className="grid gap-1 text-[12px] font-semibold text-[#666]">
+        <label className={SETTINGS_FIELD_CLASS}>
           판 수
           {isHost ? (
             <select
@@ -196,7 +201,7 @@ export function TypingRoomSettingsPanel({
               onChange={(event) =>
                 onSendSetting({ roundCount: Number(event.target.value) })
               }
-              className="h-9 rounded-lg border border-[#d7d7d7] px-2"
+              className={SETTINGS_SELECT_CLASS}
             >
               {LOBBY_ROUND_COUNT_OPTIONS.map((value) => (
                 <option key={value} value={value}>
@@ -205,13 +210,13 @@ export function TypingRoomSettingsPanel({
               ))}
             </select>
           ) : (
-            <p className="rounded-lg border border-[#e5e5e5] bg-[#fafafa] px-3 py-2">
+            <p className={SHARED_FEATURE_CLASS.mutedInputPanel}>
               {room.roundCount}판
             </p>
           )}
         </label>
 
-        <label className="grid gap-1 text-[12px] font-semibold text-[#666]">
+        <label className={SETTINGS_FIELD_CLASS}>
           진행 방식
           {isHost ? (
             <select
@@ -221,7 +226,7 @@ export function TypingRoomSettingsPanel({
                   mode: event.target.value as TypingRoomMode,
                 })
               }
-              className="h-9 rounded-lg border border-[#d7d7d7] px-2"
+              className={SETTINGS_SELECT_CLASS}
             >
               {[TYPING_ROOM_MODE.FINISH, TYPING_ROOM_MODE.TIME_LIMIT].map(
                 (value) => (
@@ -232,7 +237,7 @@ export function TypingRoomSettingsPanel({
               )}
             </select>
           ) : (
-            <p className="rounded-lg border border-[#e5e5e5] bg-[#fafafa] px-3 py-2">
+            <p className={SHARED_FEATURE_CLASS.mutedInputPanel}>
               {TYPING_ROOM_MODE_LABELS[room.mode]}
             </p>
           )}
@@ -244,13 +249,13 @@ export function TypingRoomSettingsPanel({
           </p>
         )}
 
-        <label className="col-span-2 grid gap-1 text-[12px] font-semibold text-[#666]">
+        <label className={`col-span-2 ${SETTINGS_FIELD_CLASS}`}>
           덱
           {isHost ? (
             <select
               value={room.selectedDeckId ?? selectedDeckId}
               onChange={onDeckChange}
-              className="h-9 rounded-lg border border-[#d7d7d7] px-2"
+              className={SETTINGS_SELECT_CLASS}
             >
               {deckOptions.map((deck) => (
                 <option key={deck.id} value={deck.id}>
@@ -259,7 +264,7 @@ export function TypingRoomSettingsPanel({
               ))}
             </select>
           ) : (
-            <p className="rounded-lg border border-[#e5e5e5] bg-[#fafafa] px-3 py-2">
+            <p className={SHARED_FEATURE_CLASS.mutedInputPanel}>
               {roomDeckTitle}
             </p>
           )}

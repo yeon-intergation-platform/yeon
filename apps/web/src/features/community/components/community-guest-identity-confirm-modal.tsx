@@ -1,5 +1,7 @@
 "use client";
 
+import { SHARED_FEATURE_CLASS } from "@/features/shared-style-constants";
+
 import { useEffect, useState } from "react";
 
 export const COMMUNITY_GUEST_IDENTITY_CONFIRM_DISMISSED_KEY =
@@ -92,13 +94,15 @@ export function CommunityGuestIdentityConfirmModal(
         >
           작성자 확인
         </h2>
-        <p className="mt-2 text-[13px] leading-[1.7] text-[#666]">
+        <p
+          className={`${SHARED_FEATURE_CLASS.text13Neutral} mt-2 leading-[1.7]`}
+        >
           {actionLabel}하려면 커뮤니티에서 사용할 닉네임과 비밀번호를 입력해
           주세요. 기존 글/댓글 수정·삭제 때는 작성 시 사용한 값과 같아야 합니다.
         </p>
 
         <div className="mt-4 grid gap-3">
-          <label className="text-[12px] font-semibold text-[#555]">
+          <label className={SHARED_FEATURE_CLASS.text12EmphasisMuted}>
             닉네임
             <input
               value={nicknameDraft}
@@ -108,7 +112,7 @@ export function CommunityGuestIdentityConfirmModal(
               className="mt-1 h-10 w-full rounded-xl border border-[#ddd] px-3 text-[13px] font-normal text-[#111] outline-none focus:border-[#111]"
             />
           </label>
-          <label className="text-[12px] font-semibold text-[#555]">
+          <label className={SHARED_FEATURE_CLASS.text12EmphasisMuted}>
             비밀번호
             <input
               value={passwordDraft}
@@ -121,7 +125,9 @@ export function CommunityGuestIdentityConfirmModal(
           </label>
         </div>
 
-        <label className="mt-4 flex items-center gap-2 text-[12px] font-semibold text-[#555]">
+        <label
+          className={`mt-4 flex items-center gap-2 ${SHARED_FEATURE_CLASS.text12EmphasisMuted}`}
+        >
           <input
             type="checkbox"
             checked={dismiss}

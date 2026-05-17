@@ -1,5 +1,7 @@
 "use client";
 
+import { SHARED_FEATURE_CLASS } from "@/features/shared-style-constants";
+
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ChangeEvent, MouseEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -629,7 +631,7 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
 
   return (
     <div
-      className="min-h-screen bg-white text-[#111]"
+      className={SHARED_FEATURE_CLASS.pageSurface}
       onClickCapture={onRoomNavigationClickCapture}
     >
       <TypingServiceHeader active="rooms" title="타자방" />

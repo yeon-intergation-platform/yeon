@@ -1,5 +1,6 @@
 "use client";
 
+import { SHARED_FEATURE_CLASS } from "../../shared-style-constants";
 import { MarkdownContent } from "./markdown-content";
 
 export const CARD_EDITOR_HEIGHT_CLASS = {
@@ -35,8 +36,8 @@ export function CardEditorPreview({
 
   return (
     <aside className="flex h-full flex-col rounded-2xl border border-[#e8e8e8] bg-[#fafafa] p-3 md:p-4">
-      <div className="mb-3 flex items-center justify-between gap-3 px-1">
-        <p className="text-[13px] font-semibold text-[#111]">미리보기</p>
+      <div className={`mb-3 ${SHARED_FEATURE_CLASS.alignBetweenGap3} px-1`}>
+        <p className={SHARED_FEATURE_CLASS.text13Emphasis}>미리보기</p>
         <p className="truncate text-[12px] font-medium text-[#888]">{label}</p>
       </div>
       <div

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { CARD_ROOM_ROLE } from "@yeon/api-contract/card-rooms";
 import type { CardRoomRole, CardRoomRealtimeState } from "@yeon/race-shared";
+import { SHARED_FEATURE_CLASS } from "@/features/shared-style-constants";
 
 import {
   CARD_ROOM_ROLE_LABELS,
@@ -33,8 +34,10 @@ export function CardRoomHeader({
     <header className="rounded-3xl border border-[#e5e5e5] bg-white p-4 md:p-5">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-full border border-[#e5e5e5] bg-[#fafafa] px-3 py-1 text-[12px] font-bold text-[#666]">
+          <div className={SHARED_FEATURE_CLASS.wrapItemsCenterGap2}>
+            <span
+              className={`rounded-full border border-[#e5e5e5] bg-[#fafafa] px-3 py-1 ${SHARED_FEATURE_CLASS.text12BoldNeutral}`}
+            >
               #{roomId}
             </span>
             <span className="rounded-full border border-[#d9ead3] bg-[#eef8ea] px-3 py-1 text-[12px] font-bold text-[#2f7d32]">
@@ -61,7 +64,7 @@ export function CardRoomHeader({
                   type="button"
                   onClick={() => onRoleChange(role)}
                   data-active={myRole === role}
-                  className="rounded-lg px-3 py-2 text-[12px] font-bold text-[#666] data-[active=true]:bg-[#111] data-[active=true]:text-white"
+                  className={`rounded-lg px-3 py-2 ${SHARED_FEATURE_CLASS.text12BoldNeutral} data-[active=true]:bg-[#111] data-[active=true]:text-white`}
                 >
                   {CARD_ROOM_ROLE_LABELS[role]}
                 </button>

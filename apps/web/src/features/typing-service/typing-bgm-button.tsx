@@ -2,6 +2,7 @@
 
 import { useSyncExternalStore } from "react";
 import { Volume2, VolumeX } from "lucide-react";
+import { SHARED_FEATURE_CLASS } from "@/features/shared-style-constants";
 
 import {
   getTypingBgmServerSnapshot,
@@ -23,7 +24,7 @@ export function TypingBgmButton({
   const label = playing ? "BGM 끄기" : "BGM 켜기";
 
   return (
-    <div className="flex items-center gap-2">
+    <div className={SHARED_FEATURE_CLASS.inlineItemsCenterGap2}>
       <button
         type="button"
         aria-label={label}
@@ -32,7 +33,7 @@ export function TypingBgmButton({
         onClick={() => {
           void toggleTypingBgm();
         }}
-        className="inline-flex items-center gap-2 rounded-full border border-[#e5e5e5] bg-white px-3 py-1.5 text-[12px] font-semibold text-[#555] transition-colors hover:border-[#111] hover:text-[#111]"
+        className={`inline-flex items-center gap-2 rounded-full border border-[#e5e5e5] bg-white px-3 py-1.5 ${SHARED_FEATURE_CLASS.text12EmphasisMuted} transition-colors hover:border-[#111] hover:text-[#111]`}
       >
         <Icon size={14} />
         <span>{playing ? "BGM ON" : "BGM"}</span>

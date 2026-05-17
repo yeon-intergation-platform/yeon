@@ -4,6 +4,7 @@ import type { CardDeckItemDto } from "@yeon/api-contract/card-decks";
 
 import { CardRichMarkdownEditor } from "./card-rich-markdown-editor";
 import { MarkdownContent } from "./markdown-content";
+import { SHARED_FEATURE_CLASS } from "../../shared-style-constants";
 
 type CardRowEditViewProps = {
   item: CardDeckItemDto;
@@ -81,7 +82,7 @@ export function CardRowEditView({
           type="button"
           onClick={onCancelEdit}
           disabled={isSaving}
-          className="rounded-2xl border border-[#e5e5e5] px-4 py-3 text-[13px] font-semibold text-[#111] transition-colors hover:bg-[#fafafa] disabled:opacity-50"
+          className={`rounded-2xl border border-[#e5e5e5] px-4 py-3 transition-colors hover:bg-[#fafafa] disabled:opacity-50 ${SHARED_FEATURE_CLASS.text13Emphasis}`}
         >
           취소
         </button>
@@ -118,7 +119,9 @@ export function CardRowReadView({
   return (
     <>
       <div>
-        <span className="inline-flex rounded-full border border-[#ececec] bg-[#fafafa] px-2.5 py-1 text-[11px] font-semibold text-[#888] md:text-[12px]">
+        <span
+          className={`${SHARED_FEATURE_CLASS.text11EmphasisSubtle} inline-flex rounded-full border border-[#ececec] bg-[#fafafa] px-2.5 py-1 md:text-[12px]`}
+        >
           질문
         </span>
         <div className="mt-3 text-[18px] font-semibold leading-8 text-[#111] md:text-[20px]">
@@ -128,7 +131,7 @@ export function CardRowReadView({
 
       {item.imageUrl ? (
         <div className="mt-4 rounded-2xl border border-[#efefef] bg-[#fafafa] p-3">
-          <p className="mb-2 text-[12px] font-semibold text-[#777]">
+          <p className={`mb-2 ${SHARED_FEATURE_CLASS.text12EmphasisSubtle}`}>
             첨부 이미지
           </p>
           <img
@@ -141,7 +144,9 @@ export function CardRowReadView({
       ) : null}
 
       <div className="mt-5 border-t border-[#f0f0f0] pt-4">
-        <span className="inline-flex rounded-full border border-[#ececec] bg-[#fafafa] px-2.5 py-1 text-[11px] font-semibold text-[#888] md:text-[12px]">
+        <span
+          className={`${SHARED_FEATURE_CLASS.text11EmphasisSubtle} inline-flex rounded-full border border-[#ececec] bg-[#fafafa] px-2.5 py-1 md:text-[12px]`}
+        >
           답변
         </span>
         <div className="mt-3 text-[15px] leading-7 text-[#444] md:text-[16px]">
@@ -149,7 +154,9 @@ export function CardRowReadView({
         </div>
       </div>
 
-      <div className="mt-4 flex items-center justify-between gap-3 text-[12px] text-[#888] md:text-[13px]">
+      <div
+        className={`mt-4 ${SHARED_FEATURE_CLASS.alignBetweenGap3} text-[12px] text-[#888] md:text-[13px]`}
+      >
         <span>카드를 눌러 바로 수정</span>
         {deleteErrorMessage ? (
           <span className="font-medium text-red-600">{deleteErrorMessage}</span>
@@ -164,7 +171,7 @@ export function CardRowReadView({
           <button
             type="button"
             onClick={onDismissDeleteConfirm}
-            className="rounded-xl border border-[#e5e5e5] px-3 py-2 text-[12px] font-semibold text-[#111] hover:bg-[#fafafa]"
+            className={`rounded-xl border border-[#e5e5e5] px-3 py-2 ${SHARED_FEATURE_CLASS.text12Emphasis} hover:bg-[#fafafa]`}
           >
             취소
           </button>

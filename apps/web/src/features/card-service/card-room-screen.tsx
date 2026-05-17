@@ -1,5 +1,7 @@
 "use client";
 
+import { SHARED_FEATURE_CLASS } from "@/features/shared-style-constants";
+
 import { useEffect, useMemo, useState } from "react";
 import {
   CARD_ROOM_ROLE,
@@ -95,7 +97,7 @@ export function CardRoomScreen({ roomId }: CardRoomScreenProps) {
   }
 
   return (
-    <div className="min-h-screen bg-white text-[#111]">
+    <div className={SHARED_FEATURE_CLASS.pageSurface}>
       <CommonProductHeader activeService="card" />
       <main className="px-4 py-5 md:px-8 md:py-6">
         <CardRoomHeader
@@ -121,7 +123,7 @@ export function CardRoomScreen({ roomId }: CardRoomScreenProps) {
                   type="button"
                   onClick={() => setMobileTab(tab)}
                   data-active={mobileTab === tab}
-                  className="flex-1 rounded-lg px-3 py-2 text-[13px] font-bold text-[#666] data-[active=true]:bg-[#111] data-[active=true]:text-white"
+                  className={`flex-1 rounded-lg px-3 py-2 ${SHARED_FEATURE_CLASS.text13MediumSecondary} data-[active=true]:bg-[#111] data-[active=true]:text-white`}
                 >
                   {tab === "card" ? "카드" : "채팅"}
                 </button>

@@ -3,6 +3,8 @@
 import { Send } from "lucide-react";
 import type { TypingRoomSnapshot } from "@yeon/race-shared";
 
+import { TYPING_SERVICE_COMMON_CLASS } from "./typing-service-common.const";
+
 type TypingRoomChatPanelProps = {
   messages: TypingRoomSnapshot["messages"];
   chatDraft: string;
@@ -24,7 +26,7 @@ export function TypingRoomChatPanel({
 
   return (
     <section className="rounded-2xl border border-[#e5e5e5] bg-white p-3 xl:order-3">
-      <h2 className="mb-3 text-[14px] font-bold">채팅</h2>
+      <h2 className={TYPING_SERVICE_COMMON_CLASS.panelSubheading}>채팅</h2>
       <div className="h-[260px] overflow-y-auto rounded-xl border border-[#e5e5e5] bg-[#fafafa] p-3 md:h-[320px] xl:h-[300px]">
         {!hasMessages && (
           <p className="text-[12px] leading-5 text-[#aaa]">

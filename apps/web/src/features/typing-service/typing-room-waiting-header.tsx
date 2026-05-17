@@ -2,6 +2,7 @@
 
 import { ArrowLeft, Play } from "lucide-react";
 import type { TypingRoomSnapshot } from "@yeon/race-shared";
+import { SHARED_FEATURE_CLASS } from "@/features/shared-style-constants";
 
 import { TYPING_ROOM_VISIBILITY_LABELS } from "./typing-room-labels";
 
@@ -48,7 +49,7 @@ export function TypingRoomWaitingHeader({
         type="button"
         onClick={onLeaveRoom}
         disabled={isLeavingRoom}
-        className="inline-flex w-fit items-center gap-2 text-[13px] font-semibold text-[#666] no-underline transition-colors hover:text-[#111]"
+        className={`inline-flex w-fit items-center gap-2 ${SHARED_FEATURE_CLASS.text13EmphasisMuted} no-underline transition-colors hover:text-[#111]`}
       >
         <ArrowLeft size={15} />
         {isLeavingRoom ? "나가는 중..." : "타자방 나가기"}
@@ -57,7 +58,7 @@ export function TypingRoomWaitingHeader({
       <header className="rounded-2xl border border-[#e5e5e5] bg-white p-3 md:p-4">
         <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(280px,420px)]">
           <div>
-            <p className="text-[12px] font-semibold text-[#666]">
+            <p className={SHARED_FEATURE_CLASS.text12EmphasisNeutral}>
               {waitingStateLabel} ·{" "}
               {TYPING_ROOM_VISIBILITY_LABELS[room.visibility]} ·{" "}
               {room.currentParticipants}/{room.maxParticipants}
@@ -68,7 +69,7 @@ export function TypingRoomWaitingHeader({
             <p className="mt-1 text-[12px] text-[#666]">{room.roomCode}</p>
           </div>
           <div className="flex h-full flex-col items-start justify-end gap-3 lg:items-end lg:text-right">
-            <p className="text-[12px] font-semibold text-[#666]">
+            <p className={SHARED_FEATURE_CLASS.text12EmphasisNeutral}>
               참여자 {room.currentParticipants} / {room.maxParticipants}
             </p>
             <p className="max-w-[420px] text-[12px] leading-5 text-[#666]">
@@ -85,7 +86,7 @@ export function TypingRoomWaitingHeader({
               <button
                 type="button"
                 onClick={onCopyInvite}
-                className="rounded-xl border border-[#e5e5e5] px-3 py-2 text-[12px] font-semibold text-[#111] transition-colors hover:border-[#111] hover:bg-[#fafafa]"
+                className={`rounded-xl border border-[#e5e5e5] px-3 py-2 ${SHARED_FEATURE_CLASS.text12Emphasis} transition-colors hover:border-[#111] hover:bg-[#fafafa]`}
               >
                 {copied ? "초대 링크 복사됨" : "초대"}
               </button>
@@ -94,7 +95,7 @@ export function TypingRoomWaitingHeader({
                   type="button"
                   onClick={onStart}
                   disabled={!room.canStart}
-                  className="inline-flex items-center gap-2 rounded-xl bg-[#111] px-4 py-2 text-[13px] font-semibold text-white transition-colors hover:bg-[#333] disabled:cursor-not-allowed disabled:bg-[#f1f1f1] disabled:text-[#aaa]"
+                  className={`inline-flex items-center gap-2 ${SHARED_FEATURE_CLASS.primaryActionButtonMd13} disabled:cursor-not-allowed disabled:bg-[#f1f1f1] disabled:text-[#aaa]`}
                 >
                   <Play size={14} />
                   시작하기

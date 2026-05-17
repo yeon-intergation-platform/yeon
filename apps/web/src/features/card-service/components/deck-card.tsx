@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { CardDeckDto } from "@yeon/api-contract/card-decks";
 
 import { analyticsEvents, trackEvent } from "@/lib/analytics";
+import { SHARED_FEATURE_CLASS } from "@/features/shared-style-constants";
 
 interface DeckCardProps {
   deck: CardDeckDto;
@@ -30,11 +31,13 @@ export function DeckCard({ deck }: DeckCardProps) {
     >
       <h3 className="text-[16px] font-semibold">{deck.title}</h3>
       {deck.description ? (
-        <p className="mt-2 line-clamp-2 text-[13px] text-[#666]">
+        <p
+          className={`mt-2 line-clamp-2 ${SHARED_FEATURE_CLASS.text13Neutral}`}
+        >
           {deck.description}
         </p>
       ) : null}
-      <p className="mt-4 text-[12px] text-[#888]">
+      <p className={`mt-4 ${SHARED_FEATURE_CLASS.text12Soft}`}>
         카드 {deck.itemCount}장 · 업데이트 {formatDate(deck.updatedAt)}
       </p>
     </Link>

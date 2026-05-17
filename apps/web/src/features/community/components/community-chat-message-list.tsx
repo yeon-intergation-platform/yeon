@@ -7,6 +7,7 @@ import {
   formatCommunityChatMessageTime,
   trimCommunityChatDisplayText,
 } from "./community-chat-format";
+import { SHARED_FEATURE_CLASS } from "@/features/shared-style-constants";
 
 type CommunityChatMessageListProps = {
   refObject: RefObject<HTMLDivElement | null>;
@@ -37,13 +38,17 @@ export function CommunityChatMessageList({
       ].join(" ")}
     >
       {isLoading ? (
-        <p className="text-[12px] text-[#777]">채팅을 불러오는 중...</p>
+        <p className={SHARED_FEATURE_CLASS.text12Subtle}>
+          채팅을 불러오는 중...
+        </p>
       ) : null}
 
       {error ? <p className="text-[12px] text-red-600">{error}</p> : null}
 
       {!isLoading && messages.length === 0 ? (
-        <p className="px-1 py-8 text-center text-[13px] font-semibold text-[#777]">
+        <p
+          className={`px-1 py-8 text-center ${SHARED_FEATURE_CLASS.text13EmphasisSubtle}`}
+        >
           아직 채팅이 없습니다. 첫 메시지를 남겨보세요.
         </p>
       ) : (

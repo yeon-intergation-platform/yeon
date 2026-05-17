@@ -5,6 +5,8 @@ import { useState, type FormEvent } from "react";
 import type { CardDeckDto } from "@yeon/api-contract/card-decks";
 
 import { analyticsEvents, trackEvent } from "@/lib/analytics";
+import { SHARED_FEATURE_CLASS } from "@/features/shared-style-constants";
+import { CARD_SERVICE_COMMON_CLASS } from "../card-service-common.const";
 import { useUpdateDeck } from "../hooks";
 
 interface DeckDetailHeaderProps {
@@ -83,12 +85,14 @@ export function DeckDetailHeader({
         </Link>
 
         <div className="min-w-0 text-center md:hidden">
-          <h1 className="truncate text-[28px] font-semibold leading-tight text-[#111]">
+          <h1
+            className={`${SHARED_FEATURE_CLASS.text28Emphasis} truncate leading-tight`}
+          >
             <button
               type="button"
               onClick={startEditing}
               aria-label="덱 제목을 눌러 편집"
-              className="w-full max-w-full truncate rounded-lg px-1 text-[28px] font-semibold leading-tight text-[#111] outline-none transition-colors hover:bg-[#fafafa] focus-visible:ring-2 focus-visible:ring-[#111]"
+              className={`${SHARED_FEATURE_CLASS.text28Emphasis} w-full max-w-full truncate rounded-lg px-1 leading-tight outline-none transition-colors hover:bg-[#fafafa] focus-visible:ring-2 focus-visible:ring-[#111]`}
             >
               {deck.title}
             </button>
@@ -165,7 +169,7 @@ export function DeckDetailHeader({
             onChange={(e) => setTitle(e.target.value)}
             maxLength={120}
             autoFocus
-            className="rounded-2xl border border-[#e5e5e5] px-4 py-3 text-[22px] font-semibold text-[#111] outline-none focus:border-[#111]"
+            className={`${SHARED_FEATURE_CLASS.text22Emphasis} rounded-2xl border border-[#e5e5e5] px-4 py-3 focus:border-[#111] outline-none`}
           />
           <textarea
             value={description}
@@ -176,7 +180,7 @@ export function DeckDetailHeader({
             className="resize-none rounded-2xl border border-[#e5e5e5] px-4 py-3 text-[15px] leading-7 text-[#111] outline-none focus:border-[#111]"
           />
           {updateMutation.error ? (
-            <p className="text-[13px] text-red-600">
+            <p className={CARD_SERVICE_COMMON_CLASS.errorTextSm}>
               {updateMutation.error.message}
             </p>
           ) : null}
@@ -184,7 +188,7 @@ export function DeckDetailHeader({
             <button
               type="button"
               onClick={handleCancel}
-              className="rounded-2xl border border-[#e5e5e5] px-4 py-2 text-[14px] font-semibold text-[#111] hover:border-[#111] hover:bg-[#fafafa]"
+              className={`${CARD_SERVICE_COMMON_CLASS.panelTextEmphasis} rounded-2xl border border-[#e5e5e5] px-4 py-2 hover:border-[#111] hover:bg-[#fafafa]`}
             >
               취소
             </button>
@@ -200,12 +204,14 @@ export function DeckDetailHeader({
       ) : (
         <div className="mt-6 hidden md:block">
           <div className="min-w-0">
-            <h1 className="break-keep text-[34px] font-semibold leading-tight text-[#111]">
+            <h1
+              className={`${SHARED_FEATURE_CLASS.text34Emphasis} break-keep leading-tight`}
+            >
               <button
                 type="button"
                 onClick={startEditing}
                 aria-label="덱 제목을 눌러 편집"
-                className="break-keep rounded-lg px-1 text-left text-[34px] font-semibold leading-tight text-[#111] outline-none transition-colors hover:bg-[#fafafa] focus-visible:ring-2 focus-visible:ring-[#111]"
+                className={`${SHARED_FEATURE_CLASS.text34Emphasis} break-keep rounded-lg px-1 text-left leading-tight outline-none transition-colors hover:bg-[#fafafa] focus-visible:ring-2 focus-visible:ring-[#111]`}
               >
                 {deck.title}
               </button>
@@ -217,7 +223,7 @@ export function DeckDetailHeader({
             ) : (
               <p className="mt-3 text-[14px] text-[#aaa]">설명 없음</p>
             )}
-            <p className="mt-4 text-[14px] text-[#888]">
+            <p className={`mt-4 ${SHARED_FEATURE_CLASS.text14Soft}`}>
               카드 {deck.itemCount}장 · 학습 진행률 0% · 생성일 {createdDate}
             </p>
           </div>

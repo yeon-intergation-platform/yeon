@@ -1,6 +1,8 @@
 "use client";
 
 import { YeonButton, YeonSurface } from "@/components/yeon-ui";
+import { SHARED_FEATURE_CLASS } from "@/features/shared-style-constants";
+import { TYPING_SERVICE_COMMON_CLASS } from "./typing-service-common.const";
 import {
   type TypingDeckPassageDto,
   useDeleteTypingDeckPassage,
@@ -26,11 +28,11 @@ export function TypingDeckPassageList({
   if (passages.length === 0) {
     return (
       <YeonSurface variant="empty" className="p-8">
-        <p className="text-[14px] font-semibold text-[#111]">
+        <p className={TYPING_SERVICE_COMMON_CLASS.panelTextEmphasis}>
           아직 문단이 없습니다.
         </p>
         {!readonly ? (
-          <p className="mt-2 text-[13px] text-[#666]">
+          <p className={`mt-2 ${SHARED_FEATURE_CLASS.text13Neutral}`}>
             직접 추가하거나 AI 붙여넣기로 여러 문단을 넣어보세요.
           </p>
         ) : null}
@@ -42,12 +44,14 @@ export function TypingDeckPassageList({
     <ul className="flex flex-col gap-3">
       {passages.map((passage, index) => (
         <YeonSurface as="li" key={passage.id} className="p-4">
-          <div className="flex items-start justify-between gap-3">
+          <div className={SHARED_FEATURE_CLASS.alignBetweenStartGap3}>
             <div>
               <p className="text-[12px] font-semibold text-[#888]">
                 문단 {index + 1}
               </p>
-              <h4 className="mt-1 text-[15px] font-semibold text-[#111]">
+              <h4
+                className={`mt-1 ${TYPING_SERVICE_COMMON_CLASS.panelTextEmphasis15}`}
+              >
                 {passage.title || "제목 없음"}
               </h4>
             </div>
@@ -74,11 +78,13 @@ export function TypingDeckPassageList({
           <p className="mt-3 whitespace-pre-wrap text-[13px] leading-6 text-[#555]">
             {passage.prompt}
           </p>
-          <div className="mt-3 flex flex-wrap gap-2 text-[12px] text-[#777]">
-            <span className="rounded-full border border-[#e5e5e5] px-2 py-0.5">
+          <div
+            className={`mt-3 flex flex-wrap gap-2 ${SHARED_FEATURE_CLASS.text12Subtle}`}
+          >
+            <span className={SHARED_FEATURE_CLASS.tagPill}>
               {passage.textType}
             </span>
-            <span className="rounded-full border border-[#e5e5e5] px-2 py-0.5">
+            <span className={SHARED_FEATURE_CLASS.tagPill}>
               {passage.difficulty}
             </span>
           </div>

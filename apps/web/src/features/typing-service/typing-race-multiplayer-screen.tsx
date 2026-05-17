@@ -1,5 +1,8 @@
 "use client";
 
+import { SHARED_FEATURE_CLASS } from "@/features/shared-style-constants";
+import { TYPING_SERVICE_COMMON_CLASS } from "./typing-service-common.const";
+
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ClipboardEvent } from "react";
 import { RotateCcw } from "lucide-react";
@@ -283,12 +286,12 @@ export function TypingRaceMultiplayerScreen({
     race.roomSnapshot?.status === TYPING_ROOM_STATUS.FINISHED;
 
   return (
-    <div className="min-h-screen bg-white text-[#111]">
+    <div className={SHARED_FEATURE_CLASS.pageSurface}>
       <TypingServiceHeader
         active="race"
         title="YEON 레이스"
         controls={
-          <span className="font-mono text-[12px] text-[#aaa]">
+          <span className={TYPING_SERVICE_COMMON_CLASS.subtleInfoMono}>
             {race.snapshot?.roundLabel === "flow-focus"
               ? t("roundFlowFocus")
               : (race.snapshot?.roundLabel ?? "")}
@@ -296,45 +299,64 @@ export function TypingRaceMultiplayerScreen({
         }
       />
 
-      <div className="px-4 py-4 md:px-10">
-        <div className="overflow-hidden rounded-xl border border-[#e5e5e5]">
-          <div ref={engineContainerRef} className="h-[520px] w-full" />
+      <div className={TYPING_SERVICE_COMMON_CLASS.raceViewportPadding}>
+        <div className={TYPING_SERVICE_COMMON_CLASS.raceEngineFrame}>
+          <div
+            ref={engineContainerRef}
+            className={TYPING_SERVICE_COMMON_CLASS.raceEngineCanvas}
+          />
         </div>
 
-        <div className="mt-3 flex flex-wrap items-center gap-5 rounded-lg border border-[#e5e5e5] bg-[#fafafa] px-5 py-3 font-mono text-[13px]">
-          <span className="text-[#888]">
+        <div className={TYPING_SERVICE_COMMON_CLASS.raceStatRowCompact}>
+          <span className={TYPING_SERVICE_COMMON_CLASS.raceStatLabel}>
             {speedStyle === TYPING_SPEED_STYLE.KO_JASO ? "타수" : "WPM"}
           </span>
-          <span className="text-[18px] font-bold text-[#111]">
+          <span className={TYPING_SERVICE_COMMON_CLASS.titleStatValue}>
             {displaySpeed}
           </span>
-          <span className="text-[#888]">{displayUnit}</span>
+          <span className={TYPING_SERVICE_COMMON_CLASS.raceStatLabel}>
+            {displayUnit}
+          </span>
           {speedStyle !== TYPING_SPEED_STYLE.KO_JASO && (
             <>
-              <span className="text-[#ddd]">·</span>
-              <span className="text-[#888]">CPM</span>
-              <span className="text-[18px] font-bold text-[#111]">{cpm}</span>
+              <span className={TYPING_SERVICE_COMMON_CLASS.raceStatDivider}>
+                ·
+              </span>
+              <span className={TYPING_SERVICE_COMMON_CLASS.raceStatLabel}>
+                CPM
+              </span>
+              <span className={TYPING_SERVICE_COMMON_CLASS.titleStatValue}>
+                {cpm}
+              </span>
             </>
           )}
-          <span className="text-[#ddd]">·</span>
-          <span className="text-[#888]">acc</span>
-          <span className="text-[18px] font-bold text-[#111]">{accuracy}%</span>
-          <span className="text-[#ddd]">·</span>
-          <span className="text-[#888]">progress</span>
+          <span className={TYPING_SERVICE_COMMON_CLASS.raceStatDivider}>·</span>
+          <span className={TYPING_SERVICE_COMMON_CLASS.raceStatLabel}>acc</span>
+          <span className={TYPING_SERVICE_COMMON_CLASS.titleStatValue}>
+            {accuracy}%
+          </span>
+          <span className={TYPING_SERVICE_COMMON_CLASS.raceStatDivider}>·</span>
+          <span className={TYPING_SERVICE_COMMON_CLASS.raceStatLabel}>
+            progress
+          </span>
           <span
             aria-label="내 진행률"
-            className="text-[18px] font-bold text-[#111]"
+            className={TYPING_SERVICE_COMMON_CLASS.titleStatValue}
           >
             {progress}%
           </span>
-          <span className="text-[#ddd]">·</span>
-          <span className="text-[#888]">mistakes</span>
-          <span className="text-[18px] font-bold text-[#111]">
+          <span className={TYPING_SERVICE_COMMON_CLASS.raceStatDivider}>·</span>
+          <span className={TYPING_SERVICE_COMMON_CLASS.raceStatLabel}>
+            mistakes
+          </span>
+          <span className={TYPING_SERVICE_COMMON_CLASS.titleStatValue}>
             {mistakeCount}
           </span>
-          <span className="text-[#ddd]">·</span>
-          <span className="text-[#888]">time</span>
-          <span className="text-[18px] font-bold text-[#111]">
+          <span className={TYPING_SERVICE_COMMON_CLASS.raceStatDivider}>·</span>
+          <span className={TYPING_SERVICE_COMMON_CLASS.raceStatLabel}>
+            time
+          </span>
+          <span className={TYPING_SERVICE_COMMON_CLASS.titleStatValue}>
             {elapsedSeconds.toFixed(1)}s
           </span>
         </div>
@@ -346,7 +368,9 @@ export function TypingRaceMultiplayerScreen({
         ) : null}
 
         <div className="mt-3 grid gap-2 rounded-lg border border-[#e5e5e5] bg-white px-5 py-4">
-          <div className="flex items-center justify-between text-[13px] font-bold text-[#111]">
+          <div
+            className={`flex items-center justify-between ${SHARED_FEATURE_CLASS.text13PrimaryBold}`}
+          >
             <span>실시간 진행률</span>
             {myResult && (
               <span className="text-[#ff6b35]">현재 {myResult.rank}위</span>
@@ -358,7 +382,9 @@ export function TypingRaceMultiplayerScreen({
               aria-label={`${participant.label} 진행률`}
               className="grid gap-1"
             >
-              <div className="flex items-center justify-between text-[12px] text-[#666]">
+              <div
+                className={`flex items-center justify-between ${SHARED_FEATURE_CLASS.text12Neutral}`}
+              >
                 <span>
                   {participant.label}
                   {participant.id === race.mySeat ? " (나)" : ""}
@@ -383,7 +409,7 @@ export function TypingRaceMultiplayerScreen({
 
         {showResults && (
           <div className="mt-3 rounded-lg border border-[#e5e5e5] bg-[#fafafa] px-5 py-4">
-            <div className="flex items-center justify-between gap-3">
+            <div className={SHARED_FEATURE_CLASS.alignBetweenGap3}>
               <div>
                 <p className="text-[12px] font-bold uppercase tracking-[0.16em] text-[#ff6b35]">
                   Result
@@ -394,7 +420,7 @@ export function TypingRaceMultiplayerScreen({
               </div>
               <button
                 type="button"
-                className="inline-flex items-center gap-2 rounded border border-[#e5e5e5] px-5 py-2 text-[13px] font-medium text-[#555] transition-colors hover:border-[#aaa]"
+                className={SHARED_FEATURE_CLASS.smallInlineActionButton}
                 onClick={handleRestart}
               >
                 <RotateCcw size={13} />
@@ -406,7 +432,7 @@ export function TypingRaceMultiplayerScreen({
               {results.map((result) => (
                 <div
                   key={result.userId}
-                  className="rounded-2xl border border-[#e5e5e5] bg-white p-4"
+                  className={SHARED_FEATURE_CLASS.panelCard}
                 >
                   <p className="text-[13px] font-bold text-[#888]">
                     {result.rank}위
@@ -419,7 +445,11 @@ export function TypingRaceMultiplayerScreen({
                       {speedStyle === TYPING_SPEED_STYLE.KO_JASO
                         ? "타수"
                         : "WPM"}{" "}
-                      <b className="text-[16px] text-[#111]">
+                      <b
+                        className={
+                          TYPING_SERVICE_COMMON_CLASS.metricResultValue
+                        }
+                      >
                         {speedStyle === TYPING_SPEED_STYLE.KO_JASO
                           ? result.cpm
                           : result.wpm}
@@ -427,29 +457,53 @@ export function TypingRaceMultiplayerScreen({
                     </span>
                     <span>
                       CPM{" "}
-                      <b className="text-[16px] text-[#111]">{result.cpm}</b>
+                      <b
+                        className={
+                          TYPING_SERVICE_COMMON_CLASS.metricResultValue
+                        }
+                      >
+                        {result.cpm}
+                      </b>
                     </span>
                     <span>
                       정확도{" "}
-                      <b className="text-[16px] text-[#111]">
+                      <b
+                        className={
+                          TYPING_SERVICE_COMMON_CLASS.metricResultValue
+                        }
+                      >
                         {result.accuracy}%
                       </b>
                     </span>
                     <span>
                       오타{" "}
-                      <b className="text-[16px] text-[#111]">
+                      <b
+                        className={
+                          TYPING_SERVICE_COMMON_CLASS.metricResultValue
+                        }
+                      >
                         {result.mistakeCount}
                       </b>
                     </span>
                     <span>
                       시간{" "}
-                      <b className="text-[16px] text-[#111]">
+                      <b
+                        className={
+                          TYPING_SERVICE_COMMON_CLASS.metricResultValue
+                        }
+                      >
                         {(result.elapsedTimeMs / 1000).toFixed(1)}s
                       </b>
                     </span>
                     <span>
                       점수{" "}
-                      <b className="text-[16px] text-[#111]">{result.score}</b>
+                      <b
+                        className={
+                          TYPING_SERVICE_COMMON_CLASS.metricResultValue
+                        }
+                      >
+                        {result.score}
+                      </b>
                     </span>
                   </div>
                 </div>
@@ -464,8 +518,8 @@ export function TypingRaceMultiplayerScreen({
         )}
 
         {!showResults && (
-          <div className="mt-3 grid gap-3">
-            <div className="rounded-lg border border-[#e5e5e5] bg-[#fafafa] px-6 py-5 font-mono text-[19px] leading-[2] tracking-[0.01em]">
+          <div className={TYPING_SERVICE_COMMON_CLASS.sectionBodyGap3}>
+            <div className={TYPING_SERVICE_COMMON_CLASS.racePromptTextPanel}>
               {promptChars.map((char, index) => {
                 const typed = inputChars[index];
                 const isCurrent = index === inputChars.length;
@@ -478,12 +532,12 @@ export function TypingRaceMultiplayerScreen({
                     key={`${index}-${char}`}
                     className={
                       isMismatch
-                        ? "bg-red-100 text-red-500"
+                        ? TYPING_SERVICE_COMMON_CLASS.racePromptMismatchChar
                         : isMatched || isLocked
-                          ? "text-[#111]"
+                          ? TYPING_SERVICE_COMMON_CLASS.racePromptMatchedChar
                           : isCurrent
-                            ? "bg-[#111] text-white"
-                            : "text-[#ccc]"
+                            ? TYPING_SERVICE_COMMON_CLASS.racePromptCurrentChar
+                            : TYPING_SERVICE_COMMON_CLASS.racePromptPendingChar
                     }
                   >
                     {char}
@@ -503,7 +557,7 @@ export function TypingRaceMultiplayerScreen({
               rows={3}
               spellCheck={false}
               aria-label={t("typingInputLabel")}
-              className="w-full resize-none rounded-lg border border-[#e5e5e5] bg-white px-5 py-4 font-mono text-[16px] leading-[1.7] text-[#111] outline-none transition-colors placeholder:text-[#ccc] focus:border-[#111] disabled:cursor-not-allowed disabled:opacity-40"
+              className={TYPING_SERVICE_COMMON_CLASS.raceInputArea}
               placeholder={
                 inCountdown
                   ? `${race.countdownRemaining}${t("startingIn")}`

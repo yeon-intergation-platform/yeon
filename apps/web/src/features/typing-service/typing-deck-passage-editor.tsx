@@ -7,6 +7,7 @@ import {
   YeonField,
   getYeonSurfaceClassName,
 } from "@/components/yeon-ui";
+import { SHARED_FEATURE_CLASS } from "../shared-style-constants";
 import {
   type CreateTypingDeckPassageBody,
   type TypingDeckPassageDto,
@@ -15,6 +16,7 @@ import {
   useCreateTypingDeckPassage,
   useUpdateTypingDeckPassage,
 } from "./use-typing-decks";
+import { TYPING_SERVICE_COMMON_CLASS } from "./typing-service-common.const";
 
 export type TypingDeckPassageEditorProps = {
   deckId: string;
@@ -80,8 +82,8 @@ export function TypingDeckPassageEditor({
       onSubmit={handleSubmit}
       className={getYeonSurfaceClassName({ className: "p-5" })}
     >
-      <div className="flex items-center justify-between gap-3">
-        <h3 className="text-[16px] font-semibold text-[#111]">
+      <div className={SHARED_FEATURE_CLASS.alignBetweenGap3}>
+        <h3 className={SHARED_FEATURE_CLASS.text16Emphasis}>
           {editingPassage ? "문단 수정" : "문단 직접 추가"}
         </h3>
         {editingPassage ? (
@@ -135,7 +137,7 @@ export function TypingDeckPassageEditor({
         </div>
       </div>
       {mutation.error ? (
-        <p className="mt-3 text-[13px] text-red-600">
+        <p className={TYPING_SERVICE_COMMON_CLASS.textErrorWithSpacing}>
           {mutation.error.message}
         </p>
       ) : null}

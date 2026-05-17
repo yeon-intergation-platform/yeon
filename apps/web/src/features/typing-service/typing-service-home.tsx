@@ -6,6 +6,7 @@ import { useTypingProfile } from "./use-typing-profile";
 import { TypingProfileCard } from "./typing-profile-card";
 import { TypingServiceHeader } from "./typing-service-header";
 import { createTranslator, useTypingSettings } from "./use-typing-settings";
+import { TYPING_SERVICE_HOME_CLASS } from "./typing-service-home.const";
 
 type TypingServiceHomeProps = {
   showCharacterAdminLink?: boolean;
@@ -33,21 +34,19 @@ function StartCard({
       as="a"
       href={href}
       variant={isPrimary ? "primary" : "secondary"}
-      className={
+      className={`${TYPING_SERVICE_HOME_CLASS.startCardBase} ${
         isPrimary
-          ? "group relative flex min-h-[96px] items-start overflow-hidden rounded-2xl px-5 py-5 text-left shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-[#111] hover:shadow-[0_16px_34px_rgba(17,17,17,0.18)] focus-visible:-translate-y-0.5 focus-visible:shadow-[0_16px_34px_rgba(17,17,17,0.18)]"
-          : "group relative flex min-h-[96px] items-start overflow-hidden rounded-2xl px-5 py-5 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-[#111] hover:bg-[#fafafa] hover:shadow-[0_14px_30px_rgba(17,17,17,0.08)] focus-visible:-translate-y-0.5 focus-visible:shadow-[0_14px_30px_rgba(17,17,17,0.08)]"
-      }
+          ? TYPING_SERVICE_HOME_CLASS.startCardPrimary
+          : TYPING_SERVICE_HOME_CLASS.startCardSecondary
+      }`}
       onClick={onClick}
     >
-      <span className="block text-[17px] font-extrabold tracking-[-0.03em]">
-        {label}
-      </span>
+      <span className={TYPING_SERVICE_HOME_CLASS.startCardLabel}>{label}</span>
       <span
         className={
           isPrimary
-            ? "pointer-events-none absolute inset-x-5 bottom-4 line-clamp-2 translate-y-1 text-[13px] font-medium leading-[1.45] text-white/72 opacity-0 transition-all duration-200 ease-out group-hover:translate-y-0 group-hover:opacity-100 group-focus-visible:translate-y-0 group-focus-visible:opacity-100"
-            : "pointer-events-none absolute inset-x-5 bottom-4 line-clamp-2 translate-y-1 text-[13px] font-medium leading-[1.45] text-[#666] opacity-0 transition-all duration-200 ease-out group-hover:translate-y-0 group-hover:opacity-100 group-focus-visible:translate-y-0 group-focus-visible:opacity-100"
+            ? TYPING_SERVICE_HOME_CLASS.startCardDescriptionPrimary
+            : TYPING_SERVICE_HOME_CLASS.startCardDescriptionSecondary
         }
       >
         {description}
@@ -72,7 +71,7 @@ export function TypingServiceHome({
   };
 
   return (
-    <div className="min-h-screen bg-white text-[#111]">
+    <div className={TYPING_SERVICE_HOME_CLASS.root}>
       <TypingServiceHeader
         active="home"
         title={t("appName")}
@@ -85,13 +84,13 @@ export function TypingServiceHome({
         }
       />
 
-      <main className="flex flex-col items-center px-5 py-5 md:px-10 md:py-5">
-        <section className="w-full max-w-[960px]">
-          <div className="max-w-[640px]">
-            <h1 className="text-[27px] font-black tracking-[-0.04em] text-[#111] md:text-[34px]">
+      <main className={TYPING_SERVICE_HOME_CLASS.main}>
+        <section className={TYPING_SERVICE_HOME_CLASS.introSection}>
+          <div className={TYPING_SERVICE_HOME_CLASS.introCopy}>
+            <h1 className={TYPING_SERVICE_HOME_CLASS.introTitle}>
               바로 시작하는 타자 연습
             </h1>
-            <p className="mt-3 text-[14px] leading-[1.75] text-[#666] md:text-[15px]">
+            <p className={TYPING_SERVICE_HOME_CLASS.introDescription}>
               원하는 방식으로 연습하거나, 친구들과 함께 타자방에 입장하세요.
             </p>
           </div>
@@ -99,11 +98,13 @@ export function TypingServiceHome({
 
         <YeonSurface
           as="section"
-          className="mt-8 grid w-full max-w-[980px] overflow-hidden rounded-[28px] md:grid-cols-[430px_minmax(0,1fr)]"
+          className={TYPING_SERVICE_HOME_CLASS.boardSection}
         >
-          <div className="border-b border-[#e5e5e5] p-5 md:border-b-0 md:border-r md:p-6">
-            <h2 className="text-[16px] font-bold text-[#111]">내 프로필</h2>
-            <div className="mt-5 flex justify-center">
+          <div className={TYPING_SERVICE_HOME_CLASS.profilePanel}>
+            <h2 className={TYPING_SERVICE_HOME_CLASS.sectionTitle}>
+              내 프로필
+            </h2>
+            <div className={TYPING_SERVICE_HOME_CLASS.sectionBody}>
               <TypingProfileCard
                 profile={profile}
                 onNicknameChange={(nickname) => updateProfile({ nickname })}
@@ -115,10 +116,12 @@ export function TypingServiceHome({
             </div>
           </div>
 
-          <div className="p-5 md:p-6">
-            <h2 className="text-[16px] font-bold text-[#111]">오늘의 시작</h2>
+          <div className={TYPING_SERVICE_HOME_CLASS.actionPanel}>
+            <h2 className={TYPING_SERVICE_HOME_CLASS.sectionTitle}>
+              오늘의 시작
+            </h2>
 
-            <div className="mt-5 grid gap-4">
+            <div className={TYPING_SERVICE_HOME_CLASS.ctaWrap}>
               <StartCard
                 href="/typing-service/rooms"
                 label="타자방 입장"

@@ -26,6 +26,7 @@ import {
   extractCardEditorImageFiles,
   useCardEditorImageUpload,
 } from "./use-card-editor-image-upload";
+import { CARD_SERVICE_COMMON_CLASS } from "../card-service-common.const";
 
 interface CardRichMarkdownEditorProps {
   label: string;
@@ -266,7 +267,9 @@ export function CardRichMarkdownEditor({
     <div className="rounded-2xl bg-white">
       <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
         <div>
-          <label className="text-[14px] font-semibold text-[#111] md:text-[15px]">
+          <label
+            className={`${CARD_SERVICE_COMMON_CLASS.panelTextEmphasis} md:text-[15px]`}
+          >
             {label}
           </label>
           {helperText ? (

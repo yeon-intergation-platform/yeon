@@ -1,5 +1,7 @@
 "use client";
 
+import { SHARED_FEATURE_CLASS } from "@/features/shared-style-constants";
+
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { UseQueryResult } from "@tanstack/react-query";
@@ -12,6 +14,7 @@ import {
   DeleteDeckConfirm,
   ExportDeckPanel,
 } from "./components";
+import { CARD_SERVICE_COMMON_CLASS } from "./card-service-common.const";
 import { useDeckDetail } from "./hooks";
 import type { DeckDetailViewState } from "./types";
 import { useState } from "react";
@@ -90,17 +93,17 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
   };
 
   return (
-    <div className="min-h-screen bg-white text-[#111]">
+    <div className={SHARED_FEATURE_CLASS.pageSurface}>
       <header className="hidden border-b border-[#e5e5e5] px-5 py-3 md:block md:px-12">
         <div className="mx-auto flex max-w-[1280px] items-center justify-between">
           <Link
             href={PLATFORM_HOME_HREF}
-            className="text-[14px] font-semibold text-[#111] no-underline transition-colors hover:opacity-70"
+            className={`${CARD_SERVICE_COMMON_CLASS.panelTextEmphasis} no-underline transition-colors hover:opacity-70`}
           >
             YEON 카드
           </Link>
           {state.kind === "ready" ? (
-            <span className="text-[13px] text-[#888]">
+            <span className={SHARED_FEATURE_CLASS.text13Soft}>
               카드 {state.items.length}장
             </span>
           ) : null}
@@ -109,11 +112,13 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
 
       <main className="mx-auto max-w-[1280px] px-5 py-5 md:px-8 md:py-6 lg:px-10">
         {state.kind === "loading" ? (
-          <p className="text-[14px] text-[#888]">불러오는 중...</p>
+          <p className={SHARED_FEATURE_CLASS.text14Soft}>불러오는 중...</p>
         ) : null}
 
         {state.kind === "error" ? (
-          <p className="text-[14px] text-red-600">{state.message}</p>
+          <p className={CARD_SERVICE_COMMON_CLASS.errorTextMd}>
+            {state.message}
+          </p>
         ) : null}
 
         {state.kind === "ready" ? (
@@ -128,10 +133,12 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
               <section>
                 <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                   <div className="flex items-center gap-2">
-                    <h2 className="text-[24px] font-semibold text-[#111] md:text-[26px]">
+                    <h2
+                      className={CARD_SERVICE_COMMON_CLASS.sectionBodyTitleMd}
+                    >
                       카드 목록
                     </h2>
-                    <span className="rounded-full bg-[#f3f3f3] px-2 py-0.5 text-[12px] font-semibold text-[#666] md:text-[13px]">
+                    <span className={CARD_SERVICE_COMMON_CLASS.sectionBadge}>
                       {state.items.length}
                     </span>
                   </div>
@@ -144,7 +151,9 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
                       onClick={() => {
                         openCardEditor();
                       }}
-                      className="inline-flex items-center justify-center rounded-[18px] bg-[#111] px-4 py-2 text-[14px] font-semibold text-white transition-colors hover:bg-[#333]"
+                      className={
+                        CARD_SERVICE_COMMON_CLASS.actionButtonPrimaryInline
+                      }
                     >
                       + 카드 추가
                     </button>
@@ -153,7 +162,7 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
 
                 {state.isEmpty ? (
                   <div className="rounded-[24px] border border-dashed border-[#e5e5e5] p-8 text-center md:p-10">
-                    <p className="text-[18px] font-semibold text-[#111] md:text-[20px]">
+                    <p className={CARD_SERVICE_COMMON_CLASS.panelNoticeText}>
                       아직 카드가 없습니다.
                     </p>
                     <p className="mt-3 text-[14px] leading-6 text-[#888] md:text-[15px]">
@@ -165,7 +174,9 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
                       onClick={() => {
                         openCardEditor("empty_state");
                       }}
-                      className="mt-5 rounded-[22px] bg-[#111] px-5 py-3 text-[14px] font-semibold text-white transition-colors hover:bg-[#333]"
+                      className={
+                        CARD_SERVICE_COMMON_CLASS.actionButtonPrimaryLarge
+                      }
                     >
                       카드 추가
                     </button>

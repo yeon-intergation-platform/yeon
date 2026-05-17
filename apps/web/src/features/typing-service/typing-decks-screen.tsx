@@ -1,5 +1,8 @@
 "use client";
 
+import { SHARED_FEATURE_CLASS } from "@/features/shared-style-constants";
+import { TYPING_SERVICE_COMMON_CLASS } from "./typing-service-common.const";
+
 import { useState } from "react";
 
 import { YeonButton, YeonSurface } from "@/components/yeon-ui";
@@ -65,12 +68,12 @@ export function TypingDecksScreen({
   }
 
   return (
-    <div className="min-h-screen bg-white text-[#111]">
+    <div className={SHARED_FEATURE_CLASS.pageSurface}>
       <header className="border-b border-[#e5e5e5] px-6 py-3 md:px-12">
         <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-3">
           <a
             href="/typing-service"
-            className="text-[14px] font-semibold text-[#111] no-underline"
+            className={`${TYPING_SERVICE_COMMON_CLASS.panelTextEmphasis} no-underline`}
           >
             YEON 타자연습
           </a>
@@ -90,13 +93,15 @@ export function TypingDecksScreen({
       <main className="mx-auto max-w-[1400px] px-6 py-10 md:px-12">
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
-            <p className="text-[13px] font-semibold text-[#888]">
+            <p className={TYPING_SERVICE_COMMON_CLASS.mutedInfoEmphasis}>
               Typing decks
             </p>
             <h1 className="mt-1 text-[28px] font-semibold tracking-[-0.03em] text-[#111]">
               타자 덱 관리
             </h1>
-            <p className="mt-2 max-w-[720px] text-[14px] leading-6 text-[#666]">
+            <p
+              className={`mt-2 max-w-[720px] ${SHARED_FEATURE_CLASS.text14Neutral} leading-6`}
+            >
               기본 덱을 둘러보고, 내 덱을 만들고, AI가 생성한 문단을 붙여넣어
               타자 연습 문장을 빠르게 저장하세요.
             </p>
@@ -134,10 +139,12 @@ export function TypingDecksScreen({
             </YeonSurface>
 
             {decksQuery.isPending ? (
-              <p className="text-[14px] text-[#888]">목록을 불러오는 중...</p>
+              <p className={SHARED_FEATURE_CLASS.text14Soft}>
+                목록을 불러오는 중...
+              </p>
             ) : null}
             {decksQuery.isError ? (
-              <p className="text-[14px] text-red-600">
+              <p className={TYPING_SERVICE_COMMON_CLASS.errorTextMd}>
                 덱 목록을 불러오지 못했습니다.
               </p>
             ) : null}
@@ -168,10 +175,12 @@ export function TypingDecksScreen({
                 className="flex min-h-[520px] items-center justify-center rounded-3xl bg-[#fafafa] p-10"
               >
                 <div>
-                  <p className="text-[18px] font-semibold text-[#111]">
+                  <p className={TYPING_SERVICE_COMMON_CLASS.panelBodyTitle}>
                     덱을 선택하세요.
                   </p>
-                  <p className="mt-2 max-w-[420px] text-[14px] leading-6 text-[#666]">
+                  <p
+                    className={`mt-2 max-w-[420px] ${SHARED_FEATURE_CLASS.text14Neutral} leading-6`}
+                  >
                     왼쪽 목록에서 기본/내/공개 덱을 선택하면 문단 목록, 직접
                     추가, AI 붙여넣기 패널을 사용할 수 있습니다.
                   </p>

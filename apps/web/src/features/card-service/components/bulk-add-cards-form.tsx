@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { CARD_BULK_IMPORT_MAX_ITEMS } from "@yeon/api-contract/card-decks";
 
+import { SHARED_FEATURE_CLASS } from "@/features/shared-style-constants";
 import { useAddCards } from "../hooks";
 import { parseBulkCardImportInput } from "../utils/bulk-card-import-parser";
 import {
@@ -11,6 +12,7 @@ import {
   shouldShowBulkCardHelp,
 } from "../utils/bulk-card-help-preference";
 import { MarkdownContent } from "./markdown-content";
+import { CARD_SERVICE_COMMON_CLASS } from "../card-service-common.const";
 
 const BULK_CARD_TEMPLATE = `[[Q]]
 문제
@@ -99,7 +101,7 @@ export function BulkAddCardsForm({
           >
             ×
           </button>
-          <p className="text-[15px] font-semibold text-[#111]">
+          <p className={CARD_SERVICE_COMMON_CLASS.panelTextEmphasis15}>
             AI에게 아래 형식으로 카드 묶음을 만들어달라고 요청하세요.
           </p>
           <pre className="mt-3 overflow-x-auto whitespace-pre-wrap rounded-xl bg-white p-3 text-[12px] leading-5 text-[#333] md:p-4">
@@ -113,7 +115,7 @@ export function BulkAddCardsForm({
       ) : null}
 
       <label className="flex flex-col gap-2">
-        <span className="text-[14px] font-semibold text-[#111]">
+        <span className={CARD_SERVICE_COMMON_CLASS.panelTextEmphasis}>
           일괄 카드 입력
         </span>
         <textarea
@@ -150,7 +152,9 @@ export function BulkAddCardsForm({
 
       {previewCards.length > 0 ? (
         <div className="rounded-2xl border border-[#e5e5e5] p-4 md:p-5">
-          <h4 className="text-[15px] font-semibold text-[#111]">미리보기</h4>
+          <h4 className={CARD_SERVICE_COMMON_CLASS.panelTextEmphasis15}>
+            미리보기
+          </h4>
           <ul className="mt-3 flex flex-col gap-3">
             {previewCards.map((card, index) => (
               <li
@@ -169,7 +173,7 @@ export function BulkAddCardsForm({
             ))}
           </ul>
           {hiddenPreviewCount > 0 ? (
-            <p className="mt-3 text-[13px] text-[#888]">
+            <p className={`mt-3 ${SHARED_FEATURE_CLASS.text13Soft}`}>
               외 {hiddenPreviewCount}장은 추가 시 함께 저장됩니다.
             </p>
           ) : null}

@@ -1,5 +1,8 @@
 "use client";
 
+import { SHARED_FEATURE_CLASS } from "@/features/shared-style-constants";
+import { TYPING_SERVICE_COMMON_CLASS } from "./typing-service-common.const";
+
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -34,6 +37,7 @@ import {
 import {
   RoomCharacterSummaryCard,
   RoomCreateDialog,
+  ROOM_LOBBY_CLASS,
 } from "@/features/room-shared";
 import { useTypingRoomLobby } from "./use-typing-room-lobby";
 import { usePlayerIdentity } from "./use-player-identity";
@@ -250,16 +254,14 @@ export function TypingRoomLobbyScreen() {
   }, [isCreating]);
 
   return (
-    <div className="min-h-screen bg-white text-[#111]">
+    <div className={SHARED_FEATURE_CLASS.pageSurface}>
       <TypingServiceHeader active="rooms" title="YEON 타자방" />
 
       <main>
-        <section className="flex min-h-[174px] flex-col gap-6 px-6 py-10 md:flex-row md:items-center md:justify-between md:px-10">
+        <section className={ROOM_LOBBY_CLASS.heroSection}>
           <div>
-            <h1 className="text-[48px] font-black leading-none tracking-[-0.06em] text-[#111] md:text-[56px]">
-              타자방
-            </h1>
-            <p className="mt-5 text-[18px] font-medium leading-7 text-[#666]">
+            <h1 className={ROOM_LOBBY_CLASS.heroTitle}>타자방</h1>
+            <p className={ROOM_LOBBY_CLASS.heroDescription}>
               실시간으로 함께 타자를 치고 실력을 겨루는 공간입니다.
             </p>
           </div>
@@ -272,9 +274,9 @@ export function TypingRoomLobbyScreen() {
           />
         </section>
 
-        <section className="border-t border-[#e5e5e5] px-6 py-6 md:px-10">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div className="flex gap-3 overflow-x-auto pb-1 md:pb-0">
+        <section className={ROOM_LOBBY_CLASS.listTopBorder}>
+          <div className={ROOM_LOBBY_CLASS.filterRow}>
+            <div className={ROOM_LOBBY_CLASS.filterScroller}>
               {FILTERS.map((filter) => (
                 <YeonButton
                   key={filter.value}
@@ -289,12 +291,12 @@ export function TypingRoomLobbyScreen() {
               ))}
             </div>
 
-            <div className="flex flex-col gap-3 md:flex-row md:items-center">
-              <label className="relative block w-full md:w-[336px]">
+            <div className={ROOM_LOBBY_CLASS.inputButtonRow}>
+              <label className={ROOM_LOBBY_CLASS.searchField}>
                 <Search
                   aria-hidden="true"
                   size={22}
-                  className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#666]"
+                  className={ROOM_LOBBY_CLASS.searchIcon}
                 />
                 <YeonField
                   value={searchKeyword}
@@ -316,7 +318,9 @@ export function TypingRoomLobbyScreen() {
 
           <YeonSurface className="mt-7 min-h-[520px]">
             {state.kind === "loading" && (
-              <div className="flex min-h-[520px] items-center justify-center text-[16px] font-medium text-[#666]">
+              <div
+                className={`flex min-h-[520px] items-center justify-center ${SHARED_FEATURE_CLASS.text16Secondary}`}
+              >
                 열린 타자방을 불러오는 중입니다.
               </div>
             )}
@@ -343,7 +347,9 @@ export function TypingRoomLobbyScreen() {
                     ? "검색 결과가 없어요"
                     : "아직 열린 타자방이 없어요"}
                 </h2>
-                <p className="mt-3 text-[16px] font-medium leading-6 text-[#666]">
+                <p
+                  className={`mt-3 leading-6 ${SHARED_FEATURE_CLASS.text16Secondary}`}
+                >
                   {state.kind === "ready"
                     ? "다른 키워드로 검색하거나 첫 방을 만들어 보세요."
                     : "첫 방을 만들어 친구와 함께 시작해보세요."}
@@ -365,7 +371,7 @@ export function TypingRoomLobbyScreen() {
             )}
 
             {state.kind === "ready" && filteredRooms[0] !== undefined && (
-              <div className="grid gap-3 p-4 md:p-5">
+              <div className={ROOM_LOBBY_CLASS.roomListRow}>
                 {filteredRooms.map((room) => {
                   const occupancy = getRoomOccupancy(room);
 
@@ -392,21 +398,29 @@ export function TypingRoomLobbyScreen() {
                       }
                     >
                       <div>
-                        <div className="flex flex-wrap items-center gap-2">
+                        <div
+                          className={SHARED_FEATURE_CLASS.wrapItemsCenterGap2}
+                        >
                           <YeonBadge variant="success" className="text-[11px]">
                             {TYPING_ROOM_STATUS_LABELS[room.status]}
                           </YeonBadge>
                           <YeonBadge className="text-[11px] text-[#111]">
                             {occupancy.seatLabel}
                           </YeonBadge>
-                          <span className="font-mono text-[12px] text-[#aaa]">
+                          <span
+                            className={
+                              TYPING_SERVICE_COMMON_CLASS.subtleInfoMono
+                            }
+                          >
                             #{room.roomCode}
                           </span>
                         </div>
-                        <h2 className="mt-3 text-[18px] font-semibold tracking-[-0.02em] text-[#111]">
+                        <h2 className={ROOM_LOBBY_CLASS.roomMetaRow}>
                           {room.title}
                         </h2>
-                        <p className="mt-2 text-[13px] font-medium text-[#666]">
+                        <p
+                          className={`mt-2 ${SHARED_FEATURE_CLASS.text13MediumSecondary}`}
+                        >
                           {TYPING_ROOM_LANGUAGE_LABELS[room.language]} ·{" "}
                           {TYPING_ROOM_TEXT_TYPE_LABELS[room.textType]} ·{" "}
                           {TYPING_ROOM_DIFFICULTY_LABELS[room.difficulty]} ·{" "}
@@ -426,8 +440,10 @@ export function TypingRoomLobbyScreen() {
                           </span>
                         </div>
                       </div>
-                      <div className="flex items-center justify-between gap-4 md:flex-col md:items-end">
-                        <span className="inline-flex items-center gap-2 rounded-full border border-[#ddd] bg-white px-3 py-1.5 text-[13px] font-bold text-[#111]">
+                      <div className={ROOM_LOBBY_CLASS.roomStatusArea}>
+                        <span
+                          className={`inline-flex items-center gap-2 rounded-full border border-[#ddd] bg-white px-3 py-1.5 ${SHARED_FEATURE_CLASS.text13PrimaryBold}`}
+                        >
                           <Users size={14} /> {room.currentParticipants} /{" "}
                           {room.maxParticipants}
                         </span>

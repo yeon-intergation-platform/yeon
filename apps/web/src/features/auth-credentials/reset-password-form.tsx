@@ -10,6 +10,8 @@ import {
   credentialConfirmReset,
   getCredentialErrorMessage,
 } from "@/lib/credential-client";
+import { SHARED_FEATURE_CLASS } from "@/features/shared-style-constants";
+import { AUTH_CREDENTIALS_COMMON_CLASS } from "./auth-credentials-common.const";
 
 type ResetPasswordViewState =
   | { kind: "idle" }
@@ -73,7 +75,7 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
     } catch (error) {
       const message = getCredentialErrorMessage(
         error,
-        "비밀번호 재설정에 실패했습니다. 잠시 후 다시 시도해 주세요.",
+        "비밀번호 재설정에 실패했습니다. 잠시 후 다시 시도해 주세요."
       );
       setState({ kind: "error", message });
     }
@@ -93,12 +95,13 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
           maxLength={credentialPasswordPolicy.maxLength}
           value={password}
           onChange={(event) => setPassword(event.target.value)}
-          className="h-12 rounded-[14px] border border-white/[0.12] bg-[rgba(255,255,255,0.04)] px-4 text-[15px] text-[#f8f7f3] outline-none transition-colors duration-150 placeholder:text-white/40 focus:border-[#e8630a]"
+          className={AUTH_CREDENTIALS_COMMON_CLASS.inputTextBase}
           placeholder={`${credentialPasswordPolicy.minLength}자 이상, 공백 불가`}
           disabled={isSubmitting}
         />
         <span className="text-[12px] leading-[1.55] text-white/55">
-          {passwordHelper ?? `최소 ${credentialPasswordPolicy.minLength}자 · 최대 ${credentialPasswordPolicy.maxLength}자 · 공백 불가`}
+          {passwordHelper ??
+            `최소 ${credentialPasswordPolicy.minLength}자 · 최대 ${credentialPasswordPolicy.maxLength}자 · 공백 불가`}
         </span>
       </label>
 
@@ -112,7 +115,7 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
           required
           value={confirmPassword}
           onChange={(event) => setConfirmPassword(event.target.value)}
-          className="h-12 rounded-[14px] border border-white/[0.12] bg-[rgba(255,255,255,0.04)] px-4 text-[15px] text-[#f8f7f3] outline-none transition-colors duration-150 placeholder:text-white/40 focus:border-[#e8630a]"
+          className={AUTH_CREDENTIALS_COMMON_CLASS.inputTextBase}
           placeholder="비밀번호를 한 번 더 입력해 주세요."
           disabled={isSubmitting}
         />
@@ -124,10 +127,7 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
       </label>
 
       {state.kind === "error" ? (
-        <p
-          role="alert"
-          className="m-0 text-[13px] leading-[1.55] text-[#ffb38a]"
-        >
+        <p role="alert" className={AUTH_CREDENTIALS_COMMON_CLASS.errorText13}>
           {state.message}
         </p>
       ) : null}
@@ -135,7 +135,7 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
       <button
         type="submit"
         disabled={isSubmitting || passwordHelper !== null || mismatched}
-        className="min-h-[52px] rounded-full bg-[#e8630a] px-[22px] text-[15px] font-bold text-[#fffaf4] transition-transform duration-200 ease-[ease] hover:enabled:-translate-y-px disabled:cursor-not-allowed disabled:opacity-70"
+        className={`min-h-[52px] rounded-full bg-[#e8630a] px-[22px] transition-transform duration-200 ease-[ease] hover:enabled:-translate-y-px disabled:cursor-not-allowed disabled:opacity-70 ${SHARED_FEATURE_CLASS.text15EmphasisOnCream}`}
       >
         {isSubmitting ? "재설정 중..." : "비밀번호 재설정"}
       </button>

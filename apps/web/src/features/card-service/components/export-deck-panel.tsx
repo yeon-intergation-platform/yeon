@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { CardDeckItemDto } from "@yeon/api-contract/card-decks";
 
 import { ResponsiveModal } from "./responsive-modal";
+import { SHARED_FEATURE_CLASS } from "@/features/shared-style-constants";
 
 interface ExportDeckPanelProps {
   items: CardDeckItemDto[];
@@ -47,8 +48,8 @@ export function ExportDeckPanel({ items, onClose }: ExportDeckPanelProps) {
           className="mt-1 w-full resize-none rounded-2xl border border-[#e5e5e5] bg-[#fafafa] px-4 py-3 font-mono text-[13px] leading-6 text-[#333] outline-none select-text md:text-[14px]"
         />
 
-        <div className="mt-4 flex items-center justify-between gap-3">
-          <span className="text-[13px] text-[#888] md:text-[14px]">
+        <div className={SHARED_FEATURE_CLASS.alignBetweenGap3WithMargin4}>
+          <span className={`${SHARED_FEATURE_CLASS.text13Soft} md:text-[14px]`}>
             총 {items.length}장
           </span>
           <button
