@@ -6,6 +6,7 @@ import {
   getCardEditorCodeLanguageFromClassName,
   normalizeCardEditorCodeLanguage,
 } from "./card-editor-codeblock-utils";
+import { CardMarkdownMermaidBlock } from "./card-markdown-mermaid-block";
 
 interface CardMarkdownCodeBlockProps {
   children: ReactNode;
@@ -35,6 +36,10 @@ export function CardMarkdownCodeBlock({
     getCardEditorCodeLanguageFromClassName(className) ??
     normalizeCardEditorCodeLanguage(className);
   const codeText = toCodeText(children).replace(/\n$/, "");
+
+  if (language === "mermaid") {
+    return <CardMarkdownMermaidBlock code={codeText} inverted={inverted} />;
+  }
 
   const handleCopy = async () => {
     try {
