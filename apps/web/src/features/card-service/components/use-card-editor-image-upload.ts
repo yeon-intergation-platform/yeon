@@ -5,55 +5,98 @@ import { useCallback, useState } from "react";
 
 import { uploadCardDeckImage } from "../card-service-fetch";
 import {
+  extractCardEditorClipboardImageSource,
+  extractCardEditorImageFiles,
+} from "./card-editor-clipboard-utils";
+import {
   CARD_EDITOR_IMAGE_DEFAULT_WIDTH,
   CARD_EDITOR_MAX_IMAGE_COUNT,
   buildCardEditorMaxImageCountError,
   countCardEditorImages,
-  isCardEditorImageFile,
+  getCardEditorExtensionFromMime,
+  getCardEditorImageNormalizationErrorMessage,
+  normalizeCardEditorImageFileForUpload,
+  toCardEditorFileFromBlob,
   validateCardEditorImageFile,
 } from "./card-editor-image-utils";
 
-function insertCardEditorImage(editor: Editor, imageUrl: string) {
-  editor
-    .chain()
-    .focus()
-    .insertContent({
-      type: "image",
-      attrs: {
-        src: imageUrl,
-        width: CARD_EDITOR_IMAGE_DEFAULT_WIDTH,
-      },
-    })
-    .run();
+interface ImageInsertRange {
+  from: number;
+  to: number;
 }
 
-function toUniqueImageFiles(files: File[]) {
-  const seen = new Set<string>();
+interface ImageSourceFileReplacement {
+  file: File;
+  source: string;
+}
 
-  return files.filter((file) => {
-    if (!isCardEditorImageFile(file)) {
-      return false;
+function getCurrentImageInsertRange(editor: Editor): ImageInsertRange {
+  return {
+    from: editor.state.selection.from,
+    to: editor.state.selection.to,
+  };
+}
+
+function insertCardEditorImages(
+  editor: Editor,
+  imageUrls: string[],
+  insertRange: ImageInsertRange
+) {
+  if (imageUrls.length === 0) {
+    return;
+  }
+
+  const imageContents = imageUrls.map((src) => ({
+    type: "image",
+    attrs: {
+      src,
+      width: CARD_EDITOR_IMAGE_DEFAULT_WIDTH,
+    },
+  }));
+
+  try {
+    editor.chain().focus().insertContentAt(insertRange, imageContents).run();
+  } catch {
+    editor.chain().focus().insertContent(imageContents).run();
+  }
+}
+
+function replaceCardEditorImageSources(
+  editor: Editor,
+  replacements: Array<{ source: string; uploadedImageUrl: string }>
+) {
+  if (replacements.length === 0) {
+    return;
+  }
+
+  const replacementBySource = new Map(
+    replacements.map(({ source, uploadedImageUrl }) => [
+      source,
+      uploadedImageUrl,
+    ])
+  );
+  const transaction = editor.state.tr;
+
+  editor.state.doc.descendants((node, position) => {
+    if (node.type.name !== "image") {
+      return;
     }
 
-    const key = `${file.name}:${file.size}:${file.type}:${file.lastModified}`;
-    if (seen.has(key)) {
-      return false;
+    const source = typeof node.attrs.src === "string" ? node.attrs.src : "";
+    const uploadedImageUrl = replacementBySource.get(source);
+    if (!uploadedImageUrl) {
+      return;
     }
 
-    seen.add(key);
-    return true;
+    transaction.setNodeMarkup(position, undefined, {
+      ...node.attrs,
+      src: uploadedImageUrl,
+    });
   });
-}
 
-export function extractCardEditorImageFiles(dataTransfer: DataTransfer) {
-  const files = Array.from(dataTransfer.files);
-
-  const itemFiles = Array.from(dataTransfer.items)
-    .filter((item) => item.kind === "file")
-    .map((item) => item.getAsFile())
-    .filter((file): file is File => Boolean(file));
-
-  return toUniqueImageFiles([...files, ...itemFiles]);
+  if (transaction.docChanged) {
+    editor.view.dispatch(transaction);
+  }
 }
 
 async function readClipboardImageFiles() {
@@ -76,26 +119,48 @@ async function readClipboardImageFiles() {
       if (!imageType) continue;
 
       const blob = await clipboardItem.getType(imageType);
-      const extension = imageType.split("/")[1] || "png";
-      files.push(
-        new File([blob], `pasted-image.${extension}`, { type: imageType })
-      );
+      const extension = getCardEditorExtensionFromMime(imageType) || "png";
+      files.push(toCardEditorFileFromBlob(blob, `pasted-image.${extension}`));
     }
 
-    return toUniqueImageFiles(files);
+    return files;
   } catch {
     return [];
   }
 }
 
+async function toDataImageFile(source: string, index = 0) {
+  if (!source.startsWith("data:image/")) {
+    return undefined;
+  }
+
+  const response = await fetch(source);
+  const blob = await response.blob();
+  const extension = getCardEditorExtensionFromMime(blob.type) || "png";
+
+  return toCardEditorFileFromBlob(
+    blob,
+    `pasted-image-${index + 1}.${extension}`
+  );
+}
+
+export { extractCardEditorImageFiles };
+
 export function useCardEditorImageUpload() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isUploading, setUploading] = useState(false);
 
+  const uploadNormalizedFile = useCallback(async (file: File) => {
+    return uploadCardDeckImage(file);
+  }, []);
+
   const handleImageFiles = useCallback(
-    async (editor: Editor, files: File[]) => {
-      const imageFiles = toUniqueImageFiles(files);
-      if (imageFiles.length === 0 || isUploading) {
+    async (
+      editor: Editor,
+      files: File[],
+      insertRange = getCurrentImageInsertRange(editor)
+    ) => {
+      if (files.length === 0 || isUploading) {
         return false;
       }
 
@@ -108,22 +173,45 @@ export function useCardEditorImageUpload() {
         return true;
       }
 
-      const selectedFiles = imageFiles.slice(0, remainingSlots);
+      const selectedFiles = files.slice(0, remainingSlots);
       const errors: string[] = [];
+      const validFiles: File[] = [];
+
+      for (const file of selectedFiles) {
+        let normalizedFile: File;
+        try {
+          normalizedFile = await normalizeCardEditorImageFileForUpload(file);
+        } catch (error) {
+          errors.push(
+            getCardEditorImageNormalizationErrorMessage(file.name, error)
+          );
+          continue;
+        }
+
+        const validationError = validateCardEditorImageFile(normalizedFile);
+        if (validationError) {
+          errors.push(`${normalizedFile.name}: ${validationError}`);
+          continue;
+        }
+
+        validFiles.push(normalizedFile);
+      }
+
+      if (validFiles.length === 0) {
+        setErrorMessage(errors.length > 0 ? errors.join(" ") : null);
+        return true;
+      }
+
       setUploading(true);
       setErrorMessage(null);
 
       try {
-        for (const file of selectedFiles) {
-          const validationError = validateCardEditorImageFile(file);
-          if (validationError) {
-            errors.push(`${file.name}: ${validationError}`);
-            continue;
-          }
+        const uploadedImageUrls: string[] = [];
 
+        for (const file of validFiles) {
           try {
-            const uploaded = await uploadCardDeckImage(file);
-            insertCardEditorImage(editor, uploaded.imageUrl);
+            const uploaded = await uploadNormalizedFile(file);
+            uploadedImageUrls.push(uploaded.imageUrl);
           } catch (error) {
             errors.push(
               error instanceof Error
@@ -133,7 +221,9 @@ export function useCardEditorImageUpload() {
           }
         }
 
-        if (imageFiles.length > selectedFiles.length) {
+        insertCardEditorImages(editor, uploadedImageUrls, insertRange);
+
+        if (files.length > selectedFiles.length) {
           errors.push(buildCardEditorMaxImageCountError());
         }
       } finally {
@@ -143,7 +233,168 @@ export function useCardEditorImageUpload() {
       setErrorMessage(errors.length > 0 ? errors.join(" ") : null);
       return true;
     },
-    [isUploading]
+    [isUploading, uploadNormalizedFile]
+  );
+
+  const handleImageSourceFileReplacements = useCallback(
+    async (editor: Editor, replacements: ImageSourceFileReplacement[]) => {
+      if (replacements.length === 0 || isUploading) {
+        return false;
+      }
+
+      const replacementSources = new Set(
+        replacements.map(({ source }) => source)
+      );
+      const existingImageCount = Array.from(
+        editor.getHTML().matchAll(/<img\b[^>]*src=["']([^"']+)["'][^>]*>/gi)
+      ).filter((match) => !replacementSources.has(match[1] ?? "")).length;
+      const remainingSlots = Math.max(
+        0,
+        CARD_EDITOR_MAX_IMAGE_COUNT - existingImageCount
+      );
+
+      if (remainingSlots === 0) {
+        setErrorMessage(buildCardEditorMaxImageCountError());
+        return true;
+      }
+
+      const selectedReplacements = replacements.slice(0, remainingSlots);
+      const errors: string[] = [];
+      const validReplacements: ImageSourceFileReplacement[] = [];
+
+      for (const replacement of selectedReplacements) {
+        let normalizedFile: File;
+        try {
+          normalizedFile = await normalizeCardEditorImageFileForUpload(
+            replacement.file
+          );
+        } catch (error) {
+          errors.push(
+            getCardEditorImageNormalizationErrorMessage(
+              replacement.file.name,
+              error
+            )
+          );
+          continue;
+        }
+
+        const validationError = validateCardEditorImageFile(normalizedFile);
+        if (validationError) {
+          errors.push(`${normalizedFile.name}: ${validationError}`);
+          continue;
+        }
+
+        validReplacements.push({
+          file: normalizedFile,
+          source: replacement.source,
+        });
+      }
+
+      if (validReplacements.length === 0) {
+        setErrorMessage(errors.length > 0 ? errors.join(" ") : null);
+        return true;
+      }
+
+      setUploading(true);
+      setErrorMessage(null);
+
+      try {
+        const uploadedReplacements: Array<{
+          source: string;
+          uploadedImageUrl: string;
+        }> = [];
+
+        for (const replacement of validReplacements) {
+          try {
+            const uploaded = await uploadNormalizedFile(replacement.file);
+            uploadedReplacements.push({
+              source: replacement.source,
+              uploadedImageUrl: uploaded.imageUrl,
+            });
+          } catch (error) {
+            errors.push(
+              error instanceof Error
+                ? `${replacement.file.name}: ${error.message}`
+                : `${replacement.file.name}: 이미지 업로드에 실패했습니다.`
+            );
+          }
+        }
+
+        replaceCardEditorImageSources(editor, uploadedReplacements);
+
+        if (replacements.length > selectedReplacements.length) {
+          errors.push(buildCardEditorMaxImageCountError());
+        }
+      } finally {
+        setUploading(false);
+      }
+
+      setErrorMessage(errors.length > 0 ? errors.join(" ") : null);
+      return true;
+    },
+    [isUploading, uploadNormalizedFile]
+  );
+
+  const handlePasteImageSource = useCallback(
+    async (editor: Editor, source: string) => {
+      if (isUploading) {
+        return false;
+      }
+
+      const existingImageCount = countCardEditorImages(editor.getHTML());
+      if (existingImageCount >= CARD_EDITOR_MAX_IMAGE_COUNT) {
+        setErrorMessage(buildCardEditorMaxImageCountError());
+        return true;
+      }
+
+      setUploading(true);
+      setErrorMessage(null);
+
+      try {
+        const dataImageFile = await toDataImageFile(source);
+        let file = dataImageFile;
+
+        if (!file) {
+          const response = await fetch(source);
+          if (!response.ok) {
+            throw new Error("이미지를 가져올 수 없습니다.");
+          }
+
+          const blob = await response.blob();
+          const extension = getCardEditorExtensionFromMime(blob.type) || "png";
+          file = toCardEditorFileFromBlob(blob, `pasted-image.${extension}`);
+        }
+
+        const normalizedFile =
+          await normalizeCardEditorImageFileForUpload(file);
+        const validationError = validateCardEditorImageFile(normalizedFile);
+        if (validationError) {
+          setErrorMessage(`${normalizedFile.name}: ${validationError}`);
+          return true;
+        }
+
+        const uploaded = await uploadNormalizedFile(normalizedFile);
+        insertCardEditorImages(
+          editor,
+          [uploaded.imageUrl],
+          getCurrentImageInsertRange(editor)
+        );
+        return true;
+      } catch (error) {
+        if (error instanceof Error && error.message.trim()) {
+          setErrorMessage(error.message.trim());
+          return true;
+        }
+
+        setErrorMessage(
+          "이미지 URL을 가져올 수 없습니다. 이미지를 직접 복사하거나 파일로 업로드해주세요."
+        );
+        return true;
+      } finally {
+        setUploading(false);
+      }
+    },
+    [isUploading, uploadNormalizedFile]
   );
 
   const handleClipboardPaste = useCallback(
@@ -158,9 +409,15 @@ export function useCardEditorImageUpload() {
         return handleImageFiles(editor, clipboardApiFiles);
       }
 
+      const pastedImageSource =
+        extractCardEditorClipboardImageSource(clipboardData);
+      if (pastedImageSource) {
+        return handlePasteImageSource(editor, pastedImageSource);
+      }
+
       return false;
     },
-    [handleImageFiles]
+    [handleImageFiles, handlePasteImageSource]
   );
 
   return {
@@ -169,5 +426,6 @@ export function useCardEditorImageUpload() {
     setErrorMessage,
     handleImageFiles,
     handleClipboardPaste,
+    handleImageSourceFileReplacements,
   };
 }

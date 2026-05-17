@@ -15,7 +15,6 @@ import {
 } from "react";
 
 import { ResizableCardEditorImageExtension } from "./card-editor-extensions";
-import { CARD_EDITOR_IMAGE_ACCEPT } from "./card-editor-image-utils";
 import { CardEditorToolbar } from "./card-editor-toolbar";
 import {
   CARD_EDITOR_HEIGHT_CLASS,
@@ -23,9 +22,18 @@ import {
   CardRichEditorGlobalStyles,
 } from "./card-rich-markdown-editor-view";
 import {
+  extractCardEditorHtmlImageSources,
   extractCardEditorImageFiles,
-  useCardEditorImageUpload,
-} from "./use-card-editor-image-upload";
+  hasCardEditorClipboardImageHint,
+  isCardEditorClipboardImageOnly,
+} from "./card-editor-clipboard-utils";
+import {
+  CARD_EDITOR_IMAGE_ACCEPT,
+  getCardEditorExtensionFromMime,
+  toCardEditorFileFromBlob,
+} from "./card-editor-image-utils";
+import { normalizeCardEditorRichClipboardHtml } from "./card-editor-rich-clipboard-normalizer";
+import { useCardEditorImageUpload } from "./use-card-editor-image-upload";
 import { CARD_SERVICE_COMMON_CLASS } from "../card-service-common.const";
 
 interface CardRichMarkdownEditorProps {
@@ -76,12 +84,117 @@ export function CardRichMarkdownEditor({
     setErrorMessage,
     handleImageFiles,
     handleClipboardPaste,
+    handleImageSourceFileReplacements,
   } = useCardEditorImageUpload();
   const heightClassName = CARD_EDITOR_HEIGHT_CLASS[density];
 
   useEffect(() => {
     onUploadingChange?.(isUploading);
   }, [isUploading, onUploadingChange]);
+
+  const getNewImageSources = (
+    beforeSources: string[],
+    afterSources: string[]
+  ) => {
+    const remainingBeforeSourceCounts = new Map<string, number>();
+    beforeSources.forEach((source) => {
+      remainingBeforeSourceCounts.set(
+        source,
+        (remainingBeforeSourceCounts.get(source) ?? 0) + 1
+      );
+    });
+
+    return afterSources.filter((source) => {
+      const remainingCount = remainingBeforeSourceCounts.get(source) ?? 0;
+      if (remainingCount > 0) {
+        remainingBeforeSourceCounts.set(source, remainingCount - 1);
+        return false;
+      }
+
+      return true;
+    });
+  };
+
+  const toDataImageFile = async (source: string, index: number) => {
+    if (!source.startsWith("data:image/")) {
+      return undefined;
+    }
+
+    const response = await fetch(source);
+    const blob = await response.blob();
+    const extension = getCardEditorExtensionFromMime(blob.type) || "png";
+
+    return toCardEditorFileFromBlob(
+      blob,
+      `pasted-image-${index + 1}.${extension}`
+    );
+  };
+
+  const replaceMixedClipboardImagesAfterPaste = (
+    editorInstance: Editor,
+    clipboardData: DataTransfer,
+    imageSourcesBeforePaste: string[]
+  ) => {
+    const imageFiles = extractCardEditorImageFiles(clipboardData);
+
+    window.setTimeout(() => {
+      const imageSourcesAfterPaste = extractCardEditorHtmlImageSources(
+        editorInstance.getHTML()
+      );
+      const newImageSources = getNewImageSources(
+        imageSourcesBeforePaste,
+        imageSourcesAfterPaste
+      );
+
+      if (newImageSources.length === 0) {
+        if (imageFiles.length > 0) {
+          handleImageFiles(editorInstance, imageFiles).catch(() => {
+            setErrorMessage("이미지 붙여넣기에 실패했습니다.");
+          });
+        }
+
+        return;
+      }
+
+      Promise.all(
+        newImageSources.map(async (source, index) => {
+          const dataImageFile = await toDataImageFile(source, index);
+          if (dataImageFile) {
+            return { file: dataImageFile, source };
+          }
+
+          const imageFile = imageFiles[index];
+          if (!imageFile) {
+            return undefined;
+          }
+
+          return { file: imageFile, source };
+        })
+      )
+        .then((replacements) => {
+          const validReplacements = replacements.filter(
+            (
+              replacement
+            ): replacement is {
+              file: File;
+              source: string;
+            } => replacement !== undefined
+          );
+
+          if (validReplacements.length === 0) {
+            return;
+          }
+
+          return handleImageSourceFileReplacements(
+            editorInstance,
+            validReplacements
+          );
+        })
+        .catch(() => {
+          setErrorMessage("이미지 붙여넣기에 실패했습니다.");
+        });
+    }, 0);
+  };
 
   const editor = useEditor({
     immediatelyRender: false,
@@ -121,22 +234,54 @@ export function CardRichMarkdownEditor({
           return false;
         }
 
-        const imageFiles = extractCardEditorImageFiles(clipboardData);
-        const hasClipboardImage =
-          imageFiles.length > 0 ||
-          Array.from(clipboardData.items).some((item) =>
-            item.type.startsWith("image/")
-          );
+        const clipboardImageOnly =
+          hasCardEditorClipboardImageHint(clipboardData) &&
+          isCardEditorClipboardImageOnly(clipboardData);
 
-        if (!hasClipboardImage) {
-          return false;
+        if (clipboardImageOnly) {
+          event.preventDefault();
+          handleClipboardPaste(editor, clipboardData).catch(() => {
+            setErrorMessage("이미지 붙여넣기에 실패했습니다.");
+          });
+          return true;
         }
 
-        event.preventDefault();
-        handleClipboardPaste(editor, clipboardData).catch(() => {
-          setErrorMessage("이미지 붙여넣기에 실패했습니다.");
-        });
-        return true;
+        const pastedHtml = clipboardData.getData("text/html");
+        const normalizedRichClipboardHtml =
+          normalizeCardEditorRichClipboardHtml(pastedHtml);
+
+        if (normalizedRichClipboardHtml.hasChanges) {
+          event.preventDefault();
+          const imageSourcesBeforePaste = extractCardEditorHtmlImageSources(
+            editor.getHTML()
+          );
+          editor
+            .chain()
+            .focus()
+            .insertContent(normalizedRichClipboardHtml.html)
+            .run();
+          replaceMixedClipboardImagesAfterPaste(
+            editor,
+            clipboardData,
+            imageSourcesBeforePaste
+          );
+
+          if (normalizedRichClipboardHtml.notionAttachmentCount > 0) {
+            setErrorMessage(
+              "Notion 첨부 이미지는 원본 파일이 클립보드에 없어 안내 문구를 넣었습니다. 이미지는 직접 업로드해주세요."
+            );
+          }
+
+          return true;
+        }
+
+        replaceMixedClipboardImagesAfterPaste(
+          editor,
+          clipboardData,
+          extractCardEditorHtmlImageSources(editor.getHTML())
+        );
+
+        return false;
       },
       handleDrop: (_view, event) => {
         const dataTransfer = event.dataTransfer;
