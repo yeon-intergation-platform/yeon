@@ -70,7 +70,7 @@ export function CardServiceHome() {
           </div>
         </section>
 
-        <section className="mt-8 grid w-full max-w-[980px] min-w-0 overflow-hidden rounded-[20px] border border-[#e5e5e5] bg-white sm:rounded-[24px] md:grid-cols-[430px_minmax(0,1fr)] md:rounded-[28px]">
+        <section className="mt-8 grid w-full max-w-[980px] min-w-0 overflow-x-visible rounded-[20px] border border-[#e5e5e5] bg-white sm:rounded-[24px] md:grid-cols-[430px_minmax(0,1fr)] md:rounded-[28px]">
           <div className="min-w-0 border-b border-[#e5e5e5] p-4 md:border-b-0 md:border-r md:p-6">
             <h2 className="text-[16px] font-bold text-[#111]">내 프로필</h2>
             <div className="mt-5 flex justify-center">
