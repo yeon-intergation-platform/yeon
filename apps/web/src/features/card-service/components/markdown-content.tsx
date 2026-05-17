@@ -23,6 +23,7 @@ import {
 
 interface MarkdownContentProps {
   children: string;
+  className?: string;
   inverted?: boolean;
 }
 
@@ -235,6 +236,7 @@ function getMarkdownCodeChild(
 
 export function MarkdownContent({
   children,
+  className,
   inverted = false,
 }: MarkdownContentProps) {
   const htmlContainerRef = useRef<HTMLDivElement | null>(null);
@@ -251,6 +253,8 @@ export function MarkdownContent({
         border: "border-[#e5e5e5]",
         code: "bg-[#f7f7f7]",
       };
+
+  const contentTextClassName = className ?? "text-[15px] leading-7";
 
   const originalIsHtml = looksLikeHtml(children);
   const contentWithEmbeds = replaceStandaloneCardEditorYouTubeLinksWithEmbeds(
@@ -427,7 +431,7 @@ export function MarkdownContent({
       <>
         <div
           ref={htmlContainerRef}
-          className={`${baseTextClass} card-markdown-html text-[15px] leading-7 ${colors.text}`}
+          className={`${baseTextClass} card-markdown-html ${colors.text} ${contentTextClassName}`}
           suppressHydrationWarning
           dangerouslySetInnerHTML={{ __html: safeHtml }}
         />
@@ -437,7 +441,7 @@ export function MarkdownContent({
   }
 
   return (
-    <div className={`${baseTextClass} text-[15px] leading-7 ${colors.text}`}>
+    <div className={`${baseTextClass} ${colors.text} ${contentTextClassName}`}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{
