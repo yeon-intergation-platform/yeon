@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { CARD_SERVICE_COMMON_CLASS } from "./card-service-common.const";
 import { SHARED_FEATURE_CLASS } from "@/features/shared-style-constants";
 
@@ -133,6 +135,13 @@ export function CardServiceDecksScreen() {
 
       <main className="mx-auto max-w-[1400px] px-6 py-12 md:px-12">
         <section className="max-w-[820px]">
+          <Link
+            href="/card-service"
+            className="inline-flex items-center gap-2 rounded-full border border-[#e5e5e5] bg-white px-4 py-2 text-[13px] font-semibold text-[#555] no-underline transition-colors hover:border-[#111] hover:text-[#111]"
+          >
+            <span aria-hidden="true">←</span>
+            카드 홈으로
+          </Link>
           <h1 className="mt-4 text-[28px] font-black tracking-[-0.04em] text-[#111] md:text-[34px]">
             덱을 만들고 바로 복습하세요
           </h1>

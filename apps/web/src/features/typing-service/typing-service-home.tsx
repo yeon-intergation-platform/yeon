@@ -3,7 +3,10 @@
 import { YeonButton, YeonSurface } from "@/components/yeon-ui";
 import { analyticsEvents, trackEvent } from "@/lib/analytics";
 import { useTypingProfile } from "./use-typing-profile";
-import { TypingProfileCard } from "./typing-profile-card";
+import {
+  TypingProfileCard,
+  TypingProfileCardSkeleton,
+} from "./typing-profile-card";
 import { TypingServiceHeader } from "./typing-service-header";
 import { createTranslator, useTypingSettings } from "./use-typing-settings";
 import { TYPING_SERVICE_HOME_CLASS } from "./typing-service-home.const";
@@ -105,14 +108,18 @@ export function TypingServiceHome({
               내 프로필
             </h2>
             <div className={TYPING_SERVICE_HOME_CLASS.sectionBody}>
-              <TypingProfileCard
-                profile={profile}
-                onNicknameChange={(nickname) => updateProfile({ nickname })}
-                onCharacterChange={(characterId) =>
-                  updateProfile({ characterId })
-                }
-                locale={settings.locale}
-              />
+              {loaded ? (
+                <TypingProfileCard
+                  profile={profile}
+                  onNicknameChange={(nickname) => updateProfile({ nickname })}
+                  onCharacterChange={(characterId) =>
+                    updateProfile({ characterId })
+                  }
+                  locale={settings.locale}
+                />
+              ) : (
+                <TypingProfileCardSkeleton />
+              )}
             </div>
           </div>
 
