@@ -68,6 +68,12 @@ type LobbyCreateRoomRequest = TypingRoomCreateMessage & {
   raceSeed?: TypingRaceSeed;
 };
 
+type CreateRoomIdentity = {
+  characterId?: string;
+  playerId: string;
+  playerLabel: string;
+};
+
 const FILTERS: { label: string; value: LobbyFilter }[] = [
   { label: "전체", value: "all" },
   { label: "공개방", value: "public" },
@@ -107,6 +113,8 @@ export function TypingRoomLobbyScreen() {
   const [searchKeyword, setSearchKeyword] = useState("");
   const [createRoomRequest, setCreateRoomRequest] =
     useState<LobbyCreateRoomRequest | null>(null);
+  const [createRoomIdentity, setCreateRoomIdentity] =
+    useState<CreateRoomIdentity | null>(null);
   const [createError, setCreateError] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const hasHandledCreateSuccessRef = useRef(false);
@@ -125,10 +133,10 @@ export function TypingRoomLobbyScreen() {
   );
 
   const createRace = useRaceRoom({
-    enabled: Boolean(createRoomRequest && playerId),
-    playerLabel: profile.nickname,
-    playerId,
-    characterId: profile.characterId,
+    enabled: Boolean(createRoomRequest && createRoomIdentity?.playerId),
+    playerLabel: createRoomIdentity?.playerLabel ?? profile.nickname,
+    playerId: createRoomIdentity?.playerId ?? null,
+    characterId: createRoomIdentity?.characterId,
     locale: settings.locale,
     createRoom: createRoomRequest,
   });
@@ -162,6 +170,7 @@ export function TypingRoomLobbyScreen() {
 
     hasHandledCreateSuccessRef.current = true;
     setIsCreating(false);
+    setIsCreateModalOpen(false);
     trackEvent("room_create_success", {
       source: "typing_room_lobby",
       room_id: createRace.roomId,
@@ -187,6 +196,7 @@ export function TypingRoomLobbyScreen() {
         "타자방을 만들 수 없습니다. 잠시 후 다시 시도해주세요."
     );
     setCreateRoomRequest(null);
+    setCreateRoomIdentity(null);
     setIsCreating(false);
     hasHandledCreateSuccessRef.current = false;
   }, [createRace.connectionState, createRace.roomError, createRoomRequest]);
@@ -205,6 +215,11 @@ export function TypingRoomLobbyScreen() {
     setCreateError(null);
     setIsCreating(true);
     hasHandledCreateSuccessRef.current = false;
+    const createIdentity: CreateRoomIdentity = {
+      characterId: profile.characterId,
+      playerId,
+      playerLabel: profile.nickname,
+    };
     trackEvent("room_create_intent", {
       source: "typing_room_lobby",
       visibility,
@@ -220,6 +235,7 @@ export function TypingRoomLobbyScreen() {
       return;
     }
 
+    setCreateRoomIdentity(createIdentity);
     setCreateRoomRequest({
       title: title.trim() || generatedTitle,
       visibility,

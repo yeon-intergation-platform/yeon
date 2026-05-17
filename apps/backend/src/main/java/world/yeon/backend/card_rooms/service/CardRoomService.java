@@ -89,7 +89,11 @@ public class CardRoomService {
   public CardRoomResponse leaveRoom(String roomId, String participantId) {
     var room = requireRoom(roomId);
     var participant = requireParticipantInRoom(room, participantId);
-    repository.leaveParticipant(participant.internalId(), OffsetDateTime.now(ZoneOffset.UTC));
+    OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
+    repository.leaveParticipant(participant.internalId(), now);
+    if (repository.listParticipants(room.internalId()).isEmpty()) {
+      repository.updateStatus(room.internalId(), "finished", room.currentCardIndex(), now);
+    }
     return new CardRoomResponse(detail(room.publicId()), null);
   }
 
