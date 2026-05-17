@@ -70,8 +70,8 @@ export function CardServiceHome() {
           </div>
         </section>
 
-        <section className="mt-8 grid w-full max-w-[980px] overflow-hidden rounded-[28px] border border-[#e5e5e5] bg-white md:grid-cols-[430px_minmax(0,1fr)]">
-          <div className="border-b border-[#e5e5e5] p-5 md:border-b-0 md:border-r md:p-6">
+        <section className="mt-8 grid w-full max-w-[980px] min-w-0 overflow-hidden rounded-[24px] border border-[#e5e5e5] bg-white md:grid-cols-[430px_minmax(0,1fr)] md:rounded-[28px]">
+          <div className="min-w-0 border-b border-[#e5e5e5] p-4 md:border-b-0 md:border-r md:p-6">
             <h2 className="text-[16px] font-bold text-[#111]">내 프로필</h2>
             <div className="mt-5 flex justify-center">
               <TypingProfileCard
@@ -85,12 +85,12 @@ export function CardServiceHome() {
             </div>
           </div>
 
-          <div className="p-5 md:p-6">
+          <div className="min-w-0 p-4 md:p-6">
             <h2 className="text-[16px] font-bold text-[#111]">오늘의 시작</h2>
             <div className="mt-5 grid gap-4">
               <Link
                 href="/card-service/rooms"
-                className="block rounded-2xl border border-[#111] bg-[#111] px-5 py-5 text-white no-underline transition-colors hover:bg-[#333]"
+                className="block w-full rounded-2xl border border-[#111] bg-[#111] px-5 py-5 text-white no-underline transition-colors hover:bg-[#333]"
                 onClick={() => trackHomeClick("rooms")}
               >
                 <span className="block text-[16px] font-bold">카드방 입장</span>
@@ -103,7 +103,7 @@ export function CardServiceHome() {
                 <button
                   type="button"
                   disabled
-                  className="block cursor-wait rounded-2xl border border-[#e5e5e5] bg-[#f7f7f7] px-5 py-5 text-left text-[#777]"
+                  className="block w-full cursor-wait rounded-2xl border border-[#e5e5e5] bg-[#f7f7f7] px-5 py-5 text-left text-[#777]"
                 >
                   <span className="block text-[16px] font-bold">
                     덱 확인 중
@@ -115,7 +115,7 @@ export function CardServiceHome() {
               ) : shouldShowDeckListAction ? (
                 <Link
                   href="/card-service/decks"
-                  className="block rounded-2xl border border-[#e5e5e5] bg-white px-5 py-5 text-[#111] no-underline transition-colors hover:border-[#111]"
+                  className="block w-full rounded-2xl border border-[#e5e5e5] bg-white px-5 py-5 text-[#111] no-underline transition-colors hover:border-[#111]"
                   onClick={() => trackHomeClick("decks")}
                 >
                   <span className="block text-[16px] font-bold">
@@ -131,7 +131,7 @@ export function CardServiceHome() {
                 <button
                   type="button"
                   onClick={openCreate}
-                  className="block rounded-2xl border border-[#e5e5e5] bg-white px-5 py-5 text-left text-[#111] transition-colors hover:border-[#111]"
+                  className="block w-full rounded-2xl border border-[#e5e5e5] bg-white px-5 py-5 text-left text-[#111] transition-colors hover:border-[#111]"
                 >
                   <span className="block text-[16px] font-bold">
                     새 덱 만들기
