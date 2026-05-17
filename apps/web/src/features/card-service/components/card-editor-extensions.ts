@@ -1,11 +1,19 @@
 import ImageExtension from "@tiptap/extension-image";
-import { type NodeViewRendererProps } from "@tiptap/core";
+import {
+  mergeAttributes,
+  Node,
+  type NodeViewRendererProps,
+} from "@tiptap/core";
 
 import {
   CARD_EDITOR_IMAGE_DEFAULT_WIDTH,
   clampCardEditorImageWidth,
   parseCardEditorImageWidth,
 } from "./card-editor-image-utils";
+import {
+  buildCardEditorYouTubeEmbedAttrs,
+  extractCardEditorYouTubeEmbedInfo,
+} from "./card-editor-youtube-utils";
 
 function updateImageNodeWidth(props: NodeViewRendererProps, nextWidth: number) {
   const pos = props.getPos();
@@ -116,5 +124,63 @@ export const ResizableCardEditorImageExtension = ImageExtension.extend({
 
   addNodeView() {
     return (props) => createResizableImageNodeView(props);
+  },
+});
+
+export const CardEditorYouTubeEmbedExtension = Node.create({
+  name: "youtubeEmbed",
+  group: "block",
+  atom: true,
+  selectable: true,
+  draggable: true,
+
+  addAttributes() {
+    return {
+      src: {
+        default: null,
+        parseHTML: (element: HTMLElement) => {
+          return extractCardEditorYouTubeEmbedInfo(
+            element.getAttribute("src") ?? ""
+          )?.embedUrl;
+        },
+      },
+      title: {
+        default: "YouTube video player",
+      },
+    };
+  },
+
+  parseHTML() {
+    return [
+      {
+        tag: "iframe[src]",
+        getAttrs: (node) => {
+          const element = node instanceof HTMLElement ? node : null;
+          const src = extractCardEditorYouTubeEmbedInfo(
+            element?.getAttribute("src") ?? ""
+          )?.embedUrl;
+
+          if (!src) {
+            return false;
+          }
+
+          return {
+            src,
+            title:
+              element?.getAttribute("title")?.trim() || "YouTube video player",
+          };
+        },
+      },
+    ];
+  },
+
+  renderHTML({ HTMLAttributes }) {
+    const attrs = buildCardEditorYouTubeEmbedAttrs(HTMLAttributes.src ?? "");
+
+    if (!attrs) {
+      return ["p"];
+    }
+
+    return ["iframe", mergeAttributes(attrs)];
   },
 });
