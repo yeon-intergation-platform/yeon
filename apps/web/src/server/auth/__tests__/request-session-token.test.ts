@@ -1,7 +1,10 @@
 import { NextRequest } from "next/server";
 import { describe, expect, it } from "vitest";
 
-import { getAuthSessionTokenFromRequest } from "../request-session-token";
+import {
+  getAuthSessionTokenFromRequest,
+  getAuthSessionTokensFromRequest,
+} from "../request-session-token";
 
 function createRequest(headers?: HeadersInit) {
   return new NextRequest("http://localhost/api/v1/auth/session", { headers });
@@ -52,4 +55,16 @@ describe("getAuthSessionTokenFromRequest", () => {
       ),
     ).toEqual({ source: "cookie", token: "cookie-token" });
   });
+});
+
+
+it("중복 세션 쿠키는 공백과 중복을 제거한 후보 목록으로 반환한다", () => {
+  const request = createRequest({
+    cookie: "yeon.session=stale-token; yeon.session=valid-token; yeon.session=stale-token",
+  });
+
+  expect(getAuthSessionTokensFromRequest(request)).toEqual([
+    { source: "cookie", token: "stale-token" },
+    { source: "cookie", token: "valid-token" },
+  ]);
 });

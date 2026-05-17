@@ -3,7 +3,7 @@ import { errorResponseSchema } from "@yeon/api-contract/error";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
-import { getAuthSessionTokenFromRequest } from "@/server/auth/request-session-token";
+import { getAuthSessionTokensFromRequest } from "@/server/auth/request-session-token";
 import { clearAuthSessionCookie } from "@/server/auth/session";
 import {
   deleteRootAuthSessionInSpring,
@@ -16,10 +16,15 @@ function jsonError(message: string, status: number) {
 
 export async function GET(request: NextRequest) {
   try {
-    const sessionToken = getAuthSessionTokenFromRequest(request);
-    const session = sessionToken
-      ? await fetchRootAuthSessionFromSpring(sessionToken.token)
-      : authSessionResponseSchema.parse({ authenticated: false, user: null });
+    const sessionTokens = getAuthSessionTokensFromRequest(request);
+    const sessions = await Promise.all(
+      sessionTokens.map((sessionToken) =>
+        fetchRootAuthSessionFromSpring(sessionToken.token),
+      ),
+    );
+    const session =
+      sessions.find((candidate) => candidate.authenticated) ??
+      authSessionResponseSchema.parse({ authenticated: false, user: null });
     const response = NextResponse.json(
       authSessionResponseSchema.parse(session),
       {
@@ -29,7 +34,10 @@ export async function GET(request: NextRequest) {
       }
     );
 
-    if (sessionToken?.source === "cookie" && !session.authenticated) {
+    if (
+      sessionTokens.some((sessionToken) => sessionToken.source === "cookie") &&
+      !session.authenticated
+    ) {
       clearAuthSessionCookie(response);
     }
 
@@ -42,11 +50,13 @@ export async function GET(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    const sessionToken = getAuthSessionTokenFromRequest(request);
+    const sessionTokens = getAuthSessionTokensFromRequest(request);
 
-    if (sessionToken) {
-      await deleteRootAuthSessionInSpring(sessionToken.token);
-    }
+    await Promise.all(
+      sessionTokens.map((sessionToken) =>
+        deleteRootAuthSessionInSpring(sessionToken.token),
+      ),
+    );
 
     const response = NextResponse.json(
       authSessionResponseSchema.parse({

@@ -19,8 +19,9 @@ import {
   updateGuestCard,
 } from "@/lib/guest-card-service-store";
 
-import { useIsAuthenticated } from "../auth-context";
+import { useCardServiceAuth } from "../auth-context";
 import {
+  CardServiceApiError,
   cardServiceFetchJson,
   cardServiceFetchVoid,
 } from "../card-service-fetch";
@@ -44,9 +45,20 @@ function useDeckMutation<TInput, TOutput>(
   mutationFn: (input: TInput, isAuthenticated: boolean) => Promise<TOutput>
 ) {
   const queryClient = useQueryClient();
-  const isAuthenticated = useIsAuthenticated();
+  const { isAuthenticated, markUnauthenticated } = useCardServiceAuth();
   return useMutation({
-    mutationFn: (input: TInput) => mutationFn(input, isAuthenticated),
+    mutationFn: async (input: TInput) => {
+      try {
+        return await mutationFn(input, isAuthenticated);
+      } catch (error) {
+        if (error instanceof CardServiceApiError && error.status === 401) {
+          markUnauthenticated();
+          invalidateDeckAndList(queryClient, true, deckId);
+          invalidateDeckAndList(queryClient, false, deckId);
+        }
+        throw error;
+      }
+    },
     onSuccess: () =>
       invalidateDeckAndList(queryClient, isAuthenticated, deckId),
   });
@@ -158,22 +170,32 @@ export function useReviewCard(deckId: string) {
 
 export function useUpdateCardStudyPreference(deckId: string) {
   const queryClient = useQueryClient();
-  const isAuthenticated = useIsAuthenticated();
+  const { isAuthenticated, markUnauthenticated } = useCardServiceAuth();
   return useMutation({
     mutationFn: async (studyMode: CardStudyMode) => {
       if (!isAuthenticated) {
         setGuestCardStudyMode(studyMode);
         return { studyMode };
       }
-      return cardServiceFetchJson<{ studyMode: CardStudyMode }>(
-        "/api/v1/card-decks/study-preference",
-        {
-          method: "PATCH",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ studyMode }),
-        },
-        "학습 모드를 저장하지 못했습니다."
-      );
+      try {
+        return await cardServiceFetchJson<{ studyMode: CardStudyMode }>(
+          "/api/v1/card-decks/study-preference",
+          {
+            method: "PATCH",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ studyMode }),
+          },
+          "학습 모드를 저장하지 못했습니다.",
+        );
+      } catch (error) {
+        if (error instanceof CardServiceApiError && error.status === 401) {
+          markUnauthenticated();
+          void queryClient.invalidateQueries({
+            queryKey: cardServiceQueryKeys.deckDetail(true, deckId),
+          });
+        }
+        throw error;
+      }
     },
     onSuccess: () =>
       void queryClient.invalidateQueries({

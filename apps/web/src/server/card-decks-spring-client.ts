@@ -1,6 +1,15 @@
 import { buildSpringBffHeaders } from "@/server/spring-bff-client";
 
 const DEFAULT_BACKEND_BASE_URL = "http://127.0.0.1:8081";
+const CARD_DECKS_BACKEND_ERROR_MESSAGE = "카드 서비스 요청에 실패했습니다.";
+
+function normalizeBackendErrorMessage(message: string) {
+  if (/spring|backend/i.test(message)) {
+    return CARD_DECKS_BACKEND_ERROR_MESSAGE;
+  }
+
+  return message;
+}
 
 function resolveSpringBackendBaseUrl() {
   const raw =
@@ -14,7 +23,7 @@ function resolveSpringBackendBaseUrl() {
 export class CardDecksSpringBackendHttpError extends Error {
   readonly status: number;
   constructor(status: number, message: string) {
-    super(message);
+    super(normalizeBackendErrorMessage(message));
     this.name = "CardDecksSpringBackendHttpError";
     this.status = status;
   }
@@ -55,7 +64,7 @@ async function fetchJson(path: string, userId: string, init?: RequestInit) {
   if (!response.ok) {
     throw new CardDecksSpringBackendHttpError(
       response.status,
-      extractErrorMessage(parsed) ?? "Spring backend 요청에 실패했습니다."
+      extractErrorMessage(parsed) ?? CARD_DECKS_BACKEND_ERROR_MESSAGE,
     );
   }
   return parsed;

@@ -39,26 +39,49 @@ export function applyAuthSessionCookie(
   return response;
 }
 
+function appendExpiredAuthCookie(response: NextResponse, domain?: string) {
+  const parts = [
+    `${AUTH_SESSION_COOKIE_NAME}=`,
+    "Path=/",
+    "Expires=Thu, 01 Jan 1970 00:00:00 GMT",
+    "Max-Age=0",
+    "HttpOnly",
+    "SameSite=Lax",
+  ];
+
+  if (isSecureAuthCookie()) {
+    parts.push("Secure");
+  }
+  if (domain) {
+    parts.push(`Domain=${domain}`);
+  }
+
+  response.headers.append("set-cookie", parts.join("; "));
+}
+
 export function clearAuthSessionCookie(response: NextResponse) {
+  appendExpiredAuthCookie(response);
+
   const domain = getAuthCookieDomain();
-  response.cookies.set({
-    name: AUTH_SESSION_COOKIE_NAME,
-    value: "",
-    httpOnly: true,
-    sameSite: "lax",
-    secure: isSecureAuthCookie(),
-    path: "/",
-    expires: new Date(0),
-    ...(domain ? { domain } : {}),
-  });
+  if (domain) {
+    appendExpiredAuthCookie(response, domain);
+  }
 
   return response;
 }
 
-async function getCurrentSessionToken() {
+function uniqueTokens(tokens: string[]) {
+  return Array.from(
+    new Set(tokens.map((token) => token.trim()).filter(Boolean)),
+  );
+}
+
+async function getCurrentSessionTokens() {
   const cookieStore = await cookies();
 
-  return cookieStore.get(AUTH_SESSION_COOKIE_NAME)?.value ?? null;
+  return uniqueTokens(
+    cookieStore.getAll(AUTH_SESSION_COOKIE_NAME).map((cookie) => cookie.value),
+  );
 }
 
 export async function getAuthUserBySessionToken(
@@ -70,13 +93,16 @@ export async function getAuthUserBySessionToken(
 }
 
 export async function getCurrentAuthUser() {
-  const sessionToken = await getCurrentSessionToken();
+  const sessionTokens = await getCurrentSessionTokens();
 
-  if (!sessionToken) {
-    return null;
+  for (const sessionToken of sessionTokens) {
+    const user = await getAuthUserBySessionToken(sessionToken);
+    if (user) {
+      return user;
+    }
   }
 
-  return getAuthUserBySessionToken(sessionToken);
+  return null;
 }
 
 export async function deleteAuthSessionByToken(sessionToken: string) {
@@ -84,11 +110,9 @@ export async function deleteAuthSessionByToken(sessionToken: string) {
 }
 
 export async function deleteCurrentAuthSession() {
-  const sessionToken = await getCurrentSessionToken();
+  const sessionTokens = await getCurrentSessionTokens();
 
-  if (!sessionToken) {
-    return;
-  }
-
-  await deleteAuthSessionByToken(sessionToken);
+  await Promise.all(
+    sessionTokens.map((sessionToken) => deleteAuthSessionByToken(sessionToken)),
+  );
 }

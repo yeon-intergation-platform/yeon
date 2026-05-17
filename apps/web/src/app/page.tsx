@@ -12,7 +12,7 @@ import {
   getRequestHostnameFromHostHeader,
   listDevLoginOptions,
 } from "@/server/auth/dev-login";
-import { getAuthUserBySessionToken } from "@/server/auth/session";
+import { getCurrentAuthUser } from "@/server/auth/session";
 import {
   PLATFORM_HOME_HREF,
   getPlatformServices,
@@ -98,17 +98,16 @@ export default async function HomePage({ searchParams }: HomePageProps) {
     pickFirstValue(resolvedSearchParams.login) === "1";
   const cookieStore = await cookies();
   const headerStore = await headers();
-  const sessionToken = cookieStore.get(AUTH_SESSION_COOKIE_NAME)?.value ?? null;
-  const currentUser = sessionToken
-    ? await getAuthUserBySessionToken(sessionToken)
-    : null;
+  const hasSessionCookie =
+    cookieStore.getAll(AUTH_SESSION_COOKIE_NAME).length > 0;
+  const currentUser = await getCurrentAuthUser();
   const openLoginModalOnLoad = requestedLoginModalOpen && !currentUser;
 
   if (currentUser && hasRequestedNextPath) {
     redirect(nextPath);
   }
 
-  if (sessionToken && !currentUser) {
+  if (hasSessionCookie && !currentUser) {
     redirect(
       buildAuthSessionCleanupHref(
         buildHomeRedirectPath({

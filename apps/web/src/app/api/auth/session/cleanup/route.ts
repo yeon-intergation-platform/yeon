@@ -10,11 +10,20 @@ import { clearAuthSessionCookie } from "@/server/auth/session";
 import { deleteRootAuthSessionInSpring } from "@/server/auth-session-spring-client";
 
 export async function GET(request: NextRequest) {
-  const sessionToken = request.cookies.get(AUTH_SESSION_COOKIE_NAME)?.value;
+  const sessionTokens = Array.from(
+    new Set(
+      request.cookies
+        .getAll(AUTH_SESSION_COOKIE_NAME)
+        .map((cookie) => cookie.value.trim())
+        .filter(Boolean),
+    ),
+  );
 
-  if (sessionToken) {
-    await deleteRootAuthSessionInSpring(sessionToken);
-  }
+  await Promise.all(
+    sessionTokens.map((sessionToken) =>
+      deleteRootAuthSessionInSpring(sessionToken),
+    ),
+  );
 
   const nextPath = normalizeAuthRedirectPath(
     request.nextUrl.searchParams.get("next") ?? "/"
