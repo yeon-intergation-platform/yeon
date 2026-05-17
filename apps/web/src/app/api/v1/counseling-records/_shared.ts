@@ -3,7 +3,7 @@ import { errorResponseSchema } from "@yeon/api-contract/error";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
-import { getAuthSessionTokenFromRequest } from "@/server/auth/request-session-token";
+import { getAuthSessionTokensFromRequest } from "@/server/auth/request-session-token";
 import {
   clearAuthSessionCookie,
   getAuthUserBySessionToken,
@@ -35,26 +35,27 @@ export async function withHandler(
 }
 
 export async function requireAuthenticatedUser(request: NextRequest) {
-  const sessionToken = getAuthSessionTokenFromRequest(request);
-  const currentUser = sessionToken
-    ? await getAuthUserBySessionToken(sessionToken.token)
-    : null;
+  const sessionTokens = getAuthSessionTokensFromRequest(request);
 
-  if (!currentUser) {
-    const response = jsonError("로그인이 필요합니다.", 401);
+  for (const sessionToken of sessionTokens) {
+    const currentUser = await getAuthUserBySessionToken(sessionToken.token);
 
-    if (sessionToken?.source === "cookie") {
-      clearAuthSessionCookie(response);
+    if (currentUser) {
+      return {
+        currentUser,
+        response: null,
+      };
     }
+  }
 
-    return {
-      currentUser: null,
-      response,
-    };
+  const response = jsonError("로그인이 필요합니다.", 401);
+
+  if (sessionTokens.some((sessionToken) => sessionToken.source === "cookie")) {
+    clearAuthSessionCookie(response);
   }
 
   return {
-    currentUser,
-    response: null,
+    currentUser: null,
+    response,
   };
 }

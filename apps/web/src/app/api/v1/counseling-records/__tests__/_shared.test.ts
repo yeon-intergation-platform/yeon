@@ -107,6 +107,37 @@ describe("counseling-records api shared helpers", () => {
     expect(result.response).toBeNull();
   });
 
+
+  it("중복 세션 쿠키가 있으면 stale 후보 다음 유효 후보를 사용한다", async () => {
+    mockGetAuthUserBySessionToken
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({ id: "user-1" });
+
+    const request = new NextRequest(
+      "http://localhost/api/v1/counseling-records",
+      {
+        headers: {
+          cookie:
+            "yeon.session=stale-token; yeon.session=valid-token; yeon.session=stale-token",
+        },
+      },
+    );
+
+    const result = await requireAuthenticatedUser(request);
+
+    expect(mockGetAuthUserBySessionToken).toHaveBeenNthCalledWith(
+      1,
+      "stale-token",
+    );
+    expect(mockGetAuthUserBySessionToken).toHaveBeenNthCalledWith(
+      2,
+      "valid-token",
+    );
+    expect(result.currentUser).toEqual({ id: "user-1" });
+    expect(result.response).toBeNull();
+    expect(mockClearAuthSessionCookie).not.toHaveBeenCalled();
+  });
+
   it("bearer 세션이 쿠키보다 우선하고 유효하면 currentUser를 반환한다", async () => {
     mockGetAuthUserBySessionToken.mockResolvedValue({ id: "user-1" });
 

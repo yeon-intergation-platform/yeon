@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
+  CardServiceApiError,
   cardServiceFetchJson,
   cardServiceFetchVoid,
 } from "./card-service-fetch";
@@ -53,5 +54,55 @@ describe("card-service-fetch", () => {
         credentials: "include",
       }
     );
+  });
+
+  it("401은 상태를 보존한 사용자 인증 만료 오류로 정규화한다", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn<typeof fetch>().mockResolvedValue(
+        new Response(JSON.stringify({ message: "로그인이 필요합니다." }), {
+          status: 401,
+          headers: { "content-type": "application/json" },
+        }),
+      ),
+    );
+
+    await expect(
+      cardServiceFetchJson(
+        "/api/v1/card-decks/dck_1/items/dki_1",
+        { method: "PATCH" },
+        "카드를 수정하지 못했습니다.",
+      ),
+    ).rejects.toMatchObject({
+      name: "CardServiceApiError",
+      status: 401,
+      message: "로그인이 만료되었습니다. 다시 로그인해 주세요.",
+    } satisfies Partial<CardServiceApiError>);
+  });
+
+  it("내부 Spring/backend 문구는 사용자용 fallback으로 숨긴다", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn<typeof fetch>().mockResolvedValue(
+        new Response(
+          JSON.stringify({ message: "Spring backend 요청에 실패했습니다." }),
+          {
+            status: 503,
+            headers: { "content-type": "application/json" },
+          },
+        ),
+      ),
+    );
+
+    await expect(
+      cardServiceFetchVoid(
+        "/api/v1/card-decks/dck_1/items/dki_1",
+        { method: "PATCH" },
+        "카드를 수정하지 못했습니다.",
+      ),
+    ).rejects.toMatchObject({
+      status: 503,
+      message: "카드를 수정하지 못했습니다.",
+    } satisfies Partial<CardServiceApiError>);
   });
 });

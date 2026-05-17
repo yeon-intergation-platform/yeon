@@ -55,7 +55,7 @@ describe("api/v1/card-decks route", () => {
     mockFetchCardDecksFromSpring.mockRejectedValue(
       new CardDecksSpringBackendHttpError(
         503,
-        "Spring backend 요청에 실패했습니다."
+        "카드 서비스 요청에 실패했습니다."
       )
     );
 
@@ -65,7 +65,7 @@ describe("api/v1/card-decks route", () => {
 
     expect(response.status).toBe(503);
     await expect(response.json()).resolves.toEqual({
-      message: "Spring backend 요청에 실패했습니다.",
+      message: "카드 서비스 요청에 실패했습니다.",
     });
     expect(mockFetchCardDecksFromSpring).toHaveBeenCalledWith("user-1");
   });
