@@ -2,6 +2,7 @@
 
 import {
   Bold,
+  Code2,
   ImagePlus,
   Italic,
   List,
@@ -63,6 +64,7 @@ interface CardEditorToolbarProps {
     bulletList?: boolean;
     orderedList?: boolean;
     blockquote?: boolean;
+    codeBlock?: boolean;
   };
   canUndo?: boolean;
   canRedo?: boolean;
@@ -72,6 +74,7 @@ interface CardEditorToolbarProps {
   onBulletList: () => void;
   onOrderedList: () => void;
   onBlockquote: () => void;
+  onCodeBlock: () => void;
   onTable: () => void;
   onImage: () => void;
   onUndo: () => void;
@@ -90,6 +93,7 @@ export function CardEditorToolbar({
   onBulletList,
   onOrderedList,
   onBlockquote,
+  onCodeBlock,
   onTable,
   onImage,
   onUndo,
@@ -151,6 +155,13 @@ export function CardEditorToolbar({
         active={active.blockquote}
         disabled={!canUseToolbar}
         onClick={onBlockquote}
+      />
+      <CardEditorToolbarButton
+        label="코드블록"
+        icon={Code2}
+        active={active.codeBlock}
+        disabled={!canUseToolbar}
+        onClick={onCodeBlock}
       />
       <CardEditorToolbarButton
         label="표 삽입"

@@ -30,6 +30,7 @@ import {
   hasCardEditorClipboardImageHint,
   isCardEditorClipboardImageOnly,
 } from "./card-editor-clipboard-utils";
+import { parseSingleCardEditorMarkdownCodeFence } from "./card-editor-codeblock-utils";
 import {
   CARD_EDITOR_IMAGE_ACCEPT,
   getCardEditorExtensionFromMime,
@@ -224,6 +225,10 @@ export function CardRichMarkdownEditor({
     editable: !disabled,
     extensions: [
       StarterKit.configure({
+        codeBlock: {
+          enableTabIndentation: true,
+          tabSize: 2,
+        },
         heading: { levels: [2, 3] },
       }),
       UnderlineExtension,
@@ -272,6 +277,36 @@ export function CardRichMarkdownEditor({
 
         const pastedHtml = clipboardData.getData("text/html");
         const pastedText = clipboardData.getData("text/plain");
+        const pastedCodeBlock = !pastedHtml.trim()
+          ? parseSingleCardEditorMarkdownCodeFence(pastedText)
+          : undefined;
+
+        if (pastedCodeBlock) {
+          event.preventDefault();
+          editor
+            .chain()
+            .focus()
+            .insertContent([
+              {
+                type: "codeBlock",
+                attrs: {
+                  language: pastedCodeBlock.language ?? null,
+                },
+                content: pastedCodeBlock.code
+                  ? [
+                      {
+                        type: "text",
+                        text: pastedCodeBlock.code,
+                      },
+                    ]
+                  : undefined,
+              },
+              { type: "paragraph" },
+            ])
+            .run();
+          return true;
+        }
+
         const markdownTable = isCardEditorHtmlTableOnlyPaste(pastedHtml)
           ? convertCardEditorHtmlTableToMarkdownTable(pastedHtml)
           : !pastedHtml.trim()
@@ -406,6 +441,7 @@ export function CardRichMarkdownEditor({
     bulletList: editor?.isActive("bulletList"),
     orderedList: editor?.isActive("orderedList"),
     blockquote: editor?.isActive("blockquote"),
+    codeBlock: editor?.isActive("codeBlock"),
   };
   const handleInsertTable = withEditor((instance) => {
     insertCardEditorMarkdownTable(
@@ -440,6 +476,9 @@ export function CardRichMarkdownEditor({
         )}
         onBlockquote={withEditor((instance) =>
           instance.chain().focus().toggleBlockquote().run()
+        )}
+        onCodeBlock={withEditor((instance) =>
+          instance.chain().focus().toggleCodeBlock().run()
         )}
         onTable={handleInsertTable}
         onImage={() => fileInputRef.current?.click()}
