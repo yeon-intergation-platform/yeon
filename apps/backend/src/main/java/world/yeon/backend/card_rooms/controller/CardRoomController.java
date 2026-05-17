@@ -37,6 +37,12 @@ public class CardRoomController {
   @DeleteMapping("/{roomId}/participants/{participantId}")
   public CardRoomResponse leave(@PathVariable String roomId, @PathVariable String participantId) { return service.leaveRoom(roomId, participantId); }
 
+  @PostMapping("/{roomId}/start")
+  public CardRoomResponse start(@PathVariable String roomId, @RequestHeader("X-Yeon-Participant-Id") String participantId) { return service.startRoom(roomId, participantId); }
+
+  @PostMapping("/{roomId}/end")
+  public CardRoomResponse end(@PathVariable String roomId, @RequestHeader("X-Yeon-Participant-Id") String participantId) { return service.endRoom(roomId, participantId); }
+
   @PostMapping("/{roomId}/messages")
   public CardRoomMessagesResponse message(@PathVariable String roomId, @RequestHeader("X-Yeon-Participant-Id") String participantId, @RequestBody CreateCardRoomMessageRequest request) { return service.addMessage(roomId, participantId, request); }
 

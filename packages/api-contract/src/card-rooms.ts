@@ -12,6 +12,7 @@ export const CARD_ROOM_STATUS = {
   GIVEN_UP: "given_up",
   REVEALED: "revealed",
   FINISHED: "finished",
+  CLOSED: "closed",
 } as const;
 
 export const CARD_ROOM_ROLE = {
@@ -38,6 +39,7 @@ export const cardRoomStatusSchema = z.enum([
   CARD_ROOM_STATUS.GIVEN_UP,
   CARD_ROOM_STATUS.REVEALED,
   CARD_ROOM_STATUS.FINISHED,
+  CARD_ROOM_STATUS.CLOSED,
 ]);
 export type CardRoomStatus = z.infer<typeof cardRoomStatusSchema>;
 

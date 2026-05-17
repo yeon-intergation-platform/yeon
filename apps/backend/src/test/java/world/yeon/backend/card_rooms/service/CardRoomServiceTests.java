@@ -9,11 +9,13 @@ import static org.mockito.Mockito.when;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.List;
+import org.mockito.ArgumentMatchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import world.yeon.backend.card_rooms.domain.CardRoomStatus;
 import world.yeon.backend.card_rooms.dto.CreateCardRoomMessageRequest;
 import world.yeon.backend.card_rooms.dto.SubmitCardRoomResultRequest;
 import world.yeon.backend.card_rooms.repository.CardRoomRepository;
@@ -45,7 +47,7 @@ class CardRoomServiceTests {
       .satisfies((error) -> assertThat(((CardRoomServiceException) error).status()).isEqualTo(403))
       .hasMessage("참가자가 해당 카드방에 속해 있지 않습니다.");
 
-    verify(repository, never()).insertMessage(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any());
+    verify(repository, never()).insertMessage(ArgumentMatchers.any(), ArgumentMatchers.any(), ArgumentMatchers.any(), ArgumentMatchers.any(), ArgumentMatchers.any(), ArgumentMatchers.any());
   }
 
   @Test
@@ -59,7 +61,7 @@ class CardRoomServiceTests {
       .hasMessage("참가자가 해당 카드방에 속해 있지 않습니다.");
 
     verify(repository, never()).findCard("card_1");
-    verify(repository, never()).insertResult(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any());
+    verify(repository, never()).insertResult(ArgumentMatchers.any(), ArgumentMatchers.any(), ArgumentMatchers.any(), ArgumentMatchers.any(), ArgumentMatchers.any(), ArgumentMatchers.any());
   }
 
   @Test
@@ -73,8 +75,8 @@ class CardRoomServiceTests {
 
     service.leaveRoom("room_1", "participant_1");
 
-    verify(repository).leaveParticipant(org.mockito.ArgumentMatchers.eq(ROOM_PARTICIPANT.internalId()), org.mockito.ArgumentMatchers.any());
-    verify(repository).updateStatus(org.mockito.ArgumentMatchers.eq(ROOM.internalId()), org.mockito.ArgumentMatchers.eq("finished"), org.mockito.ArgumentMatchers.eq(ROOM.currentCardIndex()), org.mockito.ArgumentMatchers.any());
+    verify(repository).leaveParticipant(ArgumentMatchers.eq(ROOM_PARTICIPANT.internalId()), ArgumentMatchers.any(OffsetDateTime.class));
+    verify(repository).updateStatus(ArgumentMatchers.eq(ROOM.internalId()), ArgumentMatchers.eq(CardRoomStatus.CLOSED), ArgumentMatchers.eq(ROOM.currentCardIndex()), ArgumentMatchers.any(OffsetDateTime.class));
   }
 
   @Test

@@ -224,6 +224,30 @@ export class CardRoom extends Room {
       }
     );
 
+    this.onMessage(CARD_ROOM_EVENTS.START, async (client) => {
+      await this.withParticipant(client, async (participantId) => {
+        await this.spring(
+          `/api/v1/card-rooms/${this.cardRoomId}/start`,
+          participantId,
+          { method: "POST" }
+        );
+      });
+    });
+
+    this.onMessage(CARD_ROOM_EVENTS.END, async (client) => {
+      await this.withParticipant(client, async (participantId) => {
+        await this.spring(
+          `/api/v1/card-rooms/${this.cardRoomId}/end`,
+          participantId,
+          { method: "POST" }
+        );
+      });
+    });
+
+    this.onMessage(CARD_ROOM_EVENTS.LEAVE, async (client) => {
+      await this.leaveExplicitly(client);
+    });
+
     this.onMessage(CARD_ROOM_EVENTS.REVEAL, async (client) => {
       await this.withParticipant(client, async (participantId) => {
         await this.spring(
@@ -286,22 +310,41 @@ export class CardRoom extends Room {
     this.cleanupVoiceSessionByParticipant(participantId, "network");
     if (!participantId || !this.cardRoomId) return;
 
+    if (this.participants.size === 0) {
+      void this.setPrivate(true);
+      void this.disconnect();
+      return;
+    }
+
+    await this.refreshState();
+  }
+
+  private async leaveExplicitly(client: Client) {
+    const participantId = this.participants.get(client.sessionId);
+    this.participants.delete(client.sessionId);
+    this.cleanupVoiceSessionByParticipant(participantId, "hangup");
+    if (!participantId || !this.cardRoomId) return;
+
     try {
       await this.spring(
         `/api/v1/card-rooms/${this.cardRoomId}/participants/${participantId}`,
         participantId,
         { method: "DELETE" }
       );
-
+      await client.leave();
       if (this.participants.size === 0) {
         void this.setPrivate(true);
         void this.disconnect();
         return;
       }
-
       await this.refreshState();
     } catch (error) {
-      console.error("[card-room] 참가자 퇴장 동기화 실패:", error);
+      client.send(CARD_ROOM_EVENTS.ERROR, {
+        message:
+          error instanceof Error
+            ? error.message
+            : "카드방에서 나가지 못했습니다.",
+      });
     }
   }
 

@@ -1,12 +1,56 @@
 export type CardRoomVisibility = "public" | "private";
-export type CardRoomStatus = "waiting" | "answering" | "passed" | "given_up" | "revealed" | "finished";
+export type CardRoomStatus =
+  | "waiting"
+  | "answering"
+  | "passed"
+  | "given_up"
+  | "revealed"
+  | "finished"
+  | "closed";
 export type CardRoomRole = "MEMORIZER" | "CHECKER";
 export type CardRoomResult = "OK" | "GIVE_UP" | "HINTED_OK";
-export type CardRoomParticipantDto = { id: string; nickname: string; characterId: string; role: CardRoomRole; isHost: boolean; isReady: boolean; joinedAt: string; };
-export type CardRoomCardDto = { id: string; frontText: string; backText: string; orderIndex: number; };
-export type CardRoomMessageDto = { id: string; senderParticipantId: string | null; senderNickname: string | null; content: string; messageType: "user" | "system"; createdAt: string; };
-export type CardRoomResultDto = { id: string; cardId: string; participantId: string; result: CardRoomResult; createdAt: string; };
-export type CardRoomDetailDto = { id: string; title: string; deckTitle: string; visibility: CardRoomVisibility; status: CardRoomStatus; currentCardIndex: number; participants: readonly CardRoomParticipantDto[]; cards: readonly CardRoomCardDto[]; messages: readonly CardRoomMessageDto[]; results: readonly CardRoomResultDto[]; };
+export type CardRoomParticipantDto = {
+  id: string;
+  nickname: string;
+  characterId: string;
+  role: CardRoomRole;
+  isHost: boolean;
+  isReady: boolean;
+  joinedAt: string;
+};
+export type CardRoomCardDto = {
+  id: string;
+  frontText: string;
+  backText: string;
+  orderIndex: number;
+};
+export type CardRoomMessageDto = {
+  id: string;
+  senderParticipantId: string | null;
+  senderNickname: string | null;
+  content: string;
+  messageType: "user" | "system";
+  createdAt: string;
+};
+export type CardRoomResultDto = {
+  id: string;
+  cardId: string;
+  participantId: string;
+  result: CardRoomResult;
+  createdAt: string;
+};
+export type CardRoomDetailDto = {
+  id: string;
+  title: string;
+  deckTitle: string;
+  visibility: CardRoomVisibility;
+  status: CardRoomStatus;
+  currentCardIndex: number;
+  participants: readonly CardRoomParticipantDto[];
+  cards: readonly CardRoomCardDto[];
+  messages: readonly CardRoomMessageDto[];
+  results: readonly CardRoomResultDto[];
+};
 
 export const CARD_ROOM_NAME = "card_room";
 
@@ -16,6 +60,8 @@ export const CARD_ROOM_EVENTS = {
   CHAT: "card.chat",
   READY: "card.ready",
   ROLE: "card.role",
+  START: "card.start",
+  END: "card.end",
   REVEAL: "card.reveal",
   RESULT: "card.result",
   NEXT: "card.next",

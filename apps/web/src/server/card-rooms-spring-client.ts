@@ -18,7 +18,9 @@ function resolveSpringBackendBaseUrl() {
   const raw =
     process.env.SPRING_BACKEND_BASE_URL?.trim() ??
     process.env.SPRING_BOOTSTRAP_BASE_URL?.trim();
-  return raw && raw.length > 0 ? raw.replace(/\/$/, "") : DEFAULT_BACKEND_BASE_URL;
+  return raw && raw.length > 0
+    ? raw.replace(/\/$/, "")
+    : DEFAULT_BACKEND_BASE_URL;
 }
 
 function tryParseJson(raw: string) {
@@ -39,7 +41,7 @@ function extractMessage(parsed: unknown) {
 export class CardRoomsSpringBackendHttpError extends Error {
   constructor(
     public readonly status: number,
-    message: string,
+    message: string
   ) {
     super(message);
     this.name = "CardRoomsSpringBackendHttpError";
@@ -55,13 +57,14 @@ type SpringInit = RequestInit & {
 async function fetchSpring<T>(
   path: string,
   init: SpringInit,
-  fallback: string,
+  fallback: string
 ): Promise<T> {
   const headers = new Headers(init.headers);
   headers.set("accept", "application/json");
   if (init.userId) headers.set("X-Yeon-User-Id", init.userId);
   if (init.guestId) headers.set("X-Yeon-Guest-Id", init.guestId);
-  if (init.participantId) headers.set("X-Yeon-Participant-Id", init.participantId);
+  if (init.participantId)
+    headers.set("X-Yeon-Participant-Id", init.participantId);
 
   const response = await fetch(`${resolveSpringBackendBaseUrl()}${path}`, {
     ...init,
@@ -73,7 +76,7 @@ async function fetchSpring<T>(
   if (!response.ok) {
     throw new CardRoomsSpringBackendHttpError(
       response.status,
-      extractMessage(parsed) ?? fallback,
+      extractMessage(parsed) ?? fallback
     );
   }
   return parsed as T;
@@ -83,7 +86,7 @@ export function fetchCardRoomsFromSpring() {
   return fetchSpring<CardRoomListResponse>(
     "/api/v1/card-rooms",
     { method: "GET" },
-    "카드방 목록을 불러오지 못했습니다.",
+    "카드방 목록을 불러오지 못했습니다."
   );
 }
 
@@ -101,7 +104,7 @@ export function createCardRoomInSpring(params: {
       headers: { "content-type": "application/json" },
       body: JSON.stringify(params.payload),
     },
-    "카드방을 만들지 못했습니다.",
+    "카드방을 만들지 못했습니다."
   );
 }
 
@@ -109,7 +112,7 @@ export function fetchCardRoomFromSpring(roomId: string) {
   return fetchSpring<CardRoomResponse>(
     `/api/v1/card-rooms/${encodeURIComponent(roomId)}`,
     { method: "GET" },
-    "카드방을 불러오지 못했습니다.",
+    "카드방을 불러오지 못했습니다."
   );
 }
 
@@ -128,7 +131,7 @@ export function joinCardRoomInSpring(params: {
       headers: { "content-type": "application/json" },
       body: JSON.stringify(params.payload),
     },
-    "카드방에 입장하지 못했습니다.",
+    "카드방에 입장하지 못했습니다."
   );
 }
 
@@ -144,7 +147,7 @@ export function updateCardRoomParticipantInSpring(params: {
       headers: { "content-type": "application/json" },
       body: JSON.stringify(params.payload),
     },
-    "참가자 상태를 저장하지 못했습니다.",
+    "참가자 상태를 저장하지 못했습니다."
   );
 }
 
@@ -152,7 +155,23 @@ export function leaveCardRoomInSpring(roomId: string, participantId: string) {
   return fetchSpring<CardRoomResponse>(
     `/api/v1/card-rooms/${encodeURIComponent(roomId)}/participants/${encodeURIComponent(participantId)}`,
     { method: "DELETE" },
-    "카드방에서 나가지 못했습니다.",
+    "카드방에서 나가지 못했습니다."
+  );
+}
+
+export function startCardRoomInSpring(roomId: string, participantId: string) {
+  return fetchSpring<CardRoomResponse>(
+    `/api/v1/card-rooms/${encodeURIComponent(roomId)}/start`,
+    { method: "POST", participantId },
+    "카드방 학습을 시작하지 못했습니다."
+  );
+}
+
+export function endCardRoomInSpring(roomId: string, participantId: string) {
+  return fetchSpring<CardRoomResponse>(
+    `/api/v1/card-rooms/${encodeURIComponent(roomId)}/end`,
+    { method: "POST", participantId },
+    "카드방을 종료하지 못했습니다."
   );
 }
 
@@ -169,7 +188,7 @@ export function createCardRoomMessageInSpring(params: {
       headers: { "content-type": "application/json" },
       body: JSON.stringify(params.payload),
     },
-    "메시지를 보내지 못했습니다.",
+    "메시지를 보내지 못했습니다."
   );
 }
 
@@ -186,7 +205,7 @@ export function submitCardRoomResultInSpring(params: {
       headers: { "content-type": "application/json" },
       body: JSON.stringify(params.payload),
     },
-    "카드 결과를 저장하지 못했습니다.",
+    "카드 결과를 저장하지 못했습니다."
   );
 }
 
@@ -194,14 +213,17 @@ export function revealCardRoomInSpring(roomId: string, participantId: string) {
   return fetchSpring<CardRoomResponse>(
     `/api/v1/card-rooms/${encodeURIComponent(roomId)}/reveal`,
     { method: "POST", participantId },
-    "정답을 공개하지 못했습니다.",
+    "정답을 공개하지 못했습니다."
   );
 }
 
-export function nextCardRoomCardInSpring(roomId: string, participantId: string) {
+export function nextCardRoomCardInSpring(
+  roomId: string,
+  participantId: string
+) {
   return fetchSpring<CardRoomResponse>(
     `/api/v1/card-rooms/${encodeURIComponent(roomId)}/next`,
     { method: "POST", participantId },
-    "다음 카드로 이동하지 못했습니다.",
+    "다음 카드로 이동하지 못했습니다."
   );
 }
