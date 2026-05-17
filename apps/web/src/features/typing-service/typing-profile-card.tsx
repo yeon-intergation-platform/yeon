@@ -63,9 +63,9 @@ export function TypingProfileCard({
     }`;
 
   return (
-    <div className="flex w-[380px] flex-col items-center rounded-2xl border border-[#e5e5e5] bg-white px-10 py-8">
+    <div className="flex w-full max-w-[380px] min-w-0 flex-col items-center rounded-2xl border border-[#e5e5e5] bg-white px-4 py-6 sm:px-10 sm:py-8">
       {/* 캐릭터 애니메이션 */}
-      <div className="mb-6 flex h-[360px] items-end justify-center rounded-xl bg-[#f5f5f5] px-4 py-3">
+      <div className="mb-5 flex h-[300px] w-full items-end justify-center rounded-xl bg-[#f5f5f5] px-3 py-3 sm:mb-6 sm:h-[360px] sm:px-4">
         <CharacterSprite
           character={selectedChar}
           maxHeight={CARD_DISPLAY_MAX_HEIGHT}
