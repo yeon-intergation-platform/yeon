@@ -100,6 +100,23 @@ function toDatabaseEnv(databaseUrl) {
   return databaseUrl ? { DATABASE_URL: databaseUrl } : {};
 }
 
+function toOptionalEnv(names) {
+  return Object.fromEntries(
+    names
+      .map((name) => [name, resolveLocalEnvValue(name)])
+      .filter(([, value]) => value !== null)
+  );
+}
+
+function resolveRootAuthProviderEnv() {
+  return toOptionalEnv([
+    "GOOGLE_CLIENT_ID",
+    "GOOGLE_CLIENT_SECRET",
+    "KAKAO_REST_API_KEY",
+    "KAKAO_CLIENT_SECRET",
+  ]);
+}
+
 function getPidCommandLine(pid) {
   if (isWindows) {
     return "";
@@ -355,6 +372,7 @@ async function resolveServices() {
   const springProfilesActive =
     process.env.SPRING_PROFILES_ACTIVE?.trim() || defaultLocalSpringProfile;
   const databaseEnv = toDatabaseEnv(resolveLocalDatabaseUrl());
+  const rootAuthProviderEnv = resolveRootAuthProviderEnv();
 
   services.push({
     name: "web",
@@ -370,6 +388,7 @@ async function resolveServices() {
       SPRING_INTERNAL_TOKEN: springInternalToken,
       SPRING_PROFILES_ACTIVE: springProfilesActive,
       NEXT_PUBLIC_RACE_SERVER_URL: `ws://localhost:${racePort}`,
+      ...rootAuthProviderEnv,
     },
     assignedPort: webPort,
     interactive: false,
@@ -387,6 +406,7 @@ async function resolveServices() {
       SPRING_INTERNAL_TOKEN: springInternalToken,
       SPRING_PROFILES_ACTIVE: springProfilesActive,
       ...databaseEnv,
+      ...rootAuthProviderEnv,
     },
     assignedPort: backendPort,
     interactive: false,
