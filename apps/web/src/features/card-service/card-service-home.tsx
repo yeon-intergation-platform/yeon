@@ -57,8 +57,8 @@ export function CardServiceHome() {
         }
       />
 
-      <main className="flex flex-col items-center px-5 py-5 md:px-10 md:py-5">
-        <section className="w-full max-w-[980px]">
+      <main className="flex min-w-0 flex-col items-center px-3 py-5 sm:px-5 md:px-10 md:py-5">
+        <section className="w-full max-w-[980px] min-w-0">
           <div className="max-w-[680px]">
             <h1 className="text-[27px] font-black tracking-[-0.04em] text-[#111] md:text-[34px]">
               바로 시작하는 카드공부
@@ -70,7 +70,7 @@ export function CardServiceHome() {
           </div>
         </section>
 
-        <section className="mt-8 grid w-full max-w-[980px] min-w-0 overflow-hidden rounded-[24px] border border-[#e5e5e5] bg-white md:grid-cols-[430px_minmax(0,1fr)] md:rounded-[28px]">
+        <section className="mt-8 grid w-full max-w-[980px] min-w-0 overflow-hidden rounded-[20px] border border-[#e5e5e5] bg-white sm:rounded-[24px] md:grid-cols-[430px_minmax(0,1fr)] md:rounded-[28px]">
           <div className="min-w-0 border-b border-[#e5e5e5] p-4 md:border-b-0 md:border-r md:p-6">
             <h2 className="text-[16px] font-bold text-[#111]">내 프로필</h2>
             <div className="mt-5 flex justify-center">
