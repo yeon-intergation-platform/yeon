@@ -1,10 +1,20 @@
 "use client";
 
-import { useMemo } from "react";
+import {
+  Children,
+  isValidElement,
+  useEffect,
+  useMemo,
+  useRef,
+  type ReactElement,
+  type ReactNode,
+} from "react";
 import createDOMPurify from "dompurify";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
+import { CardMarkdownCodeBlock } from "./card-markdown-code-block";
+import { getCardEditorCodeLanguageFromClassName } from "./card-editor-codeblock-utils";
 import { renderCardEditorMarkdownTablesInHtml } from "./card-editor-table-utils";
 import {
   applyCardEditorYouTubeIframeAttributes,
@@ -14,6 +24,11 @@ import {
 interface MarkdownContentProps {
   children: string;
   inverted?: boolean;
+}
+
+interface MarkdownCodeElementProps {
+  children?: ReactNode;
+  className?: string;
 }
 
 const baseTextClass = "whitespace-pre-wrap break-words";
@@ -104,14 +119,82 @@ function sanitizeHtml(value: string) {
     anchor.setAttribute("target", "_blank");
     anchor.setAttribute("rel", "noreferrer");
   });
+  document.querySelectorAll("pre code").forEach((code) => {
+    const language = getCardEditorCodeLanguageFromClassName(
+      code.getAttribute("class") ?? ""
+    );
+    if (language) {
+      code.setAttribute("class", `language-${language}`);
+      return;
+    }
+
+    code.removeAttribute("class");
+  });
   applyCardEditorYouTubeIframeAttributes(document);
   return document.body.innerHTML;
+}
+
+function decorateHtmlCodeBlocks(container: HTMLDivElement, inverted: boolean) {
+  container.querySelectorAll("pre").forEach((pre) => {
+    if (pre.parentElement?.classList.contains("card-code-block-wrapper")) {
+      return;
+    }
+
+    const code = pre.querySelector("code");
+    const language = getCardEditorCodeLanguageFromClassName(
+      code?.getAttribute("class") ?? ""
+    );
+    const wrapper = document.createElement("div");
+    const header = document.createElement("div");
+    const languageLabel = document.createElement("span");
+    const copyButton = document.createElement("button");
+    const codeText = code?.textContent ?? pre.textContent ?? "";
+
+    wrapper.className = `card-code-block-wrapper ${
+      inverted ? "is-inverted" : ""
+    }`;
+    header.className = "card-code-block-header";
+    languageLabel.className = "card-code-block-language";
+    languageLabel.textContent = language ?? "code";
+    copyButton.type = "button";
+    copyButton.className = "card-code-block-copy";
+    copyButton.textContent = "복사";
+    copyButton.addEventListener("click", () => {
+      navigator.clipboard
+        .writeText(codeText.replace(/\n$/, ""))
+        .then(() => {
+          copyButton.textContent = "복사됨";
+          window.setTimeout(() => {
+            copyButton.textContent = "복사";
+          }, 1200);
+        })
+        .catch(() => {
+          copyButton.textContent = "실패";
+          window.setTimeout(() => {
+            copyButton.textContent = "복사";
+          }, 1200);
+        });
+    });
+
+    header.append(languageLabel, copyButton);
+    pre.parentNode?.insertBefore(wrapper, pre);
+    wrapper.append(header, pre);
+  });
+}
+
+function getMarkdownCodeChild(
+  children: ReactNode
+): ReactElement<MarkdownCodeElementProps> | undefined {
+  const child = Children.toArray(children)[0];
+  if (!isValidElement<MarkdownCodeElementProps>(child)) return undefined;
+  return child;
 }
 
 export function MarkdownContent({
   children,
   inverted = false,
 }: MarkdownContentProps) {
+  const htmlContainerRef = useRef<HTMLDivElement | null>(null);
   const colors = inverted
     ? {
         text: "text-white",
@@ -139,6 +222,11 @@ export function MarkdownContent({
         : "",
     [contentWithEmbeds, isHtml]
   );
+
+  useEffect(() => {
+    if (!isHtml || !htmlContainerRef.current) return;
+    decorateHtmlCodeBlocks(htmlContainerRef.current, inverted);
+  }, [inverted, isHtml, safeHtml]);
 
   const htmlStyles = (
     <style jsx global>{`
@@ -182,6 +270,57 @@ export function MarkdownContent({
         margin: 0.75rem 0;
         overflow-x: auto;
         padding: 0.75rem;
+      }
+      .card-markdown-html .card-code-block-wrapper {
+        background: #f7f7f7;
+        border: 1px solid #e5e5e5;
+        border-radius: 0.75rem;
+        margin: 0.75rem 0;
+        overflow: hidden;
+      }
+      .card-markdown-html .card-code-block-wrapper.is-inverted {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: rgba(255, 255, 255, 0.2);
+      }
+      .card-markdown-html .card-code-block-header {
+        align-items: center;
+        border-bottom: 1px solid #e5e5e5;
+        color: #777;
+        display: flex;
+        font-size: 11px;
+        font-weight: 700;
+        justify-content: space-between;
+        padding: 0.5rem 0.75rem;
+      }
+      .card-markdown-html
+        .card-code-block-wrapper.is-inverted
+        .card-code-block-header {
+        border-bottom-color: rgba(255, 255, 255, 0.15);
+        color: rgba(255, 255, 255, 0.75);
+      }
+      .card-markdown-html .card-code-block-language {
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+      .card-markdown-html .card-code-block-copy {
+        background: #fff;
+        border: 1px solid #d8d8d8;
+        border-radius: 0.5rem;
+        color: #333;
+        font-size: 11px;
+        font-weight: 700;
+        padding: 0.25rem 0.5rem;
+      }
+      .card-markdown-html
+        .card-code-block-wrapper.is-inverted
+        .card-code-block-copy {
+        background: transparent;
+        border-color: rgba(255, 255, 255, 0.2);
+        color: #fff;
+      }
+      .card-markdown-html .card-code-block-wrapper pre {
+        border-radius: 0;
+        margin: 0;
       }
       .card-markdown-html a {
         text-decoration: underline;
@@ -230,6 +369,7 @@ export function MarkdownContent({
     return (
       <>
         <div
+          ref={htmlContainerRef}
           className={`${baseTextClass} card-markdown-html text-[15px] leading-7 ${colors.text}`}
           suppressHydrationWarning
           dangerouslySetInnerHTML={{ __html: safeHtml }}
@@ -262,29 +402,27 @@ export function MarkdownContent({
             </blockquote>
           ),
           code: ({ children: nodeChildren, className }) => {
-            const isBlock = Boolean(className);
-            if (!isBlock) {
-              return (
-                <code
-                  className={`rounded px-1 py-0.5 font-mono text-[0.92em] ${colors.code}`}
-                >
-                  {nodeChildren}
-                </code>
-              );
-            }
             return (
-              <code className="font-mono text-[13px] leading-6">
+              <code
+                className={`rounded px-1 py-0.5 font-mono text-[0.92em] ${colors.code} ${className ?? ""}`}
+              >
                 {nodeChildren}
               </code>
             );
           },
-          pre: ({ children: nodeChildren }) => (
-            <pre
-              className={`my-3 overflow-x-auto rounded-xl ${colors.code} p-3 text-left`}
-            >
-              {nodeChildren}
-            </pre>
-          ),
+          pre: ({ children: nodeChildren }) => {
+            const codeChild = getMarkdownCodeChild(nodeChildren);
+            if (!codeChild) return <pre>{nodeChildren}</pre>;
+
+            return (
+              <CardMarkdownCodeBlock
+                className={codeChild.props.className}
+                inverted={inverted}
+              >
+                {codeChild.props.children}
+              </CardMarkdownCodeBlock>
+            );
+          },
           a: ({ children: nodeChildren, href }) => (
             <a
               className={
