@@ -21,7 +21,10 @@ import {
 import { completeSocialAuthInSpring } from "@/server/root-auth-spring-client";
 
 import { applyAuthSessionCookie } from "./session";
-import { buildSocialAuthorizationUrl } from "./social-providers";
+import {
+  buildSocialAuthorizationUrl,
+  getSocialAuthCallbackOrigin,
+} from "./social-providers";
 
 function redirectWithinApp(request: NextRequest, path: string) {
   return NextResponse.redirect(
@@ -187,7 +190,7 @@ export async function completeSocialAuth(
       provider,
       code,
       codeVerifier: oauthState.matchedEntry.codeVerifier,
-      appOrigin: request.nextUrl.origin,
+      appOrigin: getSocialAuthCallbackOrigin(request.nextUrl.origin),
     });
     const response = redirectWithinApp(
       request,

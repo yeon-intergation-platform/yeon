@@ -18,13 +18,17 @@ function getRequiredEnv(name: string, provider: SocialProvider) {
   return value;
 }
 
-function getProviderCallbackUrl(
+export function getSocialAuthCallbackOrigin(originFallback?: string) {
+  return getAppOrigin(originFallback);
+}
+
+export function getProviderCallbackUrl(
   provider: SocialProvider,
   originFallback?: string
 ) {
   return new URL(
     `/api/auth/${provider}/callback`,
-    getAppOrigin(originFallback)
+    getSocialAuthCallbackOrigin(originFallback)
   ).toString();
 }
 
