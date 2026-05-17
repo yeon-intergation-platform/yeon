@@ -284,6 +284,25 @@ export class CardRoom extends Room {
     const participantId = this.participants.get(client.sessionId);
     this.participants.delete(client.sessionId);
     this.cleanupVoiceSessionByParticipant(participantId, "network");
+    if (!participantId || !this.cardRoomId) return;
+
+    try {
+      await this.spring(
+        `/api/v1/card-rooms/${this.cardRoomId}/participants/${participantId}`,
+        participantId,
+        { method: "DELETE" }
+      );
+
+      if (this.participants.size === 0) {
+        void this.setPrivate(true);
+        void this.disconnect();
+        return;
+      }
+
+      await this.refreshState();
+    } catch (error) {
+      console.error("[card-room] 참가자 퇴장 동기화 실패:", error);
+    }
   }
 
   private onVoiceOffer(
