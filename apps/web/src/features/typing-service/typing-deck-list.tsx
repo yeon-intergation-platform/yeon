@@ -6,6 +6,8 @@ import {
   getYeonSurfaceClassName,
   joinClassNames,
 } from "@/components/yeon-ui";
+import { SHARED_FEATURE_CLASS } from "@/features/shared-style-constants";
+import { TYPING_SERVICE_COMMON_CLASS } from "./typing-service-common.const";
 import type { TypingDeckDto } from "./use-typing-decks";
 import { typingDeckBadge, typingDeckLanguageLabel } from "./typing-deck-meta";
 
@@ -23,10 +25,10 @@ export function TypingDeckList({
   if (decks.length === 0) {
     return (
       <YeonSurface variant="empty" className="p-8">
-        <p className="text-[14px] font-semibold text-[#111]">
+        <p className={TYPING_SERVICE_COMMON_CLASS.panelTextEmphasis}>
           표시할 덱이 없습니다.
         </p>
-        <p className="mt-2 text-[13px] text-[#666]">
+        <p className={`mt-2 ${SHARED_FEATURE_CLASS.text13Neutral}`}>
           내 덱 탭에서 새 덱을 만들거나 공개 덱을 둘러보세요.
         </p>
       </YeonSurface>
@@ -49,12 +51,16 @@ export function TypingDeckList({
               selectedDeckId === deck.id && "border-[#111]"
             )}
           >
-            <div className="flex items-start justify-between gap-3">
+            <div className={SHARED_FEATURE_CLASS.alignBetweenStartGap3}>
               <div className="min-w-0">
-                <h3 className="truncate text-[15px] font-semibold text-[#111]">
+                <h3
+                  className={`truncate ${TYPING_SERVICE_COMMON_CLASS.panelTextEmphasis15}`}
+                >
                   {deck.title}
                 </h3>
-                <p className="mt-1 line-clamp-2 text-[13px] leading-5 text-[#666]">
+                <p
+                  className={`${SHARED_FEATURE_CLASS.text13Neutral} mt-1 line-clamp-2 leading-5`}
+                >
                   {deck.description || "설명이 없습니다."}
                 </p>
               </div>
@@ -62,11 +68,13 @@ export function TypingDeckList({
                 {typingDeckBadge(deck)}
               </YeonBadge>
             </div>
-            <div className="mt-3 flex flex-wrap gap-2 text-[12px] text-[#666]">
-              <span className="rounded-full border border-[#e5e5e5] px-2 py-0.5">
+            <div
+              className={`mt-3 flex flex-wrap gap-2 ${SHARED_FEATURE_CLASS.text12Neutral}`}
+            >
+              <span className={SHARED_FEATURE_CLASS.tagPill}>
                 {typingDeckLanguageLabel(deck.languageTag)}
               </span>
-              <span className="rounded-full border border-[#e5e5e5] px-2 py-0.5">
+              <span className={SHARED_FEATURE_CLASS.tagPill}>
                 문단 {deck.passageCount ?? 0}개
               </span>
             </div>

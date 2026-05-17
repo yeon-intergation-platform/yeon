@@ -4,6 +4,7 @@ import { Crown } from "lucide-react";
 import type { TypingRoomParticipantSnapshot } from "@yeon/race-shared";
 
 import { RoomParticipantCard } from "@/features/room-shared";
+import { TYPING_SERVICE_COMMON_CLASS } from "./typing-service-common.const";
 import { findCharacter } from "./characters";
 
 type TypingRoomParticipantsPanelProps = {
@@ -21,7 +22,7 @@ export function TypingRoomParticipantsPanel({
 }: TypingRoomParticipantsPanelProps) {
   return (
     <section className="rounded-2xl border border-[#e5e5e5] bg-white p-3 xl:order-2">
-      <h2 className="mb-3 text-[14px] font-bold">참여자</h2>
+      <h2 className={TYPING_SERVICE_COMMON_CLASS.panelSubheading}>참여자</h2>
       <div className="grid grid-cols-2 gap-3">
         {participants.map((participant, index) => {
           const character = participant

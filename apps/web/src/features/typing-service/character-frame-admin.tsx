@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { SHARED_FEATURE_CLASS } from "@/features/shared-style-constants";
+import { TYPING_SERVICE_COMMON_CLASS } from "./typing-service-common.const";
 import type { CharacterDef } from "./characters";
 import { TYPING_CHARACTERS } from "./characters";
 import { CharacterSprite } from "./character-sprite";
@@ -118,8 +120,8 @@ function CharacterFrameCard({
     <div className="rounded-xl border border-[#e5e5e5] bg-white p-4">
       {/* Header */}
       <div className="mb-3 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="text-[14px] font-semibold text-[#111]">
+        <div className={SHARED_FEATURE_CLASS.inlineItemsCenterGap2}>
+          <span className={TYPING_SERVICE_COMMON_CLASS.panelTextEmphasis}>
             {character.label.ko}
           </span>
           <span className="text-[11px] text-[#bbb]">{character.id}</span>
@@ -236,7 +238,7 @@ export function CharacterFrameAdmin() {
             <h1 className="text-[20px] font-bold text-[#111]">
               캐릭터 프레임 시퀀스
             </h1>
-            <p className="mt-1 text-[12px] text-[#888]">
+            <p className={`mt-1 ${SHARED_FEATURE_CLASS.text12Soft}`}>
               프레임 클릭해서 활성/비활성 전환, 드래그로 순서 변경 → 해당 캐릭터
               JSON의{" "}
               <code className="rounded bg-[#f5f5f5] px-1 text-[11px]">

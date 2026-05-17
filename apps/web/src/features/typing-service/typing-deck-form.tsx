@@ -2,7 +2,9 @@
 
 import { useState, type FormEvent } from "react";
 
+import { SHARED_FEATURE_CLASS } from "../shared-style-constants";
 import { analyticsEvents, trackEvent } from "@/lib/analytics";
+import { TYPING_SERVICE_COMMON_CLASS } from "./typing-service-common.const";
 import {
   YeonBadge,
   YeonButton,
@@ -88,12 +90,12 @@ export function TypingDeckForm({
       onSubmit={handleSubmit}
       className={getYeonSurfaceClassName({ className: "p-5" })}
     >
-      <div className="flex items-start justify-between gap-3">
+      <div className={SHARED_FEATURE_CLASS.alignBetweenStartGap3}>
         <div>
-          <h2 className="text-[18px] font-semibold text-[#111]">
+          <h2 className={TYPING_SERVICE_COMMON_CLASS.panelBodyTitle}>
             {mode === "create" ? "새 타자 덱" : "덱 정보"}
           </h2>
-          <p className="mt-1 text-[13px] leading-5 text-[#666]">
+          <p className={`${SHARED_FEATURE_CLASS.text13Neutral} mt-1 leading-5`}>
             제목, 언어 태그, 공개 범위를 정한 뒤 문단을 추가하세요.
           </p>
         </div>
@@ -101,8 +103,10 @@ export function TypingDeckForm({
       </div>
 
       <div className="mt-5 grid gap-4">
-        <label className="flex flex-col gap-2">
-          <span className="text-[13px] font-medium text-[#555]">덱 제목</span>
+        <label className={TYPING_SERVICE_COMMON_CLASS.formFieldGroup}>
+          <span className={TYPING_SERVICE_COMMON_CLASS.fieldLabel}>
+            덱 제목
+          </span>
           <YeonField
             value={title}
             onChange={(event) => setTitle(event.target.value)}
@@ -111,8 +115,8 @@ export function TypingDeckForm({
             placeholder="예: 아침 워밍업 문장"
           />
         </label>
-        <label className="flex flex-col gap-2">
-          <span className="text-[13px] font-medium text-[#555]">설명</span>
+        <label className={TYPING_SERVICE_COMMON_CLASS.formFieldGroup}>
+          <span className={TYPING_SERVICE_COMMON_CLASS.fieldLabel}>설명</span>
           <YeonField
             as="textarea"
             value={description ?? ""}
@@ -124,9 +128,9 @@ export function TypingDeckForm({
             placeholder="어떤 연습에 쓰는 덱인지 적어주세요."
           />
         </label>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <label className="flex flex-col gap-2">
-            <span className="text-[13px] font-medium text-[#555]">
+        <div className={TYPING_SERVICE_COMMON_CLASS.twoColumnFormGrid}>
+          <label className={TYPING_SERVICE_COMMON_CLASS.formFieldGroup}>
+            <span className={TYPING_SERVICE_COMMON_CLASS.fieldLabel}>
               언어 태그
             </span>
             <YeonField
@@ -144,8 +148,8 @@ export function TypingDeckForm({
               ))}
             </YeonField>
           </label>
-          <label className="flex flex-col gap-2">
-            <span className="text-[13px] font-medium text-[#555]">
+          <label className={TYPING_SERVICE_COMMON_CLASS.formFieldGroup}>
+            <span className={TYPING_SERVICE_COMMON_CLASS.fieldLabel}>
               공개 범위
             </span>
             <YeonField
@@ -167,7 +171,7 @@ export function TypingDeckForm({
       </div>
 
       {mutation.error ? (
-        <p className="mt-3 text-[13px] text-red-600">
+        <p className={TYPING_SERVICE_COMMON_CLASS.textErrorWithSpacing}>
           {mutation.error.message}
         </p>
       ) : null}

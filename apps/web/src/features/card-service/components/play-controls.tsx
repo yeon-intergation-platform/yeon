@@ -1,5 +1,7 @@
 "use client";
 
+import { CARD_SERVICE_COMMON_CLASS } from "../card-service-common.const";
+
 interface PlayControlsProps {
   currentIndex: number;
   totalCount: number;
@@ -26,7 +28,7 @@ export function PlayControls({
       >
         ← 이전
       </button>
-      <span className="text-[14px] font-semibold text-[#111]">
+      <span className={CARD_SERVICE_COMMON_CLASS.panelTextEmphasis}>
         {currentIndex + 1} / {totalCount}
       </span>
       <button

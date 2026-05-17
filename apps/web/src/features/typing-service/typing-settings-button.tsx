@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { ProductHeaderSettingsButton } from "@/components/product-shell/product-header";
+import { SHARED_FEATURE_CLASS } from "@/features/shared-style-constants";
 import {
   createTranslator,
   type TypingLocale,
@@ -70,7 +71,9 @@ export function TypingSettingsButton() {
           ))}
 
           <div className="my-1 border-t border-[#eee]" />
-          <label className="grid gap-1.5 px-3 py-2 text-[12px] font-semibold text-[#555]">
+          <label
+            className={`grid gap-1.5 px-3 py-2 ${SHARED_FEATURE_CLASS.text12EmphasisMuted}`}
+          >
             기본 연습 덱
             <select
               value={selectedDeckId}

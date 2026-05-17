@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { SHARED_FEATURE_CLASS } from "@/features/shared-style-constants";
 
 const MDEditor = dynamic(() => import("@uiw/react-md-editor"), {
   ssr: false,
@@ -37,9 +38,11 @@ export function MarkdownEditor({
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex items-center justify-between gap-3">
-        <span className="text-[13px] font-medium text-[#111]">{label}</span>
-        <span className="text-[12px] text-[#888]">
+      <div className={SHARED_FEATURE_CLASS.alignBetweenGap3}>
+        <span className={SHARED_FEATURE_CLASS.text13PrimaryMedium}>
+          {label}
+        </span>
+        <span className={SHARED_FEATURE_CLASS.text12Soft}>
           {value.length}/{maxLength}
         </span>
       </div>

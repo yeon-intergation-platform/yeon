@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { SHARED_FEATURE_CLASS } from "@/features/shared-style-constants";
 import { TypingServiceHeader } from "@/features/typing-service";
 import { TypingDeckDetailPanel } from "@/features/typing-service/typing-decks-screen";
 import { getCurrentAuthUser } from "@/server/auth/session";
@@ -40,7 +41,7 @@ export default async function TypingDeckDetailPage({
     showAdminEntry && pickFirstValue(resolvedSearchParams.admin) === "1";
 
   return (
-    <div className="min-h-screen bg-white text-[#111]">
+    <div className={SHARED_FEATURE_CLASS.pageSurface}>
       <TypingServiceHeader
         active="decks"
         title="YEON 연습덱"

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { CommonProductHeader } from "@/components/product-shell/product-header";
+import { SHARED_FEATURE_CLASS } from "@/features/shared-style-constants";
 import { NON_INDEXABLE_ROBOTS } from "@/lib/seo";
 import { SITE_BRAND_NAME } from "@/lib/site-brand";
 import { getCurrentAuthUser } from "@/server/auth/session";
@@ -22,7 +23,7 @@ export default async function ProfilePage() {
   const user = await getCurrentAuthUser();
 
   return (
-    <div className="min-h-screen bg-white text-[#111]">
+    <div className={SHARED_FEATURE_CLASS.pageSurface}>
       <CommonProductHeader activeService="home" brandLabel="YEON 내정보" />
 
       <main className="mx-auto max-w-[820px] px-6 py-12 md:px-12">

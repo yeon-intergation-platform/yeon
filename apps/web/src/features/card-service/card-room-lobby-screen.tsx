@@ -1,5 +1,7 @@
 "use client";
 
+import { SHARED_FEATURE_CLASS } from "@/features/shared-style-constants";
+
 import Link from "next/link";
 import { useCallback, useMemo, useState } from "react";
 import { Search, Users } from "lucide-react";
@@ -8,6 +10,7 @@ import { useTypingSettings } from "@/features/typing-service/use-typing-settings
 import {
   RoomCharacterSummaryCard,
   RoomCreateDialog,
+  ROOM_LOBBY_CLASS,
 } from "@/features/room-shared";
 import { CardRoomCreateForm } from "./card-room-create-screen";
 import { useCardRoomList, useCardRoomProfile } from "./hooks";
@@ -54,15 +57,13 @@ export function CardRoomLobbyScreen() {
   }, [rooms, searchKeyword, selectedFilter]);
 
   return (
-    <div className="min-h-screen bg-white text-[#111]">
+    <div className={SHARED_FEATURE_CLASS.pageSurface}>
       <CommonProductHeader activeService="card" />
       <main>
-        <section className="flex min-h-[174px] flex-col gap-6 px-6 py-10 md:flex-row md:items-center md:justify-between md:px-10">
+        <section className={ROOM_LOBBY_CLASS.heroSection}>
           <div>
-            <h1 className="text-[48px] font-black leading-none tracking-[-0.06em] text-[#111] md:text-[56px]">
-              카드방
-            </h1>
-            <p className="mt-5 text-[18px] font-medium leading-7 text-[#666]">
+            <h1 className={ROOM_LOBBY_CLASS.heroTitle}>카드방</h1>
+            <p className={ROOM_LOBBY_CLASS.heroDescription}>
               Spring에 저장된 실제 덱 스냅샷으로 카드방을 만들고, 실시간으로
               답변을 확인합니다.
             </p>
@@ -76,9 +77,9 @@ export function CardRoomLobbyScreen() {
           />
         </section>
 
-        <section className="border-t border-[#e5e5e5] px-6 py-6 md:px-10">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div className="flex gap-3 overflow-x-auto pb-1 md:pb-0">
+        <section className={ROOM_LOBBY_CLASS.listTopBorder}>
+          <div className={ROOM_LOBBY_CLASS.filterRow}>
+            <div className={ROOM_LOBBY_CLASS.filterScroller}>
               {FILTERS.map((filter) => (
                 <button
                   key={filter.value}
@@ -91,12 +92,12 @@ export function CardRoomLobbyScreen() {
                 </button>
               ))}
             </div>
-            <div className="flex flex-col gap-3 md:flex-row md:items-center">
-              <label className="relative block w-full md:w-[336px]">
+            <div className={ROOM_LOBBY_CLASS.inputButtonRow}>
+              <label className={ROOM_LOBBY_CLASS.searchField}>
                 <Search
                   aria-hidden="true"
                   size={22}
-                  className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#666]"
+                  className={ROOM_LOBBY_CLASS.searchIcon}
                 />
                 <input
                   value={searchKeyword}
@@ -146,7 +147,7 @@ export function CardRoomLobbyScreen() {
                 </button>
               </div>
             ) : (
-              <div className="grid gap-3 p-4 md:p-5">
+              <div className={ROOM_LOBBY_CLASS.roomListRow}>
                 {filteredRooms.map((room) => (
                   <Link
                     key={room.id}
@@ -154,7 +155,7 @@ export function CardRoomLobbyScreen() {
                     className="group grid gap-5 rounded-2xl border border-[#e5e5e5] bg-[#fafafa] p-5 no-underline transition-colors hover:border-[#111] hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#111] md:grid-cols-[1fr_auto]"
                   >
                     <div>
-                      <div className="flex flex-wrap items-center gap-2">
+                      <div className={SHARED_FEATURE_CLASS.wrapItemsCenterGap2}>
                         <span className="rounded-full border border-[#d9ead3] bg-[#eef8ea] px-2.5 py-1 text-[11px] font-bold text-[#2f7d32]">
                           {room.status === "waiting"
                             ? "대기중"
@@ -166,15 +167,19 @@ export function CardRoomLobbyScreen() {
                           {room.cardCount}장
                         </span>
                       </div>
-                      <h2 className="mt-3 text-[18px] font-semibold tracking-[-0.02em] text-[#111]">
+                      <h2 className={ROOM_LOBBY_CLASS.roomMetaRow}>
                         {room.title}
                       </h2>
-                      <p className="mt-2 text-[13px] font-medium text-[#666]">
+                      <p
+                        className={`mt-2 ${SHARED_FEATURE_CLASS.text13MediumSecondary}`}
+                      >
                         {room.deckTitle} · 방장 {room.hostLabel}
                       </p>
                     </div>
-                    <div className="flex items-center justify-between gap-4 md:flex-col md:items-end">
-                      <span className="inline-flex items-center gap-2 rounded-full border border-[#ddd] bg-white px-3 py-1.5 text-[13px] font-bold text-[#111]">
+                    <div className={ROOM_LOBBY_CLASS.roomStatusArea}>
+                      <span
+                        className={`inline-flex items-center gap-2 rounded-full border border-[#ddd] bg-white px-3 py-1.5 ${SHARED_FEATURE_CLASS.text13PrimaryBold}`}
+                      >
                         <Users size={14} /> 외우기 {room.memorizerCount} · 확인{" "}
                         {room.checkerCount}
                       </span>

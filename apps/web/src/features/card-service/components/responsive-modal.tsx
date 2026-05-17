@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, type ReactNode } from "react";
+import { SHARED_FEATURE_CLASS } from "@/features/shared-style-constants";
 
 interface ResponsiveModalProps {
   title: string;
@@ -58,7 +59,9 @@ export function ResponsiveModal({
                 {title}
               </h2>
               {description ? (
-                <p className="mt-2 text-[14px] leading-6 text-[#666] md:text-[15px]">
+                <p
+                  className={`mt-2 ${SHARED_FEATURE_CLASS.text14Neutral} leading-6 md:text-[15px]`}
+                >
                   {description}
                 </p>
               ) : null}

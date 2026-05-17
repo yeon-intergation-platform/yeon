@@ -5,6 +5,7 @@ import {
   CARD_ROOM_STATUS,
 } from "@yeon/api-contract/card-rooms";
 import type { CardRoomCardDto, CardRoomRealtimeState } from "@yeon/race-shared";
+import { SHARED_FEATURE_CLASS } from "@/features/shared-style-constants";
 
 type CardRoomStudyPanelProps = {
   state: CardRoomRealtimeState | null;
@@ -43,7 +44,7 @@ export function CardRoomStudyPanel({
   };
 
   return (
-    <div className="rounded-2xl border border-[#e5e5e5] bg-white p-4">
+    <div className={SHARED_FEATURE_CLASS.panelCard}>
       {state?.status === CARD_ROOM_STATUS.FINISHED ? (
         <div className="flex min-h-[280px] flex-col items-center justify-center text-center">
           <h2 className="text-[28px] font-black tracking-[-0.05em]">
@@ -68,7 +69,9 @@ export function CardRoomStudyPanel({
             <span className="mt-5 text-[26px] font-black tracking-[-0.04em] text-[#111]">
               {shouldShowBack ? currentCard.backText : currentCard.frontText}
             </span>
-            <span className="mt-5 text-[12px] font-semibold text-[#777]">
+            <span
+              className={`mt-5 ${SHARED_FEATURE_CLASS.text12EmphasisSubtle}`}
+            >
               {isChecker
                 ? "클릭해서 정답 공개"
                 : "외우는 사람은 앞면만 보고 답변합니다."}

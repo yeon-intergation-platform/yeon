@@ -3,6 +3,7 @@
 import type { KeyboardEvent } from "react";
 
 import { MarkdownContent } from "./markdown-content";
+import { SHARED_FEATURE_CLASS } from "@/features/shared-style-constants";
 
 interface PlayCardProps {
   frontText: string;
@@ -50,12 +51,16 @@ export function PlayCard({
           style={{ backfaceVisibility: "hidden" }}
         >
           <div className="shrink-0 border-b border-[#e5e5e5] bg-[#f5f5f5] px-4 py-1.5">
-            <span className="text-[11px] font-semibold tracking-wide text-[#888]">
+            <span
+              className={`${SHARED_FEATURE_CLASS.text11EmphasisSubtle} tracking-wide`}
+            >
               질문
             </span>
           </div>
           <div className="flex flex-1 overflow-y-auto p-12 text-center">
-            <div className="my-auto w-full text-[22px] text-[#111]">
+            <div
+              className={`${SHARED_FEATURE_CLASS.text22Emphasis} my-auto w-full`}
+            >
               <MarkdownContent>{frontText}</MarkdownContent>
             </div>
           </div>
@@ -70,7 +75,9 @@ export function PlayCard({
             </span>
           </div>
           <div className="flex flex-1 overflow-y-auto p-12 text-center">
-            <div className="my-auto w-full text-[22px] text-[#111]">
+            <div
+              className={`${SHARED_FEATURE_CLASS.text22Emphasis} my-auto w-full`}
+            >
               <MarkdownContent>{backText}</MarkdownContent>
             </div>
           </div>

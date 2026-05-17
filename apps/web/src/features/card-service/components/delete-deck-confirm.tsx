@@ -2,6 +2,8 @@
 
 import { useState, type FormEvent } from "react";
 
+import { CARD_SERVICE_COMMON_CLASS } from "../card-service-common.const";
+import { SHARED_FEATURE_CLASS } from "../../shared-style-constants";
 import { useDeleteDeck } from "../hooks";
 
 interface DeleteDeckConfirmProps {
@@ -34,20 +36,20 @@ export function DeleteDeckConfirm({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
+      className={SHARED_FEATURE_CLASS.modalOverlay}
       role="dialog"
       aria-modal="true"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-[420px] rounded-xl bg-white p-6"
+        className={SHARED_FEATURE_CLASS.modalCard}
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="text-[18px] font-semibold text-[#111]">덱 삭제</h2>
-        <p className="mt-3 text-[14px] text-[#666]">
+        <h2 className={CARD_SERVICE_COMMON_CLASS.panelBodyTitle}>덱 삭제</h2>
+        <p className={`mt-3 ${CARD_SERVICE_COMMON_CLASS.mutedErrorTextMd}`}>
           이 작업은 되돌릴 수 없습니다. 덱과 카드가 모두 삭제됩니다.
         </p>
-        <p className="mt-3 text-[14px] text-[#666]">
+        <p className={`mt-3 ${CARD_SERVICE_COMMON_CLASS.mutedErrorTextMd}`}>
           계속하려면 덱 제목{" "}
           <span className="font-semibold text-[#111]">{deckTitle}</span>을(를)
           아래에 그대로 입력해주세요.
@@ -57,16 +59,18 @@ export function DeleteDeckConfirm({
             value={typed}
             onChange={(e) => setTyped(e.target.value)}
             autoFocus
-            className="rounded-lg border border-[#e5e5e5] px-3 py-2 text-[14px] text-[#111] outline-none focus:border-[#111]"
+            className={SHARED_FEATURE_CLASS.inputText14}
           />
           {error ? (
-            <p className="text-[13px] text-red-600">{error.message}</p>
+            <p className={CARD_SERVICE_COMMON_CLASS.errorTextSm}>
+              {error.message}
+            </p>
           ) : null}
           <div className="mt-2 flex justify-end gap-2">
             <button
               type="button"
               onClick={onClose}
-              className="rounded-xl border border-[#e5e5e5] px-4 py-2 text-[14px] text-[#111] hover:bg-[#fafafa]"
+              className={SHARED_FEATURE_CLASS.ghostButtonMd14}
             >
               취소
             </button>

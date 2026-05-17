@@ -3,6 +3,7 @@
 import type { CardRoomParticipantDto } from "@yeon/race-shared";
 
 import { RoomParticipantCard } from "@/features/room-shared";
+import { SHARED_FEATURE_CLASS } from "@/features/shared-style-constants";
 import { CARD_ROOM_ROLE_LABELS } from "./card-room-labels";
 
 type CardRoomParticipantsPanelProps = {
@@ -17,7 +18,7 @@ export function CardRoomParticipantsPanel({
   frameOverrides,
 }: CardRoomParticipantsPanelProps) {
   return (
-    <div className="rounded-2xl border border-[#e5e5e5] bg-white p-4">
+    <div className={SHARED_FEATURE_CLASS.panelCard}>
       <h2 className="text-[14px] font-bold text-[#111]">실제 참가자</h2>
       <div className="mt-4 grid grid-cols-2 gap-3">
         {participants?.map((participant) => (
@@ -30,7 +31,7 @@ export function CardRoomParticipantsPanel({
             isCurrent={participant.id === participantId}
             frameOverrides={frameOverrides}
           />
-        )) ?? <p className="text-[13px] text-[#777]">입장 중...</p>}
+        )) ?? <p className={SHARED_FEATURE_CLASS.text13Subtle}>입장 중...</p>}
       </div>
     </div>
   );

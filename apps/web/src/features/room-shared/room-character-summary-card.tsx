@@ -6,6 +6,7 @@ import { CharacterSprite } from "@/features/typing-service/character-sprite";
 import { findCharacter } from "@/features/typing-service/characters";
 import { useCharacterFrameOverrides } from "@/features/typing-service/use-character-frame-overrides";
 import type { TypingLocale } from "@/features/typing-service/use-typing-settings";
+import { SHARED_FEATURE_CLASS } from "@/features/shared-style-constants";
 import { joinClassNames } from "@/components/yeon-ui";
 
 type RoomCharacterSummaryCardProps = {
@@ -47,13 +48,13 @@ export function RoomCharacterSummaryCard({
         ) : null}
       </div>
       <div>
-        <p className="text-[13px] font-semibold text-[#666]">입장 캐릭터</p>
+        <p className={SHARED_FEATURE_CLASS.text13EmphasisMuted}>입장 캐릭터</p>
         <p className="mt-1 text-[16px] font-bold text-[#111]">
           {loaded ? `${nickname} · ${character.label[locale]}` : loadingLabel}
         </p>
         <Link
           href={changeHref}
-          className="mt-2 inline-flex text-[12px] font-semibold text-[#666] underline underline-offset-4"
+          className={`mt-2 inline-flex ${SHARED_FEATURE_CLASS.text12EmphasisNeutral} underline underline-offset-4`}
         >
           캐릭터 바꾸기
         </Link>

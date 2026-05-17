@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { MessageCircle } from "lucide-react";
+import { SHARED_FEATURE_CLASS } from "@/features/shared-style-constants";
 
 import { type ChatServiceFeedPost } from "../chat-service-api";
 import { parseCommunityPost } from "../community-post-format";
@@ -80,7 +81,9 @@ export function FeedPostItem(props: {
         />
       ) : (
         <>
-          <div className="flex flex-wrap items-center gap-2 text-[13px] text-[#6b7280]">
+          <div
+            className={`flex flex-wrap items-center gap-2 ${SHARED_FEATURE_CLASS.text13Secondary}`}
+          >
             <span className="font-bold text-[#111827]">
               {post.author.nickname}
             </span>
@@ -156,7 +159,9 @@ export function FeedPostItem(props: {
       {expanded ? (
         <div className="mt-4 space-y-2 border-t border-[#f3f4f6] pt-4">
           {isRepliesLoading ? (
-            <p className="text-[13px] text-[#6b7280]">댓글을 불러오는 중...</p>
+            <p className={SHARED_FEATURE_CLASS.text13Secondary}>
+              댓글을 불러오는 중...
+            </p>
           ) : null}
 
           {replies.length ? (

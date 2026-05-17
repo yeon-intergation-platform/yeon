@@ -1,5 +1,7 @@
 "use client";
 
+import { SHARED_FEATURE_CLASS } from "@/features/shared-style-constants";
+
 import { useCallback, useEffect, useState } from "react";
 import type { DevLoginOption } from "@/lib/auth/dev-login-options";
 import { analyticsEvents, trackEvent } from "@/lib/analytics";
@@ -83,14 +85,14 @@ export function LandingHome({
         devLoginOptions={devLoginOptions}
       />
 
-      <div className="min-h-screen bg-white text-[#111]">
+      <div className={SHARED_FEATURE_CLASS.pageSurface}>
         <CommonProductHeader
           activeService="home"
           rightExtras={
             !isAuthenticated ? (
               <button
                 type="button"
-                className="rounded-xl border border-[#e5e5e5] bg-white px-4 py-2 text-[13px] font-semibold text-[#111] transition-colors hover:border-[#111] hover:bg-[#fafafa]"
+                className={`rounded-xl border border-[#e5e5e5] bg-white px-4 py-2 transition-colors hover:border-[#111] hover:bg-[#fafafa] ${SHARED_FEATURE_CLASS.text13Emphasis}`}
                 onClick={() => handleLoginModalOpen(nextPath, "landing_nav")}
               >
                 로그인
@@ -104,7 +106,9 @@ export function LandingHome({
             <h1 className="mt-4 text-[30px] font-black tracking-[-0.04em] text-[#111] md:text-[40px]">
               현재 {visibleServices.length}가지 서비스를 운영 중입니다.
             </h1>
-            <p className="mt-4 max-w-[720px] text-[14px] leading-[1.8] text-[#666] md:text-[15px]">
+            <p
+              className={`mt-4 max-w-[720px] ${SHARED_FEATURE_CLASS.text14Neutral} leading-[1.8] md:text-[15px]`}
+            >
               필요한 서비스를 선택해 바로 이용해보세요.
             </p>
             {hasHiddenCounselingService ? (
@@ -152,12 +156,14 @@ export function LandingHome({
                       <h3 className="text-[20px] font-semibold tracking-[-0.03em] text-[#111]">
                         {service.title}
                       </h3>
-                      <p className="mt-3 text-[14px] leading-[1.8] text-[#666]">
+                      <p
+                        className={`mt-3 ${SHARED_FEATURE_CLASS.text14Neutral} leading-[1.8]`}
+                      >
                         {service.summary}
                       </p>
                     </div>
                     <div className="mt-6 border-t border-[#e5e5e5] pt-4">
-                      <span className="text-[13px] font-semibold text-[#111]">
+                      <span className={SHARED_FEATURE_CLASS.text13Emphasis}>
                         {canOpen
                           ? "바로 이동"
                           : needsLogin
@@ -226,25 +232,25 @@ export function LandingHome({
 
         <footer className="border-t border-[#e5e5e5] px-6 py-6 md:px-12">
           <div className="mx-auto flex max-w-[1400px] flex-wrap items-center justify-between gap-4">
-            <span className="text-[12px] text-[#888]">
+            <span className={SHARED_FEATURE_CLASS.text12Soft}>
               &copy; 2026 {SITE_BRAND_NAME}
             </span>
             <div className="flex gap-4">
               <a
                 href="/privacy"
-                className="text-[12px] text-[#666] no-underline hover:text-[#111]"
+                className={`${SHARED_FEATURE_CLASS.text12Neutral} no-underline hover:text-[#111]`}
               >
                 개인정보처리방침
               </a>
               <a
                 href="/terms"
-                className="text-[12px] text-[#666] no-underline hover:text-[#111]"
+                className={`${SHARED_FEATURE_CLASS.text12Neutral} no-underline hover:text-[#111]`}
               >
                 이용약관
               </a>
               <a
                 href={`mailto:${SITE_SUPPORT_EMAIL}`}
-                className="text-[12px] text-[#666] no-underline hover:text-[#111]"
+                className={`${SHARED_FEATURE_CLASS.text12Neutral} no-underline hover:text-[#111]`}
               >
                 {SITE_SUPPORT_EMAIL}
               </a>

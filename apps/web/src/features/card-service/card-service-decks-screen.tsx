@@ -1,5 +1,8 @@
 "use client";
 
+import { CARD_SERVICE_COMMON_CLASS } from "./card-service-common.const";
+import { SHARED_FEATURE_CLASS } from "@/features/shared-style-constants";
+
 import { useCallback, useEffect, useState } from "react";
 import type { UseQueryResult } from "@tanstack/react-query";
 import type { CardDeckDto } from "@yeon/api-contract/card-decks";
@@ -97,7 +100,7 @@ export function CardServiceDecksScreen() {
   };
 
   return (
-    <div className="min-h-screen bg-white text-[#111]">
+    <div className={SHARED_FEATURE_CLASS.pageSurface}>
       <CommonProductHeader
         activeService="card"
         rightExtras={
@@ -133,7 +136,9 @@ export function CardServiceDecksScreen() {
           <h1 className="mt-4 text-[28px] font-black tracking-[-0.04em] text-[#111] md:text-[34px]">
             덱을 만들고 바로 복습하세요
           </h1>
-          <p className="mt-4 max-w-[720px] text-[14px] leading-[1.8] text-[#666] md:text-[15px]">
+          <p
+            className={`mt-4 max-w-[720px] ${SHARED_FEATURE_CLASS.text14Neutral} leading-[1.8] md:text-[15px]`}
+          >
             필요한 덱을 선택하거나 새로 만들어 바로 시작해보세요.
           </p>
         </section>
@@ -141,10 +146,12 @@ export function CardServiceDecksScreen() {
         <section className="mt-10">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <h2 className="text-[22px] font-semibold text-[#111]">
+              <h2 className={SHARED_FEATURE_CLASS.headingText22Emphasis}>
                 {isAuthenticated ? "내 덱" : "로그인 없이 만드는 덱"}
               </h2>
-              <p className="mt-2 text-[13px] leading-[1.7] text-[#666]">
+              <p
+                className={`${SHARED_FEATURE_CLASS.text13Neutral} mt-2 leading-[1.7]`}
+              >
                 덱을 열어 카드를 추가하고 바로 복습을 시작할 수 있습니다.
                 {!isAuthenticated
                   ? " 지금 만든 덱은 이 기기에만 저장되며, 로그인하면 계정으로 옮겨 계속 학습할 수 있어요."
@@ -161,10 +168,12 @@ export function CardServiceDecksScreen() {
           </div>
           <div className="mt-6">
             {state.kind === "loading" ? (
-              <p className="text-[14px] text-[#888]">불러오는 중...</p>
+              <p className={SHARED_FEATURE_CLASS.text14Soft}>불러오는 중...</p>
             ) : null}
             {state.kind === "error" ? (
-              <p className="text-[14px] text-red-600">{state.message}</p>
+              <p className={CARD_SERVICE_COMMON_CLASS.errorTextMd}>
+                {state.message}
+              </p>
             ) : null}
             {state.kind === "empty" ? (
               <EmptyDecksScreen onCreate={() => openCreate("empty_state")} />

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 
 import { analyticsEvents, trackEvent } from "@/lib/analytics";
+import { CARD_SERVICE_COMMON_CLASS } from "../card-service-common.const";
 import { useAddCard } from "../hooks";
 import { CardRichMarkdownEditor } from "./card-rich-markdown-editor";
 import { isEmptyRichContent, normalizeRichContent } from "./card-content-utils";
@@ -206,7 +207,7 @@ export function AddCardForm({
           <button
             type="button"
             onClick={onCancel}
-            className="rounded-2xl border border-[#e5e5e5] px-5 py-3 text-[14px] font-semibold text-[#111] transition-colors hover:bg-[#fafafa]"
+            className={`${CARD_SERVICE_COMMON_CLASS.panelTextEmphasis} rounded-2xl border border-[#e5e5e5] px-5 py-3 transition-colors hover:bg-[#fafafa]`}
           >
             취소
           </button>

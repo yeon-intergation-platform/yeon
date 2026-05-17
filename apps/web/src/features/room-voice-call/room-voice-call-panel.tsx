@@ -1,6 +1,7 @@
 "use client";
 
 import { Mic, MicOff, Phone, PhoneOff, RefreshCw } from "lucide-react";
+import { SHARED_FEATURE_CLASS } from "@/features/shared-style-constants";
 
 import type { RoomVoiceCallResult } from "./use-room-voice-call";
 
@@ -67,12 +68,12 @@ export function RoomVoiceCallPanel({
   const canControl = status === "connected" || status === "connecting";
 
   return (
-    <section className="rounded-2xl border border-[#e5e5e5] bg-white p-4">
+    <section className={SHARED_FEATURE_CLASS.panelCard}>
       <audio ref={audioRef} autoPlay playsInline />
       <div className="flex items-start justify-between gap-3">
         <div>
           <h2 className="text-[14px] font-bold text-[#111]">{title}</h2>
-          <p className="mt-1 text-[12px] text-[#777]">
+          <p className={`mt-1 ${SHARED_FEATURE_CLASS.text12Subtle}`}>
             1:1 브라우저 음성통화 · 텍스트 채팅은 그대로 유지됩니다.
           </p>
         </div>
@@ -85,7 +86,9 @@ export function RoomVoiceCallPanel({
       </div>
 
       {!isFeatureEnabled ? (
-        <p className="mt-3 rounded-xl border border-[#eee] bg-[#fafafa] px-3 py-2 text-[12px] font-semibold text-[#777]">
+        <p
+          className={`mt-3 rounded-xl border border-[#eee] bg-[#fafafa] px-3 py-2 ${SHARED_FEATURE_CLASS.text12EmphasisSubtle}`}
+        >
           음성통화 베타가 꺼져 있습니다. 운영 환경에서
           NEXT_PUBLIC_ENABLE_ROOM_VOICE_CALL=true 설정 시 활성화됩니다.
         </p>
@@ -179,7 +182,7 @@ export function RoomVoiceCallPanel({
       ) : null}
 
       {activeLabel && status !== "ringing" ? (
-        <p className="mt-2 text-[12px] font-semibold text-[#777]">
+        <p className={`mt-2 ${SHARED_FEATURE_CLASS.text12EmphasisSubtle}`}>
           상대: {activeLabel}
         </p>
       ) : null}

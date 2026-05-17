@@ -1,5 +1,7 @@
 "use client";
 
+import { SHARED_FEATURE_CLASS } from "@/features/shared-style-constants";
+
 type CommunityChatHeaderProps = {
   activePresenceCount: number;
   compact?: boolean;
@@ -16,7 +18,7 @@ export function CommunityChatHeader({
       <div className="flex items-center justify-between gap-3 pr-10">
         <h2 className="text-[15px] font-semibold text-[#111]">실시간 채팅</h2>
         <span
-          className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-[#777]"
+          className={`inline-flex items-center gap-1.5 ${SHARED_FEATURE_CLASS.text12EmphasisSubtle}`}
           aria-label={`현재 접속 ${activePresenceCount}명`}
         >
           <span className="h-2 w-2 rounded-full bg-emerald-500" />

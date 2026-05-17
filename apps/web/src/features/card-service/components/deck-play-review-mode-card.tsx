@@ -7,6 +7,7 @@ import {
 } from "@yeon/api-contract/card-decks";
 
 import { MarkdownContent } from "./markdown-content";
+import { CARD_SERVICE_COMMON_CLASS } from "../card-service-common.const";
 
 const REVIEW_ACTIONS: Array<{
   difficulty: CardReviewDifficulty;
@@ -51,7 +52,9 @@ export function DeckPlayReviewModeCard({
 }: DeckPlayReviewModeCardProps) {
   return (
     <section className="w-full max-w-[760px] rounded-2xl border border-[#111] bg-white p-5 shadow-[0_18px_60px_rgba(0,0,0,0.08)] md:p-7">
-      <div className="flex items-center justify-between border-b border-[#e5e5e5] pb-4 text-[14px] font-semibold text-[#111]">
+      <div
+        className={`flex items-center justify-between border-b border-[#e5e5e5] pb-4 ${CARD_SERVICE_COMMON_CLASS.panelTextEmphasis}`}
+      >
         <span>
           카드 | {currentIndex + 1}/{totalCount}
         </span>

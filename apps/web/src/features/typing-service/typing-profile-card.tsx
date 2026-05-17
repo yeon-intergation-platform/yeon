@@ -6,6 +6,7 @@ import { TYPING_CHARACTERS, findCharacter } from "./characters";
 import { useCharacterFrameOverrides } from "./use-character-frame-overrides";
 import type { TypingProfile } from "./use-typing-profile";
 import type { TypingLocale } from "./use-typing-settings";
+import { TYPING_PROFILE_CARD_CLASS } from "./typing-profile-card.const";
 
 const CARD_DISPLAY_MAX_HEIGHT = 312;
 
@@ -56,16 +57,16 @@ export function TypingProfileCard({
   );
 
   const charBtnClass = (id: string) =>
-    `rounded-lg border px-3 py-1.5 text-[12px] font-medium transition-colors ${
+    `${TYPING_PROFILE_CARD_CLASS.ctaButtonBase} ${
       profile.characterId === id
-        ? "border-[#111] bg-[#111] text-white"
-        : "border-[#e5e5e5] text-[#555] hover:border-[#aaa]"
+        ? TYPING_PROFILE_CARD_CLASS.ctaButtonSelected
+        : TYPING_PROFILE_CARD_CLASS.ctaButtonDefault
     }`;
 
   return (
-    <div className="flex w-full max-w-full min-w-0 flex-col items-center rounded-2xl border border-[#e5e5e5] bg-white px-4 py-6 sm:max-w-[380px] sm:px-10 sm:py-8">
+    <div className={TYPING_PROFILE_CARD_CLASS.root}>
       {/* 캐릭터 애니메이션 */}
-      <div className="mb-5 flex h-[300px] w-full items-end justify-center rounded-xl bg-[#f5f5f5] px-3 py-3 sm:mb-6 sm:h-[360px] sm:px-4">
+      <div className={TYPING_PROFILE_CARD_CLASS.spriteWrapper}>
         <CharacterSprite
           character={selectedChar}
           maxHeight={CARD_DISPLAY_MAX_HEIGHT}
@@ -74,7 +75,7 @@ export function TypingProfileCard({
       </div>
 
       {/* 닉네임 */}
-      <div className="mb-5 flex items-center gap-2">
+      <div className={TYPING_PROFILE_CARD_CLASS.nicknameRow}>
         {isEditing ? (
           <input
             ref={inputRef}
@@ -89,23 +90,25 @@ export function TypingProfileCard({
               }
             }}
             maxLength={20}
-            className="w-44 border-b border-[#111] bg-transparent text-center text-[20px] font-semibold text-[#111] outline-none"
+            className={TYPING_PROFILE_CARD_CLASS.nicknameInput}
           />
         ) : (
           <button
             type="button"
-            className="flex items-center gap-1.5 text-[20px] font-semibold text-[#111] hover:text-[#555]"
+            className={TYPING_PROFILE_CARD_CLASS.nicknameButton}
             onClick={() => setIsEditing(true)}
           >
             {profile.nickname}
-            <span className="text-[13px] font-normal text-[#bbb]">✎</span>
+            <span className={TYPING_PROFILE_CARD_CLASS.nicknameEditIcon}>
+              ✎
+            </span>
           </button>
         )}
       </div>
 
       {/* 캐릭터 선택 */}
-      <div className="flex flex-col items-center gap-2">
-        <div className="flex flex-wrap justify-center gap-2">
+      <div className={TYPING_PROFILE_CARD_CLASS.characterListWrapper}>
+        <div className={TYPING_PROFILE_CARD_CLASS.characterListStack}>
           {featured.map((char) => (
             <button
               key={char.id}
@@ -118,7 +121,7 @@ export function TypingProfileCard({
           ))}
         </div>
         {expanded && (
-          <div className="flex flex-wrap justify-center gap-2">
+          <div className={TYPING_PROFILE_CARD_CLASS.characterListStack}>
             {rest.map((char) => (
               <button
                 key={char.id}
@@ -134,7 +137,7 @@ export function TypingProfileCard({
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
-          className="mt-1 text-[11px] text-[#aaa] hover:text-[#555]"
+          className={TYPING_PROFILE_CARD_CLASS.characterToggle}
         >
           {expanded ? "접기 ↑" : `더 보기 (${rest.length}개) ↓`}
         </button>
