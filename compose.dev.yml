@@ -93,6 +93,9 @@ services:
     environment:
       NODE_ENV: production
       PORT: 2567
+      SPRING_BOOTSTRAP_BASE_URL: http://backend:8081
+      SPRING_BACKEND_BASE_URL: http://backend:8081
+      SPRING_INTERNAL_TOKEN: ${SPRING_INTERNAL_TOKEN}
     ports:
       - "${RACE_SERVER_PORT:-2567}:2567"
     networks:
@@ -100,6 +103,9 @@ services:
       edge:
         aliases:
           - yeon-dev-race
+    depends_on:
+      backend:
+        condition: service_healthy
 
   db:
     image: postgres:16-bookworm
