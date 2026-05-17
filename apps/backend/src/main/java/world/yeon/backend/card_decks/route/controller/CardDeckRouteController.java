@@ -1,6 +1,6 @@
 package world.yeon.backend.card_decks.route.controller;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import java.util.Map;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -35,7 +35,7 @@ public class CardDeckRouteController {
 	}
 
 	@PatchMapping("/card-decks/{deckId}")
-	public CardDeckResponse updateDeck(@RequestHeader("X-Yeon-User-Id") UUID userId, @PathVariable String deckId, @RequestBody JsonNode request) {
+	public CardDeckResponse updateDeck(@RequestHeader("X-Yeon-User-Id") UUID userId, @PathVariable String deckId, @RequestBody Map<String, Object> request) {
 		return service.updateDeck(userId, deckId, new UpdateCardDeckRequest(request));
 	}
 
@@ -56,7 +56,7 @@ public class CardDeckRouteController {
 	}
 
 	@PatchMapping("/card-decks/{deckId}/items/{itemId}")
-	public CardDeckItemResponse updateItem(@RequestHeader("X-Yeon-User-Id") UUID userId, @PathVariable String deckId, @PathVariable String itemId, @RequestBody JsonNode request) {
+	public CardDeckItemResponse updateItem(@RequestHeader("X-Yeon-User-Id") UUID userId, @PathVariable String deckId, @PathVariable String itemId, @RequestBody Map<String, Object> request) {
 		return service.updateItem(userId, deckId, itemId, new UpdateCardDeckItemRequest(request));
 	}
 
