@@ -44,6 +44,37 @@ describe("social providers", () => {
     expect(url).toContain("code_challenge_method=S256");
   });
 
+
+  it("NEXT_PUBLIC_APP_URL이 있으면 내부 요청 origin이 달라도 google redirect_uri는 canonical callback을 사용한다", () => {
+    const url = new URL(
+      buildSocialAuthorizationUrl({
+        provider: "google",
+        state: "state-token",
+        codeChallenge: "challenge-abc",
+        originFallback: "http://yeon-prod-web:3000",
+      })
+    );
+
+    expect(url.searchParams.get("redirect_uri")).toBe(
+      "https://yeon.world/api/auth/google/callback"
+    );
+  });
+
+  it("NEXT_PUBLIC_APP_URL이 있으면 내부 요청 origin이 달라도 kakao redirect_uri는 canonical callback을 사용한다", () => {
+    const url = new URL(
+      buildSocialAuthorizationUrl({
+        provider: "kakao",
+        state: "kakao-state",
+        codeChallenge: "kakao-challenge",
+        originFallback: "http://yeon-prod-web:3000",
+      })
+    );
+
+    expect(url.searchParams.get("redirect_uri")).toBe(
+      "https://yeon.world/api/auth/kakao/callback"
+    );
+  });
+
   it("필수 env가 없으면 providerNotConfigured 오류를 던진다", () => {
     delete process.env.GOOGLE_CLIENT_ID;
 
