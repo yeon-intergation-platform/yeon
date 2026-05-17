@@ -6,6 +6,7 @@ import type { CardRoomRole, CardRoomRealtimeState } from "@yeon/race-shared";
 import { SHARED_FEATURE_CLASS } from "@/features/shared-style-constants";
 
 import {
+  CARD_ROOM_CONNECTION_STATE_LABELS,
   CARD_ROOM_ROLE_LABELS,
   CARD_ROOM_STATUS_LABELS,
 } from "./card-room-labels";
@@ -41,7 +42,10 @@ export function CardRoomHeader({
               #{roomId}
             </span>
             <span className="rounded-full border border-[#d9ead3] bg-[#eef8ea] px-3 py-1 text-[12px] font-bold text-[#2f7d32]">
-              {state ? CARD_ROOM_STATUS_LABELS[state.status] : connectionState}
+              {state
+                ? CARD_ROOM_STATUS_LABELS[state.status]
+                : (CARD_ROOM_CONNECTION_STATE_LABELS[connectionState] ??
+                  "연결 확인 중")}
             </span>
           </div>
           <h1 className="mt-3 text-[24px] font-black tracking-[-0.04em] md:text-[30px]">
@@ -50,7 +54,7 @@ export function CardRoomHeader({
           <p className="mt-2 text-[14px] font-medium text-[#666]">
             {state
               ? `${state.deckTitle} · ${currentCardIndex} / ${state.cards.length} · 현재 역할 ${currentRoleLabel}`
-              : "Spring 카드방 상태를 불러오는 중입니다."}
+              : "카드방 상태를 불러오는 중입니다."}
           </p>
         </div>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">

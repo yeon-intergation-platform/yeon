@@ -264,7 +264,7 @@ export function CardRoomCreateScreen() {
           <p
             className={`mt-3 ${SHARED_FEATURE_CLASS.text14Neutral} leading-[1.7]`}
           >
-            방을 만들면 현재 덱 내용이 Spring 카드방 스냅샷으로 고정됩니다. 이후
+            방을 만들면 현재 덱 내용이 카드방 학습 스냅샷으로 고정됩니다. 이후
             덱을 수정해도 이 방의 카드는 바뀌지 않습니다.
           </p>
         </section>

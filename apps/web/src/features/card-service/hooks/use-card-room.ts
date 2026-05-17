@@ -23,6 +23,27 @@ import { cardServiceFetchJson } from "../card-service-fetch";
 
 export const cardRoomsQueryKey = () => ["card-rooms"] as const;
 
+const CARD_ROOM_NETWORK_ERROR_PATTERNS = [
+  "failed to fetch",
+  "fetch failed",
+  "networkerror",
+  "load failed",
+  "econnrefused",
+] as const;
+
+function normalizeCardRoomConnectionError(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error || "");
+  const lowerMessage = message.toLowerCase();
+  if (
+    CARD_ROOM_NETWORK_ERROR_PATTERNS.some((pattern) =>
+      lowerMessage.includes(pattern)
+    )
+  ) {
+    return "카드방 연결에 실패했습니다. 잠시 후 다시 입장해 주세요.";
+  }
+  return message || "카드방에 연결하지 못했습니다.";
+}
+
 export function useCardRoomList() {
   return useQuery({
     queryKey: cardRoomsQueryKey(),
@@ -118,16 +139,16 @@ export function useCardRoomConnection(
         });
         room.onError((_code, message) => {
           if (!cancelled) {
-            setError(String(message || "카드방 연결 오류"));
+            setError(
+              normalizeCardRoomConnectionError(message || "카드방 연결 오류")
+            );
             setConnectionState("error");
           }
         });
       })
       .catch((err) => {
         if (!cancelled) {
-          setError(
-            err instanceof Error ? err.message : "카드방에 연결하지 못했습니다."
-          );
+          setError(normalizeCardRoomConnectionError(err));
           setConnectionState("error");
         }
       });
