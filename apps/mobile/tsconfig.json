@@ -4,12 +4,8 @@
   "compilerOptions": {
     "strict": true,
     "baseUrl": ".",
-    "noEmit": true
+    "noEmit": true,
+    "types": ["node"]
   },
-  "include": [
-    "expo-env.d.ts",
-    "app/**/*",
-    "src/**/*",
-    ".expo/types/**/*.ts"
-  ]
+  "include": ["expo-env.d.ts", "app/**/*", "src/**/*", ".expo/types/**/*.ts"]
 }

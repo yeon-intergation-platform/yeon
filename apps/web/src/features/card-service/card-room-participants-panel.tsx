@@ -26,7 +26,7 @@ export function CardRoomParticipantsPanel({
             key={participant.id}
             identityKey={participant.id}
             title={participant.nickname}
-            subtitle={CARD_ROOM_ROLE_LABELS[participant.role]}
+            subtitle={`${participant.isHost ? "방장 · " : ""}${CARD_ROOM_ROLE_LABELS[participant.role]} · ${participant.isReady ? "준비" : "대기"}`}
             characterId={participant.characterId}
             isCurrent={participant.id === participantId}
             frameOverrides={frameOverrides}

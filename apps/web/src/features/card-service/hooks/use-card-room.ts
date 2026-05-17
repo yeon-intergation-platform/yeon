@@ -183,6 +183,23 @@ export function useCardRoomConnection(
       roomRef.current?.send(CARD_ROOM_EVENTS.ROLE, { role }),
     []
   );
+  const sendReady = useCallback(
+    (isReady: boolean) =>
+      roomRef.current?.send(CARD_ROOM_EVENTS.READY, { isReady }),
+    []
+  );
+  const sendStart = useCallback(
+    () => roomRef.current?.send(CARD_ROOM_EVENTS.START, {}),
+    []
+  );
+  const sendEnd = useCallback(
+    () => roomRef.current?.send(CARD_ROOM_EVENTS.END, {}),
+    []
+  );
+  const sendLeave = useCallback(
+    () => roomRef.current?.send(CARD_ROOM_EVENTS.LEAVE, {}),
+    []
+  );
 
   return useMemo(
     () => ({
@@ -195,6 +212,10 @@ export function useCardRoomConnection(
       sendReveal,
       sendNext,
       sendRole,
+      sendReady,
+      sendStart,
+      sendEnd,
+      sendLeave,
     }),
     [
       state,
@@ -206,6 +227,10 @@ export function useCardRoomConnection(
       sendReveal,
       sendNext,
       sendRole,
+      sendReady,
+      sendStart,
+      sendEnd,
+      sendLeave,
     ]
   );
 }

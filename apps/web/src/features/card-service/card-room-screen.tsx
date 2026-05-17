@@ -61,6 +61,16 @@ export function CardRoomScreen({ roomId }: CardRoomScreenProps) {
   }, [guestId, profile, profileLoaded, roomId]);
 
   const state = room.state;
+  useEffect(() => {
+    if (!state || !participantId) return;
+    const exists = state.participants.some(
+      (participant) => participant.id === participantId
+    );
+    if (exists) return;
+    sessionStorage.removeItem(`yeon-card-room-participant:${roomId}`);
+    setParticipantId(null);
+  }, [participantId, roomId, state]);
+
   const voiceParticipants = useMemo(
     () =>
       (state?.participants ?? []).map((participant) => ({
@@ -81,6 +91,20 @@ export function CardRoomScreen({ roomId }: CardRoomScreenProps) {
   const currentCard = state?.cards[state.currentCardIndex] ?? null;
   const isChecker = myParticipant?.role === CARD_ROOM_ROLE.CHECKER;
   const isMemorizer = myParticipant?.role === CARD_ROOM_ROLE.MEMORIZER;
+  const isWaiting = state?.status === CARD_ROOM_STATUS.WAITING;
+  const canStart = Boolean(
+    isWaiting &&
+    myParticipant?.isHost &&
+    state &&
+    state.cards.length > 0 &&
+    state.participants.some(
+      (participant) => participant.role === CARD_ROOM_ROLE.MEMORIZER
+    ) &&
+    state.participants.some(
+      (participant) => participant.role === CARD_ROOM_ROLE.CHECKER
+    ) &&
+    state.participants.every((participant) => participant.isReady)
+  );
   const shouldShowBack =
     state?.status === CARD_ROOM_STATUS.GIVEN_UP ||
     state?.status === CARD_ROOM_STATUS.REVEALED ||
@@ -95,6 +119,12 @@ export function CardRoomScreen({ roomId }: CardRoomScreenProps) {
     room.sendChat(text);
     setChatDraft("");
   }
+  function leaveRoom() {
+    if (participantId) {
+      sessionStorage.removeItem(`yeon-card-room-participant:${roomId}`);
+      room.sendLeave();
+    }
+  }
 
   return (
     <div className={SHARED_FEATURE_CLASS.pageSurface}>
@@ -104,8 +134,13 @@ export function CardRoomScreen({ roomId }: CardRoomScreenProps) {
           roomId={roomId}
           state={state}
           connectionState={room.connectionState}
-          myRole={myParticipant?.role ?? null}
+          myParticipant={myParticipant}
+          canStart={canStart}
           onRoleChange={room.sendRole}
+          onReadyChange={room.sendReady}
+          onStart={room.sendStart}
+          onEnd={room.sendEnd}
+          onLeave={leaveRoom}
         />
 
         {joinError || room.error ? (

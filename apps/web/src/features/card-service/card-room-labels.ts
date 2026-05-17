@@ -5,6 +5,7 @@ export const CARD_ROOM_STATUS_LABELS = {
   given_up: "포기",
   revealed: "정답 공개",
   finished: "완료",
+  closed: "종료",
 } as const;
 
 export const CARD_ROOM_ROLE_LABELS = {

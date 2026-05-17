@@ -46,7 +46,45 @@ export function CardRoomStudyPanel({
 
   return (
     <div className={SHARED_FEATURE_CLASS.panelCard}>
-      {state?.status === CARD_ROOM_STATUS.FINISHED ? (
+      {state?.status === CARD_ROOM_STATUS.WAITING ? (
+        <div className="flex min-h-[280px] flex-col items-center justify-center text-center">
+          <h2 className="text-[24px] font-black tracking-[-0.05em]">
+            학습 대기실
+          </h2>
+          <p className="mt-3 max-w-[360px] text-[14px] font-semibold leading-6 text-[#666]">
+            역할을 정하고 모두 준비하면 방장이 학습을 시작합니다. 새로고침해도
+            이 방과 카드 목록은 유지됩니다.
+          </p>
+          <div className="mt-5 grid gap-2 text-[13px] font-bold text-[#777]">
+            <span>
+              외우는 사람{" "}
+              {
+                state.participants.filter(
+                  (participant) => participant.role === "MEMORIZER"
+                ).length
+              }
+              명
+            </span>
+            <span>
+              봐주는 사람{" "}
+              {
+                state.participants.filter(
+                  (participant) => participant.role === "CHECKER"
+                ).length
+              }
+              명
+            </span>
+            <span>카드 {state.cards.length}장</span>
+          </div>
+        </div>
+      ) : state?.status === CARD_ROOM_STATUS.CLOSED ? (
+        <div className="flex min-h-[280px] flex-col items-center justify-center text-center">
+          <h2 className="text-[28px] font-black tracking-[-0.05em]">방 종료</h2>
+          <p className="mt-3 text-[15px] font-semibold text-[#666]">
+            방장이 카드방을 종료했습니다.
+          </p>
+        </div>
+      ) : state?.status === CARD_ROOM_STATUS.FINISHED ? (
         <div className="flex min-h-[280px] flex-col items-center justify-center text-center">
           <h2 className="text-[28px] font-black tracking-[-0.05em]">
             학습 완료
@@ -82,7 +120,6 @@ export function CardRoomStudyPanel({
           </button>
           <div className="mt-4 grid gap-3">
             {state?.status === CARD_ROOM_STATUS.ANSWERING ||
-            state?.status === CARD_ROOM_STATUS.WAITING ||
             state?.status === CARD_ROOM_STATUS.REVEALED ? (
               <div className="grid gap-3 sm:grid-cols-2">
                 <button
