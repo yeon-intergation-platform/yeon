@@ -35,14 +35,14 @@ export function CardEditorPreview({
   const hasContent = isMeaningfulCardEditorContent(value);
 
   return (
-    <aside className="flex h-full flex-col rounded-2xl border border-[#e8e8e8] bg-[#fafafa] p-3 md:p-4">
-      <div className={`mb-3 ${SHARED_FEATURE_CLASS.alignBetweenGap3} px-1`}>
+    <aside className="flex h-full flex-col overflow-hidden rounded-2xl border border-[#e8e8e8] bg-white">
+      <div
+        className={`${SHARED_FEATURE_CLASS.alignBetweenGap3} border-b border-[#eeeeee] bg-[#fafafa] px-5 py-3 md:px-6`}
+      >
         <p className={SHARED_FEATURE_CLASS.text13Emphasis}>미리보기</p>
         <p className="truncate text-[12px] font-medium text-[#888]">{label}</p>
       </div>
-      <div
-        className={`flex-1 rounded-2xl border border-[#eeeeee] bg-white p-5 shadow-[0_10px_30px_rgba(17,17,17,0.04)] md:p-6 ${previewHeightClassName}`}
-      >
+      <div className={`flex-1 p-5 md:p-6 ${previewHeightClassName}`}>
         {hasContent ? (
           <MarkdownContent>{value}</MarkdownContent>
         ) : (
