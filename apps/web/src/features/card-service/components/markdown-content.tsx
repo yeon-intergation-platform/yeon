@@ -134,8 +134,36 @@ function sanitizeHtml(value: string) {
   return document.body.innerHTML;
 }
 
+function renderHtmlMermaidBlock(
+  host: HTMLDivElement,
+  code: string,
+  elementId: string
+) {
+  import("mermaid")
+    .then(async ({ default: mermaid }) => {
+      mermaid.initialize({
+        startOnLoad: false,
+        securityLevel: "strict",
+        theme: "neutral",
+        fontFamily:
+          'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+      });
+
+      const result = await mermaid.render(elementId, code);
+      host.innerHTML = result.svg;
+    })
+    .catch(() => {
+      host.innerHTML = "";
+      const fallback = document.createElement("pre");
+      const fallbackCode = document.createElement("code");
+      fallbackCode.textContent = code;
+      fallback.append(fallbackCode);
+      host.append(fallback);
+    });
+}
+
 function decorateHtmlCodeBlocks(container: HTMLDivElement, inverted: boolean) {
-  container.querySelectorAll("pre").forEach((pre) => {
+  container.querySelectorAll("pre").forEach((pre, index) => {
     if (pre.parentElement?.classList.contains("card-code-block-wrapper")) {
       return;
     }
@@ -178,6 +206,21 @@ function decorateHtmlCodeBlocks(container: HTMLDivElement, inverted: boolean) {
 
     header.append(languageLabel, copyButton);
     pre.parentNode?.insertBefore(wrapper, pre);
+
+    if (language === "mermaid") {
+      const mermaidBody = document.createElement("div");
+      mermaidBody.className = "card-mermaid-html-body";
+      mermaidBody.textContent = "다이어그램 렌더링 중...";
+      wrapper.append(header, mermaidBody);
+      pre.remove();
+      renderHtmlMermaidBlock(
+        mermaidBody,
+        codeText.replace(/\n$/, ""),
+        `card-html-mermaid-${Date.now()}-${index}`
+      );
+      return;
+    }
+
     wrapper.append(header, pre);
   });
 }
@@ -321,6 +364,20 @@ export function MarkdownContent({
       .card-markdown-html .card-code-block-wrapper pre {
         border-radius: 0;
         margin: 0;
+      }
+      .card-markdown-html .card-mermaid-html-body {
+        background: #fff;
+        color: #777;
+        font-size: 12px;
+        font-weight: 600;
+        overflow-x: auto;
+        padding: 1rem;
+      }
+      .card-markdown-html .card-mermaid-html-body svg,
+      .card-mermaid-diagram svg {
+        display: block;
+        height: auto;
+        max-width: 100%;
       }
       .card-markdown-html a {
         text-decoration: underline;
