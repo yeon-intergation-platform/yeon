@@ -27,19 +27,21 @@ import { colors } from "../../../theme/colors";
 export function FriendsScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { session } = useChatServiceSession();
+  const { session, status } = useChatServiceSession();
+  const isSignedIn = status === "signed_in";
+  const sessionToken = session?.token ?? "";
 
   const overviewQuery = useQuery({
-    enabled: Boolean(session?.token),
+    enabled: isSignedIn,
     queryFn: async () => {
-      return chatServiceApi.getChatServiceFriendsOverview(session!.token);
+      return chatServiceApi.getChatServiceFriendsOverview(sessionToken);
     },
     queryKey: chatServiceQueryKeys.friends,
   });
 
   const friendRequestMutation = useMutation({
     mutationFn: async (targetProfileId: string) => {
-      return chatServiceApi.sendChatServiceFriendRequest(session!.token, {
+      return chatServiceApi.sendChatServiceFriendRequest(sessionToken, {
         targetProfileId,
       });
     },

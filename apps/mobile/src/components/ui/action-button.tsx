@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import type { StyleProp, TextStyle, ViewStyle } from "react-native";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { colors } from "../../theme/colors";
@@ -7,7 +8,9 @@ type ActionButtonProps = {
   label: string;
   onPress: () => void;
   disabled?: boolean;
-  variant?: "primary" | "secondary" | "danger";
+  style?: StyleProp<ViewStyle>;
+  labelStyle?: StyleProp<TextStyle>;
+  variant?: "primary" | "secondary" | "danger" | "dark";
   leftSlot?: ReactNode;
 };
 
@@ -17,11 +20,14 @@ export function ActionButton({
   disabled = false,
   variant = "primary",
   leftSlot,
+  style,
+  labelStyle,
 }: ActionButtonProps) {
   const palette = palettes[variant];
 
   return (
     <Pressable
+      accessibilityLabel={label}
       accessibilityRole="button"
       disabled={disabled}
       onPress={onPress}
@@ -32,10 +38,13 @@ export function ActionButton({
           borderColor: palette.borderColor,
           opacity: disabled ? 0.45 : pressed ? 0.88 : 1,
         },
+        style,
       ]}
     >
       {leftSlot ? <View style={styles.leftSlot}>{leftSlot}</View> : null}
-      <Text style={[styles.label, { color: palette.labelColor }]}>{label}</Text>
+      <Text style={[styles.label, { color: palette.labelColor }, labelStyle]}>
+        {label}
+      </Text>
     </Pressable>
   );
 }
@@ -55,6 +64,11 @@ const palettes = {
     backgroundColor: "#FFF0EF",
     borderColor: "#E8B5B0",
     labelColor: colors.danger,
+  },
+  dark: {
+    backgroundColor: colors.black,
+    borderColor: colors.black,
+    labelColor: colors.white,
   },
 } as const;
 

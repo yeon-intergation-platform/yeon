@@ -29,20 +29,22 @@ export function ChatRoomScreen() {
   const scrollRef = useRef<ScrollView | null>(null);
   const { roomId: rawRoomId } = useLocalSearchParams();
   const roomId = parseOptionalString(rawRoomId) ?? "";
-  const { session } = useChatServiceSession();
+  const { session, status } = useChatServiceSession();
+  const isSignedIn = status === "signed_in";
+  const sessionToken = session?.token ?? "";
   const [draft, setDraft] = useState("");
 
   const roomQuery = useQuery({
-    enabled: Boolean(session?.token && roomId),
+    enabled: isSignedIn && Boolean(roomId),
     queryFn: async () => {
-      return chatServiceApi.getChatServiceRoom(session!.token, roomId);
+      return chatServiceApi.getChatServiceRoom(sessionToken, roomId);
     },
     queryKey: chatServiceQueryKeys.room(roomId),
   });
 
   const sendMutation = useMutation({
     mutationFn: async () => {
-      return chatServiceApi.sendChatServiceMessage(session!.token, roomId, {
+      return chatServiceApi.sendChatServiceMessage(sessionToken, roomId, {
         body: draft.trim(),
       });
     },
@@ -59,7 +61,7 @@ export function ChatRoomScreen() {
 
   const blockMutation = useMutation({
     mutationFn: async (profileId: string) => {
-      return chatServiceApi.blockChatServiceProfile(session!.token, profileId);
+      return chatServiceApi.blockChatServiceProfile(sessionToken, profileId);
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({
@@ -76,7 +78,7 @@ export function ChatRoomScreen() {
 
   const reportMutation = useMutation({
     mutationFn: async (messageId: string) => {
-      return chatServiceApi.createChatServiceReport(session!.token, {
+      return chatServiceApi.createChatServiceReport(sessionToken, {
         reason: "채팅 메시지 신고",
         targetId: messageId,
         targetType: "chat_message",
@@ -161,7 +163,7 @@ export function ChatRoomScreen() {
                         style: "destructive",
                         text: "차단",
                       },
-                    ],
+                    ]
                   );
                 }}
                 variant="danger"

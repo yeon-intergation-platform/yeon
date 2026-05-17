@@ -27,7 +27,12 @@ export function TopBar({
       {rightSlot ? (
         rightSlot
       ) : rightLabel && onRightPress ? (
-        <Pressable onPress={onRightPress} style={styles.action}>
+        <Pressable
+          accessibilityLabel={rightLabel}
+          accessibilityRole="button"
+          onPress={onRightPress}
+          style={styles.action}
+        >
           <Text style={styles.actionLabel}>{rightLabel}</Text>
         </Pressable>
       ) : null}

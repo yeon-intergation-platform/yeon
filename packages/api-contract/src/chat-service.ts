@@ -53,6 +53,15 @@ export const chatServiceVerifyOtpResponseSchema = z.object({
   session: chatServiceSessionDtoSchema,
 });
 
+export const chatServiceGuestProfileRequestSchema = z.object({
+  guestNickname: z.string().trim().min(1).max(40),
+  guestPassword: z.string().trim().min(1).max(128),
+});
+
+export const chatServiceGuestProfileResponseSchema = z.object({
+  id: z.string().uuid(),
+});
+
 export const chatServiceSessionResponseSchema = z.object({
   authenticated: z.boolean(),
   session: chatServiceSessionDtoSchema.nullable(),

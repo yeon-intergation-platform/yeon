@@ -4,12 +4,53 @@ import { useQueryClient } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { createContext, useContext, useEffect, useState } from "react";
 
+import { isAnonymousApp } from "../lib/mobile-app-mode";
 import { chatServiceApi } from "../services/chat-service/client";
 import {
   clearChatServiceSessionToken,
   readChatServiceSessionToken,
   writeChatServiceSessionToken,
 } from "../services/chat-service/storage";
+
+const CHAT_SERVICE_GUEST_SESSION_PREFIX = "guest:";
+const CHAT_SERVICE_GUEST_SESSION_TTL_MS = 24 * 60 * 60 * 1000;
+
+function buildGuestProfileFallback(profileId: string) {
+  return {
+    ageLabel: "게스트",
+    avatarUrl: null,
+    bio: "",
+    id: profileId,
+    nickname: "익명 사용자",
+    points: 0,
+    regionLabel: "익명",
+  };
+}
+
+function buildGuestSessionToken(profileId: string) {
+  return `${CHAT_SERVICE_GUEST_SESSION_PREFIX}${profileId}`;
+}
+
+function parseGuestProfileId(sessionToken: string) {
+  if (!sessionToken.startsWith(CHAT_SERVICE_GUEST_SESSION_PREFIX)) {
+    return null;
+  }
+
+  const profileId = sessionToken.slice(
+    CHAT_SERVICE_GUEST_SESSION_PREFIX.length
+  );
+
+  return profileId.length > 0 ? profileId : null;
+}
+
+function buildGuestIdentity() {
+  const suffix = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+
+  return {
+    guestNickname: `익명친구 ${suffix}`,
+    guestPassword: suffix,
+  };
+}
 
 type ChallengeState = {
   challengeId: string;
@@ -49,6 +90,77 @@ export function ChatServiceSessionProvider({
   const [session, setSession] = useState<ChatServiceSessionDto | null>(null);
   const [challenge, setChallenge] = useState<ChallengeState | null>(null);
   const [status, setStatus] = useState<ChatServiceSessionStatus>("booting");
+  const skipPhoneVerification =
+    isAnonymousApp &&
+    process.env.EXPO_PUBLIC_SKIP_ANONYMOUS_CHAT_PHONE_AUTH !== "false";
+
+  async function hydrateGuestSession(profileId: string) {
+    const guestSession: ChatServiceSessionDto = {
+      token: buildGuestSessionToken(profileId),
+      expiresAt: new Date(
+        Date.now() + CHAT_SERVICE_GUEST_SESSION_TTL_MS
+      ).toISOString(),
+      user: buildGuestProfileFallback(profileId),
+    };
+
+    setSession(guestSession);
+    setChallenge(null);
+    setStatus("signed_in");
+
+    try {
+      const response = await chatServiceApi.getChatServiceProfile(
+        guestSession.token,
+        profileId
+      );
+      setSession((next) =>
+        next
+          ? {
+              ...next,
+              user: response.profile,
+            }
+          : null
+      );
+    } catch {
+      // 프로필 미조회 상태라도 익명 세션은 유지합니다.
+    }
+  }
+
+  async function bootstrapGuestSession() {
+    const existingToken = await readChatServiceSessionToken();
+    const existingGuestProfileId = parseGuestProfileId(existingToken ?? "");
+
+    if (existingGuestProfileId) {
+      await hydrateGuestSession(existingGuestProfileId);
+      return;
+    }
+
+    const guestIdentity = buildGuestIdentity();
+    const response =
+      await chatServiceApi.resolveChatServiceGuestProfile(guestIdentity);
+    const guestToken = buildGuestSessionToken(response.id);
+
+    await writeChatServiceSessionToken(guestToken);
+    await hydrateGuestSession(response.id);
+  }
+
+  function setRealSession(
+    sessionToken: string,
+    sessionData: ChatServiceSessionDto
+  ) {
+    if (!sessionData) {
+      return;
+    }
+
+    const nextSession: ChatServiceSessionDto = {
+      token: sessionToken,
+      expiresAt: sessionData.expiresAt,
+      user: sessionData.user,
+    };
+
+    setSession(nextSession);
+    setChallenge(null);
+    setStatus("signed_in");
+  }
 
   useEffect(() => {
     void bootstrap();
@@ -59,32 +171,50 @@ export function ChatServiceSessionProvider({
       const token = await readChatServiceSessionToken();
 
       if (!token) {
+        if (skipPhoneVerification) {
+          await bootstrapGuestSession();
+          return;
+        }
         setStatus("signed_out");
         return;
       }
 
       await restoreSession(token);
     } catch {
-      setSession(null);
-      setChallenge(null);
-      setStatus("signed_out");
+      if (skipPhoneVerification) {
+        await bootstrapGuestSession();
+      } else {
+        setSession(null);
+        setChallenge(null);
+        setStatus("signed_out");
+      }
     }
   }
 
   async function restoreSession(token: string) {
+    const guestProfileId = parseGuestProfileId(token);
+
+    if (guestProfileId) {
+      await hydrateGuestSession(guestProfileId);
+      return;
+    }
+
     try {
       const response = await chatServiceApi.getChatServiceSession(token);
 
       if (!response.authenticated || !response.session) {
         await clearChatServiceSessionToken();
         setSession(null);
-        setStatus("signed_out");
+        if (skipPhoneVerification) {
+          await bootstrapGuestSession();
+        } else {
+          setStatus("signed_out");
+        }
         return;
       }
 
-      setSession(response.session);
+      setRealSession(token, response.session);
       await writeChatServiceSessionToken(response.session.token);
-      setStatus("signed_in");
     } catch (error) {
       if (
         error instanceof ApiClientError &&
@@ -94,7 +224,11 @@ export function ChatServiceSessionProvider({
       }
 
       setSession(null);
-      setStatus("signed_out");
+      if (skipPhoneVerification) {
+        await bootstrapGuestSession();
+      } else {
+        setStatus("signed_out");
+      }
     }
   }
 
@@ -128,8 +262,8 @@ export function ChatServiceSessionProvider({
     });
 
     await writeChatServiceSessionToken(response.session.token);
-    setSession(response.session);
     setChallenge(null);
+    setRealSession(response.session.token, response.session);
     setStatus("signed_in");
     queryClient.clear();
   }
@@ -138,8 +272,12 @@ export function ChatServiceSessionProvider({
     const token = await readChatServiceSessionToken();
 
     if (!token) {
-      setSession(null);
-      setStatus("signed_out");
+      if (skipPhoneVerification) {
+        await bootstrapGuestSession();
+      } else {
+        setSession(null);
+        setStatus("signed_out");
+      }
       return;
     }
 
@@ -149,7 +287,7 @@ export function ChatServiceSessionProvider({
   async function logout() {
     const token = session?.token;
 
-    if (token) {
+    if (token && !parseGuestProfileId(token)) {
       try {
         await chatServiceApi.logoutChatService(token);
       } catch {
@@ -158,10 +296,16 @@ export function ChatServiceSessionProvider({
     }
 
     await clearChatServiceSessionToken();
+    queryClient.clear();
+
+    if (skipPhoneVerification) {
+      await bootstrapGuestSession();
+      return;
+    }
+
     setSession(null);
     setChallenge(null);
     setStatus("signed_out");
-    queryClient.clear();
   }
 
   return (
@@ -186,7 +330,7 @@ export function useChatServiceSession() {
 
   if (!context) {
     throw new Error(
-      "ChatServiceSessionProvider 내부에서만 사용할 수 있습니다.",
+      "ChatServiceSessionProvider 내부에서만 사용할 수 있습니다."
     );
   }
 

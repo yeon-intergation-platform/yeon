@@ -26,24 +26,26 @@ import { colors } from "../../../theme/colors";
 export function FeedScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { session } = useChatServiceSession();
+  const { session, status } = useChatServiceSession();
+  const isSignedIn = status === "signed_in";
+  const sessionToken = session?.token ?? "";
   const [draft, setDraft] = useState("");
   const [activeReplyPostId, setActiveReplyPostId] = useState<string | null>(
-    null,
+    null
   );
   const [replyDraft, setReplyDraft] = useState("");
 
   const feedQuery = useQuery({
-    enabled: Boolean(session?.token),
+    enabled: isSignedIn,
     queryFn: async () => {
-      return chatServiceApi.listChatServiceFeed(session!.token);
+      return chatServiceApi.listChatServiceFeed(sessionToken);
     },
     queryKey: chatServiceQueryKeys.feed,
   });
 
   const createPostMutation = useMutation({
     mutationFn: async (body: string) => {
-      return chatServiceApi.createChatServiceFeedPost(session!.token, { body });
+      return chatServiceApi.createChatServiceFeedPost(sessionToken, { body });
     },
     onSuccess: async () => {
       setDraft("");
@@ -55,7 +57,7 @@ export function FeedScreen() {
 
   const replyMutation = useMutation({
     mutationFn: async ({ body, postId }: { postId: string; body: string }) => {
-      return chatServiceApi.replyToChatServiceFeedPost(session!.token, postId, {
+      return chatServiceApi.replyToChatServiceFeedPost(sessionToken, postId, {
         body,
       });
     },
@@ -72,7 +74,7 @@ export function FeedScreen() {
 
   const reportMutation = useMutation({
     mutationFn: async (postId: string) => {
-      return chatServiceApi.createChatServiceReport(session!.token, {
+      return chatServiceApi.createChatServiceReport(sessionToken, {
         reason: "피드 게시글 신고",
         targetId: postId,
         targetType: "feed_post",
@@ -82,7 +84,7 @@ export function FeedScreen() {
 
   const blockMutation = useMutation({
     mutationFn: async (profileId: string) => {
-      return chatServiceApi.blockChatServiceProfile(session!.token, profileId);
+      return chatServiceApi.blockChatServiceProfile(sessionToken, profileId);
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({
@@ -133,7 +135,7 @@ export function FeedScreen() {
       await blockMutation.mutateAsync(profileId);
       Alert.alert(
         "차단 완료",
-        "이 사용자는 더 이상 피드에 보이지 않게 처리됩니다.",
+        "이 사용자는 더 이상 피드에 보이지 않게 처리됩니다."
       );
     } catch (error) {
       const message =
@@ -229,7 +231,7 @@ export function FeedScreen() {
               onPress={() => {
                 setReplyDraft("");
                 setActiveReplyPostId((current) =>
-                  current === post.id ? null : post.id,
+                  current === post.id ? null : post.id
                 );
               }}
             >
@@ -246,7 +248,7 @@ export function FeedScreen() {
               replyDraft={replyDraft}
               replyDraftPending={replyMutation.isPending}
               setReplyDraft={setReplyDraft}
-              sessionToken={session!.token}
+              sessionToken={sessionToken}
             />
           ) : null}
         </SectionCard>
