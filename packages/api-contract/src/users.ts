@@ -4,6 +4,8 @@ export const userDtoSchema = z.object({
   id: z.string().uuid(),
   email: z.string().email(),
   displayName: z.string().min(1).max(80).nullable(),
+  role: z.string().trim().min(1).max(32),
+  lastLoginAt: z.string().datetime().nullable(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
 });

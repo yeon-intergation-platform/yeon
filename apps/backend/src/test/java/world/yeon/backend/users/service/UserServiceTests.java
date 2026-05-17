@@ -25,22 +25,25 @@ class UserServiceTests {
 	private UserService service;
 
 	@BeforeEach void setUp() {
-		service = new UserService(repository);
+		service = new UserService(repository, "seed-admin@yeon.world");
 	}
 
 	@Test void 목록응답을반환한다() {
+		when(repository.findById(OWNER_ID)).thenReturn(adminRow());
 		when(repository.listUsers()).thenReturn(List.of(
-			new UserRepository.UserRow("550e8400-e29b-41d4-a716-446655440000", "user@yeon.world", "유저", OffsetDateTime.parse("2026-05-08T07:00:00Z"), OffsetDateTime.parse("2026-05-08T07:00:00Z"))
+			userRow("550e8400-e29b-41d4-a716-446655440000", "user@yeon.world", "유저", "user")
 		));
 
 		var result = service.listUsers(OWNER_ID);
 		assertThat(result.users()).hasSize(1);
+		assertThat(result.users().getFirst().role()).isEqualTo("user");
 	}
 
 	@Test void 생성시이메일을정규화한다() {
+		when(repository.findById(OWNER_ID)).thenReturn(adminRow());
 		when(repository.findByEmail("user@yeon.world")).thenReturn(null);
 		when(repository.insertUser(any(), eq("user@yeon.world"), eq("유저"), any()))
-			.thenReturn(new UserRepository.UserRow("550e8400-e29b-41d4-a716-446655440000", "user@yeon.world", "유저", OffsetDateTime.parse("2026-05-08T07:00:00Z"), OffsetDateTime.parse("2026-05-08T07:00:00Z")));
+			.thenReturn(userRow("550e8400-e29b-41d4-a716-446655440000", "user@yeon.world", "유저", "user"));
 
 		var result = service.createUser(OWNER_ID, new CreateUserRequest(" User@Yeon.World ", " 유저 "));
 		assertThat(result.user().email()).isEqualTo("user@yeon.world");
@@ -48,8 +51,9 @@ class UserServiceTests {
 	}
 
 	@Test void 중복이메일이면409다() {
+		when(repository.findById(OWNER_ID)).thenReturn(adminRow());
 		when(repository.findByEmail("user@yeon.world")).thenReturn(
-			new UserRepository.UserRow("550e8400-e29b-41d4-a716-446655440000", "user@yeon.world", "유저", OffsetDateTime.parse("2026-05-08T07:00:00Z"), OffsetDateTime.parse("2026-05-08T07:00:00Z"))
+			userRow("550e8400-e29b-41d4-a716-446655440000", "user@yeon.world", "유저", "user")
 		);
 
 		assertThatThrownBy(() -> service.createUser(OWNER_ID, new CreateUserRequest("user@yeon.world", "유저")))
@@ -58,6 +62,7 @@ class UserServiceTests {
 	}
 
 	@Test void dbUnique충돌도409다() {
+		when(repository.findById(OWNER_ID)).thenReturn(adminRow());
 		when(repository.findByEmail("user@yeon.world")).thenReturn(null);
 		when(repository.insertUser(any(), eq("user@yeon.world"), eq(null), any()))
 			.thenThrow(new PersistenceException("duplicate key value violates unique constraint \"users_email_key\""));
@@ -65,5 +70,36 @@ class UserServiceTests {
 		assertThatThrownBy(() -> service.createUser(OWNER_ID, new CreateUserRequest("user@yeon.world", null)))
 			.isInstanceOf(UserServiceException.class)
 			.hasMessage("이미 등록된 이메일입니다.");
+	}
+
+	@Test void 관리자가아니면목록조회가403이다() {
+		when(repository.findById(OWNER_ID)).thenReturn(userRow(OWNER_ID.toString(), "owner@yeon.world", "Owner", "user"));
+
+		assertThatThrownBy(() -> service.listUsers(OWNER_ID))
+			.isInstanceOf(UserServiceException.class)
+			.hasMessage("관리자 권한이 필요합니다.");
+	}
+
+	@Test void 시드이메일이면관리자로허용한다() {
+		when(repository.findById(OWNER_ID)).thenReturn(userRow(OWNER_ID.toString(), "seed-admin@yeon.world", "Seed", "user"));
+		when(repository.listUsers()).thenReturn(List.of());
+
+		assertThat(service.listUsers(OWNER_ID).users()).isEmpty();
+	}
+
+	private UserRepository.UserRow adminRow() {
+		return userRow(OWNER_ID.toString(), "admin@yeon.world", "관리자", "admin");
+	}
+
+	private UserRepository.UserRow userRow(String id, String email, String displayName, String role) {
+		return new UserRepository.UserRow(
+			id,
+			email,
+			displayName,
+			role,
+			OffsetDateTime.parse("2026-05-08T08:00:00Z"),
+			OffsetDateTime.parse("2026-05-08T07:00:00Z"),
+			OffsetDateTime.parse("2026-05-08T07:00:00Z")
+		);
 	}
 }

@@ -19,9 +19,7 @@ function AdminDenied() {
   return (
     <main className="flex min-h-screen items-center justify-center bg-white px-6 text-[#111]">
       <section className="max-w-xl rounded-2xl border border-[#e5e5e5] bg-white p-8">
-        <p className="text-[13px] font-semibold text-red-600">
-          관리자 전용
-        </p>
+        <p className="text-[13px] font-semibold text-red-600">관리자 전용</p>
         <h1 className="mt-2 text-[26px] font-semibold tracking-[-0.03em] text-[#111]">
           관리자 권한이 필요합니다
         </h1>
@@ -70,19 +68,25 @@ export default async function AdminTypingDecksPage() {
       <div className="border-b border-[#e5e5e5] bg-white px-6 py-3 text-[#111] md:px-12">
         <div className="mx-auto flex max-w-[1400px] flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="text-[13px] font-semibold text-[#888]">
-              관리자
-            </p>
+            <p className="text-[13px] font-semibold text-[#888]">관리자</p>
             <p className="text-[14px] font-semibold">
               {adminUser.email} · 타자 덱 관리자
             </p>
           </div>
-          <Link
-            href="/typing-service/rooms"
-            className="rounded-xl border border-[#e5e5e5] bg-[#fafafa] px-4 py-2 text-[13px] font-semibold text-[#111] no-underline transition-colors hover:border-[#111]"
-          >
-            타자방 로비 확인
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            <Link
+              href="/admin/members"
+              className="rounded-xl border border-[#e5e5e5] bg-[#fafafa] px-4 py-2 text-[13px] font-semibold text-[#111] no-underline transition-colors hover:border-[#111]"
+            >
+              회원관리
+            </Link>
+            <Link
+              href="/typing-service/rooms"
+              className="rounded-xl border border-[#e5e5e5] bg-[#fafafa] px-4 py-2 text-[13px] font-semibold text-[#111] no-underline transition-colors hover:border-[#111]"
+            >
+              타자방 로비 확인
+            </Link>
+          </div>
         </div>
       </div>
       <TypingDecksScreen adminMode />
