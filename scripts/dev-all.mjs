@@ -369,6 +369,7 @@ async function resolveServices() {
       AUTH_SECRET: authSecret,
       SPRING_INTERNAL_TOKEN: springInternalToken,
       SPRING_PROFILES_ACTIVE: springProfilesActive,
+      NEXT_PUBLIC_RACE_SERVER_URL: `ws://localhost:${racePort}`,
     },
     assignedPort: webPort,
     interactive: false,
@@ -420,6 +421,10 @@ async function resolveServices() {
     cwd: rootDir,
     env: {
       PORT: String(racePort),
+      SPRING_BACKEND_BASE_URL: springBackendBaseUrl,
+      SPRING_BOOTSTRAP_BASE_URL: springBackendBaseUrl,
+      SPRING_INTERNAL_TOKEN: springInternalToken,
+      SPRING_PROFILES_ACTIVE: springProfilesActive,
     },
     assignedPort: racePort,
     interactive: false,

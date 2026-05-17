@@ -34,8 +34,7 @@ export function CardRoomChatPanel({
       <div className="border-b border-[#e5e5e5] p-4">
         <h2 className="text-[16px] font-bold text-[#111]">답변 채팅</h2>
         <p className={`mt-1 ${SHARED_FEATURE_CLASS.text13Subtle}`}>
-          메시지는 race-server를 통해 브로드캐스트되고 Spring 카드방 메시지로
-          저장됩니다.
+          메시지는 실시간으로 공유되고 카드방 기록에 저장됩니다.
         </p>
       </div>
       <div className="flex-1 space-y-3 overflow-y-auto p-4" aria-live="polite">

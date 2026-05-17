@@ -64,8 +64,8 @@ export function CardRoomLobbyScreen() {
           <div>
             <h1 className={ROOM_LOBBY_CLASS.heroTitle}>카드방</h1>
             <p className={ROOM_LOBBY_CLASS.heroDescription}>
-              Spring에 저장된 실제 덱 스냅샷으로 카드방을 만들고, 실시간으로
-              답변을 확인합니다.
+              저장된 실제 덱 스냅샷으로 카드방을 만들고, 실시간으로 답변을
+              확인합니다.
             </p>
           </div>
           <RoomCharacterSummaryCard
@@ -127,7 +127,7 @@ export function CardRoomLobbyScreen() {
                   목록을 불러오지 못했어요
                 </h2>
                 <p className="mt-3 text-[#666]">
-                  Spring 카드방 API 상태를 확인해 주세요.
+                  카드방 서버 상태를 확인해 주세요.
                 </p>
               </div>
             ) : filteredRooms[0] === undefined ? (
