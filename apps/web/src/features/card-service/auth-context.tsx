@@ -5,9 +5,12 @@ import {
   type ReactNode,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
 } from "react";
+
+import { fetchCurrentCardServiceAuthState } from "./auth-state";
 
 type CardServiceAuthContextValue = {
   isAuthenticated: boolean;
@@ -31,6 +34,37 @@ export function CardServiceAuthProvider({
   const markUnauthenticated = useCallback(() => {
     setCurrentIsAuthenticated(false);
   }, []);
+
+  useEffect(() => {
+    setCurrentIsAuthenticated(isAuthenticated);
+  }, [isAuthenticated]);
+
+  useEffect(() => {
+    let active = true;
+
+    async function refreshAuthState() {
+      try {
+        const nextIsAuthenticated = await fetchCurrentCardServiceAuthState();
+        if (active && nextIsAuthenticated !== null) {
+          setCurrentIsAuthenticated(nextIsAuthenticated);
+        }
+      } catch {
+        // 세션 확인 실패는 현재 서버 렌더 상태를 유지한다.
+      }
+    }
+
+    void refreshAuthState();
+
+    window.addEventListener("focus", refreshAuthState);
+    document.addEventListener("visibilitychange", refreshAuthState);
+
+    return () => {
+      active = false;
+      window.removeEventListener("focus", refreshAuthState);
+      document.removeEventListener("visibilitychange", refreshAuthState);
+    };
+  }, []);
+
   const value = useMemo(
     () => ({ isAuthenticated: currentIsAuthenticated, markUnauthenticated }),
     [currentIsAuthenticated, markUnauthenticated],
