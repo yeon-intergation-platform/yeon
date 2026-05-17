@@ -76,7 +76,7 @@ export function DeckDetailHeader({
     <section className="bg-white text-[#111]">
       <div className="grid grid-cols-[44px_minmax(0,1fr)_44px] items-start md:flex md:items-center md:justify-between md:gap-4">
         <Link
-          href="/card-service"
+          href="/card-service/decks"
           className="flex h-11 w-11 items-center justify-start text-[28px] font-light leading-none text-[#111] no-underline hover:text-[#555] md:h-auto md:w-auto md:text-[14px] md:font-medium md:text-[#666]"
           aria-label="내 덱으로 돌아가기"
         >

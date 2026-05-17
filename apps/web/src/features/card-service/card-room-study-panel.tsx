@@ -6,6 +6,7 @@ import {
 } from "@yeon/api-contract/card-rooms";
 import type { CardRoomCardDto, CardRoomRealtimeState } from "@yeon/race-shared";
 import { SHARED_FEATURE_CLASS } from "@/features/shared-style-constants";
+import { MarkdownContent } from "./components/markdown-content";
 
 type CardRoomStudyPanelProps = {
   state: CardRoomRealtimeState | null;
@@ -66,9 +67,11 @@ export function CardRoomStudyPanel({
             <span className="text-[12px] font-bold uppercase tracking-[0.18em] text-[#999]">
               {shouldShowBack ? "Back" : "Front"}
             </span>
-            <span className="mt-5 text-[26px] font-black tracking-[-0.04em] text-[#111]">
-              {shouldShowBack ? currentCard.backText : currentCard.frontText}
-            </span>
+            <div className="mt-5 w-full text-[#111]">
+              <MarkdownContent className="text-[26px] font-black leading-tight tracking-[-0.04em]">
+                {shouldShowBack ? currentCard.backText : currentCard.frontText}
+              </MarkdownContent>
+            </div>
             <span
               className={`mt-5 ${SHARED_FEATURE_CLASS.text12EmphasisSubtle}`}
             >
