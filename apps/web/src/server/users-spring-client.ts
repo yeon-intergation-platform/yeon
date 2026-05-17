@@ -1,3 +1,8 @@
+import {
+  createUserResponseSchema,
+  listUsersResponseSchema,
+} from "@yeon/api-contract/users";
+
 import { buildSpringBffHeaders } from "@/server/spring-bff-client";
 
 const DEFAULT_BACKEND_BASE_URL = "http://127.0.0.1:8081";
@@ -71,32 +76,18 @@ async function fetchJson(path: string, userId: string, init?: RequestInit) {
 }
 
 export async function fetchUsersFromSpring(userId: string) {
-  return fetchJson("/users", userId) as Promise<{
-    users: Array<{
-      id: string;
-      email: string;
-      displayName: string | null;
-      createdAt: string;
-      updatedAt: string;
-    }>;
-  }>;
+  return listUsersResponseSchema.parse(await fetchJson("/users", userId));
 }
 
 export async function createUserInSpring(
   userId: string,
   body: { email: string; displayName?: string }
 ) {
-  return fetchJson("/users", userId, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify(body),
-  }) as Promise<{
-    user: {
-      id: string;
-      email: string;
-      displayName: string | null;
-      createdAt: string;
-      updatedAt: string;
-    };
-  }>;
+  return createUserResponseSchema.parse(
+    await fetchJson("/users", userId, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body),
+    })
+  );
 }

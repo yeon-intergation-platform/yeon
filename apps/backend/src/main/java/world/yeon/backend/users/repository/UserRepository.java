@@ -21,6 +21,8 @@ public class UserRepository {
 		String id,
 		String email,
 		String displayName,
+		String role,
+		OffsetDateTime lastLoginAt,
 		OffsetDateTime createdAt,
 		OffsetDateTime updatedAt
 	) {}
@@ -33,9 +35,9 @@ public class UserRepository {
 
 	public List<UserRow> listUsers() {
 		return entityManager.createNativeQuery("""
-			select id, email, display_name, created_at, updated_at
+			select id, email, display_name, role, last_login_at, created_at, updated_at
 			from public.users
-			order by created_at asc
+			order by created_at desc
 			""")
 			.getResultList()
 			.stream()
@@ -43,9 +45,21 @@ public class UserRepository {
 			.toList();
 	}
 
+	public UserRow findById(UUID userId) {
+		List<?> rows = entityManager.createNativeQuery("""
+			select id, email, display_name, role, last_login_at, created_at, updated_at
+			from public.users
+			where id = :userId
+			limit 1
+			""")
+			.setParameter("userId", userId)
+			.getResultList();
+		return rows.isEmpty() ? null : toUserRow(rows.getFirst());
+	}
+
 	public UserRow findByEmail(String email) {
 		List<?> rows = entityManager.createNativeQuery("""
-			select id, email, display_name, created_at, updated_at
+			select id, email, display_name, role, last_login_at, created_at, updated_at
 			from public.users
 			where email = :email
 			limit 1
@@ -61,7 +75,7 @@ public class UserRepository {
 			List<?> rows = entityManager.createNativeQuery("""
 				insert into public.users (id, email, display_name, created_at, updated_at)
 				values (cast(:userId as uuid), :email, :displayName, :createdAt, :updatedAt)
-				returning id, email, display_name, created_at, updated_at
+				returning id, email, display_name, role, last_login_at, created_at, updated_at
 				""")
 				.setParameter("userId", userId)
 				.setParameter("email", email)
@@ -76,15 +90,17 @@ public class UserRepository {
 	}
 
 	private UserRow toUserRow(Object row) {
-		if (!(row instanceof Object[] values) || values.length < 5) {
+		if (!(row instanceof Object[] values) || values.length < 7) {
 			throw new IllegalStateException("user row를 해석하지 못했습니다.");
 		}
 		return new UserRow(
 			asUuidString(values[0]),
 			(String) values[1],
 			(String) values[2],
-			asOffsetDateTime(values[3]),
-			asOffsetDateTime(values[4])
+			(String) values[3],
+			asOffsetDateTime(values[4]),
+			asOffsetDateTime(values[5]),
+			asOffsetDateTime(values[6])
 		);
 	}
 

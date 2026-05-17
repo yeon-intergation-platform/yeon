@@ -3,7 +3,12 @@ package world.yeon.backend.users.service;
 import jakarta.persistence.PersistenceException;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.Arrays;
+import java.util.Locale;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import world.yeon.backend.users.dto.CreateUserRequest;
 import world.yeon.backend.users.dto.CreateUserResponse;
@@ -13,17 +18,26 @@ import world.yeon.backend.users.repository.UserRepository;
 
 @Service
 public class UserService {
-	private final UserRepository repository;
+	private static final String ADMIN_ROLE = "admin";
 
-	public UserService(UserRepository repository) {
+	private final UserRepository repository;
+	private final Set<String> adminSeedEmails;
+
+	public UserService(
+		UserRepository repository,
+		@Value("${YEON_ADMIN_EMAILS:${ADMIN_EMAILS:}}") String adminEmails
+	) {
 		this.repository = repository;
+		this.adminSeedEmails = parseAdminSeedEmails(adminEmails);
 	}
 
 	public GetUsersResponse listUsers(UUID userId) {
+		requireAdmin(userId);
 		return new GetUsersResponse(repository.listUsers().stream().map(this::toResponse).toList());
 	}
 
 	public CreateUserResponse createUser(UUID userId, CreateUserRequest request) {
+		requireAdmin(userId);
 		String email = normalizeEmail(request == null ? null : request.email());
 		String displayName = normalizeDisplayName(request == null ? null : request.displayName());
 		if (email == null) {
@@ -44,12 +58,36 @@ public class UserService {
 	}
 
 	private UserResponse toResponse(UserRepository.UserRow row) {
-		return new UserResponse(row.id(), row.email(), row.displayName(), row.createdAt(), row.updatedAt());
+		return new UserResponse(row.id(), row.email(), row.displayName(), row.role(), row.lastLoginAt(), row.createdAt(), row.updatedAt());
+	}
+
+	private void requireAdmin(UUID userId) {
+		if (userId == null) {
+			throw new UserServiceException(403, "ADMIN_REQUIRED", "관리자 권한이 필요합니다.");
+		}
+		var user = repository.findById(userId);
+		if (user == null) {
+			throw new UserServiceException(403, "ADMIN_REQUIRED", "관리자 권한이 필요합니다.");
+		}
+		if (ADMIN_ROLE.equals(user.role()) || adminSeedEmails.contains(normalizeEmail(user.email()))) {
+			return;
+		}
+		throw new UserServiceException(403, "ADMIN_REQUIRED", "관리자 권한이 필요합니다.");
+	}
+
+	private static Set<String> parseAdminSeedEmails(String value) {
+		if (value == null || value.isBlank()) {
+			return Set.of();
+		}
+		return Arrays.stream(value.split(","))
+			.map(email -> email.trim().toLowerCase(Locale.ROOT))
+			.filter(email -> !email.isBlank())
+			.collect(Collectors.toUnmodifiableSet());
 	}
 
 	private String normalizeEmail(String raw) {
 		if (raw == null) return null;
-		String trimmed = raw.trim().toLowerCase();
+		String trimmed = raw.trim().toLowerCase(Locale.ROOT);
 		return trimmed.isBlank() ? null : trimmed;
 	}
 

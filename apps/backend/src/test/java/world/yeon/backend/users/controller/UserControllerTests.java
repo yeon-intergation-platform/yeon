@@ -36,17 +36,19 @@ class UserControllerTests {
 
 	@Test void list응답shape를반환한다() throws Exception {
 		when(service.listUsers(eq(OWNER_ID))).thenReturn(new GetUsersResponse(List.of(
-			new UserResponse("550e8400-e29b-41d4-a716-446655440000", "user@yeon.world", "유저", OffsetDateTime.parse("2026-05-08T07:00:00Z"), OffsetDateTime.parse("2026-05-08T07:00:00Z"))
+			new UserResponse("550e8400-e29b-41d4-a716-446655440000", "user@yeon.world", "유저", "user", OffsetDateTime.parse("2026-05-08T08:00:00Z"), OffsetDateTime.parse("2026-05-08T07:00:00Z"), OffsetDateTime.parse("2026-05-08T07:00:00Z"))
 		)));
 
 		mockMvc.perform(get("/users").header("X-Yeon-User-Id", OWNER_ID.toString()).header("X-Yeon-Internal-Token", "test-internal-token"))
 			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.users[0].email").value("user@yeon.world"));
+			.andExpect(jsonPath("$.users[0].email").value("user@yeon.world"))
+			.andExpect(jsonPath("$.users[0].role").value("user"))
+			.andExpect(jsonPath("$.users[0].lastLoginAt").value("2026-05-08T08:00:00Z"));
 	}
 
 	@Test void create응답shape를반환한다() throws Exception {
 		when(service.createUser(eq(OWNER_ID), eq(new CreateUserRequest("user@yeon.world", "유저"))))
-			.thenReturn(new CreateUserResponse(new UserResponse("550e8400-e29b-41d4-a716-446655440000", "user@yeon.world", "유저", OffsetDateTime.parse("2026-05-08T07:00:00Z"), OffsetDateTime.parse("2026-05-08T07:00:00Z"))));
+			.thenReturn(new CreateUserResponse(new UserResponse("550e8400-e29b-41d4-a716-446655440000", "user@yeon.world", "유저", "user", OffsetDateTime.parse("2026-05-08T08:00:00Z"), OffsetDateTime.parse("2026-05-08T07:00:00Z"), OffsetDateTime.parse("2026-05-08T07:00:00Z"))));
 
 		mockMvc.perform(post("/users").header("X-Yeon-User-Id", OWNER_ID.toString()).header("X-Yeon-Internal-Token", "test-internal-token").contentType(MediaType.APPLICATION_JSON).content("{\"email\":\"user@yeon.world\",\"displayName\":\"유저\"}"))
 			.andExpect(status().isCreated())
@@ -60,5 +62,14 @@ class UserControllerTests {
 		mockMvc.perform(post("/users").header("X-Yeon-User-Id", OWNER_ID.toString()).header("X-Yeon-Internal-Token", "test-internal-token").contentType(MediaType.APPLICATION_JSON).content("{\"email\":\"user@yeon.world\",\"displayName\":\"유저\"}"))
 			.andExpect(status().isConflict())
 			.andExpect(jsonPath("$.message").value("이미 등록된 이메일입니다."));
+	}
+
+	@Test void 관리자권한오류는403을반환한다() throws Exception {
+		when(service.listUsers(eq(OWNER_ID)))
+			.thenThrow(new UserServiceException(403, "ADMIN_REQUIRED", "관리자 권한이 필요합니다."));
+
+		mockMvc.perform(get("/users").header("X-Yeon-User-Id", OWNER_ID.toString()).header("X-Yeon-Internal-Token", "test-internal-token"))
+			.andExpect(status().isForbidden())
+			.andExpect(jsonPath("$.message").value("관리자 권한이 필요합니다."));
 	}
 }

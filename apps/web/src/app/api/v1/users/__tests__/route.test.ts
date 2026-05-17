@@ -16,13 +16,14 @@ vi.mock("@/server/auth/session", () => ({
 }));
 
 vi.mock("@/server/users-spring-client", async () => {
-  const actual = await vi.importActual<typeof import("@/server/users-spring-client")>(
-    "@/server/users-spring-client",
-  );
+  const actual = await vi.importActual<
+    typeof import("@/server/users-spring-client")
+  >("@/server/users-spring-client");
 
   return {
     ...actual,
-    fetchUsersFromSpring: (...args: unknown[]) => mockFetchUsersFromSpring(...args),
+    fetchUsersFromSpring: (...args: unknown[]) =>
+      mockFetchUsersFromSpring(...args),
     createUserInSpring: (...args: unknown[]) => mockCreateUserInSpring(...args),
   };
 });
@@ -33,7 +34,7 @@ describe("api/v1/users route", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockClearAuthSessionCookie.mockImplementation(
-      (response: Response) => response,
+      (response: Response) => response
     );
   });
 
@@ -56,6 +57,8 @@ describe("api/v1/users route", () => {
           id: "550e8400-e29b-41d4-a716-446655440000",
           email: "user@yeon.world",
           displayName: "유저",
+          role: "user",
+          lastLoginAt: "2026-04-13T10:00:00.000Z",
           createdAt: "2026-04-12T10:00:00.000Z",
           updatedAt: "2026-04-12T10:00:00.000Z",
         },
@@ -75,10 +78,29 @@ describe("api/v1/users route", () => {
           id: "550e8400-e29b-41d4-a716-446655440000",
           email: "user@yeon.world",
           displayName: "유저",
+          role: "user",
+          lastLoginAt: "2026-04-13T10:00:00.000Z",
           createdAt: "2026-04-12T10:00:00.000Z",
           updatedAt: "2026-04-12T10:00:00.000Z",
         },
       ],
+    });
+  });
+
+  it("GET은 Spring 관리자 권한 오류를 그대로 반환한다", async () => {
+    mockGetAuthUserBySessionToken.mockResolvedValue({ id: "user-1" });
+    mockFetchUsersFromSpring.mockRejectedValue(
+      new UsersSpringBackendHttpError(403, "관리자 권한이 필요합니다.")
+    );
+    const request = new NextRequest("http://localhost/api/v1/users", {
+      headers: { cookie: "yeon.session=valid-token" },
+    });
+
+    const response = await GET(request);
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toEqual({
+      message: "관리자 권한이 필요합니다.",
     });
   });
 
@@ -123,7 +145,7 @@ describe("api/v1/users route", () => {
   it("POST는 Spring duplicate email을 그대로 노출한다", async () => {
     mockGetAuthUserBySessionToken.mockResolvedValue({ id: "user-1" });
     mockCreateUserInSpring.mockRejectedValue(
-      new UsersSpringBackendHttpError(409, "이미 등록된 이메일입니다."),
+      new UsersSpringBackendHttpError(409, "이미 등록된 이메일입니다.")
     );
     const request = new NextRequest("http://localhost/api/v1/users", {
       method: "POST",
@@ -149,6 +171,8 @@ describe("api/v1/users route", () => {
         id: "550e8400-e29b-41d4-a716-446655440000",
         email: "user@yeon.world",
         displayName: "유저",
+        role: "user",
+        lastLoginAt: "2026-04-13T10:00:00.000Z",
         createdAt: "2026-04-12T10:00:00.000Z",
         updatedAt: "2026-04-12T10:00:00.000Z",
       },
@@ -174,6 +198,8 @@ describe("api/v1/users route", () => {
         id: "550e8400-e29b-41d4-a716-446655440000",
         email: "user@yeon.world",
         displayName: "유저",
+        role: "user",
+        lastLoginAt: "2026-04-13T10:00:00.000Z",
         createdAt: "2026-04-12T10:00:00.000Z",
         updatedAt: "2026-04-12T10:00:00.000Z",
       },
