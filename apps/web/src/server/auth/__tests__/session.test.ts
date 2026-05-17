@@ -31,8 +31,16 @@ import {
 } from "../session";
 
 describe("auth session service", () => {
+  const originalAppUrl = process.env.NEXT_PUBLIC_APP_URL;
+
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.unstubAllEnvs();
+    if (originalAppUrl === undefined) {
+      delete process.env.NEXT_PUBLIC_APP_URL;
+    } else {
+      process.env.NEXT_PUBLIC_APP_URL = originalAppUrl;
+    }
     mockCookies.mockResolvedValue({
       get: vi.fn().mockReturnValue(undefined),
     });
@@ -101,5 +109,35 @@ describe("auth session service", () => {
     clearAuthSessionCookie(response);
 
     expect(response.cookies.get("yeon.session")?.value).toBe("");
+  });
+
+  it("운영 canonical/www 배포에서는 인증 쿠키를 apex와 www가 공유한다", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    process.env.NEXT_PUBLIC_APP_URL = "https://yeon.world";
+    const response = NextResponse.json({ ok: true });
+    const expiresAt = new Date(Date.now() + 60_000);
+
+    applyAuthSessionCookie(response, {
+      sessionToken: "session-token",
+      expiresAt,
+    });
+
+    const setCookie = response.headers.get("set-cookie");
+    expect(setCookie).toContain("Domain=.yeon.world");
+    expect(setCookie).toContain("Secure");
+  });
+
+  it("개발/스테이징 배포에서는 운영 apex 쿠키 도메인을 공유하지 않는다", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    process.env.NEXT_PUBLIC_APP_URL = "https://dev.yeon.world";
+    const response = NextResponse.json({ ok: true });
+    const expiresAt = new Date(Date.now() + 60_000);
+
+    applyAuthSessionCookie(response, {
+      sessionToken: "session-token",
+      expiresAt,
+    });
+
+    expect(response.headers.get("set-cookie")).not.toContain("Domain=");
   });
 });
