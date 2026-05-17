@@ -1,6 +1,6 @@
 package world.yeon.backend.card_decks.route.dto;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import java.util.Map;
 
 public final class UpdateCardDeckItemRequest {
 	private final boolean hasFrontText;
@@ -8,17 +8,17 @@ public final class UpdateCardDeckItemRequest {
 	private final boolean hasBackText;
 	private final String backText;
 
-	public UpdateCardDeckItemRequest(JsonNode node) {
-		JsonNode safe = node == null ? com.fasterxml.jackson.databind.node.NullNode.getInstance() : node;
-		this.hasFrontText = safe.has("frontText");
+	public UpdateCardDeckItemRequest(Map<String, Object> body) {
+		Map<String, Object> safe = body == null ? Map.of() : body;
+		this.hasFrontText = safe.containsKey("frontText");
 		this.frontText = readNullableText(safe.get("frontText"));
-		this.hasBackText = safe.has("backText");
+		this.hasBackText = safe.containsKey("backText");
 		this.backText = readNullableText(safe.get("backText"));
 	}
 
-	private static String readNullableText(JsonNode node) {
-		if (node == null || node.isNull()) return null;
-		return node.asText();
+	private static String readNullableText(Object value) {
+		if (value == null) return null;
+		return String.valueOf(value);
 	}
 
 	public boolean hasFrontText() { return hasFrontText; }
