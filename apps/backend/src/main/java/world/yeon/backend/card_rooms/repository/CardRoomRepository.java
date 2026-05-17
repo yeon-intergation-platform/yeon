@@ -124,6 +124,27 @@ public class CardRoomRepository {
     jdbc.update("update public.card_rooms set status = ?, current_card_index = ?, updated_at = ? where id = ?", status, currentCardIndex, now, roomId);
   }
 
+  public int finishRoomsWithoutActiveParticipants(OffsetDateTime now) {
+    return jdbc.update("""
+      update public.card_rooms r
+      set status = 'finished', updated_at = ?
+      where r.status <> 'finished'
+        and not exists (
+          select 1
+          from public.card_room_participants p
+          where p.room_id = r.id and p.left_at is null
+        )
+      """, now);
+  }
+
+  public int finishStaleRooms(OffsetDateTime cutoff, OffsetDateTime now) {
+    return jdbc.update("""
+      update public.card_rooms
+      set status = 'finished', updated_at = ?
+      where status <> 'finished' and updated_at < ?
+      """, now, cutoff);
+  }
+
   public void updateParticipant(Long participantId, String nickname, String characterId, String role, Boolean isReady) {
     jdbc.update("update public.card_room_participants set nickname = coalesce(cast(? as varchar), nickname), character_id = coalesce(cast(? as varchar), character_id), role = coalesce(cast(? as varchar), role), is_ready = coalesce(cast(? as boolean), is_ready) where id = ?", nickname, characterId, role, isReady, participantId);
   }

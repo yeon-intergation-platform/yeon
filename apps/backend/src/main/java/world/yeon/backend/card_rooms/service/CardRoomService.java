@@ -1,5 +1,6 @@
 package world.yeon.backend.card_rooms.service;
 
+import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
@@ -95,6 +96,15 @@ public class CardRoomService {
       repository.updateStatus(room.internalId(), "finished", room.currentCardIndex(), now);
     }
     return new CardRoomResponse(detail(room.publicId()), null);
+  }
+
+  @Transactional
+  public int cleanupStaleRooms(OffsetDateTime now, Duration staleAfter) {
+    if (now == null) now = OffsetDateTime.now(ZoneOffset.UTC);
+    if (staleAfter == null || staleAfter.isNegative() || staleAfter.isZero()) staleAfter = Duration.ofHours(6);
+    int closedEmptyRooms = repository.finishRoomsWithoutActiveParticipants(now);
+    int closedStaleRooms = repository.finishStaleRooms(now.minus(staleAfter), now);
+    return closedEmptyRooms + closedStaleRooms;
   }
 
   @Transactional
