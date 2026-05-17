@@ -28,7 +28,7 @@ export async function cardServiceFetchJson<T>(
   init: RequestInit,
   fallbackErrorMessage: string
 ): Promise<T> {
-  const response = await fetch(input, { credentials: "include", ...init });
+  const response = await fetch(input, { ...init, credentials: "include" });
 
   if (!response.ok) {
     throw new Error(await readErrorMessage(response, fallbackErrorMessage));
@@ -42,7 +42,7 @@ export async function cardServiceFetchVoid(
   init: RequestInit,
   fallbackErrorMessage: string
 ): Promise<void> {
-  const response = await fetch(input, { credentials: "include", ...init });
+  const response = await fetch(input, { ...init, credentials: "include" });
 
   if (!response.ok) {
     throw new Error(await readErrorMessage(response, fallbackErrorMessage));

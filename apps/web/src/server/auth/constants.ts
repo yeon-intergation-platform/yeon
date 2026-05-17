@@ -33,7 +33,7 @@ function isAllowedAuthRedirectPath(url: URL) {
 }
 
 export function normalizeAuthRedirectPath(
-  candidate: string | null | undefined,
+  candidate: string | null | undefined
 ) {
   if (!candidate) {
     return DEFAULT_POST_LOGIN_PATH;
@@ -74,6 +74,29 @@ export function getAppOrigin(originFallback?: string) {
   return new URL(rawAppUrl).origin;
 }
 
+function getAuthCookieDeploymentHostname() {
+  try {
+    return new URL(process.env.NEXT_PUBLIC_APP_URL ?? REDIRECT_PATH_BASE_URL)
+      .hostname;
+  } catch {
+    return new URL(REDIRECT_PATH_BASE_URL).hostname;
+  }
+}
+
 export function isSecureAuthCookie() {
   return process.env.NODE_ENV === "production";
+}
+
+export function getAuthCookieDomain() {
+  if (process.env.NODE_ENV !== "production") {
+    return undefined;
+  }
+
+  const hostname = getAuthCookieDeploymentHostname().toLowerCase();
+
+  if (hostname === "yeon.world" || hostname === "www.yeon.world") {
+    return ".yeon.world";
+  }
+
+  return undefined;
 }

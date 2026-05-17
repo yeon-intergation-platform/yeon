@@ -4,6 +4,7 @@ import type { NextResponse } from "next/server";
 
 import {
   AUTH_SESSION_COOKIE_NAME,
+  getAuthCookieDomain,
   isSecureAuthCookie,
 } from "@/server/auth/constants";
 import {
@@ -23,6 +24,7 @@ export function applyAuthSessionCookie(
     expiresAt: Date;
   }
 ) {
+  const domain = getAuthCookieDomain();
   response.cookies.set({
     name: AUTH_SESSION_COOKIE_NAME,
     value: session.sessionToken,
@@ -31,12 +33,14 @@ export function applyAuthSessionCookie(
     secure: isSecureAuthCookie(),
     path: "/",
     expires: session.expiresAt,
+    ...(domain ? { domain } : {}),
   });
 
   return response;
 }
 
 export function clearAuthSessionCookie(response: NextResponse) {
+  const domain = getAuthCookieDomain();
   response.cookies.set({
     name: AUTH_SESSION_COOKIE_NAME,
     value: "",
@@ -45,6 +49,7 @@ export function clearAuthSessionCookie(response: NextResponse) {
     secure: isSecureAuthCookie(),
     path: "/",
     expires: new Date(0),
+    ...(domain ? { domain } : {}),
   });
 
   return response;
