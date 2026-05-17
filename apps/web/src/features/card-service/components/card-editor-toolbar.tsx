@@ -9,6 +9,7 @@ import {
   Loader2,
   Quote,
   Redo2,
+  Table2,
   Underline as UnderlineIcon,
   Undo2,
   type LucideIcon,
@@ -71,6 +72,7 @@ interface CardEditorToolbarProps {
   onBulletList: () => void;
   onOrderedList: () => void;
   onBlockquote: () => void;
+  onTable: () => void;
   onImage: () => void;
   onUndo: () => void;
   onRedo: () => void;
@@ -88,6 +90,7 @@ export function CardEditorToolbar({
   onBulletList,
   onOrderedList,
   onBlockquote,
+  onTable,
   onImage,
   onUndo,
   onRedo,
@@ -148,6 +151,12 @@ export function CardEditorToolbar({
         active={active.blockquote}
         disabled={!canUseToolbar}
         onClick={onBlockquote}
+      />
+      <CardEditorToolbarButton
+        label="표 삽입"
+        icon={Table2}
+        disabled={!canUseToolbar}
+        onClick={onTable}
       />
       <CardEditorToolbarButton
         label={isUploading ? "이미지 업로드 중" : "이미지 삽입"}

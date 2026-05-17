@@ -5,6 +5,12 @@ import createDOMPurify from "dompurify";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
+import { renderCardEditorMarkdownTablesInHtml } from "./card-editor-table-utils";
+import {
+  applyCardEditorYouTubeIframeAttributes,
+  replaceStandaloneCardEditorYouTubeLinksWithEmbeds,
+} from "./card-editor-youtube-utils";
+
 interface MarkdownContentProps {
   children: string;
   inverted?: boolean;
@@ -16,7 +22,7 @@ const CARD_HTML_IMAGE_MAX_WIDTH = 800;
 const CARD_HTML_IMAGE_DEFAULT_WIDTH = 480;
 
 function looksLikeHtml(value: string) {
-  return /<\/?(p|div|br|ul|ol|li|strong|em|u|s|blockquote|pre|code|h[1-6]|img|a)\b/i.test(
+  return /<\/?(p|div|br|ul|ol|li|strong|em|u|s|blockquote|pre|code|h[1-6]|img|a|table|thead|tbody|tr|th|td|iframe)\b/i.test(
     value
   );
 }
@@ -59,8 +65,30 @@ function sanitizeHtml(value: string) {
       "hr",
       "a",
       "img",
+      "iframe",
+      "table",
+      "thead",
+      "tbody",
+      "tr",
+      "th",
+      "td",
     ],
-    ALLOWED_ATTR: ["href", "target", "rel", "src", "alt", "title", "width"],
+    ALLOWED_ATTR: [
+      "allow",
+      "allowfullscreen",
+      "alt",
+      "class",
+      "frameborder",
+      "height",
+      "href",
+      "loading",
+      "referrerpolicy",
+      "rel",
+      "src",
+      "target",
+      "title",
+      "width",
+    ],
     ALLOW_DATA_ATTR: false,
   });
 
@@ -76,6 +104,7 @@ function sanitizeHtml(value: string) {
     anchor.setAttribute("target", "_blank");
     anchor.setAttribute("rel", "noreferrer");
   });
+  applyCardEditorYouTubeIframeAttributes(document);
   return document.body.innerHTML;
 }
 
@@ -97,10 +126,18 @@ export function MarkdownContent({
         code: "bg-[#f7f7f7]",
       };
 
-  const isHtml = looksLikeHtml(children);
+  const originalIsHtml = looksLikeHtml(children);
+  const contentWithEmbeds = replaceStandaloneCardEditorYouTubeLinksWithEmbeds(
+    children,
+    originalIsHtml
+  );
+  const isHtml = looksLikeHtml(contentWithEmbeds);
   const safeHtml = useMemo(
-    () => (isHtml ? sanitizeHtml(children) : ""),
-    [children, isHtml]
+    () =>
+      isHtml
+        ? sanitizeHtml(renderCardEditorMarkdownTablesInHtml(contentWithEmbeds))
+        : "",
+    [contentWithEmbeds, isHtml]
   );
 
   const htmlStyles = (
@@ -159,6 +196,32 @@ export function MarkdownContent({
         max-width: 100%;
         object-fit: contain;
         vertical-align: middle;
+      }
+      .card-markdown-html table {
+        border: 1px solid #e5e5e5;
+        border-collapse: collapse;
+        margin: 0.75rem 0;
+        min-width: 100%;
+        text-align: left;
+      }
+      .card-markdown-html th,
+      .card-markdown-html td {
+        border: 1px solid #e5e5e5;
+        padding: 0.35rem 0.5rem;
+      }
+      .card-markdown-html th {
+        background: #f7f7f7;
+        font-weight: 700;
+      }
+      .card-markdown-html iframe.card-youtube-embed {
+        aspect-ratio: 16 / 9;
+        border: 1px solid #e5e5e5;
+        border-radius: 14px;
+        display: block;
+        height: auto;
+        margin: 0.75rem 0;
+        max-width: 100%;
+        width: 100%;
       }
     `}</style>
   );

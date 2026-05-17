@@ -14,7 +14,10 @@ import {
   type ChangeEvent,
 } from "react";
 
-import { ResizableCardEditorImageExtension } from "./card-editor-extensions";
+import {
+  CardEditorYouTubeEmbedExtension,
+  ResizableCardEditorImageExtension,
+} from "./card-editor-extensions";
 import { CardEditorToolbar } from "./card-editor-toolbar";
 import {
   CARD_EDITOR_HEIGHT_CLASS,
@@ -33,6 +36,12 @@ import {
   toCardEditorFileFromBlob,
 } from "./card-editor-image-utils";
 import { normalizeCardEditorRichClipboardHtml } from "./card-editor-rich-clipboard-normalizer";
+import {
+  convertCardEditorHtmlTableToMarkdownTable,
+  convertCardEditorTabularTextToMarkdownTable,
+  isCardEditorHtmlTableOnlyPaste,
+} from "./card-editor-table-utils";
+import { isSingleCardEditorYouTubeUrlText } from "./card-editor-youtube-utils";
 import { useCardEditorImageUpload } from "./use-card-editor-image-upload";
 import { CARD_SERVICE_COMMON_CLASS } from "../card-service-common.const";
 
@@ -62,6 +71,20 @@ function positionEditorSelectionFromDropEvent(
   }
 
   editor.chain().setTextSelection(position.pos).focus().run();
+}
+
+function insertCardEditorMarkdownTable(editor: Editor, markdownTable: string) {
+  const tableRows = markdownTable.split("\n").map((line) => ({
+    type: "paragraph",
+    content: [
+      {
+        type: "text",
+        text: line,
+      },
+    ],
+  }));
+
+  return editor.chain().focus().insertContent(tableRows).run();
 }
 
 export function CardRichMarkdownEditor({
@@ -212,6 +235,7 @@ export function CardRichMarkdownEditor({
         },
       }),
       ResizableCardEditorImageExtension.configure({ inline: true }),
+      CardEditorYouTubeEmbedExtension,
       Placeholder.configure({
         placeholder: placeholder ?? "내용을 입력하세요.",
       }),
@@ -247,6 +271,19 @@ export function CardRichMarkdownEditor({
         }
 
         const pastedHtml = clipboardData.getData("text/html");
+        const pastedText = clipboardData.getData("text/plain");
+        const markdownTable = isCardEditorHtmlTableOnlyPaste(pastedHtml)
+          ? convertCardEditorHtmlTableToMarkdownTable(pastedHtml)
+          : !pastedHtml.trim()
+            ? convertCardEditorTabularTextToMarkdownTable(pastedText)
+            : undefined;
+
+        if (markdownTable) {
+          event.preventDefault();
+          insertCardEditorMarkdownTable(editor, markdownTable);
+          return true;
+        }
+
         const normalizedRichClipboardHtml =
           normalizeCardEditorRichClipboardHtml(pastedHtml);
 
@@ -281,7 +318,27 @@ export function CardRichMarkdownEditor({
           extractCardEditorHtmlImageSources(editor.getHTML())
         );
 
-        return false;
+        const youtubeEmbed = isSingleCardEditorYouTubeUrlText(pastedText);
+        if (!youtubeEmbed) {
+          return false;
+        }
+
+        event.preventDefault();
+        editor
+          .chain()
+          .focus()
+          .insertContent([
+            {
+              type: "youtubeEmbed",
+              attrs: {
+                src: youtubeEmbed.embedUrl,
+                title: "YouTube video player",
+              },
+            },
+            { type: "paragraph" },
+          ])
+          .run();
+        return true;
       },
       handleDrop: (_view, event) => {
         const dataTransfer = event.dataTransfer;
@@ -350,6 +407,14 @@ export function CardRichMarkdownEditor({
     orderedList: editor?.isActive("orderedList"),
     blockquote: editor?.isActive("blockquote"),
   };
+  const handleInsertTable = withEditor((instance) => {
+    insertCardEditorMarkdownTable(
+      instance,
+      ["| 항목 | 설명 |", "| --- | --- |", "| 예시 | 내용을 입력하세요 |"].join(
+        "\n"
+      )
+    );
+  });
   const editorPanel = (
     <div className="min-w-0 rounded-2xl bg-white">
       <CardEditorToolbar
@@ -376,6 +441,7 @@ export function CardRichMarkdownEditor({
         onBlockquote={withEditor((instance) =>
           instance.chain().focus().toggleBlockquote().run()
         )}
+        onTable={handleInsertTable}
         onImage={() => fileInputRef.current?.click()}
         onUndo={withEditor((instance) => instance.chain().focus().undo().run())}
         onRedo={withEditor((instance) => instance.chain().focus().redo().run())}
