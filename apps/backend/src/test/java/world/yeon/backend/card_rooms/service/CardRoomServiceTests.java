@@ -6,6 +6,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -74,5 +75,17 @@ class CardRoomServiceTests {
 
     verify(repository).leaveParticipant(org.mockito.ArgumentMatchers.eq(ROOM_PARTICIPANT.internalId()), org.mockito.ArgumentMatchers.any());
     verify(repository).updateStatus(org.mockito.ArgumentMatchers.eq(ROOM.internalId()), org.mockito.ArgumentMatchers.eq("finished"), org.mockito.ArgumentMatchers.eq(ROOM.currentCardIndex()), org.mockito.ArgumentMatchers.any());
+  }
+
+  @Test
+  void 잔존정리는빈방과오래된방을종료한다() {
+    when(repository.finishRoomsWithoutActiveParticipants(NOW)).thenReturn(2);
+    when(repository.finishStaleRooms(NOW.minus(Duration.ofHours(6)), NOW)).thenReturn(3);
+
+    int closedCount = service.cleanupStaleRooms(NOW, Duration.ofHours(6));
+
+    assertThat(closedCount).isEqualTo(5);
+    verify(repository).finishRoomsWithoutActiveParticipants(NOW);
+    verify(repository).finishStaleRooms(NOW.minus(Duration.ofHours(6)), NOW);
   }
 }
