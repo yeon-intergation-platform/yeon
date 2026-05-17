@@ -36,6 +36,7 @@ export function RoomVoiceCallPanel({
 }: RoomVoiceCallPanelProps) {
   const {
     isFeatureEnabled,
+    isFeatureFlagLoading,
     isSupported,
     status,
     selectedTargetId,
@@ -58,6 +59,7 @@ export function RoomVoiceCallPanel({
   const incomingLabel = participantLabel(availableTargets, incomingFrom);
   const activeLabel = participantLabel(availableTargets, activeTarget);
   const canStart =
+    !isFeatureFlagLoading &&
     isFeatureEnabled &&
     isSupported &&
     status !== "calling" &&
@@ -85,7 +87,15 @@ export function RoomVoiceCallPanel({
         </span>
       </div>
 
-      {!isFeatureEnabled ? (
+      {isFeatureFlagLoading ? (
+        <p
+          className={`mt-3 rounded-xl border border-[#eee] bg-[#fafafa] px-3 py-2 ${SHARED_FEATURE_CLASS.text12EmphasisSubtle}`}
+        >
+          음성통화 설정을 확인하는 중입니다.
+        </p>
+      ) : null}
+
+      {!isFeatureFlagLoading && !isFeatureEnabled ? (
         <p
           className={`mt-3 rounded-xl border border-[#eee] bg-[#fafafa] px-3 py-2 ${SHARED_FEATURE_CLASS.text12EmphasisSubtle}`}
         >

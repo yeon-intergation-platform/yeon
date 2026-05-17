@@ -379,6 +379,10 @@ async function resolveServices() {
     process.env.SPRING_PROFILES_ACTIVE?.trim() || defaultLocalSpringProfile;
   const databaseEnv = toDatabaseEnv(resolveLocalDatabaseUrl());
   const rootAuthProviderEnv = resolveRootAuthProviderEnv();
+  const roomVoiceCallEnabled =
+    resolveLocalEnvValue("ROOM_VOICE_CALL_ENABLED") ??
+    resolveLocalEnvValue("NEXT_PUBLIC_ENABLE_ROOM_VOICE_CALL") ??
+    "false";
 
   services.push({
     name: "web",
@@ -394,6 +398,8 @@ async function resolveServices() {
       SPRING_INTERNAL_TOKEN: springInternalToken,
       SPRING_PROFILES_ACTIVE: springProfilesActive,
       NEXT_PUBLIC_RACE_SERVER_URL: `ws://localhost:${racePort}`,
+      NEXT_PUBLIC_ENABLE_ROOM_VOICE_CALL: roomVoiceCallEnabled,
+      ROOM_VOICE_CALL_ENABLED: roomVoiceCallEnabled,
       ...rootAuthProviderEnv,
     },
     assignedPort: webPort,

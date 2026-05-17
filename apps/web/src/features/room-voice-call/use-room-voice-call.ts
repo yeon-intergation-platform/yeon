@@ -8,6 +8,7 @@ import {
   useState,
   type RefObject,
 } from "react";
+import { useQuery } from "@tanstack/react-query";
 import type { Room } from "@colyseus/sdk";
 import {
   VOICE_EVENTS,
@@ -22,11 +23,14 @@ const ICE_SERVERS: RTCIceServer[] = [
   { urls: ["stun:stun.l.google.com:19302"] },
 ];
 
-const FEATURE_FLAG =
+const BUILD_TIME_FEATURE_FLAG =
   process.env.NEXT_PUBLIC_ENABLE_ROOM_VOICE_CALL?.toLowerCase() === "true";
+const VOICE_CALL_CONFIG_ENDPOINT = "/api/v1/room-voice-call-config";
+const roomVoiceCallConfigQueryKey = () => ["room-voice-call-config"] as const;
 
 const MESSAGES = {
   unsupported: "현재 브라우저는 음성통화를 지원하지 않습니다.",
+  loading: "음성통화 설정을 확인하는 중입니다.",
   disabled: "음성통화 베타가 비활성화되어 있습니다.",
   missingRoom: "룸 연결 후 음성통화를 시작할 수 있습니다.",
   missingParticipant: "참가자 정보를 확인할 수 없습니다.",
@@ -99,6 +103,7 @@ export type RoomVoiceCallOptions = {
 
 export type RoomVoiceCallResult = {
   isFeatureEnabled: boolean;
+  isFeatureFlagLoading: boolean;
   isSupported: boolean;
   status: VoiceCallStatus;
   selectedTargetId: string | null;
@@ -248,13 +253,36 @@ function endReasonMessage(reason: VoiceEndMessage["reason"] | undefined) {
   return MESSAGES.ended;
 }
 
+async function fetchRoomVoiceCallConfig() {
+  const response = await fetch(VOICE_CALL_CONFIG_ENDPOINT, {
+    cache: "no-store",
+  });
+  if (!response.ok) {
+    throw new Error("음성통화 설정을 불러오지 못했습니다.");
+  }
+  const payload = (await response.json()) as { enabled?: unknown };
+  return payload.enabled === true;
+}
+
 export function useRoomVoiceCall({
   room,
   localParticipantId,
   participants,
   enabled = true,
 }: RoomVoiceCallOptions): RoomVoiceCallResult {
-  const isFeatureEnabled = FEATURE_FLAG && enabled;
+  const runtimeFeatureFlagQuery = useQuery({
+    queryKey: roomVoiceCallConfigQueryKey(),
+    queryFn: fetchRoomVoiceCallConfig,
+    staleTime: 30_000,
+    retry: 1,
+  });
+  const runtimeFeatureFlag = runtimeFeatureFlagQuery.isError
+    ? BUILD_TIME_FEATURE_FLAG
+    : runtimeFeatureFlagQuery.data;
+  const resolvedFeatureFlag = runtimeFeatureFlag ?? BUILD_TIME_FEATURE_FLAG;
+  const isFeatureFlagLoading =
+    runtimeFeatureFlagQuery.isPending && !BUILD_TIME_FEATURE_FLAG;
+  const isFeatureEnabled = resolvedFeatureFlag && enabled;
   const isSupported = hasWebRtcSupport();
 
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -444,6 +472,10 @@ export function useRoomVoiceCall({
 
   const start = useCallback(
     async (targetId?: string) => {
+      if (isFeatureFlagLoading) {
+        setError(MESSAGES.loading);
+        return;
+      }
       if (!isFeatureEnabled) {
         setError(MESSAGES.disabled);
         return;
@@ -509,6 +541,7 @@ export function useRoomVoiceCall({
       createPeerConnection,
       failCall,
       isFeatureEnabled,
+      isFeatureFlagLoading,
       isSupported,
       selectedTargetId,
       sendPayload,
@@ -746,6 +779,7 @@ export function useRoomVoiceCall({
   return useMemo<RoomVoiceCallResult>(
     () => ({
       isFeatureEnabled,
+      isFeatureFlagLoading,
       isSupported,
       status,
       selectedTargetId,
@@ -767,6 +801,7 @@ export function useRoomVoiceCall({
     }),
     [
       isFeatureEnabled,
+      isFeatureFlagLoading,
       isSupported,
       status,
       selectedTargetId,
