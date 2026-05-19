@@ -7,8 +7,8 @@ import { type Editor, EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import {
   useCallback,
+  useDeferredValue,
   useEffect,
-  useMemo,
   useRef,
   useState,
   type ChangeEvent,
@@ -63,6 +63,28 @@ interface CardRichMarkdownEditorProps {
   onUploadingChange?: (isUploading: boolean) => void;
 }
 
+type CardEditorToolbarState = {
+  active: {
+    bold?: boolean;
+    italic?: boolean;
+    underline?: boolean;
+    bulletList?: boolean;
+    orderedList?: boolean;
+    blockquote?: boolean;
+    codeBlock?: boolean;
+  };
+  canUndo?: boolean;
+  canRedo?: boolean;
+  isTableToolbarVisible: boolean;
+};
+
+const EMPTY_TOOLBAR_STATE: CardEditorToolbarState = {
+  active: {},
+  canUndo: false,
+  canRedo: false,
+  isTableToolbarVisible: false,
+};
+
 function positionEditorSelectionFromDropEvent(
   editor: Editor,
   event: DragEvent
@@ -104,10 +126,13 @@ export function CardRichMarkdownEditor({
   disabled = false,
   onUploadingChange,
 }: CardRichMarkdownEditorProps) {
-  const [toolbarTick, setToolbarTick] = useState(0);
+  const deferredPreviewValue = useDeferredValue(value);
+  const [toolbarState, setToolbarState] =
+    useState<CardEditorToolbarState>(EMPTY_TOOLBAR_STATE);
   const [mobilePane, setMobilePane] = useState<"edit" | "preview">("edit");
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const isInternalUpdateRef = useRef(false);
+  const toolbarRefreshFrameRef = useRef<number | null>(null);
   const {
     errorMessage,
     isUploading,
@@ -121,6 +146,42 @@ export function CardRichMarkdownEditor({
   useEffect(() => {
     onUploadingChange?.(isUploading);
   }, [isUploading, onUploadingChange]);
+
+  const scheduleToolbarStateRefresh = useCallback(
+    (targetEditor: Editor | null) => {
+      if (!targetEditor) return;
+      if (toolbarRefreshFrameRef.current !== null) return;
+
+      toolbarRefreshFrameRef.current = window.requestAnimationFrame(() => {
+        toolbarRefreshFrameRef.current = null;
+
+        setToolbarState({
+          active: {
+            bold: targetEditor.isActive("bold"),
+            italic: targetEditor.isActive("italic"),
+            underline: targetEditor.isActive("underline"),
+            bulletList: targetEditor.isActive("bulletList"),
+            orderedList: targetEditor.isActive("orderedList"),
+            blockquote: targetEditor.isActive("blockquote"),
+            codeBlock: targetEditor.isActive("codeBlock"),
+          },
+          canUndo: targetEditor.can().undo(),
+          canRedo: targetEditor.can().redo(),
+          isTableToolbarVisible:
+            isCardEditorSelectionInMarkdownTable(targetEditor),
+        });
+      });
+    },
+    []
+  );
+
+  useEffect(() => {
+    return () => {
+      if (toolbarRefreshFrameRef.current === null) return;
+      window.cancelAnimationFrame(toolbarRefreshFrameRef.current);
+      toolbarRefreshFrameRef.current = null;
+    };
+  }, []);
 
   const getNewImageSources = (
     beforeSources: string[],
@@ -252,16 +313,34 @@ export function CardRichMarkdownEditor({
       }),
     ],
     content: value || "",
+    onCreate: ({ editor: createdEditor }) => {
+      scheduleToolbarStateRefresh(createdEditor);
+    },
     onUpdate: ({ editor: updatedEditor }) => {
       isInternalUpdateRef.current = true;
       onChange(updatedEditor.getHTML());
+      scheduleToolbarStateRefresh(updatedEditor);
     },
-    onTransaction: () => setToolbarTick((prev) => prev + 1),
+    onSelectionUpdate: ({ editor: updatedEditor }) => {
+      scheduleToolbarStateRefresh(updatedEditor);
+    },
     editorProps: {
       attributes: {
         class: `card-rich-editor-content ${heightClassName.editor} rounded-b-2xl border-x border-b border-[#e5e5e5] bg-white px-4 py-5 text-[15px] leading-7 text-[#111] outline-none md:px-5 md:text-[16px]`,
         spellcheck: "true",
         "aria-label": label,
+      },
+      handleKeyDown: (_view, event) => {
+        if (event.key !== "Tab") {
+          return false;
+        }
+
+        const inCodeBlock = editor?.isActive("codeBlock") ?? false;
+        if (inCodeBlock) {
+          return false;
+        }
+
+        return true;
       },
       handlePaste: (_view, event) => {
         const clipboardData = event.clipboardData;
@@ -431,26 +510,15 @@ export function CardRichMarkdownEditor({
     (callback: (editor: Editor) => void) => () => {
       if (!editor || disabled) return;
       callback(editor);
-      setToolbarTick((prev) => prev + 1);
+      scheduleToolbarStateRefresh(editor);
     },
-    [disabled, editor]
+    [disabled, editor, scheduleToolbarStateRefresh]
   );
 
   const canUseToolbar = Boolean(editor && !disabled);
-  const toolbarState = useMemo(() => ({ tick: toolbarTick }), [toolbarTick]);
-  void toolbarState;
-
-  const toolbarActiveState = {
-    bold: editor?.isActive("bold"),
-    italic: editor?.isActive("italic"),
-    underline: editor?.isActive("underline"),
-    bulletList: editor?.isActive("bulletList"),
-    orderedList: editor?.isActive("orderedList"),
-    blockquote: editor?.isActive("blockquote"),
-    codeBlock: editor?.isActive("codeBlock"),
-  };
+  const toolbarActiveState = toolbarState.active;
   const isTableToolbarVisible =
-    canUseToolbar && isCardEditorSelectionInMarkdownTable(editor);
+    canUseToolbar && toolbarState.isTableToolbarVisible;
   const handleInsertTable = withEditor((instance) => {
     insertCardEditorMarkdownTable(
       instance,
@@ -494,8 +562,8 @@ export function CardRichMarkdownEditor({
         canUseToolbar={canUseToolbar}
         isUploading={isUploading}
         active={toolbarActiveState}
-        canUndo={editor?.can().undo()}
-        canRedo={editor?.can().redo()}
+        canUndo={toolbarState.canUndo}
+        canRedo={toolbarState.canRedo}
         onBold={withEditor((instance) =>
           instance.chain().focus().toggleBold().run()
         )}
@@ -604,7 +672,7 @@ export function CardRichMarkdownEditor({
         <div className={mobilePane === "preview" ? "block" : "hidden lg:block"}>
           <CardEditorPreview
             label={label}
-            value={value}
+            value={deferredPreviewValue}
             previewHeightClassName={heightClassName.preview}
           />
         </div>
