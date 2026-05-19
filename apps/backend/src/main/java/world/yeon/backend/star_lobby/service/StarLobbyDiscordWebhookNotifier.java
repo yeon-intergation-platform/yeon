@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
@@ -22,6 +23,7 @@ public class StarLobbyDiscordWebhookNotifier {
 	private final HttpClient httpClient;
 	private final ObjectMapper objectMapper;
 
+	@Autowired
 	public StarLobbyDiscordWebhookNotifier(ObjectMapper objectMapper) {
 		this(HttpClient.newBuilder().connectTimeout(REQUEST_TIMEOUT).build(), objectMapper);
 	}
