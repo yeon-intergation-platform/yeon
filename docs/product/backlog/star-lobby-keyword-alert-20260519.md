@@ -316,6 +316,34 @@ Discord로 진행한다. 브라우저 푸시를 우선하지 않는다.
 - 2026-05-19: 보호 키가 비어 있어도 배포와 운영 테스트 발송은 가능하지만, 운영에서 웹훅 URL 영속 저장은 보호 키 설정 전까지 거부한다.
 - 2026-05-19: 인원 제한 clear 계약은 현 서버 DTO와 맞지 않아 이번 차수에서는 null clear 허용을 제거하고, 필요 시 별도 patch DTO 차수로 분리한다.
 
+### 긴급 운영 복구: Discord Notifier 생성자 주입 명시
+
+#### 작업내용
+
+- 운영 backend preflight에서 `StarLobbyDiscordWebhookNotifier` 빈 생성이 기본 생성자 탐색으로 실패하는 문제를 복구한다.
+- 운영용 `ObjectMapper` 생성자에 `@Autowired`를 명시해 테스트용 package-private 생성자와 충돌하지 않게 한다.
+- 스타 로비 단위 테스트와 Spring context boot 테스트로 같은 종류의 생성자 주입 실패를 검증한다.
+- `StarLobbySpringContextTests`를 추가해 `./gradlew test --tests '*StarLobby*'`만 실행해도 Spring bean graph 부팅 실패를 잡게 한다.
+- `docs/agent-rules/server-services.md`에 Spring bean 생성자 주입 안전장치를 명시한다.
+
+#### 논의 필요
+
+- 없음. 운영 backend preflight 차단 버그라 즉시 복구한다.
+
+#### 선택지
+
+1. 운영 생성자에 `@Autowired`를 명시한다.
+2. 테스트용 생성자를 별도 factory로 분리한다.
+3. 기본 생성자를 추가한다.
+
+#### 추천
+
+1번으로 진행한다. 필수 의존성은 생성자 주입을 유지하고, Spring에 운영 생성자만 명확히 알려주는 수정이 가장 작고 안전하다.
+
+#### 사용자 방향
+
+운영 preflight 실패를 해결하고 main에 머지한다.
+
 ## 다음 작업 TODO 기록
 
 아래 항목은 2026-05-19 `$code-review` 후 남긴 후속 작업이다. 모두 구현 가능하지만, OCR/방 identity 일부는 실제 스타 로비 관측 샘플이 있어야 정확히 풀 수 있다.

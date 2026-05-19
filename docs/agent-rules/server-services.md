@@ -62,6 +62,20 @@ Spring Controller
 - 기본 호출 대상은 Spring client(`*-spring-client.ts`)다.
 - 인증 검사는 Spring/공용 계약으로 이관하는 것을 우선한다. 기존 `src/server/auth/` 함수 사용은 legacy 호환 경계에서만 허용한다.
 
+## Spring Bean / 생성자 주입 안전장치
+
+- `@Component`, `@Service`, `@Repository`, `@RestController` 같은 Spring bean에 생성자가 둘 이상 존재하면 운영용 생성자에 `@Autowired`를 반드시 명시한다.
+- 테스트용 생성자/package-private 생성자를 추가하는 경우에도 운영 생성자 선택이 모호해지지 않게 한다. 기본 생성자를 억지로 추가하지 않는다.
+- bean 생성자/의존성/`@Value`/환경설정/신규 컴포넌트 변경 후에는 단위 테스트만으로 완료하지 않는다. 최소 한 번은 Spring ApplicationContext 부팅 검증을 실행한다.
+- 도메인별 변경이 있으면 해당 도메인 이름이 들어간 `@SpringBootTest` smoke test를 두어 집중 검증(`./gradlew test --tests '*<Domain>*'`)에도 context boot가 포함되게 한다. 예: Star Lobby 변경은 `StarLobbySpringContextTests`를 유지한다.
+- 운영 배포 preflight에서만 발견될 수 있는 실패 예시는 다음과 같다.
+  - 생성자 후보가 둘 이상인데 `@Autowired`가 없어 Spring이 기본 생성자 경로로 빠지는 경우
+  - `@Value` 기본값/환경변수 누락으로 bean 생성이 실패하는 경우
+  - Flyway migration은 성공했지만 이후 bean graph 초기화가 실패하는 경우
+- 백엔드 변경 검증 기본 명령:
+  - 도메인 단위: `cd apps/backend && ./gradlew test --tests '*<Domain>*'`
+  - 신규/수정 Spring bean이 있으면 추가로: `cd apps/backend && ./gradlew test --tests 'world.yeon.backend.YeonBackendApplicationTests'` 또는 도메인 전용 `@SpringBootTest`
+
 ## 테스트
 
 - 신규 백엔드 단위/통합 테스트는 `apps/backend`에 작성한다.
