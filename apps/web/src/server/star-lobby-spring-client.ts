@@ -3,6 +3,7 @@ import type {
   StarLobbyAlertRuleListResponse,
   StarLobbyAlertRuleMutationResponse,
   StarLobbyRoomListResponse,
+  UpdateStarLobbyAlertRuleBody,
 } from "@yeon/api-contract/star-lobby";
 
 import { buildSpringBffHeaders } from "./spring-bff-client";
@@ -116,5 +117,40 @@ export function fetchStarLobbyRoomsFromSpring() {
     "/api/v1/star-lobby/rooms",
     { method: "GET" },
     "스타 로비 현재 방 목록을 불러오지 못했습니다."
+  );
+}
+
+export function updateStarLobbyAlertRuleInSpring(params: {
+  ruleId: string;
+  userId?: string | null;
+  guestSessionId?: string | null;
+  payload: UpdateStarLobbyAlertRuleBody;
+}) {
+  return fetchSpring<StarLobbyAlertRuleMutationResponse>(
+    `/api/v1/star-lobby/alert-rules/${encodeURIComponent(params.ruleId)}`,
+    {
+      method: "PATCH",
+      userId: params.userId,
+      guestSessionId: params.guestSessionId,
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(params.payload),
+    },
+    "스타 로비 알림 조건을 수정하지 못했습니다."
+  );
+}
+
+export async function deleteStarLobbyAlertRuleInSpring(params: {
+  ruleId: string;
+  userId?: string | null;
+  guestSessionId?: string | null;
+}) {
+  await fetchSpring<void>(
+    `/api/v1/star-lobby/alert-rules/${encodeURIComponent(params.ruleId)}`,
+    {
+      method: "DELETE",
+      userId: params.userId,
+      guestSessionId: params.guestSessionId,
+    },
+    "스타 로비 알림 조건을 삭제하지 못했습니다."
   );
 }

@@ -94,6 +94,45 @@ public class StarLobbyService {
 		return new AlertRuleMutationResponse(toRuleResponse(row));
 	}
 
+	@Transactional
+	public AlertRuleMutationResponse updateAlertRule(UUID ownerUserId, String guestSessionId, UUID ruleId, UpdateAlertRuleRequest request) {
+		Owner owner = resolveOwner(ownerUserId, guestSessionId);
+		if (ruleId == null) throw new StarLobbyServiceException(400, "STAR_LOBBY_INVALID_RULE", "알림 조건 ID가 필요합니다.");
+		if (request == null) throw new StarLobbyServiceException(400, "STAR_LOBBY_INVALID_RULE", "수정할 알림 조건을 입력해 주세요.");
+		AlertRuleRow current = repository.findAlertRule(owner.userId(), owner.guestSessionId(), ruleId)
+			.orElseThrow(() -> new StarLobbyServiceException(404, "STAR_LOBBY_RULE_NOT_FOUND", "알림 조건을 찾지 못했습니다."));
+		List<String> includeKeywords = request.includeKeywords() == null
+			? current.includeKeywords()
+			: normalizeKeywords(request.includeKeywords(), "포함 키워드", 1, 20);
+		List<String> excludeKeywords = request.excludeKeywords() == null
+			? current.excludeKeywords()
+			: normalizeKeywords(request.excludeKeywords(), "제외 키워드", 0, 20);
+		Integer minPlayers = request.minPlayers() == null ? current.minPlayers() : validatePlayer(request.minPlayers(), "최소 인원", 0, 12, true);
+		Integer maxPlayers = request.maxPlayers() == null ? current.maxPlayers() : validatePlayer(request.maxPlayers(), "최대 인원", 1, 12, true);
+		if (minPlayers != null && maxPlayers != null && minPlayers > maxPlayers) {
+			throw new StarLobbyServiceException(400, "STAR_LOBBY_INVALID_RULE", "최소 인원은 최대 인원보다 클 수 없습니다.");
+		}
+		AlertRuleRow row = repository.updateAlertRule(
+			ruleId,
+			request.name() == null ? current.name() : normalizeText(request.name(), "알림 이름", 80),
+			includeKeywords,
+			excludeKeywords,
+			minPlayers,
+			maxPlayers,
+			request.enabled() == null ? current.enabled() : request.enabled(),
+			OffsetDateTime.now(ZoneOffset.UTC)
+		);
+		return new AlertRuleMutationResponse(toRuleResponse(row));
+	}
+
+	@Transactional
+	public void deleteAlertRule(UUID ownerUserId, String guestSessionId, UUID ruleId) {
+		Owner owner = resolveOwner(ownerUserId, guestSessionId);
+		if (ruleId == null) throw new StarLobbyServiceException(400, "STAR_LOBBY_INVALID_RULE", "알림 조건 ID가 필요합니다.");
+		int deleted = repository.deleteAlertRule(owner.userId(), owner.guestSessionId(), ruleId);
+		if (deleted == 0) throw new StarLobbyServiceException(404, "STAR_LOBBY_RULE_NOT_FOUND", "알림 조건을 찾지 못했습니다.");
+	}
+
 	private List<AlertMatched> matchEnabledRules(List<ObservedRoomRow> rooms, OffsetDateTime matchedAt) {
 		if (rooms.isEmpty()) return List.of();
 		List<AlertRuleRow> rules = repository.listEnabledAlertRules();
