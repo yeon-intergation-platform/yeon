@@ -48,6 +48,10 @@
 
 키워드 감지 기반으로 진행한다. 예: “랜타디 뜨면 바로 알려줘”. 맵별 대기 채팅은 MVP에서 제외한다.
 
+### 진행 기록
+
+- 2026-05-19: `/star-lobby`에 Colyseus `star_lobby` 접속 패널을 추가해 포함/제외 키워드 subscribe, 실시간 관측 피드, 접속 중 `alert_matched` 알림 표시를 연결한다.
+
 ## 2차: Spring source of truth
 
 ### 작업내용

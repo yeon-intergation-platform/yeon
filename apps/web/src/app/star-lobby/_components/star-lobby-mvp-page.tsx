@@ -1,3 +1,5 @@
+import { StarLobbyLivePanel } from "./star-lobby-live-panel";
+
 const SAMPLE_ROOMS = [
   {
     title: "랜타디 초보 환영",
@@ -101,8 +103,10 @@ export function StarLobbyMvpPage() {
         </div>
 
         <section className="grid gap-5 lg:grid-cols-2">
+          <StarLobbyLivePanel />
+
           <div className="rounded-[2rem] border border-white/10 bg-white/[0.06] p-6">
-            <p className="text-sm font-bold text-cyan-200">내 알림 조건</p>
+            <p className="text-sm font-bold text-cyan-200">알림 조건 예시</p>
             <h2 className="mt-2 text-2xl font-black">
               방제에 이 단어가 뜨면 알림
             </h2>
