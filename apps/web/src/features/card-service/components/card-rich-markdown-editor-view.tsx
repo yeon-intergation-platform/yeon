@@ -1,5 +1,7 @@
 "use client";
 
+import { memo } from "react";
+
 import { SHARED_FEATURE_CLASS } from "../../shared-style-constants";
 import { MarkdownContent } from "./markdown-content";
 
@@ -23,7 +25,7 @@ function isMeaningfulCardEditorContent(value: string) {
   );
 }
 
-export function CardEditorPreview({
+function CardEditorPreviewComponent({
   label,
   value,
   previewHeightClassName,
@@ -54,6 +56,9 @@ export function CardEditorPreview({
     </aside>
   );
 }
+
+export const CardEditorPreview = memo(CardEditorPreviewComponent);
+CardEditorPreview.displayName = "CardEditorPreview";
 
 export function CardRichEditorGlobalStyles() {
   return (
