@@ -1,5 +1,11 @@
 "use client";
 
+import { Client, type Room } from "@colyseus/sdk";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  type StarLobbyAlertRuleListResponse,
+  type StarLobbyAlertRuleMutationResponse,
+} from "@yeon/api-contract/star-lobby";
 import {
   type FormEvent,
   useCallback,
@@ -8,7 +14,6 @@ import {
   useRef,
   useState,
 } from "react";
-import { Client, type Room } from "@colyseus/sdk";
 import {
   STAR_LOBBY_EVENTS,
   STAR_LOBBY_ROOM_NAME,
@@ -20,6 +25,7 @@ import {
 import { resolveRaceServerUrl } from "@/features/typing-service/use-race-room";
 
 type ConnectionState = "connecting" | "connected" | "disconnected" | "error";
+type SaveState = "idle" | "loading" | "success" | "error";
 
 type LiveAlert = StarLobbyAlertMatchedEvent & { receivedAt: Date };
 type LiveRoom = StarLobbyRoomDto & { receivedAt: Date };
@@ -36,6 +42,7 @@ const DEFAULT_RULE: KeywordRule = {
 
 const MAX_VISIBLE_ITEMS = 6;
 const GUEST_SESSION_STORAGE_KEY = "yeon.star-lobby.guest-session-id";
+const GUEST_SESSION_ID_HEADER = "X-Yeon-Guest-Session-Id";
 
 function keywordText(keywords: string[]) {
   return keywords.join(", ");
@@ -48,6 +55,10 @@ function parseKeywords(value: string) {
     .filter(Boolean)
     .filter((keyword, index, keywords) => keywords.indexOf(keyword) === index)
     .slice(0, 20);
+}
+
+function alertRuleName(includeKeywords: string[]) {
+  return `${includeKeywords[0] ?? "스타 로비"} 방제 감지`;
 }
 
 function playersText(
@@ -64,6 +75,32 @@ function eventRoom(event: StarLobbyRealtimeEvent) {
   return event.room;
 }
 
+function mergeSavedRules(
+  current: StarLobbyAlertRuleListResponse | undefined,
+  rule: StarLobbyAlertRuleMutationResponse["rule"]
+): StarLobbyAlertRuleListResponse {
+  const existingRules = current ? current.rules : [];
+  return {
+    rules: [
+      rule,
+      ...existingRules.filter((savedRule) => savedRule.id !== rule.id),
+    ],
+  };
+}
+
+function toSavedRulesViewState(
+  data: StarLobbyAlertRuleListResponse | undefined
+) {
+  return data ? data.rules : [];
+}
+
+function toSaveButtonViewState(isPending: boolean) {
+  return {
+    disabledWhileSaving: isPending,
+    label: isPending ? "알림 조건 저장 중" : "이 키워드로 접속 중 알림 받기",
+  };
+}
+
 function ensureGuestSessionId() {
   if (typeof window === "undefined") return null;
   const current = window.localStorage.getItem(GUEST_SESSION_STORAGE_KEY);
@@ -73,10 +110,31 @@ function ensureGuestSessionId() {
   return next;
 }
 
+function requestHeaders(guestSessionId: string) {
+  return {
+    "content-type": "application/json",
+    [GUEST_SESSION_ID_HEADER]: guestSessionId,
+  };
+}
+
+async function parseErrorMessage(response: Response, fallback: string) {
+  try {
+    const body = (await response.json()) as {
+      message?: string;
+      error?: string;
+    };
+    return body.message ?? body.error ?? fallback;
+  } catch {
+    return fallback;
+  }
+}
+
 export function StarLobbyLivePanel() {
   const [connectionState, setConnectionState] =
     useState<ConnectionState>("connecting");
   const [error, setError] = useState<string | null>(null);
+  const [saveState, setSaveState] = useState<SaveState>("idle");
+  const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [includeText, setIncludeText] = useState(
     keywordText(DEFAULT_RULE.includeKeywords)
   );
@@ -84,9 +142,12 @@ export function StarLobbyLivePanel() {
     keywordText(DEFAULT_RULE.excludeKeywords)
   );
   const [rule, setRule] = useState<KeywordRule>(DEFAULT_RULE);
+  const [guestSessionId, setGuestSessionId] = useState<string | null>(null);
   const [alerts, setAlerts] = useState<LiveAlert[]>([]);
   const [rooms, setRooms] = useState<LiveRoom[]>([]);
   const roomRef = useRef<Room | null>(null);
+  const guestSessionIdRef = useRef<string | null>(null);
+  const queryClient = useQueryClient();
 
   const canSubscribe = parseKeywords(includeText).length > 0;
   const statusLabel = useMemo(() => {
@@ -101,9 +162,100 @@ export function StarLobbyLivePanel() {
   }, []);
 
   useEffect(() => {
+    const nextGuestSessionId = ensureGuestSessionId();
+    guestSessionIdRef.current = nextGuestSessionId;
+    setGuestSessionId(nextGuestSessionId);
+  }, []);
+
+  const alertRulesQuery = useQuery({
+    enabled: Boolean(guestSessionId),
+    queryKey: ["star-lobby", "alert-rules", guestSessionId],
+    queryFn: async () => {
+      if (!guestSessionId) return { rules: [] };
+      const response = await fetch("/api/v1/star-lobby/alert-rules", {
+        cache: "no-store",
+        headers: { [GUEST_SESSION_ID_HEADER]: guestSessionId },
+      });
+      if (!response.ok) {
+        throw new Error(
+          await parseErrorMessage(
+            response,
+            "저장된 알림 조건을 불러오지 못했습니다."
+          )
+        );
+      }
+      return (await response.json()) as StarLobbyAlertRuleListResponse;
+    },
+  });
+
+  const createAlertRuleMutation = useMutation({
+    mutationFn: async (nextRule: KeywordRule) => {
+      const currentGuestSessionId = guestSessionIdRef.current;
+      if (!currentGuestSessionId) {
+        throw new Error(
+          "게스트 세션을 만들지 못해 알림 조건을 저장하지 못했습니다."
+        );
+      }
+
+      const response = await fetch("/api/v1/star-lobby/alert-rules", {
+        method: "POST",
+        headers: requestHeaders(currentGuestSessionId),
+        body: JSON.stringify({
+          name: alertRuleName(nextRule.includeKeywords),
+          ...nextRule,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(
+          await parseErrorMessage(
+            response,
+            "스타 로비 알림 조건을 저장하지 못했습니다."
+          )
+        );
+      }
+
+      return (await response.json()) as StarLobbyAlertRuleMutationResponse;
+    },
+    onSuccess: (body) => {
+      queryClient.setQueryData<StarLobbyAlertRuleListResponse>(
+        ["star-lobby", "alert-rules", guestSessionIdRef.current],
+        (current) => mergeSavedRules(current, body.rule)
+      );
+      setSaveState("success");
+      setSaveMessage("알림 조건을 저장했습니다. 접속 중에는 즉시 감지합니다.");
+    },
+    onError: (err) => {
+      setSaveState("error");
+      setSaveMessage(
+        err instanceof Error
+          ? err.message
+          : "스타 로비 알림 조건을 저장하지 못했습니다."
+      );
+    },
+  });
+
+  const savedRules = toSavedRulesViewState(alertRulesQuery.data);
+  const saveButtonViewState = toSaveButtonViewState(
+    createAlertRuleMutation.isPending
+  );
+
+  useEffect(() => {
+    if (alertRulesQuery.error) {
+      setSaveState("error");
+      setSaveMessage(
+        alertRulesQuery.error instanceof Error
+          ? alertRulesQuery.error.message
+          : "저장된 알림 조건을 불러오지 못했습니다."
+      );
+    }
+  }, [alertRulesQuery.error]);
+
+  useEffect(() => {
     let cancelled = false;
     const client = new Client(resolveRaceServerUrl());
-    const guestSessionId = ensureGuestSessionId();
+    const guestSessionId = guestSessionIdRef.current ?? ensureGuestSessionId();
+    guestSessionIdRef.current = guestSessionId;
 
     setConnectionState("connecting");
     setError(null);
@@ -190,8 +342,12 @@ export function StarLobbyLivePanel() {
       includeKeywords: parseKeywords(includeText),
       excludeKeywords: parseKeywords(excludeText),
     };
+
     setRule(nextRule);
     sendSubscription(nextRule);
+    setSaveState("loading");
+    setSaveMessage("접속 중 알림을 갱신하고 서버에 조건을 저장합니다.");
+    createAlertRuleMutation.mutate(nextRule);
   }
 
   return (
@@ -227,12 +383,48 @@ export function StarLobbyLivePanel() {
         </label>
         <button
           className="w-full rounded-2xl bg-cyan-300 px-4 py-3 font-black text-slate-950 transition hover:bg-cyan-200 disabled:cursor-not-allowed disabled:bg-slate-600 disabled:text-slate-300"
-          disabled={!canSubscribe}
+          disabled={!canSubscribe || saveButtonViewState.disabledWhileSaving}
           type="submit"
         >
-          이 키워드로 접속 중 알림 받기
+          {saveButtonViewState.label}
         </button>
       </form>
+
+      {saveMessage ? (
+        <p
+          className={`mt-4 rounded-2xl border p-3 text-sm ${
+            saveState === "error"
+              ? "border-rose-300/25 bg-rose-300/10 text-rose-100"
+              : "border-cyan-300/20 bg-cyan-300/10 text-cyan-50"
+          }`}
+        >
+          {saveMessage}
+        </p>
+      ) : null}
+
+      {savedRules.length > 0 ? (
+        <section className="mt-5 rounded-2xl border border-white/10 bg-slate-950/50 p-4">
+          <h3 className="font-black text-white">저장된 알림 조건</h3>
+          <div className="mt-3 space-y-2">
+            {savedRules.slice(0, 3).map((savedRule) => (
+              <article
+                className="rounded-2xl bg-white/[0.05] p-3 text-sm text-slate-200"
+                key={savedRule.id}
+              >
+                <p className="font-bold text-white">{savedRule.name}</p>
+                <p className="mt-1 text-slate-400">
+                  포함: {keywordText(savedRule.includeKeywords)}
+                </p>
+                {savedRule.excludeKeywords.length > 0 ? (
+                  <p className="mt-1 text-slate-500">
+                    제외: {keywordText(savedRule.excludeKeywords)}
+                  </p>
+                ) : null}
+              </article>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       {error ? (
         <p className="mt-4 rounded-2xl border border-rose-300/25 bg-rose-300/10 p-3 text-sm text-rose-100">
