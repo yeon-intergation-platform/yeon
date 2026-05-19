@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.sql.Timestamp;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -108,7 +109,7 @@ public class StarLobbyRepository {
 				returning id, room_key, title, current_players, max_players, status, observed_at, last_seen_at, disappeared_at, raw_text
 				""", (rs, i) -> observedRoom(rs), now, now);
 		}
-		String placeholders = String.join(", ", java.util.Collections.nCopies(observedRoomKeys.size(), "?"));
+		String placeholders = placeholders(observedRoomKeys.size());
 		String sql = """
 			update public.star_lobby_observed_rooms
 			set status = 'disappeared', disappeared_at = ?, updated_at = ?
@@ -263,6 +264,28 @@ public class StarLobbyRepository {
 		return count == null ? 0L : count;
 	}
 
+	public List<DiscordWebhookRow> listEnabledDiscordWebhooks(Set<UUID> ownerUserIds, Set<String> guestSessionIds) {
+		boolean hasOwners = ownerUserIds != null && !ownerUserIds.isEmpty();
+		boolean hasGuests = guestSessionIds != null && !guestSessionIds.isEmpty();
+		if (!hasOwners && !hasGuests) return List.of();
+		List<Object> params = new ArrayList<>();
+		List<String> ownerPredicates = new ArrayList<>();
+		if (hasOwners) {
+			ownerPredicates.add("owner_user_id in (" + placeholders(ownerUserIds.size()) + ")");
+			params.addAll(ownerUserIds);
+		}
+		if (hasGuests) {
+			ownerPredicates.add("guest_session_id in (" + placeholders(guestSessionIds.size()) + ")");
+			params.addAll(guestSessionIds);
+		}
+		String sql = """
+			select id, owner_user_id, guest_session_id, webhook_url_encrypted, enabled, created_at, updated_at
+			from public.star_lobby_discord_webhooks
+			where enabled = true and (%s)
+			""".formatted(String.join(" or ", ownerPredicates));
+		return jdbc.query(sql, (rs, i) -> discordWebhook(rs), params.toArray());
+	}
+
 	public AlertMatchRow insertAlertMatchIfAbsent(UUID id, UUID ruleId, UUID roomId, String status, String matchedKeyword, String suppressedKeyword, OffsetDateTime matchedAt) {
 		var rows = jdbc.query("""
 			insert into public.star_lobby_alert_matches (id, rule_id, room_id, status, matched_keyword, suppressed_keyword, matched_at)
@@ -271,6 +294,10 @@ public class StarLobbyRepository {
 			returning id, rule_id, room_id, status, matched_keyword, suppressed_keyword, matched_at
 			""", (rs, i) -> alertMatch(rs), id, ruleId, roomId, status, matchedKeyword, suppressedKeyword, matchedAt);
 		return rows.isEmpty() ? null : rows.getFirst();
+	}
+
+	private String placeholders(int count) {
+		return String.join(", ", Collections.nCopies(count, "?"));
 	}
 
 	private ObservedRoomRow observedRoom(java.sql.ResultSet rs) throws java.sql.SQLException {

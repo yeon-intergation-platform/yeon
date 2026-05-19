@@ -113,7 +113,7 @@ class StarLobbyControllerTests {
 	}
 
 	@Test void 디스코드운영상태를반환한다() throws Exception {
-		when(service.getDiscordWebhookAdminStatus()).thenReturn(new DiscordWebhookAdminStatusResponse(false, false, 2, 1));
+		when(service.getDiscordWebhookAdminStatus()).thenReturn(new DiscordWebhookAdminStatusResponse(false, false, false, true, true, true, 2, 1));
 
 		mockMvc.perform(get("/api/v1/star-lobby/admin/discord-status"))
 			.andExpect(status().isOk())

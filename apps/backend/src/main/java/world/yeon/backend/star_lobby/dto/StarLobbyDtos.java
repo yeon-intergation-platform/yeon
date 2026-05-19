@@ -72,6 +72,10 @@ public class StarLobbyDtos {
 	public record DiscordWebhookAdminStatusResponse(
 		boolean globalDiscordEnvRequired,
 		boolean secretConfigured,
+		boolean webhookPersistenceAllowed,
+		boolean springInternalTokenConfigured,
+		boolean realtimeEventsUrlConfigured,
+		boolean realtimeInternalTokenConfigured,
 		long registeredWebhookCount,
 		long enabledWebhookCount
 	) {}
