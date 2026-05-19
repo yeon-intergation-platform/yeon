@@ -2,8 +2,12 @@ import type {
   CreateStarLobbyAlertRuleBody,
   StarLobbyAlertRuleListResponse,
   StarLobbyAlertRuleMutationResponse,
+  StarLobbyDiscordWebhookAdminStatusResponse,
+  StarLobbyDiscordWebhookStatusResponse,
+  StarLobbyDiscordWebhookTestResponse,
   StarLobbyRoomListResponse,
   UpdateStarLobbyAlertRuleBody,
+  UpsertStarLobbyDiscordWebhookBody,
 } from "@yeon/api-contract/star-lobby";
 
 import { buildSpringBffHeaders } from "./spring-bff-client";
@@ -152,5 +156,75 @@ export async function deleteStarLobbyAlertRuleInSpring(params: {
       guestSessionId: params.guestSessionId,
     },
     "스타 로비 알림 조건을 삭제하지 못했습니다."
+  );
+}
+
+export function fetchStarLobbyDiscordWebhookStatusFromSpring(params: {
+  userId?: string | null;
+  guestSessionId?: string | null;
+}) {
+  return fetchSpring<StarLobbyDiscordWebhookStatusResponse>(
+    "/api/v1/star-lobby/discord-webhook",
+    {
+      method: "GET",
+      userId: params.userId,
+      guestSessionId: params.guestSessionId,
+    },
+    "스타 로비 Discord 알림 상태를 불러오지 못했습니다."
+  );
+}
+
+export function upsertStarLobbyDiscordWebhookInSpring(params: {
+  userId?: string | null;
+  guestSessionId?: string | null;
+  payload: UpsertStarLobbyDiscordWebhookBody;
+}) {
+  return fetchSpring<StarLobbyDiscordWebhookStatusResponse>(
+    "/api/v1/star-lobby/discord-webhook",
+    {
+      method: "PUT",
+      userId: params.userId,
+      guestSessionId: params.guestSessionId,
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(params.payload),
+    },
+    "스타 로비 Discord 알림을 연결하지 못했습니다."
+  );
+}
+
+export function deleteStarLobbyDiscordWebhookInSpring(params: {
+  userId?: string | null;
+  guestSessionId?: string | null;
+}) {
+  return fetchSpring<StarLobbyDiscordWebhookStatusResponse>(
+    "/api/v1/star-lobby/discord-webhook",
+    {
+      method: "DELETE",
+      userId: params.userId,
+      guestSessionId: params.guestSessionId,
+    },
+    "스타 로비 Discord 알림 연결을 해제하지 못했습니다."
+  );
+}
+
+export function fetchStarLobbyDiscordAdminStatusFromSpring() {
+  return fetchSpring<StarLobbyDiscordWebhookAdminStatusResponse>(
+    "/api/v1/star-lobby/admin/discord-status",
+    { method: "GET" },
+    "스타 로비 Discord 운영 상태를 불러오지 못했습니다."
+  );
+}
+
+export function testStarLobbyDiscordWebhookInSpring(params: {
+  payload: UpsertStarLobbyDiscordWebhookBody;
+}) {
+  return fetchSpring<StarLobbyDiscordWebhookTestResponse>(
+    "/api/v1/star-lobby/admin/discord-test",
+    {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(params.payload),
+    },
+    "스타 로비 Discord 테스트 알림을 보내지 못했습니다."
   );
 }

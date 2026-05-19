@@ -6,6 +6,7 @@ import {
   type StarLobbyAlertRuleDeletionResponse,
   type StarLobbyAlertRuleListResponse,
   type StarLobbyAlertRuleMutationResponse,
+  type StarLobbyDiscordWebhookStatusResponse,
   type StarLobbyObservedRoomDto,
   type StarLobbyRoomListResponse,
 } from "@yeon/api-contract/star-lobby";
@@ -230,6 +231,8 @@ export function StarLobbyLivePanel() {
   const [excludeText, setExcludeText] = useState(
     keywordText(DEFAULT_RULE.excludeKeywords)
   );
+  const [discordWebhookText, setDiscordWebhookText] = useState("");
+  const [discordMessage, setDiscordMessage] = useState<string | null>(null);
   const [rule, setRule] = useState<KeywordRule>(DEFAULT_RULE);
   const [guestSessionId, setGuestSessionId] = useState<string | null>(null);
   const [alerts, setAlerts] = useState<LiveAlert[]>([]);
@@ -274,6 +277,27 @@ export function StarLobbyLivePanel() {
         );
       }
       return (await response.json()) as StarLobbyAlertRuleListResponse;
+    },
+  });
+
+  const discordWebhookQuery = useQuery({
+    enabled: Boolean(guestSessionId),
+    queryKey: ["star-lobby", "discord-webhook", guestSessionId],
+    queryFn: async () => {
+      if (!guestSessionId) return { connected: false, updatedAt: null };
+      const response = await fetch("/api/v1/star-lobby/discord-webhook", {
+        cache: "no-store",
+        headers: { [GUEST_SESSION_ID_HEADER]: guestSessionId },
+      });
+      if (!response.ok) {
+        throw new Error(
+          await parseErrorMessage(
+            response,
+            "Discord 알림 연결 상태를 불러오지 못했습니다."
+          )
+        );
+      }
+      return (await response.json()) as StarLobbyDiscordWebhookStatusResponse;
     },
   });
 
@@ -439,6 +463,92 @@ export function StarLobbyLivePanel() {
     },
   });
 
+  const upsertDiscordWebhookMutation = useMutation({
+    mutationFn: async (webhookUrl: string) => {
+      const currentGuestSessionId = guestSessionIdRef.current;
+      if (!currentGuestSessionId) {
+        throw new Error(
+          "게스트 세션을 만들지 못해 Discord 알림을 연결하지 못했습니다."
+        );
+      }
+
+      const response = await fetch("/api/v1/star-lobby/discord-webhook", {
+        method: "PUT",
+        headers: requestHeaders(currentGuestSessionId),
+        body: JSON.stringify({ webhookUrl }),
+      });
+
+      if (!response.ok) {
+        throw new Error(
+          await parseErrorMessage(
+            response,
+            "스타 로비 Discord 알림을 연결하지 못했습니다."
+          )
+        );
+      }
+
+      return (await response.json()) as StarLobbyDiscordWebhookStatusResponse;
+    },
+    onSuccess: (body) => {
+      queryClient.setQueryData<StarLobbyDiscordWebhookStatusResponse>(
+        ["star-lobby", "discord-webhook", guestSessionIdRef.current],
+        body
+      );
+      setDiscordWebhookText("");
+      setDiscordMessage(
+        "Discord 알림을 연결했습니다. 조건에 맞는 방이 뜨면 Discord로 전송합니다."
+      );
+    },
+    onError: (err) => {
+      setDiscordMessage(
+        err instanceof Error
+          ? err.message
+          : "스타 로비 Discord 알림을 연결하지 못했습니다."
+      );
+    },
+  });
+
+  const deleteDiscordWebhookMutation = useMutation({
+    mutationFn: async () => {
+      const currentGuestSessionId = guestSessionIdRef.current;
+      if (!currentGuestSessionId) {
+        throw new Error(
+          "게스트 세션을 만들지 못해 Discord 알림을 해제하지 못했습니다."
+        );
+      }
+
+      const response = await fetch("/api/v1/star-lobby/discord-webhook", {
+        method: "DELETE",
+        headers: { [GUEST_SESSION_ID_HEADER]: currentGuestSessionId },
+      });
+
+      if (!response.ok) {
+        throw new Error(
+          await parseErrorMessage(
+            response,
+            "스타 로비 Discord 알림 연결을 해제하지 못했습니다."
+          )
+        );
+      }
+
+      return (await response.json()) as StarLobbyDiscordWebhookStatusResponse;
+    },
+    onSuccess: (body) => {
+      queryClient.setQueryData<StarLobbyDiscordWebhookStatusResponse>(
+        ["star-lobby", "discord-webhook", guestSessionIdRef.current],
+        body
+      );
+      setDiscordMessage("Discord 알림 연결을 해제했습니다.");
+    },
+    onError: (err) => {
+      setDiscordMessage(
+        err instanceof Error
+          ? err.message
+          : "스타 로비 Discord 알림 연결을 해제하지 못했습니다."
+      );
+    },
+  });
+
   const savedRules = toSavedRulesViewState(alertRulesQuery.data);
   const currentRoomsViewState = toCurrentRoomsViewState(currentRoomsQuery.data);
   const currentRoomsError = currentRoomsQuery.error;
@@ -448,6 +558,13 @@ export function StarLobbyLivePanel() {
   const ruleActionViewState = toRuleActionViewState(
     updateAlertRuleMutation.isPending || deleteAlertRuleMutation.isPending
   );
+  const discordWebhookStatus = discordWebhookQuery.data ?? {
+    connected: false,
+    updatedAt: null,
+  };
+  const discordActionPending =
+    upsertDiscordWebhookMutation.isPending ||
+    deleteDiscordWebhookMutation.isPending;
 
   useEffect(() => {
     if (alertRulesQuery.error) {
@@ -568,6 +685,12 @@ export function StarLobbyLivePanel() {
   useEffect(() => {
     if (connectionState === "connected") sendSubscription(rule);
   }, [connectionState, rule, sendSubscription]);
+
+  function handleDiscordSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setDiscordMessage("Discord 웹훅을 저장하고 있습니다.");
+    upsertDiscordWebhookMutation.mutate(discordWebhookText);
+  }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -697,6 +820,70 @@ export function StarLobbyLivePanel() {
           </div>
         </section>
       ) : null}
+
+      <section className="mt-5 rounded-2xl border border-indigo-300/20 bg-indigo-300/10 p-4">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h3 className="font-black text-white">Discord 알림</h3>
+            <p className="mt-1 text-sm text-indigo-100">
+              Discord 웹훅 URL을 등록하면 조건에 맞는 방이 관측될 때 Discord로
+              “방 떴다” 알림을 보냅니다.
+            </p>
+          </div>
+          {discordWebhookStatus.connected ? (
+            <span className="rounded-full bg-indigo-200 px-2 py-1 text-xs font-black text-slate-950">
+              연결됨
+            </span>
+          ) : (
+            <span className="rounded-full bg-slate-700 px-2 py-1 text-xs font-black text-slate-300">
+              미연결
+            </span>
+          )}
+        </div>
+        <form
+          className="mt-3 flex flex-col gap-2 sm:flex-row"
+          onSubmit={handleDiscordSubmit}
+        >
+          <input
+            className="min-w-0 flex-1 rounded-2xl border border-white/10 bg-slate-950 px-4 py-3 text-white outline-none transition focus:border-indigo-200"
+            onChange={(event) => setDiscordWebhookText(event.target.value)}
+            placeholder="https://discord.com/api/webhooks/..."
+            value={discordWebhookText}
+          />
+          <button
+            className="rounded-2xl bg-indigo-200 px-4 py-3 font-black text-slate-950 transition hover:bg-indigo-100 disabled:cursor-not-allowed disabled:bg-slate-600 disabled:text-slate-300"
+            disabled={
+              discordActionPending || discordWebhookText.trim().length === 0
+            }
+            type="submit"
+          >
+            연결
+          </button>
+        </form>
+        <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-slate-300">
+          <span>서버 전역 Discord 환경변수 없이 동작합니다.</span>
+          {discordWebhookStatus.updatedAt ? (
+            <span>
+              마지막 연결: {relativeTimeText(discordWebhookStatus.updatedAt)}
+            </span>
+          ) : null}
+          {discordWebhookStatus.connected ? (
+            <button
+              className="rounded-full border border-white/15 px-3 py-1 font-bold text-slate-100 transition hover:border-indigo-200 disabled:cursor-not-allowed disabled:opacity-50"
+              disabled={discordActionPending}
+              onClick={() => deleteDiscordWebhookMutation.mutate()}
+              type="button"
+            >
+              연결 해제
+            </button>
+          ) : null}
+        </div>
+        {discordMessage ? (
+          <p className="mt-3 rounded-2xl border border-indigo-200/20 bg-slate-950/60 p-3 text-sm text-indigo-50">
+            {discordMessage}
+          </p>
+        ) : null}
+      </section>
 
       {error ? (
         <p className="mt-4 rounded-2xl border border-rose-300/25 bg-rose-300/10 p-3 text-sm text-rose-100">

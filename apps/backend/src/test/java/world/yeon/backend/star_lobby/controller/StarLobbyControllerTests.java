@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -96,6 +97,28 @@ class StarLobbyControllerTests {
 			.andExpect(status().isNoContent());
 
 		verify(service).deleteAlertRule(isNull(), eq("guest-1"), eq(RULE_ID));
+	}
+
+	@Test void 게스트디스코드웹훅을연결한다() throws Exception {
+		var request = new DiscordWebhookRequest("https://discord.com/api/webhooks/1/token");
+		when(service.upsertDiscordWebhook(isNull(), eq("guest-1"), eq(request)))
+			.thenReturn(new DiscordWebhookStatusResponse(true, NOW));
+
+		mockMvc.perform(put("/api/v1/star-lobby/discord-webhook")
+				.header("X-Yeon-Guest-Session-Id", "guest-1")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"webhookUrl\":\"https://discord.com/api/webhooks/1/token\"}"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.connected").value(true));
+	}
+
+	@Test void 디스코드운영상태를반환한다() throws Exception {
+		when(service.getDiscordWebhookAdminStatus()).thenReturn(new DiscordWebhookAdminStatusResponse(false, false, 2, 1));
+
+		mockMvc.perform(get("/api/v1/star-lobby/admin/discord-status"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.globalDiscordEnvRequired").value(false))
+			.andExpect(jsonPath("$.enabledWebhookCount").value(1));
 	}
 
 	@Test void 서비스오류를반환한다() throws Exception {

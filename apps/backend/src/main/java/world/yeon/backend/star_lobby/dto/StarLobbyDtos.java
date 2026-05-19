@@ -62,6 +62,22 @@ public class StarLobbyDtos {
 
 	public record AlertRuleMutationResponse(AlertRuleResponse rule) {}
 
+	public record DiscordWebhookRequest(String webhookUrl) {}
+
+	public record DiscordWebhookStatusResponse(
+		boolean connected,
+		OffsetDateTime updatedAt
+	) {}
+
+	public record DiscordWebhookAdminStatusResponse(
+		boolean globalDiscordEnvRequired,
+		boolean secretConfigured,
+		long registeredWebhookCount,
+		long enabledWebhookCount
+	) {}
+
+	public record DiscordWebhookTestResponse(boolean sent) {}
+
 	public record AlertMatchResponse(
 		UUID id,
 		UUID ruleId,
