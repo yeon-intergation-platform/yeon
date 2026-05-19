@@ -2,6 +2,7 @@ import type {
   CreateStarLobbyAlertRuleBody,
   StarLobbyAlertRuleListResponse,
   StarLobbyAlertRuleMutationResponse,
+  StarLobbyRoomListResponse,
 } from "@yeon/api-contract/star-lobby";
 
 import { buildSpringBffHeaders } from "./spring-bff-client";
@@ -107,5 +108,13 @@ export function createStarLobbyAlertRuleInSpring(params: {
       body: JSON.stringify(params.payload),
     },
     "스타 로비 알림 조건을 저장하지 못했습니다."
+  );
+}
+
+export function fetchStarLobbyRoomsFromSpring() {
+  return fetchSpring<StarLobbyRoomListResponse>(
+    "/api/v1/star-lobby/rooms",
+    { method: "GET" },
+    "스타 로비 현재 방 목록을 불러오지 못했습니다."
   );
 }
