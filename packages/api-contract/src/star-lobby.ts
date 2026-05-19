@@ -71,6 +71,24 @@ export const starLobbyAlertRuleDtoSchema = z.object({
 });
 export type StarLobbyAlertRuleDto = z.infer<typeof starLobbyAlertRuleDtoSchema>;
 
+export const starLobbyObservationRoomBodySchema = z.object({
+  title: z.string().trim().min(1).max(160),
+  currentPlayers: z.number().int().min(0).max(12).nullable().optional(),
+  maxPlayers: z.number().int().min(1).max(12).nullable().optional(),
+  rawText: z.string().max(1000).nullable().optional(),
+});
+export type StarLobbyObservationRoomBody = z.infer<
+  typeof starLobbyObservationRoomBodySchema
+>;
+
+export const ingestStarLobbyObservationBodySchema = z.object({
+  observedAt: z.string().datetime().optional(),
+  rooms: z.array(starLobbyObservationRoomBodySchema).max(300),
+});
+export type IngestStarLobbyObservationBody = z.infer<
+  typeof ingestStarLobbyObservationBodySchema
+>;
+
 export const createStarLobbyAlertRuleBodySchema = z.object({
   name: z.string().trim().min(1).max(80),
   includeKeywords: z.array(starLobbyKeywordSchema).min(1).max(20),
@@ -120,6 +138,15 @@ export const starLobbyAlertRuleListResponseSchema = z.object({
 });
 export type StarLobbyAlertRuleListResponse = z.infer<
   typeof starLobbyAlertRuleListResponseSchema
+>;
+
+export const starLobbyObservationIngestResponseSchema = z.object({
+  rooms: z.array(starLobbyObservedRoomDtoSchema),
+  matches: z.array(starLobbyAlertMatchDtoSchema),
+  observedAt: z.string().datetime(),
+});
+export type StarLobbyObservationIngestResponse = z.infer<
+  typeof starLobbyObservationIngestResponseSchema
 >;
 
 export const starLobbyLiveEventDtoSchema = z.discriminatedUnion("type", [
