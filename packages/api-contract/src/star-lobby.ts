@@ -140,6 +140,13 @@ export type StarLobbyAlertRuleListResponse = z.infer<
   typeof starLobbyAlertRuleListResponseSchema
 >;
 
+export const starLobbyAlertRuleMutationResponseSchema = z.object({
+  rule: starLobbyAlertRuleDtoSchema,
+});
+export type StarLobbyAlertRuleMutationResponse = z.infer<
+  typeof starLobbyAlertRuleMutationResponseSchema
+>;
+
 export const starLobbyObservationIngestResponseSchema = z.object({
   rooms: z.array(starLobbyObservedRoomDtoSchema),
   matches: z.array(starLobbyAlertMatchDtoSchema),
