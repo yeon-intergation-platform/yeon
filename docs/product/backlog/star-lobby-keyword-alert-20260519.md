@@ -212,3 +212,30 @@ OCR/자동조작 전 단계로, 수동/더미 관측 입력부터 진행한다.
 ### 사용자 방향
 
 운영 오류를 해결하고 main에 머지한다.
+
+## 8차: web/race-server 배포 전 교체 안전장치 확장
+
+### 작업내용
+
+- backend에만 적용된 운영 교체 전 preflight를 web과 race-server에도 확장한다.
+- 새 web 이미지는 실제 운영 컨테이너 교체 전에 1회성 컨테이너로 부팅하고 `/api/health` 응답을 확인한다.
+- 새 race-server 이미지는 실제 운영 컨테이너 교체 전에 1회성 컨테이너로 부팅하고 `/health` 응답을 확인한다.
+- preflight 실패 시 기존 운영 컨테이너를 유지하고 deploy job만 실패시킨다.
+
+### 논의 필요
+
+- 없음. 운영 안정성 요구사항이므로 backend와 같은 배포 차단 기준을 web/race-server에도 맞춘다.
+
+### 선택지
+
+1. 배포 워크플로에서 web/race-server 1회성 컨테이너 preflight를 추가한다.
+2. compose healthcheck만 추가한다.
+3. blue/green 또는 canary 배포 구조로 전환한다.
+
+### 추천
+
+1번으로 진행한다. 현재 배포 구조를 크게 바꾸지 않으면서 운영 컨테이너 교체 전 새 이미지의 런타임 부팅 실패를 막을 수 있다.
+
+### 사용자 방향
+
+web/race-server도 backend와 마찬가지로 자동 배포 안전장치를 적용하고 main에 머지한다.

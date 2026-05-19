@@ -446,8 +446,51 @@ jobs:
             '
           }
 
+          preflight_http_service() {
+            service="$1"
+            container_name="$2"
+            port="$3"
+            path="$4"
+
+            echo "${service} preflight: 새 ${service} 이미지를 운영 컨테이너 교체 전에 1회성으로 부팅 확인합니다."
+            docker rm -f "${container_name}" >/dev/null 2>&1 || true
+
+            cleanup_preflight() {
+              docker logs "${container_name}" --tail=120 || true
+              docker rm -f "${container_name}" >/dev/null 2>&1 || true
+            }
+
+            docker compose -f "${COMPOSE_FILE}" run -d --name "${container_name}" --no-deps -e PORT="${port}" "${service}" >/dev/null
+            for _ in $(seq 1 30); do
+              if ! docker inspect -f '{{.State.Running}}' "${container_name}" 2>/dev/null | grep -q true; then
+                echo "::error::${service} preflight 컨테이너가 health 확인 전에 종료되었습니다."
+                cleanup_preflight
+                exit 1
+              fi
+
+              container_ip="$(docker inspect -f '{{range $name, $network := .NetworkSettings.Networks}}{{println $network.IPAddress}}{{end}}' "${container_name}" | awk 'NF {print; exit}')"
+              if [ -n "${container_ip}" ] && curl -fsS "http://${container_ip}:${port}${path}" >/dev/null; then
+                echo "${service} preflight: ${path} OK"
+                docker rm -f "${container_name}" >/dev/null 2>&1 || true
+                return 0
+              fi
+
+              sleep 2
+            done
+
+            echo "::error::${service} preflight health 확인 시간 초과: ${path}"
+            cleanup_preflight
+            exit 1
+          }
+
           if [[ "${{ needs.detect_changes.outputs.backend }}" == "true" ]]; then
             preflight_backend
+          fi
+          if [[ "${{ needs.detect_changes.outputs.web }}" == "true" ]]; then
+            preflight_http_service web "yeon-web-preflight-${GITHUB_RUN_ID}" 3100 /api/health
+          fi
+          if [[ "${{ needs.detect_changes.outputs.race }}" == "true" ]]; then
+            preflight_http_service race-server "yeon-race-preflight-${GITHUB_RUN_ID}" 2568 /health
           fi
 
           # --force-recreate 제거: 변경된 서비스(web)만 재시작, DB는 불필요하게 재시작하지 않음
