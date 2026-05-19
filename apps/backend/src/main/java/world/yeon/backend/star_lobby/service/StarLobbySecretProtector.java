@@ -3,6 +3,7 @@ package world.yeon.backend.star_lobby.service;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
+import java.util.Arrays;
 import java.util.Base64;
 import javax.crypto.Cipher;
 import javax.crypto.spec.GCMParameterSpec;
@@ -20,14 +21,17 @@ public class StarLobbySecretProtector {
 	private final SecretKeySpec key;
 	private final SecureRandom secureRandom = new SecureRandom();
 	private final boolean configuredSecret;
+	private final boolean persistentWritesAllowed;
 
 	public StarLobbySecretProtector(Environment environment) {
 		ResolvedSecret resolved = resolveSecret(environment);
 		this.key = new SecretKeySpec(sha256(resolved.value()), "AES");
 		this.configuredSecret = resolved.configured();
+		this.persistentWritesAllowed = resolved.configured() || isLocalOrTest(environment);
 	}
 
 	public String protect(String value) {
+		requirePersistentWritesAllowed();
 		try {
 			byte[] iv = new byte[IV_LENGTH];
 			secureRandom.nextBytes(iv);
@@ -56,6 +60,21 @@ public class StarLobbySecretProtector {
 
 	public boolean hasConfiguredSecret() {
 		return configuredSecret;
+	}
+
+	public boolean allowsPersistentWrites() {
+		return persistentWritesAllowed;
+	}
+
+	public void requirePersistentWritesAllowed() {
+		if (persistentWritesAllowed) return;
+		throw new StarLobbyServiceException(503, "STAR_LOBBY_DISCORD_SECRET_REQUIRED", "Discord 웹훅 저장용 보호 키가 아직 설정되지 않았습니다. 운영 확인 페이지의 테스트 발송은 사용할 수 있습니다.");
+	}
+
+	private boolean isLocalOrTest(Environment environment) {
+		return Arrays.stream(environment.getActiveProfiles())
+			.map(String::toLowerCase)
+			.anyMatch(profile -> profile.equals("local") || profile.equals("test") || profile.equals("dev"));
 	}
 
 	private ResolvedSecret resolveSecret(Environment environment) {

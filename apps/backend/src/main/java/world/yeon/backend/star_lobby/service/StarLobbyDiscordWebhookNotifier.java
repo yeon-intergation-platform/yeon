@@ -96,7 +96,9 @@ public class StarLobbyDiscordWebhookNotifier {
 
 	private String truncateDiscordContent(String content) {
 		if (content == null) return "";
-		return content.length() <= 1900 ? content : content.substring(0, 1900);
+		return content.length() <= StarLobbyDomainRules.DISCORD_CONTENT_MAX_LENGTH
+			? content
+			: content.substring(0, StarLobbyDomainRules.DISCORD_CONTENT_MAX_LENGTH);
 	}
 
 	public record DiscordWebhookNotification(String webhookUrl, String content) {}

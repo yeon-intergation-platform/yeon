@@ -1,6 +1,5 @@
 package world.yeon.backend.star_lobby.service;
 
-import java.net.URI;
 import java.text.Normalizer;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -16,37 +15,28 @@ import world.yeon.backend.star_lobby.dto.StarLobbyDtos.*;
 import world.yeon.backend.star_lobby.repository.StarLobbyRepository;
 import world.yeon.backend.star_lobby.repository.StarLobbyRepository.AlertMatchRow;
 import world.yeon.backend.star_lobby.repository.StarLobbyRepository.AlertRuleRow;
-import world.yeon.backend.star_lobby.repository.StarLobbyRepository.DiscordWebhookRow;
 import world.yeon.backend.star_lobby.repository.StarLobbyRepository.ObservedRoomRow;
-import world.yeon.backend.star_lobby.service.StarLobbyDiscordWebhookNotifier.DiscordWebhookNotification;
+import world.yeon.backend.star_lobby.service.StarLobbyDiscordWebhookService.MatchedAlertNotificationCandidate;
 
 @Service
 public class StarLobbyService {
-	private static final int RECENT_ROOM_LIMIT = 100;
-	private static final String EVENT_ROOM_OBSERVED = "room_observed";
-	private static final String EVENT_ROOM_DISAPPEARED = "room_disappeared";
-	private static final String EVENT_ALERT_MATCHED = "alert_matched";
-
 	private final StarLobbyRepository repository;
 	private final StarLobbyRealtimePublisher realtimePublisher;
-	private final StarLobbyDiscordWebhookNotifier discordWebhookNotifier;
-	private final StarLobbySecretProtector secretProtector;
+	private final StarLobbyDiscordWebhookService discordWebhookService;
 
 	public StarLobbyService(
 		StarLobbyRepository repository,
 		StarLobbyRealtimePublisher realtimePublisher,
-		StarLobbyDiscordWebhookNotifier discordWebhookNotifier,
-		StarLobbySecretProtector secretProtector
+		StarLobbyDiscordWebhookService discordWebhookService
 	) {
 		this.repository = repository;
 		this.realtimePublisher = realtimePublisher;
-		this.discordWebhookNotifier = discordWebhookNotifier;
-		this.secretProtector = secretProtector;
+		this.discordWebhookService = discordWebhookService;
 	}
 
 	@Transactional(readOnly = true)
 	public RoomListResponse listRecentRooms() {
-		var rooms = repository.listRecentRooms(RECENT_ROOM_LIMIT);
+		var rooms = repository.listRecentRooms(StarLobbyDomainRules.RECENT_ROOM_LIMIT);
 		OffsetDateTime observedAt = rooms.stream().map(ObservedRoomRow::lastSeenAt).filter(v -> v != null).findFirst().orElse(null);
 		return new RoomListResponse(rooms.stream().map(this::toRoomResponse).toList(), observedAt);
 	}
@@ -60,18 +50,18 @@ public class StarLobbyService {
 		List<ObservedRoomRow> savedRooms = new ArrayList<>();
 		Set<String> observedKeys = new LinkedHashSet<>();
 		for (ObservationRoomRequest input : inputRooms) {
-			String title = normalizeText(input == null ? null : input.title(), "방제", 160);
-			Integer currentPlayers = validatePlayer(input.currentPlayers(), "현재 인원", 0, 12, true);
-			Integer maxPlayers = validatePlayer(input.maxPlayers(), "최대 인원", 1, 12, true);
+			String title = normalizeText(input == null ? null : input.title(), "방제", StarLobbyDomainRules.ROOM_TITLE_MAX_LENGTH);
+			Integer currentPlayers = validatePlayer(input.currentPlayers(), "현재 인원", StarLobbyDomainRules.PLAYER_MIN, StarLobbyDomainRules.PLAYER_MAX, true);
+			Integer maxPlayers = validatePlayer(input.maxPlayers(), "최대 인원", 1, StarLobbyDomainRules.PLAYER_MAX, true);
 			String roomKey = roomKey(title, currentPlayers, maxPlayers);
 			observedKeys.add(roomKey);
-			savedRooms.add(repository.upsertObservedRoom(UUID.randomUUID(), roomKey, title, currentPlayers, maxPlayers, observedAt, trimToNull(input.rawText())));
+			savedRooms.add(repository.upsertObservedRoom(UUID.randomUUID(), roomKey, title, currentPlayers, maxPlayers, observedAt, normalizeOptionalText(input.rawText(), "관측 원문", StarLobbyDomainRules.ROOM_RAW_TEXT_MAX_LENGTH)));
 		}
 		List<ObservedRoomRow> disappearedRooms = repository.markMissingRoomsDisappeared(observedKeys, observedAt);
 		List<AlertMatched> matchedAlerts = matchEnabledRules(savedRooms, observedAt);
 		List<AlertMatchResponse> matches = matchedAlerts.stream().map(alert -> toMatchResponse(alert.match())).toList();
 		realtimePublisher.publishAfterCommit(realtimeEvents(savedRooms, disappearedRooms, matchedAlerts));
-		discordWebhookNotifier.notifyAfterCommit(discordNotifications(matchedAlerts));
+		discordWebhookService.notifyAfterCommit(discordNotificationCandidates(matchedAlerts));
 		return new ObservationIngestResponse(savedRooms.stream().map(this::toRoomResponse).toList(), matches, observedAt);
 	}
 
@@ -81,57 +71,41 @@ public class StarLobbyService {
 		return new AlertRuleListResponse(repository.listAlertRules(owner.userId(), owner.guestSessionId()).stream().map(this::toRuleResponse).toList());
 	}
 
-
 	@Transactional(readOnly = true)
 	public DiscordWebhookStatusResponse getDiscordWebhookStatus(UUID ownerUserId, String guestSessionId) {
 		Owner owner = resolveOwner(ownerUserId, guestSessionId);
-		return repository.findDiscordWebhook(owner.userId(), owner.guestSessionId())
-			.filter(DiscordWebhookRow::enabled)
-			.map(row -> new DiscordWebhookStatusResponse(true, row.updatedAt()))
-			.orElseGet(() -> new DiscordWebhookStatusResponse(false, null));
+		return discordWebhookService.getStatus(owner.userId(), owner.guestSessionId());
 	}
 
 	@Transactional
 	public DiscordWebhookStatusResponse upsertDiscordWebhook(UUID ownerUserId, String guestSessionId, DiscordWebhookRequest request) {
 		Owner owner = resolveOwner(ownerUserId, guestSessionId);
-		if (request == null) throw new StarLobbyServiceException(400, "STAR_LOBBY_INVALID_DISCORD_WEBHOOK", "Discord 웹훅 URL을 입력해 주세요.");
-		String webhookUrl = validateDiscordWebhookUrl(request.webhookUrl());
-		OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
-		DiscordWebhookRow row = repository.upsertDiscordWebhook(UUID.randomUUID(), owner.userId(), owner.guestSessionId(), secretProtector.protect(webhookUrl), now);
-		return new DiscordWebhookStatusResponse(row.enabled(), row.updatedAt());
+		return discordWebhookService.upsert(owner.userId(), owner.guestSessionId(), request);
 	}
 
 	@Transactional
 	public DiscordWebhookStatusResponse deleteDiscordWebhook(UUID ownerUserId, String guestSessionId) {
 		Owner owner = resolveOwner(ownerUserId, guestSessionId);
-		repository.deleteDiscordWebhook(owner.userId(), owner.guestSessionId());
-		return new DiscordWebhookStatusResponse(false, null);
+		return discordWebhookService.delete(owner.userId(), owner.guestSessionId());
 	}
 
 	@Transactional(readOnly = true)
 	public DiscordWebhookAdminStatusResponse getDiscordWebhookAdminStatus() {
-		return new DiscordWebhookAdminStatusResponse(
-			false,
-			secretProtector.hasConfiguredSecret(),
-			repository.countDiscordWebhooks(false),
-			repository.countDiscordWebhooks(true)
-		);
+		return discordWebhookService.getAdminStatus();
 	}
 
 	public DiscordWebhookTestResponse testDiscordWebhook(DiscordWebhookRequest request) {
-		if (request == null) throw new StarLobbyServiceException(400, "STAR_LOBBY_INVALID_DISCORD_WEBHOOK", "Discord 웹훅 URL을 입력해 주세요.");
-		discordWebhookNotifier.sendTest(validateDiscordWebhookUrl(request.webhookUrl()));
-		return new DiscordWebhookTestResponse(true);
+		return discordWebhookService.sendTest(request);
 	}
 
 	@Transactional
 	public AlertRuleMutationResponse createAlertRule(UUID ownerUserId, String guestSessionId, AlertRuleRequest request) {
 		Owner owner = resolveOwner(ownerUserId, guestSessionId);
 		if (request == null) throw new StarLobbyServiceException(400, "STAR_LOBBY_INVALID_RULE", "알림 조건을 입력해 주세요.");
-		List<String> includeKeywords = normalizeKeywords(request.includeKeywords(), "포함 키워드", 1, 20);
-		List<String> excludeKeywords = normalizeKeywords(request.excludeKeywords(), "제외 키워드", 0, 20);
-		Integer minPlayers = validatePlayer(request.minPlayers(), "최소 인원", 0, 12, true);
-		Integer maxPlayers = validatePlayer(request.maxPlayers(), "최대 인원", 1, 12, true);
+		List<String> includeKeywords = normalizeKeywords(request.includeKeywords(), "포함 키워드", StarLobbyDomainRules.INCLUDE_KEYWORD_MIN_COUNT, StarLobbyDomainRules.KEYWORD_MAX_COUNT);
+		List<String> excludeKeywords = normalizeKeywords(request.excludeKeywords(), "제외 키워드", 0, StarLobbyDomainRules.KEYWORD_MAX_COUNT);
+		Integer minPlayers = validatePlayer(request.minPlayers(), "최소 인원", StarLobbyDomainRules.PLAYER_MIN, StarLobbyDomainRules.PLAYER_MAX, true);
+		Integer maxPlayers = validatePlayer(request.maxPlayers(), "최대 인원", 1, StarLobbyDomainRules.PLAYER_MAX, true);
 		if (minPlayers != null && maxPlayers != null && minPlayers > maxPlayers) {
 			throw new StarLobbyServiceException(400, "STAR_LOBBY_INVALID_RULE", "최소 인원은 최대 인원보다 클 수 없습니다.");
 		}
@@ -140,7 +114,7 @@ public class StarLobbyService {
 			UUID.randomUUID(),
 			owner.userId(),
 			owner.guestSessionId(),
-			normalizeText(request.name(), "알림 이름", 80),
+			normalizeText(request.name(), "알림 이름", StarLobbyDomainRules.ALERT_NAME_MAX_LENGTH),
 			includeKeywords,
 			excludeKeywords,
 			minPlayers,
@@ -159,18 +133,18 @@ public class StarLobbyService {
 			.orElseThrow(() -> new StarLobbyServiceException(404, "STAR_LOBBY_RULE_NOT_FOUND", "알림 조건을 찾지 못했습니다."));
 		List<String> includeKeywords = request.includeKeywords() == null
 			? current.includeKeywords()
-			: normalizeKeywords(request.includeKeywords(), "포함 키워드", 1, 20);
+			: normalizeKeywords(request.includeKeywords(), "포함 키워드", StarLobbyDomainRules.INCLUDE_KEYWORD_MIN_COUNT, StarLobbyDomainRules.KEYWORD_MAX_COUNT);
 		List<String> excludeKeywords = request.excludeKeywords() == null
 			? current.excludeKeywords()
-			: normalizeKeywords(request.excludeKeywords(), "제외 키워드", 0, 20);
-		Integer minPlayers = request.minPlayers() == null ? current.minPlayers() : validatePlayer(request.minPlayers(), "최소 인원", 0, 12, true);
-		Integer maxPlayers = request.maxPlayers() == null ? current.maxPlayers() : validatePlayer(request.maxPlayers(), "최대 인원", 1, 12, true);
+			: normalizeKeywords(request.excludeKeywords(), "제외 키워드", 0, StarLobbyDomainRules.KEYWORD_MAX_COUNT);
+		Integer minPlayers = request.minPlayers() == null ? current.minPlayers() : validatePlayer(request.minPlayers(), "최소 인원", StarLobbyDomainRules.PLAYER_MIN, StarLobbyDomainRules.PLAYER_MAX, true);
+		Integer maxPlayers = request.maxPlayers() == null ? current.maxPlayers() : validatePlayer(request.maxPlayers(), "최대 인원", 1, StarLobbyDomainRules.PLAYER_MAX, true);
 		if (minPlayers != null && maxPlayers != null && minPlayers > maxPlayers) {
 			throw new StarLobbyServiceException(400, "STAR_LOBBY_INVALID_RULE", "최소 인원은 최대 인원보다 클 수 없습니다.");
 		}
 		AlertRuleRow row = repository.updateAlertRule(
 			ruleId,
-			request.name() == null ? current.name() : normalizeText(request.name(), "알림 이름", 80),
+			request.name() == null ? current.name() : normalizeText(request.name(), "알림 이름", StarLobbyDomainRules.ALERT_NAME_MAX_LENGTH),
 			includeKeywords,
 			excludeKeywords,
 			minPlayers,
@@ -206,53 +180,39 @@ public class StarLobbyService {
 					result.suppressedKeyword(),
 					matchedAt
 				);
-				if (inserted != null && "matched".equals(inserted.status())) matches.add(new AlertMatched(inserted, rule, room));
+				if (inserted != null && StarLobbyDomainRules.ALERT_MATCH_STATUS_MATCHED.equals(inserted.status())) matches.add(new AlertMatched(inserted, rule, room));
 			}
 		}
 		return matches;
 	}
 
-
-
-	private List<DiscordWebhookNotification> discordNotifications(List<AlertMatched> matchedAlerts) {
-		List<DiscordWebhookNotification> notifications = new ArrayList<>();
-		for (AlertMatched alert : matchedAlerts == null ? List.<AlertMatched>of() : matchedAlerts) {
-			AlertRuleRow rule = alert.rule();
-			repository.findDiscordWebhook(rule.ownerUserId(), rule.guestSessionId())
-				.filter(DiscordWebhookRow::enabled)
-				.ifPresent(webhook -> notifications.add(new DiscordWebhookNotification(
-					secretProtector.reveal(webhook.webhookUrlEncrypted()),
-					discordContent(alert)
-				)));
-		}
-		return notifications;
-	}
-
-	private String discordContent(AlertMatched alert) {
-		ObservedRoomRow room = alert.room();
-		AlertRuleRow rule = alert.rule();
-		String players = room.currentPlayers() == null || room.maxPlayers() == null
-			? "인원 미확인"
-			: room.currentPlayers() + "/" + room.maxPlayers();
-		return "[방 떴다]\n"
-			+ rule.name() + " 조건과 맞는 스타 유즈맵 방이 관측됐습니다.\n\n"
-			+ "방제: " + room.title() + " " + players + "\n"
-			+ "감지 키워드: " + alert.match().matchedKeyword() + "\n"
-			+ "관측 시간: " + room.lastSeenAt();
+	private List<MatchedAlertNotificationCandidate> discordNotificationCandidates(List<AlertMatched> matchedAlerts) {
+		return (matchedAlerts == null ? List.<AlertMatched>of() : matchedAlerts).stream()
+			.map(alert -> new MatchedAlertNotificationCandidate(
+				alert.rule().ownerUserId(),
+				alert.rule().guestSessionId(),
+				alert.rule().name(),
+				alert.room().title(),
+				alert.room().currentPlayers(),
+				alert.room().maxPlayers(),
+				alert.match().matchedKeyword(),
+				alert.room().lastSeenAt()
+			))
+			.toList();
 	}
 
 	private List<StarLobbyRealtimeEvent> realtimeEvents(List<ObservedRoomRow> observedRooms, List<ObservedRoomRow> disappearedRooms, List<AlertMatched> matchedAlerts) {
 		List<StarLobbyRealtimeEvent> events = new ArrayList<>();
 		for (ObservedRoomRow room : observedRooms) {
-			events.add(new StarLobbyRealtimeEvent(EVENT_ROOM_OBSERVED, toRoomResponse(room), null, null, null));
+			events.add(new StarLobbyRealtimeEvent(StarLobbyDomainRules.EVENT_ROOM_OBSERVED, toRoomResponse(room), null, null, null));
 		}
 		for (ObservedRoomRow room : disappearedRooms == null ? List.<ObservedRoomRow>of() : disappearedRooms) {
-			events.add(new StarLobbyRealtimeEvent(EVENT_ROOM_DISAPPEARED, toRoomResponse(room), null, null, null));
+			events.add(new StarLobbyRealtimeEvent(StarLobbyDomainRules.EVENT_ROOM_DISAPPEARED, toRoomResponse(room), null, null, null));
 		}
 		for (AlertMatched alert : matchedAlerts) {
 			AlertRuleRow rule = alert.rule();
 			events.add(new StarLobbyRealtimeEvent(
-				EVENT_ALERT_MATCHED,
+				StarLobbyDomainRules.EVENT_ALERT_MATCHED,
 				toRoomResponse(alert.room()),
 				toMatchResponse(alert.match()),
 				toRuleResponse(rule),
@@ -269,8 +229,8 @@ public class StarLobbyService {
 		String matchedKeyword = firstKeyword(rule.includeKeywords(), normalizedTitle);
 		if (matchedKeyword == null) return null;
 		String suppressedKeyword = firstKeyword(rule.excludeKeywords(), normalizedTitle);
-		if (suppressedKeyword != null) return new MatchResult("suppressed", matchedKeyword, suppressedKeyword);
-		return new MatchResult("matched", matchedKeyword, null);
+		if (suppressedKeyword != null) return new MatchResult(StarLobbyDomainRules.ALERT_MATCH_STATUS_SUPPRESSED, matchedKeyword, suppressedKeyword);
+		return new MatchResult(StarLobbyDomainRules.ALERT_MATCH_STATUS_MATCHED, matchedKeyword, null);
 	}
 
 	private String firstKeyword(List<String> keywords, String normalizedTitle) {
@@ -293,40 +253,22 @@ public class StarLobbyService {
 	}
 
 	private Owner resolveOwner(UUID userId, String guestSessionId) {
-		if (userId != null) return new Owner(userId, trimToNull(guestSessionId));
+		if (userId != null) return new Owner(userId, null);
 		String guest = trimToNull(guestSessionId);
 		if (guest == null) {
 			throw new StarLobbyServiceException(401, "STAR_LOBBY_OWNER_REQUIRED", "알림 조건을 저장하려면 로그인하거나 게스트 세션이 필요합니다.");
 		}
-		if (guest.length() > 128) {
+		if (guest.length() > StarLobbyDomainRules.GUEST_SESSION_MAX_LENGTH) {
 			throw new StarLobbyServiceException(400, "STAR_LOBBY_INVALID_OWNER", "게스트 세션은 128자 이하로 입력해 주세요.");
 		}
 		return new Owner(null, guest);
-	}
-
-
-	private String validateDiscordWebhookUrl(String value) {
-		String webhookUrl = normalizeText(value, "Discord 웹훅 URL", 2000);
-		try {
-			URI uri = URI.create(webhookUrl);
-			String scheme = uri.getScheme();
-			String host = uri.getHost() == null ? "" : uri.getHost().toLowerCase(Locale.ROOT);
-			String path = uri.getPath() == null ? "" : uri.getPath();
-			boolean discordHost = host.equals("discord.com") || host.endsWith(".discord.com") || host.equals("discordapp.com") || host.endsWith(".discordapp.com");
-			if (!"https".equalsIgnoreCase(scheme) || !discordHost || !path.startsWith("/api/webhooks/")) {
-				throw new IllegalArgumentException("invalid discord webhook");
-			}
-			return webhookUrl;
-		} catch (Exception error) {
-			throw new StarLobbyServiceException(400, "STAR_LOBBY_INVALID_DISCORD_WEBHOOK", "Discord 웹훅 URL 형식이 올바르지 않습니다.");
-		}
 	}
 
 	private List<String> normalizeKeywords(List<String> values, String label, int min, int max) {
 		List<String> normalized = new ArrayList<>();
 		if (values != null) {
 			for (String value : values) {
-				String keyword = normalizeText(value, label, 80);
+				String keyword = normalizeText(value, label, StarLobbyDomainRules.KEYWORD_MAX_LENGTH);
 				if (!normalized.contains(keyword)) normalized.add(keyword);
 			}
 		}
@@ -336,9 +278,16 @@ public class StarLobbyService {
 	}
 
 	private String normalizeText(String input, String label, int maxLength) {
-		String normalized = trimToNull(input);
+		String normalized = normalizeOptionalText(input, label, maxLength);
 		if (normalized == null) throw new StarLobbyServiceException(400, "STAR_LOBBY_INVALID_INPUT", label + "를 입력해 주세요.");
-		if (normalized.length() > maxLength) throw new StarLobbyServiceException(400, "STAR_LOBBY_INVALID_INPUT", label + "는 " + maxLength + "자 이하로 입력해 주세요.");
+		return normalized;
+	}
+
+	private String normalizeOptionalText(String input, String label, int maxLength) {
+		String normalized = trimToNull(input);
+		if (normalized != null && normalized.length() > maxLength) {
+			throw new StarLobbyServiceException(400, "STAR_LOBBY_INVALID_INPUT", label + "는 " + maxLength + "자 이하로 입력해 주세요.");
+		}
 		return normalized;
 	}
 

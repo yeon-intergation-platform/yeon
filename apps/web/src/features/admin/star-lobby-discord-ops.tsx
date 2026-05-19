@@ -26,11 +26,25 @@ function toTestButtonViewState(isPending: boolean) {
   };
 }
 
-function StatusCard({ label, value }: { label: string; value: string }) {
+function StatusCard({
+  label,
+  value,
+  tone = "default",
+}: {
+  label: string;
+  value: string;
+  tone?: "default" | "warn" | "good";
+}) {
+  const valueClassName =
+    tone === "warn"
+      ? "text-amber-700"
+      : tone === "good"
+        ? "text-emerald-700"
+        : "text-[#111]";
   return (
     <div className="rounded-2xl border border-[#ececec] bg-white p-5">
       <p className="text-[13px] font-bold text-[#777]">{label}</p>
-      <p className="mt-2 text-[24px] font-black text-[#111]">{value}</p>
+      <p className={`mt-2 text-[24px] font-black ${valueClassName}`}>{value}</p>
     </div>
   );
 }
@@ -107,8 +121,9 @@ export function StarLobbyDiscordOps() {
           스타 로비 Discord 알림 운영 확인
         </h1>
         <p className="mt-3 max-w-2xl text-[15px] leading-7 text-[#555]">
-          Discord 봇 토큰이나 전역 Discord 환경변수 없이 배포됩니다. 유저가
-          등록한 Discord 웹훅이 있을 때만 매칭 알림을 전송합니다.
+          Discord 봇 토큰이나 전역 Discord 환경변수 없이 배포됩니다. 단,
+          운영에서 유저 웹훅 URL을 저장하려면 보호 키가 설정되어 있어야 합니다.
+          테스트 발송은 URL을 저장하지 않고 즉시 전송 경로만 확인합니다.
         </p>
 
         {statusQuery.error ? (
@@ -122,10 +137,34 @@ export function StarLobbyDiscordOps() {
         <section className="mt-8 grid gap-4 md:grid-cols-4">
           <StatusCard
             label="Discord 전역 env 필요"
+            tone="good"
             value={status?.globalDiscordEnvRequired ? "필요" : "불필요"}
           />
           <StatusCard
+            label="웹훅 저장 가능"
+            tone={status?.webhookPersistenceAllowed ? "good" : "warn"}
+            value={status?.webhookPersistenceAllowed ? "가능" : "보호 키 필요"}
+          />
+          <StatusCard
+            label="Spring 내부 토큰"
+            tone={status?.springInternalTokenConfigured ? "good" : "warn"}
+            value={status?.springInternalTokenConfigured ? "설정됨" : "미설정"}
+          />
+          <StatusCard
+            label="실시간 이벤트 URL"
+            tone={status?.realtimeEventsUrlConfigured ? "good" : "warn"}
+            value={status?.realtimeEventsUrlConfigured ? "설정됨" : "미설정"}
+          />
+          <StatusCard
+            label="실시간 내부 토큰"
+            tone={status?.realtimeInternalTokenConfigured ? "good" : "warn"}
+            value={
+              status?.realtimeInternalTokenConfigured ? "설정됨" : "미설정"
+            }
+          />
+          <StatusCard
             label="보호 키 설정"
+            tone={status?.secretConfigured ? "good" : "warn"}
             value={status?.secretConfigured ? "설정됨" : "기본값"}
           />
           <StatusCard

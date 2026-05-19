@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
 import { jsonError } from "@/app/api/v1/counseling-records/_shared";
-import { getCurrentAuthUser } from "@/server/auth/session";
+import { resolveStarLobbyBffOwner } from "../../_shared";
 import {
   deleteStarLobbyAlertRuleInSpring,
   StarLobbySpringBackendHttpError,
@@ -11,25 +11,6 @@ import {
 } from "@/server/star-lobby-spring-client";
 
 export const runtime = "nodejs";
-
-const GUEST_SESSION_ID_HEADER = "x-yeon-guest-session-id";
-const GUEST_SESSION_ID_COOKIE = "yeon_star_lobby_guest_session_id";
-
-function resolveGuestSessionId(request: NextRequest) {
-  return (
-    request.headers.get(GUEST_SESSION_ID_HEADER)?.trim() ||
-    request.cookies.get(GUEST_SESSION_ID_COOKIE)?.value?.trim() ||
-    null
-  );
-}
-
-async function resolveOwner(request: NextRequest) {
-  const user = await getCurrentAuthUser();
-  return {
-    userId: user?.id ?? null,
-    guestSessionId: resolveGuestSessionId(request),
-  };
-}
 
 type RouteContext = {
   params: Promise<{ ruleId: string }>;
@@ -53,7 +34,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
   }
 
   const { ruleId } = await context.params;
-  const owner = await resolveOwner(request);
+  const owner = await resolveStarLobbyBffOwner(request);
 
   try {
     return NextResponse.json(
@@ -74,7 +55,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 
 export async function DELETE(request: NextRequest, context: RouteContext) {
   const { ruleId } = await context.params;
-  const owner = await resolveOwner(request);
+  const owner = await resolveStarLobbyBffOwner(request);
 
   try {
     await deleteStarLobbyAlertRuleInSpring({ ...owner, ruleId });

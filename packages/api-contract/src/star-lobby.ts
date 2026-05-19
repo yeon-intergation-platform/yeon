@@ -16,6 +16,9 @@ export const STAR_LOBBY_LIVE_EVENT_TYPE = {
   ALERT_MATCHED: "alert_matched",
 } as const;
 
+export const STAR_LOBBY_DISCORD_WEBHOOK_URL_PATTERN =
+  /^https:\/\/([a-z0-9-]+\.)?(discord(?:app)?\.com)\/api\/webhooks\//i;
+
 export const starLobbyRoomStatusSchema = z.enum([
   STAR_LOBBY_ROOM_STATUS.OBSERVED,
   STAR_LOBBY_ROOM_STATUS.DISAPPEARED,
@@ -93,8 +96,8 @@ export const createStarLobbyAlertRuleBodySchema = z.object({
   name: z.string().trim().min(1).max(80),
   includeKeywords: z.array(starLobbyKeywordSchema).min(1).max(20),
   excludeKeywords: z.array(starLobbyKeywordSchema).max(20).default([]),
-  minPlayers: z.number().int().min(0).max(12).nullable().optional(),
-  maxPlayers: z.number().int().min(1).max(12).nullable().optional(),
+  minPlayers: z.number().int().min(0).max(12).optional(),
+  maxPlayers: z.number().int().min(1).max(12).optional(),
 });
 export type CreateStarLobbyAlertRuleBody = z.infer<
   typeof createStarLobbyAlertRuleBodySchema
@@ -104,8 +107,8 @@ export const updateStarLobbyAlertRuleBodySchema = z.object({
   name: z.string().trim().min(1).max(80).optional(),
   includeKeywords: z.array(starLobbyKeywordSchema).min(1).max(20).optional(),
   excludeKeywords: z.array(starLobbyKeywordSchema).max(20).optional(),
-  minPlayers: z.number().int().min(0).max(12).nullable().optional(),
-  maxPlayers: z.number().int().min(1).max(12).nullable().optional(),
+  minPlayers: z.number().int().min(0).max(12).optional(),
+  maxPlayers: z.number().int().min(1).max(12).optional(),
   enabled: z.boolean().optional(),
 });
 export type UpdateStarLobbyAlertRuleBody = z.infer<
@@ -155,7 +158,12 @@ export type StarLobbyAlertRuleDeletionResponse = z.infer<
 >;
 
 export const upsertStarLobbyDiscordWebhookBodySchema = z.object({
-  webhookUrl: z.string().trim().url().max(2000),
+  webhookUrl: z
+    .string()
+    .trim()
+    .url()
+    .max(2000)
+    .regex(STAR_LOBBY_DISCORD_WEBHOOK_URL_PATTERN),
 });
 export type UpsertStarLobbyDiscordWebhookBody = z.infer<
   typeof upsertStarLobbyDiscordWebhookBodySchema
@@ -172,6 +180,10 @@ export type StarLobbyDiscordWebhookStatusResponse = z.infer<
 export const starLobbyDiscordWebhookAdminStatusResponseSchema = z.object({
   globalDiscordEnvRequired: z.boolean(),
   secretConfigured: z.boolean(),
+  webhookPersistenceAllowed: z.boolean(),
+  springInternalTokenConfigured: z.boolean(),
+  realtimeEventsUrlConfigured: z.boolean(),
+  realtimeInternalTokenConfigured: z.boolean(),
   registeredWebhookCount: z.number().int().min(0),
   enabledWebhookCount: z.number().int().min(0),
 });
