@@ -37,6 +37,15 @@ public class StarLobbyDtos {
 		Integer maxPlayers
 	) {}
 
+	public record UpdateAlertRuleRequest(
+		String name,
+		List<String> includeKeywords,
+		List<String> excludeKeywords,
+		Integer minPlayers,
+		Integer maxPlayers,
+		Boolean enabled
+	) {}
+
 	public record AlertRuleResponse(
 		UUID id,
 		String name,

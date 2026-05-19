@@ -7,6 +7,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -145,6 +146,46 @@ public class StarLobbyRepository {
 			) values (?, ?, ?, ?, cast(? as jsonb), cast(? as jsonb), ?, ?, true, ?, ?)
 			returning id, owner_user_id, guest_session_id, name, include_keywords, exclude_keywords, min_players, max_players, enabled, created_at, updated_at
 			""", (rs, i) -> alertRule(rs), id, ownerUserId, guestSessionId, name, json(includeKeywords), json(excludeKeywords), minPlayers, maxPlayers, now, now);
+	}
+
+	public Optional<AlertRuleRow> findAlertRule(UUID ownerUserId, String guestSessionId, UUID ruleId) {
+		List<AlertRuleRow> rows;
+		if (ownerUserId != null) {
+			rows = jdbc.query("""
+				select id, owner_user_id, guest_session_id, name, include_keywords, exclude_keywords, min_players, max_players, enabled, created_at, updated_at
+				from public.star_lobby_alert_rules
+				where owner_user_id = ? and id = ?
+				""", (rs, i) -> alertRule(rs), ownerUserId, ruleId);
+		} else {
+			rows = jdbc.query("""
+				select id, owner_user_id, guest_session_id, name, include_keywords, exclude_keywords, min_players, max_players, enabled, created_at, updated_at
+				from public.star_lobby_alert_rules
+				where guest_session_id = ? and id = ?
+				""", (rs, i) -> alertRule(rs), guestSessionId, ruleId);
+		}
+		return rows.stream().findFirst();
+	}
+
+	public AlertRuleRow updateAlertRule(UUID id, String name, List<String> includeKeywords, List<String> excludeKeywords, Integer minPlayers, Integer maxPlayers, boolean enabled, OffsetDateTime now) {
+		return jdbc.queryForObject("""
+			update public.star_lobby_alert_rules
+			set name = ?, include_keywords = cast(? as jsonb), exclude_keywords = cast(? as jsonb), min_players = ?, max_players = ?, enabled = ?, updated_at = ?
+			where id = ?
+			returning id, owner_user_id, guest_session_id, name, include_keywords, exclude_keywords, min_players, max_players, enabled, created_at, updated_at
+			""", (rs, i) -> alertRule(rs), name, json(includeKeywords), json(excludeKeywords), minPlayers, maxPlayers, enabled, now, id);
+	}
+
+	public int deleteAlertRule(UUID ownerUserId, String guestSessionId, UUID ruleId) {
+		if (ownerUserId != null) {
+			return jdbc.update("""
+				delete from public.star_lobby_alert_rules
+				where owner_user_id = ? and id = ?
+				""", ownerUserId, ruleId);
+		}
+		return jdbc.update("""
+			delete from public.star_lobby_alert_rules
+			where guest_session_id = ? and id = ?
+			""", guestSessionId, ruleId);
 	}
 
 	public AlertMatchRow insertAlertMatchIfAbsent(UUID id, UUID ruleId, UUID roomId, String status, String matchedKeyword, String suppressedKeyword, OffsetDateTime matchedAt) {

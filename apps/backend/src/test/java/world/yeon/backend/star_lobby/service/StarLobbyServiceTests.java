@@ -8,6 +8,7 @@ import static org.mockito.Mockito.when;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -15,6 +16,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import world.yeon.backend.star_lobby.dto.StarLobbyDtos.AlertRuleRequest;
+import world.yeon.backend.star_lobby.dto.StarLobbyDtos.UpdateAlertRuleRequest;
 import world.yeon.backend.star_lobby.dto.StarLobbyDtos.IngestObservationRequest;
 import world.yeon.backend.star_lobby.dto.StarLobbyDtos.ObservationRoomRequest;
 import world.yeon.backend.star_lobby.repository.StarLobbyRepository;
@@ -94,4 +96,31 @@ class StarLobbyServiceTests {
 
 		assertThat(result.rule().includeKeywords()).containsExactly("랜타디");
 	}
+	@Test void 알림조건을끌수있다() {
+		var current = new StarLobbyRepository.AlertRuleRow(RULE_ID, null, "guest-1", "랜타디", List.of("랜타디"), List.of("고수"), null, null, true, OBSERVED_AT, OBSERVED_AT);
+		var updated = new StarLobbyRepository.AlertRuleRow(RULE_ID, null, "guest-1", "랜타디", List.of("랜타디"), List.of("고수"), null, null, false, OBSERVED_AT, OBSERVED_AT);
+		when(repository.findAlertRule(isNull(), eq("guest-1"), eq(RULE_ID))).thenReturn(Optional.of(current));
+		when(repository.updateAlertRule(eq(RULE_ID), eq("랜타디"), eq(List.of("랜타디")), eq(List.of("고수")), isNull(), isNull(), eq(false), any())).thenReturn(updated);
+
+		var result = service.updateAlertRule(null, "guest-1", RULE_ID, new UpdateAlertRuleRequest(null, null, null, null, null, false));
+
+		assertThat(result.rule().enabled()).isFalse();
+	}
+
+	@Test void 내알림조건만삭제한다() {
+		when(repository.deleteAlertRule(isNull(), eq("guest-1"), eq(RULE_ID))).thenReturn(1);
+
+		service.deleteAlertRule(null, "guest-1", RULE_ID);
+
+		verify(repository).deleteAlertRule(isNull(), eq("guest-1"), eq(RULE_ID));
+	}
+
+	@Test void 없는알림조건삭제는실패한다() {
+		when(repository.deleteAlertRule(isNull(), eq("guest-1"), eq(RULE_ID))).thenReturn(0);
+
+		assertThatThrownBy(() -> service.deleteAlertRule(null, "guest-1", RULE_ID))
+			.isInstanceOf(StarLobbyServiceException.class)
+			.hasMessage("알림 조건을 찾지 못했습니다.");
+	}
+
 }

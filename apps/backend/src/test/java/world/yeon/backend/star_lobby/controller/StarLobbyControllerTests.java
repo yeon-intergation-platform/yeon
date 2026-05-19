@@ -2,8 +2,11 @@ package world.yeon.backend.star_lobby.controller;
 
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -72,6 +75,27 @@ class StarLobbyControllerTests {
 		mockMvc.perform(get("/api/v1/star-lobby/alert-rules").header("X-Yeon-User-Id", USER_ID.toString()))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.rules[0].name").value("랜타디"));
+	}
+
+	@Test void 게스트알림조건을끄거나켠다() throws Exception {
+		var request = new UpdateAlertRuleRequest(null, null, null, null, null, false);
+		when(service.updateAlertRule(isNull(), eq("guest-1"), eq(RULE_ID), eq(request)))
+			.thenReturn(new AlertRuleMutationResponse(new AlertRuleResponse(RULE_ID, "랜타디", List.of("랜타디"), List.of(), null, null, false, NOW, NOW)));
+
+		mockMvc.perform(patch("/api/v1/star-lobby/alert-rules/{ruleId}", RULE_ID)
+				.header("X-Yeon-Guest-Session-Id", "guest-1")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"enabled\":false}"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.rule.enabled").value(false));
+	}
+
+	@Test void 게스트알림조건을삭제한다() throws Exception {
+		mockMvc.perform(delete("/api/v1/star-lobby/alert-rules/{ruleId}", RULE_ID)
+				.header("X-Yeon-Guest-Session-Id", "guest-1"))
+			.andExpect(status().isNoContent());
+
+		verify(service).deleteAlertRule(isNull(), eq("guest-1"), eq(RULE_ID));
 	}
 
 	@Test void 서비스오류를반환한다() throws Exception {

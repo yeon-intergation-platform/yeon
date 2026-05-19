@@ -147,6 +147,13 @@ export type StarLobbyAlertRuleMutationResponse = z.infer<
   typeof starLobbyAlertRuleMutationResponseSchema
 >;
 
+export const starLobbyAlertRuleDeletionResponseSchema = z.object({
+  deletedRuleId: z.string(),
+});
+export type StarLobbyAlertRuleDeletionResponse = z.infer<
+  typeof starLobbyAlertRuleDeletionResponseSchema
+>;
+
 export const starLobbyObservationIngestResponseSchema = z.object({
   rooms: z.array(starLobbyObservedRoomDtoSchema),
   matches: z.array(starLobbyAlertMatchDtoSchema),

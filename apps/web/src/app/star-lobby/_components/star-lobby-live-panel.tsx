@@ -3,6 +3,7 @@
 import { Client, type Room } from "@colyseus/sdk";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  type StarLobbyAlertRuleDeletionResponse,
   type StarLobbyAlertRuleListResponse,
   type StarLobbyAlertRuleMutationResponse,
   type StarLobbyObservedRoomDto,
@@ -159,6 +160,16 @@ function mergeSavedRules(
   };
 }
 
+function removeSavedRule(
+  current: StarLobbyAlertRuleListResponse | undefined,
+  ruleId: string
+): StarLobbyAlertRuleListResponse {
+  const existingRules = current ? current.rules : [];
+  return {
+    rules: existingRules.filter((savedRule) => savedRule.id !== ruleId),
+  };
+}
+
 function toSavedRulesViewState(
   data: StarLobbyAlertRuleListResponse | undefined
 ) {
@@ -169,6 +180,13 @@ function toSaveButtonViewState(isPending: boolean) {
   return {
     disabledWhileSaving: isPending,
     label: isPending ? "알림 조건 저장 중" : "이 키워드로 접속 중 알림 받기",
+  };
+}
+
+function toRuleActionViewState(isPending: boolean) {
+  return {
+    disabled: isPending,
+    statusText: isPending ? "처리 중" : null,
   };
 }
 
@@ -324,11 +342,111 @@ export function StarLobbyLivePanel() {
     },
   });
 
+  const updateAlertRuleMutation = useMutation({
+    mutationFn: async (params: { ruleId: string; enabled: boolean }) => {
+      const currentGuestSessionId = guestSessionIdRef.current;
+      if (!currentGuestSessionId) {
+        throw new Error(
+          "게스트 세션을 만들지 못해 알림 조건을 수정하지 못했습니다."
+        );
+      }
+
+      const response = await fetch(
+        `/api/v1/star-lobby/alert-rules/${encodeURIComponent(params.ruleId)}`,
+        {
+          method: "PATCH",
+          headers: requestHeaders(currentGuestSessionId),
+          body: JSON.stringify({ enabled: params.enabled }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(
+          await parseErrorMessage(
+            response,
+            "스타 로비 알림 조건을 수정하지 못했습니다."
+          )
+        );
+      }
+
+      return (await response.json()) as StarLobbyAlertRuleMutationResponse;
+    },
+    onSuccess: (body) => {
+      queryClient.setQueryData<StarLobbyAlertRuleListResponse>(
+        ["star-lobby", "alert-rules", guestSessionIdRef.current],
+        (current) => mergeSavedRules(current, body.rule)
+      );
+      setSaveState("success");
+      setSaveMessage(
+        body.rule.enabled
+          ? "알림 조건을 다시 켰습니다."
+          : "알림 조건을 껐습니다. 꺼진 조건은 매칭 알림을 받지 않습니다."
+      );
+    },
+    onError: (err) => {
+      setSaveState("error");
+      setSaveMessage(
+        err instanceof Error
+          ? err.message
+          : "스타 로비 알림 조건을 수정하지 못했습니다."
+      );
+    },
+  });
+
+  const deleteAlertRuleMutation = useMutation({
+    mutationFn: async (ruleId: string) => {
+      const currentGuestSessionId = guestSessionIdRef.current;
+      if (!currentGuestSessionId) {
+        throw new Error(
+          "게스트 세션을 만들지 못해 알림 조건을 삭제하지 못했습니다."
+        );
+      }
+
+      const response = await fetch(
+        `/api/v1/star-lobby/alert-rules/${encodeURIComponent(ruleId)}`,
+        {
+          method: "DELETE",
+          headers: { [GUEST_SESSION_ID_HEADER]: currentGuestSessionId },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(
+          await parseErrorMessage(
+            response,
+            "스타 로비 알림 조건을 삭제하지 못했습니다."
+          )
+        );
+      }
+
+      return (await response.json()) as StarLobbyAlertRuleDeletionResponse;
+    },
+    onSuccess: (body) => {
+      queryClient.setQueryData<StarLobbyAlertRuleListResponse>(
+        ["star-lobby", "alert-rules", guestSessionIdRef.current],
+        (current) => removeSavedRule(current, body.deletedRuleId)
+      );
+      setSaveState("success");
+      setSaveMessage("알림 조건을 삭제했습니다.");
+    },
+    onError: (err) => {
+      setSaveState("error");
+      setSaveMessage(
+        err instanceof Error
+          ? err.message
+          : "스타 로비 알림 조건을 삭제하지 못했습니다."
+      );
+    },
+  });
+
   const savedRules = toSavedRulesViewState(alertRulesQuery.data);
   const currentRoomsViewState = toCurrentRoomsViewState(currentRoomsQuery.data);
   const currentRoomsError = currentRoomsQuery.error;
   const saveButtonViewState = toSaveButtonViewState(
     createAlertRuleMutation.isPending
+  );
+  const ruleActionViewState = toRuleActionViewState(
+    updateAlertRuleMutation.isPending || deleteAlertRuleMutation.isPending
   );
 
   useEffect(() => {
@@ -506,15 +624,15 @@ export function StarLobbyLivePanel() {
       </form>
 
       {saveMessage ? (
-        <p
-          className={`mt-4 rounded-2xl border p-3 text-sm ${
-            saveState === "error"
-              ? "border-rose-300/25 bg-rose-300/10 text-rose-100"
-              : "border-cyan-300/20 bg-cyan-300/10 text-cyan-50"
-          }`}
-        >
-          {saveMessage}
-        </p>
+        saveState === "error" ? (
+          <p className="mt-4 rounded-2xl border border-rose-300/25 bg-rose-300/10 p-3 text-sm text-rose-100">
+            {saveMessage}
+          </p>
+        ) : (
+          <p className="mt-4 rounded-2xl border border-cyan-300/20 bg-cyan-300/10 p-3 text-sm text-cyan-50">
+            {saveMessage}
+          </p>
+        )
       ) : null}
 
       {savedRules.length > 0 ? (
@@ -526,7 +644,18 @@ export function StarLobbyLivePanel() {
                 className="rounded-2xl bg-white/[0.05] p-3 text-sm text-slate-200"
                 key={savedRule.id}
               >
-                <p className="font-bold text-white">{savedRule.name}</p>
+                <div className="flex items-center justify-between gap-3">
+                  <p className="font-bold text-white">{savedRule.name}</p>
+                  {savedRule.enabled ? (
+                    <span className="rounded-full bg-cyan-300 px-2 py-1 text-xs font-black text-slate-950">
+                      켜짐
+                    </span>
+                  ) : (
+                    <span className="rounded-full bg-slate-700 px-2 py-1 text-xs font-black text-slate-300">
+                      꺼짐
+                    </span>
+                  )}
+                </div>
                 <p className="mt-1 text-slate-400">
                   포함: {keywordText(savedRule.includeKeywords)}
                 </p>
@@ -535,6 +664,34 @@ export function StarLobbyLivePanel() {
                     제외: {keywordText(savedRule.excludeKeywords)}
                   </p>
                 ) : null}
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button
+                    className="rounded-full border border-white/15 px-3 py-1 text-xs font-bold text-slate-100 transition hover:border-cyan-200 disabled:cursor-not-allowed disabled:opacity-50"
+                    disabled={ruleActionViewState.disabled}
+                    onClick={() =>
+                      updateAlertRuleMutation.mutate({
+                        ruleId: savedRule.id,
+                        enabled: !savedRule.enabled,
+                      })
+                    }
+                    type="button"
+                  >
+                    {savedRule.enabled ? "알림 끄기" : "알림 켜기"}
+                  </button>
+                  <button
+                    className="rounded-full border border-rose-300/30 px-3 py-1 text-xs font-bold text-rose-100 transition hover:border-rose-200 disabled:cursor-not-allowed disabled:opacity-50"
+                    disabled={ruleActionViewState.disabled}
+                    onClick={() => deleteAlertRuleMutation.mutate(savedRule.id)}
+                    type="button"
+                  >
+                    삭제
+                  </button>
+                  {ruleActionViewState.statusText ? (
+                    <span className="px-2 py-1 text-xs text-slate-500">
+                      {ruleActionViewState.statusText}
+                    </span>
+                  ) : null}
+                </div>
               </article>
             ))}
           </div>

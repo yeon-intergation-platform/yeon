@@ -44,6 +44,26 @@ public class StarLobbyController {
 		return ResponseEntity.status(HttpStatus.CREATED).body(service.createAlertRule(ownerUserId, guestSessionId, request));
 	}
 
+	@PatchMapping("/alert-rules/{ruleId}")
+	public AlertRuleMutationResponse updateAlertRule(
+		@PathVariable UUID ruleId,
+		@RequestHeader(value = "X-Yeon-User-Id", required = false) UUID ownerUserId,
+		@RequestHeader(value = "X-Yeon-Guest-Session-Id", required = false) String guestSessionId,
+		@RequestBody UpdateAlertRuleRequest request
+	) {
+		return service.updateAlertRule(ownerUserId, guestSessionId, ruleId, request);
+	}
+
+	@DeleteMapping("/alert-rules/{ruleId}")
+	public ResponseEntity<Void> deleteAlertRule(
+		@PathVariable UUID ruleId,
+		@RequestHeader(value = "X-Yeon-User-Id", required = false) UUID ownerUserId,
+		@RequestHeader(value = "X-Yeon-Guest-Session-Id", required = false) String guestSessionId
+	) {
+		service.deleteAlertRule(ownerUserId, guestSessionId, ruleId);
+		return ResponseEntity.noContent().build();
+	}
+
 	@ExceptionHandler(StarLobbyServiceException.class)
 	public ResponseEntity<ErrorResponse> serviceError(StarLobbyServiceException error) {
 		return ResponseEntity.status(error.status()).body(new ErrorResponse(error.code(), error.getMessage()));
