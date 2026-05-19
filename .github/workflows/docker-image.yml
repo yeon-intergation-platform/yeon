@@ -419,33 +419,6 @@ jobs:
             sleep 30
           done
 
-          preflight_backend() {
-            echo "backend preflight: 새 backend 이미지를 운영 컨테이너 교체 전에 1회성으로 부팅 확인합니다."
-            docker compose -f "${COMPOSE_FILE}" run --rm --no-deps --entrypoint /bin/sh backend -lc '
-              set -eu
-              java -jar /app/app.jar &
-              pid="$!"
-              trap "kill \"$pid\" >/dev/null 2>&1 || true; wait \"$pid\" >/dev/null 2>&1 || true" EXIT
-
-              for _ in $(seq 1 30); do
-                if ! kill -0 "$pid" >/dev/null 2>&1; then
-                  wait "$pid"
-                  exit $?
-                fi
-
-                if curl -fsS http://127.0.0.1:8081/actuator/health >/dev/null; then
-                  echo "backend preflight: actuator health OK"
-                  exit 0
-                fi
-
-                sleep 2
-              done
-
-              echo "backend preflight: actuator health 확인 시간 초과"
-              exit 1
-            '
-          }
-
           preflight_http_service() {
             service="$1"
             container_name="$2"
@@ -484,7 +457,7 @@ jobs:
           }
 
           if [[ "${{ needs.detect_changes.outputs.backend }}" == "true" ]]; then
-            preflight_backend
+            preflight_http_service backend "yeon-backend-preflight-${GITHUB_RUN_ID}" 8081 /actuator/health
           fi
           if [[ "${{ needs.detect_changes.outputs.web }}" == "true" ]]; then
             preflight_http_service web "yeon-web-preflight-${GITHUB_RUN_ID}" 3100 /api/health

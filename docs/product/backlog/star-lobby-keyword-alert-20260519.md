@@ -239,3 +239,28 @@ OCR/자동조작 전 단계로, 수동/더미 관측 입력부터 진행한다.
 ### 사용자 방향
 
 web/race-server도 backend와 마찬가지로 자동 배포 안전장치를 적용하고 main에 머지한다.
+
+## 9차: backend preflight entrypoint 오용 복구
+
+### 작업내용
+
+- backend preflight가 `--entrypoint /bin/sh`로 원래 Java entrypoint를 우회해 `/bin/sh: java: not found`로 실패하는 문제를 복구한다.
+- backend도 web/race-server와 같은 1회성 컨테이너 실행 후 container IP의 `/actuator/health`를 확인하는 공통 preflight 경로를 사용한다.
+
+### 논의 필요
+
+- 없음. 새 이미지 교체 전 검증 자체는 맞지만 실행 방식이 잘못되어 즉시 복구한다.
+
+### 선택지
+
+1. backend 전용 shell preflight를 제거하고 공통 HTTP preflight를 사용한다.
+2. shell 안에서 Java 절대 경로를 찾아 직접 실행한다.
+3. 별도 preflight용 entrypoint 스크립트를 이미지에 추가한다.
+
+### 추천
+
+1번으로 진행한다. 이미지의 원래 `ENTRYPOINT ["java", "-jar", "/app/app.jar"]`를 그대로 검증해야 운영 실행 방식과 같은 조건을 확인할 수 있다.
+
+### 사용자 방향
+
+backend preflight 실패를 복구하고 main에 머지한다.
