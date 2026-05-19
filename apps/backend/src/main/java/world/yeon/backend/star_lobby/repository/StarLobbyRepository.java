@@ -88,26 +88,28 @@ public class StarLobbyRepository {
 			""", (rs, i) -> observedRoom(rs), id, roomKey, title, currentPlayers, maxPlayers, observedAt, observedAt, rawText, observedAt, observedAt);
 	}
 
-	public int markMissingRoomsDisappeared(Set<String> observedRoomKeys, OffsetDateTime now) {
+	public List<ObservedRoomRow> markMissingRoomsDisappeared(Set<String> observedRoomKeys, OffsetDateTime now) {
 		if (observedRoomKeys == null || observedRoomKeys.isEmpty()) {
-			return jdbc.update("""
+			return jdbc.query("""
 				update public.star_lobby_observed_rooms
 				set status = 'disappeared', disappeared_at = ?, updated_at = ?
 				where status = 'observed'
-				""", now, now);
+				returning id, room_key, title, current_players, max_players, status, observed_at, last_seen_at, disappeared_at, raw_text
+				""", (rs, i) -> observedRoom(rs), now, now);
 		}
 		String placeholders = String.join(", ", java.util.Collections.nCopies(observedRoomKeys.size(), "?"));
 		String sql = """
 			update public.star_lobby_observed_rooms
 			set status = 'disappeared', disappeared_at = ?, updated_at = ?
 			where status = 'observed' and room_key not in (%s)
+			returning id, room_key, title, current_players, max_players, status, observed_at, last_seen_at, disappeared_at, raw_text
 			""".formatted(placeholders);
 		Object[] params = new Object[2 + observedRoomKeys.size()];
 		params[0] = now;
 		params[1] = now;
 		int index = 2;
 		for (String key : observedRoomKeys) params[index++] = key;
-		return jdbc.update(sql, params);
+		return jdbc.query(sql, (rs, i) -> observedRoom(rs), params);
 	}
 
 	public List<AlertRuleRow> listAlertRules(UUID ownerUserId, String guestSessionId) {
