@@ -16,6 +16,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import world.yeon.backend.star_lobby.dto.StarLobbyDtos.AlertRuleRequest;
+import world.yeon.backend.star_lobby.dto.StarLobbyDtos.DiscordWebhookRequest;
 import world.yeon.backend.star_lobby.dto.StarLobbyDtos.UpdateAlertRuleRequest;
 import world.yeon.backend.star_lobby.dto.StarLobbyDtos.IngestObservationRequest;
 import world.yeon.backend.star_lobby.dto.StarLobbyDtos.ObservationRoomRequest;
@@ -31,10 +32,12 @@ class StarLobbyServiceTests {
 
 	@Mock private StarLobbyRepository repository;
 	@Mock private StarLobbyRealtimePublisher realtimePublisher;
+	@Mock private StarLobbyDiscordWebhookNotifier discordWebhookNotifier;
+	@Mock private StarLobbySecretProtector secretProtector;
 	private StarLobbyService service;
 
 	@BeforeEach void setUp() {
-		service = new StarLobbyService(repository, realtimePublisher);
+		service = new StarLobbyService(repository, realtimePublisher, discordWebhookNotifier, secretProtector);
 	}
 
 	@Test void 관측방제가기존키워드조건과맞으면매칭을저장한다() {
@@ -80,6 +83,48 @@ class StarLobbyServiceTests {
 		verify(realtimePublisher).publishAfterCommit(argThat(events -> events.size() == 1
 			&& "room_disappeared".equals(events.getFirst().type())
 			&& events.getFirst().room().id().equals(ROOM_ID)));
+	}
+
+	@Test void 매칭된조건에디스코드웹훅이있으면알림을예약한다() {
+		var room = new StarLobbyRepository.ObservedRoomRow(ROOM_ID, "랜타디초보환영|3|6", "랜타디 초보 환영", 3, 6, "observed", OBSERVED_AT, OBSERVED_AT, null, null);
+		var rule = new StarLobbyRepository.AlertRuleRow(RULE_ID, USER_ID, null, "랜타디", List.of("랜타디"), List.of(), null, null, true, OBSERVED_AT, OBSERVED_AT);
+		var match = new StarLobbyRepository.AlertMatchRow(MATCH_ID, RULE_ID, ROOM_ID, "matched", "랜타디", null, OBSERVED_AT);
+		var webhook = new StarLobbyRepository.DiscordWebhookRow(UUID.randomUUID(), USER_ID, null, "protected", true, OBSERVED_AT, OBSERVED_AT);
+		when(repository.upsertObservedRoom(any(), eq("랜타디초보환영|3|6"), eq("랜타디 초보 환영"), eq(3), eq(6), eq(OBSERVED_AT), isNull())).thenReturn(room);
+		when(repository.markMissingRoomsDisappeared(java.util.Set.of("랜타디초보환영|3|6"), OBSERVED_AT)).thenReturn(List.of());
+		when(repository.listEnabledAlertRules()).thenReturn(List.of(rule));
+		when(repository.insertAlertMatchIfAbsent(any(), eq(RULE_ID), eq(ROOM_ID), eq("matched"), eq("랜타디"), isNull(), eq(OBSERVED_AT))).thenReturn(match);
+		when(repository.findDiscordWebhook(eq(USER_ID), isNull())).thenReturn(Optional.of(webhook));
+		when(secretProtector.reveal("protected")).thenReturn("https://discord.com/api/webhooks/1/token");
+
+		service.ingestObservation(new IngestObservationRequest(OBSERVED_AT, List.of(new ObservationRoomRequest("랜타디 초보 환영", 3, 6, null))));
+
+		verify(discordWebhookNotifier).notifyAfterCommit(argThat(notifications -> notifications.size() == 1
+			&& notifications.getFirst().webhookUrl().equals("https://discord.com/api/webhooks/1/token")
+			&& notifications.getFirst().content().contains("랜타디 초보 환영")));
+	}
+
+	@Test void 디스코드웹훅을저장한다() {
+		var row = new StarLobbyRepository.DiscordWebhookRow(UUID.randomUUID(), null, "guest-1", "protected", true, OBSERVED_AT, OBSERVED_AT);
+		when(secretProtector.protect("https://discord.com/api/webhooks/1/token")).thenReturn("protected");
+		when(repository.upsertDiscordWebhook(any(), isNull(), eq("guest-1"), eq("protected"), any())).thenReturn(row);
+
+		var result = service.upsertDiscordWebhook(null, "guest-1", new DiscordWebhookRequest("https://discord.com/api/webhooks/1/token"));
+
+		assertThat(result.connected()).isTrue();
+	}
+
+	@Test void 디스코드전역환경변수없이도운영상태를반환한다() {
+		when(secretProtector.hasConfiguredSecret()).thenReturn(false);
+		when(repository.countDiscordWebhooks(false)).thenReturn(2L);
+		when(repository.countDiscordWebhooks(true)).thenReturn(1L);
+
+		var result = service.getDiscordWebhookAdminStatus();
+
+		assertThat(result.globalDiscordEnvRequired()).isFalse();
+		assertThat(result.secretConfigured()).isFalse();
+		assertThat(result.registeredWebhookCount()).isEqualTo(2);
+		assertThat(result.enabledWebhookCount()).isEqualTo(1);
 	}
 
 	@Test void 게스트세션또는로그인없이알림조건을만들수없다() {

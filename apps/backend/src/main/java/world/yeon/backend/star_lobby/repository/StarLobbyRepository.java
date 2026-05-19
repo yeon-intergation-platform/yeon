@@ -62,6 +62,16 @@ public class StarLobbyRepository {
 		OffsetDateTime matchedAt
 	) {}
 
+	public record DiscordWebhookRow(
+		UUID id,
+		UUID ownerUserId,
+		String guestSessionId,
+		String webhookUrlEncrypted,
+		boolean enabled,
+		OffsetDateTime createdAt,
+		OffsetDateTime updatedAt
+	) {}
+
 	public List<ObservedRoomRow> listRecentRooms(int limit) {
 		return jdbc.query("""
 			select id, room_key, title, current_players, max_players, status, observed_at, last_seen_at, disappeared_at, raw_text
@@ -188,6 +198,71 @@ public class StarLobbyRepository {
 			""", guestSessionId, ruleId);
 	}
 
+
+	public Optional<DiscordWebhookRow> findDiscordWebhook(UUID ownerUserId, String guestSessionId) {
+		List<DiscordWebhookRow> rows;
+		if (ownerUserId != null) {
+			rows = jdbc.query("""
+				select id, owner_user_id, guest_session_id, webhook_url_encrypted, enabled, created_at, updated_at
+				from public.star_lobby_discord_webhooks
+				where owner_user_id = ?
+				""", (rs, i) -> discordWebhook(rs), ownerUserId);
+		} else {
+			rows = jdbc.query("""
+				select id, owner_user_id, guest_session_id, webhook_url_encrypted, enabled, created_at, updated_at
+				from public.star_lobby_discord_webhooks
+				where guest_session_id = ?
+				""", (rs, i) -> discordWebhook(rs), guestSessionId);
+		}
+		return rows.stream().findFirst();
+	}
+
+	public DiscordWebhookRow upsertDiscordWebhook(UUID id, UUID ownerUserId, String guestSessionId, String webhookUrlEncrypted, OffsetDateTime now) {
+		if (ownerUserId != null) {
+			var updated = jdbc.query("""
+				update public.star_lobby_discord_webhooks
+				set webhook_url_encrypted = ?, enabled = true, updated_at = ?
+				where owner_user_id = ?
+				returning id, owner_user_id, guest_session_id, webhook_url_encrypted, enabled, created_at, updated_at
+				""", (rs, i) -> discordWebhook(rs), webhookUrlEncrypted, now, ownerUserId);
+			if (!updated.isEmpty()) return updated.getFirst();
+		} else {
+			var updated = jdbc.query("""
+				update public.star_lobby_discord_webhooks
+				set webhook_url_encrypted = ?, enabled = true, updated_at = ?
+				where guest_session_id = ?
+				returning id, owner_user_id, guest_session_id, webhook_url_encrypted, enabled, created_at, updated_at
+				""", (rs, i) -> discordWebhook(rs), webhookUrlEncrypted, now, guestSessionId);
+			if (!updated.isEmpty()) return updated.getFirst();
+		}
+		return jdbc.queryForObject("""
+			insert into public.star_lobby_discord_webhooks (id, owner_user_id, guest_session_id, webhook_url_encrypted, enabled, created_at, updated_at)
+			values (?, ?, ?, ?, true, ?, ?)
+			returning id, owner_user_id, guest_session_id, webhook_url_encrypted, enabled, created_at, updated_at
+			""", (rs, i) -> discordWebhook(rs), id, ownerUserId, guestSessionId, webhookUrlEncrypted, now, now);
+	}
+
+	public int deleteDiscordWebhook(UUID ownerUserId, String guestSessionId) {
+		if (ownerUserId != null) {
+			return jdbc.update("""
+				delete from public.star_lobby_discord_webhooks
+				where owner_user_id = ?
+				""", ownerUserId);
+		}
+		return jdbc.update("""
+			delete from public.star_lobby_discord_webhooks
+			where guest_session_id = ?
+			""", guestSessionId);
+	}
+
+	public long countDiscordWebhooks(boolean enabledOnly) {
+		String sql = enabledOnly
+			? "select count(*) from public.star_lobby_discord_webhooks where enabled = true"
+			: "select count(*) from public.star_lobby_discord_webhooks";
+		Long count = jdbc.queryForObject(sql, Long.class);
+		return count == null ? 0L : count;
+	}
+
 	public AlertMatchRow insertAlertMatchIfAbsent(UUID id, UUID ruleId, UUID roomId, String status, String matchedKeyword, String suppressedKeyword, OffsetDateTime matchedAt) {
 		var rows = jdbc.query("""
 			insert into public.star_lobby_alert_matches (id, rule_id, room_id, status, matched_keyword, suppressed_keyword, matched_at)
@@ -238,6 +313,18 @@ public class StarLobbyRepository {
 			rs.getString("matched_keyword"),
 			rs.getString("suppressed_keyword"),
 			toOffset(rs.getTimestamp("matched_at"))
+		);
+	}
+
+	private DiscordWebhookRow discordWebhook(java.sql.ResultSet rs) throws java.sql.SQLException {
+		return new DiscordWebhookRow(
+			rs.getObject("id", UUID.class),
+			rs.getObject("owner_user_id", UUID.class),
+			rs.getString("guest_session_id"),
+			rs.getString("webhook_url_encrypted"),
+			rs.getBoolean("enabled"),
+			toOffset(rs.getTimestamp("created_at")),
+			toOffset(rs.getTimestamp("updated_at"))
 		);
 	}
 

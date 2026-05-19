@@ -154,6 +154,38 @@ export type StarLobbyAlertRuleDeletionResponse = z.infer<
   typeof starLobbyAlertRuleDeletionResponseSchema
 >;
 
+export const upsertStarLobbyDiscordWebhookBodySchema = z.object({
+  webhookUrl: z.string().trim().url().max(2000),
+});
+export type UpsertStarLobbyDiscordWebhookBody = z.infer<
+  typeof upsertStarLobbyDiscordWebhookBodySchema
+>;
+
+export const starLobbyDiscordWebhookStatusResponseSchema = z.object({
+  connected: z.boolean(),
+  updatedAt: z.string().datetime().nullable(),
+});
+export type StarLobbyDiscordWebhookStatusResponse = z.infer<
+  typeof starLobbyDiscordWebhookStatusResponseSchema
+>;
+
+export const starLobbyDiscordWebhookAdminStatusResponseSchema = z.object({
+  globalDiscordEnvRequired: z.boolean(),
+  secretConfigured: z.boolean(),
+  registeredWebhookCount: z.number().int().min(0),
+  enabledWebhookCount: z.number().int().min(0),
+});
+export type StarLobbyDiscordWebhookAdminStatusResponse = z.infer<
+  typeof starLobbyDiscordWebhookAdminStatusResponseSchema
+>;
+
+export const starLobbyDiscordWebhookTestResponseSchema = z.object({
+  sent: z.boolean(),
+});
+export type StarLobbyDiscordWebhookTestResponse = z.infer<
+  typeof starLobbyDiscordWebhookTestResponseSchema
+>;
+
 export const starLobbyObservationIngestResponseSchema = z.object({
   rooms: z.array(starLobbyObservedRoomDtoSchema),
   matches: z.array(starLobbyAlertMatchDtoSchema),

@@ -44,6 +44,41 @@ public class StarLobbyController {
 		return ResponseEntity.status(HttpStatus.CREATED).body(service.createAlertRule(ownerUserId, guestSessionId, request));
 	}
 
+	@GetMapping("/discord-webhook")
+	public DiscordWebhookStatusResponse getDiscordWebhook(
+		@RequestHeader(value = "X-Yeon-User-Id", required = false) UUID ownerUserId,
+		@RequestHeader(value = "X-Yeon-Guest-Session-Id", required = false) String guestSessionId
+	) {
+		return service.getDiscordWebhookStatus(ownerUserId, guestSessionId);
+	}
+
+	@PutMapping("/discord-webhook")
+	public DiscordWebhookStatusResponse upsertDiscordWebhook(
+		@RequestHeader(value = "X-Yeon-User-Id", required = false) UUID ownerUserId,
+		@RequestHeader(value = "X-Yeon-Guest-Session-Id", required = false) String guestSessionId,
+		@RequestBody DiscordWebhookRequest request
+	) {
+		return service.upsertDiscordWebhook(ownerUserId, guestSessionId, request);
+	}
+
+	@DeleteMapping("/discord-webhook")
+	public DiscordWebhookStatusResponse deleteDiscordWebhook(
+		@RequestHeader(value = "X-Yeon-User-Id", required = false) UUID ownerUserId,
+		@RequestHeader(value = "X-Yeon-Guest-Session-Id", required = false) String guestSessionId
+	) {
+		return service.deleteDiscordWebhook(ownerUserId, guestSessionId);
+	}
+
+	@GetMapping("/admin/discord-status")
+	public DiscordWebhookAdminStatusResponse getDiscordWebhookAdminStatus() {
+		return service.getDiscordWebhookAdminStatus();
+	}
+
+	@PostMapping("/admin/discord-test")
+	public DiscordWebhookTestResponse testDiscordWebhook(@RequestBody DiscordWebhookRequest request) {
+		return service.testDiscordWebhook(request);
+	}
+
 	@PatchMapping("/alert-rules/{ruleId}")
 	public AlertRuleMutationResponse updateAlertRule(
 		@PathVariable UUID ruleId,
