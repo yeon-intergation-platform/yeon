@@ -11,6 +11,7 @@ export * from "./home-insights";
 export * from "./instructor-dashboard";
 export * from "./instructor-workspace";
 export * from "./spaces";
+export * from "./star-lobby";
 export * from "./student-board";
 export * from "./typing-decks";
 export * from "./users";
