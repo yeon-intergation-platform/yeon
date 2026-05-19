@@ -5,6 +5,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   type StarLobbyAlertRuleListResponse,
   type StarLobbyAlertRuleMutationResponse,
+  type StarLobbyObservedRoomDto,
+  type StarLobbyRoomListResponse,
 } from "@yeon/api-contract/star-lobby";
 import {
   type FormEvent,
@@ -73,6 +75,75 @@ function playersText(
 
 function eventRoom(event: StarLobbyRealtimeEvent) {
   return event.room;
+}
+
+function roomTime(
+  room: Pick<StarLobbyObservedRoomDto, "lastSeenAt" | "observedAt">
+) {
+  return new Date(room.lastSeenAt || room.observedAt).getTime();
+}
+
+function sortRoomsByLatest(rooms: StarLobbyObservedRoomDto[]) {
+  return [...rooms].sort((left, right) => roomTime(right) - roomTime(left));
+}
+
+function mergeObservedRoom(
+  current: StarLobbyRoomListResponse | undefined,
+  room: StarLobbyObservedRoomDto
+): StarLobbyRoomListResponse {
+  const existingRooms = current ? current.rooms : [];
+  return {
+    observedAt: room.observedAt,
+    rooms: sortRoomsByLatest([
+      room,
+      ...existingRooms.filter((currentRoom) => currentRoom.id !== room.id),
+    ]),
+  };
+}
+
+function mergeDisappearedRoom(
+  current: StarLobbyRoomListResponse | undefined,
+  room: StarLobbyObservedRoomDto
+): StarLobbyRoomListResponse {
+  const existingRooms = current ? current.rooms : [];
+  return {
+    observedAt: current ? current.observedAt : room.observedAt,
+    rooms: sortRoomsByLatest(
+      existingRooms.map((currentRoom) =>
+        currentRoom.id === room.id ? room : currentRoom
+      )
+    ),
+  };
+}
+
+function toCurrentRoomsViewState(data: StarLobbyRoomListResponse | undefined) {
+  const rooms = data ? data.rooms : [];
+  const visibleRooms = rooms.filter((room) => room.status === "observed");
+  return {
+    rooms: visibleRooms.slice(0, MAX_VISIBLE_ITEMS),
+    totalCount: visibleRooms.length,
+    observedAt: data ? data.observedAt : null,
+  };
+}
+
+function relativeTimeText(value: string | null) {
+  if (!value) return "관측 전";
+  const diffSeconds = Math.max(
+    0,
+    Math.floor((Date.now() - new Date(value).getTime()) / 1000)
+  );
+  if (diffSeconds < 5) return "방금";
+  if (diffSeconds < 60) return `${diffSeconds}초 전`;
+  const diffMinutes = Math.floor(diffSeconds / 60);
+  if (diffMinutes < 60) return `${diffMinutes}분 전`;
+  const diffHours = Math.floor(diffMinutes / 60);
+  return `${diffHours}시간 전`;
+}
+
+function roomConfidenceText(room: StarLobbyObservedRoomDto) {
+  if (room.matchedKeywords.length > 0) return "키워드 감지";
+  if (room.rawText) return "관측됨";
+  return "확인 필요";
 }
 
 function mergeSavedRules(
@@ -188,6 +259,24 @@ export function StarLobbyLivePanel() {
     },
   });
 
+  const currentRoomsQuery = useQuery({
+    queryKey: ["star-lobby", "rooms"],
+    queryFn: async () => {
+      const response = await fetch("/api/v1/star-lobby/rooms", {
+        cache: "no-store",
+      });
+      if (!response.ok) {
+        throw new Error(
+          await parseErrorMessage(
+            response,
+            "스타 로비 현재 방 목록을 불러오지 못했습니다."
+          )
+        );
+      }
+      return (await response.json()) as StarLobbyRoomListResponse;
+    },
+  });
+
   const createAlertRuleMutation = useMutation({
     mutationFn: async (nextRule: KeywordRule) => {
       const currentGuestSessionId = guestSessionIdRef.current;
@@ -236,6 +325,8 @@ export function StarLobbyLivePanel() {
   });
 
   const savedRules = toSavedRulesViewState(alertRulesQuery.data);
+  const currentRoomsViewState = toCurrentRoomsViewState(currentRoomsQuery.data);
+  const currentRoomsError = currentRoomsQuery.error;
   const saveButtonViewState = toSaveButtonViewState(
     createAlertRuleMutation.isPending
   );
@@ -250,6 +341,16 @@ export function StarLobbyLivePanel() {
       );
     }
   }, [alertRulesQuery.error]);
+
+  useEffect(() => {
+    if (currentRoomsError) {
+      setError(
+        currentRoomsError instanceof Error
+          ? currentRoomsError.message
+          : "스타 로비 현재 방 목록을 불러오지 못했습니다."
+      );
+    }
+  }, [currentRoomsError]);
 
   useEffect(() => {
     let cancelled = false;
@@ -277,11 +378,25 @@ export function StarLobbyLivePanel() {
           STAR_LOBBY_EVENTS.ROOM_OBSERVED,
           (event: StarLobbyRealtimeEvent) => {
             const room = eventRoom(event);
+            queryClient.setQueryData<StarLobbyRoomListResponse>(
+              ["star-lobby", "rooms"],
+              (current) => mergeObservedRoom(current, room)
+            );
             setRooms((current) =>
               [
                 { ...room, receivedAt: new Date() },
                 ...current.filter((item) => item.id !== room.id),
               ].slice(0, MAX_VISIBLE_ITEMS)
+            );
+          }
+        );
+        room.onMessage(
+          STAR_LOBBY_EVENTS.ROOM_DISAPPEARED,
+          (event: StarLobbyRealtimeEvent) => {
+            const room = eventRoom(event);
+            queryClient.setQueryData<StarLobbyRoomListResponse>(
+              ["star-lobby", "rooms"],
+              (current) => mergeDisappearedRoom(current, room)
             );
           }
         );
@@ -330,7 +445,7 @@ export function StarLobbyLivePanel() {
       void roomRef.current?.leave();
       roomRef.current = null;
     };
-  }, []);
+  }, [queryClient]);
 
   useEffect(() => {
     if (connectionState === "connected") sendSubscription(rule);
@@ -431,6 +546,58 @@ export function StarLobbyLivePanel() {
           {error}
         </p>
       ) : null}
+
+      <section className="mt-6 rounded-2xl border border-cyan-300/20 bg-slate-950/70 p-4">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p className="text-sm font-bold text-cyan-100">현재 열린 방</p>
+            <h3 className="mt-1 font-black text-white">
+              관측된 방 {currentRoomsViewState.totalCount}개
+            </h3>
+          </div>
+          <span className="rounded-full bg-cyan-300/15 px-3 py-1 text-xs font-bold text-cyan-100">
+            마지막 관측 {relativeTimeText(currentRoomsViewState.observedAt)}
+          </span>
+        </div>
+        <p className="mt-3 text-sm leading-6 text-slate-400">
+          관측 기반 로비 목록입니다. 일부 방은 누락되거나 늦게 반영될 수
+          있습니다.
+        </p>
+
+        <div className="mt-4 space-y-3">
+          {currentRoomsViewState.rooms.length === 0 ? (
+            <p className="rounded-2xl bg-white/[0.04] p-4 text-sm leading-6 text-slate-400">
+              아직 현재 열린 방이 없습니다. 개발용 수동 관측 입력이나 실제 관측
+              이벤트가 들어오면 여기에 표시됩니다.
+            </p>
+          ) : (
+            currentRoomsViewState.rooms.map((room) => (
+              <article
+                className="rounded-2xl border border-white/10 bg-white/[0.05] p-4"
+                key={room.id}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <h4 className="font-bold text-white">{room.title}</h4>
+                    <p className="mt-1 text-xs text-slate-400">
+                      마지막 확인 {relativeTimeText(room.lastSeenAt)} ·{" "}
+                      {roomConfidenceText(room)}
+                    </p>
+                    {room.matchedKeywords.length > 0 ? (
+                      <p className="mt-2 text-xs font-bold text-cyan-100">
+                        매칭 키워드: {keywordText(room.matchedKeywords)}
+                      </p>
+                    ) : null}
+                  </div>
+                  <span className="rounded-full bg-cyan-300 px-3 py-1 text-sm font-black text-slate-950">
+                    {playersText(room)}
+                  </span>
+                </div>
+              </article>
+            ))
+          )}
+        </div>
+      </section>
 
       <div className="mt-6 grid gap-4 xl:grid-cols-2">
         <section className="rounded-2xl bg-slate-950/70 p-4">
