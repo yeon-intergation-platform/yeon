@@ -9,6 +9,7 @@ import java.time.Duration;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionSynchronization;
@@ -25,6 +26,7 @@ public class StarLobbyRealtimePublisher {
 	private final String eventsUrl;
 	private final String internalToken;
 
+	@Autowired
 	public StarLobbyRealtimePublisher(
 		ObjectMapper objectMapper,
 		@Value("${STAR_LOBBY_REALTIME_EVENTS_URL:}") String eventsUrl,
