@@ -20,10 +20,16 @@ import world.yeon.backend.star_lobby.repository.StarLobbyRepository.ObservedRoom
 @Service
 public class StarLobbyService {
 	private static final int RECENT_ROOM_LIMIT = 100;
-	private final StarLobbyRepository repository;
+	private static final String EVENT_ROOM_OBSERVED = "room_observed";
+	private static final String EVENT_ROOM_DISAPPEARED = "room_disappeared";
+	private static final String EVENT_ALERT_MATCHED = "alert_matched";
 
-	public StarLobbyService(StarLobbyRepository repository) {
+	private final StarLobbyRepository repository;
+	private final StarLobbyRealtimePublisher realtimePublisher;
+
+	public StarLobbyService(StarLobbyRepository repository, StarLobbyRealtimePublisher realtimePublisher) {
 		this.repository = repository;
+		this.realtimePublisher = realtimePublisher;
 	}
 
 	@Transactional(readOnly = true)
@@ -49,8 +55,10 @@ public class StarLobbyService {
 			observedKeys.add(roomKey);
 			savedRooms.add(repository.upsertObservedRoom(UUID.randomUUID(), roomKey, title, currentPlayers, maxPlayers, observedAt, trimToNull(input.rawText())));
 		}
-		repository.markMissingRoomsDisappeared(observedKeys, observedAt);
-		List<AlertMatchResponse> matches = matchEnabledRules(savedRooms, observedAt).stream().map(this::toMatchResponse).toList();
+		List<ObservedRoomRow> disappearedRooms = repository.markMissingRoomsDisappeared(observedKeys, observedAt);
+		List<AlertMatched> matchedAlerts = matchEnabledRules(savedRooms, observedAt);
+		List<AlertMatchResponse> matches = matchedAlerts.stream().map(alert -> toMatchResponse(alert.match())).toList();
+		realtimePublisher.publishAfterCommit(realtimeEvents(savedRooms, disappearedRooms, matchedAlerts));
 		return new ObservationIngestResponse(savedRooms.stream().map(this::toRoomResponse).toList(), matches, observedAt);
 	}
 
@@ -86,10 +94,10 @@ public class StarLobbyService {
 		return new AlertRuleMutationResponse(toRuleResponse(row));
 	}
 
-	private List<AlertMatchRow> matchEnabledRules(List<ObservedRoomRow> rooms, OffsetDateTime matchedAt) {
+	private List<AlertMatched> matchEnabledRules(List<ObservedRoomRow> rooms, OffsetDateTime matchedAt) {
 		if (rooms.isEmpty()) return List.of();
 		List<AlertRuleRow> rules = repository.listEnabledAlertRules();
-		List<AlertMatchRow> matches = new ArrayList<>();
+		List<AlertMatched> matches = new ArrayList<>();
 		for (ObservedRoomRow room : rooms) {
 			for (AlertRuleRow rule : rules) {
 				MatchResult result = match(rule, room);
@@ -103,10 +111,32 @@ public class StarLobbyService {
 					result.suppressedKeyword(),
 					matchedAt
 				);
-				if (inserted != null && "matched".equals(inserted.status())) matches.add(inserted);
+				if (inserted != null && "matched".equals(inserted.status())) matches.add(new AlertMatched(inserted, rule, room));
 			}
 		}
 		return matches;
+	}
+
+
+	private List<StarLobbyRealtimeEvent> realtimeEvents(List<ObservedRoomRow> observedRooms, List<ObservedRoomRow> disappearedRooms, List<AlertMatched> matchedAlerts) {
+		List<StarLobbyRealtimeEvent> events = new ArrayList<>();
+		for (ObservedRoomRow room : observedRooms) {
+			events.add(new StarLobbyRealtimeEvent(EVENT_ROOM_OBSERVED, toRoomResponse(room), null, null, null));
+		}
+		for (ObservedRoomRow room : disappearedRooms == null ? List.<ObservedRoomRow>of() : disappearedRooms) {
+			events.add(new StarLobbyRealtimeEvent(EVENT_ROOM_DISAPPEARED, toRoomResponse(room), null, null, null));
+		}
+		for (AlertMatched alert : matchedAlerts) {
+			AlertRuleRow rule = alert.rule();
+			events.add(new StarLobbyRealtimeEvent(
+				EVENT_ALERT_MATCHED,
+				toRoomResponse(alert.room()),
+				toMatchResponse(alert.match()),
+				toRuleResponse(rule),
+				new StarLobbyRealtimeRecipient(rule.ownerUserId(), rule.guestSessionId())
+			));
+		}
+		return events;
 	}
 
 	private MatchResult match(AlertRuleRow rule, ObservedRoomRow room) {
@@ -194,5 +224,6 @@ public class StarLobbyService {
 	}
 
 	private record Owner(UUID userId, String guestSessionId) {}
+	private record AlertMatched(AlertMatchRow match, AlertRuleRow rule, ObservedRoomRow room) {}
 	private record MatchResult(String status, String matchedKeyword, String suppressedKeyword) {}
 }

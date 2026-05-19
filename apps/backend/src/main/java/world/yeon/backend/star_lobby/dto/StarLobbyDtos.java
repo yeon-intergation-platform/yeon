@@ -68,4 +68,17 @@ public class StarLobbyDtos {
 		List<AlertMatchResponse> matches,
 		OffsetDateTime observedAt
 	) {}
+
+	public record StarLobbyRealtimeRecipient(
+		UUID ownerUserId,
+		String guestSessionId
+	) {}
+
+	public record StarLobbyRealtimeEvent(
+		String type,
+		ObservedRoomResponse room,
+		AlertMatchResponse match,
+		AlertRuleResponse rule,
+		StarLobbyRealtimeRecipient recipient
+	) {}
 }
