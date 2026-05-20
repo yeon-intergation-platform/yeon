@@ -173,20 +173,26 @@ export function CardRichEditorGlobalStyles() {
       .card-rich-editor-content a {
         text-decoration: underline;
       }
+      .card-rich-editor-content .tableWrapper {
+        max-width: 100%;
+        overflow-x: auto;
+      }
       .card-rich-editor-content table {
         border-collapse: collapse;
-        margin: 0.75rem 0;
+        margin: 0.5rem 0;
         overflow: hidden;
-        table-layout: fixed;
-        width: 100%;
+        table-layout: auto;
+        width: max-content;
+        max-width: 100%;
       }
       .card-rich-editor-content th,
       .card-rich-editor-content td {
         border: 1px solid #dcdcdc;
-        min-width: 80px;
-        padding: 0.45rem 0.55rem;
+        min-width: 0;
+        padding: 0.25rem 0.4rem;
         position: relative;
         vertical-align: top;
+        white-space: nowrap;
       }
       .card-rich-editor-content th {
         background: #f7f7f7;
