@@ -15,6 +15,7 @@ import {
   Undo2,
   type LucideIcon,
 } from "lucide-react";
+import { motion } from "framer-motion";
 
 import { CARD_EDITOR_COMPACT_CLASS } from "./card-rich-markdown-editor-view";
 
@@ -47,8 +48,16 @@ function CardEditorToolbarButton({
   const iconSizeClassName =
     density === "compact" ? CARD_EDITOR_COMPACT_CLASS.toolbarIcon : "h-4 w-4";
 
+  const buttonMotion = disabled
+    ? undefined
+    : ({
+        whileHover: { scale: 1.04, y: -1 },
+        whileTap: { scale: 0.96, y: 0 },
+        transition: { type: "spring", stiffness: 520, damping: 34 },
+      } as const);
+
   return (
-    <button
+    <motion.button
       type="button"
       disabled={disabled}
       onClick={onClick}
@@ -60,11 +69,12 @@ function CardEditorToolbarButton({
           ? "border-[#111] bg-[#111] text-white"
           : "border-[#e5e5e5] bg-white hover:border-[#111] hover:bg-[#fafafa]"
       }`}
+      {...buttonMotion}
     >
       <DisplayIcon
         className={`${iconSizeClassName} ${isLoading ? "animate-spin" : ""}`}
       />
-    </button>
+    </motion.button>
   );
 }
 
