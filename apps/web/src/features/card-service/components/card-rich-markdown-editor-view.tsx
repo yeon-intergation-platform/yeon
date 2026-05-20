@@ -174,6 +174,45 @@ export function CardRichEditorGlobalStyles() {
       .card-rich-editor-content a {
         text-decoration: underline;
       }
+      .card-rich-editor-content table {
+        border-collapse: collapse;
+        margin: 0.75rem 0;
+        overflow: hidden;
+        table-layout: fixed;
+        width: 100%;
+      }
+      .card-rich-editor-content th,
+      .card-rich-editor-content td {
+        border: 1px solid #dcdcdc;
+        min-width: 80px;
+        padding: 0.45rem 0.55rem;
+        position: relative;
+        vertical-align: top;
+      }
+      .card-rich-editor-content th {
+        background: #f7f7f7;
+        font-weight: 700;
+      }
+      .card-rich-editor-content .selectedCell::after {
+        background: rgba(17, 17, 17, 0.08);
+        bottom: 0;
+        content: "";
+        left: 0;
+        pointer-events: none;
+        position: absolute;
+        right: 0;
+        top: 0;
+        z-index: 2;
+      }
+      .card-rich-editor-content .column-resize-handle {
+        background: #111;
+        bottom: -1px;
+        pointer-events: none;
+        position: absolute;
+        right: -2px;
+        top: 0;
+        width: 3px;
+      }
       .card-rich-editor-image {
         display: block;
         margin: 0.5rem 0;

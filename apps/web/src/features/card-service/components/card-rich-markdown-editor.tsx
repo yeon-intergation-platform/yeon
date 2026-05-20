@@ -2,6 +2,10 @@
 
 import LinkExtension from "@tiptap/extension-link";
 import Placeholder from "@tiptap/extension-placeholder";
+import { Table as TableExtension } from "@tiptap/extension-table";
+import TableCellExtension from "@tiptap/extension-table-cell";
+import TableHeaderExtension from "@tiptap/extension-table-header";
+import TableRowExtension from "@tiptap/extension-table-row";
 import UnderlineExtension from "@tiptap/extension-underline";
 import { type Editor, EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
@@ -12,11 +16,13 @@ import {
   useRef,
   useState,
   type ChangeEvent,
+  type MouseEvent,
 } from "react";
 import {
   AlignHorizontalJustifyCenter,
   Columns3,
   Rows3,
+  Plus,
   type LucideIcon,
 } from "lucide-react";
 
@@ -46,16 +52,14 @@ import {
 } from "./card-editor-image-utils";
 import { normalizeCardEditorRichClipboardHtml } from "./card-editor-rich-clipboard-normalizer";
 import {
-  addColumnToSelectedCardEditorMarkdownTable,
-  addRowToSelectedCardEditorMarkdownTable,
-  isCardEditorSelectionInMarkdownTable,
-  normalizeSelectedCardEditorMarkdownTable,
-} from "./card-editor-table-edit-utils";
-import {
   convertCardEditorHtmlTableToMarkdownTable,
   convertCardEditorTabularTextToMarkdownTable,
   isCardEditorHtmlTableOnlyPaste,
+  isCardEditorMarkdownTableSeparatorRow,
+  normalizeCardEditorMarkdownTableLines,
+  splitCardEditorMarkdownTableRow,
 } from "./card-editor-table-utils";
+import { serializeCardEditorSliceToMarkdown } from "./card-editor-markdown-serializer";
 import { isSingleCardEditorYouTubeUrlText } from "./card-editor-youtube-utils";
 import { useCardEditorImageUpload } from "./use-card-editor-image-upload";
 import { CARD_SERVICE_COMMON_CLASS } from "../card-service-common.const";
@@ -87,6 +91,13 @@ type CardEditorToolbarState = {
   canRedo?: boolean;
   isTableToolbarVisible: boolean;
 };
+
+interface CardEditorTableActionOverlayState {
+  top: number;
+  left: number;
+  width: number;
+  height: number;
+}
 
 function TableEditIconButton({
   label,
@@ -142,6 +153,72 @@ function exitEmptyListItemOnBackspace(editor: Editor | null) {
   return editor.chain().focus().liftListItem("listItem").run();
 }
 
+function insertCardEditorTableFromMarkdown(
+  editor: Editor,
+  markdownTable: string
+) {
+  const normalizedLines = normalizeCardEditorMarkdownTableLines(
+    markdownTable.split("\n")
+  );
+  const lines = normalizedLines ?? markdownTable.split("\n");
+  const contentRows = lines
+    .filter((line) => !isCardEditorMarkdownTableSeparatorRow(line))
+    .map(splitCardEditorMarkdownTableRow)
+    .filter((cells) => cells.length > 0);
+
+  if (contentRows.length === 0) {
+    return false;
+  }
+
+  const columnCount = Math.max(...contentRows.map((cells) => cells.length));
+  const tableRows = contentRows.map((cells, rowIndex) => ({
+    type: "tableRow",
+    content: Array.from({ length: columnCount }, (_, cellIndex) => {
+      const text = cells[cellIndex] ?? "";
+      return {
+        type: rowIndex === 0 ? "tableHeader" : "tableCell",
+        content: [
+          {
+            type: "paragraph",
+            content: text ? [{ type: "text", text }] : undefined,
+          },
+        ],
+      };
+    }),
+  }));
+
+  return editor
+    .chain()
+    .focus()
+    .insertContent([
+      {
+        type: "table",
+        content: tableRows,
+      },
+      { type: "paragraph" },
+    ])
+    .run();
+}
+
+function findClosestTableElement(target: EventTarget | null) {
+  if (!(target instanceof HTMLElement)) {
+    return null;
+  }
+
+  return target.closest("table");
+}
+
+function findSelectedTableElement(editor: Editor) {
+  const { from } = editor.state.selection;
+  const domAtPos = editor.view.domAtPos(from);
+  const node =
+    domAtPos.node instanceof HTMLElement
+      ? domAtPos.node
+      : domAtPos.node.parentElement;
+
+  return findClosestTableElement(node);
+}
+
 const EMPTY_TOOLBAR_STATE: CardEditorToolbarState = {
   active: {},
   canUndo: false,
@@ -166,20 +243,6 @@ function positionEditorSelectionFromDropEvent(
   editor.chain().setTextSelection(position.pos).focus().run();
 }
 
-function insertCardEditorMarkdownTable(editor: Editor, markdownTable: string) {
-  const tableRows = markdownTable.split("\n").map((line) => ({
-    type: "paragraph",
-    content: [
-      {
-        type: "text",
-        text: line,
-      },
-    ],
-  }));
-
-  return editor.chain().focus().insertContent(tableRows).run();
-}
-
 export function CardRichMarkdownEditor({
   label,
   value,
@@ -195,7 +258,10 @@ export function CardRichMarkdownEditor({
   const deferredPreviewValue = useDeferredValue(value);
   const [toolbarState, setToolbarState] =
     useState<CardEditorToolbarState>(EMPTY_TOOLBAR_STATE);
+  const [tableActionOverlay, setTableActionOverlay] =
+    useState<CardEditorTableActionOverlayState | null>(null);
   const [mobilePane, setMobilePane] = useState<"edit" | "preview">("edit");
+  const editorPanelRef = useRef<HTMLDivElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const isInternalUpdateRef = useRef(false);
   const onUploadingChangeRef = useRef(onUploadingChange);
@@ -222,6 +288,26 @@ export function CardRichMarkdownEditor({
     onUploadingChangeRef.current?.(isUploading);
   }, [isUploading]);
 
+  const updateTableActionOverlay = useCallback(
+    (tableElement: HTMLTableElement | null) => {
+      const panelElement = editorPanelRef.current;
+      if (!panelElement || !tableElement) {
+        setTableActionOverlay(null);
+        return;
+      }
+
+      const panelRect = panelElement.getBoundingClientRect();
+      const tableRect = tableElement.getBoundingClientRect();
+      setTableActionOverlay({
+        top: tableRect.top - panelRect.top,
+        left: tableRect.left - panelRect.left,
+        width: tableRect.width,
+        height: tableRect.height,
+      });
+    },
+    []
+  );
+
   const scheduleToolbarStateRefresh = useCallback(
     (targetEditor: Editor | null) => {
       if (!targetEditor) return;
@@ -242,12 +328,16 @@ export function CardRichMarkdownEditor({
           },
           canUndo: targetEditor.can().undo(),
           canRedo: targetEditor.can().redo(),
-          isTableToolbarVisible:
-            isCardEditorSelectionInMarkdownTable(targetEditor),
+          isTableToolbarVisible: targetEditor.isActive("table"),
         });
+        updateTableActionOverlay(
+          targetEditor.isActive("table")
+            ? findSelectedTableElement(targetEditor)
+            : null
+        );
       });
     },
-    []
+    [updateTableActionOverlay]
   );
 
   useEffect(() => {
@@ -381,6 +471,15 @@ export function CardRichMarkdownEditor({
           target: "_blank",
         },
       }),
+      TableExtension.configure({
+        resizable: true,
+        HTMLAttributes: {
+          class: "card-rich-editor-table",
+        },
+      }),
+      TableRowExtension,
+      TableHeaderExtension,
+      TableCellExtension,
       ResizableCardEditorImageExtension,
       CardEditorYouTubeEmbedExtension,
       Placeholder.configure({
@@ -405,7 +504,7 @@ export function CardRichMarkdownEditor({
         spellcheck: "true",
         "aria-label": label,
       },
-      handleKeyDown: (view, event) => {
+      handleKeyDown: (_view, event) => {
         if (
           event.key === "Backspace" &&
           !event.altKey &&
@@ -423,6 +522,18 @@ export function CardRichMarkdownEditor({
         }
 
         if (event.key !== "Tab" || event.shiftKey) {
+          if (event.key === "Tab" && event.shiftKey) {
+            const didLiftListItem = editor?.isActive("listItem")
+              ? editor.chain().focus().liftListItem("listItem").run()
+              : false;
+
+            if (didLiftListItem) {
+              event.preventDefault();
+              scheduleToolbarStateRefresh(editor);
+              return true;
+            }
+          }
+
           return false;
         }
 
@@ -431,10 +542,20 @@ export function CardRichMarkdownEditor({
           return false;
         }
 
-        event.preventDefault();
-        view.dispatch(view.state.tr.insertText("    "));
-        return true;
+        const didSinkListItem = editor?.isActive("listItem")
+          ? editor.chain().focus().sinkListItem("listItem").run()
+          : false;
+
+        if (didSinkListItem) {
+          event.preventDefault();
+          scheduleToolbarStateRefresh(editor);
+          return true;
+        }
+
+        return false;
       },
+      clipboardTextSerializer: (slice) =>
+        serializeCardEditorSliceToMarkdown(slice),
       handlePaste: (_view, event) => {
         const clipboardData = event.clipboardData;
         if (!clipboardData || !editor) {
@@ -497,7 +618,7 @@ export function CardRichMarkdownEditor({
 
         if (markdownTable) {
           event.preventDefault();
-          insertCardEditorMarkdownTable(editor, markdownTable);
+          insertCardEditorTableFromMarkdown(editor, markdownTable);
           return true;
         }
 
@@ -617,7 +738,7 @@ export function CardRichMarkdownEditor({
   const isTableToolbarVisible =
     canUseToolbar && toolbarState.isTableToolbarVisible;
   const handleInsertTable = withEditor((instance) => {
-    insertCardEditorMarkdownTable(
+    insertCardEditorTableFromMarkdown(
       instance,
       ["| 항목 | 설명 |", "| --- | --- |", "| 예시 | 내용을 입력하세요 |"].join(
         "\n"
@@ -630,28 +751,34 @@ export function CardRichMarkdownEditor({
       <TableEditIconButton
         label="행 추가"
         icon={Rows3}
-        onClick={withEditor(addRowToSelectedCardEditorMarkdownTable)}
+        onClick={withEditor((instance) =>
+          instance.chain().focus().addRowAfter().run()
+        )}
       />
       <TableEditIconButton
         label="열 추가"
         icon={Columns3}
-        onClick={withEditor(addColumnToSelectedCardEditorMarkdownTable)}
+        onClick={withEditor((instance) =>
+          instance.chain().focus().addColumnAfter().run()
+        )}
       />
       <TableEditIconButton
-        label="표 정렬"
+        label="헤더 행 전환"
         icon={AlignHorizontalJustifyCenter}
-        onClick={withEditor(normalizeSelectedCardEditorMarkdownTable)}
+        onClick={withEditor((instance) =>
+          instance.chain().focus().toggleHeaderRow().run()
+        )}
       />
       <span className="text-[#999]">
-        커서를 표 라인에 두면 사용할 수 있어요.
+        표 위의 + 버튼으로도 행과 열을 추가할 수 있어요.
       </span>
     </div>
   ) : null;
   const shouldShowPreview = previewPlacement !== "none";
   const shouldShowDesktopInlinePreview = previewPlacement === "inline";
   const editorPanelClassName = isCompactLayout
-    ? CARD_EDITOR_COMPACT_CLASS.fieldShell
-    : "min-w-0 rounded-2xl bg-white";
+    ? `${CARD_EDITOR_COMPACT_CLASS.fieldShell} relative`
+    : "relative min-w-0 rounded-2xl bg-white";
   const mobilePaneClassName = isCompactLayout
     ? CARD_EDITOR_COMPACT_CLASS.mobileToggle
     : "mb-3 grid grid-cols-2 rounded-2xl border border-[#e5e5e5] bg-[#fafafa] p-1 lg:hidden";
@@ -663,8 +790,55 @@ export function CardRichMarkdownEditor({
     : isCompactLayout
       ? "이미지 삽입 가능"
       : "드롭·붙여넣기·버튼 삽입";
+  const handleEditorMouseMove = useCallback(
+    (event: MouseEvent<HTMLDivElement>) => {
+      updateTableActionOverlay(findClosestTableElement(event.target));
+    },
+    [updateTableActionOverlay]
+  );
+  const handleEditorMouseLeave = useCallback(() => {
+    if (editor?.isActive("table")) {
+      updateTableActionOverlay(findSelectedTableElement(editor));
+      return;
+    }
+    setTableActionOverlay(null);
+  }, [editor, updateTableActionOverlay]);
+  const tableActionOverlayElement = tableActionOverlay ? (
+    <div className="pointer-events-none absolute inset-0 z-10">
+      <button
+        type="button"
+        aria-label="뒤에 열 추가하기"
+        title="뒤에 열 추가하기"
+        className="pointer-events-auto absolute flex h-6 w-6 items-center justify-center rounded-md border border-[#d6d6d6] bg-[#111] text-white shadow-md transition-colors hover:bg-[#333]"
+        style={{
+          left: tableActionOverlay.left + tableActionOverlay.width + 6,
+          top: tableActionOverlay.top + tableActionOverlay.height / 2 - 12,
+        }}
+        onClick={withEditor((instance) =>
+          instance.chain().focus().addColumnAfter().run()
+        )}
+      >
+        <Plus className="h-3.5 w-3.5" />
+      </button>
+      <button
+        type="button"
+        aria-label="아래에 행 추가하기"
+        title="아래에 행 추가하기"
+        className="pointer-events-auto absolute flex h-6 w-6 items-center justify-center rounded-md border border-[#d6d6d6] bg-[#111] text-white shadow-md transition-colors hover:bg-[#333]"
+        style={{
+          left: tableActionOverlay.left + tableActionOverlay.width / 2 - 12,
+          top: tableActionOverlay.top + tableActionOverlay.height + 6,
+        }}
+        onClick={withEditor((instance) =>
+          instance.chain().focus().addRowAfter().run()
+        )}
+      >
+        <Plus className="h-3.5 w-3.5" />
+      </button>
+    </div>
+  ) : null;
   const editorPanel = (
-    <div className={editorPanelClassName}>
+    <div ref={editorPanelRef} className={editorPanelClassName}>
       <CardEditorToolbar
         canUseToolbar={canUseToolbar}
         isUploading={isUploading}
@@ -703,7 +877,13 @@ export function CardRichMarkdownEditor({
 
       {tableEditBar}
 
-      <EditorContent editor={editor} />
+      <div
+        onMouseLeave={handleEditorMouseLeave}
+        onMouseMove={handleEditorMouseMove}
+      >
+        <EditorContent editor={editor} />
+      </div>
+      {tableActionOverlayElement}
 
       <input
         ref={fileInputRef}
