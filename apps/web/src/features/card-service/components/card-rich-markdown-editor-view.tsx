@@ -31,7 +31,7 @@ const CARD_EDITOR_COMPACT_HEIGHT_CLASS = {
 
 export const CARD_EDITOR_COMPACT_CLASS = {
   fieldShell:
-    "grid min-w-0 rounded-xl border border-[#e5e5e5] bg-white lg:min-h-full",
+    "grid min-w-0 overflow-hidden rounded-xl border border-[#e5e5e5] bg-white lg:min-h-full",
   fieldLabel: "min-w-0 text-[13px] font-semibold leading-none text-[#111]",
   statusPill: `shrink-0 rounded-full border border-[#e5e5e5] bg-white px-2 py-0.5 ${SHARED_FEATURE_CLASS.text12Neutral}`,
   mobileToggle:
