@@ -828,8 +828,11 @@ export function CardRichMarkdownEditor({
   ) : null;
   const shouldShowPreview = previewPlacement !== "none";
   const shouldShowDesktopInlinePreview = previewPlacement === "inline";
+  const compactEditorPanelRowsClassName = isTableToolbarVisible
+    ? "grid-rows-[auto_auto_minmax(0,1fr)]"
+    : "grid-rows-[auto_minmax(0,1fr)]";
   const editorPanelClassName = isCompactLayout
-    ? `${CARD_EDITOR_COMPACT_CLASS.fieldShell} relative`
+    ? `${CARD_EDITOR_COMPACT_CLASS.fieldShell} ${compactEditorPanelRowsClassName} relative`
     : "relative min-w-0 rounded-2xl bg-white";
   const mobilePaneClassName = isCompactLayout
     ? CARD_EDITOR_COMPACT_CLASS.mobileToggle
@@ -855,6 +858,12 @@ export function CardRichMarkdownEditor({
     }
     setTableActionOverlay(null);
   }, [editor, updateTableActionOverlay]);
+  const editorBodyClassName = isCompactLayout
+    ? CARD_EDITOR_COMPACT_CLASS.editorBody
+    : undefined;
+  const editorBodyContentClassName = isCompactLayout
+    ? CARD_EDITOR_COMPACT_CLASS.editorBodyContent
+    : undefined;
   const tableActionOverlayElement = tableActionOverlay ? (
     <div className="pointer-events-none absolute inset-0 z-10">
       <button
@@ -930,10 +939,19 @@ export function CardRichMarkdownEditor({
       {tableEditBar}
 
       <div
+        className={editorBodyClassName}
         onMouseLeave={handleEditorMouseLeave}
         onMouseMove={handleEditorMouseMove}
       >
-        <EditorContent editor={editor} />
+        {isCompactLayout ? (
+          <div
+            aria-hidden="true"
+            className={CARD_EDITOR_COMPACT_CLASS.editorBodyGutter}
+          />
+        ) : null}
+        <div className={editorBodyContentClassName}>
+          <EditorContent editor={editor} />
+        </div>
       </div>
       {tableActionOverlayElement}
 

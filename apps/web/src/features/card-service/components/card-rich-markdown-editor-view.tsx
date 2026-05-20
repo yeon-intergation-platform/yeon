@@ -31,20 +31,22 @@ const CARD_EDITOR_COMPACT_HEIGHT_CLASS = {
 
 export const CARD_EDITOR_COMPACT_CLASS = {
   fieldShell:
-    "flex min-w-0 flex-col rounded-xl border border-[#e5e5e5] bg-white lg:min-h-full",
-  fieldLabel:
-    "min-w-[72px] shrink-0 pr-3 text-[13px] font-semibold leading-none text-[#111]",
+    "grid min-w-0 rounded-xl border border-[#e5e5e5] bg-white lg:min-h-full",
+  fieldLabel: "min-w-0 text-[13px] font-semibold leading-none text-[#111]",
   statusPill: `shrink-0 rounded-full border border-[#e5e5e5] bg-white px-2 py-0.5 ${SHARED_FEATURE_CLASS.text12Neutral}`,
   mobileToggle:
     "mb-2 grid grid-cols-2 rounded-xl border border-[#e5e5e5] bg-[#fafafa] p-0.5 lg:hidden",
   mobileToggleButton: "rounded-lg px-2.5 py-1.5 text-[12px] font-semibold",
   toolbar:
-    "flex min-h-[42px] flex-wrap content-start items-center gap-1.5 border-b border-[#e5e5e5] bg-white px-3 py-2",
+    "grid min-h-[42px] grid-cols-[88px_minmax(0,1fr)_auto] items-center gap-2 border-b border-[#e5e5e5] bg-white px-3 py-2",
   toolbarButton: "h-8 w-8 rounded-lg",
   toolbarIcon: "h-3.5 w-3.5",
   toolbarDivider: "mx-0.5 hidden h-8 w-px bg-[#e5e5e5] sm:block",
+  editorBody: "grid min-h-0 grid-cols-[88px_minmax(0,1fr)]",
+  editorBodyGutter: "border-r border-transparent",
+  editorBodyContent: "min-h-0 min-w-0",
   editorContent:
-    "card-rich-editor-content bg-white px-3 py-3 text-[14px] leading-6 text-[#111] outline-none",
+    "card-rich-editor-content h-full bg-white px-3 py-3 text-[14px] leading-6 text-[#111] outline-none",
   previewRail:
     "hidden rounded-xl border border-[#e5e5e5] bg-white lg:flex lg:min-h-full",
   previewFace:
