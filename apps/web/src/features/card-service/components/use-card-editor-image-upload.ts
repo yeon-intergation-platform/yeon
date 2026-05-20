@@ -53,11 +53,12 @@ function insertCardEditorImages(
       width: CARD_EDITOR_IMAGE_DEFAULT_WIDTH,
     },
   }));
+  const blockContents = [...imageContents, { type: "paragraph" }];
 
   try {
-    editor.chain().focus().insertContentAt(insertRange, imageContents).run();
+    editor.chain().focus().insertContentAt(insertRange, blockContents).run();
   } catch {
-    editor.chain().focus().insertContent(imageContents).run();
+    editor.chain().focus().insertContent(blockContents).run();
   }
 }
 

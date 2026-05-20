@@ -34,8 +34,6 @@ const CARD_EDITOR_COMPACT_HEIGHT_CLASS = {
 export const CARD_EDITOR_COMPACT_CLASS = {
   fieldShell:
     "min-w-0 overflow-hidden rounded-xl border border-[#e5e5e5] bg-white",
-  fieldHeader:
-    "flex items-center justify-between gap-2 border-b border-[#e5e5e5] bg-[#fafafa] px-3 py-2",
   fieldLabel: SHARED_FEATURE_CLASS.text13Emphasis,
   statusPill: `shrink-0 rounded-full border border-[#e5e5e5] bg-white px-2 py-0.5 ${SHARED_FEATURE_CLASS.text12Neutral}`,
   mobileToggle:
@@ -50,8 +48,6 @@ export const CARD_EDITOR_COMPACT_CLASS = {
     "card-rich-editor-content bg-white px-3 py-3 text-[14px] leading-6 text-[#111] outline-none",
   previewRail:
     "hidden min-h-0 flex-col overflow-hidden rounded-xl border border-[#e5e5e5] bg-white lg:flex lg:h-full",
-  previewRailHeader:
-    "flex items-center justify-between gap-2 border-b border-[#e5e5e5] bg-[#fafafa] px-3 py-2",
   previewFace:
     "flex min-h-0 flex-1 flex-col overflow-hidden border-b border-[#e5e5e5] bg-white last:border-b-0",
   previewFaceHeader:
@@ -180,10 +176,10 @@ export function CardRichEditorGlobalStyles() {
         text-decoration: underline;
       }
       .card-rich-editor-image {
-        display: inline-block;
+        display: block;
+        margin: 0.5rem 0;
         max-width: 100%;
         position: relative;
-        vertical-align: middle;
       }
       .card-rich-editor-image img {
         border: 1px solid #e5e5e5;
@@ -216,8 +212,14 @@ export function CardRichEditorGlobalStyles() {
         color: white;
         font-size: 11px;
         left: 8px;
+        opacity: 0;
         padding: 3px 8px;
         position: absolute;
+        transition: opacity 0.15s ease;
+      }
+      .card-rich-editor-image:hover .card-rich-editor-image-size,
+      .card-rich-editor-image.is-selected .card-rich-editor-image-size {
+        opacity: 1;
       }
     `}</style>
   );

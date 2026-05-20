@@ -46,10 +46,6 @@ export function CardAddLivePreview({
 }: CardAddLivePreviewProps) {
   return (
     <aside className={CARD_EDITOR_COMPACT_CLASS.previewRail}>
-      <div className={CARD_EDITOR_COMPACT_CLASS.previewRailHeader}>
-        <p className={SHARED_FEATURE_CLASS.text13Emphasis}>실시간 미리보기</p>
-        <p className={SHARED_FEATURE_CLASS.text12Neutral}>앞면 / 뒷면</p>
-      </div>
       <div className="flex min-h-0 flex-1 flex-col">
         <PreviewFace
           label="앞면"
@@ -59,7 +55,7 @@ export function CardAddLivePreview({
         />
         <PreviewFace
           label="뒷면"
-          title="카드 답변 / 본문"
+          title="카드 답변"
           value={backText}
           emptyText="답변을 작성하면 카드 뒷면에 표시됩니다."
         />

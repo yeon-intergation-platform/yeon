@@ -316,7 +316,7 @@ export function CardRichMarkdownEditor({
           target: "_blank",
         },
       }),
-      ResizableCardEditorImageExtension.configure({ inline: true }),
+      ResizableCardEditorImageExtension,
       CardEditorYouTubeEmbedExtension,
       Placeholder.configure({
         placeholder: placeholder ?? "내용을 입력하세요.",
@@ -355,6 +355,10 @@ export function CardRichMarkdownEditor({
       handlePaste: (_view, event) => {
         const clipboardData = event.clipboardData;
         if (!clipboardData || !editor) {
+          return false;
+        }
+
+        if (editor.isActive("codeBlock")) {
           return false;
         }
 
@@ -584,16 +588,6 @@ export function CardRichMarkdownEditor({
       : "드롭·붙여넣기·버튼 삽입";
   const editorPanel = (
     <div className={editorPanelClassName}>
-      {isCompactLayout ? (
-        <div className={CARD_EDITOR_COMPACT_CLASS.fieldHeader}>
-          <label className={CARD_EDITOR_COMPACT_CLASS.fieldLabel}>
-            {label}
-          </label>
-          <span className={CARD_EDITOR_COMPACT_CLASS.statusPill}>
-            {editorStatusText}
-          </span>
-        </div>
-      ) : null}
       <CardEditorToolbar
         canUseToolbar={canUseToolbar}
         isUploading={isUploading}
@@ -626,6 +620,8 @@ export function CardRichMarkdownEditor({
         onUndo={withEditor((instance) => instance.chain().focus().undo().run())}
         onRedo={withEditor((instance) => instance.chain().focus().redo().run())}
         density={isCompactLayout ? "compact" : "default"}
+        leadingLabel={isCompactLayout ? label : undefined}
+        trailingStatus={isCompactLayout ? editorStatusText : undefined}
       />
 
       {tableEditBar}

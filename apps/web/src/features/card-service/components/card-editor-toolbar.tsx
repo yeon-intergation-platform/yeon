@@ -94,6 +94,8 @@ interface CardEditorToolbarProps {
   onUndo: () => void;
   onRedo: () => void;
   density?: CardEditorToolbarDensity;
+  leadingLabel?: string;
+  trailingStatus?: string;
 }
 
 export function CardEditorToolbar({
@@ -114,6 +116,8 @@ export function CardEditorToolbar({
   onUndo,
   onRedo,
   density = "default",
+  leadingLabel,
+  trailingStatus,
 }: CardEditorToolbarProps) {
   const toolbarClassName =
     density === "compact"
@@ -124,8 +128,8 @@ export function CardEditorToolbar({
       ? CARD_EDITOR_COMPACT_CLASS.toolbarDivider
       : "mx-1 hidden h-10 w-px bg-[#e5e5e5] sm:block";
 
-  return (
-    <div className={toolbarClassName}>
+  const toolbarControls = (
+    <>
       <CardEditorToolbarButton
         label="실행 취소"
         icon={Undo2}
@@ -212,6 +216,28 @@ export function CardEditorToolbar({
         density={density}
         onClick={onImage}
       />
-    </div>
+    </>
   );
+
+  if (density === "compact") {
+    return (
+      <div className={toolbarClassName}>
+        {leadingLabel ? (
+          <span className={`${CARD_EDITOR_COMPACT_CLASS.fieldLabel} pt-1`}>
+            {leadingLabel}
+          </span>
+        ) : null}
+        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
+          {toolbarControls}
+        </div>
+        {trailingStatus ? (
+          <span className={`${CARD_EDITOR_COMPACT_CLASS.statusPill} mt-1`}>
+            {trailingStatus}
+          </span>
+        ) : null}
+      </div>
+    );
+  }
+
+  return <div className={toolbarClassName}>{toolbarControls}</div>;
 }
