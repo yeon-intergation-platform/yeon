@@ -13,6 +13,12 @@ import {
   useState,
   type ChangeEvent,
 } from "react";
+import {
+  AlignHorizontalJustifyCenter,
+  Columns3,
+  Rows3,
+  type LucideIcon,
+} from "lucide-react";
 
 import {
   CardEditorYouTubeEmbedExtension,
@@ -81,6 +87,28 @@ type CardEditorToolbarState = {
   canRedo?: boolean;
   isTableToolbarVisible: boolean;
 };
+
+function TableEditIconButton({
+  label,
+  icon: Icon,
+  onClick,
+}: {
+  label: string;
+  icon: LucideIcon;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      title={label}
+      className={`flex ${CARD_EDITOR_COMPACT_CLASS.toolbarButton} items-center justify-center border border-[#e5e5e5] bg-[#fafafa] text-[#333] transition-colors hover:border-[#cfcfcf] hover:bg-[#f2f2f2]`}
+      onClick={onClick}
+    >
+      <Icon className={CARD_EDITOR_COMPACT_CLASS.toolbarIcon} />
+    </button>
+  );
+}
 
 const EMPTY_TOOLBAR_STATE: CardEditorToolbarState = {
   active: {},
@@ -551,27 +579,21 @@ export function CardRichMarkdownEditor({
   const tableEditBar = isTableToolbarVisible ? (
     <div className="flex flex-wrap items-center gap-2 border-x border-[#e5e5e5] bg-[#fff] px-3 py-2 text-[12px] font-medium text-[#777] md:px-4">
       <span className="mr-1 text-[#555]">표 편집</span>
-      <button
-        type="button"
-        className="rounded-lg border border-[#e5e5e5] bg-[#fafafa] px-2.5 py-1.5 text-[#333] transition-colors hover:border-[#cfcfcf] hover:bg-[#f2f2f2]"
+      <TableEditIconButton
+        label="행 추가"
+        icon={Rows3}
         onClick={withEditor(addRowToSelectedCardEditorMarkdownTable)}
-      >
-        행 추가
-      </button>
-      <button
-        type="button"
-        className="rounded-lg border border-[#e5e5e5] bg-[#fafafa] px-2.5 py-1.5 text-[#333] transition-colors hover:border-[#cfcfcf] hover:bg-[#f2f2f2]"
+      />
+      <TableEditIconButton
+        label="열 추가"
+        icon={Columns3}
         onClick={withEditor(addColumnToSelectedCardEditorMarkdownTable)}
-      >
-        열 추가
-      </button>
-      <button
-        type="button"
-        className="rounded-lg border border-[#e5e5e5] bg-[#fafafa] px-2.5 py-1.5 text-[#333] transition-colors hover:border-[#cfcfcf] hover:bg-[#f2f2f2]"
+      />
+      <TableEditIconButton
+        label="표 정렬"
+        icon={AlignHorizontalJustifyCenter}
         onClick={withEditor(normalizeSelectedCardEditorMarkdownTable)}
-      >
-        표 정렬
-      </button>
+      />
       <span className="text-[#999]">
         커서를 표 라인에 두면 사용할 수 있어요.
       </span>
