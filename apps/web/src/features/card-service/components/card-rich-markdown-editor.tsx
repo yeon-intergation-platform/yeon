@@ -45,6 +45,7 @@ import {
   isCardEditorClipboardImageOnly,
 } from "./card-editor-clipboard-utils";
 import { parseSingleCardEditorMarkdownCodeFence } from "./card-editor-codeblock-utils";
+import { getCardEditorLineLeadingIndentBeforeCursor } from "./card-editor-enter-indent-utils";
 import {
   CARD_EDITOR_IMAGE_ACCEPT,
   getCardEditorExtensionFromMime,
@@ -151,6 +152,41 @@ function exitEmptyListItemOnBackspace(editor: Editor | null) {
   }
 
   return editor.chain().focus().liftListItem("listItem").run();
+}
+
+function carryParagraphIndentOnEnter(editor: Editor | null) {
+  if (!editor || !editor.state.selection.empty) {
+    return false;
+  }
+
+  if (
+    !editor.isActive("paragraph") ||
+    editor.isActive("listItem") ||
+    editor.isActive("codeBlock") ||
+    editor.isActive("table")
+  ) {
+    return false;
+  }
+
+  const { $from } = editor.state.selection;
+
+  if ($from.parent.type.name !== "paragraph") {
+    return false;
+  }
+
+  const textBeforeCursor = $from.parent.textBetween(
+    0,
+    $from.parentOffset,
+    "\n",
+    "\n"
+  );
+  const indent = getCardEditorLineLeadingIndentBeforeCursor(textBeforeCursor);
+
+  if (!indent) {
+    return false;
+  }
+
+  return editor.chain().focus().splitBlock().insertContent(indent).run();
 }
 
 function insertCardEditorTableFromMarkdown(
@@ -515,6 +551,22 @@ export function CardRichMarkdownEditor({
           const didExitEmptyListItem = exitEmptyListItemOnBackspace(editor);
 
           if (didExitEmptyListItem) {
+            event.preventDefault();
+            scheduleToolbarStateRefresh(editor);
+            return true;
+          }
+        }
+
+        if (
+          event.key === "Enter" &&
+          !event.altKey &&
+          !event.ctrlKey &&
+          !event.metaKey &&
+          !event.shiftKey
+        ) {
+          const didCarryParagraphIndent = carryParagraphIndentOnEnter(editor);
+
+          if (didCarryParagraphIndent) {
             event.preventDefault();
             scheduleToolbarStateRefresh(editor);
             return true;
