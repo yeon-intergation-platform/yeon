@@ -223,18 +223,24 @@ export function CardEditorToolbar({
     return (
       <div className={toolbarClassName}>
         {leadingLabel ? (
-          <span className={`${CARD_EDITOR_COMPACT_CLASS.fieldLabel} pt-1`}>
+          <span className={CARD_EDITOR_COMPACT_CLASS.fieldLabel}>
             {leadingLabel}
           </span>
-        ) : null}
-        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
+        ) : (
+          <span aria-hidden="true" />
+        )}
+        <div className="flex min-w-0 flex-wrap items-center gap-1.5">
           {toolbarControls}
         </div>
         {trailingStatus ? (
-          <span className={`${CARD_EDITOR_COMPACT_CLASS.statusPill} mt-1`}>
+          <span
+            className={`${CARD_EDITOR_COMPACT_CLASS.statusPill} justify-self-end whitespace-nowrap`}
+          >
             {trailingStatus}
           </span>
-        ) : null}
+        ) : (
+          <span aria-hidden="true" />
+        )}
       </div>
     );
   }
