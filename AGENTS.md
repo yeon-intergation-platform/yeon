@@ -195,7 +195,8 @@ https://dev.yeon.world/counseling-service/api/v1/integrations/<provider>/auth/ca
 - breaking/minor 의도가 있으면 PR title/body/label에 `semver:major`, `semver:minor`, `BREAKING CHANGE`, `feat:` 같은 결정적 신호를 남긴다.
 - root `package.json`의 `version`은 자동 운영 릴리즈 번호를 막거나 대체하는 기준으로 쓰지 않는다.
 - PR 생성/merge 명령을 수행한 뒤에는 머지 상태 재조회나 CI/CD/배포/릴리즈 완료 대기로 오래 멈추지 않는다. 후속 상태는 GitHub Actions 비동기 흐름에 맡기고, 필요한 URL만 남긴다.
-- 사후 동작 확인은 개발자가 이미 `pnpm dev:all`로 켜둔 `http://localhost:3000/`을 기준으로 한다. 에이전트가 직접 dev server를 기동하지 않는다.
+- Playwright 같은 로컬 브라우저 확인이 필요한 경우 에이전트가 직접 `pnpm dev:all`을 기동해도 된다. 단, 사용자 컴퓨터의 RAM을 아껴야 하므로 중복 기동을 금지한다. 먼저 `lsof -nP -iTCP:3000 -iTCP:3001 -iTCP:3002 -iTCP:8000 -iTCP:8081 -iTCP:8082 -iTCP:8083 -iTCP:2567 -sTCP:LISTEN`처럼 관련 포트 점유 상태를 확인한다. 이미 `pnpm dev:all`로 web/backend/mobile/race-server가 정상 기동 중이면 재사용하고, 매번 끄고 다시 켜지 않는다. 필요한 포트가 비어 있거나 기존 프로세스가 죽은 상태일 때만 `pnpm dev:all`을 실행한다. 충돌 프로세스를 종료해야 할 때는 Yeon 로컬 개발 프로세스인지 확인하고, unrelated 프로세스를 함부로 죽이지 않는다. 확인 후에는 Playwright로 실제 동작을 검증하고, 에이전트가 새로 띄운 dev 서버는 검증 종료 후 필요하면 정리한다.
+- 로컬 검증 중 Docker 컨테이너가 필요한 경우에도 먼저 `docker ps`/`docker ps -a`로 기존 컨테이너를 확인하고 재사용한다. 같은 목적의 DB/MCP/테스트 컨테이너를 반복 생성해 RAM을 낭비하지 않는다. 불필요하게 쌓인 에이전트 생성 컨테이너가 보이면 소유와 용도를 확인한 뒤 정리하며, 프로젝트/사용자 장기 실행 컨테이너는 근거 없이 중지하지 않는다.
 - 로컬 커밋 훅에서 `pnpm build`를 기본적으로 강제하지 않는다. `pnpm --filter @yeon/web lint`/`typecheck`로 선검증하고, 웹 빌드는 CD 이미지 빌드 단계에서 실패 게이트를 수행한다.
 
 ## Claude CLI / OMC skill 참고
