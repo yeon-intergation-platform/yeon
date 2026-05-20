@@ -20,6 +20,7 @@ import {
 } from "./card-editor-extensions";
 import { CardEditorToolbar } from "./card-editor-toolbar";
 import {
+  CARD_EDITOR_COMPACT_CLASS,
   CARD_EDITOR_HEIGHT_CLASS,
   CardEditorPreview,
   CardRichEditorGlobalStyles,
@@ -147,6 +148,10 @@ export function CardRichMarkdownEditor({
     handleImageSourceFileReplacements,
   } = useCardEditorImageUpload();
   const heightClassName = getCardEditorHeightClass(density, layoutMode);
+  const isCompactLayout = layoutMode === "compact";
+  const editorContentClassName = isCompactLayout
+    ? `${CARD_EDITOR_COMPACT_CLASS.editorContent} ${heightClassName.editor}`
+    : `card-rich-editor-content ${heightClassName.editor} rounded-b-2xl border-x border-b border-[#e5e5e5] bg-white px-4 py-5 text-[15px] leading-7 text-[#111] outline-none md:px-5 md:text-[16px]`;
 
   useEffect(() => {
     onUploadingChange?.(isUploading);
@@ -331,7 +336,7 @@ export function CardRichMarkdownEditor({
     },
     editorProps: {
       attributes: {
-        class: `card-rich-editor-content ${heightClassName.editor} rounded-b-2xl border-x border-b border-[#e5e5e5] bg-white px-4 py-5 text-[15px] leading-7 text-[#111] outline-none md:px-5 md:text-[16px]`,
+        class: editorContentClassName,
         spellcheck: "true",
         "aria-label": label,
       },
@@ -563,8 +568,32 @@ export function CardRichMarkdownEditor({
   ) : null;
   const shouldShowPreview = previewPlacement !== "none";
   const shouldShowDesktopInlinePreview = previewPlacement === "inline";
+  const editorPanelClassName = isCompactLayout
+    ? CARD_EDITOR_COMPACT_CLASS.fieldShell
+    : "min-w-0 rounded-2xl bg-white";
+  const mobilePaneClassName = isCompactLayout
+    ? CARD_EDITOR_COMPACT_CLASS.mobileToggle
+    : "mb-3 grid grid-cols-2 rounded-2xl border border-[#e5e5e5] bg-[#fafafa] p-1 lg:hidden";
+  const mobilePaneButtonClassName = isCompactLayout
+    ? CARD_EDITOR_COMPACT_CLASS.mobileToggleButton
+    : "rounded-xl px-3 py-2 text-[13px] font-semibold";
+  const editorStatusText = isUploading
+    ? "업로드 중"
+    : isCompactLayout
+      ? "이미지 삽입 가능"
+      : "드롭·붙여넣기·버튼 삽입";
   const editorPanel = (
-    <div className="min-w-0 rounded-2xl bg-white">
+    <div className={editorPanelClassName}>
+      {isCompactLayout ? (
+        <div className={CARD_EDITOR_COMPACT_CLASS.fieldHeader}>
+          <label className={CARD_EDITOR_COMPACT_CLASS.fieldLabel}>
+            {label}
+          </label>
+          <span className={CARD_EDITOR_COMPACT_CLASS.statusPill}>
+            {editorStatusText}
+          </span>
+        </div>
+      ) : null}
       <CardEditorToolbar
         canUseToolbar={canUseToolbar}
         isUploading={isUploading}
@@ -596,11 +625,12 @@ export function CardRichMarkdownEditor({
         onImage={() => fileInputRef.current?.click()}
         onUndo={withEditor((instance) => instance.chain().focus().undo().run())}
         onRedo={withEditor((instance) => instance.chain().focus().redo().run())}
+        density={isCompactLayout ? "compact" : "default"}
       />
 
       {tableEditBar}
 
-      <EditorContent editor={editor} className={heightClassName.editor} />
+      <EditorContent editor={editor} />
 
       <input
         ref={fileInputRef}
@@ -628,31 +658,33 @@ export function CardRichMarkdownEditor({
   );
 
   return (
-    <div className="rounded-2xl bg-white">
-      <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
-        <div>
-          <label
-            className={`${CARD_SERVICE_COMMON_CLASS.panelTextEmphasis} md:text-[15px]`}
-          >
-            {label}
-          </label>
-          {helperText ? (
-            <p className="mt-1 text-[12px] leading-5 text-[#777]">
-              {helperText}
-            </p>
-          ) : null}
+    <div className={isCompactLayout ? "bg-white" : "rounded-2xl bg-white"}>
+      {!isCompactLayout ? (
+        <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
+          <div className="min-w-0">
+            <label
+              className={`${CARD_SERVICE_COMMON_CLASS.panelTextEmphasis} md:text-[15px]`}
+            >
+              {label}
+            </label>
+            {helperText ? (
+              <p className="mt-1 text-[12px] leading-5 text-[#777]">
+                {helperText}
+              </p>
+            ) : null}
+          </div>
+          <span className="text-[12px] font-medium text-[#777]">
+            {editorStatusText}
+          </span>
         </div>
-        <span className="text-[12px] font-medium text-[#777]">
-          {isUploading ? "업로드 중" : "드롭·붙여넣기·버튼 삽입"}
-        </span>
-      </div>
+      ) : null}
 
       {shouldShowPreview ? (
-        <div className="mb-3 grid grid-cols-2 rounded-2xl border border-[#e8e8e8] bg-[#fafafa] p-1 lg:hidden">
+        <div className={mobilePaneClassName}>
           <button
             type="button"
             onClick={() => setMobilePane("edit")}
-            className={`rounded-xl px-3 py-2 text-[13px] font-semibold ${
+            className={`${mobilePaneButtonClassName} ${
               mobilePane === "edit"
                 ? "bg-white text-[#111] shadow-sm"
                 : "text-[#777]"
@@ -663,7 +695,7 @@ export function CardRichMarkdownEditor({
           <button
             type="button"
             onClick={() => setMobilePane("preview")}
-            className={`rounded-xl px-3 py-2 text-[13px] font-semibold ${
+            className={`${mobilePaneButtonClassName} ${
               mobilePane === "preview"
                 ? "bg-white text-[#111] shadow-sm"
                 : "text-[#777]"

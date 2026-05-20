@@ -21,14 +21,43 @@ export const CARD_EDITOR_HEIGHT_CLASS = {
 const CARD_EDITOR_COMPACT_HEIGHT_CLASS = {
   question: {
     editor:
-      "h-[180px] min-h-[180px] max-h-[180px] overflow-y-auto md:h-[210px] md:min-h-[210px] md:max-h-[210px]",
-    preview: "min-h-[180px] md:min-h-[210px]",
+      "h-[140px] min-h-[140px] max-h-[140px] overflow-y-auto md:h-[160px] md:min-h-[160px] md:max-h-[160px]",
+    preview: "min-h-[140px] md:min-h-[160px]",
   },
   answer: {
     editor:
-      "h-[220px] min-h-[220px] max-h-[220px] overflow-y-auto md:h-[270px] md:min-h-[270px] md:max-h-[270px]",
-    preview: "min-h-[220px] md:min-h-[270px]",
+      "h-[160px] min-h-[160px] max-h-[160px] overflow-y-auto md:h-[185px] md:min-h-[185px] md:max-h-[185px]",
+    preview: "min-h-[160px] md:min-h-[185px]",
   },
+} as const;
+
+export const CARD_EDITOR_COMPACT_CLASS = {
+  fieldShell:
+    "min-w-0 overflow-hidden rounded-xl border border-[#e5e5e5] bg-white",
+  fieldHeader:
+    "flex items-center justify-between gap-2 border-b border-[#e5e5e5] bg-[#fafafa] px-3 py-2",
+  fieldLabel: SHARED_FEATURE_CLASS.text13Emphasis,
+  statusPill: `shrink-0 rounded-full border border-[#e5e5e5] bg-white px-2 py-0.5 ${SHARED_FEATURE_CLASS.text12Neutral}`,
+  mobileToggle:
+    "mb-2 grid grid-cols-2 rounded-xl border border-[#e5e5e5] bg-[#fafafa] p-0.5 lg:hidden",
+  mobileToggleButton: "rounded-lg px-2.5 py-1.5 text-[12px] font-semibold",
+  toolbar:
+    "flex min-h-[42px] flex-wrap content-start items-center gap-1.5 border-b border-[#e5e5e5] bg-white px-3 py-2",
+  toolbarButton: "h-8 w-8 rounded-lg",
+  toolbarIcon: "h-3.5 w-3.5",
+  toolbarDivider: "mx-0.5 hidden h-8 w-px bg-[#e5e5e5] sm:block",
+  editorContent:
+    "card-rich-editor-content bg-white px-3 py-3 text-[14px] leading-6 text-[#111] outline-none",
+  previewRail:
+    "hidden min-h-0 flex-col overflow-hidden rounded-xl border border-[#e5e5e5] bg-white lg:flex lg:h-full",
+  previewRailHeader:
+    "flex items-center justify-between gap-2 border-b border-[#e5e5e5] bg-[#fafafa] px-3 py-2",
+  previewFace:
+    "flex min-h-0 flex-1 flex-col overflow-hidden border-b border-[#e5e5e5] bg-white last:border-b-0",
+  previewFaceHeader:
+    "flex items-center justify-between gap-2 border-b border-[#e5e5e5] px-3 py-2",
+  previewFaceBody:
+    "min-h-[120px] flex-1 overflow-y-auto px-3 py-3 text-[13px] leading-6 text-[#111] md:min-h-[145px]",
 } as const;
 
 export function getCardEditorHeightClass(
@@ -103,7 +132,7 @@ function CardEditorPreviewComponent({
       eyebrow={label}
       value={value}
       emptyText="작성한 내용이 오른쪽에 실제 카드처럼 표시됩니다."
-      bodyClassName={`flex-1 p-5 md:p-6 ${previewHeightClassName}`}
+      bodyClassName={`flex-1 p-3 md:p-4 ${previewHeightClassName}`}
     />
   );
 }
