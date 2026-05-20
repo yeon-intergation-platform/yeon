@@ -38,7 +38,7 @@ export const CARD_EDITOR_COMPACT_CLASS = {
     "mb-2 grid grid-cols-2 rounded-xl border border-[#e5e5e5] bg-[#fafafa] p-0.5 lg:hidden",
   mobileToggleButton: "rounded-lg px-2.5 py-1.5 text-[12px] font-semibold",
   toolbar:
-    "grid min-h-[42px] grid-cols-[88px_minmax(0,1fr)] items-center gap-2 border-b border-[#e5e5e5] bg-white px-3 py-2",
+    "grid min-h-12 grid-cols-[88px_minmax(0,1fr)] items-center gap-2 border-b border-[#e5e5e5] bg-white px-3 py-2",
   toolbarButton: "h-8 w-8 rounded-lg",
   toolbarIcon: "h-3.5 w-3.5",
   toolbarDivider: "mx-0.5 hidden h-8 w-px bg-[#e5e5e5] sm:block",
@@ -49,7 +49,7 @@ export const CARD_EDITOR_COMPACT_CLASS = {
   previewFace:
     "flex h-full min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-[#e5e5e5] bg-white",
   previewFaceHeader:
-    "flex items-center justify-between gap-2 border-b border-[#e5e5e5] px-3 py-2",
+    "flex min-h-12 items-center justify-between gap-2 border-b border-[#e5e5e5] px-3 py-2",
   previewFaceBody:
     "min-h-0 flex-1 overflow-visible px-3 py-3 text-[13px] leading-6 text-[#111]",
 } as const;
