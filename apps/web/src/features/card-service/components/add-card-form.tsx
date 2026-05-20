@@ -9,7 +9,6 @@ import {
 } from "react";
 
 import { analyticsEvents, trackEvent } from "@/lib/analytics";
-import { CARD_SERVICE_COMMON_CLASS } from "../card-service-common.const";
 import { useAddCard } from "../hooks";
 import { CardAddLivePreview } from "./card-add-live-preview";
 import { CardRichMarkdownEditor } from "./card-rich-markdown-editor";
@@ -22,13 +21,30 @@ interface CardEditorValue {
   backText: string;
 }
 
+export interface AddCardFormActionState {
+  canSubmit: boolean;
+  isPending: boolean;
+  actionLabel: string;
+  pendingActionLabel: string;
+  errorMessage: string | null;
+}
+
+export const ADD_CARD_FORM_INITIAL_ACTION_STATE: AddCardFormActionState = {
+  canSubmit: false,
+  isPending: false,
+  actionLabel: "카드 저장",
+  pendingActionLabel: "저장 중...",
+  errorMessage: null,
+};
+
 interface AddCardFormProps {
   deckId: string;
+  formId: string;
   submitLabel?: string;
   pendingLabel?: string;
   onSaved?: () => void;
-  onCancel?: () => void;
   onDirtyChange?: (dirty: boolean) => void;
+  onActionStateChange?: (state: AddCardFormActionState) => void;
 }
 
 function normalizeValue(value?: Partial<CardEditorValue>): CardEditorValue {
@@ -57,11 +73,12 @@ function snapshotValue(value: CardEditorValue) {
 
 export function AddCardForm({
   deckId,
+  formId,
   submitLabel,
   pendingLabel,
   onSaved,
-  onCancel,
   onDirtyChange,
+  onActionStateChange,
 }: AddCardFormProps) {
   const draftKey = useMemo(() => buildDraftKey(deckId), [deckId]);
   const initialSnapshot = useMemo(() => normalizeValue(), []);
@@ -172,9 +189,23 @@ export function AddCardForm({
   const pendingActionLabel =
     pendingLabel ?? (isUploading ? "이미지 업로드 중..." : "저장 중...");
   const errorMessage = addMutation.error?.message || null;
+  const actionState = useMemo<AddCardFormActionState>(
+    () => ({
+      canSubmit,
+      isPending,
+      actionLabel,
+      pendingActionLabel,
+      errorMessage,
+    }),
+    [actionLabel, canSubmit, errorMessage, isPending, pendingActionLabel]
+  );
+
+  useEffect(() => {
+    onActionStateChange?.(actionState);
+  }, [actionState, onActionStateChange]);
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+    <form id={formId} onSubmit={handleSubmit} className="flex flex-col gap-4">
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(320px,0.52fr)] lg:items-stretch">
         <div className="flex min-w-0 flex-col gap-4">
           <div className="rounded-2xl border border-[#ececec] bg-white p-3 md:p-4">
@@ -218,29 +249,6 @@ export function AddCardForm({
           frontText={deferredFrontText}
           backText={deferredBackText}
         />
-      </div>
-
-      {errorMessage ? (
-        <p className="text-[13px] font-medium text-red-600">{errorMessage}</p>
-      ) : null}
-
-      <div className="sticky bottom-0 z-10 flex flex-col-reverse gap-3 rounded-2xl border border-[#efefef] bg-white/95 px-4 py-4 shadow-[0_-12px_36px_rgba(17,17,17,0.06)] backdrop-blur sm:flex-row sm:items-center sm:justify-end">
-        {onCancel ? (
-          <button
-            type="button"
-            onClick={onCancel}
-            className={`${CARD_SERVICE_COMMON_CLASS.panelTextEmphasis} rounded-2xl border border-[#e5e5e5] px-5 py-3 transition-colors hover:bg-[#fafafa]`}
-          >
-            취소
-          </button>
-        ) : null}
-        <button
-          type="submit"
-          disabled={!canSubmit}
-          className="rounded-2xl bg-[#111] px-5 py-3 text-[14px] font-semibold text-white transition-colors hover:bg-[#333] disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {isPending ? pendingActionLabel : actionLabel}
-        </button>
       </div>
     </form>
   );

@@ -1,8 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useId, useMemo, useState } from "react";
 
-import { AddCardForm } from "./add-card-form";
+import { CARD_SERVICE_COMMON_CLASS } from "../card-service-common.const";
+import {
+  ADD_CARD_FORM_INITIAL_ACTION_STATE,
+  AddCardForm,
+  type AddCardFormActionState,
+} from "./add-card-form";
 import { BulkAddCardsForm } from "./bulk-add-cards-form";
 import { ResponsiveModal } from "./responsive-modal";
 
@@ -18,9 +23,75 @@ interface AddCardsPanelProps {
   onClose: () => void;
 }
 
+function isSameActionState(
+  left: AddCardFormActionState,
+  right: AddCardFormActionState
+) {
+  return (
+    left.canSubmit === right.canSubmit &&
+    left.isPending === right.isPending &&
+    left.actionLabel === right.actionLabel &&
+    left.pendingActionLabel === right.pendingActionLabel &&
+    left.errorMessage === right.errorMessage
+  );
+}
+
+function ManualAddCardFooter({
+  formId,
+  state,
+  onCancel,
+}: {
+  formId: string;
+  state: AddCardFormActionState;
+  onCancel: () => void;
+}) {
+  const isActionPending = state.isPending;
+  const buttonLabel = isActionPending
+    ? state.pendingActionLabel
+    : state.actionLabel;
+
+  return (
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="min-h-5 min-w-0">
+        {state.errorMessage ? (
+          <p className="text-[13px] font-medium leading-5 text-red-600">
+            {state.errorMessage}
+          </p>
+        ) : (
+          <p className="text-[12px] leading-5 text-[#888]">
+            질문과 답변을 모두 작성하면 저장할 수 있습니다.
+          </p>
+        )}
+      </div>
+      <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-end">
+        <button
+          type="button"
+          onClick={onCancel}
+          disabled={isActionPending}
+          className={`${CARD_SERVICE_COMMON_CLASS.panelTextEmphasis} rounded-2xl border border-[#e5e5e5] px-5 py-3 transition-colors hover:bg-[#fafafa] disabled:cursor-not-allowed disabled:opacity-50`}
+        >
+          취소
+        </button>
+        <button
+          type="submit"
+          form={formId}
+          disabled={!state.canSubmit}
+          className="rounded-2xl bg-[#111] px-5 py-3 text-[14px] font-semibold text-white transition-colors hover:bg-[#333] disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {buttonLabel}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function AddCardsPanel({ deckId, onClose }: AddCardsPanelProps) {
+  const manualFormId = useId();
   const [mode, setMode] = useState<AddCardMode>(ADD_CARD_MODES.manual);
   const [isDirty, setDirty] = useState(false);
+  const [manualActionState, setManualActionState] = useState(
+    ADD_CARD_FORM_INITIAL_ACTION_STATE
+  );
 
   const modeDescription = useMemo(
     () =>
@@ -32,7 +103,23 @@ export function AddCardsPanel({ deckId, onClose }: AddCardsPanelProps) {
   const modalWidthClassName =
     mode === ADD_CARD_MODES.manual ? "max-w-[1180px]" : "max-w-[880px]";
 
-  const handleRequestClose = () => {
+  const handleManualActionStateChange = useCallback(
+    (nextState: AddCardFormActionState) => {
+      setManualActionState((prevState) =>
+        isSameActionState(prevState, nextState) ? prevState : nextState
+      );
+    },
+    []
+  );
+
+  const handleRequestClose = useCallback(() => {
+    if (mode === ADD_CARD_MODES.manual && manualActionState.isPending) {
+      window.alert(
+        "이미지 업로드 또는 저장이 진행 중입니다. 완료 후 닫아주세요."
+      );
+      return;
+    }
+
     if (
       isDirty &&
       !window.confirm(
@@ -42,7 +129,16 @@ export function AddCardsPanel({ deckId, onClose }: AddCardsPanelProps) {
       return;
     }
     onClose();
-  };
+  }, [isDirty, manualActionState.isPending, mode, onClose]);
+
+  const footer =
+    mode === ADD_CARD_MODES.manual ? (
+      <ManualAddCardFooter
+        formId={manualFormId}
+        state={manualActionState}
+        onCancel={handleRequestClose}
+      />
+    ) : null;
 
   return (
     <ResponsiveModal
@@ -50,6 +146,7 @@ export function AddCardsPanel({ deckId, onClose }: AddCardsPanelProps) {
       description={modeDescription}
       onClose={handleRequestClose}
       widthClassName={modalWidthClassName}
+      footer={footer}
     >
       <div className="flex rounded-2xl bg-[#f3f3f3] p-1 text-[14px] font-semibold">
         <button
@@ -80,9 +177,10 @@ export function AddCardsPanel({ deckId, onClose }: AddCardsPanelProps) {
         {mode === ADD_CARD_MODES.manual ? (
           <AddCardForm
             deckId={deckId}
+            formId={manualFormId}
             onSaved={onClose}
-            onCancel={handleRequestClose}
             onDirtyChange={setDirty}
+            onActionStateChange={handleManualActionStateChange}
           />
         ) : (
           <BulkAddCardsForm
