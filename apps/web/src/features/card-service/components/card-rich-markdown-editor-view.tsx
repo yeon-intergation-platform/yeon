@@ -42,9 +42,7 @@ export const CARD_EDITOR_COMPACT_CLASS = {
   toolbarButton: "h-8 w-8 rounded-lg",
   toolbarIcon: "h-3.5 w-3.5",
   toolbarDivider: "mx-0.5 hidden h-8 w-px bg-[#e5e5e5] sm:block",
-  editorBody: "grid min-h-0 grid-cols-[88px_minmax(0,1fr)]",
-  editorBodyGutter: "border-r border-transparent",
-  editorBodyContent: "min-h-0 min-w-0",
+  editorBody: "min-h-0 min-w-0",
   editorContent:
     "card-rich-editor-content h-full bg-white px-3 py-3 text-[14px] leading-6 text-[#111] outline-none",
   previewRail: "hidden min-h-0 flex-col gap-3 lg:flex lg:min-h-full",

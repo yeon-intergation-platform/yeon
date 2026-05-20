@@ -859,9 +859,6 @@ export function CardRichMarkdownEditor({
   const editorBodyClassName = isCompactLayout
     ? CARD_EDITOR_COMPACT_CLASS.editorBody
     : undefined;
-  const editorBodyContentClassName = isCompactLayout
-    ? CARD_EDITOR_COMPACT_CLASS.editorBodyContent
-    : undefined;
   const tableActionOverlayElement = tableActionOverlay ? (
     <div className="pointer-events-none absolute inset-0 z-10">
       <button
@@ -940,15 +937,7 @@ export function CardRichMarkdownEditor({
         onMouseLeave={handleEditorMouseLeave}
         onMouseMove={handleEditorMouseMove}
       >
-        {isCompactLayout ? (
-          <div
-            aria-hidden="true"
-            className={CARD_EDITOR_COMPACT_CLASS.editorBodyGutter}
-          />
-        ) : null}
-        <div className={editorBodyContentClassName}>
-          <EditorContent editor={editor} />
-        </div>
+        <EditorContent editor={editor} />
       </div>
       {tableActionOverlayElement}
 
