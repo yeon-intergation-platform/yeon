@@ -842,9 +842,7 @@ export function CardRichMarkdownEditor({
     : "rounded-xl px-3 py-2 text-[13px] font-semibold";
   const editorStatusText = isUploading
     ? "업로드 중"
-    : isCompactLayout
-      ? "이미지 삽입 가능"
-      : "드롭·붙여넣기·버튼 삽입";
+    : "드롭·붙여넣기·버튼 삽입";
   const handleEditorMouseMove = useCallback(
     (event: MouseEvent<HTMLDivElement>) => {
       updateTableActionOverlay(findClosestTableElement(event.target));
@@ -933,7 +931,6 @@ export function CardRichMarkdownEditor({
         onRedo={withEditor((instance) => instance.chain().focus().redo().run())}
         density={isCompactLayout ? "compact" : "default"}
         leadingLabel={isCompactLayout ? label : undefined}
-        trailingStatus={isCompactLayout ? editorStatusText : undefined}
       />
 
       {tableEditBar}
