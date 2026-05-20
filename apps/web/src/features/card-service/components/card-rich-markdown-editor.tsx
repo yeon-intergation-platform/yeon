@@ -58,7 +58,8 @@ interface CardRichMarkdownEditorProps {
   onChange: (nextValue: string) => void;
   placeholder?: string;
   helperText?: string;
-  density?: "question" | "answer";
+  density?: keyof typeof CARD_EDITOR_HEIGHT_CLASS;
+  previewPlacement?: "inline" | "none";
   disabled?: boolean;
   onUploadingChange?: (isUploading: boolean) => void;
 }
@@ -123,6 +124,7 @@ export function CardRichMarkdownEditor({
   placeholder,
   helperText,
   density = "question",
+  previewPlacement = "inline",
   disabled = false,
   onUploadingChange,
 }: CardRichMarkdownEditorProps) {
@@ -556,6 +558,7 @@ export function CardRichMarkdownEditor({
       </span>
     </div>
   ) : null;
+  const shouldShowInlinePreview = previewPlacement === "inline";
   const editorPanel = (
     <div className="min-w-0 rounded-2xl bg-white">
       <CardEditorToolbar
@@ -640,42 +643,62 @@ export function CardRichMarkdownEditor({
         </span>
       </div>
 
-      <div className="mb-3 grid grid-cols-2 rounded-2xl border border-[#e8e8e8] bg-[#fafafa] p-1 lg:hidden">
-        <button
-          type="button"
-          onClick={() => setMobilePane("edit")}
-          className={`rounded-xl px-3 py-2 text-[13px] font-semibold ${
-            mobilePane === "edit"
-              ? "bg-white text-[#111] shadow-sm"
-              : "text-[#777]"
-          }`}
-        >
-          작성
-        </button>
-        <button
-          type="button"
-          onClick={() => setMobilePane("preview")}
-          className={`rounded-xl px-3 py-2 text-[13px] font-semibold ${
-            mobilePane === "preview"
-              ? "bg-white text-[#111] shadow-sm"
-              : "text-[#777]"
-          }`}
-        >
-          미리보기
-        </button>
-      </div>
+      {shouldShowInlinePreview ? (
+        <div className="mb-3 grid grid-cols-2 rounded-2xl border border-[#e8e8e8] bg-[#fafafa] p-1 lg:hidden">
+          <button
+            type="button"
+            onClick={() => setMobilePane("edit")}
+            className={`rounded-xl px-3 py-2 text-[13px] font-semibold ${
+              mobilePane === "edit"
+                ? "bg-white text-[#111] shadow-sm"
+                : "text-[#777]"
+            }`}
+          >
+            작성
+          </button>
+          <button
+            type="button"
+            onClick={() => setMobilePane("preview")}
+            className={`rounded-xl px-3 py-2 text-[13px] font-semibold ${
+              mobilePane === "preview"
+                ? "bg-white text-[#111] shadow-sm"
+                : "text-[#777]"
+            }`}
+          >
+            미리보기
+          </button>
+        </div>
+      ) : null}
 
-      <div className="lg:grid lg:grid-cols-[minmax(0,1.35fr)_minmax(320px,1fr)] lg:items-stretch lg:gap-5">
-        <div className={mobilePane === "edit" ? "block" : "hidden lg:block"}>
+      <div
+        className={
+          shouldShowInlinePreview
+            ? "lg:grid lg:grid-cols-[minmax(0,1.35fr)_minmax(320px,1fr)] lg:items-stretch lg:gap-5"
+            : ""
+        }
+      >
+        <div
+          className={
+            shouldShowInlinePreview
+              ? mobilePane === "edit"
+                ? "block"
+                : "hidden lg:block"
+              : "block"
+          }
+        >
           {editorPanel}
         </div>
-        <div className={mobilePane === "preview" ? "block" : "hidden lg:block"}>
-          <CardEditorPreview
-            label={label}
-            value={deferredPreviewValue}
-            previewHeightClassName={heightClassName.preview}
-          />
-        </div>
+        {shouldShowInlinePreview ? (
+          <div
+            className={mobilePane === "preview" ? "block" : "hidden lg:block"}
+          >
+            <CardEditorPreview
+              label={label}
+              value={deferredPreviewValue}
+              previewHeightClassName={heightClassName.preview}
+            />
+          </div>
+        ) : null}
       </div>
 
       <CardRichEditorGlobalStyles />

@@ -14,9 +14,19 @@ export const CARD_EDITOR_HEIGHT_CLASS = {
     editor: "min-h-[360px] md:min-h-[420px]",
     preview: "min-h-[360px] md:min-h-[420px]",
   },
+  compactQuestion: {
+    editor:
+      "h-[180px] min-h-[180px] max-h-[180px] overflow-y-auto md:h-[210px] md:min-h-[210px] md:max-h-[210px]",
+    preview: "min-h-[180px] md:min-h-[210px]",
+  },
+  compactAnswer: {
+    editor:
+      "h-[220px] min-h-[220px] max-h-[220px] overflow-y-auto md:h-[270px] md:min-h-[270px] md:max-h-[270px]",
+    preview: "min-h-[220px] md:min-h-[270px]",
+  },
 } as const;
 
-function isMeaningfulCardEditorContent(value: string) {
+export function isMeaningfulCardEditorContent(value: string) {
   return (
     value
       .replace(/<[^>]*>/g, "")
