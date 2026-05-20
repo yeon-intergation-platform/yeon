@@ -309,7 +309,7 @@ export function CardRichMarkdownEditor({
       StarterKit.configure({
         codeBlock: {
           enableTabIndentation: true,
-          tabSize: 2,
+          tabSize: 4,
         },
         heading: { levels: [2, 3] },
       }),
@@ -345,8 +345,8 @@ export function CardRichMarkdownEditor({
         spellcheck: "true",
         "aria-label": label,
       },
-      handleKeyDown: (_view, event) => {
-        if (event.key !== "Tab") {
+      handleKeyDown: (view, event) => {
+        if (event.key !== "Tab" || event.shiftKey) {
           return false;
         }
 
@@ -355,6 +355,8 @@ export function CardRichMarkdownEditor({
           return false;
         }
 
+        event.preventDefault();
+        view.dispatch(view.state.tr.insertText("    "));
         return true;
       },
       handlePaste: (_view, event) => {
