@@ -16,12 +16,17 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
+import { CARD_EDITOR_COMPACT_CLASS } from "./card-rich-markdown-editor-view";
+
+type CardEditorToolbarDensity = "default" | "compact";
+
 interface CardEditorToolbarButtonProps {
   label: string;
   icon: LucideIcon;
   active?: boolean;
   disabled?: boolean;
   isLoading?: boolean;
+  density: CardEditorToolbarDensity;
   onClick: () => void;
 }
 
@@ -31,9 +36,16 @@ function CardEditorToolbarButton({
   active,
   disabled,
   isLoading,
+  density,
   onClick,
 }: CardEditorToolbarButtonProps) {
   const DisplayIcon = isLoading ? Loader2 : Icon;
+  const buttonSizeClassName =
+    density === "compact"
+      ? CARD_EDITOR_COMPACT_CLASS.toolbarButton
+      : "h-10 w-10 rounded-xl";
+  const iconSizeClassName =
+    density === "compact" ? CARD_EDITOR_COMPACT_CLASS.toolbarIcon : "h-4 w-4";
 
   return (
     <button
@@ -43,13 +55,15 @@ function CardEditorToolbarButton({
       aria-label={label}
       aria-pressed={typeof active === "boolean" ? active : undefined}
       title={label}
-      className={`flex h-10 w-10 items-center justify-center rounded-xl border text-[#111] transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
+      className={`flex ${buttonSizeClassName} items-center justify-center border text-[#111] transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
         active
           ? "border-[#111] bg-[#111] text-white"
-          : "border-[#e5e5e5] bg-white hover:border-[#cfcfcf] hover:bg-[#f7f7f7]"
+          : "border-[#e5e5e5] bg-white hover:border-[#111] hover:bg-[#fafafa]"
       }`}
     >
-      <DisplayIcon className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
+      <DisplayIcon
+        className={`${iconSizeClassName} ${isLoading ? "animate-spin" : ""}`}
+      />
     </button>
   );
 }
@@ -79,6 +93,7 @@ interface CardEditorToolbarProps {
   onImage: () => void;
   onUndo: () => void;
   onRedo: () => void;
+  density?: CardEditorToolbarDensity;
 }
 
 export function CardEditorToolbar({
@@ -98,27 +113,40 @@ export function CardEditorToolbar({
   onImage,
   onUndo,
   onRedo,
+  density = "default",
 }: CardEditorToolbarProps) {
+  const toolbarClassName =
+    density === "compact"
+      ? CARD_EDITOR_COMPACT_CLASS.toolbar
+      : "flex min-h-[64px] flex-wrap content-start items-center gap-x-2 gap-y-2.5 rounded-t-2xl border border-[#e5e5e5] bg-[#fafafa] p-3 md:min-h-[72px] md:gap-x-2.5 md:gap-y-3";
+  const dividerClassName =
+    density === "compact"
+      ? CARD_EDITOR_COMPACT_CLASS.toolbarDivider
+      : "mx-1 hidden h-10 w-px bg-[#e5e5e5] sm:block";
+
   return (
-    <div className="flex min-h-[64px] flex-wrap content-start items-center gap-x-2 gap-y-2.5 rounded-t-2xl border border-[#e5e5e5] bg-[#fafafa] p-3 md:min-h-[72px] md:gap-x-2.5 md:gap-y-3">
+    <div className={toolbarClassName}>
       <CardEditorToolbarButton
         label="실행 취소"
         icon={Undo2}
         disabled={!canUseToolbar || !canUndo}
+        density={density}
         onClick={onUndo}
       />
       <CardEditorToolbarButton
         label="다시 실행"
         icon={Redo2}
         disabled={!canUseToolbar || !canRedo}
+        density={density}
         onClick={onRedo}
       />
-      <span className="mx-1 hidden h-10 w-px bg-[#e5e5e5] sm:block" />
+      <span className={dividerClassName} />
       <CardEditorToolbarButton
         label="굵게"
         icon={Bold}
         active={active.bold}
         disabled={!canUseToolbar}
+        density={density}
         onClick={onBold}
       />
       <CardEditorToolbarButton
@@ -126,6 +154,7 @@ export function CardEditorToolbar({
         icon={Italic}
         active={active.italic}
         disabled={!canUseToolbar}
+        density={density}
         onClick={onItalic}
       />
       <CardEditorToolbarButton
@@ -133,6 +162,7 @@ export function CardEditorToolbar({
         icon={UnderlineIcon}
         active={active.underline}
         disabled={!canUseToolbar}
+        density={density}
         onClick={onUnderline}
       />
       <CardEditorToolbarButton
@@ -140,6 +170,7 @@ export function CardEditorToolbar({
         icon={List}
         active={active.bulletList}
         disabled={!canUseToolbar}
+        density={density}
         onClick={onBulletList}
       />
       <CardEditorToolbarButton
@@ -147,6 +178,7 @@ export function CardEditorToolbar({
         icon={ListOrdered}
         active={active.orderedList}
         disabled={!canUseToolbar}
+        density={density}
         onClick={onOrderedList}
       />
       <CardEditorToolbarButton
@@ -154,6 +186,7 @@ export function CardEditorToolbar({
         icon={Quote}
         active={active.blockquote}
         disabled={!canUseToolbar}
+        density={density}
         onClick={onBlockquote}
       />
       <CardEditorToolbarButton
@@ -161,12 +194,14 @@ export function CardEditorToolbar({
         icon={Code2}
         active={active.codeBlock}
         disabled={!canUseToolbar}
+        density={density}
         onClick={onCodeBlock}
       />
       <CardEditorToolbarButton
         label="표 삽입"
         icon={Table2}
         disabled={!canUseToolbar}
+        density={density}
         onClick={onTable}
       />
       <CardEditorToolbarButton
@@ -174,6 +209,7 @@ export function CardEditorToolbar({
         icon={ImagePlus}
         disabled={!canUseToolbar || isUploading}
         isLoading={isUploading}
+        density={density}
         onClick={onImage}
       />
     </div>

@@ -205,45 +205,41 @@ export function AddCardForm({
   }, [actionState, onActionStateChange]);
 
   return (
-    <form id={formId} onSubmit={handleSubmit} className="flex flex-col gap-4">
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(320px,0.52fr)] lg:items-stretch">
-        <div className="flex min-w-0 flex-col gap-4">
-          <div className="rounded-2xl border border-[#ececec] bg-white p-3 md:p-4">
-            <CardRichMarkdownEditor
-              label="카드 질문"
-              value={frontText}
-              onChange={setFrontText}
-              placeholder="질문 또는 앞면 내용을 작성하고 이미지는 문장 사이에 붙여넣으세요."
-              helperText="이미지는 드래그·붙여넣기·버튼으로 본문에 삽입됩니다."
-              density="question"
-              layoutMode="compact"
-              previewPlacement="mobile"
-              onUploadingChange={(isUploadingFront) =>
-                setUploadingSides((prev) => ({
-                  ...prev,
-                  front: isUploadingFront,
-                }))
-              }
-            />
-          </div>
-          <div className="rounded-2xl border border-[#ececec] bg-white p-3 md:p-4">
-            <CardRichMarkdownEditor
-              label="카드 답변 / 본문"
-              value={backText}
-              onChange={setBackText}
-              placeholder="답변 또는 본문을 작성하세요."
-              helperText="삽입 이미지는 크기 조절 후 저장하면 본문과 함께 유지됩니다."
-              density="answer"
-              layoutMode="compact"
-              previewPlacement="mobile"
-              onUploadingChange={(isUploadingBack) =>
-                setUploadingSides((prev) => ({
-                  ...prev,
-                  back: isUploadingBack,
-                }))
-              }
-            />
-          </div>
+    <form id={formId} onSubmit={handleSubmit} className="flex flex-col gap-3">
+      <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(300px,0.45fr)] lg:items-stretch">
+        <div className="flex min-w-0 flex-col gap-3">
+          <CardRichMarkdownEditor
+            label="카드 질문"
+            value={frontText}
+            onChange={setFrontText}
+            placeholder="질문 또는 앞면 내용을 작성하고 이미지는 문장 사이에 붙여넣으세요."
+            helperText="이미지는 드래그·붙여넣기·버튼으로 본문에 삽입됩니다."
+            density="question"
+            layoutMode="compact"
+            previewPlacement="mobile"
+            onUploadingChange={(isUploadingFront) =>
+              setUploadingSides((prev) => ({
+                ...prev,
+                front: isUploadingFront,
+              }))
+            }
+          />
+          <CardRichMarkdownEditor
+            label="카드 답변 / 본문"
+            value={backText}
+            onChange={setBackText}
+            placeholder="답변 또는 본문을 작성하세요."
+            helperText="삽입 이미지는 크기 조절 후 저장하면 본문과 함께 유지됩니다."
+            density="answer"
+            layoutMode="compact"
+            previewPlacement="mobile"
+            onUploadingChange={(isUploadingBack) =>
+              setUploadingSides((prev) => ({
+                ...prev,
+                back: isUploadingBack,
+              }))
+            }
+          />
         </div>
         <CardAddLivePreview
           frontText={deferredFrontText}

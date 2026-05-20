@@ -51,7 +51,7 @@ function ManualAddCardFooter({
     : state.actionLabel;
 
   return (
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
       <div className="min-h-5 min-w-0">
         {state.errorMessage ? (
           <p className="text-[13px] font-medium leading-5 text-red-600">
@@ -68,7 +68,7 @@ function ManualAddCardFooter({
           type="button"
           onClick={onCancel}
           disabled={isActionPending}
-          className={`${CARD_SERVICE_COMMON_CLASS.panelTextEmphasis} rounded-2xl border border-[#e5e5e5] px-5 py-3 transition-colors hover:bg-[#fafafa] disabled:cursor-not-allowed disabled:opacity-50`}
+          className={`${CARD_SERVICE_COMMON_CLASS.panelTextEmphasis} rounded-xl border border-[#e5e5e5] px-4 py-2.5 transition-colors hover:bg-[#fafafa] disabled:cursor-not-allowed disabled:opacity-50`}
         >
           취소
         </button>
@@ -76,7 +76,7 @@ function ManualAddCardFooter({
           type="submit"
           form={formId}
           disabled={!state.canSubmit}
-          className="rounded-2xl bg-[#111] px-5 py-3 text-[14px] font-semibold text-white transition-colors hover:bg-[#333] disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-xl bg-[#111] px-4 py-2.5 text-[14px] font-semibold text-white transition-colors hover:bg-[#333] disabled:cursor-not-allowed disabled:opacity-50"
         >
           {buttonLabel}
         </button>
@@ -96,7 +96,7 @@ export function AddCardsPanel({ deckId, onClose }: AddCardsPanelProps) {
   const modeDescription = useMemo(
     () =>
       mode === ADD_CARD_MODES.manual
-        ? "질문, 답변, 인라인 이미지를 한 화면에서 작성하고 저장할 수 있습니다."
+        ? "질문과 답변을 한 화면에서 빠르게 작성합니다."
         : "AI가 만든 카드 묶음을 붙여넣어 여러 장을 한 번에 추가할 수 있습니다.",
     [mode]
   );
@@ -147,12 +147,13 @@ export function AddCardsPanel({ deckId, onClose }: AddCardsPanelProps) {
       onClose={handleRequestClose}
       widthClassName={modalWidthClassName}
       footer={footer}
+      density="compact"
     >
-      <div className="flex rounded-2xl bg-[#f3f3f3] p-1 text-[14px] font-semibold">
+      <div className="flex rounded-xl bg-[#f3f3f3] p-1 text-[13px] font-semibold">
         <button
           type="button"
           onClick={() => setMode(ADD_CARD_MODES.manual)}
-          className={`flex-1 rounded-xl px-3 py-3 transition-colors ${
+          className={`flex-1 rounded-lg px-3 py-2 transition-colors ${
             mode === ADD_CARD_MODES.manual
               ? "bg-white text-[#111] shadow-sm"
               : "text-[#666] hover:text-[#111]"
@@ -163,7 +164,7 @@ export function AddCardsPanel({ deckId, onClose }: AddCardsPanelProps) {
         <button
           type="button"
           onClick={() => setMode(ADD_CARD_MODES.bulk)}
-          className={`flex-1 rounded-xl px-3 py-3 transition-colors ${
+          className={`flex-1 rounded-lg px-3 py-2 transition-colors ${
             mode === ADD_CARD_MODES.bulk
               ? "bg-white text-[#111] shadow-sm"
               : "text-[#666] hover:text-[#111]"
@@ -173,7 +174,7 @@ export function AddCardsPanel({ deckId, onClose }: AddCardsPanelProps) {
         </button>
       </div>
 
-      <div className="mt-5">
+      <div className="mt-3">
         {mode === ADD_CARD_MODES.manual ? (
           <AddCardForm
             deckId={deckId}
