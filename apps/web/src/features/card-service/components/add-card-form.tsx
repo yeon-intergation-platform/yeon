@@ -210,7 +210,7 @@ export function AddCardForm({
       onSubmit={handleSubmit}
       className="flex h-full min-h-0 flex-col gap-3"
     >
-      <div className="grid min-h-0 flex-1 gap-3 lg:grid-cols-2 lg:grid-rows-[minmax(min-content,1fr)_minmax(min-content,1fr)] lg:items-stretch">
+      <div className="grid min-h-0 flex-1 gap-3 lg:grid-cols-2 lg:grid-rows-[auto_auto] lg:items-stretch">
         <div className="min-w-0">
           <CardRichMarkdownEditor
             label="카드 질문"
