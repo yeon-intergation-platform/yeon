@@ -48,7 +48,7 @@ function createResizableImageNodeView(props: NodeViewRendererProps) {
     imageElement.width = nextWidth;
     imageElement.style.width = `${nextWidth}px`;
     imageElement.style.height = "auto";
-    sizeLabelElement.textContent = `표시 크기: ${nextWidth}px`;
+    sizeLabelElement.textContent = `표시 크기: ${nextWidth}px × auto`;
   };
 
   wrapperElement.className = "card-rich-editor-image";
@@ -58,6 +58,9 @@ function createResizableImageNodeView(props: NodeViewRendererProps) {
   sizeLabelElement.className = "card-rich-editor-image-size";
 
   applyAttributes(props.node.attrs);
+  imageElement.addEventListener("load", () => {
+    sizeLabelElement.textContent = `표시 크기: ${currentWidth}px × auto · 원본 크기: ${imageElement.naturalWidth} × ${imageElement.naturalHeight}px`;
+  });
   wrapperElement.append(imageElement, resizeHandleElement, sizeLabelElement);
 
   resizeHandleElement.addEventListener("pointerdown", (event) => {
@@ -75,7 +78,7 @@ function createResizableImageNodeView(props: NodeViewRendererProps) {
       wrapperElement.style.width = `${nextWidth}px`;
       imageElement.width = nextWidth;
       imageElement.style.width = `${nextWidth}px`;
-      sizeLabelElement.textContent = `표시 크기: ${nextWidth}px`;
+      sizeLabelElement.textContent = `표시 크기: ${nextWidth}px × auto · 원본 크기: ${imageElement.naturalWidth} × ${imageElement.naturalHeight}px`;
     };
 
     const handlePointerUp = (upEvent: PointerEvent) => {

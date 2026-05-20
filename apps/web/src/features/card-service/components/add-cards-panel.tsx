@@ -88,10 +88,12 @@ function ManualAddCardFooter({
 export function AddCardsPanel({ deckId, onClose }: AddCardsPanelProps) {
   const manualFormId = useId();
   const [mode, setMode] = useState<AddCardMode>(ADD_CARD_MODES.manual);
-  const [isDirty, setDirty] = useState(false);
+  const [manualDirty, setManualDirty] = useState(false);
+  const [bulkDirty, setBulkDirty] = useState(false);
   const [manualActionState, setManualActionState] = useState(
     ADD_CARD_FORM_INITIAL_ACTION_STATE
   );
+  const isDirty = manualDirty || bulkDirty;
 
   const modeDescription = useMemo(
     () =>
@@ -113,7 +115,7 @@ export function AddCardsPanel({ deckId, onClose }: AddCardsPanelProps) {
   );
 
   const handleRequestClose = useCallback(() => {
-    if (mode === ADD_CARD_MODES.manual && manualActionState.isPending) {
+    if (manualActionState.isPending) {
       window.alert(
         "이미지 업로드 또는 저장이 진행 중입니다. 완료 후 닫아주세요."
       );
@@ -129,7 +131,7 @@ export function AddCardsPanel({ deckId, onClose }: AddCardsPanelProps) {
       return;
     }
     onClose();
-  }, [isDirty, manualActionState.isPending, mode, onClose]);
+  }, [isDirty, manualActionState.isPending, onClose]);
 
   const footer =
     mode === ADD_CARD_MODES.manual ? (
@@ -175,21 +177,28 @@ export function AddCardsPanel({ deckId, onClose }: AddCardsPanelProps) {
       </div>
 
       <div className="mt-3">
-        {mode === ADD_CARD_MODES.manual ? (
+        <div
+          hidden={mode !== ADD_CARD_MODES.manual}
+          aria-hidden={mode !== ADD_CARD_MODES.manual}
+        >
           <AddCardForm
             deckId={deckId}
             formId={manualFormId}
             onSaved={onClose}
-            onDirtyChange={setDirty}
+            onDirtyChange={setManualDirty}
             onActionStateChange={handleManualActionStateChange}
           />
-        ) : (
+        </div>
+        <div
+          hidden={mode !== ADD_CARD_MODES.bulk}
+          aria-hidden={mode !== ADD_CARD_MODES.bulk}
+        >
           <BulkAddCardsForm
             deckId={deckId}
             onSuccess={onClose}
-            onDirtyChange={setDirty}
+            onDirtyChange={setBulkDirty}
           />
-        )}
+        </div>
       </div>
     </ResponsiveModal>
   );

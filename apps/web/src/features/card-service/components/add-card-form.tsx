@@ -12,7 +12,11 @@ import { analyticsEvents, trackEvent } from "@/lib/analytics";
 import { useAddCard } from "../hooks";
 import { CardAddLivePreview } from "./card-add-live-preview";
 import { CardRichMarkdownEditor } from "./card-rich-markdown-editor";
-import { isEmptyRichContent, normalizeRichContent } from "./card-content-utils";
+import {
+  isEmptyRichContent,
+  isRenderableRichContent,
+  normalizeRichContent,
+} from "./card-content-utils";
 
 const CARD_EDITOR_DRAFT_STORAGE_KEY = "yeon-card-service-editor-draft";
 
@@ -60,15 +64,9 @@ function buildDraftKey(deckId: string) {
 
 function hasAnyDraftContent(value: CardEditorValue) {
   return (
-    !isEmptyRichContent(value.frontText) || !isEmptyRichContent(value.backText)
+    isRenderableRichContent(value.frontText) ||
+    isRenderableRichContent(value.backText)
   );
-}
-
-function snapshotValue(value: CardEditorValue) {
-  return JSON.stringify({
-    frontText: normalizeRichContent(value.frontText),
-    backText: normalizeRichContent(value.backText),
-  });
 }
 
 export function AddCardForm({
@@ -101,8 +99,8 @@ export function AddCardForm({
     () => ({ frontText, backText }),
     [frontText, backText]
   );
-  const isDirty =
-    snapshotValue(currentValue) !== snapshotValue(initialSnapshot);
+  const hasUnsavedContent = hasAnyDraftContent(currentValue);
+  const isDirty = isDraftLoaded && hasUnsavedContent;
   const canSubmit =
     !isEmptyRichContent(frontText) &&
     !isEmptyRichContent(backText) &&
@@ -110,6 +108,7 @@ export function AddCardForm({
 
   useEffect(() => {
     setDraftLoaded(false);
+    onDirtyChange?.(false);
     const savedDraft = window.localStorage.getItem(draftKey);
     if (!savedDraft) {
       setFrontText(initialSnapshot.frontText);
@@ -131,11 +130,12 @@ export function AddCardForm({
       setBackText(initialSnapshot.backText);
       setDraftLoaded(true);
     }
-  }, [draftKey, initialSnapshot]);
+  }, [draftKey, initialSnapshot, onDirtyChange]);
 
   useEffect(() => {
-    onDirtyChange?.(isDirty);
-  }, [isDirty, onDirtyChange]);
+    if (!isDraftLoaded) return;
+    onDirtyChange?.(hasUnsavedContent);
+  }, [hasUnsavedContent, isDraftLoaded, onDirtyChange]);
 
   useEffect(() => {
     if (!isDraftLoaded) return;
@@ -225,7 +225,7 @@ export function AddCardForm({
             }
           />
           <CardRichMarkdownEditor
-            label="카드 답변 / 본문"
+            label="카드 답변"
             value={backText}
             onChange={setBackText}
             placeholder="답변 또는 본문을 작성하세요."

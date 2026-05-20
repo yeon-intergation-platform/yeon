@@ -390,12 +390,11 @@ export function MarkdownContent({
       .card-markdown-html img {
         border: 1px solid #e5e5e5;
         border-radius: 14px;
-        display: inline-block;
+        display: block;
         height: auto;
         margin: 0.5rem 0;
         max-width: 100%;
         object-fit: contain;
-        vertical-align: middle;
       }
       .card-markdown-html table {
         border: 1px solid #e5e5e5;
@@ -571,12 +570,11 @@ export function MarkdownContent({
         .card-markdown-html img {
           border: 1px solid #e5e5e5;
           border-radius: 14px;
-          display: inline-block;
+          display: block;
           height: auto;
           margin: 0.5rem 0;
           max-width: 100%;
           object-fit: contain;
-          vertical-align: middle;
         }
       `}</style>
     </div>

@@ -58,7 +58,7 @@ describe("card-editor-image-utils", () => {
         size: 1024,
         type: "image/svg+xml",
       } as File)
-    ).toBe("JPG, PNG, WEBP, GIF 이미지만 업로드할 수 있습니다.");
+    ).toBe("JPG, PNG, WEBP, GIF, HEIC 이미지만 업로드할 수 있습니다.");
   });
 
   it("이미지 개수 제한 메시지를 단일 source of truth로 만든다", () => {
