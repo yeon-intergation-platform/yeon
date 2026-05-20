@@ -110,6 +110,38 @@ function TableEditIconButton({
   );
 }
 
+function isSelectionInEmptyListItem(editor: Editor) {
+  const { selection } = editor.state;
+
+  if (!selection.empty) {
+    return false;
+  }
+
+  const { $from } = selection;
+  const isAtEmptyTextBlockStart =
+    $from.parentOffset === 0 && $from.parent.content.size === 0;
+
+  if (!isAtEmptyTextBlockStart) {
+    return false;
+  }
+
+  for (let depth = $from.depth; depth > 0; depth -= 1) {
+    if ($from.node(depth).type.name === "listItem") {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function exitEmptyListItemOnBackspace(editor: Editor | null) {
+  if (!editor || !isSelectionInEmptyListItem(editor)) {
+    return false;
+  }
+
+  return editor.chain().focus().liftListItem("listItem").run();
+}
+
 const EMPTY_TOOLBAR_STATE: CardEditorToolbarState = {
   active: {},
   canUndo: false,
@@ -374,6 +406,22 @@ export function CardRichMarkdownEditor({
         "aria-label": label,
       },
       handleKeyDown: (view, event) => {
+        if (
+          event.key === "Backspace" &&
+          !event.altKey &&
+          !event.ctrlKey &&
+          !event.metaKey &&
+          !event.shiftKey
+        ) {
+          const didExitEmptyListItem = exitEmptyListItemOnBackspace(editor);
+
+          if (didExitEmptyListItem) {
+            event.preventDefault();
+            scheduleToolbarStateRefresh(editor);
+            return true;
+          }
+        }
+
         if (event.key !== "Tab" || event.shiftKey) {
           return false;
         }
