@@ -210,16 +210,24 @@ export function CardRow({
               onFrontTextChange={setFrontText}
               onBackTextChange={setBackText}
               onUploadingFrontChange={(isUploadingFront) =>
-                setUploadingSides((prev) => ({
-                  ...prev,
-                  front: isUploadingFront,
-                }))
+                setUploadingSides((prev) =>
+                  prev.front === isUploadingFront
+                    ? prev
+                    : {
+                        ...prev,
+                        front: isUploadingFront,
+                      }
+                )
               }
               onUploadingBackChange={(isUploadingBack) =>
-                setUploadingSides((prev) => ({
-                  ...prev,
-                  back: isUploadingBack,
-                }))
+                setUploadingSides((prev) =>
+                  prev.back === isUploadingBack
+                    ? prev
+                    : {
+                        ...prev,
+                        back: isUploadingBack,
+                      }
+                )
               }
               onCancelEdit={cancelEdit}
               onSaveEdit={saveEdit}

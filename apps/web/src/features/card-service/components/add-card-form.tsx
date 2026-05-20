@@ -218,10 +218,14 @@ export function AddCardForm({
             layoutMode="compact"
             previewPlacement="mobile"
             onUploadingChange={(isUploadingFront) =>
-              setUploadingSides((prev) => ({
-                ...prev,
-                front: isUploadingFront,
-              }))
+              setUploadingSides((prev) =>
+                prev.front === isUploadingFront
+                  ? prev
+                  : {
+                      ...prev,
+                      front: isUploadingFront,
+                    }
+              )
             }
           />
           <CardRichMarkdownEditor
@@ -234,10 +238,14 @@ export function AddCardForm({
             layoutMode="compact"
             previewPlacement="mobile"
             onUploadingChange={(isUploadingBack) =>
-              setUploadingSides((prev) => ({
-                ...prev,
-                back: isUploadingBack,
-              }))
+              setUploadingSides((prev) =>
+                prev.back === isUploadingBack
+                  ? prev
+                  : {
+                      ...prev,
+                      back: isUploadingBack,
+                    }
+              )
             }
           />
         </div>
