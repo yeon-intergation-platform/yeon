@@ -138,6 +138,7 @@ export function CardRichMarkdownEditor({
   const [mobilePane, setMobilePane] = useState<"edit" | "preview">("edit");
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const isInternalUpdateRef = useRef(false);
+  const onUploadingChangeRef = useRef(onUploadingChange);
   const toolbarRefreshFrameRef = useRef<number | null>(null);
   const {
     errorMessage,
@@ -154,8 +155,12 @@ export function CardRichMarkdownEditor({
     : `card-rich-editor-content ${heightClassName.editor} rounded-b-2xl border-x border-b border-[#e5e5e5] bg-white px-4 py-5 text-[15px] leading-7 text-[#111] outline-none md:px-5 md:text-[16px]`;
 
   useEffect(() => {
-    onUploadingChange?.(isUploading);
-  }, [isUploading, onUploadingChange]);
+    onUploadingChangeRef.current = onUploadingChange;
+  }, [onUploadingChange]);
+
+  useEffect(() => {
+    onUploadingChangeRef.current?.(isUploading);
+  }, [isUploading]);
 
   const scheduleToolbarStateRefresh = useCallback(
     (targetEditor: Editor | null) => {
