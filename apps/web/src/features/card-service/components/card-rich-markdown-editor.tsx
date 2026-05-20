@@ -661,7 +661,13 @@ export function CardRichMarkdownEditor({
   );
 
   return (
-    <div className={isCompactLayout ? "bg-white" : "rounded-2xl bg-white"}>
+    <div
+      className={
+        isCompactLayout
+          ? "flex h-full min-h-full flex-col bg-white"
+          : "rounded-2xl bg-white"
+      }
+    >
       {!isCompactLayout ? (
         <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
           <div className="min-w-0">
