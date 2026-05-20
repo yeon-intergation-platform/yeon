@@ -10,7 +10,7 @@ interface CardAddLivePreviewProps {
   backText: string;
 }
 
-function PreviewFace({
+export function CardAddPreviewFace({
   label,
   title,
   value,
@@ -46,14 +46,14 @@ export function CardAddLivePreview({
 }: CardAddLivePreviewProps) {
   return (
     <aside className={CARD_EDITOR_COMPACT_CLASS.previewRail}>
-      <div className="flex min-h-0 flex-1 flex-col">
-        <PreviewFace
+      <div className="grid min-h-0 flex-1 grid-rows-[minmax(0,1fr)_minmax(0,1fr)]">
+        <CardAddPreviewFace
           label="앞면"
           title="카드 질문"
           value={frontText}
           emptyText="질문을 작성하면 카드 앞면에 표시됩니다."
         />
-        <PreviewFace
+        <CardAddPreviewFace
           label="뒷면"
           title="카드 답변"
           value={backText}

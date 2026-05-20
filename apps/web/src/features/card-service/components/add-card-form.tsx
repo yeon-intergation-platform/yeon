@@ -10,7 +10,7 @@ import {
 
 import { analyticsEvents, trackEvent } from "@/lib/analytics";
 import { useAddCard } from "../hooks";
-import { CardAddLivePreview } from "./card-add-live-preview";
+import { CardAddPreviewFace } from "./card-add-live-preview";
 import { CardRichMarkdownEditor } from "./card-rich-markdown-editor";
 import {
   isEmptyRichContent,
@@ -205,9 +205,13 @@ export function AddCardForm({
   }, [actionState, onActionStateChange]);
 
   return (
-    <form id={formId} onSubmit={handleSubmit} className="flex flex-col gap-3">
-      <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(300px,0.45fr)] lg:items-stretch">
-        <div className="flex min-w-0 flex-col gap-3">
+    <form
+      id={formId}
+      onSubmit={handleSubmit}
+      className="flex h-full min-h-0 flex-col gap-3"
+    >
+      <div className="grid min-h-0 flex-1 gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(300px,0.45fr)] lg:grid-rows-[minmax(min-content,1fr)_minmax(min-content,1fr)] lg:items-stretch">
+        <div className="min-w-0">
           <CardRichMarkdownEditor
             label="카드 질문"
             value={frontText}
@@ -228,6 +232,16 @@ export function AddCardForm({
               )
             }
           />
+        </div>
+        <div className="hidden min-w-0 lg:block">
+          <CardAddPreviewFace
+            label="앞면"
+            title="카드 질문"
+            value={deferredFrontText}
+            emptyText="질문을 작성하면 카드 앞면에 표시됩니다."
+          />
+        </div>
+        <div className="min-w-0">
           <CardRichMarkdownEditor
             label="카드 답변"
             value={backText}
@@ -249,10 +263,14 @@ export function AddCardForm({
             }
           />
         </div>
-        <CardAddLivePreview
-          frontText={deferredFrontText}
-          backText={deferredBackText}
-        />
+        <div className="hidden min-w-0 lg:block">
+          <CardAddPreviewFace
+            label="뒷면"
+            title="카드 답변"
+            value={deferredBackText}
+            emptyText="답변을 작성하면 카드 뒷면에 표시됩니다."
+          />
+        </div>
       </div>
     </form>
   );

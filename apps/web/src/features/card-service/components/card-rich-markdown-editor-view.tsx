@@ -20,21 +20,20 @@ export const CARD_EDITOR_HEIGHT_CLASS = {
 
 const CARD_EDITOR_COMPACT_HEIGHT_CLASS = {
   question: {
-    editor:
-      "h-[140px] min-h-[140px] max-h-[140px] overflow-y-auto md:h-[160px] md:min-h-[160px] md:max-h-[160px]",
+    editor: "min-h-[140px] md:min-h-[160px] lg:min-h-0 lg:flex-1",
     preview: "min-h-[140px] md:min-h-[160px]",
   },
   answer: {
-    editor:
-      "h-[160px] min-h-[160px] max-h-[160px] overflow-y-auto md:h-[185px] md:min-h-[185px] md:max-h-[185px]",
+    editor: "min-h-[160px] md:min-h-[185px] lg:min-h-0 lg:flex-1",
     preview: "min-h-[160px] md:min-h-[185px]",
   },
 } as const;
 
 export const CARD_EDITOR_COMPACT_CLASS = {
   fieldShell:
-    "min-w-0 overflow-hidden rounded-xl border border-[#e5e5e5] bg-white",
-  fieldLabel: SHARED_FEATURE_CLASS.text13Emphasis,
+    "flex min-w-0 flex-col rounded-xl border border-[#e5e5e5] bg-white lg:min-h-full",
+  fieldLabel:
+    "min-w-[72px] shrink-0 pr-3 text-[13px] font-semibold leading-none text-[#111]",
   statusPill: `shrink-0 rounded-full border border-[#e5e5e5] bg-white px-2 py-0.5 ${SHARED_FEATURE_CLASS.text12Neutral}`,
   mobileToggle:
     "mb-2 grid grid-cols-2 rounded-xl border border-[#e5e5e5] bg-[#fafafa] p-0.5 lg:hidden",
@@ -47,13 +46,13 @@ export const CARD_EDITOR_COMPACT_CLASS = {
   editorContent:
     "card-rich-editor-content bg-white px-3 py-3 text-[14px] leading-6 text-[#111] outline-none",
   previewRail:
-    "hidden min-h-0 flex-col overflow-hidden rounded-xl border border-[#e5e5e5] bg-white lg:flex lg:h-full",
+    "hidden rounded-xl border border-[#e5e5e5] bg-white lg:flex lg:min-h-full",
   previewFace:
-    "flex min-h-0 flex-1 flex-col overflow-hidden border-b border-[#e5e5e5] bg-white last:border-b-0",
+    "flex min-h-0 flex-1 flex-col border-b border-[#e5e5e5] bg-white last:border-b-0",
   previewFaceHeader:
     "flex items-center justify-between gap-2 border-b border-[#e5e5e5] px-3 py-2",
   previewFaceBody:
-    "min-h-[120px] flex-1 overflow-y-auto px-3 py-3 text-[13px] leading-6 text-[#111] md:min-h-[145px]",
+    "min-h-0 flex-1 overflow-visible px-3 py-3 text-[13px] leading-6 text-[#111]",
 } as const;
 
 export function getCardEditorHeightClass(

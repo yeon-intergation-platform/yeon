@@ -151,53 +151,57 @@ export function AddCardsPanel({ deckId, onClose }: AddCardsPanelProps) {
       footer={footer}
       density="compact"
     >
-      <div className="flex rounded-xl bg-[#f3f3f3] p-1 text-[13px] font-semibold">
-        <button
-          type="button"
-          onClick={() => setMode(ADD_CARD_MODES.manual)}
-          className={`flex-1 rounded-lg px-3 py-2 transition-colors ${
-            mode === ADD_CARD_MODES.manual
-              ? "bg-white text-[#111] shadow-sm"
-              : "text-[#666] hover:text-[#111]"
-          }`}
-        >
-          직접 작성
-        </button>
-        <button
-          type="button"
-          onClick={() => setMode(ADD_CARD_MODES.bulk)}
-          className={`flex-1 rounded-lg px-3 py-2 transition-colors ${
-            mode === ADD_CARD_MODES.bulk
-              ? "bg-white text-[#111] shadow-sm"
-              : "text-[#666] hover:text-[#111]"
-          }`}
-        >
-          일괄 추가
-        </button>
-      </div>
-
-      <div className="mt-3">
-        <div
-          hidden={mode !== ADD_CARD_MODES.manual}
-          aria-hidden={mode !== ADD_CARD_MODES.manual}
-        >
-          <AddCardForm
-            deckId={deckId}
-            formId={manualFormId}
-            onSaved={onClose}
-            onDirtyChange={setManualDirty}
-            onActionStateChange={handleManualActionStateChange}
-          />
+      <div className="flex h-full min-h-0 flex-col">
+        <div className="flex shrink-0 rounded-xl bg-[#f3f3f3] p-1 text-[13px] font-semibold">
+          <button
+            type="button"
+            onClick={() => setMode(ADD_CARD_MODES.manual)}
+            className={`flex-1 rounded-lg px-3 py-2 transition-colors ${
+              mode === ADD_CARD_MODES.manual
+                ? "bg-white text-[#111] shadow-sm"
+                : "text-[#666] hover:text-[#111]"
+            }`}
+          >
+            직접 작성
+          </button>
+          <button
+            type="button"
+            onClick={() => setMode(ADD_CARD_MODES.bulk)}
+            className={`flex-1 rounded-lg px-3 py-2 transition-colors ${
+              mode === ADD_CARD_MODES.bulk
+                ? "bg-white text-[#111] shadow-sm"
+                : "text-[#666] hover:text-[#111]"
+            }`}
+          >
+            일괄 추가
+          </button>
         </div>
-        <div
-          hidden={mode !== ADD_CARD_MODES.bulk}
-          aria-hidden={mode !== ADD_CARD_MODES.bulk}
-        >
-          <BulkAddCardsForm
-            deckId={deckId}
-            onSuccess={onClose}
-            onDirtyChange={setBulkDirty}
-          />
+
+        <div className="mt-3 min-h-0 flex-1">
+          <div
+            hidden={mode !== ADD_CARD_MODES.manual}
+            aria-hidden={mode !== ADD_CARD_MODES.manual}
+            className="h-full min-h-0"
+          >
+            <AddCardForm
+              deckId={deckId}
+              formId={manualFormId}
+              onSaved={onClose}
+              onDirtyChange={setManualDirty}
+              onActionStateChange={handleManualActionStateChange}
+            />
+          </div>
+          <div
+            hidden={mode !== ADD_CARD_MODES.bulk}
+            aria-hidden={mode !== ADD_CARD_MODES.bulk}
+            className="h-full min-h-0"
+          >
+            <BulkAddCardsForm
+              deckId={deckId}
+              onSuccess={onClose}
+              onDirtyChange={setBulkDirty}
+            />
+          </div>
         </div>
       </div>
     </ResponsiveModal>
