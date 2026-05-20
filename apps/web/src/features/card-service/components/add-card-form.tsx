@@ -1,10 +1,17 @@
 "use client";
 
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import {
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useState,
+  type FormEvent,
+} from "react";
 
 import { analyticsEvents, trackEvent } from "@/lib/analytics";
 import { CARD_SERVICE_COMMON_CLASS } from "../card-service-common.const";
 import { useAddCard } from "../hooks";
+import { CardAddLivePreview } from "./card-add-live-preview";
 import { CardRichMarkdownEditor } from "./card-rich-markdown-editor";
 import { isEmptyRichContent, normalizeRichContent } from "./card-content-utils";
 
@@ -70,6 +77,8 @@ export function AddCardForm({
   const addMutation = useAddCard(deckId);
   const isUploading = uploadingSides.front || uploadingSides.back;
   const isPending = addMutation.isPending || isUploading;
+  const deferredFrontText = useDeferredValue(frontText);
+  const deferredBackText = useDeferredValue(backText);
 
   const currentValue = useMemo<CardEditorValue>(
     () => ({ frontText, backText }),
@@ -165,44 +174,55 @@ export function AddCardForm({
   const errorMessage = addMutation.error?.message || null;
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-      <div className="flex flex-col gap-6">
-        <div className="rounded-2xl border border-[#ececec] bg-white p-4 md:p-5">
-          <CardRichMarkdownEditor
-            label="카드 질문"
-            value={frontText}
-            onChange={setFrontText}
-            placeholder="질문 또는 앞면 내용을 작성하고 이미지는 문장 사이에 붙여넣으세요."
-            helperText="이미지는 드래그앤드롭, 붙여넣기, 이미지 버튼으로 본문 안에 삽입됩니다."
-            density="question"
-            onUploadingChange={(isUploadingFront) =>
-              setUploadingSides((prev) => ({
-                ...prev,
-                front: isUploadingFront,
-              }))
-            }
-          />
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(320px,0.52fr)] lg:items-start">
+        <div className="flex min-w-0 flex-col gap-4">
+          <div className="rounded-2xl border border-[#ececec] bg-white p-3 md:p-4">
+            <CardRichMarkdownEditor
+              label="카드 질문"
+              value={frontText}
+              onChange={setFrontText}
+              placeholder="질문 또는 앞면 내용을 작성하고 이미지는 문장 사이에 붙여넣으세요."
+              helperText="이미지는 드래그·붙여넣기·버튼으로 본문에 삽입됩니다."
+              density="compactQuestion"
+              previewPlacement="none"
+              onUploadingChange={(isUploadingFront) =>
+                setUploadingSides((prev) => ({
+                  ...prev,
+                  front: isUploadingFront,
+                }))
+              }
+            />
+          </div>
+          <div className="rounded-2xl border border-[#ececec] bg-white p-3 md:p-4">
+            <CardRichMarkdownEditor
+              label="카드 답변 / 본문"
+              value={backText}
+              onChange={setBackText}
+              placeholder="답변 또는 본문을 작성하세요."
+              helperText="삽입 이미지는 크기 조절 후 저장하면 본문과 함께 유지됩니다."
+              density="compactAnswer"
+              previewPlacement="none"
+              onUploadingChange={(isUploadingBack) =>
+                setUploadingSides((prev) => ({
+                  ...prev,
+                  back: isUploadingBack,
+                }))
+              }
+            />
+          </div>
         </div>
-        <div className="rounded-2xl border border-[#ececec] bg-white p-4 md:p-5">
-          <CardRichMarkdownEditor
-            label="카드 답변 / 본문"
-            value={backText}
-            onChange={setBackText}
-            placeholder="답변 또는 본문을 작성하세요."
-            helperText="삽입한 이미지는 크기 조절 후 저장하면 본문과 함께 유지됩니다."
-            density="answer"
-            onUploadingChange={(isUploadingBack) =>
-              setUploadingSides((prev) => ({ ...prev, back: isUploadingBack }))
-            }
-          />
-        </div>
+        <CardAddLivePreview
+          frontText={deferredFrontText}
+          backText={deferredBackText}
+        />
       </div>
 
       {errorMessage ? (
         <p className="text-[13px] font-medium text-red-600">{errorMessage}</p>
       ) : null}
 
-      <div className="flex flex-col-reverse gap-3 border-t border-[#efefef] pt-4 sm:flex-row sm:items-center sm:justify-end">
+      <div className="sticky bottom-0 z-10 -mx-5 flex flex-col-reverse gap-3 border-t border-[#efefef] bg-white/95 px-5 py-4 backdrop-blur sm:flex-row sm:items-center sm:justify-end md:-mx-6 md:px-6">
         {onCancel ? (
           <button
             type="button"
