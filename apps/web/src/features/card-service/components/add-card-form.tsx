@@ -175,7 +175,7 @@ export function AddCardForm({
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(320px,0.52fr)] lg:items-start">
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(320px,0.52fr)] lg:items-stretch">
         <div className="flex min-w-0 flex-col gap-4">
           <div className="rounded-2xl border border-[#ececec] bg-white p-3 md:p-4">
             <CardRichMarkdownEditor
@@ -184,8 +184,9 @@ export function AddCardForm({
               onChange={setFrontText}
               placeholder="질문 또는 앞면 내용을 작성하고 이미지는 문장 사이에 붙여넣으세요."
               helperText="이미지는 드래그·붙여넣기·버튼으로 본문에 삽입됩니다."
-              density="compactQuestion"
-              previewPlacement="none"
+              density="question"
+              layoutMode="compact"
+              previewPlacement="mobile"
               onUploadingChange={(isUploadingFront) =>
                 setUploadingSides((prev) => ({
                   ...prev,
@@ -201,8 +202,9 @@ export function AddCardForm({
               onChange={setBackText}
               placeholder="답변 또는 본문을 작성하세요."
               helperText="삽입 이미지는 크기 조절 후 저장하면 본문과 함께 유지됩니다."
-              density="compactAnswer"
-              previewPlacement="none"
+              density="answer"
+              layoutMode="compact"
+              previewPlacement="mobile"
               onUploadingChange={(isUploadingBack) =>
                 setUploadingSides((prev) => ({
                   ...prev,
@@ -222,7 +224,7 @@ export function AddCardForm({
         <p className="text-[13px] font-medium text-red-600">{errorMessage}</p>
       ) : null}
 
-      <div className="sticky bottom-0 z-10 -mx-5 flex flex-col-reverse gap-3 border-t border-[#efefef] bg-white/95 px-5 py-4 backdrop-blur sm:flex-row sm:items-center sm:justify-end md:-mx-6 md:px-6">
+      <div className="sticky bottom-0 z-10 flex flex-col-reverse gap-3 rounded-2xl border border-[#efefef] bg-white/95 px-4 py-4 shadow-[0_-12px_36px_rgba(17,17,17,0.06)] backdrop-blur sm:flex-row sm:items-center sm:justify-end">
         {onCancel ? (
           <button
             type="button"

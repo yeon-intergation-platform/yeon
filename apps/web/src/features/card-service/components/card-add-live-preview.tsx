@@ -1,7 +1,6 @@
 "use client";
 
-import { MarkdownContent } from "./markdown-content";
-import { isMeaningfulCardEditorContent } from "./card-rich-markdown-editor-view";
+import { CardPreviewSurface } from "./card-rich-markdown-editor-view";
 
 interface CardAddLivePreviewProps {
   frontText: string;
@@ -19,24 +18,20 @@ function CardFacePreview({
   value: string;
   emptyText: string;
 }) {
-  const hasContent = isMeaningfulCardEditorContent(value);
-
   return (
-    <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[22px] border border-[#e8e8e8] bg-white shadow-[0_12px_36px_rgba(17,17,17,0.06)]">
-      <div className="flex items-center justify-between gap-3 border-b border-[#eeeeee] bg-[#fafafa] px-4 py-3">
-        <p className="text-[13px] font-semibold text-[#111]">{title}</p>
+    <CardPreviewSurface
+      title={title}
+      eyebrow={
         <span className="rounded-full border border-[#e2e2e2] bg-white px-2.5 py-1 text-[11px] font-semibold text-[#777]">
           {label}
         </span>
-      </div>
-      <div className="min-h-[130px] flex-1 overflow-y-auto px-4 py-4 text-[14px] leading-7 text-[#111] md:min-h-[160px]">
-        {hasContent ? (
-          <MarkdownContent>{value}</MarkdownContent>
-        ) : (
-          <p className="text-[13px] leading-6 text-[#999]">{emptyText}</p>
-        )}
-      </div>
-    </section>
+      }
+      value={value}
+      emptyText={emptyText}
+      containerClassName="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[22px] border border-[#e8e8e8] bg-white shadow-[0_12px_36px_rgba(17,17,17,0.06)]"
+      headerClassName="flex items-center justify-between gap-3 border-b border-[#eeeeee] bg-[#fafafa] px-4 py-3"
+      bodyClassName="min-h-[130px] flex-1 overflow-y-auto px-4 py-4 text-[14px] leading-7 text-[#111] md:min-h-[160px]"
+    />
   );
 }
 
@@ -45,7 +40,7 @@ export function CardAddLivePreview({
   backText,
 }: CardAddLivePreviewProps) {
   return (
-    <aside className="flex min-h-0 flex-col rounded-[24px] border border-[#ececec] bg-[#f8f8f8] p-4 lg:sticky lg:top-0 lg:max-h-[calc(90vh-220px)]">
+    <aside className="hidden min-h-0 flex-col overflow-hidden rounded-[24px] border border-[#ececec] bg-[#f8f8f8] p-4 lg:flex lg:h-full">
       <div className="mb-4">
         <p className="text-[15px] font-semibold text-[#111]">
           실시간 카드 미리보기

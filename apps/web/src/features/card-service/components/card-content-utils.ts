@@ -16,6 +16,10 @@ export function isEmptyRichContent(value: string) {
   return htmlToVisibleText(value).length === 0;
 }
 
+export function isRenderableRichContent(value: string) {
+  return !isEmptyRichContent(value) || /<iframe\b/i.test(value);
+}
+
 export function normalizeRichContent(value: string) {
   return value.trim();
 }

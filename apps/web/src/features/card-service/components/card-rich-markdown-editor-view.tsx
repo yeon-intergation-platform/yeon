@@ -1,8 +1,10 @@
 "use client";
 
 import { memo } from "react";
+import type { ReactNode } from "react";
 
 import { SHARED_FEATURE_CLASS } from "../../shared-style-constants";
+import { isRenderableRichContent } from "./card-content-utils";
 import { MarkdownContent } from "./markdown-content";
 
 export const CARD_EDITOR_HEIGHT_CLASS = {
@@ -14,24 +16,75 @@ export const CARD_EDITOR_HEIGHT_CLASS = {
     editor: "min-h-[360px] md:min-h-[420px]",
     preview: "min-h-[360px] md:min-h-[420px]",
   },
-  compactQuestion: {
+} as const;
+
+const CARD_EDITOR_COMPACT_HEIGHT_CLASS = {
+  question: {
     editor:
       "h-[180px] min-h-[180px] max-h-[180px] overflow-y-auto md:h-[210px] md:min-h-[210px] md:max-h-[210px]",
     preview: "min-h-[180px] md:min-h-[210px]",
   },
-  compactAnswer: {
+  answer: {
     editor:
       "h-[220px] min-h-[220px] max-h-[220px] overflow-y-auto md:h-[270px] md:min-h-[270px] md:max-h-[270px]",
     preview: "min-h-[220px] md:min-h-[270px]",
   },
 } as const;
 
-export function isMeaningfulCardEditorContent(value: string) {
+export function getCardEditorHeightClass(
+  density: keyof typeof CARD_EDITOR_HEIGHT_CLASS,
+  layoutMode: "default" | "compact" = "default"
+) {
+  if (layoutMode === "compact") {
+    return CARD_EDITOR_COMPACT_HEIGHT_CLASS[density];
+  }
+
+  return CARD_EDITOR_HEIGHT_CLASS[density];
+}
+
+interface CardPreviewSurfaceProps {
+  eyebrow?: ReactNode;
+  title: ReactNode;
+  value: string;
+  emptyText: string;
+  containerClassName?: string;
+  headerClassName?: string;
+  bodyClassName?: string;
+  contentClassName?: string;
+}
+
+export function CardPreviewSurface({
+  eyebrow,
+  title,
+  value,
+  emptyText,
+  containerClassName = "flex h-full flex-col overflow-hidden rounded-2xl border border-[#e8e8e8] bg-white",
+  headerClassName = `${SHARED_FEATURE_CLASS.alignBetweenGap3} border-b border-[#eeeeee] bg-[#fafafa] px-5 py-3 md:px-6`,
+  bodyClassName = "flex-1 p-5 md:p-6",
+  contentClassName,
+}: CardPreviewSurfaceProps) {
+  const hasContent = isRenderableRichContent(value);
+
   return (
-    value
-      .replace(/<[^>]*>/g, "")
-      .replace(/&nbsp;/g, " ")
-      .trim().length > 0 || /<img\b/i.test(value)
+    <section className={containerClassName}>
+      <div className={headerClassName}>
+        <p className={SHARED_FEATURE_CLASS.text13Emphasis}>{title}</p>
+        {eyebrow ? (
+          <p className="truncate text-[12px] font-medium text-[#888]">
+            {eyebrow}
+          </p>
+        ) : null}
+      </div>
+      <div className={bodyClassName}>
+        {hasContent ? (
+          <MarkdownContent className={contentClassName}>
+            {value}
+          </MarkdownContent>
+        ) : (
+          <p className="text-[13px] leading-6 text-[#999]">{emptyText}</p>
+        )}
+      </div>
+    </section>
   );
 }
 
@@ -44,26 +97,14 @@ function CardEditorPreviewComponent({
   value: string;
   previewHeightClassName: string;
 }) {
-  const hasContent = isMeaningfulCardEditorContent(value);
-
   return (
-    <aside className="flex h-full flex-col overflow-hidden rounded-2xl border border-[#e8e8e8] bg-white">
-      <div
-        className={`${SHARED_FEATURE_CLASS.alignBetweenGap3} border-b border-[#eeeeee] bg-[#fafafa] px-5 py-3 md:px-6`}
-      >
-        <p className={SHARED_FEATURE_CLASS.text13Emphasis}>미리보기</p>
-        <p className="truncate text-[12px] font-medium text-[#888]">{label}</p>
-      </div>
-      <div className={`flex-1 p-5 md:p-6 ${previewHeightClassName}`}>
-        {hasContent ? (
-          <MarkdownContent>{value}</MarkdownContent>
-        ) : (
-          <p className="text-[13px] leading-6 text-[#999]">
-            작성한 내용이 오른쪽에 실제 카드처럼 표시됩니다.
-          </p>
-        )}
-      </div>
-    </aside>
+    <CardPreviewSurface
+      title="미리보기"
+      eyebrow={label}
+      value={value}
+      emptyText="작성한 내용이 오른쪽에 실제 카드처럼 표시됩니다."
+      bodyClassName={`flex-1 p-5 md:p-6 ${previewHeightClassName}`}
+    />
   );
 }
 
