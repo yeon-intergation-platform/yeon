@@ -95,7 +95,6 @@ interface CardEditorToolbarProps {
   onRedo: () => void;
   density?: CardEditorToolbarDensity;
   leadingLabel?: string;
-  trailingStatus?: string;
 }
 
 export function CardEditorToolbar({
@@ -117,7 +116,6 @@ export function CardEditorToolbar({
   onRedo,
   density = "default",
   leadingLabel,
-  trailingStatus,
 }: CardEditorToolbarProps) {
   const toolbarClassName =
     density === "compact"
@@ -232,15 +230,6 @@ export function CardEditorToolbar({
         <div className="flex min-w-0 flex-wrap items-center gap-1.5">
           {toolbarControls}
         </div>
-        {trailingStatus ? (
-          <span
-            className={`${CARD_EDITOR_COMPACT_CLASS.statusPill} justify-self-end whitespace-nowrap`}
-          >
-            {trailingStatus}
-          </span>
-        ) : (
-          <span aria-hidden="true" />
-        )}
       </div>
     );
   }
