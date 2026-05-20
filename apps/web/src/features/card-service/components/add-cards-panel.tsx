@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useId, useMemo, useState } from "react";
+import { motion } from "framer-motion";
 
 import { CARD_SERVICE_COMMON_CLASS } from "../card-service-common.const";
 import {
@@ -10,6 +11,12 @@ import {
 } from "./add-card-form";
 import { BulkAddCardsForm } from "./bulk-add-cards-form";
 import { ResponsiveModal } from "./responsive-modal";
+
+const MODE_TAB_MOTION = {
+  whileHover: { scale: 1.01, y: -1 },
+  whileTap: { scale: 0.985, y: 0 },
+  transition: { type: "spring", stiffness: 420, damping: 32 },
+} as const;
 
 const ADD_CARD_MODES = {
   manual: "manual",
@@ -153,7 +160,7 @@ export function AddCardsPanel({ deckId, onClose }: AddCardsPanelProps) {
     >
       <div className="flex h-full min-h-0 flex-col">
         <div className="flex shrink-0 rounded-xl bg-[#f3f3f3] p-1 text-[13px] font-semibold">
-          <button
+          <motion.button
             type="button"
             onClick={() => setMode(ADD_CARD_MODES.manual)}
             className={`flex-1 rounded-lg px-3 py-2 transition-colors ${
@@ -161,10 +168,11 @@ export function AddCardsPanel({ deckId, onClose }: AddCardsPanelProps) {
                 ? "bg-white text-[#111] shadow-sm"
                 : "text-[#666] hover:text-[#111]"
             }`}
+            {...MODE_TAB_MOTION}
           >
             직접 작성
-          </button>
-          <button
+          </motion.button>
+          <motion.button
             type="button"
             onClick={() => setMode(ADD_CARD_MODES.bulk)}
             className={`flex-1 rounded-lg px-3 py-2 transition-colors ${
@@ -172,9 +180,10 @@ export function AddCardsPanel({ deckId, onClose }: AddCardsPanelProps) {
                 ? "bg-white text-[#111] shadow-sm"
                 : "text-[#666] hover:text-[#111]"
             }`}
+            {...MODE_TAB_MOTION}
           >
             일괄 추가
-          </button>
+          </motion.button>
         </div>
 
         <div className="mt-3 min-h-0 flex-1">
