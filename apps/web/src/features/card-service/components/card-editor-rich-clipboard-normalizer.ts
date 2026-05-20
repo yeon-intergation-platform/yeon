@@ -1,5 +1,3 @@
-import { convertCardEditorHtmlTableElementToMarkdownTable } from "./card-editor-table-utils";
-
 const NOTION_ATTACHMENT_SOURCE_PATTERN = /^attachment:[^\s]+/i;
 
 function isNotionAttachmentSource(source: string) {
@@ -26,24 +24,6 @@ export function normalizeCardEditorRichClipboardHtml(html: string) {
 
   const document = new window.DOMParser().parseFromString(html, "text/html");
   let notionAttachmentCount = 0;
-  let tableCount = 0;
-
-  Array.from(document.querySelectorAll("table")).forEach((table) => {
-    const markdownTable =
-      convertCardEditorHtmlTableElementToMarkdownTable(table);
-    if (!markdownTable) {
-      return;
-    }
-
-    const fragment = document.createDocumentFragment();
-    markdownTable.split("\n").forEach((line) => {
-      const paragraph = document.createElement("p");
-      paragraph.textContent = line;
-      fragment.appendChild(paragraph);
-    });
-    table.replaceWith(fragment);
-    tableCount += 1;
-  });
 
   Array.from(document.querySelectorAll("img")).forEach((image) => {
     const source = image.getAttribute("src") ?? "";
@@ -61,8 +41,7 @@ export function normalizeCardEditorRichClipboardHtml(html: string) {
 
   return {
     html: document.body.innerHTML,
-    hasChanges: notionAttachmentCount > 0 || tableCount > 0,
+    hasChanges: notionAttachmentCount > 0,
     notionAttachmentCount,
-    tableCount,
   };
 }
