@@ -397,16 +397,20 @@ export function MarkdownContent({
         object-fit: contain;
       }
       .card-markdown-html table {
-        border: 1px solid #e5e5e5;
+        border: 1px solid #dcdcdc;
         border-collapse: collapse;
-        margin: 0.75rem 0;
-        min-width: 100%;
+        margin: 0.5rem 0;
+        max-width: 100%;
+        table-layout: auto;
         text-align: left;
+        width: max-content;
       }
       .card-markdown-html th,
       .card-markdown-html td {
-        border: 1px solid #e5e5e5;
-        padding: 0.35rem 0.5rem;
+        border: 1px solid #dcdcdc;
+        padding: 0.25rem 0.4rem;
+        vertical-align: top;
+        white-space: nowrap;
       }
       .card-markdown-html th {
         background: #f7f7f7;
@@ -498,21 +502,25 @@ export function MarkdownContent({
             </a>
           ),
           table: ({ children: nodeChildren }) => (
-            <div className="my-3 overflow-x-auto">
+            <div className="my-2 max-w-full overflow-x-auto">
               <table
-                className={`min-w-full border-collapse border ${colors.border} text-left text-[13px]`}
+                className={`w-max max-w-full table-auto border-collapse border ${colors.border} text-left text-[13px]`}
               >
                 {nodeChildren}
               </table>
             </div>
           ),
           th: ({ children: nodeChildren }) => (
-            <th className={`border ${colors.border} px-2 py-1 font-semibold`}>
+            <th
+              className={`whitespace-nowrap border ${colors.border} px-1.5 py-1 align-top font-semibold`}
+            >
               {nodeChildren}
             </th>
           ),
           td: ({ children: nodeChildren }) => (
-            <td className={`border ${colors.border} px-2 py-1`}>
+            <td
+              className={`whitespace-nowrap border ${colors.border} px-1.5 py-1 align-top`}
+            >
               {nodeChildren}
             </td>
           ),
