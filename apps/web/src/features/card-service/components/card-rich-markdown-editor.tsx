@@ -23,6 +23,7 @@ import {
   CARD_EDITOR_HEIGHT_CLASS,
   CardEditorPreview,
   CardRichEditorGlobalStyles,
+  getCardEditorHeightClass,
 } from "./card-rich-markdown-editor-view";
 import {
   extractCardEditorHtmlImageSources,
@@ -59,7 +60,8 @@ interface CardRichMarkdownEditorProps {
   placeholder?: string;
   helperText?: string;
   density?: keyof typeof CARD_EDITOR_HEIGHT_CLASS;
-  previewPlacement?: "inline" | "none";
+  layoutMode?: "default" | "compact";
+  previewPlacement?: "inline" | "mobile" | "none";
   disabled?: boolean;
   onUploadingChange?: (isUploading: boolean) => void;
 }
@@ -124,6 +126,7 @@ export function CardRichMarkdownEditor({
   placeholder,
   helperText,
   density = "question",
+  layoutMode = "default",
   previewPlacement = "inline",
   disabled = false,
   onUploadingChange,
@@ -143,7 +146,7 @@ export function CardRichMarkdownEditor({
     handleClipboardPaste,
     handleImageSourceFileReplacements,
   } = useCardEditorImageUpload();
-  const heightClassName = CARD_EDITOR_HEIGHT_CLASS[density];
+  const heightClassName = getCardEditorHeightClass(density, layoutMode);
 
   useEffect(() => {
     onUploadingChange?.(isUploading);
@@ -558,7 +561,8 @@ export function CardRichMarkdownEditor({
       </span>
     </div>
   ) : null;
-  const shouldShowInlinePreview = previewPlacement === "inline";
+  const shouldShowPreview = previewPlacement !== "none";
+  const shouldShowDesktopInlinePreview = previewPlacement === "inline";
   const editorPanel = (
     <div className="min-w-0 rounded-2xl bg-white">
       <CardEditorToolbar
@@ -643,7 +647,7 @@ export function CardRichMarkdownEditor({
         </span>
       </div>
 
-      {shouldShowInlinePreview ? (
+      {shouldShowPreview ? (
         <div className="mb-3 grid grid-cols-2 rounded-2xl border border-[#e8e8e8] bg-[#fafafa] p-1 lg:hidden">
           <button
             type="button"
@@ -672,14 +676,14 @@ export function CardRichMarkdownEditor({
 
       <div
         className={
-          shouldShowInlinePreview
+          shouldShowDesktopInlinePreview
             ? "lg:grid lg:grid-cols-[minmax(0,1.35fr)_minmax(320px,1fr)] lg:items-stretch lg:gap-5"
             : ""
         }
       >
         <div
           className={
-            shouldShowInlinePreview
+            shouldShowPreview
               ? mobilePane === "edit"
                 ? "block"
                 : "hidden lg:block"
@@ -688,9 +692,17 @@ export function CardRichMarkdownEditor({
         >
           {editorPanel}
         </div>
-        {shouldShowInlinePreview ? (
+        {shouldShowPreview ? (
           <div
-            className={mobilePane === "preview" ? "block" : "hidden lg:block"}
+            className={
+              mobilePane === "preview"
+                ? shouldShowDesktopInlinePreview
+                  ? "block"
+                  : "block lg:hidden"
+                : shouldShowDesktopInlinePreview
+                  ? "hidden lg:block"
+                  : "hidden"
+            }
           >
             <CardEditorPreview
               label={label}

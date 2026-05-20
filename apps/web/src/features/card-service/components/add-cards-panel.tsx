@@ -29,6 +29,8 @@ export function AddCardsPanel({ deckId, onClose }: AddCardsPanelProps) {
         : "AI가 만든 카드 묶음을 붙여넣어 여러 장을 한 번에 추가할 수 있습니다.",
     [mode]
   );
+  const modalWidthClassName =
+    mode === ADD_CARD_MODES.manual ? "max-w-[1180px]" : "max-w-[880px]";
 
   const handleRequestClose = () => {
     if (
@@ -47,7 +49,7 @@ export function AddCardsPanel({ deckId, onClose }: AddCardsPanelProps) {
       title="카드 추가"
       description={modeDescription}
       onClose={handleRequestClose}
-      widthClassName="max-w-[1180px]"
+      widthClassName={modalWidthClassName}
     >
       <div className="flex rounded-2xl bg-[#f3f3f3] p-1 text-[14px] font-semibold">
         <button
