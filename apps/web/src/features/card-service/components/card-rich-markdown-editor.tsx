@@ -23,6 +23,7 @@ import {
   Columns3,
   Rows3,
   Plus,
+  Trash2,
   type LucideIcon,
 } from "lucide-react";
 
@@ -63,6 +64,11 @@ import {
 import { serializeCardEditorSliceToMarkdown } from "./card-editor-markdown-serializer";
 import { isSingleCardEditorYouTubeUrlText } from "./card-editor-youtube-utils";
 import { useCardEditorImageUpload } from "./use-card-editor-image-upload";
+import {
+  YeonContextMenu,
+  type YeonContextMenuPosition,
+} from "@/components/yeon-ui";
+
 import { CARD_SERVICE_COMMON_CLASS } from "../card-service-common.const";
 
 interface CardRichMarkdownEditorProps {
@@ -98,6 +104,10 @@ interface CardEditorTableActionOverlayState {
   left: number;
   width: number;
   height: number;
+}
+
+interface CardEditorTableContextMenuState {
+  position: YeonContextMenuPosition;
 }
 
 function TableEditIconButton({
@@ -241,7 +251,9 @@ function findClosestTableElement(target: EventTarget | null) {
     return null;
   }
 
-  return target.closest("table");
+  const tableElement = target.closest("table");
+
+  return tableElement instanceof HTMLTableElement ? tableElement : null;
 }
 
 function findSelectedTableElement(editor: Editor) {
@@ -296,6 +308,8 @@ export function CardRichMarkdownEditor({
     useState<CardEditorToolbarState>(EMPTY_TOOLBAR_STATE);
   const [tableActionOverlay, setTableActionOverlay] =
     useState<CardEditorTableActionOverlayState | null>(null);
+  const [tableContextMenu, setTableContextMenu] =
+    useState<CardEditorTableContextMenuState | null>(null);
   const [mobilePane, setMobilePane] = useState<"edit" | "preview">("edit");
   const editorPanelRef = useRef<HTMLDivElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -856,6 +870,51 @@ export function CardRichMarkdownEditor({
     }
     setTableActionOverlay(null);
   }, [editor, updateTableActionOverlay]);
+  const closeTableContextMenu = useCallback(() => {
+    setTableContextMenu(null);
+  }, []);
+  const handleEditorContextMenu = useCallback(
+    (event: MouseEvent<HTMLDivElement>) => {
+      if (!editor || disabled) {
+        return;
+      }
+
+      const tableElement = findClosestTableElement(event.target);
+      if (!tableElement) {
+        closeTableContextMenu();
+        return;
+      }
+
+      const position = editor.view.posAtCoords({
+        left: event.clientX,
+        top: event.clientY,
+      });
+
+      if (!position) {
+        return;
+      }
+
+      event.preventDefault();
+      editor.chain().setTextSelection(position.pos).focus().run();
+      updateTableActionOverlay(tableElement);
+      setTableContextMenu({
+        position: {
+          x: event.clientX,
+          y: event.clientY,
+        },
+      });
+    },
+    [closeTableContextMenu, disabled, editor, updateTableActionOverlay]
+  );
+  const deleteSelectedTable = useCallback(() => {
+    if (!editor || disabled) {
+      return;
+    }
+
+    editor.chain().focus().deleteTable().run();
+    setTableActionOverlay(null);
+    scheduleToolbarStateRefresh(editor);
+  }, [disabled, editor, scheduleToolbarStateRefresh]);
   const editorBodyClassName = isCompactLayout
     ? CARD_EDITOR_COMPACT_CLASS.editorBody
     : undefined;
@@ -934,12 +993,30 @@ export function CardRichMarkdownEditor({
 
       <div
         className={editorBodyClassName}
+        onContextMenu={handleEditorContextMenu}
         onMouseLeave={handleEditorMouseLeave}
         onMouseMove={handleEditorMouseMove}
       >
         <EditorContent editor={editor} />
       </div>
       {tableActionOverlayElement}
+
+      {tableContextMenu ? (
+        <YeonContextMenu
+          ariaLabel="표 컨텍스트 메뉴"
+          position={tableContextMenu.position}
+          onClose={closeTableContextMenu}
+          items={[
+            {
+              key: "delete-table",
+              label: "표 삭제",
+              destructive: true,
+              icon: <Trash2 className="h-4 w-4" />,
+              onSelect: deleteSelectedTable,
+            },
+          ]}
+        />
+      ) : null}
 
       <input
         ref={fileInputRef}
