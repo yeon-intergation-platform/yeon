@@ -182,8 +182,16 @@ export function CardRichEditorGlobalStyles() {
         margin: 0.5rem 0;
         overflow: hidden;
         table-layout: auto;
+        text-align: left;
         width: max-content;
         max-width: 100%;
+      }
+      .card-rich-editor-content table colgroup {
+        display: none;
+      }
+      .card-rich-editor-content table col {
+        min-width: 0 !important;
+        width: auto !important;
       }
       .card-rich-editor-content th,
       .card-rich-editor-content td {
@@ -191,8 +199,14 @@ export function CardRichEditorGlobalStyles() {
         min-width: 0;
         padding: 0.25rem 0.4rem;
         position: relative;
+        text-align: left;
         vertical-align: top;
         white-space: nowrap;
+        width: auto;
+      }
+      .card-rich-editor-content th > *,
+      .card-rich-editor-content td > * {
+        margin: 0;
       }
       .card-rich-editor-content th {
         background: #f7f7f7;
