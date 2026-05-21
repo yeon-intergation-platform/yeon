@@ -5,7 +5,11 @@ import type { ReactNode } from "react";
 
 import { SHARED_FEATURE_CLASS } from "../../shared-style-constants";
 import { isRenderableRichContent } from "./card-content-utils";
-import { MarkdownContent } from "./markdown-content";
+import {
+  CARD_MARKDOWN_TABLE_MIN_CELL_HEIGHT,
+  CARD_MARKDOWN_TABLE_MIN_CELL_WIDTH,
+  MarkdownContent,
+} from "./markdown-content";
 
 export const CARD_EDITOR_HEIGHT_CLASS = {
   question: {
@@ -196,7 +200,10 @@ export function CardRichEditorGlobalStyles() {
       .card-rich-editor-content th,
       .card-rich-editor-content td {
         border: 1px solid #dcdcdc;
-        min-width: 0;
+        box-sizing: border-box;
+        height: ${CARD_MARKDOWN_TABLE_MIN_CELL_HEIGHT}px;
+        line-height: 1.4;
+        min-width: ${CARD_MARKDOWN_TABLE_MIN_CELL_WIDTH}px;
         padding: 0.25rem 0.4rem;
         position: relative;
         text-align: left;

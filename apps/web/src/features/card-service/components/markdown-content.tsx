@@ -36,6 +36,13 @@ const baseTextClass = "whitespace-pre-wrap break-words";
 const CARD_HTML_IMAGE_MIN_WIDTH = 200;
 const CARD_HTML_IMAGE_MAX_WIDTH = 800;
 const CARD_HTML_IMAGE_DEFAULT_WIDTH = 480;
+export const CARD_MARKDOWN_TABLE_MIN_CELL_WIDTH = 56;
+export const CARD_MARKDOWN_TABLE_MIN_CELL_HEIGHT = 56;
+
+const CARD_MARKDOWN_TABLE_CELL_STYLE = {
+  minWidth: CARD_MARKDOWN_TABLE_MIN_CELL_WIDTH,
+  height: CARD_MARKDOWN_TABLE_MIN_CELL_HEIGHT,
+} as const;
 
 function looksLikeHtml(value: string) {
   return /<\/?(p|div|br|ul|ol|li|strong|em|u|s|blockquote|pre|code|h[1-6]|img|a|table|thead|tbody|tr|th|td|iframe)\b/i.test(
@@ -408,6 +415,11 @@ export function MarkdownContent({
       .card-markdown-html th,
       .card-markdown-html td {
         border: 1px solid #dcdcdc;
+        box-sizing: border-box;
+        font-size: 13px;
+        height: ${CARD_MARKDOWN_TABLE_MIN_CELL_HEIGHT}px;
+        line-height: 1.4;
+        min-width: ${CARD_MARKDOWN_TABLE_MIN_CELL_WIDTH}px;
         padding: 0.25rem 0.4rem;
         vertical-align: top;
         white-space: nowrap;
@@ -512,14 +524,16 @@ export function MarkdownContent({
           ),
           th: ({ children: nodeChildren }) => (
             <th
-              className={`whitespace-nowrap border ${colors.border} px-1.5 py-1 align-top font-semibold`}
+              className={`box-border whitespace-nowrap border ${colors.border} px-1.5 py-1 align-top font-semibold leading-[1.4]`}
+              style={CARD_MARKDOWN_TABLE_CELL_STYLE}
             >
               {nodeChildren}
             </th>
           ),
           td: ({ children: nodeChildren }) => (
             <td
-              className={`whitespace-nowrap border ${colors.border} px-1.5 py-1 align-top`}
+              className={`box-border whitespace-nowrap border ${colors.border} px-1.5 py-1 align-top leading-[1.4]`}
+              style={CARD_MARKDOWN_TABLE_CELL_STYLE}
             >
               {nodeChildren}
             </td>
