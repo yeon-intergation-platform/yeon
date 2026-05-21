@@ -8,6 +8,8 @@ import TableHeaderExtension from "@tiptap/extension-table-header";
 import TableRowExtension from "@tiptap/extension-table-row";
 import UnderlineExtension from "@tiptap/extension-underline";
 import { type Editor, EditorContent, useEditor } from "@tiptap/react";
+import { NodeSelection } from "@tiptap/pm/state";
+import { CellSelection } from "@tiptap/pm/tables";
 import StarterKit from "@tiptap/starter-kit";
 import {
   useCallback,
@@ -197,6 +199,42 @@ function carryParagraphIndentOnEnter(editor: Editor | null) {
   }
 
   return editor.chain().focus().splitBlock().insertContent(indent).run();
+}
+
+function isTableDeleteKeyboardEvent(event: KeyboardEvent) {
+  return (
+    (event.key === "Backspace" || event.key === "Delete") &&
+    !event.altKey &&
+    !event.ctrlKey &&
+    !event.metaKey &&
+    !event.shiftKey
+  );
+}
+
+function shouldDeleteSelectedTableWithKeyboard(editor: Editor | null) {
+  if (!editor) {
+    return false;
+  }
+
+  const { selection } = editor.state;
+
+  if (selection instanceof NodeSelection) {
+    return selection.node.type.name === "table";
+  }
+
+  if (selection instanceof CellSelection) {
+    return selection.$anchorCell.pos !== selection.$headCell.pos;
+  }
+
+  return false;
+}
+
+function deleteSelectedTableFromKeyboard(editor: Editor | null) {
+  if (!shouldDeleteSelectedTableWithKeyboard(editor)) {
+    return false;
+  }
+
+  return editor?.chain().focus().deleteTable().run() ?? false;
 }
 
 function insertCardEditorTableFromMarkdown(
@@ -555,19 +593,26 @@ export function CardRichMarkdownEditor({
         "aria-label": label,
       },
       handleKeyDown: (_view, event) => {
-        if (
-          event.key === "Backspace" &&
-          !event.altKey &&
-          !event.ctrlKey &&
-          !event.metaKey &&
-          !event.shiftKey
-        ) {
-          const didExitEmptyListItem = exitEmptyListItemOnBackspace(editor);
+        if (isTableDeleteKeyboardEvent(event)) {
+          const didDeleteSelectedTable =
+            deleteSelectedTableFromKeyboard(editor);
 
-          if (didExitEmptyListItem) {
+          if (didDeleteSelectedTable) {
             event.preventDefault();
+            setTableActionOverlay(null);
+            closeTableContextMenu();
             scheduleToolbarStateRefresh(editor);
             return true;
+          }
+
+          if (event.key === "Backspace") {
+            const didExitEmptyListItem = exitEmptyListItemOnBackspace(editor);
+
+            if (didExitEmptyListItem) {
+              event.preventDefault();
+              scheduleToolbarStateRefresh(editor);
+              return true;
+            }
           }
         }
 
