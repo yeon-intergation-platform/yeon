@@ -22,3 +22,9 @@ export {
   YEON_BADGE_VARIANTS,
   type YeonBadgeProps,
 } from "./yeon-badge";
+
+export {
+  YeonContextMenu,
+  type YeonContextMenuItem,
+  type YeonContextMenuPosition,
+} from "./yeon-context-menu";
