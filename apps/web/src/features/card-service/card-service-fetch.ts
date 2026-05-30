@@ -1,4 +1,5 @@
 import type {
+  CardDeckAssetUploadResponse,
   CardDeckDetailResponse,
   CardDeckDto,
   CreateCardDeckBody,
@@ -13,7 +14,7 @@ const CARD_SERVICE_AUTH_ERROR_MESSAGE =
 
 function normalizeCardServiceErrorMessage(
   message: string,
-  fallbackErrorMessage: string,
+  fallbackErrorMessage: string
 ) {
   if (!message) {
     return fallbackErrorMessage;
@@ -29,7 +30,7 @@ function normalizeCardServiceErrorMessage(
 export class CardServiceApiError extends Error {
   constructor(
     public readonly status: number,
-    message: string,
+    message: string
   ) {
     super(message);
     this.name = "CardServiceApiError";
@@ -38,7 +39,7 @@ export class CardServiceApiError extends Error {
 
 async function readErrorMessage(
   response: Response,
-  fallbackErrorMessage: string,
+  fallbackErrorMessage: string
 ): Promise<string> {
   if (response.status === 401) {
     return CARD_SERVICE_AUTH_ERROR_MESSAGE;
@@ -51,7 +52,7 @@ async function readErrorMessage(
     const parsed = JSON.parse(text) as { message?: string };
     return normalizeCardServiceErrorMessage(
       parsed.message ?? "",
-      fallbackErrorMessage,
+      fallbackErrorMessage
     );
   } catch {
     return fallbackErrorMessage;
@@ -62,7 +63,7 @@ async function throwIfNotOk(response: Response, fallbackErrorMessage: string) {
   if (!response.ok) {
     throw new CardServiceApiError(
       response.status,
-      await readErrorMessage(response, fallbackErrorMessage),
+      await readErrorMessage(response, fallbackErrorMessage)
     );
   }
 }
@@ -70,7 +71,7 @@ async function throwIfNotOk(response: Response, fallbackErrorMessage: string) {
 export async function cardServiceFetchJson<T>(
   input: RequestInfo | URL,
   init: RequestInit,
-  fallbackErrorMessage: string,
+  fallbackErrorMessage: string
 ): Promise<T> {
   const response = await fetch(input, { ...init, credentials: "include" });
 
@@ -82,7 +83,7 @@ export async function cardServiceFetchJson<T>(
 export async function cardServiceFetchVoid(
   input: RequestInfo | URL,
   init: RequestInit,
-  fallbackErrorMessage: string,
+  fallbackErrorMessage: string
 ): Promise<void> {
   const response = await fetch(input, { ...init, credentials: "include" });
 
@@ -90,19 +91,19 @@ export async function cardServiceFetchVoid(
 }
 
 export async function uploadCardDeckImage(
-  file: File,
-): Promise<{ storageKey: string; imageUrl: string }> {
+  file: File
+): Promise<CardDeckAssetUploadResponse> {
   const formData = new FormData();
   formData.append("file", file);
-  return cardServiceFetchJson<{ storageKey: string; imageUrl: string }>(
+  return cardServiceFetchJson<CardDeckAssetUploadResponse>(
     "/api/v1/card-decks/assets",
     { method: "POST", body: formData },
-    "이미지를 업로드하지 못했습니다.",
+    "이미지를 업로드하지 못했습니다."
   );
 }
 
 export async function createServerCardDeck(
-  body: CreateCardDeckBody,
+  body: CreateCardDeckBody
 ): Promise<CardDeckDto> {
   const data = await cardServiceFetchJson<{ deck: CardDeckDto }>(
     "/api/v1/card-decks",
@@ -111,7 +112,7 @@ export async function createServerCardDeck(
       headers: { "content-type": "application/json" },
       body: JSON.stringify(body),
     },
-    "덱을 생성하지 못했습니다.",
+    "덱을 생성하지 못했습니다."
   );
   return data.deck;
 }
@@ -135,17 +136,17 @@ export async function listServerCardDecksOrNull(): Promise<
 }
 
 export async function loadServerCardDeckDetail(
-  deckId: string,
+  deckId: string
 ): Promise<CardDeckDetailResponse> {
   return cardServiceFetchJson<CardDeckDetailResponse>(
     `/api/v1/card-decks/${deckId}`,
     {},
-    "덱을 불러오지 못했습니다.",
+    "덱을 불러오지 못했습니다."
   );
 }
 
 export async function mergeGuestCardDecksToServer(
-  body: unknown,
+  body: unknown
 ): Promise<MergeGuestResponse> {
   const raw = await cardServiceFetchJson<unknown>(
     "/api/v1/card-decks/merge-guest",
@@ -154,7 +155,7 @@ export async function mergeGuestCardDecksToServer(
       headers: { "content-type": "application/json" },
       body: JSON.stringify(body),
     },
-    "덱 이관에 실패했습니다. 다시 시도해 주세요.",
+    "덱 이관에 실패했습니다. 다시 시도해 주세요."
   );
 
   return mergeGuestResponseSchema.parse(raw);

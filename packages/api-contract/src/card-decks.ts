@@ -151,3 +151,13 @@ export const createCardDeckItemsResponseSchema = z.object({
 export type CreateCardDeckItemsResponse = z.infer<
   typeof createCardDeckItemsResponseSchema
 >;
+
+// 이미지 업로드(POST /api/v1/card-decks/assets) 응답 계약.
+// 백엔드 CardDeckAssetUploadResponse(record storageKey, imageUrl)와 1:1로 맞춘다.
+export const cardDeckAssetUploadResponseSchema = z.object({
+  storageKey: z.string().min(1).max(CARD_IMAGE_STORAGE_KEY_MAX_LENGTH),
+  imageUrl: z.string().min(1),
+});
+export type CardDeckAssetUploadResponse = z.infer<
+  typeof cardDeckAssetUploadResponseSchema
+>;
