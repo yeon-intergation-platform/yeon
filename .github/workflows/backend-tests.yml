@@ -34,9 +34,9 @@ jobs:
           distribution: temurin
           java-version: "25"
 
-      - name: Run tests + JaCoCo (Testcontainers uses runner Docker)
+      - name: Run tests + JaCoCo + 핵심 패키지 커버리지 검증 (Testcontainers uses runner Docker)
         working-directory: apps/backend
-        run: ./gradlew --no-daemon test jacocoTestReport
+        run: ./gradlew --no-daemon test jacocoTestReport jacocoTestCoverageVerification
 
       - name: Upload JaCoCo coverage report
         if: ${{ always() }}
@@ -134,6 +134,7 @@ jobs:
         uses: actions/upload-artifact@v7.0.1
         with:
           name: backend-karate-report
-          path: apps/backend/target/karate-reports/
+          # run-flows.sh 가 karate 리소스 디렉터리에서 실행되므로 리포트가 그 아래 생성된다.
+          path: apps/backend/src/test/resources/karate/target/karate-reports/
           if-no-files-found: warn
           retention-days: 14

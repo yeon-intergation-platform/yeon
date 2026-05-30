@@ -67,3 +67,29 @@ tasks.named('jacocoTestReport') {
 		xml.required = true
 	}
 }
+
+// 전체 % 강제(나쁜 목표) 대신, P0 요구사항 도메인의 핵심 로직(서비스/컨트롤러)에만
+// 완만한 하한을 둬서 "P0 코드 테스트 누락/회귀"를 감지한다. 리포지토리(DB 통합 비중 큼)와
+// DTO 는 포함하지 않는다. requirements.yaml 의 P0: 카드 에셋·커뮤니티 채팅·카드 덱.
+tasks.named('jacocoTestCoverageVerification') {
+	dependsOn tasks.named('test')
+	violationRules {
+		rule {
+			element = 'PACKAGE'
+			includes = [
+				'world.yeon.backend.card_decks.route.service',
+				'world.yeon.backend.card_decks.route.controller',
+				'world.yeon.backend.card_decks.assets.service',
+				'world.yeon.backend.card_decks.assets.controller',
+				'world.yeon.backend.card_decks.merge_guest.service',
+				'world.yeon.backend.community_chat.service',
+				'world.yeon.backend.community_chat.controller',
+			]
+			limit {
+				counter = 'INSTRUCTION'
+				value = 'COVEREDRATIO'
+				minimum = 0.30
+			}
+		}
+	}
+}
