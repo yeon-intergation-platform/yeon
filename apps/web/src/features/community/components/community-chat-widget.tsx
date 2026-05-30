@@ -5,6 +5,7 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { MessageCircle, X } from "lucide-react";
 
 import { useCommunityChat } from "../hooks/use-community-chat";
+import { useCommunityChatPanel } from "../hooks/use-community-chat-panel";
 import { CommunityChatForm } from "./community-chat-form";
 import { CommunityChatHeader } from "./community-chat-header";
 import { CommunityChatMessageList } from "./community-chat-message-list";
@@ -24,11 +25,15 @@ export function CommunityChatWidget({
   guestNickname,
 }: CommunityChatWidgetProps) {
   const [messageBody, setMessageBody] = useState("");
-  const [isBodyCollapsed, setIsBodyCollapsed] = useState(false);
-  const [isShellCollapsed, setIsShellCollapsed] = useState(false);
+  // 초기값은 닫힘(true). compact 패널의 실제 열림 여부는 useCommunityChatPanel이 결정한다
+  // (데스크톱 기본 열림 / 모바일 닫힘 + 사용자 선택 localStorage 유지).
+  const [isBodyCollapsed, setIsBodyCollapsed] = useState(true);
+  const [isShellCollapsed, setIsShellCollapsed] = useState(true);
   const messageInputRef = useRef<HTMLInputElement | null>(null);
   const messageListRef = useRef<HTMLDivElement | null>(null);
   const shouldReduceMotion = useReducedMotion();
+  const { isOpen: isChatPanelOpen, setOpen: setChatPanelOpen } =
+    useCommunityChatPanel();
 
   const {
     messages,
@@ -76,6 +81,21 @@ export function CommunityChatWidget({
       }
     : {};
 
+  // compact 패널의 접힘/펼침 애니메이션 상태를 전역 열림 상태(isChatPanelOpen)에 동기화한다.
+  // 라우트 이동/재마운트 후에도 store가 소스라 사용자 선택과 breakpoint 기본값이 유지된다.
+  useEffect(() => {
+    if (!isCompact) {
+      return;
+    }
+    if (isChatPanelOpen) {
+      setIsShellCollapsed(false);
+      setIsBodyCollapsed(false);
+      return;
+    }
+    // 닫힘: 본문을 접으면 exit 애니메이션 후 onExitComplete가 shell을 원형으로 접는다.
+    setIsBodyCollapsed(true);
+  }, [isCompact, isChatPanelOpen]);
+
   useEffect(() => {
     const listElement = messageListRef.current;
     if (!listElement) {
@@ -106,15 +126,7 @@ export function CommunityChatWidget({
   const compactToggleButton = isCompact ? (
     <motion.button
       type="button"
-      onClick={() => {
-        if (isBodyCollapsed || isShellCollapsed) {
-          setIsShellCollapsed(false);
-          setIsBodyCollapsed(false);
-          return;
-        }
-
-        setIsBodyCollapsed(true);
-      }}
+      onClick={() => setChatPanelOpen(!isChatPanelOpen)}
       aria-label={shouldShowCollapsedShell ? "채팅 열기" : "채팅 접기"}
       aria-expanded={!isBodyCollapsed}
       initial={false}
