@@ -1,0 +1,1256 @@
+# 백로그 — Universal UI 마이그레이션 (경로 A: NativeWind + React Native Web + react-native-reusables)
+
+> 작성: 2026-05-31 · 작성자: claude(Opus 4.8) · 상태: 계획(착수 전) · 근거: 코드 인벤토리 실측
+> SSOT 규칙(AGENTS.md): 실제 개발 착수 전 백로그 필수. 본 문서가 그 원장이다.
+
+## 목표
+
+**단일 UI 코드베이스로 web + iOS + Android를 한 벌로** 운영한다. 화면을 플랫폼마다 따로 작성하지 않는다.
+
+## 목표 아키텍처 (경로 A)
+
+```
+@yeon/design-tokens (Style Dictionary, 토큰 SSOT)   ← 색/간격/타이포/radius/shadow
+        │  (web + native 공유)
+packages/ui  ── RN 프리미티브 + NativeWind v4 + react-native-reusables(RN용 shadcn) + cva + tailwind-merge
+   ├── apps/web (Next.js + react-native-web)   ← 웹 렌더(SSR/SEO 유지)
+   └── apps/mobile (Expo / Expo Router)        ← iOS/Android 렌더
+```
+
+- shadcn/Radix(DOM 전용)는 universal 레이어에서 제외. 컴포넌트는 한 번 작성해 3플랫폼 렌더.
+- 공유되는 것은 **토큰뿐**, 컴포넌트는 packages/ui 한 곳에서 web/native 분기(.web/.native).
+
+## 범위/제약
+
+- 대상: **card-service · typing-service · community** 3종. **counseling 워크스페이스는 동결**(기존 Next.js DOM 유지, 마이그레이션·린트·CI 제외).
+- Next.js는 SSR/SEO 때문에 **웹 호스트로 유지**(Expo-web 전면 전환 비채택).
+- 기존 .githooks+lint-staged 사용(Lefthook 미도입). prettier 보유(plugin만 추가).
+- 무회귀: 화면 이관은 Playwright 시각회귀 before/after 게이트 통과 후 구 컴포넌트 제거.
+- 인벤토리: 웹 컴포넌트 ~82(카드38·타자27·커뮤14·room-shared3), 라우트 ~18, 모바일 미성숙(~21 tsx).
+
+## 3개월 타임라인
+
+| 월                                     | 워크스트림 | 핵심 산출물                                                                                                          |
+| -------------------------------------- | ---------- | -------------------------------------------------------------------------------------------------------------------- |
+| **M1 토대**                            | W1~W4      | 토큰 원장, packages/ui 스캐폴드, NativeWind+RNW를 Next.js·Expo 배선, 코어 프리미티브 착수, PoC(컴포넌트 1개 3플랫폼) |
+| **M2 코어+카드/타자**                  | W5~W8      | 프리미티브 전량, 카드·타자 화면 이관                                                                                 |
+| **M3 커뮤니티+네이티브+게이트+릴리즈** | W9~W12     | 커뮤니티 이관, 네이티브 패리티, a11y/시각회귀/CI 게이트, iOS/Android 릴리즈(EAS), 정리/문서                          |
+
+## 차수별 계획 (논의 필요 / 선택지 / 추천 / 사용자 방향)
+
+### 1차 (M1) — 토대
+
+- **작업내용**: W1 packages/ui 스캐폴드+NativeWind+RNW 배선, W2 토큰 원장(Style Dictionary), W3 Next.js+RNW SSR 통합, W4 Expo 호스트, PoC(YeonButton 3플랫폼).
+- **논의 필요**:
+  - Tailwind v4 전환 시점
+  - Next.js+RNW의 SSR/SEO/성능 영향
+  - 토큰 원천: 코드 직접 vs Figma(Tokens Studio)
+- **선택지**:
+  - v4: 지금/별도 PoC/v3 유지
+  - 토큰: 코드 직접+Style Dictionary / Tokens Studio
+- **추천**: v4는 별도 브랜치 PoC 후 결정(M1은 v3). 토큰은 코드 직접+Style Dictionary(디자이너 생기면 Tokens Studio).
+- **사용자 방향**: (미정 — 비어 있으면 추천대로 진행)
+
+### 2차 (M2) — 코어 프리미티브 + 카드/타자 이관
+
+- **작업내용**: W5 폼/입력, W6 오버레이/피드백/레이아웃, W7 카드 화면 이관, W8 타자 화면 이관.
+- **논의 필요**:
+  - 리치 마크다운 에디터의 네이티브 대체
+  - 타자 레이스 Phaser 캔버스의 네이티브 대체/래핑
+  - 화면 컷오버(시각회귀) 기준
+- **선택지**:
+  - 에디터: 웹유지+네이티브 단순대체 / 크로스플랫폼 에디터
+  - 레이스: 네이티브 구현 / WebView 래핑 / 기능 축소
+- **추천**: 에디터·레이스는 최대 기술 리스크 → 단독 스파이크 선검증 후 이관. 시각회귀 통과 시에만 구 컴포넌트 제거.
+- **사용자 방향**: (미정 — 비어 있으면 추천대로 진행)
+
+### 3차 (M3) — 커뮤니티 + 네이티브 패리티 + 게이트 + 릴리즈
+
+- **작업내용**: W9 커뮤니티 이관, W10 품질 게이트, W11 CI/CD+EAS 릴리즈, W12 거버넌스/완료.
+- **논의 필요**:
+  - CI 머지 하드 차단(branch protection, 현재 403)
+  - Chromatic(유료) 도입
+  - 스토어 심사/서명/크리덴셜
+- **선택지**:
+  - 차단: 무료→보류 / Pro·Team→required checks
+  - 시각: Playwright(무료) / +Chromatic
+- **추천**: Playwright 시각회귀로 시작. 하드 차단은 플랜 가능 시. EAS Build/Submit로 iOS/Android 릴리즈.
+- **사용자 방향**: (미정 — 비어 있으면 추천대로 진행)
+
+## 전체 체크리스트 (총 1098개)
+
+### W1: 크로스플랫폼 토대·packages/ui 스캐폴드·NativeWind v4 배선 (92개)
+
+> packages/ui 신규 패키지 생성, NativeWind v4 설치/설정, react-native-web 배선, react-native-reusables 컴포넌트 복사 구조 초기화, 크로스플랫폼 타입/export/peer deps 정의, Metro/Next transpilePackages 설정, 폰트/아이콘 공유 베이스, 그리고 YeonButton 단일 컴포넌트로 web RNW + iOS Expo + Android Expo 3플랫폼 렌더 증명하는 95개 구체적 체크리스트 항목
+
+- [ ] 1.  [M1] packages/ui 디렉토리 생성 및 package.json 작성(name: @yeon/ui, exports 필드 정의, peer deps: react/react-native/react-native-web)
+- [ ] 2.  [M1] packages/ui/src 디렉토리 구조 생성: primitives/, hooks/, types/, utils/, exports/ 폴더
+- [ ] 3.  [M1] packages/ui tsconfig.json 작성(extends: packages/config, strict: true, skipLibCheck: true)
+- [ ] 4.  [M1] NativeWind v4 패키지 앱(web/mobile) devDependencies 추가(nativewind@4.\*)
+- [ ] 5.  [M1] react-native-web@0.21 설치 확인(apps/mobile/package.json에 이미 존재)
+- [ ] 6.  [M1] tailwind-merge 설치(web·mobile dual 사용용)
+- [ ] 7.  [M1] clsx 설치(web·mobile dual 사용용)
+- [ ] 8.  [M1] class-variance-authority(cva) 설치(web·mobile)
+- [ ] 9.  [M1] lucide-react-native 패키지 설치(mobile용 아이콘, lucide-react 병행)
+- [ ] 10. [M1] @react-native-reusables/core 혹은 react-native-reusables 패키지 검토(manual copy 전략 확정)
+- [ ] 11. [M1] apps/web package.json에 @yeon/ui workspace 의존성 추가
+- [ ] 12. [M1] apps/mobile package.json에 @yeon/ui workspace 의존성 추가
+- [ ] 13. [M1] packages/ui/package.json exports 필드: ./primitives, ./hooks, ./types, ./utils 정의
+- [ ] 14. [M1] packages/ui/src/types/index.ts 생성: primitive 공통 타입(ButtonVariant, SurfaceVariant, SizeVariant 등)
+- [ ] 15. [M1] packages/ui/src/utils/cn.ts 생성: web용 tailwind-merge + clsx 유틸, mobile 호환 placeholder
+- [ ] 16. [M1] packages/ui/src/utils/cva-config.ts 생성: cva 기본 config(slot, compoundVariants 템플릿)
+- [ ] 17. [M1] web app 프로젝트 next.config.ts 내 transpilePackages 배열에 @yeon/ui 추가
+- [ ] 18. [M1] mobile app 프로젝트 metro.config.js 내 resolver.extraNodeModules에 @yeon/ui alias 추가
+- [ ] 19. [M1] web app tailwind.config.ts에 NativeWind preset 통합: extends ['nativewind/preset']
+- [ ] 20. [M1] mobile app tailwind.config.ts 신규 생성(NativeWind v4 preset 사용, content: ['./src/**/*.{ts,tsx}', './app/**/*.{ts,tsx}'])
+- [ ] 21. [M1] packages/design-tokens/src/colors.ts 생성: 웹/모바일 color palette(hex 문자열, RN-호환)
+- [ ] 22. [M1] packages/design-tokens/src/spacing.ts 생성: 8px-grid기반 spacing scale(xs~4xl)
+- [ ] 23. [M1] packages/design-tokens/src/typography.ts 생성: fontSize, fontWeight, lineHeight 토큰
+- [ ] 24. [M1] packages/design-tokens/src/radius.ts 생성: borderRadius 토큰(sm/md/lg/xl/2xl)
+- [ ] 25. [M1] packages/design-tokens/src/shadows.ts 생성: shadow 토큰(elevation, web box-shadow 및 RN elevation)
+- [ ] 26. [M1] packages/design-tokens/src/index.ts 업데이트: 모든 토큰 re-export
+- [ ] 27. [M1] packages/design-tokens/package.json 업데이트: main/exports 필드 추가, build script 검토
+- [ ] 28. [M1] web app tailwind.config.ts theme.extend.colors/spacing/borderRadius에 design-tokens 연결(CSS 변수 기반)
+- [ ] 29. [M1] mobile app nativewind.config.ts 신규 생성: design-tokens color/spacing/radius 매핑
+- [ ] 30. [M1] packages/ui/src/primitives/YeonButton 폴더 생성: index.ts, types.ts, variants.ts, index.web.ts, index.native.tsx
+- [ ] 31. [M1] packages/ui/src/primitives/YeonButton/types.ts: ButtonProps 공통 타입(variant, size, disabled, children, onPress/onClick)
+- [ ] 32. [M1] packages/ui/src/primitives/YeonButton/variants.ts: cva로 variant/size 조합(primary, secondary, ghost, danger 4종)
+- [ ] 33. [M1] packages/ui/src/primitives/YeonButton/index.web.tsx: React + tailwind 렌더(button/a 태그, cn() 사용)
+- [ ] 34. [M1] packages/ui/src/primitives/YeonButton/index.native.tsx: React Native Pressable + NativeWind 클래스명 렌더
+- [ ] 35. [M1] packages/ui/src/primitives/YeonButton/index.ts: 플랫폼별 export(web은 .web, native는 .native)
+- [ ] 36. [M1] YeonButton size prop: sm(px-3 py-1.5 text-xs), md(px-4 py-2 text-sm), lg(px-5 py-3 text-base), xl(px-8 py-4 text-lg)
+- [ ] 37. [M1] YeonButton disabled 상태: opacity-50 + cursor-not-allowed(web) / opacity-50(native)
+- [ ] 38. [M1] YeonButton focus/accessibility: focus-visible:ring-2(web), accessibilityRole="button"(native)
+- [ ] 39. [M1] packages/ui/src/index.ts 생성: YeonButton export
+- [ ] 40. [M1] apps/web/src/components/yeon-ui/yeon-button.tsx 제거 예정(YeonButton을 packages/ui에서 import로 전환 준비)
+- [ ] 41. [M1] apps/web/src/**tests**/button.test.tsx: YeonButton 스냅샷/렌더 테스트(primary/secondary/ghost/danger)
+- [ ] 42. [M1] apps/mobile/src/**tests**/button.test.tsx: YeonButton 스냅샷/렌더 테스트(Pressable state 확인)
+- [ ] 43. [M1] apps/web Next.js app.css 또는 globals.css에 @tailwind 지시어 확인(NativeWind 통합 후)
+- [ ] 44. [M1] apps/mobile babel.config.js 존재 확인 및 NativeWind plugin 추가: plugins: ['nativewind/babel']
+- [ ] 45. [M1] apps/web ESLint 설정(eslint.config.mjs) 확인: @yeon/ui 경로 resolve 문제 없는지 체크
+- [ ] 46. [M1] apps/mobile ESLint 설정(eslint.config.mjs) 확인: @yeon/ui 경로 resolve 문제 없는지 체크
+- [ ] 47. [M1] pnpm install 실행 후 @yeon/ui 심링크 생성 확인
+- [ ] 48. [M1] apps/web dev 서버 시작 가능 확인(Next.js turbopack 빌드 성공)
+- [ ] 49. [M1] apps/mobile dev 시작 가능 확인(Expo 메트로 빌드 성공)
+- [ ] 50. [M1] apps/web 홈(card-service /decks) 페이지에서 YeonButton import 테스트: import { YeonButton } from '@yeon/ui'
+- [ ] 51. [M1] apps/web 렌더: YeonButton variant="primary" size="md" "클릭" 정상 표시 확인
+- [ ] 52. [M1] apps/web 브라우저 DevTools에서 tailwind className 적용 확인(px-4 py-2 등)
+- [ ] 53. [M1] apps/mobile Expo 앱(/card-service 혹은 index 화면)에서 YeonButton import 테스트
+- [ ] 54. [M1] apps/mobile iOS 시뮬레이터 렌더: YeonButton variant="primary" size="md" 버튼 터치 가능 확인
+- [ ] 55. [M1] apps/mobile Android 에뮬레이터 렌더: YeonButton variant="primary" size="md" 버튼 정상 표시
+- [ ] 56. [M1] Playwright 스냅샷: apps/web에서 YeonButton 4종 variant 페이지 before-screenshot 저장(/e2e/snapshots/yeon-button-web.png)
+- [ ] 57. [M1] Playwright 스냅샷: apps/web에서 YeonButton disabled 상태 스냅샷 저장
+- [ ] 58. [M1] 폰트 통합 검토: web app 기존 폰트(Pretendard 등) 확인 후 mobile 호환 계획 수립
+- [ ] 59. [M1] packages/ui/src/theme/fonts.ts 생성: 웹/모바일 폰트 로드 전략(web: next/font, mobile: Expo Assets)
+- [ ] 60. [M1] apps/web layout.tsx 또는 \_document.tsx에서 폰트 import 확인(Pretendard 등)
+- [ ] 61. [M1] apps/mobile app/\_layout.tsx에서 expo-font 또는 폰트 로드 로직 추가(필요시)
+- [ ] 62. [M1] 아이콘 통합: packages/ui/src/icons/index.ts 생성, lucide-react vs lucide-react-native export 전략
+- [ ] 63. [M1] apps/web에서 lucide-react import 테스트(기존 deps 확인)
+- [ ] 64. [M1] apps/mobile에서 lucide-react-native import 테스트
+- [ ] 65. [M1] packages/config tsconfig 기본값 점검: baseUrl, strict, skipLibCheck 설정 확인
+- [ ] 66. [M1] .prettierignore 확인 및 필요시 packages/ui/dist 제외 추가
+- [ ] 67. [M1] packages/ui 루트에 README.md 작성: 목표(universal component layer), NativeWind v4 사용, react-native-reusables 복사 구조 설명
+- [ ] 68. [M1] git status 확인: packages/ui 신규 파일 staged 준비
+- [ ] 69. [M1] .gitignore 확인: packages/ui/dist, node_modules 제외 정상 확인
+- [ ] 70. [M1] apps/web page/card-service/\_layout.tsx 또는 decks 라우트에서 YeonButton 기존 사용처 확인(마이그레이션 대기)
+- [ ] 71. [M1] apps/web page/typing-service/\_layout.tsx 또는 home 라우트에서 YeonButton 기존 사용처 확인
+- [ ] 72. [M1] apps/web page/community/\_layout.tsx 또는 home 라우트에서 YeonButton 기존 사용처 확인
+- [ ] 73. [M1] apps/mobile app/card-service.tsx, app/(tabs)/_.tsx, app/(auth)/_.tsx 버튼 컴포넌트 현황 파악
+- [ ] 74. [M1] TypeScript strict mode에서 packages/ui YeonButton props 타입 에러 없음 확인(tsc 실행)
+- [ ] 75. [M1] packages/ui build script 추가 가능성 검토(dist/ 생성 필요시, esbuild/tsup 고려)
+- [ ] 76. [M1] packages/ui .npmignore 생성: src, **tests**, .eslintrc, tsconfig 제외
+- [ ] 77. [M1] apps/web next.config.ts에 @yeon/ui alias 추가 검토(path mapping 대체 확인)
+- [ ] 78. [M1] apps/mobile metro.config.js에 @yeon/ui node_modules 해석 확인
+- [ ] 79. [M1] pnpm --filter @yeon/web typecheck 실행 성공 확인(packages/ui import 경로 정상)
+- [ ] 80. [M1] pnpm --filter @yeon/mobile typecheck 실행 성공 확인
+- [ ] 81. [M1] pnpm lint 실행(web/mobile eslint): YeonButton 미사용 경고 없음
+- [ ] 82. [M1] pnpm prettier:fix 실행: packages/ui 폴더 포함 포맷팅 정상
+- [ ] 83. [M1] git diff packages/ui 확인: export 누락, platform-specific 파일(.web.tsx/.native.tsx) 포함
+- [ ] 84. [M1] YeonButton 사용 예시: apps/web src/test-page.tsx 임시 파일 생성(import + variant 4종 렌더)
+- [ ] 85. [M1] apps/web dev 시작 후 http://localhost:3000/test-page 접속: YeonButton 4종 렌더 확인
+- [ ] 86. [M1] YeonButton 사용 예시: apps/mobile app/test-button.tsx 임시 파일 생성
+- [ ] 87. [M1] apps/mobile Expo 시작 후 test-button 라우트 네비게이션: YeonButton iOS/Android 렌더 확인
+- [ ] 88. [M1] packages/ui/src/primitives/ 아래 YeonButton 외 원계획 primitive 리스트 정리: Surface, Field, Badge, ContextMenu(총 5종 예정)
+- [ ] 89. [M1] react-native-reusables 초기 컴포넌트 조사: packages/ui docs 또는 README에 수동 복사 위치 메모
+- [ ] 90. [M1] CI/CD: GitHub Actions workflow(e2e, typecheck) 내 @yeon/ui build/lint 단계 추가 검토(필요시)
+- [ ] 91. [M1] Monorepo 의존성 그래프: packages/ui -> design-tokens 링크 확인(circular deps 없음)
+- [ ] 92. [M1] 전체 워크스페이스 pnpm install: counseling 워크스페이스 제외(기존 Next.js DOM 유지)
+
+### W2: Design Tokens (Style Dictionary) (77개)
+
+> 85 comprehensive checklist items for @yeon/design-tokens package in Week 2, covering token architecture (colors, spacing, radius, typography, shadows, z-index, breakpoints), Style Dictionary build pipeline, dark/light themes, semantic token mapping, web (CSS variables + Tailwind preset + NativeWind)
+
+- [ ] 93. [M1] Scaffold @yeon/design-tokens: create src/tokens, src/outputs, src/config directories with README
+- [ ] 94. [M1] Install Style Dictionary 4.x, @style-dictionary/cli, and @style-dictionary/preprocessors to design-tokens package.json
+- [ ] 95. [M1] Create tokens/color.tokens.json with core dark theme (bg #09090b, surface #111113, border #27272a, text #fafafa)
+- [ ] 96. [M1] Create tokens/spacing.tokens.json with 4/8 scale (0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 48, 56, 64)
+- [ ] 97. [M1] Create tokens/radius.tokens.json with sm (6px), md/default (10px), lg (14px) mapping
+- [ ] 98. [M1] Create tokens/typography.tokens.json with font families (Noto Sans KR primary, system fallback), sizes (12/13/14/16/18/20/24px), weights (400/500/600/700), lineHeights (1/1.2/1.5/1.7)
+- [ ] 99. [M1] Create tokens/shadow.tokens.json with 3 elevation levels (sm, md, lg) for dark theme
+- [ ] 100.  [M1] Create tokens/zindex.tokens.json with canonical scale (0-base, 10-sticky, 20-dropdown, 30-popover, 40-modal, 50-toast)
+- [ ] 101.  [M1] Create tokens/breakpoint.tokens.json with mobile-first (sm 640, md 768, lg 1024, xl 1280, 2xl 1536)
+- [ ] 102.  [M1] Create tokens/light-theme.tokens.json with light background (#fff, #fafafa, #f7f7f7, #f2f2f2, #e5e5e5, #171717 text)
+- [ ] 103.  [M1] Map existing 146-color palette (from globals.css inline colors) into discrete palette.tokens.json; flag ad-hoc colors in features for refactoring list
+- [ ] 104.  [M1] Create tokens/semantic.tokens.json for intent (primary=accent #818cf8, secondary=gray #a1a1aa, success=green #34d399, warning=amber #fbbf24, error=red #f87171)
+- [ ] 105.  [M1] Add cva, tailwind-merge, clsx to design-tokens devDependencies (for Tailwind preset generation)
+- [ ] 106.  [M1] Create style-dictionary.config.js with platforms array: [web, native]
+- [ ] 107.  [M1] Configure web platform: CSS custom properties format (—prefix, file: globals.css.json)
+- [ ] 108.  [M1] Configure native platform: JavaScript theme export (file: theme.ts, format commonjs)
+- [ ] 109.  [M1] Create build script in design-tokens/package.json: build = style-dictionary build --config style-dictionary.config.js
+- [ ] 110.  [M1] Test token build: pnpm --filter @yeon/design-tokens build → verify dist/web/globals.css.json + dist/native/theme.ts generation
+- [ ] 111.  [M1] Create tailwind-preset.ts in design-tokens/src/outputs: export function getTailwindPreset() consuming CSS vars
+- [ ] 112.  [M1] Add dark/light theme toggle tokens (color-scheme preference token, opacity-based overlays for dim/dim-border variants)
+- [ ] 113.  [M1] Document token structure in packages/design-tokens/README.md: source files, build process, consumption patterns
+- [ ] 114.  [M1] Create TOKENS.md in monorepo root: token reference guide (categories, values, usage rules)
+- [ ] 115.  [M2] Integrate tailwind preset into apps/web/tailwind.config.ts: import getTailwindPreset(), extend: preset
+- [ ] 116.  [M2] Verify apps/web build with preset: pnpm --filter @yeon/web build → no Tailwind undefined var errors
+- [ ] 117.  [M2] Create NativeWind v4 integration guide in docs/NATIVE_WIND_SETUP.md: className + NativeWind compilation
+- [ ] 118.  [M2] Add NativeWind to apps/mobile package.json: nativewind@^4.0.0 devDependency
+- [ ] 119.  [M2] Create nativewind.config.js in apps/mobile: point to @yeon/design-tokens preset
+- [ ] 120.  [M2] Create apps/mobile/src/theme.ts: re-export native theme from @yeon/design-tokens for React Native StyleSheet
+- [ ] 121.  [M2] Update apps/mobile tailwind.config.js to extend preset from @yeon/design-tokens getTailwindPreset()
+- [ ] 122.  [M2] Create a /packages/ui stub package.json (universal components package, consumed by web + mobile)
+- [ ] 123.  [M2] Document token consumption in card-service: replace hardcoded colors (bg-[#111], border-[#e5e5e5]) with semantic token aliases
+- [ ] 124.  [M2] Document token consumption in typing-service: replace inline rgba(...) with token refs (e.g., accent-dim, text-secondary)
+- [ ] 125.  [M2] Document token consumption in community: audit color refs in feed-post-item, chat-message-list, form components
+- [ ] 126.  [M2] Create tokens/component-overrides.tokens.json for service-specific token refinements (e.g., card-service accent override to #1682d4)
+- [ ] 127.  [M2] Map yeon-ui Button variants to semantic tokens: primary → accent, secondary → surface+border, ghost → text+transparent, danger → error
+- [ ] 128.  [M2] Map yeon-ui Field (input/textarea) to tokens: bg-surface-2, border-border, focus:border-accent-border, text-text
+- [ ] 129.  [M2] Map yeon-ui Surface to tokens: bg-surface, border-border, rounded-[var(--radius)]
+- [ ] 130.  [M2] Map yeon-ui Badge colors to semantic: success/warning/error tokens with dim backgrounds
+- [ ] 131.  [M2] Resolve 146-color drift: audit all inline hex values in card-service (38 components), typing-service (27 components), community (14 components)
+- [ ] 132.  [M2] Replace hardcoded #1f8fe5 (typing deck) with token: create typing.primary semantic token
+- [ ] 133.  [M2] Replace hardcoded #419d47 (success card) with success token + variations (light/dark/border)
+- [ ] 134.  [M2] Replace hardcoded #ff6b45 (alert/destructive) with error token
+- [ ] 135.  [M2] Replace hardcoded #1682d4 (link/interactive) with primary token (distinct from accent if needed)
+- [ ] 136.  [M2] Audit card-rich-markdown-editor colors: toolbar bg #fafafa, text #555555 → map to light theme tokens
+- [ ] 137.  [M2] Audit markdown preview styles: #ffffff bg, #111111 text → ensure light/dark mode compatible
+- [ ] 138.  [M2] Audit room-shared components (3 files: room-create-dialog, room-character-summary-card, room-participant-card): replace hardcoded borders/surfaces with token refs
+- [ ] 139.  [M3] Create dark theme CSS cascade: @media (prefers-color-scheme: dark) { :root { ... } }
+- [ ] 140.  [M3] Create light theme CSS cascade: @media (prefers-color-scheme: light) { :root { ... } } (browser default)
+- [ ] 141.  [M3] Add apps/web dark mode class toggle: <html class="dark"> selector for Tailwind dark: modifier support
+- [ ] 142.  [M3] Add apps/mobile dark mode detection: useColorScheme() from react-native
+- [ ] 143.  [M3] Create token versioning scheme: @yeon/design-tokens version in package.json, auto-bump on token build
+- [ ] 144.  [M3] Document breaking token changes in CHANGELOG.md: renamed tokens, removed aliases, variant restructures
+- [ ] 145.  [M3] Create token consumption checklist for card-service: grep bg-, text-, border-, var(-- → map remaining hardcoded to token
+- [ ] 146.  [M3] Create token consumption checklist for typing-service: grep color:, background:, rgba( → map to tokens
+- [ ] 147.  [M3] Create token consumption checklist for community: grep inline colors in feed/chat components → token migration
+- [ ] 148.  [M3] Audit counseling-record-workspace (frozen): note color refs without migration (e.g., var(--error, #e53e3e)) for doc
+- [ ] 149.  [M3] Add a11y contrast ratios to TOKENS.md: WCAG AA ratios for text-on-surface, text-on-primary, etc.
+- [ ] 150.  [M3] Create token usage analytics: build script output → color, spacing, radius usage frequency per service
+- [ ] 151.  [M3] Add token linting: ESLint rule to warn on hardcoded colors outside @yeon/design-tokens export (post-M3)
+- [ ] 152.  [M3] Document token override pattern: how services inject custom semantic tokens (component-overrides.tokens.json)
+- [ ] 153.  [M3] Add token export validation test: verify all CSS vars + JS theme exports match token source
+- [ ] 154.  [M3] Create mobile theme.ts test: verify React Native StyleSheet compatibility (no CSS vars, only RGB/hex)
+- [ ] 155.  [M3] Document spacing scale usage rules: 4px grid for padding/margin/gap/width/height, exceptions for transitions/opacity
+- [ ] 156.  [M3] Document typography pairing rules: heading + body combos, line-height matching content type (prose 1.7, UI 1.2)
+- [ ] 157.  [M3] Document shadow elevation semantics: sm for input focus, md for card/popover, lg for modal
+- [ ] 158.  [M3] Create z-index governance doc: modal > dropdown > sticky, no arbitrary stacking contexts
+- [ ] 159.  [M3] Publish @yeon/design-tokens to npm (or internal registry) with semver version
+- [ ] 160.  [M3] Add token release notes: list token additions/changes for Month 1-3 in CHANGELOG
+- [ ] 161.  [M3] Update monorepo root CONTRIBUTING.md: token consumption + modification guidelines
+- [ ] 162.  [M3] Add pre-commit hook check: verify style-dictionary build output is committed (tokens + exports)
+- [ ] 163.  [M3] Create token onboarding doc: new developer intro to token system, where to find colors/spacing, how to request new token
+- [ ] 164.  [M3] Add token snapshot test: commit design-tokens/dist outputs to repo, flag unexpected changes in PR
+- [ ] 165.  [M3] Document web + mobile token parity: identify unavoidable divergences (CSS vs JS), testing strategy per platform
+- [ ] 166.  [M3] Create token consumption report: final audit of card-service (0 hardcoded colors), typing-service (0 hardcoded colors), community (0 hardcoded colors)
+- [ ] 167.  [M3] Finalize semantic token aliases: primary, secondary, success, warning, error, info — commit to TOKENS.md
+- [ ] 168.  [M3] Add token API stability guarantee: commit to backward compat, deprecation path for renamed tokens
+- [ ] 169.  [M3] Create Figma → tokens bridge doc (future): design sync workflow once design system moves to Figma tokens plugin
+
+### W3 - Web Host (Next.js + react-native-web) Infrastructure & Setup (91개)
+
+> 80 concrete, actionable checklist items for M1-M3 spanning next.config transpilePackages/aliases, react-native-web integration, SSR/hydration, font/image abstraction, routing, build optimization, SEO preservation, and point-in-time migration of card-service/typing-service/community routes with Playw
+
+- [ ] 170.  [M1] Install react-native-web@0.21.0 and react-native@0.81.5 dependencies in apps/web package.json alongside existing Next.js setup
+- [ ] 171.  [M1] Create packages/ui scaffold with structure: src/components/{Button,Card,Surface,Badge,Input,etc}, src/hooks, src/utils, src/theme
+- [ ] 172.  [M1] Add packages/ui to root pnpm-workspace.yaml packages list and configure tsconfig for cross-workspace imports
+- [ ] 173.  [M1] Update apps/web/next.config.ts transpilePackages to include packages/ui and react-native ecosystem (react-native, react-native-web, @react-native/\*)
+- [ ] 174.  [M1] Configure apps/web tsconfig.json with path alias @yeon/ui for packages/ui/src import resolution
+- [ ] 175.  [M1] Create apps/web/next.config.ts react-native-web webpack alias for react-native → react-native-web fallback resolution
+- [ ] 176.  [M1] Test that import { View, Text } from 'react-native' resolves to react-native-web in Next.js dev server without errors
+- [ ] 177.  [M1] Update apps/web/.babelrc or babel config if needed to handle react-native JSX via @babel/preset-react in projects.json
+- [ ] 178.  [M1] Install nativewind@4 in apps/web as dev dependency for Tailwind className generation on React Native targets
+- [ ] 179.  [M1] Create apps/web/src/\_app-registry.ts wrapper exporting AppRegistry from react-native-web (required for SSR)
+- [ ] 180.  [M1] Update apps/web/src/app/\_document.tsx or create new document to flush AppRegistry styles on SSR using AppRegistry.runApplication lifecycle
+- [ ] 181.  [M1] Create design token schema at packages/design-tokens/src/tokens.json with structure {colors:{primary,secondary,surface,text}, spacing:{xs,sm,md,lg}, typography:{fontSizes,lineHeights}, radius:{sm,md,lg}, shadow}
+- [ ] 182.  [M1] Configure Style Dictionary at packages/design-tokens/build.config.js with output targets for web (CSS vars) and native (JS export)
+- [ ] 183.  [M1] Run Style Dictionary build script in packages/design-tokens/package.json and verify output generates apps/web/src/tokens.css and packages/design-tokens/dist/native.js
+- [ ] 184.  [M1] Migrate apps/web/src/app/globals.css CSS variables from hardcoded values to imported Style Dictionary CSS vars (--bg, --surface, --text, --accent, etc)
+- [ ] 185.  [M1] Update apps/web/tailwind.config.ts theme.extend colors to reference Style Dictionary CSS variable names without hardcoding hex values
+- [ ] 186.  [M1] Create packages/ui/src/Button.tsx as universal Button wrapping React Native Pressable+Text with className prop (web) + style prop (native)
+- [ ] 187.  [M1] Implement Button variant/size logic using cva + classnames for web RNW, StyleSheet for native alternate rendering path
+- [ ] 188.  [M1] Create packages/ui/src/Surface.tsx universal surface component (web: div+className, native: View+style from tokens)
+- [ ] 189.  [M1] Create packages/ui/src/hooks/useResponsive.ts detecting platform (web vs native) and media queries for conditional rendering
+- [ ] 190.  [M1] Scaffold packages/ui/src/utils/platform.ts with getPlatform() returning 'web'|'ios'|'android' for build-time feature flags
+- [ ] 191.  [M1] Create apps/web/metro.config.js stub (web only uses Next.js bundler, but config exists for RN ecosystem awareness)
+- [ ] 192.  [M1] Add apps/mobile/metro.config.js entry points for Expo to reference packages/ui as source (sourceExts: ['ts', 'tsx', 'js', 'jsx'])
+- [ ] 193.  [M1] Create PoC: migrate card-service-home screen to universal by extracting CardServiceHome as packages/ui → apps/web+apps/mobile both import
+- [ ] 194.  [M1] Test PoC universal CardServiceHome renders without errors on http://localhost:3000/card-service (web RNW)
+- [ ] 195.  [M1] Test PoC universal CardServiceHome renders without errors on Expo web via pnpm dev:mobile:web
+- [ ] 196.  [M1] Test PoC universal CardServiceHome renders visually on iOS Simulator (Expo) and confirm baseline Playwright snapshot
+- [ ] 197.  [M1] Test PoC universal CardServiceHome renders visually on Android Emulator (Expo) and confirm baseline Playwright snapshot
+- [ ] 198.  [M1] Create Playwright baseline screenshot at e2e/baselines/card-service-home.web.png for visual regression gating (web RNW)
+- [ ] 199.  [M1] Create Playwright baseline screenshot at e2e/baselines/card-service-home.ios.png from iOS Simulator (Expo)
+- [ ] 200.  [M1] Create Playwright baseline screenshot at e2e/baselines/card-service-home.android.png from Android Emulator (Expo)
+- [ ] 201.  [M1] Verify Next.js build with react-native-web alias succeeds: pnpm --filter @yeon/web build (no transpile errors)
+- [ ] 202.  [M1] Verify Expo build with packages/ui succeeds: pnpm --filter @yeon/mobile web (web target)
+- [ ] 203.  [M1] Verify no circular dependencies between packages/ui, apps/web, apps/mobile (scan pnpm ls)
+- [ ] 204.  [M2] Extract card-service routing screens (/, /decks, /decks/[id], /decks/[id]/play, /rooms, /rooms/[id]) to universal Layer in packages/ui/src/screens/card-service
+- [ ] 205.  [M2] Migrate card-service-home.tsx to universal CardServiceHome using SurfaceLayout + Button + theme tokens (remove all DOM specifics)
+- [ ] 206.  [M2] Migrate card-service-decks-screen.tsx to universal CardServiceDecksScreen (render DeckList items, filter, sort, add deck button)
+- [ ] 207.  [M2] Migrate deck-detail-screen.tsx to universal DeckDetailScreen (deck metadata, card list, study/play actions, settings)
+- [ ] 208.  [M2] Migrate deck-play-screen.tsx to universal DeckPlayScreen (play controls, card FlashCard component, progress bar, exit)
+- [ ] 209.  [M2] Migrate card-room-\* screen suite to universal CardRoomScreen (header, lobby state, study state, participants, chat panels)
+- [ ] 210.  [M2] Create abstract routing layer packages/ui/src/hooks/useNavigation.ts with goToDeck(id), goToRoom(id), goBack() (Next.js Link vs Expo Router)
+- [ ] 211.  [M2] Update next.config.ts with image optimization disable/allow for react-native-web (no next/image on RN, use expo-image abstraction)
+- [ ] 212.  [M2] Create packages/ui/src/Image.tsx wrapper: web uses next/image, native uses expo-image, both accept src/alt/width/height
+- [ ] 213.  [M2] Create packages/ui/src/Link.tsx wrapper: web uses next/link, native uses expo-router Link, both accept href/children
+- [ ] 214.  [M2] Update apps/web/src/app/card-service/page.tsx to import CardServiceHome from packages/ui and remove local implementation
+- [ ] 215.  [M2] Update apps/web/src/app/card-service/decks/page.tsx to import CardServiceDecksScreen from packages/ui
+- [ ] 216.  [M2] Update apps/web/src/app/card-service/decks/[deckId]/page.tsx to import DeckDetailScreen, pass params.deckId as prop
+- [ ] 217.  [M2] Update apps/web/src/app/card-service/decks/[deckId]/play/page.tsx to import DeckPlayScreen, pass params
+- [ ] 218.  [M2] Update apps/web/src/app/card-service/rooms/page.tsx to import rooms list screen from packages/ui
+- [ ] 219.  [M2] Update apps/web/src/app/card-service/rooms/[roomId]/page.tsx to import CardRoomScreen from packages/ui
+- [ ] 220.  [M2] Create apps/mobile/app/card-service/index.tsx as Expo layout exporting CardServiceHome from packages/ui
+- [ ] 221.  [M2] Create apps/mobile/app/card-service/\_layout.tsx as Expo stack layout for deck/room navigation
+- [ ] 222.  [M2] Update apps/mobile/app/card-service/decks/[deckId].tsx to import DeckDetailScreen from packages/ui
+- [ ] 223.  [M2] Update apps/mobile/app/card-service/decks/[deckId]/play.tsx to import DeckPlayScreen from packages/ui
+- [ ] 224.  [M2] Migrate typing-service home, deck library, deck detail, practice/race play screens to universal in packages/ui/src/screens/typing-service
+- [ ] 225.  [M2] Create packages/ui/src/TypingServiceHome.tsx, TypingDeckLibrary.tsx, TypingRacePlayScreen.tsx, TypingRoomLobby.tsx (universal)
+- [ ] 226.  [M2] Update apps/web/typing-service routes (/, /decks, /decks/[id], /practice, /play, /rooms, /rooms/[id]) to consume from packages/ui
+- [ ] 227.  [M2] Update apps/mobile/app/typing-service routes to consume from packages/ui (create Expo layout structure)
+- [ ] 228.  [M2] Migrate community home, posts list, post detail screens to universal in packages/ui/src/screens/community
+- [ ] 229.  [M2] Create packages/ui/src/CommunityHome.tsx, CommunityFeedScreen.tsx, PostDetailScreen.tsx (universal)
+- [ ] 230.  [M2] Update apps/web/community routes (/, /posts, /posts/[id]) to consume from packages/ui
+- [ ] 231.  [M2] Update apps/mobile/app/community routes to consume from packages/ui
+- [ ] 232.  [M2] Add prettier-plugin-tailwindcss to apps/web devDependencies (maintain Tailwind className consistency)
+- [ ] 233.  [M2] Update .prettierrc to include plugins: [prettier-plugin-tailwindcss] for auto-sorting Tailwind classes
+- [ ] 234.  [M3] Verify SSR hydration on apps/web: disable AppRegistry SSR manually and observe hydration mismatch errors in console (intentional test)
+- [ ] 235.  [M3] Fix any hydration mismatches by ensuring AppRegistry.getApplication is server-safe (no client-only hooks in SSR)
+- [ ] 236.  [M3] Test apps/web SSR rendering: curl http://localhost:3000/card-service | grep -i 'card-service-home' (verify server-rendered HTML)
+- [ ] 237.  [M3] Verify next/font integration: add next/font for web typography (Noto Sans/Serif for Korean typography)
+- [ ] 238.  [M3] Create universal typography utilities at packages/ui/src/theme/typography.ts exporting fontSize/fontWeight/lineHeight (web + native parity)
+- [ ] 239.  [M3] Test apps/web font loading: inspect Network tab in DevTools, verify fonts load and apply (Lighthouse audit font loading)
+- [ ] 240.  [M3] Test apps/mobile font loading: ensure RN font stack (System) renders at same metrics as web next/font (measure em/px)
+- [ ] 241.  [M3] Run Playwright e2e: pnpm --filter @yeon/web e2e (should pass for card-service routes with visual regression baseline)
+- [ ] 242.  [M3] Run Playwright visual regression: pnpm --filter @yeon/web e2e --update-snapshots (baseline capture, commit snapshots)
+- [ ] 243.  [M3] Create e2e test at apps/web/e2e/card-service-home.spec.ts: navigate to /card-service, screenshot, assert against baseline
+- [ ] 244.  [M3] Create e2e test at apps/web/e2e/typing-service-home.spec.ts: navigate to /typing-service, screenshot, assert against baseline
+- [ ] 245.  [M3] Create e2e test at apps/web/e2e/community-home.spec.ts: navigate to /community, screenshot, assert against baseline
+- [ ] 246.  [M3] Run e2e tests via CI: GitHub Actions workflow validate visual regression before merge to main
+- [ ] 247.  [M3] Run Expo e2e via detox (or manual Playwright via Expo web runner): baseline capture on iOS + Android
+- [ ] 248.  [M3] Compare web (RNW) + iOS + Android visual baselines: confirm pixel parity for Button, Surface, Text colors/spacing
+- [ ] 249.  [M3] Run SEO validation: pnpm --filter @yeon/web build, inspect .next/server/pages for meta tags in card-service/page.tsx server component
+- [ ] 250.  [M3] Verify og:image, meta description, canonical tags render at /card-service (SSR metadata preservation)
+- [ ] 251.  [M3] Run bundle size analysis: pnpm --filter @yeon/web build && node_modules/.bin/next-bundle-analyzer
+- [ ] 252.  [M3] Confirm packages/ui is not duplicated in bundles (tree-shaking working) and react-native-web is <50kb gzipped
+- [ ] 253.  [M3] Remove old card-service components from apps/web/src/features/card-service/components after visual regression passes (no regression observed)
+- [ ] 254.  [M3] Remove old typing-service components from apps/web/src/features/typing-service after visual regression passes
+- [ ] 255.  [M3] Remove old community components from apps/web/src/features/community after visual regression passes
+- [ ] 256.  [M3] Update .eslintrc to warn on remaining DOM-only imports (react-dom direct, react-dom/client) in packages/ui
+- [ ] 257.  [M3] Final build validation: pnpm --filter @yeon/web build && pnpm --filter @yeon/mobile web (both succeed, no transpile warnings)
+- [ ] 258.  [M3] Final e2e validation: pnpm --filter @yeon/web e2e && pnpm --filter @yeon/mobile e2e (all tests pass, no visual regressions)
+- [ ] 259.  [M3] Documentation: update README.md with universal component architecture, migration checklist, and how to add new routes
+- [ ] 260.  [M3] Commit migration work: single commit or series per feature (card-service, typing-service, community) with visual regression proof
+
+### W4: 네이티브 호스트(Expo) (36개)
+
+> 총 110개 이상의 구체적·실행 가능한 체크리스트 항목 (8개 Part로 분류). M1 토대 단계 ~45개, M2 코어 구축 ~40개, M3 완성 및 릴리스 ~25개. card-service, typing-service, community 3서비스 + web RNW + iOS/Android 3플랫폼 관점 반영. Expo Router, NativeWind v4, packages/ui, design-tokens, routing parity, auth context, build profile, a11y, Playwright 시각회귀, C
+
+- [ ] 261.  [M1] apps/mobile를 Expo Router 단일 진입(app/)으로 정리 + expo-router plugin·typedRoutes 활성화
+- [ ] 262.  [M1] app.config.ts 전환(동적): name/slug/scheme/version/orientation/userInterfaceStyle
+- [ ] 263.  [M1] iOS bundleIdentifier·Android package 확정 + versionCode/buildNumber 정책
+- [ ] 264.  [M1] deep link scheme(yeon://) 정의 + card/typing/community 경로 매핑
+- [ ] 265.  [M1] 아이콘/adaptive-icon/스플래시 assets 준비 + app.config 연결
+- [ ] 266.  [M1] iOS Info.plist 권한 문구(사용 기능만)·Android uses-permission 정렬
+- [ ] 267.  [M1] EXPO*PUBLIC*\* 환경변수 확정 + .env.example 갱신(비밀 제외)
+- [ ] 268.  [M1] babel.config: nativewind/babel + reanimated plugin(마지막) 추가
+- [ ] 269.  [M1] metro.config: NativeWind transformer + monorepo 해석(@yeon/ui,@yeon/design-tokens) + 블록리스트(web/.next)
+- [ ] 270.  [M1] global.css(@tailwind) + app/\_layout import(NativeWind v4)
+- [ ] 271.  [M1] mobile tailwind.config: design-tokens preset 공유, content app/**·packages/ui/**
+- [ ] 272.  [M1] tsconfig: nativewind 타입 + @yeon/ui·@yeon/design-tokens paths
+- [ ] 273.  [M1] 루트 Provider: GestureHandlerRootView > SafeAreaProvider > QueryClientProvider > 서비스 세션 컨텍스트
+- [ ] 274.  [M1] safe-area-context/screens/gesture-handler/reanimated 버전 호환 확인(expo54/RN0.81)
+- [ ] 275.  [M1] expo-font로 Noto Sans KR 로드 + SplashScreen preventAutoHide/hide 연동
+- [ ] 276.  [M1] expo-image + 이미지 추상화(packages/ui Image: web=next/expo-image, native=expo-image)
+- [ ] 277.  [M1] 폰트/색을 @yeon/design-tokens에서 소비(하드코딩 제거)
+- [ ] 278.  [M2] Expo Router 네비: 인증 게이트(booting/signed_out/signed_in) + 서비스 스택
+- [ ] 279.  [M2] card-service 라우트: /card-service,/decks,/decks/[deckId],/decks/[deckId]/play,/rooms,/rooms/[roomId]
+- [ ] 280.  [M2] typing-service 라우트: /typing-service,/decks,/decks/[deckId],/play,/practice,/rooms,/rooms/[roomId]
+- [ ] 281.  [M2] community 라우트: /community,/posts,/posts/[postId]
+- [ ] 282.  [M2] 웹↔네이티브 라우트 패리티 표 + Link/useRouter 파라미터 전달 검증
+- [ ] 283.  [M2] 딥링크 linking config 매핑(yeon://card-service/decks/123 등) 테스트
+- [ ] 284.  [M2] 인증/세션 컨텍스트 웹과 동일 @yeon/api-client 공유 + expo-secure-store 토큰 저장
+- [ ] 285.  [M2] SafeArea/Keyboard: insets·KeyboardAvoidingView, 채팅/폼/방생성 입력 겹침 처리
+- [ ] 286.  [M2] 리스트 성능: FlatList(가상화)+RefreshControl+무한스크롤(useInfiniteQuery)
+- [ ] 287.  [M2] Android 하드웨어 뒤로가기·iOS 스와이프백 + 헤더/탭 네비 패리티
+- [ ] 288.  [M3] 다크/라이트 정책(userInterfaceStyle) + 토큰 테마 스위치
+- [ ] 289.  [M3] 네이티브 a11y: accessibilityRole/Label/State·포커스 순서·VoiceOver/TalkBack 스모크
+- [ ] 290.  [M3] expo-updates(OTA) 채널/런타임버전(상세 배포 W11)
+- [ ] 291.  [M3] ErrorBoundary + Sentry(expo)(크래시/JS 에러, 토큰 마스킹)
+- [ ] 292.  [M3] 환경별(dev/staging/prod) API base 분기 + EAS 프로파일 연동(상세 W11)
+- [ ] 293.  [M3] 네이티브 단위 테스트(@testing-library/react-native) + 라우팅 통합 테스트 기초
+- [ ] 294.  [M3] 모바일 README/온보딩 작성
+- [ ] 295.  [M3] counseling 네이티브 화면 범위 외(동결) — 네비/번들 제외 확인
+- [ ] 296.  [M3] packages/ui 변경 시 web·native 양 호스트 스모크
+
+### W5-코어 프리미티브 A(폼/입력) (93개)
+
+> W5(Week 5~8) 코어 프리미티브 A 워크스트림: Button, Text/Heading, Input, Textarea, Label, Field, Checkbox, Switch, RadioGroup, Select, Combobox, Form/validation 등 12개 컴포넌트의 web(react-native-web) + iOS/Android(Expo) 3플랫폼 구현. react-native-reusables 기반, NativeWind v4 + Tailwind className, cva variants, 디자인 토큰만 사용(a
+
+- [ ] 297.  [M1] 토대: Design Tokens 완성 - packages/@yeon/design-tokens에 색/간격/타이포/radius/shadow 정의 (CSS Variables & Style Dictionary export)
+- [ ] 298.  [M1] 토대: packages/ui 스캐폴드 생성 - 구조 /src/primitives (Button, Input, ...) + /src/components (Form, ...) + /src/hooks
+- [ ] 299.  [M1] 토대: Next.js + react-native-web 통합 - web.tsconfig.json alias paths 설정, NativeWind v4 설치 & 설정 (tailwind.config.js)
+- [ ] 300.  [M1] 토대: Expo + NativeWind 통합 - mobile app.json, babel.config.js 설정 (NativeWind 플러그인), 디자인 토큰 import
+- [ ] 301.  [M1] 토대: packages/ui package.json 설정 - exports: Button, Text, Heading, Input, ... ; peer deps: react, react-native, tailwindcss
+- [ ] 302.  [M1] 토대: cva + tailwind-merge/clsx 설정 - packages/ui src/lib/cn.ts 작성 (classname merger utility)
+- [ ] 303.  [M1] 토대: Button 컴포넌트 (web + native) - RNW Text + Pressable, cva variants (primary/secondary/ghost/danger), sizes (sm/md/lg/xl), disabled state
+- [ ] 304.  [M1] 토대: Button 접근성 - role="button", aria-pressed, aria-disabled, keyboard enter/space 지원, focus ring (RNW + web)
+- [ ] 305.  [M1] 토대: Button Story (Storybook) - web @storybook/react setup (apps/web 또는 packages/ui), 모든 variant/size 조합
+- [ ] 306.  [M1] 토대: Button 시각 베이스라인 - web(Next.js) + iOS Simulator + Android Emulator에서 padding/border/radius 검증
+- [ ] 307.  [M1] 토대: Button 단위테스트 - vitest + @testing-library/react-native, render, userEvent, press 상호작용 테스트
+- [ ] 308.  [M1] 토대: Text & Heading 컴포넌트 - RNW Text, cva variants (xs/sm/base/lg/xl), weights (regular/semibold/bold), colors
+- [ ] 309.  [M1] 토대: Text 접근성 - textRole (button/header), 충분한 contrast, aria-label fallback
+- [ ] 310.  [M1] 토대: Heading (H1~H6) - semantic tags (web) + role="heading" (native), font-size/weight 계층, spacing
+- [ ] 311.  [M1] 토대: Input 컴포넌트 스케치 - requirements: text/email/password/number/search 타입, placeholder, disabled, error state, size variants
+- [ ] 312.  [M1] 토대: Input 구현 (web) - <input> + Tailwind className (design tokens: border-border, bg-surface, text-text, focus:border-accent)
+- [ ] 313.  [M1] 토대: Input 구현 (native) - RNW TextInput + StyleSheet, platform-aware keyboard 처리
+- [ ] 314.  [M1] 토대: Input 접근성 - aria-label, aria-describedby (error message), role="textbox", focus ring consistency
+- [ ] 315.  [M1] 토대: Input Story & visual baseline - variant showcase (text/email/password/number), placeholder, disabled, error states
+- [ ] 316.  [M1] 토대: Textarea 컴포넌트 - Input 기반, multiline: true, min-height 설정, word-wrap, overflow handling
+- [ ] 317.  [M1] 토대: Textarea 접근성 - aria-label, aria-describedby, role="textbox", maxLength indicator (optional)
+- [ ] 318.  [M1] 토대: Label 컴포넌트 - web <label> + RNW Text, htmlFor connection, required indicator (\*), typography control
+- [ ] 319.  [M1] 토대: Label 시각 베이스라인 - font-size, color (text-secondary), margin-bottom 일관성
+- [ ] 320.  [M1] 토대: Field 컴포넌트 개선 - 기존 YeonField 대체, Input/Textarea wrapper, error message 렌더링, required badge
+- [ ] 321.  [M1] 토대: Field 슬롯 구조 - <Field> <Label /> <Input /> <Error /> 조합 가능, 모든 플랫폼
+- [ ] 322.  [M1] PoC: 첫 컴포넌트 완성 게이트 - Button을 web(Next.js RNW) + iOS + Android에서 렌더링 검증, Storybook 표시, 테스트 통과
+- [ ] 323.  [M2] Checkbox 컴포넌트 - React Native Pressable + Icon (lucide-react-native), cva (default/checked/disabled), sizes
+- [ ] 324.  [M2] Checkbox 상호작용 - onValueChange 콜백, keyboard space/enter, screen reader 지원 (role="checkbox", aria-checked)
+- [ ] 325.  [M2] Checkbox Story - 체크/언체크 상태, disabled, indeterminate (optional), 라벨 연결
+- [ ] 326.  [M2] Checkbox 테스트 - press 상호작용, state change, a11y contract 검증
+- [ ] 327.  [M2] Switch 컴포넌트 - RNW Animated 토글, cva (on/off/disabled), size variants, accessibility (role="switch", aria-checked)
+- [ ] 328.  [M2] Switch 상호작용 - onValueChange, keyboard space, 부드러운 애니메이션 (native Reanimated)
+- [ ] 329.  [M2] Switch Story & baseline - on/off state, disabled, color variants (accent/green/red)
+- [ ] 330.  [M2] Switch 테스트 - press, state toggle, a11y roles 검증
+- [ ] 331.  [M2] RadioGroup 컴포넌트 - 여러 Radio 자식, controlled value prop, onValueChange 콜백
+- [ ] 332.  [M2] RadioGroup 구현 - Context (RadioGroupContext) 활용, accessibility (role="radiogroup")
+- [ ] 333.  [M2] Radio 항목 - 개별 Radio 컴포넌트, cva (default/selected/disabled), label 렌더링
+- [ ] 334.  [M2] RadioGroup 접근성 - role="radiogroup", role="radio" (각 항목), aria-checked, tab/arrow key 네비게이션
+- [ ] 335.  [M2] RadioGroup Story - 여러 선택지, 선택 상태, disabled 항목
+- [ ] 336.  [M2] RadioGroup 테스트 - 선택 상호작용, context 전파, keyboard navigation
+- [ ] 337.  [M2] Select 컴포넌트 - 기존 YeonField select 대체, native <select> (web) + custom dropdown (native)
+- [ ] 338.  [M2] Select 구현 (web) - HTML <select> + Tailwind 스타일
+- [ ] 339.  [M2] Select 구현 (native) - ActionSheetIOS 또는 native modal, FlatList, option 렌더링
+- [ ] 340.  [M2] Select 접근성 - aria-label, role="combobox" (native), aria-expanded, keyboard open/close
+- [ ] 341.  [M2] Select Story - 옵션 목록, 선택 상태, placeholder, disabled
+- [ ] 342.  [M2] Select 테스트 - 선택 상호작용, option value 전파
+- [ ] 343.  [M2] Combobox 컴포넌트 - searchable select, input filtering, dropdown list, accessible
+- [ ] 344.  [M2] Combobox 구현 (web) - input + Popover (radix? 또는 custom), option list, filter logic
+- [ ] 345.  [M2] Combobox 구현 (native) - TextInput + FlatList filtering, keyboard dismiss, option selection
+- [ ] 346.  [M2] Combobox 상호작용 - onValueChange, search query state, filtering, keyboard navigation (arrow up/down, enter)
+- [ ] 347.  [M2] Combobox 접근성 - aria-autocomplete="list", aria-expanded, aria-owns (option list)
+- [ ] 348.  [M2] Combobox Story - 검색 필터링, 옵션 렌더링, empty state
+- [ ] 349.  [M2] Combobox 테스트 - 입력 필터링, 옵션 선택, keyboard nav
+- [ ] 350.  [M2] Form 컴포넌트 - FormProvider Context, error/touched 상태 관리, form submission 콜백
+- [ ] 351.  [M2] Form 구현 - Zod schema 검증 (or react-hook-form integration), field registration, error 전파
+- [ ] 352.  [M2] Form Context - FormProvider wrap, useFormContext hook, field 자동 error/touched 접근
+- [ ] 353.  [M2] Form error rendering - Field 내 자동 error message 표시, error color styling
+- [ ] 354.  [M2] Form 접근성 - form role, fieldset (optional), required indicators, error association (aria-describedby)
+- [ ] 355.  [M2] Form Story - form with various field types, validation, error states, submit handler
+- [ ] 356.  [M2] Form 테스트 - submit 상호작용, validation error 표시, field 값 캡처
+- [ ] 357.  [M2] 중간 검증: 모든 form/input primitives 구현 완료 - packages/ui 정리, export 확인, 내부 의존성 체크
+- [ ] 358.  [M3] Input 변형들 - email/password/search/number 타입, placeholder, maxLength, pattern (optional)
+- [ ] 359.  [M3] Input 오류 상태 - error prop, aria-invalid, error color (red), error message 슬롯
+- [ ] 360.  [M3] Input 부가 기능 - leftAddon/rightAddon (icon/text), clearButton (search), visibility toggle (password)
+- [ ] 361.  [M3] Input 모바일 최적화 - touchTarget 48px 이상, keyboard type (email/number/phone/default), returnKeyType
+- [ ] 362.  [M3] Textarea 오류/유효성 - error state, maxLength indicator, character counter (optional)
+- [ ] 363.  [M3] Textarea 자동 높이 - onHeightChange 콜백, max-height, overflow handling
+- [ ] 364.  [M3] TextArea 모바일 최적화 - 캐럿 포지셀링, 확대축소 방지, returnKeyType
+- [ ] 365.  [M3] Checkbox 그룹 - CheckboxGroup 컴포넌트, multiple selection, FormField integration
+- [ ] 366.  [M3] Checkbox 라벨 - 클릭 가능한 라벨, 대형 터치 영역, 라벨과 박스 정렬
+- [ ] 367.  [M3] Switch 색상 변형 - primary (accent)/success (green)/danger (red), cva color variants
+- [ ] 368.  [M3] RadioGroup 큰 항목 - 각 radio를 card-like 구조 (label + description), onClick expand (optional)
+- [ ] 369.  [M3] RadioGroup 라벨 - 클릭 가능 라벨, 라디오 버튼 정렬, 터치 영역 확대
+- [ ] 370.  [M3] Select 다중선택 - multiple attribute (web), multiselect flag (native), CheckboxGroup 스타일
+- [ ] 371.  [M3] Select 아이콘 - dropdown indicator icon, custom icon support (leading/trailing)
+- [ ] 372.  [M3] Combobox 고급 - 객체 옵션 (label/value), custom rendering, async option loading (optional)
+- [ ] 373.  [M3] Combobox 모바일 우선 - 모바일에서 드롭다운 대신 bottom sheet or modal, large touch targets
+- [ ] 374.  [M3] FormField 슬롯 컴포넌트 - generic <FormField> wrapper, <Label> <Input> <Error> <Hint> 조합
+- [ ] 375.  [M3] Form validation hook - useFormField hook, context-based error/touched, required prop
+- [ ] 376.  [M3] Form 제출 후 오류 - onSubmit에서 error 업데이트, field-level error 표시, form-level summary (optional)
+- [ ] 377.  [M3] Form 초기값 - defaultValue prop, reset() function, field 재초기화
+- [ ] 378.  [M3] Form accessibility - aria-required, aria-invalid, aria-describedby 자동 연결, label focus
+- [ ] 379.  [M3] Button as submit - type="submit", disabled during submission, loading spinner (optional)
+- [ ] 380.  [M3] Input 크기 변형들 - sm/md/lg/xl, padding/height 일관성, text-size 스케일
+- [ ] 381.  [M3] 통합 테스트: form submission flow - form render -> fill fields -> submit -> error display -> success
+- [ ] 382.  [M3] 시각회귀 베이스라인 - web/iOS/Android 각 플랫폼에서 모든 primitive 조합 스크린샷 (Playwright/mobile)
+- [ ] 383.  [M3] Storybook 완성 - 모든 primitive 및 Form 조합, variant showcase, accessibility panel (axe)
+- [ ] 384.  [M3] 디자인 토큰 검증 - 모든 색상/간격/반지름이 design-tokens에서 export, arbitrary value 제거
+- [ ] 385.  [M3] 번들 크기 체크 - packages/ui treeshakeable export, web/mobile 번들 분석, unused code 제거
+- [ ] 386.  [M3] CI integration - lint, typecheck, vitest, Playwright visual regression gate 설정
+- [ ] 387.  [M3] 문서화 시작 - packages/ui README, component API docs, usage examples (MDX in Storybook)
+- [ ] 388.  [M3] card-service 마이그레이션 PoC - add-card-form의 하나 필드를 universal Input로 교체, visual parity 검증
+- [ ] 389.  [M3] 첫 화면 마이그레이션 준비 - typing-service-home 또는 card-service-home의 form 영역을 universal로 재구성
+
+### W6 - Core Primitives B (Overlay/Feedback/Layout) (99개)
+
+> 111 executable checklist items for W6 covering Dialog/Modal, BottomSheet/Drawer, Popover, Tooltip, Toast/Snackbar, AlertDialog, Tabs, Accordion, Card, Surface, Badge, Avatar, Separator, Skeleton, ScrollArea, Menu/DropdownMenu, Toggle, Progress, Spinner components. Each component spans web (React Nat
+
+- [ ] 390.  [M2] Design Dialog/Modal token schema (padding, border-radius, shadow, z-index) in @yeon/design-tokens/src/tokens.json for web+native parity with responsive-modal baseline (880px max-w, 28px border-radius)
+- [ ] 391.  [M2] Scaffold packages/ui directory with monorepo export index (dialog.ts, modal.ts, overlay.ts, feedback.ts, layout.ts, menu.ts) following yeon-ui convention
+- [ ] 392.  [M2] Implement universal Dialog component (web: Next.js + RNW headless div role=dialog, native: Expo Modal) with title/description/footer slots matching responsive-modal footprint
+- [ ] 393.  [M2] Document Dialog a11y contract (focus trap, Escape key, aria-modal, aria-labelledby) in mobile components/ui/ui-a11y-contract.test.ts pattern for native testing
+- [ ] 394.  [M2] Build Dialog Storybook story (web: CSF + Playwright, native: expo-router story screen) showing default/compact/fullscreen variants
+- [ ] 395.  [M2] Create Dialog visual baseline screenshots (web 1440px/768px responsive, native iPhone14/Pixel8) for zero-regression gating pre-merge
+- [ ] 396.  [M2] Add Dialog Vitest snapshot tests (web+RNW render tree, native render via react-native-testing-library) validating aria attributes
+- [ ] 397.  [M2] Replace responsive-modal with universal Dialog across card-service (create-deck-dialog, delete-deck-confirm, merge-guest-dialog, card-service-settings-dialog template)
+- [ ] 398.  [M2] Swap create-deck-dialog/merge-guest-dialog/delete-deck-confirm to Dialog (remove responsive-modal import, wire dialog state/onClose, test web+native visuals)
+- [ ] 399.  [M2] Create Dialog variant tests: fullscreen (mobile), centered (tablet/desktop), scrollable body (tall content), footer sticky (card-rich-markdown-editor preview modal)
+- [ ] 400.  [M2] Implement universal ModalStack context (useModal hook, ModalProvider) for card-service room dialogs (card-room-create-screen, card-room-lobby-screen) to prevent z-index collisions
+- [ ] 401.  [M2] Build AlertDialog component (web: Dialog + semantic confirmation flow, native: Alert.alert wrapper for iOS/Android native feel) with destructive/default variants
+- [ ] 402.  [M2] Document AlertDialog accessibility (role=alertdialog, aria-live regions, keyboard navigation) for card delete/merge workflows
+- [ ] 403.  [M2] Create AlertDialog stories (confirmation/warning/destructive) + visual baselines (web light/dark mode if applicable, native platform variants)
+- [ ] 404.  [M2] Implement confirm delete flow: card-service delete-deck-confirm → AlertDialog, replace inline confirm modal
+- [ ] 405.  [M2] Wire AlertDialog for typing-service room leave (typing-room-state-views, typing-room-lobby-screen) with destructive style
+- [ ] 406.  [M2] Implement universal Drawer component (web: Dialog + slide-in from edge + react-native-web, native: Expo Animated + swipe gesture) for 240-320px width sidebar/panels
+- [ ] 407.  [M2] Build Drawer a11y (focus trap scoped to drawer, Escape closes, aria-label, swipe dismiss + keyboard dismiss consistency)
+- [ ] 408.  [M2] Create Drawer stories (left/right, full-height/modal, overlay scrim, swipe threshold, content scrollable)
+- [ ] 409.  [M2] Generate Drawer visual baselines (web: responsive drawer at mobile/tablet breakpoint, native: iOS left/right + Android system gesture)
+- [ ] 410.  [M2] Map Drawer to card-service panels (card-room-participants-panel → slide Drawer, card-room-chat-panel → slide Drawer on mobile)
+- [ ] 411.  [M2] Implement BottomSheet component (web: position-fixed bottom + resize observer, native: Expo Gesture Handler + Reanimated) with snap points [25%, 50%, 100%]
+- [ ] 412.  [M2] Document BottomSheet a11y (focus management within sheet, Escape/swipe down dismiss, aria-live for content changes)
+- [ ] 413.  [M2] Create BottomSheet stories + baselines: half-sheet (room chat), full-sheet (add cards), dismiss gesture + button
+- [ ] 414.  [M2] Integrate BottomSheet for typing-service room chat (typing-room-chat-panel → BottomSheet on mobile) + community chat replies (community-chat-widget → reply BottomSheet)
+- [ ] 415.  [M2] Build universal Popover component (web: floating-ui + React, native: custom positioned View + gesture) with anchor alignment (top/bottom/left/right)
+- [ ] 416.  [M2] Document Popover a11y (focus management, click-outside dismiss, arrow pointer, aria-describedby for tooltips)
+- [ ] 417.  [M2] Create Popover stories (anchor variants, content width control, auto-flip viewport edge detection) + visual baselines
+- [ ] 418.  [M2] Implement Popover for card-service deck detail header (deck-detail-header → info popover), typing deck list (typing-deck-list → sort/filter popover)
+- [ ] 419.  [M2] Build universal Tooltip component (web: Popover wrapper + keyboard accessible, native: long-press trigger) with 300ms delay
+- [ ] 420.  [M2] Document Tooltip a11y (aria-label/aria-describedby, role=tooltip, keyboard focus trigger for keyboard-only users)
+- [ ] 421.  [M2] Create Tooltip stories (position variants, dark/light bg, max-width control) + visual baselines (web: no hover on mobile test, native: long-press demo)
+- [ ] 422.  [M2] Add Tooltips to icon buttons: card-service deck actions (share/delete), typing race controls, community post actions
+- [ ] 423.  [M2] Implement universal Toast component (web: react-hot-toast adapter + custom styling, native: useToast hook + Animated overlay) with position (top/bottom)
+- [ ] 424.  [M2] Document Toast a11y (aria-live=polite, role=status, auto-dismiss after 4s, manual dismiss button, screen reader announcement)
+- [ ] 425.  [M2] Create Toast stories (success/error/info/warning variants, auto-dismiss, action button) + visual baselines (web mobile/desktop, native safe-area-inset)
+- [ ] 426.  [M2] Build toast trigger: form error feedback in add-card-form, bulk-passage-import-form, typing-deck-form (replace inline error display with Toast)
+- [ ] 427.  [M2] Implement Toast for async operation feedback (card merge mutation, deck import, room join) across card-service + typing-service
+- [ ] 428.  [M2] Create universal Menu/DropdownMenu component (web: floating-ui + keyboard nav, native: ActionSheetIOS/native context menu) replacing yeon-context-menu
+- [ ] 429.  [M2] Document Menu a11y (role=menu, role=menuitem, arrow keys navigate, Escape closes, aria-label, disabled state)
+- [ ] 430.  [M2] Build Menu stories (icon menu, text menu, submenus, dividers) + visual baselines matching yeon-context-menu position/style
+- [ ] 431.  [M2] Migrate yeon-context-menu usage to universal Menu: card-rich-markdown-editor toolbar menu, deck-card context menu (duplicate/move/delete)
+- [ ] 432.  [M2] Implement Menu for community-feed post actions (edit/delete/report → DropdownMenu on web, ActionSheet on native)
+- [ ] 433.  [M2] Build universal Tabs component (web: Radix-inspired imperative API, native: react-native ScrollView tab bar) with indicator animation
+- [ ] 434.  [M2] Document Tabs a11y (role=tablist/tab/tabpanel, aria-selected, keyboard arrow nav, roving tabindex)
+- [ ] 435.  [M2] Create Tabs stories (horizontal/vertical, icon+label, disabled tabs, lazy content) + visual baselines
+- [ ] 436.  [M2] Replace card-service deck detail tabs: play/study/stats → Tabs component (deck-detail-screen, deck-play-screen re-layout)
+- [ ] 437.  [M2] Implement Tabs for typing-service race screens (solo/multiplayer mode tabs in typing-race-solo-screen, typing-race-multiplayer-screen)
+- [ ] 438.  [M2] Wire Tabs for community post detail (discussion/replies tabs in community-post-detail-page)
+- [ ] 439.  [M2] Build universal Accordion component (web: Radix-inspired, native: custom expand/collapse View) with single/multi expand modes
+- [ ] 440.  [M2] Document Accordion a11y (role=region, aria-expanded, aria-controls, keyboard Enter/Space to toggle)
+- [ ] 441.  [M2] Create Accordion stories (single/multi, nested, animated height, icon rotation) + visual baselines
+- [ ] 442.  [M2] Map Accordion to card-service: deck card layout (card-row → expand details), room study panel (card-room-study-panel → collapsible card groups)
+- [ ] 443.  [M2] Implement Accordion for typing-service room rules/settings panels (typing-room-settings-panel → collapsible rule sections)
+- [ ] 444.  [M2] Build universal Card component (web: div + Tailwind, native: View + NativeWind) as semantic layout wrapper with padding/border/shadow variants
+- [ ] 445.  [M2] Document Card a11y (no intrinsic a11y; parent component responsibility for semantic role/heading structure)
+- [ ] 446.  [M2] Create Card stories (default/elevated/outlined variants, with/without footer action, content sizing) + visual baselines
+- [ ] 447.  [M2] Replace custom card divs across codebase: deck-card, card-row-views → Card component, community-feed-post-item → Card
+- [ ] 448.  [M2] Integrate Card into room components: card-room-lobby-screen (room info card), typing-room-lobby-screen (race info card)
+- [ ] 449.  [M2] Build universal Surface component variant extension (existing yeon-surface from yeon-ui: elevated/inset/flat) with NativeWind class support
+- [ ] 450.  [M2] Create Surface stories (all variants, nested surfaces, semantic color backgrounds for tokens schema)
+- [ ] 451.  [M2] Map Surface to feature backgrounds: card-service home (empty-decks-screen bg), typing-service home (typing-service-home gradient bg)
+- [ ] 452.  [M2] Implement universal Badge component variant extension (existing yeon-badge: status/success/warning/danger) with right icon slot
+- [ ] 453.  [M2] Create Badge stories (all variants, with/without icon, small/medium sizes, count badge variant for list item badges)
+- [ ] 454.  [M2] Add Badges to deck list (card tags/status), typing room (player count, room status), community posts (like count, reply count)
+- [ ] 455.  [M2] Build universal Avatar component (web: img wrapper + initials fallback, native: react-native Image + Text) supporting XS/SM/MD/LG/XL sizes
+- [ ] 456.  [M2] Document Avatar a11y (alt text, aria-label for initials mode, image loading states)
+- [ ] 457.  [M2] Create Avatar stories (image/initials, presence indicator dot, group avatar stack, online status)
+- [ ] 458.  [M2] Integrate Avatars: room participants (card-room-participants-panel + typing-room-participants-panel), community presence (community-presence-tracker), post authors (community-feed-post-item)
+- [ ] 459.  [M2] Build universal Separator component (web: hr + Tailwind, native: View 1px border) as full-width/inset variants
+- [ ] 460.  [M2] Create Separator stories (full-width, inset, custom color/thickness, vertical orientation test)
+- [ ] 461.  [M2] Map Separators across UI: modal/dialog footer separators, room panel section breaks, list item dividers
+- [ ] 462.  [M2] Implement universal Skeleton component (web: animated placeholder, native: Shimmer animation) for content loaders matching card/tab structure
+- [ ] 463.  [M2] Document Skeleton a11y (aria-busy=true, aria-label for loader region, avoid interactive skeletons)
+- [ ] 464.  [M2] Create Skeleton stories (circular/rectangular, text lines, custom dimensions) + visual baselines
+- [ ] 465.  [M2] Wire Skeleton loaders: deck list loading (deck-list, typing-deck-list), room chat message stream, community feed initial load
+- [ ] 466.  [M2] Build universal ScrollArea component (web: scrollbar.js wrapper, native: FlatList for performance) with scrollbar visibility control
+- [ ] 467.  [M2] Document ScrollArea a11y (preserve semantic structure inside, keyboard scroll support, aria-live=polite for dynamic content)
+- [ ] 468.  [M2] Create ScrollArea stories (vertical/horizontal, scrollbar styling, nested scroll, custom wheel/touch behavior)
+- [ ] 469.  [M2] Map ScrollArea to tall panels: room chat history (card-room-chat-panel + typing-room-chat-panel), community feed infinite scroll
+- [ ] 470.  [M2] Implement universal Toggle component (web: button + visual toggle state, native: React Native Switch) with checked/unchecked states
+- [ ] 471.  [M2] Document Toggle a11y (role=switch, aria-checked, aria-label, keyboard toggle via Space/Enter on web)
+- [ ] 472.  [M2] Create Toggle stories (icon/text toggle, disabled, size variants) + visual baselines
+- [ ] 473.  [M2] Add Toggles to settings: card-service settings (AI help toggle in card-service-settings-dialog), typing race modes (practice/race toggle)
+- [ ] 474.  [M2] Implement universal Progress component (web: progress bar linear animation, native: View width % animation) with percent/indeterminate modes
+- [ ] 475.  [M2] Document Progress a11y (aria-valuenow/aria-valuemin/aria-valuemax, aria-label, role=progressbar)
+- [ ] 476.  [M2] Create Progress stories (linear/indeterminate, label/percentage text, color variants) + visual baselines
+- [ ] 477.  [M2] Wire Progress to card study flow (deck-play-screen → progress bar for card index), typing race (typing-race-solo-screen → WPM/accuracy progress)
+- [ ] 478.  [M2] Build universal Spinner/Loader component (web: CSS animation, native: ActivityIndicator) with size variants XS/SM/MD/LG and color palette
+- [ ] 479.  [M2] Document Spinner a11y (aria-busy=true on parent, aria-label for semantics, no interactive content during spin)
+- [ ] 480.  [M2] Create Spinner stories (all sizes, inline/block layout, overlay spinner pattern) + visual baselines
+- [ ] 481.  [M2] Map Spinners: form submission states (create-deck-dialog pending state), async operations (merge-guest-dialog merging state), room join (card-room-create-screen joining)
+- [ ] 482.  [M2] Create universal component CSS reset + Tailwind config extension for web (NativeWind equivalent for native via tailwind-merge/clsx in component styles)
+- [ ] 483.  [M2] Add responsive-modal → Dialog migration guide + codemod (sed-based for quick batch replacements in 3-service codebase)
+- [ ] 484.  [M2] Set up component visual regression CI gate (Playwright route tests pre/post migration, block merge if baseline mismatch > 2% pixel diff)
+- [ ] 485.  [M2] Write @yeon/ui exports index covering all 18 component families + test export compilation (tsc --noEmit check)
+- [ ] 486.  [M2] Create shared component contract tests (a11y snapshot, Cypress axe scan for web, native accessibility audit) validating all primitives
+- [ ] 487.  [M2] Document component migration path for card-service (14 component replacements), typing-service (8 components), community (6 components) with removal dates
+- [ ] 488.  [M2] Tag all M2 components with @implements-w6 JSDoc + verify zero imports from counseling workspace (counseling frozen, excluded from migration)
+
+### W7 - 카드 서비스 화면 이관 (Card Service Screen Migration) (120개)
+
+> 웹 카드 서비스의 38개 컴포넌트(card-service-home, card-service-decks-screen, deck-detail-screen, deck-play-screen, card-room-\*screens, add-card-form, card-rich-markdown-editor+toolbar, deck-card, deck-list, 다이얼로그들, empty-decks, responsive-modal)를 universal 컴포넌트로 재구성하고, web(react-native-web) + iOS/Android(Expo)로
+
+- [ ] 489.  [M1/W1] packages/ui 스캐폴드 생성 (tsconfig, package.json, index 진입점, /primitives /components /hooks /types 디렉토리)
+- [ ] 490.  [M1/W1] @yeon/design-tokens에 색상/간격/타이포/radius/shadow 토큰 원장 작성 (tokens.json)
+- [ ] 491.  [M1/W1] Style Dictionary 설정하여 web(CSS)/native(RN object) export 파이프라인 구성
+- [ ] 492.  [M1/W1] NativeWind v4 + react-native-web을 apps/web Next.js에 배선 (tailwind.config, globals.css)
+- [ ] 493.  [M1/W1] NativeWind v4 + Tailwind을 apps/mobile Expo에 배선 (tailwind.config, babel.config)
+- [ ] 494.  [M1/W1] packages/ui/primitives에 universal Button(web/native dual-render) 제작 후 web·mobile 둘 다 임포트 검증
+- [ ] 495.  [M1/W1] packages/ui/primitives에 universal Surface(web: div+Tailwind / native: View+NativeWind) 제작
+- [ ] 496.  [M1/W1] packages/ui/primitives에 universal Field(web: input+Tailwind / native: TextInput+NativeWind) 제작
+- [ ] 497.  [M1/W1] packages/ui/primitives에 universal Badge(web: span+Tailwind / native: View+NativeWind) 제작
+- [ ] 498.  [M1/W1] packages/ui/primitives에 universal ContextMenu(web: react-native-web shimmed radix / native: ActionSheetIOS 래퍼) 제작
+- [ ] 499.  [M1/W1] CI/lint-staged 기존 .githooks 유지(Lefthook 도입 금지), prettier-plugin-tailwindcss만 추가
+- [ ] 500.  [M1/W2] card-service-home(카드 홈 화면): 인벤토리(web 버전 분석) → universal 컴포넌트 설계(프로필/덱리스트/CTA)
+- [ ] 501.  [M1/W2] card-service-home universal 버전 packages/ui에서 구현 → import { CardServiceHome } from @yeon/ui
+- [ ] 502.  [M1/W2] apps/web에서 card-service-home을 universal 버전으로 임포트·렌더 (react-native-web 경로)
+- [ ] 503.  [M1/W2] apps/mobile에서 card-service-home을 universal 버전으로 임포트·렌더 (Expo)
+- [ ] 504.  [M1/W2] card-service-home 웹 시각 검증 (Playwright: before/after 스크린샷 비교, 레이아웃·타이포·색상 동일)
+- [ ] 505.  [M1/W2] card-service-home 모바일 시각 검증 (iOS 시뮬레이터·안드로이드 에뮬레이터: 레이아웃·터치 영역 확인)
+- [ ] 506.  [M1/W2] card-service-home a11y 검증 (WCAG AA: 색상대비·초점순서·스크린리더·포커스 표시)
+- [ ] 507.  [M1/W2] 구 card-service-home(apps/web/src/features/card-service/card-service-home.tsx) 제거
+- [ ] 508.  [M1/W2] card-service-decks-screen(덱 목록 화면): 인벤토리 → universal 설계(deck-list + filter + create CTA)
+- [ ] 509.  [M1/W2] card-service-decks-screen universal 구현 in packages/ui
+- [ ] 510.  [M1/W2] apps/web·mobile에서 card-service-decks-screen universal 버전 렌더
+- [ ] 511.  [M1/W2] card-service-decks-screen 웹/모바일/a11y 시각 검증 + 구컴포넌트 제거
+- [ ] 512.  [M1/W3] deck-detail-screen(덱 상세 화면): 인벤토리 → universal 설계(헤더+카드목록+추가폼)
+- [ ] 513.  [M1/W3] deck-detail-screen universal 구현 in packages/ui (Card 렌더링, 응답형 레이아웃)
+- [ ] 514.  [M1/W3] apps/web·mobile deck-detail-screen universal 임포트 + URL 파라미터([deckId]) 연결
+- [ ] 515.  [M1/W3] deck-detail-screen 웹/모바일/a11y 검증 + 구컴포넌트 제거
+- [ ] 516.  [M1/W3] play-card(카드 표시 컴포넌트): 웹(앞/뒤 뒤집기) → universal 버전(TouchableOpacity로 제스처 지원)
+- [ ] 517.  [M1/W3] play-controls(진행/이전/다시/설정): web only Radix → universal(NativeWind 호환 버튼그룹)
+- [ ] 518.  [M1/W3] deck-play-screen(덱 학습/play 화면): 인벤토리 → universal 설계(play-card + controls + progress)
+- [ ] 519.  [M1/W3] deck-play-screen universal 구현 in packages/ui
+- [ ] 520.  [M1/W3] apps/web·mobile deck-play-screen universal 임포트 + [deckId]/play 라우트 연결
+- [ ] 521.  [M1/W3] deck-play-screen 웹/모바일/a11y 검증 + 구컴포넌트 제거
+- [ ] 522.  [M1/W4] card-rich-markdown-editor(리치 에디터, Tiptap 기반): web-only 평가 → native 대체 전략 결정(SimpleMarkdown or 플레인 TextInput)
+- [ ] 523.  [M1/W4] card-rich-markdown-editor-view: web Tiptap preview → universal PlainText preview(native는 plain text)
+- [ ] 524.  [M1/W4] card-editor-toolbar(bold/italic/list/link/table/image/youtube): web Radix 드롭다운 → universal NativeWind 버튼그룹
+- [ ] 525.  [M1/W4] card-editor-toolbar universal 구현 in packages/ui
+- [ ] 526.  [M1/W4] add-card-form(카드 추가 폼): 인벤토리 → universal 설계(front/back rich text + preview)
+- [ ] 527.  [M1/W4] add-card-form universal 구현 in packages/ui (markdown-editor + preview 통합)
+- [ ] 528.  [M1/W4] apps/web·mobile add-card-form universal 임포트 (add-cards-panel 포함)
+- [ ] 529.  [M1/W4] add-card-form 웹/모바일/a11y 검증 + 구컴포넌트 제거
+- [ ] 530.  [M2/W5] deck-card(덱 카드 아이템): 인벤토리(클릭 → 상세) → universal 버전(Pressable + 네비게이션)
+- [ ] 531.  [M2/W5] deck-card universal 구현 in packages/ui
+- [ ] 532.  [M2/W5] apps/web·mobile deck-card universal 임포트·렌더
+- [ ] 533.  [M2/W5] deck-list(덱 목록 컨테이너): 인벤토리 → universal 버전(FlatList/ScrollView)
+- [ ] 534.  [M2/W5] deck-list universal 구현 in packages/ui
+- [ ] 535.  [M2/W5] deck-card + deck-list 웹/모바일/a11y 검증 + 구컴포넌트 제거
+- [ ] 536.  [M2/W5] card-room-create-screen(방 생성 화면): 인벤토리(덱선택+이름입력) → universal 버전
+- [ ] 537.  [M2/W5] card-room-create-screen universal 구현 in packages/ui
+- [ ] 538.  [M2/W5] apps/web·mobile card-room-create-screen universal 임포트
+- [ ] 539.  [M2/W5] card-room-create-screen 웹/모바일/a11y 검증 + 구컴포넌트 제거
+- [ ] 540.  [M2/W6] card-room-lobby-screen(방 로비): 인벤토리(참가자+상태+시작버튼) → universal 버전
+- [ ] 541.  [M2/W6] card-room-lobby-screen universal 구현 in packages/ui
+- [ ] 542.  [M2/W6] apps/web·mobile card-room-lobby-screen universal 임포트 + /rooms/[roomId] 라우트 연결
+- [ ] 543.  [M2/W6] card-room-screen(방 전체 화면): 인벤토리(스터디+채팅+참가자) → universal 배치(3-column web, stack mobile)
+- [ ] 544.  [M2/W6] card-room-screen universal 구현 in packages/ui (responsive LayoutContext 포함)
+- [ ] 545.  [M2/W6] apps/web·mobile card-room-screen universal 임포트
+- [ ] 546.  [M2/W6] card-room-screen 웹/모바일/a11y 검증 + 구컴포넌트 제거
+- [ ] 547.  [M2/W6] card-room-header(방 헤더): 인벤토리 → universal 버전(타이틀+종료버튼)
+- [ ] 548.  [M2/W6] card-room-header universal 구현 in packages/ui
+- [ ] 549.  [M2/W7] card-room-study-panel(카드 학습 판): 인벤토리(play-card + controls) → universal 버전 (앞서 play-controls 재사용)
+- [ ] 550.  [M2/W7] card-room-study-panel universal 구현 in packages/ui
+- [ ] 551.  [M2/W7] card-room-chat-panel(채팅 판): 인벤토리 → universal 버전(TextInput + MessageList + 게시버튼)
+- [ ] 552.  [M2/W7] card-room-chat-panel universal 구현 in packages/ui
+- [ ] 553.  [M2/W7] card-room-participants-panel(참가자 판): 인벤토리(UserList) → universal 버전
+- [ ] 554.  [M2/W7] card-room-participants-panel universal 구현 in packages/ui
+- [ ] 555.  [M2/W7] card-room-\* 패널 3개 (study/chat/participants) 웹/모바일/a11y 검증 + 구컴포넌트 제거
+- [ ] 556.  [M2/W8] empty-decks-screen(덱 없음 상태): 인벤토리 → universal 버전(일러스트레이션 + CTA)
+- [ ] 557.  [M2/W8] empty-decks-screen universal 구현 in packages/ui
+- [ ] 558.  [M2/W8] apps/web·mobile empty-decks-screen universal 임포트
+- [ ] 559.  [M2/W8] empty-decks-screen 웹/모바일/a11y 검증 + 구컴포넌트 제거
+- [ ] 560.  [M2/W8] responsive-modal(모달 래퍼): 인벤토리(web: Dialog / mobile: Modal) → universal 버전
+- [ ] 561.  [M2/W8] responsive-modal universal 구현 in packages/ui
+- [ ] 562.  [M3/W9] create-deck-dialog(덱 생성 다이얼로그): 인벤토리 → universal 버전(responsive-modal + form)
+- [ ] 563.  [M3/W9] create-deck-dialog universal 구현 in packages/ui
+- [ ] 564.  [M3/W9] delete-deck-confirm(덱 삭제 컨펌): 인벤토리 → universal 버전(responsive-modal + 경고)
+- [ ] 565.  [M3/W9] delete-deck-confirm universal 구현 in packages/ui
+- [ ] 566.  [M3/W9] merge-guest-dialog(게스트 병합 다이얼로그): 인벤토리 → universal 버전
+- [ ] 567.  [M3/W9] merge-guest-dialog universal 구현 in packages/ui
+- [ ] 568.  [M3/W9] card-service-settings-dialog(카드 설정 다이얼로그): 인벤토리 → universal 버전
+- [ ] 569.  [M3/W9] card-service-settings-dialog universal 구현 in packages/ui
+- [ ] 570.  [M3/W9] 다이얼로그 4개 (create/delete/merge/settings) 웹/모바일/a11y 검증 + 구컴포넌트 제거
+- [ ] 571.  [M3/W9] card-row(카드 행 표시): 인벤토리(앞/뒤 전환 가능) → universal 버전
+- [ ] 572.  [M3/W9] card-row universal 구현 in packages/ui
+- [ ] 573.  [M3/W9] card-row-views(여러 행 렌더): 인벤토리 → universal 버전 (card-row 재사용)
+- [ ] 574.  [M3/W9] card-row-views universal 구현 in packages/ui
+- [ ] 575.  [M3/W9] card-row + card-row-views 웹/모바일/a11y 검증 + 구컴포넌트 제거
+- [ ] 576.  [M3/W10] deck-card 파리티 추적: 모바일 레이아웃 스택(예: 덱 이미지/제목/설명) vs 웹 그리드 → universal responsive grid로 통합
+- [ ] 577.  [M3/W10] deck-detail-header(덱 상세 헤더): 인벤토리 → universal 버전(타이틀+설명+통계)
+- [ ] 578.  [M3/W10] deck-detail-header universal 구현 in packages/ui
+- [ ] 579.  [M3/W10] deck-play-review-mode-card(학습 완료 카드): 인벤토리 → universal 버전
+- [ ] 580.  [M3/W10] deck-play-review-mode-card universal 구현 in packages/ui
+- [ ] 581.  [M3/W10] export-deck-panel(덱 내보내기): 인벤토리(JSON 다운로드) → 웹만 유지(native는 공유 intent)
+- [ ] 582.  [M3/W10] markdown-content(마크다운 렌더): 웹(react-markdown) → universal(plain text via react-native-web)
+- [ ] 583.  [M3/W10] markdown-editor(간단한 마크다운 에디터): 인벤토리 → universal 버전(card-rich-markdown-editor와 별개, 간이 버전)
+- [ ] 584.  [M3/W10] markdown-editor universal 구현 in packages/ui
+- [ ] 585.  [M3/W10] card-markdown-code-block(코드 블록): web Prism → universal plain-text 렌더
+- [ ] 586.  [M3/W10] card-markdown-mermaid-block(Mermaid 다이어그램): web only(svg 렌더) → mobile은 텍스트 preview fallback
+- [ ] 587.  [M3/W10] card-add-live-preview(실시간 미리보기): 인벤토리 → universal 버전
+- [ ] 588.  [M3/W10] card-add-live-preview universal 구현 in packages/ui
+- [ ] 589.  [M3/W10] add-cards-panel(일괄 카드 추가): 인벤토리 → universal 버전
+- [ ] 590.  [M3/W10] add-cards-panel universal 구현 in packages/ui
+- [ ] 591.  [M3/W10] bulk-add-cards-form(벌크 임포트 폼): 인벤토리 → universal 버전(CSV 파싱)
+- [ ] 592.  [M3/W10] bulk-add-cards-form universal 구현 in packages/ui
+- [ ] 593.  [M3/W11] 모든 card-service universal 컴포넌트 시각 회귀 게이트(Playwright): web before/after 스크린샷 100% 매칭
+- [ ] 594.  [M3/W11] 모든 card-service universal 컴포넌트 a11y 게이트(axe-core·axe-playright): WCAG AA 준수 확인
+- [ ] 595.  [M3/W11] 모든 card-service universal 컴포넌트 네이티브 시각 게이트(iOS 시뮬레이터·안드로이드 에뮬레이터)
+- [ ] 596.  [M3/W11] card-service 마크다운 에디터 네이티브 대체 검증: plain text 편집 UX vs web Tiptap(기능 손실 명시)
+- [ ] 597.  [M3/W11] card-service 이미지 업로드 네이티브 대체: web FormData → mobile ImagePicker + Blob 변환
+- [ ] 598.  [M3/W11] card-service universal 컴포넌트 속도 검증(Lighthouse·React DevTools Profiler): FCP <2s, LCP <3s, 메모리 누수 없음
+- [ ] 599.  [M3/W12] 웹 card-service 라우트(/, /decks, /decks/[id], /decks/[id]/play, /rooms, /rooms/[id]) 모두 universal 컴포넌트 사용 확인
+- [ ] 600.  [M3/W12] 모바일 card-service 라우트(/, /decks, /decks/[id], /decks/[id]/play) 모두 universal 컴포넌트 사용 확인
+- [ ] 601.  [M3/W12] 웹 card-service 구 컴포넌트 제거(apps/web/src/features/card-service → 38개 파일 삭제 or 아카이브)
+- [ ] 602.  [M3/W12] 모바일 card-service 구 컴포넌트 제거(apps/mobile/src/features/card-service → 3개 파일 중 universal로 마이그레이션된 부분 정리)
+- [ ] 603.  [M3/W12] card-service 문서화: README(packages/ui에 card-service universal 컴포넌트 목록·스타일 가이드)
+- [ ] 604.  [M3/W13] card-service iOS 앱 테스트(Testflight/EAS Build): 라우팅·터치·네트워크 동작 확인, 구 native 코드 잔여 없음
+- [ ] 605.  [M3/W13] card-service Android 앱 테스트(Expo Go·EAS Build): 라우팅·터치·네트워크 동작 확인, 구 native 코드 잔여 없음
+- [ ] 606.  [M3/W13] card-service 웹 성능 재감사(Core Web Vitals, 번들 크기): universal 컴포넌트 추가로 인한 회귀 확인
+- [ ] 607.  [M3/W13] card-service 배포 가이드 작성(changelog: 웹/모바일 동시 릴리스, universal 컴포넌트 사용, 구 컴포넌트 사용 금지)
+- [ ] 608.  [M3/W13] 팀 교육: card-service universal 마이그레이션 완료, packages/ui에서 컴포넌트 가져오는 방법, 스타일 변경 정책(디자인토큰만 변경)
+
+### W8 타자 서비스 화면 이관 — Month 2 (Week 5-8) 타자 서비스 대규모 마이그레이션 (94개)
+
+> 타자 서비스(typing-service) 전체 화면과 컴포넌트를 Universal(packages/ui) 계층으로 마이그레이션. 목표: web(Next.js+RNW), iOS/Android(Expo)에서 동일한 UI. 경로: 각 화면 → universal 재작성 → web+native 패리티 검증 → 시각/a11y 회귀 게이트 → 구 컴포넌트 제거. 약 90개 단위 작업(M2: W5-8 범위).
+
+- [ ] 609.  [M2-W5] Scaffold packages/ui와 기초 설정 — universal 컴포넌트 레포지토리 생성 및 packages/@yeon/design-tokens 토큰 원장 구축
+- [ ] 610.  [M2-W5] Style Dictionary 설정으로 web(CSS 변수) + native(JS 객체) 토큰 export 자동화 구축
+- [ ] 611.  [M2-W5] NativeWind v4 기초 설정 — Tailwind className으로 React Native 스타일링 web/native 통일
+- [ ] 612.  [M2-W5] react-native-web을 Next.js와 통합 — 기존 web app에 react-native 컴포넌트 렌더 경로 추가
+- [ ] 613.  [M2-W5] Expo Router 라우팅 재구성 — mobile/app 하위에 typing-service 경로 구조 추가 (typing, typing/decks, typing/play, typing/practice, typing/rooms)
+- [ ] 614.  [M2-W5] Universal Button 컴포넌트 작성 — react-native.Pressable 기반, NativeWind 클래스, cva 변수/크기/상태
+- [ ] 615.  [M2-W5] Universal TextField 컴포넌트 작성 — react-native.TextInput/web input 통합, IME/키보드 이벤트 교차 핸들
+- [ ] 616.  [M2-W5] Universal Surface/Card 컴포넌트 작성 — flexbox 레이아웃, 테두리/간격/그림자 토큰 기반
+- [ ] 617.  [M2-W5] Universal Badge 컴포넌트 작성 — 언어/범위/상태 표시용 작은 라벨
+- [ ] 618.  [M2-W5] Universal ContextMenu 포트 — native는 ActionSheetIOS/BottomSheetModal로 대체, web 유지
+- [ ] 619.  [M2-W5] Universal Icon 래퍼 설정 — lucide-react와 lucide-react-native 추상화 레이어
+- [ ] 620.  [M2-W5] NativeWind 클래스 preset 정의 — typing-service용 색상/간격/타이포 정의 (web tailwind.config, native nativewind.json)
+- [ ] 621.  [M2-W5] packages/ui 와 앱 연결 설정 — 타스크패스 설정으로 packages/ui import 패스 모두 인식
+- [ ] 622.  [M2-W5] CI 파이프라인 확장 — packages/ui 타입스크립트/린트 빌드 추가, tsc + eslint 검증
+- [ ] 623.  [M2-W5] 이관 전 스냅샷 생성 — 현 typing-service 전체 화면 Playwright 시각 회귀 기준선 수립
+- [ ] 624.  [M2-W5] typing-service-home.tsx universal 재작성 — profile card + start cards (rooms/decks/play 링크)
+- [ ] 625.  [M2-W5] typing-service-home 테스트 — web (RNW) + native (Expo) 렌더 패리티 확인, 버튼 tap/클릭 작동
+- [ ] 626.  [M2-W5] typing-profile-card.tsx universal 재작성 — 프로필 표시, 닉네임 입력, 캐릭터 선택 드롭다운
+- [ ] 627.  [M2-W5] typing-profile-card 테스트 — web/native 입력 이벤트, 프로필 변경 핸들 일관성
+- [ ] 628.  [M2-W5] typing-service-header.tsx universal 포트 — 헤더 레이아웃, 탭/활성 상태, 설정 버튼
+- [ ] 629.  [M2-W5] typing-service-header 테스트 — a11y label, navigation role 크로스플랫폼
+- [ ] 630.  [M2-W6] typing-deck-library-screen.tsx universal 재작성 — 덱 검색/필터/목록, 임포트/생성 다이얼로그
+- [ ] 631.  [M2-W6] typing-deck-library-screen 테스트 — search input, language/scope filter, 덱 리스트 가상화 (native는 FlatList)
+- [ ] 632.  [M2-W6] typing-decks-screen.tsx universal 재작성 — 덱 상세, passage editor, 다이얼로그 (생성/삭제/병합)
+- [ ] 633.  [M2-W6] typing-decks-screen 테스트 — 개별 덱 CRUD, 모달 열기/닫기, 폼 제출
+- [ ] 634.  [M2-W6] typing-deck-form.tsx universal 재작성 — 덱 메타데이터 입력 폼 (제목, 설명, 언어, 범위)
+- [ ] 635.  [M2-W6] typing-deck-form 테스트 — 폼 유효성, web/native 제출 이벤트
+- [ ] 636.  [M2-W6] typing-deck-bulk-passage-import-form.tsx universal 재작성 — 대량 문장 import textarea + 파싱 로직
+- [ ] 637.  [M2-W6] typing-deck-bulk-passage-import-form 테스트 — paste이벤트, 줄 분할 파싱, 유효성 검사
+- [ ] 638.  [M2-W6] typing-deck-passage-editor.tsx universal 재작성 — 개별 passage 입력/편집/마크다운 리뷰
+- [ ] 639.  [M2-W6] typing-deck-passage-editor 테스트 — 텍스트 편집, 마크다운 미리보기 렌더 동기화
+- [ ] 640.  [M2-W6] typing-deck-detail-panel.tsx universal 재작성 — 덱 요약 패널 (메타, 추가 버튼 등)
+- [ ] 641.  [M2-W6] typing-deck-list.tsx universal 재작성 — 덱 항목 리스트 (카드/인라인 형식)
+- [ ] 642.  [M2-W6] typing-deck-detail-panel, typing-deck-list 테스트 — 레이아웃 반응형, 스크롤/터치 상호작용
+- [ ] 643.  [M2-W6] typing-decks-screen 시각 회귀 gate — 현 스냅샷 vs 신규 universal 렌더 비교, 레이아웃/색상/타이포 일치 확인
+- [ ] 644.  [M2-W6] typing-deck-library-screen 시각 회귀 gate — 필터/검색 UI, 리스트 항목 스타일 일치
+- [ ] 645.  [M2-W7] typing-race-solo-screen.tsx universal 재작성 — 타자 입력 필드, 레이스 상태 표시(cpm/정확도), 재시작 버튼
+- [ ] 646.  [M2-W7] typing-race-solo-screen 이벤트 핸들 — IME 합성 문자 처리, 영문/한글 mixed input 크로스플랫폼 (web: onCompositionStart/End + native: Keyboard.addListener)
+- [ ] 647.  [M2-W7] typing-race-solo-screen 테스트 — 장문 타자 입력, cpm/wpm 계산 정확도, 실수 감지
+- [ ] 648.  [M2-W7] typing-race-solo-practice-panel.tsx universal 재작성 — 연습 모드 설정 (덱/난이도/타이머)
+- [ ] 649.  [M2-W7] typing-race-solo-practice-panel 테스트 — 옵션 변경, 연습 시작 로직
+- [ ] 650.  [M2-W7] typing-race-play-screen.tsx universal 래퍼 생성 — 멀티플레이 vs 솔로 fallback 로직 유지, 웹소켓 연결 추상화
+- [ ] 651.  [M2-W7] typing-race-multiplayer-screen.tsx universal 재작성 — 실시간 대전 화면 (lanes, progress, chat)
+- [ ] 652.  [M2-W7] typing-race-multiplayer-screen 이벤트 핸들 — 타이핑 입력 sync, 상대 진행률 리얼타임 업데이트
+- [ ] 653.  [M2-W7] typing-race-multiplayer-screen 테스트 — 3대1 레이스, 승패 결정 로직, 채팅 메시지 표시
+- [ ] 654.  [M2-W7] typing-race-play-screen 시각 회귀 gate — 솔로/멀티 화면 스냅샷 비교
+- [ ] 655.  [M2-W7] typing-room-lobby-screen.tsx universal 재작성 — 방 생성/검색/목록, 참여자 표시
+- [ ] 656.  [M2-W7] typing-room-lobby-screen 테스트 — 방 목록 필터, 검색, 참여자 수 표시
+- [ ] 657.  [M2-W7] typing-room-screen.tsx universal 재작성 — 진행 중인 방 메인 화면 (상태 뷰, 참여자, 채팅, 설정)
+- [ ] 658.  [M2-W7] typing-room-screen 테스트 — 방 참여/나가기, 상태 전환, 채팅 메시지 수신
+- [ ] 659.  [M2-W7] typing-room-participants-panel.tsx universal 재작성 — 참여자 목록, 방장 표시, 프로필 카드
+- [ ] 660.  [M2-W7] typing-room-chat-panel.tsx universal 재작성 — 채팅 입력, 메시지 리스트, 실시간 수신
+- [ ] 661.  [M2-W7] typing-room-chat-panel 이벤트 핸들 — 엔터 전송, 모바일 키보드 처리
+- [ ] 662.  [M2-W7] typing-room-settings-panel.tsx universal 재작성 — 방 설정 (난이도, 언어, 비공개/공개)
+- [ ] 663.  [M2-W7] typing-room-waiting-header.tsx universal 재작성 — 대기 중 헤더 (상태 텍스트, 시작 버튼)
+- [ ] 664.  [M2-W7] character-sprite.tsx 네이티브 대안 작성 — Canvas 렌더링 대신 SVG/image 컴포넌트로 캐릭터 표시 (Phaser 제거, RN Image)
+- [ ] 665.  [M2-W7] typing-bgm-button.tsx universal 재작성 — BGM 토글 버튼, web/native 오디오 제어 (web: Web Audio API, native: expo-av)
+- [ ] 666.  [M2-W7] typing-bgm-audio.ts universal 포트 — 크로스플랫폼 오디오 재생 로직
+- [ ] 667.  [M2-W7] typing-room-lobby-screen + room-screen 시각 회귀 gate — 방 목록/진행 화면 스냅샷 비교
+- [ ] 668.  [M2-W8] typing-service 라우트 통합 — apps/mobile/app/typing 경로 추가 (index, decks, play, practice, rooms, rooms/[roomId])
+- [ ] 669.  [M2-W8] typing-service 페이지 컴포넌트 작성 — mobile/app/typing/index.tsx (universal 홈)
+- [ ] 670.  [M2-W8] typing-decks 페이지 — mobile/app/typing/decks/index.tsx (universal 라이브러리)
+- [ ] 671.  [M2-W8] typing-deck-detail 페이지 — mobile/app/typing/decks/[deckId].tsx (universal 상세/편집)
+- [ ] 672.  [M2-W8] typing-play 페이지 — mobile/app/typing/play/index.tsx (universal 레이스 입장)
+- [ ] 673.  [M2-W8] typing-practice 페이지 — mobile/app/typing/practice/index.tsx (universal 연습 모드)
+- [ ] 674.  [M2-W8] typing-rooms 페이지 — mobile/app/typing/rooms/index.tsx (universal 방 로비)
+- [ ] 675.  [M2-W8] typing-room-detail 페이지 — mobile/app/typing/rooms/[roomId].tsx (universal 진행 중 화면)
+- [ ] 676.  [M2-W8] 웹 라우트 RNW 통합 — apps/web/src/app/typing-service/\* 페이지를 universal 컴포넌트로 연결
+- [ ] 677.  [M2-W8] RNW 브라우저 번들 최적화 — react-native-web 조건부 import, tree-shake 불필요한 native 런타임 코드
+- [ ] 678.  [M2-W8] 네이티브 래퍼 번들 최적화 — Expo 번들링, web 관련 import 제외, native-only 패키지 연결
+- [ ] 679.  [M2-W8] typing-service-home 크로스플랫폼 E2E 검증 — web (Chrome) + iOS (Simulator) + Android (Emulator)에서 홈 화면 렌더 + 버튼 작동
+- [ ] 680.  [M2-W8] typing-deck-library 크로스플랫폼 E2E 검증 — 검색/필터 기능, 덱 목록 스크롤
+- [ ] 681.  [M2-W8] typing-race-solo 크로스플랫폼 E2E 검증 — 타자 입력, cpm 측정, 정확도 계산
+- [ ] 682.  [M2-W8] typing-room-lobby 크로스플랫폼 E2E 검증 — 방 생성/검색, 참여자 표시
+- [ ] 683.  [M2-W8] a11y 감사 — typing-service 모든 universal 컴포넌트 (ARIA label, heading 계층, 색상 대비)
+- [ ] 684.  [M2-W8] a11y 자동화 테스트 — axe-core 또는 jest-axe로 web + native 접근성 검증 (label, role, 색상 대비)
+- [ ] 685.  [M2-W8] keyboard navigation 검증 — web tab order, native screen reader (VoiceOver/TalkBack) 통합 테스트
+- [ ] 686.  [M2-W8] 구 typing-service 컴포넌트 제거 — typing-service-home.tsx (web 구버전) 삭제
+- [ ] 687.  [M2-W8] 구 typing-profile-card 제거
+- [ ] 688.  [M2-W8] 구 typing-deck-library-screen 제거
+- [ ] 689.  [M2-W8] 구 typing-decks-screen 제거
+- [ ] 690.  [M2-W8] 구 typing-deck-form 제거
+- [ ] 691.  [M2-W8] 구 typing-deck-bulk-passage-import-form 제거
+- [ ] 692.  [M2-W8] 구 typing-race-solo-screen 제거
+- [ ] 693.  [M2-W8] 구 typing-race-multiplayer-screen 제거
+- [ ] 694.  [M2-W8] 구 typing-race-play-screen 제거
+- [ ] 695.  [M2-W8] 구 typing-room-lobby-screen 제거
+- [ ] 696.  [M2-W8] 구 typing-room-screen 제거
+- [ ] 697.  [M2-W8] 구 character-sprite.tsx 제거
+- [ ] 698.  [M2-W8] 구 typing 패키지 import 정리 — 이관 완료된 컴포넌트 정배출 (packages/ui export로 대체)
+- [ ] 699.  [M2-W8] 시각 회귀 최종 게이트 — W5부터 W8 마지막까지 모든 이관 화면 Playwright 스냅샷 비교 (baseline vs final)
+- [ ] 700.  [M2-W8] 웹 성능 측정 — Lighthouse 점수 (LCP/FID/CLS) 비교 (구 typing-service vs universal RNW)
+- [ ] 701.  [M2-W8] 네이티브 성능 측정 — iOS/Android 앱 시작 시간, 메모리 사용량, 프레임율 (도구: React Native Debugger)
+- [ ] 702.  [M2-W8] CI 파이프라인 최종 검증 — build + test + E2E 모두 통과, merge 게이트 확인
+
+### W9-커뮤니티 화면 이관 (Month 3, Weeks 9-13) (83개)
+
+> community-page, community-post-detail-page, 실시간 채팅(chat-widget/form/header/message-list), 피드(post-item/reply-item/forms/meta), seo-section을 Universal(React Native+NativeWind+react-native-web) 컴포넌트로 재작성. 웹/네이티브 패리티 및 구버전 제거까지 포함한 70개 체크리스트.
+
+- [ ] 703.  [M3/W9] 토큰 원장 — 커뮤니티 색상(#111827 기본, #e5e7eb 테두리, #f7f8fa 배경) + 간격(px-4/5/6) + 타이포(text-13/14/15/16/18/24) + radius(rounded-2xl/3xl) + shadow(shadow-sm) → packages/design-tokens/src/community.tokens.json으로 Style Dictionary 스키마 정의.
+- [ ] 704.  [M3/W9] packages/ui 스캐폴드 생성 — 파일 구조: packages/ui/src/primitives/(button/textarea/input/badge), packages/ui/src/community/(community-chat-widget/feed-post-item/etc), packages/ui/package.json(name: @yeon/ui, exports: {./primitives, ./community}).
+- [ ] 705.  [M3/W9] Universal Button 프리미티브 — NativeWind className 지원(Tailwind) + 웹 onClick/disabled 매핑 + React Native Pressable 호환 + cva 변형(size/variant: ghost/solid) → packages/ui/src/primitives/button.tsx.
+- [ ] 706.  [M3/W9] Universal Textarea 프리미티브 — 웹 <textarea> + RN TextInput 추상화 + NativeWind placeholder/value + rows prop + maxLength → packages/ui/src/primitives/textarea.tsx.
+- [ ] 707.  [M3/W9] Universal Input 프리미티브 — 웹 <input type=text/password> + RN TextInput + placeholder/maxLength/type → packages/ui/src/primitives/input.tsx.
+- [ ] 708.  [M3/W9] Universal Badge 프리미티브 — span/Text 추상화 + NativeWind 클래스 + 웹 border/bg/text 직접 → packages/ui/src/primitives/badge.tsx.
+- [ ] 709.  [M3/W9] Next.js (web)에 react-native-web + NativeWind v4 구성 — apps/web/next.config에 babel-plugin-nativewind 추가, apps/web/tailwind.config 중 NativeWind 호환 Tailwind 구문만 유지.
+- [ ] 710.  [M3/W9] Expo (mobile)에 NativeWind v4 + Expo Router 구성 — apps/mobile에 nativewind.config.ts 설정, npx nativewind init, babel config에 plugin 추가.
+- [ ] 711.  [M3/W9] react-native-web을 apps/web에 설치 및 webpack 별칭 설정 — react-native → react-native-web 매핑 (next.config webpack) + nativeWind styles 번들링.
+- [ ] 712.  [M3/W9] Universal ChatsWidget 재구성 — apps/ui/src/community/community-chat-widget.tsx: NativeWind 클래스(variant/guestNickname prop) + RN View/Pressable + Web div/button 조건부 → web에서도 react-native-web으로 렌더.
+- [ ] 713.  [M3/W9] Universal ChatForm 재구성 — 웹/RN 공용 textarea + 전송버튼 + isLoading UI → apps/ui/src/community/community-chat-form.tsx.
+- [ ] 714.  [M3/W9] Universal ChatHeader 재구성 — 실시간 접속자 badge + 채팅 제목 → apps/ui/src/community/community-chat-header.tsx.
+- [ ] 715.  [M3/W9] Universal MessageList 재구성 — 가상화(react-native-actions-sheet 또는 FlatList 추상) + 메시지 렌더링(author/body/createdAt) + 스크롤 동기화 → apps/ui/src/community/community-chat-message-list.tsx.
+- [ ] 716.  [M3/W9] Universal FeedPostItem 재구성 — 작성자/시간/카테고리 배지 + 제목/본문 미리보기 + 댓글개수버튼 + 수정/삭제 액션 + expanded replies 조건부 표시 → apps/ui/src/community/community-feed-post-item.tsx.
+- [ ] 717.  [M3/W9] Universal FeedReplyItem 재구성 — 댓글 작성자/본문/시간 + 삭제버튼 + 오류표시 → apps/ui/src/community/community-feed-reply-item.tsx.
+- [ ] 718.  [M3/W9] Universal FeedPostEditForm 재구성 — textarea + 취소/저장버튼 + isSubmitting UI → apps/ui/src/community/community-feed-forms.tsx 내 export.
+- [ ] 719.  [M3/W9] Universal FeedPostReplyForm 재구성 — 닉네임/비밀번호 input + textarea + 등록버튼 + isSubmitting UI → apps/ui/src/community/community-feed-forms.tsx 내 export.
+- [ ] 720.  [M3/W9] Universal CommunityCategoryBadge 재구성 — category string prop → styled badge (rounded-full border px-3 py-1) → apps/ui/src/community/community-feed-meta.tsx.
+- [ ] 721.  [M3/W9] Universal FeedGuestIdentityRow 재구성 — 닉네임/비밀번호 input + 글쓰기 토글버튼 → apps/ui/src/community/community-feed-components.tsx.
+- [ ] 722.  [M3/W9] Universal WritePostPanel 재구성 — 카테고리 select + 제목/내용 textarea + 취소/제출버튼 → apps/ui/src/community/community-feed-components.tsx.
+- [ ] 723.  [M3/W9] Universal CommunityGuestIdentityConfirmModal 재구성 — Modal/Dialog 래퍼(Modal-like overlay) + 닉네임/비밀번호 input + 확인/취소 액션 → apps/ui/src/community/community-guest-identity-confirm-modal.tsx.
+- [ ] 724.  [M3/W9] 웹 라우트 유지 — apps/web/src/app/community/page.tsx (community-page.tsx import), apps/web/src/app/community/posts/[postId]/page.tsx (community-post-detail-page.tsx import).
+- [ ] 725.  [M3/W9] 모바일 라우트 신규 생성 — apps/mobile/app/community.tsx (root 탭, Expo Router 진입), apps/mobile/app/(tabs)/community.tsx (탭 스크린), apps/mobile/app/community/posts/[id].tsx (상세페이지).
+- [ ] 726.  [M3/W9] useCommunityChat 훅 추상화 — web/mobile 공용(packages/@yeon/hooks 또는 apps/web+mobile 공용 monorepo 패키지) → messages/isLoading/error/sendMessage/activePresenceCount 반환.
+- [ ] 727.  [M3/W9] useCommunityFeed 훅 추상화 — web/mobile 공용 → posts/isLoading/error/createPost/toggleReplies/submitReply/updatePost/deletePost/deleteReply 등 전체 상태 관리.
+- [ ] 728.  [M3/W9] useCommunityGuestIdentity 훅 신규 생성 — guestNickname/guestPassword localStorage + setter 함수 → web/mobile 양쪽에서 사용.
+- [ ] 729.  [M3/W9] usePendingGuestIdentityAction 훅 신규 생성 — modal open/close + actionLabel/run/resolve 상태 관리 → community-page와 post-detail 양쪽 로직 통일.
+- [ ] 730.  [M3/W9] 웹 community-page 재작성 — apps/web/src/features/community/community-page.tsx: Universal 컴포넌트 소비 + RNW 렌더링 + SSR 보존(Product Header 등).
+- [ ] 731.  [M3/W9] 웹 community-post-detail-page 재작성 — apps/web/src/features/community/community-post-detail-page.tsx: Universal 컴포넌트 소비 + 동적 라우팅 [postId] 파라미터 + 뒤로가기 Link.
+- [ ] 732.  [M3/W9] 모바일 CommunityScreen 신규 구성 — apps/mobile/src/features/community/community-screen.tsx: Universal 컴포넌트 + Expo Router tab stack.
+- [ ] 733.  [M3/W9] 모바일 CommunityPostDetailScreen 신규 구성 — apps/mobile/src/features/community/community-post-detail-screen.tsx: Universal 컴포넌트 + [id] 동적 라우팅.
+- [ ] 734.  [M3/W9] universal 채팅 훅 SSR 호환성 — 폴링 interval(web 5000ms/RN 8000ms)을 초기화 가능하게 → 서버사이드 렌더 시 빈 메시지 배열로 시작.
+- [ ] 735.  [M3/W9] community-seo-section 재작성 — Next.js 전용(getStaticProps 형태 없으므로 RSC) + universal 컴포넌트 감싸기(사실상 web-only 텍스트 섹션, RN에서는 조건부 비표시) → apps/web/src/features/community/community-seo-section.tsx 유지.
+- [ ] 736.  [M3/W9] 웹 visual regression 테스트 추가 — e2e/community-page-visual.spec.ts: 커뮤니티 메인 페이지 스크린샷 baseline 수립, 메시지/글 렌더링 후 비교.
+- [ ] 737.  [M3/W9] 웹 visual regression 테스트 — e2e/community-post-detail-visual.spec.ts: 상세페이지 스크린샷 baseline, 댓글 펼침 상태 비교.
+- [ ] 738.  [M3/W9] 웹 accessibility 테스트 추가 — e2e/community-a11y.spec.ts: axe-core로 커뮤니티 페이지 WCAG 검사, 色対비/ARIA 속성 검증.
+- [ ] 739.  [M3/W9] 모바일 visual 검증(스크린샷 비교) — apps/mobile/e2e 또는 percy.io: 커뮤니티 메인/상세 스크린 기준선 수립, 메시지/글 렌더링 확인.
+- [ ] 740.  [M3/W9] 웹 채팅 상호작용 테스트 — e2e/community-chat-interaction.spec.ts: 메시지 입력 → 전송 → 목록 업데이트 → 시간표시 정상 검증.
+- [ ] 741.  [M3/W9] 웹 게시판 CRUD 테스트 — e2e/community-feed-crud.spec.ts: 글작성 → 댓글달기 → 수정 → 삭제 플로우, 게스트 인증 모달 검증.
+- [ ] 742.  [M3/W9] 모바일 채팅 상호작용 테스트 — 에뮬레이터/기기: 메시지 입력(RN TextInput) → 전송 → 스크롤 가상화 성능 확인.
+- [ ] 743.  [M3/W9] 모바일 게시판 CRUD 테스트 — 에뮬레이터/기기: 글작성 → 목록 스크롤(FlatList 가상화) → 상세페이지 진입 → 댓글 쓰기.
+- [ ] 744.  [M3/W9] 웹 채팅 메시지 가상화 성능 테스트 — 100+ 메시지 렌더링 후 Lighthouse/DevTools 프로파일링: DOM 노드 수, 메모리 사용량 확인.
+- [ ] 745.  [M3/W9] 모바일 메시지 리스트 성능 테스트 — FlatList 가상화 + renderItem 최적화 + 스크롤 FPS 측정(RN Profiler).
+- [ ] 746.  [M3/W9] 웹/모바일 폰트/색상 일관성 검증 — NativeWind 클래스(text-13/14/15 등) 동일 크기 확인, 색상 변수(#111827/#e5e7eb) 양쪽 매칭.
+- [ ] 747.  [M3/W9] 웹 다크모드 지원 확인 — tailwind.config dark: 클래스 적용 시 커뮤니티 페이지 색상 전환 정상(기존 설정 유지 또는 확장).
+- [ ] 748.  [M3/W9] 모바일 시스템 다크모드 대응 — React Native 기본 useColorScheme() 또는 NativeWind 자동 감지, 색상 토큰 원장에 dark 변형 추가.
+- [ ] 749.  [M3/W9] Playwright 기기별 테스트 — chromium(웹 기본) + mobile chromium(mobile 시뮬레이션) + webkit(Safari 호환성) 각각 커뮤니티 페이지 실행.
+- [ ] 750.  [M3/W9] 모바일 iOS 시뮬레이터 테스트 — xcodebuild 또는 Xcode: 커뮤니티 메인/상세/채팅 렌더링 정상, 텍스트 입력 키보드 모양 정상.
+- [ ] 751.  [M3/W9] 모바일 Android 에뮬레이터 테스트 — Android Studio emulator 또는 Pixel device: 커뮤니티 렌더링 + 입력 필드 터치 응답 정상.
+- [ ] 752.  [M3/W9] 웹 반응형 테스트 — 375px(모바일) → 768px(태블릿) → 1440px(데스크톱): 레이아웃 깨짐/글자 겹침 없음, 채팅 판넬 가시성 유지.
+- [ ] 753.  [M3/W9] 모바일 가로/세로 회전 테스트 — iOS/Android: 가로 회전 후 메시지 리스트 스크롤 위치 유지, 입력 필드 포커스 복구.
+- [ ] 754.  [M3/W9] 웹 구성품 제거 — 기존 원본 community-page.tsx → 조건부 import로 새 Universal 버전으로 전환 후 원본 파일 제거.
+- [ ] 755.  [M3/W9] 웹 구성품 제거 — 기존 원본 community-post-detail-page.tsx → 새 Universal 버전으로 전환 후 제거.
+- [ ] 756.  [M3/W9] 웹 구성품 제거 — 기존 community-chat-\*.tsx(widget/form/header/message-list) → Universal apps/ui 버전으로 전환 후 apps/web/src/features/community/components 내 파일 제거.
+- [ ] 757.  [M3/W9] 웹 구성품 제거 — 기존 community-feed-\*.tsx(post-item/forms/meta/reply-item/components) → Universal 버전으로 전환 후 제거.
+- [ ] 758.  [M3/W9] 웹 구성품 제거 — CommunityGuestIdentityConfirmModal 기존 파일 → Universal 버전 사용으로 전환 후 제거.
+- [ ] 759.  [M3/W9] 웹 구성품 제거 — community-presence-tracker.tsx 기존 → Universal 호환 버전 또는 web-only 유지 후 정리.
+- [ ] 760.  [M3/W9] 웹 API 혼합 단계 — community-\*-api.ts(chat-service-api.ts/community-chat-api.ts/community-presence-api.ts) 유지(backend 연동), 훅만 shared로 이동.
+- [ ] 761.  [M3/W9] 모바일 API 클라이언트 연결 — @yeon/api-client 기존 타입 재사용, RN 환경에서 fetch/axios 호출 정상 동작 확인.
+- [ ] 762.  [M3/W9] 웹 세션/인증 유지 — Cookies(guest identity 로컬스토리지) + 기존 RQ cache 전략 유지, 라우트 변경 시 상태 손실 없음.
+- [ ] 763.  [M3/W9] 모바일 세션 저장소 — React Query persist adapter 또는 AsyncStorage + @tanstack/query-persist-client: 앱 종료 후 재진입 시 draft 복구.
+- [ ] 764.  [M3/W9] 웹 마크다운/리치 에디터 제외 — 커뮤니티는 평문만(제약 명시), 카드서비스의 rich-markdown-editor 동일 방식 적용 불필요.
+- [ ] 765.  [M3/W9] 모바일 마크다운/리치 에디터 제외 — 평문 textarea만, RN TextInput maxLength 제약.
+- [ ] 766.  [M3/W9] 웹 emoji 지원 여부 결정 — 기존 community-chat-form에서 emoji picker 유무 확인 후, Universal로 이식할지 제외할지 결정.
+- [ ] 767.  [M3/W9] 모바일 emoji 지원 — RN 환경에서 emoji keyboard 자동 표시(플랫폼 기본) 또는 선택적 피커 추가.
+- [ ] 768.  [M3/W9] 커뮤니티 라우팅 최종 확인 — 웹: / → /community → /community/posts/[postId], 모바일: (tabs)/community → community/posts/[id] → 경로 일관성 검증.
+- [ ] 769.  [M3/W9] 배포 전 모서리 케이스 테스트 — 빈 메시지 목록/댓글 없는 글/오류 응답 모두 커뮤니티 페이지 정상 렌더링 확인(web/RN).
+- [ ] 770.  [M3/W10] CI 파이프라인 추가 — 커뮤니티 Playwright 테스트 + mobile 빌드 체크: pnpm run build + pnpm run e2e:community(신규 스크립트).
+- [ ] 771.  [M3/W10] 문서 작성 — 커뮤니티 Universal 컴포넌트 아키텍처 설명서(packages/ui README), 웹/RN 호환성 주의사항, 스타일링 지침(NativeWind vs Tailwind).
+- [ ] 772.  [M3/W10] iOS 릴리즈 빌드 — eas build --platform ios 또는 xcodebuild: 커뮤니티 화면 포함 IPA 생성, 내부 테스터 배포 링크 생성.
+- [ ] 773.  [M3/W10] Android 릴리즈 빌드 — eas build --platform android 또는 gradlew assembleRelease: 커뮤니티 화면 포함 APK/AAB 생성, 테스터 배포.
+- [ ] 774.  [M3/W10] 웹 스테이징 배포 — 커뮤니티 Universal 컴포넌트 적용 버전 배포, 관계자 검수.
+- [ ] 775.  [M3/W10] 모바일 테스터 배포 — iOS TestFlight + Android internal testing: 커뮤니티 메인/상세/채팅 QA 피드백 수집.
+- [ ] 776.  [M3/W10] 성능 최적화 최종 검증 — 웹: LCP/CLS/FID 메트릭스, 모바일: 메모리/배터리 영향도 측정, 각각 임계값 내 확인.
+- [ ] 777.  [M3/W11] counseling 워크스페이스 확인 — 마이그레이션 대상 아님(동결 상태 유지), 기존 Next.js DOM 렌더링 유지, 크로스 워크스페이스 영향 없음 검증.
+- [ ] 778.  [M3/W11] card-service/typing-service 통합 테스트 — 커뮤니티 타입/API 변경 사항이 타 서비스 라우팅/state management에 영향 없음 확인.
+- [ ] 779.  [M3/W11] 웹 build 최종 검증 — next build: 번들 크기 증감 평가, 정적 export 가능 여부 확인.
+- [ ] 780.  [M3/W11] 모바일 빌드 최종 검증 — eas build --local: 번들 크기(main.jsbundle) 평가, Hermes 사용 시 성능 이득 측정.
+- [ ] 781.  [M3/W11] 이전 커뮤니티 컴포넌트 완전 제거 — git rm 으로 구원본 파일 확인 삭제, import 경로 전체 검색으로 고아 import 확인.
+- [ ] 782.  [M3/W12] 최종 문서화 — 마이그레이션 완료 리포트 작성: 파일 수(web: -27 → +universal 12), 번들 크기 변화, 성능 개선율.
+- [ ] 783.  [M3/W12] 팀 내 교육 자료 작성 — NativeWind+react-native-web 스택 개요, 신규 커뮤니티 컴포넌트 개발 가이드라인.
+- [ ] 784.  [M3/W13] 릴리스 노트 작성 — 웹/iOS/Android 커뮤니티 디자인 개선 사항 정리, 유저 기능 추가(없으면 '안정성 향상').
+- [ ] 785.  [M3/W13] 포스트모템 회의 — 마이그레이션 프로세스 회고, 다음 워크스트림(month 3 후속 또는 새 기능) 계획.
+
+### W10-품질 게이트(린트/a11y/시각/테스트) (97개)
+
+> 3개월 M3(W10-13) 품질 게이트 단계에서 필수 체크박스 목록: 린트(tailwindcss/NativeWind 호환, no-arbitrary-value, no-custom-classname), jsx-a11y(web)+react-native-a11y(mobile), Prettier-tailwindcss, 금지 패턴(inline style, 원시 RN/DOM 요소), Storybook(web+RN addon-a11y), Playwright 시각회귀(card-service/typing-service/community, 모바일뷰포트
+
+- [ ] 786.  [M1] ESLint + eslint-plugin-tailwindcss(v4 호환) 설정: NativeWind className 인식 + no-arbitrary-value=error(색상 토큰 강제) + classnames-order warn 구성
+- [ ] 787.  [M1] ESLint + no-custom-classname 룰: packages/ui 컴포넌트만 classname 직접 선언 허용 + card-service/typing-service/community 화면은 기존 className 사용 금지(eslint-disable 추적)
+- [ ] 788.  [M1] ESLint + no-restricted-syntax 룰: inline style(style={{...}}) 전역 금지 + RNW ClassNameMap/react-native View/Text 직접 사용 금지 → packages/ui 컴포넌트로 강제
+- [ ] 789.  [M1] Prettier + prettier-plugin-tailwindcss 설정: web/mobile 공통 tailwind className 자동 정렬 + .prettierrc 통합 설정(printWidth 80 유지)
+- [ ] 790.  [M1] ESLint 확장: jsx-a11y 플러그인(web) + react-native-a11y 플러그인(mobile) 추가 + role/aria-label 누락 검사
+- [ ] 791.  [M1] pre-commit 게이트(기존 .githooks/pre-commit 확장): prettier --write 후 eslint src --ext .ts,.tsx + lint-staged 자동 실행
+- [ ] 792.  [M1] 토큰 참조 강제 룰: colors/spacing/radius/typography 변수만 Tailwind/NativeWind에서 인식 + 하드코딩된 #xxx/10px 금지 (eslint error)
+- [ ] 793.  [M2] Storybook 신설(web): @storybook/react@latest + addon-a11y + addon-essentials + addon-interactions 구성
+- [ ] 794.  [M2] Storybook 초기화(mobile): expo+react-native용 @storybook/react-native 설정 OR chromatic/screenshot 기반 대체 선택
+- [ ] 795.  [M2] Storybook stories: packages/ui(Button/Badge/Field/Surface/ContextMenu) 5종 + card-service 핵심(card-service-home/card-service-decks-screen/deck-detail-screen/deck-play-screen) 4종 + typing-service(typing-service-home/typing-deck-library/typing-race-solo-screen) 3종 + community(community-page) 1종 = 13종 스토리 작성
+- [ ] 796.  [M2] Storybook addon-a11y: 각 story에서 axe 자동 스캔 + 색상 대비/ARIA 검증 (WCAG AA minimum)
+- [ ] 797.  [M2] Storybook interactions: Button/Badge 사용자 상호작용(click/hover) 시뮬레이션 스토리 작성
+- [ ] 798.  [M2] Storybook stories web viewport: 1440px(desktop) + 768px(tablet) + 375px(mobile) 뷰포트 확인용 story 추가
+- [ ] 799.  [M2] Storybook stories mobile: iOS(375x812) + Android(360x800) 뷰포트 story variant 작성(react-native-web용)
+- [ ] 800.  [M2] Playwright 시각회귀 기초(web): apps/web/e2e/visual-regression/ 신설 + card-service/typing-service/community 3종 서비스 baseline 스크린샷 촬영(desktop/tablet/mobile 각 1회)
+- [ ] 801.  [M2] Playwright 시각회귀 초기화: playwright test --update-snapshots 로 baseline.png 생성 + git lfs 또는 artifact 저장소 연동
+- [ ] 802.  [M2] Playwright 시각회귀 테스트: card-service-home(빈 상태·덱 1개), card-service-decks-screen(목록), deck-detail-screen(상세), deck-play-screen(플레이 모드) = 4종 시나리오
+- [ ] 803.  [M2] Playwright 시각회귀 테스트: typing-service-home, typing-deck-library-screen, typing-race-solo-screen = 3종 시나리오
+- [ ] 804.  [M2] Playwright 시각회귀 테스트: community-page(피드), community 피드-포스트 = 2종 시나리오 (총 9종)
+- [ ] 805.  [M2] Playwright 시각회귀 모바일뷰: 각 시나리오를 375px(iPhone 12) + 768px(iPad) 뷰포트에서 반복 테스트(크로스브라우저 chrome만, headless 강제)
+- [ ] 806.  [M2] Playwright 시각회귀 axe 통합: e2e/accessibility.spec.ts 확장 + card-service/typing-service/community 3종 home 화면 color-contrast 제외 WCAG violations zero
+- [ ] 807.  [M3] Playwright 시각회귀 CI 게이트: visual-regression.spec.ts 실행 후 diff 감지 시 failed artifact(diff.png) 업로드 + PR 댓글로 before/after 첨부
+- [ ] 808.  [M3] Playwright 시각회귀 업그레이드 가이드: baseline 변경 필요 시 playwright test --update-snapshots + git commit 절차 자동화(bin/update-visual-baselines.sh)
+- [ ] 809.  [M1] vitest 단위테스트(web): Button/Badge/Field 등 yeon-ui 프리미티브 각 variant 렌더링 검증 (snapshot OR assertion)
+- [ ] 810.  [M1] vitest 단위테스트(mobile): @testing-library/react-native 기반 Button/Badge 터치 인터랙션 테스트(onPress 콜백 검증)
+- [ ] 811.  [M2] vitest 통합테스트: card-service-home 덱 없을 때 empty state 렌더 + API mock 검증(React Query MSW)
+- [ ] 812.  [M2] vitest 통합테스트: typing-race-solo-screen 시작/일시정지/결과 상태 전환 검증
+- [ ] 813.  [M2] vitest 커버리지 하한: yeon-ui + card-service/typing-service 컴포넌트 line coverage 60% 이상 (ci gate화 금지, 현재 metric만 수집)
+- [ ] 814.  [M1] RN Testing Library 세팅: apps/mobile vitest.config.ts + @testing-library/react-native resolver 설정
+- [ ] 815.  [M1] React Query MSW mock: apps/web/e2e/mocks 구조화 + typing-service/card-service API 엔드포인트 모의 + story 통합
+- [ ] 816.  [M2] 요구사항 추적성(W10 추가): requirements.yaml에 UI 화면/컴포넌트 검증 시나리오 추가(backend처럼) OR 별도 ui-requirements.yaml 신설
+- [ ] 817.  [M2] 요구사항 추적성: card-service 6종 화면(home/decks/detail/play/room-create/room-screen) + typing-service 4종 + community 2종 = 12종 화면 각각 @TC 태그 검증
+- [ ] 818.  [M2] Playwright 테스트에 @REQ/@TC 주석 추가: 각 test() 블록에 요구사항 ID + test case ID 문서화(traceability 추적 가능)
+- [ ] 819.  [M1] 린트 기본규칙(web): apps/web/package.json에 eslint-plugin-jsx-a11y ^6.10 추가 + 기존 eslint config 통합
+- [ ] 820.  [M1] 린트 기본규칙(mobile): apps/mobile/package.json에 eslint-plugin-react-native-a11y 추가 + apps/mobile/eslint.config.mjs 신설
+- [ ] 821.  [M1] 타이포그래피 토큰 강제: @yeon/design-tokens에 font-size/line-height/font-weight 변수 정의 + Tailwind extend.fontSize 매핑
+- [ ] 822.  [M1] 색상 토큰 강제: globals.css의 CSS var 12종(bg/surface/border/text/accent 등)을 Tailwind extend.colors에 매핑 검증
+- [ ] 823.  [M1] 간격 토큰 강제: spacing(4px/8px/12px/16px 등) Tailwind extend.spacing 명확화 + no-arbitrary-value=error로 px-5 금지
+- [ ] 824.  [M1] 라디우스 토큰 강제: borderRadius(sm:6px/default:10px/lg:14px) Tailwind extend.borderRadius + rounded-[20px] 금지
+- [ ] 825.  [M1] 그림자 토큰: @yeon/design-tokens에 shadow(sm/md/lg) 정의 + Tailwind boxShadow extend + shadow-[0_4px_...] 직접 작성 금지
+- [ ] 826.  [M2] Storybook 컨트롤: Button(variant/size/disabled), Badge(variant), Field(placeholder/disabled), Surface(children) 등 props 컨트롤 UI 자동생성
+- [ ] 827.  [M2] Storybook 문서: README.stories.mdx로 각 컴포넌트 가이드(사용법/금지사항/접근성 주의사항) 작성
+- [ ] 828.  [M2] Playwright 스크린샷 정책: maxDiffPixelRatio=0.02(2% 차이 허용) + timeout=30s + retries=2 for flakiness
+- [ ] 829.  [M3] Playwright 시각회귀 CI: web e2e/visual-regression.spec.ts 자동실행 + 변경감지 시 artifact 업로드 + PR check 실패로 병합 차단
+- [ ] 830.  [M3] vitest CI 게이트(web): pnpm test 자동실행 + 모든 .test.ts/.test.tsx 포함 (coverage skip)
+- [ ] 831.  [M3] vitest CI 게이트(mobile): apps/mobile vitest.config.ts 추가 후 pnpm test 자동실행
+- [ ] 832.  [M2] 금지 패턴 ESLint 검사: button/link/span 직접 사용 금지(useYeonButton 함수 또는 <Button> 컴포넌트 강제) + @typescript-eslint/no-restricted-imports로 react/html 요소 직접 import 방지
+- [ ] 833.  [M2] NativeWind className 호환성: card-service/typing-service/community 화면에서 className="flex gap-2 bg-bg" (공통 Tailwind) 패턴만 사용 + nativewind/lib 대체문법 금지
+- [ ] 834.  [M2] NativeWind 테스트(iOS/Android): apps/mobile UI 화면 render 검증 시 className 파싱 검증(NativeWind가 React Native style로 변환되는지)
+- [ ] 835.  [M1] prettier --check CI 게이트: pre-commit에서 --write, CI에서 --check로 fail fast
+- [ ] 836.  [M1] typecheck CI 게이트: pnpm typecheck (web/mobile 포함) 자동실행 + 모든 .ts/.tsx strict mode
+- [ ] 837.  [M2] Storybook build CI: pnpm build-storybook 자동실행 + artifact 저장(배포/리뷰용)
+- [ ] 838.  [M2] Storybook 렌더 검증: chromatic/Storybook Cloud integration (선택사항) OR localhost:6006 접근성 테스트로 대체
+- [ ] 839.  [M3] 가이드 문서화: docs/QUALITY_GATE.md(~3주에 한 번 업데이트) + 린트규칙/테스트절차/baseline 업데이트 프로세스
+- [ ] 840.  [M2] Playwright trace 수집: trace='on-first-retry' 유지 + visual-regression 실패 시 trace artifact로 디버깅 지원
+- [ ] 841.  [M3] a11y 수동검증 체크리스트: keyboard 탐색(Tab/Shift+Tab/Enter), 스크린리더(NVDA/JAWS mock) 테스트 for card-service-home + typing-service-home (샘플 선정)
+- [ ] 842.  [M3] a11y 수동검증: 색상 대비 측정(WebAIM contrast checker) for 다크테마 bg/surface/text 조합 + 필요시 색상 조정
+- [ ] 843.  [M2] 모바일 접근성 테스트: iOS VoiceOver + Android TalkBack 시뮬레이터/장비 테스트(app-providers.tsx에서 accessibilityLabel 준수 확인)
+- [ ] 844.  [M1] 컴포넌트 export 원칙: packages/ui/{Button,Badge,Field,Surface,ContextMenu}/index.ts만 export + **test**는 제외
+- [ ] 845.  [M1] 스토리 파일명 규칙: ComponentName.stories.tsx (web) + ComponentName.rn.stories.tsx (RN) 구분
+- [ ] 846.  [M2] 스토리 시드 관리: 모든 story에서 seeded random 사용 (예: faker.seed(0)) → 반복 실행 시 동일 데이터
+- [ ] 847.  [M2] jest/vitest 환경분리: browser 모드는 jsdom (web SSR 테스트), node 모드는 현재 유지(유틸 테스트)
+- [ ] 848.  [M1] tailwind content 설정 검증: web/mobile 각각 tailwind.config.{ts,js}에서 src/\*_/_.{ts,tsx} 명시 + 누락파일 없는지 확인
+- [ ] 849.  [M1] 터보팩 호환성(web dev): next dev --turbopack 기존 유지 + HMR 시 Tailwind class 재계산 확인
+- [ ] 850.  [M2] Storybook HMR: stories 수정 시 실시간 반영 확인(addon-essentials 기본제공)
+- [ ] 851.  [M2] 테스트 보고서(vitest): apps/web/coverage/index.html + text report 매 실행 시 생성
+- [ ] 852.  [M2] 테스트 보고서(playwright): apps/web/test-results/index.html + trace.zip 실패 케이스만 artifact
+- [ ] 853.  [M3] 린트 캐시: eslint --cache 옵션 추가 + .eslintcache .gitignore (CI는 --no-cache)
+- [ ] 854.  [M2] 린트 성능: color-contrast 수동검증으로 axe rule 제외 + 자동검사 속도 향상(accessibility.spec.ts 기존 유지)
+- [ ] 855.  [M2] Prettier 포맷 자동화: CI 성공 후 자동 커밋(prettier fix) 보다는 pre-commit lint-staged로 강제(권장 방식)
+- [ ] 856.  [M1] .eslintignore 작성: counseling 워크스페이스 디렉토리 제외(마이그레이션 대상 아님) + generated 파일 제외
+- [ ] 857.  [M1] .prettierignore 확인: .next, dist, coverage, node_modules 제외 검증
+- [ ] 858.  [M2] 크로스 서비스 테스트: card-service + typing-service 공유 room 로직(card-room-\*) 상호운용 test (통합테스트)
+- [ ] 859.  [M2] 커뮤니티 피드 성능(a11y): 1000+ 포스트 list 가상화(virtualization) 확인 + 스크롤 접근성 유지
+- [ ] 860.  [M3] 마이그레이션 거버넌스: web 화면 rnw 전환 완료 후 기존 DOM 컴포넌트 비활성(console.warn) → 3개월 후 삭제
+- [ ] 861.  [M3] 품질 대시보드: coverage/a11y violations/visual-regression fail count를 CI 출력에 요약(한눈에 현황 파악)
+- [ ] 862.  [M2] 수동회귀 체크리스트(before/after gate): 각 화면 마이그레이션 시 Playwright 실행 → before(기존 DOM) vs after(RNW) 시각비교 approval
+- [ ] 863.  [M1] RN Testing Library render(): apps/mobile components 테스트 시 react-native-web 렌더러 명시
+- [ ] 864.  [M2] RTL query 선택: getByRole 우선 > getByLabel > getByTestId 순서 (접근성 쿼리 강제)
+- [ ] 865.  [M2] RTL 상호작용: fireEvent 보다 userEvent 선호(실제 사용자 행동 시뮬레이션) for mobile button press
+- [ ] 866.  [M3] RTL snapshot 최소화: .toMatchInlineSnapshot() 매우 제한적(변경 추적 어려움) → assertion 방식 권장
+- [ ] 867.  [M2] Playwright page object: e2e/helpers/card-service.po.ts 등 PO 패턴으로 selector 중앙화
+- [ ] 868.  [M2] 테스트 데이터 팩토리: e2e/helpers/factories/ 디렉토리에서 deck/card/room 객체 생성 유틸 제공
+- [ ] 869.  [M1] 금지 import 명시: import { View } from 'react-native' (직접 사용 금지) vs import { View } from '@yeon/ui' (필수)
+- [ ] 870.  [M1] styled-components 금지: inline style + Tailwind className만 허용 (CSS-in-JS 도입 금지)
+- [ ] 871.  [M1] Radix UI 제외: 기존 counseling의 Radix (Dialog/Popover) → NativeWind + react-native으로 대체 금지(유지보수 대상 아님)
+- [ ] 872.  [M2] 컴포넌트 props 타입: React.FC<Props> 대신 명시적 함수 선언 권장 (children prop 수동 정의)
+- [ ] 873.  [M2] forwardRef 사용: ref 필요 컴포넌트만 forwardRef (Button/Field) + 문서화
+- [ ] 874.  [M3] 번들 분석: pnpm build 후 next/bundle-analyzer 또는 webpack-bundle-analyzer로 tree-shaking 검증(packages/ui 중복 제거)
+- [ ] 875.  [M3] 성능 메트릭(Lighthouse): Playwright에 lighthouse 통합 → FCP/LCP/CLS 측정 for card-service-home(목표: 90+)
+- [ ] 876.  [M1] 로컬 검증 스크립트: bin/validate-quality.sh (eslint/prettier/typecheck/vitest 순차 실행)
+- [ ] 877.  [M2] CI 체크 병렬화: eslint + typecheck (독립) + vitest (독립) + playwright (마지막) 의존성 명확화
+- [ ] 878.  [M2] 시각회귀 fail 분류: intentional(baseline 업데이트 필요) vs regression(코드 다시 검토 필요) 이슈 템플릿
+- [ ] 879.  [M3] 품질 레트로: 월말 회의에서 a11y violations/test skip/visual-regression fail 추세 검토 + 개선액션 기록
+- [ ] 880.  [M2] 스토리북 배포: Chromatic OR GitHub Pages에 빌드 결과 배포(team collaboration용)
+- [ ] 881.  [M3] 개발자 가이드: docs/LINT_RULES.md(eslint 커스텀 규칙) + docs/COMPONENT_GUIDELINES.md(className 작성법) 신설
+- [ ] 882.  [M1] 코드리뷰 체크리스트: PR template에 'yarn lint pass?', 'playwright baseline updated?', 'a11y checked?' 추가
+
+### W11 CI/CD + Mobile Release (iOS/Android) (103개)
+
+> 90+ actionable checklist items for universal component CI/CD (web RNW + Expo native) and iOS/Android release pipeline integration. Covers web-tests workflow, packages/ui CI, EAS Build/Submit profiles (dev/preview/prod), code signing, store metadata, visual regression gates (card-service-home, typing
+
+- [ ] 883.  [M1/W1] Create .github/workflows/web-tests.yml typecheck step (pnpm typecheck filtering @yeon/web @yeon/mobile @yeon/api-contract @yeon/api-client @yeon/domain @yeon/race-server @yeon/race-shared @yeon/typing-race-engine) with parallel matrix
+- [ ] 884.  [M1/W1] Create .github/workflows/web-tests.yml lint step (pnpm lint with same filter) supporting eslint @yeon/web and @yeon/mobile
+- [ ] 885.  [M1/W1] Create .github/workflows/web-tests.yml stylelint step for Tailwind/CSS in @yeon/web src with prettier --check integration
+- [ ] 886.  [M1/W1] Create .github/workflows/web-tests.yml unit test step (pnpm --filter @yeon/web test with vitest coverage report artifact upload)
+- [ ] 887.  [M1/W1] Create .github/workflows/web-tests.yml storybook build step for @yeon/web (pnpm --filter @yeon/web build-storybook) with artifact retention
+- [ ] 888.  [M1/W1] Create .github/workflows/web-tests.yml playwright e2e test step (pnpm --filter @yeon/web e2e) splitting setup/chromium/chromium-authed projects with trace artifacts
+- [ ] 889.  [M1/W1] Create .github/workflows/web-tests.yml accessibility test (axe-playwright on home/card-service-decks-screen/typing-service-home/community-page) with violations report
+- [ ] 890.  [M1/W1] Create .github/workflows/web-tests.yml visual regression baseline step for card-service-home.spec.ts before/after RNW component migration
+- [ ] 891.  [M1/W1] Create .github/workflows/web-tests.yml visual regression baseline step for typing-service-home.spec.ts before/after RNW component migration
+- [ ] 892.  [M1/W1] Create .github/workflows/web-tests.yml visual regression baseline step for community-page.spec.ts before/after RNW component migration
+- [ ] 893.  [M1/W1] Create .github/workflows/web-tests.yml Next.js build step (pnpm --filter @yeon/web build --turbopack) with cache and artifact logging
+- [ ] 894.  [M1/W1] Set web-tests workflow to run on push to main/develop and pull_request (not draft)
+- [ ] 895.  [M1/W1] Configure web-tests concurrency group to cancel prior runs on same ref
+- [ ] 896.  [M1/W1] Add web-tests workflow timeout 60m with step timeouts (typecheck 10m, lint 10m, unit-tests 15m, playwright 30m, build 20m)
+- [ ] 897.  [M1/W1] Create packages/ui/.github/workflows/ui-tests.yml typecheck step (tsc -p tsconfig.json) once UI package scaffolded
+- [ ] 898.  [M1/W1] Create packages/ui/.github/workflows/ui-tests.yml lint step (eslint src --ext .ts,.tsx) for universal components
+- [ ] 899.  [M1/W1] Create packages/ui/.github/workflows/ui-tests.yml component visual test baseline (render Button/Field/Surface/Badge/ContextMenu across web RNW + Expo web)
+- [ ] 900.  [M1/W1] Create packages/ui/.github/workflows/ui-tests.yml coverage report (vitest run --coverage) with threshold enforcement (>80% statements)
+- [ ] 901.  [M1/W2] Add web-tests step to validate .githooks/pre-commit lint-staged execution (mock commit on feature branch)
+- [ ] 902.  [M1/W2] Add web-tests step to block merge if any typecheck/lint/test error (exit 1)
+- [ ] 903.  [M1/W2] Add web-tests artifact download for storybook build and upload to GitHub Pages (deployment token)
+- [ ] 904.  [M1/W2] Trigger web-tests from PR with required GitHub check status on main/develop branch protection rules
+- [ ] 905.  [M1/W2] Create EAS Build workflow .github/workflows/eas-build-dev.yml for iOS (bundleIdentifier com.yeon.chat, entitlements push/notifications)
+- [ ] 906.  [M1/W2] Create EAS Build workflow .github/workflows/eas-build-dev.yml for Android (package com.yeon.chat, target generic emulator)
+- [ ] 907.  [M1/W2] Configure EAS Build dev profile Android keystore alias (Yeon_Key) and signing password from GH secrets (EAS_KEYSTORE_BASE64, EAS_KEYSTORE_PASSWORD)
+- [ ] 908.  [M1/W2] Configure EAS Build dev profile iOS provisioning (auto-provisioning enabled for wildcard profile in EAS)
+- [ ] 909.  [M1/W2] Create eas.json with build profiles: dev (development), preview (release w/ ota), prod (app store submission)
+- [ ] 910.  [M1/W2] Set eas.json SDK version constraint to match apps/mobile package.json expo version (54.0.34)
+- [ ] 911.  [M1/W2] Set eas.json node version 20.x (match .nvmrc or root package.json intent)
+- [ ] 912.  [M1/W3] Create EAS Build preview profile for iOS internal testing (adhoc provisioning, development certificate)
+- [ ] 913.  [M1/W3] Create EAS Build preview profile for Android with internal keystore signing
+- [ ] 914.  [M1/W3] Validate EAS Build iOS dev profile signing with mock build (eas build --platform ios --profile dev --local)
+- [ ] 915.  [M1/W3] Validate EAS Build Android dev profile signing with mock build (eas build --platform android --profile dev --local)
+- [ ] 916.  [M1/W3] Create EAS Build prod profile for iOS App Store submission (distribution provisioning, distribution certificate)
+- [ ] 917.  [M1/W3] Create EAS Build prod profile for Android Play Store submission (production keystore signing)
+- [ ] 918.  [M1/W3] Store iOS distribution certificate (p12 + private key) in GitHub encrypted secret (EAS_APPLE_DIST_CERT) or Apple Developer account
+- [ ] 919.  [M1/W3] Store iOS provisioning profiles (UUID refs) in EAS web UI linked to Apple Developer account
+- [ ] 920.  [M1/W3] Store Android keystore file (base64 encoded .jks) in GitHub secret (EAS_ANDROID_KEYSTORE)
+- [ ] 921.  [M1/W3] Create .github/workflows/eas-build-preview.yml triggered on release branches (release/v\*) with EAS Build preview profile
+- [ ] 922.  [M1/W3] Create .github/workflows/eas-submit-testflight.yml to submit preview builds to Apple TestFlight
+- [ ] 923.  [M1/W3] Create .github/workflows/eas-submit-playstore-internal.yml to submit preview builds to Google Play internal test track
+- [ ] 924.  [M1/W4] Configure EAS Update OTA profile in eas.json (Channel: production for main, Channel: staging for develop)
+- [ ] 925.  [M1/W4] Create .github/workflows/eas-update.yml to publish OTA updates to production channel on main push
+- [ ] 926.  [M1/W4] Create .github/workflows/eas-update-staging.yml to publish OTA updates to staging channel on develop push
+- [ ] 927.  [M1/W4] Add EAS Update channel validation to web-tests (check runtimeVersion consistency in app.config.js)
+- [ ] 928.  [M1/W4] Document EAS Build secret management in DEPLOYMENT.md (keystore locations, certificate renewal schedule, TestFlight provisioning)
+- [ ] 929.  [M2/W5] Create .github/workflows/eas-submit-prod.yml for App Store Connect submission (triggered manually or on version tag v*.*.\*)
+- [ ] 930.  [M2/W5] Create .github/workflows/eas-submit-prod.yml for Google Play Store submission (beta and production track auto-promotion)
+- [ ] 931.  [M2/W5] Configure App Store Connect API key in GitHub secret (APPLE_API_KEY_ID, APPLE_API_KEY_ISSUER_ID, APPLE_API_KEY_FILE)
+- [ ] 932.  [M2/W5] Configure Google Play service account JSON in GitHub secret (GOOGLE_PLAY_SERVICE_ACCOUNT)
+- [ ] 933.  [M2/W5] Set App Store metadata (bundleIdentifier com.yeon.chat): app name, subtitle, description, category, contact info, copyright, age rating (4+)
+- [ ] 934.  [M2/W5] Set App Store screenshots (minimum 1 per localized language en/ko, dimensions 1170x2532 for iPhone)
+- [ ] 935.  [M2/W5] Set App Store preview video (optional, max 30s, showcase typing-service-home or card-service-home screen)
+- [ ] 936.  [M2/W5] Set Google Play metadata (package com.yeon.chat): short description, full description, store listing, category, content rating questionnaire
+- [ ] 937.  [M2/W5] Set Google Play screenshots (minimum 2 per locale, dimensions 1080x1920 for phones)
+- [ ] 938.  [M2/W5] Set Google Play feature graphics (1024x500) for category placement
+- [ ] 939.  [M2/W5] Enable Google Play internal test track access list (testers' Google accounts)
+- [ ] 940.  [M2/W5] Create TestFlight beta group (Yeon Team: internal testers) with auto-notify enabled
+- [ ] 941.  [M2/W5] Create TestFlight public link (optional) for external beta testing (max 10k testers without Apple review)
+- [ ] 942.  [M2/W6] Add version sync step to eas-submit-prod: validate app.config.js version matches auto-release git tag (v*.*.\*)
+- [ ] 943.  [M2/W6] Add pre-submission checklist to eas-submit-prod: verify privacy policy URL, COPPA compliance, background modes declared
+- [ ] 944.  [M2/W6] Configure Google Play beta promotion rule: 7-day soak in beta track before auto-promotion to production
+- [ ] 945.  [M2/W6] Implement eas-submit-prod artifact upload (signed APK, IPA links) to GitHub release
+- [ ] 946.  [M2/W6] Create release notes generator for App Store (changelog from git log v{prev}..v{current})
+- [ ] 947.  [M2/W6] Create release notes generator for Play Store (same changelog, localized Korean)
+- [ ] 948.  [M2/W7] Add TestFlight submission success notification to Slack (channel: #ios-releases)
+- [ ] 949.  [M2/W7] Add Play Store submission success notification to Slack (channel: #android-releases)
+- [ ] 950.  [M2/W7] Set up App Store review monitoring (poll review status daily, notify on rejection with feedback summary)
+- [ ] 951.  [M2/W7] Set up Play Store review monitoring (poll review status daily, notify on policy violations)
+- [ ] 952.  [M2/W7] Document App Store review time SLA (typically 24h, max 48h) and retry workflow in DEPLOYMENT.md
+- [ ] 953.  [M2/W7] Document Play Store review time SLA (typically 2-4h) and expedited rejection remediation process
+- [ ] 954.  [M2/W8] Create build artifact retention policy (.github/workflows/cleanup-artifacts.yml, delete eas-build artifacts after 30d)
+- [ ] 955.  [M2/W8] Create signed APK/IPA artifact retention (keep production submissions 2y, delete dev/preview after 6mo)
+- [ ] 956.  [M3/W9] Add branch protection rule on main: require web-tests pass (typecheck/lint/test/playwright/build)
+- [ ] 957.  [M3/W9] Add branch protection rule on main: require packages/ui-tests pass (typecheck/lint/visual-regression)
+- [ ] 958.  [M3/W9] Add branch protection rule on main: require EAS Build success for iOS preview (smoke test)
+- [ ] 959.  [M3/W9] Add branch protection rule on main: require EAS Build success for Android preview (smoke test)
+- [ ] 960.  [M3/W9] Add branch protection rule on release/\* branches: require eas-submit-testflight pass
+- [ ] 961.  [M3/W9] Add branch protection rule on release/\* branches: require eas-submit-playstore-internal pass
+- [ ] 962.  [M3/W9] Configure auto-release workflow to create GitHub release with formatted changelog (commits since v{prev})
+- [ ] 963.  [M3/W9] Document CI/CD decision tree in DEPLOYMENT.md (when to use dev/preview/prod profiles, manual vs auto submission)
+- [ ] 964.  [M3/W10] Create screenshot testing baseline for card-service-home (RNW web + Expo iOS + Expo Android)
+- [ ] 965.  [M3/W10] Create screenshot testing baseline for card-service-decks-screen (same 3 platforms)
+- [ ] 966.  [M3/W10] Create screenshot testing baseline for typing-service-home (same 3 platforms)
+- [ ] 967.  [M3/W10] Create screenshot testing baseline for typing-race-solo-screen (same 3 platforms)
+- [ ] 968.  [M3/W10] Create screenshot testing baseline for community-page (same 3 platforms)
+- [ ] 969.  [M3/W10] Gate card-service-home screen migration on visual regression pass (before/after RNW threshold <2% pixel diff)
+- [ ] 970.  [M3/W10] Gate typing-service-home screen migration on visual regression pass
+- [ ] 971.  [M3/W10] Gate community-page screen migration on visual regression pass
+- [ ] 972.  [M3/W10] Create .github/workflows/visual-regression-check.yml to run on universal component PRs
+- [ ] 973.  [M3/W11] Add accessibility audit to web-tests Playwright (axe-playwright 4.11 on card-service-home/decks/play screens)
+- [ ] 974.  [M3/W11] Add accessibility audit to web-tests Playwright (axe-playwright 4.11 on typing-service-home/practice/rooms screens)
+- [ ] 975.  [M3/W11] Add accessibility audit to web-tests Playwright (axe-playwright 4.11 on community-page/posts screens)
+- [ ] 976.  [M3/W11] Document accessibility compliance targets (WCAG 2.1 AA minimum) in DEPLOYMENT.md
+- [ ] 977.  [M3/W12] Create post-release checklist: verify app appears in App Store public app listing after 24h
+- [ ] 978.  [M3/W12] Create post-release checklist: verify app appears in Play Store public store listing after 2h
+- [ ] 979.  [M3/W12] Create post-release checklist: monitor crash reports in TestFlight Analytics for 24h
+- [ ] 980.  [M3/W12] Create post-release checklist: monitor Play Console crash reports for 24h
+- [ ] 981.  [M3/W12] Document incident response SOP for app store rejection/pull (hotfix branch, emergency resubmission, user comms)
+- [ ] 982.  [M3/W13] Add OTA update rollback procedure to DEPLOYMENT.md (revert EAS Update channel to prior version on user crash spike)
+- [ ] 983.  [M3/W13] Set up Sentry DSN (native + web) in secrets for crash tracking across platforms
+- [ ] 984.  [M3/W13] Document mobile variant build separation (EXPO_PUBLIC_MOBILE_VARIANT=card vs default chat-service in app.config.js)
+- [ ] 985.  [M3/W13] Create final release-readiness sign-off checklist (privacy policy, terms, data collection disclosures, payment/subscription setup if applicable)
+
+### W12 - 거버넌스/크로스커팅/롤아웃/완료기준 (102개)
+
+> 경로 A 확정 후 web(RNW) + iOS/Android 3플랫폼 통합 설계 시스템 구축. 토큰/컴포넌트 SSOT, yeon-ui 폐기, counseling 동결, 화면별 회귀 게이트, 롤백 절차 포함. 약 80개 체크리스트 항목(월/주 표기, 구체적 검증 가능).
+
+- [ ] 986.  [M1/W1] ADR-001: 경로 A(React Native + NativeWind v4 + RNW + Expo Router) 공식 채택 문서화(design.md 갱신으로 arbitrary hex→토큰 규칙 이행, 타이포/라운딩/그림자 포함)
+- [ ] 987.  [M1/W1] 색상 토큰 원장 정의: 카드/타이핑 화이트 테마(#111/#666/#aaa/#e5e5e5/#fafafa 유지), 타이핑 오렌지 #e8630a, auth 오렌지 #e87310, 인디고 accent 추가(#5865f2), 상태색 4종(success/warning/error/info) hex+RGB 정의
+- [ ] 988.  [M1/W1] 타이포그래피 토큰 정의: 모바일 기본 12/14/16/18/24, 웹 13/14/17/20/32, font-weight 4단계(400/500/600/700), letter-spacing 0/-0.01, line-height 1.4/1.5/1.6/1.7/1.8 + 각 플랫폼별 폰트 family(web: system stack, mobile: inter/noto-sans 등)
+- [ ] 989.  [M1/W1] 라운딩 토큰: sm(4dp/px), md(6px), lg(8px), xl(12px), full(9999px) — NativeWind/Tailwind/RN borderRadius 호환성 검증
+- [ ] 990.  [M1/W1] 간격 토큰: 4px 기조 (0/4/8/12/16/20/24/32/40/48) + 차등 모바일(8dp 기조) / 웹(4px 기조) 스케일 문서화
+- [ ] 991.  [M1/W1] 그림자 토큰: sm(0 1px 2px), md(0 4px 6px), lg(0 10px 15px), xl(0 20px 25px) — web box-shadow, mobile elevation/shadowColor 동치 매핑
+- [ ] 992.  [M1/W1] yeon-ui 폐기 계획 문서화(Button/Field/Surface/Badge/ContextMenu): 6주 deprecated 기간 + 이관 대상(web/mobile shared) 명시 + 2개월 제거 예정일
+- [ ] 993.  [M1/W1] packages/design-tokens 초기화: src/index.ts(토큰 객체 내보내기 - colors/typography/spacing/radius/shadows) + package.json 진입점 설정
+- [ ] 994.  [M1/W1] packages/ui 신규 생성(private workspace, name: @yeon/ui) + package.json(react/react-native/react-native-web peer 의존성) + tsconfig 설정
+- [ ] 995.  [M1/W1] counseling-service 동결 선언: docs/agent-rules/design-system.md에 "counseling-record-workspace, instructor-workspace는 universal 컴포넌트 이관 대상 제외" 및 lint CI ignore 패턴 추가
+- [ ] 996.  [M1/W2] Style Dictionary 도입: packages/design-tokens에 config.json(web/native 빌드 타겟) + build script 추가(pnpm build:tokens)
+- [ ] 997.  [M1/W2] NativeWind v4 설정: apps/web & apps/mobile에 nativewind.config.ts + input CSS(NativeWind preset 포함) 추가, tailwind.config.ts 통합(서로 다른 config 불가)
+- [ ] 998.  [M1/W2] React Native Web(RNW) 설정: apps/web의 Next.js에 RNW 별칭(react-native → react-native-web) + metro.config.js 호환 검증
+- [ ] 999.  [M1/W2] Expo Router 설정: apps/mobile의 app/(tabs) 레이아웃 실행 확인 + deep-link 테스트(앱 시작→카드/타자 랜딩)
+- [ ] 1000. [M1/W2] 아이콘 마이그레이션 계획: lucide-react → lucide-react-native(ios/android 호환) + web에서 react-native-web 래퍼 작성
+- [ ] 1001. [M1/W2] 이미지 추상화 계획: Image 컴포넌트(web:Image, mobile:Image) 래퍼 생성 + src/resolveImageUri.ts(http→file:// 변환 로직)
+- [ ] 1002. [M1/W2] 다크모드 전략 수립 문서: 현재 화이트 테마만 지원 선언 + 향후 다크모드 토큰 추가 시 호환성 경로(CSS var/Tailwind darkMode) 명시
+- [ ] 1003. [M1/W2] i18n 전략: 기존 next-intl(web) vs i18next(mobile) 통합 평가 + 7월(M2) 이전에 결정(공유 translation JSON path 정의)
+- [ ] 1004. [M1/W2] 안전 영역(safe-area) 가이드: ios StatusBar/HomeIndicator, android NotchHeight 처리 + RNW에서 ENV var 또는 media query 재현
+- [ ] 1005. [M1/W3] 제스처 추상화: GestureHandler(mobile) vs mouse event(web) 통합 계획 + onPress/onLongPress 공유 시그니처 정의
+- [ ] 1006. [M1/W3] 성능 예산 공식화: web(Core Web Vitals: LCP<2.5s, FID<100ms, CLS<0.1) + mobile(First Paint<2s, js bundle<400KB, layout shift <5%)
+- [ ] 1007. [M1/W3] 회귀 테스트 파이프라인: Playwright visual snapshot(web) + 모바일 스크린샷 비교(android emulator) 기초 구축
+- [ ] 1008. [M1/W3] Definition of Done(컴포넌트 수준): TS 타입 완결, 3플랫폼 렌더 확인, 접근성 감사(aria-label/role), 시각회귀 before/after 패스, 문서 예시/용법
+- [ ] 1009. [M1/W3] CI 게이트 정의: build(web/mobile) + lint + typecheck + visual-regression(카드/타자 정해진 화면만) + a11y 스캔 + e2e 스모크(card-room/typing-room-online 기존 스크립트 유지)
+- [ ] 1010. [M1/W3] 롤백 절차: 이관 후 기존 컴포넌트 1주일 유지 + 회귀 탐지 시 git revert + 모바일/웹 동시 배포 불가(web first, 1주 후 mobile)
+- [ ] 1011. [M1/W3] 백로그 우선순위: Month 1 토대 > Month 2 코어 > Month 3 완성. 모바일 Expo Router 화면은 Month 2부터 웹 이관 진행과 병렬 구축
+- [ ] 1012. [M1/W4] 컴포넌트 카테고리 정의(packages/ui): Primitives(Button/Text/Input/Surface), Cards(DeckCard/PassageCard), Forms(DeckForm/CardForm), Dialogs(CreateDeck/DeleteDeck), Navigation(TabNav/Header), Feedback(Badge/LoadingSpinner)
+- [ ] 1013. [M1/W4] web/mobile 심볼 호환성 검증: Button/Text/Input/Surface는 react-native 기본형으로 정의 가능 여부 사전 검증(RNW 래퍼 필요 여부)
+- [ ] 1014. [M1/W4] 컴포넌트 폴더 구조: packages/ui/{primitives,cards,forms,dialogs,navigation,feedback}/Comp.tsx + index.ts 재내보내기 + .rn.tsx 플랫폼별 버전(필요시만)
+- [ ] 1015. [M1/W4] yeon-ui 현재 5개 컴포넌트 이관 로드맵: Button(M1/W4), Surface(M1/W4), Field(M2/W6), Badge(M2/W7), ContextMenu(M2/W8—native dropdown API 차이로 지연)
+- [ ] 1016. [M1/W4] 웹 진입점: apps/web/src/index.ts가 없으면 생성 + @yeon/ui 재내보내기 경로 설정(utils/ui-imports.ts 또는 lib/components.ts)
+- [ ] 1017. [M1/W4] 모바일 진입점: apps/mobile/src/index.ts가 없으면 생성 + @yeon/ui 재내보내기 경로 설정
+- [ ] 1018. [M2/W5] 카드/타이핑/커뮤니티 공유 상태 추상화: useQuery/useMutation 커스텀 훅(packages/utils 또는 domain) = card deck/typing deck/community post 모두
+- [ ] 1019. [M2/W5] 웹 카드 서비스 화면 이관 계획: card-service-home(산책로 스크린) → card-deck-library-screen(목록) → deck-detail-screen(상세) → deck-play-screen(학습)
+- [ ] 1020. [M2/W5] 웹 타이핑 서비스 화면 이관 계획: typing-service-home → typing-deck-library-screen(목록) + typing-profile-card(프로필) → typing-room-lobby(대기실) → typing-race-solo-screen(연습/레이스)
+- [ ] 1021. [M2/W5] 웹 커뮤니티 화면 이관 계획: community-page(피드) → community-feed-post-item(개별 글) + community-chat(실시간)
+- [ ] 1022. [M2/W5] card-service 주 컴포넌트 26개 중 우선순위: DeckCard/DeckList/DeckDetailScreen(1순위—가장 많이 재사용), AddCardForm/CardRichMarkdownEditor(2순위), CardRoom\*(3순위)
+- [ ] 1023. [M2/W5] typing-service 주 컴포넌트 27개 중 우선순위: TypingDeckList/TypingRaceScreen(1순위), TypingRoomLobby(2순위), TypingProfileCard(3순위)
+- [ ] 1024. [M2/W5] community 주 컴포넌트 11개 중 우선순위: CommunityFeedPostItem/CommunityChat\*(1순위), CommunityPage(2순위)
+- [ ] 1025. [M2/W5] Playwright 시각회귀 기초 설정: apps/web/e2e/visual-regression/ 폴더 생성 + snapshot 저장 경로 .gitignore에 추가
+- [ ] 1026. [M2/W6] Button 이관 web→packages/ui: yeon-button.tsx(NativeWind+CVA 리팩터) + Button.native.tsx(React Native View+Pressable) + docs/Button.mdx 추가
+- [ ] 1027. [M2/W6] Button CI 검증: web과 mobile 동시 build 통과 + e2e 스모크(클릭 상호작용) + visual snapshot 베이스라인 기록
+- [ ] 1028. [M2/W6] Surface 이관: card-service의 여러 배경 컨테이너를 Surface 프리미티브로 통합 + NativeWind className vs RN style props 호환성 확인
+- [ ] 1029. [M2/W6] DeckCard 컴포넌트 신규 작성(packages/ui): card-service/deck-card.tsx와 동일 visual + universal className 지원 + mobile.tsx 버전(터치 피드백)
+- [ ] 1030. [M2/W6] DeckList 컴포넌트 신규 작성: FlatList(mobile) vs map(web) 추상화 + scroll-to-top, infinite scroll 지원
+- [ ] 1031. [M2/W7] Field 이관: yeon-field.tsx(web 텍스트/체크박스/라디오) → packages/ui/Field.tsx + Field.native.tsx(RN TextInput/Switch)
+- [ ] 1032. [M2/W7] typing-race-solo-screen 웹→universal 이관: typing-race-solo-practice-panel.tsx 모듈별로 분리(screen/panel/controls)
+- [ ] 1033. [M2/W7] AddCardForm 웹 컴포넌트 universal으로 전환: CardRichMarkdownEditor(toolbar/view/utils) 포함 + RN에서 keyboard 처리(KeyboardAvoidingView)
+- [ ] 1034. [M2/W7] typing-deck-form 웹 컴포넌트 universal으로 전환: bulk-passage-import-form 포함 + file picker 추상화(web: input[type=file], mobile: expo-document-picker)
+- [ ] 1035. [M2/W8] CardRoom\* (create/lobby/screen/chat/participants/study/header) 컴포넌트 이관: 7개 파일 → packages/ui/room/ 폴더 + 실시간 messaging 훅 공유
+- [ ] 1036. [M2/W8] Badge 이관: yeon-badge.tsx → packages/ui + Color variant 확장(success/warning/error/info) + RN TouchableOpacity 버전
+- [ ] 1037. [M2/W8] 웹 카드 서비스 card-service-home 스크린 universal으로 재작성: 기존 Next.js layout 유지 + 컴포넌트는 packages/ui 소비
+- [ ] 1038. [M2/W8] 웹 카드 서비스 각 라우트 Playwright before 스냅샷 기록: /(home), /decks(목록), /decks/[id](상세), /decks/[id]/play(학습)
+- [ ] 1039. [M2/W9] Badge 이관 검증: web + mobile 동시 build + a11y 체크(색상 대비)
+- [ ] 1040. [M2/W9] ContextMenu 이관 계획 검토: web(Radix menu—DOM 전용) vs mobile(UIActionSheetIOS/ActionSheetAndroid) 호환성 재평가. 우회 가능하면 M3로 연기
+- [ ] 1041. [M2/W9] 웹 타이핑 서비스 화면 이관: typing-service-home + typing-deck-library-screen + typing-race-solo-screen universal 버전 배포
+- [ ] 1042. [M2/W9] typing-service 라우트별 Playwright before 스냅샷: /(home), /decks(목록), /play(연습), /practice(대시보드), /rooms(방 목록), /rooms/[id](방 상세)
+- [ ] 1043. [M2/W10] 웹 커뮤니티 화면 이관: community-page + feed-post-item + chat-\* 컴포넌트 universal 버전 배포 준비
+- [ ] 1044. [M2/W10] community 라우트별 Playwright before 스냅샷: /(피드), /posts(글 목록), /posts/[id](글 상세)
+- [ ] 1045. [M2/W10] web의 기존 카드/타이핑/커뮤니티 컴포넌트 폐기 대기 상태(1주일 유지, 아직 제거 금지)
+- [ ] 1046. [M3/W11] 모바일 Expo Router 화면 구축(웹 이관과 병렬): card-service/decks/[deckId].tsx + play.tsx → universal 컴포넌트 소비
+- [ ] 1047. [M3/W11] 모바일 tap-stack 네비게이션(typing-service) 구축: Expo Router (tabs) + deep-link 기능성 검증
+- [ ] 1048. [M3/W11] 모바일 community 화면(tabs/feed 등) 구축: 웹과 동일 universal 컴포넌트 + RN-specific 스크롤/제스처
+- [ ] 1049. [M3/W11] 모바일 카드방/타자방 실시간 채팅 구축: room-shared 컴포넌트 3개(타입/상태/메시징) + socket.io(web) vs 폴링(mobile RN) 선택
+- [ ] 1050. [M3/W11] 시각회귀 after 스냅샷 기록: web 모든 주요 화면 + android emulator screenshot(기본 Pixel 5 해상도)
+- [ ] 1051. [M3/W12] web 기존 카드/타이핑/커뮤니티 컴포넌트 제거(1주 유지 완료 후): features/card-service/components 26개, features/typing-service/components 27개, features/community/components 11개 정리(삭제)
+- [ ] 1052. [M3/W12] 웹 라우트 확인: card-service(/, /decks, /decks/[id], /decks/[id]/play, /rooms, /rooms/[id]), typing-service(/, /decks, /decks/[id], /play, /practice, /rooms, /rooms/[id]), community(/, /posts, /posts/[id]) 모두 universal 호스팅 정상 작동
+- [ ] 1053. [M3/W12] 모바일 라우트 확인: app/(tabs)/(card-service)/[deckId] 및 deep link 정상 작동 + 앱 런칭 이후 cold start 성능 <3s
+- [ ] 1054. [M3/W12] yeon-ui 폐기 최종 실행: packages/yeon-ui 폴더 삭제 + web/mobile import 제거 + 남은 문헌(README/내부 규칙 등) 정리
+- [ ] 1055. [M3/W12] a11y 감사 완료: web 카드/타이핑/커뮤니티 + mobile iOS/Android keyboard nav, screen reader text, color contrast(WCAG AA 최소)
+- [ ] 1056. [M3/W12] 시각회귀 CI 게이트 활성화: Playwright snapshots(web) + android emulator screenshot 비교(threshold 1% 픽셀 차이) 강제
+- [ ] 1057. [M3/W12] 성능 테스트(web): LCP/FID/CLS 측정 + 예산 초과 시 번들 분석(lazy loading, code split 재검토)
+- [ ] 1058. [M3/W12] 성능 테스트(mobile): Android Profiler로 frame rate(60fps 유지), JS bundle size(400KB 하한) 검증
+- [ ] 1059. [M3/W12] iOS 빌드 최종 검증: Xcode 또는 EAS(Expo)로 simulator에서 구축 + card-service/typing-service/community 주요 화면 터치 상호작용 검증
+- [ ] 1060. [M3/W12] Android 빌드 최종 검증: Android Studio emulator에서 구축 + 위와 동일 화면 검증 + back button nav 정상
+- [ ] 1061. [M3/W13] counseling-service lint CI 확정: .gitignore(eslintIgnorePatterns)에 "features/counseling-\*" + eslint-disable comments 필요시만 추가, prettier는 계속 적용
+- [ ] 1062. [M3/W13] 문서 최종화: docs/agent-rules/design-system.md(토큰 SSOT 완전 이행), docs/architecture/(web+mobile universal architecture overview), docs/guides/component-development.md(신규 컴포넌트 추가 가이드)
+- [ ] 1063. [M3/W13] 온보딩 가이드: 신입 개발자가 universal 컴포넌트 추가 시 따를 체크리스트(packages/ui 구조, NativeWind CSS, RN StyleSheet, test 작성 등)
+- [ ] 1064. [M3/W13] 의존성 감사: packages/ui의 peer dependencies(react/react-native/react-native-web) 버전 호환성 최종 확인 + peerDependencies vs dependencies 분리
+- [ ] 1065. [M3/W13] 마이그레이션 마무리 로그: ai-log에 3개월 타임라인 회고 + 주요 의사결정/이슈/해결책 기록 + 다음 개선 항목(다크모드/i18n/ContextMenu 선택지 등) 제안
+- [ ] 1066. [M3/W13] 릴리즈 파이프라인: web 배포(Vercel) + 1주 후 mobile(EAS/Apple TestFlight/Google Play) + 버전 tag 일관성(v1.0.0 기점)
+- [ ] 1067. [M3/W13] 최종 Definition of Done: 모든 카드/타이핑/커뮤니티 화면 3플랫폼 동시 배포 + 회귀 0건 + a11y WCAG AA 합격 + 성능 예산 하한 통과
+- [ ] 1068. [크로스커팅] 타이포그래피: 웹 system-ui font-family(SF Pro/Segoe) vs 모바일 native + inter(fallback) 통합 검증
+- [ ] 1069. [크로스커팅] 폰트 로딩: web next/font + mobile 네이티브 폰트 캐시(ios .ttf, android asset) 이중화 + 폴백 글꼴 정의
+- [ ] 1070. [크로스커팅] 아이콘 lucide-react-native: 기존 lucide-react 사용처(카드/타이핑/커뮤니티) → 버전 동기화(v0.400+) 및 크기 스케일(24px web, 20dp mobile) 일관성
+- [ ] 1071. [크로스커팅] 이미지 최적화: web next/image(자동 WebP) vs mobile(로컬 uri encoding) + placeholder 통일(LQIP or skeleton) + 크기 반응형(srcset 유사 로직)
+- [ ] 1072. [크로스커팅] 다크모드 보류: 현재 화이트+암흑 테마(auth) 병행. 향후 다크모드 추가 시 CSS var 시스템(web) + RN scheme 변수(mobile) 설계 필요
+- [ ] 1073. [크로스커팅] i18n 체크: web(next-intl) + mobile(i18next vs react-i18next) 선택 + translation JSON 공유 경로(packages/translations/) 정의 필요
+- [ ] 1074. [크로스커팅] safe-area: iOS NotchHeight + HomeIndicator + Android system insets 처리 → SafeAreaView(web: CSS padding 래퍼, mobile: RN SafeAreaView)
+- [ ] 1075. [크로스커팅] 제스처 접근성: onPress 핸들러에 onMouseDown/onMouseUp 폴백(web) + 길게 누르기(LongPress) cross-platform 시그니처 통일
+- [ ] 1076. [크로스커팅] 폰트 서브셋: 한글 noto-sans-kr 데이터 크기 최소화(web gzip, mobile 옵션화) + Latin 필수 포함
+- [ ] 1077. [크로스커팅] 색상 접근성: 모든 색상 조합이 WCAG AA(4.5:1 텍스트, 3:1 UI) 충족 여부 검증 + colorContrast 유틸 추가
+- [ ] 1078. [크로스커팅] 레이아웃 반응형: web breakpoint(sm/md/lg) + mobile breakpoint(phone/tablet) 분리 + margin/padding 스케일 차등(유동적 간격 함수)
+- [ ] 1079. [크로스커팅] 애니메이션 성능: web(CSS transition) vs mobile(Reanimated v4 선택적 사용—기본은 React state 애니메이션) 선택지 문서화
+- [ ] 1080. [크로스커팅] 폼 유효성: web(html5 validation) + mobile(커스텀) → 공유 validation lib(zod or valibot) 검토 + 에러 메시지 다국어 지원 계획
+- [ ] 1081. [크로스커팅] 로딩 상태: Skeleton/Spinner 컴포넌트 universal 버전 + web CSS animation vs mobile Reanimated duration 일관성
+- [ ] 1082. [크로스커팅] 에러 경계: web (React Error Boundary) + mobile (Expo Error boundary) + fallback UI 통일
+- [ ] 1083. [크로스커팅] 클립보드: web (navigator.clipboard) vs mobile (expo-clipboard 또는 react-native-clipboard) cross-platform 래퍼
+- [ ] 1084. [크로스커팅] 알림: web (toast notification—react-hot-toast) vs mobile (expo-notifications/android-toast) cross-platform 인터페이스 정의
+- [ ] 1085. [크로스커팅] 네트워킹: web (fetch + TanStack Query) vs mobile (same) + 요청 재시도 로직 공유 정의
+- [ ] 1086. [크로스커팅] 로컬 저장소: web (localStorage/IndexedDB) vs mobile (expo-secure-store/AsyncStorage) → storage-abstraction 래퍼 생성
+- [ ] 1087. [크로스커팅] 로깅: web (Sentry + 번들 분석) vs mobile (동일 Sentry + session replay) 통합 + env별 log level 제어
+
+### W13: 코드베이스 청소(Knip) (11개)
+
+> 미사용 파일/export/deps 정리 — 마이그레이션으로 폐기되는 구 컴포넌트·죽은 코드를 지속 제거.
+
+- [ ] 1088. [M1] knip 설치 + 설정(entry/project, pnpm workspaces 인식: apps/web·apps/mobile·packages/ui·packages/design-tokens)
+- [ ] 1089. [M1] knip ignore: 동결 counseling 경로·생성물(.next/dist/build) 제외 규칙
+- [ ] 1090. [M2] 미사용 파일 리포트 → 카드/타자/커뮤니티 이관 후 잔존 구 컴포넌트 식별
+- [ ] 1091. [M2] 미사용 export 리포트 → yeon-ui 폐기 시 죽은 export 제거
+- [ ] 1092. [M2] 미사용 dependency 리포트 → 마이그레이션으로 불필요해진 deps 제거
+- [ ] 1093. [M2] shadcn→react-native-reusables 전환 후 미사용 yeon-ui 파일 knip로 일괄 확인·삭제
+- [ ] 1094. [M3] CI에 knip 단계 추가(경고 우선 → 정착 후 error)
+- [ ] 1095. [M3] 구 컴포넌트 제거 게이트에 knip 통과 연동(이관 완료 화면 dead code 0)
+- [ ] 1096. [M3] knip baseline 기록 후 신규 dead code만 실패
+- [ ] 1097. [M3] packages/ui 공개 export 표면 knip 점검(불필요 public export 최소화)
+- [ ] 1098. [M3] 릴리즈 전 정기 청소 루틴 문서화(knip 실행)
+
+## 리스크 / 롤백
+
+- **최대 리스크**: (1) Next.js+RNW SSR 성능/SEO 회귀, (2) 리치 에디터·Phaser 레이스의 네이티브 대체, (3) Tailwind v4 전환. 각각 별도 스파이크/PoC 선검증.
+- **롤백**: 라우트 단위 이관, 시각회귀 실패 시 구 컴포넌트 유지(병행). packages/ui는 가산적이라 미채택 화면 무영향.
+- **동결 가드**: counseling 경로는 린트/CI/이관 제외.
+
+## Definition of Done
+
+- 카드/타자/커뮤니티 전 화면이 packages/ui(universal)로 렌더(web+iOS+Android).
+- 토큰 SSOT 단일화(arbitrary 색 0, 린트 강제), yeon-ui 폐기.
+- Playwright 시각회귀+axe + CI 게이트 통과, iOS/Android EAS 빌드 산출.
+- 구 DOM 전용 컴포넌트 제거(동결 counseling 제외).
