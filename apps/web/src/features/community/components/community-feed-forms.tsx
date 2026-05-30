@@ -55,7 +55,7 @@ export function FeedGuestIdentityRow(props: {
           글쓰기
         </button>
       </div>
-      <p className="mt-2 text-[11px] font-normal text-[#9ca3af]">
+      <p className="mt-2 text-[11px] font-normal text-[#6b7280]">
         자동 생성된 게스트 닉네임이에요. 직접 바꿀 수 있고, 비밀번호는 글
         수정·삭제에 사용해요.
       </p>

@@ -130,7 +130,10 @@ export function CommunityPage() {
             <CommunityChatWidget variant="feed" guestNickname={guestNickname} />
           </div>
 
-          <div className="space-y-4 border-b border-[#e5e7eb] px-5 py-4 sm:px-6">
+          <div className="space-y-4 border-b border-[#e5e7eb] px-5 pb-4 pt-5 sm:px-6">
+            <h2 className="text-[16px] font-black tracking-[-0.02em] text-[#111827]">
+              게시판
+            </h2>
             <div className="relative">
               <div
                 className="flex gap-2 overflow-x-auto scroll-pr-6 pb-1 pr-6"

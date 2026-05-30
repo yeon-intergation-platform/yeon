@@ -35,7 +35,7 @@ export function CommunitySeoSection({
               <span className="text-[14px] font-semibold text-[#111]">
                 {category}
               </span>
-              <span className="mt-0.5 block text-[13px] leading-6 text-[#888]">
+              <span className="mt-0.5 block text-[13px] leading-6 text-[#666]">
                 {COMMUNITY_CATEGORY_DESCRIPTIONS[category]}
               </span>
             </li>
