@@ -102,9 +102,9 @@ export function LandingHome({
           }
         />
 
-        <main className="mx-auto max-w-[1400px] px-6 py-10 md:px-12 md:py-20">
+        <main className="mx-auto max-w-[1400px] px-6 py-8 md:px-12 md:py-12">
           <section className="max-w-[720px]">
-            <h1 className="mt-4 text-balance break-keep text-[30px] font-black tracking-[-0.04em] text-[#111] md:text-[40px]">
+            <h1 className="text-balance break-keep text-[30px] font-black tracking-[-0.04em] text-[#111] md:text-[40px]">
               현재 {visibleServices.length}가지 서비스를 운영 중입니다.
             </h1>
             <p
@@ -133,7 +133,7 @@ export function LandingHome({
             ) : null}
           </section>
 
-          <section className="mt-10">
+          <section className="mt-8">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {visibleServices.map((service) => {
                 const isLive = service.status === platformServiceStatuses.live;
@@ -149,16 +149,22 @@ export function LandingHome({
                   <>
                     <div className="flex items-start justify-end gap-3">
                       <span
-                        className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+                        className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium ${
                           isLive
-                            ? "bg-[#111] text-white"
-                            : "border border-[#e5e5e5] bg-white text-[#777]"
+                            ? "border border-[#e5e5e5] bg-white text-[#888]"
+                            : "border border-[#e5e5e5] bg-[#fafafa] text-[#aaa]"
                         }`}
                       >
+                        {isLive ? (
+                          <span
+                            aria-hidden="true"
+                            className="h-1.5 w-1.5 rounded-full bg-[#111]"
+                          />
+                        ) : null}
                         {isLive ? "운영 중" : "준비 중"}
                       </span>
                     </div>
-                    <div className="mt-5">
+                    <div className="mt-4">
                       <h3 className="text-[20px] font-semibold tracking-[-0.03em] text-[#111]">
                         {service.title}
                       </h3>
@@ -168,16 +174,27 @@ export function LandingHome({
                         {service.summary}
                       </p>
                     </div>
-                    <div className="mt-6 border-t border-[#e5e5e5] pt-5">
+                    <div className="mt-5 flex items-center border-t border-[#e5e5e5] pt-4">
                       <span
-                        className={`inline-flex items-center gap-1.5 ${SHARED_FEATURE_CLASS.text13Emphasis}`}
+                        className={`inline-flex items-center gap-1.5 ${
+                          isLive
+                            ? SHARED_FEATURE_CLASS.text13Emphasis
+                            : SHARED_FEATURE_CLASS.text13EmphasisSubtle
+                        }`}
                       >
                         {canOpen
                           ? "바로 이동"
                           : needsLogin
                             ? "로그인 후 이동"
                             : "준비 중"}
-                        {isLive ? <span aria-hidden="true">→</span> : null}
+                        {isLive ? (
+                          <span
+                            aria-hidden="true"
+                            className="transition-transform duration-200 group-hover:translate-x-0.5"
+                          >
+                            →
+                          </span>
+                        ) : null}
                       </span>
                     </div>
                   </>
