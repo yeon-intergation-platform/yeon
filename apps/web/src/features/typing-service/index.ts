@@ -5,7 +5,10 @@ export { TypingRoomScreen } from "./typing-room-screen";
 export { TypingServiceHeader } from "./typing-service-header";
 export {
   TYPING_FAQS,
+  TYPING_FEATURES,
   TYPING_PAGE_DESCRIPTION,
   TYPING_PAGE_TITLE,
+  TYPING_SEO_HEADING,
+  TYPING_SEO_INTRO,
   TYPING_SEO_KEYWORDS,
 } from "./typing-content";

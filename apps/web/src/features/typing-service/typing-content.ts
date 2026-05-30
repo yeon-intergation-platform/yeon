@@ -28,6 +28,36 @@ export const TYPING_SEO_KEYWORDS = [
   "무료 한글 타자 테스트",
 ] as const;
 
+export const TYPING_SEO_HEADING = "YEON 타자연습 소개";
+
+export const TYPING_SEO_INTRO = [
+  "YEON 타자연습은 회원가입 없이 바로 시작하는 무료 한글 타자 연습 서비스입니다. 문장을 입력하면 정확도와 분당 타수, 경과 시간을 실시간으로 계산해 보여 줍니다.",
+  "혼자 손을 푸는 개인 연습은 물론, 친구들과 타자방에 모여 함께 연습하거나 레이스로 서로의 속도를 겨룰 수 있습니다. 연습할 문장은 직접 추가해 나만의 덱으로 관리할 수 있습니다.",
+] as const;
+
+export const TYPING_FEATURES = [
+  {
+    title: "개인 타자 연습",
+    description:
+      "짧은 문장부터 호흡 있는 문단, 속도 스프린트까지 난이도별 문장으로 정확도와 분당 타수를 측정합니다.",
+  },
+  {
+    title: "실시간 타자방",
+    description:
+      "친구들과 같은 방에 모여 동시에 연습하고, 채팅으로 함께 기록을 확인합니다.",
+  },
+  {
+    title: "타자 레이스",
+    description:
+      "다른 사용자와 같은 문장을 입력하며 실시간으로 타자 속도를 겨룹니다.",
+  },
+  {
+    title: "연습 덱 관리",
+    description:
+      "연습할 문장을 직접 추가하고 나만의 연습 덱으로 정리해 반복합니다.",
+  },
+] as const;
+
 export const TYPING_FAQS = [
   {
     question: "회원가입 없이 바로 연습할 수 있나요?",

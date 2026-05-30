@@ -1,10 +1,14 @@
 import type { Metadata } from "next";
 import Script from "next/script";
 import { SITE_BRAND_NAME } from "@/lib/site-brand";
+import { ServiceSeoSection } from "@/components/service-seo-section";
 import {
   TYPING_FAQS,
+  TYPING_FEATURES,
   TYPING_PAGE_DESCRIPTION,
   TYPING_PAGE_TITLE,
+  TYPING_SEO_HEADING,
+  TYPING_SEO_INTRO,
   TYPING_SEO_KEYWORDS,
   TypingServiceHome,
 } from "@/features/typing-service";
@@ -79,6 +83,12 @@ export default async function TypingServicePage() {
         }}
       />
       <TypingServiceHome showCharacterAdminLink={!!admin} />
+      <ServiceSeoSection
+        heading={TYPING_SEO_HEADING}
+        intro={TYPING_SEO_INTRO}
+        features={TYPING_FEATURES}
+        faqs={TYPING_FAQS}
+      />
     </>
   );
 }
