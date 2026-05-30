@@ -56,6 +56,11 @@ export function CardRoomLobbyScreen() {
     });
   }, [rooms, searchKeyword, selectedFilter]);
 
+  const isEmptyState =
+    !roomsQuery.isLoading &&
+    !roomsQuery.isError &&
+    filteredRooms[0] === undefined;
+
   return (
     <div className={SHARED_FEATURE_CLASS.pageSurface}>
       <CommonProductHeader activeService="card" />
@@ -106,23 +111,25 @@ export function CardRoomLobbyScreen() {
                   className="h-[50px] w-full rounded-lg border border-[#d7d7d7] bg-white pl-12 pr-4 text-[16px] font-medium text-[#111] outline-none placeholder:text-[#aaa] focus:border-[#111]"
                 />
               </label>
-              <button
-                type="button"
-                onClick={openCreateModal}
-                className="inline-flex h-[50px] items-center justify-center rounded-lg bg-[#111] px-8 text-[16px] font-bold text-white no-underline transition-opacity hover:opacity-90"
-              >
-                방 만들기
-              </button>
+              {!isEmptyState ? (
+                <button
+                  type="button"
+                  onClick={openCreateModal}
+                  className="inline-flex h-[50px] items-center justify-center rounded-lg bg-[#111] px-8 text-[16px] font-bold text-white no-underline transition-opacity hover:opacity-90"
+                >
+                  카드방 만들기
+                </button>
+              ) : null}
             </div>
           </div>
 
-          <div className="mt-7 min-h-[520px] rounded-2xl border border-[#d9d9d9] bg-white">
+          <div className="mt-7 rounded-2xl border border-[#d9d9d9] bg-white">
             {roomsQuery.isLoading ? (
-              <div className="flex min-h-[520px] items-center justify-center text-[16px] font-bold text-[#666]">
+              <div className="flex min-h-[280px] items-center justify-center text-[16px] font-bold text-[#666]">
                 실제 카드방 목록을 불러오는 중...
               </div>
             ) : roomsQuery.isError ? (
-              <div className="flex min-h-[520px] flex-col items-center justify-center px-6 text-center">
+              <div className="flex min-h-[280px] flex-col items-center justify-center px-6 py-16 text-center">
                 <h2 className="text-[28px] font-black tracking-[-0.05em]">
                   목록을 불러오지 못했어요
                 </h2>
@@ -130,18 +137,18 @@ export function CardRoomLobbyScreen() {
                   카드방 서버 상태를 확인해 주세요.
                 </p>
               </div>
-            ) : filteredRooms[0] === undefined ? (
-              <div className="flex min-h-[520px] flex-col items-center justify-center px-6 text-center">
-                <h2 className="text-[32px] font-black tracking-[-0.05em] text-[#111]">
+            ) : isEmptyState ? (
+              <div className="flex flex-col items-center justify-center px-6 py-20 text-center">
+                <h2 className="break-keep text-[32px] font-black tracking-[-0.05em] text-[#111]">
                   열린 카드방이 없어요
                 </h2>
-                <p className="mt-3 text-[16px] font-medium leading-6 text-[#666]">
+                <p className="mt-3 max-w-[300px] break-keep text-[16px] font-medium leading-6 text-[#666]">
                   내 덱 또는 게스트 덱 스냅샷으로 첫 카드방을 만들어 보세요.
                 </p>
                 <button
                   type="button"
                   onClick={openCreateModal}
-                  className="mt-8 rounded-lg bg-[#050505] px-8 py-4 text-[17px] font-bold text-white no-underline transition-colors hover:bg-[#222]"
+                  className="mx-auto mt-8 rounded-lg bg-[#050505] px-8 py-4 text-[17px] font-bold text-white no-underline transition-colors hover:bg-[#222]"
                 >
                   카드방 만들기
                 </button>
