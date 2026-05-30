@@ -307,7 +307,7 @@ export function TypingRoomLobbyScreen() {
                     onClick={() => setSelectedFilter(filter.value)}
                     data-active={selectedFilter === filter.value}
                     variant="pill"
-                    className="h-[50px] shrink-0 px-7 text-[16px] data-[active=true]:border-[#111] data-[active=true]:bg-[#111] data-[active=true]:text-white"
+                    className="h-[50px] shrink-0 px-7 text-[16px] data-[active=true]:border-[#111] data-[active=true]:bg-[#fafafa] data-[active=true]:font-bold data-[active=true]:text-[#111] data-[active=true]:shadow-[inset_0_0_0_1px_#111]"
                   >
                     {filter.label}
                   </YeonButton>
@@ -326,7 +326,7 @@ export function TypingRoomLobbyScreen() {
                     onChange={(event) => setSearchKeyword(event.target.value)}
                     placeholder="방 검색"
                     aria-label="방 검색"
-                    className="h-[50px] rounded-lg pl-12 pr-4 text-[16px] font-medium"
+                    className="h-[50px] rounded-lg pl-12 pr-4 text-[16px] font-medium placeholder:text-[#888]"
                   />
                 </label>
                 <YeonButton
@@ -358,7 +358,7 @@ export function TypingRoomLobbyScreen() {
 
             {(state.kind === "empty" ||
               (state.kind === "ready" && filteredRooms[0] === undefined)) && (
-              <div className="flex min-h-[520px] flex-col items-center justify-center px-6 py-12 text-center">
+              <div className="flex min-h-[520px] flex-col items-center justify-center rounded-2xl border border-[#e5e5e5] bg-[#fafafa] px-6 py-12 text-center">
                 <Image
                   src="/illustrations/typing-empty-keyboard.png"
                   alt=""
@@ -376,8 +376,8 @@ export function TypingRoomLobbyScreen() {
                   className={`mt-3 max-w-[320px] break-keep leading-6 ${SHARED_FEATURE_CLASS.text16Secondary}`}
                 >
                   {state.kind === "ready"
-                    ? "다른 키워드로 검색하거나 첫 방을 만들어 보세요."
-                    : "첫 방을 만들어 친구와 함께 시작해보세요."}
+                    ? "다른 키워드로 검색해 보세요. 원하는 방이 없다면 직접 만들 수 있어요."
+                    : "공개방은 누구나 입장할 수 있고, 비공개방은 방 코드를 받은 사람만 들어와요."}
                 </p>
                 <YeonButton
                   type="button"
