@@ -25,7 +25,7 @@ export const TYPING_SERVICE_HOME_CLASS = {
     "hover:border-[#111] hover:bg-[#fafafa] hover:shadow-[0_14px_30px_rgba(17,17,17,0.08)] focus-visible:shadow-[0_14px_30px_rgba(17,17,17,0.08)]",
   startCardLabel: "block text-[17px] font-extrabold tracking-[-0.03em]",
   startCardDescriptionPrimary:
-    "pointer-events-none absolute inset-x-5 bottom-4 line-clamp-2 translate-y-1 text-[13px] font-medium leading-[1.45] text-white/72 opacity-0 transition-all duration-200 ease-out group-hover:translate-y-0 group-hover:opacity-100 group-focus-visible:translate-y-0 group-focus-visible:opacity-100",
+    "pointer-events-none absolute inset-x-5 bottom-4 line-clamp-2 text-[13px] font-medium leading-[1.45] text-white/72 transition-all duration-200 ease-out sm:translate-y-1 sm:opacity-0 sm:group-hover:translate-y-0 sm:group-hover:opacity-100 sm:group-focus-visible:translate-y-0 sm:group-focus-visible:opacity-100",
   startCardDescriptionSecondary:
-    "pointer-events-none absolute inset-x-5 bottom-4 line-clamp-2 translate-y-1 text-[13px] font-medium leading-[1.45] text-[#666] opacity-0 transition-all duration-200 ease-out group-hover:translate-y-0 group-hover:opacity-100 group-focus-visible:translate-y-0 group-focus-visible:opacity-100",
+    "pointer-events-none absolute inset-x-5 bottom-4 line-clamp-2 text-[13px] font-medium leading-[1.45] text-[#666] transition-all duration-200 ease-out sm:translate-y-1 sm:opacity-0 sm:group-hover:translate-y-0 sm:group-hover:opacity-100 sm:group-focus-visible:translate-y-0 sm:group-focus-visible:opacity-100",
 } as const;
