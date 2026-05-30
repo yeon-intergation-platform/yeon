@@ -1,0 +1,139 @@
+name: Backend Tests & Reports
+
+# 백엔드 테스트 게이트 + 리포트 노출.
+# (Dockerfile 은 bootJar 만 하므로 테스트가 CI에서 돌지 않던 공백을 메운다.)
+# - test-and-report: ./gradlew test(ArchUnit·추적성·springdoc·REST Docs·통합) + JaCoCo. 산출물 업로드.
+# - karate-flows: 앱(Java25)을 띄우고 Karate(Java21 standalone)로 메인 흐름 검증 + HTML 리포트.
+
+on:
+  pull_request:
+    paths:
+      - "apps/backend/**"
+      - ".github/workflows/backend-tests.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "apps/backend/**"
+      - ".github/workflows/backend-tests.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test-and-report:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6.0.2
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+
+      - name: Run tests + JaCoCo (Testcontainers uses runner Docker)
+        working-directory: apps/backend
+        run: ./gradlew --no-daemon test jacocoTestReport
+
+      - name: Upload JaCoCo coverage report
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: backend-jacoco-report
+          path: apps/backend/build/reports/jacoco/test/
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Upload REST Docs snippets
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: backend-restdocs-snippets
+          path: apps/backend/build/generated-snippets/
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Upload JUnit results
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: backend-junit-results
+          path: apps/backend/build/test-results/test/
+          if-no-files-found: warn
+          retention-days: 14
+
+  karate-flows:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-bookworm
+        env:
+          POSTGRES_USER: yeon_local
+          POSTGRES_PASSWORD: yeon_local
+          POSTGRES_DB: yeon_local
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U yeon_local -d yeon_local"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6.0.2
+
+      - name: Set up JDK 21 (Karate runtime)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up JDK 25 (app runtime)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+
+      - name: Start backend (Java 25, dev.local) in background
+        working-directory: apps/backend
+        env:
+          SPRING_PROFILES_ACTIVE: dev.local
+          DATABASE_URL: postgresql://yeon_local:yeon_local@localhost:5432/yeon_local
+          SPRING_INTERNAL_TOKEN: local-dev-internal-token
+          CARD_ASSET_LOCAL_FALLBACK: "true"
+        run: |
+          ./gradlew --no-daemon bootRun --args='--server.port=8081' > /tmp/backend-boot.log 2>&1 &
+          for i in $(seq 1 60); do
+            if curl -fsS http://localhost:8081/actuator/health >/dev/null 2>&1; then
+              echo "backend up after ${i} tries"
+              exit 0
+            fi
+            sleep 3
+          done
+          echo "backend did not start"; tail -50 /tmp/backend-boot.log; exit 1
+
+      - name: Seed traceability test user
+        run: |
+          sudo apt-get update && sudo apt-get install -y --no-install-recommends postgresql-client
+          PGPASSWORD=yeon_local psql -h localhost -U yeon_local -d yeon_local -c \
+            "INSERT INTO public.users (id,email,display_name) VALUES ('11111111-1111-1111-1111-111111111111','karate@test.local','Karate Test') ON CONFLICT (id) DO NOTHING;"
+
+      - name: Run Karate main-flow features (Java 21 standalone)
+        env:
+          KARATE_SEED_USER: "0"
+        run: |
+          # setup-java 가 노출한 JDK 21 홈을 Karate 실행에 사용(앱은 Java 25 로 이미 기동).
+          export KARATE_JAVA_HOME="$JAVA_HOME_21_X64"
+          bash apps/backend/src/test/resources/karate/run-flows.sh
+
+      - name: Upload Karate HTML report
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: backend-karate-report
+          path: apps/backend/target/karate-reports/
+          if-no-files-found: warn
+          retention-days: 14
