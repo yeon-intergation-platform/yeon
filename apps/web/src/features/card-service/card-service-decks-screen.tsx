@@ -133,16 +133,16 @@ export function CardServiceDecksScreen() {
         }
       />
 
-      <main className="mx-auto max-w-[1400px] px-6 pb-28 pt-12 md:px-12">
+      <main className="mx-auto max-w-[1400px] px-6 pb-28 pt-7 md:px-12">
         <section className="max-w-[820px]">
           <Link
             href="/card-service"
-            className="inline-flex items-center gap-2 rounded-full border border-[#e5e5e5] bg-white px-4 py-2 text-[13px] font-semibold text-[#555] no-underline transition-colors hover:border-[#111] hover:text-[#111]"
+            className="-ml-1 inline-flex min-h-11 items-center gap-1.5 rounded-lg px-1 py-1 text-[13px] font-semibold text-[#666] no-underline transition-colors hover:text-[#111]"
           >
             <span aria-hidden="true">←</span>
             카드 홈으로
           </Link>
-          <h1 className="mt-4 break-keep text-[28px] font-black tracking-[-0.04em] text-[#111] md:text-[34px]">
+          <h1 className="mt-3 break-keep text-[28px] font-black tracking-[-0.04em] text-[#111] md:text-[34px]">
             덱을 만들고 바로 복습하세요
           </h1>
           <p
@@ -152,12 +152,10 @@ export function CardServiceDecksScreen() {
           </p>
         </section>
 
-        <section className="mt-10">
+        <section className="mt-9 border-t border-[#e5e5e5] pt-8">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <h2
-                className={`${SHARED_FEATURE_CLASS.headingText22Emphasis} break-keep`}
-              >
+              <h2 className="break-keep text-[18px] font-bold text-[#111]">
                 {isAuthenticated ? "내 덱" : "로그인 없이 만드는 덱"}
               </h2>
               <p
@@ -175,7 +173,7 @@ export function CardServiceDecksScreen() {
                 onClick={() => openCreate("deck_section")}
                 className="inline-flex h-11 shrink-0 items-center justify-center rounded-xl bg-[#111] px-5 text-[13px] font-semibold text-white transition-colors hover:bg-[#333]"
               >
-                + 새 덱
+                새 덱 만들기
               </button>
             )}
           </div>

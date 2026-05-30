@@ -7,7 +7,7 @@ interface EmptyDecksScreenProps {
 
 export function EmptyDecksScreen({ onCreate }: EmptyDecksScreenProps) {
   return (
-    <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-[#e5e5e5] px-6 py-12 text-center">
+    <div className="flex min-h-[360px] flex-col items-center justify-center rounded-2xl border border-dashed border-[#e5e5e5] px-6 py-10 text-center">
       <h3 className={CARD_SERVICE_COMMON_CLASS.panelTextEmphasis15}>
         아직 덱이 없습니다
       </h3>
@@ -17,7 +17,7 @@ export function EmptyDecksScreen({ onCreate }: EmptyDecksScreenProps) {
       <button
         type="button"
         onClick={onCreate}
-        className={`mt-5 ${SHARED_FEATURE_CLASS.primaryActionButtonMd14}`}
+        className={`mt-5 inline-flex min-h-11 items-center justify-center ${SHARED_FEATURE_CLASS.primaryActionButtonMd14}`}
       >
         첫 덱 만들기
       </button>
