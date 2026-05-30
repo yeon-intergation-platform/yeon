@@ -12,7 +12,7 @@ export const SHARED_FEATURE_CLASS = {
   text13EmphasisMuted: "text-[13px] font-semibold text-[#666]",
   text13Primary: "text-[13px] text-[#111]",
   text13PrimaryBold: "text-[13px] font-bold text-[#111]",
-  text13Secondary: "text-[13px] text-[#6b7280]",
+  text13Secondary: "text-[13px] text-[#666]",
   text13MediumSecondary: "text-[13px] font-medium text-[#666]",
   text15EmphasisOnCream: "text-[15px] font-bold text-[#fffaf4]",
   text13Neutral: "text-[13px] text-[#666]",

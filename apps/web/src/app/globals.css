@@ -56,6 +56,10 @@ body {
     BlinkMacSystemFont,
     "Segoe UI",
     sans-serif;
+  /* 한글은 어절(띄어쓰기) 단위로만 줄바꿈해 '중입니다'가 '중입/니다'처럼 음절에서
+     끊기는 외톨이 글자를 막는다. 끊을 수 없는 긴 문자열(URL 등)은 anywhere로 넘침 방지. */
+  word-break: keep-all;
+  overflow-wrap: anywhere;
 }
 
 body.landing-login-open [data-landing-spline="true"] {
