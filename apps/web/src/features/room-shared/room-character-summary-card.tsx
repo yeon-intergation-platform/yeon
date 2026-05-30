@@ -54,9 +54,23 @@ export function RoomCharacterSummaryCard({
         </p>
         <Link
           href={changeHref}
-          className={`mt-2 inline-flex ${SHARED_FEATURE_CLASS.text12EmphasisNeutral} underline underline-offset-4`}
+          aria-label="캐릭터 바꾸기"
+          className="mt-2 inline-flex min-h-[44px] items-center gap-1 rounded-xl border border-[#e5e5e5] bg-white px-3 text-[13px] font-semibold text-[#111]"
         >
           캐릭터 바꾸기
+          <svg
+            aria-hidden="true"
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="m9 18 6-6-6-6" />
+          </svg>
         </Link>
       </div>
     </div>

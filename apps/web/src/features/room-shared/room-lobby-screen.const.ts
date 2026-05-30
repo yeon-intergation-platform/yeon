@@ -3,7 +3,8 @@ export const ROOM_LOBBY_CLASS = {
     "flex min-h-[174px] flex-col gap-6 px-6 py-10 md:flex-row md:items-center md:justify-between md:px-10",
   heroTitle:
     "text-[48px] font-black leading-none tracking-[-0.06em] text-[#111] md:text-[56px]",
-  heroDescription: "mt-5 text-[18px] font-medium leading-7 text-[#666]",
+  heroDescription:
+    "mt-5 max-w-[20ch] break-keep text-[18px] font-medium leading-7 text-[#666] md:max-w-[34ch]",
   listTopBorder: "border-t border-[#e5e5e5] px-6 py-6 md:px-10",
   filterRow:
     "flex flex-col gap-4 md:flex-row md:items-center md:justify-between",
