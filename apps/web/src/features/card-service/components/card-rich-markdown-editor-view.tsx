@@ -248,6 +248,7 @@ export function CardRichEditorGlobalStyles() {
       .card-rich-editor-image img {
         border: 1px solid #e5e5e5;
         border-radius: 14px;
+        cursor: pointer;
         display: block;
         height: auto;
         max-width: 100%;
@@ -260,14 +261,22 @@ export function CardRichEditorGlobalStyles() {
         background: #111;
         border: 2px solid #fff;
         border-radius: 999px;
-        bottom: -10px;
+        bottom: -9px;
         box-shadow: 0 2px 8px rgba(17, 17, 17, 0.22);
-        cursor: ew-resize;
-        height: 22px;
+        cursor: nwse-resize;
+        height: 18px;
+        opacity: 0;
+        pointer-events: none;
         position: absolute;
-        right: -10px;
+        right: -9px;
         touch-action: none;
-        width: 22px;
+        transition: opacity 0.12s ease;
+        width: 18px;
+      }
+      .card-rich-editor-image.is-selected .card-rich-editor-image-handle,
+      .card-rich-editor-image.is-resizing .card-rich-editor-image-handle {
+        opacity: 1;
+        pointer-events: auto;
       }
       .card-rich-editor-image-size {
         background: rgba(17, 17, 17, 0.78);
@@ -278,11 +287,11 @@ export function CardRichEditorGlobalStyles() {
         left: 8px;
         opacity: 0;
         padding: 3px 8px;
+        pointer-events: none;
         position: absolute;
-        transition: opacity 0.15s ease;
+        transition: opacity 0.12s ease;
       }
-      .card-rich-editor-image:hover .card-rich-editor-image-size,
-      .card-rich-editor-image.is-selected .card-rich-editor-image-size {
+      .card-rich-editor-image.is-resizing .card-rich-editor-image-size {
         opacity: 1;
       }
     `}</style>

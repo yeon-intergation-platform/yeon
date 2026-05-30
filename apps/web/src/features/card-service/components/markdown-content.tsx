@@ -15,6 +15,10 @@ import remarkGfm from "remark-gfm";
 
 import { CardMarkdownCodeBlock } from "./card-markdown-code-block";
 import { getCardEditorCodeLanguageFromClassName } from "./card-editor-codeblock-utils";
+import {
+  parseCardEditorImageWidth,
+  parseOptionalCardEditorImageHeight,
+} from "./card-editor-image-utils";
 import { renderCardEditorMarkdownTablesInHtml } from "./card-editor-table-utils";
 import {
   applyCardEditorYouTubeIframeAttributes,
@@ -33,9 +37,6 @@ interface MarkdownCodeElementProps {
 }
 
 const baseTextClass = "whitespace-pre-wrap break-words";
-const CARD_HTML_IMAGE_MIN_WIDTH = 200;
-const CARD_HTML_IMAGE_MAX_WIDTH = 800;
-const CARD_HTML_IMAGE_DEFAULT_WIDTH = 480;
 export const CARD_MARKDOWN_TABLE_MIN_CELL_WIDTH = 56;
 export const CARD_MARKDOWN_TABLE_MIN_CELL_HEIGHT = 56;
 
@@ -47,15 +48,6 @@ const CARD_MARKDOWN_TABLE_CELL_STYLE = {
 function looksLikeHtml(value: string) {
   return /<\/?(p|div|br|ul|ol|li|strong|em|u|s|blockquote|pre|code|h[1-6]|img|a|table|thead|tbody|tr|th|td|iframe)\b/i.test(
     value
-  );
-}
-
-function clampImageWidth(value: unknown) {
-  const parsed = Number(value);
-  if (!Number.isFinite(parsed)) return CARD_HTML_IMAGE_DEFAULT_WIDTH;
-  return Math.min(
-    CARD_HTML_IMAGE_MAX_WIDTH,
-    Math.max(CARD_HTML_IMAGE_MIN_WIDTH, Math.round(parsed))
   );
 }
 
@@ -118,8 +110,24 @@ function sanitizeHtml(value: string) {
   if (typeof DOMParser === "undefined") return sanitized;
   const document = new DOMParser().parseFromString(sanitized, "text/html");
   document.querySelectorAll("img").forEach((image) => {
-    const width = clampImageWidth(image.getAttribute("width"));
+    const width = parseCardEditorImageWidth(image.getAttribute("width"));
     image.setAttribute("width", String(width));
+    image.style.width = `${width}px`;
+
+    // 명시적 height(px)가 있으면 aspect-ratio + height:auto로 적용한다. 좁은 폭에서
+    // max-width:100%로 줄어도 지정한 W:H 비율을 유지하며 함께 축소된다(고정 height 왜곡 방지).
+    const height = parseOptionalCardEditorImageHeight(
+      image.getAttribute("height")
+    );
+    image.style.height = "auto";
+    if (height === null) {
+      image.removeAttribute("height");
+      image.style.removeProperty("aspect-ratio");
+    } else {
+      image.setAttribute("height", String(height));
+      image.style.aspectRatio = `${width} / ${height}`;
+    }
+
     image.setAttribute("loading", "lazy");
     image.setAttribute("decoding", "async");
   });
