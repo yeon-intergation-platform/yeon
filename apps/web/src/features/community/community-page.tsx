@@ -131,22 +131,33 @@ export function CommunityPage() {
           </div>
 
           <div className="space-y-4 border-b border-[#e5e7eb] px-5 py-4 sm:px-6">
-            <div className="flex gap-2 overflow-x-auto pb-1">
-              {COMMUNITY_CATEGORIES.map((category) => (
-                <button
-                  key={category}
-                  type="button"
-                  onClick={() => setSelectedCategory(category)}
-                  className={[
-                    "shrink-0 rounded-full border px-4 py-2 text-[13px] font-bold transition-colors",
-                    selectedCategory === category
-                      ? "border-[#111827] bg-[#111827] text-white"
-                      : "border-[#e5e7eb] bg-white text-[#4b5563] hover:border-[#111827] hover:text-[#111827]",
-                  ].join(" ")}
-                >
-                  {category}
-                </button>
-              ))}
+            <div className="relative">
+              <div
+                className="flex gap-2 overflow-x-auto scroll-pr-6 pb-1 pr-6"
+                role="group"
+                aria-label="게시글 분류 필터"
+              >
+                {COMMUNITY_CATEGORIES.map((category) => (
+                  <button
+                    key={category}
+                    type="button"
+                    onClick={() => setSelectedCategory(category)}
+                    aria-pressed={selectedCategory === category}
+                    className={[
+                      "shrink-0 whitespace-nowrap rounded-full border px-4 py-2 text-[13px] font-bold transition-colors",
+                      selectedCategory === category
+                        ? "border-[#111827] bg-[#111827] text-white"
+                        : "border-[#e5e7eb] bg-white text-[#4b5563] hover:border-[#111827] hover:text-[#111827]",
+                    ].join(" ")}
+                  >
+                    {category}
+                  </button>
+                ))}
+              </div>
+              <div
+                aria-hidden
+                className="pointer-events-none absolute inset-y-0 right-0 w-6 bg-gradient-to-l from-white to-transparent"
+              />
             </div>
 
             <div>
