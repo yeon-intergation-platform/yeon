@@ -23,36 +23,42 @@ export function FeedGuestIdentityRow(props: {
   } = props;
 
   return (
-    <div className="grid gap-2 rounded-2xl border border-[#e5e7eb] bg-white p-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_104px] sm:items-end">
-      <label className="text-[12px] font-semibold text-[#4b5563]">
-        닉네임
-        <input
-          value={guestNickname}
-          onChange={(event) => onChangeNickname(event.target.value)}
-          placeholder="닉네임 입력"
-          maxLength={40}
-          className="mt-1 h-10 w-full rounded-xl border border-[#d1d5db] bg-white px-3 text-[14px] font-normal text-[#111827] outline-none transition-colors focus:border-[#111827]"
-        />
-      </label>
-      <label className="text-[12px] font-semibold text-[#4b5563]">
-        비밀번호
-        <input
-          value={guestPassword}
-          onChange={(event) => onChangePassword(event.target.value)}
-          placeholder="수정/삭제용 비밀번호"
-          type="password"
-          maxLength={128}
-          className="mt-1 h-10 w-full rounded-xl border border-[#d1d5db] bg-white px-3 text-[14px] font-normal text-[#111827] outline-none transition-colors focus:border-[#111827]"
-        />
-      </label>
-      <button
-        type="button"
-        onClick={onToggleWrite}
-        className="h-10 rounded-xl bg-[#111827] px-4 text-[14px] font-bold text-white transition-colors hover:bg-[#374151]"
-        aria-expanded={isWriteOpen}
-      >
-        글쓰기
-      </button>
+    <div className="rounded-2xl border border-[#e5e7eb] bg-white p-3">
+      <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_104px] sm:items-end">
+        <label className="text-[12px] font-semibold text-[#4b5563]">
+          게스트 닉네임
+          <input
+            value={guestNickname}
+            onChange={(event) => onChangeNickname(event.target.value)}
+            placeholder="닉네임 입력"
+            maxLength={40}
+            className="mt-1 h-10 w-full rounded-xl border border-[#d1d5db] bg-white px-3 text-[14px] font-normal text-[#111827] outline-none transition-colors focus:border-[#111827]"
+          />
+        </label>
+        <label className="text-[12px] font-semibold text-[#4b5563]">
+          비밀번호
+          <input
+            value={guestPassword}
+            onChange={(event) => onChangePassword(event.target.value)}
+            placeholder="수정/삭제용 비밀번호"
+            type="password"
+            maxLength={128}
+            className="mt-1 h-10 w-full rounded-xl border border-[#d1d5db] bg-white px-3 text-[14px] font-normal text-[#111827] outline-none transition-colors focus:border-[#111827]"
+          />
+        </label>
+        <button
+          type="button"
+          onClick={onToggleWrite}
+          className="h-10 rounded-xl bg-[#111827] px-4 text-[14px] font-bold text-white transition-colors hover:bg-[#374151]"
+          aria-expanded={isWriteOpen}
+        >
+          글쓰기
+        </button>
+      </div>
+      <p className="mt-2 text-[11px] font-normal text-[#9ca3af]">
+        자동 생성된 게스트 닉네임이에요. 직접 바꿀 수 있고, 비밀번호는 글
+        수정·삭제에 사용해요.
+      </p>
     </div>
   );
 }
