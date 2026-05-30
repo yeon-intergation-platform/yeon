@@ -58,7 +58,12 @@ export function TypingRaceSoloPracticePanel({
 }: TypingRaceSoloPracticePanelProps) {
   return (
     <>
-      <div className={TYPING_SERVICE_COMMON_CLASS.raceStatRowBase}>
+      <div
+        className={`${TYPING_SERVICE_COMMON_CLASS.raceStatRowBase}${
+          countdownRemaining > 0 ? " opacity-40" : ""
+        }`}
+        aria-hidden={countdownRemaining > 0}
+      >
         <span className={TYPING_SERVICE_COMMON_CLASS.raceStatLabel}>
           {speedStyle === TYPING_SPEED_STYLE.KO_JASO ? "타수" : "WPM"}
         </span>
@@ -138,7 +143,9 @@ export function TypingRaceSoloPracticePanel({
 
       {!completed && (
         <div className={TYPING_SERVICE_COMMON_CLASS.sectionBodyGap3}>
-          <div className={TYPING_SERVICE_COMMON_CLASS.racePromptTextPanel}>
+          <div
+            className={`${TYPING_SERVICE_COMMON_CLASS.racePromptTextPanel} break-keep`}
+          >
             {promptChars.map((char, index) => {
               const typed = inputChars[index];
               const isCurrent = index === inputChars.length;
