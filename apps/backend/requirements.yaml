@@ -1,0 +1,63 @@
+# 제품 요구사항 원장 (SSOT).
+#
+# 요구사항(ID) ↔ BDD 시나리오(@REQ 태그) ↔ 테스트(파일) ↔ CI 결과를 잇는 추적성의 원천이다.
+# RequirementsTraceabilityTest 가 빌드(./gradlew test)에서 다음을 강제한다:
+#   (a) feature 의 @REQ-xxx 가 이 파일에 실제 존재하는가
+#   (b) P0 요구사항인데 테스트가 없는 항목은 없는가
+#   (c) 삭제된 요구사항 ID 를 feature 가 아직 참조하지 않는가
+#   (d) 여기 적힌 테스트 파일 경로가 실제 존재하는가
+#   (e) karate 테스트로 연결된 feature 가 해당 @REQ 태그를 실제로 달고 있는가(양방향)
+#
+# 경로는 apps/backend 기준 상대경로. priority: P0(필수) > P1 > P2.
+
+requirements:
+  - id: REQ-PLATFORM-HEALTH-001
+    title: 백엔드 헬스체크가 인증 없이 응답한다
+    priority: P1
+    tests:
+      - type: karate
+        path: src/test/resources/karate/smoke.feature
+
+  - id: REQ-CARD-ASSET-001
+    title: 카드 이미지 업로드/조회 (멀티파트 한도·인코딩 슬래시·형식 검증·인증)
+    priority: P0
+    tests:
+      - type: karate
+        path: src/test/resources/karate/card-deck-assets.feature
+      - type: junit
+        path: src/test/java/world/yeon/backend/card_decks/assets/controller/CardDeckAssetUploadIntegrationTest.java
+
+  - id: REQ-COMMUNITY-CHAT-001
+    title: 커뮤니티 게스트 실시간 채팅 전송/조회/검증
+    priority: P0
+    tests:
+      - type: karate
+        path: src/test/resources/karate/community-chat.feature
+
+  - id: REQ-CARD-DECK-001
+    title: 카드 덱·카드 라이프사이클 (생성/추가/수정/복습/삭제·학습모드)
+    priority: P0
+    tests:
+      - type: karate
+        path: src/test/resources/karate/card-decks.feature
+
+  - id: REQ-TYPING-DECK-001
+    title: 타자 덱 라이프사이클 (목록/생성/문장/삭제)
+    priority: P1
+    tests:
+      - type: karate
+        path: src/test/resources/karate/typing-decks.feature
+
+  - id: REQ-CARD-ROOM-001
+    title: 카드방 라이프사이클 (생성/조회/목록/입장)
+    priority: P1
+    tests:
+      - type: karate
+        path: src/test/resources/karate/card-rooms.feature
+
+  - id: REQ-STAR-LOBBY-001
+    title: 스타 로비 관전 룸/관리 상태 조회
+    priority: P2
+    tests:
+      - type: karate
+        path: src/test/resources/karate/star-lobby.feature

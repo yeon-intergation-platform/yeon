@@ -1,4 +1,4 @@
-@communityChat
+@communityChat @REQ-COMMUNITY-CHAT-001
 Feature: 커뮤니티 실시간 채팅 (게스트, permitAll)
 
   Background:

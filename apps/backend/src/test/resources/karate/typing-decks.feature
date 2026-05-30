@@ -1,4 +1,4 @@
-@typingDecks
+@typingDecks @REQ-TYPING-DECK-001
 Feature: 타자 덱 라이프사이클 (목록/생성/문장/삭제)
 
   Background:
