@@ -18,6 +18,9 @@ export const CARD_EDITOR_MAX_IMAGE_COUNT = 20;
 export const CARD_EDITOR_IMAGE_MIN_WIDTH = 200;
 export const CARD_EDITOR_IMAGE_DEFAULT_WIDTH = 480;
 export const CARD_EDITOR_IMAGE_MAX_WIDTH = 800;
+// height는 기본적으로 auto(=null)로 비율을 유지하고, Shift 비율 해제 시에만 명시값을 갖는다.
+export const CARD_EDITOR_IMAGE_MIN_HEIGHT = 60;
+export const CARD_EDITOR_IMAGE_MAX_HEIGHT = 1200;
 
 const IMAGE_TAG_PATTERN = /<img\b/gi;
 const IMAGE_HEADER_BYTE_LENGTH = 32;
@@ -68,6 +71,29 @@ export function parseCardEditorImageWidth(value: unknown) {
   }
 
   return clampCardEditorImageWidth(parsed);
+}
+
+export function clampCardEditorImageHeight(value: number) {
+  return Math.min(
+    CARD_EDITOR_IMAGE_MAX_HEIGHT,
+    Math.max(CARD_EDITOR_IMAGE_MIN_HEIGHT, Math.round(value))
+  );
+}
+
+// 명시적 height(px)가 있으면 보정한 숫자를, 없거나 비정상이면 null(=비율 유지 auto)을 돌려준다.
+export function parseOptionalCardEditorImageHeight(
+  value: unknown
+): number | null {
+  if (value === null || value === undefined || value === "") {
+    return null;
+  }
+
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return null;
+  }
+
+  return clampCardEditorImageHeight(parsed);
 }
 
 export function countCardEditorImages(html: string) {
