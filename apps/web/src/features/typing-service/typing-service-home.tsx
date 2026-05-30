@@ -37,6 +37,7 @@ function StartCard({
       as="a"
       href={href}
       variant={isPrimary ? "primary" : "secondary"}
+      aria-label={`${label} — ${description}`}
       className={`${TYPING_SERVICE_HOME_CLASS.startCardBase} ${
         isPrimary
           ? TYPING_SERVICE_HOME_CLASS.startCardPrimary
@@ -44,8 +45,14 @@ function StartCard({
       }`}
       onClick={onClick}
     >
-      <span className={TYPING_SERVICE_HOME_CLASS.startCardLabel}>{label}</span>
       <span
+        aria-hidden="true"
+        className={TYPING_SERVICE_HOME_CLASS.startCardLabel}
+      >
+        {label}
+      </span>
+      <span
+        aria-hidden="true"
         className={
           isPrimary
             ? TYPING_SERVICE_HOME_CLASS.startCardDescriptionPrimary
