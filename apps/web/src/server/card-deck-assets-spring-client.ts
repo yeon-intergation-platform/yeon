@@ -85,8 +85,16 @@ export async function uploadCardDeckAssetToSpring(file: File) {
 }
 
 export async function fetchCardDeckAssetFromSpring(storageKey: string) {
+  // storageKey의 '/'는 실제 경로 구분자로 보존한다. 통째로 encodeURIComponent하면 %2F가
+  // 되어 Spring Security StrictHttpFirewall이 400으로 차단한다(이미지가 안 뜨는 원인).
+  // 세그먼트 단위로만 인코딩해 슬래시는 살리고 그 외 문자만 안전 처리한다.
+  const encodedPath = storageKey
+    .split("/")
+    .map((segment) => encodeURIComponent(segment))
+    .join("/");
+
   const response = await fetch(
-    `${resolveSpringBackendBaseUrl()}/card-decks/assets/${encodeURIComponent(storageKey)}`,
+    `${resolveSpringBackendBaseUrl()}/card-decks/assets/${encodedPath}`,
     {
       method: "GET",
       cache: "no-store",

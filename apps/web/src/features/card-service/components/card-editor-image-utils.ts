@@ -13,7 +13,9 @@ export const CARD_EDITOR_IMAGE_ACCEPT =
     ","
   );
 
-export const CARD_EDITOR_MAX_IMAGE_SIZE = 10 * 1024 * 1024;
+// 백엔드 CardDeckAssetService(5MB)와 api-contract 한도에 맞춘다.
+// FE가 더 크게 허용하면 업로드 후 백엔드에서 거부돼 혼란을 주므로 fail-fast로 통일.
+export const CARD_EDITOR_MAX_IMAGE_SIZE = 5 * 1024 * 1024;
 export const CARD_EDITOR_MAX_IMAGE_COUNT = 20;
 export const CARD_EDITOR_IMAGE_MIN_WIDTH = 200;
 export const CARD_EDITOR_IMAGE_DEFAULT_WIDTH = 480;
@@ -166,7 +168,7 @@ export function validateCardEditorImageFile(file: CardEditorFileLike) {
   }
 
   if (file.size > CARD_EDITOR_MAX_IMAGE_SIZE) {
-    return "이미지는 10MB 이하만 업로드할 수 있습니다.";
+    return "이미지는 5MB 이하만 업로드할 수 있습니다.";
   }
 
   const extension = getCardEditorFileExtension(file.name);

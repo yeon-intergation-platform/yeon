@@ -1,0 +1,106 @@
+# 카드 덱 이미지 등록(업로드/조회) API — BDD 시나리오 명세 (Cucumber/Karate 스타일)
+#
+# 목적: "이미지 등록이 제대로 안 됨" 회귀를 막기 위한 정확한 시나리오 정의(SSOT).
+# 실행 가능한 Karate 버전은 card-deck-assets.feature 에 1:1로 대응한다.
+# baseUrl 은 karate-config.js 에서 주입한다(로컬 Spring=http://127.0.0.1:8081, Next 프록시=http://127.0.0.1:3000/api/v1).
+
+feature: 카드 덱 이미지 등록 API
+endpoints:
+  upload: "POST /card-decks/assets" # Next 프록시 기준 POST /api/v1/card-decks/assets
+  read: "GET /card-decks/assets/{storageKey}"
+auth:
+  header: "X-Yeon-Internal-Token"
+  note: "Next BFF가 서버-서버 내부 토큰을 주입한다. 토큰이 없으면 Spring Security가 차단한다."
+limits:
+  maxFileSizeMb: 5 # CardDeckAssetService 검증 한도(서블릿 multipart 는 6MB 헤드룸)
+  allowedTypes: ["image/png", "image/jpeg", "image/webp", "image/gif"]
+
+background:
+  - given: "유효한 내부 토큰 헤더를 모든 요청에 포함한다"
+
+scenarios:
+  - id: UPLOAD_OVER_1MB_SUCCEEDS
+    title: 1MB를 초과하는 PNG도 정상 등록된다 (멀티파트 한도 회귀 방지)
+    severity: high
+    regression: "서블릿 multipart 기본 한도(1MB)로 1MB 초과 사진이 컨트롤러 도달 전에 잘리던 버그"
+    given:
+      - "2MB 크기의 image/png 파일이 있다"
+    when:
+      - "multipart/form-data 의 file 필드로 업로드를 POST 한다"
+    then:
+      - "응답 상태는 201 이다"
+      - "응답 body.storageKey 는 'card-service/images/' 로 시작한다"
+      - "응답 body.imageUrl 은 '/api/v1/card-decks/assets/' 로 시작한다"
+
+  - id: READ_BACK_VIA_RETURNED_URL
+    title: 업로드한 이미지를 반환된 imageUrl로 그대로 되읽을 수 있다 (인코딩 슬래시 회귀 방지)
+    severity: high
+    regression: "imageUrl 경로의 %2F(인코딩된 슬래시)를 Tomcat/Security가 막아 업로드는 되지만 표시가 안 되던 가능성"
+    given:
+      - "2MB image/png 를 업로드해 imageUrl 을 받았다"
+    when:
+      - "반환된 imageUrl(에서 /api/v1 프리픽스를 제외한 경로)로 GET 한다"
+    then:
+      - "응답 상태는 200 이다"
+      - "응답 content-type 은 image/png 이다"
+      - "응답 본문 바이트 길이는 업로드한 원본과 같다"
+
+  - id: UPLOAD_OVER_5MB_REJECTED
+    title: 5MB를 초과하면 친절한 400으로 거부한다
+    severity: medium
+    given:
+      - "7MB 크기의 image/png 파일이 있다"
+    when:
+      - "업로드를 POST 한다"
+    then:
+      - "응답 상태는 400 이다"
+      - "응답 메시지에 '5MB 이하' 가 포함된다"
+
+  - id: REJECT_NON_IMAGE
+    title: 이미지가 아닌 파일은 400으로 거부한다
+    severity: medium
+    given:
+      - "text/plain content-type 의 파일이 있다"
+    when:
+      - "업로드를 POST 한다"
+    then:
+      - "응답 상태는 400 이다"
+      - "응답 메시지에 'PNG, JPG, WEBP, GIF' 가 포함된다"
+
+  - id: REJECT_EMPTY_FILE
+    title: 빈 파일은 400으로 거부한다
+    severity: low
+    given:
+      - "0바이트 image/png 파일이 있다"
+    when:
+      - "업로드를 POST 한다"
+    then:
+      - "응답 상태는 400 이다"
+      - "응답 메시지에 '비어 있는' 이 포함된다"
+
+  - id: REQUIRE_INTERNAL_TOKEN
+    title: 내부 토큰이 없으면 인증 단계에서 차단된다
+    severity: high
+    given:
+      - "유효한 image/png 파일이 있다"
+      - "X-Yeon-Internal-Token 헤더를 포함하지 않는다"
+    when:
+      - "Spring 백엔드로 직접 업로드를 POST 한다"
+    then:
+      - "응답 상태는 401 또는 403 이다"
+
+  - id: SUPPORTED_TYPES_MATRIX
+    title: 지원 형식(png/jpeg/webp/gif)은 모두 등록되고 확장자가 형식과 일치한다
+    severity: low
+    examples:
+      - { contentType: "image/png", ext: "png" }
+      - { contentType: "image/jpeg", ext: "jpg" }
+      - { contentType: "image/webp", ext: "webp" }
+      - { contentType: "image/gif", ext: "gif" }
+    given:
+      - "<contentType> 형식의 2MB 파일이 있다"
+    when:
+      - "업로드를 POST 한다"
+    then:
+      - "응답 상태는 201 이다"
+      - "응답 body.storageKey 는 '.<ext>' 로 끝난다"

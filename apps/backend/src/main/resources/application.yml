@@ -1,6 +1,13 @@
 spring:
   application:
     name: yeon-backend
+  servlet:
+    multipart:
+      # 카드 이미지 업로드는 서비스단에서 5MB까지 허용한다. 서블릿 멀티파트 기본값(1MB)이
+      # 더 낮으면 컨트롤러 도달 전에 잘려 대부분의 사진(>1MB) 등록이 실패하므로, 서비스
+      # 한도보다 약간 큰 6MB로 올려 5MB 검증이 사용자에게 친절한 에러로 노출되게 한다.
+      max-file-size: 6MB
+      max-request-size: 10MB
   flyway:
     enabled: true
     locations: classpath:db/migration
