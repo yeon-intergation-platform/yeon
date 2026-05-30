@@ -86,7 +86,13 @@ function DeckLibraryEmptyState({
   );
 }
 
-function DeckLibraryCard({ deck }: { deck: TypingDeckDto }) {
+function DeckLibraryCard({
+  deck,
+  activeScope,
+}: {
+  deck: TypingDeckDto;
+  activeScope: TypingDeckScope;
+}) {
   const detailHref = `/typing-service/decks/${deck.id}`;
   const practiceHref = `/typing-service/practice?deckId=${encodeURIComponent(deck.id)}`;
   const detailParams = {
@@ -118,9 +124,11 @@ function DeckLibraryCard({ deck }: { deck: TypingDeckDto }) {
       <div
         className={`relative z-10 flex flex-wrap items-center gap-2 ${SHARED_FEATURE_CLASS.text12EmphasisNeutral}`}
       >
-        <span className="rounded-full border border-[#e5e5e5] px-2.5 py-1">
-          {typingDeckBadge(deck)}
-        </span>
+        {activeScope === "default" ? null : (
+          <span className="rounded-full border border-[#e5e5e5] px-2.5 py-1">
+            {typingDeckBadge(deck)}
+          </span>
+        )}
         <span className="rounded-full border border-[#e5e5e5] px-2.5 py-1">
           {typingDeckLanguageLabel(deck.languageTag)}
         </span>
@@ -132,18 +140,18 @@ function DeckLibraryCard({ deck }: { deck: TypingDeckDto }) {
       </div>
 
       <div className="mt-5 min-w-0 flex-1">
-        <h2 className="break-keep text-[20px] font-semibold tracking-[-0.03em] text-[#111] group-hover:underline group-hover:decoration-[#d8d8d8] group-hover:underline-offset-4">
+        <h2 className="break-keep text-[20px] font-semibold leading-7 tracking-[-0.03em] text-[#111] group-hover:underline group-hover:decoration-[#d8d8d8] group-hover:underline-offset-4">
           {deck.title}
         </h2>
         <p
-          className={`mt-3 line-clamp-3 break-keep ${TYPING_SERVICE_COMMON_CLASS.textBody14Neutral}`}
+          className={`mt-3 line-clamp-2 break-keep ${TYPING_SERVICE_COMMON_CLASS.textBody14Neutral}`}
         >
           {deck.description ||
             "설명이 없는 덱입니다. 문단 구성을 확인하고 바로 연습해보세요."}
         </p>
       </div>
 
-      <div className="relative z-10 mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-[#efefef] pt-4">
+      <div className="relative z-10 mt-6 flex flex-wrap items-center justify-between gap-3 pt-2">
         <span className={SHARED_FEATURE_CLASS.text13EmphasisSubtle}>
           문단 {deck.passageCount ?? 0}개
         </span>
@@ -189,10 +197,10 @@ function CreateDeckModal({
               새 덱 만들기
             </h2>
             <p
-              className={`${SHARED_FEATURE_CLASS.text13Neutral} mt-2 leading-5`}
+              className={`${SHARED_FEATURE_CLASS.text13Neutral} mt-2 break-keep leading-5`}
             >
-              제목과 언어만 먼저 정해도 됩니다. 문단 관리는 생성 후 상세
-              화면에서 이어집니다.
+              제목과 언어만 정하면 시작할 수 있어요. 문단은 만든 뒤 이어서
+              채웁니다.
             </p>
           </div>
           <button
@@ -347,16 +355,22 @@ export function TypingDeckLibraryScreen({
           </div>
 
           <div className="mt-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            <div className="flex flex-wrap gap-2">
+            <div
+              role="tablist"
+              aria-label="덱 범위"
+              className="inline-flex flex-wrap gap-1 rounded-2xl border border-[#e5e5e5] bg-white p-1"
+            >
               {TYPING_DECK_SCOPE_TABS.map((tab) => (
                 <button
                   key={tab.value}
                   type="button"
+                  role="tab"
+                  aria-selected={scope === tab.value}
                   onClick={() => setScope(tab.value)}
                   className={`min-h-11 rounded-xl px-4 py-2 text-[13px] font-semibold transition-colors ${
                     scope === tab.value
                       ? "bg-[#111] text-white"
-                      : "border border-[#e5e5e5] bg-white text-[#666] hover:border-[#111] hover:text-[#111]"
+                      : "text-[#666] hover:bg-[#fafafa] hover:text-[#111]"
                   }`}
                 >
                   {tab.label}
@@ -392,7 +406,11 @@ export function TypingDeckLibraryScreen({
           {decksQuery.isSuccess && hasFilteredDecks ? (
             <div className="grid gap-4 md:grid-cols-2">
               {filteredDecks.map((deck) => (
-                <DeckLibraryCard key={deck.id} deck={deck} />
+                <DeckLibraryCard
+                  key={deck.id}
+                  deck={deck}
+                  activeScope={scope}
+                />
               ))}
             </div>
           ) : null}
