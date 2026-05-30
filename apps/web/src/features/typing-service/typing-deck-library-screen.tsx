@@ -63,11 +63,13 @@ function DeckLibraryEmptyState({
     <div className="flex min-h-[360px] items-center justify-center rounded-3xl border border-dashed border-[#dcdcdc] bg-[#fafafa] p-8 text-center">
       <div className="max-w-md">
         <p
-          className={`${TYPING_SERVICE_COMMON_CLASS.panelBodyTitle} tracking-[-0.02em]`}
+          className={`${TYPING_SERVICE_COMMON_CLASS.panelBodyTitle} break-keep tracking-[-0.02em]`}
         >
           {hasAnyDecks ? "조건에 맞는 덱이 없습니다." : "아직 덱이 없습니다."}
         </p>
-        <p className={`mt-2 ${TYPING_SERVICE_COMMON_CLASS.textBody14Neutral}`}>
+        <p
+          className={`mt-2 break-keep ${TYPING_SERVICE_COMMON_CLASS.textBody14Neutral}`}
+        >
           {hasAnyDecks
             ? "검색어나 필터를 줄이면 더 많은 연습 덱을 볼 수 있습니다."
             : "내가 자주 연습할 문장 묶음을 만들고 바로 연습을 시작하세요."}
@@ -116,25 +118,25 @@ function DeckLibraryCard({ deck }: { deck: TypingDeckDto }) {
       <div
         className={`relative z-10 flex flex-wrap items-center gap-2 ${SHARED_FEATURE_CLASS.text12EmphasisNeutral}`}
       >
-        <span className="rounded-full bg-[#f3f3f3] px-2.5 py-1">
+        <span className="rounded-full border border-[#e5e5e5] px-2.5 py-1">
           {typingDeckBadge(deck)}
         </span>
-        <span className="rounded-full border border-[#e8e8e8] px-2.5 py-1">
+        <span className="rounded-full border border-[#e5e5e5] px-2.5 py-1">
           {typingDeckLanguageLabel(deck.languageTag)}
         </span>
         {deck.isOwner ? (
-          <span className="rounded-full border border-[#e8e8e8] px-2.5 py-1">
+          <span className="rounded-full border border-[#e5e5e5] px-2.5 py-1">
             내 덱
           </span>
         ) : null}
       </div>
 
       <div className="mt-5 min-w-0 flex-1">
-        <h2 className="text-[20px] font-semibold tracking-[-0.03em] text-[#111] group-hover:underline group-hover:decoration-[#d8d8d8] group-hover:underline-offset-4">
+        <h2 className="break-keep text-[20px] font-semibold tracking-[-0.03em] text-[#111] group-hover:underline group-hover:decoration-[#d8d8d8] group-hover:underline-offset-4">
           {deck.title}
         </h2>
         <p
-          className={`mt-3 line-clamp-3 ${TYPING_SERVICE_COMMON_CLASS.textBody14Neutral}`}
+          className={`mt-3 line-clamp-3 break-keep ${TYPING_SERVICE_COMMON_CLASS.textBody14Neutral}`}
         >
           {deck.description ||
             "설명이 없는 덱입니다. 문단 구성을 확인하고 바로 연습해보세요."}
@@ -145,32 +147,18 @@ function DeckLibraryCard({ deck }: { deck: TypingDeckDto }) {
         <span className={SHARED_FEATURE_CLASS.text13EmphasisSubtle}>
           문단 {deck.passageCount ?? 0}개
         </span>
-        <div className="flex flex-wrap gap-2">
-          <Link
-            href={detailHref}
-            className={`rounded-xl border border-[#e5e5e5] bg-white px-4 py-2 ${SHARED_FEATURE_CLASS.text13Emphasis} no-underline transition-colors hover:border-[#111]`}
-            onClick={() =>
-              trackEvent("deck_open", {
-                ...detailParams,
-                source: "deck_card_button",
-              })
-            }
-          >
-            자세히 보기
-          </Link>
-          <Link
-            href={practiceHref}
-            className={`${SHARED_FEATURE_CLASS.primaryActionButtonMd13} no-underline`}
-            onClick={() =>
-              trackEvent("typing_practice_select", {
-                ...detailParams,
-                source: "deck_card_button",
-              })
-            }
-          >
-            연습하기
-          </Link>
-        </div>
+        <Link
+          href={practiceHref}
+          className={`${SHARED_FEATURE_CLASS.primaryActionButtonMd13} no-underline`}
+          onClick={() =>
+            trackEvent("typing_practice_select", {
+              ...detailParams,
+              source: "deck_card_button",
+            })
+          }
+        >
+          연습하기
+        </Link>
       </div>
     </article>
   );
@@ -295,28 +283,27 @@ export function TypingDeckLibraryScreen({
             >
               연습할 덱을 고르세요
             </h1>
-            <p className="mt-3 max-w-[680px] text-[15px] leading-7 text-[#666]">
-              기본 덱, 내 덱, 공개 덱을 한 곳에서 찾고 바로 연습으로 이동합니다.
-              문단 편집은 덱 상세 화면에서 이어집니다.
+            <p className="mt-3 max-w-[680px] break-keep text-[15px] leading-7 text-[#666]">
+              기본 덱, 내 덱, 공개 덱을 한 곳에서 찾아 바로 연습하세요.
             </p>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3 md:flex md:flex-wrap">
             <button
               type="button"
               onClick={() => openCreateModal("hero")}
-              className={SHARED_FEATURE_CLASS.primaryActionButtonMd14}
+              className={`${SHARED_FEATURE_CLASS.primaryActionButtonMd14} text-center`}
             >
               새 덱 만들기
             </button>
             <Link
               href="/typing-service"
-              className={TYPING_SERVICE_COMMON_CLASS.panelGhostButton}
+              className={`${TYPING_SERVICE_COMMON_CLASS.panelGhostButton} text-center`}
             >
               타자연습 홈으로
             </Link>
             <Link
               href="/typing-service/practice"
-              className={TYPING_SERVICE_COMMON_CLASS.panelGhostButton}
+              className={`${TYPING_SERVICE_COMMON_CLASS.panelGhostButton} text-center`}
               onClick={() =>
                 trackEvent("typing_practice_select", {
                   source: "library_hero",
@@ -376,9 +363,11 @@ export function TypingDeckLibraryScreen({
                 </button>
               ))}
             </div>
-            <p className={SHARED_FEATURE_CLASS.text13Subtle}>
+            <p className={SHARED_FEATURE_CLASS.text13Neutral}>
               {decksQuery.isSuccess
-                ? `${filteredDecks.length}개 표시 · 전체 ${decks.length}개`
+                ? filteredDecks.length === decks.length
+                  ? `총 ${decks.length}개`
+                  : `전체 ${decks.length}개 중 ${filteredDecks.length}개 표시`
                 : "덱 목록을 불러오는 중"}
             </p>
           </div>

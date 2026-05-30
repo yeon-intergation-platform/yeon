@@ -59,7 +59,7 @@ export function TypingDeckList({
                   {deck.title}
                 </h3>
                 <p
-                  className={`${SHARED_FEATURE_CLASS.text13Neutral} mt-1 line-clamp-2 leading-5`}
+                  className={`${SHARED_FEATURE_CLASS.text13Neutral} mt-1 line-clamp-2 break-keep leading-5`}
                 >
                   {deck.description || "설명이 없습니다."}
                 </p>
