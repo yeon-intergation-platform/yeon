@@ -23,9 +23,9 @@ export const CARD_SERVICE_HOME_CLASS = {
   ctaDefault:
     "border border-[#e5e5e5] bg-white text-[#111] hover:border-[#111]",
   ctaLoading:
-    "block w-full rounded-2xl px-5 py-5 text-left border border-[#e5e5e5] bg-[#f7f7f7] text-[#777] cursor-wait",
+    "block w-full rounded-2xl px-5 py-5 text-left border border-[#e5e5e5] bg-[#fafafa] text-[#666] cursor-wait",
   ctaTextPrimary: "block text-[16px] font-bold",
   ctaTextSecondary: "mt-1 block text-[13px] leading-[1.6] text-white/70",
-  ctaTextSecondaryMuted: "mt-1 block text-[13px] leading-[1.6] text-[#777]",
-  ctaTextSecondaryGray: "mt-1 block text-[13px] leading-[1.6] text-[#999]",
+  ctaTextSecondaryMuted: "mt-1 block text-[13px] leading-[1.6] text-[#666]",
+  ctaTextSecondaryGray: "mt-1 block text-[13px] leading-[1.6] text-[#666]",
 } as const;

@@ -96,11 +96,11 @@ export function TypingDecksScreen({
             <p className={TYPING_SERVICE_COMMON_CLASS.mutedInfoEmphasis}>
               Typing decks
             </p>
-            <h1 className="mt-1 text-[28px] font-semibold tracking-[-0.03em] text-[#111]">
+            <h1 className="mt-1 break-keep text-[28px] font-semibold tracking-[-0.03em] text-[#111]">
               타자 덱 관리
             </h1>
             <p
-              className={`mt-2 max-w-[720px] ${SHARED_FEATURE_CLASS.text14Neutral} leading-6`}
+              className={`mt-2 max-w-[720px] break-keep ${SHARED_FEATURE_CLASS.text14Neutral} leading-6`}
             >
               기본 덱을 둘러보고, 내 덱을 만들고, AI가 생성한 문단을 붙여넣어
               타자 연습 문장을 빠르게 저장하세요.
@@ -122,7 +122,7 @@ export function TypingDecksScreen({
                       setScope(tab.value);
                       setSelectedDeckId(null);
                     }}
-                    className={`rounded-xl px-3 py-2 text-[13px] font-semibold transition-colors ${
+                    className={`flex min-h-11 items-center justify-center rounded-xl px-3 py-2 text-[13px] font-semibold transition-colors ${
                       scope === tab.value
                         ? "bg-[#111] text-white"
                         : "bg-[#f6f6f6] text-[#666] hover:bg-[#ededed] hover:text-[#111]"
@@ -133,7 +133,7 @@ export function TypingDecksScreen({
                   </button>
                 ))}
               </div>
-              <p className="mt-3 text-[12px] leading-5 text-[#777]">
+              <p className="mt-3 break-keep text-[12px] leading-5 text-[#666]">
                 {scopeTabs.find((tab) => tab.value === scope)?.help}
               </p>
             </YeonSurface>
@@ -175,11 +175,13 @@ export function TypingDecksScreen({
                 className="flex min-h-[520px] items-center justify-center rounded-3xl bg-[#fafafa] p-10"
               >
                 <div>
-                  <p className={TYPING_SERVICE_COMMON_CLASS.panelBodyTitle}>
+                  <p
+                    className={`break-keep ${TYPING_SERVICE_COMMON_CLASS.panelBodyTitle}`}
+                  >
                     덱을 선택하세요.
                   </p>
                   <p
-                    className={`mt-2 max-w-[420px] ${SHARED_FEATURE_CLASS.text14Neutral} leading-6`}
+                    className={`mt-2 max-w-[420px] break-keep ${SHARED_FEATURE_CLASS.text14Neutral} leading-6`}
                   >
                     왼쪽 목록에서 기본/내/공개 덱을 선택하면 문단 목록, 직접
                     추가, AI 붙여넣기 패널을 사용할 수 있습니다.

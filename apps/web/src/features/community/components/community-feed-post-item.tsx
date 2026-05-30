@@ -82,7 +82,7 @@ export function FeedPostItem(props: {
       ) : (
         <>
           <div
-            className={`flex flex-wrap items-center gap-2 ${SHARED_FEATURE_CLASS.text13Secondary}`}
+            className={`flex flex-wrap items-center gap-x-2 gap-y-1 ${SHARED_FEATURE_CLASS.text13Secondary}`}
           >
             <span className="font-bold text-[#111827]">
               {post.author.nickname}
@@ -91,18 +91,20 @@ export function FeedPostItem(props: {
             <time dateTime={post.createdAt}>
               {formatCommunityRelativeTime(post.createdAt)}
             </time>
-            <CommunityCategoryBadge category={parsedPost.category} />
+            <span className="ml-auto">
+              <CommunityCategoryBadge category={parsedPost.category} />
+            </span>
           </div>
 
           <Link
             href={`/community/posts/${post.id}`}
             className="mt-3 block no-underline"
           >
-            <h2 className="text-[18px] font-bold tracking-[-0.02em] text-[#111827]">
+            <h2 className="line-clamp-2 text-[18px] font-bold tracking-[-0.02em] text-[#111827]">
               {parsedPost.title}
             </h2>
-            {parsedPost.content ? (
-              <p className="mt-2 whitespace-pre-wrap text-[15px] leading-[1.65] text-[#374151]">
+            {parsedPost.content && parsedPost.content !== parsedPost.title ? (
+              <p className="mt-2 line-clamp-2 whitespace-pre-wrap text-[15px] leading-[1.65] text-[#374151]">
                 {parsedPost.content}
               </p>
             ) : null}
@@ -120,17 +122,17 @@ export function FeedPostItem(props: {
           onClick={onToggleReplies}
           disabled={isRepliesLoading}
           aria-expanded={expanded}
-          className="inline-flex items-center gap-1.5 rounded-xl px-2 py-1.5 text-[13px] font-bold text-[#4b5563] transition-colors hover:bg-[#f3f4f6] disabled:text-[#9ca3af]"
+          className="inline-flex min-h-[44px] items-center gap-1.5 rounded-xl px-3 py-2.5 text-[13px] font-bold text-[#4b5563] transition-colors hover:bg-[#f3f4f6] disabled:text-[#9ca3af]"
         >
           <MessageCircle size={16} aria-hidden="true" />
-          댓글 {post.replyCount}
+          {post.replyCount > 0 ? `댓글 ${post.replyCount}` : "댓글 달기"}
         </button>
-        <div className="flex flex-wrap items-center gap-1">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
             onClick={() => setIsEditing(true)}
             disabled={isUpdatingPost || isDeletingPost}
-            className="rounded-xl px-2 py-1.5 text-[12px] font-bold text-[#4b5563] transition-colors hover:bg-[#f3f4f6] hover:text-[#111827] disabled:text-[#9ca3af]"
+            className="min-h-[44px] rounded-xl px-3 py-2.5 text-[12px] font-bold text-[#4b5563] transition-colors hover:bg-[#f3f4f6] hover:text-[#111827] disabled:text-[#9ca3af]"
           >
             수정
           </button>
@@ -140,7 +142,7 @@ export function FeedPostItem(props: {
               void onDeletePost(post.id);
             }}
             disabled={isUpdatingPost || isDeletingPost}
-            className="rounded-xl px-2 py-1.5 text-[12px] font-bold text-red-600 transition-colors hover:bg-red-50 disabled:text-[#9ca3af]"
+            className="min-h-[44px] rounded-xl px-3 py-2.5 text-[12px] font-bold text-red-600 transition-colors hover:bg-red-50 disabled:text-[#9ca3af]"
           >
             {isDeletingPost ? "삭제 중" : "삭제"}
           </button>

@@ -53,22 +53,38 @@ export function CommunityChatMessageList({
         </p>
       ) : (
         <div className="space-y-1.5">
-          {messages.map((message) => (
-            <div
-              key={message.id}
-              className="grid grid-cols-[78px_48px_minmax(0,1fr)] items-baseline gap-2 text-[13px] leading-[1.55]"
-            >
-              <span className="truncate font-semibold text-[#555]">
-                {message.senderNickname}
-              </span>
-              <span className="font-mono text-[10px] text-[#999]">
-                {formatCommunityChatMessageTime(message.createdAt)}
-              </span>
-              <span className="truncate text-[#111]">
-                {trimCommunityChatDisplayText(message.body)}
-              </span>
-            </div>
-          ))}
+          {messages.map((message, index) => {
+            const previous = index > 0 ? messages[index - 1] : null;
+            const isGroupedWithPrevious =
+              previous?.senderId === message.senderId;
+
+            return (
+              <div
+                key={message.id}
+                className={[
+                  "text-[13px] leading-[1.55]",
+                  isGroupedWithPrevious ? "" : "pt-1.5 first:pt-0",
+                ].join(" ")}
+              >
+                {isGroupedWithPrevious ? null : (
+                  <span className="block truncate font-semibold text-[#555]">
+                    {message.senderNickname}
+                  </span>
+                )}
+                <div className="flex items-baseline gap-2">
+                  <span className="min-w-0 flex-1 break-words [overflow-wrap:anywhere] text-[#111]">
+                    {trimCommunityChatDisplayText(message.body)}
+                  </span>
+                  <time
+                    dateTime={message.createdAt}
+                    className="shrink-0 font-mono text-[10px] text-[#999]"
+                  >
+                    {formatCommunityChatMessageTime(message.createdAt)}
+                  </time>
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>

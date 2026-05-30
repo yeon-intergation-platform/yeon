@@ -21,8 +21,11 @@ export function CommunityChatHeader({
           className={`inline-flex items-center gap-1.5 ${SHARED_FEATURE_CLASS.text12EmphasisSubtle}`}
           aria-label={`현재 접속 ${activePresenceCount}명`}
         >
-          <span className="h-2 w-2 rounded-full bg-emerald-500" />
-          <span>{activePresenceCount}</span>
+          <span
+            className="h-2 w-2 rounded-full bg-emerald-500"
+            aria-hidden="true"
+          />
+          <span aria-hidden="true">접속 {activePresenceCount}명</span>
         </span>
       </div>
     );
@@ -37,14 +40,14 @@ export function CommunityChatHeader({
           </h2>
         </div>
         <div
-          className="flex items-center gap-2 text-[18px] font-black text-[#6f6f6f]"
+          className="flex items-center gap-2 text-[14px] font-bold text-[#666]"
           aria-label={`현재 접속 ${activePresenceCount}명`}
         >
           <span
-            className="h-4 w-4 rounded-full bg-[#59b47c]"
+            className="h-2.5 w-2.5 rounded-full bg-[#59b47c]"
             aria-hidden="true"
           />
-          <span>{activePresenceCount}</span>
+          <span aria-hidden="true">접속 {activePresenceCount}명</span>
         </div>
       </div>
     </div>

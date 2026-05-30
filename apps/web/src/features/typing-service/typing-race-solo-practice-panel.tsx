@@ -58,43 +58,42 @@ export function TypingRaceSoloPracticePanel({
 }: TypingRaceSoloPracticePanelProps) {
   return (
     <>
-      <div className={TYPING_SERVICE_COMMON_CLASS.raceStatRowBase}>
-        <span className={TYPING_SERVICE_COMMON_CLASS.raceStatLabel}>
+      <div
+        className={`${TYPING_SERVICE_COMMON_CLASS.raceStatRowBase} flex-wrap gap-x-6 gap-y-2${
+          countdownRemaining > 0 ? " opacity-40" : ""
+        }`}
+        aria-hidden={countdownRemaining > 0}
+      >
+        <span className="text-[13px] text-[#666]">
           {speedStyle === TYPING_SPEED_STYLE.KO_JASO ? "타수" : "WPM"}
         </span>
         <span className={TYPING_SERVICE_COMMON_CLASS.titleStatValue}>
           {displaySpeed}
         </span>
-        <span className={TYPING_SERVICE_COMMON_CLASS.raceStatLabel}>
-          {displayUnit}
-        </span>
+        <span className="text-[13px] text-[#666]">{displayUnit}</span>
         {speedStyle !== TYPING_SPEED_STYLE.KO_JASO && (
           <>
             <span className={TYPING_SERVICE_COMMON_CLASS.raceStatDivider}>
               ·
             </span>
-            <span className={TYPING_SERVICE_COMMON_CLASS.raceStatLabel}>
-              CPM
-            </span>
+            <span className="text-[13px] text-[#666]">CPM</span>
             <span className={TYPING_SERVICE_COMMON_CLASS.titleStatValue}>
               {cpm}
             </span>
           </>
         )}
         <span className={TYPING_SERVICE_COMMON_CLASS.raceStatDivider}>·</span>
-        <span className={TYPING_SERVICE_COMMON_CLASS.raceStatLabel}>acc</span>
+        <span className="text-[13px] text-[#666]">정확도</span>
         <span className={TYPING_SERVICE_COMMON_CLASS.titleStatValue}>
           {accuracy}%
         </span>
         <span className={TYPING_SERVICE_COMMON_CLASS.raceStatDivider}>·</span>
-        <span className={TYPING_SERVICE_COMMON_CLASS.raceStatLabel}>
-          progress
-        </span>
+        <span className="text-[13px] text-[#666]">진행도</span>
         <span className={TYPING_SERVICE_COMMON_CLASS.titleStatValue}>
           {progress}%
         </span>
         <span className={TYPING_SERVICE_COMMON_CLASS.raceStatDivider}>·</span>
-        <span className={TYPING_SERVICE_COMMON_CLASS.raceStatLabel}>time</span>
+        <span className="text-[13px] text-[#666]">시간</span>
         <span className={TYPING_SERVICE_COMMON_CLASS.titleStatValue}>
           {elapsedSeconds.toFixed(1)}s
         </span>
@@ -138,7 +137,9 @@ export function TypingRaceSoloPracticePanel({
 
       {!completed && (
         <div className={TYPING_SERVICE_COMMON_CLASS.sectionBodyGap3}>
-          <div className={TYPING_SERVICE_COMMON_CLASS.racePromptTextPanel}>
+          <div
+            className={`${TYPING_SERVICE_COMMON_CLASS.racePromptTextPanel} break-keep`}
+          >
             {promptChars.map((char, index) => {
               const typed = inputChars[index];
               const isCurrent = index === inputChars.length;
@@ -154,7 +155,7 @@ export function TypingRaceSoloPracticePanel({
                       : isMatched
                         ? TYPING_SERVICE_COMMON_CLASS.racePromptMatchedChar
                         : isCurrent
-                          ? TYPING_SERVICE_COMMON_CLASS.racePromptCurrentChar
+                          ? "border-b-2 border-[#111] bg-white text-[#111]"
                           : TYPING_SERVICE_COMMON_CLASS.racePromptPendingChar
                   }
                 >

@@ -97,9 +97,14 @@ export function TypingProfileCard({
             type="button"
             className={TYPING_PROFILE_CARD_CLASS.nicknameButton}
             onClick={() => setIsEditing(true)}
+            aria-label="닉네임 편집"
+            title="닉네임 편집"
           >
             {profile.nickname}
-            <span className={TYPING_PROFILE_CARD_CLASS.nicknameEditIcon}>
+            <span
+              aria-hidden="true"
+              className={TYPING_PROFILE_CARD_CLASS.nicknameEditIcon}
+            >
               ✎
             </span>
           </button>
@@ -108,6 +113,9 @@ export function TypingProfileCard({
 
       {/* 캐릭터 선택 */}
       <div className={TYPING_PROFILE_CARD_CLASS.characterListWrapper}>
+        <span className={TYPING_PROFILE_CARD_CLASS.characterGroupLabel}>
+          캐릭터 선택
+        </span>
         <div className={TYPING_PROFILE_CARD_CLASS.characterListStack}>
           {featured.map((char) => (
             <button

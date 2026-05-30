@@ -29,12 +29,15 @@ export function CommunitySeoSection({
     >
       <div className="mt-8">
         <h3 className="text-[16px] font-semibold text-[#111]">게시판 종류</h3>
-        <ul className="mt-3 space-y-2 text-[14px] leading-6 text-[#666]">
+        <ul className="mt-3 space-y-3">
           {WRITABLE_CATEGORIES.map((category) => (
-            <li key={category}>
-              <span className="font-semibold text-[#111]">{category}</span>
-              {" — "}
-              {COMMUNITY_CATEGORY_DESCRIPTIONS[category]}
+            <li key={category} className="break-keep">
+              <span className="text-[14px] font-semibold text-[#111]">
+                {category}
+              </span>
+              <span className="mt-0.5 block text-[13px] leading-6 text-[#666]">
+                {COMMUNITY_CATEGORY_DESCRIPTIONS[category]}
+              </span>
             </li>
           ))}
         </ul>
@@ -47,16 +50,16 @@ export function CommunitySeoSection({
             {recentPosts.map((post, index) => (
               <li
                 key={`${index}-${post.title}`}
-                className="rounded-2xl border border-[#e5e5e5] p-4"
+                className="rounded-2xl border border-[#e5e5e5] bg-white p-4 shadow-sm"
               >
-                <p className="text-[13px] font-medium text-[#aaa]">
+                <span className="inline-flex items-center rounded-full border border-[#e5e5e5] bg-[#fafafa] px-2.5 py-0.5 text-[12px] font-semibold text-[#555]">
                   {post.category}
-                </p>
-                <p className="mt-0.5 text-[15px] font-semibold text-[#111]">
+                </span>
+                <p className="mt-2 line-clamp-1 break-keep text-[16px] font-semibold text-[#111]">
                   {post.title}
                 </p>
                 {post.content ? (
-                  <p className="mt-1 text-[14px] leading-6 text-[#666]">
+                  <p className="mt-1 line-clamp-2 break-keep text-[14px] leading-6 text-[#666]">
                     {post.content}
                   </p>
                 ) : null}

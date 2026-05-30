@@ -40,9 +40,9 @@ export function CommunityChatForm({
       <button
         type="submit"
         disabled={!canSendMessage || !messageBody.trim()}
-        className="h-10 rounded-full bg-[#0f1419] px-4 text-[13px] font-bold text-white disabled:bg-[#cfd9de]"
+        className="h-10 rounded-full bg-[#0f1419] px-4 text-[13px] font-bold text-white transition-colors disabled:cursor-not-allowed disabled:bg-[#e5e5e5] disabled:text-[#aaa]"
       >
-        {isSendingMessage ? "전송" : "전송"}
+        {isSendingMessage ? "전송 중" : "전송"}
       </button>
     </form>
   );

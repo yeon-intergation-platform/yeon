@@ -75,6 +75,7 @@ export function LandingHome({
   const hasHiddenCounselingService = services.some(
     (service) => service.slug === COUNSELING_SERVICE_SLUG
   );
+  const hiddenServiceCount = services.length - visibleServices.length;
 
   return (
     <>
@@ -101,9 +102,9 @@ export function LandingHome({
           }
         />
 
-        <main className="mx-auto max-w-[1400px] px-6 py-16 md:px-12 md:py-20">
+        <main className="mx-auto max-w-[1400px] px-6 py-8 md:px-12 md:py-12">
           <section className="max-w-[720px]">
-            <h1 className="mt-4 text-[30px] font-black tracking-[-0.04em] text-[#111] md:text-[40px]">
+            <h1 className="text-balance break-keep text-[30px] font-black tracking-[-0.04em] text-[#111] md:text-[40px]">
               현재 {visibleServices.length}가지 서비스를 운영 중입니다.
             </h1>
             <p
@@ -114,20 +115,25 @@ export function LandingHome({
             {hasHiddenCounselingService ? (
               <button
                 type="button"
-                className="mt-5 rounded-xl border border-[#e5e5e5] bg-white px-4 py-2 text-[13px] font-semibold text-[#555] transition-colors hover:border-[#111] hover:text-[#111]"
+                className="mt-5 inline-flex min-h-[44px] items-center rounded-xl border border-[#e5e5e5] bg-white px-4 py-2 text-[13px] font-semibold text-[#555] transition-colors hover:border-[#111] hover:text-[#111]"
                 aria-pressed={!isCounselingServiceHidden}
+                aria-label={
+                  isCounselingServiceHidden
+                    ? "숨겨진 서비스 보기"
+                    : "상담 기록 워크스페이스 숨기기"
+                }
                 onClick={() =>
                   setIsCounselingServiceHidden((hidden) => !hidden)
                 }
               >
                 {isCounselingServiceHidden
-                  ? "숨김 서비스 보기"
+                  ? `숨겨진 서비스 ${hiddenServiceCount}개 보기`
                   : "상담 기록 워크스페이스 숨기기"}
               </button>
             ) : null}
           </section>
 
-          <section className="mt-10">
+          <section className="mt-8">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {visibleServices.map((service) => {
                 const isLive = service.status === platformServiceStatuses.live;
@@ -137,38 +143,58 @@ export function LandingHome({
                 const canOpen = isLive && (!requiresAuth || isAuthenticated);
                 const needsLogin = isLive && requiresAuth && !isAuthenticated;
                 const cardBase =
-                  "group flex min-w-0 flex-col rounded-2xl border border-[#e5e5e5] bg-[#fafafa] p-5 text-left transition-colors duration-200";
+                  "group flex min-w-0 flex-col rounded-2xl border border-[#e5e5e5] bg-[#fafafa] p-5 text-left shadow-sm transition-colors duration-200";
                 const interactiveCard = "hover:border-[#111] hover:bg-white";
                 const cardInner = (
                   <>
                     <div className="flex items-start justify-end gap-3">
                       <span
-                        className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+                        className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium ${
                           isLive
-                            ? "bg-[#111] text-white"
-                            : "border border-[#e5e5e5] bg-white text-[#777]"
+                            ? "border border-[#e5e5e5] bg-white text-[#888]"
+                            : "border border-[#e5e5e5] bg-[#fafafa] text-[#aaa]"
                         }`}
                       >
+                        {isLive ? (
+                          <span
+                            aria-hidden="true"
+                            className="h-1.5 w-1.5 rounded-full bg-[#111]"
+                          />
+                        ) : null}
                         {isLive ? "운영 중" : "준비 중"}
                       </span>
                     </div>
-                    <div className="mt-5">
+                    <div className="mt-4">
                       <h3 className="text-[20px] font-semibold tracking-[-0.03em] text-[#111]">
                         {service.title}
                       </h3>
                       <p
-                        className={`mt-3 ${SHARED_FEATURE_CLASS.text14Neutral} leading-[1.8]`}
+                        className={`mt-3 break-keep ${SHARED_FEATURE_CLASS.text14Neutral} leading-[1.8]`}
                       >
                         {service.summary}
                       </p>
                     </div>
-                    <div className="mt-6 border-t border-[#e5e5e5] pt-4">
-                      <span className={SHARED_FEATURE_CLASS.text13Emphasis}>
+                    <div className="mt-5 flex items-center border-t border-[#e5e5e5] pt-4">
+                      <span
+                        className={`inline-flex items-center gap-1.5 ${
+                          isLive
+                            ? SHARED_FEATURE_CLASS.text13Emphasis
+                            : SHARED_FEATURE_CLASS.text13EmphasisSubtle
+                        }`}
+                      >
                         {canOpen
                           ? "바로 이동"
                           : needsLogin
                             ? "로그인 후 이동"
                             : "준비 중"}
+                        {isLive ? (
+                          <span
+                            aria-hidden="true"
+                            className="transition-transform duration-200 group-hover:translate-x-0.5"
+                          >
+                            →
+                          </span>
+                        ) : null}
                       </span>
                     </div>
                   </>
@@ -235,22 +261,28 @@ export function LandingHome({
             <span className={SHARED_FEATURE_CLASS.text12Soft}>
               &copy; 2026 {SITE_BRAND_NAME}
             </span>
-            <div className="flex gap-4">
+            <div className="flex items-center gap-3">
               <a
                 href="/privacy"
                 className={`${SHARED_FEATURE_CLASS.text12Neutral} no-underline hover:text-[#111]`}
               >
                 개인정보처리방침
               </a>
+              <span aria-hidden="true" className="text-[#aaa]">
+                ·
+              </span>
               <a
                 href="/terms"
                 className={`${SHARED_FEATURE_CLASS.text12Neutral} no-underline hover:text-[#111]`}
               >
                 이용약관
               </a>
+              <span aria-hidden="true" className="text-[#aaa]">
+                ·
+              </span>
               <a
                 href={`mailto:${SITE_SUPPORT_EMAIL}`}
-                className={`${SHARED_FEATURE_CLASS.text12Neutral} no-underline hover:text-[#111]`}
+                className={`${SHARED_FEATURE_CLASS.text12Neutral} underline decoration-[#e5e5e5] underline-offset-2 hover:text-[#111]`}
               >
                 {SITE_SUPPORT_EMAIL}
               </a>

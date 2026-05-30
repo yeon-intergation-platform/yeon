@@ -64,10 +64,12 @@ export function CardServiceHome() {
       <main className={CARD_SERVICE_HOME_CLASS.main}>
         <section className={CARD_SERVICE_HOME_CLASS.introSection}>
           <div className={CARD_SERVICE_HOME_CLASS.introCopy}>
-            <h1 className={CARD_SERVICE_HOME_CLASS.introTitle}>
+            <h1 className={`${CARD_SERVICE_HOME_CLASS.introTitle} break-keep`}>
               바로 시작하는 카드공부
             </h1>
-            <p className={CARD_SERVICE_HOME_CLASS.introDescription}>
+            <p
+              className={`${CARD_SERVICE_HOME_CLASS.introDescription} break-keep`}
+            >
               카드를 넘기기 전에 먼저 떠올리고, 친구와 함께 답을 확인해보세요.
               혼자 복습하거나 카드방에서 함께 공부할 수 있어요.
             </p>
@@ -106,7 +108,9 @@ export function CardServiceHome() {
                 <span className={CARD_SERVICE_HOME_CLASS.ctaTextPrimary}>
                   카드방 입장
                 </span>
-                <span className={CARD_SERVICE_HOME_CLASS.ctaTextSecondary}>
+                <span
+                  className={`${CARD_SERVICE_HOME_CLASS.ctaTextSecondary} break-keep`}
+                >
                   친구와 역할을 나눠 채팅으로 암기 답변을 검증해요.
                 </span>
               </Link>
@@ -121,7 +125,7 @@ export function CardServiceHome() {
                     덱 확인 중
                   </span>
                   <span
-                    className={CARD_SERVICE_HOME_CLASS.ctaTextSecondaryGray}
+                    className={`${CARD_SERVICE_HOME_CLASS.ctaTextSecondaryGray} break-keep`}
                   >
                     저장된 덱이 있는지 확인하고 있어요.
                   </span>
@@ -136,7 +140,7 @@ export function CardServiceHome() {
                     내 덱 보기
                   </span>
                   <span
-                    className={CARD_SERVICE_HOME_CLASS.ctaTextSecondaryMuted}
+                    className={`${CARD_SERVICE_HOME_CLASS.ctaTextSecondaryMuted} break-keep`}
                   >
                     {decksQuery.isError
                       ? "덱 목록에서 저장된 카드를 다시 확인해요."
@@ -153,7 +157,7 @@ export function CardServiceHome() {
                     새 덱 만들기
                   </span>
                   <span
-                    className={CARD_SERVICE_HOME_CLASS.ctaTextSecondaryMuted}
+                    className={`${CARD_SERVICE_HOME_CLASS.ctaTextSecondaryMuted} break-keep`}
                   >
                     카드방에서 사용할 앞면/뒷면 덱을 먼저 준비해요.
                   </span>
