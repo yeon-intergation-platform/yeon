@@ -124,7 +124,7 @@ export function ProductHeaderSettingsButton({
     <button
       type="button"
       className={joinClassNames(
-        "flex items-center justify-center rounded-lg border border-[#e5e5e5] bg-white p-2 text-[#888] transition-colors hover:border-[#aaa] hover:text-[#111]",
+        "flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-[#e5e5e5] bg-white p-2 text-[#888] transition-colors hover:border-[#aaa] hover:text-[#111]",
         className
       )}
       {...props}
@@ -196,7 +196,7 @@ export function ProductHeaderProfileButton({
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={() => setOpen((value) => !value)}
-        className="flex items-center justify-center rounded-lg border border-[#e5e5e5] bg-white p-2 text-[#888] transition-colors hover:border-[#aaa] hover:text-[#111]"
+        className="flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-[#e5e5e5] bg-white p-2 text-[#888] transition-colors hover:border-[#aaa] hover:text-[#111]"
       >
         <CircleUserRound size={16} />
       </button>
