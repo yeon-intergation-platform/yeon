@@ -1,4 +1,4 @@
-@cardDecks
+@cardDecks @REQ-CARD-DECK-001
 Feature: 카드 덱 라이프사이클 (사용자 소유 + 학습설정)
 
   # userHeaders = 내부토큰 + X-Yeon-User-Id(시드된 테스트 사용자). 하니스가 사용자를 미리 시드한다.

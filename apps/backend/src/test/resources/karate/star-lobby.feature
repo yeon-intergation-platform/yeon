@@ -1,4 +1,4 @@
-@starLobby
+@starLobby @REQ-STAR-LOBBY-001
 Feature: 스타 로비 (관전 룸 / 관리 상태)
 
   Background:

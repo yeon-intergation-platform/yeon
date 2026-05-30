@@ -1,4 +1,4 @@
-@cardDeckAssets
+@cardDeckAssets @REQ-CARD-ASSET-001
 Feature: 카드 덱 이미지 등록(업로드/조회) API
 
   # baseUrl = Spring 직접(예: http://localhost:8081), internalHeaders = karate-config.js 주입.

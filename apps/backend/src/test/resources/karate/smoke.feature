@@ -1,4 +1,4 @@
-@smoke
+@smoke @REQ-PLATFORM-HEALTH-001
 Feature: Karate 스택 스모크
 
   Scenario: actuator health 는 인증 없이 200 + UP

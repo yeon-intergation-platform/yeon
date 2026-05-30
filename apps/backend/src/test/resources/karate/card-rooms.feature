@@ -1,4 +1,4 @@
-@cardRooms
+@cardRooms @REQ-CARD-ROOM-001
 Feature: 카드방 라이프사이클 (게스트 인라인 덱)
 
   # deckId(소유 덱) 대신 guestDeck(인라인 스냅샷)으로 사용자/덱 의존 없이 방 흐름을 검증한다.
