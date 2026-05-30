@@ -1,8 +1,6 @@
 package world.yeon.backend.card_decks.assets.service;
 
 import java.io.IOException;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.util.HexFormat;
 import java.util.Set;
@@ -77,6 +75,10 @@ public class CardDeckAssetService {
 	}
 
 	private String resolveImageUrl(String storageKey) {
-		return "/api/v1/card-decks/assets/" + URLEncoder.encode(storageKey, StandardCharsets.UTF_8);
+		// storageKey(card-service/images/{hex}.{ext})의 '/'는 실제 경로 구분자로 남긴다.
+		// URL 인코딩하면 %2F가 되어 Spring Security StrictHttpFirewall이 조회 GET을 400으로
+		// 차단한다(업로드는 되지만 이미지가 안 뜨는 원인). 와일드카드(/card-decks/assets/**)가
+		// 다중 세그먼트를 받으므로 안전 문자로만 이뤄진 키는 인코딩 없이 그대로 노출한다.
+		return "/api/v1/card-decks/assets/" + storageKey;
 	}
 }
