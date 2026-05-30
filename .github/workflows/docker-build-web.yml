@@ -151,11 +151,11 @@ jobs:
           sbom: false
           cache-from: |
             type=local,src=${{ env.BUILDX_LOCAL_CACHE }}
-            type=registry,ref=ghcr.io/hyeonjun0527/yeon-web-app:buildcache-arm64
+            type=registry,ref=${{ steps.image.outputs.ref }}:buildcache-arm64
           # local 은 Pi 디스크라 빠르므로 mode=max 로 모든 layer 보관, registry 는 cross-runner fallback 용이라 min 으로 충분.
           cache-to: |
             type=local,dest=${{ env.BUILDX_LOCAL_CACHE }},mode=max
-            type=registry,ref=ghcr.io/hyeonjun0527/yeon-web-app:buildcache-arm64,mode=min
+            type=registry,ref=${{ steps.image.outputs.ref }}:buildcache-arm64,mode=min
 
       - name: Export arm64 digest
         run: |

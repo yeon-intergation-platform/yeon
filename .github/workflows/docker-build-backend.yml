@@ -135,10 +135,10 @@ jobs:
           sbom: false
           cache-from: |
             type=local,src=${{ env.BUILDX_LOCAL_CACHE }}
-            type=registry,ref=ghcr.io/hyeonjun0527/yeon-backend:buildcache-arm64
+            type=registry,ref=${{ steps.image.outputs.ref }}:buildcache-arm64
           cache-to: |
             type=local,dest=${{ env.BUILDX_LOCAL_CACHE }},mode=max
-            type=registry,ref=ghcr.io/hyeonjun0527/yeon-backend:buildcache-arm64,mode=min
+            type=registry,ref=${{ steps.image.outputs.ref }}:buildcache-arm64,mode=min
 
       - name: Export arm64 digest
         run: |
