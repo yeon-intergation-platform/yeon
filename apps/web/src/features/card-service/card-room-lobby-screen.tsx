@@ -91,7 +91,7 @@ export function CardRoomLobbyScreen() {
                   type="button"
                   onClick={() => setSelectedFilter(filter.value)}
                   data-active={selectedFilter === filter.value}
-                  className="h-[50px] shrink-0 rounded-full border border-[#e5e5e5] bg-[#fafafa] px-7 text-[16px] font-semibold text-[#666] transition-colors hover:border-[#111] hover:bg-white hover:text-[#111] data-[active=true]:border-[#050505] data-[active=true]:bg-[#050505] data-[active=true]:text-white"
+                  className="h-[50px] shrink-0 rounded-full border border-[#e5e5e5] bg-white px-7 text-[16px] font-semibold text-[#666] transition-colors hover:border-[#111] hover:bg-[#fafafa] hover:text-[#111] data-[active=true]:border-[#111] data-[active=true]:bg-[#fafafa] data-[active=true]:font-bold data-[active=true]:text-[#111] data-[active=true]:shadow-[inset_0_0_0_1px_#111]"
                 >
                   {filter.label}
                 </button>
