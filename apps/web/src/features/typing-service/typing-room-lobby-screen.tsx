@@ -269,6 +269,12 @@ export function TypingRoomLobbyScreen() {
     setIsCreateModalOpen(false);
   }, [isCreating]);
 
+  const isInitialEmpty =
+    state.kind === "empty" ||
+    (state.kind === "ready" &&
+      rooms.length === 0 &&
+      searchKeyword.trim().length === 0);
+
   return (
     <div className={SHARED_FEATURE_CLASS.pageSurface}>
       <TypingServiceHeader active="rooms" title="YEON 타자방" />
@@ -291,46 +297,49 @@ export function TypingRoomLobbyScreen() {
         </section>
 
         <section className={ROOM_LOBBY_CLASS.listTopBorder}>
-          <div className={ROOM_LOBBY_CLASS.filterRow}>
-            <div className={ROOM_LOBBY_CLASS.filterScroller}>
-              {FILTERS.map((filter) => (
-                <YeonButton
-                  key={filter.value}
-                  type="button"
-                  onClick={() => setSelectedFilter(filter.value)}
-                  data-active={selectedFilter === filter.value}
-                  variant="pill"
-                  className="h-[50px] shrink-0 px-7 text-[16px] data-[active=true]:border-[#111] data-[active=true]:bg-[#111] data-[active=true]:text-white"
-                >
-                  {filter.label}
-                </YeonButton>
-              ))}
-            </div>
+          {!isInitialEmpty && (
+            <div className={ROOM_LOBBY_CLASS.filterRow}>
+              <div className={ROOM_LOBBY_CLASS.filterScroller}>
+                {FILTERS.map((filter) => (
+                  <YeonButton
+                    key={filter.value}
+                    type="button"
+                    onClick={() => setSelectedFilter(filter.value)}
+                    data-active={selectedFilter === filter.value}
+                    variant="pill"
+                    className="h-[50px] shrink-0 px-7 text-[16px] data-[active=true]:border-[#111] data-[active=true]:bg-[#111] data-[active=true]:text-white"
+                  >
+                    {filter.label}
+                  </YeonButton>
+                ))}
+              </div>
 
-            <div className={ROOM_LOBBY_CLASS.inputButtonRow}>
-              <label className={ROOM_LOBBY_CLASS.searchField}>
-                <Search
-                  aria-hidden="true"
-                  size={22}
-                  className={ROOM_LOBBY_CLASS.searchIcon}
-                />
-                <YeonField
-                  value={searchKeyword}
-                  onChange={(event) => setSearchKeyword(event.target.value)}
-                  placeholder="방 검색"
-                  className="h-[50px] rounded-lg pl-12 pr-4 text-[16px] font-medium"
-                />
-              </label>
-              <YeonButton
-                type="button"
-                onClick={openCreateModal}
-                variant="primary"
-                className="hidden h-[50px] rounded-lg px-8 text-[16px] font-bold md:inline-flex"
-              >
-                방 만들기
-              </YeonButton>
+              <div className={ROOM_LOBBY_CLASS.inputButtonRow}>
+                <label className={ROOM_LOBBY_CLASS.searchField}>
+                  <Search
+                    aria-hidden="true"
+                    size={22}
+                    className={ROOM_LOBBY_CLASS.searchIcon}
+                  />
+                  <YeonField
+                    value={searchKeyword}
+                    onChange={(event) => setSearchKeyword(event.target.value)}
+                    placeholder="방 검색"
+                    aria-label="방 검색"
+                    className="h-[50px] rounded-lg pl-12 pr-4 text-[16px] font-medium"
+                  />
+                </label>
+                <YeonButton
+                  type="button"
+                  onClick={openCreateModal}
+                  variant="primary"
+                  className="hidden h-[50px] rounded-lg px-8 text-[16px] font-bold md:inline-flex"
+                >
+                  방 만들기
+                </YeonButton>
+              </div>
             </div>
-          </div>
+          )}
 
           <YeonSurface className="mt-7 min-h-[520px]">
             {state.kind === "loading" && (
@@ -349,7 +358,7 @@ export function TypingRoomLobbyScreen() {
 
             {(state.kind === "empty" ||
               (state.kind === "ready" && filteredRooms[0] === undefined)) && (
-              <div className="flex min-h-[520px] flex-col items-center justify-center px-6 py-20 text-center">
+              <div className="flex min-h-[520px] flex-col items-center justify-center px-6 py-12 text-center">
                 <Image
                   src="/illustrations/typing-empty-keyboard.png"
                   alt=""
@@ -358,13 +367,13 @@ export function TypingRoomLobbyScreen() {
                   height={160}
                   className="h-40 w-40 object-contain"
                 />
-                <h2 className="mt-6 text-[32px] font-black leading-tight tracking-[-0.05em] text-[#111]">
+                <h2 className="mt-6 max-w-[300px] break-keep text-[28px] font-black leading-tight tracking-[-0.05em] text-[#111]">
                   {state.kind === "ready"
                     ? "검색 결과가 없어요"
                     : "아직 열린 타자방이 없어요"}
                 </h2>
                 <p
-                  className={`mt-3 leading-6 ${SHARED_FEATURE_CLASS.text16Secondary}`}
+                  className={`mt-3 max-w-[320px] break-keep leading-6 ${SHARED_FEATURE_CLASS.text16Secondary}`}
                 >
                   {state.kind === "ready"
                     ? "다른 키워드로 검색하거나 첫 방을 만들어 보세요."
@@ -476,14 +485,17 @@ export function TypingRoomLobbyScreen() {
         </section>
       </main>
 
-      <YeonButton
-        type="button"
-        onClick={openCreateModal}
-        variant="primary"
-        className="fixed bottom-5 right-5 z-30 rounded-full px-6 py-4 text-[15px] shadow-lg md:hidden"
-      >
-        방 만들기
-      </YeonButton>
+      {!isInitialEmpty && (
+        <YeonButton
+          type="button"
+          onClick={openCreateModal}
+          variant="primary"
+          aria-label="방 만들기"
+          className="fixed bottom-5 right-5 z-30 rounded-full px-6 py-4 text-[15px] shadow-lg md:hidden"
+        >
+          방 만들기
+        </YeonButton>
+      )}
 
       <RoomCreateDialog
         open={isCreateModalOpen}
