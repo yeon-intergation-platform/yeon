@@ -18,11 +18,11 @@ export const TYPING_SERVICE_HOME_CLASS = {
   sectionBody: "mt-5 flex justify-center",
   ctaWrap: "mt-5 grid gap-4",
   startCardBase:
-    "group relative flex min-h-[96px] items-start overflow-hidden rounded-2xl px-5 py-5 text-left transition-all duration-200 hover:-translate-y-0.5 focus-visible:-translate-y-0.5",
+    "group relative flex min-h-[96px] cursor-pointer items-start overflow-hidden rounded-2xl px-5 py-5 text-left transition-all duration-200 hover:-translate-y-0.5 focus-visible:-translate-y-0.5 active:translate-y-0 active:duration-75",
   startCardPrimary:
-    "shadow-sm hover:border-[#111] hover:shadow-[0_16px_34px_rgba(17,17,17,0.18)] focus-visible:shadow-[0_16px_34px_rgba(17,17,17,0.18)]",
+    "shadow-sm hover:border-[#111] hover:shadow-[0_16px_34px_rgba(17,17,17,0.18)] focus-visible:shadow-[0_16px_34px_rgba(17,17,17,0.18)] active:shadow-sm",
   startCardSecondary:
-    "hover:border-[#111] hover:bg-[#fafafa] hover:shadow-[0_14px_30px_rgba(17,17,17,0.08)] focus-visible:shadow-[0_14px_30px_rgba(17,17,17,0.08)]",
+    "hover:border-[#111] hover:bg-[#fafafa] hover:shadow-[0_14px_30px_rgba(17,17,17,0.08)] focus-visible:shadow-[0_14px_30px_rgba(17,17,17,0.08)] active:shadow-none",
   startCardLabel: "block text-[17px] font-extrabold tracking-[-0.03em]",
   startCardDescriptionPrimary:
     "pointer-events-none absolute inset-x-5 bottom-4 line-clamp-2 text-[13px] font-medium leading-[1.45] text-white/72 transition-all duration-200 ease-out sm:translate-y-1 sm:opacity-0 sm:group-hover:translate-y-0 sm:group-hover:opacity-100 sm:group-focus-visible:translate-y-0 sm:group-focus-visible:opacity-100",
