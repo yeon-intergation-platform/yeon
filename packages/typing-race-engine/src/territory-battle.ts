@@ -19,34 +19,31 @@ export type TerritoryBattleEngineController = {
 };
 
 const TERRITORY_SNAPSHOT_EVENT = "typing-territory:snapshot";
-const CANVAS_HEIGHT = 540;
+const MIN_CANVAS_WIDTH = 760;
+const MIN_CANVAS_HEIGHT = 520;
 const TEAM_COLORS = {
   red: {
-    fill: 0xfff1f1,
-    stroke: 0xef4444,
-    text: "#991b1b",
-    glow: 0xff6b6b,
+    fill: 0x8f3a4a,
+    fillAlpha: 0.74,
+    stroke: 0xc75c5c,
+    text: "#FDE2E5",
+    glow: 0xf2a3ad,
   },
   blue: {
-    fill: 0xeff6ff,
-    stroke: 0x2563eb,
-    text: "#1e3a8a",
-    glow: 0x60a5fa,
+    fill: 0x334e8c,
+    fillAlpha: 0.76,
+    stroke: 0x4f6fad,
+    text: "#E0E7FF",
+    glow: 0xa5b4fc,
   },
   neutral: {
-    fill: 0xffffff,
-    stroke: 0xd4d4d4,
-    text: "#333333",
-    glow: 0xf5f5f5,
+    fill: 0xf8fafc,
+    fillAlpha: 0.1,
+    stroke: 0x64748b,
+    text: "#F8FAFC",
+    glow: 0xf2c94c,
   },
 } as const;
-
-type CellVisual = {
-  card: Phaser.GameObjects.Rectangle;
-  label: Phaser.GameObjects.Text;
-  owner: TerritoryCellSnapshot["owner"];
-  capturedAt?: number;
-};
 
 export async function mountTerritoryBattleEngine({
   container,
@@ -60,25 +57,34 @@ export async function mountTerritoryBattleEngine({
     snapshotBus,
     currentSnapshot
   );
+  const dimensions = resolveCanvasSize(container);
 
   const game = new Phaser.Game({
     type: Phaser.AUTO,
     parent: container,
-    backgroundColor: "#ffffff",
-    width: Math.max(container.clientWidth, 960),
-    height: CANVAS_HEIGHT,
-    pixelArt: true,
+    backgroundColor: "#0F172A",
+    width: dimensions.width,
+    height: dimensions.height,
+    pixelArt: false,
     scale: {
       mode: Phaser.Scale.RESIZE,
       autoCenter: Phaser.Scale.CENTER_BOTH,
-      width: "100%",
-      height: CANVAS_HEIGHT,
+      width: dimensions.width,
+      height: dimensions.height,
     },
     scene: [scene],
   });
 
   const handleResize = () => {
-    game.scale.resize(Math.max(container.clientWidth, 960), CANVAS_HEIGHT);
+    const nextDimensions = resolveCanvasSize(container);
+    game.scale.resize(nextDimensions.width, nextDimensions.height);
+    if (currentSnapshot) {
+      snapshotBus.dispatchEvent(
+        new CustomEvent<TerritoryBattleSnapshot>(TERRITORY_SNAPSHOT_EVENT, {
+          detail: currentSnapshot,
+        })
+      );
+    }
   };
   window.addEventListener("resize", handleResize);
 
@@ -106,26 +112,19 @@ function createTerritoryBattleScene(
   return class TerritoryBattleScene extends Phaser.Scene {
     private currentSnapshot = initialSnapshot;
     private detachSnapshot?: () => void;
-    private readonly cellVisuals = new Map<string, CellVisual>();
-    private titleLabel?: Phaser.GameObjects.Text;
-    private timerLabel?: Phaser.GameObjects.Text;
-    private redScoreLabel?: Phaser.GameObjects.Text;
-    private blueScoreLabel?: Phaser.GameObjects.Text;
-    private statusLabel?: Phaser.GameObjects.Text;
 
     constructor() {
       super("territory-battle-board");
     }
 
     create() {
-      this.cameras.main.setBackgroundColor("#ffffff");
-      this.drawShell();
-      this.renderSnapshot(this.currentSnapshot);
+      this.cameras.main.setBackgroundColor("#0F172A");
+      this.renderScene(this.currentSnapshot);
 
       const handleSnapshot = (event: Event) => {
         const customEvent = event as CustomEvent<TerritoryBattleSnapshot>;
         this.currentSnapshot = customEvent.detail;
-        this.renderSnapshot(customEvent.detail);
+        this.renderScene(customEvent.detail);
       };
 
       snapshotBus.addEventListener(TERRITORY_SNAPSHOT_EVENT, handleSnapshot);
@@ -135,174 +134,207 @@ function createTerritoryBattleScene(
           handleSnapshot
         );
 
+      this.scale.on("resize", () => this.renderScene(this.currentSnapshot));
       this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
         this.detachSnapshot?.();
+        this.scale.off("resize");
       });
     }
 
     update() {
-      this.updateTimer(this.currentSnapshot);
+      this.updateTimerText();
     }
 
-    private drawShell() {
-      const width = this.scale.width;
-      this.titleLabel = this.add.text(width / 2, 28, "타자 점령전", {
-        color: "#111111",
-        fontFamily: "monospace",
-        fontSize: "28px",
-        fontStyle: "900",
-      });
-      this.titleLabel.setOrigin(0.5, 0.5);
+    private renderScene(snapshot: TerritoryBattleSnapshot | null) {
+      this.children.removeAll(true);
+      this.drawBackdrop();
+      this.drawBoardFrame(snapshot);
 
-      this.redScoreLabel = this.add.text(44, 72, "RED 0P", {
-        color: "#991b1b",
-        fontFamily: "monospace",
-        fontSize: "22px",
-        fontStyle: "900",
-      });
-      this.blueScoreLabel = this.add.text(width - 44, 72, "BLUE 0P", {
-        color: "#1e3a8a",
-        fontFamily: "monospace",
-        fontSize: "22px",
-        fontStyle: "900",
-      });
-      this.blueScoreLabel.setOrigin(1, 0);
-
-      this.timerLabel = this.add.text(width / 2, 76, "00:60", {
-        color: "#111111",
-        fontFamily: "monospace",
-        fontSize: "24px",
-        fontStyle: "900",
-      });
-      this.timerLabel.setOrigin(0.5, 0);
-
-      this.statusLabel = this.add.text(width / 2, CANVAS_HEIGHT - 34, "", {
-        color: "#666666",
-        fontFamily: "monospace",
-        fontSize: "14px",
-      });
-      this.statusLabel.setOrigin(0.5, 0.5);
-    }
-
-    private renderSnapshot(snapshot: TerritoryBattleSnapshot | null) {
       if (!snapshot) {
-        this.statusLabel?.setText("서버 점령전 snapshot을 기다리는 중");
+        this.drawCenteredStatus("서버 점령전 snapshot을 기다리는 중");
         return;
       }
 
-      this.updateScores(snapshot);
-      this.updateTimer(snapshot);
-      this.statusLabel?.setText(createStatusLabel(snapshot));
-      this.syncBoard(snapshot);
+      this.drawBoard(snapshot);
+      this.drawStatus(snapshot);
     }
 
-    private updateScores(snapshot: TerritoryBattleSnapshot) {
-      const redScore = getTeamScore(snapshot, TERRITORY_BATTLE_TEAM.RED);
-      const blueScore = getTeamScore(snapshot, TERRITORY_BATTLE_TEAM.BLUE);
-      this.redScoreLabel?.setText(`RED ${redScore}P`);
-      this.blueScoreLabel?.setText(`BLUE ${blueScore}P`);
+    private drawBackdrop() {
+      const { width, height } = this.scale;
+      this.add.rectangle(width / 2, height / 2, width, height, 0x0f172a);
+      this.add.rectangle(
+        width * 0.25,
+        height / 2,
+        width / 2,
+        height,
+        0x3b1822,
+        0.32
+      );
+      this.add.rectangle(
+        width * 0.75,
+        height / 2,
+        width / 2,
+        height,
+        0x172554,
+        0.34
+      );
+      this.add.rectangle(width / 2, height / 2, 2, height - 48, 0xf8fafc, 0.12);
+      this.add.rectangle(width / 2, 36, width - 48, 1, 0xf8fafc, 0.12);
+      this.add.rectangle(width / 2, height - 36, width - 48, 1, 0xf8fafc, 0.12);
     }
 
-    private updateTimer(snapshot: TerritoryBattleSnapshot | null) {
-      if (
-        !snapshot?.endsAt ||
-        snapshot.phase !== TERRITORY_BATTLE_PHASE.PLAYING
-      ) {
-        this.timerLabel?.setText(
-          snapshot?.phase === TERRITORY_BATTLE_PHASE.FINISHED
-            ? "FINISH"
-            : "READY"
-        );
-        return;
-      }
+    private drawBoardFrame(snapshot: TerritoryBattleSnapshot | null) {
+      const { width } = this.scale;
+      const redScore = snapshot
+        ? getTeamScore(snapshot, TERRITORY_BATTLE_TEAM.RED)
+        : 0;
+      const blueScore = snapshot
+        ? getTeamScore(snapshot, TERRITORY_BATTLE_TEAM.BLUE)
+        : 0;
+      const topY = 30;
 
-      const remainingMs = Math.max(0, snapshot.endsAt - Date.now());
-      const seconds = Math.ceil(remainingMs / 1000);
-      this.timerLabel?.setText(`00:${String(seconds).padStart(2, "0")}`);
+      this.add.text(34, topY, `RED ${redScore}P`, {
+        color: "#F6B7BE",
+        fontFamily: "Inter, Arial, sans-serif",
+        fontSize: "18px",
+        fontStyle: "900",
+      });
+      const blueLabel = this.add.text(width - 34, topY, `BLUE ${blueScore}P`, {
+        color: "#C7D2FE",
+        fontFamily: "Inter, Arial, sans-serif",
+        fontSize: "18px",
+        fontStyle: "900",
+      });
+      blueLabel.setOrigin(1, 0);
+
+      const timer = this.add.text(width / 2, 20, timerText(snapshot), {
+        color: "#F8FAFC",
+        fontFamily: "Inter, Arial, sans-serif",
+        fontSize: "30px",
+        fontStyle: "900",
+      });
+      timer.setName("territory-timer");
+      timer.setOrigin(0.5, 0);
     }
 
-    private syncBoard(snapshot: TerritoryBattleSnapshot) {
-      const width = this.scale.width;
+    private drawBoard(snapshot: TerritoryBattleSnapshot) {
+      const { width, height } = this.scale;
       const boardSize = snapshot.boardSize;
-      const boardWidth = Math.min(width - 64, 820);
-      const gap = 8;
-      const cellSize = (boardWidth - gap * (boardSize - 1)) / boardSize;
-      const startX = (width - boardWidth) / 2;
-      const startY = 122;
-      const activeIds = new Set(snapshot.board.map((cell) => cell.id));
+      const gap = Math.max(8, Math.min(14, width * 0.008));
+      const boardWidth = Math.min(width - 72, 1180);
+      const boardHeight = Math.min(height - 96, boardWidth * 0.72);
+      const cellSize = Math.min(
+        (boardWidth - gap * (boardSize - 1)) / boardSize,
+        (boardHeight - gap * (boardSize - 1)) / boardSize
+      );
+      const actualBoardWidth = cellSize * boardSize + gap * (boardSize - 1);
+      const actualBoardHeight = cellSize * boardSize + gap * (boardSize - 1);
+      const startX = (width - actualBoardWidth) / 2;
+      const startY = Math.max(78, (height - actualBoardHeight) / 2);
 
-      for (const [id, visual] of this.cellVisuals.entries()) {
-        if (!activeIds.has(id)) {
-          visual.card.destroy();
-          visual.label.destroy();
-          this.cellVisuals.delete(id);
-        }
-      }
+      this.add
+        .rectangle(
+          width / 2,
+          startY + actualBoardHeight / 2,
+          actualBoardWidth + 34,
+          actualBoardHeight + 34,
+          0x020617,
+          0.3
+        )
+        .setStrokeStyle(1, 0xf8fafc, 0.13);
 
       for (const cell of snapshot.board) {
         const x = startX + cell.col * (cellSize + gap) + cellSize / 2;
         const y = startY + cell.row * (cellSize + gap) + cellSize / 2;
-        const colors = TEAM_COLORS[cell.owner];
-        const existing = this.cellVisuals.get(cell.id);
-
-        if (!existing) {
-          const card = this.add.rectangle(
-            x,
-            y,
-            cellSize,
-            cellSize,
-            colors.fill
-          );
-          card.setStrokeStyle(3, colors.stroke);
-          const label = this.add.text(x, y, cell.word, {
-            color: colors.text,
-            fontFamily: "monospace",
-            fontSize: `${Math.max(13, Math.floor(cellSize * 0.18))}px`,
-            fontStyle: "900",
-          });
-          label.setOrigin(0.5, 0.5);
-          this.cellVisuals.set(cell.id, {
-            card,
-            label,
-            owner: cell.owner,
-            capturedAt: cell.capturedAt,
-          });
-          continue;
-        }
-
-        existing.card.setPosition(x, y);
-        existing.card.setSize(cellSize, cellSize);
-        existing.label.setPosition(x, y);
-        existing.label.setText(cell.word);
-        existing.label.setStyle({
-          color: colors.text,
-          fontSize: `${Math.max(13, Math.floor(cellSize * 0.18))}px`,
-        });
-        existing.card.setFillStyle(colors.fill);
-        existing.card.setStrokeStyle(3, colors.stroke);
-
-        if (
-          existing.owner !== cell.owner ||
-          existing.capturedAt !== cell.capturedAt
-        ) {
-          this.pulseCapture(existing.card, colors.glow);
-          existing.owner = cell.owner;
-          existing.capturedAt = cell.capturedAt;
-        }
+        this.drawCell(cell, x, y, cellSize);
       }
     }
 
-    private pulseCapture(card: Phaser.GameObjects.Rectangle, color: number) {
-      card.setScale(1.08);
-      card.setStrokeStyle(5, color);
-      this.tweens.add({
-        targets: card,
-        scaleX: 1,
-        scaleY: 1,
-        duration: 180,
-        ease: "Back.Out",
+    private drawCell(
+      cell: TerritoryCellSnapshot,
+      x: number,
+      y: number,
+      cellSize: number
+    ) {
+      const colors = TEAM_COLORS[cell.owner];
+      const card = this.add.rectangle(
+        x,
+        y,
+        cellSize,
+        cellSize,
+        colors.fill,
+        colors.fillAlpha
+      );
+      card.setStrokeStyle(
+        2,
+        colors.stroke,
+        cell.owner === "neutral" ? 0.34 : 0.72
+      );
+
+      if (cell.owner !== "neutral") {
+        this.add.rectangle(
+          x,
+          y - cellSize * 0.38,
+          cellSize * 0.72,
+          2,
+          colors.glow,
+          0.42
+        );
+      }
+
+      const label = this.add.text(x, y, cell.word, {
+        color: colors.text,
+        fontFamily: "Inter, Arial, sans-serif",
+        fontSize: `${Math.max(17, Math.floor(cellSize * 0.2))}px`,
+        fontStyle: "900",
       });
+      label.setOrigin(0.5, 0.5);
     }
+
+    private drawStatus(snapshot: TerritoryBattleSnapshot) {
+      const { width, height } = this.scale;
+      const status = this.add.text(
+        width / 2,
+        height - 58,
+        createStatusLabel(snapshot),
+        {
+          color: "#CBD5E1",
+          fontFamily: "Inter, Arial, sans-serif",
+          fontSize: "14px",
+          fontStyle: "700",
+        }
+      );
+      status.setOrigin(0.5, 0.5);
+    }
+
+    private drawCenteredStatus(message: string) {
+      const status = this.add.text(
+        this.scale.width / 2,
+        this.scale.height / 2,
+        message,
+        {
+          color: "#CBD5E1",
+          fontFamily: "Inter, Arial, sans-serif",
+          fontSize: "16px",
+          fontStyle: "700",
+        }
+      );
+      status.setOrigin(0.5, 0.5);
+    }
+
+    private updateTimerText() {
+      const timer = this.children.getByName("territory-timer") as
+        | Phaser.GameObjects.Text
+        | undefined;
+      timer?.setText(timerText(this.currentSnapshot));
+    }
+  };
+}
+
+function resolveCanvasSize(container: HTMLElement) {
+  return {
+    width: Math.max(container.clientWidth, MIN_CANVAS_WIDTH),
+    height: Math.max(container.clientHeight, MIN_CANVAS_HEIGHT),
   };
 }
 
@@ -313,12 +345,22 @@ function getTeamScore(
   return snapshot.teams.find((score) => score.team === team)?.score ?? 0;
 }
 
+function timerText(snapshot: TerritoryBattleSnapshot | null) {
+  if (!snapshot?.endsAt || snapshot.phase !== TERRITORY_BATTLE_PHASE.PLAYING) {
+    return snapshot?.phase === TERRITORY_BATTLE_PHASE.FINISHED
+      ? "FINISH"
+      : "READY";
+  }
+
+  const remainingMs = Math.max(0, snapshot.endsAt - Date.now());
+  const seconds = Math.ceil(remainingMs / 1000);
+  return `00:${String(seconds).padStart(2, "0")}`;
+}
+
 function createStatusLabel(snapshot: TerritoryBattleSnapshot) {
   if (snapshot.phase === TERRITORY_BATTLE_PHASE.WAITING) {
     return `${snapshot.players.length}명 대기 중 · 서버 판 시작을 누르세요`;
   }
-  if (snapshot.phase === TERRITORY_BATTLE_PHASE.FINISHED) {
-    return "경기 종료";
-  }
+  if (snapshot.phase === TERRITORY_BATTLE_PHASE.FINISHED) return "경기 종료";
   return `${snapshot.players.length}명 플레이 중 · 서버 authoritative 판정`;
 }
