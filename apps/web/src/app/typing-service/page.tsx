@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Script from "next/script";
 import { SITE_BRAND_NAME } from "@/lib/site-brand";
+import { buildServiceCanonicalUrl } from "@/lib/seo";
 import { ServiceSeoSection } from "@/components/service-seo-section";
 import {
   TYPING_FAQS,
@@ -19,12 +20,12 @@ export const metadata: Metadata = {
   description: TYPING_PAGE_DESCRIPTION,
   keywords: [...TYPING_SEO_KEYWORDS],
   alternates: {
-    canonical: "/typing-service",
+    canonical: buildServiceCanonicalUrl("typing"),
   },
   openGraph: {
     title: TYPING_PAGE_TITLE,
     description: TYPING_PAGE_DESCRIPTION,
-    url: "/typing-service",
+    url: buildServiceCanonicalUrl("typing"),
     siteName: SITE_BRAND_NAME,
     type: "website",
     locale: "ko_KR",
@@ -53,7 +54,7 @@ function getTypingServiceJsonLd() {
           price: "0",
           priceCurrency: "KRW",
         },
-        url: "https://yeon.world/typing-service",
+        url: buildServiceCanonicalUrl("typing"),
       },
       {
         "@type": "FAQPage",

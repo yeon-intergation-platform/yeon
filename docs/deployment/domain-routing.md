@@ -30,6 +30,16 @@ dbdev.yeon.world  -> tcp://yeon-dev-db:5432
 Catch-all         -> http_status:404
 ```
 
+## Cloudflare Tunnel public hostname 설정 상태
+
+사용자 설정 완료 시점: 2026-06-01
+
+```text
+10 typing.yeon.world     * -> http://yeon-prod-web:3000
+11 card.yeon.world       * -> http://yeon-prod-web:3000
+12 community.yeon.world  * -> http://yeon-prod-web:3000
+```
+
 ## 목표 Cloudflare Tunnel public hostname
 
 | Hostname               | Service                     | 비고                                      |
@@ -91,7 +101,7 @@ packages/api-contract/**
 
 ## 권장 라우팅 방식
 
-1. Cloudflare에서 세 hostname을 모두 `http://yeon-prod-web:3000`으로 보낸다.
+1. Cloudflare에서 세 hostname을 모두 `http://yeon-prod-web:3000`으로 보낸다. 완료.
 2. Next.js에서 Host header를 기준으로 내부 path로 rewrite한다.
    - `typing.yeon.world/*` -> `/typing-service/*`
    - `card.yeon.world/*` -> `/card-service/*`

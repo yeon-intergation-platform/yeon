@@ -10,6 +10,7 @@ import {
   isDevHostname,
   isWwwHostname,
 } from "@/lib/seo";
+import { resolveServiceSubdomainRewritePath } from "@/lib/subdomain-routing";
 import { AUTH_SESSION_COOKIE_NAME } from "@/server/auth/constants";
 
 const COUNSELING_SERVICE_BASE_PATH = "/counseling-service";
@@ -37,6 +38,21 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(redirectUrl, 308);
   }
 
+  const subdomainRewritePath = resolveServiceSubdomainRewritePath({
+    host:
+      request.headers.get("x-forwarded-host") ?? request.headers.get("host"),
+    pathname,
+    search: request.nextUrl.search,
+  });
+
+  if (subdomainRewritePath) {
+    const rewriteUrl = request.nextUrl.clone();
+    const targetUrl = new URL(subdomainRewritePath, request.url);
+    rewriteUrl.pathname = targetUrl.pathname;
+    rewriteUrl.search = targetUrl.search;
+    return withSeoHeaders(NextResponse.rewrite(rewriteUrl), hostname);
+  }
+
   if (pathname.startsWith(`${COUNSELING_SERVICE_BASE_PATH}/api/`)) {
     const rewriteUrl = request.nextUrl.clone();
     rewriteUrl.pathname = pathname.slice(COUNSELING_SERVICE_BASE_PATH.length);
@@ -48,7 +64,7 @@ export function proxy(request: NextRequest) {
     matchedService !== null &&
     pathname.startsWith(`${matchedService.href}/api/`);
   const hasSessionCookie = Boolean(
-    request.cookies.get(AUTH_SESSION_COOKIE_NAME)?.value,
+    request.cookies.get(AUTH_SESSION_COOKIE_NAME)?.value
   );
 
   if (
@@ -62,7 +78,7 @@ export function proxy(request: NextRequest) {
     redirectUrl.searchParams.set("login", "1");
     redirectUrl.searchParams.set(
       "next",
-      `${pathname}${request.nextUrl.search}`,
+      `${pathname}${request.nextUrl.search}`
     );
     return withSeoHeaders(NextResponse.redirect(redirectUrl), hostname);
   }

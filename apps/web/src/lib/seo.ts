@@ -2,6 +2,12 @@ import type { Metadata, MetadataRoute } from "next";
 
 export const CANONICAL_SITE_URL = "https://yeon.world";
 
+export const SERVICE_CANONICAL_URLS = {
+  typing: "https://typing.yeon.world",
+  card: "https://card.yeon.world",
+  community: "https://community.yeon.world",
+} as const;
+
 const DEFAULT_APP_URL = CANONICAL_SITE_URL;
 const WWW_SITE_HOSTNAME = "www.yeon.world";
 const DEV_SITE_HOSTNAME = "dev.yeon.world";
@@ -21,47 +27,47 @@ export const NON_INDEXABLE_ROBOTS: Metadata["robots"] = {
 
 export const INDEXABLE_SITEMAP_ENTRIES = [
   {
-    pathname: "/",
+    url: `${CANONICAL_SITE_URL}/`,
     changeFrequency: "weekly",
     priority: 1,
   },
   {
-    pathname: "/typing-service",
+    url: SERVICE_CANONICAL_URLS.typing,
     changeFrequency: "daily",
     priority: 0.9,
   },
   {
-    pathname: "/community",
+    url: SERVICE_CANONICAL_URLS.community,
     changeFrequency: "daily",
     priority: 0.85,
   },
   {
-    pathname: "/typing-service/rooms",
+    url: `${SERVICE_CANONICAL_URLS.typing}/rooms`,
     changeFrequency: "daily",
     priority: 0.85,
   },
   {
-    pathname: "/typing-service/decks",
+    url: `${SERVICE_CANONICAL_URLS.typing}/decks`,
     changeFrequency: "daily",
     priority: 0.85,
   },
   {
-    pathname: "/card-service",
+    url: SERVICE_CANONICAL_URLS.card,
     changeFrequency: "weekly",
     priority: 0.8,
   },
   {
-    pathname: "/privacy",
+    url: `${CANONICAL_SITE_URL}/privacy`,
     changeFrequency: "yearly",
     priority: 0.2,
   },
   {
-    pathname: "/terms",
+    url: `${CANONICAL_SITE_URL}/terms`,
     changeFrequency: "yearly",
     priority: 0.2,
   },
 ] as const satisfies readonly {
-  pathname: string;
+  url: string;
   changeFrequency: NonNullable<
     MetadataRoute.Sitemap[number]["changeFrequency"]
   >;
@@ -108,6 +114,13 @@ export function buildCanonicalUrl(pathname: string) {
   return new URL(pathname, getCanonicalSite()).toString();
 }
 
+export function buildServiceCanonicalUrl(
+  service: keyof typeof SERVICE_CANONICAL_URLS,
+  pathname = "/"
+) {
+  return new URL(pathname, SERVICE_CANONICAL_URLS[service]).toString();
+}
+
 export function getDefaultSiteRobots(): Metadata["robots"] {
   return isCanonicalDeployment()
     ? {
@@ -119,7 +132,7 @@ export function getDefaultSiteRobots(): Metadata["robots"] {
 
 export function getIndexableSitemapEntries(): MetadataRoute.Sitemap {
   return INDEXABLE_SITEMAP_ENTRIES.map((entry) => ({
-    url: buildCanonicalUrl(entry.pathname),
+    url: entry.url,
     changeFrequency: entry.changeFrequency,
     priority: entry.priority,
   }));
