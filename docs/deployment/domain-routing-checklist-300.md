@@ -18,9 +18,9 @@
 - [ ] 4. 신규 URL `https://typing.yeon.world` 확정
 - [ ] 5. 신규 URL `https://card.yeon.world` 확정
 - [ ] 6. 신규 URL `https://community.yeon.world` 확정
-- [ ] 7. 기존 path URL 유지 기간 결정
-- [ ] 8. 기존 path URL redirect 여부 결정
-- [ ] 9. 301/302 redirect 정책 결정
+- [ ] 7. 기존 path URL 미유지 정책 확정
+- [ ] 8. 기존 path URL canonical redirect 확정
+- [ ] 9. 308 redirect 정책 결정
 - [ ] 10. SEO canonical 정책 결정
 - [ ] 11. 모바일 앱 deep link 영향 확인
 - [ ] 12. 공유 링크 영향 확인
@@ -288,12 +288,12 @@
 
 ## 13. Redirect/호환성
 
-- [ ] 241. `/typing-service` 유지 여부 결정
-- [ ] 242. `/card-service` 유지 여부 결정
-- [ ] 243. `/community` 유지 여부 결정
-- [ ] 244. typing 301 redirect 구현
-- [ ] 245. card 301 redirect 구현
-- [ ] 246. community 301 redirect 구현
+- [ ] 241. `/typing-service` public 미유지 확정
+- [ ] 242. `/card-service` public 미유지 확정
+- [ ] 243. `/community` public 미유지 확정
+- [ ] 244. typing 308 redirect 구현
+- [ ] 245. card 308 redirect 구현
+- [ ] 246. community 308 redirect 구현
 - [ ] 247. query string 보존 확인
 - [ ] 248. hash fragment 한계 확인
 - [ ] 249. deep path 보존 확인

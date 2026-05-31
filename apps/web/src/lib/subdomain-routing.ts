@@ -1,10 +1,23 @@
 export const SERVICE_SUBDOMAIN_ROUTES = {
-  "typing.yeon.world": "/typing-service",
-  "card.yeon.world": "/card-service",
-  "community.yeon.world": "/community",
+  "typing.yeon.world": {
+    servicePath: "/typing-service",
+    publicUrl: "https://typing.yeon.world",
+  },
+  "card.yeon.world": {
+    servicePath: "/card-service",
+    publicUrl: "https://card.yeon.world",
+  },
+  "community.yeon.world": {
+    servicePath: "/community",
+    publicUrl: "https://community.yeon.world",
+  },
 } as const;
 
 export type ServiceSubdomainHost = keyof typeof SERVICE_SUBDOMAIN_ROUTES;
+export type ServiceRouteSlug =
+  (typeof SERVICE_SUBDOMAIN_ROUTES)[ServiceSubdomainHost]["servicePath"];
+
+const ROOT_CANONICAL_HOST = "yeon.world";
 
 const REWRITE_EXCLUDED_PATH_PREFIXES = [
   "/api",
@@ -40,6 +53,32 @@ function isAlreadyServicePath(pathname: string, serviceBasePath: string) {
   );
 }
 
+function buildServicePublicUrl({
+  publicUrl,
+  serviceBasePath,
+  pathname,
+  search = "",
+}: {
+  publicUrl: string;
+  serviceBasePath: string;
+  pathname: string;
+  search?: string;
+}) {
+  const suffixPathname =
+    pathname === serviceBasePath
+      ? "/"
+      : pathname.slice(serviceBasePath.length) || "/";
+  const url = new URL(suffixPathname, publicUrl);
+  url.search = search;
+  return url;
+}
+
+function findServiceRouteByPathname(pathname: string) {
+  return Object.values(SERVICE_SUBDOMAIN_ROUTES).find(({ servicePath }) =>
+    isAlreadyServicePath(pathname, servicePath)
+  );
+}
+
 export function resolveServiceSubdomainRewritePath({
   host,
   pathname,
@@ -50,14 +89,52 @@ export function resolveServiceSubdomainRewritePath({
   search?: string;
 }) {
   const normalizedHost = normalizeHost(host);
-  const serviceBasePath =
+  const serviceRoute =
     SERVICE_SUBDOMAIN_ROUTES[normalizedHost as ServiceSubdomainHost];
 
-  if (!serviceBasePath) return null;
+  if (!serviceRoute) return null;
   if (isExcludedRewritePath(pathname)) return null;
-  if (isAlreadyServicePath(pathname, serviceBasePath)) return null;
+  if (isAlreadyServicePath(pathname, serviceRoute.servicePath)) return null;
 
   const suffixPathname = pathname === "/" ? "" : pathname;
 
-  return `${serviceBasePath}${suffixPathname}${search}`;
+  return `${serviceRoute.servicePath}${suffixPathname}${search}`;
+}
+
+export function resolveLegacyServicePathRedirectUrl({
+  host,
+  pathname,
+  search = "",
+}: {
+  host: string | null | undefined;
+  pathname: string;
+  search?: string;
+}) {
+  const normalizedHost = normalizeHost(host);
+  const serviceRoute = findServiceRouteByPathname(pathname);
+
+  if (!serviceRoute) return null;
+
+  if (normalizedHost === ROOT_CANONICAL_HOST) {
+    return buildServicePublicUrl({
+      publicUrl: serviceRoute.publicUrl,
+      serviceBasePath: serviceRoute.servicePath,
+      pathname,
+      search,
+    });
+  }
+
+  const subdomainRoute =
+    SERVICE_SUBDOMAIN_ROUTES[normalizedHost as ServiceSubdomainHost];
+
+  if (subdomainRoute?.servicePath !== serviceRoute.servicePath) {
+    return null;
+  }
+
+  return buildServicePublicUrl({
+    publicUrl: subdomainRoute.publicUrl,
+    serviceBasePath: serviceRoute.servicePath,
+    pathname,
+    search,
+  });
 }
