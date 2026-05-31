@@ -1,0 +1,23 @@
+import type { Metadata } from "next";
+import { TypingTerritoryBattleScreen } from "@/features/typing-service/typing-territory-battle-screen";
+import { buildServiceCanonicalUrl } from "@/lib/seo";
+
+export const metadata: Metadata = {
+  title: "타자 점령전 | YEON 타자연습",
+  description:
+    "단어를 정확히 입력해 팀 보드 칸을 점령하는 실시간 타자 게임 모드입니다.",
+  alternates: {
+    canonical: buildServiceCanonicalUrl("typing", "/territory"),
+  },
+  openGraph: {
+    title: "타자 점령전 | YEON 타자연습",
+    description:
+      "단어를 정확히 입력해 팀 보드 칸을 점령하는 실시간 타자 게임 모드입니다.",
+    url: buildServiceCanonicalUrl("typing", "/territory"),
+    type: "website",
+  },
+};
+
+export default function TypingTerritoryBattlePage() {
+  return <TypingTerritoryBattleScreen />;
+}

@@ -99,6 +99,18 @@ packages/
 
 `race.progress`는 raw key stream 전체를 보내지 않고, 현재 index, 진행률, 정확도, 마지막 입력 시각 같은 요약 상태만 보낸다.
 
+### 타자 점령전 프로토콜
+
+- 기획/체크리스트: `docs/projects/typing-race/territory-battle.md`, `docs/projects/typing-race/territory-battle-checklist-300.md`
+- 웹 MVP 진입점: `/typing-service/territory`
+- Colyseus room: `typing_territory_battle`
+- 공유 규칙: `packages/race-shared/src/territory-battle.ts`
+- 서버 룸: `apps/race-server/src/rooms/territory-battle-room.ts`
+- 이벤트 prefix: `territory.*`
+- v0.1 웹 화면은 규칙 검증용 React 프로토타입이다.
+- 실시간 판정은 `apps/race-server`의 Colyseus room이 확정한다.
+- v0.2에서 보드 애니메이션과 캐릭터 연출을 `packages/typing-race-engine`의 Phaser scene으로 이동한다.
+
 ## 6. 실시간 기본값
 
 - 방 크기: `2~6인`
