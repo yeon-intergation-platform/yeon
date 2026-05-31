@@ -7,3 +7,5 @@
 - `oauth-token-encryption-rollout.md` — OAuth 토큰 암호화 rollout
 - `n100-proxmox-cutover.md` — N100 Proxmox 기반 운영 이전 계획
 - `cloudflare-warp-db-access.md` — Cloudflare WARP 운영 DB 접속 runbook
+- `domain-routing.md` — 서비스 subdomain 전환, Cloudflare Tunnel/Public Hostname, Access, DNS, redirect, 검증/롤백 SSOT
+- `domain-routing-checklist-300.md` — typing/card/community subdomain 전환 300단계 체크리스트
