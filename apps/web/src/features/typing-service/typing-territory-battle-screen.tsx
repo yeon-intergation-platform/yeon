@@ -1,13 +1,19 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import {
+  mountTerritoryBattleEngine,
+  type TerritoryBattleEngineController,
+} from "@yeon/typing-race-engine";
+import {
+  TERRITORY_BATTLE_PHASE,
   TERRITORY_BATTLE_TEAM,
   captureTerritoryCell,
   createTerritoryBoard,
   findTerritoryCellByWord,
   resolveTerritoryWinner,
+  type TerritoryBattleSnapshot,
   type TerritoryCellSnapshot,
 } from "@yeon/race-shared";
 import { YeonButton, YeonSurface } from "@/components/yeon-ui";
@@ -67,6 +73,13 @@ export function TypingTerritoryBattleScreen() {
   const [message, setMessage] = useState(
     "서버 연결 전에는 로컬 규칙으로 점령전을 체험할 수 있습니다."
   );
+  const engineContainerRef = useRef<HTMLDivElement | null>(null);
+  const engineControllerRef = useRef<TerritoryBattleEngineController | null>(
+    null
+  );
+  const latestSnapshotRef = useRef<TerritoryBattleSnapshot | null>(
+    territoryRoom.snapshot
+  );
   const displayBoard = territoryRoom.snapshot?.board ?? board;
   const isServerConnected =
     territoryRoom.connectionState === "connected" && !!territoryRoom.snapshot;
@@ -83,6 +96,73 @@ export function TypingTerritoryBattleScreen() {
     redScore,
     blueScore,
   }).winner;
+  const engineSnapshot = useMemo<TerritoryBattleSnapshot>(
+    () =>
+      territoryRoom.snapshot ?? {
+        phase: TERRITORY_BATTLE_PHASE.WAITING,
+        seed: PROTOTYPE_SEED,
+        boardSize: 5,
+        board: displayBoard,
+        players: [
+          {
+            id: LOCAL_PLAYER_ID,
+            nickname: "Guest",
+            team: TERRITORY_BATTLE_TEAM.RED,
+            score: teamScore.red,
+            combo,
+            capturedCellCount: countOwnedCells(displayBoard, "red"),
+            accuracy: 100,
+            cpm: 0,
+            isConnected: true,
+          },
+        ],
+        teams: [
+          {
+            team: TERRITORY_BATTLE_TEAM.RED,
+            score: teamScore.red,
+            capturedCellCount: countOwnedCells(displayBoard, "red"),
+          },
+          {
+            team: TERRITORY_BATTLE_TEAM.BLUE,
+            score: teamScore.blue,
+            capturedCellCount: countOwnedCells(displayBoard, "blue"),
+          },
+        ],
+      },
+    [combo, displayBoard, teamScore.blue, teamScore.red, territoryRoom.snapshot]
+  );
+
+  useEffect(() => {
+    latestSnapshotRef.current = engineSnapshot;
+    engineControllerRef.current?.setSnapshot(engineSnapshot);
+  }, [engineSnapshot]);
+
+  useEffect(() => {
+    const container = engineContainerRef.current;
+    if (!container) return;
+
+    let cancelled = false;
+    void mountTerritoryBattleEngine({
+      container,
+      snapshot: latestSnapshotRef.current ?? undefined,
+    }).then((controller) => {
+      if (cancelled) {
+        controller.destroy();
+        return;
+      }
+
+      engineControllerRef.current = controller;
+      if (latestSnapshotRef.current) {
+        controller.setSnapshot(latestSnapshotRef.current);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+      engineControllerRef.current?.destroy();
+      engineControllerRef.current = null;
+    };
+  }, []);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -170,6 +250,10 @@ export function TypingTerritoryBattleScreen() {
               <YeonButton as="a" href="/typing-service" variant="secondary">
                 타자 홈으로
               </YeonButton>
+            </div>
+
+            <div className="mt-5 overflow-hidden rounded-[28px] border border-[#e5e5e5] bg-white">
+              <div ref={engineContainerRef} className="h-[540px] w-full" />
             </div>
 
             <div className="mt-5 grid grid-cols-5 gap-2">
