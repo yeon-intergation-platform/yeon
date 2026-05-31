@@ -39,10 +39,14 @@ typing.yeon.world
 
 ### 플레이
 
-- 상단: red/blue 팀 점수, 제한 시간, 내 팀
-- 중앙: 5x5 점령 보드
-- 하단: 목표 단어, 입력창, CPM/정확도/콤보
-- 상태 색상: red/blue/neutral, 오류 red, 성공 green, MVP gold
+- 점령전 route는 타자 서비스 기본 흰 배경 규칙의 예외로 둔다.
+- 전체 화면 `100vw`/`100vh` 다크 네이비 게임 HUD를 사용한다.
+- 상단: red/blue 팀 점수, 제한 시간, 연결 상태
+- 좌우: 팀 패널, 플레이어, 점령 칸, 정확도, 콤보
+- 중앙: Phaser 5x5 점령 보드
+- 하단: 목표 단어, 입력창, 제출, 시작/재연결
+- 색상: muted red/blue, dark navy, gold accent. 원색 장난감 톤과 픽셀아트는 쓰지 않는다.
+- 전체 화면 게임 몰입을 위해 `/typing-service/territory`에서는 공용 커뮤니티 채팅 widget을 숨긴다.
 
 ### 결과
 
@@ -131,6 +135,8 @@ territory.error
 - Colyseus `reconnectionToken` 기반 재접속 복구를 web hook과 race-server room에 추가했다.
 - 플레이어 snapshot에 `isConnected`, `disconnectedAt`을 추가해 끊김/복구 상태를 표시할 수 있게 했다.
 - `apps/race-server/scripts/territory-battle-smoke.ts`로 2~6인, 입력 간격, too-fast 방어, 재접속 smoke를 실행한다.
+- 플레이 화면을 전체 화면 모던 대전 HUD로 전환하고, Phaser 보드를 중앙 주 시각 요소로 확대했다.
+- 점령전 화면에서는 공용 floating community chat이 게임 조작부를 덮지 않도록 숨긴다.
 
 ## 관련 문서
 
