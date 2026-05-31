@@ -5,8 +5,10 @@ import {
   CARD_ROOM_NAME,
   STAR_LOBBY_ROOM_NAME,
   TYPING_RACE_ROOM_NAME,
+  TERRITORY_BATTLE_ROOM_NAME,
 } from "@yeon/race-shared";
 import { TypingRaceRoom } from "./rooms/typing-race-room";
+import { TerritoryBattleRoom } from "./rooms/territory-battle-room";
 import { CardRoom } from "./rooms/card-room";
 import {
   parseStarLobbyRealtimeEvent,
@@ -75,7 +77,12 @@ const gameServer = new Server({
     app.get("/health", (_request: unknown, response: JsonResponse) => {
       response.json({
         ok: true,
-        rooms: [TYPING_RACE_ROOM_NAME, CARD_ROOM_NAME, STAR_LOBBY_ROOM_NAME],
+        rooms: [
+          TYPING_RACE_ROOM_NAME,
+          TERRITORY_BATTLE_ROOM_NAME,
+          CARD_ROOM_NAME,
+          STAR_LOBBY_ROOM_NAME,
+        ],
       });
     });
 
@@ -140,6 +147,7 @@ const gameServer = new Server({
 gameServer
   .define(TYPING_RACE_ROOM_NAME, TypingRaceRoom)
   .filterBy(["locale", "roomMode"]);
+gameServer.define(TERRITORY_BATTLE_ROOM_NAME, TerritoryBattleRoom);
 gameServer.define(CARD_ROOM_NAME, CardRoom).filterBy(["cardRoomId"]);
 gameServer.define(STAR_LOBBY_ROOM_NAME, StarLobbyRoom);
 

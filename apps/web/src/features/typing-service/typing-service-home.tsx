@@ -151,6 +151,13 @@ export function TypingServiceHome({
                 onClick={() => handleCtaClick("decks")}
               />
               <StartCard
+                href="/typing-service/territory"
+                label="점령전 입장"
+                description="단어를 입력해 팀 보드 칸을 점령합니다."
+                tone="secondary"
+                onClick={() => handleCtaClick("territory")}
+              />
+              <StartCard
                 href="/typing-service/play"
                 label="레이스 입장"
                 description="다른 사용자와 타자 속도를 겨룹니다."
