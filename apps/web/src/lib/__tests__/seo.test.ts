@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import {
   buildCanonicalUrl,
+  buildServiceCanonicalUrl,
   getDefaultSiteRobots,
   getIndexableSitemapEntries,
   isCanonicalDeployment,
@@ -21,9 +22,20 @@ describe("seo", () => {
     process.env.NEXT_PUBLIC_APP_URL = originalAppUrl;
   });
 
-  it("canonical url은 항상 yeon.world를 기준으로 만든다", () => {
-    expect(buildCanonicalUrl("/typing-service")).toBe(
-      "https://yeon.world/typing-service"
+  it("루트 canonical url은 yeon.world를 기준으로 만든다", () => {
+    expect(buildCanonicalUrl("/privacy")).toBe("https://yeon.world/privacy");
+  });
+
+  it("서비스 canonical url은 서비스 subdomain을 기준으로 만든다", () => {
+    expect(buildServiceCanonicalUrl("typing")).toBe(
+      "https://typing.yeon.world/"
+    );
+    expect(buildServiceCanonicalUrl("typing", "/rooms")).toBe(
+      "https://typing.yeon.world/rooms"
+    );
+    expect(buildServiceCanonicalUrl("card")).toBe("https://card.yeon.world/");
+    expect(buildServiceCanonicalUrl("community")).toBe(
+      "https://community.yeon.world/"
     );
   });
 
@@ -52,12 +64,27 @@ describe("seo", () => {
         priority: 1,
       },
       {
-        url: "https://yeon.world/typing-service",
+        url: "https://typing.yeon.world",
         changeFrequency: "daily",
         priority: 0.9,
       },
       {
-        url: "https://yeon.world/card-service",
+        url: "https://community.yeon.world",
+        changeFrequency: "daily",
+        priority: 0.85,
+      },
+      {
+        url: "https://typing.yeon.world/rooms",
+        changeFrequency: "daily",
+        priority: 0.85,
+      },
+      {
+        url: "https://typing.yeon.world/decks",
+        changeFrequency: "daily",
+        priority: 0.85,
+      },
+      {
+        url: "https://card.yeon.world",
         changeFrequency: "weekly",
         priority: 0.8,
       },

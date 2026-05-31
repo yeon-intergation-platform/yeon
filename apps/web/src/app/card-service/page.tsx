@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Script from "next/script";
 
 import { SITE_BRAND_NAME } from "@/lib/site-brand";
+import { buildServiceCanonicalUrl } from "@/lib/seo";
 import { ServiceSeoSection } from "@/components/service-seo-section";
 import {
   CARD_SERVICE_FAQS,
@@ -19,12 +20,12 @@ export const metadata: Metadata = {
   description: CARD_SERVICE_PAGE_DESCRIPTION,
   keywords: [...CARD_SERVICE_SEO_KEYWORDS],
   alternates: {
-    canonical: "/card-service",
+    canonical: buildServiceCanonicalUrl("card"),
   },
   openGraph: {
     title: CARD_SERVICE_PAGE_TITLE,
     description: CARD_SERVICE_PAGE_DESCRIPTION,
-    url: "/card-service",
+    url: buildServiceCanonicalUrl("card"),
     siteName: SITE_BRAND_NAME,
     type: "website",
     locale: "ko_KR",
@@ -62,7 +63,7 @@ function getCardServiceJsonLd() {
           price: "0",
           priceCurrency: "KRW",
         },
-        url: "https://yeon.world/card-service",
+        url: buildServiceCanonicalUrl("card"),
       },
       {
         "@type": "FAQPage",
