@@ -4,6 +4,12 @@
 
 목표: `typing.yeon.world`에 실시간 팀 기반 타자 점령전 모드를 추가한다.
 
+## 2026-06-01 진행 상태
+
+- 구현 완료: shared protocol/helper, Colyseus room, web 점령전 route/hook, Phaser scene mount, 재접속 토큰 복구, race-server 2인/6인 smoke script.
+- 검증 완료: local 2인 재접속 smoke, local 6인 지연 smoke, lint/typecheck/build.
+- 아직 제품 후속으로 남는 항목: 덱 단어 연동, Spring 결과 저장, 랭킹, 모바일 최적화, 운영 실사용 부하 측정, 시각 에셋 고도화.
+
 ## 1. 목표/범위 확정
 
 - [ ] 1. 타자 점령전의 한 줄 목표를 확정한다.

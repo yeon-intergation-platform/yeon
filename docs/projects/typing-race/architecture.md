@@ -109,7 +109,7 @@ packages/
 - 이벤트 prefix: `territory.*`
 - v0.1 웹 화면은 규칙 검증용 React 프로토타입이다.
 - 실시간 판정은 `apps/race-server`의 Colyseus room이 확정한다.
-- v0.2에서 보드 애니메이션과 캐릭터 연출을 `packages/typing-race-engine`의 Phaser scene으로 이동한다.
+- 점령전 보드 애니메이션은 `packages/typing-race-engine`의 `mountTerritoryBattleEngine` Phaser scene으로 렌더링한다.
 
 ## 6. 실시간 기본값
 

@@ -16,7 +16,7 @@
 - 판정: 서버 authoritative
 - 경기 중 저장: 없음
 - 경기 종료 저장: 후속 단계에서 Spring 소유 API로 검토
-- Phaser: 서버 규칙 검증 후 v0.2에서 적용
+- Phaser: `packages/typing-race-engine`의 점령전 scene으로 플레이 영역 렌더링
 
 ## 제품 구조
 
@@ -55,16 +55,16 @@ typing.yeon.world
 
 ## 기술 결정
 
-| 영역            | 결정                                                     |
-| --------------- | -------------------------------------------------------- |
-| Web route       | `apps/web/src/app/typing-service/territory`              |
-| Web UI          | React + Tailwind, 기능 우선 UI                           |
-| Game rendering  | v0.1 React board, v0.2 Phaser scene                      |
-| Realtime        | `apps/race-server` Colyseus room                         |
-| Shared protocol | `packages/race-shared/src/territory-battle.ts`           |
-| Engine          | `packages/typing-race-engine`는 v0.2 렌더링 전환 때 확장 |
-| Storage         | 경기 종료 후만 저장, 신규 backend ownership은 Spring     |
-| Deployment      | 기존 race-server/web Docker workflow 사용                |
+| 영역            | 결정                                                              |
+| --------------- | ----------------------------------------------------------------- |
+| Web route       | `apps/web/src/app/typing-service/territory`                       |
+| Web UI          | React + Tailwind, 기능 우선 UI                                    |
+| Game rendering  | Phaser scene + React fallback board                               |
+| Realtime        | `apps/race-server` Colyseus room                                  |
+| Shared protocol | `packages/race-shared/src/territory-battle.ts`                    |
+| Engine          | `packages/typing-race-engine`의 `mountTerritoryBattleEngine` 사용 |
+| Storage         | 경기 종료 후만 저장, 신규 backend ownership은 Spring              |
+| Deployment      | 기존 race-server/web Docker workflow 사용                         |
 
 ## 서버 authoritative 원칙
 
@@ -121,6 +121,16 @@ territory.error
 6. 서버 authoritative 제출/종료 검증
 7. 운영 smoke test
 8. Phaser 연출 전환
+9. 재접속 복구
+10. 2~6인/지연 smoke test
+
+## 2026-06-01 후속 구현 상태
+
+- Phaser 점령전 scene을 `packages/typing-race-engine`에 추가하고 웹 점령전 route에 연결했다.
+- 서버 snapshot만 기준으로 점수/보드/타이머를 그리며 Phaser scene은 판정을 계산하지 않는다.
+- Colyseus `reconnectionToken` 기반 재접속 복구를 web hook과 race-server room에 추가했다.
+- 플레이어 snapshot에 `isConnected`, `disconnectedAt`을 추가해 끊김/복구 상태를 표시할 수 있게 했다.
+- `apps/race-server/scripts/territory-battle-smoke.ts`로 2~6인, 입력 간격, too-fast 방어, 재접속 smoke를 실행한다.
 
 ## 관련 문서
 

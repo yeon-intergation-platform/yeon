@@ -45,6 +45,7 @@ export const TERRITORY_BATTLE_DEFAULTS = {
   countdownSeconds: 3,
   maxPlayers: 6,
   minSubmitIntervalMs: 250,
+  reconnectGraceSeconds: 30,
 } as const;
 
 export const TERRITORY_BATTLE_SCORE = {
@@ -87,6 +88,8 @@ export type TerritoryBattlePlayerSnapshot = {
   accuracy: number;
   cpm: number;
   lastSubmittedAt?: number;
+  isConnected: boolean;
+  disconnectedAt?: number;
 };
 
 export type TerritoryBattleTeamSnapshot = {

@@ -401,3 +401,5 @@ function createFallbackLane(
     role: id === "local" ? "local" : "benchmark",
   };
 }
+
+export * from "./territory-battle";

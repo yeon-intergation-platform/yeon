@@ -53,6 +53,7 @@ export class TerritoryBattleRoom extends Room {
   private board: TerritoryCellSnapshot[] = [];
   private readonly players = new Map<string, TerritoryPlayer>();
   private readonly clientPlayerIds = new Map<string, string>();
+  private readonly reconnectingPlayerIds = new Set<string>();
   private startsAt: number | undefined;
   private endsAt: number | undefined;
   private finishTimer: { clear: () => void } | null = null;
@@ -94,6 +95,7 @@ export class TerritoryBattleRoom extends Room {
       capturedCellCount: 0,
       accuracy: 100,
       cpm: 0,
+      isConnected: true,
       joinedAt: Date.now(),
     };
 
@@ -103,9 +105,55 @@ export class TerritoryBattleRoom extends Room {
     this.broadcastState();
   }
 
-  onLeave(client: Client) {
+  onDrop(client: Client) {
+    const playerId = this.clientPlayerIds.get(client.sessionId);
+    const player = playerId ? this.players.get(playerId) : null;
+
+    if (!playerId || !player) return;
+
     this.clientPlayerIds.delete(client.sessionId);
-    this.players.delete(client.sessionId);
+    this.reconnectingPlayerIds.add(playerId);
+    player.isConnected = false;
+    player.disconnectedAt = Date.now();
+    this.broadcastState();
+
+    this.allowReconnection(
+      client,
+      TERRITORY_BATTLE_DEFAULTS.reconnectGraceSeconds
+    )
+      .then((reconnectedClient) => {
+        this.clientPlayerIds.set(reconnectedClient.sessionId, playerId);
+        this.reconnectingPlayerIds.delete(playerId);
+        player.isConnected = true;
+        player.disconnectedAt = undefined;
+        this.broadcastState();
+      })
+      .catch(() => {
+        this.reconnectingPlayerIds.delete(playerId);
+        this.players.delete(playerId);
+        this.broadcastState();
+      });
+  }
+
+  onReconnect(client: Client) {
+    const playerId = this.clientPlayerIds.get(client.sessionId);
+    const player = playerId ? this.players.get(playerId) : null;
+    if (!player) return;
+
+    player.isConnected = true;
+    player.disconnectedAt = undefined;
+    this.reconnectingPlayerIds.delete(player.id);
+    this.broadcastState();
+  }
+
+  onLeave(client: Client) {
+    const playerId =
+      this.clientPlayerIds.get(client.sessionId) ?? client.sessionId;
+    this.clientPlayerIds.delete(client.sessionId);
+
+    if (this.reconnectingPlayerIds.has(playerId)) return;
+
+    this.players.delete(playerId);
     this.broadcastState();
   }
 
@@ -239,10 +287,30 @@ export class TerritoryBattleRoom extends Room {
 
     this.broadcast(TERRITORY_BATTLE_EVENTS.RESULT, {
       ...result,
-      players: Array.from(this.players.values()),
+      players: Array.from(this.players.values()).map((player) =>
+        this.createPlayerSnapshot(player)
+      ),
       board: this.board,
     });
     this.broadcastState();
+  }
+
+  private createPlayerSnapshot(
+    player: TerritoryPlayer
+  ): TerritoryBattlePlayerSnapshot {
+    return {
+      id: player.id,
+      nickname: player.nickname,
+      team: player.team,
+      score: player.score,
+      combo: player.combo,
+      capturedCellCount: player.capturedCellCount,
+      accuracy: player.accuracy,
+      cpm: player.cpm,
+      lastSubmittedAt: player.lastSubmittedAt,
+      isConnected: player.isConnected,
+      disconnectedAt: player.disconnectedAt,
+    };
   }
 
   private createTeamSnapshots(): TerritoryBattleTeamSnapshot[] {
@@ -266,7 +334,9 @@ export class TerritoryBattleRoom extends Room {
       startsAt: this.startsAt,
       endsAt: this.endsAt,
       board: this.board,
-      players: Array.from(this.players.values()),
+      players: Array.from(this.players.values()).map((player) =>
+        this.createPlayerSnapshot(player)
+      ),
       teams: this.createTeamSnapshots(),
     };
   }
