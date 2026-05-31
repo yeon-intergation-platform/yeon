@@ -18,6 +18,7 @@ export type PlatformServiceStatus =
 export type PlatformServiceDescriptor = {
   slug: string;
   href: string;
+  publicHref: string;
   title: string;
   summary: string;
   audience: string;
@@ -29,6 +30,7 @@ export const PLATFORM_SERVICES = [
   {
     slug: "counseling-service",
     href: "/counseling-service",
+    publicHref: "/counseling-service",
     title: "상담 기록 워크스페이스",
     summary:
       "녹음 업로드, 원문 열람, 구조화 요약, AI 질의를 하나의 워크스페이스에서 다룹니다.",
@@ -39,6 +41,7 @@ export const PLATFORM_SERVICES = [
   {
     slug: "typing-service",
     href: "/typing-service",
+    publicHref: "https://typing.yeon.world",
     title: "키보드 타자연습",
     summary:
       "바로 연습을 시작하고 속도와 정확도를 확인할 수 있는 타자 서비스입니다.",
@@ -49,6 +52,7 @@ export const PLATFORM_SERVICES = [
   {
     slug: "card-service",
     href: "/card-service",
+    publicHref: "https://card.yeon.world",
     title: "플래시카드 덱",
     summary:
       "덱을 만들고 카드를 추가해 바로 복습을 시작할 수 있는 카드 학습 서비스입니다.",
@@ -59,6 +63,7 @@ export const PLATFORM_SERVICES = [
   {
     slug: "community",
     href: "/community",
+    publicHref: "https://community.yeon.world",
     title: "커뮤니티",
     summary: "실시간 채팅과 커뮤니티 글·댓글 피드를 함께 제공합니다.",
     audience: "커뮤니티",

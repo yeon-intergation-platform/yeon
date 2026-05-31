@@ -204,7 +204,7 @@ export function LandingHome({
                   return (
                     <a
                       key={service.slug}
-                      href={service.href}
+                      href={service.publicHref}
                       className={`${cardBase} ${interactiveCard} no-underline`}
                       onClick={() =>
                         trackEvent(analyticsEvents.serviceEntryClick, {

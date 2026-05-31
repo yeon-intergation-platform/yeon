@@ -10,7 +10,10 @@ import {
   isDevHostname,
   isWwwHostname,
 } from "@/lib/seo";
-import { resolveServiceSubdomainRewritePath } from "@/lib/subdomain-routing";
+import {
+  resolveLegacyServicePathRedirectUrl,
+  resolveServiceSubdomainRewritePath,
+} from "@/lib/subdomain-routing";
 import { AUTH_SESSION_COOKIE_NAME } from "@/server/auth/constants";
 
 const COUNSELING_SERVICE_BASE_PATH = "/counseling-service";
@@ -38,9 +41,23 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(redirectUrl, 308);
   }
 
+  const requestHost =
+    request.headers.get("x-forwarded-host") ?? request.headers.get("host");
+  const legacyServiceRedirectUrl = resolveLegacyServicePathRedirectUrl({
+    host: requestHost,
+    pathname,
+    search: request.nextUrl.search,
+  });
+
+  if (legacyServiceRedirectUrl) {
+    return withSeoHeaders(
+      NextResponse.redirect(legacyServiceRedirectUrl, 308),
+      hostname
+    );
+  }
+
   const subdomainRewritePath = resolveServiceSubdomainRewritePath({
-    host:
-      request.headers.get("x-forwarded-host") ?? request.headers.get("host"),
+    host: requestHost,
     pathname,
     search: request.nextUrl.search,
   });

@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { resolveServiceSubdomainRewritePath } from "../subdomain-routing";
+import {
+  resolveLegacyServicePathRedirectUrl,
+  resolveServiceSubdomainRewritePath,
+} from "../subdomain-routing";
 
 describe("subdomain-routing", () => {
   it("서비스 subdomain 루트를 기존 서비스 path로 rewrite한다", () => {
@@ -78,6 +81,49 @@ describe("subdomain-routing", () => {
       resolveServiceSubdomainRewritePath({
         host: "yeon.world",
         pathname: "/",
+      })
+    ).toBeNull();
+  });
+
+  it("루트 도메인의 legacy 서비스 path를 canonical subdomain으로 redirect한다", () => {
+    expect(
+      resolveLegacyServicePathRedirectUrl({
+        host: "yeon.world",
+        pathname: "/typing-service",
+      })?.toString()
+    ).toBe("https://typing.yeon.world/");
+
+    expect(
+      resolveLegacyServicePathRedirectUrl({
+        host: "yeon.world",
+        pathname: "/card-service/decks/abc",
+        search: "?mode=study",
+      })?.toString()
+    ).toBe("https://card.yeon.world/decks/abc?mode=study");
+
+    expect(
+      resolveLegacyServicePathRedirectUrl({
+        host: "yeon.world",
+        pathname: "/community/posts/1",
+      })?.toString()
+    ).toBe("https://community.yeon.world/posts/1");
+  });
+
+  it("서비스 subdomain에 legacy prefix가 남으면 prefix를 제거한 URL로 redirect한다", () => {
+    expect(
+      resolveLegacyServicePathRedirectUrl({
+        host: "typing.yeon.world",
+        pathname: "/typing-service/rooms",
+        search: "?room=abc",
+      })?.toString()
+    ).toBe("https://typing.yeon.world/rooms?room=abc");
+  });
+
+  it("다른 서비스 subdomain의 legacy path는 redirect하지 않는다", () => {
+    expect(
+      resolveLegacyServicePathRedirectUrl({
+        host: "typing.yeon.world",
+        pathname: "/card-service/decks",
       })
     ).toBeNull();
   });

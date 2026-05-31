@@ -8,11 +8,11 @@
 
 ## URL 매핑
 
-| 서비스         | 기존 URL                            | 목표 URL                       | 기본 처리                                                     |
-| -------------- | ----------------------------------- | ------------------------------ | ------------------------------------------------------------- |
-| typing-service | `https://yeon.world/typing-service` | `https://typing.yeon.world`    | 신규 subdomain 검증 후 기존 path 호환 유지 또는 redirect 결정 |
-| card-service   | `https://yeon.world/card-service`   | `https://card.yeon.world`      | 신규 subdomain 검증 후 기존 path 호환 유지 또는 redirect 결정 |
-| community      | `https://yeon.world/community`      | `https://community.yeon.world` | 신규 subdomain 검증 후 기존 path 호환 유지 또는 redirect 결정 |
+| 서비스         | 기존 URL                            | 목표 URL                       | 기본 처리                       |
+| -------------- | ----------------------------------- | ------------------------------ | ------------------------------- |
+| typing-service | `https://yeon.world/typing-service` | `https://typing.yeon.world`    | 신규 subdomain으로 308 redirect |
+| card-service   | `https://yeon.world/card-service`   | `https://card.yeon.world`      | 신규 subdomain으로 308 redirect |
+| community      | `https://yeon.world/community`      | `https://community.yeon.world` | 신규 subdomain으로 308 redirect |
 
 ## 현재 확인된 운영 라우트 근거
 
@@ -106,8 +106,11 @@ packages/api-contract/**
    - `typing.yeon.world/*` -> `/typing-service/*`
    - `card.yeon.world/*` -> `/card-service/*`
    - `community.yeon.world/*` -> `/community/*`
-3. 기존 path URL은 초기에는 호환 유지한다.
-4. 안정화 후 기존 path를 301 redirect할지 결정한다.
+3. 기존 path URL은 public 진입점으로 유지하지 않고 308 redirect한다.
+   - `https://yeon.world/typing-service/*` -> `https://typing.yeon.world/*`
+   - `https://yeon.world/card-service/*` -> `https://card.yeon.world/*`
+   - `https://yeon.world/community/*` -> `https://community.yeon.world/*`
+4. Next.js 내부 rewrite target으로 기존 route 디렉터리는 유지한다.
 
 ## 인증/쿠키 확인 항목
 
@@ -169,6 +172,7 @@ curl -I https://community.yeon.world
 curl -I https://yeon.world/typing-service
 curl -I https://yeon.world/card-service
 curl -I https://yeon.world/community
+curl -I https://typing.yeon.world/typing-service
 curl -I https://race.yeon.world
 ```
 
@@ -181,7 +185,7 @@ WebSocket 확인은 브라우저 또는 Playwright로 확인한다.
 - 앱 라우팅 구현 완료
 - CORS/CSRF/cookie 확인 완료
 - SEO canonical/sitemap 정책 확인 완료
-- 기존 path 호환 또는 redirect 정책 확인 완료
+- 기존 path 308 redirect 정책 확인 완료
 - lint/typecheck 통과
 - PR main merge 후 배포 workflow 시작 확인
 
@@ -190,7 +194,7 @@ WebSocket 확인은 브라우저 또는 Playwright로 확인한다.
 - `https://typing.yeon.world` HTTP 200 또는 의도한 redirect
 - `https://card.yeon.world` HTTP 200 또는 의도한 redirect
 - `https://community.yeon.world` HTTP 200 또는 의도한 redirect
-- 기존 path URL 동작 확인
+- 기존 path URL이 canonical subdomain으로 308 redirect되는지 확인
 - 로그인 후 새 subdomain 진입 확인
 - 브라우저 콘솔 CORS 오류 없음
 - Cloudflare 52x 없음

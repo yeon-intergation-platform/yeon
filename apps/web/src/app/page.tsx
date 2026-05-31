@@ -50,6 +50,10 @@ function buildHomeRedirectPath(options: {
   return query ? `/?${query}` : "/";
 }
 
+function buildServicePublicUrl(href: string) {
+  return href.startsWith("http") ? href : `https://yeon.world${href}`;
+}
+
 function getHomeJsonLd() {
   const services = getPlatformServices();
 
@@ -80,7 +84,7 @@ function getHomeJsonLd() {
             "@type": "ListItem",
             position: index + 1,
             name: service.title,
-            url: `https://yeon.world${service.href}`,
+            url: buildServicePublicUrl(service.publicHref),
             description: service.summary,
           })),
         },
