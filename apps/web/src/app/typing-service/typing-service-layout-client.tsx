@@ -4,7 +4,10 @@ import type { ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { CommunityChatWidget } from "@/features/community/components/community-chat-widget";
 
-const FULLSCREEN_TYPING_PATHS = new Set(["/typing-service/territory"]);
+const FULLSCREEN_TYPING_PATHS = new Set([
+  "/typing-service/territory",
+  "/territory",
+]);
 
 export function TypingServiceLayoutClient({
   children,
