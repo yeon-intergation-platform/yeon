@@ -105,6 +105,34 @@ a {
   background-clip: padding-box;
 }
 
+.service-help-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #aaa transparent;
+  scrollbar-gutter: stable;
+}
+
+.service-help-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.service-help-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+  margin-block: 18px;
+}
+
+.service-help-scrollbar::-webkit-scrollbar-thumb {
+  background: #aaa;
+  border: 2px solid #ffffff;
+  border-radius: 999px;
+  background-clip: padding-box;
+}
+
+.service-help-scrollbar:hover::-webkit-scrollbar-thumb {
+  background: #666;
+  border-color: #ffffff;
+  background-clip: padding-box;
+}
+
 button,
 input,
 textarea,
