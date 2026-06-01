@@ -58,6 +58,7 @@ Prefer pointers to copies. Do not paste long policies, command catalogs, or code
 
 ## How agents should work here
 
+- 로컬 디버깅/수정 세션에서 사용자가 PR 생성·merge 금지를 명시하면, 해당 세션은 로컬 환경에서 수정 → Playwright 직접 확인 → 검증 통과 후 로컬 commit까지만 진행한다. 이 경우 PR 생성, push, merge, 배포는 하지 않으며 마지막 확인은 사용자가 로컬에서 수행한다.
 - 멀티 워크트리 운영 규칙(요청 반영):
   - 기본 개발은 `yeon-2`, `yeon-3`, `yeon-4` 3개 워크트리를 사용한다.
   - `yeon` 워크트리는 작업용이 아니라 로컬 환경 확인/검증용으로 유지한다.

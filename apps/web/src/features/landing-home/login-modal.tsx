@@ -205,7 +205,7 @@ export function LoginModal({
     <AnimatePresence>
       {open ? (
         <motion.div
-          className="fixed inset-0 z-20 flex items-center justify-center bg-[rgba(8,10,14,0.82)] p-6 md:p-4"
+          className="fixed inset-0 z-20 flex items-center justify-center bg-[rgba(17,17,17,0.72)] p-6 md:p-4"
           style={{ willChange: "opacity" }}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -218,7 +218,7 @@ export function LoginModal({
             role="dialog"
             aria-modal="true"
             aria-labelledby="landing-login-title"
-            className="w-[min(100%,560px)] rounded-[32px] border border-[rgba(17,19,24,0.08)] bg-gradient-to-b from-[#fffdf9] to-[#faf7f1] p-9 text-[#111318] shadow-[0_28px_80px_rgba(15,18,24,0.18)] md:p-[22px]"
+            className="w-[min(100%,560px)] rounded-[32px] border border-[#e5e5e5] bg-white p-9 text-[#111] shadow-[0_28px_80px_rgba(17,17,17,0.14)] md:p-[22px]"
             style={{
               willChange: "transform, opacity",
               transform: "translateZ(0)",
@@ -234,11 +234,11 @@ export function LoginModal({
               <div className="grid gap-3">
                 <h2
                   id="landing-login-title"
-                  className="m-0 text-[clamp(24px,3vw,34px)] font-black leading-[1.08] tracking-[-0.04em] text-[#111318]"
+                  className="m-0 text-[clamp(24px,3vw,34px)] font-black leading-[1.08] tracking-[-0.04em] text-[#111]"
                 >
                   공통 계정으로 계속할게요
                 </h2>
-                <p className="m-0 text-[14px] leading-[1.6] text-[#626b79]">
+                <p className="m-0 text-[14px] leading-[1.6] text-[#666]">
                   카드·타자·커뮤니티처럼 계정이 필요한 서비스를 바로 이어 쓸 수
                   있어요.
                 </p>
@@ -246,7 +246,7 @@ export function LoginModal({
 
               <button
                 type="button"
-                className="w-12 h-12 border border-[rgba(17,19,24,0.08)] rounded-full bg-[rgba(17,19,24,0.04)] text-[#2b313d] inline-flex items-center justify-center cursor-pointer transition-[border-color,background-color,color] duration-[220ms] ease-in-out hover:border-[rgba(17,19,24,0.14)] hover:bg-[rgba(17,19,24,0.08)] hover:text-[#111318]"
+                className="w-12 h-12 border border-[#e5e5e5] rounded-full bg-[#fafafa] text-[#666] inline-flex items-center justify-center cursor-pointer transition-[border-color,background-color,color] duration-[220ms] ease-in-out hover:border-[#aaa] hover:bg-white hover:text-[#111]"
                 onClick={onClose}
                 aria-label="로그인 모달 닫기"
               >
@@ -271,7 +271,7 @@ export function LoginModal({
 
                 <button
                   type="button"
-                  className="w-full min-h-16 rounded-[18px] inline-flex items-center justify-center gap-3 px-5 text-[17px] font-black tracking-[-0.02em] cursor-pointer transition-[transform,box-shadow,filter,opacity] duration-[220ms] ease-in-out border border-[rgba(17,19,24,0.1)] bg-white text-[#111318] disabled:cursor-not-allowed disabled:opacity-100 hover:enabled:-translate-y-px hover:enabled:shadow-[0_14px_24px_rgba(17,19,24,0.08)]"
+                  className="w-full min-h-16 rounded-[18px] inline-flex items-center justify-center gap-3 px-5 text-[17px] font-black tracking-[-0.02em] cursor-pointer transition-[transform,box-shadow,filter,opacity] duration-[220ms] ease-in-out border border-[#e5e5e5] bg-white text-[#111] disabled:cursor-not-allowed disabled:opacity-100 hover:enabled:-translate-y-px hover:enabled:shadow-[0_14px_24px_rgba(17,17,17,0.08)]"
                   disabled={pendingProvider !== null}
                   onClick={() => moveToSocialLogin("google", googleLoginHref)}
                 >
@@ -281,15 +281,15 @@ export function LoginModal({
                     : "구글 로그인"}
                 </button>
               </div>
-              <p className="m-0 text-[12px] leading-[1.55] tracking-[-0.01em] text-[#626b79]">
+              <p className="m-0 text-[12px] leading-[1.55] tracking-[-0.01em] text-[#666]">
                 카카오 로그인 시 서비스 이용약관 및 개인정보 처리방침에 동의한
                 것으로 간주됩니다.
               </p>
 
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 pt-1 text-[12px] leading-[1.5] text-[#626b79]">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 pt-1 text-[12px] leading-[1.5] text-[#666]">
                 <Link
                   href={`/auth/login?next=${encodeURIComponent(nextPath)}`}
-                  className="font-semibold text-[#2b313d] underline-offset-2 hover:underline"
+                  className="font-semibold text-[#111] underline-offset-2 hover:underline"
                   onClick={() =>
                     trackEvent(analyticsEvents.loginSecondaryClick, {
                       target: "email_login",
@@ -331,12 +331,12 @@ export function LoginModal({
               </div>
 
               {hasDevLoginOptions ? (
-                <div className="mt-2 grid gap-3 rounded-[22px] border border-[rgba(17,19,24,0.08)] bg-[rgba(17,19,24,0.03)] p-4">
+                <div className="mt-2 grid gap-3 rounded-[22px] border border-[#e5e5e5] bg-[#fafafa] p-4">
                   <div className="grid gap-1">
-                    <p className="m-0 text-[11px] font-bold uppercase tracking-[0.18em] text-[#7a818d]">
+                    <p className="m-0 text-[11px] font-bold uppercase tracking-[0.18em] text-[#aaa]">
                       로컬 개발 전용
                     </p>
-                    <p className="m-0 text-[13px] leading-[1.55] text-[#4b5563]">
+                    <p className="m-0 text-[13px] leading-[1.55] text-[#666]">
                       운영자 테스트용으로 원하는 계정 세션을 바로 발급합니다.
                     </p>
                   </div>
@@ -344,7 +344,7 @@ export function LoginModal({
                   <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto_auto]">
                     <div className="relative">
                       <select
-                        className="h-12 w-full appearance-none rounded-[14px] border border-[rgba(17,19,24,0.12)] bg-white px-4 pr-10 text-[14px] font-semibold text-[#111318] outline-none transition-colors duration-[180ms] ease-out hover:border-[rgba(17,19,24,0.2)] focus:border-[#111318]"
+                        className="h-12 w-full appearance-none rounded-[14px] border border-[#e5e5e5] bg-white px-4 pr-10 text-[14px] font-semibold text-[#111] outline-none transition-colors duration-[180ms] ease-out hover:border-[#aaa] focus:border-[#111]"
                         aria-label="테스트 로그인 계정 선택"
                         disabled={pendingProvider !== null}
                         value={selectedDevLoginAccount}
@@ -363,12 +363,12 @@ export function LoginModal({
                           </option>
                         ))}
                       </select>
-                      <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#7a818d]" />
+                      <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#aaa]" />
                     </div>
 
                     <button
                       type="button"
-                      className="min-h-12 rounded-[14px] bg-[#111318] px-4 text-[14px] font-bold tracking-[-0.01em] text-white transition-[transform,background-color,opacity] duration-[180ms] ease-out hover:enabled:-translate-y-px hover:enabled:bg-[#1a1f28] disabled:cursor-not-allowed disabled:opacity-60"
+                      className="min-h-12 rounded-[14px] bg-[#111] px-4 text-[14px] font-bold tracking-[-0.01em] text-white transition-[transform,background-color,opacity] duration-[180ms] ease-out hover:enabled:-translate-y-px hover:enabled:bg-[#111] disabled:cursor-not-allowed disabled:opacity-60"
                       disabled={
                         pendingProvider !== null || !selectedDevLoginAccount
                       }
@@ -381,7 +381,7 @@ export function LoginModal({
 
                     <button
                       type="button"
-                      className="min-h-12 rounded-[14px] border border-[rgba(17,19,24,0.12)] bg-white px-4 text-[14px] font-bold tracking-[-0.01em] text-[#111318] transition-[transform,border-color,background-color,opacity] duration-[180ms] ease-out hover:enabled:-translate-y-px hover:enabled:border-[rgba(17,19,24,0.22)] hover:enabled:bg-[rgba(17,19,24,0.03)] disabled:cursor-not-allowed disabled:opacity-60"
+                      className="min-h-12 rounded-[14px] border border-[#e5e5e5] bg-white px-4 text-[14px] font-bold tracking-[-0.01em] text-[#111] transition-[transform,border-color,background-color,opacity] duration-[180ms] ease-out hover:enabled:-translate-y-px hover:enabled:border-[#aaa] hover:enabled:bg-[#fafafa] disabled:cursor-not-allowed disabled:opacity-60"
                       disabled={pendingProvider !== null}
                       onClick={createDevLoginAccount}
                     >
@@ -392,7 +392,7 @@ export function LoginModal({
                   </div>
 
                   {selectedDevLoginOption ? (
-                    <p className="m-0 text-[12px] leading-[1.55] tracking-[-0.01em] text-[#626b79]">
+                    <p className="m-0 text-[12px] leading-[1.55] tracking-[-0.01em] text-[#666]">
                       {selectedDevLoginOption.email} ·{" "}
                       {getProviderLabel(selectedDevLoginOption.providers)}
                     </p>
