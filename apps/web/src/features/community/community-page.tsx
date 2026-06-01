@@ -1,7 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { CommonProductHeader } from "@/components/product-shell/product-header";
+import {
+  CommonProductHeader,
+  ProductHeaderDefaultSettingsButton,
+} from "@/components/product-shell/product-header";
+import { ServiceHelpDialog } from "@/components/product-shell/service-help-dialog";
 import {
   CommunityGuestIdentityConfirmModal,
   isCommunityGuestIdentityConfirmDismissed,
@@ -22,6 +26,12 @@ import {
   type CommunityCategory,
   type WritableCommunityCategory,
 } from "./community-post-format";
+import {
+  COMMUNITY_FAQS,
+  COMMUNITY_FEATURES,
+  COMMUNITY_SEO_HEADING,
+  COMMUNITY_SEO_INTRO,
+} from "./community-content";
 
 type PendingGuestIdentityAction = {
   actionLabel: string;
@@ -116,7 +126,22 @@ export function CommunityPage() {
 
   return (
     <div className="min-h-screen bg-[#f7f8fa] text-[#111827]">
-      <CommonProductHeader activeService="community" />
+      <CommonProductHeader
+        activeService="community"
+        settingsControl={
+          <>
+            <ServiceHelpDialog
+              content={{
+                title: COMMUNITY_SEO_HEADING,
+                intro: COMMUNITY_SEO_INTRO,
+                features: COMMUNITY_FEATURES,
+                faqs: COMMUNITY_FAQS,
+              }}
+            />
+            <ProductHeaderDefaultSettingsButton />
+          </>
+        }
+      />
 
       <main className="mx-auto w-full max-w-[840px] px-4 py-6 sm:px-6 lg:px-8">
         <section className="rounded-3xl border border-[#e5e7eb] bg-white shadow-sm">

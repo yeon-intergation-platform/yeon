@@ -3,14 +3,10 @@ import Script from "next/script";
 
 import { SITE_BRAND_NAME } from "@/lib/site-brand";
 import { buildServiceCanonicalUrl } from "@/lib/seo";
-import { ServiceSeoSection } from "@/components/service-seo-section";
 import {
   CARD_SERVICE_FAQS,
-  CARD_SERVICE_FEATURES,
   CARD_SERVICE_PAGE_DESCRIPTION,
   CARD_SERVICE_PAGE_TITLE,
-  CARD_SERVICE_SEO_HEADING,
-  CARD_SERVICE_SEO_INTRO,
   CARD_SERVICE_SEO_KEYWORDS,
   CardServiceHome,
 } from "@/features/card-service";
@@ -91,12 +87,6 @@ export default function CardServicePage() {
         }}
       />
       <CardServiceHome />
-      <ServiceSeoSection
-        heading={CARD_SERVICE_SEO_HEADING}
-        intro={CARD_SERVICE_SEO_INTRO}
-        features={CARD_SERVICE_FEATURES}
-        faqs={CARD_SERVICE_FAQS}
-      />
     </>
   );
 }

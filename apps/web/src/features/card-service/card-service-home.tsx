@@ -7,6 +7,7 @@ import {
   CommonProductHeader,
   ProductHeaderSettingsButton,
 } from "@/components/product-shell/product-header";
+import { ServiceHelpDialog } from "@/components/product-shell/service-help-dialog";
 import {
   TypingProfileCard,
   TypingProfileCardSkeleton,
@@ -18,6 +19,12 @@ import { useIsAuthenticated } from "./auth-context";
 import { CardServiceSettingsDialog, CreateDeckDialog } from "./components";
 import { useDeckList } from "./hooks";
 import { CARD_SERVICE_HOME_CLASS } from "./card-service-home.const";
+import {
+  CARD_SERVICE_FAQS,
+  CARD_SERVICE_FEATURES,
+  CARD_SERVICE_SEO_HEADING,
+  CARD_SERVICE_SEO_INTRO,
+} from "./card-service-content";
 
 export function CardServiceHome() {
   const [isCreateOpen, setCreateOpen] = useState(false);
@@ -54,10 +61,20 @@ export function CardServiceHome() {
       <CommonProductHeader
         activeService="card"
         settingsControl={
-          <ProductHeaderSettingsButton
-            onClick={() => setSettingsOpen(true)}
-            aria-label="카드 설정"
-          />
+          <>
+            <ServiceHelpDialog
+              content={{
+                title: CARD_SERVICE_SEO_HEADING,
+                intro: CARD_SERVICE_SEO_INTRO,
+                features: CARD_SERVICE_FEATURES,
+                faqs: CARD_SERVICE_FAQS,
+              }}
+            />
+            <ProductHeaderSettingsButton
+              onClick={() => setSettingsOpen(true)}
+              aria-label="카드 설정"
+            />
+          </>
         }
       />
 
