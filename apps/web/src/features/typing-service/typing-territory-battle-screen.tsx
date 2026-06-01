@@ -41,21 +41,21 @@ const RESULT_RETURN_SECONDS = 24;
 
 const TEAM_VIEW = {
   red: {
-    label: "RED TEAM",
-    shortLabel: "RED",
-    gradient: "from-[#8F3A4A]/90 via-[#B94A62]/80 to-[#C75C5C]/70",
-    border: "border-[#C75C5C]/45",
-    text: "text-[#F6B7BE]",
-    tile: "border-[#C75C5C]/55 bg-[#8F3A4A]/35 text-[#FDE2E5]",
+    label: "주황팀",
+    shortLabel: "주황",
+    gradient: "from-[#e8630a] via-orange-400 to-yellow-300",
+    border: "border-orange-300/70",
+    text: "text-orange-100",
+    tile: "border-orange-300/70 bg-orange-400/45 text-white",
     glow: "shadow-[0_0_40px_rgba(199,92,92,0.18)]",
   },
   blue: {
-    label: "BLUE TEAM",
-    shortLabel: "BLUE",
-    gradient: "from-[#334E8C]/90 via-[#4C63B6]/80 to-[#4F6FAD]/70",
-    border: "border-[#4F6FAD]/45",
-    text: "text-[#C7D2FE]",
-    tile: "border-[#4F6FAD]/55 bg-[#334E8C]/35 text-[#E0E7FF]",
+    label: "파랑팀",
+    shortLabel: "파랑",
+    gradient: "from-sky-600 via-sky-500 to-blue-400",
+    border: "border-sky-300/70",
+    text: "text-sky-100",
+    tile: "border-sky-300/70 bg-sky-500/45 text-white",
     glow: "shadow-[0_0_40px_rgba(79,111,173,0.18)]",
   },
 } as const;
@@ -65,7 +65,7 @@ type TypingTerritoryBattleScreenProps = {
 };
 
 function getTeamDisplayLabel(team: TerritoryBattleTeam) {
-  return team === TERRITORY_BATTLE_TEAM.RED ? "주황팀" : "보라팀";
+  return team === TERRITORY_BATTLE_TEAM.RED ? "주황팀" : "파랑팀";
 }
 
 function getTeamResultClass(team: TerritoryBattleTeam) {
@@ -629,7 +629,7 @@ function TypingTerritoryBattleGameScreen({
         <header className="grid grid-cols-[minmax(210px,1fr)_minmax(260px,420px)_minmax(210px,1fr)] items-center gap-4">
           <div className="rounded-[26px] border border-[#C75C5C]/35 bg-[#0B1220]/72 px-5 py-4 shadow-[0_18px_60px_rgba(0,0,0,0.22)] backdrop-blur-xl">
             <p className="text-[11px] font-black uppercase tracking-[0.28em] text-[#F6B7BE]">
-              RED SCORE
+              주황팀 점수
             </p>
             <p className="mt-1 text-[38px] font-black leading-none tracking-[-0.07em] text-[#F8FAFC]">
               {redScore}P
@@ -639,7 +639,7 @@ function TypingTerritoryBattleGameScreen({
           <div className="relative overflow-hidden rounded-[32px] border border-white/12 bg-[#F8FAFC]/10 px-6 py-4 text-center shadow-[0_24px_80px_rgba(0,0,0,0.3)] backdrop-blur-2xl">
             <div className="absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-[#F2C94C]/80 to-transparent" />
             <p className="text-[11px] font-black uppercase tracking-[0.32em] text-[#CBD5E1]">
-              Territory Battle
+              Card Flip Battle
             </p>
             <p className="mt-1 text-[42px] font-black leading-none tracking-[-0.08em] text-[#F8FAFC]">
               {timerLabel}
@@ -652,7 +652,7 @@ function TypingTerritoryBattleGameScreen({
 
           <div className="rounded-[26px] border border-[#4F6FAD]/35 bg-[#0B1220]/72 px-5 py-4 text-right shadow-[0_18px_60px_rgba(0,0,0,0.22)] backdrop-blur-xl">
             <p className="text-[11px] font-black uppercase tracking-[0.28em] text-[#C7D2FE]">
-              BLUE SCORE
+              파랑팀 점수
             </p>
             <p className="mt-1 text-[38px] font-black leading-none tracking-[-0.07em] text-[#F8FAFC]">
               {blueScore}P
@@ -673,10 +673,10 @@ function TypingTerritoryBattleGameScreen({
               <div className="flex items-center justify-between border-b border-white/10 px-5 py-3">
                 <div>
                   <p className="text-[11px] font-black uppercase tracking-[0.3em] text-[#94A3B8]">
-                    Polished Tactical Board
+                    카드를 뒤집는 팀 점령전
                   </p>
                   <h1 className="mt-1 text-[24px] font-black tracking-[-0.05em] text-[#F8FAFC]">
-                    타자 점령전
+                    판 뒤집기 점령전
                   </h1>
                 </div>
                 <div className="flex items-center gap-2 text-[12px] font-bold text-[#CBD5E1]">
@@ -699,7 +699,7 @@ function TypingTerritoryBattleGameScreen({
 
               <div className="flex items-center justify-between gap-3 border-t border-white/10 bg-[#0B1220]/80 px-5 py-3">
                 <p className="text-[11px] font-black uppercase tracking-[0.24em] text-[#94A3B8]">
-                  Quick targets
+                  뒤집을 판
                 </p>
                 <div className="flex min-w-0 flex-1 justify-end gap-2 overflow-hidden">
                   {displayBoard.slice(0, 5).map((cell) => (
@@ -732,13 +732,13 @@ function TypingTerritoryBattleGameScreen({
         <footer className="grid grid-cols-[220px_minmax(0,1fr)_220px] items-stretch gap-4 xl:grid-cols-[280px_minmax(0,1fr)_280px]">
           <div className="rounded-[26px] border border-white/10 bg-[#0B1220]/72 p-4 backdrop-blur-xl">
             <p className="text-[11px] font-black uppercase tracking-[0.25em] text-[#94A3B8]">
-              My Capture
+              내가 뒤집은 판
             </p>
             <p className="mt-2 text-[34px] font-black leading-none tracking-[-0.06em] text-[#F8FAFC]">
               {combo} combo
             </p>
             <p className="mt-2 text-[12px] font-bold text-[#CBD5E1]">
-              뒤집은 타일 {redCapturedCells}개
+              뒤집은 판 {redCapturedCells}개
             </p>
           </div>
 
@@ -748,7 +748,7 @@ function TypingTerritoryBattleGameScreen({
           >
             <div className="rounded-2xl border border-[#F2C94C]/25 bg-[#F2C94C]/10 px-4 py-3">
               <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#F8D86A]">
-                Target
+                뒤집을 단어
               </p>
               <p className="mt-1 truncate text-[22px] font-black tracking-[-0.04em] text-[#F8FAFC]">
                 {targetWord}
@@ -758,14 +758,14 @@ function TypingTerritoryBattleGameScreen({
               value={inputValue}
               onChange={(event) => setInputValue(event.target.value)}
               className="h-16 rounded-2xl border border-white/15 bg-[#F8FAFC] px-5 text-[22px] font-black tracking-[-0.04em] text-[#111827] outline-none ring-0 placeholder:text-[#64748B] focus:border-[#F2C94C]"
-              placeholder="보드 단어 입력"
+              placeholder="뒤집을 판의 단어를 입력해주세요"
               autoComplete="off"
             />
             <button
               type="submit"
               className="h-16 rounded-2xl border border-[#F2C94C]/30 bg-[#F2C94C] px-4 text-[16px] font-black tracking-[-0.03em] text-[#111827] transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-45"
             >
-              입력하기
+              입력하기 ↵
             </button>
           </form>
 
@@ -778,7 +778,7 @@ function TypingTerritoryBattleGameScreen({
                 type="button"
                 onClick={() => {
                   territoryRoom.sendStart();
-                  setMessage("서버 점령전 시작을 요청했습니다.");
+                  setMessage("판 뒤집기 점령전 시작을 요청했습니다.");
                 }}
                 disabled={!isServerConnected}
                 className="rounded-xl border border-white/12 bg-white/[0.08] px-3 py-2 text-[12px] font-black text-[#F8FAFC] transition hover:bg-white/[0.14] disabled:opacity-40"
