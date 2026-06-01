@@ -33,6 +33,7 @@ type TerritoryBattleRoomError = {
 export type UseTerritoryBattleRoomOptions = {
   enabled: boolean;
   nickname: string;
+  originRoomId: string;
 };
 
 export type UseTerritoryBattleRoomResult = {
@@ -47,26 +48,28 @@ export type UseTerritoryBattleRoomResult = {
   rejoin: () => void;
 };
 
-function readReconnectionToken() {
+function getReconnectionTokenStorageKey(originRoomId: string) {
+  return `${TERRITORY_BATTLE_RECONNECTION_TOKEN_STORAGE_KEY}:${originRoomId}`;
+}
+
+function readReconnectionToken(originRoomId: string) {
   if (typeof window === "undefined") return null;
   return window.localStorage.getItem(
-    TERRITORY_BATTLE_RECONNECTION_TOKEN_STORAGE_KEY
+    getReconnectionTokenStorageKey(originRoomId)
   );
 }
 
-function writeReconnectionToken(token: string) {
+function writeReconnectionToken(originRoomId: string, token: string) {
   if (typeof window === "undefined") return;
   window.localStorage.setItem(
-    TERRITORY_BATTLE_RECONNECTION_TOKEN_STORAGE_KEY,
+    getReconnectionTokenStorageKey(originRoomId),
     token
   );
 }
 
-function clearReconnectionToken() {
+function clearReconnectionToken(originRoomId: string) {
   if (typeof window === "undefined") return;
-  window.localStorage.removeItem(
-    TERRITORY_BATTLE_RECONNECTION_TOKEN_STORAGE_KEY
-  );
+  window.localStorage.removeItem(getReconnectionTokenStorageKey(originRoomId));
 }
 
 function normalizeRoomError(error: unknown): TerritoryBattleRoomError {
@@ -97,6 +100,7 @@ function normalizeRoomError(error: unknown): TerritoryBattleRoomError {
 export function useTerritoryBattleRoom({
   enabled,
   nickname,
+  originRoomId,
 }: UseTerritoryBattleRoomOptions): UseTerritoryBattleRoomResult {
   const [connectionState, setConnectionState] =
     useState<TerritoryBattleConnectionState>("idle");
@@ -129,17 +133,19 @@ export function useTerritoryBattleRoom({
     setRoomError(null);
 
     const client = new Client(resolveRaceServerUrl());
-    const storedReconnectionToken = readReconnectionToken();
+    const storedReconnectionToken = readReconnectionToken(originRoomId);
     const connectRoom = storedReconnectionToken
       ? client.reconnect<unknown>(storedReconnectionToken).catch(() => {
-          clearReconnectionToken();
+          clearReconnectionToken(originRoomId);
           if (!cancelled) setConnectionState("connecting");
           return client.joinOrCreate<unknown>(TERRITORY_BATTLE_ROOM_NAME, {
             nickname: nicknameRef.current,
+            sourceRoomId: originRoomId,
           });
         })
       : client.joinOrCreate<unknown>(TERRITORY_BATTLE_ROOM_NAME, {
           nickname: nicknameRef.current,
+          sourceRoomId: originRoomId,
         });
 
     if (storedReconnectionToken) setConnectionState("reconnecting");
@@ -154,7 +160,7 @@ export function useTerritoryBattleRoom({
         roomRef.current = room;
         setConnectionState("connected");
         setRoomId(room.roomId);
-        writeReconnectionToken(room.reconnectionToken);
+        writeReconnectionToken(originRoomId, room.reconnectionToken);
 
         room.onMessage(
           TERRITORY_BATTLE_EVENTS.STATE,
@@ -196,7 +202,7 @@ export function useTerritoryBattleRoom({
       roomRef.current = null;
       if (room) void room.leave(false);
     };
-  }, [enabled, rejoinToken]);
+  }, [enabled, originRoomId, rejoinToken]);
 
   const sendStart = useCallback(() => {
     setRoomError(null);
@@ -224,7 +230,7 @@ export function useTerritoryBattleRoom({
       return;
     }
 
-    clearReconnectionToken();
+    clearReconnectionToken(originRoomId);
 
     try {
       await room.leave(true);
@@ -233,7 +239,7 @@ export function useTerritoryBattleRoom({
     } finally {
       setConnectionState("disconnected");
     }
-  }, []);
+  }, [originRoomId]);
 
   const rejoin = useCallback(() => {
     setConnectionState("connecting");

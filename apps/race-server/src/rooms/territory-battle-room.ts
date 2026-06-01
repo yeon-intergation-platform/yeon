@@ -25,6 +25,7 @@ type TerritoryPlayer = TerritoryBattlePlayerSnapshot & {
 
 type TerritoryBattleRoomOptions = {
   seed?: string;
+  sourceRoomId?: string;
   durationSeconds?: number;
 };
 
@@ -50,6 +51,7 @@ export class TerritoryBattleRoom extends Room {
 
   private phase: TerritoryBattlePhase = TERRITORY_BATTLE_PHASE.WAITING;
   private seed = "";
+  private sourceRoomId = "";
   private board: TerritoryCellSnapshot[] = [];
   private readonly players = new Map<string, TerritoryPlayer>();
   private readonly clientPlayerIds = new Map<string, string>();
@@ -59,7 +61,12 @@ export class TerritoryBattleRoom extends Room {
   private finishTimer: { clear: () => void } | null = null;
 
   onCreate(options?: TerritoryBattleRoomOptions) {
-    this.seed = options?.seed?.trim() || `territory-${Date.now()}`;
+    this.sourceRoomId = options?.sourceRoomId?.trim().slice(0, 80) || "";
+    this.seed =
+      options?.seed?.trim() ||
+      (this.sourceRoomId
+        ? `territory-${this.sourceRoomId}`
+        : `territory-${Date.now()}`);
     this.board = createTerritoryBoard({ seed: this.seed });
     this.phase = TERRITORY_BATTLE_PHASE.WAITING;
     this.autoDispose = true;
@@ -77,6 +84,11 @@ export class TerritoryBattleRoom extends Room {
     });
 
     this.setState(this.createSnapshot());
+    this.setMetadata({
+      phase: this.phase,
+      players: 0,
+      sourceRoomId: this.sourceRoomId,
+    });
   }
 
   onJoin(client: Client, options?: { nickname?: string }) {
@@ -348,6 +360,7 @@ export class TerritoryBattleRoom extends Room {
     this.setMetadata({
       phase: snapshot.phase,
       players: snapshot.players.length,
+      sourceRoomId: this.sourceRoomId,
     });
   }
 }

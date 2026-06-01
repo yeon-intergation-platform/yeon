@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Play } from "lucide-react";
+import { ArrowLeft, Play, Swords } from "lucide-react";
 import type { TypingRoomSnapshot } from "@yeon/race-shared";
 import { SHARED_FEATURE_CLASS } from "@/features/shared-style-constants";
 
@@ -16,6 +16,7 @@ type TypingRoomWaitingHeaderProps = {
   isReady: boolean;
   isLeavingRoom: boolean;
   roomError: string | null;
+  territoryHref: string;
   onLeaveRoom: () => void;
   onCopyInvite: () => void;
   onStart: () => void;
@@ -32,6 +33,7 @@ export function TypingRoomWaitingHeader({
   isReady,
   isLeavingRoom,
   roomError,
+  territoryHref,
   onLeaveRoom,
   onCopyInvite,
   onStart,
@@ -90,6 +92,13 @@ export function TypingRoomWaitingHeader({
               >
                 {copied ? "초대 링크 복사됨" : "초대"}
               </button>
+              <a
+                href={territoryHref}
+                className="inline-flex items-center gap-2 rounded-xl bg-[#e8630a] px-4 py-2 text-[13px] font-semibold text-white transition-colors hover:brightness-110"
+              >
+                <Swords size={14} />
+                점령전 입장
+              </a>
               {isHost ? (
                 <button
                   type="button"

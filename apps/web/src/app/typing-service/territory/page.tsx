@@ -18,6 +18,18 @@ export const metadata: Metadata = {
   },
 };
 
-export default function TypingTerritoryBattlePage() {
-  return <TypingTerritoryBattleScreen />;
+type TypingTerritoryBattlePageProps = {
+  searchParams?: Promise<{ roomId?: string }>;
+};
+
+export default async function TypingTerritoryBattlePage({
+  searchParams,
+}: TypingTerritoryBattlePageProps) {
+  const resolvedSearchParams = await searchParams;
+
+  return (
+    <TypingTerritoryBattleScreen
+      originRoomId={resolvedSearchParams?.roomId ?? null}
+    />
+  );
 }

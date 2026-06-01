@@ -151,9 +151,9 @@ export function TypingServiceHome({
                 onClick={() => handleCtaClick("decks")}
               />
               <StartCard
-                href="/typing-service/territory"
+                href="/typing-service/rooms"
                 label="점령전 입장"
-                description="단어를 입력해 팀 보드 칸을 점령합니다."
+                description="타자방에 먼저 참가한 뒤 팀 점령전에 입장합니다."
                 tone="secondary"
                 onClick={() => handleCtaClick("territory")}
               />

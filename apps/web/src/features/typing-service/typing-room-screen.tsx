@@ -509,6 +509,10 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
         return;
       }
 
+      if (destination.pathname === "/typing-service/territory" && race.roomId) {
+        return;
+      }
+
       event.preventDefault();
       if (isLeavingRoom) return;
 
@@ -647,6 +651,9 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
           isReady={isReady}
           isLeavingRoom={isLeavingRoom}
           roomError={race.roomError}
+          territoryHref={`/typing-service/territory?roomId=${encodeURIComponent(
+            race.roomId ?? room.roomId
+          )}`}
           onLeaveRoom={onLeaveRoom}
           onCopyInvite={copyInvite}
           onStart={onStart}
