@@ -31,6 +31,10 @@ type CommonProductHeaderProps = {
   rightExtras?: ReactNode;
 };
 
+type AuthSessionPayload = {
+  authenticated?: unknown;
+};
+
 const COMMON_HEADER_BRAND_LABELS: Record<CommonServiceKey, string> = {
   home: "YEON",
   typing: "YEON 타자연습",
@@ -46,6 +50,20 @@ const PRODUCT_HEADER_INNER_DEFAULT_LAYOUT_CLASS =
 
 function joinClassNames(...values: Array<string | undefined>) {
   return values.filter(Boolean).join(" ");
+}
+
+async function fetchIsAuthenticated() {
+  const response = await fetch("/api/v1/auth/session", {
+    cache: "no-store",
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    return false;
+  }
+
+  const payload = (await response.json()) as AuthSessionPayload;
+  return payload.authenticated === true;
 }
 
 export function ProductHeader({
@@ -160,8 +178,30 @@ export function ProductHeaderProfileButton({
   href?: string;
 }) {
   const [open, setOpen] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
   const { logout, isLoggingOut } = useLogout();
+
+  useEffect(() => {
+    let cancelled = false;
+
+    fetchIsAuthenticated()
+      .then((nextIsAuthenticated) => {
+        if (!cancelled) {
+          setIsAuthenticated(nextIsAuthenticated);
+        }
+      })
+      .catch((error) => {
+        console.error(error);
+        if (!cancelled) {
+          setIsAuthenticated(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -186,6 +226,10 @@ export function ProductHeaderProfileButton({
       document.removeEventListener("keydown", handleKeyDown);
     };
   }, [open]);
+
+  if (!isAuthenticated) {
+    return null;
+  }
 
   return (
     <div ref={menuRef} className="relative shrink-0">
