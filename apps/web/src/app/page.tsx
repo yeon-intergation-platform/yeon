@@ -16,6 +16,7 @@ import { getCurrentAuthUser } from "@/server/auth/session";
 import {
   PLATFORM_HOME_HREF,
   getPlatformServices,
+  getPlatformServicesForRequest,
 } from "@/lib/platform-services";
 import { SITE_BRAND_NAME, SITE_SUPPORT_EMAIL } from "@/lib/site-brand";
 
@@ -127,6 +128,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
     headerStore.get("x-forwarded-host") ?? headerStore.get("host")
   );
   const devLoginOptions = await listDevLoginOptions(requestHostname);
+  const entryServices = getPlatformServicesForRequest(requestHostname);
 
   return (
     <>
@@ -141,7 +143,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
         nextPath={hasRequestedNextPath ? nextPath : PLATFORM_HOME_HREF}
         initialLoginModalOpen={openLoginModalOnLoad}
         devLoginOptions={devLoginOptions}
-        services={getPlatformServices()}
+        services={entryServices}
         isAuthenticated={!!currentUser}
       />
     </>

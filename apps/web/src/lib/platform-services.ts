@@ -72,6 +72,43 @@ export const PLATFORM_SERVICES = [
   },
 ] as const satisfies readonly PlatformServiceDescriptor[];
 
+const CANONICAL_ROOT_HOSTS = new Set(["yeon.world", "www.yeon.world"]);
+
+function normalizeRequestHostname(hostname: string | null | undefined) {
+  const firstHost = hostname?.split(",")[0]?.trim().toLowerCase();
+  if (!firstHost) return "";
+
+  if (firstHost.startsWith("[")) {
+    return firstHost.slice(0, firstHost.indexOf("]") + 1);
+  }
+
+  return firstHost.split(":")[0] ?? "";
+}
+
+export function shouldUseCanonicalServicePublicHref(
+  hostname: string | null | undefined
+) {
+  return CANONICAL_ROOT_HOSTS.has(normalizeRequestHostname(hostname));
+}
+
+export function resolvePlatformServiceEntryHref(
+  service: Pick<PlatformServiceDescriptor, "href" | "publicHref">,
+  hostname: string | null | undefined
+) {
+  return shouldUseCanonicalServicePublicHref(hostname)
+    ? service.publicHref
+    : service.href;
+}
+
+export function getPlatformServicesForRequest(
+  hostname: string | null | undefined
+): PlatformServiceDescriptor[] {
+  return PLATFORM_SERVICES.map((service) => ({
+    ...service,
+    publicHref: resolvePlatformServiceEntryHref(service, hostname),
+  }));
+}
+
 export const PLATFORM_HOME_HREF = "https://yeon.world";
 export const DEFAULT_COUNSELING_SERVICE_HREF = "/counseling-service";
 
