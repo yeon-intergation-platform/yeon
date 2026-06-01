@@ -102,8 +102,8 @@ function TerritoryLobbyPanel({
   onLeaveRoom,
   onToggleReady,
 }: TerritoryLobbyPanelProps) {
-  const orangeTeam = participants.filter((_, index) => index % 2 === 0);
-  const blueTeam = participants.filter((_, index) => index % 2 === 1);
+  const firstTeam = participants.filter((_, index) => index % 2 === 0);
+  const secondTeam = participants.filter((_, index) => index % 2 === 1);
   const recentMessages = messages.slice(-4);
   const roomInfo = [
     ["방 이름", room.title],
@@ -114,18 +114,18 @@ function TerritoryLobbyPanel({
   ];
 
   return (
-    <section className="overflow-hidden rounded-[30px] border-2 border-sky-400 bg-sky-100 p-3 shadow-[0_18px_50px_rgba(14,165,233,0.18)]">
+    <section className="overflow-hidden rounded-[30px] border border-[#e5e5e5] bg-white p-3 shadow-sm">
       <div className="grid gap-4 xl:grid-cols-[320px_minmax(0,1fr)]">
         <aside className="grid gap-3">
-          <div className="rounded-[22px] bg-sky-500 p-3 text-white shadow-lg">
-            <h2 className="text-center text-[22px] font-black tracking-[-0.05em]">
+          <div className="rounded-[22px] border border-[#e5e5e5] bg-white p-3">
+            <h2 className="text-center text-[22px] font-black tracking-[-0.05em] text-[#111]">
               {room.title}
             </h2>
-            <div className="mt-3 rounded-2xl bg-white p-3 text-[#111]">
+            <div className="mt-3 rounded-2xl border border-[#e5e5e5] bg-[#fafafa] p-3 text-[#111]">
               {roomInfo.map(([label, value]) => (
                 <div
                   key={label}
-                  className="mb-2 grid grid-cols-[minmax(0,1fr)_auto] rounded-xl bg-[#fafafa] px-3 py-2 text-[14px] font-black last:mb-0"
+                  className="mb-2 grid grid-cols-[minmax(0,1fr)_auto] rounded-xl bg-white px-3 py-2 text-[14px] font-black last:mb-0"
                 >
                   <span className="text-[#666]">• {label}</span>
                   <span>{value}</span>
@@ -134,20 +134,20 @@ function TerritoryLobbyPanel({
             </div>
           </div>
 
-          <div className="rounded-[22px] bg-sky-500 p-3 text-white shadow-lg">
-            <h3 className="text-center text-[20px] font-black tracking-[-0.05em]">
+          <div className="rounded-[22px] border border-[#e5e5e5] bg-white p-3">
+            <h3 className="text-center text-[20px] font-black tracking-[-0.05em] text-[#111]">
               이모티콘 표시
             </h3>
-            <div className="mt-2 grid grid-cols-4 gap-2 rounded-2xl bg-white p-3 text-center text-[28px]">
+            <div className="mt-2 grid grid-cols-4 gap-2 rounded-2xl bg-[#fafafa] p-3 text-center text-[28px]">
               {[
                 ["😁", "웃음"],
                 ["😴", "졸림"],
                 ["😡", "화남"],
                 ["😎", "준비"],
               ].map(([emoji, label]) => (
-                <div key={label} className="rounded-xl bg-[#fafafa] p-2">
+                <div key={label} className="rounded-xl bg-white p-2">
                   <div>{emoji}</div>
-                  <p className="mt-1 text-[11px] font-black text-sky-600">
+                  <p className="mt-1 text-[11px] font-black text-[#666]">
                     {label}
                   </p>
                 </div>
@@ -155,15 +155,15 @@ function TerritoryLobbyPanel({
             </div>
           </div>
 
-          <div className="rounded-[18px] bg-[#111] px-4 py-3 text-center text-[16px] font-black text-white shadow-lg">
+          <div className="rounded-[18px] bg-[#111] px-4 py-3 text-center text-[16px] font-black text-white">
             💬 채팅 하기
           </div>
 
-          <div className="rounded-[18px] bg-sky-500 p-3 text-white shadow-lg">
-            <h3 className="flex items-center justify-between text-[18px] font-black">
+          <div className="rounded-[18px] border border-[#e5e5e5] bg-white p-3">
+            <h3 className="flex items-center justify-between text-[18px] font-black text-[#111]">
               상세보기 <span>⌃</span>
             </h3>
-            <div className="mt-2 max-h-24 overflow-hidden rounded-xl bg-white p-2 text-[12px] font-bold leading-5 text-[#666]">
+            <div className="mt-2 max-h-24 overflow-hidden rounded-xl bg-[#fafafa] p-2 text-[12px] font-bold leading-5 text-[#666]">
               {recentMessages.length ? (
                 recentMessages.map((message) => (
                   <p key={message.id} className="truncate">
@@ -180,65 +180,65 @@ function TerritoryLobbyPanel({
           </div>
         </aside>
 
-        <div className="overflow-hidden rounded-[24px] border-2 border-sky-400 bg-white shadow-lg">
-          <div className="grid grid-cols-[160px_minmax(0,1fr)] border-b-2 border-sky-300 bg-sky-500 text-white">
+        <div className="overflow-hidden rounded-[24px] border border-[#e5e5e5] bg-white">
+          <div className="grid grid-cols-[160px_minmax(0,1fr)] border-b border-[#e5e5e5] bg-[#111] text-white">
             <div className="px-6 py-4 text-[22px] font-black">대기방</div>
             <div className="px-6 py-4 text-[22px] font-black">준비</div>
           </div>
 
-          <div className="grid min-h-[520px] grid-cols-[minmax(0,1fr)_34px_minmax(0,1fr)] gap-3 bg-sky-50 p-4">
+          <div className="grid min-h-[520px] grid-cols-[minmax(0,1fr)_34px_minmax(0,1fr)] gap-3 bg-[#fafafa] p-4">
             <TerritoryTeamColumn
-              tone="orange"
               title="주황팀"
-              members={orangeTeam}
+              members={firstTeam}
               maxSlots={5}
             />
-            <div className="flex flex-col items-center justify-center gap-8 text-3xl font-black text-sky-300">
+            <div className="flex flex-col items-center justify-center gap-8 text-3xl font-black text-[#aaa]">
               {Array.from({ length: 5 }).map((_, index) => (
                 <span key={index}>◆</span>
               ))}
             </div>
             <TerritoryTeamColumn
-              tone="blue"
               title="파랑팀"
-              members={blueTeam}
+              members={secondTeam}
               maxSlots={5}
             />
           </div>
 
-          <div className="grid gap-3 border-t-2 border-sky-200 bg-sky-100 p-4 md:grid-cols-[180px_minmax(0,1fr)_180px_220px]">
+          <div className="grid gap-3 border-t border-[#e5e5e5] bg-white p-4 md:grid-cols-[180px_minmax(0,1fr)_180px_220px]">
             <button
               type="button"
               onClick={onLeaveRoom}
               disabled={isLeavingRoom}
-              className="rounded-[22px] bg-red-500 px-5 py-4 text-[18px] font-black text-white shadow-md disabled:opacity-50"
+              className="rounded-[22px] border border-[#e5e5e5] bg-white px-5 py-4 text-[18px] font-black text-[#111] disabled:opacity-50"
             >
               {isLeavingRoom ? "나가는 중" : "방 나가기"}
             </button>
-            <p className="flex items-center justify-center rounded-[22px] bg-white px-4 py-3 text-center text-[13px] font-bold leading-5 text-[#666]">
+            <p className="flex items-center justify-center rounded-[22px] bg-[#fafafa] px-4 py-3 text-center text-[13px] font-bold leading-5 text-[#666]">
               {roomSummary}
             </p>
             <button
               type="button"
-              className="rounded-[22px] bg-sky-500 px-5 py-4 text-[18px] font-black text-white shadow-md"
+              className="rounded-[22px] bg-[#111] px-5 py-4 text-[18px] font-black text-white"
             >
               팀 이동
             </button>
             <button
               type="button"
               onClick={onToggleReady}
-              className={`rounded-[22px] px-5 py-4 text-[18px] font-black text-white shadow-md ${
-                isReady ? "bg-[#666]" : "bg-sky-500"
+              className={`rounded-[22px] px-5 py-4 text-[18px] font-black ${
+                isReady
+                  ? "border border-[#e5e5e5] bg-white text-[#111]"
+                  : "bg-[#111] text-white"
               }`}
             >
               {isReady ? "준비 해제" : "준비하기"}
             </button>
           </div>
 
-          <div className="border-t border-sky-200 bg-white p-4">
+          <div className="border-t border-[#e5e5e5] bg-white p-4">
             <a
               href={territoryHref}
-              className="block rounded-[22px] bg-[#e8630a] px-6 py-4 text-center text-[20px] font-black text-white shadow-md transition hover:brightness-110"
+              className="block rounded-[22px] bg-[#e8630a] px-6 py-4 text-center text-[20px] font-black text-white transition-opacity hover:opacity-90"
             >
               점령전 입장
             </a>
@@ -250,7 +250,6 @@ function TerritoryLobbyPanel({
 }
 
 type TerritoryTeamColumnProps = {
-  tone: "orange" | "blue";
   title: string;
   members: (
     | NonNullable<
@@ -262,7 +261,6 @@ type TerritoryTeamColumnProps = {
 };
 
 function TerritoryTeamColumn({
-  tone,
   title,
   members,
   maxSlots,
@@ -271,29 +269,25 @@ function TerritoryTeamColumn({
     { length: maxSlots },
     (_, index) => members[index] ?? null
   );
-  const toneClass =
-    tone === "orange"
-      ? "bg-[#e8630a] border-orange-200"
-      : "bg-sky-500 border-sky-200";
 
   return (
     <div className="min-w-0">
-      <div
-        className={`flex items-center gap-3 rounded-t-2xl px-4 py-3 text-white ${toneClass}`}
-      >
-        <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-[24px]">
+      <div className="flex items-center gap-3 rounded-t-2xl border border-[#e5e5e5] bg-white px-4 py-3 text-[#111]">
+        <span className="flex h-12 w-12 items-center justify-center rounded-full bg-[#fafafa] text-[24px]">
           🏴‍☠️
         </span>
         <h3 className="text-[24px] font-black tracking-[-0.05em]">{title}</h3>
       </div>
-      <div className="grid gap-2 border-x-2 border-b-2 border-sky-100 bg-white p-3">
+      <div className="grid gap-2 border-x border-b border-[#e5e5e5] bg-white p-3">
         {slots.map((member, index) => {
           const isLocked = index >= 5;
           return (
             <div
               key={member?.id ?? `${title}-${index}`}
               className={`grid min-h-14 grid-cols-[42px_minmax(0,1fr)_auto] items-center gap-3 rounded-xl border px-3 py-2 ${
-                member ? "border-sky-100 bg-pink-50" : "border-sky-100 bg-white"
+                member
+                  ? "border-[#111] bg-[#fafafa]"
+                  : "border-[#e5e5e5] bg-white"
               }`}
             >
               <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-[22px] shadow-sm">
@@ -303,7 +297,7 @@ function TerritoryTeamColumn({
                 {member?.label ?? (isLocked ? "잠김" : "빈 자리")}
               </span>
               {member ? (
-                <span className="text-[13px] font-black text-green-600">
+                <span className="text-[13px] font-black text-[#666]">
                   {member.role === "host"
                     ? "방장 👑"
                     : member.isReady
