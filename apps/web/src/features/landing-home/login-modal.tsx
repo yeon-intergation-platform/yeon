@@ -239,7 +239,7 @@ export function LoginModal({
                   공통 계정으로 계속할게요
                 </h2>
                 <p className="m-0 text-[14px] leading-[1.6] text-[#626b79]">
-                  상담 워크스페이스처럼 계정이 필요한 서비스를 바로 열 수
+                  카드·타자·커뮤니티처럼 계정이 필요한 서비스를 바로 이어 쓸 수
                   있어요.
                 </p>
               </div>
