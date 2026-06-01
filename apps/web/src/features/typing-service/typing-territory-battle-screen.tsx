@@ -1,12 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import {
-  mountTerritoryBattleEngine,
-  type TerritoryBattleEngineController,
-} from "@yeon/typing-race-engine";
 import {
   TERRITORY_BATTLE_PHASE,
   TERRITORY_BATTLE_TEAM,
@@ -41,12 +37,12 @@ const RESULT_RETURN_SECONDS = 24;
 
 const TEAM_VIEW = {
   red: {
-    label: "주황팀",
-    shortLabel: "주황",
-    gradient: "from-[#e8630a] via-orange-400 to-yellow-300",
-    border: "border-orange-300/70",
-    text: "text-orange-100",
-    tile: "border-orange-300/70 bg-orange-400/45 text-white",
+    label: "빨강팀",
+    shortLabel: "빨강",
+    gradient: "from-red-700 via-red-600 to-red-500",
+    border: "border-red-400/70",
+    text: "text-red-100",
+    tile: "border-red-300 bg-red-600 text-white",
     glow: "shadow-[0_0_40px_rgba(199,92,92,0.18)]",
   },
   blue: {
@@ -55,7 +51,7 @@ const TEAM_VIEW = {
     gradient: "from-sky-600 via-sky-500 to-blue-400",
     border: "border-sky-300/70",
     text: "text-sky-100",
-    tile: "border-sky-300/70 bg-sky-500/45 text-white",
+    tile: "border-sky-300 bg-sky-600 text-white",
     glow: "shadow-[0_0_40px_rgba(79,111,173,0.18)]",
   },
 } as const;
@@ -65,13 +61,13 @@ type TypingTerritoryBattleScreenProps = {
 };
 
 function getTeamDisplayLabel(team: TerritoryBattleTeam) {
-  return team === TERRITORY_BATTLE_TEAM.RED ? "주황팀" : "파랑팀";
+  return team === TERRITORY_BATTLE_TEAM.RED ? "빨강팀" : "파랑팀";
 }
 
 function getTeamResultClass(team: TerritoryBattleTeam) {
   return team === TERRITORY_BATTLE_TEAM.RED
-    ? "border-orange-400 bg-orange-500"
-    : "border-purple-400 bg-purple-600";
+    ? "border-red-400 bg-red-600"
+    : "border-sky-400 bg-sky-600";
 }
 
 function TerritoryGateScreen() {
@@ -295,10 +291,22 @@ function countOwnedCells(
   return board.filter((cell) => cell.owner === owner).length;
 }
 
-function pickNextTargetWord(board: readonly TerritoryCellSnapshot[]) {
+function getOpponentTeam(team: TerritoryBattleTeam): TerritoryBattleTeam {
+  return team === TERRITORY_BATTLE_TEAM.RED
+    ? TERRITORY_BATTLE_TEAM.BLUE
+    : TERRITORY_BATTLE_TEAM.RED;
+}
+
+function pickNextTargetWord(
+  board: readonly TerritoryCellSnapshot[],
+  myTeam: TerritoryBattleTeam
+) {
+  const opponentTeam = getOpponentTeam(myTeam);
+
   return (
+    board.find((cell) => cell.owner === opponentTeam) ??
     board.find((cell) => cell.owner === "neutral") ??
-    board.find((cell) => cell.owner === TERRITORY_BATTLE_TEAM.BLUE) ??
+    board.find((cell) => cell.owner !== myTeam) ??
     board[0]
   )?.word;
 }
@@ -306,7 +314,99 @@ function pickNextTargetWord(board: readonly TerritoryCellSnapshot[]) {
 function getCellClass(owner: TerritoryCellSnapshot["owner"]) {
   if (owner === TERRITORY_BATTLE_TEAM.RED) return TEAM_VIEW.red.tile;
   if (owner === TERRITORY_BATTLE_TEAM.BLUE) return TEAM_VIEW.blue.tile;
-  return "border-[#CBD5E1]/25 bg-[#F8FAFC]/12 text-[#F8FAFC]";
+  return "border-slate-600 bg-slate-800 text-white";
+}
+
+function getCellOwnerLabel(owner: TerritoryCellSnapshot["owner"]) {
+  if (owner === TERRITORY_BATTLE_TEAM.RED) return "빨강";
+  if (owner === TERRITORY_BATTLE_TEAM.BLUE) return "파랑";
+  return "중립";
+}
+
+function TerritoryCardBoard({
+  board,
+  myTeam,
+  targetWord,
+  redScore,
+  blueScore,
+  onPickWord,
+}: {
+  board: readonly TerritoryCellSnapshot[];
+  myTeam: TerritoryBattleTeam;
+  targetWord: string;
+  redScore: number;
+  blueScore: number;
+  onPickWord: (word: string) => void;
+}) {
+  const opponentTeam = getOpponentTeam(myTeam);
+
+  return (
+    <div className="flex h-full min-h-0 flex-col rounded-[28px] border border-white/10 bg-[#111827] p-4 shadow-[0_30px_100px_rgba(0,0,0,0.28)]">
+      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 border-b border-white/10 pb-3">
+        <p className="text-left text-[14px] font-black text-red-200">
+          RED {redScore}P
+        </p>
+        <div className="text-center">
+          <p className="text-[26px] font-black leading-none tracking-[-0.06em] text-white">
+            {targetWord ? "READY" : "WAIT"}
+          </p>
+          <p className="mt-1 text-[11px] font-bold text-slate-300">
+            상대팀 카드를 입력하면 내 팀 카드로 뒤집힙니다.
+          </p>
+        </div>
+        <p className="text-right text-[14px] font-black text-sky-200">
+          BLUE {blueScore}P
+        </p>
+      </div>
+
+      <div className="flex min-h-0 flex-1 items-center justify-center py-4">
+        <div className="grid h-full max-h-[620px] w-full max-w-[720px] grid-cols-5 gap-2">
+          {board.map((cell) => {
+            const isOpponentCard = cell.owner === opponentTeam;
+            const isMyCard = cell.owner === myTeam;
+            const isTarget = cell.word === targetWord;
+
+            return (
+              <button
+                key={cell.id}
+                type="button"
+                onClick={() => onPickWord(cell.word)}
+                className={`group relative min-h-20 rounded-[10px] border-2 px-2 py-3 text-center shadow-inner transition hover:-translate-y-0.5 hover:brightness-110 ${getCellClass(
+                  cell.owner
+                )} ${isTarget ? "ring-4 ring-yellow-300" : ""} ${
+                  isOpponentCard ? "cursor-pointer" : ""
+                } ${isMyCard ? "opacity-90" : ""}`}
+              >
+                <span className="absolute left-2 top-2 rounded-full bg-black/30 px-2 py-0.5 text-[10px] font-black text-white/80">
+                  {getCellOwnerLabel(cell.owner)}
+                </span>
+                <span className="flex h-full items-center justify-center pt-3 text-[18px] font-black tracking-[-0.05em] text-white [text-shadow:0_2px_0_rgba(0,0,0,0.28)]">
+                  {cell.word}
+                </span>
+                {isOpponentCard && (
+                  <span className="absolute inset-x-2 bottom-2 rounded-full bg-white/18 py-0.5 text-[10px] font-black text-white opacity-0 transition group-hover:opacity-100">
+                    뒤집기 타깃
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-3 gap-2 border-t border-white/10 pt-3 text-center text-[12px] font-black">
+        <div className="rounded-xl border border-red-300/40 bg-red-600 px-3 py-2 text-white">
+          빨강 카드
+        </div>
+        <div className="rounded-xl border border-slate-500 bg-slate-800 px-3 py-2 text-white">
+          중립 카드
+        </div>
+        <div className="rounded-xl border border-sky-300/40 bg-sky-600 px-3 py-2 text-white">
+          파랑 카드
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function formatTimer(snapshot: TerritoryBattleSnapshot | null, now: number) {
@@ -439,17 +539,9 @@ function TypingTerritoryBattleGameScreen({
     "서버 연결 전에는 로컬 규칙으로 점령전을 체험할 수 있습니다."
   );
   const [now, setNow] = useState(() => Date.now());
-  const engineContainerRef = useRef<HTMLDivElement | null>(null);
-  const engineControllerRef = useRef<TerritoryBattleEngineController | null>(
-    null
-  );
-  const latestSnapshotRef = useRef<TerritoryBattleSnapshot | null>(
-    territoryRoom.snapshot
-  );
   const displayBoard = territoryRoom.snapshot?.board ?? board;
   const isServerConnected =
     territoryRoom.connectionState === "connected" && !!territoryRoom.snapshot;
-  const targetWord = pickNextTargetWord(displayBoard) ?? "";
   const redScore =
     territoryRoom.snapshot?.teams.find(
       (team) => team.team === TERRITORY_BATTLE_TEAM.RED
@@ -505,6 +597,15 @@ function TypingTerritoryBattleGameScreen({
     ]
   );
   const hudPlayers = engineSnapshot.players;
+  const currentPlayer =
+    hudPlayers.find((player) => player.id === LOCAL_PLAYER_ID) ??
+    hudPlayers[0] ??
+    null;
+  const myTeam = currentPlayer?.team ?? TERRITORY_BATTLE_TEAM.RED;
+  const opponentTeam = getOpponentTeam(myTeam);
+  const myCapturedCells =
+    myTeam === TERRITORY_BATTLE_TEAM.RED ? redCapturedCells : blueCapturedCells;
+  const targetWord = pickNextTargetWord(displayBoard, myTeam) ?? "";
   const timerLabel = formatTimer(territoryRoom.snapshot, now);
   const returnPath = `/typing-service/rooms/${encodeURIComponent(
     originRoomId
@@ -537,37 +638,6 @@ function TypingTerritoryBattleGameScreen({
     router.push(returnPath);
   }, [resultReturnSeconds, returnPath, router, shouldShowResult]);
 
-  useEffect(() => {
-    latestSnapshotRef.current = engineSnapshot;
-    engineControllerRef.current?.setSnapshot(engineSnapshot);
-  }, [engineSnapshot]);
-
-  useEffect(() => {
-    const container = engineContainerRef.current;
-    if (!container) return;
-
-    let cancelled = false;
-    void mountTerritoryBattleEngine({
-      container,
-      snapshot: latestSnapshotRef.current ?? undefined,
-    }).then((controller) => {
-      if (cancelled) {
-        controller.destroy();
-        return;
-      }
-
-      engineControllerRef.current = controller;
-      if (latestSnapshotRef.current)
-        controller.setSnapshot(latestSnapshotRef.current);
-    });
-
-    return () => {
-      cancelled = true;
-      engineControllerRef.current?.destroy();
-      engineControllerRef.current = null;
-    };
-  }, []);
-
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -594,10 +664,10 @@ function TypingTerritoryBattleGameScreen({
       return;
     }
 
-    if (targetCell.owner === TERRITORY_BATTLE_TEAM.RED) {
+    if (targetCell.owner === myTeam) {
       setCombo(0);
       setMessage(
-        "이미 우리 팀이 점령한 칸입니다. 중립 또는 상대 칸을 입력해 주세요."
+        "이미 우리 팀 카드입니다. 상대팀 카드나 중립 카드를 입력해 주세요."
       );
       return;
     }
@@ -606,18 +676,22 @@ function TypingTerritoryBattleGameScreen({
     const { board: nextBoard, result } = captureTerritoryCell({
       board,
       cellId: targetCell.id,
-      team: TERRITORY_BATTLE_TEAM.RED,
+      team: myTeam,
       playerId: LOCAL_PLAYER_ID,
       combo: nextCombo,
       capturedAt: Date.now(),
     });
 
     setBoard(nextBoard);
-    setTeamScore((score) => ({ ...score, red: score.red + result.scoreDelta }));
+    setTeamScore((score) =>
+      myTeam === TERRITORY_BATTLE_TEAM.RED
+        ? { ...score, red: score.red + result.scoreDelta }
+        : { ...score, blue: score.blue + result.scoreDelta }
+    );
     setCombo(nextCombo);
     setInputValue("");
     setMessage(
-      `${targetCell.word} 점령 성공 · +${result.scoreDelta}P${
+      `${targetCell.word} 카드 뒤집기 성공 · +${result.scoreDelta}P${
         result.isSteal ? " · 탈환" : ""
       }${result.completesLine ? " · 라인 완성" : ""}`
     );
@@ -629,7 +703,7 @@ function TypingTerritoryBattleGameScreen({
         <header className="grid grid-cols-[minmax(210px,1fr)_minmax(260px,420px)_minmax(210px,1fr)] items-center gap-4">
           <div className="rounded-[26px] border border-[#C75C5C]/35 bg-[#0B1220]/72 px-5 py-4 shadow-[0_18px_60px_rgba(0,0,0,0.22)] backdrop-blur-xl">
             <p className="text-[11px] font-black uppercase tracking-[0.28em] text-[#F6B7BE]">
-              주황팀 점수
+              빨강팀 점수
             </p>
             <p className="mt-1 text-[38px] font-black leading-none tracking-[-0.07em] text-[#F8FAFC]">
               {redScore}P
@@ -673,10 +747,10 @@ function TypingTerritoryBattleGameScreen({
               <div className="flex items-center justify-between border-b border-white/10 px-5 py-3">
                 <div>
                   <p className="text-[11px] font-black uppercase tracking-[0.3em] text-[#94A3B8]">
-                    카드를 뒤집는 팀 점령전
+                    중앙 카드를 뒤집는 팀 점령전
                   </p>
                   <h1 className="mt-1 text-[24px] font-black tracking-[-0.05em] text-[#F8FAFC]">
-                    판 뒤집기 점령전
+                    상대팀 카드를 입력해 뒤집으세요
                   </h1>
                 </div>
                 <div className="flex items-center gap-2 text-[12px] font-bold text-[#CBD5E1]">
@@ -685,6 +759,10 @@ function TypingTerritoryBattleGameScreen({
                       ? "동점"
                       : `${winner.toUpperCase()} 우세`}
                   </span>
+                  <span className="rounded-full border border-yellow-300/30 bg-yellow-300/10 px-3 py-1 text-yellow-100">
+                    내 팀 {getTeamDisplayLabel(myTeam)} · 타깃{" "}
+                    {getTeamDisplayLabel(opponentTeam)}
+                  </span>
                   <span className="rounded-full border border-[#A3E635]/20 bg-[#A3E635]/10 px-3 py-1 text-[#D9F99D]">
                     {isServerConnected ? "LIVE" : "LOCAL"}
                   </span>
@@ -692,9 +770,14 @@ function TypingTerritoryBattleGameScreen({
               </div>
 
               <div className="min-h-0 flex-1 p-3">
-                <div className="h-full min-h-[360px] overflow-hidden rounded-[22px] border border-white/10 bg-[#0F172A]">
-                  <div ref={engineContainerRef} className="h-full w-full" />
-                </div>
+                <TerritoryCardBoard
+                  board={displayBoard}
+                  myTeam={myTeam}
+                  targetWord={targetWord}
+                  redScore={redScore}
+                  blueScore={blueScore}
+                  onPickWord={setInputValue}
+                />
               </div>
 
               <div className="flex items-center justify-between gap-3 border-t border-white/10 bg-[#0B1220]/80 px-5 py-3">
@@ -702,20 +785,26 @@ function TypingTerritoryBattleGameScreen({
                   뒤집을 판
                 </p>
                 <div className="flex min-w-0 flex-1 justify-end gap-2 overflow-hidden">
-                  {displayBoard.slice(0, 5).map((cell) => (
-                    <button
-                      key={cell.id}
-                      type="button"
-                      className={`min-w-0 rounded-full border px-3 py-1.5 text-center text-[11px] font-black transition hover:scale-[1.02] ${getCellClass(
-                        cell.owner
-                      )}`}
-                      onClick={() => setInputValue(cell.word)}
-                    >
-                      <span className="block max-w-20 truncate">
-                        {cell.word}
-                      </span>
-                    </button>
-                  ))}
+                  {displayBoard
+                    .filter((cell) => cell.owner === opponentTeam)
+                    .concat(
+                      displayBoard.filter((cell) => cell.owner === "neutral")
+                    )
+                    .slice(0, 5)
+                    .map((cell) => (
+                      <button
+                        key={cell.id}
+                        type="button"
+                        className={`min-w-0 rounded-full border px-3 py-1.5 text-center text-[11px] font-black transition hover:scale-[1.02] ${getCellClass(
+                          cell.owner
+                        )}`}
+                        onClick={() => setInputValue(cell.word)}
+                      >
+                        <span className="block max-w-20 truncate">
+                          {cell.word}
+                        </span>
+                      </button>
+                    ))}
                 </div>
               </div>
             </div>
@@ -738,7 +827,7 @@ function TypingTerritoryBattleGameScreen({
               {combo} combo
             </p>
             <p className="mt-2 text-[12px] font-bold text-[#CBD5E1]">
-              뒤집은 판 {redCapturedCells}개
+              뒤집은 판 {myCapturedCells}개
             </p>
           </div>
 
@@ -751,7 +840,7 @@ function TypingTerritoryBattleGameScreen({
                 뒤집을 단어
               </p>
               <p className="mt-1 truncate text-[22px] font-black tracking-[-0.04em] text-[#F8FAFC]">
-                {targetWord}
+                {targetWord || "대기"}
               </p>
             </div>
             <input
