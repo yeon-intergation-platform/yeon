@@ -135,7 +135,7 @@ export function SlimeCombatValidationRuntime() {
             {attackHitbox ? (
               <div
                 data-testid="slime-combat-attack-hitbox"
-                className="absolute z-40 border-2 border-orange-300 bg-orange-300/20 shadow-[0_0_26px_rgba(251,146,60,0.35)]"
+                className="absolute z-40 border-2 border-white/20 bg-white/10 shadow-[0_0_26px_rgba(255,255,255,0.14)]"
                 style={{
                   left: attackHitbox.x,
                   top: attackHitbox.y,
@@ -143,7 +143,7 @@ export function SlimeCombatValidationRuntime() {
                   height: attackHitbox.height,
                 }}
               >
-                <span className="absolute -top-6 left-0 text-[10px] font-black uppercase tracking-[0.16em] text-orange-200">
+                <span className="absolute -top-6 left-0 text-[10px] font-black uppercase tracking-[0.16em] text-white/80">
                   active hitbox
                 </span>
               </div>
@@ -156,7 +156,8 @@ export function SlimeCombatValidationRuntime() {
                   state.enemy.x +
                   SLIME_COMBAT_STAGE.enemyWidth / 2 -
                   GREEN_SLIME_COMBAT_SPRITE.width / 2,
-                top: SLIME_COMBAT_STAGE.groundY - GREEN_SLIME_COMBAT_SPRITE.height,
+                top:
+                  SLIME_COMBAT_STAGE.groundY - GREEN_SLIME_COMBAT_SPRITE.height,
                 width: GREEN_SLIME_COMBAT_SPRITE.width,
                 height: GREEN_SLIME_COMBAT_SPRITE.height,
                 opacity: state.enemy.hp === 0 ? 0.35 : 1,

@@ -20,7 +20,7 @@ export function AuthShell({
       className="min-h-screen text-[#f8f7f3]"
       style={{
         background:
-          "radial-gradient(circle at top, rgba(232,99,10,0.16), transparent 28%), linear-gradient(180deg, #080808 0%, #0f0f11 100%)",
+          "radial-gradient(circle at top, rgba(248,247,243,0.08), transparent 28%), linear-gradient(180deg, #080808 0%, #0f0f11 100%)",
       }}
     >
       <div className="w-[min(560px,calc(100%-32px))] mx-auto min-h-screen grid place-items-center py-10">

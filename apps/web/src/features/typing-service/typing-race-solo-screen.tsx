@@ -493,14 +493,14 @@ export function TypingRaceSoloScreen({
       />
 
       {offlineReason && (
-        <div className="border-b border-[#fcd34d] bg-[#fef3c7] px-6 py-2 text-[12px] text-[#92400e]">
+        <div className="border-b border-[#e5e5e5] bg-[#fafafa] px-6 py-2 text-[12px] text-[#666]">
           <div className="flex items-center justify-between px-6 md:px-10">
             <span>{offlineReason}</span>
             {onRetryMultiplayer && (
               <button
                 type="button"
                 onClick={onRetryMultiplayer}
-                className="rounded border border-[#f59e0b] px-2 py-0.5 text-[11px] font-medium text-[#92400e] hover:bg-[#fde68a]"
+                className="rounded border border-[#e5e5e5] px-2 py-0.5 text-[11px] font-medium text-[#111] hover:bg-white"
               >
                 {retryLabel ?? "재연결"}
               </button>

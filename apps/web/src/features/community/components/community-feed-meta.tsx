@@ -7,7 +7,7 @@ function getCategoryBadgeClassName(category: WritableCommunityCategory) {
     case "타자친구 모집":
       return "inline-flex items-center rounded-full bg-[#e7f7ef] px-2.5 py-1 text-[12px] font-bold text-[#00875a]";
     case "카드친구 모집":
-      return "inline-flex items-center rounded-full bg-[#fff4d6] px-2.5 py-1 text-[12px] font-bold text-[#8a5a00]";
+      return "inline-flex items-center rounded-full bg-[#f1f1f1] px-2.5 py-1 text-[12px] font-bold text-[#555]";
     case "관리자에게 아무말/조언":
       return "inline-flex items-center rounded-full bg-[#f1e8ff] px-2.5 py-1 text-[12px] font-bold text-[#6d28d9]";
     case "잡담":

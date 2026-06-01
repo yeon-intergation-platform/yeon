@@ -141,7 +141,7 @@ export function BulkAddCardsForm({
           </ul>
         ) : null}
         {parseResult.warnings.length > 0 ? (
-          <ul className="flex flex-col gap-1 rounded-xl border border-amber-200 bg-amber-50 p-3 text-amber-700">
+          <ul className="flex flex-col gap-1 rounded-xl border border-[#e5e5e5] bg-[#fafafa] p-3 text-[#666]">
             {parseResult.warnings.map((message) => (
               <li key={message}>• {message}</li>
             ))}

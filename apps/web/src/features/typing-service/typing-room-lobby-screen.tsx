@@ -454,7 +454,7 @@ export function TypingRoomLobbyScreen() {
                         </p>
                         <div className="mt-4 flex flex-wrap gap-2 text-[12px] font-semibold">
                           <span className="inline-flex items-center gap-1.5 rounded-full border border-[#e5e5e5] bg-white px-3 py-1.5 text-[#666]">
-                            <Crown size={13} className="text-[#b7791f]" />{" "}
+                            <Crown size={13} className="text-[#666]" />{" "}
                             {room.hostLabel
                               ? `${room.hostLabel}님의 방`
                               : `방장 ${occupancy.hostCount}명`}

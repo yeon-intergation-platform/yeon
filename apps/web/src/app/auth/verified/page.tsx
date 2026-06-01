@@ -19,7 +19,7 @@ export default function AuthVerifiedPage() {
       footer={
         <Link
           href="/auth/login"
-          className="inline-flex min-h-[52px] items-center justify-center rounded-full bg-[#e8630a] px-[22px] text-[15px] font-bold text-[#fffaf4] transition-transform duration-200 ease-[ease] hover:-translate-y-px"
+          className="inline-flex min-h-[52px] items-center justify-center rounded-full bg-[#f8f7f3] px-[22px] text-[15px] font-bold text-[#080808] transition-transform duration-200 ease-[ease] hover:-translate-y-px"
         >
           로그인
         </Link>

@@ -17,8 +17,8 @@ export function CloudImportEntryHeader({
 }: CloudImportEntryHeaderProps) {
   return (
     <div className="border-b border-border bg-surface-2/30 px-4 py-4 sm:px-5">
-      <div className="relative overflow-hidden rounded-2xl border border-border-light bg-[linear-gradient(180deg,rgba(255,255,255,0.028),rgba(232,99,10,0.055))] px-4 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] sm:px-5 sm:py-5">
-        <div className="pointer-events-none absolute inset-x-5 top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(232,99,10,0.28),transparent)]" />
+      <div className="relative overflow-hidden rounded-2xl border border-border-light bg-[linear-gradient(180deg,rgba(255,255,255,0.028),rgba(248,247,243,0.055))] px-4 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] sm:px-5 sm:py-5">
+        <div className="pointer-events-none absolute inset-x-5 top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(129,140,248,0.28),transparent)]" />
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
             <div className="min-w-0">
@@ -58,7 +58,7 @@ export function CloudImportEntryHeader({
             </div>
             <div className="flex flex-col gap-2 sm:flex-row">
               <button
-                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-accent-border bg-accent px-4 py-2.5 text-[13px] font-semibold text-white shadow-[0_10px_24px_rgba(232,99,10,0.18)] transition-[background-color,box-shadow] duration-150 hover:bg-[var(--accent-hover)] hover:shadow-[0_14px_28px_rgba(232,99,10,0.22)]"
+                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-accent-border bg-accent px-4 py-2.5 text-[13px] font-semibold text-white shadow-[0_10px_24px_rgba(129,140,248,0.18)] transition-[background-color,box-shadow] duration-150 hover:bg-[var(--accent-hover)] hover:shadow-[0_14px_28px_rgba(129,140,248,0.22)]"
                 onClick={onOpenFilePicker}
                 type="button"
                 title="내 컴퓨터에서 파일 선택"

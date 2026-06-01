@@ -187,11 +187,7 @@ function TerritoryLobbyPanel({
           </div>
 
           <div className="grid min-h-[520px] grid-cols-[minmax(0,1fr)_34px_minmax(0,1fr)] gap-3 bg-[#fafafa] p-4">
-            <TerritoryTeamColumn
-              title="주황팀"
-              members={firstTeam}
-              maxSlots={5}
-            />
+            <TerritoryTeamColumn title="1팀" members={firstTeam} maxSlots={5} />
             <div className="flex flex-col items-center justify-center gap-8 text-3xl font-black text-[#aaa]">
               {Array.from({ length: 5 }).map((_, index) => (
                 <span key={index}>◆</span>
@@ -238,7 +234,7 @@ function TerritoryLobbyPanel({
           <div className="border-t border-[#e5e5e5] bg-white p-4">
             <a
               href={territoryHref}
-              className="block rounded-[22px] bg-[#e8630a] px-6 py-4 text-center text-[20px] font-black text-white transition-opacity hover:opacity-90"
+              className="block rounded-[22px] bg-[#111] px-6 py-4 text-center text-[20px] font-black text-white transition-opacity hover:opacity-90"
             >
               점령전 입장
             </a>
@@ -299,7 +295,7 @@ function TerritoryTeamColumn({
               {member ? (
                 <span className="text-[13px] font-black text-[#666]">
                   {member.role === "host"
-                    ? "방장 👑"
+                    ? "방장"
                     : member.isReady
                       ? "준비 완료 ✓"
                       : "준비 중 …"}

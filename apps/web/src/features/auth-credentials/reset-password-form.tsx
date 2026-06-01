@@ -120,7 +120,7 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
           disabled={isSubmitting}
         />
         {mismatched ? (
-          <span className="text-[12px] leading-[1.55] text-[#ffb38a]">
+          <span className="text-[12px] leading-[1.55] text-[#f8f7f3]">
             두 비밀번호가 일치하지 않아요.
           </span>
         ) : null}
@@ -135,7 +135,7 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
       <button
         type="submit"
         disabled={isSubmitting || passwordHelper !== null || mismatched}
-        className={`min-h-[52px] rounded-full bg-[#e8630a] px-[22px] transition-transform duration-200 ease-[ease] hover:enabled:-translate-y-px disabled:cursor-not-allowed disabled:opacity-70 ${SHARED_FEATURE_CLASS.text15EmphasisOnCream}`}
+        className={`min-h-[52px] rounded-full bg-[#f8f7f3] px-[22px] text-[#080808] transition-transform duration-200 ease-[ease] hover:enabled:-translate-y-px disabled:cursor-not-allowed disabled:opacity-70 ${SHARED_FEATURE_CLASS.text15EmphasisOnCream}`}
       >
         {isSubmitting ? "재설정 중..." : "비밀번호 재설정"}
       </button>

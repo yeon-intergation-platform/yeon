@@ -56,7 +56,7 @@ export function TypingRoomParticipantsPanel({
                       {participant.isReady ? "준비완료" : "대기중"}
                     </span>
                     {participant.role === "host" ? (
-                      <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[#b7791f]">
+                      <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[#666]">
                         <Crown size={13} /> 방장
                       </span>
                     ) : null}

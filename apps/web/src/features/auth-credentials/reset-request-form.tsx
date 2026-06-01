@@ -84,7 +84,7 @@ export function ResetRequestForm() {
       <button
         type="submit"
         disabled={isSubmitting}
-        className={`min-h-[52px] rounded-full bg-[#e8630a] px-[22px] transition-transform duration-200 ease-[ease] hover:enabled:-translate-y-px disabled:cursor-not-allowed disabled:opacity-70 ${SHARED_FEATURE_CLASS.text15EmphasisOnCream}`}
+        className={`min-h-[52px] rounded-full bg-[#f8f7f3] px-[22px] text-[#080808] transition-transform duration-200 ease-[ease] hover:enabled:-translate-y-px disabled:cursor-not-allowed disabled:opacity-70 ${SHARED_FEATURE_CLASS.text15EmphasisOnCream}`}
       >
         {isSubmitting ? "요청 중..." : "재설정 링크 받기"}
       </button>

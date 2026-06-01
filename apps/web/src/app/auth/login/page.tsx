@@ -59,7 +59,7 @@ export default async function CredentialLoginPage({ searchParams }: PageProps) {
       {showResetSuccess ? (
         <div
           role="status"
-          className="grid gap-1 rounded-[16px] border border-white/[0.1] bg-[rgba(232,99,10,0.12)] p-4 text-[13px] leading-[1.55] text-[#ffd1a3]"
+          className="grid gap-1 rounded-[16px] border border-white/[0.1] bg-[rgba(248,247,243,0.08)] p-4 text-[13px] leading-[1.55] text-[#f8f7f3]"
         >
           <p className="m-0 font-bold">비밀번호가 재설정되었습니다.</p>
           <p className="m-0">새 비밀번호로 로그인해 주세요.</p>

@@ -95,8 +95,8 @@ export function RegisterForm({ nextPath = "/" }: RegisterFormProps) {
   if (state.kind === "link-needed") {
     const socialLoginHref = `/?login=1&next=${encodeURIComponent(nextPath)}`;
     return (
-      <div className="grid gap-4 rounded-[20px] border border-white/[0.1] bg-[rgba(232,99,10,0.1)] p-5">
-        <p className="m-0 text-[15px] font-bold leading-[1.5] text-[#ffcfa3]">
+      <div className="grid gap-4 rounded-[20px] border border-white/[0.1] bg-[rgba(248,247,243,0.08)] p-5">
+        <p className="m-0 text-[15px] font-bold leading-[1.5] text-[#f8f7f3]">
           이미 같은 이메일로 가입된 소셜 계정이 있어요.
         </p>
         <p className="m-0 text-[13px] leading-[1.6] text-white/[0.78]">
@@ -105,7 +105,7 @@ export function RegisterForm({ nextPath = "/" }: RegisterFormProps) {
         </p>
         <Link
           href={socialLoginHref}
-          className="inline-flex h-11 items-center justify-center rounded-full bg-[#e8630a] px-5 text-[14px] font-bold text-[#fffaf4] transition-transform duration-200 ease-[ease] hover:-translate-y-px"
+          className="inline-flex h-11 items-center justify-center rounded-full bg-[#f8f7f3] px-5 text-[14px] font-bold text-[#080808] transition-transform duration-200 ease-[ease] hover:-translate-y-px"
         >
           홈에서 소셜 로그인
         </Link>
@@ -203,7 +203,7 @@ export function RegisterForm({ nextPath = "/" }: RegisterFormProps) {
       {state.kind === "email-send-failed" ? (
         <div
           role="alert"
-          className="grid gap-2 rounded-[16px] border border-white/[0.1] bg-[rgba(255,176,138,0.08)] p-4 text-[13px] leading-[1.55] text-[#ffcfa3]"
+          className="grid gap-2 rounded-[16px] border border-white/[0.1] bg-[rgba(248,247,243,0.08)] p-4 text-[13px] leading-[1.55] text-[#f8f7f3]"
         >
           <p className="m-0 font-bold">
             계정은 만들어졌지만 인증 메일 발송에 실패했습니다.
@@ -218,7 +218,7 @@ export function RegisterForm({ nextPath = "/" }: RegisterFormProps) {
       <button
         type="submit"
         disabled={isSubmitting || passwordHelper !== null}
-        className={`min-h-[52px] rounded-full bg-[#e8630a] px-[22px] transition-transform duration-200 ease-[ease] hover:enabled:-translate-y-px disabled:cursor-not-allowed disabled:opacity-70 ${SHARED_FEATURE_CLASS.text15EmphasisOnCream}`}
+        className={`min-h-[52px] rounded-full bg-[#f8f7f3] px-[22px] text-[#080808] transition-transform duration-200 ease-[ease] hover:enabled:-translate-y-px disabled:cursor-not-allowed disabled:opacity-70 ${SHARED_FEATURE_CLASS.text15EmphasisOnCream}`}
       >
         {isSubmitting ? "가입 처리 중..." : "계정 만들기"}
       </button>

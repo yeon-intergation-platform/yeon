@@ -100,7 +100,7 @@ export function SheetExportPanel({ spaceId }: SheetExportPanelProps) {
     displayState.kind === "drive-disconnected"
       ? "text-text-dim bg-surface-3 border-border"
       : displayState.kind === "ready" && !displayState.sheetSyncReady
-        ? "text-yellow-200 bg-yellow-500/10 border-yellow-500/20"
+        ? "text-[#666] bg-[#fafafa] border-[#e5e5e5]"
         : displayState.kind === "ready" && displayState.integration
           ? "text-green bg-[rgba(34,197,94,0.12)] border-[rgba(34,197,94,0.22)]"
           : "text-accent bg-accent-dim border-accent-border";
@@ -378,7 +378,7 @@ export function SheetExportPanel({ spaceId }: SheetExportPanelProps) {
             ) : isReady && !sheetSyncReady ? (
               <a
                 href={resolveApiHref("/api/v1/integrations/googledrive/auth")}
-                className={`inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-yellow-500/30 bg-yellow-500/10 px-3 py-2 text-[12px] font-medium text-yellow-100 transition-colors hover:border-yellow-400/50 ${disabledLinkClass}`}
+                className={`inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-[#e5e5e5] bg-[#fafafa] px-3 py-2 text-[12px] font-medium text-[#666] transition-colors hover:border-[#aaa] ${disabledLinkClass}`}
               >
                 <Link2 size={13} />
                 Google 재연결
@@ -456,26 +456,26 @@ export function SheetExportPanel({ spaceId }: SheetExportPanelProps) {
         ) : null}
 
         {importConflicts.length > 0 ? (
-          <div className="rounded-xl border border-yellow-500/20 bg-yellow-500/10 px-3 py-3">
+          <div className="rounded-xl border border-[#e5e5e5] bg-[#fafafa] px-3 py-3">
             <div className="flex flex-col gap-2">
-              <div className="text-[12px] font-medium text-yellow-100">
+              <div className="text-[12px] font-medium text-[#666]">
                 충돌 {importConflicts.length}건
               </div>
-              <div className="flex flex-col gap-2 text-[12px] text-yellow-50/90">
+              <div className="flex flex-col gap-2 text-[12px] text-[#666]">
                 {importConflicts.slice(0, 5).map((conflict, index) => (
                   <div
                     key={`${conflict.memberId ?? "row"}-${conflict.rowNumber ?? index}`}
-                    className="rounded-lg border border-yellow-500/15 bg-black/10 px-3 py-2"
+                    className="rounded-lg border border-[#e5e5e5] bg-black/10 px-3 py-2"
                   >
-                    <div className="font-medium text-yellow-100">
+                    <div className="font-medium text-[#666]">
                       {conflict.memberName ?? "이름 없음"}
                       {conflict.rowNumber ? ` · ${conflict.rowNumber}행` : ""}
                     </div>
-                    <div className="mt-1 leading-relaxed text-yellow-50/80">
+                    <div className="mt-1 leading-relaxed text-[#666]">
                       {conflict.message}
                     </div>
                     {conflict.changedFields.length > 0 ? (
-                      <div className="mt-1 text-[11px] text-yellow-50/70">
+                      <div className="mt-1 text-[11px] text-[#aaa]">
                         변경 필드: {conflict.changedFields.join(", ")}
                       </div>
                     ) : null}
@@ -487,7 +487,7 @@ export function SheetExportPanel({ spaceId }: SheetExportPanelProps) {
         ) : null}
 
         {isReady && !sheetSyncReady ? (
-          <div className="rounded-xl border border-yellow-500/20 bg-yellow-500/10 px-3 py-2 text-[12px] leading-relaxed text-yellow-100">
+          <div className="rounded-xl border border-[#e5e5e5] bg-[#fafafa] px-3 py-2 text-[12px] leading-relaxed text-[#666]">
             예전 권한 토큰이 남아 있으면 Google 재연결이 한 번 필요합니다.
           </div>
         ) : null}

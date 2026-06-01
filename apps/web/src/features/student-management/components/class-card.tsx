@@ -16,7 +16,7 @@ interface ClassCardProps {
 
 function getCapacityColor(ratio: number): string {
   if (ratio > 0.9) return "#ef4444";
-  if (ratio > 0.6) return "#f59e0b";
+  if (ratio > 0.6) return "#666666";
   return "#22c55e";
 }
 

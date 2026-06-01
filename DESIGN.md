@@ -33,7 +33,7 @@ Accent (Indigo-Violet)
 
 Status Colors
   --green:      #34d399   → text-green
-  --amber:      #fbbf24   → text-amber
+  --neutral:    #666666   → text-neutral
   --red:        #f87171   → text-red
   --cyan:       #22d3ee
 
@@ -56,7 +56,7 @@ Surfaces:    bg-surface-2, bg-surface-3, bg-surface-4
 Borders:     border border-border, border-border-light
 Text:        text-text, text-text-secondary, text-text-dim, text-accent
 Accent bg:   bg-accent-dim (subtle fills), bg-accent (solid)
-Status:      text-green, text-amber, text-red
+Status:      text-green, text-neutral, text-red
 Radius:      rounded (6px), rounded-lg (10px), rounded-xl (14px)
 ```
 

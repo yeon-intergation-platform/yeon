@@ -373,7 +373,7 @@ export function TypingRaceMultiplayerScreen({
           >
             <span>실시간 진행률</span>
             {myResult && (
-              <span className="text-[#ff6b35]">현재 {myResult.rank}위</span>
+              <span className="text-[#111]">현재 {myResult.rank}위</span>
             )}
           </div>
           {roomParticipants.map((participant) => (
@@ -399,7 +399,7 @@ export function TypingRaceMultiplayerScreen({
               </div>
               <div className="h-2 overflow-hidden rounded-full bg-[#f1f1f1]">
                 <div
-                  className="h-full rounded-full bg-[#ff6b35] transition-all"
+                  className="h-full rounded-full bg-[#111] transition-all"
                   style={{ width: `${participant.progress}%` }}
                 />
               </div>
@@ -411,7 +411,7 @@ export function TypingRaceMultiplayerScreen({
           <div className="mt-3 rounded-lg border border-[#e5e5e5] bg-[#fafafa] px-5 py-4">
             <div className={SHARED_FEATURE_CLASS.alignBetweenGap3}>
               <div>
-                <p className="text-[12px] font-bold uppercase tracking-[0.16em] text-[#ff6b35]">
+                <p className="text-[12px] font-bold uppercase tracking-[0.16em] text-[#111]">
                   Result
                 </p>
                 <h2 className="mt-1 text-[22px] font-black tracking-[-0.03em]">

@@ -118,7 +118,7 @@ export function CardServiceDecksScreen() {
                     guest_deck_count: guestDeckCount,
                   });
                 }}
-                className="rounded-xl border border-[rgba(17,19,24,0.12)] bg-[rgba(232,99,10,0.08)] px-3 py-2 text-[12px] font-semibold text-[#a3430a] transition-colors hover:bg-[rgba(232,99,10,0.16)]"
+                className="rounded-xl border border-[rgba(17,19,24,0.12)] bg-[rgba(248,247,243,0.08)] px-3 py-2 text-[12px] font-semibold text-[#555] transition-colors hover:bg-[rgba(248,247,243,0.08)]"
               >
                 게스트 덱 {guestDeckCount}개 계정에 추가
               </button>

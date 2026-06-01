@@ -92,7 +92,7 @@ export function CloudImportSavedDraftsModal({
                     key={draft.id}
                     className="relative overflow-hidden rounded-2xl border border-border bg-[linear-gradient(180deg,rgba(255,255,255,0.035),rgba(255,255,255,0.015))] px-4 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
                   >
-                    <div className="pointer-events-none absolute inset-x-4 top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(232,99,10,0.35),transparent)]" />
+                    <div className="pointer-events-none absolute inset-x-4 top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(129,140,248,0.35),transparent)]" />
                     <div className="flex items-start gap-3.5">
                       <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-accent-border bg-accent-dim/70 text-accent shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
                         <FileClock size={18} />
@@ -126,7 +126,7 @@ export function CloudImportSavedDraftsModal({
                         <div className="mt-4 flex flex-wrap gap-2.5">
                           <button
                             type="button"
-                            className="inline-flex min-h-9 items-center gap-1.5 rounded-xl bg-accent px-3.5 py-2 text-[12px] font-semibold text-white shadow-[0_10px_24px_rgba(232,99,10,0.22)] transition-[opacity,box-shadow,background-color] duration-150 hover:bg-[var(--accent-hover)] hover:opacity-100 hover:shadow-[0_14px_28px_rgba(232,99,10,0.28)]"
+                            className="inline-flex min-h-9 items-center gap-1.5 rounded-xl bg-accent px-3.5 py-2 text-[12px] font-semibold text-white shadow-[0_10px_24px_rgba(129,140,248,0.22)] transition-[opacity,box-shadow,background-color] duration-150 hover:bg-[var(--accent-hover)] hover:opacity-100 hover:shadow-[0_14px_28px_rgba(129,140,248,0.28)]"
                             onClick={() => {
                               void modal.openDraft(draft.id);
                             }}

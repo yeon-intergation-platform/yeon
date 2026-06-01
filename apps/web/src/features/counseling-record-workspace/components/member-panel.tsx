@@ -181,7 +181,7 @@ export function MemberPanel({
                       className={`flex-shrink-0 text-[10px] px-1.5 py-0.5 rounded ${
                         rec.status === "ready"
                           ? "bg-green-dim text-green"
-                          : "bg-amber-dim text-amber"
+                          : "bg-surface-3 text-text-secondary"
                       }`}
                     >
                       {rec.status === "ready" ? "완료" : "처리 중"}

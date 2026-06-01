@@ -1,6 +1,6 @@
 .page {
   min-height: 100vh;
-  background: #f5f1e6;
+  background: #f5f5f5;
   color: #1f2937;
   padding: 24px;
 }
@@ -30,9 +30,9 @@
 
 .canvasWrap {
   overflow-x: auto;
-  border: 2px solid #b59b2a;
-  background: #fffdf4;
-  box-shadow: 0 12px 40px rgba(60, 45, 8, 0.14);
+  border: 2px solid #777777;
+  background: #fafafa;
+  box-shadow: 0 12px 40px rgba(17, 17, 17, 0.12);
 }
 
 .canvas {
@@ -44,23 +44,23 @@
 .sheetBlock {
   display: grid;
   grid-auto-rows: minmax(42px, auto);
-  border-right: 1px solid #d8c56b;
+  border-right: 1px solid #d4d4d4;
 }
 
 .sheetBlock:last-child {
   border-right: 0;
-  border-left: 1px solid #d8c56b;
+  border-left: 1px solid #d4d4d4;
 }
 
 .memoZone {
   padding: 16px;
-  border-inline: 1px solid #e1d6a0;
-  background: linear-gradient(180deg, #fff7c7, #fffdf4);
+  border-inline: 1px solid #e5e5e5;
+  background: linear-gradient(180deg, #f5f5f5, #fafafa);
 }
 
 .dayBand {
-  background: linear-gradient(180deg, #fff1a8, #ffd95a);
-  border-bottom: 1px solid #b59b2a;
+  background: linear-gradient(180deg, #f5f5f5, #e5e5e5);
+  border-bottom: 1px solid #777777;
   font-weight: 700;
   padding: 8px 10px;
 }
@@ -75,8 +75,8 @@
   padding: 8px 10px;
   font-size: 12px;
   font-weight: 700;
-  background: #fff6b2;
-  border-right: 1px solid #d8c56b;
+  background: #f5f5f5;
+  border-right: 1px solid #d4d4d4;
 }
 
 .cell {
@@ -89,7 +89,7 @@
 .memoCard,
 .reportCard {
   background: rgba(255, 255, 255, 0.8);
-  border: 1px solid #e7d48d;
+  border: 1px solid #e5e5e5;
   border-radius: 14px;
   padding: 14px;
   margin-bottom: 12px;
@@ -106,7 +106,7 @@
   width: fit-content;
   padding: 4px 10px;
   border-radius: 999px;
-  background: #ffe46b;
+  background: #e5e5e5;
   font-weight: 700;
   font-size: 12px;
 }
@@ -119,21 +119,21 @@
 
 .dateInput,
 .saveButton {
-  border: 1px solid #c7ab37;
+  border: 1px solid #d4d4d4;
   border-radius: 10px;
-  background: #fffef6;
+  background: #fafafa;
   padding: 9px 12px;
   font-weight: 700;
 }
 
 .saveButton {
   cursor: pointer;
-  background: #ffe46b;
+  background: #e5e5e5;
 }
 
 .statusText {
   margin: 0;
-  color: #6b4e00;
+  color: #555555;
   font-size: 14px;
   font-weight: 700;
 }

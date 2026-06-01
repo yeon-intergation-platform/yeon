@@ -48,7 +48,7 @@ export function UnlinkedRecordListItem({
       </span>
       <span className="truncate">{record.title}</span>
       {record.status === "processing" && (
-        <span className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-amber animate-pulse" />
+        <span className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-text-secondary animate-pulse" />
       )}
     </button>
   );

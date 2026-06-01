@@ -571,7 +571,7 @@ export function StudentCheckBoardPanel({
                         {sessionRadiusMeters !== null &&
                         (sessionRadiusMeters < MIN_LOCATION_RADIUS_METERS ||
                           sessionRadiusMeters > MAX_LOCATION_RADIUS_METERS) ? (
-                          <p className="text-[11px] text-amber-300">
+                          <p className="text-[11px] text-text-secondary-300">
                             반경은 50m에서 300m 사이로 입력해 주세요.
                           </p>
                         ) : null}
@@ -702,7 +702,7 @@ export function StudentCheckBoardPanel({
                     ) : null}
 
                     {!sessionForm.locationLabel ? (
-                      <p className="mt-3 text-[11px] text-amber-300">
+                      <p className="mt-3 text-[11px] text-text-secondary-300">
                         위치 인증을 쓰려면 검색 결과에서 기준 위치를 하나
                         선택해야 합니다.
                       </p>

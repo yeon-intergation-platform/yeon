@@ -187,7 +187,7 @@ function CharacterFrameCard({
                   style={{
                     opacity: isDragging ? 0.4 : enabled ? 1 : 0.3,
                     outline: isDropTarget
-                      ? "2px solid #e87310"
+                      ? "2px solid #111"
                       : enabled
                         ? "2px solid #111"
                         : "2px solid #e5e5e5",

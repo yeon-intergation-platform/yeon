@@ -44,7 +44,7 @@ export function TypingBgmButton({
         ) : null}
       </button>
       {blocked && (
-        <span className="hidden text-[11px] text-[#c2410c] md:inline">
+        <span className="hidden text-[11px] text-[#666] md:inline">
           다시 눌러 재생해 주세요
         </span>
       )}

@@ -30,7 +30,7 @@ export default async function AuthErrorPage({
   const reason = pickFirstValue(resolvedSearchParams.reason);
   const provider = pickFirstValue(resolvedSearchParams.provider);
   const nextPath = normalizeAuthRedirectPath(
-    pickFirstValue(resolvedSearchParams.next),
+    pickFirstValue(resolvedSearchParams.next)
   );
   const copy = getAuthErrorCopy(reason, provider);
   const retryHref = `/?login=1&next=${encodeURIComponent(nextPath)}`;
@@ -40,7 +40,7 @@ export default async function AuthErrorPage({
       className="min-h-screen text-[#f8f7f3]"
       style={{
         background:
-          "radial-gradient(circle at top, rgba(232,99,10,0.16), transparent 28%), linear-gradient(180deg, #080808 0%, #0f0f11 100%)",
+          "radial-gradient(circle at top, rgba(248,247,243,0.08), transparent 28%), linear-gradient(180deg, #080808 0%, #0f0f11 100%)",
       }}
     >
       <div className="w-[min(720px,calc(100%-32px))] mx-auto min-h-screen grid place-items-center py-10">
@@ -66,7 +66,7 @@ export default async function AuthErrorPage({
           <div className="flex flex-wrap gap-3 md:flex-col">
             <Link
               href={retryHref}
-              className="min-h-[52px] px-[22px] rounded-full inline-flex items-center justify-center font-bold transition-transform duration-200 ease-[ease] hover:-translate-y-px bg-[#e8630a] text-[#fffaf4]"
+              className="min-h-[52px] px-[22px] rounded-full inline-flex items-center justify-center font-bold transition-transform duration-200 ease-[ease] hover:-translate-y-px bg-[#f8f7f3] text-[#080808]"
             >
               다시 로그인
             </Link>

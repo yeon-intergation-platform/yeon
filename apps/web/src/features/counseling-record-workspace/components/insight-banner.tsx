@@ -29,11 +29,13 @@ function InsightBannerItem(props: {
         className="flex min-w-0 flex-1 items-start gap-2.5 rounded-xl px-2 py-2 text-left font-[inherit] transition-colors hover:bg-[rgba(245,158,11,0.08)]"
         onClick={props.onClick}
       >
-        <span className="pt-0.5 text-amber">
+        <span className="pt-0.5 text-text-secondary">
           <AlertTriangle size={18} strokeWidth={2.2} />
         </span>
         <span className="min-w-0 text-xs leading-relaxed text-text-secondary">
-          <span className="font-semibold text-amber">{props.title}</span>{" "}
+          <span className="font-semibold text-text-secondary">
+            {props.title}
+          </span>{" "}
           {props.description}
         </span>
       </button>

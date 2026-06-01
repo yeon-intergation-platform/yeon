@@ -263,7 +263,7 @@ export function ProductHeaderProfileButton({
           <button
             type="button"
             role="menuitem"
-            className="flex w-full items-center gap-2 border-0 bg-transparent px-3 py-2 text-left text-[13px] text-[#c2410c] transition-colors hover:bg-[#fff7ed] disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex w-full items-center gap-2 border-0 bg-transparent px-3 py-2 text-left text-[13px] text-[#666] transition-colors hover:bg-[#fafafa] disabled:cursor-not-allowed disabled:opacity-60"
             onClick={() => {
               setOpen(false);
               void logout();

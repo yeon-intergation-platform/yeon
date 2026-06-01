@@ -94,7 +94,7 @@ export function TypingRoomWaitingHeader({
               </button>
               <a
                 href={territoryHref}
-                className="inline-flex items-center gap-2 rounded-xl bg-[#e8630a] px-4 py-2 text-[13px] font-semibold text-white transition-colors hover:brightness-110"
+                className="inline-flex items-center gap-2 rounded-xl bg-[#111] px-4 py-2 text-[13px] font-semibold text-white transition-opacity hover:opacity-90"
               >
                 <Swords size={14} />
                 점령전 입장

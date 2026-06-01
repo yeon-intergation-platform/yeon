@@ -75,7 +75,7 @@ function TerritoryGateScreen() {
     <div className="min-h-screen bg-white px-4 py-8 text-[#111]">
       <main className="mx-auto flex min-h-[70vh] max-w-3xl flex-col items-center justify-center text-center">
         <div className="rounded-3xl border border-[#e5e5e5] bg-[#fafafa] p-8">
-          <p className="text-[13px] font-black uppercase tracking-[0.24em] text-[#e8630a]">
+          <p className="text-[13px] font-black uppercase tracking-[0.24em] text-[#111]">
             타자방 선입장 필요
           </p>
           <h1 className="mt-4 text-[34px] font-black tracking-[-0.06em]">
@@ -167,9 +167,7 @@ function TerritoryResultBoard({
             >
               <div
                 className={`flex items-center gap-3 rounded-t-[18px] px-5 py-3 text-white ${
-                  team === TERRITORY_BATTLE_TEAM.RED
-                    ? "bg-orange-500"
-                    : "bg-purple-600"
+                  team === TERRITORY_BATTLE_TEAM.RED ? "bg-[#111]" : "bg-[#666]"
                 }`}
               >
                 <span className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-white bg-slate-900 text-[22px]">
@@ -190,7 +188,7 @@ function TerritoryResultBoard({
                         index === 1 ? "ring-2 ring-purple-500" : ""
                       }`}
                     >
-                      <span className="flex h-10 w-10 items-center justify-center rounded-full bg-yellow-300 text-[20px] font-black text-[#111]">
+                      <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#fafafa] text-[20px] font-black text-[#111]">
                         {index + 1}
                       </span>
                       <span className="truncate text-[14px] font-black">
@@ -220,8 +218,8 @@ function TerritoryResultBoard({
                     <h2
                       className={`rounded-2xl px-4 py-3 text-center text-[30px] font-black tracking-[-0.08em] text-white ${
                         team === TERRITORY_BATTLE_TEAM.RED
-                          ? "bg-orange-500"
-                          : "bg-purple-600"
+                          ? "bg-[#111]"
+                          : "bg-[#666]"
                       }`}
                     >
                       {getTeamDisplayLabel(team)}
@@ -373,7 +371,7 @@ function TerritoryCardBoard({
                 onClick={() => onPickWord(cell.word)}
                 className={`group relative min-h-20 rounded-[10px] border-2 px-2 py-3 text-center shadow-inner transition hover:-translate-y-0.5 hover:brightness-110 ${getCellClass(
                   cell.owner
-                )} ${isTarget ? "ring-4 ring-yellow-300" : ""} ${
+                )} ${isTarget ? "ring-4 ring-[#111]" : ""} ${
                   isOpponentCard ? "cursor-pointer" : ""
                 } ${isMyCard ? "opacity-90" : ""}`}
               >
@@ -759,7 +757,7 @@ function TypingTerritoryBattleGameScreen({
                       ? "동점"
                       : `${winner.toUpperCase()} 우세`}
                   </span>
-                  <span className="rounded-full border border-yellow-300/30 bg-yellow-300/10 px-3 py-1 text-yellow-100">
+                  <span className="rounded-full border border-[#e5e5e5] bg-[#fafafa] px-3 py-1 text-[#111]">
                     내 팀 {getTeamDisplayLabel(myTeam)} · 타깃{" "}
                     {getTeamDisplayLabel(opponentTeam)}
                   </span>

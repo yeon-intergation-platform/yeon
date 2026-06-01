@@ -76,8 +76,8 @@ export function MergeGuestDialog({
             </h2>
             <p className="m-0 text-[14px] leading-[1.6] text-[#4b5563]">
               덱 {state.createdDeckCount}개 · 카드 {state.createdItemCount}장을
-              계정으로 이관했습니다. 이제 다른 기기에서도 같은 덱으로 공부할
-              수 있어요.
+              계정으로 이관했습니다. 이제 다른 기기에서도 같은 덱으로 공부할 수
+              있어요.
             </p>
             <button
               type="button"
@@ -103,7 +103,7 @@ export function MergeGuestDialog({
             {state.kind === "error" ? (
               <p
                 role="alert"
-                className="m-0 rounded-[12px] border border-[rgba(232,99,10,0.24)] bg-[rgba(232,99,10,0.08)] px-3 py-2 text-[13px] leading-[1.55] text-[#a3430a]"
+                className="m-0 rounded-[12px] border border-[rgba(248,247,243,0.16)] bg-[rgba(248,247,243,0.08)] px-3 py-2 text-[13px] leading-[1.55] text-[#555]"
               >
                 {state.message}
               </p>
@@ -125,7 +125,7 @@ export function MergeGuestDialog({
                 }}
                 disabled={isBusy}
                 autoFocus
-                className="min-h-12 rounded-[14px] bg-[#e8630a] px-5 text-[14px] font-bold text-white transition-transform duration-200 hover:enabled:-translate-y-px disabled:cursor-not-allowed disabled:opacity-70"
+                className="min-h-12 rounded-[14px] bg-[#111] px-5 text-[14px] font-bold text-white transition-transform duration-200 hover:enabled:-translate-y-px disabled:cursor-not-allowed disabled:opacity-70"
               >
                 {isBusy ? "이관 중..." : "계정에 추가"}
               </button>

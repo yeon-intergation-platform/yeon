@@ -167,7 +167,7 @@ function solidClassName(kind: string) {
     return "absolute border border-fuchsia-300/35 bg-fuchsia-400/20";
   }
   if (kind === "platform") {
-    return "absolute border border-amber-300/40 bg-amber-400/20";
+    return "absolute border border-[#e5e5e5] bg-[#fafafa]";
   }
   return "absolute border border-emerald-300/40 bg-emerald-400/20";
 }

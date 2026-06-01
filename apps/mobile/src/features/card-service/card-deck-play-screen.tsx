@@ -585,7 +585,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#1f8fe5",
   },
   reviewButton_hard: {
-    backgroundColor: "#ff6b45",
+    backgroundColor: colors.black,
   },
   reviewButtonText: {
     color: colors.white,

@@ -148,21 +148,21 @@ export function StarLobbyMvpPage() {
             </div>
           </div>
 
-          <div className="rounded-[2rem] border border-amber-200/20 bg-amber-200/10 p-6 text-amber-50">
-            <p className="text-sm font-bold text-amber-100">관측 기반 안내</p>
+          <div className="rounded-[2rem] border border-white/20 bg-white/10 p-6 text-white">
+            <p className="text-sm font-bold text-white">관측 기반 안내</p>
             <h2 className="mt-2 text-2xl font-black">
               100% 확정 정보처럼 말하지 않습니다
             </h2>
-            <p className="mt-4 leading-7 text-amber-50/85">
+            <p className="mt-4 leading-7 text-white/85">
               이 서비스는 스타크래프트 로비 화면을 관측해 방 정보를 제공합니다.
               일부 방은 누락되거나 늦게 반영될 수 있고, OCR/방제 표기 차이로
               잘못 감지될 수 있습니다.
             </p>
             <div className="mt-6 rounded-2xl bg-slate-950/60 p-4">
-              <p className="text-sm font-bold text-amber-100">
+              <p className="text-sm font-bold text-white">
                 초기 MVP에서 하지 않는 것
               </p>
-              <ul className="mt-3 space-y-2 text-sm text-amber-50/85">
+              <ul className="mt-3 space-y-2 text-sm text-white/85">
                 <li>스타 방 자동 입장</li>
                 <li>게임 내 자동 채팅</li>
                 <li>맵별 대기 채팅/파티 모집</li>

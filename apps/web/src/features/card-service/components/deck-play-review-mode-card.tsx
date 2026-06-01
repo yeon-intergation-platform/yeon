@@ -19,7 +19,7 @@ const REVIEW_ACTIONS: Array<{
     difficulty: CARD_REVIEW_DIFFICULTIES.hard,
     label: "어려움",
     nextLabel: "1일 후",
-    className: "bg-[#ff6b45] text-white hover:bg-[#f05f3a]",
+    className: "bg-[#111] text-white hover:bg-[#333]",
   },
   {
     difficulty: CARD_REVIEW_DIFFICULTIES.good,

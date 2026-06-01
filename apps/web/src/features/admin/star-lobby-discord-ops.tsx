@@ -37,7 +37,7 @@ function StatusCard({
 }) {
   const valueClassName =
     tone === "warn"
-      ? "text-amber-700"
+      ? "text-[#666]"
       : tone === "good"
         ? "text-emerald-700"
         : "text-[#111]";

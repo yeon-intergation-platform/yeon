@@ -64,8 +64,8 @@ export function RecordPartialTranscriptState({
       />
 
       <div className="scrollbar-subtle flex-1 overflow-y-auto px-5 py-4">
-        <div className="mb-4 rounded-lg border border-amber/30 bg-amber/10 px-4 py-3">
-          <p className="m-0 text-[13px] font-semibold text-amber">
+        <div className="mb-4 rounded-lg border border-border-light bg-surface-3 px-4 py-3">
+          <p className="m-0 text-[13px] font-semibold text-text-secondary">
             원문 일부만 먼저 복구되었습니다
           </p>
           <p className="mt-1 mb-0 text-[12px] leading-relaxed text-text-secondary">

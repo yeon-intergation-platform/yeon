@@ -55,7 +55,7 @@ function createInitialEntries(): LifeOsHourEntry[] {
 
 function getCellText(
   row: (typeof LIFE_OS_ROWS)[number],
-  entry: LifeOsHourEntry,
+  entry: LifeOsHourEntry
 ) {
   if (row === "MINDSET") return entry.hour === 0 ? "오늘 기준" : "";
   if (row === "TIME") return `${entry.hour}`;
@@ -109,7 +109,7 @@ export function LifeOsScreen() {
           mindset,
           timezone: "Asia/Seoul",
         },
-        sessionToken,
+        sessionToken
       );
     },
     onSuccess: async (response) => {
@@ -137,7 +137,7 @@ export function LifeOsScreen() {
       createInitialEntries().map((entry) => ({
         ...entry,
         ...day.entries.find((dayEntry) => dayEntry.hour === entry.hour),
-      })),
+      }))
     );
   }, [dayQuery.data]);
 
@@ -214,8 +214,8 @@ export function LifeOsScreen() {
   function updateEntry(field: "goalText" | "actionText", value: string) {
     setEntries((current) =>
       current.map((entry) =>
-        entry.hour === selectedHour ? { ...entry, [field]: value } : entry,
-      ),
+        entry.hour === selectedHour ? { ...entry, [field]: value } : entry
+      )
     );
   }
 
@@ -477,7 +477,7 @@ const styles = StyleSheet.create({
   },
   dayBand: {
     alignItems: "center",
-    backgroundColor: "#fff533",
+    backgroundColor: "#f1f1f1",
     borderBottomColor: colors.borderStrong,
     borderBottomWidth: 1,
     flexDirection: "row",
@@ -554,8 +554,8 @@ const styles = StyleSheet.create({
     fontWeight: "900",
   },
   reportCard: {
-    backgroundColor: "#fffde1",
-    borderColor: "#f2e65a",
+    backgroundColor: "#fafafa",
+    borderColor: "#e5e5e5",
     borderRadius: 20,
     borderWidth: 1,
     gap: 8,

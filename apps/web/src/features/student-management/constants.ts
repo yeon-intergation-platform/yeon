@@ -12,8 +12,8 @@ export const STUDENT_STATUS_META: Record<
   },
   on_leave: {
     label: "휴원",
-    color: "#fbbf24",
-    bgColor: "rgba(251, 191, 36, 0.1)",
+    color: "#666666",
+    bgColor: "rgba(102, 102, 102, 0.1)",
   },
   withdrawn: {
     label: "중도포기",
@@ -62,9 +62,9 @@ export const RISK_LEVEL_META: Record<
   },
   medium: {
     label: "보통",
-    color: "#fbbf24",
-    bgColor: "rgba(251, 191, 36, 0.1)",
-    borderColor: "rgba(251, 191, 36, 0.2)",
+    color: "#666666",
+    bgColor: "rgba(102, 102, 102, 0.1)",
+    borderColor: "rgba(102, 102, 102, 0.2)",
   },
   high: {
     label: "높음",
@@ -88,12 +88,12 @@ export const AVATAR_COLORS = [
   "linear-gradient(135deg, #818cf8, #22d3ee)",
   "linear-gradient(135deg, #f87171, #fb7185)",
   "linear-gradient(135deg, #34d399, #22d3ee)",
-  "linear-gradient(135deg, #fbbf24, #f87171)",
+  "linear-gradient(135deg, #a1a1aa, #f87171)",
   "linear-gradient(135deg, #818cf8, #fb7185)",
   "linear-gradient(135deg, #22d3ee, #34d399)",
-  "linear-gradient(135deg, #fb7185, #fbbf24)",
+  "linear-gradient(135deg, #fb7185, #a1a1aa)",
   "linear-gradient(135deg, #34d399, #818cf8)",
-  "linear-gradient(135deg, #f87171, #fbbf24)",
+  "linear-gradient(135deg, #f87171, #a1a1aa)",
   "linear-gradient(135deg, #22d3ee, #818cf8)",
 ] as const;
 
