@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { TypingRoomSummary } from "@yeon/race-shared";
 import { loadPublicWaitingTypingRooms } from "./typing-service-fetch";
@@ -13,6 +13,10 @@ export type TypingRoomLobbyState =
   | { kind: "empty" }
   | { kind: "ready"; rooms: TypingRoomSummary[] };
 
+const TYPING_ROOM_LOBBY_CONNECTION_ERROR_MESSAGE =
+  "타자방 서버에 연결할 수 없어요.";
+const TYPING_ROOM_LOBBY_ERROR_DISPLAY_FAILURE_COUNT = 2;
+
 async function fetchTypingRooms() {
   const endpoint = resolveRaceServerUrl().replace(/^ws/, "http");
   return loadPublicWaitingTypingRooms(endpoint);
@@ -24,15 +28,36 @@ export function useTypingRoomLobby() {
     queryFn: fetchTypingRooms,
     refetchInterval: 2500,
   });
+  const [hasConnectionFailure, setHasConnectionFailure] = useState(false);
+
+  useEffect(() => {
+    if (roomsQuery.isSuccess) {
+      setHasConnectionFailure(false);
+      return;
+    }
+
+    if (
+      roomsQuery.isError ||
+      roomsQuery.failureCount >= TYPING_ROOM_LOBBY_ERROR_DISPLAY_FAILURE_COUNT
+    ) {
+      setHasConnectionFailure(true);
+    }
+  }, [roomsQuery.failureCount, roomsQuery.isError, roomsQuery.isSuccess]);
 
   const state = useMemo<TypingRoomLobbyState>(() => {
+    const rooms = roomsQuery.data;
+    if (rooms && rooms.length > 0) return { kind: "ready", rooms };
+
+    if (hasConnectionFailure) {
+      return {
+        kind: "error",
+        message: TYPING_ROOM_LOBBY_CONNECTION_ERROR_MESSAGE,
+      };
+    }
+
     if (roomsQuery.isPending) return { kind: "loading" };
-    if (roomsQuery.isError)
-      return { kind: "error", message: "타자방 서버에 연결할 수 없어요." };
-    return roomsQuery.data.length > 0
-      ? { kind: "ready", rooms: roomsQuery.data }
-      : { kind: "empty" };
-  }, [roomsQuery.data, roomsQuery.isError, roomsQuery.isPending]);
+    return { kind: "empty" };
+  }, [hasConnectionFailure, roomsQuery.data, roomsQuery.isPending]);
 
   const refresh = useCallback(() => {
     void roomsQuery.refetch();
