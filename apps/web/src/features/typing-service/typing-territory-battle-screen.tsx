@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent } from "react";
+import { useRouter } from "next/navigation";
 import {
   mountTerritoryBattleEngine,
   type TerritoryBattleEngineController,
@@ -36,6 +37,7 @@ type TeamPanelProps = {
 
 const LOCAL_PLAYER_ID = "local-red-player";
 const PROTOTYPE_SEED = "territory-battle-v0-1";
+const RESULT_RETURN_SECONDS = 24;
 
 const TEAM_VIEW = {
   red: {
@@ -57,6 +59,234 @@ const TEAM_VIEW = {
     glow: "shadow-[0_0_40px_rgba(79,111,173,0.18)]",
   },
 } as const;
+
+type TypingTerritoryBattleScreenProps = {
+  originRoomId: string | null;
+};
+
+function getTeamDisplayLabel(team: TerritoryBattleTeam) {
+  return team === TERRITORY_BATTLE_TEAM.RED ? "주황팀" : "보라팀";
+}
+
+function getTeamResultClass(team: TerritoryBattleTeam) {
+  return team === TERRITORY_BATTLE_TEAM.RED
+    ? "border-orange-400 bg-orange-500"
+    : "border-purple-400 bg-purple-600";
+}
+
+function TerritoryGateScreen() {
+  return (
+    <div className="min-h-screen bg-white px-4 py-8 text-[#111]">
+      <main className="mx-auto flex min-h-[70vh] max-w-3xl flex-col items-center justify-center text-center">
+        <div className="rounded-3xl border border-[#e5e5e5] bg-[#fafafa] p-8">
+          <p className="text-[13px] font-black uppercase tracking-[0.24em] text-[#e8630a]">
+            타자방 선입장 필요
+          </p>
+          <h1 className="mt-4 text-[34px] font-black tracking-[-0.06em]">
+            점령전은 타자방 참가 후 입장합니다.
+          </h1>
+          <p className="mt-3 text-[15px] font-medium leading-7 text-[#666]">
+            먼저 로비에서 타자방을 만들거나 참가한 다음, 대기방의 ‘점령전 입장’
+            버튼으로 들어가 주세요.
+          </p>
+          <a
+            href="/typing-service/rooms"
+            className="mt-6 inline-flex rounded-2xl bg-[#111] px-6 py-3 text-[14px] font-black text-white"
+          >
+            타자방 로비로 이동
+          </a>
+        </div>
+      </main>
+    </div>
+  );
+}
+
+function TerritoryResultBoard({
+  snapshot,
+  winner,
+  redScore,
+  blueScore,
+  returnPath,
+  remainingSeconds,
+}: {
+  snapshot: TerritoryBattleSnapshot;
+  winner: TerritoryBattleTeam | "draw";
+  redScore: number;
+  blueScore: number;
+  returnPath: string;
+  remainingSeconds: number;
+}) {
+  const rankedPlayers = [...snapshot.players].sort((a, b) => b.score - a.score);
+  const redPlayers = rankedPlayers.filter(
+    (player) => player.team === TERRITORY_BATTLE_TEAM.RED
+  );
+  const bluePlayers = rankedPlayers.filter(
+    (player) => player.team === TERRITORY_BATTLE_TEAM.BLUE
+  );
+  const currentPlayer =
+    rankedPlayers.find((player) => player.id === LOCAL_PLAYER_ID) ??
+    rankedPlayers[0] ??
+    null;
+  const currentRank = currentPlayer
+    ? rankedPlayers.findIndex((player) => player.id === currentPlayer.id) + 1
+    : null;
+
+  const teamRows = [
+    {
+      team: TERRITORY_BATTLE_TEAM.RED,
+      score: redScore,
+      players: redPlayers,
+      capturedCellCount:
+        snapshot.teams.find((team) => team.team === TERRITORY_BATTLE_TEAM.RED)
+          ?.capturedCellCount ?? 0,
+    },
+    {
+      team: TERRITORY_BATTLE_TEAM.BLUE,
+      score: blueScore,
+      players: bluePlayers,
+      capturedCellCount:
+        snapshot.teams.find((team) => team.team === TERRITORY_BATTLE_TEAM.BLUE)
+          ?.capturedCellCount ?? 0,
+    },
+  ];
+
+  return (
+    <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/72 px-6 py-5">
+      <div className="relative grid h-full max-h-[760px] w-full max-w-[1360px] grid-rows-[96px_minmax(0,1fr)_96px] overflow-hidden rounded-[28px] border-2 border-sky-500/70 bg-black/80 shadow-[0_0_80px_rgba(250,204,21,0.35)]">
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-52 bg-[radial-gradient(circle_at_center,rgba(250,204,21,0.72)_0%,rgba(250,204,21,0.25)_34%,transparent_70%)]" />
+
+        <header className="relative flex items-center justify-center">
+          <div className="rounded-[28px] border-4 border-white bg-indigo-800 px-8 py-3 text-center shadow-[0_0_44px_rgba(250,204,21,0.72)]">
+            <p className="text-[44px] font-black leading-none tracking-[-0.08em] text-white [text-shadow:0_4px_0_rgba(0,0,0,0.55)]">
+              {winner === "draw" ? "무승부" : "승리"}
+            </p>
+          </div>
+        </header>
+
+        <section className="relative grid min-h-0 grid-cols-[minmax(220px,1fr)_minmax(420px,660px)_minmax(220px,1fr)] gap-6 px-8 pb-4">
+          {teamRows.map(({ team, players }) => (
+            <aside
+              key={team}
+              className="flex min-h-0 flex-col rounded-[24px] border-2 border-sky-500/60 bg-black/72 p-4"
+            >
+              <div
+                className={`flex items-center gap-3 rounded-t-[18px] px-5 py-3 text-white ${
+                  team === TERRITORY_BATTLE_TEAM.RED
+                    ? "bg-orange-500"
+                    : "bg-purple-600"
+                }`}
+              >
+                <span className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-white bg-slate-900 text-[22px]">
+                  🚀
+                </span>
+                <p className="text-[24px] font-black tracking-[-0.05em]">
+                  {getTeamDisplayLabel(team)}
+                </p>
+              </div>
+
+              <div className="mt-5 grid gap-3">
+                {(players.length ? players : [null, null, null])
+                  .slice(0, 3)
+                  .map((player, index) => (
+                    <div
+                      key={player?.id ?? `${team}-empty-${index}`}
+                      className={`grid grid-cols-[42px_minmax(0,1fr)_auto] items-center gap-3 rounded-xl border border-white/20 bg-black/60 px-3 py-2 text-white ${
+                        index === 1 ? "ring-2 ring-purple-500" : ""
+                      }`}
+                    >
+                      <span className="flex h-10 w-10 items-center justify-center rounded-full bg-yellow-300 text-[20px] font-black text-[#111]">
+                        {index + 1}
+                      </span>
+                      <span className="truncate text-[14px] font-black">
+                        {player?.nickname ?? "대기 중"}
+                      </span>
+                      <span className="text-[13px] font-black text-white/80">
+                        {player?.score ?? 0}
+                      </span>
+                    </div>
+                  ))}
+              </div>
+            </aside>
+          ))}
+
+          <div className="grid min-h-0 grid-cols-2 items-start gap-6 self-center">
+            {teamRows.map(({ team, score, capturedCellCount }) => {
+              const isWinner = winner === team;
+
+              return (
+                <article
+                  key={team}
+                  className={`rounded-[22px] border-4 bg-white p-2 shadow-xl ${
+                    isWinner ? "scale-[1.02]" : "opacity-90"
+                  } ${getTeamResultClass(team)}`}
+                >
+                  <div className="rounded-[18px] bg-white p-4">
+                    <h2
+                      className={`rounded-2xl px-4 py-3 text-center text-[30px] font-black tracking-[-0.08em] text-white ${
+                        team === TERRITORY_BATTLE_TEAM.RED
+                          ? "bg-orange-500"
+                          : "bg-purple-600"
+                      }`}
+                    >
+                      {getTeamDisplayLabel(team)}
+                    </h2>
+                    <div className="mt-4 grid gap-4">
+                      <ResultScoreRow label="판 점수" value={`${score}P`} />
+                      <ResultScoreRow
+                        label="보너스 게임"
+                        value={`${capturedCellCount * 100}P`}
+                      />
+                      <ResultScoreRow label="팀 점수" value={`${score}P`} />
+                      {team === currentPlayer?.team && (
+                        <>
+                          <ResultScoreRow
+                            label="내 순위"
+                            value={currentRank ? `${currentRank}위` : "-"}
+                          />
+                          <ResultScoreRow
+                            label="획득 포인트"
+                            value={`${currentPlayer.capturedCellCount}`}
+                          />
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        </section>
+
+        <footer className="relative grid grid-cols-[220px_minmax(0,1fr)_220px] items-center gap-5 bg-slate-300/95 px-6">
+          <a
+            href="/typing-service/rooms"
+            className="rounded-[24px] bg-red-500 px-7 py-4 text-center text-[22px] font-black text-white shadow-lg"
+          >
+            방 나가기
+          </a>
+          <p className="text-center text-[28px] font-black tracking-[-0.06em] text-white [text-shadow:0_2px_0_rgba(0,0,0,0.22)]">
+            {remainingSeconds}초 뒤 대기방으로 이동합니다.
+          </p>
+          <a
+            href={returnPath}
+            className="rounded-[24px] bg-sky-500 px-7 py-4 text-center text-[22px] font-black text-white shadow-lg"
+          >
+            대기방
+          </a>
+        </footer>
+      </div>
+    </div>
+  );
+}
+
+function ResultScoreRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-xl bg-[#111] px-4 py-2 text-white shadow-inner">
+      <span className="text-[18px] font-black tracking-[-0.04em]">{label}</span>
+      <span className="text-[20px] font-black tracking-[-0.04em]">{value}</span>
+    </div>
+  );
+}
 
 function countOwnedCells(
   board: readonly TerritoryCellSnapshot[],
@@ -173,10 +403,29 @@ function TeamPanel({
   );
 }
 
-export function TypingTerritoryBattleScreen() {
+export function TypingTerritoryBattleScreen({
+  originRoomId,
+}: TypingTerritoryBattleScreenProps) {
+  if (!originRoomId) {
+    return <TerritoryGateScreen />;
+  }
+
+  return <TypingTerritoryBattleGameScreen originRoomId={originRoomId} />;
+}
+
+function TypingTerritoryBattleGameScreen({
+  originRoomId,
+}: {
+  originRoomId: string;
+}) {
+  const router = useRouter();
+  const [resultReturnSeconds, setResultReturnSeconds] = useState(
+    RESULT_RETURN_SECONDS
+  );
   const territoryRoom = useTerritoryBattleRoom({
     enabled: true,
     nickname: "Guest",
+    originRoomId,
   });
   const initialBoard = useMemo(
     () => createTerritoryBoard({ seed: PROTOTYPE_SEED }),
@@ -257,11 +506,36 @@ export function TypingTerritoryBattleScreen() {
   );
   const hudPlayers = engineSnapshot.players;
   const timerLabel = formatTimer(territoryRoom.snapshot, now);
+  const returnPath = `/typing-service/rooms/${encodeURIComponent(
+    originRoomId
+  )}`;
+  const resultWinner = territoryRoom.result?.winner ?? winner;
+  const shouldShowResult =
+    engineSnapshot.phase === TERRITORY_BATTLE_PHASE.FINISHED ||
+    Boolean(territoryRoom.result);
 
   useEffect(() => {
     const intervalId = window.setInterval(() => setNow(Date.now()), 250);
     return () => window.clearInterval(intervalId);
   }, []);
+
+  useEffect(() => {
+    if (!shouldShowResult) {
+      setResultReturnSeconds(RESULT_RETURN_SECONDS);
+      return;
+    }
+
+    const intervalId = window.setInterval(() => {
+      setResultReturnSeconds((seconds) => Math.max(0, seconds - 1));
+    }, 1000);
+
+    return () => window.clearInterval(intervalId);
+  }, [shouldShowResult]);
+
+  useEffect(() => {
+    if (!shouldShowResult || resultReturnSeconds > 0) return;
+    router.push(returnPath);
+  }, [resultReturnSeconds, returnPath, router, shouldShowResult]);
 
   useEffect(() => {
     latestSnapshotRef.current = engineSnapshot;
@@ -350,7 +624,7 @@ export function TypingTerritoryBattleScreen() {
   }
 
   return (
-    <div className="h-screen w-screen overflow-hidden bg-[radial-gradient(circle_at_top,#1E293B_0%,#111827_42%,#0F172A_100%)] text-[#F8FAFC]">
+    <div className="relative h-screen w-screen overflow-hidden bg-[radial-gradient(circle_at_top,#1E293B_0%,#111827_42%,#0F172A_100%)] text-[#F8FAFC]">
       <main className="grid h-full w-full grid-rows-[104px_minmax(0,1fr)_132px] gap-4 p-4">
         <header className="grid grid-cols-[minmax(210px,1fr)_minmax(260px,420px)_minmax(210px,1fr)] items-center gap-4">
           <div className="rounded-[26px] border border-[#C75C5C]/35 bg-[#0B1220]/72 px-5 py-4 shadow-[0_18px_60px_rgba(0,0,0,0.22)] backdrop-blur-xl">
@@ -525,6 +799,16 @@ export function TypingTerritoryBattleScreen() {
           </div>
         </footer>
       </main>
+      {shouldShowResult && (
+        <TerritoryResultBoard
+          snapshot={engineSnapshot}
+          winner={resultWinner}
+          redScore={redScore}
+          blueScore={blueScore}
+          returnPath={returnPath}
+          remainingSeconds={resultReturnSeconds}
+        />
+      )}
     </div>
   );
 }

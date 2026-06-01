@@ -147,7 +147,9 @@ const gameServer = new Server({
 gameServer
   .define(TYPING_RACE_ROOM_NAME, TypingRaceRoom)
   .filterBy(["locale", "roomMode"]);
-gameServer.define(TERRITORY_BATTLE_ROOM_NAME, TerritoryBattleRoom);
+gameServer
+  .define(TERRITORY_BATTLE_ROOM_NAME, TerritoryBattleRoom)
+  .filterBy(["sourceRoomId"]);
 gameServer.define(CARD_ROOM_NAME, CardRoom).filterBy(["cardRoomId"]);
 gameServer.define(STAR_LOBBY_ROOM_NAME, StarLobbyRoom);
 
