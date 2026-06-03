@@ -223,6 +223,7 @@ public class CardRoomService {
       var heir = repository.findEarliestActiveParticipant(room.internalId());
       if (heir != null) {
         repository.assignHost(heir.internalId());
+        rebalanceRolesAfterHostSuccession(room, remaining, heir);
       }
     }
     return new CardRoomResponse(detail(room.publicId()), null, null);
@@ -413,6 +414,27 @@ public class CardRoomService {
     if (!participant.isHost()) {
       throw new CardRoomServiceException(CardRoomError.HOST_ONLY);
     }
+  }
+
+  // finding(#5): 호스트가 떠나며 필수 역할(외우는/봐주는) 한쪽이 사라지면, WAITING 방이
+  // 시작 불가로 고착될 수 있다(startRoom은 memorizer·checker 둘 다 요구). 입장 시 자동 역할
+  // 배정(nextRole)과 동일하게, 승계받은 새 호스트에게 빠진 역할을 부여해 방을 다시 시작 가능
+  // 상태로 되돌린다. 활성 2인 이상에서만 적용한다 — 1인 방은 본질적으로 두 역할을 동시에 채울
+  // 수 없으므로 새 입장자를 기다린다. WAITING이 아닌 방(이미 시작/종료)은 건드리지 않는다.
+  // remaining은 역할 재배정 전 스냅샷이라 '무엇이 빠졌는지' 판정에 그대로 쓴다.
+  private void rebalanceRolesAfterHostSuccession(RoomRow room, List<ParticipantRow> remaining, ParticipantRow heir) {
+    if (!CardRoomStatus.WAITING.matches(room.status()) || remaining.size() < 2) {
+      return;
+    }
+    boolean hasMemorizer = remaining.stream().anyMatch((item) -> CardRoomParticipantRole.MEMORIZER.matches(item.role()));
+    boolean hasChecker = remaining.stream().anyMatch((item) -> CardRoomParticipantRole.CHECKER.matches(item.role()));
+    CardRoomParticipantRole missingRole = !hasMemorizer
+      ? CardRoomParticipantRole.MEMORIZER
+      : (!hasChecker ? CardRoomParticipantRole.CHECKER : null);
+    if (missingRole == null) {
+      return;
+    }
+    repository.updateParticipant(heir.internalId(), null, null, missingRole, null);
   }
 
   private void ensureRoomOpen(RoomRow room) {

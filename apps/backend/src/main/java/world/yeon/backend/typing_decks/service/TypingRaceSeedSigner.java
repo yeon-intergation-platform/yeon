@@ -4,6 +4,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
 /**
@@ -13,13 +14,20 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class TypingRaceSeedSigner {
-	private static final String RACE_SEED_FALLBACK_SECRET = "yeon-local-typing-race-seed-secret";
 	private static final Base64.Encoder BASE64_URL = Base64.getUrlEncoder().withoutPadding();
+	private final Environment environment;
+
+	public TypingRaceSeedSigner(Environment environment) {
+		this.environment = environment;
+	}
 
 	public String sign(UnsignedTypingRaceSeed seed) {
+		// 시크릿 해석은 try 밖에서 한다. 시크릿 부재(fail-closed) 메시지가 아래 catch의
+		// 일반 서명 실패 메시지로 가려지지 않게 하기 위함이다.
+		String secret = getTypingRaceSeedSigningSecret();
 		try {
 			Mac mac = Mac.getInstance("HmacSHA256");
-			mac.init(new SecretKeySpec(getTypingRaceSeedSigningSecret().getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
+			mac.init(new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
 			byte[] digest = mac.doFinal(raceSeedSigningPayload(seed).getBytes(StandardCharsets.UTF_8));
 			return "v1." + BASE64_URL.encodeToString(digest);
 		} catch (Exception error) {
@@ -27,12 +35,29 @@ public class TypingRaceSeedSigner {
 		}
 	}
 
+	// race-server와 동일하게 TYPING_RACE_SEED_SECRET > AUTH_SECRET 순으로 해석한다. AuthTokenHasher와
+	// 동일하게 Environment(프로퍼티 소스 + OS env)를 본다. 공개 하드코딩 fallback은 제거했다 — 시크릿이
+	// 없으면 공개 문자열로 조용히 약한 서명을 만들지 않고 fail-closed로 거부한다. AuthTokenHasher가
+	// 부팅 시 AUTH_SECRET(최소 길이)을 강제하므로 정상 기동 환경에서는 항상 해석된다.
 	private String getTypingRaceSeedSigningSecret() {
-		String raw = System.getenv("TYPING_RACE_SEED_SECRET");
-		if (raw != null && !raw.trim().isBlank()) return raw.trim();
-		raw = System.getenv("AUTH_SECRET");
-		if (raw != null && !raw.trim().isBlank()) return raw.trim();
-		return RACE_SEED_FALLBACK_SECRET;
+		String typingSecret = firstNonBlank(
+			environment.getProperty("TYPING_RACE_SEED_SECRET"),
+			environment.getProperty("typing.race.seed.secret"),
+			System.getenv("TYPING_RACE_SEED_SECRET"));
+		if (typingSecret != null) return typingSecret;
+		String authSecret = firstNonBlank(
+			environment.getProperty("AUTH_SECRET"),
+			environment.getProperty("auth.secret"),
+			System.getenv("AUTH_SECRET"));
+		if (authSecret != null) return authSecret;
+		throw new IllegalStateException("race seed 서명 시크릿이 없습니다. TYPING_RACE_SEED_SECRET 또는 AUTH_SECRET을 설정해야 합니다.");
+	}
+
+	private static String firstNonBlank(String... values) {
+		for (String value : values) {
+			if (value != null && !value.trim().isBlank()) return value.trim();
+		}
+		return null;
 	}
 
 	private String raceSeedSigningPayload(UnsignedTypingRaceSeed seed) {

@@ -27,3 +27,29 @@
 
 - 백엔드 `compileJava compileTestJava test` 전체 BUILD SUCCESSFUL.
 - 카드 leave: race-server participantId 경로 회귀 테스트 신규 통과.
+
+## 2차: 시드 시그너 fail-closed + 호스트 승계 역할 재배정
+
+### 작업내용 (수정 완료)
+
+- **[HIGH·보안] 타자 race-seed 시그너 fail-open 제거**: `TypingRaceSeedSigner`가 `System.getenv`만 보고
+  시크릿이 없으면 공개 하드코딩 fallback(`yeon-local-typing-race-seed-secret`)으로 조용히 약한 서명을 만들었다.
+  `AuthTokenHasher`와 동일하게 `Environment`(프로퍼티 소스 + OS env)를 주입받아 `TYPING_RACE_SEED_SECRET`
+  → `AUTH_SECRET` 순으로 해석하고, 둘 다 없으면 `IllegalStateException`으로 **fail-closed**한다(공개 fallback 삭제).
+  `TypingDeckService` 보조 생성자는 `new TypingRaceSeedSigner(new StandardEnvironment())`로 갱신. 해석 값은
+  race-server(`process.env.TYPING_RACE_SEED_SECRET || AUTH_SECRET`)와 바이트 동일하게 유지.
+- **[MAJOR·기능] 카드방 호스트 승계 시 역할 데드락 해소**: 호스트가 떠나며 필수 역할(외우는/봐주는) 한쪽이
+  비면 WAITING 방이 `startRoom`(memorizer·checker 둘 다 요구)을 통과 못 해 고착될 수 있었다. 입장 시 자동
+  역할 배정(`nextRole`)과 동일하게, 승계받은 새 호스트에게 빠진 역할을 부여(`rebalanceRolesAfterHostSuccession`).
+  활성 2인 이상 + WAITING에서만 적용(1인 방은 본질적으로 두 역할 동시 충족 불가 → 새 입장 대기).
+
+### 논의 필요
+
+- 1차 '보고만' 항목들(친구요청 거절/취소 부재, ask 차단 voter 집계, star-lobby room_key 재알림, HINTED_OK 게이팅,
+  rate-limit 인메모리)은 제품 의도 판단이 필요해 본 차수에서 제외. 별도 차수로 다룬다.
+
+### 검증
+
+- `CardRoomServiceTests` 14 tests 0 failures(호스트 승계 역할 재배정 긍정/음성 테스트 신규 2건 포함).
+- `TypingDeckServiceTests`(raceSeed 서명 포함) 통과.
+- `compileJava compileTestJava --rerun-tasks` BUILD SUCCESSFUL.
