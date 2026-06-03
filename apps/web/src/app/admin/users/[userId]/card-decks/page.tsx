@@ -2,23 +2,20 @@ import { YeonLink } from "@yeon/ui";
 import type { YeonPageMetadata } from "@yeon/ui/runtime/YeonPageMetadata";
 import { YeonText, YeonView } from "@yeon/ui";
 import { YEON_WEB_SHARED_CLASS as SHARED_FEATURE_CLASS } from "@yeon/ui/theme/web-style-tokens";
-import { AdminMemberList } from "@/features/admin/admin-member-list";
+import { AdminUserCardDecksList } from "@/features/admin/admin-user-card-decks-list";
 import { NON_INDEXABLE_ROBOTS } from "@/lib/seo";
-import { getCurrentAdminUser, getAdminSeedEmails } from "@/server/auth/admin";
+import { getCurrentAdminUser } from "@/server/auth/admin";
 import {
-  fetchUsersFromSpring,
-  UsersSpringBackendHttpError,
-} from "@/server/users-spring-client";
+  adminListUserCardDecks,
+  UserExperienceSpringBackendHttpError,
+} from "@/server/user-experience-spring-client";
 
 export const metadata: YeonPageMetadata = {
-  title: "회원 관리 | YEON Admin",
+  title: "사용자 카드덱 | YEON Admin",
   robots: NON_INDEXABLE_ROBOTS,
 };
 
-function AdminDenied() {
-  const seedEmails = Array.from(getAdminSeedEmails());
-  const hasSeedEmail = seedEmails.some(Boolean);
-
+function AdminGuardDenied() {
   return (
     <YeonView
       as="main"
@@ -43,39 +40,6 @@ function AdminDenied() {
         >
           관리자 권한이 필요합니다
         </YeonText>
-        <YeonText
-          variant="unstyled"
-          tone="inherit"
-          className="mt-3 text-[14px] leading-6 text-[#666]"
-        >
-          회원관리 페이지는 DB role이{" "}
-          <YeonText as="strong" variant="unstyled" tone="inherit">
-            admin
-          </YeonText>
-          인 계정만 접근할 수 있습니다. 최초 관리자는 운영 환경변수{" "}
-          <YeonText as="code" variant="unstyled" tone="inherit">
-            YEON_ADMIN_EMAILS
-          </YeonText>{" "}
-          또는{" "}
-          <YeonText as="code" variant="unstyled" tone="inherit">
-            ADMIN_EMAILS
-          </YeonText>
-          에 이메일을 넣고 로그인하면 자동으로 admin role로 승격됩니다.
-        </YeonText>
-        <YeonView className="mt-5 rounded-2xl border border-[#e5e5e5] bg-[#fafafa] p-4 text-[13px] leading-6 text-[#666]">
-          <YeonText
-            variant="unstyled"
-            tone="inherit"
-            className="font-bold text-[#111]"
-          >
-            현재 시드 설정
-          </YeonText>
-          <YeonText variant="unstyled" tone="inherit" className="mt-1">
-            {hasSeedEmail
-              ? `${seedEmails.length}개 이메일이 설정되어 있습니다.`
-              : "아직 시드 이메일이 설정되어 있지 않습니다."}
-          </YeonText>
-        </YeonView>
         <YeonView className={SHARED_FEATURE_CLASS.wrapGap2 + " mt-6"}>
           <YeonLink
             href="/auth/login"
@@ -92,7 +56,7 @@ function AdminDenied() {
   );
 }
 
-function AdminMemberListError({ message }: { message: string }) {
+function AdminCardDecksError({ message }: { message: string }) {
   return (
     <YeonView
       as="main"
@@ -107,7 +71,7 @@ function AdminMemberListError({ message }: { message: string }) {
           tone="inherit"
           className={SHARED_FEATURE_CLASS.text13EmphasisSubtle}
         >
-          회원 목록 오류
+          카드덱 오류
         </YeonText>
         <YeonText
           as="h1"
@@ -115,7 +79,7 @@ function AdminMemberListError({ message }: { message: string }) {
           tone="inherit"
           className="mt-2 text-[26px] font-black tracking-[-0.04em]"
         >
-          회원 정보를 불러오지 못했습니다
+          카드덱 정보를 불러오지 못했습니다
         </YeonText>
         <YeonText
           variant="unstyled"
@@ -129,15 +93,21 @@ function AdminMemberListError({ message }: { message: string }) {
   );
 }
 
-export default async function AdminMembersPage() {
+export default async function AdminUserCardDecksPage({
+  params,
+}: {
+  params: Promise<{ userId: string }>;
+}) {
   const adminUser = await getCurrentAdminUser();
 
   if (!adminUser) {
-    return <AdminDenied />;
+    return <AdminGuardDenied />;
   }
 
+  const { userId } = await params;
+
   try {
-    const result = await fetchUsersFromSpring(adminUser.id);
+    const result = await adminListUserCardDecks(adminUser.id, userId);
 
     return (
       <YeonView className="min-h-screen bg-white">
@@ -149,43 +119,32 @@ export default async function AdminMembersPage() {
                 tone="inherit"
                 className={SHARED_FEATURE_CLASS.text13EmphasisSubtle}
               >
-                관리자
+                관리자 · 사용자 카드덱
               </YeonText>
               <YeonText
                 variant="unstyled"
                 tone="inherit"
                 className="text-[14px] font-semibold"
               >
-                {adminUser.email} · 회원 관리
+                {`사용자 ${userId}`}
               </YeonText>
             </YeonView>
-            <YeonView className={SHARED_FEATURE_CLASS.wrapGap2}>
-              <YeonLink
-                href="/admin/users"
-                className={SHARED_FEATURE_CLASS.ghostButtonMd13}
-              >
-                사용자 · 경험치
-              </YeonLink>
-              <YeonLink
-                href="/admin/typing-decks"
-                className={SHARED_FEATURE_CLASS.ghostButtonMd13}
-              >
-                타자 덱 관리자
-              </YeonLink>
-            </YeonView>
+            <YeonLink
+              href="/admin/users"
+              className={SHARED_FEATURE_CLASS.ghostButtonMd13}
+            >
+              사용자 목록으로
+            </YeonLink>
           </YeonView>
         </YeonView>
-        <AdminMemberList users={result.users} />
+        <AdminUserCardDecksList cardDecks={result.cardDecks} />
       </YeonView>
     );
   } catch (error) {
-    if (error instanceof UsersSpringBackendHttpError) {
-      return <AdminMemberListError message={error.message} />;
+    if (error instanceof UserExperienceSpringBackendHttpError) {
+      return <AdminCardDecksError message={error.message} />;
     }
-
     console.error(error);
-    return (
-      <AdminMemberListError message="예상하지 못한 오류가 발생했습니다." />
-    );
+    return <AdminCardDecksError message="예상하지 못한 오류가 발생했습니다." />;
   }
 }

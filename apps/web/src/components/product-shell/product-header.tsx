@@ -10,6 +10,7 @@ import {
   fetchYeon,
 } from "@yeon/ui";
 import { TypingBgmButton } from "@/features/typing-service/typing-bgm-button";
+import { HeaderExperienceBadge } from "@/features/user-experience/header-experience-badge";
 import { useLogout } from "@/lib/use-logout";
 
 type CommonServiceKey = "home" | "typing" | "card" | "community";
@@ -79,6 +80,9 @@ export function CommonProductHeader({
             {rightExtras}
           </YeonView>
         ) : null}
+        <YeonView className="hidden shrink-0 md:block">
+          <HeaderExperienceBadge />
+        </YeonView>
         <YeonView className="hidden shrink-0 md:block">
           <TypingBgmButton />
         </YeonView>

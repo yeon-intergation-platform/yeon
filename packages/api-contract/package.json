@@ -22,7 +22,8 @@
     "./typing-decks": "./src/typing-decks.ts",
     "./card-rooms": "./src/card-rooms.ts",
     "./community-chat": "./src/community-chat.ts",
-    "./star-lobby": "./src/star-lobby.ts"
+    "./star-lobby": "./src/star-lobby.ts",
+    "./user-experience": "./src/user-experience.ts"
   },
   "scripts": {
     "lint": "eslint src --ext .ts",

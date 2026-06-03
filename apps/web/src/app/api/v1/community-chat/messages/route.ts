@@ -10,6 +10,7 @@ import {
   fetchCommunityChatMessagesFromSpring,
   sendCommunityChatMessageToSpring,
 } from "@/server/community-chat-spring-client";
+import { getCurrentAuthUser } from "@/server/auth/session";
 
 const COMMUNITY_CHAT_LIST_ERROR_MESSAGE =
   "커뮤니티 채팅을 불러오지 못했습니다.";
@@ -53,8 +54,13 @@ export async function POST(request: YeonRequest) {
     const senderNickname =
       parsed.data.guestNickname?.trim() || DEFAULT_COMMUNITY_CHAT_NICKNAME;
 
+    // 커뮤니티는 공개(익명 허용)지만, 로그인 사용자가 작성하면 세션에서 도출한 userId를
+    // 주입해 경험치를 적립받게 한다(익명은 null → 적립 없음). userId는 클라이언트가 아니라
+    // 서버 세션에서만 도출하므로 위조 불가.
+    const authUser = await getCurrentAuthUser().catch(() => null);
+
     const response = await sendCommunityChatMessageToSpring({
-      userId: null,
+      userId: authUser?.id ?? null,
       payload: {
         ...parsed.data,
         senderNickname,
