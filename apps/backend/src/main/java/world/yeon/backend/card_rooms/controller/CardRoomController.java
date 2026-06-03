@@ -35,7 +35,7 @@ public class CardRoomController {
   public CardRoomParticipantResponse updateParticipant(@PathVariable String roomId, @PathVariable String participantId, @RequestHeader(value = "X-Yeon-User-Id", required = false) UUID userId, @RequestHeader(value = "X-Yeon-Guest-Id", required = false) String guestId, @RequestHeader(value = "X-Yeon-Participant-Id", required = false) String callerParticipantId, @RequestBody UpdateCardRoomParticipantRequest request) { return service.updateParticipant(roomId, participantId, userId, guestId, callerParticipantId, request); }
 
   @DeleteMapping("/{roomId}/participants/{participantId}")
-  public CardRoomResponse leave(@PathVariable String roomId, @PathVariable String participantId, @RequestHeader(value = "X-Yeon-User-Id", required = false) UUID userId, @RequestHeader(value = "X-Yeon-Guest-Id", required = false) String guestId) { return service.leaveRoom(roomId, participantId, userId, guestId); }
+  public CardRoomResponse leave(@PathVariable String roomId, @PathVariable String participantId, @RequestHeader(value = "X-Yeon-User-Id", required = false) UUID userId, @RequestHeader(value = "X-Yeon-Guest-Id", required = false) String guestId, @RequestHeader(value = "X-Yeon-Participant-Id", required = false) String callerParticipantId) { return service.leaveRoom(roomId, participantId, userId, guestId, callerParticipantId); }
 
   @PostMapping("/{roomId}/start")
   public CardRoomResponse start(@PathVariable String roomId, @RequestHeader("X-Yeon-Participant-Id") String participantId) { return service.startRoom(roomId, participantId); }

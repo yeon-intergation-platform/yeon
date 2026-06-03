@@ -44,8 +44,10 @@ public class ChatServiceAuthRepository {
 		return toChallengeRow(rows.getFirst());
 	}
 
-	public void consumeChallenge(UUID id) {
-		entityManager.createNativeQuery("update public.chat_service_auth_challenges set consumed_at = now() where id = :id")
+	// consumed_at is null 가드로 원자적 소비. 동시 verify-otp 경합에서 단 한 호출만 1을 받아
+	// 세션을 발급하도록 직렬화한다(한 OTP로 다중 세션 발급 TOCTOU 차단).
+	public int consumeChallenge(UUID id) {
+		return (int) entityManager.createNativeQuery("update public.chat_service_auth_challenges set consumed_at = now() where id = :id and consumed_at is null")
 			.setParameter("id", id)
 			.executeUpdate();
 	}

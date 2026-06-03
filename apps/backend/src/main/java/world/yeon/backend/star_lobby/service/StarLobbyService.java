@@ -50,7 +50,9 @@ public class StarLobbyService {
 		List<ObservedRoomRow> savedRooms = new ArrayList<>();
 		Set<String> observedKeys = new LinkedHashSet<>();
 		for (ObservationRoomRequest input : inputRooms) {
-			String title = normalizeText(input == null ? null : input.title(), "방제", StarLobbyDomainRules.ROOM_TITLE_MAX_LENGTH);
+			// rooms 배열에 null 원소가 오면(예: {"rooms":[null]}) 아래 역참조가 NPE(500)나므로 건너뛴다.
+			if (input == null) continue;
+			String title = normalizeText(input.title(), "방제", StarLobbyDomainRules.ROOM_TITLE_MAX_LENGTH);
 			Integer currentPlayers = validatePlayer(input.currentPlayers(), "현재 인원", StarLobbyDomainRules.PLAYER_MIN, StarLobbyDomainRules.PLAYER_MAX, true);
 			Integer maxPlayers = validatePlayer(input.maxPlayers(), "최대 인원", 1, StarLobbyDomainRules.PLAYER_MAX, true);
 			String roomKey = roomKey(title, currentPlayers, maxPlayers);

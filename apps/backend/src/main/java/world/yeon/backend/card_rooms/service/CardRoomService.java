@@ -207,10 +207,12 @@ public class CardRoomService {
   }
 
   @Transactional
-  public CardRoomResponse leaveRoom(String roomId, String participantId, UUID callerUserId, String callerGuestId) {
+  public CardRoomResponse leaveRoom(String roomId, String participantId, UUID callerUserId, String callerGuestId, String callerParticipantId) {
     var room = requireLockedRoom(roomId);
     var participant = requireParticipantInRoom(room, participantId);
-    requireParticipantOwnership(participant, callerUserId, callerGuestId);
+    // race-server(내부 신뢰 호출)는 게스트/유저 식별자 없이 HMAC 검증된 X-Yeon-Participant-Id로 본인을 증명한다.
+    // 이 인자가 없으면 정상 퇴장이 모두 막혀 좀비 방이 된다(updateParticipant와 동일한 신뢰 경계).
+    requireParticipantOwnership(participant, callerUserId, callerGuestId, callerParticipantId);
     OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
     repository.leaveParticipant(participant.internalId(), now);
     var remaining = repository.listParticipants(room.internalId());
