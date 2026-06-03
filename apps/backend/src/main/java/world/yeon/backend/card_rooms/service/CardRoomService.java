@@ -6,9 +6,13 @@ import java.time.ZoneOffset;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Function;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import world.yeon.backend.user_experience.domain.ExperienceActivity;
+import world.yeon.backend.user_experience.service.ExperienceService;
 import world.yeon.backend.card_rooms.domain.CardRoomError;
 import world.yeon.backend.card_rooms.domain.CardRoomIdPrefix;
 import world.yeon.backend.card_rooms.domain.CardRoomMessageType;
@@ -44,12 +48,16 @@ public class CardRoomService {
   private static final Duration DEFAULT_STALE_AFTER = Duration.ofHours(6);
   private static final int MAX_DECK_ITEMS = 200;
 
+  private static final Logger log = LoggerFactory.getLogger(CardRoomService.class);
+
   private final CardRoomRepository repository;
   private final CardRoomParticipantTokenService participantTokenService;
+  private final ExperienceService experienceService;
 
-  public CardRoomService(CardRoomRepository repository, CardRoomParticipantTokenService participantTokenService) {
+  public CardRoomService(CardRoomRepository repository, CardRoomParticipantTokenService participantTokenService, ExperienceService experienceService) {
     this.repository = repository;
     this.participantTokenService = participantTokenService;
+    this.experienceService = experienceService;
   }
 
   public CardRoomListResponse listRooms() {
@@ -280,7 +288,26 @@ public class CardRoomService {
     CardRoomStatus nextStatus = isLastCard ? CardRoomStatus.FINISHED : CardRoomStatus.IN_PROGRESS;
     // 다음 카드로 진입하면 공개 플래그를 리셋한다. 종료 시에는 마지막 카드 인덱스에 고정한다.
     repository.updateStatus(room.internalId(), nextStatus, Math.min(nextIndex, Math.max(cardCount - 1, 0)), false, OffsetDateTime.now(ZoneOffset.UTC));
+    if (isLastCard) {
+      awardCardRoomFinished(room);
+    }
     return new CardRoomResponse(detail(roomId), null, null);
+  }
+
+  // 카드방이 FINISHED로 전이될 때 활성 참가자 중 로그인 유저에게 경험치를 적립한다.
+  // 멱등 키는 roomPublicId라 중복 next 호출이나 재시도에도 유저당 1회만 적립된다.
+  // 적립 실패가 방 종료(이미 커밋된 status 전이)를 깨지 않도록 참가자별로 try/catch한다.
+  private void awardCardRoomFinished(RoomRow room) {
+    for (var participant : repository.listParticipants(room.internalId())) {
+      if (participant.userId() == null) {
+        continue; // 게스트 참가자는 적립 대상이 아니다.
+      }
+      try {
+        experienceService.award(participant.userId(), ExperienceActivity.CARD_ROOM_FINISHED, room.publicId());
+      } catch (RuntimeException error) {
+        log.warn("카드방 완료 경험치 적립에 실패했습니다(방 종료는 정상). userId={}, roomId={}", participant.userId(), room.publicId(), error);
+      }
+    }
   }
 
   @Transactional

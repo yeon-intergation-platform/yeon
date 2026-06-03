@@ -44,7 +44,7 @@ class CardRoomServiceTests {
 
   @BeforeEach
   void setUp() {
-    service = new CardRoomService(repository, new CardRoomParticipantTokenService(new org.springframework.mock.env.MockEnvironment()));
+    service = new CardRoomService(repository, new CardRoomParticipantTokenService(new org.springframework.mock.env.MockEnvironment()), org.mockito.Mockito.mock(world.yeon.backend.user_experience.service.ExperienceService.class));
   }
 
   @Test
