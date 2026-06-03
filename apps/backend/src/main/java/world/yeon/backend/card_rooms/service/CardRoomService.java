@@ -139,10 +139,10 @@ public class CardRoomService {
   }
 
   @Transactional
-  public CardRoomParticipantResponse updateParticipant(String roomId, String participantId, UUID callerUserId, String callerGuestId, UpdateCardRoomParticipantRequest request) {
+  public CardRoomParticipantResponse updateParticipant(String roomId, String participantId, UUID callerUserId, String callerGuestId, String callerParticipantId, UpdateCardRoomParticipantRequest request) {
     var room = requireLockedRoom(roomId);
     var participant = requireParticipantInRoom(room, participantId);
-    requireParticipantOwnership(participant, callerUserId, callerGuestId);
+    requireParticipantOwnership(participant, callerUserId, callerGuestId, callerParticipantId);
     // 정책(finding 27): 학습 시작 후(status != WAITING)에는 역할/준비 상태뿐 아니라
     // 프로필(닉네임/캐릭터)도 변경할 수 없게 막는다. 진행 중 닉네임이 바뀌면 시스템 메시지
     // ('님이 입장했습니다')와 결과 화면 표시가 도중에 흔들려 기록 일관성이 깨지기 때문이다.
@@ -390,11 +390,22 @@ public class CardRoomService {
   // 같은 방의 악의적 사용자가 다른 참가자의 publicId로 역할 변경·강제 퇴장하는 것을 막는다.
   // 로그인 사용자는 user_id, 게스트는 guest_id로 소유권을 판정한다.
   private void requireParticipantOwnership(ParticipantRow participant, UUID callerUserId, String callerGuestId) {
+    requireParticipantOwnership(participant, callerUserId, callerGuestId, null);
+  }
+
+  private void requireParticipantOwnership(ParticipantRow participant, UUID callerUserId, String callerGuestId, String callerParticipantId) {
     if (callerUserId != null && callerUserId.equals(participant.userId())) {
       return;
     }
     if (callerGuestId != null && !callerGuestId.isBlank()
       && callerGuestId.equals(participant.guestId())) {
+      return;
+    }
+    // race-server(내부 신뢰 호출)는 게스트 식별자 대신 X-Yeon-Participant-Id로 본인을 증명한다.
+    // race-server는 WS 입장 시 (roomId, participantId) HMAC 토큰을 이미 검증했고, 이 엔드포인트는
+    // 내부 토큰 필터로 보호되므로, 헤더 participantId가 대상과 일치하면 소유로 인정한다.
+    if (callerParticipantId != null && !callerParticipantId.isBlank()
+      && callerParticipantId.equals(participant.publicId())) {
       return;
     }
     throw new CardRoomServiceException(CardRoomError.PARTICIPANT_NOT_OWNED);
