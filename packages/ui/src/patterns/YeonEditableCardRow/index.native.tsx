@@ -59,18 +59,27 @@ export function YeonEditableCardRow({
 }: YeonEditableCardRowProps) {
   const [isDeleteRevealed, setDeleteRevealed] = useState(false);
   const [startX, setStartX] = useState<number | null>(null);
+  const [startY, setStartY] = useState<number | null>(null);
 
   function handlePressIn(event: YeonGestureResponderEvent) {
     setStartX(event.nativeEvent.pageX);
+    setStartY(event.nativeEvent.pageY);
   }
 
   function handlePressOut(event: YeonGestureResponderEvent) {
-    if (startX === null) {
+    if (startX === null || startY === null) {
       return;
     }
 
     const deltaX = event.nativeEvent.pageX - startX;
+    const deltaY = event.nativeEvent.pageY - startY;
     setStartX(null);
+    setStartY(null);
+
+    // idx=137: 세로 이동이 가로 이동보다 크면 스크롤 의도로 보고 스와이프 판정 무시.
+    if (Math.abs(deltaY) > Math.abs(deltaX)) {
+      return;
+    }
 
     if (deltaX < -42) {
       setDeleteRevealed(true);

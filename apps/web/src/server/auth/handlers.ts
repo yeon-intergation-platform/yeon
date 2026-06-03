@@ -65,29 +65,53 @@ function applyOAuthStateCookie(
 
 // 모바일 소셜 로그인 복귀: 커스텀 scheme(yeon-card-service:// 등)으로 302.
 // NextResponse.redirect은 http(s) 외 scheme을 막을 수 있어 Location 헤더를 직접 세팅한다.
+//
+// idx=142: 세션 토큰을 쿼리스트링 대신 URL fragment(#)로 전달한다.
+// fragment는 HTTP 요청 라인/프록시 액세스 로그에 포함되지 않아 노출 면을 줄인다.
+// 모바일 측 파싱도 result.url fragment 직접 분해로 맞춘다(social-login.ts).
+// 비-민감 파라미터(error, errorCode 등)는 기존처럼 쿼리스트링으로 남긴다.
 function buildMobileReturnLocation(
   mobileReturnUrl: string,
-  params: Record<string, string | null | undefined>
+  sensitiveParams: Record<string, string | null | undefined>,
+  publicParams: Record<string, string | null | undefined> = {}
 ) {
   const url = createYeonUrl(mobileReturnUrl);
 
-  for (const [key, value] of Object.entries(params)) {
+  for (const [key, value] of Object.entries(publicParams)) {
     if (value != null) {
       url.searchParams.set(key, value);
     }
   }
 
-  return url.toString();
+  const fragmentParts: string[] = [];
+  for (const [key, value] of Object.entries(sensitiveParams)) {
+    if (value != null) {
+      fragmentParts.push(
+        `${encodeURIComponent(key)}=${encodeURIComponent(value)}`
+      );
+    }
+  }
+  const baseUrl = url.toString();
+  return fragmentParts.length > 0
+    ? `${baseUrl}#${fragmentParts.join("&")}`
+    : baseUrl;
 }
 
 function redirectToMobileReturn(
   mobileReturnUrl: string,
-  params: Record<string, string | null | undefined>,
-  oauthStateCookieValue?: string | null
+  sensitiveParams: Record<string, string | null | undefined>,
+  oauthStateCookieValue?: string | null,
+  publicParams: Record<string, string | null | undefined> = {}
 ) {
   const response = new NextResponse(null, {
     status: 302,
-    headers: { Location: buildMobileReturnLocation(mobileReturnUrl, params) },
+    headers: {
+      Location: buildMobileReturnLocation(
+        mobileReturnUrl,
+        sensitiveParams,
+        publicParams
+      ),
+    },
   });
 
   if (oauthStateCookieValue !== undefined) {
@@ -108,11 +132,13 @@ function redirectToAuthError(
   }
 ) {
   // 모바일 플로우면 웹 에러 페이지가 아니라 딥링크로 오류를 돌려보낸다(브라우저 세션 종료).
+  // 에러 코드는 비민감 정보이므로 publicParams(쿼리스트링)으로 전달한다.
   if (options.mobileReturnUrl) {
     return redirectToMobileReturn(
       options.mobileReturnUrl,
-      { error: options.reason },
-      options.oauthStateCookieValue
+      {},
+      options.oauthStateCookieValue,
+      { error: options.reason }
     );
   }
 
@@ -252,12 +278,12 @@ export async function completeSocialAuth(
     });
 
     // 모바일 플로우: 쿠키 대신 딥링크로 세션 토큰을 반환(앱이 SecureStore에 저장).
-    // idx-142: 세션 토큰이 쿼리스트링에 포함되어 프록시/OS 딥링크 로그에 평문 노출 위험.
-    // 개선 방향: URL fragment(#token=...) 또는 일회용 exchange code 방식으로 전환 권장.
-    // 현재 normalizeMobileReturnUrl이 화이트리스트 scheme/pathname을 강제해 open-redirect는 차단됨.
+    // idx=142: 토큰을 URL fragment(#)로 전달해 프록시/OS 딥링크 액세스 로그 노출을 줄인다.
+    // normalizeMobileReturnUrl이 화이트리스트 scheme/pathname을 강제해 open-redirect는 차단됨.
     if (oauthState.matchedEntry.mobileReturnUrl) {
       return redirectToMobileReturn(
         oauthState.matchedEntry.mobileReturnUrl,
+        // 민감 파라미터 → URL fragment(#)로 전달
         {
           token: session.sessionToken,
           expiresAt: session.expiresAt.toISOString(),

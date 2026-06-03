@@ -1,16 +1,21 @@
-import {
-  getYeonOptionalLocalStorage,
-  getYeonSecureStorage,
-} from "@yeon/ui/native";
+import { getYeonSecureStorage } from "@yeon/ui/native";
 
 const PRIMARY_AUTH_SESSION_TOKEN_KEY = "yeon.primary-auth.session-token";
 const inMemoryStorage = new Map<string, string>();
 
 // ⚠ 보안 주의(idx=144): Expo web 빌드에서는 getYeonSecureStorage()가 null을 반환하고
-// localStorage가 폴백으로 사용된다. localStorage는 XSS 취약점이 있을 경우 세션 토큰이 노출된다.
-// 이상적으로는 서버가 HttpOnly 쿠키로 토큰을 set해야 한다. 단기 완화책: CSP 강화 + 짧은 토큰 수명.
-function getBrowserStorage() {
-  return getYeonOptionalLocalStorage();
+// 브라우저 스토리지 폴백으로 동작한다. 이상적으로는 서버가 HttpOnly 쿠키로 토큰을 set해야 한다.
+//
+// 완화책(적용됨): localStorage 대신 sessionStorage 사용. sessionStorage는 탭/창 닫힘 시
+// 자동 소거되어 localStorage보다 토큰 잔존 기간이 짧다. XSS 위험은 동일하게 존재하므로
+// CSP 강화 + 짧은 토큰 수명으로 추가 완화 권장. 웹 빌드에서 HttpOnly 쿠키로 전환이 장기 목표.
+function getBrowserStorage(): Storage | null {
+  try {
+    return globalThis.sessionStorage ?? null;
+  } catch {
+    // 크로스-오리진 iframe 등 sessionStorage 접근 불가 환경.
+    return null;
+  }
 }
 
 export async function readPrimaryAuthSessionToken() {

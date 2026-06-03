@@ -125,10 +125,13 @@ export function CardDeckDetailScreen({ deckId }: CardDeckDetailScreenProps) {
       return itemRepository.getDeckDetail(deckId);
     },
     queryKey: deckId
-      ? cardServiceQueryKeys.deck(deckId, mode === CARD_SERVICE_MODE.server)
-      : cardServiceQueryKeys.deck(
-          "__missing__",
-          mode === CARD_SERVICE_MODE.server
+      ? cardServiceQueryKeys.deckDetail(
+          mode === CARD_SERVICE_MODE.server,
+          deckId
+        )
+      : cardServiceQueryKeys.deckDetail(
+          mode === CARD_SERVICE_MODE.server,
+          "__missing__"
         ),
   });
 
@@ -213,9 +216,9 @@ export function CardDeckDetailScreen({ deckId }: CardDeckDetailScreenProps) {
       return;
     }
     await queryClient.invalidateQueries({
-      queryKey: cardServiceQueryKeys.deck(
-        deckId,
-        mode === CARD_SERVICE_MODE.server
+      queryKey: cardServiceQueryKeys.deckDetail(
+        mode === CARD_SERVICE_MODE.server,
+        deckId
       ),
     });
     await queryClient.invalidateQueries({
