@@ -110,7 +110,7 @@ export const createTypingDeckBodySchema = z.object({
   description: z.string().max(TYPING_DECK_DESCRIPTION_MAX_LENGTH).nullish(),
   languageTag: typingDeckLanguageTagSchema,
   visibility: typingDeckVisibilitySchema.default(
-    TYPING_DECK_VISIBILITY.private,
+    TYPING_DECK_VISIBILITY.private
   ),
 });
 export type CreateTypingDeckBody = z.infer<typeof createTypingDeckBodySchema>;
@@ -127,10 +127,10 @@ export const createTypingDeckPassageBodySchema = z.object({
   title: z.string().min(1).max(TYPING_DECK_TITLE_MAX_LENGTH).nullish(),
   prompt: z.string().min(1).max(TYPING_PASSAGE_TEXT_MAX_LENGTH),
   textType: typingPassageTextTypeSchema.default(
-    TYPING_PASSAGE_TEXT_TYPES.short,
+    TYPING_PASSAGE_TEXT_TYPES.short
   ),
   difficulty: typingPassageDifficultySchema.default(
-    TYPING_PASSAGE_DIFFICULTIES.normal,
+    TYPING_PASSAGE_DIFFICULTIES.normal
   ),
   sortOrder: z.number().int().optional(),
 });
@@ -212,6 +212,10 @@ export const typingRaceSeedDtoSchema = z.object({
   lobbyDeckTitle: z.string(),
   participantDeckTitle: z.string(),
   languageTag: typingDeckLanguageTagSchema,
+  // 인증된 시드 발급 시에만 BFF 가 내려주는 로그인 사용자 식별자/검증 토큰.
+  // race-server 가 userToken 을 검증해 통과할 때만 userId 를 신뢰(경험치 적립). 비로그인은 둘 다 생략.
+  userId: z.string().min(1).optional(),
+  userToken: z.string().min(1).optional(),
 });
 export type TypingRaceSeedDto = z.infer<typeof typingRaceSeedDtoSchema>;
 

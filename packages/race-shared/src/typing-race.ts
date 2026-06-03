@@ -272,6 +272,11 @@ export type TypingRaceSeed = {
   lobbyDeckTitle?: string;
   participantDeckTitle?: string;
   languageTag?: TypingDeckLanguageTag;
+  // 인증된 시드 발급 시 BFF 가 내려주는 로그인 사용자 토큰(검증용). 시드 서명 payload 에는
+  // 포함되지 않으며(seedToken 무관), race-server 가 별도 HMAC 으로 독립 검증한다.
+  // 비로그인 시 둘 다 omit.
+  userId?: string;
+  userToken?: string;
 };
 
 export type TypingRoomSettings = TypingRoomDeckMetadata & {
@@ -371,6 +376,10 @@ export type MatchJoinMessage = {
   playerId?: string;
   characterId?: string;
   locale?: "ko" | "en";
+  // 로그인 사용자의 검증용 식별자. userToken 이 유효할 때만 race-server 가 신뢰한다.
+  // (비로그인/게스트는 둘 다 omit — 경험치 적립 안 함)
+  userId?: string;
+  userToken?: string;
 };
 
 export type TypingRoomCreateMessage = Partial<TypingRoomSettings> & {

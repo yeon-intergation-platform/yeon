@@ -193,3 +193,27 @@ export async function requestTypingRaceSeed(path: string, languageTag: string) {
     "레이스 문장을 준비하지 못했습니다."
   );
 }
+
+export type TypingRaceUserToken = {
+  userId: string | null;
+  userToken: string | null;
+};
+
+// 레이스 입장용 로그인 사용자 토큰을 발급받는다(세션 쿠키 기반, credentials: include).
+// best-effort: 실패하면 { userId: null, userToken: null } 를 돌려줘 레이스 진행을 절대 깨지 않는다.
+// (토큰이 없으면 경험치 적립만 누락된다.) 비로그인도 서버가 null 을 반환한다.
+export async function loadTypingRaceUserToken(): Promise<TypingRaceUserToken> {
+  try {
+    const data = await typingServiceFetchJson<Partial<TypingRaceUserToken>>(
+      "/api/v1/typing-races/user-token",
+      { method: "GET" },
+      "타자 레이스 사용자 토큰을 발급하지 못했습니다."
+    );
+    return {
+      userId: typeof data.userId === "string" ? data.userId : null,
+      userToken: typeof data.userToken === "string" ? data.userToken : null,
+    };
+  } catch {
+    return { userId: null, userToken: null };
+  }
+}

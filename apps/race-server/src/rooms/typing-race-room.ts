@@ -87,6 +87,9 @@ type RoomParticipant = {
   rank: number | null;
   isReady: boolean;
   joinedAt: number;
+  // 검증된 로그인 userId. options.userId + options.userToken 이 HMAC 검증을 통과할 때만 저장.
+  // 토큰 없음/위조 → null → 경험치 적립 대상에서 제외(익명/게스트도 null).
+  verifiedUserId: string | null;
 };
 
 const DEMO_PROMPT_OPTIONS: Record<
@@ -393,6 +396,35 @@ function raceSeedSigningPayload(seed: RaceSeedMessage) {
     participantDeckTitle: seed.participantDeckTitle,
     languageTag: seed.languageTag,
   });
+}
+
+// 로그인 사용자 토큰 검증: 웹 BFF(signTypingRaceUserToken)와 바이트 동일하게 계산해 비교한다.
+// - 동일 시크릿(getTypingRaceSeedSigningSecret: TYPING_RACE_SEED_SECRET → AUTH_SECRET → 로컬 fallback).
+// - payload prefix "typing-race-user." + userId, base64url, "u1." prefix.
+// - timing-safe 비교(카드방 토큰 패턴과 동일).
+// 토큰 없음/형식 불일치/계산 불일치 → false(신뢰 안 함 → 적립 없음).
+const TYPING_RACE_USER_TOKEN_PREFIX = "typing-race-user.";
+
+function verifyTypingRaceUserToken(
+  userId: string | undefined | null,
+  token: string | undefined | null
+): boolean {
+  if (typeof userId !== "string" || userId.length === 0) {
+    return false;
+  }
+  if (typeof token !== "string" || !token.startsWith("u1.")) {
+    return false;
+  }
+  const expected = createHmac("sha256", getTypingRaceSeedSigningSecret())
+    .update(`${TYPING_RACE_USER_TOKEN_PREFIX}${userId}`)
+    .digest("base64url");
+  const actual = token.slice(3);
+  const actualBuffer = Buffer.from(actual);
+  const expectedBuffer = Buffer.from(expected);
+  return (
+    actualBuffer.length === expectedBuffer.length &&
+    timingSafeEqual(actualBuffer, expectedBuffer)
+  );
 }
 
 function verifyRaceSeedToken(seed: RaceSeedMessage) {
@@ -850,12 +882,24 @@ export class TypingRaceRoom extends Room {
       void this.setPrivate(false);
     }
 
+    // options.userId 는 userToken 검증을 통과할 때만 신뢰한다(위조 차단). 비로그인/게스트는 null.
+    const verifiedUserId = verifyTypingRaceUserToken(
+      message?.userId,
+      message?.userToken
+    )
+      ? (message?.userId ?? null)
+      : null;
+
     const existing = this.participants.get(participantId);
     if (existing) {
       existing.label = message?.playerLabel || existing.label;
       existing.characterId =
         optionalText(message?.characterId, MAX_SEED_ID_LENGTH) ??
         existing.characterId;
+      // 재접속 시 유효한 토큰이 새로 들어오면 검증된 userId 를 갱신한다(기존 값을 무검증으로 덮지 않음).
+      if (verifiedUserId) {
+        existing.verifiedUserId = verifiedUserId;
+      }
       if (!this.hostId) {
         this.hostId = existing.id;
         existing.isReady = true;
@@ -888,6 +932,7 @@ export class TypingRaceRoom extends Room {
       rank: null,
       isReady: !this.lobbyMode || this.hostId === participantId,
       joinedAt: Date.now(),
+      verifiedUserId,
     };
 
     this.participants.set(participantId, participant);
@@ -1687,14 +1732,12 @@ export class TypingRaceRoom extends Room {
     this.syncState();
   }
 
-  // 레이스가 종료(전원 완주)되면 로그인 참가자에게 경험치를 적립한다.
+  // 레이스가 종료(전원 완주)되면 검증된 로그인 참가자에게만 경험치를 적립한다.
   //
-  // 보안 보류(중요): 현재 race-server 는 참가자의 "신뢰 가능한 로그인 userId"를 알지 못한다.
-  // participant.id 는 클라이언트가 보낸 playerId(웹은 localStorage 의 임의 UUID)이거나 WS sessionId 라,
-  // users 테이블의 실제 userId 가 아니고 위조도 가능하다(아무 값이나 보낼 수 있음). 이런 무검증 식별자로
-  // 경험치를 적립하면 위조 적립 위험이 있으므로, 검증된 userId 가 확보되기 전까지는 적립을 보류한다.
-  // resolveVerifiedUserId 가 검증된 userId 를 돌려주면(예: 좌석 예약/HMAC 토큰에 서버가 userId 를 심는
-  // 경로가 추가되면) 그때부터 적립이 활성화되도록 호출 경로만 미리 연결해 둔다.
+  // 신뢰 경로: 웹 BFF(인증된 race-seed 발급 지점)가 HMAC userToken 을 발급 → 클라이언트가 join 옵션으로
+  // 전달 → race-server 가 동일 시크릿으로 검증 → 통과 시에만 verifiedUserId 저장(카드방 participant 토큰
+  // 패턴과 동일). 무검증 클라이언트 식별자(participant.id/playerId)로는 절대 적립하지 않는다.
+  // best-effort: awardTypingRaceFinished 호출 실패가 레이스 진행/결과를 깨지 않게 await 하지 않는다.
   private awardFinishedParticipants() {
     const raceId = this.roomId;
     for (const participant of this.participants.values()) {
@@ -1703,17 +1746,18 @@ export class TypingRaceRoom extends Room {
       }
       const userId = this.resolveVerifiedUserId(participant);
       if (!userId) {
-        // 검증된 userId 가 없으면(현재 전 참가자) 적립을 건너뛴다. 무검증 클라이언트 식별자로 적립하지 않는다.
+        // 검증된 userId 가 없는 참가자(비로그인/게스트/토큰 위조)는 건너뛴다. 무검증 식별자로 적립 금지.
         continue;
       }
       void awardTypingRaceFinished(userId, raceId);
     }
   }
 
-  // 참가자의 검증된 로그인 userId 를 반환한다. 현재는 신뢰 가능한 출처가 없어 항상 null 을 반환한다.
-  // participant.id 는 클라이언트 입력(playerId)이라 신뢰할 수 없으므로 적립 식별자로 쓰지 않는다.
-  private resolveVerifiedUserId(_participant: RoomParticipant): string | null {
-    return null;
+  // 참가자의 검증된 로그인 userId 를 반환한다. onJoin 시 options.userToken HMAC 검증을 통과한
+  // 경우에만 verifiedUserId 가 채워지고, 그 외(토큰 없음/위조/게스트/봇)에는 null 이라 적립되지 않는다.
+  // participant.id(클라이언트 playerId)는 신뢰하지 않는다 — 적립 식별자로 쓰지 않는다.
+  private resolveVerifiedUserId(participant: RoomParticipant): string | null {
+    return participant.verifiedUserId ?? null;
   }
 
   private applyParticipantMetrics(
@@ -1992,6 +2036,8 @@ export class TypingRaceRoom extends Room {
         rank: null,
         isReady: true,
         joinedAt: Date.now(),
+        // 벤치마크(봇)는 로그인 사용자가 아니므로 항상 검증된 userId 없음.
+        verifiedUserId: null,
       });
     });
   }
