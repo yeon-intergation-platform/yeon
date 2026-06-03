@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, test, vi } from "vitest";
+import { beforeEach, describe, expect, test, vi, type Mock } from "vitest";
 
 const requireAuthenticatedUser = vi.fn();
 
@@ -38,19 +38,31 @@ describe("/api/v1/spaces/[spaceId]/member-tabs/[tabId]", () => {
           {
             status: 200,
             headers: { "content-type": "application/json" },
-          },
-        ),
-      ),
+          }
+        )
+      )
     );
 
     const { PATCH } = await import("../route");
     const response = await PATCH(
-      new Request("http://localhost/api/v1/spaces/space_alpha/member-tabs/mtb_custom", {
-        method: "PATCH",
-        body: JSON.stringify({ name: "새 이름", isVisible: false, displayOrder: 7 }),
-        headers: { "content-type": "application/json" },
-      }) as never,
-      { params: Promise.resolve({ spaceId: "space_alpha", tabId: "mtb_custom" }) },
+      new Request(
+        "http://localhost/api/v1/spaces/space_alpha/member-tabs/mtb_custom",
+        {
+          method: "PATCH",
+          body: JSON.stringify({
+            name: "새 이름",
+            isVisible: false,
+            displayOrder: 7,
+          }),
+          headers: { "content-type": "application/json" },
+        }
+      ) as never,
+      {
+        params: Promise.resolve({
+          spaceId: "space_alpha",
+          tabId: "mtb_custom",
+        }),
+      }
     );
     const body = await response.json();
 
@@ -60,8 +72,12 @@ describe("/api/v1/spaces/[spaceId]/member-tabs/[tabId]", () => {
       "http://127.0.0.1:8081/spaces/space_alpha/member-tabs/mtb_custom",
       expect.objectContaining({
         method: "PATCH",
-        body: JSON.stringify({ name: "새 이름", isVisible: false, displayOrder: 7 }),
-      }),
+        body: JSON.stringify({
+          name: "새 이름",
+          isVisible: false,
+          displayOrder: 7,
+        }),
+      })
     );
   });
 
@@ -73,15 +89,23 @@ describe("/api/v1/spaces/[spaceId]/member-tabs/[tabId]", () => {
     process.env.SPRING_INTERNAL_TOKEN = "internal-token";
     vi.stubGlobal(
       "fetch",
-      vi.fn().mockResolvedValue(new Response(null, { status: 204 })),
+      vi.fn().mockResolvedValue(new Response(null, { status: 204 }))
     );
 
     const { DELETE } = await import("../route");
     const response = await DELETE(
-      new Request("http://localhost/api/v1/spaces/space_alpha/member-tabs/mtb_custom", {
-        method: "DELETE",
-      }) as never,
-      { params: Promise.resolve({ spaceId: "space_alpha", tabId: "mtb_custom" }) },
+      new Request(
+        "http://localhost/api/v1/spaces/space_alpha/member-tabs/mtb_custom",
+        {
+          method: "DELETE",
+        }
+      ) as never,
+      {
+        params: Promise.resolve({
+          spaceId: "space_alpha",
+          tabId: "mtb_custom",
+        }),
+      }
     );
 
     expect(response.status).toBe(204);
@@ -89,12 +113,13 @@ describe("/api/v1/spaces/[spaceId]/member-tabs/[tabId]", () => {
       "http://127.0.0.1:8081/spaces/space_alpha/member-tabs/mtb_custom",
       expect.objectContaining({
         method: "DELETE",
-        headers: expect.objectContaining({
-          "X-Yeon-User-Id": "user-1",
-          "X-Yeon-Internal-Token": "internal-token",
-        }),
-      }),
+        headers: expect.any(Headers),
+      })
     );
+    const requestHeaders = (fetch as unknown as Mock).mock.calls[0][1]
+      .headers as Headers;
+    expect(requestHeaders.get("X-Yeon-User-Id")).toBe("user-1");
+    expect(requestHeaders.get("X-Yeon-Internal-Token")).toBe("internal-token");
   });
 
   test("PATCH: Spring 403은 jsonError로 번역한다", async () => {
@@ -106,23 +131,34 @@ describe("/api/v1/spaces/[spaceId]/member-tabs/[tabId]", () => {
       "fetch",
       vi.fn().mockResolvedValue(
         new Response(
-          JSON.stringify({ code: "PROTECTED_SYSTEM_TAB", message: "기본 탭은 수정할 수 없습니다." }),
+          JSON.stringify({
+            code: "PROTECTED_SYSTEM_TAB",
+            message: "기본 탭은 수정할 수 없습니다.",
+          }),
           {
             status: 403,
             headers: { "content-type": "application/json" },
-          },
-        ),
-      ),
+          }
+        )
+      )
     );
 
     const { PATCH } = await import("../route");
     const response = await PATCH(
-      new Request("http://localhost/api/v1/spaces/space_alpha/member-tabs/mtb_overview", {
-        method: "PATCH",
-        body: JSON.stringify({ name: "변경" }),
-        headers: { "content-type": "application/json" },
-      }) as never,
-      { params: Promise.resolve({ spaceId: "space_alpha", tabId: "mtb_overview" }) },
+      new Request(
+        "http://localhost/api/v1/spaces/space_alpha/member-tabs/mtb_overview",
+        {
+          method: "PATCH",
+          body: JSON.stringify({ name: "변경" }),
+          headers: { "content-type": "application/json" },
+        }
+      ) as never,
+      {
+        params: Promise.resolve({
+          spaceId: "space_alpha",
+          tabId: "mtb_overview",
+        }),
+      }
     );
     const body = await response.json();
 

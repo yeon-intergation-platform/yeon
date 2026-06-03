@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, test, vi } from "vitest";
+import { beforeEach, describe, expect, test, vi, type Mock } from "vitest";
 
 const requireAuthenticatedUser = vi.fn();
 
@@ -24,17 +24,22 @@ describe("POST /api/v1/space-templates/[templateId]/duplicate", () => {
     vi.stubGlobal(
       "fetch",
       vi.fn().mockResolvedValue(
-        new Response(JSON.stringify({ template: { id: "tpl_dup", name: "원본 복사본" } }), {
-          status: 201,
-          headers: { "content-type": "application/json" },
-        }),
-      ),
+        new Response(
+          JSON.stringify({ template: { id: "tpl_dup", name: "원본 복사본" } }),
+          {
+            status: 201,
+            headers: { "content-type": "application/json" },
+          }
+        )
+      )
     );
 
     const { POST } = await import("../route");
     const response = await POST(
-      new Request("http://localhost/api/v1/space-templates/tpl_1/duplicate", { method: "POST" }) as never,
-      { params: Promise.resolve({ templateId: "tpl_1" }) },
+      new Request("http://localhost/api/v1/space-templates/tpl_1/duplicate", {
+        method: "POST",
+      }) as never,
+      { params: Promise.resolve({ templateId: "tpl_1" }) }
     );
     const body = await response.json();
 
@@ -44,12 +49,13 @@ describe("POST /api/v1/space-templates/[templateId]/duplicate", () => {
       "http://127.0.0.1:8081/space-templates/tpl_1/duplicate",
       expect.objectContaining({
         method: "POST",
-        headers: expect.objectContaining({
-          "X-Yeon-User-Id": "user-1",
-          "X-Yeon-Internal-Token": "internal-token",
-        }),
-      }),
+        headers: expect.any(Headers),
+      })
     );
+    const requestHeaders = (fetch as unknown as Mock).mock.calls[0][1]
+      .headers as Headers;
+    expect(requestHeaders.get("X-Yeon-User-Id")).toBe("user-1");
+    expect(requestHeaders.get("X-Yeon-Internal-Token")).toBe("internal-token");
   });
 
   test("Spring 404는 그대로 jsonError로 번역한다", async () => {
@@ -60,17 +66,25 @@ describe("POST /api/v1/space-templates/[templateId]/duplicate", () => {
     vi.stubGlobal(
       "fetch",
       vi.fn().mockResolvedValue(
-        new Response(JSON.stringify({ code: "SPACE_TEMPLATE_NOT_FOUND", message: "템플릿을 찾지 못했습니다." }), {
-          status: 404,
-          headers: { "content-type": "application/json" },
-        }),
-      ),
+        new Response(
+          JSON.stringify({
+            code: "SPACE_TEMPLATE_NOT_FOUND",
+            message: "템플릿을 찾지 못했습니다.",
+          }),
+          {
+            status: 404,
+            headers: { "content-type": "application/json" },
+          }
+        )
+      )
     );
 
     const { POST } = await import("../route");
     const response = await POST(
-      new Request("http://localhost/api/v1/space-templates/missing/duplicate", { method: "POST" }) as never,
-      { params: Promise.resolve({ templateId: "missing" }) },
+      new Request("http://localhost/api/v1/space-templates/missing/duplicate", {
+        method: "POST",
+      }) as never,
+      { params: Promise.resolve({ templateId: "missing" }) }
     );
     const body = await response.json();
 

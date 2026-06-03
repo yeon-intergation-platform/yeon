@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, test, vi } from "vitest";
+import { beforeEach, describe, expect, test, vi, type Mock } from "vitest";
 
 const requireAuthenticatedUser = vi.fn();
 
@@ -27,16 +27,19 @@ describe("/api/v1/spaces/[spaceId]/member-tabs/reset", () => {
         new Response(JSON.stringify({ ok: true }), {
           status: 200,
           headers: { "content-type": "application/json" },
-        }),
-      ),
+        })
+      )
     );
 
     const { POST } = await import("../route");
     const response = await POST(
-      new Request("http://localhost/api/v1/spaces/space_alpha/member-tabs/reset", {
-        method: "POST",
-      }) as never,
-      { params: Promise.resolve({ spaceId: "space_alpha" }) },
+      new Request(
+        "http://localhost/api/v1/spaces/space_alpha/member-tabs/reset",
+        {
+          method: "POST",
+        }
+      ) as never,
+      { params: Promise.resolve({ spaceId: "space_alpha" }) }
     );
     const body = await response.json();
 
@@ -46,12 +49,13 @@ describe("/api/v1/spaces/[spaceId]/member-tabs/reset", () => {
       "http://127.0.0.1:8081/spaces/space_alpha/member-tabs/reset",
       expect.objectContaining({
         method: "POST",
-        headers: expect.objectContaining({
-          "X-Yeon-User-Id": "user-1",
-          "X-Yeon-Internal-Token": "internal-token",
-        }),
-      }),
+        headers: expect.any(Headers),
+      })
     );
+    const requestHeaders = (fetch as unknown as Mock).mock.calls[0][1]
+      .headers as Headers;
+    expect(requestHeaders.get("X-Yeon-User-Id")).toBe("user-1");
+    expect(requestHeaders.get("X-Yeon-Internal-Token")).toBe("internal-token");
   });
 
   test("POST: Spring 404는 jsonError로 번역한다", async () => {
@@ -63,13 +67,16 @@ describe("/api/v1/spaces/[spaceId]/member-tabs/reset", () => {
       "fetch",
       vi.fn().mockResolvedValue(
         new Response(
-          JSON.stringify({ code: "SPACE_NOT_FOUND", message: "스페이스를 찾지 못했습니다." }),
+          JSON.stringify({
+            code: "SPACE_NOT_FOUND",
+            message: "스페이스를 찾지 못했습니다.",
+          }),
           {
             status: 404,
             headers: { "content-type": "application/json" },
-          },
-        ),
-      ),
+          }
+        )
+      )
     );
 
     const { POST } = await import("../route");
@@ -77,7 +84,7 @@ describe("/api/v1/spaces/[spaceId]/member-tabs/reset", () => {
       new Request("http://localhost/api/v1/spaces/missing/member-tabs/reset", {
         method: "POST",
       }) as never,
-      { params: Promise.resolve({ spaceId: "missing" }) },
+      { params: Promise.resolve({ spaceId: "missing" }) }
     );
     const body = await response.json();
 
