@@ -12,6 +12,9 @@ import { getOptionalAuthenticatedUser, jsonError } from "../../_shared";
 
 export const runtime = "nodejs";
 
+// 참고: 타자 레이스 로그인 사용자 토큰(userToken)은 시드와 무관한 전용 엔드포인트
+// (GET /api/v1/typing-races/user-token)에서 발급한다. 모든 join 경로(create/quickRoom/joinById)에
+// 균일하게 토큰을 공급하기 위함이며, 이 시드 라우트는 토큰을 다루지 않는다(단일 발급 경로 유지).
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ deckId: string }> }

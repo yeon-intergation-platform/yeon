@@ -25,6 +25,10 @@ import {
   ensureYeonRealtimeSeatReservationCompat,
   type YeonRealtimeRoom,
 } from "@yeon/ui/runtime/YeonRealtimeClient";
+import {
+  loadTypingRaceUserToken,
+  type TypingRaceUserToken,
+} from "./typing-service-fetch";
 
 export type RaceConnectionState =
   | "idle"
@@ -179,6 +183,8 @@ export function useRaceRoom(options: UseRaceRoomOptions): UseRaceRoomResult {
   const [rejoinToken, setRejoinToken] = useState(0);
 
   const roomRef = useRef<YeonRealtimeRoom | null>(null);
+  // 전용 토큰 엔드포인트 결과를 한 번만 받아 보관한다(재연결마다 중복 fetch 방지).
+  const userTokenPromiseRef = useRef<Promise<TypingRaceUserToken> | null>(null);
   const createRoomKey = createRoom ? JSON.stringify(createRoom) : "";
   const quickRoomKey = quickRoom ? JSON.stringify(quickRoom) : "";
 
@@ -204,29 +210,43 @@ export function useRaceRoom(options: UseRaceRoomOptions): UseRaceRoomResult {
 
     ensureYeonRealtimeSeatReservationCompat();
     const client = createYeonRealtimeClient(resolveRaceServerUrl());
-    const joinOptions = {
-      playerLabel: playerLabelRef.current,
-      playerId,
-      characterId,
-      locale,
-    };
-    const createOptions: TypingRoomCreateMessage | null = createRoom
-      ? {
-          ...createRoom,
-          ...joinOptions,
-          roomMode: "lobby",
-        }
-      : null;
 
-    const joinPromise = createOptions
-      ? client.create<unknown>(TYPING_RACE_ROOM_NAME, createOptions)
-      : roomId
-        ? client.joinById<unknown>(roomId, joinOptions)
-        : client.joinOrCreate<unknown>(TYPING_RACE_ROOM_NAME, {
-            ...quickRoom,
+    // 시드와 무관한 전용 토큰 엔드포인트에서 로그인 사용자 토큰을 받아 모든 join 경로
+    // (create/quickRoom/joinById)에 균일하게 userId/userToken 을 주입한다. 이렇게 해야 방을 만든 host
+    // 뿐 아니라 기존 방에 입장(joinById)하는 참가자도 경험치 적립 대상이 된다.
+    // best-effort: loadTypingRaceUserToken 은 실패 시 { null, null } 을 돌려주므로 토큰이 없어도
+    // 레이스 진행은 깨지지 않고 적립만 누락된다. 비로그인은 서버가 null 을 반환 → join 옵션에서 빠진다.
+    if (!userTokenPromiseRef.current) {
+      userTokenPromiseRef.current = loadTypingRaceUserToken();
+    }
+
+    const joinPromise = userTokenPromiseRef.current.then((userAuth) => {
+      const joinOptions = {
+        playerLabel: playerLabelRef.current,
+        playerId,
+        characterId,
+        locale,
+        ...(userAuth.userId ? { userId: userAuth.userId } : {}),
+        ...(userAuth.userToken ? { userToken: userAuth.userToken } : {}),
+      };
+      const createOptions: TypingRoomCreateMessage | null = createRoom
+        ? {
+            ...createRoom,
             ...joinOptions,
-            roomMode: "quick",
-          });
+            roomMode: "lobby",
+          }
+        : null;
+
+      return createOptions
+        ? client.create<unknown>(TYPING_RACE_ROOM_NAME, createOptions)
+        : roomId
+          ? client.joinById<unknown>(roomId, joinOptions)
+          : client.joinOrCreate<unknown>(TYPING_RACE_ROOM_NAME, {
+              ...quickRoom,
+              ...joinOptions,
+              roomMode: "quick",
+            });
+    });
 
     joinPromise
       .then((room) => {

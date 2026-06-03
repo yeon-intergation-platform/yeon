@@ -62,6 +62,19 @@ function signTypingRaceSeed(seed: UnsignedTypingRaceSeed) {
   return `v1.${digest}`;
 }
 
+// 로그인 사용자 토큰: "u1." + base64url(HMAC_SHA256(secret, "typing-race-user." + userId))
+// - 시드 서명과 동일한 시크릿(getTypingRaceSeedSigningSecret)을 재사용한다(웹·race-server 공유).
+// - prefix("typing-race-user.")로 시드 payload 와 분리해 토큰 교차 사용을 막는다.
+// - race-server 의 verifyTypingRaceUserToken 과 바이트 동일하게 계산해야 한다.
+const TYPING_RACE_USER_TOKEN_PREFIX = "typing-race-user.";
+
+export function signTypingRaceUserToken(userId: string): string {
+  const digest = createHmac("sha256", getTypingRaceSeedSigningSecret())
+    .update(`${TYPING_RACE_USER_TOKEN_PREFIX}${userId}`)
+    .digest("base64url");
+  return `u1.${digest}`;
+}
+
 export function createTypingRaceSeedFromDetail(
   detail: TypingDeckDetailResponse,
   requestedPassageId: string | undefined
