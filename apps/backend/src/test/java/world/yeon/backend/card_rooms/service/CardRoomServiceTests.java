@@ -106,7 +106,7 @@ class CardRoomServiceTests {
     when(repository.findRoom("room_1")).thenReturn(ROOM);
     when(repository.findParticipant("participant_2")).thenReturn(OTHER_ROOM_PARTICIPANT);
     // participant_2는 room_1 소속이 아니므로 방 불일치(403)로 먼저 막힌다.
-    assertThatThrownBy(() -> service.updateParticipant("room_1", "participant_2", HOST_USER_ID, null, new UpdateCardRoomParticipantRequest(null, "CHECKER", null)))
+    assertThatThrownBy(() -> service.updateParticipant("room_1", "participant_2", HOST_USER_ID, null, null, new UpdateCardRoomParticipantRequest(null, "CHECKER", null)))
       .isInstanceOf(CardRoomServiceException.class)
       .satisfies((error) -> assertThat(((CardRoomServiceException) error).status()).isEqualTo(403));
 
@@ -118,7 +118,7 @@ class CardRoomServiceTests {
     when(repository.findRoom("room_1")).thenReturn(ROOM);
     when(repository.findParticipant("participant_1")).thenReturn(ROOM_PARTICIPANT);
 
-    assertThatThrownBy(() -> service.updateParticipant("room_1", "participant_1", HOST_USER_ID, null, new UpdateCardRoomParticipantRequest(new CardRoomProfileRequest("새닉네임", "guga"), null, null)))
+    assertThatThrownBy(() -> service.updateParticipant("room_1", "participant_1", HOST_USER_ID, null, null, new UpdateCardRoomParticipantRequest(new CardRoomProfileRequest("새닉네임", "guga"), null, null)))
       .isInstanceOf(CardRoomServiceException.class)
       .satisfies((error) -> assertThat(((CardRoomServiceException) error).status()).isEqualTo(409))
       .hasMessage("학습 시작 후에는 역할이나 준비 상태를 바꿀 수 없습니다.");

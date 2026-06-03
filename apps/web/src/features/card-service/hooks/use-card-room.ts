@@ -16,6 +16,7 @@ import {
 } from "@yeon/race-shared";
 import {
   createYeonRealtimeClient,
+  ensureYeonRealtimeSeatReservationCompat,
   type YeonRealtimeRoom,
 } from "@yeon/ui/runtime/YeonRealtimeClient";
 import { cardRoomsQueryKey } from "@yeon/ui/runtime/ports/card-rooms";
@@ -117,6 +118,9 @@ export function useCardRoomConnection(
     let cancelled = false;
     setConnectionState("connecting");
     setError(null);
+    // 타자방과 동일하게 seat reservation 레거시 응답 호환 패치를 적용한다.
+    // (미적용 시 SDK consumeSeatReservation이 실패해 join이 4002/524로 닫힌다.)
+    ensureYeonRealtimeSeatReservationCompat();
     const client = createYeonRealtimeClient(resolveRaceServerUrl());
     client
       .joinOrCreate<CardRoomRealtimeState>(CARD_ROOM_NAME, {
