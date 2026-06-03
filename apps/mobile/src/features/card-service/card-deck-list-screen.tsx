@@ -34,6 +34,7 @@ import {
   yeonMobileAppColors,
 } from "@yeon/ui/native";
 import { cardServiceQueryKeys } from "../../services/card-service/query-keys";
+import { HeaderExperienceBadge } from "../user-experience/header-experience-badge";
 import { createMobileCardDeckRepository } from "./runtime-adapters/card-deck-repository";
 import { CARD_SERVICE_TEXT } from "./card-service-copy";
 import { useCardSession } from "./card-session-context";
@@ -187,6 +188,8 @@ export function CardDeckListScreen() {
             </YeonText>
           </YeonView>
           <YeonView style={styles.headerRight}>
+            {/* 로그인 시 경험치 배지(데이터/로딩/에러는 배지 내부에서 분기, 미표시 가능). */}
+            <HeaderExperienceBadge />
             <YeonImage
               resizeMode="contain"
               source={mascotImage}

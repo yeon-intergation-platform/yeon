@@ -80,6 +80,11 @@
       "import": "./src/runtime/ports/room-voice-call/index.ts",
       "default": "./src/runtime/ports/room-voice-call/index.ts"
     },
+    "./runtime/ports/user-experience": {
+      "react-native": "./src/runtime/ports/user-experience/index.native.ts",
+      "import": "./src/runtime/ports/user-experience/index.ts",
+      "default": "./src/runtime/ports/user-experience/index.ts"
+    },
     "./runtime/YeonSecureStorage": {
       "react-native": "./src/runtime/YeonSecureStorage/index.native.ts",
       "import": "./src/runtime/YeonSecureStorage/index.ts",

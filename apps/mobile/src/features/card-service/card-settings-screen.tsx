@@ -11,6 +11,7 @@ import {
   showYeonAlert,
   yeonMobileAppColors,
 } from "@yeon/ui/native";
+import { ProfileExperienceSection } from "../user-experience/profile-experience-section";
 import { CARD_SERVICE_TEXT } from "./card-service-copy";
 import { useCardSession } from "./card-session-context";
 
@@ -81,6 +82,9 @@ export function CardSettingsScreen() {
             )}
           </SectionCard>
         </YeonView>
+
+        {/* 경험치/레벨: 로그인 시에만 패널 + 적립 이력 노출(웹 프로필과 동일 표시). */}
+        <ProfileExperienceSection />
       </FormStack>
     </MobileScreen>
   );

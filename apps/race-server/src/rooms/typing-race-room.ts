@@ -417,6 +417,58 @@ function createRoomCode() {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
+const DEFAULT_BACKEND_BASE_URL = "http://localhost:8080";
+const TYPING_RACE_FINISHED_ACTIVITY = "typing_race_finished";
+
+function backendBaseUrl() {
+  const raw =
+    process.env.SPRING_BACKEND_BASE_URL?.trim() ||
+    process.env.SPRING_BOOTSTRAP_BASE_URL?.trim();
+  return raw && raw.length > 0
+    ? raw.replace(/\/$/, "")
+    : DEFAULT_BACKEND_BASE_URL;
+}
+
+function springInternalHeaders() {
+  const headers: Record<string, string> = {
+    accept: "application/json",
+    "content-type": "application/json",
+  };
+  const token = process.env.SPRING_INTERNAL_TOKEN?.trim();
+  if (token) headers["X-Yeon-Internal-Token"] = token;
+  return headers;
+}
+
+// 타자 레이스 완료 시 로그인 참가자에게 경험치를 적립하도록 Spring 내부 엔드포인트를 호출한다.
+// best-effort: 호출 실패가 레이스 진행/결과를 깨지 않게 호출부에서 await 하지 않고 예외를 삼킨다.
+// referenceId 는 (레이스 roomId + userId) 라 멱등이다 — 같은 레이스로 유저당 1회만 적립된다.
+async function awardTypingRaceFinished(userId: string, raceId: string) {
+  try {
+    const response = await fetch(
+      `${backendBaseUrl()}/api/v1/internal/experience/award`,
+      {
+        method: "POST",
+        headers: springInternalHeaders(),
+        body: JSON.stringify({
+          userId,
+          activityType: TYPING_RACE_FINISHED_ACTIVITY,
+          referenceId: `${raceId}#${userId}`,
+        }),
+      }
+    );
+    if (!response.ok) {
+      console.warn(
+        `타자 레이스 완료 경험치 적립 응답이 실패했습니다(레이스 진행은 정상). status=${response.status}`
+      );
+    }
+  } catch (error) {
+    console.warn(
+      "타자 레이스 완료 경험치 적립 호출에 실패했습니다(레이스 진행은 정상).",
+      error
+    );
+  }
+}
+
 function normalizeSettings(
   options?: TypingRoomCreateMessage
 ): TypingRoomSettings {
@@ -1627,11 +1679,41 @@ export class TypingRaceRoom extends Room {
       this.status = TYPING_ROOM_STATUS.FINISHED;
       this.stage = TYPING_RACE_STAGE.FINISHED;
       this.unlock();
+      this.awardFinishedParticipants();
       if (this.lobbyMode) {
         this.scheduleLobbyReturn();
       }
     }
     this.syncState();
+  }
+
+  // 레이스가 종료(전원 완주)되면 로그인 참가자에게 경험치를 적립한다.
+  //
+  // 보안 보류(중요): 현재 race-server 는 참가자의 "신뢰 가능한 로그인 userId"를 알지 못한다.
+  // participant.id 는 클라이언트가 보낸 playerId(웹은 localStorage 의 임의 UUID)이거나 WS sessionId 라,
+  // users 테이블의 실제 userId 가 아니고 위조도 가능하다(아무 값이나 보낼 수 있음). 이런 무검증 식별자로
+  // 경험치를 적립하면 위조 적립 위험이 있으므로, 검증된 userId 가 확보되기 전까지는 적립을 보류한다.
+  // resolveVerifiedUserId 가 검증된 userId 를 돌려주면(예: 좌석 예약/HMAC 토큰에 서버가 userId 를 심는
+  // 경로가 추가되면) 그때부터 적립이 활성화되도록 호출 경로만 미리 연결해 둔다.
+  private awardFinishedParticipants() {
+    const raceId = this.roomId;
+    for (const participant of this.participants.values()) {
+      if (participant.kind !== "player" || participant.finishedAt === null) {
+        continue;
+      }
+      const userId = this.resolveVerifiedUserId(participant);
+      if (!userId) {
+        // 검증된 userId 가 없으면(현재 전 참가자) 적립을 건너뛴다. 무검증 클라이언트 식별자로 적립하지 않는다.
+        continue;
+      }
+      void awardTypingRaceFinished(userId, raceId);
+    }
+  }
+
+  // 참가자의 검증된 로그인 userId 를 반환한다. 현재는 신뢰 가능한 출처가 없어 항상 null 을 반환한다.
+  // participant.id 는 클라이언트 입력(playerId)이라 신뢰할 수 없으므로 적립 식별자로 쓰지 않는다.
+  private resolveVerifiedUserId(_participant: RoomParticipant): string | null {
+    return null;
   }
 
   private applyParticipantMetrics(

@@ -3,6 +3,7 @@ import type { YeonPageMetadata } from "@yeon/ui/runtime/YeonPageMetadata";
 import { YeonText, YeonView } from "@yeon/ui";
 import { YEON_WEB_SHARED_CLASS as SHARED_FEATURE_CLASS } from "@yeon/ui/theme/web-style-tokens";
 import { CommonProductHeader } from "@/components/product-shell/product-header";
+import { ProfileExperienceSection } from "@/features/user-experience/profile-experience-section";
 import { NON_INDEXABLE_ROBOTS } from "@/lib/seo";
 import { SITE_BRAND_NAME } from "@/lib/site-brand";
 import { getCurrentAuthUser } from "@/server/auth/session";
@@ -99,6 +100,7 @@ export default async function ProfilePage() {
                   </YeonText>
                 </YeonView>
               </YeonView>
+              <ProfileExperienceSection />
             </YeonView>
           ) : (
             <YeonView className="mt-8 rounded-2xl border border-[#e5e5e5] bg-white p-5">

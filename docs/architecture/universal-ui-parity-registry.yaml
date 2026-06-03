@@ -58,6 +58,18 @@ concepts:
       이전 drift 사례: web ["card-decks", mode] ↔ mobile ["card-service","decks", mode].
       같은 개념인데 키 배열이 어긋나 캐시 의미가 분리됐다. SSOT로 통일했다.
 
+  - id: user-experience-query-keys
+    concept: 경험치/레벨 TanStack queryKey
+    parity: identical-value
+    ssot: packages/ui/src/runtime/ports/user-experience/query-keys.ts
+    verify: 양 앱 query-keys가 SSOT(userExperienceQueryKeys) 재수출만 + typecheck
+    note: >
+      card-deck 포트와 동일 구조(scope/isAuthenticated). web/mobile가 동일 헤더 뱃지·프로필 패널·이력을
+      공유하므로 캐시 키도 글자 그대로 동일해야 한다. 현재는 SSOT 포트만 존재하고 앱별 어댑터(재수출)·
+      화면 마운트/패칭은 후속 작업에서 연결한다. 어댑터 연결 시 apps/web·apps/mobile query-keys 재수출을
+      adapters로 등록하고 bin/verify-parity.mjs 에 대응 CHECK(@yeon/ui/runtime/ports/user-experience 재수출,
+      raw 배열 재선언 금지)를 추가한다.
+
   - id: route-identity
     concept: 라우트 정체성(라우트 이름 + 필수 params)
     parity: identical-value
@@ -178,6 +190,20 @@ concepts:
     note: >
       웹 ProductHeader+다이얼로그 ↔ 모바일 TopBar+풀스크린+네이티브 알럿.
       공용 스크린은 chrome을 "슬롯"으로 주입받아 플랫폼별 차이를 흡수한다.
+
+  - id: user-experience-display-components
+    concept: 경험치/레벨 공유 표시 컴포넌트(YeonExperienceBadge/Panel/HistoryList)
+    parity: shared
+    ssot: >
+      packages/ui/src/patterns/YeonExperienceBadge,
+      packages/ui/src/patterns/YeonExperiencePanel,
+      packages/ui/src/patterns/YeonExperienceHistoryList
+    consumers: [apps/web, apps/mobile]
+    verify: 양 앱이 @yeon/ui에서 동일 컴포넌트 import + @yeon/ui typecheck/lint
+    note: >
+      순수 표시(props-in, 데이터 패칭 없음). web은 index.tsx(className), mobile은 index.native.tsx(StyleSheet)
+      한 벌씩 — @yeon/ui 배럴(web/native)에서 동일 이름으로 노출. 활동 라벨은 api-contract
+      EXPERIENCE_ACTIVITY_LABELS(identical-value)를 props로 주입.
 
   # ── queryKey parity 판정 (slice 8: 기계적 SSOT화 대신 정직한 분류) ──────────────
   # 같아야 하는 것만 SSOT로 묶는다. drift 파트너가 없으면(웹 전용) SSOT 대상이 아니다.

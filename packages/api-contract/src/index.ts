@@ -14,6 +14,7 @@ export * from "./spaces";
 export * from "./star-lobby";
 export * from "./student-board";
 export * from "./typing-decks";
+export * from "./user-experience";
 export * from "./users";
 export * from "./credential";
 export * from "./card-deck-merge-guest";
