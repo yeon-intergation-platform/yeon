@@ -16,14 +16,16 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import world.yeon.backend.card_decks.route.dto.*;
 import world.yeon.backend.card_decks.route.repository.CardDeckRouteRepository;
+import world.yeon.backend.user_experience.service.ExperienceService;
 
 @ExtendWith(MockitoExtension.class)
 class CardDeckRouteServiceTests {
 	private static final UUID USER_ID = UUID.fromString("00000000-0000-0000-0000-000000000983");
 	@Mock private CardDeckRouteRepository repository;
+	@Mock private ExperienceService experienceService;
 	private CardDeckRouteService service;
 
-	@BeforeEach void setUp() { service = new CardDeckRouteService(repository); }
+	@BeforeEach void setUp() { service = new CardDeckRouteService(repository, experienceService); }
 
 	@Test void 목록응답을반환한다() {
 		when(repository.listDecks(USER_ID)).thenReturn(List.of(new CardDeckRouteRepository.CardDeckListRow(1L, "dck_1", USER_ID.toString(), "덱", null, OffsetDateTime.parse("2026-05-08T00:00:00Z"), OffsetDateTime.parse("2026-05-08T00:00:00Z"), 2)));

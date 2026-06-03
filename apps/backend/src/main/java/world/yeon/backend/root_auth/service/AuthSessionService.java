@@ -19,6 +19,8 @@ import world.yeon.backend.root_auth.dto.*;
 import world.yeon.backend.root_auth.repository.AuthSessionRepository;
 import world.yeon.backend.root_auth.social.SocialIdentityProfile;
 import world.yeon.backend.root_auth.social.SocialIdentityProviderClient;
+import world.yeon.backend.user_experience.domain.ExperienceActivity;
+import world.yeon.backend.user_experience.service.ExperienceService;
 
 @Service
 public class AuthSessionService {
@@ -42,19 +44,22 @@ public class AuthSessionService {
 	private final AuthSessionTokenFactory tokenFactory;
 	private final SocialIdentityProviderClient socialIdentityProviderClient;
 	private final Environment environment;
+	private final ExperienceService experienceService;
 
 	public AuthSessionService(
 		AuthSessionRepository repository,
 		AuthTokenHasher tokenHasher,
 		AuthSessionTokenFactory tokenFactory,
 		SocialIdentityProviderClient socialIdentityProviderClient,
-		Environment environment
+		Environment environment,
+		ExperienceService experienceService
 	) {
 		this.repository = repository;
 		this.tokenHasher = tokenHasher;
 		this.tokenFactory = tokenFactory;
 		this.socialIdentityProviderClient = socialIdentityProviderClient;
 		this.environment = environment;
+		this.experienceService = experienceService;
 	}
 
 	@Transactional
@@ -287,7 +292,20 @@ public class AuthSessionService {
 		OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
 		OffsetDateTime expiresAt = now.plusDays(AUTH_SESSION_TTL_DAYS);
 		repository.insertAuthSession(UUID.randomUUID().toString(), userId, tokenHasher.hash(sessionToken), expiresAt, now);
+		awardDailyLogin(userId, now);
 		return new RootAuthSessionCreateResponse(userId, sessionToken, expiresAt);
+	}
+
+	// 출석 경험치(하루 1회). 멱등 키는 오늘 UTC 날짜(yyyy-MM-dd)라 같은 날 여러 번 로그인해도 1회만 적립된다.
+	// 적립 실패가 세션 발급(로그인)을 깨지 않도록 별도 트랜잭션(REQUIRES_NEW) + try/catch로 방어한다.
+	private void awardDailyLogin(String userId, OffsetDateTime now) {
+		try {
+			UUID parsedUserId = UUID.fromString(userId);
+			String today = now.toLocalDate().toString();
+			experienceService.award(parsedUserId, ExperienceActivity.DAILY_LOGIN, today);
+		} catch (RuntimeException error) {
+			log.warn("출석 경험치 적립에 실패했습니다(로그인은 정상). userId={}", userId, error);
+		}
 	}
 
 	private AuthSessionResponse authenticated(AuthSessionRepository.UserRow user, List<String> providers) {

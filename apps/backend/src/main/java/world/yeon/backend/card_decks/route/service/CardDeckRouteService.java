@@ -7,13 +7,18 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import world.yeon.backend.card_decks.route.dto.*;
 import world.yeon.backend.card_decks.route.repository.CardDeckRouteRepository;
+import world.yeon.backend.user_experience.domain.ExperienceActivity;
+import world.yeon.backend.user_experience.service.ExperienceService;
 
 @Service
 public class CardDeckRouteService {
+	private static final Logger log = LoggerFactory.getLogger(CardDeckRouteService.class);
 	private static final SecureRandom RANDOM = new SecureRandom();
 	private static final Base64.Encoder BASE64_URL = Base64.getUrlEncoder().withoutPadding();
 	private static final Set<String> STUDY_MODES = Set.of("flashcard", "review");
@@ -21,9 +26,11 @@ public class CardDeckRouteService {
 	private static final String ASSET_URL_PREFIX = "/api/v1/card-decks/assets/";
 
 	private final CardDeckRouteRepository repository;
+	private final ExperienceService experienceService;
 
-	public CardDeckRouteService(CardDeckRouteRepository repository) {
+	public CardDeckRouteService(CardDeckRouteRepository repository, ExperienceService experienceService) {
 		this.repository = repository;
+		this.experienceService = experienceService;
 	}
 
 	public CardDeckListResponse listDecks(UUID userId) {
@@ -37,6 +44,7 @@ public class CardDeckRouteService {
 		OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
 		var row = repository.insertDeck(generatePublicId("dck"), userId, title, description, now);
 		if (row == null) throw new CardDeckRouteServiceException(500, "DECK_CREATE_FAILED", "덱을 생성하지 못했습니다.");
+		awardDeckCreated(userId, row.publicId());
 		return new CardDeckResponse(toDeckDto(row, 0));
 	}
 
@@ -144,6 +152,16 @@ public class CardDeckRouteService {
 		var updated = repository.reviewItem(owned.internalId(), difficulty, now, nextReviewAt);
 		if (updated == null) throw new CardDeckRouteServiceException(500, "ITEM_REVIEW_FAILED", "복습 결과를 저장하지 못했습니다.");
 		return new CardDeckItemResponse(toItemDto(updated));
+	}
+
+	// 경험치 적립은 덱 생성 성공의 부수효과이므로, 실패가 덱 생성 트랜잭션을 깨지 않도록
+	// 별도 트랜잭션(REQUIRES_NEW) + try/catch로 방어한다. 실패해도 덱 생성은 그대로 성공한다.
+	private void awardDeckCreated(UUID userId, String deckPublicId) {
+		try {
+			experienceService.award(userId, ExperienceActivity.DECK_CREATED, deckPublicId);
+		} catch (RuntimeException error) {
+			log.warn("덱 생성 경험치 적립에 실패했습니다(덱 생성은 정상). userId={}, deckId={}", userId, deckPublicId, error);
+		}
 	}
 
 	private CardDeckRouteRepository.CardDeckRow findOwnedDeck(UUID userId, String deckPublicId) {
