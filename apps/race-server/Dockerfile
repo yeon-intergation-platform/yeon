@@ -24,6 +24,10 @@ WORKDIR /app
 
 COPY --from=pruner /app/out/json/ .
 COPY --from=pruner /app/out/pnpm-lock.yaml ./pnpm-lock.yaml
+# turbo prune --docker 의 out/ 에는 .pnpmfile.cjs 가 포함되지 않는다. lockfile 에는
+# pnpmfileChecksum 이 박혀 있어, 이 파일이 없으면 --frozen-lockfile 이
+# ERR_PNPM_LOCKFILE_CONFIG_MISMATCH 로 실패한다. pruner 루트에서 직접 복사한다.
+COPY --from=pruner /app/.pnpmfile.cjs ./.pnpmfile.cjs
 
 RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
     pnpm install --frozen-lockfile
