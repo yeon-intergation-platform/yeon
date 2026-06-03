@@ -21,7 +21,6 @@ vi.mock("@/server/chat-service-auth-spring-client", () => ({
   requestChatServiceOtpInSpring: (...args: unknown[]) =>
     mockRequestChatServiceOtpInSpring(...args),
 }));
-
 import { POST } from "../route";
 
 describe("chat-service request-otp route", () => {

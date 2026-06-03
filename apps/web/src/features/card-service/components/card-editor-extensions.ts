@@ -1,10 +1,27 @@
-import ImageExtension from "@tiptap/extension-image";
+import type {
+  YeonDocumentPointerEvent,
+  YeonElement,
+  YeonEventTarget,
+} from "@yeon/ui/types";
 import {
   mergeAttributes,
-  Node,
-  type NodeViewRendererProps,
-} from "@tiptap/core";
-
+  YeonTiptapImageExtension as ImageExtension,
+  YeonTiptapNode as Node,
+  type YeonTiptapNodeViewRendererProps as NodeViewRendererProps,
+} from "@yeon/ui/rich-content/YeonTiptap";
+import { addYeonDocumentEventListener } from "@yeon/ui/hooks/YeonBrowserHooks";
+import {
+  addYeonElementClass,
+  createYeonDomElement,
+  getYeonElementAttribute,
+  getYeonOwnerDocument,
+  isYeonElement,
+  removeYeonElementClass,
+  setYeonElementAttribute,
+  setYeonElementStyleProperty,
+  removeYeonElementStyleProperty,
+  setYeonNodeTextContent,
+} from "@yeon/ui/rich-content/YeonRichDom";
 import {
   CARD_EDITOR_IMAGE_DEFAULT_WIDTH,
   clampCardEditorImageHeight,
@@ -39,10 +56,11 @@ function updateImageNodeSize(
 }
 
 function createResizableImageNodeView(props: NodeViewRendererProps) {
-  const wrapperElement = document.createElement("span");
-  const imageElement = document.createElement("img");
-  const resizeHandleElement = document.createElement("span");
-  const sizeLabelElement = document.createElement("span");
+  const htmlDocument = getYeonOwnerDocument(props.view.dom);
+  const wrapperElement = createYeonDomElement(htmlDocument, "span");
+  const imageElement = createYeonDomElement(htmlDocument, "img");
+  const resizeHandleElement = createYeonDomElement(htmlDocument, "span");
+  const sizeLabelElement = createYeonDomElement(htmlDocument, "span");
   let currentWidth = parseCardEditorImageWidth(props.node.attrs.width);
   let currentHeight = parseOptionalCardEditorImageHeight(
     props.node.attrs.height
@@ -82,18 +100,22 @@ function createResizableImageNodeView(props: NodeViewRendererProps) {
   // 명시 height가 있으면 aspect-ratio + height:auto로 적용해, 좁은 폭(max-width:100%)에서도
   // 지정한 W:H 비율을 유지하며 함께 축소되도록 한다(height 고정 시 발생하는 왜곡 방지).
   const applyImageSize = (width: number, height: number | null) => {
-    wrapperElement.style.width = `${width}px`;
-    imageElement.style.width = `${width}px`;
-    imageElement.style.height = "auto";
+    setYeonElementStyleProperty(wrapperElement, "width", `${width}px`);
+    setYeonElementStyleProperty(imageElement, "width", `${width}px`);
+    setYeonElementStyleProperty(imageElement, "height", "auto");
     if (height === null) {
-      imageElement.style.removeProperty("aspect-ratio");
+      removeYeonElementStyleProperty(imageElement, "aspect-ratio");
     } else {
-      imageElement.style.aspectRatio = `${width} / ${height}`;
+      setYeonElementStyleProperty(
+        imageElement,
+        "aspect-ratio",
+        `${width} / ${height}`
+      );
     }
   };
 
   const renderSizeLabel = (width: number, height: number) => {
-    sizeLabelElement.textContent = `${width} × ${height}px`;
+    setYeonNodeTextContent(sizeLabelElement, `${width} × ${height}px`);
   };
 
   const applyAttributes = (attrs: Record<string, unknown>) => {
@@ -108,7 +130,7 @@ function createResizableImageNodeView(props: NodeViewRendererProps) {
   wrapperElement.className = "card-rich-editor-image";
   wrapperElement.contentEditable = "false";
   resizeHandleElement.className = "card-rich-editor-image-handle";
-  resizeHandleElement.setAttribute("aria-hidden", "true");
+  setYeonElementAttribute(resizeHandleElement, "aria-hidden", "true");
   sizeLabelElement.className = "card-rich-editor-image-size";
 
   applyAttributes(props.node.attrs);
@@ -135,9 +157,9 @@ function createResizableImageNodeView(props: NodeViewRendererProps) {
           ? startWidth / startHeight
           : 1;
 
-    wrapperElement.classList.add("is-resizing");
+    addYeonElementClass(wrapperElement, "is-resizing");
 
-    const handlePointerMove = (moveEvent: PointerEvent) => {
+    const handlePointerMove = (moveEvent: YeonDocumentPointerEvent) => {
       const dx = moveEvent.clientX - startX;
       const dy = moveEvent.clientY - startY;
       let nextWidth: number;
@@ -163,15 +185,19 @@ function createResizableImageNodeView(props: NodeViewRendererProps) {
       renderSizeLabel(nextWidth, nextHeight ?? measureDisplayHeight(nextWidth));
     };
 
+    let removePointerMove: () => void = () => undefined;
+    let removePointerUp: () => void = () => undefined;
+    let removePointerCancel: () => void = () => undefined;
+
     const cleanup = () => {
-      wrapperElement.classList.remove("is-resizing");
-      document.removeEventListener("pointermove", handlePointerMove);
-      document.removeEventListener("pointerup", handlePointerUp);
-      document.removeEventListener("pointercancel", handlePointerCancel);
+      removeYeonElementClass(wrapperElement, "is-resizing");
+      removePointerMove();
+      removePointerUp();
+      removePointerCancel();
       endResize = undefined;
     };
 
-    function handlePointerUp(upEvent: PointerEvent) {
+    function handlePointerUp(upEvent: YeonDocumentPointerEvent) {
       handlePointerMove(upEvent);
       updateImageNodeSize(props, currentWidth, currentHeight);
       cleanup();
@@ -185,9 +211,18 @@ function createResizableImageNodeView(props: NodeViewRendererProps) {
       cleanup();
     }
 
-    document.addEventListener("pointermove", handlePointerMove);
-    document.addEventListener("pointerup", handlePointerUp);
-    document.addEventListener("pointercancel", handlePointerCancel);
+    removePointerMove = addYeonDocumentEventListener(
+      "pointermove",
+      handlePointerMove
+    );
+    removePointerUp = addYeonDocumentEventListener(
+      "pointerup",
+      handlePointerUp
+    );
+    removePointerCancel = addYeonDocumentEventListener(
+      "pointercancel",
+      handlePointerCancel
+    );
     endResize = cleanup;
   });
 
@@ -198,12 +233,12 @@ function createResizableImageNodeView(props: NodeViewRendererProps) {
       applyAttributes(nextNode.attrs);
       return true;
     },
-    selectNode: () => wrapperElement.classList.add("is-selected"),
-    deselectNode: () => wrapperElement.classList.remove("is-selected"),
+    selectNode: () => addYeonElementClass(wrapperElement, "is-selected"),
+    deselectNode: () => removeYeonElementClass(wrapperElement, "is-selected"),
     stopEvent: (event: Event) => event.target === resizeHandleElement,
     destroy: () => {
       endResize?.();
-      wrapperElement.classList.remove("is-resizing");
+      removeYeonElementClass(wrapperElement, "is-resizing");
     },
   };
 }
@@ -214,16 +249,18 @@ export const ResizableCardEditorImageExtension = ImageExtension.extend({
       ...this.parent?.(),
       width: {
         default: CARD_EDITOR_IMAGE_DEFAULT_WIDTH,
-        parseHTML: (element: HTMLElement) =>
-          parseCardEditorImageWidth(element.getAttribute("width")),
+        parseHTML: (element: YeonElement) =>
+          parseCardEditorImageWidth(getYeonElementAttribute(element, "width")),
         renderHTML: (attributes: Record<string, unknown>) => ({
           width: String(parseCardEditorImageWidth(attributes.width)),
         }),
       },
       height: {
         default: null,
-        parseHTML: (element: HTMLElement) =>
-          parseOptionalCardEditorImageHeight(element.getAttribute("height")),
+        parseHTML: (element: YeonElement) =>
+          parseOptionalCardEditorImageHeight(
+            getYeonElementAttribute(element, "height")
+          ),
         renderHTML: (attributes: Record<string, unknown>) => {
           const height = parseOptionalCardEditorImageHeight(attributes.height);
           return height === null ? {} : { height: String(height) };
@@ -248,9 +285,9 @@ export const CardEditorYouTubeEmbedExtension = Node.create({
     return {
       src: {
         default: null,
-        parseHTML: (element: HTMLElement) => {
+        parseHTML: (element: YeonElement) => {
           return extractCardEditorYouTubeEmbedInfo(
-            element.getAttribute("src") ?? ""
+            getYeonElementAttribute(element, "src") ?? ""
           )?.embedUrl;
         },
       },
@@ -265,9 +302,10 @@ export const CardEditorYouTubeEmbedExtension = Node.create({
       {
         tag: "iframe[src]",
         getAttrs: (node) => {
-          const element = node instanceof HTMLElement ? node : null;
+          const target = node as YeonEventTarget | null;
+          const element = isYeonElement(target) ? target : null;
           const src = extractCardEditorYouTubeEmbedInfo(
-            element?.getAttribute("src") ?? ""
+            getYeonElementAttribute(element, "src") ?? ""
           )?.embedUrl;
 
           if (!src) {
@@ -277,7 +315,8 @@ export const CardEditorYouTubeEmbedExtension = Node.create({
           return {
             src,
             title:
-              element?.getAttribute("title")?.trim() || "YouTube video player",
+              getYeonElementAttribute(element, "title")?.trim() ||
+              "YouTube video player",
           };
         },
       },

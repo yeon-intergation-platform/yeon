@@ -8,7 +8,6 @@ const { getCurrentAuthUser } = vi.hoisted(() => ({
 vi.mock("@/server/auth/session", () => ({
   getCurrentAuthUser,
 }));
-
 import { POST } from "../route";
 
 describe("api/v1/card-decks/merge-guest route", () => {
@@ -24,7 +23,7 @@ describe("api/v1/card-decks/merge-guest route", () => {
       new NextRequest("http://localhost/api/v1/card-decks/merge-guest", {
         method: "POST",
         body: JSON.stringify({ decks: [] }),
-      }),
+      })
     );
 
     expect(response.status).toBe(401);
@@ -35,11 +34,14 @@ describe("api/v1/card-decks/merge-guest route", () => {
     vi.stubGlobal(
       "fetch",
       vi.fn().mockResolvedValue(
-        new Response(JSON.stringify({ createdDeckCount: 1, createdItemCount: 2 }), {
-          status: 200,
-          headers: { "content-type": "application/json" },
-        }),
-      ),
+        new Response(
+          JSON.stringify({ createdDeckCount: 1, createdItemCount: 2 }),
+          {
+            status: 200,
+            headers: { "content-type": "application/json" },
+          }
+        )
+      )
     );
 
     const response = await POST(
@@ -57,7 +59,7 @@ describe("api/v1/card-decks/merge-guest route", () => {
             },
           ],
         }),
-      }),
+      })
     );
 
     expect(response.status).toBe(200);
@@ -72,11 +74,14 @@ describe("api/v1/card-decks/merge-guest route", () => {
     vi.stubGlobal(
       "fetch",
       vi.fn().mockResolvedValue(
-        new Response(JSON.stringify({ message: "덱 제목은 비워 둘 수 없습니다." }), {
-          status: 400,
-          headers: { "content-type": "application/json" },
-        }),
-      ),
+        new Response(
+          JSON.stringify({ message: "덱 제목은 비워 둘 수 없습니다." }),
+          {
+            status: 400,
+            headers: { "content-type": "application/json" },
+          }
+        )
+      )
     );
 
     const response = await POST(
@@ -86,7 +91,7 @@ describe("api/v1/card-decks/merge-guest route", () => {
         body: JSON.stringify({
           decks: [{ title: "덱", items: [] }],
         }),
-      }),
+      })
     );
 
     expect(response.status).toBe(400);

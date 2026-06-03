@@ -3,8 +3,8 @@ import {
   communityChatSendMessageBodySchema,
   communityChatSendMessageResponseSchema,
 } from "@yeon/api-contract/community-chat";
+import type { YeonRequest } from "@yeon/ui/runtime/YeonBrowserRuntime";
 import { NextResponse } from "next/server";
-
 import {
   CommunityChatSpringBackendHttpError,
   fetchCommunityChatMessagesFromSpring,
@@ -21,7 +21,7 @@ function jsonError(message: string, status: number) {
   return NextResponse.json({ message }, { status });
 }
 
-async function readJson(request: Request) {
+async function readJson(request: YeonRequest) {
   return request.json().catch(() => null) as Promise<unknown>;
 }
 
@@ -41,7 +41,7 @@ export async function GET() {
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: YeonRequest) {
   try {
     const body = await readJson(request);
     const parsed = communityChatSendMessageBodySchema.safeParse(body);

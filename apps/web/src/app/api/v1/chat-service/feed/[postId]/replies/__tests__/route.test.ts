@@ -1,6 +1,5 @@
 import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-
 import { ServiceError } from "@/server/errors/service-error";
 
 const mockGetOptionalChatServiceAuth = vi.fn();
@@ -45,7 +44,6 @@ vi.mock("@/server/chat-service-auth-spring-client", () => ({
   resolveChatServiceGuestProfileInSpring: (...args: unknown[]) =>
     mockResolveChatServiceGuestProfileInSpring(...args),
 }));
-
 import { DELETE, GET, POST } from "../route";
 
 const profileId = "11111111-1111-4111-8111-111111111111";

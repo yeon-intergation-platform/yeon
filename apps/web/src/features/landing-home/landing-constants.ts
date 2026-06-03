@@ -1,4 +1,9 @@
-import { Mic, FileText, MessageSquare, FolderOpen } from "lucide-react";
+import { type YeonIconName } from "@yeon/ui";
+type LandingFeature = {
+  description: string;
+  icon: YeonIconName;
+  title: string;
+};
 
 export const STATS = [
   {
@@ -23,34 +28,30 @@ export const STATS = [
   },
 ] as const;
 
-export const FEATURES = [
+export const FEATURES: readonly LandingFeature[] = [
   {
-    icon: Mic,
+    icon: "mic",
     title: "루트 포털 + 서비스 레지스트리",
     description:
       "yeon.world 루트는 브랜드와 서비스 포털을 맡고, 각 서비스는 자기 slug 아래에서 독립적으로 동작합니다.",
-    accent: "accent" as const,
   },
   {
-    icon: MessageSquare,
+    icon: "message-circle",
     title: "공통 로그인과 계정",
     description:
       "로그인, 세션, 계정 정리는 플랫폼이 소유하고 계정이 필요한 서비스만 그 위에 올라탑니다.",
-    accent: "blue" as const,
   },
   {
-    icon: FileText,
+    icon: "file-text",
     title: "서비스별 독립 SEO와 URL",
     description:
       "타자연습처럼 공개형 유입 서비스는 자기 canonical 경로와 metadata를 직접 소유합니다.",
-    accent: "green" as const,
   },
   {
-    icon: FolderOpen,
+    icon: "folder-open",
     title: "서비스별 깊은 경험 설계",
     description:
       "상담, 타자연습, 랭킹처럼 서로 다른 UX를 하나의 앱 안에서도 서비스 경계 기준으로 분리합니다.",
-    accent: "purple" as const,
   },
 ] as const;
 
@@ -80,13 +81,3 @@ export const FLOW_STEPS = [
       "새 서비스를 추가할 때는 루트 브랜드나 로그인 허브를 다시 뒤흔들지 않고 서비스 단위로 붙입니다.",
   },
 ] as const;
-
-export const fadeUp = {
-  hidden: { opacity: 0, y: 40 },
-  visible: { opacity: 1, y: 0 },
-};
-
-export const staggerContainer = {
-  hidden: {},
-  visible: { transition: { staggerChildren: 0.12 } },
-};

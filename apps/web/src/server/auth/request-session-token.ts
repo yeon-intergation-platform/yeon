@@ -1,5 +1,4 @@
 import type { NextRequest } from "next/server";
-
 import { AUTH_SESSION_COOKIE_NAME } from "./constants";
 
 export type AuthSessionTokenSource = "authorization" | "cookie";
@@ -9,7 +8,8 @@ export type AuthSessionTokenFromRequest = {
   token: string;
 } | null;
 
-export type AuthSessionTokenCandidate = NonNullable<AuthSessionTokenFromRequest>;
+export type AuthSessionTokenCandidate =
+  NonNullable<AuthSessionTokenFromRequest>;
 
 function getBearerToken(request: NextRequest) {
   const authorization = request.headers.get("authorization");
@@ -24,7 +24,7 @@ function getBearerToken(request: NextRequest) {
 
 function uniqueTokens(tokens: string[]) {
   return Array.from(
-    new Set(tokens.map((token) => token.trim()).filter(Boolean)),
+    new Set(tokens.map((token) => token.trim()).filter(Boolean))
   );
 }
 
@@ -40,12 +40,12 @@ function getCookieSessionTokens(request: NextRequest) {
       .split(";")
       .map((part) => part.trim())
       .filter((part) => part.startsWith(`${AUTH_SESSION_COOKIE_NAME}=`))
-      .map((part) => part.slice(AUTH_SESSION_COOKIE_NAME.length + 1)),
+      .map((part) => part.slice(AUTH_SESSION_COOKIE_NAME.length + 1))
   );
 }
 
 export function getAuthSessionTokensFromRequest(
-  request: NextRequest,
+  request: NextRequest
 ): AuthSessionTokenCandidate[] {
   const bearerToken = getBearerToken(request);
 
@@ -65,7 +65,7 @@ export function getAuthSessionTokensFromRequest(
 }
 
 export function getAuthSessionTokenFromRequest(
-  request: NextRequest,
+  request: NextRequest
 ): AuthSessionTokenFromRequest {
   return getAuthSessionTokensFromRequest(request)[0] ?? null;
 }

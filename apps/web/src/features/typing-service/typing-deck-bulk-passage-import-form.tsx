@@ -1,19 +1,25 @@
 "use client";
-
-import { useMemo, useState, type FormEvent } from "react";
-
+import { useMemo, useState } from "react";
 import {
   YeonButton,
   YeonField,
   getYeonSurfaceClassName,
-} from "@/components/yeon-ui";
+  YeonLabel,
+  YeonForm,
+  YeonList,
+  YeonListItem,
+  YeonText,
+  YeonView,
+  type YeonFormEvent,
+  type YeonFormElement,
+} from "@yeon/ui";
 import { useBulkCreateTypingDeckPassages } from "./use-typing-decks";
 import {
   parseBulkTypingPassageImportInput,
   TYPING_PASSAGE_BULK_IMPORT_MAX_ITEMS,
 } from "./utils/bulk-typing-passage-import-parser";
 import { TYPING_SERVICE_COMMON_CLASS } from "./typing-service-common.const";
-import { SHARED_FEATURE_CLASS } from "@/features/shared-style-constants";
+import { YEON_WEB_SHARED_CLASS as SHARED_FEATURE_CLASS } from "@yeon/ui/theme/web-style-tokens";
 
 const BULK_PASSAGE_TEMPLATE = `[[PASSAGE]]
 [[TITLE]]
@@ -56,7 +62,7 @@ export function TypingDeckBulkPassageImportForm({
     0
   );
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  function handleSubmit(event: YeonFormEvent<YeonFormElement>) {
     event.preventDefault();
     if (!canSubmit) {
       return;
@@ -75,28 +81,53 @@ export function TypingDeckBulkPassageImportForm({
   }
 
   return (
-    <form
+    <YeonForm
       onSubmit={handleSubmit}
       className={getYeonSurfaceClassName({ className: "p-5" })}
     >
-      <div className="rounded-xl border border-[#e5e5e5] bg-[#fafafa] p-4 text-[13px] leading-6 text-[#555]">
-        <p className="font-semibold text-[#111]">
+      <YeonView className="rounded-xl border border-[#e5e5e5] bg-[#fafafa] p-4 text-[13px] leading-6 text-[#666]">
+        <YeonText
+          as="p"
+          variant="unstyled"
+          tone="inherit"
+          className="font-semibold text-[#111]"
+        >
           AI에게 이렇게 만들어달라고 요청하세요.
-        </p>
-        <pre className="mt-3 overflow-x-auto whitespace-pre-wrap rounded-lg bg-white p-3 text-[12px] leading-5 text-[#333]">
+        </YeonText>
+        <YeonText
+          as="pre"
+          variant="unstyled"
+          tone="inherit"
+          className="mt-3 overflow-x-auto whitespace-pre-wrap rounded-lg bg-white p-3 text-[12px] leading-5 text-[#111]"
+        >
           {BULK_PASSAGE_TEMPLATE}
-        </pre>
-        <p className="mt-3">
-          마커는 한 줄 전체가 <code>[[PASSAGE]]</code>, <code>[[TITLE]]</code>,{" "}
-          <code>[[TEXT]]</code>일 때 인식합니다. 마커가 없으면 빈 줄 기준으로
-          문단을 나눕니다.
-        </p>
-      </div>
+        </YeonText>
+        <YeonText as="p" variant="unstyled" tone="inherit" className="mt-3">
+          마커는 한 줄 전체가{" "}
+          <YeonText as="code" variant="unstyled" tone="inherit">
+            [[PASSAGE]]
+          </YeonText>
+          ,{" "}
+          <YeonText as="code" variant="unstyled" tone="inherit">
+            [[TITLE]]
+          </YeonText>
+          ,{" "}
+          <YeonText as="code" variant="unstyled" tone="inherit">
+            [[TEXT]]
+          </YeonText>
+          일 때 인식합니다. 마커가 없으면 빈 줄 기준으로 문단을 나눕니다.
+        </YeonText>
+      </YeonView>
 
-      <label className="mt-4 flex flex-col gap-2">
-        <span className="text-[13px] font-medium text-[#555]">
+      <YeonLabel className="mt-4 flex flex-col gap-2">
+        <YeonText
+          as="span"
+          variant="unstyled"
+          tone="inherit"
+          className="text-[13px] font-medium text-[#666]"
+        >
           AI 형식 붙여넣기
-        </span>
+        </YeonText>
         <YeonField
           as="textarea"
           value={rawText}
@@ -105,66 +136,105 @@ export function TypingDeckBulkPassageImportForm({
           placeholder={BULK_PASSAGE_TEMPLATE}
           className="resize-y font-mono text-[13px] leading-5"
         />
-      </label>
+      </YeonLabel>
 
-      <div className="mt-3 flex flex-col gap-2 text-[13px]">
-        <p className="text-[#666]">
+      <YeonView className="mt-3 flex flex-col gap-2 text-[13px]">
+        <YeonText
+          as="p"
+          variant="unstyled"
+          tone="inherit"
+          className="text-[#666]"
+        >
           인식된 문단:{" "}
-          <strong className="text-[#111]">{parseResult.passages.length}</strong>
+          <YeonText
+            as="strong"
+            variant="unstyled"
+            tone="inherit"
+            className="text-[#111]"
+          >
+            {parseResult.passages.length}
+          </YeonText>
           개 / 최대 {TYPING_PASSAGE_BULK_IMPORT_MAX_ITEMS}개
-        </p>
+        </YeonText>
         {hasParseErrors ? (
-          <ul className="flex flex-col gap-1 rounded-lg border border-red-200 bg-red-50 p-3 text-red-700">
+          <YeonList className="flex flex-col gap-1 rounded-lg border border-[#e5e5e5] bg-[#fafafa] p-3 text-[#666]">
             {parseResult.errors.map((message) => (
-              <li key={message}>• {message}</li>
+              <YeonListItem key={message}>• {message}</YeonListItem>
             ))}
-          </ul>
+          </YeonList>
         ) : null}
         {hasParseWarnings ? (
-          <ul className="flex flex-col gap-1 rounded-lg border border-amber-200 bg-amber-50 p-3 text-amber-700">
+          <YeonList className="flex flex-col gap-1 rounded-lg border border-[#e5e5e5] bg-[#fafafa] p-3 text-[#666]">
             {parseResult.warnings.map((message) => (
-              <li key={message}>• {message}</li>
+              <YeonListItem key={message}>• {message}</YeonListItem>
             ))}
-          </ul>
+          </YeonList>
         ) : null}
         {bulkCreate.error ? (
-          <p className="text-red-600">{bulkCreate.error.message}</p>
+          <YeonText
+            as="p"
+            variant="unstyled"
+            tone="inherit"
+            className="text-[#666]"
+          >
+            {bulkCreate.error.message}
+          </YeonText>
         ) : null}
-      </div>
+      </YeonView>
 
       {hasPreviewPassages ? (
-        <div className="mt-4 rounded-xl border border-[#e5e5e5] p-4">
-          <h4 className={TYPING_SERVICE_COMMON_CLASS.panelTextEmphasis}>
+        <YeonView className="mt-4 rounded-xl border border-[#e5e5e5] p-4">
+          <YeonText
+            as="h4"
+            variant="unstyled"
+            tone="inherit"
+            className={TYPING_SERVICE_COMMON_CLASS.panelTextEmphasis}
+          >
             미리보기
-          </h4>
-          <ul className="mt-3 flex flex-col gap-3">
+          </YeonText>
+          <YeonList className="mt-3 flex flex-col gap-3">
             {previewPassages.map((passage, index) => (
-              <li
+              <YeonListItem
                 key={`${passage.prompt}-${index}`}
                 className="rounded-lg bg-[#fafafa] p-3 text-[13px] leading-6"
               >
-                <p className="font-semibold text-[#111]">
+                <YeonText
+                  as="p"
+                  variant="unstyled"
+                  tone="inherit"
+                  className="font-semibold text-[#111]"
+                >
                   {index + 1}. {passage.title || "제목 없음"}
-                </p>
-                <p className="mt-1 whitespace-pre-wrap text-[#555]">
+                </YeonText>
+                <YeonText
+                  as="p"
+                  variant="unstyled"
+                  tone="inherit"
+                  className="mt-1 whitespace-pre-wrap text-[#666]"
+                >
                   {passage.prompt}
-                </p>
-              </li>
+                </YeonText>
+              </YeonListItem>
             ))}
-          </ul>
+          </YeonList>
           {hiddenPreviewCount > 0 ? (
-            <p className={`mt-3 ${SHARED_FEATURE_CLASS.text13Soft}`}>
+            <YeonText
+              as="p"
+              variant="unstyled"
+              tone="inherit"
+              className={`mt-3 ${SHARED_FEATURE_CLASS.text13Soft}`}
+            >
               외 {hiddenPreviewCount}개 문단은 추가 시 함께 저장됩니다.
-            </p>
+            </YeonText>
           ) : null}
-        </div>
+        </YeonView>
       ) : null}
 
-      <div className="mt-4 flex justify-end">
+      <YeonView className="mt-4 flex justify-end">
         <YeonButton type="submit" disabled={!canSubmit} variant="primary">
           {submitLabel}
         </YeonButton>
-      </div>
-    </form>
+      </YeonView>
+    </YeonForm>
   );
 }

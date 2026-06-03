@@ -1,14 +1,12 @@
 "use client";
-
 import { useCallback, useMemo, useState } from "react";
 import {
-  type QueryClient,
-  useMutation,
-  useQuery,
-  useQueries,
-  useQueryClient,
-} from "@tanstack/react-query";
-
+  type YeonQueryClient as QueryClient,
+  useYeonMutation as useMutation,
+  useYeonQueries as useQueries,
+  useYeonQuery as useQuery,
+  useYeonQueryClient as useQueryClient,
+} from "@yeon/ui/runtime/YeonQuery";
 import { chatServiceApi, type ChatServiceFeedPost } from "../chat-service-api";
 import {
   readCommunityGuestNickname,

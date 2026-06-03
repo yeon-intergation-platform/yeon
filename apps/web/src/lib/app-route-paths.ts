@@ -1,3 +1,4 @@
+import { getYeonLocationSnapshot } from "@yeon/ui/runtime/YeonBrowserRuntime";
 import { getPlatformServiceByPathname } from "@/lib/platform-services";
 
 export const DEFAULT_COUNSELING_SERVICE_BASE_PATH = "/counseling-service";
@@ -17,13 +18,13 @@ export function resolveAppHrefForBasePath(appBasePath: string, href: string) {
     href.startsWith(`${DEFAULT_COUNSELING_SERVICE_BASE_PATH}#`)
   ) {
     return `${appBasePath}${href.slice(
-      DEFAULT_COUNSELING_SERVICE_BASE_PATH.length,
+      DEFAULT_COUNSELING_SERVICE_BASE_PATH.length
     )}`;
   }
 
   if (href.startsWith(`${DEFAULT_COUNSELING_SERVICE_BASE_PATH}/`)) {
     return `${appBasePath}${href.slice(
-      DEFAULT_COUNSELING_SERVICE_BASE_PATH.length,
+      DEFAULT_COUNSELING_SERVICE_BASE_PATH.length
     )}`;
   }
 
@@ -32,7 +33,7 @@ export function resolveAppHrefForBasePath(appBasePath: string, href: string) {
 
 export function normalizeAppPathnameForBasePath(
   appBasePath: string,
-  pathname: string,
+  pathname: string
 ) {
   if (appBasePath === DEFAULT_COUNSELING_SERVICE_BASE_PATH) {
     return pathname;
@@ -44,7 +45,7 @@ export function normalizeAppPathnameForBasePath(
 
   if (pathname.startsWith(`${appBasePath}/`)) {
     return `${DEFAULT_COUNSELING_SERVICE_BASE_PATH}${pathname.slice(
-      appBasePath.length,
+      appBasePath.length
     )}`;
   }
 
@@ -83,9 +84,7 @@ export function resolveApiHrefForPathname(pathname: string, href: string) {
 }
 
 export function resolveApiHrefForCurrentPath(href: string) {
-  if (typeof window === "undefined") {
-    return href;
-  }
+  const pathname = getYeonLocationSnapshot()?.pathname;
 
-  return resolveApiHrefForPathname(window.location.pathname, href);
+  return pathname ? resolveApiHrefForPathname(pathname, href) : href;
 }

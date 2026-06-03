@@ -1,3 +1,9 @@
+import {
+  createYeonHeaders,
+  createYeonUrlSearchParams,
+  fetchYeon,
+  type YeonRequestInit,
+} from "@yeon/ui/runtime/YeonBrowserRuntime";
 const DEFAULT_BACKEND_BASE_URL = "http://127.0.0.1:8081";
 const INTERNAL_TOKEN_HEADER = "X-Yeon-Internal-Token";
 
@@ -6,7 +12,9 @@ function resolveSpringBackendBaseUrl() {
     process.env.SPRING_BACKEND_BASE_URL?.trim() ??
     process.env.SPRING_BOOTSTRAP_BASE_URL?.trim();
 
-  return raw && raw.length > 0 ? raw.replace(/\/$/, "") : DEFAULT_BACKEND_BASE_URL;
+  return raw && raw.length > 0
+    ? raw.replace(/\/$/, "")
+    : DEFAULT_BACKEND_BASE_URL;
 }
 
 export class TypingDecksSpringBackendHttpError extends Error {
@@ -29,7 +37,8 @@ function tryParseJson(raw: string) {
 
 function extractErrorMessage(parsed: unknown) {
   if (!parsed || typeof parsed !== "object") return null;
-  if ("message" in parsed && typeof parsed.message === "string") return parsed.message;
+  if ("message" in parsed && typeof parsed.message === "string")
+    return parsed.message;
   if (
     "error" in parsed &&
     parsed.error &&
@@ -44,18 +53,21 @@ function extractErrorMessage(parsed: unknown) {
 
 async function fetchJson(
   path: string,
-  init?: RequestInit & { userId?: string | null },
+  init?: YeonRequestInit & { userId?: string | null }
 ) {
-  const headers = new Headers(init?.headers);
+  const headers = createYeonHeaders(init?.headers);
   headers.set("accept", "application/json");
   if (init?.userId) {
     headers.set("X-Yeon-User-Id", init.userId);
   }
   if (process.env.SPRING_INTERNAL_TOKEN?.trim()) {
-    headers.set(INTERNAL_TOKEN_HEADER, process.env.SPRING_INTERNAL_TOKEN.trim());
+    headers.set(
+      INTERNAL_TOKEN_HEADER,
+      process.env.SPRING_INTERNAL_TOKEN.trim()
+    );
   }
 
-  const response = await fetch(`${resolveSpringBackendBaseUrl()}${path}`, {
+  const response = await fetchYeon(`${resolveSpringBackendBaseUrl()}${path}`, {
     cache: "no-store",
     ...init,
     headers,
@@ -67,7 +79,7 @@ async function fetchJson(
   if (!response.ok) {
     throw new TypingDecksSpringBackendHttpError(
       response.status,
-      extractErrorMessage(parsed) ?? "Spring backend 요청에 실패했습니다.",
+      extractErrorMessage(parsed) ?? "Spring backend 요청에 실패했습니다."
     );
   }
 
@@ -80,7 +92,7 @@ export async function fetchTypingDecksFromSpring(params: {
   languageTag?: string;
   adminMode?: boolean;
 }) {
-  const search = new URLSearchParams({ scope: params.scope });
+  const search = createYeonUrlSearchParams({ scope: params.scope });
   if (params.languageTag) {
     search.set("languageTag", params.languageTag);
   }
@@ -96,7 +108,7 @@ export async function fetchTypingDecksFromSpring(params: {
 export async function createTypingDeckInSpring(
   userId: string | null,
   body: unknown,
-  adminMode: boolean,
+  adminMode: boolean
 ) {
   const search = adminMode ? "?admin=true" : "";
   return fetchJson(`/typing-decks${search}`, {
@@ -123,7 +135,7 @@ export async function updateTypingDeckInSpring(
   userId: string | null,
   deckId: string,
   body: unknown,
-  adminMode: boolean,
+  adminMode: boolean
 ) {
   const search = adminMode ? "?admin=true" : "";
   return fetchJson(`/typing-decks/${deckId}${search}`, {
@@ -137,7 +149,7 @@ export async function updateTypingDeckInSpring(
 export async function deleteTypingDeckInSpring(
   userId: string | null,
   deckId: string,
-  adminMode: boolean,
+  adminMode: boolean
 ) {
   const search = adminMode ? "?admin=true" : "";
   return fetchJson(`/typing-decks/${deckId}${search}`, {
@@ -150,7 +162,7 @@ export async function createTypingDeckPassageInSpring(
   userId: string | null,
   deckId: string,
   body: unknown,
-  adminMode: boolean,
+  adminMode: boolean
 ) {
   const search = adminMode ? "?admin=true" : "";
   return fetchJson(`/typing-decks/${deckId}/passages${search}`, {
@@ -165,7 +177,7 @@ export async function createTypingDeckPassagesInSpring(
   userId: string | null,
   deckId: string,
   body: unknown,
-  adminMode: boolean,
+  adminMode: boolean
 ) {
   const search = adminMode ? "?admin=true" : "";
   return fetchJson(`/typing-decks/${deckId}/passages/bulk${search}`, {
@@ -181,7 +193,7 @@ export async function updateTypingDeckPassageInSpring(
   deckId: string,
   passageId: string,
   body: unknown,
-  adminMode: boolean,
+  adminMode: boolean
 ) {
   const search = adminMode ? "?admin=true" : "";
   return fetchJson(`/typing-decks/${deckId}/passages/${passageId}${search}`, {
@@ -196,7 +208,7 @@ export async function deleteTypingDeckPassageInSpring(
   userId: string | null,
   deckId: string,
   passageId: string,
-  adminMode: boolean,
+  adminMode: boolean
 ) {
   const search = adminMode ? "?admin=true" : "";
   return fetchJson(`/typing-decks/${deckId}/passages/${passageId}${search}`, {
@@ -208,7 +220,7 @@ export async function deleteTypingDeckPassageInSpring(
 export async function createTypingRaceSeedInSpring(
   userId: string | null,
   deckId: string,
-  body: unknown,
+  body: unknown
 ) {
   return fetchJson(`/typing-decks/${deckId}/race-seed`, {
     method: "POST",

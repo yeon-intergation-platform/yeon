@@ -9,7 +9,6 @@ vi.mock("@/server/root-auth-spring-client", () => ({
 vi.mock("@/server/auth/session", () => ({
   getCurrentAuthUser: vi.fn(),
 }));
-
 import { isAdminUser, isSeedAdminEmail, parseAdminSeedEmails } from "../admin";
 
 const ORIGINAL_YEON_ADMIN_EMAILS = process.env.YEON_ADMIN_EMAILS;

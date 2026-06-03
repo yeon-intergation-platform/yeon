@@ -1,6 +1,5 @@
 "use client";
-
-import { YeonButton, YeonSurface } from "@/components/yeon-ui";
+import { YeonButton, YeonSurface, YeonView, YeonText } from "@yeon/ui";
 import { analyticsEvents, trackEvent } from "@/lib/analytics";
 import { useTypingProfile } from "./use-typing-profile";
 import {
@@ -45,13 +44,19 @@ function StartCard({
       }`}
       onClick={onClick}
     >
-      <span
+      <YeonText
+        as="span"
+        variant="unstyled"
+        tone="inherit"
         aria-hidden="true"
         className={TYPING_SERVICE_HOME_CLASS.startCardLabel}
       >
         {label}
-      </span>
-      <span
+      </YeonText>
+      <YeonText
+        as="span"
+        variant="unstyled"
+        tone="inherit"
         aria-hidden="true"
         className={
           isPrimary
@@ -60,7 +65,7 @@ function StartCard({
         }
       >
         {description}
-      </span>
+      </YeonText>
     </YeonButton>
   );
 }
@@ -81,7 +86,7 @@ export function TypingServiceHome({
   };
 
   return (
-    <div className={TYPING_SERVICE_HOME_CLASS.root}>
+    <YeonView className={TYPING_SERVICE_HOME_CLASS.root}>
       <TypingServiceHeader
         active="home"
         title={t("appName")}
@@ -94,27 +99,45 @@ export function TypingServiceHome({
         }
       />
 
-      <main className={TYPING_SERVICE_HOME_CLASS.main}>
-        <section className={TYPING_SERVICE_HOME_CLASS.introSection}>
-          <div className={TYPING_SERVICE_HOME_CLASS.introCopy}>
-            <h1 className={TYPING_SERVICE_HOME_CLASS.introTitle}>
+      <YeonView as="main" className={TYPING_SERVICE_HOME_CLASS.main}>
+        <YeonView
+          as="section"
+          className={TYPING_SERVICE_HOME_CLASS.introSection}
+        >
+          <YeonView className={TYPING_SERVICE_HOME_CLASS.introCopy}>
+            <YeonText
+              as="h1"
+              variant="unstyled"
+              tone="inherit"
+              className={TYPING_SERVICE_HOME_CLASS.introTitle}
+            >
               바로 시작하는 타자 연습
-            </h1>
-            <p className={TYPING_SERVICE_HOME_CLASS.introDescription}>
+            </YeonText>
+            <YeonText
+              as="p"
+              variant="unstyled"
+              tone="inherit"
+              className={TYPING_SERVICE_HOME_CLASS.introDescription}
+            >
               원하는 방식으로 연습하거나, 친구들과 함께 타자방에 입장하세요.
-            </p>
-          </div>
-        </section>
+            </YeonText>
+          </YeonView>
+        </YeonView>
 
         <YeonSurface
           as="section"
           className={TYPING_SERVICE_HOME_CLASS.boardSection}
         >
-          <div className={TYPING_SERVICE_HOME_CLASS.profilePanel}>
-            <h2 className={TYPING_SERVICE_HOME_CLASS.sectionTitle}>
+          <YeonView className={TYPING_SERVICE_HOME_CLASS.profilePanel}>
+            <YeonText
+              as="h2"
+              variant="unstyled"
+              tone="inherit"
+              className={TYPING_SERVICE_HOME_CLASS.sectionTitle}
+            >
               내 프로필
-            </h2>
-            <div className={TYPING_SERVICE_HOME_CLASS.sectionBody}>
+            </YeonText>
+            <YeonView className={TYPING_SERVICE_HOME_CLASS.sectionBody}>
               {loaded ? (
                 <TypingProfileCard
                   profile={profile}
@@ -127,15 +150,20 @@ export function TypingServiceHome({
               ) : (
                 <TypingProfileCardSkeleton />
               )}
-            </div>
-          </div>
+            </YeonView>
+          </YeonView>
 
-          <div className={TYPING_SERVICE_HOME_CLASS.actionPanel}>
-            <h2 className={TYPING_SERVICE_HOME_CLASS.sectionTitle}>
+          <YeonView className={TYPING_SERVICE_HOME_CLASS.actionPanel}>
+            <YeonText
+              as="h2"
+              variant="unstyled"
+              tone="inherit"
+              className={TYPING_SERVICE_HOME_CLASS.sectionTitle}
+            >
               오늘의 시작
-            </h2>
+            </YeonText>
 
-            <div className={TYPING_SERVICE_HOME_CLASS.ctaWrap}>
+            <YeonView className={TYPING_SERVICE_HOME_CLASS.ctaWrap}>
               <StartCard
                 href="/typing-service/rooms"
                 label="타자방 입장"
@@ -164,10 +192,10 @@ export function TypingServiceHome({
                 tone="secondary"
                 onClick={() => handleCtaClick("play")}
               />
-            </div>
-          </div>
+            </YeonView>
+          </YeonView>
         </YeonSurface>
-      </main>
-    </div>
+      </YeonView>
+    </YeonView>
   );
 }

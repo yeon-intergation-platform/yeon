@@ -1,5 +1,5 @@
+import { createYeonUrl } from "@yeon/ui/runtime/YeonBrowserRuntime";
 import { NextRequest, NextResponse } from "next/server";
-
 import {
   type AuthErrorCode,
   AuthFlowError,
@@ -11,6 +11,7 @@ import {
   AUTH_OAUTH_STATE_TTL_SECONDS,
   getAppOrigin,
   isSecureAuthCookie,
+  normalizeMobileReturnUrl,
   type SocialProvider,
 } from "./constants";
 import { createPkceCodeChallenge } from "./crypto";
@@ -19,7 +20,6 @@ import {
   consumeOAuthStateCookieValue,
 } from "./oauth-state";
 import { completeSocialAuthInSpring } from "@/server/root-auth-spring-client";
-
 import { applyAuthSessionCookie } from "./session";
 import {
   buildSocialAuthorizationUrl,
@@ -28,7 +28,7 @@ import {
 
 function redirectWithinApp(request: NextRequest, path: string) {
   return NextResponse.redirect(
-    new URL(path, getAppOrigin(request.nextUrl.origin))
+    createYeonUrl(path, getAppOrigin(request.nextUrl.origin))
   );
 }
 
@@ -63,15 +63,59 @@ function applyOAuthStateCookie(
   return response;
 }
 
+// 모바일 소셜 로그인 복귀: 커스텀 scheme(yeon-card-service:// 등)으로 302.
+// NextResponse.redirect은 http(s) 외 scheme을 막을 수 있어 Location 헤더를 직접 세팅한다.
+function buildMobileReturnLocation(
+  mobileReturnUrl: string,
+  params: Record<string, string | null | undefined>
+) {
+  const url = createYeonUrl(mobileReturnUrl);
+
+  for (const [key, value] of Object.entries(params)) {
+    if (value != null) {
+      url.searchParams.set(key, value);
+    }
+  }
+
+  return url.toString();
+}
+
+function redirectToMobileReturn(
+  mobileReturnUrl: string,
+  params: Record<string, string | null | undefined>,
+  oauthStateCookieValue?: string | null
+) {
+  const response = new NextResponse(null, {
+    status: 302,
+    headers: { Location: buildMobileReturnLocation(mobileReturnUrl, params) },
+  });
+
+  if (oauthStateCookieValue !== undefined) {
+    applyOAuthStateCookie(response, oauthStateCookieValue);
+  }
+
+  return response;
+}
+
 function redirectToAuthError(
   request: NextRequest,
   options: {
     provider: SocialProvider;
     reason: AuthErrorCode;
     nextPath?: string | null;
+    mobileReturnUrl?: string | null;
     oauthStateCookieValue?: string | null;
   }
 ) {
+  // 모바일 플로우면 웹 에러 페이지가 아니라 딥링크로 오류를 돌려보낸다(브라우저 세션 종료).
+  if (options.mobileReturnUrl) {
+    return redirectToMobileReturn(
+      options.mobileReturnUrl,
+      { error: options.reason },
+      options.oauthStateCookieValue
+    );
+  }
+
   const response = redirectWithinApp(
     request,
     buildAuthErrorRedirectPath({
@@ -93,11 +137,16 @@ export async function startSocialAuth(
   provider: SocialProvider
 ) {
   const requestedNextPath = request.nextUrl.searchParams.get("next");
+  // 모바일 소셜 로그인: 복귀 딥링크(화이트리스트 검증된 값만 사용 — 그 외엔 null).
+  const mobileReturnUrl = normalizeMobileReturnUrl(
+    request.nextUrl.searchParams.get("mobileReturnUrl")
+  );
 
   try {
     const oauthState = createOAuthStateCookieValue({
       provider,
       nextPath: requestedNextPath,
+      mobileReturnUrl,
       existingCookieValue: request.cookies.get(AUTH_OAUTH_STATE_COOKIE_NAME)
         ?.value,
     });
@@ -119,6 +168,7 @@ export async function startSocialAuth(
         provider,
         reason: error.code,
         nextPath: requestedNextPath,
+        mobileReturnUrl,
       });
     }
 
@@ -126,6 +176,7 @@ export async function startSocialAuth(
       provider,
       reason: authErrorCodes.serverError,
       nextPath: requestedNextPath,
+      mobileReturnUrl,
     });
   }
 }
@@ -155,6 +206,7 @@ export async function completeSocialAuth(
       provider,
       reason: authErrorCodes.providerDenied,
       nextPath: oauthState.matchedEntry?.nextPath,
+      mobileReturnUrl: oauthState.matchedEntry?.mobileReturnUrl,
       oauthStateCookieValue: oauthState.nextCookieValue,
     });
   }
@@ -172,6 +224,7 @@ export async function completeSocialAuth(
       provider,
       reason: authErrorCodes.invalidState,
       nextPath: oauthState.matchedEntry.nextPath,
+      mobileReturnUrl: oauthState.matchedEntry.mobileReturnUrl,
       oauthStateCookieValue: oauthState.nextCookieValue,
     });
   }
@@ -181,6 +234,7 @@ export async function completeSocialAuth(
       provider,
       reason: authErrorCodes.missingCode,
       nextPath: oauthState.matchedEntry.nextPath,
+      mobileReturnUrl: oauthState.matchedEntry.mobileReturnUrl,
       oauthStateCookieValue: oauthState.nextCookieValue,
     });
   }
@@ -192,6 +246,19 @@ export async function completeSocialAuth(
       codeVerifier: oauthState.matchedEntry.codeVerifier,
       appOrigin: getSocialAuthCallbackOrigin(request.nextUrl.origin),
     });
+
+    // 모바일 플로우: 쿠키 대신 딥링크로 세션 토큰을 반환(앱이 SecureStore에 저장).
+    if (oauthState.matchedEntry.mobileReturnUrl) {
+      return redirectToMobileReturn(
+        oauthState.matchedEntry.mobileReturnUrl,
+        {
+          token: session.sessionToken,
+          expiresAt: session.expiresAt.toISOString(),
+        },
+        oauthState.nextCookieValue
+      );
+    }
+
     const response = redirectWithinApp(
       request,
       oauthState.matchedEntry.nextPath
@@ -209,6 +276,7 @@ export async function completeSocialAuth(
         provider,
         reason: error.code,
         nextPath: oauthState.matchedEntry.nextPath,
+        mobileReturnUrl: oauthState.matchedEntry.mobileReturnUrl,
         oauthStateCookieValue: oauthState.nextCookieValue,
       });
     }
@@ -217,6 +285,7 @@ export async function completeSocialAuth(
       provider,
       reason: authErrorCodes.serverError,
       nextPath: oauthState.matchedEntry.nextPath,
+      mobileReturnUrl: oauthState.matchedEntry.mobileReturnUrl,
       oauthStateCookieValue: oauthState.nextCookieValue,
     });
   }

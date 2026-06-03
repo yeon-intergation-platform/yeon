@@ -1,7 +1,7 @@
-import type { Metadata } from "next";
+import type { YeonPageMetadata } from "@yeon/ui/runtime/YeonPageMetadata";
 import { TypingRacePlayScreen } from "@/features/typing-service";
 
-export const metadata: Metadata = {
+export const metadata: YeonPageMetadata = {
   title: "YEON 타이핑 레이스 플레이",
   description: "카운트다운과 레인 UI가 포함된 타이핑 레이스 플레이 화면입니다.",
   alternates: {

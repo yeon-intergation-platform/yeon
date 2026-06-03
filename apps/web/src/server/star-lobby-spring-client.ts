@@ -9,7 +9,11 @@ import type {
   UpdateStarLobbyAlertRuleBody,
   UpsertStarLobbyDiscordWebhookBody,
 } from "@yeon/api-contract/star-lobby";
-
+import {
+  createYeonHeaders,
+  fetchYeon,
+  type YeonRequestInit,
+} from "@yeon/ui/runtime/YeonBrowserRuntime";
 import { buildSpringBffHeaders } from "./spring-bff-client";
 
 const DEFAULT_BACKEND_BASE_URL = "http://127.0.0.1:8081";
@@ -49,7 +53,7 @@ export class StarLobbySpringBackendHttpError extends Error {
   }
 }
 
-type StarLobbySpringInit = RequestInit & {
+type StarLobbySpringInit = YeonRequestInit & {
   userId?: string | null;
   guestSessionId?: string | null;
 };
@@ -59,13 +63,13 @@ async function fetchSpring<T>(
   init: StarLobbySpringInit,
   fallback: string
 ): Promise<T> {
-  const headers = new Headers(init.headers);
+  const headers = createYeonHeaders(init.headers);
   headers.set("accept", "application/json");
   if (init.guestSessionId) {
     headers.set(GUEST_SESSION_ID_HEADER, init.guestSessionId);
   }
 
-  const response = await fetch(`${resolveSpringBackendBaseUrl()}${path}`, {
+  const response = await fetchYeon(`${resolveSpringBackendBaseUrl()}${path}`, {
     ...init,
     cache: "no-store",
     headers: buildSpringBffHeaders(headers, { userId: init.userId }),

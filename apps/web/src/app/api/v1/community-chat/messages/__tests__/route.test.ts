@@ -17,7 +17,6 @@ vi.mock("@/server/community-chat-spring-client", async () => {
       mockSendCommunityChatMessageToSpring(...args),
   };
 });
-
 import { GET, POST } from "../route";
 import { CommunityChatSpringBackendHttpError } from "@/server/community-chat-spring-client";
 

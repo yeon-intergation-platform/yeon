@@ -1,27 +1,31 @@
 import type { ChatServiceFeedPostDto } from "@yeon/api-contract/chat-service";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "expo-router";
-import { useState } from "react";
 import {
-  Alert,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
-
-import { ActionButton } from "../../../components/ui/action-button";
-import { AvatarCircle } from "../../../components/ui/avatar-circle";
-import { SectionCard } from "../../../components/ui/section-card";
-import { StateBlock } from "../../../components/ui/state-block";
-import { TextField } from "../../../components/ui/text-field";
-import { TopBar } from "../../../components/ui/top-bar";
+  useYeonMutation as useMutation,
+  useYeonQuery as useQuery,
+  useYeonQueryClient as useQueryClient,
+} from "@yeon/ui/native";
+import { useYeonRouter as useRouter } from "@yeon/ui/native";
+import { useState } from "react";
+import { showYeonAlert } from "@yeon/ui/native";
+import {
+  YeonActionButton as ActionButton,
+  YeonFormIntro as FormIntro,
+  YeonFormStack as FormStack,
+  YeonMobileScreen as MobileScreen,
+  YeonPillBadge as PillBadge,
+  YeonPostAuthorHeader as PostAuthorHeader,
+  YeonPostFooter as PostFooter,
+  YeonPostText as PostText,
+  YeonReplyListItem as ReplyListItem,
+  YeonSectionCard as SectionCard,
+  YeonStateBlock as StateBlock,
+  YeonTextField as TextField,
+  YeonTopBar as TopBar,
+} from "@yeon/ui/native";
 import { formatRelativeTime } from "../../../lib/format";
 import { useChatServiceSession } from "../../../providers/chat-service-session-provider";
 import { chatServiceApi } from "../../../services/chat-service/client";
 import { chatServiceQueryKeys } from "../../../services/chat-service/query-keys";
-import { colors } from "../../../theme/colors";
 
 export function FeedScreen() {
   const router = useRouter();
@@ -105,7 +109,7 @@ export function FeedScreen() {
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "글 작성에 실패했습니다.";
-      Alert.alert("오류", message);
+      showYeonAlert("오류", message);
     }
   }
 
@@ -115,32 +119,32 @@ export function FeedScreen() {
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "답글 작성에 실패했습니다.";
-      Alert.alert("오류", message);
+      showYeonAlert("오류", message);
     }
   }
 
   async function handleReport(postId: string) {
     try {
       await reportMutation.mutateAsync(postId);
-      Alert.alert("신고 완료", "운영팀이 내용을 검토합니다.");
+      showYeonAlert("신고 완료", "운영팀이 내용을 검토합니다.");
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "신고 처리에 실패했습니다.";
-      Alert.alert("오류", message);
+      showYeonAlert("오류", message);
     }
   }
 
   async function handleBlock(profileId: string) {
     try {
       await blockMutation.mutateAsync(profileId);
-      Alert.alert(
+      showYeonAlert(
         "차단 완료",
         "이 사용자는 더 이상 피드에 보이지 않게 처리됩니다."
       );
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "차단 처리에 실패했습니다.";
-      Alert.alert("오류", message);
+      showYeonAlert("오류", message);
     }
   }
 
@@ -149,7 +153,7 @@ export function FeedScreen() {
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.content} style={styles.screen}>
+    <MobileScreen>
       <TopBar
         rightLabel="새로고침"
         onRightPress={() => {
@@ -160,22 +164,21 @@ export function FeedScreen() {
       />
 
       <SectionCard>
-        <View style={styles.composeHeader}>
-          <Text style={styles.composeTitle}>한 줄 올리기</Text>
-          <Text style={styles.composeHint}>400자 이하 공개 글</Text>
-        </View>
-        <TextField
-          label="내용"
-          multiline
-          onChangeText={setDraft}
-          placeholder="지금 생각나는 말을 남겨보세요"
-          value={draft}
-        />
-        <ActionButton
-          disabled={createPostMutation.isPending || draft.trim().length < 1}
-          label="피드에 올리기"
-          onPress={handleCreatePost}
-        />
+        <FormStack>
+          <FormIntro hint="400자 이하 공개 글" title="한 줄 올리기" />
+          <TextField
+            label="내용"
+            multiline
+            onChangeText={setDraft}
+            placeholder="지금 생각나는 말을 남겨보세요"
+            value={draft}
+          />
+          <ActionButton
+            disabled={createPostMutation.isPending || draft.trim().length < 1}
+            label="피드에 올리기"
+            onPress={handleCreatePost}
+          />
+        </FormStack>
       </SectionCard>
 
       {feedQuery.isLoading ? (
@@ -195,51 +198,42 @@ export function FeedScreen() {
 
       {feedQuery.data?.posts.map((post) => (
         <SectionCard key={post.id}>
-          <View style={styles.postHeader}>
-            <Pressable
-              onPress={() => pushProfile(post)}
-              style={styles.authorRow}
-            >
-              <AvatarCircle
-                imageUrl={post.author.avatarUrl}
-                label={post.author.nickname}
-                tone="warm"
-              />
-              <View style={styles.authorMeta}>
-                <Text style={styles.authorName}>{post.author.nickname}</Text>
-                <Text style={styles.authorSub}>
-                  {post.author.regionLabel} {post.author.ageLabel} ·{" "}
-                  {formatRelativeTime(post.createdAt)}
-                </Text>
-              </View>
-            </Pressable>
-            <View style={styles.actionRow}>
-              <Pressable onPress={() => void handleReport(post.id)}>
-                <Text style={styles.linkText}>신고</Text>
-              </Pressable>
-              <Pressable onPress={() => void handleBlock(post.author.id)}>
-                <Text style={styles.linkText}>차단</Text>
-              </Pressable>
-            </View>
-          </View>
+          <PostAuthorHeader
+            avatarTone="neutral"
+            imageUrl={post.author.avatarUrl}
+            label={post.author.nickname}
+            meta={`${post.author.regionLabel} ${post.author.ageLabel} · ${formatRelativeTime(post.createdAt)}`}
+            onPress={() => pushProfile(post)}
+            title={post.author.nickname}
+            titleSize="lg"
+            trailingSlot={
+              <>
+                <PillBadge
+                  label="신고"
+                  onPress={() => void handleReport(post.id)}
+                />
+                <PillBadge
+                  label="차단"
+                  onPress={() => void handleBlock(post.author.id)}
+                />
+              </>
+            }
+          />
 
-          <Text style={styles.postBody}>{post.body}</Text>
+          <PostText>{post.body}</PostText>
 
-          <View style={styles.postFooter}>
-            <Text style={styles.footerText}>답글 {post.replyCount}</Text>
-            <Pressable
-              onPress={() => {
-                setReplyDraft("");
-                setActiveReplyPostId((current) =>
-                  current === post.id ? null : post.id
-                );
-              }}
-            >
-              <Text style={styles.replyToggle}>
-                {activeReplyPostId === post.id ? "답글 닫기" : "답글 보기"}
-              </Text>
-            </Pressable>
-          </View>
+          <PostFooter
+            actionLabel={
+              activeReplyPostId === post.id ? "답글 닫기" : "답글 보기"
+            }
+            label={`답글 ${post.replyCount}`}
+            onActionPress={() => {
+              setReplyDraft("");
+              setActiveReplyPostId((current) =>
+                current === post.id ? null : post.id
+              );
+            }}
+          />
 
           {activeReplyPostId === post.id ? (
             <FeedRepliesPanel
@@ -253,7 +247,7 @@ export function FeedScreen() {
           ) : null}
         </SectionCard>
       ))}
-    </ScrollView>
+    </MobileScreen>
   );
 }
 
@@ -280,25 +274,19 @@ function FeedRepliesPanel({
   });
 
   return (
-    <View style={styles.replyPanel}>
+    <FormStack>
       {repliesQuery.data?.replies.map((reply) => (
-        <View key={reply.id} style={styles.replyItem}>
-          <View style={styles.replyAuthorRow}>
-            <AvatarCircle
-              imageUrl={reply.author.avatarUrl}
-              label={reply.author.nickname}
-              size={34}
-            />
-            <Text style={styles.replyAuthorName}>
-              {reply.author.nickname} · {formatRelativeTime(reply.createdAt)}
-            </Text>
-          </View>
-          <Text style={styles.replyBody}>{reply.body}</Text>
-        </View>
+        <ReplyListItem
+          body={reply.body}
+          imageUrl={reply.author.avatarUrl}
+          key={reply.id}
+          label={reply.author.nickname}
+          meta={`${reply.author.nickname} · ${formatRelativeTime(reply.createdAt)}`}
+        />
       ))}
 
       {repliesQuery.isLoading ? (
-        <Text style={styles.replyMeta}>답글을 불러오는 중입니다.</Text>
+        <PostText variant="meta">답글을 불러오는 중입니다.</PostText>
       ) : null}
 
       <TextField
@@ -314,115 +302,6 @@ function FeedRepliesPanel({
         onPress={onReply}
         variant="secondary"
       />
-    </View>
+    </FormStack>
   );
 }
-
-const styles = StyleSheet.create({
-  screen: {
-    backgroundColor: colors.background,
-    flex: 1,
-  },
-  content: {
-    gap: 16,
-    paddingBottom: 120,
-    paddingHorizontal: 18,
-    paddingTop: 22,
-  },
-  composeHeader: {
-    gap: 4,
-    marginBottom: 12,
-  },
-  composeTitle: {
-    color: colors.text,
-    fontSize: 18,
-    fontWeight: "900",
-  },
-  composeHint: {
-    color: colors.textMuted,
-    fontSize: 13,
-  },
-  postHeader: {
-    alignItems: "flex-start",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 12,
-  },
-  authorRow: {
-    alignItems: "center",
-    flexDirection: "row",
-    flexShrink: 1,
-    gap: 12,
-  },
-  authorMeta: {
-    flexShrink: 1,
-    gap: 4,
-  },
-  authorName: {
-    color: colors.accent,
-    fontSize: 20,
-    fontWeight: "900",
-  },
-  authorSub: {
-    color: colors.textMuted,
-    fontSize: 13,
-  },
-  actionRow: {
-    flexDirection: "row",
-    gap: 12,
-  },
-  linkText: {
-    color: colors.textMuted,
-    fontSize: 13,
-    fontWeight: "700",
-  },
-  postBody: {
-    color: colors.text,
-    fontSize: 20,
-    fontWeight: "700",
-    lineHeight: 30,
-  },
-  postFooter: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 14,
-  },
-  footerText: {
-    color: colors.textMuted,
-    fontSize: 13,
-  },
-  replyToggle: {
-    color: colors.accent,
-    fontSize: 13,
-    fontWeight: "800",
-  },
-  replyPanel: {
-    gap: 12,
-    marginTop: 14,
-  },
-  replyItem: {
-    backgroundColor: colors.backgroundMuted,
-    borderRadius: 18,
-    gap: 8,
-    padding: 12,
-  },
-  replyAuthorRow: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: 10,
-  },
-  replyAuthorName: {
-    color: colors.textMuted,
-    fontSize: 13,
-    fontWeight: "700",
-  },
-  replyBody: {
-    color: colors.text,
-    fontSize: 15,
-    lineHeight: 22,
-  },
-  replyMeta: {
-    color: colors.textMuted,
-    fontSize: 12,
-  },
-});

@@ -1,8 +1,8 @@
 import type {
-  Fragment,
-  Node as ProseMirrorNode,
-  Slice,
-} from "@tiptap/pm/model";
+  YeonTiptapFragment as Fragment,
+  YeonTiptapProseMirrorNode as ProseMirrorNode,
+  YeonTiptapProseMirrorSlice as Slice,
+} from "@yeon/ui/rich-content/YeonTiptap";
 
 function escapeMarkdownTableCell(value: string) {
   return value.replace(/\|/g, "\\|").replace(/\s+/g, " ").trim();

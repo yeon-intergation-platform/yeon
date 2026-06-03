@@ -1,8 +1,15 @@
 "use client";
-
-import type { FormEvent } from "react";
-import { Send } from "lucide-react";
-import { SHARED_FEATURE_CLASS } from "@/features/shared-style-constants";
+import {
+  YeonButton,
+  YeonField,
+  YeonIcon,
+  YeonForm,
+  YeonView,
+  YeonText,
+  type YeonFormEvent,
+  type YeonFormElement,
+} from "@yeon/ui";
+import { YEON_WEB_SHARED_CLASS as SHARED_FEATURE_CLASS } from "@yeon/ui/theme/web-style-tokens";
 import type { CardRoomRealtimeState } from "@yeon/race-shared";
 
 type CardRoomChatPanelProps = {
@@ -22,57 +29,85 @@ export function CardRoomChatPanel({
   onChatDraftChange,
   onSubmitChat,
 }: CardRoomChatPanelProps) {
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (event: YeonFormEvent<YeonFormElement>) => {
     event.preventDefault();
     onSubmitChat();
   };
 
   return (
-    <section
+    <YeonView
+      as="section"
       className={`${mobileTab === "card" ? "hidden lg:flex" : "flex"} min-h-[560px] flex-col rounded-3xl border border-[#e5e5e5] bg-white`}
     >
-      <div className="border-b border-[#e5e5e5] p-4">
-        <h2 className="text-[16px] font-bold text-[#111]">답변 채팅</h2>
-        <p className={`mt-1 ${SHARED_FEATURE_CLASS.text13Subtle}`}>
+      <YeonView className="border-b border-[#e5e5e5] p-4">
+        <YeonText
+          as="h2"
+          variant="unstyled"
+          tone="inherit"
+          className="text-[16px] font-bold text-[#111]"
+        >
+          답변 채팅
+        </YeonText>
+        <YeonText
+          as="p"
+          variant="unstyled"
+          tone="inherit"
+          className={`mt-1 ${SHARED_FEATURE_CLASS.text13Subtle}`}
+        >
           메시지는 실시간으로 공유되고 카드방 기록에 저장됩니다.
-        </p>
-      </div>
-      <div className="flex-1 space-y-3 overflow-y-auto p-4" aria-live="polite">
+        </YeonText>
+      </YeonView>
+      <YeonView
+        className="flex-1 space-y-3 overflow-y-auto p-4"
+        aria-live="polite"
+      >
         {messages.map((message) => {
           const mine = message.senderParticipantId === participantId;
           return (
-            <div
+            <YeonView
               key={message.id}
               className={`rounded-2xl px-4 py-3 ${mine ? "ml-auto max-w-[78%] bg-[#111] text-white" : message.messageType === "system" ? "mx-auto max-w-[88%] border border-[#e5e5e5] bg-[#fafafa] text-center text-[#666]" : "mr-auto max-w-[78%] border border-[#e5e5e5] bg-white text-[#111]"}`}
             >
-              <p className="text-[11px] font-bold opacity-70">
+              <YeonText
+                as="p"
+                variant="unstyled"
+                tone="inherit"
+                className="text-[11px] font-bold opacity-70"
+              >
                 {message.senderNickname ?? "시스템"}
-              </p>
-              <p className="mt-1 text-[14px] leading-[1.6]">
+              </YeonText>
+              <YeonText
+                as="p"
+                variant="unstyled"
+                tone="inherit"
+                className="mt-1 text-[14px] leading-[1.6]"
+              >
                 {message.content}
-              </p>
-            </div>
+              </YeonText>
+            </YeonView>
           );
         })}
-      </div>
-      <form
+      </YeonView>
+      <YeonForm
         className="flex gap-2 border-t border-[#e5e5e5] p-4"
         onSubmit={handleSubmit}
       >
-        <input
+        <YeonField
           value={chatDraft}
           onChange={(event) => onChatDraftChange(event.target.value)}
           placeholder="답변을 입력하세요"
-          className="h-12 min-w-0 flex-1 rounded-xl border border-[#d9d9d9] px-4 text-[14px] outline-none focus:border-[#111]"
+          className="h-12 min-w-0 flex-1 rounded-xl px-4 text-[14px]"
         />
-        <button
+        <YeonButton
           type="submit"
-          className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-[#111] text-white transition-colors hover:bg-[#333]"
+          variant="primary"
+          size="icon"
+          className="h-12 w-12 rounded-xl"
           aria-label="채팅 보내기"
         >
-          <Send size={18} />
-        </button>
-      </form>
-    </section>
+          <YeonIcon name="send" size={18} />
+        </YeonButton>
+      </YeonForm>
+    </YeonView>
   );
 }

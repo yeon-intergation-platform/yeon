@@ -1,8 +1,11 @@
 import {
+  fetchYeon,
+  type YeonRequestInit,
+} from "@yeon/ui/runtime/YeonBrowserRuntime";
+import {
   authSessionResponseSchema,
   type AuthSessionResponse,
 } from "@yeon/api-contract/auth";
-
 import { buildSpringBffHeaders } from "@/server/spring-bff-client";
 
 const DEFAULT_BACKEND_BASE_URL = "http://127.0.0.1:8081";
@@ -58,12 +61,12 @@ function extractErrorMessage(parsed: unknown) {
 
 async function fetchAuthSession(
   sessionToken: string,
-  init?: RequestInit
+  init?: YeonRequestInit
 ): Promise<AuthSessionResponse> {
   const headers = buildSpringBffHeaders(init?.headers);
   headers.set(SESSION_TOKEN_HEADER, sessionToken);
 
-  const response = await fetch(
+  const response = await fetchYeon(
     `${resolveSpringBackendBaseUrl()}/auth/session`,
     {
       ...init,

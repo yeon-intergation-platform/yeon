@@ -46,7 +46,7 @@ function SelfCheckReadyBadge({ ready }: { ready: boolean }) {
       가능
     </span>
   ) : (
-    <span className="rounded-full bg-amber-500/10 px-2 py-1 text-[11px] text-amber-300">
+    <span className="rounded-full bg-[#fafafa] px-2 py-1 text-[11px] text-text-secondary-300">
       전화번호 필요
     </span>
   );

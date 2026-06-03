@@ -1,7 +1,19 @@
 import baseConfig from "../../packages/config/eslint/base.mjs";
+import { universalUiBoundary } from "../../packages/config/eslint/universal-ui-boundary.mjs";
 
 export default [
   ...baseConfig,
+
+  // Universal UI 경계: 유지보수 3종 서비스 feature/screen은 플랫폼 의존 직접 import 금지(포트 경유).
+  // 상담/동결 영역은 대상에서 제외한다.
+  ...universalUiBoundary([
+    "src/features/card-service/**/*.{ts,tsx}",
+    "src/features/typing-service/**/*.{ts,tsx}",
+    "src/features/community/**/*.{ts,tsx}",
+    "src/features/room-shared/**/*.{ts,tsx}",
+    "src/features/room-voice-call/**/*.{ts,tsx}",
+    "src/features/life-os/**/*.{ts,tsx}",
+  ]),
 
   // ── 클라이언트 전체 적용 ────────────────────────────────────────────
   // 렌더링 여부와 관계없이 어디서나 금지할 패턴

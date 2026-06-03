@@ -1,8 +1,6 @@
 "use client";
-
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Client, type Room } from "@colyseus/sdk";
-import { useQuery } from "@tanstack/react-query";
+import { useYeonQuery as useQuery } from "@yeon/ui/runtime/YeonQuery";
 import type {
   CardRoomListResponse,
   CardRoomParticipantResponse,
@@ -16,12 +14,16 @@ import {
   type CardRoomErrorMessage,
   type CardRoomRealtimeState,
 } from "@yeon/race-shared";
-
+import {
+  createYeonRealtimeClient,
+  type YeonRealtimeRoom,
+} from "@yeon/ui/runtime/YeonRealtimeClient";
+import { cardRoomsQueryKey } from "@yeon/ui/runtime/ports/card-rooms";
 import { resolveRaceServerUrl } from "@/features/typing-service/use-race-room";
-
 import { cardServiceFetchJson } from "../card-service-fetch";
 
-export const cardRoomsQueryKey = () => ["card-rooms"] as const;
+// queryKey는 SSOT에서 가져와 재수출한다(복제 금지). SSOT: packages/ui/.../card-rooms/query-keys.ts
+export { cardRoomsQueryKey };
 
 const CARD_ROOM_NETWORK_ERROR_PATTERNS = [
   "failed to fetch",
@@ -100,19 +102,20 @@ export function useCardRoomConnection(
   participantId: string | null
 ) {
   const [state, setState] = useState<CardRoomRealtimeState | null>(null);
-  const [room, setRoom] = useState<Room | null>(null);
+  const [room, setRoom] =
+    useState<YeonRealtimeRoom<CardRoomRealtimeState> | null>(null);
   const [connectionState, setConnectionState] = useState<
     "idle" | "connecting" | "connected" | "error" | "disconnected"
   >("idle");
   const [error, setError] = useState<string | null>(null);
-  const roomRef = useRef<Room | null>(null);
+  const roomRef = useRef<YeonRealtimeRoom<CardRoomRealtimeState> | null>(null);
 
   useEffect(() => {
     if (!roomId || !participantId) return;
     let cancelled = false;
     setConnectionState("connecting");
     setError(null);
-    const client = new Client(resolveRaceServerUrl());
+    const client = createYeonRealtimeClient(resolveRaceServerUrl());
     client
       .joinOrCreate<CardRoomRealtimeState>(CARD_ROOM_NAME, {
         cardRoomId: roomId,

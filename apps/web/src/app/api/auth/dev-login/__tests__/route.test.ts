@@ -18,7 +18,6 @@ vi.mock("@/server/auth/session", () => ({
   applyAuthSessionCookie: (...args: unknown[]) =>
     mockApplyAuthSessionCookie(...args),
 }));
-
 import { GET } from "../route";
 
 describe("api/auth/dev-login route", () => {

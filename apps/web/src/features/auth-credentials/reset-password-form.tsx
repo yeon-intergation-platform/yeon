@@ -1,16 +1,15 @@
 "use client";
-
-import { useMutation } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
-import { type FormEvent, useState } from "react";
-
+import { useState } from "react";
+import type { YeonFormElement, YeonFormEvent } from "@yeon/ui/types";
 import { credentialPasswordPolicy } from "@yeon/api-contract/credential";
-
+import { YeonButton, YeonField, YeonForm, YeonLabel, YeonText } from "@yeon/ui";
+import { useYeonRouter } from "@yeon/ui/runtime/YeonNavigation";
+import { YEON_WEB_AUTH_CLASS } from "@yeon/ui/theme/web-style-tokens";
 import {
   credentialConfirmReset,
   getCredentialErrorMessage,
 } from "@/lib/credential-client";
-import { SHARED_FEATURE_CLASS } from "@/features/shared-style-constants";
+import { useYeonMutation as useMutation } from "@yeon/ui/runtime/YeonQuery";
 import { AUTH_CREDENTIALS_COMMON_CLASS } from "./auth-credentials-common.const";
 
 type ResetPasswordViewState =
@@ -39,7 +38,7 @@ function deriveHelperMessage(password: string): string | null {
 }
 
 export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
-  const router = useRouter();
+  const router = useYeonRouter();
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [state, setState] = useState<ResetPasswordViewState>({ kind: "idle" });
@@ -52,7 +51,7 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
   const passwordHelper = deriveHelperMessage(password);
   const mismatched = confirmPassword.length > 0 && confirmPassword !== password;
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: YeonFormEvent<YeonFormElement>) {
     event.preventDefault();
 
     if (passwordHelper) {
@@ -82,12 +81,17 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="grid gap-4">
-      <label className="grid gap-1.5">
-        <span className="text-[13px] font-bold tracking-[-0.01em] text-white/[0.82]">
+    <YeonForm onSubmit={handleSubmit} className="grid gap-4">
+      <YeonLabel className={YEON_WEB_AUTH_CLASS.label}>
+        <YeonText
+          as="span"
+          variant="unstyled"
+          tone="inherit"
+          className={YEON_WEB_AUTH_CLASS.labelText}
+        >
           새 비밀번호
-        </span>
-        <input
+        </YeonText>
+        <YeonField
           type="password"
           autoComplete="new-password"
           required
@@ -99,17 +103,27 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
           placeholder={`${credentialPasswordPolicy.minLength}자 이상, 공백 불가`}
           disabled={isSubmitting}
         />
-        <span className="text-[12px] leading-[1.55] text-white/55">
+        <YeonText
+          as="span"
+          variant="unstyled"
+          tone="inherit"
+          className={YEON_WEB_AUTH_CLASS.helperText}
+        >
           {passwordHelper ??
             `최소 ${credentialPasswordPolicy.minLength}자 · 최대 ${credentialPasswordPolicy.maxLength}자 · 공백 불가`}
-        </span>
-      </label>
+        </YeonText>
+      </YeonLabel>
 
-      <label className="grid gap-1.5">
-        <span className="text-[13px] font-bold tracking-[-0.01em] text-white/[0.82]">
+      <YeonLabel className={YEON_WEB_AUTH_CLASS.label}>
+        <YeonText
+          as="span"
+          variant="unstyled"
+          tone="inherit"
+          className={YEON_WEB_AUTH_CLASS.labelText}
+        >
           새 비밀번호 확인
-        </span>
-        <input
+        </YeonText>
+        <YeonField
           type="password"
           autoComplete="new-password"
           required
@@ -120,25 +134,35 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
           disabled={isSubmitting}
         />
         {mismatched ? (
-          <span className="text-[12px] leading-[1.55] text-[#ffb38a]">
+          <YeonText
+            as="span"
+            variant="unstyled"
+            tone="inherit"
+            className="text-[12px] leading-[1.55] text-[#f8f7f3]"
+          >
             두 비밀번호가 일치하지 않아요.
-          </span>
+          </YeonText>
         ) : null}
-      </label>
+      </YeonLabel>
 
       {state.kind === "error" ? (
-        <p role="alert" className={AUTH_CREDENTIALS_COMMON_CLASS.errorText13}>
+        <YeonText
+          role="alert"
+          variant="unstyled"
+          tone="inherit"
+          className={AUTH_CREDENTIALS_COMMON_CLASS.errorText13}
+        >
           {state.message}
-        </p>
+        </YeonText>
       ) : null}
 
-      <button
+      <YeonButton
         type="submit"
         disabled={isSubmitting || passwordHelper !== null || mismatched}
-        className={`min-h-[52px] rounded-full bg-[#e8630a] px-[22px] transition-transform duration-200 ease-[ease] hover:enabled:-translate-y-px disabled:cursor-not-allowed disabled:opacity-70 ${SHARED_FEATURE_CLASS.text15EmphasisOnCream}`}
+        className={YEON_WEB_AUTH_CLASS.primaryAction}
       >
         {isSubmitting ? "재설정 중..." : "비밀번호 재설정"}
-      </button>
-    </form>
+      </YeonButton>
+    </YeonForm>
   );
 }

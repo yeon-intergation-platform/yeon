@@ -1,5 +1,4 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-
 import { GET } from "../route";
 
 describe("backend bootstrap health route", () => {
@@ -24,7 +23,7 @@ describe("backend bootstrap health route", () => {
       new Response('{"status":"UP"}', {
         status: 200,
         headers: { "content-type": "application/json" },
-      }),
+      })
     );
 
     const response = await GET();
@@ -41,14 +40,14 @@ describe("backend bootstrap health route", () => {
       {
         headers: { accept: "application/json" },
         cache: "no-store",
-      },
+      }
     );
   });
 
   it("env base url이 있으면 그 값을 사용한다", async () => {
     process.env.SPRING_BOOTSTRAP_BASE_URL = "http://127.0.0.1:9090/";
     vi.spyOn(globalThis, "fetch").mockResolvedValue(
-      new Response('{"status":"UP"}', { status: 200 }),
+      new Response('{"status":"UP"}', { status: 200 })
     );
 
     const response = await GET();
@@ -61,7 +60,7 @@ describe("backend bootstrap health route", () => {
 
   it("upstream가 실패하면 502로 감싼다", async () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue(
-      new Response('{"status":"DOWN"}', { status: 503 }),
+      new Response('{"status":"DOWN"}', { status: 503 })
     );
 
     const response = await GET();
@@ -76,7 +75,9 @@ describe("backend bootstrap health route", () => {
   });
 
   it("fetch 예외가 나면 502와 메시지를 반환한다", async () => {
-    vi.spyOn(globalThis, "fetch").mockRejectedValue(new Error("connect ECONNREFUSED"));
+    vi.spyOn(globalThis, "fetch").mockRejectedValue(
+      new Error("connect ECONNREFUSED")
+    );
 
     const response = await GET();
 

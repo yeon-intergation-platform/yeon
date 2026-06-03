@@ -1,9 +1,12 @@
 import type { ChatServiceSessionDto } from "@yeon/api-contract/chat-service";
 import { ApiClientError } from "@yeon/api-client";
-import { useQueryClient } from "@tanstack/react-query";
+import {
+  getYeonNow,
+  getYeonRandom,
+  useYeonQueryClient as useQueryClient,
+} from "@yeon/ui/native";
 import type { ReactNode } from "react";
 import { createContext, useContext, useEffect, useState } from "react";
-
 import { isAnonymousApp } from "../lib/mobile-app-mode";
 import { chatServiceApi } from "../services/chat-service/client";
 import {
@@ -44,7 +47,7 @@ function parseGuestProfileId(sessionToken: string) {
 }
 
 function buildGuestIdentity() {
-  const suffix = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+  const suffix = `${getYeonNow()}-${getYeonRandom().toString(36).slice(2, 10)}`;
 
   return {
     guestNickname: `익명친구 ${suffix}`,
@@ -98,7 +101,7 @@ export function ChatServiceSessionProvider({
     const guestSession: ChatServiceSessionDto = {
       token: buildGuestSessionToken(profileId),
       expiresAt: new Date(
-        Date.now() + CHAT_SERVICE_GUEST_SESSION_TTL_MS
+        getYeonNow() + CHAT_SERVICE_GUEST_SESSION_TTL_MS
       ).toISOString(),
       user: buildGuestProfileFallback(profileId),
     };

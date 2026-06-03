@@ -49,7 +49,7 @@ const RISK_LABELS: Record<string, string> = {
 
 const CONFIDENCE_COLORS: Record<string, string> = {
   high: "#34d399",
-  medium: "#fbbf24",
+  medium: "#666666",
   low: "#f87171",
 };
 

@@ -1,8 +1,9 @@
-import type { Metadata } from "next";
+import { type YeonPageMetadata } from "@yeon/ui/runtime/YeonPageMetadata";
 import { Suspense } from "react";
+import { YeonView } from "@yeon/ui";
 import { TypingRoomScreen } from "@/features/typing-service";
 
-export const metadata: Metadata = {
+export const metadata: YeonPageMetadata = {
   title: "YEON 타자방",
   description: "실시간 타자 대결방 대기 및 플레이 화면입니다.",
   robots: {
@@ -18,7 +19,13 @@ type TypingRoomPageProps = {
 export default async function TypingRoomPage({ params }: TypingRoomPageProps) {
   const { roomId } = await params;
   return (
-    <Suspense fallback={<div className="flex min-h-screen items-center justify-center">타자방에 입장하는 중...</div>}>
+    <Suspense
+      fallback={
+        <YeonView className="flex min-h-screen items-center justify-center">
+          타자방에 입장하는 중...
+        </YeonView>
+      }
+    >
       <TypingRoomScreen mode="join" roomId={roomId} />
     </Suspense>
   );

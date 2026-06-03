@@ -1,3 +1,5 @@
+import { createYeonUrl } from "@yeon/ui/runtime/YeonBrowserRuntime";
+
 export const SERVICE_SUBDOMAIN_ROUTES = {
   "typing.yeon.world": {
     servicePath: "/typing-service",
@@ -68,7 +70,7 @@ function buildServicePublicUrl({
     pathname === serviceBasePath
       ? "/"
       : pathname.slice(serviceBasePath.length) || "/";
-  const url = new URL(suffixPathname, publicUrl);
+  const url = createYeonUrl(suffixPathname, publicUrl);
   url.search = search;
   return url;
 }

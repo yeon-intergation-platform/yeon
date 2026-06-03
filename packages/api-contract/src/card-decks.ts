@@ -104,8 +104,10 @@ export const cardDeckItemDtoSchema = z.object({
   id: z.string(),
   frontText: z.string(),
   backText: z.string(),
-  imageStorageKey: z.string().nullable(),
-  imageUrl: z.string().nullable(),
+  // 일부 백엔드 응답은 이미지가 없는 카드에서 두 필드를 생략(undefined)한다.
+  // nullish로 string|null|undefined를 모두 허용해 엄격 파싱(api-client) 실패를 막는다.
+  imageStorageKey: z.string().nullish(),
+  imageUrl: z.string().nullish(),
   reviewDifficulty: cardReviewDifficultySchema.nullable(),
   lastReviewedAt: z.string().datetime().nullable(),
   nextReviewAt: z.string().datetime().nullable(),

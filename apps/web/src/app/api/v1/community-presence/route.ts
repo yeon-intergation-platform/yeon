@@ -1,3 +1,7 @@
+import {
+  getYeonNow,
+  type YeonRequest,
+} from "@yeon/ui/runtime/YeonBrowserRuntime";
 import { NextResponse } from "next/server";
 
 const ACTIVE_WINDOW_MS = 30_000;
@@ -38,7 +42,7 @@ function normalizeSessionId(value: unknown) {
   return trimmed.slice(0, MAX_SESSION_ID_LENGTH);
 }
 
-function createPresenceResponse(now = Date.now()) {
+function createPresenceResponse(now = getYeonNow()) {
   cleanupExpired(now);
   return NextResponse.json({ activeCount: presenceStore.size });
 }
@@ -47,8 +51,8 @@ export function GET() {
   return createPresenceResponse();
 }
 
-export async function POST(request: Request) {
-  const now = Date.now();
+export async function POST(request: YeonRequest) {
+  const now = getYeonNow();
 
   try {
     const body = (await request.json()) as {

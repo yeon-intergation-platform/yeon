@@ -1,7 +1,4 @@
 "use client";
-
-import { Client, type Room } from "@colyseus/sdk";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   type StarLobbyAlertRuleDeletionResponse,
   type StarLobbyAlertRuleListResponse,
@@ -11,13 +8,29 @@ import {
   type StarLobbyRoomListResponse,
 } from "@yeon/api-contract/star-lobby";
 import {
-  type FormEvent,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+  createYeonRealtimeClient,
+  type YeonRealtimeRoom,
+} from "@yeon/ui/runtime/YeonRealtimeClient";
+import {
+  createYeonRandomUUID,
+  fetchYeon,
+  getYeonNow,
+  readYeonLocalStorageItem,
+  type YeonResponse,
+  writeYeonLocalStorageItem,
+} from "@yeon/ui/runtime/YeonBrowserRuntime";
+import {
+  YeonBadge,
+  YeonButton,
+  YeonField,
+  YeonForm,
+  YeonLabel,
+  YeonSurface,
+  YeonText,
+  YeonView,
+} from "@yeon/ui";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { YeonFormElement, YeonFormEvent } from "@yeon/ui/types";
 import {
   STAR_LOBBY_EVENTS,
   STAR_LOBBY_ROOM_NAME,
@@ -25,7 +38,11 @@ import {
   type StarLobbyRealtimeEvent,
   type StarLobbyRoomDto,
 } from "@yeon/race-shared";
-
+import {
+  useYeonMutation as useMutation,
+  useYeonQuery as useQuery,
+  useYeonQueryClient as useQueryClient,
+} from "@yeon/ui/runtime/YeonQuery";
 import { resolveRaceServerUrl } from "@/features/typing-service/use-race-room";
 
 type ConnectionState = "connecting" | "connected" | "disconnected" | "error";
@@ -132,7 +149,7 @@ function relativeTimeText(value: string | null) {
   if (!value) return "관측 전";
   const diffSeconds = Math.max(
     0,
-    Math.floor((Date.now() - new Date(value).getTime()) / 1000)
+    Math.floor((getYeonNow() - new Date(value).getTime()) / 1000)
   );
   if (diffSeconds < 5) return "방금";
   if (diffSeconds < 60) return `${diffSeconds}초 전`;
@@ -192,11 +209,12 @@ function toRuleActionViewState(isPending: boolean) {
 }
 
 function ensureGuestSessionId() {
-  if (typeof window === "undefined") return null;
-  const current = window.localStorage.getItem(GUEST_SESSION_STORAGE_KEY);
+  const current = readYeonLocalStorageItem(GUEST_SESSION_STORAGE_KEY);
   if (current) return current;
-  const next = globalThis.crypto?.randomUUID?.() ?? `guest-${Date.now()}`;
-  window.localStorage.setItem(GUEST_SESSION_STORAGE_KEY, next);
+
+  const next = createYeonRandomUUID() ?? `guest-${getYeonNow()}`;
+  writeYeonLocalStorageItem(GUEST_SESSION_STORAGE_KEY, next);
+
   return next;
 }
 
@@ -207,7 +225,7 @@ function requestHeaders(guestSessionId: string) {
   };
 }
 
-async function parseErrorMessage(response: Response, fallback: string) {
+async function parseErrorMessage(response: YeonResponse, fallback: string) {
   try {
     const body = (await response.json()) as {
       message?: string;
@@ -237,7 +255,7 @@ export function StarLobbyLivePanel() {
   const [guestSessionId, setGuestSessionId] = useState<string | null>(null);
   const [alerts, setAlerts] = useState<LiveAlert[]>([]);
   const [rooms, setRooms] = useState<LiveRoom[]>([]);
-  const roomRef = useRef<Room | null>(null);
+  const roomRef = useRef<YeonRealtimeRoom | null>(null);
   const guestSessionIdRef = useRef<string | null>(null);
   const queryClient = useQueryClient();
 
@@ -264,7 +282,7 @@ export function StarLobbyLivePanel() {
     queryKey: ["star-lobby", "alert-rules", guestSessionId],
     queryFn: async () => {
       if (!guestSessionId) return { rules: [] };
-      const response = await fetch("/api/v1/star-lobby/alert-rules", {
+      const response = await fetchYeon("/api/v1/star-lobby/alert-rules", {
         cache: "no-store",
         headers: { [GUEST_SESSION_ID_HEADER]: guestSessionId },
       });
@@ -285,7 +303,7 @@ export function StarLobbyLivePanel() {
     queryKey: ["star-lobby", "discord-webhook", guestSessionId],
     queryFn: async () => {
       if (!guestSessionId) return { connected: false, updatedAt: null };
-      const response = await fetch("/api/v1/star-lobby/discord-webhook", {
+      const response = await fetchYeon("/api/v1/star-lobby/discord-webhook", {
         cache: "no-store",
         headers: { [GUEST_SESSION_ID_HEADER]: guestSessionId },
       });
@@ -304,7 +322,7 @@ export function StarLobbyLivePanel() {
   const currentRoomsQuery = useQuery({
     queryKey: ["star-lobby", "rooms"],
     queryFn: async () => {
-      const response = await fetch("/api/v1/star-lobby/rooms", {
+      const response = await fetchYeon("/api/v1/star-lobby/rooms", {
         cache: "no-store",
       });
       if (!response.ok) {
@@ -328,7 +346,7 @@ export function StarLobbyLivePanel() {
         );
       }
 
-      const response = await fetch("/api/v1/star-lobby/alert-rules", {
+      const response = await fetchYeon("/api/v1/star-lobby/alert-rules", {
         method: "POST",
         headers: requestHeaders(currentGuestSessionId),
         body: JSON.stringify({
@@ -375,7 +393,7 @@ export function StarLobbyLivePanel() {
         );
       }
 
-      const response = await fetch(
+      const response = await fetchYeon(
         `/api/v1/star-lobby/alert-rules/${encodeURIComponent(params.ruleId)}`,
         {
           method: "PATCH",
@@ -426,7 +444,7 @@ export function StarLobbyLivePanel() {
         );
       }
 
-      const response = await fetch(
+      const response = await fetchYeon(
         `/api/v1/star-lobby/alert-rules/${encodeURIComponent(ruleId)}`,
         {
           method: "DELETE",
@@ -472,7 +490,7 @@ export function StarLobbyLivePanel() {
         );
       }
 
-      const response = await fetch("/api/v1/star-lobby/discord-webhook", {
+      const response = await fetchYeon("/api/v1/star-lobby/discord-webhook", {
         method: "PUT",
         headers: requestHeaders(currentGuestSessionId),
         body: JSON.stringify({ webhookUrl }),
@@ -517,7 +535,7 @@ export function StarLobbyLivePanel() {
         );
       }
 
-      const response = await fetch("/api/v1/star-lobby/discord-webhook", {
+      const response = await fetchYeon("/api/v1/star-lobby/discord-webhook", {
         method: "DELETE",
         headers: { [GUEST_SESSION_ID_HEADER]: currentGuestSessionId },
       });
@@ -589,7 +607,7 @@ export function StarLobbyLivePanel() {
 
   useEffect(() => {
     let cancelled = false;
-    const client = new Client(resolveRaceServerUrl());
+    const client = createYeonRealtimeClient(resolveRaceServerUrl());
     const guestSessionId = guestSessionIdRef.current ?? ensureGuestSessionId();
     guestSessionIdRef.current = guestSessionId;
 
@@ -686,13 +704,13 @@ export function StarLobbyLivePanel() {
     if (connectionState === "connected") sendSubscription(rule);
   }, [connectionState, rule, sendSubscription]);
 
-  function handleDiscordSubmit(event: FormEvent<HTMLFormElement>) {
+  function handleDiscordSubmit(event: YeonFormEvent<YeonFormElement>) {
     event.preventDefault();
     setDiscordMessage("Discord 웹훅을 저장하고 있습니다.");
     upsertDiscordWebhookMutation.mutate(discordWebhookText);
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  function handleSubmit(event: YeonFormEvent<YeonFormElement>) {
     event.preventDefault();
     const nextRule = {
       includeKeywords: parseKeywords(includeText),
@@ -707,89 +725,96 @@ export function StarLobbyLivePanel() {
   }
 
   return (
-    <div className="rounded-[2rem] border border-white/10 bg-white/[0.06] p-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <p className="text-sm font-bold text-cyan-200">접속 중 실시간 알림</p>
-          <h2 className="mt-2 text-2xl font-black">키워드 뜨면 바로 표시</h2>
-        </div>
-        <span className="rounded-full border border-white/15 px-3 py-1 text-xs font-bold text-slate-200">
+    <YeonSurface className="rounded-[2rem] p-6">
+      <YeonView className="flex flex-wrap items-start justify-between gap-3">
+        <YeonView>
+          <YeonText variant="label" className="text-[#666]">
+            접속 중 실시간 알림
+          </YeonText>
+          <YeonText as="h2" variant="subtitle" className="mt-2">
+            키워드 뜨면 바로 표시
+          </YeonText>
+        </YeonView>
+        <YeonBadge variant="neutral" className="px-3 py-1">
           {statusLabel}
-        </span>
-      </div>
+        </YeonBadge>
+      </YeonView>
 
-      <form className="mt-5 space-y-4" onSubmit={handleSubmit}>
-        <label className="block">
-          <span className="text-sm font-bold text-slate-300">포함 키워드</span>
-          <input
-            className="mt-2 w-full rounded-2xl border border-white/10 bg-slate-950 px-4 py-3 text-white outline-none transition focus:border-cyan-300"
+      <YeonForm className="mt-5 space-y-4" onSubmit={handleSubmit}>
+        <YeonLabel className="block">
+          <YeonText as="span" variant="label" className="text-[#666]">
+            포함 키워드
+          </YeonText>
+          <YeonField
+            className="mt-2 rounded-2xl px-4 py-3"
             onChange={(event) => setIncludeText(event.target.value)}
             placeholder="랜타디, 랜덤타워디펜스, RTD"
             value={includeText}
           />
-        </label>
-        <label className="block">
-          <span className="text-sm font-bold text-slate-300">제외 키워드</span>
-          <input
-            className="mt-2 w-full rounded-2xl border border-white/10 bg-slate-950 px-4 py-3 text-white outline-none transition focus:border-rose-300"
+        </YeonLabel>
+        <YeonLabel className="block">
+          <YeonText as="span" variant="label" className="text-[#666]">
+            제외 키워드
+          </YeonText>
+          <YeonField
+            className="mt-2 rounded-2xl px-4 py-3"
             onChange={(event) => setExcludeText(event.target.value)}
             placeholder="고수, 빡겜, 노초보"
             value={excludeText}
           />
-        </label>
-        <button
-          className="w-full rounded-2xl bg-cyan-300 px-4 py-3 font-black text-slate-950 transition hover:bg-cyan-200 disabled:cursor-not-allowed disabled:bg-slate-600 disabled:text-slate-300"
+        </YeonLabel>
+        <YeonButton
+          className="w-full rounded-2xl px-4 py-3 font-black"
           disabled={!canSubscribe || saveButtonViewState.disabledWhileSaving}
           type="submit"
+          variant="primary"
         >
           {saveButtonViewState.label}
-        </button>
-      </form>
+        </YeonButton>
+      </YeonForm>
 
       {saveMessage ? (
-        saveState === "error" ? (
-          <p className="mt-4 rounded-2xl border border-rose-300/25 bg-rose-300/10 p-3 text-sm text-rose-100">
+        <YeonSurface
+          variant={saveState === "error" ? "outlined" : "panel"}
+          className="mt-4 p-3"
+        >
+          <YeonText variant="caption" className="text-[#666]">
             {saveMessage}
-          </p>
-        ) : (
-          <p className="mt-4 rounded-2xl border border-cyan-300/20 bg-cyan-300/10 p-3 text-sm text-cyan-50">
-            {saveMessage}
-          </p>
-        )
+          </YeonText>
+        </YeonSurface>
       ) : null}
 
       {savedRules.length > 0 ? (
-        <section className="mt-5 rounded-2xl border border-white/10 bg-slate-950/50 p-4">
-          <h3 className="font-black text-white">저장된 알림 조건</h3>
-          <div className="mt-3 space-y-2">
+        <YeonSurface as="section" variant="panel" className="mt-5 p-4">
+          <YeonText as="h3" variant="label">
+            저장된 알림 조건
+          </YeonText>
+          <YeonView className="mt-3 space-y-2">
             {savedRules.slice(0, 3).map((savedRule) => (
-              <article
-                className="rounded-2xl bg-white/[0.05] p-3 text-sm text-slate-200"
+              <YeonSurface
+                as="article"
+                variant="outlined"
+                className="p-3 text-sm"
                 key={savedRule.id}
               >
-                <div className="flex items-center justify-between gap-3">
-                  <p className="font-bold text-white">{savedRule.name}</p>
+                <YeonView className="flex items-center justify-between gap-3">
+                  <YeonText variant="label">{savedRule.name}</YeonText>
                   {savedRule.enabled ? (
-                    <span className="rounded-full bg-cyan-300 px-2 py-1 text-xs font-black text-slate-950">
-                      켜짐
-                    </span>
+                    <YeonBadge variant="accent">켜짐</YeonBadge>
                   ) : (
-                    <span className="rounded-full bg-slate-700 px-2 py-1 text-xs font-black text-slate-300">
-                      꺼짐
-                    </span>
+                    <YeonBadge variant="neutral">꺼짐</YeonBadge>
                   )}
-                </div>
-                <p className="mt-1 text-slate-400">
+                </YeonView>
+                <YeonText variant="caption" className="mt-1 text-[#666]">
                   포함: {keywordText(savedRule.includeKeywords)}
-                </p>
+                </YeonText>
                 {savedRule.excludeKeywords.length > 0 ? (
-                  <p className="mt-1 text-slate-500">
+                  <YeonText variant="caption" className="mt-1 text-[#aaa]">
                     제외: {keywordText(savedRule.excludeKeywords)}
-                  </p>
+                  </YeonText>
                 ) : null}
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <button
-                    className="rounded-full border border-white/15 px-3 py-1 text-xs font-bold text-slate-100 transition hover:border-cyan-200 disabled:cursor-not-allowed disabled:opacity-50"
+                <YeonView className="mt-3 flex flex-wrap gap-2">
+                  <YeonButton
                     disabled={ruleActionViewState.disabled}
                     onClick={() =>
                       updateAlertRuleMutation.mutate({
@@ -797,210 +822,238 @@ export function StarLobbyLivePanel() {
                         enabled: !savedRule.enabled,
                       })
                     }
+                    size="sm"
                     type="button"
+                    variant="secondary"
                   >
                     {savedRule.enabled ? "알림 끄기" : "알림 켜기"}
-                  </button>
-                  <button
-                    className="rounded-full border border-rose-300/30 px-3 py-1 text-xs font-bold text-rose-100 transition hover:border-rose-200 disabled:cursor-not-allowed disabled:opacity-50"
+                  </YeonButton>
+                  <YeonButton
                     disabled={ruleActionViewState.disabled}
                     onClick={() => deleteAlertRuleMutation.mutate(savedRule.id)}
+                    size="sm"
                     type="button"
+                    variant="danger"
                   >
                     삭제
-                  </button>
+                  </YeonButton>
                   {ruleActionViewState.statusText ? (
-                    <span className="px-2 py-1 text-xs text-slate-500">
+                    <YeonText
+                      variant="caption"
+                      className="px-2 py-1 text-[#aaa]"
+                    >
                       {ruleActionViewState.statusText}
-                    </span>
+                    </YeonText>
                   ) : null}
-                </div>
-              </article>
+                </YeonView>
+              </YeonSurface>
             ))}
-          </div>
-        </section>
+          </YeonView>
+        </YeonSurface>
       ) : null}
 
-      <section className="mt-5 rounded-2xl border border-indigo-300/20 bg-indigo-300/10 p-4">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h3 className="font-black text-white">Discord 알림</h3>
-            <p className="mt-1 text-sm text-indigo-100">
+      <YeonSurface as="section" variant="panel" className="mt-5 p-4">
+        <YeonView className="flex flex-wrap items-start justify-between gap-3">
+          <YeonView>
+            <YeonText as="h3" variant="label">
+              Discord 알림
+            </YeonText>
+            <YeonText variant="caption" className="mt-1 text-[#666]">
               Discord 웹훅 URL을 등록하면 조건에 맞는 방이 관측될 때 Discord로
               “방 떴다” 알림을 보냅니다.
-            </p>
-          </div>
+            </YeonText>
+          </YeonView>
           {discordWebhookStatus.connected ? (
-            <span className="rounded-full bg-indigo-200 px-2 py-1 text-xs font-black text-slate-950">
-              연결됨
-            </span>
+            <YeonBadge variant="accent">연결됨</YeonBadge>
           ) : (
-            <span className="rounded-full bg-slate-700 px-2 py-1 text-xs font-black text-slate-300">
-              미연결
-            </span>
+            <YeonBadge variant="neutral">미연결</YeonBadge>
           )}
-        </div>
-        <form
+        </YeonView>
+        <YeonForm
           className="mt-3 flex flex-col gap-2 sm:flex-row"
           onSubmit={handleDiscordSubmit}
         >
-          <input
-            className="min-w-0 flex-1 rounded-2xl border border-white/10 bg-slate-950 px-4 py-3 text-white outline-none transition focus:border-indigo-200"
+          <YeonField
+            className="min-w-0 flex-1 rounded-2xl px-4 py-3"
             onChange={(event) => setDiscordWebhookText(event.target.value)}
             placeholder="https://discord.com/api/webhooks/..."
             value={discordWebhookText}
           />
-          <button
-            className="rounded-2xl bg-indigo-200 px-4 py-3 font-black text-slate-950 transition hover:bg-indigo-100 disabled:cursor-not-allowed disabled:bg-slate-600 disabled:text-slate-300"
+          <YeonButton
+            className="rounded-2xl px-4 py-3 font-black"
             disabled={
               discordActionPending || discordWebhookText.trim().length === 0
             }
             type="submit"
+            variant="primary"
           >
             연결
-          </button>
-        </form>
-        <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-slate-300">
-          <span>서버 전역 Discord 환경변수 없이 동작합니다.</span>
+          </YeonButton>
+        </YeonForm>
+        <YeonView className="mt-3 flex flex-wrap items-center gap-2">
+          <YeonText variant="caption" className="text-[#666]">
+            서버 전역 Discord 환경변수 없이 동작합니다.
+          </YeonText>
           {discordWebhookStatus.updatedAt ? (
-            <span>
+            <YeonText variant="caption" className="text-[#666]">
               마지막 연결: {relativeTimeText(discordWebhookStatus.updatedAt)}
-            </span>
+            </YeonText>
           ) : null}
           {discordWebhookStatus.connected ? (
-            <button
-              className="rounded-full border border-white/15 px-3 py-1 font-bold text-slate-100 transition hover:border-indigo-200 disabled:cursor-not-allowed disabled:opacity-50"
+            <YeonButton
               disabled={discordActionPending}
               onClick={() => deleteDiscordWebhookMutation.mutate()}
+              size="sm"
               type="button"
+              variant="secondary"
             >
               연결 해제
-            </button>
+            </YeonButton>
           ) : null}
-        </div>
+        </YeonView>
         {discordMessage ? (
-          <p className="mt-3 rounded-2xl border border-indigo-200/20 bg-slate-950/60 p-3 text-sm text-indigo-50">
-            {discordMessage}
-          </p>
+          <YeonSurface variant="outlined" className="mt-3 p-3">
+            <YeonText variant="caption" className="text-[#666]">
+              {discordMessage}
+            </YeonText>
+          </YeonSurface>
         ) : null}
-      </section>
+      </YeonSurface>
 
       {error ? (
-        <p className="mt-4 rounded-2xl border border-rose-300/25 bg-rose-300/10 p-3 text-sm text-rose-100">
-          {error}
-        </p>
+        <YeonSurface variant="outlined" className="mt-4 p-3">
+          <YeonText variant="caption" className="text-[#666]">
+            {error}
+          </YeonText>
+        </YeonSurface>
       ) : null}
 
-      <section className="mt-6 rounded-2xl border border-cyan-300/20 bg-slate-950/70 p-4">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <p className="text-sm font-bold text-cyan-100">현재 열린 방</p>
-            <h3 className="mt-1 font-black text-white">
+      <YeonSurface as="section" variant="panel" className="mt-6 p-4">
+        <YeonView className="flex flex-wrap items-start justify-between gap-3">
+          <YeonView>
+            <YeonText variant="label" className="text-[#666]">
+              현재 열린 방
+            </YeonText>
+            <YeonText as="h3" variant="label" className="mt-1">
               관측된 방 {currentRoomsViewState.totalCount}개
-            </h3>
-          </div>
-          <span className="rounded-full bg-cyan-300/15 px-3 py-1 text-xs font-bold text-cyan-100">
+            </YeonText>
+          </YeonView>
+          <YeonBadge variant="neutral">
             마지막 관측 {relativeTimeText(currentRoomsViewState.observedAt)}
-          </span>
-        </div>
-        <p className="mt-3 text-sm leading-6 text-slate-400">
+          </YeonBadge>
+        </YeonView>
+        <YeonText variant="caption" className="mt-3 text-[#666]">
           관측 기반 로비 목록입니다. 일부 방은 누락되거나 늦게 반영될 수
           있습니다.
-        </p>
+        </YeonText>
 
-        <div className="mt-4 space-y-3">
+        <YeonView className="mt-4 space-y-3">
           {currentRoomsViewState.rooms.length === 0 ? (
-            <p className="rounded-2xl bg-white/[0.04] p-4 text-sm leading-6 text-slate-400">
-              아직 현재 열린 방이 없습니다. 개발용 수동 관측 입력이나 실제 관측
-              이벤트가 들어오면 여기에 표시됩니다.
-            </p>
+            <YeonSurface variant="empty" className="p-4 text-left">
+              <YeonText variant="caption" className="text-[#666]">
+                아직 현재 열린 방이 없습니다. 개발용 수동 관측 입력이나 실제
+                관측 이벤트가 들어오면 여기에 표시됩니다.
+              </YeonText>
+            </YeonSurface>
           ) : (
             currentRoomsViewState.rooms.map((room) => (
-              <article
-                className="rounded-2xl border border-white/10 bg-white/[0.05] p-4"
+              <YeonSurface
+                as="article"
+                variant="outlined"
+                className="p-4"
                 key={room.id}
               >
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <h4 className="font-bold text-white">{room.title}</h4>
-                    <p className="mt-1 text-xs text-slate-400">
+                <YeonView className="flex items-start justify-between gap-3">
+                  <YeonView>
+                    <YeonText as="h4" variant="label">
+                      {room.title}
+                    </YeonText>
+                    <YeonText variant="caption" className="mt-1 text-[#666]">
                       마지막 확인 {relativeTimeText(room.lastSeenAt)} ·{" "}
                       {roomConfidenceText(room)}
-                    </p>
+                    </YeonText>
                     {room.matchedKeywords.length > 0 ? (
-                      <p className="mt-2 text-xs font-bold text-cyan-100">
+                      <YeonText variant="caption" className="mt-2 text-[#111]">
                         매칭 키워드: {keywordText(room.matchedKeywords)}
-                      </p>
+                      </YeonText>
                     ) : null}
-                  </div>
-                  <span className="rounded-full bg-cyan-300 px-3 py-1 text-sm font-black text-slate-950">
-                    {playersText(room)}
-                  </span>
-                </div>
-              </article>
+                  </YeonView>
+                  <YeonBadge variant="accent">{playersText(room)}</YeonBadge>
+                </YeonView>
+              </YeonSurface>
             ))
           )}
-        </div>
-      </section>
+        </YeonView>
+      </YeonSurface>
 
-      <div className="mt-6 grid gap-4 xl:grid-cols-2">
-        <section className="rounded-2xl bg-slate-950/70 p-4">
-          <h3 className="font-black text-white">알림</h3>
-          <div className="mt-3 space-y-3">
+      <YeonView className="mt-6 grid gap-4 xl:grid-cols-2">
+        <YeonSurface as="section" variant="panel" className="p-4">
+          <YeonText as="h3" variant="label">
+            알림
+          </YeonText>
+          <YeonView className="mt-3 space-y-3">
             {alerts.length === 0 ? (
-              <p className="text-sm leading-6 text-slate-400">
+              <YeonText variant="caption" className="text-[#666]">
                 조건에 맞는 방이 관측되면 여기에 바로 표시됩니다.
-              </p>
+              </YeonText>
             ) : (
               alerts.map((alert) => (
-                <article
-                  className="rounded-2xl border border-cyan-300/20 bg-cyan-300/10 p-3"
+                <YeonSurface
+                  as="article"
+                  variant="outlined"
+                  className="p-3"
                   key={`${alert.match.id}-${alert.receivedAt.toISOString()}`}
                 >
-                  <p className="text-xs font-bold text-cyan-100">방 떴다</p>
-                  <h4 className="mt-1 font-black text-white">
+                  <YeonText variant="caption" className="font-bold text-[#666]">
+                    방 떴다
+                  </YeonText>
+                  <YeonText as="h4" variant="label" className="mt-1">
                     {alert.room.title}
-                  </h4>
-                  <p className="mt-1 text-sm text-cyan-50/80">
+                  </YeonText>
+                  <YeonText variant="caption" className="mt-1 text-[#666]">
                     {playersText(alert.room)} ·{" "}
                     {alert.match.matchedKeyword ?? "키워드 매칭"}
-                  </p>
-                </article>
+                  </YeonText>
+                </YeonSurface>
               ))
             )}
-          </div>
-        </section>
+          </YeonView>
+        </YeonSurface>
 
-        <section className="rounded-2xl bg-slate-950/70 p-4">
-          <h3 className="font-black text-white">실시간 관측 피드</h3>
-          <div className="mt-3 space-y-3">
+        <YeonSurface as="section" variant="panel" className="p-4">
+          <YeonText as="h3" variant="label">
+            실시간 관측 피드
+          </YeonText>
+          <YeonView className="mt-3 space-y-3">
             {rooms.length === 0 ? (
-              <p className="text-sm leading-6 text-slate-400">
+              <YeonText variant="caption" className="text-[#666]">
                 관측 이벤트가 들어오면 최근 방이 표시됩니다.
-              </p>
+              </YeonText>
             ) : (
               rooms.map((room) => (
-                <article
-                  className="rounded-2xl border border-white/10 bg-white/[0.05] p-3"
+                <YeonSurface
+                  as="article"
+                  variant="outlined"
+                  className="p-3"
                   key={`${room.id}-${room.receivedAt.toISOString()}`}
                 >
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <h4 className="font-bold text-white">{room.title}</h4>
-                      <p className="mt-1 text-xs text-slate-400">
+                  <YeonView className="flex items-start justify-between gap-3">
+                    <YeonView>
+                      <YeonText as="h4" variant="label">
+                        {room.title}
+                      </YeonText>
+                      <YeonText variant="caption" className="mt-1 text-[#666]">
                         {room.receivedAt.toLocaleTimeString("ko-KR")}
-                      </p>
-                    </div>
-                    <span className="rounded-full bg-white px-2 py-1 text-xs font-black text-slate-950">
-                      {playersText(room)}
-                    </span>
-                  </div>
-                </article>
+                      </YeonText>
+                    </YeonView>
+                    <YeonBadge variant="accent">{playersText(room)}</YeonBadge>
+                  </YeonView>
+                </YeonSurface>
               ))
             )}
-          </div>
-        </section>
-      </div>
-    </div>
+          </YeonView>
+        </YeonSurface>
+      </YeonView>
+    </YeonSurface>
   );
 }

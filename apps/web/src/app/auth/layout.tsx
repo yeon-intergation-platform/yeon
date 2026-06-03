@@ -1,5 +1,4 @@
 import type { ReactNode } from "react";
-
 import { QueryProvider } from "@/lib/query-provider";
 
 type AuthLayoutProps = {

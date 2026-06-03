@@ -1,22 +1,25 @@
 "use client";
-
-import { SHARED_FEATURE_CLASS } from "@/features/shared-style-constants";
+import { YEON_WEB_SHARED_CLASS as SHARED_FEATURE_CLASS } from "@yeon/ui/theme/web-style-tokens";
 import { TYPING_SERVICE_COMMON_CLASS } from "./typing-service-common.const";
-
-import Link from "next/link";
-import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useYeonRouter } from "@yeon/ui/runtime/YeonNavigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { FormEvent } from "react";
-import { Crown, Search, Users } from "lucide-react";
 import {
   YeonBadge,
   YeonButton,
   YeonField,
+  YeonIcon,
+  YeonImage,
   YeonSurface,
   getYeonSurfaceClassName,
   joinClassNames,
-} from "@/components/yeon-ui";
+  YeonLabel,
+  YeonView,
+  YeonText,
+  YeonLink,
+  type YeonFormEvent,
+  type YeonFormElement,
+  YEON_WEB_SHADOW_CLASS,
+} from "@yeon/ui";
 import { TypingServiceHeader } from "./typing-service-header";
 import { trackEvent } from "@/lib/analytics";
 import {
@@ -99,7 +102,7 @@ function getRoomOccupancy(room: TypingRoomSummary) {
 }
 
 export function TypingRoomLobbyScreen() {
-  const router = useRouter();
+  const router = useYeonRouter();
   const { state } = useTypingRoomLobby();
   const { settings } = useTypingSettings();
   const { profile, loaded: profileLoaded } = useTypingProfile();
@@ -201,7 +204,7 @@ export function TypingRoomLobbyScreen() {
     hasHandledCreateSuccessRef.current = false;
   }, [createRace.connectionState, createRace.roomError, createRoomRequest]);
 
-  const handleCreate = async (event: FormEvent<HTMLFormElement>) => {
+  const handleCreate = async (event: YeonFormEvent<YeonFormElement>) => {
     event.preventDefault();
     if (isCreating) return;
 
@@ -276,17 +279,29 @@ export function TypingRoomLobbyScreen() {
       searchKeyword.trim().length === 0);
 
   return (
-    <div className={SHARED_FEATURE_CLASS.pageSurface}>
+    <YeonView className={SHARED_FEATURE_CLASS.pageSurface}>
       <TypingServiceHeader active="rooms" title="YEON 타자방" />
 
-      <main>
-        <section className={ROOM_LOBBY_CLASS.heroSection}>
-          <div>
-            <h1 className={ROOM_LOBBY_CLASS.heroTitle}>타자방</h1>
-            <p className={ROOM_LOBBY_CLASS.heroDescription}>
+      <YeonView as="main">
+        <YeonView as="section" className={ROOM_LOBBY_CLASS.heroSection}>
+          <YeonView>
+            <YeonText
+              as="h1"
+              variant="unstyled"
+              tone="inherit"
+              className={ROOM_LOBBY_CLASS.heroTitle}
+            >
+              타자방
+            </YeonText>
+            <YeonText
+              as="p"
+              variant="unstyled"
+              tone="inherit"
+              className={ROOM_LOBBY_CLASS.heroDescription}
+            >
               실시간으로 함께 타자를 치고 실력을 겨루는 공간입니다.
-            </p>
-          </div>
+            </YeonText>
+          </YeonView>
           <RoomCharacterSummaryCard
             loaded={profileLoaded}
             nickname={profile.nickname}
@@ -294,12 +309,12 @@ export function TypingRoomLobbyScreen() {
             locale={settings.locale}
             changeHref="/typing-service"
           />
-        </section>
+        </YeonView>
 
-        <section className={ROOM_LOBBY_CLASS.listTopBorder}>
+        <YeonView as="section" className={ROOM_LOBBY_CLASS.listTopBorder}>
           {!isInitialEmpty && (
-            <div className={ROOM_LOBBY_CLASS.filterRow}>
-              <div className={ROOM_LOBBY_CLASS.filterScroller}>
+            <YeonView className={ROOM_LOBBY_CLASS.filterRow}>
+              <YeonView className={ROOM_LOBBY_CLASS.filterScroller}>
                 {FILTERS.map((filter) => (
                   <YeonButton
                     key={filter.value}
@@ -312,12 +327,12 @@ export function TypingRoomLobbyScreen() {
                     {filter.label}
                   </YeonButton>
                 ))}
-              </div>
+              </YeonView>
 
-              <div className={ROOM_LOBBY_CLASS.inputButtonRow}>
-                <label className={ROOM_LOBBY_CLASS.searchField}>
-                  <Search
-                    aria-hidden="true"
+              <YeonView className={ROOM_LOBBY_CLASS.inputButtonRow}>
+                <YeonLabel className={ROOM_LOBBY_CLASS.searchField}>
+                  <YeonIcon
+                    name="search"
                     size={22}
                     className={ROOM_LOBBY_CLASS.searchIcon}
                   />
@@ -326,9 +341,9 @@ export function TypingRoomLobbyScreen() {
                     onChange={(event) => setSearchKeyword(event.target.value)}
                     placeholder="방 검색"
                     aria-label="방 검색"
-                    className="h-[50px] rounded-lg pl-12 pr-4 text-[16px] font-medium placeholder:text-[#888]"
+                    className="h-[50px] rounded-lg pl-12 pr-4 text-[16px] font-medium placeholder:text-[#aaa]"
                   />
-                </label>
+                </YeonLabel>
                 <YeonButton
                   type="button"
                   onClick={openCreateModal}
@@ -337,29 +352,29 @@ export function TypingRoomLobbyScreen() {
                 >
                   방 만들기
                 </YeonButton>
-              </div>
-            </div>
+              </YeonView>
+            </YeonView>
           )}
 
           <YeonSurface className="mt-7 min-h-[520px]">
             {state.kind === "loading" && (
-              <div
+              <YeonView
                 className={`flex min-h-[520px] items-center justify-center ${SHARED_FEATURE_CLASS.text16Secondary}`}
               >
                 열린 타자방을 불러오는 중입니다.
-              </div>
+              </YeonView>
             )}
 
             {state.kind === "error" && (
-              <div className="flex min-h-[520px] items-center justify-center px-6 text-center text-[16px] font-semibold text-red-600">
+              <YeonView className="flex min-h-[520px] items-center justify-center px-6 text-center text-[16px] font-semibold text-[#666]">
                 {state.message}
-              </div>
+              </YeonView>
             )}
 
             {(state.kind === "empty" ||
               (state.kind === "ready" && filteredRooms[0] === undefined)) && (
-              <div className="flex min-h-[520px] flex-col items-center justify-center rounded-2xl border border-[#e5e5e5] bg-[#fafafa] px-6 py-12 text-center">
-                <Image
+              <YeonView className="flex min-h-[520px] flex-col items-center justify-center rounded-2xl border border-[#e5e5e5] bg-[#fafafa] px-6 py-12 text-center">
+                <YeonImage
                   src="/illustrations/typing-empty-keyboard.png"
                   alt=""
                   aria-hidden="true"
@@ -367,18 +382,26 @@ export function TypingRoomLobbyScreen() {
                   height={160}
                   className="h-40 w-40 object-contain"
                 />
-                <h2 className="mt-6 max-w-[300px] break-keep text-[28px] font-black leading-tight tracking-[-0.05em] text-[#111]">
+                <YeonText
+                  as="h2"
+                  variant="unstyled"
+                  tone="inherit"
+                  className="mt-6 max-w-[300px] break-keep text-[28px] font-black leading-tight tracking-[-0.05em] text-[#111]"
+                >
                   {state.kind === "ready"
                     ? "검색 결과가 없어요"
                     : "아직 열린 타자방이 없어요"}
-                </h2>
-                <p
+                </YeonText>
+                <YeonText
+                  as="p"
+                  variant="unstyled"
+                  tone="inherit"
                   className={`mt-3 max-w-[320px] break-keep leading-6 ${SHARED_FEATURE_CLASS.text16Secondary}`}
                 >
                   {state.kind === "ready"
                     ? "다른 키워드로 검색해 보세요. 원하는 방이 없다면 직접 만들 수 있어요."
                     : "공개방은 누구나 입장할 수 있고, 비공개방은 방 코드를 받은 사람만 들어와요."}
-                </p>
+                </YeonText>
                 <YeonButton
                   type="button"
                   onClick={
@@ -388,20 +411,20 @@ export function TypingRoomLobbyScreen() {
                   }
                   variant="primary"
                   size="xl"
-                  className="mt-8 rounded-lg shadow-[0_3px_10px_rgba(0,0,0,0.10)]"
+                  className={`mt-8 rounded-lg ${YEON_WEB_SHADOW_CLASS.actionSoft}`}
                 >
                   {state.kind === "ready" ? "검색 초기화" : "첫 방 만들기"}
                 </YeonButton>
-              </div>
+              </YeonView>
             )}
 
             {state.kind === "ready" && filteredRooms[0] !== undefined && (
-              <div className={ROOM_LOBBY_CLASS.roomListRow}>
+              <YeonView className={ROOM_LOBBY_CLASS.roomListRow}>
                 {filteredRooms.map((room) => {
                   const occupancy = getRoomOccupancy(room);
 
                   return (
-                    <Link
+                    <YeonLink
                       key={room.roomId}
                       href={`/typing-service/rooms/${room.roomId}`}
                       aria-label={`${room.title} 입장, ${occupancy.seatLabel}`}
@@ -422,8 +445,8 @@ export function TypingRoomLobbyScreen() {
                         })
                       }
                     >
-                      <div>
-                        <div
+                      <YeonView>
+                        <YeonView
                           className={SHARED_FEATURE_CLASS.wrapItemsCenterGap2}
                         >
                           <YeonBadge variant="success" className="text-[11px]">
@@ -432,18 +455,29 @@ export function TypingRoomLobbyScreen() {
                           <YeonBadge className="text-[11px] text-[#111]">
                             {occupancy.seatLabel}
                           </YeonBadge>
-                          <span
+                          <YeonText
+                            as="span"
+                            variant="unstyled"
+                            tone="inherit"
                             className={
                               TYPING_SERVICE_COMMON_CLASS.subtleInfoMono
                             }
                           >
                             #{room.roomCode}
-                          </span>
-                        </div>
-                        <h2 className={ROOM_LOBBY_CLASS.roomMetaRow}>
+                          </YeonText>
+                        </YeonView>
+                        <YeonText
+                          as="h2"
+                          variant="unstyled"
+                          tone="inherit"
+                          className={ROOM_LOBBY_CLASS.roomMetaRow}
+                        >
                           {room.title}
-                        </h2>
-                        <p
+                        </YeonText>
+                        <YeonText
+                          as="p"
+                          variant="unstyled"
+                          tone="inherit"
                           className={`mt-2 ${SHARED_FEATURE_CLASS.text13MediumSecondary}`}
                         >
                           {TYPING_ROOM_LANGUAGE_LABELS[room.language]} ·{" "}
@@ -451,39 +485,65 @@ export function TypingRoomLobbyScreen() {
                           {TYPING_ROOM_DIFFICULTY_LABELS[room.difficulty]} ·{" "}
                           {room.roundCount}판 ·{" "}
                           {TYPING_ROOM_MODE_LABELS[room.mode]}
-                        </p>
-                        <div className="mt-4 flex flex-wrap gap-2 text-[12px] font-semibold">
-                          <span className="inline-flex items-center gap-1.5 rounded-full border border-[#e5e5e5] bg-white px-3 py-1.5 text-[#666]">
-                            <Crown size={13} className="text-[#b7791f]" />{" "}
+                        </YeonText>
+                        <YeonView className="mt-4 flex flex-wrap gap-2 text-[12px] font-semibold">
+                          <YeonText
+                            as="span"
+                            variant="unstyled"
+                            tone="inherit"
+                            className="inline-flex items-center gap-1.5 rounded-full border border-[#e5e5e5] bg-white px-3 py-1.5 text-[#666]"
+                          >
+                            <YeonIcon
+                              name="crown"
+                              size={13}
+                              className="text-[#666]"
+                            />{" "}
                             {room.hostLabel
                               ? `${room.hostLabel}님의 방`
                               : `방장 ${occupancy.hostCount}명`}
-                          </span>
-                          <span className="inline-flex items-center gap-1.5 rounded-full border border-[#e5e5e5] bg-white px-3 py-1.5 text-[#666]">
-                            <Users size={13} className="text-[#111]" /> 참가자{" "}
-                            {occupancy.guestCount}명
-                          </span>
-                        </div>
-                      </div>
-                      <div className={ROOM_LOBBY_CLASS.roomStatusArea}>
-                        <span
-                          className={`inline-flex items-center gap-2 rounded-full border border-[#ddd] bg-white px-3 py-1.5 ${SHARED_FEATURE_CLASS.text13PrimaryBold}`}
+                          </YeonText>
+                          <YeonText
+                            as="span"
+                            variant="unstyled"
+                            tone="inherit"
+                            className="inline-flex items-center gap-1.5 rounded-full border border-[#e5e5e5] bg-white px-3 py-1.5 text-[#666]"
+                          >
+                            <YeonIcon
+                              name="users"
+                              size={13}
+                              className="text-[#111]"
+                            />{" "}
+                            참가자 {occupancy.guestCount}명
+                          </YeonText>
+                        </YeonView>
+                      </YeonView>
+                      <YeonView className={ROOM_LOBBY_CLASS.roomStatusArea}>
+                        <YeonText
+                          as="span"
+                          variant="unstyled"
+                          tone="inherit"
+                          className={`inline-flex items-center gap-2 rounded-full border border-[#e5e5e5] bg-white px-3 py-1.5 ${SHARED_FEATURE_CLASS.text13PrimaryBold}`}
                         >
-                          <Users size={14} /> {room.currentParticipants} /{" "}
-                          {room.maxParticipants}
-                        </span>
-                        <span className="rounded-xl bg-[#111] px-4 py-2 text-[13px] font-bold text-white transition-opacity group-hover:opacity-90">
+                          <YeonIcon name="users" size={14} />{" "}
+                          {room.currentParticipants} / {room.maxParticipants}
+                        </YeonText>
+                        <YeonText
+                          as="span"
+                          variant="unstyled"
+                          tone="inherit"
+                          className="rounded-xl bg-[#111] px-4 py-2 text-[13px] font-bold text-white transition-opacity group-hover:opacity-90"
+                        >
                           입장하기
-                        </span>
-                      </div>
-                    </Link>
+                        </YeonText>
+                      </YeonView>
+                    </YeonLink>
                   );
                 })}
-              </div>
+              </YeonView>
             )}
           </YeonSurface>
-        </section>
-      </main>
+        </YeonView>
+      </YeonView>
 
       {!isInitialEmpty && (
         <YeonButton
@@ -507,13 +567,12 @@ export function TypingRoomLobbyScreen() {
         onSubmit={handleCreate}
         closeDisabled={isCreating}
         panelClassName={getYeonSurfaceClassName({
-          className:
-            "relative z-10 max-h-[calc(100vh-3rem)] w-full max-w-[456px] overflow-y-auto rounded-xl shadow-[0_24px_80px_rgba(0,0,0,0.22)]",
+          className: `relative z-10 max-h-[calc(100vh-3rem)] w-full max-w-[456px] overflow-y-auto rounded-xl ${YEON_WEB_SHADOW_CLASS.popover}`,
         })}
         bodyClassName="p-7 pt-6"
       >
-        <div className="grid gap-6">
-          <label className="grid gap-3 text-[15px] font-bold text-[#111]">
+        <YeonView className="grid gap-6">
+          <YeonLabel className="grid gap-3 text-[15px] font-bold text-[#111]">
             방 제목
             <YeonField
               value={title}
@@ -523,24 +582,29 @@ export function TypingRoomLobbyScreen() {
               disabled={isCreating}
               className="h-[50px] rounded-lg px-4 text-[16px] font-medium"
             />
-          </label>
+          </YeonLabel>
 
-          <fieldset className="grid gap-3 text-[15px] font-bold text-[#111]">
-            <legend>공개 설정</legend>
-            <div className="grid grid-cols-2 gap-2">
+          <YeonView
+            as="fieldset"
+            className="grid gap-3 text-[15px] font-bold text-[#111]"
+          >
+            <YeonText as="legend" variant="unstyled" tone="inherit">
+              공개 설정
+            </YeonText>
+            <YeonView className="grid grid-cols-2 gap-2">
               {[
                 TYPING_ROOM_VISIBILITY.PUBLIC,
                 TYPING_ROOM_VISIBILITY.PRIVATE,
               ].map((option) => (
-                <label
+                <YeonLabel
                   key={option}
                   className={`flex h-[52px] cursor-pointer items-center justify-center rounded-lg border text-[16px] font-semibold transition-colors ${
                     visibility === option
                       ? "border-[#111] bg-white text-[#111] shadow-[inset_0_0_0_1px_#111]"
-                      : "border-[#d7d7d7] bg-white text-[#111] hover:border-[#111]"
+                      : "border-[#e5e5e5] bg-white text-[#111] hover:border-[#111]"
                   }`}
                 >
-                  <input
+                  <YeonField
                     type="radio"
                     name="visibility"
                     value={option}
@@ -550,31 +614,41 @@ export function TypingRoomLobbyScreen() {
                     className="sr-only"
                   />
                   {TYPING_ROOM_VISIBILITY_LABELS[option]}
-                </label>
+                </YeonLabel>
               ))}
-            </div>
-          </fieldset>
+            </YeonView>
+          </YeonView>
 
-          <p className="text-[14px] font-medium leading-6 text-[#777]">
+          <YeonText
+            as="p"
+            variant="unstyled"
+            tone="inherit"
+            className="text-[14px] font-medium leading-6 text-[#666]"
+          >
             세부 설정은 방에 들어간 뒤 시작 전에 바꿀 수 있어요.
-          </p>
+          </YeonText>
 
           {createError && (
-            <p className="rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-[13px] font-semibold leading-5 text-red-600">
+            <YeonText
+              as="p"
+              variant="unstyled"
+              tone="inherit"
+              className="rounded-lg border border-[#e5e5e5] bg-[#fafafa] px-3 py-2 text-[13px] font-semibold leading-5 text-[#111]"
+            >
               {createError}
-            </p>
+            </YeonText>
           )}
 
           <YeonButton
             type="submit"
             variant="primary"
             disabled={isCreating}
-            className="h-[60px] rounded-lg px-4 text-[18px] shadow-[0_3px_10px_rgba(0,0,0,0.10)] disabled:cursor-not-allowed disabled:opacity-60"
+            className={`h-[60px] rounded-lg px-4 text-[18px] disabled:cursor-not-allowed disabled:opacity-60 ${YEON_WEB_SHADOW_CLASS.actionSoft}`}
           >
             {isCreating ? "타자방 만드는 중..." : "만들고 입장하기"}
           </YeonButton>
-        </div>
+        </YeonView>
       </RoomCreateDialog>
-    </div>
+    </YeonView>
   );
 }

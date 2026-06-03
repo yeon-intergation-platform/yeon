@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-
 import { getCardEditorLineLeadingIndentBeforeCursor } from "./card-editor-enter-indent-utils";
 
 describe("card-editor-enter-indent-utils", () => {

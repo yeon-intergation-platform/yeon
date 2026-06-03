@@ -1,9 +1,11 @@
+import { fetchYeon } from "@yeon/ui/runtime/YeonBrowserRuntime";
+
 type AuthSessionPayload = {
   authenticated?: unknown;
 };
 
 export async function fetchCurrentCardServiceAuthState(
-  fetcher: typeof fetch = fetch,
+  fetcher: typeof fetchYeon = fetchYeon
 ) {
   const response = await fetcher("/api/v1/auth/session", {
     cache: "no-store",

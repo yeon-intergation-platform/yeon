@@ -4,13 +4,11 @@ import {
 } from "@yeon/api-contract/chat-service";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-
 import {
   ChatServiceReportSpringBackendHttpError,
   createChatServiceReportInSpring,
 } from "@/server/chat-service-report-spring-client";
 import { ServiceError } from "@/server/errors/service-error";
-
 import {
   jsonChatServiceError,
   parseJsonBody,
@@ -36,7 +34,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(
       chatServiceCreateReportResponseSchema.parse(response),
-      { status: 201 },
+      { status: 201 }
     );
   } catch (error) {
     if (error instanceof ServiceError) {

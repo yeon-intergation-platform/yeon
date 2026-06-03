@@ -16,7 +16,6 @@ vi.mock("@/server/auth-session-spring-client", () => ({
   deleteRootAuthSessionInSpring: (...args: unknown[]) =>
     mockDeleteRootAuthSessionInSpring(...args),
 }));
-
 import { DELETE, GET } from "../route";
 
 describe("api/v1/auth/session route", () => {

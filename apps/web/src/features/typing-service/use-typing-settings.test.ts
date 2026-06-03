@@ -1,5 +1,4 @@
 import { describe, expect, it, vi } from "vitest";
-
 import {
   getSelectedTypingDeckForLanguage,
   resolveTypingRaceSeed,
@@ -34,12 +33,12 @@ describe("typing default deck compatibility", () => {
     const koSelection = getSelectedTypingDeckForLanguage(
       persistedSettings,
       [remoteDeck({ id: "default-ko-source", languageTag: "ko" })],
-      "ko",
+      "ko"
     );
     const enSelection = getSelectedTypingDeckForLanguage(
       persistedSettings,
       [remoteDeck({ id: "default-en-source", languageTag: "en" })],
-      "en",
+      "en"
     );
 
     expect(koSelection.selectedDeckId).toBe(OLD_KO_DEFAULT_ID);
@@ -58,15 +57,17 @@ describe("typing default deck compatibility", () => {
       visibility: "public",
       source: "user",
     });
-    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
-      new Response(JSON.stringify({ error: "not found" }), { status: 404 }),
-    );
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValue(
+        new Response(JSON.stringify({ error: "not found" }), { status: 404 })
+      );
 
     const result = await resolveTypingRaceSeed(staleDeck, "ko");
 
     expect(fetchMock).toHaveBeenCalledWith(
       `/api/v1/typing-decks/${OLD_KO_DEFAULT_ID}/race-seed`,
-      expect.objectContaining({ method: "POST" }),
+      expect.objectContaining({ method: "POST" })
     );
     expect(result).toEqual({
       ok: false,

@@ -1,5 +1,5 @@
+import { createYeonResponse } from "@yeon/ui/runtime/YeonBrowserRuntime";
 import type { NextRequest } from "next/server";
-
 import { jsonError } from "@/app/api/v1/counseling-records/_shared";
 import {
   CardDeckAssetsSpringBackendHttpError,
@@ -19,7 +19,7 @@ export async function GET(
       .map((segment) => decodeURIComponent(segment))
       .join("/");
     const springResponse = await fetchCardDeckAssetFromSpring(storageKey);
-    return new Response(springResponse.body, {
+    return createYeonResponse(springResponse.body, {
       headers: {
         "content-type":
           springResponse.headers.get("content-type") ??

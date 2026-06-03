@@ -1,10 +1,7 @@
 "use client";
-
 import { useEffect, useMemo, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { LifeOsDayDto } from "@yeon/api-contract/life-os";
-
-import styles from "./life-os.module.css";
+import { YeonButton, YeonField, YeonLabel, YeonText, YeonView } from "@yeon/ui";
 import {
   createEmptyLifeOsEntries,
   LIFE_OS_HOUR_BLOCKS,
@@ -13,6 +10,12 @@ import {
 import type { LifeOsHourEntry } from "./types";
 import { fetchLifeOsDay, saveLifeOsDay } from "./life-os-fetch";
 import { buildLifeOsReport, computeLifeOsDailyMetrics } from "./utils";
+import {
+  useYeonMutation as useMutation,
+  useYeonQuery as useQuery,
+  useYeonQueryClient as useQueryClient,
+} from "@yeon/ui/runtime/YeonQuery";
+import { lifeOsQueryKeys } from "@yeon/ui/runtime/ports/life-os";
 
 type LifeOsDraft = {
   localDate: string;
@@ -27,9 +30,41 @@ type LifeOsViewState =
   | { kind: "error"; message: string }
   | { kind: "ready"; draft: LifeOsDraft };
 
-const lifeOsQueryKeys = {
-  day: (localDate: string) => ["life-os", "day", localDate] as const,
-};
+const LIFE_OS_CLASS = {
+  page: "min-h-screen bg-[#fafafa] p-6 text-[#111]",
+  shell: "grid gap-4",
+  header: "flex items-end justify-between gap-4",
+  title: "m-0 text-[32px] font-extrabold",
+  subtitle: "mb-0 mt-1 text-[#666]",
+  headerActions: "flex items-center gap-2",
+  dateInput:
+    "rounded-[10px] border border-[#e5e5e5] bg-white px-3 py-[9px] font-bold",
+  saveButton: "cursor-pointer rounded-[10px] px-3 py-[9px] font-bold",
+  statusText: "m-0 text-sm font-bold text-[#666]",
+  canvasWrap:
+    "overflow-x-auto border border-[#e5e5e5] bg-[#fafafa] shadow-[0_12px_40px_rgba(17,17,17,0.08)]",
+  canvas: "grid min-w-[1400px] grid-cols-[280px_1fr_280px]",
+  sheetBlock: {
+    left: "grid auto-rows-[minmax(42px,auto)] border-r border-[#e5e5e5]",
+    right: "grid auto-rows-[minmax(42px,auto)] border-l border-[#e5e5e5]",
+  },
+  dayBand:
+    "border-b border-[#e5e5e5] bg-gradient-to-b from-[#fafafa] to-[#e5e5e5] px-2.5 py-2 font-bold",
+  row: "grid grid-cols-[88px_repeat(8,minmax(0,1fr))] border-b border-[#e5e5e5]",
+  rowLabel:
+    "border-r border-[#e5e5e5] bg-[#fafafa] px-2.5 py-2 text-xs font-bold",
+  cell: "min-h-[42px] border-r border-[#e5e5e5] px-2 py-1.5 text-xs",
+  cellInput:
+    "min-h-[30px] w-full resize-y border-0 bg-transparent p-0 leading-[1.25] text-inherit outline-none placeholder:text-[#aaa]",
+  readOnlyCell: "font-extrabold text-[#111]",
+  memoZone:
+    "border-x border-[#e5e5e5] bg-gradient-to-b from-[#fafafa] to-white p-4",
+  memoCard: "mb-3 block rounded-[14px] border border-[#e5e5e5] bg-white p-3.5",
+  memoInput:
+    "mt-2 min-h-24 w-full resize-y rounded-[10px] border border-[#e5e5e5] bg-white p-2.5 text-inherit placeholder:text-[#aaa]",
+  reportPanel: "grid gap-3",
+  reportCard: "mb-3 rounded-[14px] border border-[#e5e5e5] bg-white p-3.5",
+} as const;
 
 function getTodayLocalDate() {
   return new Intl.DateTimeFormat("en-CA", {
@@ -93,16 +128,23 @@ function DayBlock({
   ) => void;
 }) {
   return (
-    <section className={styles.sheetBlock} aria-label={`${side} day block`}>
+    <YeonView
+      as="section"
+      className={LIFE_OS_CLASS.sheetBlock[side]}
+      aria-label={`${side} day block`}
+    >
       {LIFE_OS_HOUR_BLOCKS.map((block) => (
-        <div key={`${side}-${block.label}`}>
-          <div className={styles.dayBand}>
+        <YeonView key={`${side}-${block.label}`}>
+          <YeonView className={LIFE_OS_CLASS.dayBand}>
             {draft.localDate} · {side === "left" ? "기록" : "다음 기록"} ·{" "}
             {block.label}
-          </div>
+          </YeonView>
           {LIFE_OS_ROWS.map((row) => (
-            <div className={styles.row} key={`${side}-${block.label}-${row}`}>
-              <div className={styles.rowLabel}>{row}</div>
+            <YeonView
+              className={LIFE_OS_CLASS.row}
+              key={`${side}-${block.label}-${row}`}
+            >
+              <YeonView className={LIFE_OS_CLASS.rowLabel}>{row}</YeonView>
               {block.hours.map((hour) => {
                 const entry =
                   draft.entries[hour] ?? createEmptyLifeOsEntries()[hour]!;
@@ -115,14 +157,15 @@ function DayBlock({
                       : null;
 
                 return (
-                  <div
-                    className={styles.cell}
+                  <YeonView
+                    className={LIFE_OS_CLASS.cell}
                     key={`${side}-${block.label}-${row}-${hour}`}
                   >
                     {field ? (
-                      <textarea
+                      <YeonField
+                        as="textarea"
                         aria-label={`${draft.localDate} ${hour}시 ${row}`}
-                        className={styles.cellInput}
+                        className={LIFE_OS_CLASS.cellInput}
                         disabled={isDisabled}
                         value={entry[field]}
                         onChange={(event) =>
@@ -131,18 +174,23 @@ function DayBlock({
                         placeholder={row === "GOAL" ? "계획" : "실행"}
                       />
                     ) : (
-                      <span className={styles.readOnlyCell}>
+                      <YeonText
+                        as="span"
+                        variant="unstyled"
+                        tone="inherit"
+                        className={LIFE_OS_CLASS.readOnlyCell}
+                      >
                         {readOnlyContent}
-                      </span>
+                      </YeonText>
                     )}
-                  </div>
+                  </YeonView>
                 );
               })}
-            </div>
+            </YeonView>
           ))}
-        </div>
+        </YeonView>
       ))}
-    </section>
+    </YeonView>
   );
 }
 
@@ -216,46 +264,76 @@ export function LifeOsScreen() {
   }
 
   return (
-    <main className={styles.page}>
-      <div className={styles.shell}>
-        <header className={styles.header}>
-          <div>
-            <h1 className={styles.title}>Life OS</h1>
-            <p className={styles.subtitle}>
+    <YeonView as="main" className={LIFE_OS_CLASS.page}>
+      <YeonView className={LIFE_OS_CLASS.shell}>
+        <YeonView as="header" className={LIFE_OS_CLASS.header}>
+          <YeonView>
+            <YeonText
+              as="h1"
+              variant="unstyled"
+              tone="inherit"
+              className={LIFE_OS_CLASS.title}
+            >
+              Life OS
+            </YeonText>
+            <YeonText
+              variant="unstyled"
+              tone="inherit"
+              className={LIFE_OS_CLASS.subtitle}
+            >
               스프레드시트처럼 시간별 GOAL/ACTION을 직접 기록하고, 과계획 신호를
               리포트로 전환합니다.
-            </p>
-          </div>
-          <div className={styles.headerActions}>
-            <input
-              className={styles.dateInput}
+            </YeonText>
+          </YeonView>
+          <YeonView className={LIFE_OS_CLASS.headerActions}>
+            <YeonField
+              className={LIFE_OS_CLASS.dateInput}
               type="date"
               value={selectedDate}
               onChange={(event) => setSelectedDate(event.target.value)}
             />
-            <button
-              className={styles.saveButton}
+            <YeonButton
+              className={LIFE_OS_CLASS.saveButton}
               type="button"
               disabled={isSaveDisabled}
               onClick={handleSave}
+              variant="primary"
             >
               {saveButtonLabel}
-            </button>
-          </div>
-        </header>
+            </YeonButton>
+          </YeonView>
+        </YeonView>
 
         {viewState.kind === "loading" ? (
-          <p className={styles.statusText}>기록을 불러오는 중입니다.</p>
+          <YeonText
+            variant="unstyled"
+            tone="inherit"
+            className={LIFE_OS_CLASS.statusText}
+          >
+            기록을 불러오는 중입니다.
+          </YeonText>
         ) : null}
         {viewState.kind === "error" ? (
-          <p className={styles.statusText}>{viewState.message}</p>
+          <YeonText
+            variant="unstyled"
+            tone="inherit"
+            className={LIFE_OS_CLASS.statusText}
+          >
+            {viewState.message}
+          </YeonText>
         ) : null}
         {saveStatusText ? (
-          <p className={styles.statusText}>{saveStatusText}</p>
+          <YeonText
+            variant="unstyled"
+            tone="inherit"
+            className={LIFE_OS_CLASS.statusText}
+          >
+            {saveStatusText}
+          </YeonText>
         ) : null}
 
-        <div className={styles.canvasWrap}>
-          <div className={styles.canvas}>
+        <YeonView className={LIFE_OS_CLASS.canvasWrap}>
+          <YeonView className={LIFE_OS_CLASS.canvas}>
             <DayBlock
               side="left"
               draft={draft}
@@ -263,14 +341,18 @@ export function LifeOsScreen() {
               onEntryChange={handleEntryChange}
             />
 
-            <section
-              className={styles.memoZone}
+            <YeonView
+              as="section"
+              className={LIFE_OS_CLASS.memoZone}
               aria-label="central memo backlog"
             >
-              <label className={styles.memoCard}>
-                <strong>MINDSET</strong>
-                <textarea
-                  className={styles.memoInput}
+              <YeonLabel className={LIFE_OS_CLASS.memoCard}>
+                <YeonText as="strong" variant="unstyled" tone="inherit">
+                  MINDSET
+                </YeonText>
+                <YeonField
+                  as="textarea"
+                  className={LIFE_OS_CLASS.memoInput}
                   disabled={isEntryDisabled}
                   value={draft.mindset}
                   onChange={(event) =>
@@ -281,11 +363,14 @@ export function LifeOsScreen() {
                   }
                   placeholder="오늘 판단 기준, 버릴 것, 지킬 것"
                 />
-              </label>
-              <label className={styles.memoCard}>
-                <strong>Memo / Backlog</strong>
-                <textarea
-                  className={styles.memoInput}
+              </YeonLabel>
+              <YeonLabel className={LIFE_OS_CLASS.memoCard}>
+                <YeonText as="strong" variant="unstyled" tone="inherit">
+                  Memo / Backlog
+                </YeonText>
+                <YeonField
+                  as="textarea"
+                  className={LIFE_OS_CLASS.memoInput}
                   disabled={isEntryDisabled}
                   value={draft.backlogText}
                   onChange={(event) =>
@@ -296,32 +381,38 @@ export function LifeOsScreen() {
                   }
                   placeholder="중앙 여백처럼 아직 시간표에 넣지 않을 생각을 보관"
                 />
-              </label>
-              <div className={styles.reportPanel}>
-                <div className={styles.reportCard}>
-                  <strong>Daily report</strong>
-                  <p>
+              </YeonLabel>
+              <YeonView className={LIFE_OS_CLASS.reportPanel}>
+                <YeonView className={LIFE_OS_CLASS.reportCard}>
+                  <YeonText as="strong" variant="unstyled" tone="inherit">
+                    Daily report
+                  </YeonText>
+                  <YeonText variant="unstyled" tone="inherit">
                     planned: {report.metrics.plannedHours}h · matched:{" "}
                     {report.metrics.matchedHours}h · overplanned:{" "}
                     {report.metrics.overplannedHours}h
-                  </p>
-                </div>
-                <div className={styles.reportCard}>
-                  <strong>Pattern evidence</strong>
-                  <p>
+                  </YeonText>
+                </YeonView>
+                <YeonView className={LIFE_OS_CLASS.reportCard}>
+                  <YeonText as="strong" variant="unstyled" tone="inherit">
+                    Pattern evidence
+                  </YeonText>
+                  <YeonText variant="unstyled" tone="inherit">
                     {report.patterns[0]?.evidence ??
                       "아직 반복 패턴을 판단할 기록이 부족합니다."}
-                  </p>
-                </div>
-                <div className={styles.reportCard}>
-                  <strong>Next adjustment</strong>
-                  <p>
+                  </YeonText>
+                </YeonView>
+                <YeonView className={LIFE_OS_CLASS.reportCard}>
+                  <YeonText as="strong" variant="unstyled" tone="inherit">
+                    Next adjustment
+                  </YeonText>
+                  <YeonText variant="unstyled" tone="inherit">
                     {report.recommendations[0]?.suggestedAdjustment ??
                       "GOAL/ACTION을 최소 4칸 이상 기록하세요."}
-                  </p>
-                </div>
-              </div>
-            </section>
+                  </YeonText>
+                </YeonView>
+              </YeonView>
+            </YeonView>
 
             <DayBlock
               side="right"
@@ -329,9 +420,9 @@ export function LifeOsScreen() {
               isDisabled={isEntryDisabled}
               onEntryChange={handleEntryChange}
             />
-          </div>
-        </div>
-      </div>
-    </main>
+          </YeonView>
+        </YeonView>
+      </YeonView>
+    </YeonView>
   );
 }

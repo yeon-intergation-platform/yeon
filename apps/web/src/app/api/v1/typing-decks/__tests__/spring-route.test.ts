@@ -25,7 +25,6 @@ vi.mock("@/server/typing-decks-spring-client", async () => {
       mockCreateTypingDeckInSpring(...args),
   };
 });
-
 import { GET, POST } from "../route";
 import { TypingDecksSpringBackendHttpError } from "@/server/typing-decks-spring-client";
 

@@ -22,6 +22,11 @@ import {
   type ChatServiceFeedPostDto,
   type ChatServiceSessionResponse,
 } from "@yeon/api-contract/chat-service";
+import {
+  fetchYeon,
+  type YeonRequestInit,
+  type YeonResponse,
+} from "@yeon/ui/runtime/YeonBrowserRuntime";
 
 const CHAT_SERVICE_API_BASE = "/api/v1/chat-service";
 
@@ -30,7 +35,7 @@ type ParsedPayload<TSchema extends z.ZodTypeAny> = z.infer<TSchema>;
 type RequestBody = Record<string, unknown> | undefined;
 
 async function parseJsonResponse<TSchema extends z.ZodTypeAny>(
-  response: Response,
+  response: YeonResponse,
   schema: TSchema
 ): Promise<ParsedPayload<TSchema>> {
   const payload = await response.json().catch(() => null);
@@ -52,10 +57,10 @@ async function requestJson<
   TBody extends RequestBody = undefined,
 >(
   path: string,
-  init: Omit<RequestInit, "body"> & { body?: TBody } = {},
+  init: Omit<YeonRequestInit, "body"> & { body?: TBody } = {},
   schema: TSchema
 ): Promise<ParsedPayload<TSchema>> {
-  const requestInit: RequestInit = {
+  const requestInit: YeonRequestInit = {
     credentials: "include",
     ...init,
     headers: {
@@ -65,7 +70,10 @@ async function requestJson<
     body: init.body ? JSON.stringify(init.body) : undefined,
   };
 
-  const response = await fetch(`${CHAT_SERVICE_API_BASE}${path}`, requestInit);
+  const response = await fetchYeon(
+    `${CHAT_SERVICE_API_BASE}${path}`,
+    requestInit
+  );
   return parseJsonResponse(response, schema);
 }
 

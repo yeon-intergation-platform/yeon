@@ -1,0 +1,207 @@
+{
+  "name": "@yeon/ui",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "exports": {
+    ".": {
+      "react-native": "./src/index.native.ts",
+      "import": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./web": "./src/index.ts",
+    "./native": "./src/index.native.ts",
+    "./theme": "./src/theme/index.ts",
+    "./theme/web-style-tokens": "./src/theme/web-style-tokens/index.ts",
+    "./types": "./src/types/index.ts",
+    "./utils": "./src/utils/index.ts",
+    "./primitives/*": {
+      "react-native": "./src/primitives/*/index.native.tsx",
+      "import": "./src/primitives/*/index.tsx",
+      "default": "./src/primitives/*/index.tsx"
+    },
+    "./patterns/*": {
+      "react-native": "./src/patterns/*/index.native.tsx",
+      "import": "./src/patterns/*/index.tsx",
+      "default": "./src/patterns/*/index.tsx"
+    },
+    "./hooks/*": {
+      "react-native": "./src/hooks/*/index.native.ts",
+      "import": "./src/hooks/*/index.ts",
+      "default": "./src/hooks/*/index.ts"
+    },
+    "./runtime/YeonBrowserRuntime": {
+      "react-native": "./src/runtime/YeonBrowserRuntime/index.native.ts",
+      "import": "./src/runtime/YeonBrowserRuntime/index.ts",
+      "default": "./src/runtime/YeonBrowserRuntime/index.ts"
+    },
+    "./runtime/YeonServerRequest": {
+      "react-native": "./src/runtime/YeonServerRequest/index.native.ts",
+      "import": "./src/runtime/YeonServerRequest/index.ts",
+      "default": "./src/runtime/YeonServerRequest/index.ts"
+    },
+    "./runtime/YeonImageConversion": {
+      "react-native": "./src/runtime/YeonImageConversion/index.native.ts",
+      "import": "./src/runtime/YeonImageConversion/index.ts",
+      "default": "./src/runtime/YeonImageConversion/index.ts"
+    },
+    "./runtime/YeonQuery": {
+      "react-native": "./src/runtime/YeonQuery/index.native.ts",
+      "import": "./src/runtime/YeonQuery/index.ts",
+      "default": "./src/runtime/YeonQuery/index.ts"
+    },
+    "./runtime/ports": {
+      "react-native": "./src/runtime/ports/index.native.ts",
+      "import": "./src/runtime/ports/index.ts",
+      "default": "./src/runtime/ports/index.ts"
+    },
+    "./runtime/ports/card-deck": {
+      "react-native": "./src/runtime/ports/card-deck/index.native.ts",
+      "import": "./src/runtime/ports/card-deck/index.ts",
+      "default": "./src/runtime/ports/card-deck/index.ts"
+    },
+    "./runtime/ports/life-os": {
+      "react-native": "./src/runtime/ports/life-os/index.native.ts",
+      "import": "./src/runtime/ports/life-os/index.ts",
+      "default": "./src/runtime/ports/life-os/index.ts"
+    },
+    "./runtime/ports/typing-service": {
+      "react-native": "./src/runtime/ports/typing-service/index.native.ts",
+      "import": "./src/runtime/ports/typing-service/index.ts",
+      "default": "./src/runtime/ports/typing-service/index.ts"
+    },
+    "./runtime/ports/card-rooms": {
+      "react-native": "./src/runtime/ports/card-rooms/index.native.ts",
+      "import": "./src/runtime/ports/card-rooms/index.ts",
+      "default": "./src/runtime/ports/card-rooms/index.ts"
+    },
+    "./runtime/ports/room-voice-call": {
+      "react-native": "./src/runtime/ports/room-voice-call/index.native.ts",
+      "import": "./src/runtime/ports/room-voice-call/index.ts",
+      "default": "./src/runtime/ports/room-voice-call/index.ts"
+    },
+    "./runtime/YeonSecureStorage": {
+      "react-native": "./src/runtime/YeonSecureStorage/index.native.ts",
+      "import": "./src/runtime/YeonSecureStorage/index.ts",
+      "default": "./src/runtime/YeonSecureStorage/index.ts"
+    },
+    "./runtime/YeonStateStore": {
+      "react-native": "./src/runtime/YeonStateStore/index.native.ts",
+      "import": "./src/runtime/YeonStateStore/index.ts",
+      "default": "./src/runtime/YeonStateStore/index.ts"
+    },
+    "./runtime/YeonNavigation": {
+      "react-native": "./src/runtime/YeonNavigation/index.native.ts",
+      "import": "./src/runtime/YeonNavigation/index.ts",
+      "default": "./src/runtime/YeonNavigation/index.ts"
+    },
+    "./runtime/YeonPageMetadata": {
+      "react-native": "./src/runtime/YeonPageMetadata/index.native.ts",
+      "import": "./src/runtime/YeonPageMetadata/index.ts",
+      "default": "./src/runtime/YeonPageMetadata/index.ts"
+    },
+    "./runtime/YeonRouteControl": {
+      "react-native": "./src/runtime/YeonRouteControl/index.native.ts",
+      "import": "./src/runtime/YeonRouteControl/index.ts",
+      "default": "./src/runtime/YeonRouteControl/index.ts"
+    },
+    "./rich-content/*": {
+      "react-native": "./src/rich-content/*/index.native.ts",
+      "import": "./src/rich-content/*/index.ts",
+      "default": "./src/rich-content/*/index.ts"
+    },
+    "./rich-content/YeonMarkdown": {
+      "react-native": "./src/rich-content/YeonMarkdown/index.native.tsx",
+      "import": "./src/rich-content/YeonMarkdown/index.tsx",
+      "default": "./src/rich-content/YeonMarkdown/index.tsx"
+    },
+    "./runtime/YeonRealtimeClient": {
+      "react-native": "./src/runtime/YeonRealtimeClient/index.native.ts",
+      "import": "./src/runtime/YeonRealtimeClient/index.ts",
+      "default": "./src/runtime/YeonRealtimeClient/index.ts"
+    },
+    "./rich-content/YeonMarkdownEditor": {
+      "react-native": "./src/rich-content/YeonMarkdownEditor/index.native.ts",
+      "import": "./src/rich-content/YeonMarkdownEditor/index.ts",
+      "default": "./src/rich-content/YeonMarkdownEditor/index.ts"
+    },
+    "./runtime/YeonOgImageResponse": {
+      "react-native": "./src/runtime/YeonOgImageResponse/index.native.ts",
+      "import": "./src/runtime/YeonOgImageResponse/index.ts",
+      "default": "./src/runtime/YeonOgImageResponse/index.ts"
+    },
+    "./runtime/YeonMetadataRoute": {
+      "react-native": "./src/runtime/YeonMetadataRoute/index.native.ts",
+      "import": "./src/runtime/YeonMetadataRoute/index.ts",
+      "default": "./src/runtime/YeonMetadataRoute/index.ts"
+    }
+  },
+  "scripts": {
+    "lint": "eslint src --ext .ts,.tsx",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@yeon/api-contract": "workspace:*",
+    "@yeon/design-tokens": "workspace:*",
+    "mermaid": "^11.15.0",
+    "dompurify": "^3.3.3",
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1",
+    "@tiptap/core": "^3.23.1",
+    "@tiptap/extension-image": "^3.23.1",
+    "@tiptap/extension-link": "^3.23.1",
+    "@tiptap/extension-placeholder": "^3.23.1",
+    "@tiptap/extension-table": "^3.23.1",
+    "@tiptap/extension-table-cell": "^3.23.1",
+    "@tiptap/extension-table-header": "^3.23.1",
+    "@tiptap/extension-table-row": "^3.23.1",
+    "@tiptap/extension-underline": "^3.23.1",
+    "@tiptap/pm": "3.23.1",
+    "@tiptap/react": "^3.23.1",
+    "@tiptap/starter-kit": "^3.23.1",
+    "zustand": "^5.0.12",
+    "expo-router": "~6.0.23",
+    "expo-secure-store": "~15.0.7",
+    "heic2any": "^0.0.4",
+    "expo-status-bar": "~3.0.9"
+  },
+  "peerDependencies": {
+    "react": ">=19",
+    "react-native": ">=0.81",
+    "react-native-web": ">=0.21",
+    "react-native-safe-area-context": ">=5.6",
+    "react-native-svg": ">=15",
+    "@tanstack/react-query": "^5.97.0",
+    "next": ">=16",
+    "@colyseus/sdk": "^0.17.42",
+    "@uiw/react-md-editor": "^4.1.0",
+    "react-dom": ">=19"
+  },
+  "peerDependenciesMeta": {
+    "next": {
+      "optional": true
+    },
+    "@colyseus/sdk": {
+      "optional": true
+    },
+    "@uiw/react-md-editor": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/react": "~19.1.0",
+    "@yeon/config": "workspace:*",
+    "react": "19.1.0",
+    "react-native": "0.81.5",
+    "react-native-web": "~0.21.0",
+    "typescript": "^6.0.2",
+    "react-native-safe-area-context": "~5.6.0",
+    "react-native-svg": "15.12.1",
+    "@tanstack/react-query": "^5.97.0",
+    "next": "^16.2.6",
+    "@colyseus/sdk": "^0.17.42",
+    "@uiw/react-md-editor": "^4.1.0",
+    "react-dom": "19.1.0",
+    "@types/react-dom": "^19.2.3"
+  }
+}

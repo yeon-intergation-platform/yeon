@@ -1,11 +1,11 @@
 "use client";
-
 import {
   CARD_ROOM_RESULT,
   CARD_ROOM_STATUS,
 } from "@yeon/api-contract/card-rooms";
 import type { CardRoomCardDto, CardRoomRealtimeState } from "@yeon/race-shared";
-import { SHARED_FEATURE_CLASS } from "@/features/shared-style-constants";
+import { YeonButton, YeonText, YeonView } from "@yeon/ui";
+import { YEON_WEB_SHARED_CLASS as SHARED_FEATURE_CLASS } from "@yeon/ui/theme/web-style-tokens";
 import { MarkdownContent } from "./components/markdown-content";
 
 type CardRoomStudyPanelProps = {
@@ -45,18 +45,28 @@ export function CardRoomStudyPanel({
   };
 
   return (
-    <div className={SHARED_FEATURE_CLASS.panelCard}>
+    <YeonView className={SHARED_FEATURE_CLASS.panelCard}>
       {state?.status === CARD_ROOM_STATUS.WAITING ? (
-        <div className="flex min-h-[280px] flex-col items-center justify-center text-center">
-          <h2 className="text-[24px] font-black tracking-[-0.05em]">
+        <YeonView className="flex min-h-[280px] flex-col items-center justify-center text-center">
+          <YeonText
+            as="h2"
+            variant="unstyled"
+            tone="inherit"
+            className="text-[24px] font-black tracking-[-0.05em]"
+          >
             학습 대기실
-          </h2>
-          <p className="mt-3 max-w-[360px] text-[14px] font-semibold leading-6 text-[#666]">
+          </YeonText>
+          <YeonText
+            as="p"
+            variant="unstyled"
+            tone="inherit"
+            className="mt-3 max-w-[360px] text-[14px] font-semibold leading-6 text-[#666]"
+          >
             역할을 정하고 모두 준비하면 방장이 학습을 시작합니다. 새로고침해도
             이 방과 카드 목록은 유지됩니다.
-          </p>
-          <div className="mt-5 grid gap-2 text-[13px] font-bold text-[#777]">
-            <span>
+          </YeonText>
+          <YeonView className="mt-5 grid gap-2 text-[13px] font-bold text-[#666]">
+            <YeonText as="span" variant="unstyled" tone="inherit">
               외우는 사람{" "}
               {
                 state.participants.filter(
@@ -64,8 +74,8 @@ export function CardRoomStudyPanel({
                 ).length
               }
               명
-            </span>
-            <span>
+            </YeonText>
+            <YeonText as="span" variant="unstyled" tone="inherit">
               봐주는 사람{" "}
               {
                 state.participants.filter(
@@ -73,93 +83,133 @@ export function CardRoomStudyPanel({
                 ).length
               }
               명
-            </span>
-            <span>카드 {state.cards.length}장</span>
-          </div>
-        </div>
+            </YeonText>
+            <YeonText as="span" variant="unstyled" tone="inherit">
+              카드 {state.cards.length}장
+            </YeonText>
+          </YeonView>
+        </YeonView>
       ) : state?.status === CARD_ROOM_STATUS.CLOSED ? (
-        <div className="flex min-h-[280px] flex-col items-center justify-center text-center">
-          <h2 className="text-[28px] font-black tracking-[-0.05em]">방 종료</h2>
-          <p className="mt-3 text-[15px] font-semibold text-[#666]">
+        <YeonView className="flex min-h-[280px] flex-col items-center justify-center text-center">
+          <YeonText
+            as="h2"
+            variant="unstyled"
+            tone="inherit"
+            className="text-[28px] font-black tracking-[-0.05em]"
+          >
+            방 종료
+          </YeonText>
+          <YeonText
+            as="p"
+            variant="unstyled"
+            tone="inherit"
+            className="mt-3 text-[15px] font-semibold text-[#666]"
+          >
             방장이 카드방을 종료했습니다.
-          </p>
-        </div>
+          </YeonText>
+        </YeonView>
       ) : state?.status === CARD_ROOM_STATUS.FINISHED ? (
-        <div className="flex min-h-[280px] flex-col items-center justify-center text-center">
-          <h2 className="text-[28px] font-black tracking-[-0.05em]">
+        <YeonView className="flex min-h-[280px] flex-col items-center justify-center text-center">
+          <YeonText
+            as="h2"
+            variant="unstyled"
+            tone="inherit"
+            className="text-[28px] font-black tracking-[-0.05em]"
+          >
             학습 완료
-          </h2>
-          <p className="mt-3 text-[15px] font-semibold text-[#666]">
+          </YeonText>
+          <YeonText
+            as="p"
+            variant="unstyled"
+            tone="inherit"
+            className="mt-3 text-[15px] font-semibold text-[#666]"
+          >
             OK {resultSummary.ok}개 · 포기 {resultSummary.giveUp}개
-          </p>
-        </div>
+          </YeonText>
+        </YeonView>
       ) : currentCard ? (
         <>
-          <button
+          <YeonButton
             type="button"
             disabled={!isChecker}
             onClick={onReveal}
             aria-live="polite"
-            className="flex min-h-[250px] w-full flex-col items-center justify-center rounded-2xl border border-[#e5e5e5] bg-[#fafafa] px-5 text-center disabled:cursor-not-allowed"
+            variant="secondary"
+            size="xl"
+            className="min-h-[250px] w-full flex-col rounded-2xl bg-[#fafafa] px-5 text-center"
           >
-            <span className="text-[12px] font-bold uppercase tracking-[0.18em] text-[#999]">
+            <YeonText
+              as="span"
+              variant="caption"
+              tone="muted"
+              className="font-bold uppercase tracking-[0.18em]"
+            >
               {shouldShowBack ? "Back" : "Front"}
-            </span>
-            <div className="mt-5 w-full text-[#111]">
+            </YeonText>
+            <YeonView className="mt-5 w-full text-[#111]">
               <MarkdownContent className="text-[26px] font-black leading-tight tracking-[-0.04em]">
                 {shouldShowBack ? currentCard.backText : currentCard.frontText}
               </MarkdownContent>
-            </div>
-            <span
+            </YeonView>
+            <YeonText
+              as="span"
+              variant="unstyled"
+              tone="inherit"
               className={`mt-5 ${SHARED_FEATURE_CLASS.text12EmphasisSubtle}`}
             >
               {isChecker
                 ? "클릭해서 정답 공개"
                 : "외우는 사람은 앞면만 보고 답변합니다."}
-            </span>
-          </button>
-          <div className="mt-4 grid gap-3">
+            </YeonText>
+          </YeonButton>
+          <YeonView className="mt-4 grid gap-3">
             {state?.status === CARD_ROOM_STATUS.ANSWERING ||
             state?.status === CARD_ROOM_STATUS.REVEALED ? (
-              <div className="grid gap-3 sm:grid-cols-2">
-                <button
+              <YeonView className="grid gap-3 sm:grid-cols-2">
+                <YeonButton
                   type="button"
                   disabled={!isChecker || !currentCard}
                   onClick={() => onResult(currentCard.id, CARD_ROOM_RESULT.OK)}
-                  className="h-12 rounded-xl bg-[#111] text-[14px] font-bold text-white transition-colors hover:bg-[#333] disabled:border disabled:border-[#e5e5e5] disabled:bg-[#f5f5f5] disabled:text-[#aaa]"
+                  variant="primary"
+                  size="lg"
+                  className="h-12 rounded-xl text-[14px]"
                 >
                   OK
-                </button>
-                <button
+                </YeonButton>
+                <YeonButton
                   type="button"
                   disabled={!isMemorizer || !currentCard}
                   onClick={() =>
                     onResult(currentCard.id, CARD_ROOM_RESULT.GIVE_UP)
                   }
-                  className="h-12 rounded-xl border border-[#e5e5e5] bg-white text-[14px] font-bold text-[#666] transition-colors hover:border-[#111] hover:text-[#111] disabled:text-[#ccc]"
+                  variant="secondary"
+                  size="lg"
+                  className="h-12 rounded-xl text-[14px]"
                 >
                   포기
-                </button>
-              </div>
+                </YeonButton>
+              </YeonView>
             ) : null}
             {canMoveNext ? (
-              <button
+              <YeonButton
                 type="button"
                 onClick={onNext}
-                className="h-12 rounded-xl bg-[#111] text-[14px] font-bold text-white transition-colors hover:bg-[#333]"
+                variant="primary"
+                size="lg"
+                className="h-12 rounded-xl text-[14px]"
               >
                 {state && state.currentCardIndex >= state.cards.length - 1
                   ? "결과 보기"
                   : "다음 카드"}
-              </button>
+              </YeonButton>
             ) : null}
-          </div>
+          </YeonView>
         </>
       ) : (
-        <div className="flex min-h-[280px] items-center justify-center text-[14px] font-bold text-[#777]">
+        <YeonView className="flex min-h-[280px] items-center justify-center text-[14px] font-bold text-[#666]">
           카드방 상태를 기다리는 중...
-        </div>
+        </YeonView>
       )}
-    </div>
+    </YeonView>
   );
 }

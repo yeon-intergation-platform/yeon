@@ -1,20 +1,8 @@
 import type {
-  CardDeckDto,
-  CardDeckItemDto,
-} from "@yeon/api-contract/card-decks";
+  YeonCardDeckDetailViewState,
+  YeonCardDeckListViewState,
+} from "@yeon/ui/runtime/ports/card-deck";
 
-export type CardServiceHomeViewState =
-  | { kind: "loading" }
-  | { kind: "error"; message: string }
-  | { kind: "empty" }
-  | { kind: "ready"; decks: CardDeckDto[] };
-
-export type DeckDetailViewState =
-  | { kind: "loading" }
-  | { kind: "error"; message: string }
-  | {
-      kind: "ready";
-      deck: CardDeckDto;
-      items: CardDeckItemDto[];
-      isEmpty: boolean;
-    };
+// view-state는 SSOT에서 파생한다(복제 금지). SSOT: packages/ui/.../card-deck/view-state.ts
+export type CardServiceHomeViewState = YeonCardDeckListViewState;
+export type DeckDetailViewState = YeonCardDeckDetailViewState;

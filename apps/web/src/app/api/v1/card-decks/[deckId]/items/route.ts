@@ -1,7 +1,6 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { createCardDeckItemBodySchema } from "@yeon/api-contract/card-decks";
-
 import {
   jsonError,
   requireAuthenticatedUser,
@@ -15,7 +14,7 @@ export const runtime = "nodejs";
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ deckId: string }> },
+  { params }: { params: Promise<{ deckId: string }> }
 ) {
   const { currentUser, response } = await requireAuthenticatedUser(request);
   if (!currentUser) return response;
@@ -34,7 +33,11 @@ export async function POST(
   }
 
   try {
-    const item = await createCardDeckItemInSpring(currentUser.id, deckId, parsed.data);
+    const item = await createCardDeckItemInSpring(
+      currentUser.id,
+      deckId,
+      parsed.data
+    );
     return NextResponse.json(item, { status: 201 });
   } catch (error) {
     if (error instanceof CardDecksSpringBackendHttpError) {

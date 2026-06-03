@@ -1,12 +1,11 @@
-import type { MetadataRoute } from "next";
-
+import type { YeonMetadataRoute } from "@yeon/ui/runtime/YeonMetadataRoute";
 import {
   buildCanonicalUrl,
   getCanonicalSite,
   isCanonicalDeployment,
 } from "@/lib/seo";
 
-export default function robots(): MetadataRoute.Robots {
+export default function robots(): YeonMetadataRoute["Robots"] {
   if (!isCanonicalDeployment()) {
     return {
       rules: {

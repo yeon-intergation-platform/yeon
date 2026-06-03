@@ -1,18 +1,20 @@
-import type { ReadonlyURLSearchParams } from "next/navigation";
+import {
+  createYeonUrlSearchParams,
+  type YeonUrlSearchParams,
+} from "@yeon/ui/runtime/YeonBrowserRuntime";
 
 type QueryPatchValue = string | number | boolean | null | undefined;
+type ReadableSearchParams = Pick<YeonUrlSearchParams, "toString">;
 
 export type QueryPatch = Record<string, QueryPatchValue>;
 
-function cloneSearchParams(
-  searchParams: URLSearchParams | ReadonlyURLSearchParams,
-) {
-  return new URLSearchParams(searchParams.toString());
+function cloneSearchParams(searchParams: ReadableSearchParams) {
+  return createYeonUrlSearchParams(searchParams.toString());
 }
 
 export function createPatchedSearchParams(
-  searchParams: URLSearchParams | ReadonlyURLSearchParams,
-  patch: QueryPatch,
+  searchParams: ReadableSearchParams,
+  patch: QueryPatch
 ) {
   const next = cloneSearchParams(searchParams);
 
@@ -30,8 +32,8 @@ export function createPatchedSearchParams(
 
 export function createPatchedHref(
   pathname: string,
-  searchParams: URLSearchParams | ReadonlyURLSearchParams,
-  patch: QueryPatch,
+  searchParams: ReadableSearchParams,
+  patch: QueryPatch
 ) {
   const next = createPatchedSearchParams(searchParams, patch);
   const query = next.toString();
@@ -54,7 +56,7 @@ export function serializeCsvParam(values: Iterable<string>) {
 
 export function isOneOf<T extends string>(
   value: string | null,
-  candidates: readonly T[],
+  candidates: readonly T[]
 ): value is T {
   return value !== null && candidates.includes(value as T);
 }

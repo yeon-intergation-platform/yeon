@@ -1,21 +1,17 @@
-import type { Metadata } from "next";
-import Script from "next/script";
+import { type YeonPageMetadata } from "@yeon/ui/runtime/YeonPageMetadata";
+import { YeonStructuredData } from "@yeon/ui";
 import { SITE_BRAND_NAME } from "@/lib/site-brand";
 import { buildServiceCanonicalUrl } from "@/lib/seo";
-import { ServiceSeoSection } from "@/components/service-seo-section";
 import {
   TYPING_FAQS,
-  TYPING_FEATURES,
   TYPING_PAGE_DESCRIPTION,
   TYPING_PAGE_TITLE,
-  TYPING_SEO_HEADING,
-  TYPING_SEO_INTRO,
   TYPING_SEO_KEYWORDS,
   TypingServiceHome,
 } from "@/features/typing-service";
 import { getCurrentAdminUser } from "@/server/auth/admin";
 
-export const metadata: Metadata = {
+export const metadata: YeonPageMetadata = {
   title: TYPING_PAGE_TITLE,
   description: TYPING_PAGE_DESCRIPTION,
   keywords: [...TYPING_SEO_KEYWORDS],
@@ -76,20 +72,11 @@ export default async function TypingServicePage() {
 
   return (
     <>
-      <Script
+      <YeonStructuredData
         id="typing-service-jsonld"
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(getTypingServiceJsonLd()),
-        }}
+        data={getTypingServiceJsonLd()}
       />
       <TypingServiceHome showCharacterAdminLink={!!admin} />
-      <ServiceSeoSection
-        heading={TYPING_SEO_HEADING}
-        intro={TYPING_SEO_INTRO}
-        features={TYPING_FEATURES}
-        faqs={TYPING_FAQS}
-      />
     </>
   );
 }

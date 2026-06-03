@@ -3,7 +3,11 @@ import type {
   CommunityChatSendMessageBody,
   CommunityChatSendMessageResponse,
 } from "@yeon/api-contract/community-chat";
-
+import {
+  fetchYeon,
+  type YeonRequestInit,
+  type YeonResponse,
+} from "@yeon/ui/runtime/YeonBrowserRuntime";
 import { buildSpringBffHeaders } from "@/server/spring-bff-client";
 
 const DEFAULT_BACKEND_BASE_URL = "http://127.0.0.1:8081";
@@ -58,7 +62,7 @@ export class CommunityChatSpringBackendHttpError extends Error {
   }
 }
 
-type SpringInit = RequestInit & {
+type SpringInit = YeonRequestInit & {
   userId?: string | null;
 };
 
@@ -67,10 +71,10 @@ async function fetchSpring<T>(
   init: SpringInit,
   fallbackMessage: string
 ): Promise<T> {
-  let response: Response;
+  let response: YeonResponse;
 
   try {
-    response = await fetch(`${resolveSpringBackendBaseUrl()}${path}`, {
+    response = await fetchYeon(`${resolveSpringBackendBaseUrl()}${path}`, {
       ...init,
       cache: "no-store",
       headers: buildSpringBffHeaders(init.headers, { userId: init.userId }),

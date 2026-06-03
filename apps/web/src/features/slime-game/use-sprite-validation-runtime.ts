@@ -1,7 +1,11 @@
 "use client";
-
 import { useCallback, useEffect, useRef, useState } from "react";
-
+import {
+  clearYeonInterval,
+  scheduleYeonInterval,
+} from "@yeon/ui/runtime/YeonBrowserRuntime";
+import type { YeonDocumentKeyboardEvent } from "@yeon/ui/types";
+import { useYeonWindowEvent } from "@yeon/ui/hooks/YeonBrowserHooks";
 import {
   clearSpritePressedControls,
   createSpriteInputState,
@@ -42,32 +46,34 @@ export function useSpriteValidationRuntime<State, ControlId extends string>({
     [reduce]
   );
 
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
+  const handleKeyDown = useCallback(
+    (event: YeonDocumentKeyboardEvent) => {
       if (!isSpriteControlCode(controls, event.code)) return;
       event.preventDefault();
       pressSpriteInputCode(inputRef.current, event.code);
-    };
-    const handleKeyUp = (event: KeyboardEvent) => {
+    },
+    [controls]
+  );
+
+  const handleKeyUp = useCallback(
+    (event: YeonDocumentKeyboardEvent) => {
       if (!isSpriteControlCode(controls, event.code)) return;
       event.preventDefault();
       releaseSpriteInputCode(inputRef.current, event.code);
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    window.addEventListener("keyup", handleKeyUp);
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-      window.removeEventListener("keyup", handleKeyUp);
-    };
-  }, [controls]);
+    },
+    [controls]
+  );
+
+  useYeonWindowEvent("keydown", handleKeyDown);
+  useYeonWindowEvent("keyup", handleKeyUp);
 
   useEffect(() => {
-    const timer = window.setInterval(() => {
+    const timer = scheduleYeonInterval(() => {
       const inputSnapshot = snapshotSpriteInputState(inputRef.current);
       clearSpritePressedControls(inputRef.current);
       advanceWithSnapshot(inputSnapshot);
     }, 1000 / fps);
-    return () => window.clearInterval(timer);
+    return () => clearYeonInterval(timer);
   }, [advanceWithSnapshot, fps]);
 
   const reset = useCallback(() => {

@@ -1,20 +1,19 @@
 "use client";
-
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  useYeonMutation as useMutation,
+  useYeonQueryClient as useQueryClient,
+} from "@yeon/ui/runtime/YeonQuery";
+import { useYeonCardDeckRepository } from "@yeon/ui/runtime/ports/card-deck";
 import type { CreateCardDeckBody } from "@yeon/api-contract/card-decks";
-
-import { createGuestDeck } from "@/lib/guest-card-service-store";
-
 import { useIsAuthenticated } from "../auth-context";
-import { createServerCardDeck } from "../card-service-fetch";
 import { cardServiceQueryKeys } from "../card-service-query-keys";
 
 export function useCreateDeck() {
   const queryClient = useQueryClient();
   const isAuthenticated = useIsAuthenticated();
+  const repository = useYeonCardDeckRepository();
   return useMutation({
-    mutationFn: (body: CreateCardDeckBody) =>
-      isAuthenticated ? createServerCardDeck(body) : createGuestDeck(body),
+    mutationFn: (body: CreateCardDeckBody) => repository.createDeck(body),
     onSuccess: () => {
       void queryClient.invalidateQueries({
         queryKey: cardServiceQueryKeys.decks(isAuthenticated),

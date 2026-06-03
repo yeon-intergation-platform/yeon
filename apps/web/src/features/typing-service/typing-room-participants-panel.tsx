@@ -1,8 +1,6 @@
 "use client";
-
-import { Crown } from "lucide-react";
 import type { TypingRoomParticipantSnapshot } from "@yeon/race-shared";
-
+import { YeonIcon, YeonView, YeonText } from "@yeon/ui";
 import { RoomParticipantCard } from "@/features/room-shared";
 import { TYPING_SERVICE_COMMON_CLASS } from "./typing-service-common.const";
 import { findCharacter } from "./characters";
@@ -21,9 +19,19 @@ export function TypingRoomParticipantsPanel({
   frameOverrides,
 }: TypingRoomParticipantsPanelProps) {
   return (
-    <section className="rounded-2xl border border-[#e5e5e5] bg-white p-3 xl:order-2">
-      <h2 className={TYPING_SERVICE_COMMON_CLASS.panelSubheading}>참여자</h2>
-      <div className="grid grid-cols-2 gap-3">
+    <YeonView
+      as="section"
+      className="rounded-2xl border border-[#e5e5e5] bg-white p-3 xl:order-2"
+    >
+      <YeonText
+        as="h2"
+        variant="unstyled"
+        tone="inherit"
+        className={TYPING_SERVICE_COMMON_CLASS.panelSubheading}
+      >
+        참여자
+      </YeonText>
+      <YeonView className="grid grid-cols-2 gap-3">
         {participants.map((participant, index) => {
           const character = participant
             ? findCharacter(participant.characterId)
@@ -46,28 +54,36 @@ export function TypingRoomParticipantsPanel({
               spriteBoxClassName="flex h-[72px] items-end justify-center overflow-hidden rounded-xl bg-white px-2 py-1"
               spriteMaxHeight={68}
               titleClassName="text-[14px] font-semibold"
-              subtitleClassName="text-[#888]"
+              subtitleClassName="text-[#aaa]"
               badges={
                 participant ? (
-                  <div className="flex items-center justify-between gap-2">
-                    <span
-                      className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${participant.isReady ? "border border-[#d9ead3] bg-[#eef8ea] text-[#2f7d32]" : "border border-[#e5e5e5] bg-white text-[#999]"}`}
+                  <YeonView className="flex items-center justify-between gap-2">
+                    <YeonText
+                      as="span"
+                      variant="unstyled"
+                      tone="inherit"
+                      className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${participant.isReady ? "border border-[#111] bg-[#fafafa] text-[#111]" : "border border-[#e5e5e5] bg-white text-[#aaa]"}`}
                     >
                       {participant.isReady ? "준비완료" : "대기중"}
-                    </span>
+                    </YeonText>
                     {participant.role === "host" ? (
-                      <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[#b7791f]">
-                        <Crown size={13} /> 방장
-                      </span>
+                      <YeonText
+                        as="span"
+                        variant="unstyled"
+                        tone="inherit"
+                        className="inline-flex items-center gap-1 text-[11px] font-bold text-[#666]"
+                      >
+                        <YeonIcon name="crown" size={13} /> 방장
+                      </YeonText>
                     ) : null}
-                  </div>
+                  </YeonView>
                 ) : null
               }
               emptyLabel="빈자리"
             />
           );
         })}
-      </div>
-    </section>
+      </YeonView>
+    </YeonView>
   );
 }

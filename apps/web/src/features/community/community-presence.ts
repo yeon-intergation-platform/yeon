@@ -1,4 +1,11 @@
 import {
+  createYeonRandomUUID,
+  getYeonNow,
+  getYeonRandom,
+  readYeonSessionStorageItem,
+  writeYeonSessionStorageItem,
+} from "@yeon/ui/runtime/YeonBrowserRuntime";
+import {
   sendCommunityPresenceHeartbeat,
   sendCommunityPresenceLeaveBeacon,
 } from "./community-presence-api";
@@ -7,24 +14,17 @@ const COMMUNITY_PRESENCE_SESSION_STORAGE_KEY =
   "yeon-community-presence-session";
 
 function createFallbackRandomId() {
-  return Math.random().toString(36).slice(2, 10);
+  return getYeonRandom().toString(36).slice(2, 10);
 }
 
 function createPresenceSessionId() {
-  const randomId =
-    globalThis.crypto && "randomUUID" in globalThis.crypto
-      ? globalThis.crypto.randomUUID()
-      : createFallbackRandomId();
+  const randomId = createYeonRandomUUID() ?? createFallbackRandomId();
 
-  return `presence-${randomId}-${Date.now()}`;
+  return `presence-${randomId}-${getYeonNow()}`;
 }
 
 export function readPresenceSessionId() {
-  if (typeof window === "undefined") {
-    return createPresenceSessionId();
-  }
-
-  const saved = window.sessionStorage.getItem(
+  const saved = readYeonSessionStorageItem(
     COMMUNITY_PRESENCE_SESSION_STORAGE_KEY
   );
   if (saved?.trim()) {
@@ -32,10 +32,7 @@ export function readPresenceSessionId() {
   }
 
   const created = createPresenceSessionId();
-  window.sessionStorage.setItem(
-    COMMUNITY_PRESENCE_SESSION_STORAGE_KEY,
-    created
-  );
+  writeYeonSessionStorageItem(COMMUNITY_PRESENCE_SESSION_STORAGE_KEY, created);
   return created;
 }
 

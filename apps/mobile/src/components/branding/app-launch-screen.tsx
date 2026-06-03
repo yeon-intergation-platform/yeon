@@ -1,30 +1,14 @@
-import { Image, StyleSheet, View } from "react-native";
+import { YeonLaunchScreen } from "@yeon/ui/native";
+import yeonSplashImage from "../../../assets/images/yeon-splash.png";
+import chatSplashImage from "../../../assets/images/chat-service-splash-animal.png";
 
-import splashAnimalImage from "../../../assets/images/chat-service-splash-animal.png";
-import { colors } from "../../theme/colors";
+// variant별 launch 화면 이미지: 카드 = YEON 스플래시, 연챗 = 동물 스플래시.
+const isCardApp = process.env.EXPO_PUBLIC_MOBILE_VARIANT === "card";
 
 export function AppLaunchScreen() {
   return (
-    <View style={styles.screen}>
-      <Image
-        accessibilityIgnoresInvertColors
-        resizeMode="contain"
-        source={splashAnimalImage}
-        style={styles.image}
-      />
-    </View>
+    <YeonLaunchScreen
+      imageSource={isCardApp ? yeonSplashImage : chatSplashImage}
+    />
   );
 }
-
-const styles = StyleSheet.create({
-  screen: {
-    alignItems: "center",
-    backgroundColor: colors.background,
-    flex: 1,
-    justifyContent: "center",
-  },
-  image: {
-    height: "100%",
-    width: "100%",
-  },
-});

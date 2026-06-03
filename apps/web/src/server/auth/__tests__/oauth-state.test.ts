@@ -1,5 +1,4 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-
 import { signAuthValue } from "../crypto";
 import {
   consumeOAuthStateCookieValue,
@@ -158,7 +157,7 @@ describe("oauth-state", () => {
             expiresAt: new Date(Date.now() - 60_000).toISOString(),
           },
         ],
-      }),
+      })
     ).toString("base64url");
     const cookieValue = `${encodedPayload}.${signAuthValue(encodedPayload)}`;
 

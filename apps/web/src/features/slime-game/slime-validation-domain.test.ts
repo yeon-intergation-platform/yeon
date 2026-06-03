@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-
 import {
   INITIAL_COLLISION_STATE,
   SLIME_COLLISION_STAGE,
@@ -10,7 +9,7 @@ import {
   SLIME_COMBAT_STAGE,
   combatFrame,
   nextCombatState,
-  } from "./slime-combat-domain";
+} from "./slime-combat-domain";
 import { INITIAL_STATE, nextState, slimeFrame } from "./slime-game-state";
 import {
   SLIME_ACTIONS,
@@ -150,7 +149,7 @@ describe("slime action validation domain", () => {
   it("loops attack frames while attack key is held", () => {
     let state = INITIAL_STATE;
     const frames: number[] = [];
-    const states: typeof INITIAL_STATE[] = [];
+    const states: (typeof INITIAL_STATE)[] = [];
 
     for (let i = 0; i < 19; i += 1) {
       state = nextState(state, {
@@ -305,9 +304,9 @@ describe("slime combat validation domain", () => {
   it("repeats attack serial and reduces hp on repeated held attacks", () => {
     const attackDuration = SLIME_ACTIONS.attack.durationTicks ?? 1;
     const attackLoopCount = 3;
-    const intervalTicks =
-      attackDuration + SLIME_ATTACK_COOLDOWN_TICKS;
-    const totalTicks = intervalTicks * attackLoopCount - SLIME_ATTACK_COOLDOWN_TICKS;
+    const intervalTicks = attackDuration + SLIME_ATTACK_COOLDOWN_TICKS;
+    const totalTicks =
+      intervalTicks * attackLoopCount - SLIME_ATTACK_COOLDOWN_TICKS;
     let state = {
       ...INITIAL_COMBAT_STATE,
     };
@@ -323,7 +322,8 @@ describe("slime combat validation domain", () => {
     expect(state.enemy.hp).toBe(
       Math.max(
         0,
-        INITIAL_COMBAT_STATE.enemy.hp - attackLoopCount * SLIME_COMBAT_STAGE.attackDamage
+        INITIAL_COMBAT_STATE.enemy.hp -
+          attackLoopCount * SLIME_COMBAT_STAGE.attackDamage
       )
     );
   });

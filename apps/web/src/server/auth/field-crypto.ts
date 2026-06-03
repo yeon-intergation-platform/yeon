@@ -1,5 +1,4 @@
 import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
-
 import { getFieldEncryptionKey } from "./crypto";
 
 const VERSION = "v1";
@@ -45,7 +44,7 @@ export function decryptField(stored: string): string {
   const [version, ivB64, tagB64, ctB64] = parts;
   if (version !== VERSION) {
     throw new FieldDecryptError(
-      `지원하지 않는 필드 암호문 버전입니다: ${version}`,
+      `지원하지 않는 필드 암호문 버전입니다: ${version}`
     );
   }
 
@@ -57,7 +56,7 @@ export function decryptField(stored: string): string {
   const tag = Buffer.from(tagB64, "base64");
   if (tag.length !== TAG_BYTE_LENGTH) {
     throw new FieldDecryptError(
-      "필드 암호문 인증 태그 길이가 올바르지 않습니다.",
+      "필드 암호문 인증 태그 길이가 올바르지 않습니다."
     );
   }
 

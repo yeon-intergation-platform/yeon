@@ -1,7 +1,6 @@
 import type { AuthUserDto } from "@yeon/api-contract/auth";
-import { cookies } from "next/headers";
+import { getYeonRequestCookies } from "@yeon/ui/runtime/YeonServerRequest";
 import type { NextResponse } from "next/server";
-
 import {
   AUTH_SESSION_COOKIE_NAME,
   getAuthCookieDomain,
@@ -72,15 +71,15 @@ export function clearAuthSessionCookie(response: NextResponse) {
 
 function uniqueTokens(tokens: string[]) {
   return Array.from(
-    new Set(tokens.map((token) => token.trim()).filter(Boolean)),
+    new Set(tokens.map((token) => token.trim()).filter(Boolean))
   );
 }
 
 async function getCurrentSessionTokens() {
-  const cookieStore = await cookies();
+  const cookieStore = await getYeonRequestCookies();
 
   return uniqueTokens(
-    cookieStore.getAll(AUTH_SESSION_COOKIE_NAME).map((cookie) => cookie.value),
+    cookieStore.getAll(AUTH_SESSION_COOKIE_NAME).map((cookie) => cookie.value)
   );
 }
 
@@ -113,6 +112,6 @@ export async function deleteCurrentAuthSession() {
   const sessionTokens = await getCurrentSessionTokens();
 
   await Promise.all(
-    sessionTokens.map((sessionToken) => deleteAuthSessionByToken(sessionToken)),
+    sessionTokens.map((sessionToken) => deleteAuthSessionByToken(sessionToken))
   );
 }

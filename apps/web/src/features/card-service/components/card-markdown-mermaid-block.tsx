@@ -1,6 +1,7 @@
 "use client";
-
 import { useEffect, useId, useState } from "react";
+import { YeonHtmlContent, YeonText, YeonView } from "@yeon/ui";
+import { renderYeonMermaidSvg } from "@yeon/ui/rich-content/YeonMermaid";
 
 interface CardMarkdownMermaidBlockProps {
   code: string;
@@ -23,19 +24,14 @@ export function CardMarkdownMermaidBlock({
   useEffect(() => {
     let isMounted = true;
 
-    import("mermaid")
-      .then(async ({ default: mermaid }) => {
-        mermaid.initialize({
-          startOnLoad: false,
-          securityLevel: "strict",
-          theme: inverted ? "dark" : "neutral",
-          fontFamily:
-            'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-        });
-
-        const result = await mermaid.render(elementId, code);
+    renderYeonMermaidSvg({
+      code,
+      elementId,
+      theme: inverted ? "dark" : "neutral",
+    })
+      .then((nextSvg) => {
         if (!isMounted) return;
-        setSvg(result.svg);
+        setSvg(nextSvg);
         setErrorMessage("");
       })
       .catch(() => {
@@ -50,43 +46,72 @@ export function CardMarkdownMermaidBlock({
   }, [code, elementId, inverted]);
 
   return (
-    <div
+    <YeonView
       className={`my-3 overflow-hidden rounded-xl border ${
         inverted
           ? "border-white/20 bg-white/10"
-          : "border-[#e5e5e5] bg-[#f7f7f7]"
+          : "border-[#e5e5e5] bg-[#fafafa]"
       }`}
     >
-      <div
+      <YeonView
         className={`flex items-center justify-between border-b px-3 py-2 text-[11px] font-semibold ${
           inverted
             ? "border-white/15 text-white/75"
-            : "border-[#e5e5e5] text-[#777]"
+            : "border-[#e5e5e5] text-[#666]"
         }`}
       >
-        <span className="uppercase tracking-[0.12em]">mermaid</span>
+        <YeonText
+          as="span"
+          variant="unstyled"
+          tone="inherit"
+          className="uppercase tracking-[0.12em]"
+        >
+          mermaid
+        </YeonText>
         {errorMessage ? (
-          <span className={inverted ? "text-white/70" : "text-[#777]"}>
+          <YeonText
+            as="span"
+            variant="unstyled"
+            tone="inherit"
+            className={inverted ? "text-white/70" : "text-[#666]"}
+          >
             렌더링 실패
-          </span>
+          </YeonText>
         ) : null}
-      </div>
-      <div className="overflow-x-auto bg-white p-4">
+      </YeonView>
+      <YeonView className="overflow-x-auto bg-white p-4">
         {svg ? (
-          <div
+          <YeonHtmlContent
             className="card-mermaid-diagram min-w-max"
-            dangerouslySetInnerHTML={{ __html: svg }}
+            html={svg}
           />
         ) : errorMessage ? (
-          <pre className="overflow-x-auto text-left">
-            <code className="font-mono text-[13px] leading-6">{code}</code>
-          </pre>
+          <YeonText
+            as="pre"
+            variant="unstyled"
+            tone="inherit"
+            className="overflow-x-auto text-left"
+          >
+            <YeonText
+              as="code"
+              variant="unstyled"
+              tone="inherit"
+              className="font-mono text-[13px] leading-6"
+            >
+              {code}
+            </YeonText>
+          </YeonText>
         ) : (
-          <p className="text-[12px] font-medium text-[#777]">
+          <YeonText
+            as="p"
+            variant="unstyled"
+            tone="inherit"
+            className="text-[12px] font-medium text-[#666]"
+          >
             다이어그램 렌더링 중...
-          </p>
+          </YeonText>
         )}
-      </div>
-    </div>
+      </YeonView>
+    </YeonView>
   );
 }

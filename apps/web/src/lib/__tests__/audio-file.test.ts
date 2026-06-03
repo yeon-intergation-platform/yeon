@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-
 import { isAcceptedAudioFile } from "../audio-file";
 
 describe("isAcceptedAudioFile", () => {
@@ -8,7 +7,7 @@ describe("isAcceptedAudioFile", () => {
       isAcceptedAudioFile({
         name: "recording.mp3",
         type: "audio/mpeg",
-      }),
+      })
     ).toBe(true);
   });
 
@@ -17,7 +16,7 @@ describe("isAcceptedAudioFile", () => {
       isAcceptedAudioFile({
         name: "voice.m4a",
         type: "",
-      }),
+      })
     ).toBe(true);
   });
 
@@ -26,7 +25,7 @@ describe("isAcceptedAudioFile", () => {
       isAcceptedAudioFile({
         name: "document.pdf",
         type: "application/pdf",
-      }),
+      })
     ).toBe(false);
   });
 });

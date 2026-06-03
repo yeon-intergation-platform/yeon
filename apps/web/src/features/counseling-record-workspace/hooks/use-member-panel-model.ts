@@ -41,14 +41,14 @@ export function useMemberPanelModel({
     member.indicator === "recent"
       ? "bg-green"
       : member.indicator === "warning"
-        ? "bg-amber"
+        ? "bg-text-secondary"
         : "bg-surface-4 border border-border";
 
   const indicatorTextColor =
     member.indicator === "recent"
       ? "text-green"
       : member.indicator === "warning"
-        ? "text-amber"
+        ? "text-text-secondary"
         : "text-text-dim";
 
   async function handleExport() {

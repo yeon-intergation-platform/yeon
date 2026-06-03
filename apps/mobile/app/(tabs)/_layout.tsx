@@ -1,8 +1,17 @@
-import { Ionicons } from "@expo/vector-icons";
-import { Redirect, Tabs } from "expo-router";
-
+import {
+  YeonIcon,
+  YeonRedirect as Redirect,
+  YeonTabs as Tabs,
+  type YeonIconName,
+} from "@yeon/ui/native";
 import { useChatServiceSession } from "../../src/providers/chat-service-session-provider";
 import { colors } from "../../src/theme/colors";
+
+function renderTabIcon(name: YeonIconName) {
+  return ({ color, size }: { color: string; size: number }) => (
+    <YeonIcon color={color} name={name} size={size} />
+  );
+}
 
 export default function TabsLayout() {
   const { status } = useChatServiceSession();
@@ -40,13 +49,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="feed"
         options={{
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons
-              color={color}
-              name="chatbubble-ellipses-outline"
-              size={size}
-            />
-          ),
+          tabBarIcon: renderTabIcon("message-circle"),
           tabBarLabel: "피드",
           title: "피드",
         }}
@@ -54,9 +57,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="ask"
         options={{
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons color={color} name="help-buoy-outline" size={size} />
-          ),
+          tabBarIcon: renderTabIcon("circle-help"),
           tabBarLabel: "에스크",
           title: "에스크",
         }}
@@ -65,9 +66,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="friends"
         options={{
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons color={color} name="people-outline" size={size} />
-          ),
+          tabBarIcon: renderTabIcon("users"),
           tabBarLabel: "친구",
           title: "친구",
         }}
@@ -75,9 +74,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="chat"
         options={{
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons color={color} name="mail-open-outline" size={size} />
-          ),
+          tabBarIcon: renderTabIcon("send"),
           tabBarLabel: "대화",
           title: "대화",
         }}
@@ -85,9 +82,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="profile"
         options={{
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons color={color} name="person-circle-outline" size={size} />
-          ),
+          tabBarIcon: renderTabIcon("circle-user"),
           tabBarLabel: "프로필",
           title: "프로필",
         }}

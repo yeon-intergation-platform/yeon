@@ -1,7 +1,11 @@
+// queryKey SSOT 재수출 (parity: identical-value).
+// 정의는 단일 SSOT에만 둔다 — 여기서는 기존 호출부 호환을 위한 이름/인자 매핑만 한다.
+// SSOT: packages/ui/src/runtime/ports/card-deck/query-keys.ts
+import { cardDeckQueryKeys } from "@yeon/ui/runtime/ports/card-deck";
+
 export const cardServiceQueryKeys = {
-  all: ["card-service"] as const,
+  all: cardDeckQueryKeys.root,
+  decks: cardDeckQueryKeys.list,
   deck: (deckId: string, isSignedIn: boolean) =>
-    ["card-service", "deck", isSignedIn ? "server" : "guest", deckId] as const,
-  decks: (isSignedIn: boolean) =>
-    ["card-service", "decks", isSignedIn ? "server" : "guest"] as const,
+    cardDeckQueryKeys.detail(isSignedIn, deckId),
 };

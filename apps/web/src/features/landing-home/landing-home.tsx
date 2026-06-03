@@ -1,7 +1,6 @@
 "use client";
-
-import { SHARED_FEATURE_CLASS } from "@/features/shared-style-constants";
-
+import { YeonBadge, YeonButton, YeonLink, YeonText, YeonView } from "@yeon/ui";
+import { YEON_WEB_SHARED_CLASS as SHARED_FEATURE_CLASS } from "@yeon/ui/theme/web-style-tokens";
 import { useCallback, useEffect, useState } from "react";
 import type { DevLoginOption } from "@/lib/auth/dev-login-options";
 import { analyticsEvents, trackEvent } from "@/lib/analytics";
@@ -86,36 +85,48 @@ export function LandingHome({
         devLoginOptions={devLoginOptions}
       />
 
-      <div className={SHARED_FEATURE_CLASS.pageSurface}>
+      <YeonView className={SHARED_FEATURE_CLASS.pageSurface}>
         <CommonProductHeader
           activeService="home"
           rightExtras={
             !isAuthenticated ? (
-              <button
+              <YeonButton
                 type="button"
+                variant="secondary"
                 className={`rounded-xl border border-[#e5e5e5] bg-white px-4 py-2 transition-colors hover:border-[#111] hover:bg-[#fafafa] ${SHARED_FEATURE_CLASS.text13Emphasis}`}
                 onClick={() => handleLoginModalOpen(nextPath, "landing_nav")}
               >
                 로그인
-              </button>
+              </YeonButton>
             ) : null
           }
         />
 
-        <main className="mx-auto max-w-[1400px] px-6 py-8 md:px-12 md:py-12">
-          <section className="max-w-[720px]">
-            <h1 className="text-balance break-keep text-[30px] font-black tracking-[-0.04em] text-[#111] md:text-[40px]">
+        <YeonView
+          as="main"
+          className="mx-auto max-w-[1400px] px-6 py-8 md:px-12 md:py-12"
+        >
+          <YeonView as="section" className="max-w-[720px]">
+            <YeonText
+              as="h1"
+              variant="unstyled"
+              tone="inherit"
+              className="text-balance break-keep text-[30px] font-black tracking-[-0.04em] text-[#111] md:text-[40px]"
+            >
               현재 {visibleServices.length}가지 서비스를 운영 중입니다.
-            </h1>
-            <p
+            </YeonText>
+            <YeonText
+              variant="unstyled"
+              tone="inherit"
               className={`mt-4 max-w-[720px] ${SHARED_FEATURE_CLASS.text14Neutral} leading-[1.8] md:text-[15px]`}
             >
               필요한 서비스를 선택해 바로 이용해보세요.
-            </p>
+            </YeonText>
             {hasHiddenCounselingService ? (
-              <button
+              <YeonButton
                 type="button"
-                className="mt-5 inline-flex min-h-[44px] items-center rounded-xl border border-[#e5e5e5] bg-white px-4 py-2 text-[13px] font-semibold text-[#555] transition-colors hover:border-[#111] hover:text-[#111]"
+                variant="secondary"
+                className="mt-5 inline-flex min-h-[44px] items-center rounded-xl border border-[#e5e5e5] bg-white px-4 py-2 text-[13px] font-semibold text-[#666] transition-colors hover:border-[#111] hover:text-[#111]"
                 aria-pressed={!isCounselingServiceHidden}
                 aria-label={
                   isCounselingServiceHidden
@@ -129,12 +140,12 @@ export function LandingHome({
                 {isCounselingServiceHidden
                   ? `숨겨진 서비스 ${hiddenServiceCount}개 보기`
                   : "상담 기록 워크스페이스 숨기기"}
-              </button>
+              </YeonButton>
             ) : null}
-          </section>
+          </YeonView>
 
-          <section className="mt-8">
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <YeonView as="section" className="mt-8">
+            <YeonView className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {visibleServices.map((service) => {
                 const isLive = service.status === platformServiceStatuses.live;
                 const requiresAuth =
@@ -147,35 +158,46 @@ export function LandingHome({
                 const interactiveCard = "hover:border-[#111] hover:bg-white";
                 const cardInner = (
                   <>
-                    <div className="flex items-start justify-end gap-3">
-                      <span
+                    <YeonView className="flex items-start justify-end gap-3">
+                      <YeonBadge
                         className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium ${
                           isLive
-                            ? "border border-[#e5e5e5] bg-white text-[#888]"
+                            ? "border border-[#e5e5e5] bg-white text-[#aaa]"
                             : "border border-[#e5e5e5] bg-[#fafafa] text-[#aaa]"
                         }`}
                       >
                         {isLive ? (
-                          <span
+                          <YeonView
+                            as="span"
                             aria-hidden="true"
                             className="h-1.5 w-1.5 rounded-full bg-[#111]"
                           />
                         ) : null}
                         {isLive ? "운영 중" : "준비 중"}
-                      </span>
-                    </div>
-                    <div className="mt-4">
-                      <h3 className="text-[20px] font-semibold tracking-[-0.03em] text-[#111]">
+                      </YeonBadge>
+                    </YeonView>
+                    <YeonView className="mt-4">
+                      <YeonText
+                        as="h3"
+                        variant="unstyled"
+                        tone="inherit"
+                        className="text-[20px] font-semibold tracking-[-0.03em] text-[#111]"
+                      >
                         {service.title}
-                      </h3>
-                      <p
+                      </YeonText>
+                      <YeonText
+                        variant="unstyled"
+                        tone="inherit"
                         className={`mt-3 break-keep ${SHARED_FEATURE_CLASS.text14Neutral} leading-[1.8]`}
                       >
                         {service.summary}
-                      </p>
-                    </div>
-                    <div className="mt-5 flex items-center border-t border-[#e5e5e5] pt-4">
-                      <span
+                      </YeonText>
+                    </YeonView>
+                    <YeonView className="mt-5 flex items-center border-t border-[#e5e5e5] pt-4">
+                      <YeonText
+                        as="span"
+                        variant="unstyled"
+                        tone="inherit"
                         className={`inline-flex items-center gap-1.5 ${
                           isLive
                             ? SHARED_FEATURE_CLASS.text13Emphasis
@@ -188,21 +210,24 @@ export function LandingHome({
                             ? "로그인 후 이동"
                             : "준비 중"}
                         {isLive ? (
-                          <span
+                          <YeonText
+                            as="span"
+                            variant="unstyled"
+                            tone="inherit"
                             aria-hidden="true"
                             className="transition-transform duration-200 group-hover:translate-x-0.5"
                           >
                             →
-                          </span>
+                          </YeonText>
                         ) : null}
-                      </span>
-                    </div>
+                      </YeonText>
+                    </YeonView>
                   </>
                 );
 
                 if (canOpen) {
                   return (
-                    <a
+                    <YeonLink
                       key={service.slug}
                       href={service.publicHref}
                       className={`${cardBase} ${interactiveCard} no-underline`}
@@ -216,14 +241,15 @@ export function LandingHome({
                       }
                     >
                       {cardInner}
-                    </a>
+                    </YeonLink>
                   );
                 }
                 if (needsLogin) {
                   return (
-                    <button
+                    <YeonButton
                       key={service.slug}
                       type="button"
+                      variant="secondary"
                       className={`${cardBase} ${interactiveCard}`}
                       onClick={() => {
                         trackEvent(analyticsEvents.serviceEntryClick, {
@@ -239,57 +265,77 @@ export function LandingHome({
                       }}
                     >
                       {cardInner}
-                    </button>
+                    </YeonButton>
                   );
                 }
 
                 return (
-                  <div
+                  <YeonView
                     key={service.slug}
                     className={`${cardBase} bg-white opacity-60`}
                   >
                     {cardInner}
-                  </div>
+                  </YeonView>
                 );
               })}
-            </div>
-          </section>
-        </main>
+            </YeonView>
+          </YeonView>
+        </YeonView>
 
-        <footer className="border-t border-[#e5e5e5] px-6 py-6 md:px-12">
-          <div className="mx-auto flex max-w-[1400px] flex-wrap items-center justify-between gap-4">
-            <span className={SHARED_FEATURE_CLASS.text12Soft}>
+        <YeonView
+          as="footer"
+          className="border-t border-[#e5e5e5] px-6 py-6 md:px-12"
+        >
+          <YeonView className="mx-auto flex max-w-[1400px] flex-wrap items-center justify-between gap-4">
+            <YeonText
+              as="span"
+              variant="unstyled"
+              tone="inherit"
+              className={SHARED_FEATURE_CLASS.text12Soft}
+            >
               &copy; 2026 {SITE_BRAND_NAME}
-            </span>
-            <div className="flex items-center gap-3">
-              <a
+            </YeonText>
+            <YeonView className="flex items-center gap-3">
+              <YeonLink
                 href="/privacy"
                 className={`${SHARED_FEATURE_CLASS.text12Neutral} no-underline hover:text-[#111]`}
               >
                 개인정보처리방침
-              </a>
-              <span aria-hidden="true" className="text-[#aaa]">
+              </YeonLink>
+              <YeonText
+                as="span"
+                variant="unstyled"
+                tone="inherit"
+                aria-hidden="true"
+                className="text-[#aaa]"
+              >
                 ·
-              </span>
-              <a
+              </YeonText>
+              <YeonLink
                 href="/terms"
                 className={`${SHARED_FEATURE_CLASS.text12Neutral} no-underline hover:text-[#111]`}
               >
                 이용약관
-              </a>
-              <span aria-hidden="true" className="text-[#aaa]">
+              </YeonLink>
+              <YeonText
+                as="span"
+                variant="unstyled"
+                tone="inherit"
+                aria-hidden="true"
+                className="text-[#aaa]"
+              >
                 ·
-              </span>
-              <a
+              </YeonText>
+              <YeonLink
                 href={`mailto:${SITE_SUPPORT_EMAIL}`}
                 className={`${SHARED_FEATURE_CLASS.text12Neutral} underline decoration-[#e5e5e5] underline-offset-2 hover:text-[#111]`}
               >
                 {SITE_SUPPORT_EMAIL}
-              </a>
-            </div>
-          </div>
-        </footer>
-      </div>
+              </YeonLink>
+            </YeonView>
+          </YeonView>
+        </YeonView>
+      </YeonView>
     </>
   );
 }

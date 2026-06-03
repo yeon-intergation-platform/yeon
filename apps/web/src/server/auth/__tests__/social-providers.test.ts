@@ -1,5 +1,4 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-
 import { authErrorCodes } from "../auth-errors";
 import { buildSocialAuthorizationUrl } from "../social-providers";
 
@@ -43,7 +42,6 @@ describe("social providers", () => {
     expect(url).toContain("code_challenge=kakao-challenge");
     expect(url).toContain("code_challenge_method=S256");
   });
-
 
   it("NEXT_PUBLIC_APP_URL이 있으면 내부 요청 origin이 달라도 google redirect_uri는 canonical callback을 사용한다", () => {
     const url = new URL(

@@ -1,4 +1,9 @@
 "use client";
+import {
+  getYeonDocumentTitle,
+  getYeonGtag,
+  getYeonLocationOrigin,
+} from "@yeon/ui/runtime/YeonBrowserRuntime";
 
 export const GA_MEASUREMENT_ID = "G-YGRNS3PQBQ";
 
@@ -34,31 +39,6 @@ export const analyticsEvents = {
 type AnalyticsScalar = string | number | boolean | null | undefined;
 type AnalyticsParams = Record<string, AnalyticsScalar>;
 
-declare global {
-  interface Window {
-    dataLayer: unknown[];
-    gtag?: (...args: unknown[]) => void;
-  }
-}
-
-function getGtag() {
-  if (typeof window === "undefined") {
-    return null;
-  }
-
-  if (!Array.isArray(window.dataLayer)) {
-    window.dataLayer = [];
-  }
-
-  if (typeof window.gtag !== "function") {
-    window.gtag = (...args: unknown[]) => {
-      window.dataLayer.push(args);
-    };
-  }
-
-  return window.gtag;
-}
-
 function normalizeParams(params?: AnalyticsParams) {
   if (!params) {
     return {};
@@ -70,7 +50,7 @@ function normalizeParams(params?: AnalyticsParams) {
 }
 
 export function trackEvent(eventName: string, params?: AnalyticsParams): void {
-  const gtag = getGtag();
+  const gtag = getYeonGtag();
   if (!gtag) {
     return;
   }
@@ -79,18 +59,14 @@ export function trackEvent(eventName: string, params?: AnalyticsParams): void {
 }
 
 export function trackPageView(path: string): void {
-  const gtag = getGtag();
-  if (
-    !gtag ||
-    typeof document === "undefined" ||
-    typeof window === "undefined"
-  ) {
+  const gtag = getYeonGtag();
+  if (!gtag) {
     return;
   }
 
   gtag("event", "page_view", {
-    page_title: document.title,
+    page_title: getYeonDocumentTitle(),
     page_path: path,
-    page_location: `${window.location.origin}${path}`,
+    page_location: `${getYeonLocationOrigin()}${path}`,
   });
 }

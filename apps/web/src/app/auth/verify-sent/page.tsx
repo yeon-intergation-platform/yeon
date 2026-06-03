@@ -1,12 +1,13 @@
-import type { Metadata } from "next";
-import Link from "next/link";
-
+import { YeonLink } from "@yeon/ui";
+import type { YeonPageMetadata } from "@yeon/ui/runtime/YeonPageMetadata";
+import { YeonText, YeonView } from "@yeon/ui";
+import { YEON_WEB_AUTH_CLASS } from "@yeon/ui/theme/web-style-tokens";
 import { NON_INDEXABLE_ROBOTS } from "@/lib/seo";
 import { SITE_BRAND_NAME } from "@/lib/site-brand";
 import { AuthShell } from "@/features/auth-credentials/auth-shell";
 import { ResendVerificationForm } from "@/features/auth-credentials/resend-verification-form";
 
-export const metadata: Metadata = {
+export const metadata: YeonPageMetadata = {
   title: `인증 메일 발송 | ${SITE_BRAND_NAME}`,
   robots: NON_INDEXABLE_ROBOTS,
 };
@@ -35,21 +36,25 @@ export default async function VerifySentPage({ searchParams }: PageProps) {
           : "입력한 이메일 주소로 인증 링크를 발송했습니다. 메일에 있는 링크를 누르면 가입이 완료됩니다."
       }
       footer={
-        <Link
+        <YeonLink
           href="/auth/login"
-          className="text-[13px] text-white/70 underline-offset-4 hover:underline"
+          className={`text-[13px] ${YEON_WEB_AUTH_CLASS.inlineLink}`}
         >
           이미 인증을 완료했다면 로그인
-        </Link>
+        </YeonLink>
       }
     >
-      <div className="grid gap-4">
-        <p className="m-0 text-[13px] leading-[1.65] text-white/[0.74]">
+      <YeonView className="grid gap-4">
+        <YeonText
+          variant="unstyled"
+          tone="inherit"
+          className={YEON_WEB_AUTH_CLASS.body13}
+        >
           메일이 도착하지 않거나 링크가 만료되었다면 아래에서 다시 요청할 수
           있어요. 스팸함도 함께 확인해 주세요.
-        </p>
+        </YeonText>
         <ResendVerificationForm initialEmail={email} />
-      </div>
+      </YeonView>
     </AuthShell>
   );
 }

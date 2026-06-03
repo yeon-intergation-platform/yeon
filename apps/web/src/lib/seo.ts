@@ -1,4 +1,6 @@
-import type { Metadata, MetadataRoute } from "next";
+import { createYeonUrl } from "@yeon/ui/runtime/YeonBrowserRuntime";
+import type { YeonPageMetadata } from "@yeon/ui/runtime/YeonPageMetadata";
+import type { YeonMetadataRoute } from "@yeon/ui/runtime/YeonMetadataRoute";
 
 export const CANONICAL_SITE_URL = "https://yeon.world";
 
@@ -14,7 +16,7 @@ const DEV_SITE_HOSTNAME = "dev.yeon.world";
 
 export const NOINDEX_X_ROBOTS_TAG_VALUE = "noindex, nofollow";
 
-export const NON_INDEXABLE_ROBOTS: Metadata["robots"] = {
+export const NON_INDEXABLE_ROBOTS: YeonPageMetadata["robots"] = {
   index: false,
   follow: false,
   nocache: true,
@@ -69,16 +71,16 @@ export const INDEXABLE_SITEMAP_ENTRIES = [
 ] as const satisfies readonly {
   url: string;
   changeFrequency: NonNullable<
-    MetadataRoute.Sitemap[number]["changeFrequency"]
+    YeonMetadataRoute["Sitemap"][number]["changeFrequency"]
   >;
   priority: number;
 }[];
 
 function parseUrl(rawUrl: string | undefined) {
   try {
-    return new URL(rawUrl ?? DEFAULT_APP_URL);
+    return createYeonUrl(rawUrl ?? DEFAULT_APP_URL);
   } catch {
-    return new URL(DEFAULT_APP_URL);
+    return createYeonUrl(DEFAULT_APP_URL);
   }
 }
 
@@ -87,7 +89,7 @@ function normalizeHostname(hostname: string | null | undefined) {
 }
 
 export function getCanonicalSite() {
-  return new URL(CANONICAL_SITE_URL);
+  return createYeonUrl(CANONICAL_SITE_URL);
 }
 
 export function getDeploymentSite() {
@@ -111,17 +113,17 @@ export function isDevHostname(hostname: string | null | undefined) {
 }
 
 export function buildCanonicalUrl(pathname: string) {
-  return new URL(pathname, getCanonicalSite()).toString();
+  return createYeonUrl(pathname, getCanonicalSite()).toString();
 }
 
 export function buildServiceCanonicalUrl(
   service: keyof typeof SERVICE_CANONICAL_URLS,
   pathname = "/"
 ) {
-  return new URL(pathname, SERVICE_CANONICAL_URLS[service]).toString();
+  return createYeonUrl(pathname, SERVICE_CANONICAL_URLS[service]).toString();
 }
 
-export function getDefaultSiteRobots(): Metadata["robots"] {
+export function getDefaultSiteRobots(): YeonPageMetadata["robots"] {
   return isCanonicalDeployment()
     ? {
         index: true,
@@ -130,7 +132,7 @@ export function getDefaultSiteRobots(): Metadata["robots"] {
     : NON_INDEXABLE_ROBOTS;
 }
 
-export function getIndexableSitemapEntries(): MetadataRoute.Sitemap {
+export function getIndexableSitemapEntries(): YeonMetadataRoute["Sitemap"] {
   return INDEXABLE_SITEMAP_ENTRIES.map((entry) => ({
     url: entry.url,
     changeFrequency: entry.changeFrequency,

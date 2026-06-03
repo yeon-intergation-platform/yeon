@@ -1,13 +1,22 @@
 "use client";
-
-import { useMutation, useQuery } from "@tanstack/react-query";
 import type {
   StarLobbyDiscordWebhookAdminStatusResponse,
   StarLobbyDiscordWebhookTestResponse,
 } from "@yeon/api-contract/star-lobby";
-import { type FormEvent, useState } from "react";
+import { YeonButton, YeonField, YeonForm, YeonText, YeonView } from "@yeon/ui";
+import { YEON_WEB_SHARED_CLASS as SHARED_FEATURE_CLASS } from "@yeon/ui/theme/web-style-tokens";
+import {
+  fetchYeon,
+  type YeonResponse,
+} from "@yeon/ui/runtime/YeonBrowserRuntime";
+import { useState } from "react";
+import type { YeonFormElement, YeonFormEvent } from "@yeon/ui/types";
+import {
+  useYeonMutation as useMutation,
+  useYeonQuery as useQuery,
+} from "@yeon/ui/runtime/YeonQuery";
 
-async function parseErrorMessage(response: Response, fallback: string) {
+async function parseErrorMessage(response: YeonResponse, fallback: string) {
   try {
     const body = (await response.json()) as {
       message?: string;
@@ -37,15 +46,27 @@ function StatusCard({
 }) {
   const valueClassName =
     tone === "warn"
-      ? "text-amber-700"
+      ? "text-[#666]"
       : tone === "good"
-        ? "text-emerald-700"
+        ? "text-[#111]"
         : "text-[#111]";
   return (
-    <div className="rounded-2xl border border-[#ececec] bg-white p-5">
-      <p className="text-[13px] font-bold text-[#777]">{label}</p>
-      <p className={`mt-2 text-[24px] font-black ${valueClassName}`}>{value}</p>
-    </div>
+    <YeonView className="rounded-2xl border border-[#e5e5e5] bg-white p-5">
+      <YeonText
+        variant="unstyled"
+        tone="inherit"
+        className={SHARED_FEATURE_CLASS.text13EmphasisSubtle}
+      >
+        {label}
+      </YeonText>
+      <YeonText
+        variant="unstyled"
+        tone="inherit"
+        className={`mt-2 text-[24px] font-black ${valueClassName}`}
+      >
+        {value}
+      </YeonText>
+    </YeonView>
   );
 }
 
@@ -56,9 +77,12 @@ export function StarLobbyDiscordOps() {
   const statusQuery = useQuery({
     queryKey: ["admin", "star-lobby", "discord-status"],
     queryFn: async () => {
-      const response = await fetch("/api/v1/star-lobby/admin/discord-status", {
-        cache: "no-store",
-      });
+      const response = await fetchYeon(
+        "/api/v1/star-lobby/admin/discord-status",
+        {
+          cache: "no-store",
+        }
+      );
       if (!response.ok) {
         throw new Error(
           await parseErrorMessage(
@@ -73,11 +97,14 @@ export function StarLobbyDiscordOps() {
 
   const testMutation = useMutation({
     mutationFn: async (nextWebhookUrl: string) => {
-      const response = await fetch("/api/v1/star-lobby/admin/discord-test", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ webhookUrl: nextWebhookUrl }),
-      });
+      const response = await fetchYeon(
+        "/api/v1/star-lobby/admin/discord-test",
+        {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ webhookUrl: nextWebhookUrl }),
+        }
+      );
       if (!response.ok) {
         throw new Error(
           await parseErrorMessage(
@@ -102,7 +129,7 @@ export function StarLobbyDiscordOps() {
     },
   });
 
-  function handleTestSubmit(event: FormEvent<HTMLFormElement>) {
+  function handleTestSubmit(event: YeonFormEvent<YeonFormElement>) {
     event.preventDefault();
     setMessage("테스트 Discord 알림을 보내는 중입니다.");
     testMutation.mutate(webhookUrl);
@@ -112,29 +139,49 @@ export function StarLobbyDiscordOps() {
   const testButtonViewState = toTestButtonViewState(testMutation.isPending);
 
   return (
-    <main className="min-h-screen bg-[#f7f7f7] px-6 py-10 text-[#111]">
-      <div className="mx-auto max-w-5xl">
-        <p className="text-[13px] font-black uppercase tracking-[0.24em] text-[#555]">
+    <YeonView
+      as="main"
+      className="min-h-screen bg-[#fafafa] px-6 py-10 text-[#111]"
+    >
+      <YeonView className="mx-auto max-w-5xl">
+        <YeonText
+          variant="unstyled"
+          tone="inherit"
+          className="text-[13px] font-black uppercase tracking-[0.24em] text-[#666]"
+        >
           Star Lobby Ops
-        </p>
-        <h1 className="mt-3 text-[34px] font-black tracking-[-0.04em]">
+        </YeonText>
+        <YeonText
+          as="h1"
+          variant="unstyled"
+          tone="inherit"
+          className="mt-3 text-[34px] font-black tracking-[-0.04em]"
+        >
           스타 로비 Discord 알림 운영 확인
-        </h1>
-        <p className="mt-3 max-w-2xl text-[15px] leading-7 text-[#555]">
+        </YeonText>
+        <YeonText
+          variant="unstyled"
+          tone="inherit"
+          className="mt-3 max-w-2xl text-[15px] leading-7 text-[#666]"
+        >
           Discord 봇 토큰이나 전역 Discord 환경변수 없이 배포됩니다. 단,
           운영에서 유저 웹훅 URL을 저장하려면 보호 키가 설정되어 있어야 합니다.
           테스트 발송은 URL을 저장하지 않고 즉시 전송 경로만 확인합니다.
-        </p>
+        </YeonText>
 
         {statusQuery.error ? (
-          <p className="mt-6 rounded-2xl border border-red-200 bg-red-50 p-4 text-[14px] text-red-700">
+          <YeonText
+            variant="unstyled"
+            tone="inherit"
+            className="mt-6 rounded-2xl border border-[#e5e5e5] bg-white p-4 text-[14px] text-[#111]"
+          >
             {statusQuery.error instanceof Error
               ? statusQuery.error.message
               : "운영 상태를 불러오지 못했습니다."}
-          </p>
+          </YeonText>
         ) : null}
 
-        <section className="mt-8 grid gap-4 md:grid-cols-4">
+        <YeonView as="section" className="mt-8 grid gap-4 md:grid-cols-4">
           <StatusCard
             label="Discord 전역 env 필요"
             tone="good"
@@ -175,44 +222,61 @@ export function StarLobbyDiscordOps() {
             label="활성 웹훅"
             value={String(status?.enabledWebhookCount ?? "-")}
           />
-        </section>
+        </YeonView>
 
-        <section className="mt-8 rounded-3xl border border-[#e5e5e5] bg-white p-6">
-          <h2 className="text-[22px] font-black tracking-[-0.03em]">
+        <YeonView
+          as="section"
+          className="mt-8 rounded-3xl border border-[#e5e5e5] bg-white p-6"
+        >
+          <YeonText
+            as="h2"
+            variant="unstyled"
+            tone="inherit"
+            className="text-[22px] font-black tracking-[-0.03em]"
+          >
             테스트 발송
-          </h2>
-          <p className="mt-2 text-[14px] leading-6 text-[#666]">
+          </YeonText>
+          <YeonText
+            variant="unstyled"
+            tone="inherit"
+            className="mt-2 text-[14px] leading-6 text-[#666]"
+          >
             운영에서 실제 Discord 웹훅 URL을 임시로 입력해 전송 경로를
             확인합니다. URL은 저장하지 않고 테스트 요청에만 사용합니다.
-          </p>
-          <form
+          </YeonText>
+          <YeonForm
             className="mt-5 flex flex-col gap-3 md:flex-row"
             onSubmit={handleTestSubmit}
           >
-            <input
-              className="min-w-0 flex-1 rounded-2xl border border-[#ddd] px-4 py-3 text-[14px] outline-none focus:border-[#111]"
+            <YeonField
+              className="min-w-0 flex-1 rounded-2xl px-4 py-3"
               onChange={(event) => setWebhookUrl(event.target.value)}
               placeholder="https://discord.com/api/webhooks/..."
               value={webhookUrl}
             />
-            <button
-              className="rounded-2xl bg-[#111] px-5 py-3 text-[14px] font-black text-white disabled:cursor-not-allowed disabled:bg-[#aaa]"
+            <YeonButton
+              className="rounded-2xl px-5 py-3 text-[14px] font-black"
               disabled={
                 testButtonViewState.disabledWhileSending ||
                 webhookUrl.trim().length === 0
               }
               type="submit"
+              variant="primary"
             >
               {testButtonViewState.label}
-            </button>
-          </form>
+            </YeonButton>
+          </YeonForm>
           {message ? (
-            <p className="mt-4 rounded-2xl bg-[#f2f2f2] p-4 text-[14px] text-[#333]">
+            <YeonText
+              variant="unstyled"
+              tone="inherit"
+              className="mt-4 rounded-2xl bg-[#fafafa] p-4 text-[14px] text-[#111]"
+            >
               {message}
-            </p>
+            </YeonText>
           ) : null}
-        </section>
-      </div>
-    </main>
+        </YeonView>
+      </YeonView>
+    </YeonView>
   );
 }

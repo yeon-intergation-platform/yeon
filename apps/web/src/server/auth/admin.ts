@@ -1,7 +1,5 @@
 import type { AuthUserDto } from "@yeon/api-contract/auth";
-
 import { checkAdminInSpring } from "@/server/root-auth-spring-client";
-
 import { getCurrentAuthUser } from "./session";
 
 export const USER_ROLES = {

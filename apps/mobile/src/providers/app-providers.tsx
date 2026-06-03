@@ -1,9 +1,11 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { StatusBar } from "expo-status-bar";
 import type { ReactNode } from "react";
 import { useState } from "react";
-import { SafeAreaProvider } from "react-native-safe-area-context";
-
+import {
+  YeonQueryClient as QueryClient,
+  YeonQueryClientProvider as QueryClientProvider,
+  YeonSafeAreaProvider as SafeAreaProvider,
+  YeonStatusBar,
+} from "@yeon/ui/native";
 import { ChatServiceSessionProvider } from "./chat-service-session-provider";
 
 type AppProvidersProps = {
@@ -24,14 +26,14 @@ export function AppProviders({ children }: AppProvidersProps) {
             retry: 0,
           },
         },
-      }),
+      })
   );
 
   return (
     <SafeAreaProvider>
       <QueryClientProvider client={queryClient}>
         <ChatServiceSessionProvider>{children}</ChatServiceSessionProvider>
-        <StatusBar style="dark" />
+        <YeonStatusBar tone="dark" />
       </QueryClientProvider>
     </SafeAreaProvider>
   );

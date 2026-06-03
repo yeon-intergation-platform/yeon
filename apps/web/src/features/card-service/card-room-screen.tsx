@@ -1,13 +1,17 @@
 "use client";
-
-import { SHARED_FEATURE_CLASS } from "@/features/shared-style-constants";
-
+import { YEON_WEB_SHARED_CLASS as SHARED_FEATURE_CLASS } from "@yeon/ui/theme/web-style-tokens";
 import { useEffect, useMemo, useState } from "react";
 import {
   CARD_ROOM_ROLE,
   CARD_ROOM_STATUS,
 } from "@yeon/api-contract/card-rooms";
 import { CommonProductHeader } from "@/components/product-shell/product-header";
+import { YeonButton, YeonText, YeonView } from "@yeon/ui";
+import {
+  readYeonSessionStorageItem,
+  removeYeonSessionStorageItem,
+  writeYeonSessionStorageItem,
+} from "@yeon/ui/runtime/YeonBrowserRuntime";
 import { RoomVoiceCallPanel } from "@/features/room-voice-call/room-voice-call-panel";
 import { useRoomVoiceCall } from "@/features/room-voice-call/use-room-voice-call";
 import { useCharacterFrameOverrides } from "@/features/typing-service/use-character-frame-overrides";
@@ -35,7 +39,7 @@ export function CardRoomScreen({ roomId }: CardRoomScreenProps) {
   useEffect(() => {
     if (!profileLoaded) return;
     const key = `yeon-card-room-participant:${roomId}`;
-    const existing = sessionStorage.getItem(key);
+    const existing = readYeonSessionStorageItem(key);
     if (existing) {
       setParticipantId(existing);
       return;
@@ -44,7 +48,7 @@ export function CardRoomScreen({ roomId }: CardRoomScreenProps) {
     joinCardRoom(roomId, { profile }, guestId)
       .then((joined) => {
         if (cancelled) return;
-        sessionStorage.setItem(key, joined.participant.id);
+        writeYeonSessionStorageItem(key, joined.participant.id);
         setParticipantId(joined.participant.id);
       })
       .catch((error) => {
@@ -67,7 +71,7 @@ export function CardRoomScreen({ roomId }: CardRoomScreenProps) {
       (participant) => participant.id === participantId
     );
     if (exists) return;
-    sessionStorage.removeItem(`yeon-card-room-participant:${roomId}`);
+    removeYeonSessionStorageItem(`yeon-card-room-participant:${roomId}`);
     setParticipantId(null);
   }, [participantId, roomId, state]);
 
@@ -121,15 +125,15 @@ export function CardRoomScreen({ roomId }: CardRoomScreenProps) {
   }
   function leaveRoom() {
     if (participantId) {
-      sessionStorage.removeItem(`yeon-card-room-participant:${roomId}`);
+      removeYeonSessionStorageItem(`yeon-card-room-participant:${roomId}`);
       room.sendLeave();
     }
   }
 
   return (
-    <div className={SHARED_FEATURE_CLASS.pageSurface}>
+    <YeonView className={SHARED_FEATURE_CLASS.pageSurface}>
       <CommonProductHeader activeService="card" />
-      <main className="px-4 py-5 md:px-8 md:py-6">
+      <YeonView as="main" className="px-4 py-5 md:px-8 md:py-6">
         <CardRoomHeader
           roomId={roomId}
           state={state}
@@ -144,30 +148,42 @@ export function CardRoomScreen({ roomId }: CardRoomScreenProps) {
         />
 
         {joinError || room.error ? (
-          <p className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-[13px] font-bold text-red-700">
+          <YeonText
+            as="p"
+            variant="caption"
+            tone="primary"
+            className="mt-4 rounded-xl border border-[#e5e5e5] bg-[#fafafa] px-4 py-3 font-bold"
+          >
             {joinError ?? room.error}
-          </p>
+          </YeonText>
         ) : null}
 
-        <section className="mt-4 grid gap-4 lg:grid-cols-[35fr_65fr]">
-          <section className="rounded-3xl border border-[#e5e5e5] bg-[#fafafa] p-3 md:p-4">
-            <div className="mb-3 flex rounded-xl border border-[#e5e5e5] bg-white p-1 lg:hidden">
+        <YeonView
+          as="section"
+          className="mt-4 grid gap-4 lg:grid-cols-[35fr_65fr]"
+        >
+          <YeonView
+            as="section"
+            className="rounded-3xl border border-[#e5e5e5] bg-[#fafafa] p-3 md:p-4"
+          >
+            <YeonView className="mb-3 flex rounded-xl border border-[#e5e5e5] bg-white p-1 lg:hidden">
               {(["card", "chat"] as const).map((tab) => (
-                <button
+                <YeonButton
                   key={tab}
                   type="button"
                   onClick={() => setMobileTab(tab)}
-                  data-active={mobileTab === tab}
-                  className={`flex-1 rounded-lg px-3 py-2 ${SHARED_FEATURE_CLASS.text13MediumSecondary} data-[active=true]:bg-[#111] data-[active=true]:text-white`}
+                  variant={mobileTab === tab ? "primary" : "ghost"}
+                  size="md"
+                  className={`flex-1 rounded-lg px-3 py-2 ${SHARED_FEATURE_CLASS.text13MediumSecondary}`}
                 >
                   {tab === "card" ? "카드" : "채팅"}
-                </button>
+                </YeonButton>
               ))}
-            </div>
-            <div
+            </YeonView>
+            <YeonView
               className={`${mobileTab === "chat" ? "hidden lg:block" : "block"}`}
             >
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+              <YeonView className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
                 <CardRoomParticipantsPanel
                   participants={state?.participants ?? null}
                   participantId={participantId}
@@ -185,9 +201,9 @@ export function CardRoomScreen({ roomId }: CardRoomScreenProps) {
                   onResult={room.sendResult}
                   onNext={room.sendNext}
                 />
-              </div>
-            </div>
-          </section>
+              </YeonView>
+            </YeonView>
+          </YeonView>
 
           <CardRoomChatPanel
             mobileTab={mobileTab}
@@ -197,8 +213,8 @@ export function CardRoomScreen({ roomId }: CardRoomScreenProps) {
             onChatDraftChange={setChatDraft}
             onSubmitChat={submitChat}
           />
-        </section>
-      </main>
-    </div>
+        </YeonView>
+      </YeonView>
+    </YeonView>
   );
 }

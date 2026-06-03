@@ -2,27 +2,28 @@ import type {
   ChatServiceFriendCardDto,
   ChatServiceProfileSummaryDto,
 } from "@yeon/api-contract/chat-service";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "expo-router";
-import type { ReactNode } from "react";
 import {
-  Alert,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
-
-import { ActionButton } from "../../../components/ui/action-button";
-import { AvatarCircle } from "../../../components/ui/avatar-circle";
-import { SectionCard } from "../../../components/ui/section-card";
-import { StateBlock } from "../../../components/ui/state-block";
-import { TopBar } from "../../../components/ui/top-bar";
+  useYeonMutation as useMutation,
+  useYeonQuery as useQuery,
+  useYeonQueryClient as useQueryClient,
+} from "@yeon/ui/native";
+import { useYeonRouter as useRouter } from "@yeon/ui/native";
+import type { ReactNode } from "react";
+import { showYeonAlert } from "@yeon/ui/native";
+import {
+  YeonDescriptionText as DescriptionText,
+  YeonFormStack as FormStack,
+  YeonMobileScreen as MobileScreen,
+  YeonPillBadge as PillBadge,
+  YeonProfileListRow as ProfileListRow,
+  YeonSectionCard as SectionCard,
+  YeonSectionTitle as SectionTitle,
+  YeonStateBlock as StateBlock,
+  YeonTopBar as TopBar,
+} from "@yeon/ui/native";
 import { useChatServiceSession } from "../../../providers/chat-service-session-provider";
 import { chatServiceApi } from "../../../services/chat-service/client";
 import { chatServiceQueryKeys } from "../../../services/chat-service/query-keys";
-import { colors } from "../../../theme/colors";
 
 export function FriendsScreen() {
   const router = useRouter();
@@ -55,13 +56,13 @@ export function FriendsScreen() {
   async function handleFriendRequest(profileId: string) {
     try {
       await friendRequestMutation.mutateAsync(profileId);
-      Alert.alert("친구 요청 전송", "상대에게 요청이 전달됐습니다.");
+      showYeonAlert("친구 요청 전송", "상대에게 요청이 전달됐습니다.");
     } catch (error) {
       const message =
         error instanceof Error
           ? error.message
           : "친구 요청 전송에 실패했습니다.";
-      Alert.alert("오류", message);
+      showYeonAlert("오류", message);
     }
   }
 
@@ -70,7 +71,7 @@ export function FriendsScreen() {
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.content} style={styles.screen}>
+    <MobileScreen>
       <TopBar
         rightLabel="새로고침"
         onRightPress={() => {
@@ -109,7 +110,7 @@ export function FriendsScreen() {
                 />
               ))
             ) : (
-              <Text style={styles.emptyText}>아직 연결된 친구가 없습니다.</Text>
+              <DescriptionText>아직 연결된 친구가 없습니다.</DescriptionText>
             )}
           </FriendsSection>
 
@@ -124,7 +125,7 @@ export function FriendsScreen() {
                 />
               ))
             ) : (
-              <Text style={styles.emptyText}>보낸 요청이 없습니다.</Text>
+              <DescriptionText>보낸 요청이 없습니다.</DescriptionText>
             )}
           </FriendsSection>
 
@@ -140,7 +141,7 @@ export function FriendsScreen() {
                 />
               ))
             ) : (
-              <Text style={styles.emptyText}>받은 요청이 없습니다.</Text>
+              <DescriptionText>받은 요청이 없습니다.</DescriptionText>
             )}
           </FriendsSection>
 
@@ -156,7 +157,7 @@ export function FriendsScreen() {
           </FriendsSection>
         </>
       ) : null}
-    </ScrollView>
+    </MobileScreen>
   );
 }
 
@@ -169,8 +170,8 @@ function FriendsSection({
 }) {
   return (
     <SectionCard>
-      <Text style={styles.sectionTitle}>{title}</Text>
-      <View style={styles.sectionBody}>{children}</View>
+      <SectionTitle spacing="sm">{title}</SectionTitle>
+      <FormStack>{children}</FormStack>
     </SectionCard>
   );
 }
@@ -187,32 +188,21 @@ function FriendRow({
   onPress: () => void;
 }) {
   return (
-    <View style={styles.row}>
-      <Pressable onPress={onPress} style={styles.profileRow}>
-        <AvatarCircle
-          imageUrl={card.profile.avatarUrl}
-          label={card.profile.nickname}
+    <ProfileListRow
+      imageUrl={card.profile.avatarUrl}
+      label={card.profile.nickname}
+      meta={`${card.profile.regionLabel} ${card.profile.ageLabel}`}
+      onPress={onPress}
+      preview={card.previewText ?? undefined}
+      title={card.profile.nickname}
+      trailingSlot={
+        <PillBadge
+          label={actionLabel}
+          onPress={onAction}
+          tone={onAction ? "accent" : "neutral"}
         />
-        <View style={styles.rowText}>
-          <Text style={styles.nickname}>{card.profile.nickname}</Text>
-          <Text style={styles.meta}>
-            {card.profile.regionLabel} {card.profile.ageLabel}
-          </Text>
-          {card.previewText ? (
-            <Text style={styles.preview}>{card.previewText}</Text>
-          ) : null}
-        </View>
-      </Pressable>
-      {onAction ? (
-        <Pressable onPress={onAction} style={styles.inlineAction}>
-          <Text style={styles.inlineActionLabel}>{actionLabel}</Text>
-        </Pressable>
-      ) : (
-        <View style={styles.inlineAction}>
-          <Text style={styles.inlineActionLabel}>{actionLabel}</Text>
-        </View>
-      )}
-    </View>
+      }
+    />
   );
 }
 
@@ -226,82 +216,13 @@ function SuggestedRow({
   onPress: () => void;
 }) {
   return (
-    <View style={styles.row}>
-      <Pressable onPress={onPress} style={styles.profileRow}>
-        <AvatarCircle imageUrl={profile.avatarUrl} label={profile.nickname} />
-        <View style={styles.rowText}>
-          <Text style={styles.nickname}>{profile.nickname}</Text>
-          <Text style={styles.meta}>
-            {profile.regionLabel} {profile.ageLabel}
-          </Text>
-        </View>
-      </Pressable>
-      <ActionButton label="친구추가" onPress={onAdd} variant="secondary" />
-    </View>
+    <ProfileListRow
+      imageUrl={profile.avatarUrl}
+      label={profile.nickname}
+      meta={`${profile.regionLabel} ${profile.ageLabel}`}
+      onPress={onPress}
+      title={profile.nickname}
+      trailingSlot={<PillBadge label="친구추가" onPress={onAdd} />}
+    />
   );
 }
-
-const styles = StyleSheet.create({
-  screen: {
-    backgroundColor: colors.background,
-    flex: 1,
-  },
-  content: {
-    gap: 16,
-    paddingBottom: 120,
-    paddingHorizontal: 18,
-    paddingTop: 22,
-  },
-  sectionTitle: {
-    color: colors.text,
-    fontSize: 18,
-    fontWeight: "900",
-    marginBottom: 12,
-  },
-  sectionBody: {
-    gap: 12,
-  },
-  row: {
-    alignItems: "center",
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-  profileRow: {
-    alignItems: "center",
-    flex: 1,
-    flexDirection: "row",
-    gap: 12,
-  },
-  rowText: {
-    flex: 1,
-    gap: 4,
-  },
-  nickname: {
-    color: colors.accent,
-    fontSize: 18,
-    fontWeight: "900",
-  },
-  meta: {
-    color: colors.textMuted,
-    fontSize: 13,
-  },
-  preview: {
-    color: colors.text,
-    fontSize: 14,
-  },
-  inlineAction: {
-    backgroundColor: colors.accentSoft,
-    borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
-  inlineActionLabel: {
-    color: colors.accent,
-    fontSize: 12,
-    fontWeight: "800",
-  },
-  emptyText: {
-    color: colors.textMuted,
-    fontSize: 14,
-  },
-});

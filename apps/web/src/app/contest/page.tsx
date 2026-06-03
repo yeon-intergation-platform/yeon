@@ -1,5 +1,5 @@
-import { permanentRedirect } from "next/navigation";
+import { permanentRedirectYeon } from "@yeon/ui/runtime/YeonRouteControl";
 
 export default function ContestPage() {
-  permanentRedirect("/");
+  permanentRedirectYeon("/");
 }

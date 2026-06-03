@@ -3,3 +3,6 @@ node_modules
 dist
 coverage
 pnpm-lock.yaml
+
+# 자유서술(한국어 콜론 등) 아키텍처 레지스트리 — verify-parity(js-yaml)로 검증, prettier 대상 아님
+docs/architecture/universal-ui-parity-registry.yaml

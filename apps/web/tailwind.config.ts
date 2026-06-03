@@ -1,7 +1,10 @@
+import nativewindPreset from "nativewind/preset";
+import { yeonTailwindPreset } from "@yeon/design-tokens/tailwind-preset";
 import type { Config } from "tailwindcss";
 
 export default {
-  content: ["./src/**/*.{ts,tsx}"],
+  content: ["./src/**/*.{ts,tsx}", "../../packages/ui/src/**/*.{ts,tsx}"],
+  presets: [nativewindPreset, yeonTailwindPreset],
   theme: {
     extend: {
       colors: {
@@ -32,10 +35,10 @@ export default {
           dim: "var(--green-dim)",
           border: "var(--green-border)",
         },
-        amber: {
-          DEFAULT: "var(--amber)",
-          dim: "var(--amber-dim)",
-          border: "var(--amber-border)",
+        neutral: {
+          DEFAULT: "var(--neutral)",
+          dim: "var(--neutral-dim)",
+          border: "var(--neutral-border)",
         },
         red: {
           DEFAULT: "var(--red)",

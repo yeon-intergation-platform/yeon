@@ -1,5 +1,4 @@
 import type { NextRequest } from "next/server";
-
 import { socialProviders } from "@/server/auth/constants";
 import { startSocialAuth } from "@/server/auth/handlers";
 

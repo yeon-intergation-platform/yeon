@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-
 import {
   authErrorCodes,
   buildAuthErrorRedirectPath,
@@ -46,7 +45,7 @@ describe("auth-errors", () => {
     });
 
     expect(withSafeNext).toContain(
-      "next=%2Fcounseling-service%3Ftab%3Drecords",
+      "next=%2Fcounseling-service%3Ftab%3Drecords"
     );
     expect(withUnsafeNext).not.toContain("next=");
     expect(withLegacyHomeNext).not.toContain("next=");

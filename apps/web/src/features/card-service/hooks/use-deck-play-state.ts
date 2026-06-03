@@ -1,6 +1,13 @@
 "use client";
-
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import {
+  useYeonPathname,
+  useYeonRouter,
+  useYeonSearchParams,
+} from "@yeon/ui/runtime/YeonNavigation";
+import {
+  createYeonUrlSearchParams,
+  getYeonRandom,
+} from "@yeon/ui/runtime/YeonBrowserRuntime";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CardDeckItemDto } from "@yeon/api-contract/card-decks";
 
@@ -19,16 +26,16 @@ function parseIndexFromParam(param: string | null): number {
 function shuffleInPlace<T>(source: readonly T[]): T[] {
   const out = source.slice();
   for (let i = out.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = Math.floor(getYeonRandom() * (i + 1));
     [out[i], out[j]] = [out[j]!, out[i]!];
   }
   return out;
 }
 
 export function useDeckPlayState(items: CardDeckItemDto[]) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
+  const router = useYeonRouter();
+  const pathname = useYeonPathname();
+  const searchParams = useYeonSearchParams();
 
   const [isShuffled, setShuffled] = useState(false);
   const [shuffledItems, setShuffledItems] = useState<CardDeckItemDto[]>(items);
@@ -63,7 +70,7 @@ export function useDeckPlayState(items: CardDeckItemDto[]) {
   const updateIndex = useCallback(
     (nextIndex: number) => {
       const bounded = clampIndex(nextIndex, visibleItems.length);
-      const nextParams = new URLSearchParams(searchParams.toString());
+      const nextParams = createYeonUrlSearchParams(searchParams.toString());
       if (bounded === 0) {
         nextParams.delete("i");
       } else {
@@ -72,7 +79,7 @@ export function useDeckPlayState(items: CardDeckItemDto[]) {
       const query = nextParams.toString();
       router.replace(query ? `${pathname}?${query}` : pathname);
     },
-    [pathname, router, searchParams, visibleItems.length],
+    [pathname, router, searchParams, visibleItems.length]
   );
 
   const handleFlip = useCallback(() => {
@@ -132,6 +139,6 @@ export function useDeckPlayState(items: CardDeckItemDto[]) {
       handleNext,
       handleFirst,
       handleToggleShuffle,
-    ],
+    ]
   );
 }

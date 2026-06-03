@@ -2,7 +2,6 @@ import { authSessionResponseSchema } from "@yeon/api-contract/auth";
 import { errorResponseSchema } from "@yeon/api-contract/error";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-
 import { getAuthSessionTokensFromRequest } from "@/server/auth/request-session-token";
 import { clearAuthSessionCookie } from "@/server/auth/session";
 import {
@@ -19,8 +18,8 @@ export async function GET(request: NextRequest) {
     const sessionTokens = getAuthSessionTokensFromRequest(request);
     const sessions = await Promise.all(
       sessionTokens.map((sessionToken) =>
-        fetchRootAuthSessionFromSpring(sessionToken.token),
-      ),
+        fetchRootAuthSessionFromSpring(sessionToken.token)
+      )
     );
     const session =
       sessions.find((candidate) => candidate.authenticated) ??
@@ -54,8 +53,8 @@ export async function DELETE(request: NextRequest) {
 
     await Promise.all(
       sessionTokens.map((sessionToken) =>
-        deleteRootAuthSessionInSpring(sessionToken.token),
-      ),
+        deleteRootAuthSessionInSpring(sessionToken.token)
+      )
     );
 
     const response = NextResponse.json(

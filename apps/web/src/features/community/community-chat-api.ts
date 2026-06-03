@@ -5,6 +5,11 @@ import {
   communityChatSendMessageResponseSchema,
   type CommunityChatMessageDto,
 } from "@yeon/api-contract/community-chat";
+import {
+  fetchYeon,
+  type YeonRequestInit,
+  type YeonResponse,
+} from "@yeon/ui/runtime/YeonBrowserRuntime";
 
 const COMMUNITY_CHAT_API_BASE = "/api/v1/community-chat/messages";
 
@@ -13,7 +18,7 @@ type ParsedPayload<TSchema extends z.ZodTypeAny> = z.infer<TSchema>;
 type RequestBody = Record<string, unknown> | undefined;
 
 async function parseJsonResponse<TSchema extends z.ZodTypeAny>(
-  response: Response,
+  response: YeonResponse,
   schema: TSchema,
   fallbackMessage: string
 ): Promise<ParsedPayload<TSchema>> {
@@ -53,11 +58,11 @@ async function requestJson<
   TSchema extends z.ZodTypeAny,
   TBody extends RequestBody = undefined,
 >(
-  init: Omit<RequestInit, "body"> & { body?: TBody } = {},
+  init: Omit<YeonRequestInit, "body"> & { body?: TBody } = {},
   schema: TSchema,
   fallbackMessage: string
 ): Promise<ParsedPayload<TSchema>> {
-  const response = await fetch(COMMUNITY_CHAT_API_BASE, {
+  const response = await fetchYeon(COMMUNITY_CHAT_API_BASE, {
     credentials: "include",
     cache: "no-store",
     ...init,

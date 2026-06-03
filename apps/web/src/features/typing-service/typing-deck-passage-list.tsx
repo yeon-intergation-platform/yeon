@@ -1,7 +1,12 @@
 "use client";
-
-import { YeonButton, YeonSurface } from "@/components/yeon-ui";
-import { SHARED_FEATURE_CLASS } from "@/features/shared-style-constants";
+import {
+  YeonButton,
+  YeonSurface,
+  YeonList,
+  YeonText,
+  YeonView,
+} from "@yeon/ui";
+import { YEON_WEB_SHARED_CLASS as SHARED_FEATURE_CLASS } from "@yeon/ui/theme/web-style-tokens";
 import { TYPING_SERVICE_COMMON_CLASS } from "./typing-service-common.const";
 import {
   type TypingDeckPassageDto,
@@ -28,35 +33,53 @@ export function TypingDeckPassageList({
   if (passages.length === 0) {
     return (
       <YeonSurface variant="empty" className="p-8">
-        <p className={TYPING_SERVICE_COMMON_CLASS.panelTextEmphasis}>
+        <YeonText
+          as="p"
+          variant="unstyled"
+          tone="inherit"
+          className={TYPING_SERVICE_COMMON_CLASS.panelTextEmphasis}
+        >
           아직 문단이 없습니다.
-        </p>
+        </YeonText>
         {!readonly ? (
-          <p className={`mt-2 ${SHARED_FEATURE_CLASS.text13Neutral}`}>
+          <YeonText
+            as="p"
+            variant="unstyled"
+            tone="inherit"
+            className={`mt-2 ${SHARED_FEATURE_CLASS.text13Neutral}`}
+          >
             직접 추가하거나 AI 붙여넣기로 여러 문단을 넣어보세요.
-          </p>
+          </YeonText>
         ) : null}
       </YeonSurface>
     );
   }
 
   return (
-    <ul className="flex flex-col gap-3">
+    <YeonList className="flex flex-col gap-3">
       {passages.map((passage, index) => (
         <YeonSurface as="li" key={passage.id} className="p-4">
-          <div className={SHARED_FEATURE_CLASS.alignBetweenStartGap3}>
-            <div>
-              <p className="text-[12px] font-semibold text-[#888]">
+          <YeonView className={SHARED_FEATURE_CLASS.alignBetweenStartGap3}>
+            <YeonView>
+              <YeonText
+                as="p"
+                variant="unstyled"
+                tone="inherit"
+                className="text-[12px] font-semibold text-[#aaa]"
+              >
                 문단 {index + 1}
-              </p>
-              <h4
+              </YeonText>
+              <YeonText
+                as="h4"
+                variant="unstyled"
+                tone="inherit"
                 className={`mt-1 ${TYPING_SERVICE_COMMON_CLASS.panelTextEmphasis15}`}
               >
                 {passage.title || "제목 없음"}
-              </h4>
-            </div>
+              </YeonText>
+            </YeonView>
             {!readonly ? (
-              <div className="flex shrink-0 gap-2">
+              <YeonView className="flex shrink-0 gap-2">
                 <YeonButton
                   type="button"
                   onClick={() => onEdit(passage)}
@@ -72,29 +95,49 @@ export function TypingDeckPassageList({
                 >
                   삭제
                 </YeonButton>
-              </div>
+              </YeonView>
             ) : null}
-          </div>
-          <p className="mt-3 whitespace-pre-wrap text-[13px] leading-6 text-[#555]">
+          </YeonView>
+          <YeonText
+            as="p"
+            variant="unstyled"
+            tone="inherit"
+            className="mt-3 whitespace-pre-wrap text-[13px] leading-6 text-[#666]"
+          >
             {passage.prompt}
-          </p>
-          <div
+          </YeonText>
+          <YeonView
             className={`mt-3 flex flex-wrap gap-2 ${SHARED_FEATURE_CLASS.text12Subtle}`}
           >
-            <span className={SHARED_FEATURE_CLASS.tagPill}>
+            <YeonText
+              as="span"
+              variant="unstyled"
+              tone="inherit"
+              className={SHARED_FEATURE_CLASS.tagPill}
+            >
               {passage.textType}
-            </span>
-            <span className={SHARED_FEATURE_CLASS.tagPill}>
+            </YeonText>
+            <YeonText
+              as="span"
+              variant="unstyled"
+              tone="inherit"
+              className={SHARED_FEATURE_CLASS.tagPill}
+            >
               {passage.difficulty}
-            </span>
-          </div>
+            </YeonText>
+          </YeonView>
           {deletePassage.error ? (
-            <p className="mt-2 text-[12px] text-red-600">
+            <YeonText
+              as="p"
+              variant="unstyled"
+              tone="inherit"
+              className="mt-2 text-[12px] text-[#666]"
+            >
               {deletePassage.error.message}
-            </p>
+            </YeonText>
           ) : null}
         </YeonSurface>
       ))}
-    </ul>
+    </YeonList>
   );
 }

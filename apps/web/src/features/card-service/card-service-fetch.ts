@@ -8,6 +8,14 @@ import {
   type MergeGuestResponse,
   mergeGuestResponseSchema,
 } from "@yeon/api-contract/card-deck-merge-guest";
+import {
+  createYeonFormData,
+  fetchYeon,
+  type YeonFetchInput,
+  type YeonRequestInit,
+  type YeonFile,
+  type YeonResponse,
+} from "@yeon/ui/runtime/YeonBrowserRuntime";
 
 const CARD_SERVICE_AUTH_ERROR_MESSAGE =
   "로그인이 만료되었습니다. 다시 로그인해 주세요.";
@@ -38,7 +46,7 @@ export class CardServiceApiError extends Error {
 }
 
 async function readErrorMessage(
-  response: Response,
+  response: YeonResponse,
   fallbackErrorMessage: string
 ): Promise<string> {
   if (response.status === 401) {
@@ -59,7 +67,10 @@ async function readErrorMessage(
   }
 }
 
-async function throwIfNotOk(response: Response, fallbackErrorMessage: string) {
+async function throwIfNotOk(
+  response: YeonResponse,
+  fallbackErrorMessage: string
+) {
   if (!response.ok) {
     throw new CardServiceApiError(
       response.status,
@@ -69,11 +80,11 @@ async function throwIfNotOk(response: Response, fallbackErrorMessage: string) {
 }
 
 export async function cardServiceFetchJson<T>(
-  input: RequestInfo | URL,
-  init: RequestInit,
+  input: YeonFetchInput,
+  init: YeonRequestInit,
   fallbackErrorMessage: string
 ): Promise<T> {
-  const response = await fetch(input, { ...init, credentials: "include" });
+  const response = await fetchYeon(input, { ...init, credentials: "include" });
 
   await throwIfNotOk(response, fallbackErrorMessage);
 
@@ -81,19 +92,19 @@ export async function cardServiceFetchJson<T>(
 }
 
 export async function cardServiceFetchVoid(
-  input: RequestInfo | URL,
-  init: RequestInit,
+  input: YeonFetchInput,
+  init: YeonRequestInit,
   fallbackErrorMessage: string
 ): Promise<void> {
-  const response = await fetch(input, { ...init, credentials: "include" });
+  const response = await fetchYeon(input, { ...init, credentials: "include" });
 
   await throwIfNotOk(response, fallbackErrorMessage);
 }
 
 export async function uploadCardDeckImage(
-  file: File
+  file: YeonFile
 ): Promise<CardDeckAssetUploadResponse> {
-  const formData = new FormData();
+  const formData = createYeonFormData();
   formData.append("file", file);
   return cardServiceFetchJson<CardDeckAssetUploadResponse>(
     "/api/v1/card-decks/assets",
@@ -120,7 +131,7 @@ export async function createServerCardDeck(
 export async function listServerCardDecksOrNull(): Promise<
   CardDeckDto[] | null
 > {
-  const response = await fetch("/api/v1/card-decks", {
+  const response = await fetchYeon("/api/v1/card-decks", {
     credentials: "include",
   });
 

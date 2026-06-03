@@ -1,3 +1,4 @@
+import { fetchYeon } from "@yeon/ui/runtime/YeonBrowserRuntime";
 import { NextResponse } from "next/server";
 
 const DEFAULT_BACKEND_BASE_URL = "http://127.0.0.1:8081";
@@ -5,7 +6,9 @@ const BACKEND_HEALTH_PATH = "/actuator/health";
 
 function resolveBackendBaseUrl() {
   const raw = process.env.SPRING_BOOTSTRAP_BASE_URL?.trim();
-  return raw && raw.length > 0 ? raw.replace(/\/$/, "") : DEFAULT_BACKEND_BASE_URL;
+  return raw && raw.length > 0
+    ? raw.replace(/\/$/, "")
+    : DEFAULT_BACKEND_BASE_URL;
 }
 
 export async function GET() {
@@ -13,7 +16,7 @@ export async function GET() {
   const targetUrl = `${backendBaseUrl}${BACKEND_HEALTH_PATH}`;
 
   try {
-    const response = await fetch(targetUrl, {
+    const response = await fetchYeon(targetUrl, {
       headers: {
         accept: "application/json",
       },
@@ -31,7 +34,7 @@ export async function GET() {
       },
       {
         status: response.ok ? 200 : 502,
-      },
+      }
     );
   } catch (error) {
     const message =
@@ -45,7 +48,7 @@ export async function GET() {
       },
       {
         status: 502,
-      },
+      }
     );
   }
 }

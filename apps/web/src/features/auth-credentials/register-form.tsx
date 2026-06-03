@@ -1,18 +1,23 @@
 "use client";
-
-import { useMutation } from "@tanstack/react-query";
-import Link from "next/link";
-import { type FormEvent, useState } from "react";
-
+import { YeonLink } from "@yeon/ui";
+import { useState } from "react";
+import type { YeonFormElement, YeonFormEvent } from "@yeon/ui/types";
 import { credentialPasswordPolicy } from "@yeon/api-contract/credential";
-
+import {
+  YeonButton,
+  YeonField,
+  YeonForm,
+  YeonLabel,
+  YeonText,
+  YeonView,
+} from "@yeon/ui";
+import { YEON_WEB_AUTH_CLASS } from "@yeon/ui/theme/web-style-tokens";
 import {
   credentialRegister,
   getCredentialErrorMessage,
 } from "@/lib/credential-client";
-import { SHARED_FEATURE_CLASS } from "@/features/shared-style-constants";
+import { useYeonMutation as useMutation } from "@yeon/ui/runtime/YeonQuery";
 import { AUTH_CREDENTIALS_COMMON_CLASS } from "./auth-credentials-common.const";
-
 import { ResendVerificationForm } from "./resend-verification-form";
 
 type RegisterViewState =
@@ -56,7 +61,7 @@ export function RegisterForm({ nextPath = "/" }: RegisterFormProps) {
     state.kind === "submitting" || registerMutation.isPending;
   const passwordHelper = deriveHelperMessage(password);
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: YeonFormEvent<YeonFormElement>) {
     event.preventDefault();
     if (passwordHelper) {
       setState({ kind: "error", message: passwordHelper });
@@ -95,56 +100,74 @@ export function RegisterForm({ nextPath = "/" }: RegisterFormProps) {
   if (state.kind === "link-needed") {
     const socialLoginHref = `/?login=1&next=${encodeURIComponent(nextPath)}`;
     return (
-      <div className="grid gap-4 rounded-[20px] border border-white/[0.1] bg-[rgba(232,99,10,0.1)] p-5">
-        <p className="m-0 text-[15px] font-bold leading-[1.5] text-[#ffcfa3]">
+      <YeonView className={YEON_WEB_AUTH_CLASS.noticePanel}>
+        <YeonText
+          variant="unstyled"
+          tone="inherit"
+          className={YEON_WEB_AUTH_CLASS.statusTitle15}
+        >
           이미 같은 이메일로 가입된 소셜 계정이 있어요.
-        </p>
-        <p className="m-0 text-[13px] leading-[1.6] text-white/[0.78]">
+        </YeonText>
+        <YeonText
+          variant="unstyled"
+          tone="inherit"
+          className={YEON_WEB_AUTH_CLASS.body13}
+        >
           기존 카카오/구글 계정으로 로그인하신 뒤 프로필 설정에서 &quot;비밀번호
           추가&quot;를 진행하면 같은 계정으로 일반 로그인도 할 수 있어요.
-        </p>
-        <Link
+        </YeonText>
+        <YeonLink
           href={socialLoginHref}
-          className="inline-flex h-11 items-center justify-center rounded-full bg-[#e8630a] px-5 text-[14px] font-bold text-[#fffaf4] transition-transform duration-200 ease-[ease] hover:-translate-y-px"
+          className={YEON_WEB_AUTH_CLASS.primaryAction}
         >
           홈에서 소셜 로그인
-        </Link>
-      </div>
+        </YeonLink>
+      </YeonView>
     );
   }
 
   if (state.kind === "sent") {
     return (
-      <div className="grid gap-4">
-        <div
-          role="status"
-          className="grid gap-2 rounded-[20px] border border-white/[0.1] bg-[rgba(16,17,20,0.6)] p-5 text-[13px] leading-[1.6] text-white/[0.82]"
-        >
-          <p className="m-0 text-[15px] font-bold text-white/90">
+      <YeonView className="grid gap-4">
+        <YeonView role="status" className={YEON_WEB_AUTH_CLASS.statusPanel}>
+          <YeonText
+            variant="unstyled"
+            tone="inherit"
+            className={YEON_WEB_AUTH_CLASS.statusTitle15}
+          >
             인증 메일을 발송했습니다.
-          </p>
-          <p className="m-0">
+          </YeonText>
+          <YeonText variant="unstyled" tone="inherit" className="m-0">
             받은 편지함에서 링크를 눌러 이메일 인증을 완료해 주세요. 스팸함도
             함께 확인해 보시고, 메일이 도착하지 않으면 아래에서 다시 요청할 수
             있습니다.
-          </p>
-        </div>
+          </YeonText>
+        </YeonView>
         <ResendVerificationForm initialEmail={state.email} />
-        <p className="m-0 text-[12px] text-white/55">
+        <YeonText
+          variant="unstyled"
+          tone="inherit"
+          className="m-0 text-[12px] text-[#f8f7f3]/55"
+        >
           인증 메일은 24시간 동안 유효합니다. 새로운 요청이 들어오면 이전 링크는
           더 이상 사용할 수 없습니다.
-        </p>
-      </div>
+        </YeonText>
+      </YeonView>
     );
   }
 
   return (
-    <form onSubmit={handleSubmit} className="grid gap-4">
-      <label className="grid gap-1.5">
-        <span className="text-[13px] font-bold tracking-[-0.01em] text-white/[0.82]">
+    <YeonForm onSubmit={handleSubmit} className="grid gap-4">
+      <YeonLabel className={YEON_WEB_AUTH_CLASS.label}>
+        <YeonText
+          as="span"
+          variant="unstyled"
+          tone="inherit"
+          className={YEON_WEB_AUTH_CLASS.labelText}
+        >
           이메일
-        </span>
-        <input
+        </YeonText>
+        <YeonField
           type="email"
           autoComplete="email"
           required
@@ -154,13 +177,26 @@ export function RegisterForm({ nextPath = "/" }: RegisterFormProps) {
           placeholder="you@yeon.world"
           disabled={isSubmitting}
         />
-      </label>
+      </YeonLabel>
 
-      <label className="grid gap-1.5">
-        <span className="text-[13px] font-bold tracking-[-0.01em] text-white/[0.82]">
-          표시 이름 <span className="text-white/50">(선택)</span>
-        </span>
-        <input
+      <YeonLabel className={YEON_WEB_AUTH_CLASS.label}>
+        <YeonText
+          as="span"
+          variant="unstyled"
+          tone="inherit"
+          className={YEON_WEB_AUTH_CLASS.labelText}
+        >
+          표시 이름{" "}
+          <YeonText
+            as="span"
+            variant="unstyled"
+            tone="inherit"
+            className="text-[#f8f7f3]/50"
+          >
+            (선택)
+          </YeonText>
+        </YeonText>
+        <YeonField
           type="text"
           autoComplete="name"
           value={displayName}
@@ -170,13 +206,18 @@ export function RegisterForm({ nextPath = "/" }: RegisterFormProps) {
           placeholder="예: 김연재"
           disabled={isSubmitting}
         />
-      </label>
+      </YeonLabel>
 
-      <label className="grid gap-1.5">
-        <span className="text-[13px] font-bold tracking-[-0.01em] text-white/[0.82]">
+      <YeonLabel className={YEON_WEB_AUTH_CLASS.label}>
+        <YeonText
+          as="span"
+          variant="unstyled"
+          tone="inherit"
+          className={YEON_WEB_AUTH_CLASS.labelText}
+        >
           비밀번호
-        </span>
-        <input
+        </YeonText>
+        <YeonField
           type="password"
           autoComplete="new-password"
           required
@@ -188,40 +229,47 @@ export function RegisterForm({ nextPath = "/" }: RegisterFormProps) {
           placeholder={`${credentialPasswordPolicy.minLength}자 이상, 공백 불가`}
           disabled={isSubmitting}
         />
-        <span className="text-[12px] leading-[1.55] text-white/55">
+        <YeonText
+          as="span"
+          variant="unstyled"
+          tone="inherit"
+          className={YEON_WEB_AUTH_CLASS.helperText}
+        >
           {passwordHelper ??
             `최소 ${credentialPasswordPolicy.minLength}자 · 최대 ${credentialPasswordPolicy.maxLength}자 · 공백 불가`}
-        </span>
-      </label>
+        </YeonText>
+      </YeonLabel>
 
       {state.kind === "error" ? (
-        <p role="alert" className={AUTH_CREDENTIALS_COMMON_CLASS.errorText13}>
+        <YeonText
+          role="alert"
+          variant="unstyled"
+          tone="inherit"
+          className={AUTH_CREDENTIALS_COMMON_CLASS.errorText13}
+        >
           {state.message}
-        </p>
+        </YeonText>
       ) : null}
 
       {state.kind === "email-send-failed" ? (
-        <div
-          role="alert"
-          className="grid gap-2 rounded-[16px] border border-white/[0.1] bg-[rgba(255,176,138,0.08)] p-4 text-[13px] leading-[1.55] text-[#ffcfa3]"
-        >
-          <p className="m-0 font-bold">
+        <YeonView role="alert" className={YEON_WEB_AUTH_CLASS.alertPanel}>
+          <YeonText variant="unstyled" tone="inherit" className="m-0 font-bold">
             계정은 만들어졌지만 인증 메일 발송에 실패했습니다.
-          </p>
-          <p className="m-0">
+          </YeonText>
+          <YeonText variant="unstyled" tone="inherit" className="m-0">
             잠시 후 아래 재발송 페이지에서 인증 메일을 다시 요청해 주세요.
-          </p>
+          </YeonText>
           <ResendVerificationForm initialEmail={state.email} />
-        </div>
+        </YeonView>
       ) : null}
 
-      <button
+      <YeonButton
         type="submit"
         disabled={isSubmitting || passwordHelper !== null}
-        className={`min-h-[52px] rounded-full bg-[#e8630a] px-[22px] transition-transform duration-200 ease-[ease] hover:enabled:-translate-y-px disabled:cursor-not-allowed disabled:opacity-70 ${SHARED_FEATURE_CLASS.text15EmphasisOnCream}`}
+        className={YEON_WEB_AUTH_CLASS.primaryAction}
       >
         {isSubmitting ? "가입 처리 중..." : "계정 만들기"}
-      </button>
-    </form>
+      </YeonButton>
+    </YeonForm>
   );
 }

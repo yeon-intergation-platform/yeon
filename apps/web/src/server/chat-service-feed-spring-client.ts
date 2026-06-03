@@ -1,3 +1,9 @@
+import {
+  createYeonUrl,
+  fetchYeon,
+  type YeonRequestInit,
+  type YeonResponse,
+} from "@yeon/ui/runtime/YeonBrowserRuntime";
 const DEFAULT_BACKEND_BASE_URL = "http://127.0.0.1:8081";
 const INTERNAL_TOKEN_HEADER = "X-Yeon-Internal-Token";
 const CHAT_PROFILE_HEADER = "X-Yeon-Chat-Profile-Id";
@@ -49,23 +55,31 @@ function withOptionalProfileHeader(currentProfileId?: string | null) {
   return headers;
 }
 
-async function fetchSpring(path: string, init: RequestInit, fallback: string) {
-  let response: Response;
+async function fetchSpring(
+  path: string,
+  init: YeonRequestInit,
+  fallback: string
+) {
+  let response: YeonResponse;
 
   try {
-    response = await fetch(new URL(`${resolveSpringBackendBaseUrl()}${path}`), {
-      cache: "no-store",
-      ...init,
-      headers: {
-        accept: "application/json",
-        ...(init.headers ?? {}),
-        ...(process.env.SPRING_INTERNAL_TOKEN?.trim()
-          ? {
-              [INTERNAL_TOKEN_HEADER]: process.env.SPRING_INTERNAL_TOKEN.trim(),
-            }
-          : {}),
-      },
-    });
+    response = await fetchYeon(
+      createYeonUrl(`${resolveSpringBackendBaseUrl()}${path}`),
+      {
+        cache: "no-store",
+        ...init,
+        headers: {
+          accept: "application/json",
+          ...(init.headers ?? {}),
+          ...(process.env.SPRING_INTERNAL_TOKEN?.trim()
+            ? {
+                [INTERNAL_TOKEN_HEADER]:
+                  process.env.SPRING_INTERNAL_TOKEN.trim(),
+              }
+            : {}),
+        },
+      }
+    );
   } catch {
     throw new ChatServiceFeedSpringBackendHttpError(
       503,

@@ -1,5 +1,4 @@
 import { afterEach, describe, expect, it } from "vitest";
-
 import { buildSpringBffHeaders } from "../spring-bff-client";
 
 describe("spring-bff-client", () => {

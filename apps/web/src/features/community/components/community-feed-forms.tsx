@@ -1,5 +1,13 @@
 "use client";
-
+import {
+  YeonButton,
+  YeonField,
+  YeonSurface,
+  YeonText,
+  YeonLabel,
+  YeonView,
+  YeonOption,
+} from "@yeon/ui";
 import {
   WRITABLE_CATEGORIES,
   type WritableCommunityCategory,
@@ -23,43 +31,44 @@ export function FeedGuestIdentityRow(props: {
   } = props;
 
   return (
-    <div className="rounded-2xl border border-[#e5e7eb] bg-white p-3">
-      <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_104px] sm:items-end">
-        <label className="text-[12px] font-semibold text-[#4b5563]">
+    <YeonSurface className="p-3">
+      <YeonView className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_104px] sm:items-end">
+        <YeonLabel className="text-[12px] font-semibold text-[#666]">
           게스트 닉네임
-          <input
+          <YeonField
             value={guestNickname}
             onChange={(event) => onChangeNickname(event.target.value)}
             placeholder="닉네임 입력"
             maxLength={40}
-            className="mt-1 h-10 w-full rounded-xl border border-[#d1d5db] bg-white px-3 text-[14px] font-normal text-[#111827] outline-none transition-colors focus:border-[#111827]"
+            className="mt-1 h-10"
           />
-        </label>
-        <label className="text-[12px] font-semibold text-[#4b5563]">
+        </YeonLabel>
+        <YeonLabel className="text-[12px] font-semibold text-[#666]">
           비밀번호
-          <input
+          <YeonField
             value={guestPassword}
             onChange={(event) => onChangePassword(event.target.value)}
             placeholder="수정/삭제용 비밀번호"
             type="password"
             maxLength={128}
-            className="mt-1 h-10 w-full rounded-xl border border-[#d1d5db] bg-white px-3 text-[14px] font-normal text-[#111827] outline-none transition-colors focus:border-[#111827]"
+            className="mt-1 h-10"
           />
-        </label>
-        <button
+        </YeonLabel>
+        <YeonButton
           type="button"
+          variant="primary"
           onClick={onToggleWrite}
-          className="h-10 rounded-xl bg-[#111827] px-4 text-[14px] font-bold text-white transition-colors hover:bg-[#374151]"
+          className="h-10 px-4 text-[14px]"
           aria-expanded={isWriteOpen}
         >
           글쓰기
-        </button>
-      </div>
-      <p className="mt-2 text-[11px] font-normal text-[#6b7280]">
+        </YeonButton>
+      </YeonView>
+      <YeonText variant="caption" tone="secondary" className="mt-2">
         자동 생성된 게스트 닉네임이에요. 직접 바꿀 수 있고, 비밀번호는 글
         수정·삭제에 사용해요.
-      </p>
-    </div>
+      </YeonText>
+    </YeonSurface>
   );
 }
 
@@ -73,40 +82,42 @@ export function FeedPostEditForm(props: {
   const { draft, isSubmitting, onChange, onCancel, onSubmit } = props;
 
   return (
-    <form
+    <YeonSurface
+      as="form"
+      variant="panel"
       onSubmit={(event) => {
         event.preventDefault();
         void onSubmit();
       }}
-      className="rounded-2xl border border-[#e5e7eb] bg-[#f9fafb] p-3"
+      className="p-3"
     >
-      <textarea
+      <YeonField
+        as="textarea"
         value={draft}
         onChange={(event) => onChange(event.target.value)}
         rows={5}
         maxLength={400}
-        className="w-full resize-y rounded-xl border border-[#d1d5db] bg-white px-3 py-3 text-[15px] leading-[1.55] text-[#111827] outline-none transition-colors focus:border-[#111827]"
+        className="resize-y text-[15px] leading-[1.55]"
       />
-      <div className="mt-3 flex items-center justify-between gap-2">
-        <p className="text-[12px] text-[#6b7280]">{draft.length}/400</p>
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="rounded-xl border border-[#d1d5db] px-4 py-2 text-[13px] font-bold text-[#111827] transition-colors hover:bg-white"
-          >
+      <YeonView className="mt-3 flex items-center justify-between gap-2">
+        <YeonText variant="caption" tone="secondary">
+          {draft.length}/400
+        </YeonText>
+        <YeonView className="flex gap-2">
+          <YeonButton type="button" size="sm" onClick={onCancel}>
             취소
-          </button>
-          <button
+          </YeonButton>
+          <YeonButton
             type="submit"
+            size="sm"
+            variant="primary"
             disabled={isSubmitting || !draft.trim()}
-            className="rounded-xl bg-[#111827] px-4 py-2 text-[13px] font-bold text-white transition-colors hover:bg-[#374151] disabled:bg-[#d1d5db]"
           >
             {isSubmitting ? "저장 중" : "저장"}
-          </button>
-        </div>
-      </div>
-    </form>
+          </YeonButton>
+        </YeonView>
+      </YeonView>
+    </YeonSurface>
   );
 }
 
@@ -120,35 +131,39 @@ export function FeedPostReplyForm(props: {
   const { postId, replyDraft, isSubmitting, onChange, onSubmit } = props;
 
   return (
-    <form
-      className="mt-4 rounded-2xl border border-[#e5e7eb] bg-white p-3"
+    <YeonSurface
+      as="form"
+      className="mt-4 p-3"
       onSubmit={(event) => {
         event.preventDefault();
         void onSubmit();
       }}
     >
-      <label htmlFor={`community-reply-${postId}`} className="sr-only">
+      <YeonLabel htmlFor={`community-reply-${postId}`} className="sr-only">
         댓글 입력
-      </label>
-      <textarea
+      </YeonLabel>
+      <YeonField
+        as="textarea"
         id={`community-reply-${postId}`}
         value={replyDraft}
         onChange={(event) => onChange(event.target.value)}
         rows={2}
         maxLength={400}
         placeholder="댓글을 입력하세요"
-        className="min-h-[58px] w-full resize-y border-0 bg-transparent text-[15px] leading-[1.5] text-[#111827] outline-none placeholder:text-[#9ca3af]"
+        className="min-h-[58px] resize-y border-0 bg-transparent text-[15px] leading-[1.5]"
       />
-      <div className="mt-2 flex justify-end">
-        <button
+      <YeonView className="mt-2 flex justify-end">
+        <YeonButton
           type="submit"
-          className="h-9 rounded-xl bg-[#111827] px-4 text-[13px] font-bold text-white transition-colors hover:bg-[#374151] disabled:bg-[#d1d5db]"
+          size="sm"
+          variant="primary"
+          className="h-9 px-4"
           disabled={isSubmitting || !replyDraft.trim()}
         >
           {isSubmitting ? "게시 중" : "댓글"}
-        </button>
-      </div>
-    </form>
+        </YeonButton>
+      </YeonView>
+    </YeonSurface>
   );
 }
 
@@ -176,63 +191,68 @@ export function WritePostPanel(props: {
   } = props;
 
   return (
-    <form
+    <YeonSurface
+      as="form"
+      variant="panel"
       onSubmit={(event) => {
         event.preventDefault();
         onSubmit();
       }}
-      className="mt-3 rounded-2xl border border-[#e5e7eb] bg-[#f9fafb] p-4"
+      className="mt-3 p-4"
     >
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <select
+      <YeonView className="flex flex-wrap items-center justify-between gap-3">
+        <YeonField
+          as="select"
           value={category}
           onChange={(event) =>
             onChangeCategory(event.target.value as WritableCommunityCategory)
           }
-          className="h-10 rounded-xl border border-[#d1d5db] bg-white px-3 text-[13px] font-bold text-[#111827] outline-none transition-colors focus:border-[#111827]"
+          className="h-10 w-auto text-[13px] font-bold"
           aria-label="카테고리"
         >
           {WRITABLE_CATEGORIES.map((item) => (
-            <option key={item} value={item}>
+            <YeonOption key={item} value={item}>
               {item}
-            </option>
+            </YeonOption>
           ))}
-        </select>
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="rounded-xl border border-[#d1d5db] bg-white px-4 py-2 text-[13px] font-bold text-[#111827] transition-colors hover:bg-[#f3f4f6]"
-          >
+        </YeonField>
+        <YeonView className="flex gap-2">
+          <YeonButton type="button" size="sm" onClick={onCancel}>
             취소
-          </button>
-          <button
+          </YeonButton>
+          <YeonButton
             type="submit"
+            size="sm"
+            variant="primary"
             disabled={isCreatingPost || !title.trim() || !content.trim()}
-            className="rounded-xl bg-[#111827] px-4 py-2 text-[13px] font-bold text-white transition-colors hover:bg-[#374151] disabled:bg-[#d1d5db]"
           >
             {isCreatingPost ? "게시 중" : "게시"}
-          </button>
-        </div>
-      </div>
-      <input
+          </YeonButton>
+        </YeonView>
+      </YeonView>
+      <YeonField
         value={title}
         onChange={(event) => onChangeTitle(event.target.value)}
         placeholder="제목을 입력하세요"
         maxLength={80}
-        className="mt-4 h-11 w-full rounded-xl border border-[#d1d5db] bg-white px-3 text-[15px] font-semibold text-[#111827] outline-none transition-colors placeholder:text-[#9ca3af] focus:border-[#111827]"
+        className="mt-4 h-11 text-[15px] font-semibold"
       />
-      <textarea
+      <YeonField
+        as="textarea"
         value={content}
         onChange={(event) => onChangeContent(event.target.value)}
         placeholder="내용을 입력하세요"
         rows={4}
         maxLength={280}
-        className="mt-2 w-full resize-y rounded-xl border border-[#d1d5db] bg-white px-3 py-3 text-[15px] leading-[1.55] text-[#111827] outline-none transition-colors placeholder:text-[#9ca3af] focus:border-[#111827]"
+        className="mt-2 resize-y text-[15px] leading-[1.55]"
       />
-      <div className="mt-2 text-right text-[12px] font-semibold text-[#6b7280]">
+      <YeonText
+        variant="caption"
+        tone="secondary"
+        className="mt-2 text-right font-semibold"
+      >
         {title.length + content.length}/360
-      </div>
-    </form>
+      </YeonText>
+    </YeonSurface>
   );
 }

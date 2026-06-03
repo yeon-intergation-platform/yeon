@@ -1,3 +1,4 @@
+import { createYeonUrl } from "@yeon/ui/runtime/YeonBrowserRuntime";
 import {
   DEFAULT_POST_LOGIN_PATH,
   normalizeAuthRedirectPath,
@@ -32,7 +33,7 @@ const authErrorCodeSet = new Set<AuthErrorCode>(Object.values(authErrorCodes));
 export class AuthFlowError extends Error {
   constructor(
     public readonly code: AuthErrorCode,
-    message: string,
+    message: string
   ) {
     super(message);
     this.name = "AuthFlowError";
@@ -52,14 +53,14 @@ function getProviderLabel(provider?: string | null) {
 }
 
 export function isAuthErrorCode(
-  value: string | null | undefined,
+  value: string | null | undefined
 ): value is AuthErrorCode {
   return value ? authErrorCodeSet.has(value as AuthErrorCode) : false;
 }
 
 export function getAuthErrorCopy(
   reason: string | null | undefined,
-  provider?: string | null,
+  provider?: string | null
 ) {
   const normalizedReason = isAuthErrorCode(reason)
     ? reason
@@ -141,8 +142,7 @@ export function getAuthErrorCopy(
       return {
         reason: normalizedReason,
         title: "비밀번호 형식이 올바르지 않아요",
-        description:
-          "최소 8자 이상 72자 이하로, 공백 없이 입력해 주세요.",
+        description: "최소 8자 이상 72자 이하로, 공백 없이 입력해 주세요.",
       };
     case authErrorCodes.emailAlreadyRegistered:
       return {
@@ -168,15 +168,13 @@ export function getAuthErrorCopy(
       return {
         reason: normalizedReason,
         title: "인증 링크가 만료되었거나 사용할 수 없어요",
-        description:
-          "새로운 인증 메일을 다시 받아 진행해 주세요.",
+        description: "새로운 인증 메일을 다시 받아 진행해 주세요.",
       };
     case authErrorCodes.invalidResetToken:
       return {
         reason: normalizedReason,
         title: "비밀번호 재설정 링크가 만료되었거나 사용할 수 없어요",
-        description:
-          "비밀번호 재설정을 다시 요청해 주세요.",
+        description: "비밀번호 재설정을 다시 요청해 주세요.",
       };
     default:
       return {
@@ -193,7 +191,7 @@ export function buildAuthErrorRedirectPath(options: {
   reason: AuthErrorCode;
   nextPath?: string | null;
 }) {
-  const url = new URL("/auth/error", "https://yeon.world");
+  const url = createYeonUrl("/auth/error", "https://yeon.world");
 
   url.searchParams.set("reason", options.reason);
 

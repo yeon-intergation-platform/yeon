@@ -1,12 +1,17 @@
 "use client";
-
-import { SHARED_FEATURE_CLASS } from "@/features/shared-style-constants";
-
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import type { UseQueryResult } from "@tanstack/react-query";
+import { YEON_WEB_SHARED_CLASS as SHARED_FEATURE_CLASS } from "@yeon/ui/theme/web-style-tokens";
+import { useYeonRouter } from "@yeon/ui/runtime/YeonNavigation";
+import type { YeonUseQueryResult as UseQueryResult } from "@yeon/ui/runtime/YeonQuery";
 import type { CardDeckDetailResponse } from "@yeon/api-contract/card-decks";
-
+import {
+  YeonButton,
+  YeonView,
+  YeonList,
+  YeonListItem,
+  YeonText,
+  YeonLink,
+} from "@yeon/ui";
+import { showYeonConfirm } from "@yeon/ui/runtime/YeonBrowserRuntime";
 import {
   AddCardsPanel,
   CardRow,
@@ -17,26 +22,20 @@ import {
 import { CARD_SERVICE_COMMON_CLASS } from "./card-service-common.const";
 import { useDeckDetail } from "./hooks";
 import type { DeckDetailViewState } from "./types";
+import { deriveCardDeckDetailViewState } from "@yeon/ui/runtime/ports/card-deck";
 import { useState } from "react";
 import { analyticsEvents, trackEvent } from "@/lib/analytics";
 import { PLATFORM_HOME_HREF } from "@/lib/platform-services";
 
+// 분기 로직은 SSOT에서 파생한다(web/mobile 공용). 복제 금지.
 function toViewState(
   query: UseQueryResult<CardDeckDetailResponse>
 ): DeckDetailViewState {
-  if (query.isPending) {
-    return { kind: "loading" };
-  }
-  if (query.isError || !query.data) {
-    return { kind: "error", message: "덱을 불러오지 못했습니다." };
-  }
-  const items = query.data.items;
-  return {
-    kind: "ready",
-    deck: query.data.deck,
-    items,
-    isEmpty: items.length === 0,
-  };
+  return deriveCardDeckDetailViewState({
+    isPending: query.isPending,
+    isError: query.isError,
+    data: query.data,
+  });
 }
 
 interface DeckDetailScreenProps {
@@ -44,7 +43,7 @@ interface DeckDetailScreenProps {
 }
 
 export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
-  const router = useRouter();
+  const router = useYeonRouter();
   const [isDeleteOpen, setDeleteOpen] = useState(false);
   const [isEditorOpen, setEditorOpen] = useState(false);
   const [isExportOpen, setExportOpen] = useState(false);
@@ -56,7 +55,7 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
   const openCardEditor = (source = "card_list_header") => {
     if (
       editingCardDirty &&
-      !window.confirm(
+      !showYeonConfirm(
         "수정 중인 카드 내용이 있습니다. 카드 추가를 열면 현재 편집을 닫습니다. 계속할까요?"
       )
     ) {
@@ -75,7 +74,7 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
     if (editingCardId === itemId) return true;
     if (
       editingCardDirty &&
-      !window.confirm(
+      !showYeonConfirm(
         "수정 중인 카드 내용이 있습니다. 저장하지 않고 다른 카드를 수정할까요?"
       )
     ) {
@@ -93,98 +92,143 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
   };
 
   return (
-    <div className={SHARED_FEATURE_CLASS.pageSurface}>
-      <header className="hidden border-b border-[#e5e5e5] px-5 py-3 md:block md:px-12">
-        <div className="mx-auto flex max-w-[1280px] items-center justify-between">
-          <Link
+    <YeonView className={SHARED_FEATURE_CLASS.pageSurface}>
+      <YeonView
+        as="header"
+        className="hidden border-b border-[#e5e5e5] px-5 py-3 md:block md:px-12"
+      >
+        <YeonView className="mx-auto flex max-w-[1280px] items-center justify-between">
+          <YeonLink
             href={PLATFORM_HOME_HREF}
             className={`${CARD_SERVICE_COMMON_CLASS.panelTextEmphasis} no-underline transition-colors hover:opacity-70`}
           >
             YEON 카드
-          </Link>
+          </YeonLink>
           {state.kind === "ready" ? (
-            <span className={SHARED_FEATURE_CLASS.text13Soft}>
+            <YeonText
+              as="span"
+              variant="unstyled"
+              tone="inherit"
+              className={SHARED_FEATURE_CLASS.text13Soft}
+            >
               카드 {state.items.length}장
-            </span>
+            </YeonText>
           ) : null}
-        </div>
-      </header>
+        </YeonView>
+      </YeonView>
 
-      <main className="mx-auto max-w-[1280px] px-5 py-5 md:px-8 md:py-6 lg:px-10">
+      <YeonView
+        as="main"
+        className="mx-auto max-w-[1280px] px-5 py-5 md:px-8 md:py-6 lg:px-10"
+      >
         {state.kind === "loading" ? (
-          <p className={SHARED_FEATURE_CLASS.text14Soft}>불러오는 중...</p>
+          <YeonText
+            as="p"
+            variant="unstyled"
+            tone="inherit"
+            className={SHARED_FEATURE_CLASS.text14Soft}
+          >
+            불러오는 중...
+          </YeonText>
         ) : null}
 
         {state.kind === "error" ? (
-          <p className={CARD_SERVICE_COMMON_CLASS.errorTextMd}>
+          <YeonText
+            as="p"
+            variant="unstyled"
+            tone="inherit"
+            className={CARD_SERVICE_COMMON_CLASS.errorTextMd}
+          >
             {state.message}
-          </p>
+          </YeonText>
         ) : null}
 
         {state.kind === "ready" ? (
           <>
-            <div className="space-y-6">
+            <YeonView className="space-y-6">
               <DeckDetailHeader
                 deck={state.deck}
                 onOpenDelete={() => setDeleteOpen(true)}
                 onRequestExport={() => setExportOpen(true)}
               />
 
-              <section>
-                <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-                  <div className="flex items-center gap-2">
-                    <h2
+              <YeonView as="section">
+                <YeonView className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                  <YeonView className="flex items-center gap-2">
+                    <YeonText
+                      as="h2"
+                      variant="unstyled"
+                      tone="inherit"
                       className={CARD_SERVICE_COMMON_CLASS.sectionBodyTitleMd}
                     >
                       카드 목록
-                    </h2>
-                    <span className={CARD_SERVICE_COMMON_CLASS.sectionBadge}>
+                    </YeonText>
+                    <YeonText
+                      as="span"
+                      variant="unstyled"
+                      tone="inherit"
+                      className={CARD_SERVICE_COMMON_CLASS.sectionBadge}
+                    >
                       {state.items.length}
-                    </span>
-                  </div>
-                  <div className="flex w-full items-center justify-between gap-3 sm:w-auto sm:justify-end">
-                    <span className="shrink-0 text-[15px] text-[#666] md:text-[14px] md:text-[#888]">
+                    </YeonText>
+                  </YeonView>
+                  <YeonView className="flex w-full items-center justify-between gap-3 sm:w-auto sm:justify-end">
+                    <YeonText
+                      as="span"
+                      variant="unstyled"
+                      tone="inherit"
+                      className="shrink-0 text-[15px] text-[#666] md:text-[14px]"
+                    >
                       전체 {state.items.length}
-                    </span>
-                    <button
+                    </YeonText>
+                    <YeonButton
                       type="button"
                       onClick={() => {
                         openCardEditor();
                       }}
-                      className={
-                        CARD_SERVICE_COMMON_CLASS.actionButtonPrimaryInline
-                      }
+                      variant="primary"
+                      size="md"
                     >
                       + 카드 추가
-                    </button>
-                  </div>
-                </div>
+                    </YeonButton>
+                  </YeonView>
+                </YeonView>
 
                 {state.isEmpty ? (
-                  <div className="rounded-[24px] border border-dashed border-[#e5e5e5] p-8 text-center md:p-10">
-                    <p className={CARD_SERVICE_COMMON_CLASS.panelNoticeText}>
+                  <YeonView className="rounded-[24px] border border-dashed border-[#e5e5e5] p-8 text-center md:p-10">
+                    <YeonText
+                      as="p"
+                      variant="unstyled"
+                      tone="inherit"
+                      className={CARD_SERVICE_COMMON_CLASS.panelNoticeText}
+                    >
                       아직 카드가 없습니다.
-                    </p>
-                    <p className="mt-3 text-[14px] leading-6 text-[#888] md:text-[15px]">
+                    </YeonText>
+                    <YeonText
+                      as="p"
+                      variant="unstyled"
+                      tone="inherit"
+                      className="mt-3 text-[14px] leading-6 text-[#666] md:text-[15px]"
+                    >
                       카드 추가 버튼을 눌러 첫 카드부터 질문과 답변을
                       작성해보세요.
-                    </p>
-                    <button
+                    </YeonText>
+                    <YeonButton
                       type="button"
                       onClick={() => {
                         openCardEditor("empty_state");
                       }}
-                      className={
-                        CARD_SERVICE_COMMON_CLASS.actionButtonPrimaryLarge
-                      }
+                      variant="primary"
+                      size="lg"
+                      className="mt-6"
                     >
                       카드 추가
-                    </button>
-                  </div>
+                    </YeonButton>
+                  </YeonView>
                 ) : (
-                  <ul className="flex flex-col gap-4">
+                  <YeonList className="flex flex-col gap-4">
                     {state.items.map((item, index) => (
-                      <li key={item.id}>
+                      <YeonListItem key={item.id}>
                         <CardRow
                           deckId={state.deck.id}
                           index={index + 1}
@@ -198,12 +242,12 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
                             }
                           }}
                         />
-                      </li>
+                      </YeonListItem>
                     ))}
-                  </ul>
+                  </YeonList>
                 )}
-              </section>
-            </div>
+              </YeonView>
+            </YeonView>
 
             {isEditorOpen ? (
               <AddCardsPanel
@@ -231,7 +275,7 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
             ) : null}
           </>
         ) : null}
-      </main>
-    </div>
+      </YeonView>
+    </YeonView>
   );
 }

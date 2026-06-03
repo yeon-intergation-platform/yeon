@@ -70,11 +70,11 @@ export function RecordReadyState({
       </div>
 
       {mismatchWarning && (
-        <div className="mx-5 mt-4 rounded-lg border border-amber/30 bg-amber/10 px-4 py-3">
+        <div className="mx-5 mt-4 rounded-lg border border-border-light bg-surface-3 px-4 py-3">
           <div className="flex items-start gap-2">
-            <span className="mt-0.5 text-amber">⚠️</span>
+            <span className="mt-0.5 text-text-secondary">⚠️</span>
             <div className="min-w-0">
-              <p className="m-0 text-[13px] font-semibold text-amber">
+              <p className="m-0 text-[13px] font-semibold text-text-secondary">
                 {mismatchWarning.title}
               </p>
               <p className="mt-1 mb-0 text-[12px] leading-relaxed text-text-secondary">

@@ -1,13 +1,17 @@
 "use client";
-
+import { useYeonWindowEvent } from "@yeon/ui/hooks/YeonBrowserHooks";
 import {
-  useDeferredValue,
-  useEffect,
-  useMemo,
-  useState,
-  type FormEvent,
-} from "react";
-
+  readYeonLocalStorageItem,
+  removeYeonLocalStorageItem,
+  writeYeonLocalStorageItem,
+} from "@yeon/ui/runtime/YeonBrowserRuntime";
+import {
+  YeonForm,
+  YeonView,
+  type YeonFormEvent,
+  type YeonFormElement,
+} from "@yeon/ui";
+import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import { analyticsEvents, trackEvent } from "@/lib/analytics";
 import { useAddCard } from "../hooks";
 import { CardAddPreviewFace } from "./card-add-live-preview";
@@ -109,7 +113,7 @@ export function AddCardForm({
   useEffect(() => {
     setDraftLoaded(false);
     onDirtyChange?.(false);
-    const savedDraft = window.localStorage.getItem(draftKey);
+    const savedDraft = readYeonLocalStorageItem(draftKey);
     if (!savedDraft) {
       setFrontText(initialSnapshot.frontText);
       setBackText(initialSnapshot.backText);
@@ -125,7 +129,7 @@ export function AddCardForm({
       setBackText(parsed.backText);
       setDraftLoaded(true);
     } catch {
-      window.localStorage.removeItem(draftKey);
+      removeYeonLocalStorageItem(draftKey);
       setFrontText(initialSnapshot.frontText);
       setBackText(initialSnapshot.backText);
       setDraftLoaded(true);
@@ -140,28 +144,27 @@ export function AddCardForm({
   useEffect(() => {
     if (!isDraftLoaded) return;
     if (hasAnyDraftContent(currentValue)) {
-      window.localStorage.setItem(draftKey, JSON.stringify(currentValue));
+      writeYeonLocalStorageItem(draftKey, JSON.stringify(currentValue));
       return;
     }
-    window.localStorage.removeItem(draftKey);
+    removeYeonLocalStorageItem(draftKey);
   }, [currentValue, draftKey, isDraftLoaded]);
 
-  useEffect(() => {
-    if (!isDirty) return;
-    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+  useYeonWindowEvent(
+    "beforeunload",
+    (event) => {
       event.preventDefault();
       event.returnValue = "작성 중인 카드 내용이 있습니다.";
-    };
-    window.addEventListener("beforeunload", handleBeforeUnload);
-    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
-  }, [isDirty]);
+    },
+    isDirty
+  );
 
   const resetDraft = () => {
-    window.localStorage.removeItem(draftKey);
+    removeYeonLocalStorageItem(draftKey);
     onDirtyChange?.(false);
   };
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (event: YeonFormEvent<YeonFormElement>) => {
     event.preventDefault();
     if (!canSubmit) return;
 
@@ -205,13 +208,13 @@ export function AddCardForm({
   }, [actionState, onActionStateChange]);
 
   return (
-    <form
+    <YeonForm
       id={formId}
       onSubmit={handleSubmit}
       className="flex h-full min-h-0 flex-col gap-3"
     >
-      <div className="grid min-h-0 flex-1 gap-3 lg:grid-cols-2 lg:grid-rows-[auto_auto] lg:items-stretch">
-        <div className="min-w-0">
+      <YeonView className="grid min-h-0 flex-1 gap-3 lg:grid-cols-2 lg:grid-rows-[auto_auto] lg:items-stretch">
+        <YeonView className="min-w-0">
           <CardRichMarkdownEditor
             label="카드 질문"
             value={frontText}
@@ -232,16 +235,16 @@ export function AddCardForm({
               )
             }
           />
-        </div>
-        <div className="hidden min-w-0 lg:block">
+        </YeonView>
+        <YeonView className="hidden min-w-0 lg:block">
           <CardAddPreviewFace
             label="앞면"
             title="카드 질문"
             value={deferredFrontText}
             emptyText="질문을 작성하면 카드 앞면에 표시됩니다."
           />
-        </div>
-        <div className="min-w-0">
+        </YeonView>
+        <YeonView className="min-w-0">
           <CardRichMarkdownEditor
             label="카드 답변"
             value={backText}
@@ -262,16 +265,16 @@ export function AddCardForm({
               )
             }
           />
-        </div>
-        <div className="hidden min-w-0 lg:block">
+        </YeonView>
+        <YeonView className="hidden min-w-0 lg:block">
           <CardAddPreviewFace
             label="뒷면"
             title="카드 답변"
             value={deferredBackText}
             emptyText="답변을 작성하면 카드 뒷면에 표시됩니다."
           />
-        </div>
-      </div>
-    </form>
+        </YeonView>
+      </YeonView>
+    </YeonForm>
   );
 }

@@ -1,10 +1,10 @@
 "use client";
-
-import { SHARED_FEATURE_CLASS } from "@/features/shared-style-constants";
-
+import { YEON_WEB_SHARED_CLASS as SHARED_FEATURE_CLASS } from "@yeon/ui/theme/web-style-tokens";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { ChangeEvent, MouseEvent } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import {
+  useYeonRouter,
+  useYeonSearchParams,
+} from "@yeon/ui/runtime/YeonNavigation";
 import {
   TYPING_ROOM_DIFFICULTY,
   TYPING_ROOM_LANGUAGE,
@@ -55,6 +55,29 @@ import {
   MAX_LOBBY_CHAT_LENGTH,
 } from "./typing-room-options";
 import { trackEvent } from "@/lib/analytics";
+import {
+  YeonButton,
+  YeonView,
+  YeonText,
+  type YeonChangeEvent,
+  type YeonMouseEvent,
+  type YeonAnchorElement,
+  type YeonSelectElement,
+  type YeonElement,
+} from "@yeon/ui";
+import {
+  getYeonClosestElement,
+  getYeonElementAttribute,
+  hasYeonElementAttribute,
+  isYeonElementTagName,
+} from "@yeon/ui/rich-content/YeonRichDom";
+import {
+  copyYeonClipboardText,
+  createYeonUrl,
+  getYeonLocationOrigin,
+  getYeonLocationSnapshot,
+  scheduleYeonTimeout,
+} from "@yeon/ui/runtime/YeonBrowserRuntime";
 import { RoomVoiceCallPanel } from "@/features/room-voice-call/room-voice-call-panel";
 import { useRoomVoiceCall } from "@/features/room-voice-call/use-room-voice-call";
 
@@ -102,8 +125,8 @@ function TerritoryLobbyPanel({
   onLeaveRoom,
   onToggleReady,
 }: TerritoryLobbyPanelProps) {
-  const orangeTeam = participants.filter((_, index) => index % 2 === 0);
-  const blueTeam = participants.filter((_, index) => index % 2 === 1);
+  const firstTeam = participants.filter((_, index) => index % 2 === 0);
+  const secondTeam = participants.filter((_, index) => index % 2 === 1);
   const recentMessages = messages.slice(-4);
   const roomInfo = [
     ["방 이름", room.title],
@@ -114,143 +137,204 @@ function TerritoryLobbyPanel({
   ];
 
   return (
-    <section className="overflow-hidden rounded-[30px] border-2 border-sky-400 bg-sky-100 p-3 shadow-[0_18px_50px_rgba(14,165,233,0.18)]">
-      <div className="grid gap-4 xl:grid-cols-[320px_minmax(0,1fr)]">
-        <aside className="grid gap-3">
-          <div className="rounded-[22px] bg-sky-500 p-3 text-white shadow-lg">
-            <h2 className="text-center text-[22px] font-black tracking-[-0.05em]">
+    <YeonView
+      as="section"
+      className="overflow-hidden rounded-[30px] border border-[#e5e5e5] bg-white p-3 shadow-sm"
+    >
+      <YeonView className="grid gap-4 xl:grid-cols-[320px_minmax(0,1fr)]">
+        <YeonView as="aside" className="grid gap-3">
+          <YeonView className="rounded-[22px] border border-[#e5e5e5] bg-white p-3">
+            <YeonText
+              as="h2"
+              variant="unstyled"
+              tone="inherit"
+              className="text-center text-[22px] font-black tracking-[-0.05em] text-[#111]"
+            >
               {room.title}
-            </h2>
-            <div className="mt-3 rounded-2xl bg-white p-3 text-[#111]">
+            </YeonText>
+            <YeonView className="mt-3 rounded-2xl border border-[#e5e5e5] bg-[#fafafa] p-3 text-[#111]">
               {roomInfo.map(([label, value]) => (
-                <div
+                <YeonView
                   key={label}
-                  className="mb-2 grid grid-cols-[minmax(0,1fr)_auto] rounded-xl bg-[#fafafa] px-3 py-2 text-[14px] font-black last:mb-0"
+                  className="mb-2 grid grid-cols-[minmax(0,1fr)_auto] rounded-xl bg-white px-3 py-2 text-[14px] font-black last:mb-0"
                 >
-                  <span className="text-[#666]">• {label}</span>
-                  <span>{value}</span>
-                </div>
+                  <YeonText
+                    as="span"
+                    variant="unstyled"
+                    tone="inherit"
+                    className="text-[#666]"
+                  >
+                    • {label}
+                  </YeonText>
+                  <YeonText as="span" variant="unstyled" tone="inherit">
+                    {value}
+                  </YeonText>
+                </YeonView>
               ))}
-            </div>
-          </div>
+            </YeonView>
+          </YeonView>
 
-          <div className="rounded-[22px] bg-sky-500 p-3 text-white shadow-lg">
-            <h3 className="text-center text-[20px] font-black tracking-[-0.05em]">
+          <YeonView className="rounded-[22px] border border-[#e5e5e5] bg-white p-3">
+            <YeonText
+              as="h3"
+              variant="unstyled"
+              tone="inherit"
+              className="text-center text-[20px] font-black tracking-[-0.05em] text-[#111]"
+            >
               이모티콘 표시
-            </h3>
-            <div className="mt-2 grid grid-cols-4 gap-2 rounded-2xl bg-white p-3 text-center text-[28px]">
+            </YeonText>
+            <YeonView className="mt-2 grid grid-cols-4 gap-2 rounded-2xl bg-[#fafafa] p-3 text-center text-[28px]">
               {[
                 ["😁", "웃음"],
                 ["😴", "졸림"],
                 ["😡", "화남"],
                 ["😎", "준비"],
               ].map(([emoji, label]) => (
-                <div key={label} className="rounded-xl bg-[#fafafa] p-2">
-                  <div>{emoji}</div>
-                  <p className="mt-1 text-[11px] font-black text-sky-600">
+                <YeonView key={label} className="rounded-xl bg-white p-2">
+                  <YeonView>{emoji}</YeonView>
+                  <YeonText
+                    as="p"
+                    variant="unstyled"
+                    tone="inherit"
+                    className="mt-1 text-[11px] font-black text-[#666]"
+                  >
                     {label}
-                  </p>
-                </div>
+                  </YeonText>
+                </YeonView>
               ))}
-            </div>
-          </div>
+            </YeonView>
+          </YeonView>
 
-          <div className="rounded-[18px] bg-[#111] px-4 py-3 text-center text-[16px] font-black text-white shadow-lg">
+          <YeonView className="rounded-[18px] bg-[#111] px-4 py-3 text-center text-[16px] font-black text-white">
             💬 채팅 하기
-          </div>
+          </YeonView>
 
-          <div className="rounded-[18px] bg-sky-500 p-3 text-white shadow-lg">
-            <h3 className="flex items-center justify-between text-[18px] font-black">
-              상세보기 <span>⌃</span>
-            </h3>
-            <div className="mt-2 max-h-24 overflow-hidden rounded-xl bg-white p-2 text-[12px] font-bold leading-5 text-[#666]">
+          <YeonView className="rounded-[18px] border border-[#e5e5e5] bg-white p-3">
+            <YeonText
+              as="h3"
+              variant="unstyled"
+              tone="inherit"
+              className="flex items-center justify-between text-[18px] font-black text-[#111]"
+            >
+              상세보기{" "}
+              <YeonText as="span" variant="unstyled" tone="inherit">
+                ⌃
+              </YeonText>
+            </YeonText>
+            <YeonView className="mt-2 max-h-24 overflow-hidden rounded-xl bg-[#fafafa] p-2 text-[12px] font-bold leading-5 text-[#666]">
               {recentMessages.length ? (
                 recentMessages.map((message) => (
-                  <p key={message.id} className="truncate">
+                  <YeonText
+                    as="p"
+                    variant="unstyled"
+                    tone="inherit"
+                    key={message.id}
+                    className="truncate"
+                  >
                     [{message.senderLabel ?? "시스템"}] {message.content}
-                  </p>
+                  </YeonText>
                 ))
               ) : (
                 <>
-                  <p>[시스템] 점령전 대기방에 입장했습니다.</p>
-                  <p>[시스템] 팀을 정하고 준비를 눌러 주세요.</p>
+                  <YeonText as="p" variant="unstyled" tone="inherit">
+                    [시스템] 점령전 대기방에 입장했습니다.
+                  </YeonText>
+                  <YeonText as="p" variant="unstyled" tone="inherit">
+                    [시스템] 팀을 정하고 준비를 눌러 주세요.
+                  </YeonText>
                 </>
               )}
-            </div>
-          </div>
-        </aside>
+            </YeonView>
+          </YeonView>
+        </YeonView>
 
-        <div className="overflow-hidden rounded-[24px] border-2 border-sky-400 bg-white shadow-lg">
-          <div className="grid grid-cols-[160px_minmax(0,1fr)] border-b-2 border-sky-300 bg-sky-500 text-white">
-            <div className="px-6 py-4 text-[22px] font-black">대기방</div>
-            <div className="px-6 py-4 text-[22px] font-black">준비</div>
-          </div>
+        <YeonView className="overflow-hidden rounded-[24px] border border-[#e5e5e5] bg-white">
+          <YeonView className="grid grid-cols-[160px_minmax(0,1fr)] border-b border-[#e5e5e5] bg-[#111] text-white">
+            <YeonView className="px-6 py-4 text-[22px] font-black">
+              대기방
+            </YeonView>
+            <YeonView className="px-6 py-4 text-[22px] font-black">
+              준비
+            </YeonView>
+          </YeonView>
 
-          <div className="grid min-h-[520px] grid-cols-[minmax(0,1fr)_34px_minmax(0,1fr)] gap-3 bg-sky-50 p-4">
-            <TerritoryTeamColumn
-              tone="orange"
-              title="주황팀"
-              members={orangeTeam}
-              maxSlots={5}
-            />
-            <div className="flex flex-col items-center justify-center gap-8 text-3xl font-black text-sky-300">
+          <YeonView className="grid min-h-[520px] grid-cols-[minmax(0,1fr)_34px_minmax(0,1fr)] gap-3 bg-[#fafafa] p-4">
+            <TerritoryTeamColumn title="1팀" members={firstTeam} maxSlots={5} />
+            <YeonView className="flex flex-col items-center justify-center gap-8 text-3xl font-black text-[#aaa]">
               {Array.from({ length: 5 }).map((_, index) => (
-                <span key={index}>◆</span>
+                <YeonText
+                  as="span"
+                  variant="unstyled"
+                  tone="inherit"
+                  key={index}
+                >
+                  ◆
+                </YeonText>
               ))}
-            </div>
+            </YeonView>
             <TerritoryTeamColumn
-              tone="blue"
               title="파랑팀"
-              members={blueTeam}
+              members={secondTeam}
               maxSlots={5}
             />
-          </div>
+          </YeonView>
 
-          <div className="grid gap-3 border-t-2 border-sky-200 bg-sky-100 p-4 md:grid-cols-[180px_minmax(0,1fr)_180px_220px]">
-            <button
+          <YeonView className="grid gap-3 border-t border-[#e5e5e5] bg-white p-4 md:grid-cols-[180px_minmax(0,1fr)_180px_220px]">
+            <YeonButton
               type="button"
               onClick={onLeaveRoom}
               disabled={isLeavingRoom}
-              className="rounded-[22px] bg-red-500 px-5 py-4 text-[18px] font-black text-white shadow-md disabled:opacity-50"
+              variant="secondary"
+              size="xl"
+              className="rounded-[22px] px-5 py-4 text-[18px] font-black"
             >
               {isLeavingRoom ? "나가는 중" : "방 나가기"}
-            </button>
-            <p className="flex items-center justify-center rounded-[22px] bg-white px-4 py-3 text-center text-[13px] font-bold leading-5 text-[#666]">
+            </YeonButton>
+            <YeonText
+              as="p"
+              variant="unstyled"
+              tone="inherit"
+              className="flex items-center justify-center rounded-[22px] bg-[#fafafa] px-4 py-3 text-center text-[13px] font-bold leading-5 text-[#666]"
+            >
               {roomSummary}
-            </p>
-            <button
+            </YeonText>
+            <YeonButton
               type="button"
-              className="rounded-[22px] bg-sky-500 px-5 py-4 text-[18px] font-black text-white shadow-md"
+              variant="primary"
+              size="xl"
+              className="rounded-[22px] px-5 py-4 text-[18px] font-black"
             >
               팀 이동
-            </button>
-            <button
+            </YeonButton>
+            <YeonButton
               type="button"
               onClick={onToggleReady}
-              className={`rounded-[22px] px-5 py-4 text-[18px] font-black text-white shadow-md ${
-                isReady ? "bg-[#666]" : "bg-sky-500"
-              }`}
+              variant={isReady ? "secondary" : "primary"}
+              size="xl"
+              className="rounded-[22px] px-5 py-4 text-[18px] font-black"
             >
               {isReady ? "준비 해제" : "준비하기"}
-            </button>
-          </div>
+            </YeonButton>
+          </YeonView>
 
-          <div className="border-t border-sky-200 bg-white p-4">
-            <a
+          <YeonView className="border-t border-[#e5e5e5] bg-white p-4">
+            <YeonButton
+              as="a"
               href={territoryHref}
-              className="block rounded-[22px] bg-[#e8630a] px-6 py-4 text-center text-[20px] font-black text-white shadow-md transition hover:brightness-110"
+              variant="primary"
+              size="xl"
+              className="block rounded-[22px] px-6 py-4 text-center text-[20px] font-black"
             >
               점령전 입장
-            </a>
-          </div>
-        </div>
-      </div>
-    </section>
+            </YeonButton>
+          </YeonView>
+        </YeonView>
+      </YeonView>
+    </YeonView>
   );
 }
 
 type TerritoryTeamColumnProps = {
-  tone: "orange" | "blue";
   title: string;
   members: (
     | NonNullable<
@@ -262,7 +346,6 @@ type TerritoryTeamColumnProps = {
 };
 
 function TerritoryTeamColumn({
-  tone,
   title,
   members,
   maxSlots,
@@ -271,53 +354,83 @@ function TerritoryTeamColumn({
     { length: maxSlots },
     (_, index) => members[index] ?? null
   );
-  const toneClass =
-    tone === "orange"
-      ? "bg-[#e8630a] border-orange-200"
-      : "bg-sky-500 border-sky-200";
 
   return (
-    <div className="min-w-0">
-      <div
-        className={`flex items-center gap-3 rounded-t-2xl px-4 py-3 text-white ${toneClass}`}
-      >
-        <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-[24px]">
+    <YeonView className="min-w-0">
+      <YeonView className="flex items-center gap-3 rounded-t-2xl border border-[#e5e5e5] bg-white px-4 py-3 text-[#111]">
+        <YeonText
+          as="span"
+          variant="unstyled"
+          tone="inherit"
+          className="flex h-12 w-12 items-center justify-center rounded-full bg-[#fafafa] text-[24px]"
+        >
           🏴‍☠️
-        </span>
-        <h3 className="text-[24px] font-black tracking-[-0.05em]">{title}</h3>
-      </div>
-      <div className="grid gap-2 border-x-2 border-b-2 border-sky-100 bg-white p-3">
+        </YeonText>
+        <YeonText
+          as="h3"
+          variant="unstyled"
+          tone="inherit"
+          className="text-[24px] font-black tracking-[-0.05em]"
+        >
+          {title}
+        </YeonText>
+      </YeonView>
+      <YeonView className="grid gap-2 border-x border-b border-[#e5e5e5] bg-white p-3">
         {slots.map((member, index) => {
           const isLocked = index >= 5;
           return (
-            <div
+            <YeonView
               key={member?.id ?? `${title}-${index}`}
               className={`grid min-h-14 grid-cols-[42px_minmax(0,1fr)_auto] items-center gap-3 rounded-xl border px-3 py-2 ${
-                member ? "border-sky-100 bg-pink-50" : "border-sky-100 bg-white"
+                member
+                  ? "border-[#111] bg-[#fafafa]"
+                  : "border-[#e5e5e5] bg-white"
               }`}
             >
-              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-[22px] shadow-sm">
+              <YeonText
+                as="span"
+                variant="unstyled"
+                tone="inherit"
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-[22px] shadow-sm"
+              >
                 {member ? "🙂" : isLocked ? "🔒" : "+"}
-              </span>
-              <span className="truncate text-[15px] font-black text-[#111]">
+              </YeonText>
+              <YeonText
+                as="span"
+                variant="unstyled"
+                tone="inherit"
+                className="truncate text-[15px] font-black text-[#111]"
+              >
                 {member?.label ?? (isLocked ? "잠김" : "빈 자리")}
-              </span>
+              </YeonText>
               {member ? (
-                <span className="text-[13px] font-black text-green-600">
+                <YeonText
+                  as="span"
+                  variant="unstyled"
+                  tone="inherit"
+                  className="text-[13px] font-black text-[#666]"
+                >
                   {member.role === "host"
-                    ? "방장 👑"
+                    ? "방장"
                     : member.isReady
                       ? "준비 완료 ✓"
                       : "준비 중 …"}
-                </span>
+                </YeonText>
               ) : (
-                <span className="text-[20px] font-black text-[#aaa]">+</span>
+                <YeonText
+                  as="span"
+                  variant="unstyled"
+                  tone="inherit"
+                  className="text-[20px] font-black text-[#aaa]"
+                >
+                  +
+                </YeonText>
               )}
-            </div>
+            </YeonView>
           );
         })}
-      </div>
-    </div>
+      </YeonView>
+    </YeonView>
   );
 }
 
@@ -368,7 +481,7 @@ function buildRoomSummary({
 }
 
 function useCreateRoomOptions(): DeckAwareCreateMessage {
-  const searchParams = useSearchParams();
+  const searchParams = useYeonSearchParams();
 
   return useMemo(() => {
     const language = parseEnum<TypingRoomLanguage>(
@@ -431,7 +544,7 @@ function useCreateRoomOptions(): DeckAwareCreateMessage {
 }
 
 export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
-  const router = useRouter();
+  const router = useYeonRouter();
   const { profile, loaded: profileLoaded } = useTypingProfile();
   const { settings } = useTypingSettings();
   const playerId = usePlayerIdentity();
@@ -581,10 +694,11 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
   });
   const isHost = me?.role === "host";
   const isReady = Boolean(me?.isReady);
+  const inviteOrigin = getYeonLocationOrigin();
   const inviteUrl =
-    typeof window === "undefined" || !race.roomId
-      ? ""
-      : `${window.location.origin}/typing-service/rooms/${race.roomId}`;
+    inviteOrigin && race.roomId
+      ? `${inviteOrigin}/typing-service/rooms/${race.roomId}`
+      : "";
 
   useEffect(() => {
     if (!room || !race.roomId) return;
@@ -609,7 +723,10 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
   const copyInvite = async () => {
     if (!inviteUrl) return;
     try {
-      await navigator.clipboard.writeText(inviteUrl);
+      const copiedSuccessfully = await copyYeonClipboardText(inviteUrl);
+      if (!copiedSuccessfully) {
+        throw new Error("클립보드 복사를 지원하지 않습니다.");
+      }
       trackEvent("room_invite_copy", {
         source: "typing_room",
         room_id: race.roomId ?? roomId ?? null,
@@ -617,7 +734,7 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
       });
       setCopied(true);
       setCopyError(null);
-      window.setTimeout(() => setCopied(false), 1600);
+      scheduleYeonTimeout(() => setCopied(false), 1600);
     } catch {
       setCopied(false);
       setCopyError("링크를 복사할 수 없습니다.");
@@ -667,7 +784,7 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
   }, [chatDraft, race]);
 
   const onDeckChange = useCallback(
-    async (event: ChangeEvent<HTMLSelectElement>) => {
+    async (event: YeonChangeEvent<YeonSelectElement>) => {
       const deckId = event.target.value;
       const targetDeck = deckState.decks.find((deck) => deck.id === deckId);
       if (!targetDeck) return;
@@ -728,7 +845,7 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
   }, [isLeavingRoom, race, router]);
 
   const onRoomNavigationClickCapture = useCallback(
-    (event: MouseEvent<HTMLDivElement>) => {
+    (event: YeonMouseEvent<YeonElement>) => {
       if (
         event.defaultPrevented ||
         event.button !== 0 ||
@@ -740,20 +857,24 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
         return;
       }
 
-      if (!(event.target instanceof Element)) return;
-      const anchor = event.target.closest("a[href]");
-      if (!(anchor instanceof HTMLAnchorElement)) return;
-      if (anchor.target || anchor.hasAttribute("download")) return;
+      const anchor = getYeonClosestElement<YeonAnchorElement>(
+        event.target,
+        "a[href]"
+      );
+      if (!anchor || !isYeonElementTagName(anchor, "a")) return;
+      if (anchor.target || hasYeonElementAttribute(anchor, "download")) return;
 
-      const href = anchor.getAttribute("href");
+      const href = getYeonElementAttribute(anchor, "href");
       if (!href || href.startsWith("#")) return;
 
-      const destination = new URL(anchor.href, window.location.href);
-      if (destination.origin !== window.location.origin) return;
+      const currentLocation = getYeonLocationSnapshot();
+      if (!currentLocation) return;
+      const destination = createYeonUrl(anchor.href, currentLocation.href);
+      if (destination.origin !== currentLocation.origin) return;
       if (
-        destination.pathname === window.location.pathname &&
-        destination.search === window.location.search &&
-        destination.hash === window.location.hash
+        destination.pathname === currentLocation.pathname &&
+        destination.search === currentLocation.search &&
+        destination.hash === currentLocation.hash
       ) {
         return;
       }
@@ -883,13 +1004,13 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
   }
 
   return (
-    <div
+    <YeonView
       className={SHARED_FEATURE_CLASS.pageSurface}
       onClickCapture={onRoomNavigationClickCapture}
     >
       <TypingServiceHeader active="rooms" title="타자방" />
 
-      <main className="grid gap-3 px-4 py-3 md:px-8 md:py-4">
+      <YeonView as="main" className="grid gap-3 px-4 py-3 md:px-8 md:py-4">
         <TypingRoomWaitingHeader
           room={room}
           roomSummary={roomSummary}
@@ -923,8 +1044,11 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
           onToggleReady={() => race.sendReady(!isReady)}
         />
 
-        <section className="grid gap-3 xl:grid-cols-[minmax(260px,320px)_minmax(360px,420px)_minmax(0,1fr)] xl:items-start">
-          <div className="grid gap-3 xl:order-2">
+        <YeonView
+          as="section"
+          className="grid gap-3 xl:grid-cols-[minmax(260px,320px)_minmax(360px,420px)_minmax(0,1fr)] xl:items-start"
+        >
+          <YeonView className="grid gap-3 xl:order-2">
             <TypingRoomParticipantsPanel
               participants={participants}
               myParticipantId={me?.id ?? null}
@@ -932,7 +1056,7 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
               frameOverrides={frameOverrides}
             />
             <RoomVoiceCallPanel voiceCall={voiceCall} />
-          </div>
+          </YeonView>
 
           <TypingRoomSettingsPanel
             room={room}
@@ -953,8 +1077,8 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
             onChatDraftChange={onChatDraftChange}
             onChatSubmit={onChatSubmit}
           />
-        </section>
-      </main>
-    </div>
+        </YeonView>
+      </YeonView>
+    </YeonView>
   );
 }

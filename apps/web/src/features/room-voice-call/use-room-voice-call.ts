@@ -1,5 +1,4 @@
 "use client";
-
 import {
   useCallback,
   useEffect,
@@ -8,8 +7,23 @@ import {
   useState,
   type RefObject,
 } from "react";
-import { useQuery } from "@tanstack/react-query";
-import type { Room } from "@colyseus/sdk";
+import type { YeonRealtimeRoom } from "@yeon/ui/runtime/YeonRealtimeClient";
+import { roomVoiceCallConfigQueryKey } from "@yeon/ui/runtime/ports/room-voice-call";
+import {
+  createYeonRandomUUID,
+  fetchYeon,
+  createYeonRtcPeerConnection,
+  getYeonNow,
+  getYeonRandom,
+  hasYeonUserMediaSupport,
+  isYeonUserMediaPermissionDenied,
+  requestYeonUserMedia,
+  type YeonAudioElement,
+  type YeonMediaStream,
+  type YeonRtcIceCandidateInit,
+  type YeonRtcIceServer,
+  type YeonRtcPeerConnection,
+} from "@yeon/ui/runtime/YeonBrowserRuntime";
 import {
   VOICE_EVENTS,
   type VoiceAnswerMessage,
@@ -18,15 +32,15 @@ import {
   type VoiceMuteToggleMessage,
   type VoiceOfferMessage,
 } from "@yeon/race-shared";
+import { useYeonQuery as useQuery } from "@yeon/ui/runtime/YeonQuery";
 
-const ICE_SERVERS: RTCIceServer[] = [
+const ICE_SERVERS: YeonRtcIceServer[] = [
   { urls: ["stun:stun.l.google.com:19302"] },
 ];
 
 const BUILD_TIME_FEATURE_FLAG =
   process.env.NEXT_PUBLIC_ENABLE_ROOM_VOICE_CALL?.toLowerCase() === "true";
 const VOICE_CALL_CONFIG_ENDPOINT = "/api/v1/room-voice-call-config";
-const roomVoiceCallConfigQueryKey = () => ["room-voice-call-config"] as const;
 
 const MESSAGES = {
   unsupported: "현재 브라우저는 음성통화를 지원하지 않습니다.",
@@ -75,6 +89,8 @@ type IncomingEnd = {
   reason?: VoiceEndMessage["reason"];
 };
 
+type VoiceRealtimeRoom = Pick<YeonRealtimeRoom<unknown>, "onMessage" | "send">;
+
 type CleanupOptions = {
   status?: VoiceCallStatus;
   error?: string | null;
@@ -95,7 +111,7 @@ export type VoiceCallStatus =
   | "ended";
 
 export type RoomVoiceCallOptions = {
-  room: Room | null;
+  room: VoiceRealtimeRoom | null;
   localParticipantId: string | null;
   participants: readonly VoiceCallParticipant[];
   enabled?: boolean;
@@ -113,7 +129,7 @@ export type RoomVoiceCallResult = {
   incomingFrom: string | null;
   activeTarget: string | null;
   availableTargets: readonly VoiceCallParticipant[];
-  audioRef: RefObject<HTMLAudioElement | null>;
+  audioRef: RefObject<YeonAudioElement | null>;
   start: (targetId?: string) => Promise<void>;
   accept: () => Promise<void>;
   reject: () => void;
@@ -125,18 +141,14 @@ export type RoomVoiceCallResult = {
 };
 
 function createSessionId() {
-  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
-    return crypto.randomUUID();
-  }
-  return `voice-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+  return (
+    createYeonRandomUUID() ??
+    `voice-${getYeonNow()}-${getYeonRandom().toString(36).slice(2, 10)}`
+  );
 }
 
 function hasWebRtcSupport() {
-  return (
-    typeof window !== "undefined" &&
-    typeof window.RTCPeerConnection !== "undefined" &&
-    Boolean(window.navigator.mediaDevices?.getUserMedia)
-  );
+  return hasYeonUserMediaSupport();
 }
 
 function isActiveStatus(status: VoiceCallStatus) {
@@ -150,7 +162,7 @@ function isActiveStatus(status: VoiceCallStatus) {
 
 function toCandidateInit(
   candidate: VoiceIceCandidateLike
-): RTCIceCandidateInit {
+): YeonRtcIceCandidateInit {
   return {
     candidate: candidate.candidate,
     sdpMid: candidate.sdpMid ?? undefined,
@@ -160,7 +172,7 @@ function toCandidateInit(
 }
 
 function normalizeMediaError(error: unknown) {
-  return error instanceof DOMException && error.name === "NotAllowedError"
+  return isYeonUserMediaPermissionDenied(error)
     ? MESSAGES.permissionDenied
     : MESSAGES.mediaFailed;
 }
@@ -254,7 +266,7 @@ function endReasonMessage(reason: VoiceEndMessage["reason"] | undefined) {
 }
 
 async function fetchRoomVoiceCallConfig() {
-  const response = await fetch(VOICE_CALL_CONFIG_ENDPOINT, {
+  const response = await fetchYeon(VOICE_CALL_CONFIG_ENDPOINT, {
     cache: "no-store",
   });
   if (!response.ok) {
@@ -285,14 +297,14 @@ export function useRoomVoiceCall({
   const isFeatureEnabled = resolvedFeatureFlag && enabled;
   const isSupported = hasWebRtcSupport();
 
-  const audioRef = useRef<HTMLAudioElement>(null);
-  const roomRef = useRef<Room | null>(null);
+  const audioRef = useRef<YeonAudioElement>(null);
+  const roomRef = useRef<VoiceRealtimeRoom | null>(null);
   const localParticipantIdRef = useRef<string | null>(null);
   const statusRef = useRef<VoiceCallStatus>("idle");
   const sessionRef = useRef<SessionRef | null>(null);
   const incomingOfferRef = useRef<IncomingOffer | null>(null);
-  const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
-  const localStreamRef = useRef<MediaStream | null>(null);
+  const peerConnectionRef = useRef<YeonRtcPeerConnection | null>(null);
+  const localStreamRef = useRef<YeonMediaStream | null>(null);
   const candidateQueueRef = useRef<Map<string, VoiceIceCandidateLike[]>>(
     new Map()
   );
@@ -419,7 +431,12 @@ export function useRoomVoiceCall({
 
   const createPeerConnection = useCallback(
     (sessionId: string, targetParticipantId: string) => {
-      const connection = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+      const connection = createYeonRtcPeerConnection({
+        iceServers: ICE_SERVERS,
+      });
+      if (!connection) {
+        throw new Error("WEB_RTC_UNSUPPORTED");
+      }
 
       connection.onicecandidate = (event) => {
         if (!event.candidate) return;
@@ -463,7 +480,7 @@ export function useRoomVoiceCall({
     [failCall, sendPayload]
   );
 
-  const attachLocalStream = useCallback((connection: RTCPeerConnection) => {
+  const attachLocalStream = useCallback((connection: YeonRtcPeerConnection) => {
     const stream = localStreamRef.current;
     if (!stream) return false;
     stream.getTracks().forEach((track) => connection.addTrack(track, stream));
@@ -513,9 +530,7 @@ export function useRoomVoiceCall({
       setIsStarted(true);
 
       try {
-        localStreamRef.current = await navigator.mediaDevices.getUserMedia({
-          audio: true,
-        });
+        localStreamRef.current = await requestYeonUserMedia({ audio: true });
         const connection = createPeerConnection(sessionId, targetParticipantId);
         peerConnectionRef.current = connection;
         if (!attachLocalStream(connection)) {
@@ -561,9 +576,7 @@ export function useRoomVoiceCall({
     setIsStarted(true);
 
     try {
-      localStreamRef.current = await navigator.mediaDevices.getUserMedia({
-        audio: true,
-      });
+      localStreamRef.current = await requestYeonUserMedia({ audio: true });
       const connection = createPeerConnection(
         offer.sessionId,
         offer.fromParticipantId

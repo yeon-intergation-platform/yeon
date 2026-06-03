@@ -1,3 +1,7 @@
+import {
+  fetchYeon,
+  type YeonRequestInit,
+} from "@yeon/ui/runtime/YeonBrowserRuntime";
 import { buildSpringBffHeaders } from "@/server/spring-bff-client";
 
 const DEFAULT_BACKEND_BASE_URL = "http://127.0.0.1:8081";
@@ -53,8 +57,8 @@ function extractErrorMessage(parsed: unknown) {
   return null;
 }
 
-async function fetchJson(path: string, userId: string, init?: RequestInit) {
-  const response = await fetch(`${resolveSpringBackendBaseUrl()}${path}`, {
+async function fetchJson(path: string, userId: string, init?: YeonRequestInit) {
+  const response = await fetchYeon(`${resolveSpringBackendBaseUrl()}${path}`, {
     ...init,
     cache: "no-store",
     headers: buildSpringBffHeaders(init?.headers, { userId }),
@@ -64,7 +68,7 @@ async function fetchJson(path: string, userId: string, init?: RequestInit) {
   if (!response.ok) {
     throw new CardDecksSpringBackendHttpError(
       response.status,
-      extractErrorMessage(parsed) ?? CARD_DECKS_BACKEND_ERROR_MESSAGE,
+      extractErrorMessage(parsed) ?? CARD_DECKS_BACKEND_ERROR_MESSAGE
     );
   }
   return parsed;

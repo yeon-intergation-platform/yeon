@@ -1,10 +1,14 @@
 "use client";
-
-import { SHARED_FEATURE_CLASS } from "@/features/shared-style-constants";
 import { TYPING_SERVICE_COMMON_CLASS } from "./typing-service-common.const";
-
 import type { RefObject } from "react";
-import { RotateCcw } from "lucide-react";
+import {
+  YeonButton,
+  YeonField,
+  YeonIcon,
+  YeonText,
+  YeonView,
+  type YeonTextAreaElement,
+} from "@yeon/ui";
 import { TYPING_SPEED_STYLE } from "@yeon/race-shared";
 import type { TypingDeckPassageOption } from "./use-typing-settings";
 
@@ -14,7 +18,7 @@ interface TypingRaceSoloPracticePanelProps {
   input: string;
   inputChars: string[];
   mismatches: number[];
-  textareaRef: RefObject<HTMLTextAreaElement | null>;
+  textareaRef: RefObject<YeonTextAreaElement | null>;
   speedStyle: (typeof TYPING_SPEED_STYLE)[keyof typeof TYPING_SPEED_STYLE];
   displaySpeed: number;
   displayUnit: string;
@@ -58,86 +62,214 @@ export function TypingRaceSoloPracticePanel({
 }: TypingRaceSoloPracticePanelProps) {
   return (
     <>
-      <div
+      <YeonView
         className={`${TYPING_SERVICE_COMMON_CLASS.raceStatRowBase} flex-wrap gap-x-6 gap-y-2${
           countdownRemaining > 0 ? " opacity-40" : ""
         }`}
         aria-hidden={countdownRemaining > 0}
       >
-        <span className="text-[13px] text-[#666]">
+        <YeonText
+          as="span"
+          variant="unstyled"
+          tone="inherit"
+          className="text-[13px] text-[#666]"
+        >
           {speedStyle === TYPING_SPEED_STYLE.KO_JASO ? "타수" : "WPM"}
-        </span>
-        <span className={TYPING_SERVICE_COMMON_CLASS.titleStatValue}>
+        </YeonText>
+        <YeonText
+          as="span"
+          variant="unstyled"
+          tone="inherit"
+          className={TYPING_SERVICE_COMMON_CLASS.titleStatValue}
+        >
           {displaySpeed}
-        </span>
-        <span className="text-[13px] text-[#666]">{displayUnit}</span>
+        </YeonText>
+        <YeonText
+          as="span"
+          variant="unstyled"
+          tone="inherit"
+          className="text-[13px] text-[#666]"
+        >
+          {displayUnit}
+        </YeonText>
         {speedStyle !== TYPING_SPEED_STYLE.KO_JASO && (
           <>
-            <span className={TYPING_SERVICE_COMMON_CLASS.raceStatDivider}>
+            <YeonText
+              as="span"
+              variant="unstyled"
+              tone="inherit"
+              className={TYPING_SERVICE_COMMON_CLASS.raceStatDivider}
+            >
               ·
-            </span>
-            <span className="text-[13px] text-[#666]">CPM</span>
-            <span className={TYPING_SERVICE_COMMON_CLASS.titleStatValue}>
+            </YeonText>
+            <YeonText
+              as="span"
+              variant="unstyled"
+              tone="inherit"
+              className="text-[13px] text-[#666]"
+            >
+              CPM
+            </YeonText>
+            <YeonText
+              as="span"
+              variant="unstyled"
+              tone="inherit"
+              className={TYPING_SERVICE_COMMON_CLASS.titleStatValue}
+            >
               {cpm}
-            </span>
+            </YeonText>
           </>
         )}
-        <span className={TYPING_SERVICE_COMMON_CLASS.raceStatDivider}>·</span>
-        <span className="text-[13px] text-[#666]">정확도</span>
-        <span className={TYPING_SERVICE_COMMON_CLASS.titleStatValue}>
+        <YeonText
+          as="span"
+          variant="unstyled"
+          tone="inherit"
+          className={TYPING_SERVICE_COMMON_CLASS.raceStatDivider}
+        >
+          ·
+        </YeonText>
+        <YeonText
+          as="span"
+          variant="unstyled"
+          tone="inherit"
+          className="text-[13px] text-[#666]"
+        >
+          정확도
+        </YeonText>
+        <YeonText
+          as="span"
+          variant="unstyled"
+          tone="inherit"
+          className={TYPING_SERVICE_COMMON_CLASS.titleStatValue}
+        >
           {accuracy}%
-        </span>
-        <span className={TYPING_SERVICE_COMMON_CLASS.raceStatDivider}>·</span>
-        <span className="text-[13px] text-[#666]">진행도</span>
-        <span className={TYPING_SERVICE_COMMON_CLASS.titleStatValue}>
+        </YeonText>
+        <YeonText
+          as="span"
+          variant="unstyled"
+          tone="inherit"
+          className={TYPING_SERVICE_COMMON_CLASS.raceStatDivider}
+        >
+          ·
+        </YeonText>
+        <YeonText
+          as="span"
+          variant="unstyled"
+          tone="inherit"
+          className="text-[13px] text-[#666]"
+        >
+          진행도
+        </YeonText>
+        <YeonText
+          as="span"
+          variant="unstyled"
+          tone="inherit"
+          className={TYPING_SERVICE_COMMON_CLASS.titleStatValue}
+        >
           {progress}%
-        </span>
-        <span className={TYPING_SERVICE_COMMON_CLASS.raceStatDivider}>·</span>
-        <span className="text-[13px] text-[#666]">시간</span>
-        <span className={TYPING_SERVICE_COMMON_CLASS.titleStatValue}>
+        </YeonText>
+        <YeonText
+          as="span"
+          variant="unstyled"
+          tone="inherit"
+          className={TYPING_SERVICE_COMMON_CLASS.raceStatDivider}
+        >
+          ·
+        </YeonText>
+        <YeonText
+          as="span"
+          variant="unstyled"
+          tone="inherit"
+          className="text-[13px] text-[#666]"
+        >
+          시간
+        </YeonText>
+        <YeonText
+          as="span"
+          variant="unstyled"
+          tone="inherit"
+          className={TYPING_SERVICE_COMMON_CLASS.titleStatValue}
+        >
           {elapsedSeconds.toFixed(1)}s
-        </span>
-      </div>
+        </YeonText>
+      </YeonView>
 
       {completed && (
-        <div className={TYPING_SERVICE_COMMON_CLASS.raceResultCard}>
-          <div className={TYPING_SERVICE_COMMON_CLASS.raceStatValueRow}>
-            <span className={TYPING_SERVICE_COMMON_CLASS.raceStatLabel}>
+        <YeonView className={TYPING_SERVICE_COMMON_CLASS.raceResultCard}>
+          <YeonView className={TYPING_SERVICE_COMMON_CLASS.raceStatValueRow}>
+            <YeonText
+              as="span"
+              variant="unstyled"
+              tone="inherit"
+              className={TYPING_SERVICE_COMMON_CLASS.raceStatLabel}
+            >
               {labels.result}
-            </span>
-            <span className={TYPING_SERVICE_COMMON_CLASS.raceResultValue}>
-              <span className={TYPING_SERVICE_COMMON_CLASS.metricValue}>
+            </YeonText>
+            <YeonText
+              as="span"
+              variant="unstyled"
+              tone="inherit"
+              className={TYPING_SERVICE_COMMON_CLASS.raceResultValue}
+            >
+              <YeonText
+                as="span"
+                variant="unstyled"
+                tone="inherit"
+                className={TYPING_SERVICE_COMMON_CLASS.metricValue}
+              >
                 {displaySpeed}
-              </span>{" "}
+              </YeonText>{" "}
               {displayUnit}
-            </span>
-            <span className={TYPING_SERVICE_COMMON_CLASS.raceResultValue}>
-              <span className={TYPING_SERVICE_COMMON_CLASS.metricValue}>
+            </YeonText>
+            <YeonText
+              as="span"
+              variant="unstyled"
+              tone="inherit"
+              className={TYPING_SERVICE_COMMON_CLASS.raceResultValue}
+            >
+              <YeonText
+                as="span"
+                variant="unstyled"
+                tone="inherit"
+                className={TYPING_SERVICE_COMMON_CLASS.metricValue}
+              >
                 {accuracy}
-              </span>{" "}
+              </YeonText>{" "}
               % {labels.accuracy}
-            </span>
-            <span className={TYPING_SERVICE_COMMON_CLASS.raceResultValue}>
-              <span className={TYPING_SERVICE_COMMON_CLASS.metricValue}>
+            </YeonText>
+            <YeonText
+              as="span"
+              variant="unstyled"
+              tone="inherit"
+              className={TYPING_SERVICE_COMMON_CLASS.raceResultValue}
+            >
+              <YeonText
+                as="span"
+                variant="unstyled"
+                tone="inherit"
+                className={TYPING_SERVICE_COMMON_CLASS.metricValue}
+              >
                 {elapsedSeconds.toFixed(1)}
-              </span>
+              </YeonText>
               s
-            </span>
-          </div>
-          <button
+            </YeonText>
+          </YeonView>
+          <YeonButton
             type="button"
-            className={SHARED_FEATURE_CLASS.smallInlineActionButton}
+            variant="secondary"
+            size="sm"
+            className="gap-1.5"
             onClick={onRestart}
           >
-            <RotateCcw size={13} />
+            <YeonIcon name="rotate-cw" size={13} />
             {labels.restart}
-          </button>
-        </div>
+          </YeonButton>
+        </YeonView>
       )}
 
       {!completed && (
-        <div className={TYPING_SERVICE_COMMON_CLASS.sectionBodyGap3}>
-          <div
+        <YeonView className={TYPING_SERVICE_COMMON_CLASS.sectionBodyGap3}>
+          <YeonView
             className={`${TYPING_SERVICE_COMMON_CLASS.racePromptTextPanel} break-keep`}
           >
             {promptChars.map((char, index) => {
@@ -147,7 +279,10 @@ export function TypingRaceSoloPracticePanel({
               const isMatched = typed === char;
 
               return (
-                <span
+                <YeonText
+                  as="span"
+                  variant="unstyled"
+                  tone="inherit"
                   key={`${passage.id}-${index}`}
                   className={
                     isMismatch
@@ -160,12 +295,13 @@ export function TypingRaceSoloPracticePanel({
                   }
                 >
                   {char}
-                </span>
+                </YeonText>
               );
             })}
-          </div>
+          </YeonView>
 
-          <textarea
+          <YeonField
+            as="textarea"
             ref={textareaRef}
             value={input}
             onChange={(event) =>
@@ -186,7 +322,7 @@ export function TypingRaceSoloPracticePanel({
                 : labels.typeHere
             }
           />
-        </div>
+        </YeonView>
       )}
     </>
   );

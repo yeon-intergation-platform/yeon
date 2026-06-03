@@ -1,7 +1,7 @@
-import type { Metadata } from "next";
+import type { YeonPageMetadata } from "@yeon/ui/runtime/YeonPageMetadata";
 import { TypingRaceSoloScreen } from "@/features/typing-service/typing-race-solo-screen";
 
-export const metadata: Metadata = {
+export const metadata: YeonPageMetadata = {
   title: "YEON 타자 덱 연습",
   description: "선택한 타자 덱으로 바로 시작하는 솔로 타자 연습 화면입니다.",
   alternates: {

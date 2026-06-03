@@ -1,7 +1,6 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { createTypingRaceSeedBodySchema } from "@yeon/api-contract/typing-decks";
-
 import {
   TypingDecksSpringBackendHttpError,
   createTypingRaceSeedInSpring,
@@ -9,14 +8,13 @@ import {
 import { createTypingRaceSeedFromDetail } from "@/server/typing-race-seed";
 import { getDefaultTypingDeckDetail } from "@/server/typing-deck-defaults";
 import { ServiceError } from "@/server/errors/service-error";
-
 import { getOptionalAuthenticatedUser, jsonError } from "../../_shared";
 
 export const runtime = "nodejs";
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ deckId: string }> },
+  { params }: { params: Promise<{ deckId: string }> }
 ) {
   const { currentUser } = await getOptionalAuthenticatedUser(request);
   const { deckId } = await params;
@@ -40,7 +38,7 @@ export async function POST(
       return NextResponse.json({
         raceSeed: createTypingRaceSeedFromDetail(
           defaultDetail,
-          parsed.data.passageId,
+          parsed.data.passageId
         ),
       });
     } catch (error) {
@@ -55,7 +53,7 @@ export async function POST(
     const raceSeed = await createTypingRaceSeedInSpring(
       currentUser?.id ?? null,
       deckId,
-      parsed.data,
+      parsed.data
     );
     return NextResponse.json(raceSeed);
   } catch (error) {

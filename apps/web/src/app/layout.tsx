@@ -1,7 +1,7 @@
-import type { Metadata } from "next";
-import Script from "next/script";
+import { type YeonPageMetadata } from "@yeon/ui/runtime/YeonPageMetadata";
+import { YeonScript } from "@yeon/ui";
+import { createYeonGoogleAnalyticsBootstrapScript } from "@yeon/ui/runtime/YeonBrowserRuntime";
 import type { ReactNode } from "react";
-
 import { CommunityPresenceTracker } from "@/features/community/components/community-presence-tracker";
 import {
   getDefaultSiteRobots,
@@ -18,7 +18,7 @@ import "@uiw/react-md-editor/markdown-editor.css";
 import "@uiw/react-markdown-preview/markdown.css";
 import "./globals.css";
 
-export const metadata: Metadata = {
+export const metadata: YeonPageMetadata = {
   title: SITE_TITLE,
   description: SITE_DESCRIPTION,
   keywords: [...SITE_KEYWORDS],
@@ -60,18 +60,13 @@ export default function RootLayout({ children }: RootLayoutProps) {
       <body>
         {shouldLoadGoogleAnalytics ? (
           <>
-            <Script
+            <YeonScript
               src={`https://www.googletagmanager.com/gtag/js?id=${GOOGLE_ANALYTICS_ID}`}
               strategy="afterInteractive"
             />
-            <Script id="google-analytics" strategy="afterInteractive">
-              {`
-                window.dataLayer = window.dataLayer || [];
-                function gtag(){dataLayer.push(arguments);}
-                gtag('js', new Date());
-                gtag('config', '${GOOGLE_ANALYTICS_ID}');
-              `}
-            </Script>
+            <YeonScript id="google-analytics" strategy="afterInteractive">
+              {createYeonGoogleAnalyticsBootstrapScript(GOOGLE_ANALYTICS_ID)}
+            </YeonScript>
           </>
         ) : null}
         <CommunityPresenceTracker />

@@ -1,5 +1,4 @@
 import { describe, expect, it, vi } from "vitest";
-
 import { ApiClientError, createApiClient } from "@yeon/api-client";
 
 describe("api-client", () => {
@@ -14,8 +13,8 @@ describe("api-client", () => {
         {
           status: 200,
           headers: { "content-type": "application/json" },
-        },
-      ),
+        }
+      )
     );
 
     const client = createApiClient({
@@ -41,12 +40,12 @@ describe("api-client", () => {
         new Response(JSON.stringify({ message: "권한이 없습니다." }), {
           status: 403,
           headers: { "content-type": "application/json" },
-        }),
+        })
       ),
     });
 
     await expect(client.listUsers()).rejects.toEqual(
-      new ApiClientError(403, "권한이 없습니다."),
+      new ApiClientError(403, "권한이 없습니다.")
     );
   });
 
@@ -56,7 +55,7 @@ describe("api-client", () => {
         new Response("<html>error</html>", {
           status: 500,
           headers: { "content-type": "text/html" },
-        }),
+        })
       ),
     });
 
@@ -72,7 +71,7 @@ describe("api-client", () => {
         new Response(JSON.stringify({ users: "not-an-array" }), {
           status: 200,
           headers: { "content-type": "application/json" },
-        }),
+        })
       ),
     });
 
@@ -84,7 +83,7 @@ describe("api-client", () => {
       new Response(JSON.stringify({ authenticated: false, user: null }), {
         status: 200,
         headers: { "content-type": "application/json" },
-      }),
+      })
     );
     const client = createApiClient({ fetch: fetchMock });
 

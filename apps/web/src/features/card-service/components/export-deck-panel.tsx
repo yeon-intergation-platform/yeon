@@ -1,10 +1,13 @@
 "use client";
-
 import { useState } from "react";
+import {
+  copyYeonClipboardText,
+  scheduleYeonTimeout,
+} from "@yeon/ui/runtime/YeonBrowserRuntime";
 import type { CardDeckItemDto } from "@yeon/api-contract/card-decks";
-
+import { YeonButton, YeonField, YeonText, YeonView } from "@yeon/ui";
 import { ResponsiveModal } from "./responsive-modal";
-import { SHARED_FEATURE_CLASS } from "@/features/shared-style-constants";
+import { YEON_WEB_SHARED_CLASS as SHARED_FEATURE_CLASS } from "@yeon/ui/theme/web-style-tokens";
 
 interface ExportDeckPanelProps {
   items: CardDeckItemDto[];
@@ -26,9 +29,12 @@ export function ExportDeckPanel({ items, onClose }: ExportDeckPanelProps) {
   const text = toExportText(items);
 
   const handleCopy = async () => {
-    await navigator.clipboard.writeText(text);
+    const copiedSuccessfully = await copyYeonClipboardText(text);
+    if (!copiedSuccessfully) {
+      throw new Error("클립보드 복사를 지원하지 않습니다.");
+    }
     setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    scheduleYeonTimeout(() => setCopied(false), 2000);
   };
 
   return (
@@ -38,29 +44,37 @@ export function ExportDeckPanel({ items, onClose }: ExportDeckPanelProps) {
       onClose={onClose}
       widthClassName="max-w-[720px]"
     >
-      <div className="select-none">
-        <textarea
+      <YeonView className="select-none">
+        <YeonField
+          as="textarea"
           readOnly
           value={text}
           rows={14}
           aria-label="내보내기 텍스트"
           draggable={false}
-          className="mt-1 w-full resize-none rounded-2xl border border-[#e5e5e5] bg-[#fafafa] px-4 py-3 font-mono text-[13px] leading-6 text-[#333] outline-none select-text md:text-[14px]"
+          className="mt-1 resize-none rounded-2xl bg-[#fafafa] px-4 py-3 font-mono text-[13px] leading-6 select-text md:text-[14px]"
         />
 
-        <div className={SHARED_FEATURE_CLASS.alignBetweenGap3WithMargin4}>
-          <span className={`${SHARED_FEATURE_CLASS.text13Soft} md:text-[14px]`}>
+        <YeonView className={SHARED_FEATURE_CLASS.alignBetweenGap3WithMargin4}>
+          <YeonText
+            as="span"
+            variant="unstyled"
+            tone="inherit"
+            className={`${SHARED_FEATURE_CLASS.text13Soft} md:text-[14px]`}
+          >
             총 {items.length}장
-          </span>
-          <button
+          </YeonText>
+          <YeonButton
             type="button"
             onClick={handleCopy}
-            className="rounded-2xl bg-[#111] px-4 py-3 text-[14px] font-semibold text-white transition-colors hover:bg-[#333]"
+            variant="primary"
+            size="lg"
+            className="rounded-2xl px-4 py-3 text-[14px]"
           >
             {copied ? "복사됨 ✓" : "복사"}
-          </button>
-        </div>
-      </div>
+          </YeonButton>
+        </YeonView>
+      </YeonView>
     </ResponsiveModal>
   );
 }

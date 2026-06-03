@@ -1,30 +1,21 @@
 "use client";
-
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  useYeonMutation as useMutation,
+  useYeonQueryClient as useQueryClient,
+} from "@yeon/ui/runtime/YeonQuery";
+import {
+  useYeonCardItemRepository,
+  type YeonCardItemRepository,
+} from "@yeon/ui/runtime/ports/card-deck";
 import type {
-  CardDeckItemDto,
-  CreateCardDeckItemBody,
-  CreateCardDeckItemsBody,
   CardReviewDifficulty,
   CardStudyMode,
+  CreateCardDeckItemBody,
+  CreateCardDeckItemsBody,
   UpdateCardDeckItemBody,
 } from "@yeon/api-contract/card-decks";
-
-import {
-  addGuestCard,
-  addGuestCards,
-  deleteGuestCard,
-  reviewGuestCard,
-  setGuestCardStudyMode,
-  updateGuestCard,
-} from "@/lib/guest-card-service-store";
-
 import { useCardServiceAuth } from "../auth-context";
-import {
-  CardServiceApiError,
-  cardServiceFetchJson,
-  cardServiceFetchVoid,
-} from "../card-service-fetch";
+import { CardServiceApiError } from "../card-service-fetch";
 import { cardServiceQueryKeys } from "../card-service-query-keys";
 
 function invalidateDeckAndList(
@@ -40,16 +31,18 @@ function invalidateDeckAndList(
   });
 }
 
+// 데이터 변형은 repository 포트가, 401 인증 오류 처리는 세션(auth-context)이 담당한다(관심사 분리).
 function useDeckMutation<TInput, TOutput>(
   deckId: string,
-  mutationFn: (input: TInput, isAuthenticated: boolean) => Promise<TOutput>
+  run: (repository: YeonCardItemRepository, input: TInput) => Promise<TOutput>
 ) {
   const queryClient = useQueryClient();
   const { isAuthenticated, markUnauthenticated } = useCardServiceAuth();
+  const repository = useYeonCardItemRepository();
   return useMutation({
     mutationFn: async (input: TInput) => {
       try {
-        return await mutationFn(input, isAuthenticated);
+        return await run(repository, input);
       } catch (error) {
         if (error instanceof CardServiceApiError && error.status === 401) {
           markUnauthenticated();
@@ -65,128 +58,49 @@ function useDeckMutation<TInput, TOutput>(
 }
 
 export function useAddCard(deckId: string) {
-  return useDeckMutation(
-    deckId,
-    async (body: CreateCardDeckItemBody, isAuthenticated) => {
-      if (isAuthenticated) {
-        const data = await cardServiceFetchJson<{ item: CardDeckItemDto }>(
-          `/api/v1/card-decks/${deckId}/items`,
-          {
-            method: "POST",
-            headers: { "content-type": "application/json" },
-            body: JSON.stringify(body),
-          },
-          "카드를 추가하지 못했습니다."
-        );
-        return data.item;
-      }
-      return addGuestCard(deckId, body);
-    }
+  return useDeckMutation(deckId, (repository, body: CreateCardDeckItemBody) =>
+    repository.addCard(deckId, body)
   );
 }
 
 export function useAddCards(deckId: string) {
-  return useDeckMutation(
-    deckId,
-    async (body: CreateCardDeckItemsBody, isAuthenticated) => {
-      if (isAuthenticated) {
-        const data = await cardServiceFetchJson<{ items: CardDeckItemDto[] }>(
-          `/api/v1/card-decks/${deckId}/items/bulk`,
-          {
-            method: "POST",
-            headers: { "content-type": "application/json" },
-            body: JSON.stringify(body),
-          },
-          "카드를 일괄 추가하지 못했습니다."
-        );
-        return data.items;
-      }
-      return addGuestCards(deckId, body);
-    }
+  return useDeckMutation(deckId, (repository, body: CreateCardDeckItemsBody) =>
+    repository.addCards(deckId, body)
   );
 }
 
 export function useUpdateCard(deckId: string) {
   return useDeckMutation(
     deckId,
-    async (
-      params: { itemId: string; body: UpdateCardDeckItemBody },
-      isAuthenticated
-    ) => {
-      if (isAuthenticated) {
-        const data = await cardServiceFetchJson<{ item: CardDeckItemDto }>(
-          `/api/v1/card-decks/${deckId}/items/${params.itemId}`,
-          {
-            method: "PATCH",
-            headers: { "content-type": "application/json" },
-            body: JSON.stringify(params.body),
-          },
-          "카드를 수정하지 못했습니다."
-        );
-        return data.item;
-      }
-      return updateGuestCard(params.itemId, params.body);
-    }
+    (repository, params: { itemId: string; body: UpdateCardDeckItemBody }) =>
+      repository.updateCard(deckId, params.itemId, params.body)
   );
 }
 
 export function useDeleteCard(deckId: string) {
-  return useDeckMutation(deckId, async (itemId: string, isAuthenticated) => {
-    if (isAuthenticated) {
-      await cardServiceFetchVoid(
-        `/api/v1/card-decks/${deckId}/items/${itemId}`,
-        { method: "DELETE" },
-        "카드를 삭제하지 못했습니다."
-      );
-      return;
-    }
-    await deleteGuestCard(itemId);
-  });
+  return useDeckMutation(deckId, (repository, itemId: string) =>
+    repository.deleteCard(deckId, itemId)
+  );
 }
 
 export function useReviewCard(deckId: string) {
   return useDeckMutation(
     deckId,
-    async (
-      params: { itemId: string; difficulty: CardReviewDifficulty },
-      isAuthenticated
-    ) => {
-      if (isAuthenticated) {
-        const data = await cardServiceFetchJson<{ item: CardDeckItemDto }>(
-          `/api/v1/card-decks/${deckId}/items/${params.itemId}/review`,
-          {
-            method: "POST",
-            headers: { "content-type": "application/json" },
-            body: JSON.stringify({ difficulty: params.difficulty }),
-          },
-          "복습 결과를 저장하지 못했습니다."
-        );
-        return data.item;
-      }
-      return reviewGuestCard(params.itemId, params.difficulty);
-    }
+    (
+      repository,
+      params: { itemId: string; difficulty: CardReviewDifficulty }
+    ) => repository.reviewCard(deckId, params.itemId, params.difficulty)
   );
 }
 
 export function useUpdateCardStudyPreference(deckId: string) {
   const queryClient = useQueryClient();
   const { isAuthenticated, markUnauthenticated } = useCardServiceAuth();
+  const repository = useYeonCardItemRepository();
   return useMutation({
     mutationFn: async (studyMode: CardStudyMode) => {
-      if (!isAuthenticated) {
-        setGuestCardStudyMode(studyMode);
-        return { studyMode };
-      }
       try {
-        return await cardServiceFetchJson<{ studyMode: CardStudyMode }>(
-          "/api/v1/card-decks/study-preference",
-          {
-            method: "PATCH",
-            headers: { "content-type": "application/json" },
-            body: JSON.stringify({ studyMode }),
-          },
-          "학습 모드를 저장하지 못했습니다.",
-        );
+        return await repository.updateStudyPreference(studyMode);
       } catch (error) {
         if (error instanceof CardServiceApiError && error.status === 401) {
           markUnauthenticated();

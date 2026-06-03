@@ -1,3 +1,4 @@
+import { createYeonUrl } from "@yeon/ui/runtime/YeonBrowserRuntime";
 import { AuthFlowError, authErrorCodes } from "./auth-errors";
 import {
   getAppOrigin,
@@ -26,7 +27,7 @@ export function getProviderCallbackUrl(
   provider: SocialProvider,
   originFallback?: string
 ) {
-  return new URL(
+  return createYeonUrl(
     `/api/auth/${provider}/callback`,
     getSocialAuthCallbackOrigin(originFallback)
   ).toString();
@@ -37,7 +38,7 @@ function buildGoogleAuthorizationUrl(
   codeChallenge: string,
   originFallback?: string
 ) {
-  const url = new URL("https://accounts.google.com/o/oauth2/v2/auth");
+  const url = createYeonUrl("https://accounts.google.com/o/oauth2/v2/auth");
 
   url.searchParams.set(
     "client_id",
@@ -62,7 +63,7 @@ function buildKakaoAuthorizationUrl(
   codeChallenge: string,
   originFallback?: string
 ) {
-  const url = new URL("https://kauth.kakao.com/oauth/authorize");
+  const url = createYeonUrl("https://kauth.kakao.com/oauth/authorize");
 
   url.searchParams.set(
     "client_id",

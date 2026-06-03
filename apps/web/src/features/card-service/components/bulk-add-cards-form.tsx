@@ -1,9 +1,22 @@
 "use client";
-
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { CARD_BULK_IMPORT_MAX_ITEMS } from "@yeon/api-contract/card-decks";
-
-import { SHARED_FEATURE_CLASS } from "@/features/shared-style-constants";
+import { useYeonWindowEvent } from "@yeon/ui/hooks/YeonBrowserHooks";
+import { getYeonCustomEventDetail } from "@yeon/ui/runtime/YeonBrowserRuntime";
+import {
+  YeonButton,
+  YeonField,
+  YeonSurface,
+  YeonText,
+  YeonLabel,
+  YeonForm,
+  YeonList,
+  YeonListItem,
+  YeonView,
+  type YeonFormEvent,
+  type YeonFormElement,
+} from "@yeon/ui";
+import { YEON_WEB_SHARED_CLASS as SHARED_FEATURE_CLASS } from "@yeon/ui/theme/web-style-tokens";
 import { useAddCards } from "../hooks";
 import { parseBulkCardImportInput } from "../utils/bulk-card-import-parser";
 import {
@@ -58,21 +71,19 @@ export function BulkAddCardsForm({
 
   useEffect(() => {
     setHelpVisible(shouldShowBulkCardHelp());
-    const handler = (event: Event) => {
-      const customEvent = event as CustomEvent<{ isVisible: boolean }>;
-      setHelpVisible(customEvent.detail?.isVisible ?? shouldShowBulkCardHelp());
-    };
-    window.addEventListener(BULK_CARD_HELP_VISIBILITY_EVENT, handler);
-    return () =>
-      window.removeEventListener(BULK_CARD_HELP_VISIBILITY_EVENT, handler);
   }, []);
+
+  useYeonWindowEvent(BULK_CARD_HELP_VISIBILITY_EVENT, (event) => {
+    const detail = getYeonCustomEventDetail<{ isVisible: boolean }>(event);
+    setHelpVisible(detail?.isVisible ?? shouldShowBulkCardHelp());
+  });
 
   function handleDismissHelp() {
     setHelpVisible(false);
     setBulkCardHelpVisible(false);
   }
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (event: YeonFormEvent<YeonFormElement>) => {
     event.preventDefault();
     if (!canSubmit) {
       return;
@@ -90,105 +101,179 @@ export function BulkAddCardsForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+    <YeonForm onSubmit={handleSubmit} className="flex flex-col gap-5">
       {isHelpVisible ? (
-        <div className="relative rounded-2xl border border-[#e5e5e5] bg-[#fafafa] p-4 pr-12 text-[13px] leading-6 text-[#555] md:p-5">
-          <button
+        <YeonSurface variant="panel" className="relative p-4 pr-12 md:p-5">
+          <YeonButton
             aria-label="AI 형식 도움말 숨기기"
-            className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-full border border-[#e5e5e5] bg-white text-[15px] font-semibold text-[#666] transition-colors hover:border-[#111] hover:text-[#111]"
+            className="absolute right-3 top-3 h-7 w-7 rounded-full text-[15px]"
             onClick={handleDismissHelp}
             type="button"
+            variant="icon"
+            size="icon"
           >
             ×
-          </button>
-          <p className={CARD_SERVICE_COMMON_CLASS.panelTextEmphasis15}>
+          </YeonButton>
+          <YeonText
+            as="p"
+            variant="label"
+            className={CARD_SERVICE_COMMON_CLASS.panelTextEmphasis15}
+          >
             AI에게 아래 형식으로 카드 묶음을 만들어달라고 요청하세요.
-          </p>
-          <pre className="mt-3 overflow-x-auto whitespace-pre-wrap rounded-xl bg-white p-3 text-[12px] leading-5 text-[#333] md:p-4">
+          </YeonText>
+          <YeonText
+            as="pre"
+            variant="unstyled"
+            tone="inherit"
+            className="mt-3 overflow-x-auto whitespace-pre-wrap rounded-xl bg-white p-3 text-[12px] leading-5 text-[#111] md:p-4"
+          >
             {BULK_CARD_TEMPLATE}
-          </pre>
-          <p className="mt-3">
-            마커는 한 줄 전체가 <code>[[Q]]</code>, <code>[[A]]</code>,{" "}
-            <code>[[CARD]]</code>일 때만 인식합니다.
-          </p>
-        </div>
+          </YeonText>
+          <YeonText as="p" variant="caption" tone="secondary" className="mt-3">
+            마커는 한 줄 전체가{" "}
+            <YeonText as="code" variant="unstyled" tone="inherit">
+              [[Q]]
+            </YeonText>
+            ,{" "}
+            <YeonText as="code" variant="unstyled" tone="inherit">
+              [[A]]
+            </YeonText>
+            ,{" "}
+            <YeonText as="code" variant="unstyled" tone="inherit">
+              [[CARD]]
+            </YeonText>
+            일 때만 인식합니다.
+          </YeonText>
+        </YeonSurface>
       ) : null}
 
-      <label className="flex flex-col gap-2">
-        <span className={CARD_SERVICE_COMMON_CLASS.panelTextEmphasis}>
+      <YeonLabel className="flex flex-col gap-2">
+        <YeonText
+          as="span"
+          variant="unstyled"
+          tone="inherit"
+          className={CARD_SERVICE_COMMON_CLASS.panelTextEmphasis}
+        >
           일괄 카드 입력
-        </span>
-        <textarea
+        </YeonText>
+        <YeonField
+          as="textarea"
           value={rawText}
           onChange={(e) => setRawText(e.target.value)}
           rows={14}
           placeholder={BULK_CARD_TEMPLATE}
-          className="resize-y rounded-2xl border border-[#e5e5e5] px-4 py-3 font-mono text-[14px] leading-6 text-[#111] outline-none focus:border-[#111]"
+          className="resize-y rounded-2xl px-4 py-3 font-mono text-[14px] leading-6"
         />
-      </label>
+      </YeonLabel>
 
-      <div className="flex flex-col gap-2 text-[13px] md:text-[14px]">
-        <p className="text-[#666]">
+      <YeonView className="flex flex-col gap-2 text-[13px] md:text-[14px]">
+        <YeonText
+          as="p"
+          variant="unstyled"
+          tone="inherit"
+          className="text-[#666]"
+        >
           인식된 카드:{" "}
-          <strong className="text-[#111]">{parseResult.cards.length}</strong>장
-          / 최대 {CARD_BULK_IMPORT_MAX_ITEMS}장
-        </p>
+          <YeonText
+            as="strong"
+            variant="unstyled"
+            tone="inherit"
+            className="text-[#111]"
+          >
+            {parseResult.cards.length}
+          </YeonText>
+          장 / 최대 {CARD_BULK_IMPORT_MAX_ITEMS}장
+        </YeonText>
         {parseResult.errors.length > 0 ? (
-          <ul className="flex flex-col gap-1 rounded-xl border border-red-200 bg-red-50 p-3 text-red-700">
+          <YeonList className="flex flex-col gap-1 rounded-xl border border-[#e5e5e5] bg-[#fafafa] p-3 text-[#111]">
             {parseResult.errors.map((message) => (
-              <li key={message}>• {message}</li>
+              <YeonListItem key={message}>• {message}</YeonListItem>
             ))}
-          </ul>
+          </YeonList>
         ) : null}
         {parseResult.warnings.length > 0 ? (
-          <ul className="flex flex-col gap-1 rounded-xl border border-amber-200 bg-amber-50 p-3 text-amber-700">
+          <YeonList className="flex flex-col gap-1 rounded-xl border border-[#e5e5e5] bg-[#fafafa] p-3 text-[#666]">
             {parseResult.warnings.map((message) => (
-              <li key={message}>• {message}</li>
+              <YeonListItem key={message}>• {message}</YeonListItem>
             ))}
-          </ul>
+          </YeonList>
         ) : null}
-        {error ? <p className="text-red-600">{error.message}</p> : null}
-      </div>
+        {error ? (
+          <YeonText
+            as="p"
+            variant="caption"
+            tone="primary"
+            className="font-semibold"
+          >
+            {error.message}
+          </YeonText>
+        ) : null}
+      </YeonView>
 
       {previewCards.length > 0 ? (
-        <div className="rounded-2xl border border-[#e5e5e5] p-4 md:p-5">
-          <h4 className={CARD_SERVICE_COMMON_CLASS.panelTextEmphasis15}>
+        <YeonSurface variant="outlined" className="p-4 md:p-5">
+          <YeonText
+            as="h4"
+            variant="unstyled"
+            tone="inherit"
+            className={CARD_SERVICE_COMMON_CLASS.panelTextEmphasis15}
+          >
             미리보기
-          </h4>
-          <ul className="mt-3 flex flex-col gap-3">
+          </YeonText>
+          <YeonList className="mt-3 flex flex-col gap-3">
             {previewCards.map((card, index) => (
-              <li
+              <YeonListItem
                 key={`${card.frontText}-${index}`}
                 className="rounded-xl bg-[#fafafa] p-3 text-[14px]"
               >
-                <p className="font-semibold text-[#111]">{index + 1}. 질문</p>
-                <div className="mt-1 text-[#555]">
+                <YeonText
+                  as="p"
+                  variant="unstyled"
+                  tone="inherit"
+                  className="font-semibold text-[#111]"
+                >
+                  {index + 1}. 질문
+                </YeonText>
+                <YeonView className="mt-1 text-[#666]">
                   <MarkdownContent>{card.frontText}</MarkdownContent>
-                </div>
-                <p className="mt-3 font-semibold text-[#111]">답변</p>
-                <div className="mt-1 text-[#555]">
+                </YeonView>
+                <YeonText
+                  as="p"
+                  variant="unstyled"
+                  tone="inherit"
+                  className="mt-3 font-semibold text-[#111]"
+                >
+                  답변
+                </YeonText>
+                <YeonView className="mt-1 text-[#666]">
                   <MarkdownContent>{card.backText}</MarkdownContent>
-                </div>
-              </li>
+                </YeonView>
+              </YeonListItem>
             ))}
-          </ul>
+          </YeonList>
           {hiddenPreviewCount > 0 ? (
-            <p className={`mt-3 ${SHARED_FEATURE_CLASS.text13Soft}`}>
+            <YeonText
+              as="p"
+              variant="unstyled"
+              tone="inherit"
+              className={`mt-3 ${SHARED_FEATURE_CLASS.text13Soft}`}
+            >
               외 {hiddenPreviewCount}장은 추가 시 함께 저장됩니다.
-            </p>
+            </YeonText>
           ) : null}
-        </div>
+        </YeonSurface>
       ) : null}
 
-      <div className="flex justify-end">
-        <button
+      <YeonView className="flex justify-end">
+        <YeonButton
           type="submit"
           disabled={!canSubmit}
-          className="rounded-2xl bg-[#111] px-5 py-3 text-[14px] font-semibold text-white transition-colors hover:bg-[#333] disabled:opacity-50"
+          variant="primary"
+          size="lg"
         >
           {isPending ? "추가 중..." : `${parseResult.cards.length || 0}장 추가`}
-        </button>
-      </div>
-    </form>
+        </YeonButton>
+      </YeonView>
+    </YeonForm>
   );
 }

@@ -1,6 +1,5 @@
 import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-
 import { ChatServiceProfileSpringBackendHttpError } from "@/server/chat-service-profile-spring-client";
 
 const mockRequireChatServiceAuth = vi.fn();
@@ -23,7 +22,6 @@ vi.mock("@/server/chat-service-profile-spring-client", async () => {
       mockFetchChatServiceProfileFromSpring(...args),
   };
 });
-
 import { GET } from "../route";
 
 describe("chat-service profile route", () => {
@@ -33,11 +31,19 @@ describe("chat-service profile route", () => {
 
   it("비인증이면 shared 에러를 반환한다", async () => {
     const { ServiceError } = await import("@/server/errors/service-error");
-    mockRequireChatServiceAuth.mockRejectedValue(new ServiceError(401, "chat-service 로그인이 필요합니다."));
+    mockRequireChatServiceAuth.mockRejectedValue(
+      new ServiceError(401, "chat-service 로그인이 필요합니다.")
+    );
 
     const response = await GET(
-      new NextRequest("http://localhost/api/v1/chat-service/profiles/22222222-2222-4222-8222-222222222222"),
-      { params: Promise.resolve({ profileId: "22222222-2222-4222-8222-222222222222" }) },
+      new NextRequest(
+        "http://localhost/api/v1/chat-service/profiles/22222222-2222-4222-8222-222222222222"
+      ),
+      {
+        params: Promise.resolve({
+          profileId: "22222222-2222-4222-8222-222222222222",
+        }),
+      }
     );
 
     expect(response.status).toBe(401);
@@ -60,8 +66,14 @@ describe("chat-service profile route", () => {
     });
 
     const response = await GET(
-      new NextRequest("http://localhost/api/v1/chat-service/profiles/22222222-2222-4222-8222-222222222222"),
-      { params: Promise.resolve({ profileId: "22222222-2222-4222-8222-222222222222" }) },
+      new NextRequest(
+        "http://localhost/api/v1/chat-service/profiles/22222222-2222-4222-8222-222222222222"
+      ),
+      {
+        params: Promise.resolve({
+          profileId: "22222222-2222-4222-8222-222222222222",
+        }),
+      }
     );
 
     expect(mockFetchChatServiceProfileFromSpring).toHaveBeenCalledWith({
@@ -76,15 +88,26 @@ describe("chat-service profile route", () => {
       profile: { id: "11111111-1111-4111-8111-111111111111" },
     });
     mockFetchChatServiceProfileFromSpring.mockRejectedValue(
-      new ChatServiceProfileSpringBackendHttpError(403, "차단 관계에서는 이 작업을 수행할 수 없습니다."),
+      new ChatServiceProfileSpringBackendHttpError(
+        403,
+        "차단 관계에서는 이 작업을 수행할 수 없습니다."
+      )
     );
 
     const response = await GET(
-      new NextRequest("http://localhost/api/v1/chat-service/profiles/22222222-2222-4222-8222-222222222222"),
-      { params: Promise.resolve({ profileId: "22222222-2222-4222-8222-222222222222" }) },
+      new NextRequest(
+        "http://localhost/api/v1/chat-service/profiles/22222222-2222-4222-8222-222222222222"
+      ),
+      {
+        params: Promise.resolve({
+          profileId: "22222222-2222-4222-8222-222222222222",
+        }),
+      }
     );
 
     expect(response.status).toBe(403);
-    await expect(response.json()).resolves.toEqual({ message: "차단 관계에서는 이 작업을 수행할 수 없습니다." });
+    await expect(response.json()).resolves.toEqual({
+      message: "차단 관계에서는 이 작업을 수행할 수 없습니다.",
+    });
   });
 });

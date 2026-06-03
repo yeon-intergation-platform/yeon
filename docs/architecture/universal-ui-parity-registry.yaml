@@ -1,0 +1,236 @@
+# Universal UI Parity Registry — "SSOT들의 SSOT"
+#
+# 목적: 플랫폼(web/mobile)이 공유하는 각 개념에 대해 "얼마나 같아야 하는지"(parity)를
+#       상태 단위로 명시한다. 모든 것을 강제로 같게 만들지 않는다 — 같아야 하는 것만 SSOT로
+#       묶고, 달라도 되는 것은 명시적으로 'platform-divergent'로 표시한다.
+#
+# 왜: "네비게이션은 정말 항상 같아야 할까? 아닐 수도 있다." 라우트 '정체성'(이름+params)은
+#     반드시 동일해야 하지만, 라우트 '경로 문자열'은 플랫폼별로 달라도 된다. 이처럼 한 영역도
+#     parity가 갈린다. 이 레지스트리가 그 판단을 한곳에서 못박는다.
+#
+# parity 분류:
+#   identical-value    : 값/타입이 모든 플랫폼에서 글자 그대로 동일해야 함. 어긋나면 버그.
+#                        → 반드시 단일 SSOT 모듈에서 파생(재수출)한다. 복제 금지.
+#   shared-contract    : 인터페이스(포트)는 동일, 구현(어댑터)은 플랫폼별. 화면은 포트만 의존.
+#   platform-divergent : 의도적으로 달라도 됨. 강제 동일 '금지'. 어댑터/앱 책임.
+#
+# 규칙:
+#   - identical-value 개념은 SSOT 한 파일에서만 정의하고, 앱별 파일은 재수출만 한다.
+#   - shared-contract 개념은 포트 인터페이스가 SSOT이고, 각 앱이 어댑터로 구현해 주입한다.
+#   - platform-divergent 개념을 SSOT로 묶으려 하지 않는다(과공유 방지).
+#   - 새 공유 개념을 도입하면 먼저 이 레지스트리에 entry를 추가하고 parity를 정한다.
+
+version: 1
+updated: 2026-06-03
+owner: universal-ui
+parent_backlog: docs/product/backlog/2026-06-03-universal-ui-screen-ports-ssot.md
+
+concepts:
+  - id: api-contract
+    concept: API 요청/응답 DTO·Zod 스키마
+    parity: identical-value
+    ssot: packages/api-contract/src
+    consumers: [apps/web, apps/mobile, packages/ui]
+    verify: 양 앱·패키지가 동일 @yeon/api-contract import + typecheck(zod 추론)
+
+  - id: design-tokens
+    concept: 색/간격/타이포/radius/shadow 토큰
+    parity: identical-value
+    ssot: packages/design-tokens/src
+    consumers: [apps/web, apps/mobile, packages/ui]
+    verify: "@yeon/design-tokens 소비 + 금지색(orange/amber) lint 스캔"
+
+  - id: domain-logic
+    concept: 순수 도메인 규칙/계산
+    parity: identical-value
+    ssot: packages/domain/src
+    verify: typecheck + 단위 테스트
+
+  - id: card-deck-query-keys
+    concept: 카드 덱 TanStack queryKey
+    parity: identical-value
+    ssot: packages/ui/src/runtime/ports/card-deck/query-keys.ts
+    adapters:
+      - apps/web/src/features/card-service/card-service-query-keys.ts # SSOT 재수출
+      - apps/mobile/src/services/card-service/query-keys.ts # SSOT 재수출
+    verify: 양 앱 query-keys 파일이 SSOT 재수출만 + apps/mobile query-keys.test.ts
+    note: >
+      이전 drift 사례: web ["card-decks", mode] ↔ mobile ["card-service","decks", mode].
+      같은 개념인데 키 배열이 어긋나 캐시 의미가 분리됐다. SSOT로 통일했다.
+
+  - id: route-identity
+    concept: 라우트 정체성(라우트 이름 + 필수 params)
+    parity: identical-value
+    ssot: packages/ui/src/runtime/ports/shared.ts # YeonRouteTarget union
+    verify: typecheck(union exhaustive) + 어댑터가 모든 name 처리(switch 빠짐 없음)
+    note: 라우트 "정체성"은 동일. 경로 "문자열"은 route-path-format(아래)에서 분기.
+
+  - id: route-path-format
+    concept: 라우트 경로 문자열 / 네비게이션 전환 / 제스처
+    parity: platform-divergent
+    ssot: null
+    adapters:
+      - apps/web navigation 어댑터(YeonNavigationPort 구현, next router)
+      - apps/mobile navigation 어댑터(YeonNavigationPort 구현, expo-router)
+    note: >
+      웹 `/card-service/decks/[deckId]` ↔ 모바일 `{ pathname, params }`.
+      강제 동일 금지 — 라우트 name→경로 변환은 어댑터 책임.
+
+  - id: navigation-port
+    concept: 네비게이션 능력 인터페이스
+    parity: shared-contract
+    ssot: packages/ui/src/runtime/ports/shared.ts # YeonNavigationPort
+    verify: typecheck(각 앱 어댑터가 포트 구현)
+
+  - id: session-port
+    concept: 인증/세션 능력 인터페이스(슬림: isAuthenticated + markUnauthenticated)
+    parity: shared-contract
+    ssot: packages/ui/src/runtime/ports/shared.ts # YeonSessionPort
+    adapters:
+      - web: auth-context(useIsAuthenticated/markUnauthenticated)
+      - mobile: 화면 세션 상태(isSignedIn) — 공용 스크린 도입 시 provider로 승격
+    note: >
+      웹 isAuthenticated == 모바일 isSignedIn → 단일 이름 isAuthenticated로 통일.
+      공유 표면은 인증여부 + 만료신호뿐이다(토큰 획득/저장/폐기는 session-persistence=platform-divergent).
+      현재 카드 덱 목록 화면은 web/mobile이 분리(platform-divergent layout)되어 각자 세션 소스를 직접 쓴다.
+      포트의 실제 소비 지점은 "공용 스크린"(slice C+)이며, 분리 화면에 지금 강제 적용하면 indirection 뿐(ceremony)이라
+      공용 스크린 hoist 시점에 어댑터를 붙인다. (repository 어댑터는 이미 인증 분기를 흡수함.)
+
+  - id: session-persistence
+    concept: 세션 토큰 저장 메커니즘
+    parity: platform-divergent
+    ssot: null
+    note: 웹 HTTP-only 쿠키 ↔ 모바일 SecureStore. 동일 강제 금지.
+
+  - id: guest-auth-branching-rules
+    concept: 게스트↔서버 분기/병합 규칙
+    parity: identical-value
+    ssot: .claude/rules/card-service.md # → docs/agent-rules/card-service.md
+    note: >
+      분기 "규칙"(병합 동의, queryKey auth/guest 분리, guest ID 충돌 방지)은 동일해야 한다.
+      저장 "구현"은 card-deck-repository 어댑터별(아래)로 분기한다.
+
+  - id: card-item-repository
+    concept: 카드 아이템 CRUD + 덱 상세 로딩 + 복습/학습모드 능력
+    parity: shared-contract
+    ssot: packages/ui/src/runtime/ports/card-deck/item-repository.ts # YeonCardItemRepository
+    adapters:
+      - web: apps/web/src/features/card-service/runtime-adapters/card-item-repository.tsx (완료)
+      - mobile: apps/mobile/src/features/card-service/runtime-adapters/card-item-repository.ts (완료)
+    verify: 양 어댑터가 YeonCardItemRepository 구현 + 웹 훅/모바일 detail·play 화면이 포트 소비
+    note: >
+      bulk 카드 생성 의미가 플랫폼별로 다름: 웹은 /items/bulk 엔드포인트, 모바일은 createCardDeckItem 루프.
+      이 비대칭은 어댑터 내부에서 흡수했다(모바일 addCards는 루프, 웹은 bulk). 화면은 동일 포트 동사만 호출.
+      모바일은 typecheck/lint 검증. 시각/동작 런타임 검증(slice 20)은 시뮬레이터에서 별도 수행 권장.
+
+  - id: card-deck-repository
+    concept: 카드 덱 데이터 CRUD 능력
+    parity: shared-contract
+    ssot: packages/ui/src/runtime/ports/card-deck/repository.ts # YeonCardDeckRepository
+    adapters:
+      - web: 서버 fetch ↔ IndexedDB 게스트
+      - mobile: "@yeon/api-client ↔ JSON 게스트"
+    verify: typecheck(어댑터가 YeonCardDeckRepository 구현)
+
+  - id: key-value-store-port
+    concept: 작은 KV prefs 저장(스터디 모드 등)
+    parity: shared-contract
+    ssot: packages/ui/src/runtime/ports/shared.ts # YeonKeyValueStorePort
+    note: 비동기로 통일(web localStorage를 Promise로 감쌈).
+
+  - id: storage-backend
+    concept: 저장 백엔드 구현
+    parity: platform-divergent
+    ssot: null
+    note: localStorage/IndexedDB ↔ SecureStore/JSON. 동일 강제 금지.
+
+  - id: screen-composition
+    concept: 화면 상태 로직/구성(공용 스크린)
+    parity: shared-contract
+    ssot: packages/ui/src/screens
+    note: 화면 한 벌 작성, 포트 주입으로 플랫폼 능력 소비. 웹은 시맨틱 DOM 유지.
+
+  - id: deck-meta-format
+    concept: 덱 카드 메타 표시 문자열("카드 N장 · 업데이트 DATE")
+    parity: identical-value
+    ssot: packages/ui/src/runtime/ports/card-deck/format.ts
+    adapters:
+      - apps/web/src/features/card-service/components/deck-card.tsx
+      - apps/mobile/src/features/card-service/card-deck-list-screen.tsx
+    verify: 양 화면이 formatCardDeckMeta 소비 + 로컬 날짜 포맷 재선언 없음
+    note: >
+      이전 drift: web long "2026년 6월 3일" ↔ mobile 2-digit "2026. 06. 03.".
+      canonical = 한국어 long 으로 통일.
+
+  - id: card-study-mode
+    concept: 카드 학습 모드 값
+    parity: identical-value
+    ssot: packages/api-contract (CardStudyMode 타입)
+    note: >
+      학습 모드 "값/타입"은 api-contract로 이미 공유(identical-value).
+      저장 "메커니즘"(web localStorage 키 ↔ mobile JSON 필드)은 storage-backend(platform-divergent)다.
+      따라서 별도 KV 포트 도입은 ceremony — 타입 공유로 충분하다.
+
+  - id: screen-layout-chrome
+    concept: 화면 헤더/네비 chrome/레이아웃 전환
+    parity: platform-divergent
+    ssot: null
+    note: >
+      웹 ProductHeader+다이얼로그 ↔ 모바일 TopBar+풀스크린+네이티브 알럿.
+      공용 스크린은 chrome을 "슬롯"으로 주입받아 플랫폼별 차이를 흡수한다.
+
+  # ── queryKey parity 판정 (slice 8: 기계적 SSOT화 대신 정직한 분류) ──────────────
+  # 같아야 하는 것만 SSOT로 묶는다. drift 파트너가 없으면(웹 전용) SSOT 대상이 아니다.
+
+  - id: card-rooms-query-keys
+    concept: 카드룸 queryKey
+    parity: web-only
+    ssot: packages/ui/src/runtime/ports/card-rooms/query-keys.ts
+    adapters:
+      - apps/web/src/features/card-service/hooks/use-card-room.ts # SSOT 재수출
+    note: >
+      모바일에 카드룸 미존재 → 현재 drift 파트너 없음. 패턴 통일 위해 SSOT로 통합,
+      모바일 카드룸 도입 시 동일 SSOT에서 파생한다.
+
+  - id: typing-service-query-keys
+    concept: 타자 서비스 queryKey
+    parity: web-only
+    ssot: packages/ui/src/runtime/ports/typing-service/query-keys.ts
+    adapters:
+      - apps/web/src/features/typing-service/typing-service-query-keys.ts # SSOT 재수출
+    note: typing-service는 모바일 부재. 패턴 통일 위해 SSOT로 통합, 모바일 타자 도입 시 파생.
+
+  - id: room-voice-call-query-keys
+    concept: 룸 음성통화 queryKey
+    parity: web-only
+    ssot: packages/ui/src/runtime/ports/room-voice-call/query-keys.ts
+    adapters:
+      - apps/web/src/features/room-voice-call/use-room-voice-call.ts # SSOT 소비
+    note: 웹 전용. 패턴 통일 위해 SSOT로 통합.
+
+  - id: life-os-query-keys
+    concept: Life OS queryKey (base)
+    parity: identical-value
+    ssot: packages/ui/src/runtime/ports/life-os/query-keys.ts # lifeOsQueryKeys
+    adapters:
+      - apps/web/src/features/life-os/life-os.tsx # SSOT 사용(쿠키 auth)
+      - apps/mobile/src/features/life-os/life-os-screen.tsx # base + sessionToken 확장(토큰 auth)
+    verify: 양 화면이 lifeOsQueryKeys 소비 + base 키 로컬 재선언 없음
+    note: >
+      이전 drift: web ["life-os","day",date] ↔ mobile ["life-os","day",date,sessionToken].
+      base 키를 SSOT로 통일. 모바일은 세션 분리를 위해 base 뒤에 sessionToken을 덧붙인다
+      (auth 메커니즘 차이 = session-persistence platform-divergent).
+
+  - id: community-vs-chat-service-query-keys
+    concept: 커뮤니티(web) ↔ 채팅(mobile chat-service) queryKey
+    parity: platform-divergent
+    ssot: null
+    adapters:
+      - apps/web/src/features/community/hooks/community-query-keys.ts # ["community", ...]
+      - apps/mobile/src/services/chat-service/query-keys.ts # ["chat-service", ...]
+    note: >
+      같은 "커뮤니티" 서비스지만 현재 표면이 다르다: 웹은 feed+chat 위젯+presence,
+      모바일은 풀 소셜앱(friends/rooms/ask/profile). namespace도 다름(community vs chat-service).
+      feed/replies는 잠재적 공유 대상이나 동일 백엔드 엔드포인트 여부 확인이 선행돼야 한다.
+      제품상 동일 도메인으로 수렴하기 전까지 강제 통일하지 않는다(과공유 방지).
+      수렴 결정 시: 공용 communityQueryKeys SSOT 생성 → 양 앱 재수출 → 이 entry를 identical-value로 변경.

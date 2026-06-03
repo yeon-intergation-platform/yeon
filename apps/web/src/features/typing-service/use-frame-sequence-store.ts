@@ -1,6 +1,9 @@
 "use client";
-
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useYeonMutation as useMutation,
+  useYeonQuery as useQuery,
+  useYeonQueryClient as useQueryClient,
+} from "@yeon/ui/runtime/YeonQuery";
 import type { FrameSlot } from "./frame-slot";
 import {
   loadTypingCharacterFrameOverrides,

@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-
 import { parseAiCardInput } from "./card-input-parser";
 
 describe("parseAiCardInput", () => {

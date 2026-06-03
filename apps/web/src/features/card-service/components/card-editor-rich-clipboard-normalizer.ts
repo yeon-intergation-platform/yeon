@@ -1,3 +1,14 @@
+import type { YeonImageElement } from "@yeon/ui/types";
+import {
+  createYeonDomElement,
+  getYeonElementAttribute,
+  getYeonHtmlBodyInnerHtml,
+  parseYeonHtmlDocument,
+  queryYeonElements,
+  replaceYeonElementWith,
+  setYeonNodeTextContent,
+} from "@yeon/ui/rich-content/YeonRichDom";
+
 const NOTION_ATTACHMENT_SOURCE_PATTERN = /^attachment:[^\s]+/i;
 
 function isNotionAttachmentSource(source: string) {
@@ -14,7 +25,7 @@ function getNotionAttachmentPlaceholderText(alt?: string) {
 }
 
 export function normalizeCardEditorRichClipboardHtml(html: string) {
-  if (typeof window === "undefined" || !html.trim()) {
+  if (!html.trim()) {
     return {
       html,
       hasChanges: false,
@@ -22,25 +33,36 @@ export function normalizeCardEditorRichClipboardHtml(html: string) {
     };
   }
 
-  const document = new window.DOMParser().parseFromString(html, "text/html");
+  const htmlDocument = parseYeonHtmlDocument(html);
+  if (!htmlDocument) {
+    return {
+      html,
+      hasChanges: false,
+      notionAttachmentCount: 0,
+    };
+  }
+
   let notionAttachmentCount = 0;
 
-  Array.from(document.querySelectorAll("img")).forEach((image) => {
-    const source = image.getAttribute("src") ?? "";
+  queryYeonElements<YeonImageElement>(htmlDocument, "img").forEach((image) => {
+    const source = getYeonElementAttribute(image, "src") ?? "";
     if (!isNotionAttachmentSource(source)) {
       return;
     }
 
-    const paragraph = document.createElement("p");
-    paragraph.textContent = getNotionAttachmentPlaceholderText(
-      image.getAttribute("alt") ?? undefined
+    const paragraph = createYeonDomElement(htmlDocument, "p");
+    setYeonNodeTextContent(
+      paragraph,
+      getNotionAttachmentPlaceholderText(
+        getYeonElementAttribute(image, "alt") ?? undefined
+      )
     );
-    image.replaceWith(paragraph);
+    replaceYeonElementWith(image, paragraph);
     notionAttachmentCount += 1;
   });
 
   return {
-    html: document.body.innerHTML,
+    html: getYeonHtmlBodyInnerHtml(htmlDocument),
     hasChanges: notionAttachmentCount > 0,
     notionAttachmentCount,
   };

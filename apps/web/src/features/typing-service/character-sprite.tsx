@@ -1,7 +1,11 @@
 "use client";
-
 import { useEffect, useState } from "react";
 import type { CharacterDef } from "./characters";
+import { YeonSpriteFrame } from "@yeon/ui";
+import {
+  clearYeonInterval,
+  scheduleYeonInterval,
+} from "@yeon/ui/runtime/YeonBrowserRuntime";
 
 // integer multiple(×1, ×2, ×3 ...)을 먼저 시도해 가장 큰 정수 배수를 반환한다.
 // 정수 배수가 없으면 integer divisor(1/2, 1/3 ...)로 fallback.
@@ -46,32 +50,25 @@ export function CharacterSprite({
 
   useEffect(() => {
     const intervalMs = Math.max(40, Math.round(1000 / fps));
-    const id = setInterval(
+    const id = scheduleYeonInterval(
       () => setTick((t) => (t + 1) % sequence.length),
       intervalMs
     );
-    return () => clearInterval(id);
+    return () => clearYeonInterval(id);
   }, [sequence.length, fps]);
 
   const sheetFrame = sequence[tick % sequence.length]!;
   const displayHeight = snapDisplayHeight(frameHeight, maxHeight);
-  const scale = displayHeight / frameHeight;
-  const displayWidth = Math.round(frameWidth * scale);
-  const sheetRows = Math.max(1, Math.ceil(frameCount / frameCols));
-  const col = sheetFrame % frameCols;
-  const row = Math.floor(sheetFrame / frameCols);
 
   return (
-    <div
-      style={{
-        width: displayWidth,
-        height: displayHeight,
-        backgroundImage: `url('${sprite}')`,
-        backgroundSize: `${displayWidth * frameCols}px ${displayHeight * sheetRows}px`,
-        backgroundPosition: `-${col * displayWidth}px -${row * displayHeight}px`,
-        imageRendering: "pixelated",
-        flexShrink: 0,
-      }}
+    <YeonSpriteFrame
+      displayHeight={displayHeight}
+      frameCols={frameCols}
+      frameCount={frameCount}
+      frameHeight={frameHeight}
+      frameIndex={sheetFrame}
+      frameWidth={frameWidth}
+      source={sprite}
     />
   );
 }

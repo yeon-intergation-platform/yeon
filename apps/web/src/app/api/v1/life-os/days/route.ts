@@ -4,7 +4,6 @@ import {
   lifeOsDayResponseSchema,
   upsertLifeOsDayBodySchema,
 } from "@yeon/api-contract/life-os";
-
 import {
   jsonError,
   requireAuthenticatedUser,
@@ -55,7 +54,9 @@ export async function POST(request: NextRequest) {
 
   try {
     const day = await createLifeOsDayInSpring(currentUser.id, parsed.data);
-    return NextResponse.json(lifeOsDayResponseSchema.parse(day), { status: 201 });
+    return NextResponse.json(lifeOsDayResponseSchema.parse(day), {
+      status: 201,
+    });
   } catch (error) {
     if (error instanceof LifeOsSpringBackendHttpError) {
       return jsonError(error.message, error.status);

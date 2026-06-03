@@ -22,7 +22,6 @@ vi.mock("@/server/chat-service-auth-spring-client", () => ({
   verifyChatServiceOtpInSpring: (...args: unknown[]) =>
     mockVerifyChatServiceOtpInSpring(...args),
 }));
-
 import { POST } from "../route";
 
 const body = {

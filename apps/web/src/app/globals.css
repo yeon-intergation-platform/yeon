@@ -21,9 +21,9 @@
   --green: #34d399;
   --green-dim: rgba(52, 211, 153, 0.1);
   --green-border: rgba(52, 211, 153, 0.2);
-  --amber: #fbbf24;
-  --amber-dim: rgba(251, 191, 36, 0.1);
-  --amber-border: rgba(251, 191, 36, 0.2);
+  --neutral: #666;
+  --neutral-dim: rgba(102, 102, 102, 0.1);
+  --neutral-border: rgba(102, 102, 102, 0.2);
   --red: #f87171;
   --red-dim: rgba(248, 113, 113, 0.08);
   --rose: #fb7185;
@@ -49,7 +49,7 @@ body {
 body {
   margin: 0;
   background: #ffffff;
-  color: #171717;
+  color: #111;
   font-family:
     "Noto Sans KR",
     -apple-system,
@@ -105,6 +105,34 @@ a {
   background-clip: padding-box;
 }
 
+.service-help-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #aaa transparent;
+  scrollbar-gutter: stable;
+}
+
+.service-help-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.service-help-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+  margin-block: 18px;
+}
+
+.service-help-scrollbar::-webkit-scrollbar-thumb {
+  background: #aaa;
+  border: 2px solid #ffffff;
+  border-radius: 999px;
+  background-clip: padding-box;
+}
+
+.service-help-scrollbar:hover::-webkit-scrollbar-thumb {
+  background: #666;
+  border-color: #ffffff;
+  background-clip: padding-box;
+}
+
 button,
 input,
 textarea,
@@ -113,7 +141,7 @@ select {
 }
 
 ::selection {
-  background: #171717;
+  background: #111;
   color: #ffffff;
 }
 
@@ -128,7 +156,7 @@ select {
 }
 
 .yeon-markdown-editor .w-md-editor:focus-within {
-  box-shadow: 0 0 0 1px #111111;
+  box-shadow: 0 0 0 1px #111;
 }
 
 .yeon-markdown-editor .w-md-editor-toolbar {
@@ -139,15 +167,15 @@ select {
 
 .yeon-markdown-editor .w-md-editor-toolbar li > button {
   border-radius: 8px;
-  color: #555555;
+  color: #666;
   height: 26px;
   padding: 5px;
 }
 
 .yeon-markdown-editor .w-md-editor-toolbar li > button:hover,
 .yeon-markdown-editor .w-md-editor-toolbar li > button:focus {
-  background: #eeeeee;
-  color: #111111;
+  background: #e5e5e5;
+  color: #111;
 }
 
 .yeon-markdown-editor .w-md-editor-content {
@@ -180,7 +208,7 @@ select {
 
 .yeon-markdown-editor .wmde-markdown {
   background: #ffffff;
-  color: #111111;
+  color: #111;
   font-family:
     "Noto Sans KR",
     -apple-system,

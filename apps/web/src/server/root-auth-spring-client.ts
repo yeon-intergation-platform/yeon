@@ -1,5 +1,8 @@
+import {
+  fetchYeon,
+  type YeonRequestInit,
+} from "@yeon/ui/runtime/YeonBrowserRuntime";
 import { z } from "zod";
-
 import { devLoginOptionSchema } from "@/lib/auth/dev-login-options";
 import type { SocialProvider } from "@/server/auth/constants";
 import {
@@ -66,8 +69,8 @@ function extractError(parsed: unknown) {
   };
 }
 
-async function requestRootAuthSpring(path: string, init?: RequestInit) {
-  const response = await fetch(`${resolveSpringBackendBaseUrl()}${path}`, {
+async function requestRootAuthSpring(path: string, init?: YeonRequestInit) {
+  const response = await fetchYeon(`${resolveSpringBackendBaseUrl()}${path}`, {
     ...init,
     cache: "no-store",
     headers: buildSpringBffHeaders(init?.headers),

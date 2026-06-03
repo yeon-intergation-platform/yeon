@@ -1,31 +1,20 @@
-import * as SecureStore from "expo-secure-store";
-import { Platform } from "react-native";
+import {
+  getYeonOptionalLocalStorage,
+  getYeonSecureStorage,
+} from "@yeon/ui/native";
 
 const CHAT_SERVICE_SESSION_KEY = "chat-service-session-token";
 const inMemoryStorage = new Map<string, string>();
 
-function canUseSecureStore() {
-  return (
-    Platform.OS !== "web" &&
-    typeof SecureStore.getItemAsync === "function" &&
-    typeof SecureStore.setItemAsync === "function" &&
-    typeof SecureStore.deleteItemAsync === "function"
-  );
-}
-
 function getBrowserStorage() {
-  if (Platform.OS !== "web") {
-    return null;
-  }
-
-  return typeof globalThis.localStorage !== "undefined"
-    ? globalThis.localStorage
-    : null;
+  return getYeonOptionalLocalStorage();
 }
 
 export async function readChatServiceSessionToken() {
-  if (canUseSecureStore()) {
-    return SecureStore.getItemAsync(CHAT_SERVICE_SESSION_KEY);
+  const secureStorage = getYeonSecureStorage();
+
+  if (secureStorage) {
+    return secureStorage.getItemAsync(CHAT_SERVICE_SESSION_KEY);
   }
 
   const browserStorage = getBrowserStorage();
@@ -42,8 +31,10 @@ export async function readChatServiceSessionToken() {
 }
 
 export async function writeChatServiceSessionToken(token: string) {
-  if (canUseSecureStore()) {
-    await SecureStore.setItemAsync(CHAT_SERVICE_SESSION_KEY, token);
+  const secureStorage = getYeonSecureStorage();
+
+  if (secureStorage) {
+    await secureStorage.setItemAsync(CHAT_SERVICE_SESSION_KEY, token);
     return;
   }
 
@@ -63,8 +54,10 @@ export async function writeChatServiceSessionToken(token: string) {
 }
 
 export async function clearChatServiceSessionToken() {
-  if (canUseSecureStore()) {
-    await SecureStore.deleteItemAsync(CHAT_SERVICE_SESSION_KEY);
+  const secureStorage = getYeonSecureStorage();
+
+  if (secureStorage) {
+    await secureStorage.deleteItemAsync(CHAT_SERVICE_SESSION_KEY);
     return;
   }
 

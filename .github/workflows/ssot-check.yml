@@ -19,10 +19,14 @@ jobs:
       - name: 스킬 wrapper 동기화 검사
         run: bash bin/sync-skills.sh --check
 
+      - name: Universal UI Parity 검증
+        run: node bin/verify-parity.mjs
+
       - name: 실패 시 복구 안내
         if: failure()
         run: |
-          echo "::error::SSOT drift 또는 스킬 wrapper 불일치. 로컬에서 다음을 실행하세요:"
+          echo "::error::SSOT drift / 스킬 wrapper 불일치 / Universal UI parity 위반. 로컬에서 다음을 실행하세요:"
           echo "  bin/setup.sh    # 최초 1회"
           echo "  bin/sync-skills.sh"
           echo "  bin/verify-ssot.sh"
+          echo "  node bin/verify-parity.mjs"

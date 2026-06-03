@@ -1,4 +1,28 @@
+import type {
+  YeonBaseElement,
+  YeonTableCellElement,
+  YeonTableRowElement,
+  YeonTableElement,
+  YeonDocument,
+} from "@yeon/ui/types";
+import {
+  appendYeonChild,
+  cloneYeonNode,
+  createYeonDomElement,
+  getYeonElementChildren,
+  getYeonNodeTextContent,
+  getYeonHtmlBodyInnerHtml,
+  isYeonElementTagName,
+  parseYeonHtmlDocument,
+  queryYeonElement,
+  queryYeonElements,
+  removeYeonElement,
+  replaceYeonElementWith,
+  setYeonNodeTextContent,
+} from "@yeon/ui/rich-content/YeonRichDom";
+
 const MARKDOWN_TABLE_SEPARATOR_CELL_PATTERN = /^:?-{3,}:?$/;
+const CARD_EDITOR_UNSAFE_TABLE_SELECTOR = "img,video,audio,iframe,canvas,svg";
 
 export function normalizeCardEditorTableCell(value: string) {
   return value.replace(/\s+/g, " ").trim();
@@ -44,15 +68,15 @@ export function isCardEditorMarkdownTableBlock(lines: readonly string[]) {
 }
 
 function appendCells(
-  document: Document,
-  rowElement: HTMLTableRowElement,
+  htmlDocument: YeonDocument,
+  rowElement: YeonTableRowElement,
   tagName: "td" | "th",
   cells: readonly string[]
 ) {
   cells.forEach((cell) => {
-    const cellElement = document.createElement(tagName);
-    cellElement.textContent = cell;
-    rowElement.appendChild(cellElement);
+    const cellElement = createYeonDomElement(htmlDocument, tagName);
+    setYeonNodeTextContent(cellElement, cell);
+    appendYeonChild(rowElement, cellElement);
   });
 }
 
@@ -80,19 +104,22 @@ export function normalizeCardEditorMarkdownTableLines(
   return normalizedRows.map(createCardEditorMarkdownTableRow);
 }
 
-function createTableElement(document: Document, lines: readonly string[]) {
-  const table = document.createElement("table");
-  const thead = document.createElement("thead");
-  const tbody = document.createElement("tbody");
-  const headerRow = document.createElement("tr");
+function createTableElement(
+  htmlDocument: YeonDocument,
+  lines: readonly string[]
+) {
+  const table = createYeonDomElement(htmlDocument, "table");
+  const thead = createYeonDomElement(htmlDocument, "thead");
+  const tbody = createYeonDomElement(htmlDocument, "tbody");
+  const headerRow = createYeonDomElement(htmlDocument, "tr");
 
   appendCells(
-    document,
+    htmlDocument,
     headerRow,
     "th",
     splitCardEditorMarkdownTableRow(lines[0] ?? "")
   );
-  thead.appendChild(headerRow);
+  appendYeonChild(thead, headerRow);
 
   lines.slice(2).forEach((line) => {
     const cells = splitCardEditorMarkdownTableRow(line);
@@ -100,13 +127,13 @@ function createTableElement(document: Document, lines: readonly string[]) {
       return;
     }
 
-    const bodyRow = document.createElement("tr");
-    appendCells(document, bodyRow, "td", cells);
-    tbody.appendChild(bodyRow);
+    const bodyRow = createYeonDomElement(htmlDocument, "tr");
+    appendCells(htmlDocument, bodyRow, "td", cells);
+    appendYeonChild(tbody, bodyRow);
   });
 
-  table.appendChild(thead);
-  table.appendChild(tbody);
+  appendYeonChild(table, thead);
+  appendYeonChild(table, tbody);
 
   return table;
 }
@@ -143,12 +170,12 @@ export function convertCardEditorTabularTextToMarkdownTable(text: string) {
 }
 
 export function convertCardEditorHtmlTableElementToMarkdownTable(
-  table: Element
+  table: YeonBaseElement
 ) {
-  const rows = Array.from(table.querySelectorAll("tr"))
+  const rows = queryYeonElements<YeonTableRowElement>(table, "tr")
     .map((row) =>
-      Array.from(row.querySelectorAll("th,td")).map((cell) =>
-        normalizeCardEditorTableCell(cell.textContent ?? "")
+      queryYeonElements<YeonTableCellElement>(row, "th,td").map((cell) =>
+        normalizeCardEditorTableCell(getYeonNodeTextContent(cell))
       )
     )
     .filter((cells) => cells.length >= 2 && cells.some(Boolean));
@@ -163,12 +190,16 @@ export function convertCardEditorHtmlTableElementToMarkdownTable(
 }
 
 export function convertCardEditorHtmlTableToMarkdownTable(html: string) {
-  if (typeof window === "undefined" || !html.trim()) {
+  if (!html.trim()) {
     return undefined;
   }
 
-  const document = new window.DOMParser().parseFromString(html, "text/html");
-  const tables = Array.from(document.querySelectorAll("table"));
+  const htmlDocument = parseYeonHtmlDocument(html);
+  if (!htmlDocument) {
+    return undefined;
+  }
+
+  const tables = queryYeonElements<YeonTableElement>(htmlDocument, "table");
   if (tables.length !== 1) {
     return undefined;
   }
@@ -182,60 +213,70 @@ export function convertCardEditorHtmlTableToMarkdownTable(html: string) {
 }
 
 export function isCardEditorHtmlTableOnlyPaste(html: string) {
-  if (typeof window === "undefined" || !html.trim()) {
+  if (!html.trim()) {
     return false;
   }
 
-  const document = new window.DOMParser().parseFromString(html, "text/html");
-  const tables = Array.from(document.querySelectorAll("table"));
+  const htmlDocument = parseYeonHtmlDocument(html);
+  if (!htmlDocument) {
+    return false;
+  }
+
+  const tables = queryYeonElements<YeonTableElement>(htmlDocument, "table");
   if (tables.length !== 1) {
     return false;
   }
 
   const table = tables[0];
-  if (!table || table.querySelector("img,video,audio,iframe,canvas,svg")) {
+  if (!table || queryYeonElement(table, CARD_EDITOR_UNSAFE_TABLE_SELECTOR)) {
     return false;
   }
 
-  const body = document.body.cloneNode(true) as HTMLElement;
-  body
-    .querySelectorAll("script,style,meta,link,table")
-    .forEach((element) => element.remove());
+  const body = cloneYeonNode(htmlDocument.body, true);
+  queryYeonElements(body, "script,style,meta,link,table").forEach((element) =>
+    removeYeonElement(element)
+  );
 
-  if (normalizeCardEditorTableCell(body.textContent ?? "")) {
+  if (normalizeCardEditorTableCell(getYeonNodeTextContent(body))) {
     return false;
   }
 
-  return !body.querySelector("img,video,audio,iframe,canvas,svg");
+  return !queryYeonElement(body, CARD_EDITOR_UNSAFE_TABLE_SELECTOR);
 }
 
 export function renderCardEditorMarkdownTablesInHtml(html: string) {
-  if (typeof window === "undefined" || !html.trim()) {
+  if (!html.trim()) {
     return html;
   }
 
-  const document = new window.DOMParser().parseFromString(html, "text/html");
-  const children = Array.from(document.body.children);
+  const htmlDocument = parseYeonHtmlDocument(html);
+  if (!htmlDocument) {
+    return html;
+  }
+
+  const children = getYeonElementChildren(htmlDocument.body);
   let index = 0;
 
   while (index < children.length) {
     const child = children[index];
-    if (!child || child.tagName.toLowerCase() !== "p") {
+    if (!child || !isYeonElementTagName(child, "p")) {
       index += 1;
       continue;
     }
 
     const lines: string[] = [];
-    const paragraphElements: Element[] = [];
+    const paragraphElements: YeonBaseElement[] = [];
     let nextIndex = index;
 
     while (nextIndex < children.length) {
       const nextChild = children[nextIndex];
-      if (!nextChild || nextChild.tagName.toLowerCase() !== "p") {
+      if (!nextChild || !isYeonElementTagName(nextChild, "p")) {
         break;
       }
 
-      const line = normalizeCardEditorTableCell(nextChild.textContent ?? "");
+      const line = normalizeCardEditorTableCell(
+        getYeonNodeTextContent(nextChild)
+      );
       if (!line.includes("|")) {
         break;
       }
@@ -246,9 +287,9 @@ export function renderCardEditorMarkdownTablesInHtml(html: string) {
     }
 
     if (isCardEditorMarkdownTableBlock(lines)) {
-      const table = createTableElement(document, lines);
-      paragraphElements[0]?.replaceWith(table);
-      paragraphElements.slice(1).forEach((element) => element.remove());
+      const table = createTableElement(htmlDocument, lines);
+      replaceYeonElementWith(paragraphElements[0], table);
+      paragraphElements.slice(1).forEach(removeYeonElement);
       index = nextIndex;
       continue;
     }
@@ -256,5 +297,5 @@ export function renderCardEditorMarkdownTablesInHtml(html: string) {
     index += 1;
   }
 
-  return document.body.innerHTML;
+  return getYeonHtmlBodyInnerHtml(htmlDocument);
 }

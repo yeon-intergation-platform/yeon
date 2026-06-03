@@ -13,16 +13,15 @@ vi.mock("../../../_shared", () => ({
 }));
 
 vi.mock("@/server/typing-decks-spring-client", async () => {
-  const actual = await vi.importActual<typeof import("@/server/typing-decks-spring-client")>(
-    "@/server/typing-decks-spring-client",
-  );
+  const actual = await vi.importActual<
+    typeof import("@/server/typing-decks-spring-client")
+  >("@/server/typing-decks-spring-client");
   return {
     ...actual,
     createTypingDeckPassagesInSpring: (...args: unknown[]) =>
       mockCreateTypingDeckPassagesInSpring(...args),
   };
 });
-
 import { POST } from "../route";
 
 describe("typing deck bulk passages route", () => {
@@ -46,17 +45,19 @@ describe("typing deck bulk passages route", () => {
           method: "POST",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({ passages: [{ prompt: "문장" }] }),
-        },
+        }
       ),
-      { params: Promise.resolve({ deckId: "tdk_1" }) },
+      { params: Promise.resolve({ deckId: "tdk_1" }) }
     );
 
     expect(response.status).toBe(201);
     expect(mockCreateTypingDeckPassagesInSpring).toHaveBeenCalledWith(
       null,
       "tdk_1",
-      { passages: [{ prompt: "문장", textType: "short", difficulty: "normal" }] },
-      false,
+      {
+        passages: [{ prompt: "문장", textType: "short", difficulty: "normal" }],
+      },
+      false
     );
   });
 });

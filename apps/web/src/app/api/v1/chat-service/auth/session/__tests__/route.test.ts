@@ -29,7 +29,6 @@ vi.mock("@/server/chat-service-auth-spring-client", () => ({
   logoutChatServiceSessionInSpring: (...args: unknown[]) =>
     mockLogoutChatServiceSessionInSpring(...args),
 }));
-
 import { DELETE, GET } from "../route";
 
 const sessionResponse = { authenticated: false, session: null };

@@ -94,7 +94,7 @@ export const MemberListItem = memo(
             <span className="w-1.5 h-1.5 rounded-full bg-green flex-shrink-0" />
           )}
           {member.indicator === "warning" && (
-            <span className="w-1.5 h-1.5 rounded-full bg-amber flex-shrink-0" />
+            <span className="w-1.5 h-1.5 rounded-full bg-text-secondary flex-shrink-0" />
           )}
           {member.indicator === "none" && (
             <span className="w-1.5 h-1.5 rounded-full bg-surface-4 border border-border flex-shrink-0" />
@@ -109,7 +109,7 @@ export const MemberListItem = memo(
               member.indicator === "recent"
                 ? "text-green"
                 : member.indicator === "warning"
-                  ? "text-amber"
+                  ? "text-text-secondary"
                   : "text-text-dim"
             }`}
           >

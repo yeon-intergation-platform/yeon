@@ -10,6 +10,11 @@ import type {
   CreateCardRoomMessageBody,
   SubmitCardRoomResultBody,
 } from "@yeon/api-contract/card-rooms";
+import {
+  createYeonHeaders,
+  fetchYeon,
+  type YeonRequestInit,
+} from "@yeon/ui/runtime/YeonBrowserRuntime";
 import { buildSpringBffHeaders } from "./spring-bff-client";
 
 const DEFAULT_BACKEND_BASE_URL = "http://127.0.0.1:8081";
@@ -48,7 +53,7 @@ export class CardRoomsSpringBackendHttpError extends Error {
   }
 }
 
-type SpringInit = RequestInit & {
+type SpringInit = YeonRequestInit & {
   userId?: string | null;
   guestId?: string | null;
   participantId?: string | null;
@@ -59,14 +64,14 @@ async function fetchSpring<T>(
   init: SpringInit,
   fallback: string
 ): Promise<T> {
-  const headers = new Headers(init.headers);
+  const headers = createYeonHeaders(init.headers);
   headers.set("accept", "application/json");
   if (init.userId) headers.set("X-Yeon-User-Id", init.userId);
   if (init.guestId) headers.set("X-Yeon-Guest-Id", init.guestId);
   if (init.participantId)
     headers.set("X-Yeon-Participant-Id", init.participantId);
 
-  const response = await fetch(`${resolveSpringBackendBaseUrl()}${path}`, {
+  const response = await fetchYeon(`${resolveSpringBackendBaseUrl()}${path}`, {
     ...init,
     cache: "no-store",
     headers: buildSpringBffHeaders(headers),

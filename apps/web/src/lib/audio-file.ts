@@ -1,3 +1,10 @@
+import {
+  createYeonAudioElement,
+  createYeonObjectUrl,
+  revokeYeonObjectUrl,
+  type YeonFile,
+} from "@yeon/ui/runtime/YeonBrowserRuntime";
+
 const FALLBACK_AUDIO_EXTENSIONS = [
   ".mp3",
   ".wav",
@@ -38,16 +45,17 @@ export function isAcceptedAudioFile(file: {
   );
 }
 
-export async function readAudioDurationMs(file: File) {
-  if (typeof window === "undefined") {
+export async function readAudioDurationMs(file: YeonFile) {
+  const objectUrl = createYeonObjectUrl(file);
+  const audioElement = createYeonAudioElement();
+
+  if (!objectUrl || !audioElement) {
     return null;
   }
 
   return new Promise<number | null>((resolve) => {
-    const objectUrl = URL.createObjectURL(file);
-    const audioElement = document.createElement("audio");
     const cleanup = () => {
-      URL.revokeObjectURL(objectUrl);
+      revokeYeonObjectUrl(objectUrl);
       audioElement.removeAttribute("src");
     };
 

@@ -6,12 +6,11 @@ import {
   type TypingDeckLanguageTag,
   type TypingDeckListQuery,
 } from "@yeon/api-contract/typing-decks";
-
 import { DEFAULT_TYPING_DECKS } from "@/server/services/default-typing-decks";
 
 function languageMatches(
   deckLanguage: TypingDeckLanguageTag,
-  filter: TypingDeckLanguageTag | undefined,
+  filter: TypingDeckLanguageTag | undefined
 ) {
   if (!filter) {
     return true;
@@ -27,10 +26,10 @@ function languageMatches(
 }
 
 export function listDefaultTypingDecks(
-  languageTag: TypingDeckLanguageTag | undefined,
+  languageTag: TypingDeckLanguageTag | undefined
 ): TypingDeckDto[] {
   return DEFAULT_TYPING_DECKS.filter((deck) =>
-    languageMatches(deck.languageTag, languageTag),
+    languageMatches(deck.languageTag, languageTag)
   ).map((deck) => ({
     id: deck.id,
     title: deck.title,
@@ -47,7 +46,7 @@ export function listDefaultTypingDecks(
 }
 
 export function getDefaultTypingDeckDetail(
-  deckId: string,
+  deckId: string
 ): TypingDeckDetailResponse | null {
   const deck = DEFAULT_TYPING_DECKS.find((item) => item.id === deckId);
   if (!deck) {

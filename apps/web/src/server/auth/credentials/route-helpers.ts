@@ -1,8 +1,11 @@
 import { errorResponseSchema } from "@yeon/api-contract/error";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-
-import { type AuthErrorCode, AuthFlowError, authErrorCodes } from "@/server/auth/auth-errors";
+import {
+  type AuthErrorCode,
+  AuthFlowError,
+  authErrorCodes,
+} from "@/server/auth/auth-errors";
 
 const AUTH_ERROR_STATUS: Record<AuthErrorCode, number> = {
   [authErrorCodes.providerDenied]: 400,
@@ -46,15 +49,14 @@ export function respondWithAuthError(error: AuthFlowError) {
   const status = AUTH_ERROR_STATUS[error.code] ?? 500;
   return NextResponse.json(
     errorResponseSchema.parse({ message: error.message }),
-    { status },
+    { status }
   );
 }
 
 export function respondWithInvalidInput(message: string) {
-  return NextResponse.json(
-    errorResponseSchema.parse({ message }),
-    { status: 400 },
-  );
+  return NextResponse.json(errorResponseSchema.parse({ message }), {
+    status: 400,
+  });
 }
 
 export function respondWithServerError() {
@@ -62,6 +64,6 @@ export function respondWithServerError() {
     errorResponseSchema.parse({
       message: "서버 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.",
     }),
-    { status: 500 },
+    { status: 500 }
   );
 }

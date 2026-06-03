@@ -1,7 +1,5 @@
 "use client";
-
-import { SHARED_FEATURE_CLASS } from "@/features/shared-style-constants";
-
+import { YEON_WEB_SHARED_CLASS as SHARED_FEATURE_CLASS } from "@yeon/ui/theme/web-style-tokens";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   TYPING_ROOM_LANGUAGE,
@@ -20,6 +18,11 @@ import {
   useTypingSettings,
   type TypingRaceSeed,
 } from "./use-typing-settings";
+import { YeonText, YeonView } from "@yeon/ui";
+import {
+  clearYeonTimeout,
+  scheduleYeonTimeout,
+} from "@yeon/ui/runtime/YeonBrowserRuntime";
 
 const CONNECTION_TIMEOUT_MS = 4000;
 
@@ -127,10 +130,10 @@ export function TypingRacePlayScreen() {
       return;
     }
     if (race.connectionState === "connecting") {
-      const timeout = window.setTimeout(() => {
+      const timeout = scheduleYeonTimeout(() => {
         setFallbackToSolo(true);
       }, CONNECTION_TIMEOUT_MS);
-      return () => window.clearTimeout(timeout);
+      return () => clearYeonTimeout(timeout);
     }
   }, [race.connectionState]);
 
@@ -155,17 +158,19 @@ export function TypingRacePlayScreen() {
 
   if (race.connectionState !== "connected" || !race.prompt) {
     return (
-      <div className={SHARED_FEATURE_CLASS.pageSurface}>
+      <YeonView className={SHARED_FEATURE_CLASS.pageSurface}>
         <TypingServiceHeader active="race" title="YEON 레이스" />
-        <div className="flex min-h-[calc(100vh-76px)] items-center justify-center">
-          <div
+        <YeonView className="flex min-h-[calc(100vh-76px)] items-center justify-center">
+          <YeonView
             className={`flex flex-col items-center gap-3 font-mono ${SHARED_FEATURE_CLASS.text13Soft}`}
           >
-            <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#e5e5e5] border-t-[#111]" />
-            <span>{t("connectingToServer")}</span>
-          </div>
-        </div>
-      </div>
+            <YeonView className="h-6 w-6 animate-spin rounded-full border-2 border-[#e5e5e5] border-t-[#111]" />
+            <YeonText as="span" variant="unstyled" tone="inherit">
+              {t("connectingToServer")}
+            </YeonText>
+          </YeonView>
+        </YeonView>
+      </YeonView>
     );
   }
 

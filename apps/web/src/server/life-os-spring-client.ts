@@ -1,3 +1,8 @@
+import {
+  createYeonUrlSearchParams,
+  fetchYeon,
+  type YeonRequestInit,
+} from "@yeon/ui/runtime/YeonBrowserRuntime";
 import { buildSpringBffHeaders } from "@/server/spring-bff-client";
 
 const DEFAULT_BACKEND_BASE_URL = "http://127.0.0.1:8081";
@@ -46,8 +51,8 @@ function extractErrorMessage(parsed: unknown) {
   return null;
 }
 
-async function fetchJson(path: string, userId: string, init?: RequestInit) {
-  const response = await fetch(`${resolveSpringBackendBaseUrl()}${path}`, {
+async function fetchJson(path: string, userId: string, init?: YeonRequestInit) {
+  const response = await fetchYeon(`${resolveSpringBackendBaseUrl()}${path}`, {
     ...init,
     cache: "no-store",
     headers: buildSpringBffHeaders(init?.headers, { userId }),
@@ -113,7 +118,7 @@ export async function fetchLifeOsWeeklyReportFromSpring(
   periodStart: string,
   periodEnd: string
 ) {
-  const query = new URLSearchParams({ periodStart, periodEnd });
+  const query = createYeonUrlSearchParams({ periodStart, periodEnd });
   return fetchJson(
     `/life-os/reports/weekly?${query.toString()}`,
     userId

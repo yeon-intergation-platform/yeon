@@ -1,10 +1,10 @@
 "use client";
-
 import { useEffect, useRef } from "react";
+import { addYeonDocumentEventListener } from "@yeon/ui/hooks/YeonBrowserHooks";
 
 export function useClickOutside<T extends HTMLElement>(
   onClickOutside: () => void,
-  enabled: boolean = true,
+  enabled: boolean = true
 ) {
   const ref = useRef<T>(null);
 
@@ -16,8 +16,7 @@ export function useClickOutside<T extends HTMLElement>(
       }
     }
 
-    document.addEventListener("click", handleClick);
-    return () => document.removeEventListener("click", handleClick);
+    return addYeonDocumentEventListener("click", handleClick);
   }, [enabled, onClickOutside]);
 
   return ref;

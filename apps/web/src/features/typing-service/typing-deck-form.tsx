@@ -1,7 +1,5 @@
 "use client";
-
-import { useState, type FormEvent } from "react";
-
+import { useState } from "react";
 import { SHARED_FEATURE_CLASS } from "../shared-style-constants";
 import { analyticsEvents, trackEvent } from "@/lib/analytics";
 import { TYPING_SERVICE_COMMON_CLASS } from "./typing-service-common.const";
@@ -10,7 +8,14 @@ import {
   YeonButton,
   YeonField,
   getYeonSurfaceClassName,
-} from "@/components/yeon-ui";
+  YeonLabel,
+  YeonForm,
+  YeonText,
+  YeonView,
+  YeonOption,
+  type YeonFormEvent,
+  type YeonFormElement,
+} from "@yeon/ui";
 import {
   TYPING_DECK_LANGUAGE_OPTIONS,
   TYPING_DECK_VISIBILITY_OPTIONS,
@@ -55,7 +60,7 @@ export function TypingDeckForm({
       ? "덱 만들기"
       : "덱 저장";
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  function handleSubmit(event: YeonFormEvent<YeonFormElement>) {
     event.preventDefault();
     if (!canSubmit) {
       return;
@@ -86,27 +91,42 @@ export function TypingDeckForm({
   }
 
   return (
-    <form
+    <YeonForm
       onSubmit={handleSubmit}
       className={getYeonSurfaceClassName({ className: "p-5" })}
     >
-      <div className={SHARED_FEATURE_CLASS.alignBetweenStartGap3}>
-        <div>
-          <h2 className={TYPING_SERVICE_COMMON_CLASS.panelBodyTitle}>
+      <YeonView className={SHARED_FEATURE_CLASS.alignBetweenStartGap3}>
+        <YeonView>
+          <YeonText
+            as="h2"
+            variant="unstyled"
+            tone="inherit"
+            className={TYPING_SERVICE_COMMON_CLASS.panelBodyTitle}
+          >
             {mode === "create" ? "새 타자 덱" : "덱 정보"}
-          </h2>
-          <p className={`${SHARED_FEATURE_CLASS.text13Neutral} mt-1 leading-5`}>
+          </YeonText>
+          <YeonText
+            as="p"
+            variant="unstyled"
+            tone="inherit"
+            className={`${SHARED_FEATURE_CLASS.text13Neutral} mt-1 leading-5`}
+          >
             제목, 언어 태그, 공개 범위를 정한 뒤 문단을 추가하세요.
-          </p>
-        </div>
+          </YeonText>
+        </YeonView>
         {isDefaultDeck ? <YeonBadge>읽기 전용</YeonBadge> : null}
-      </div>
+      </YeonView>
 
-      <div className="mt-5 grid gap-4">
-        <label className={TYPING_SERVICE_COMMON_CLASS.formFieldGroup}>
-          <span className={TYPING_SERVICE_COMMON_CLASS.fieldLabel}>
+      <YeonView className="mt-5 grid gap-4">
+        <YeonLabel className={TYPING_SERVICE_COMMON_CLASS.formFieldGroup}>
+          <YeonText
+            as="span"
+            variant="unstyled"
+            tone="inherit"
+            className={TYPING_SERVICE_COMMON_CLASS.fieldLabel}
+          >
             덱 제목
-          </span>
+          </YeonText>
           <YeonField
             value={title}
             onChange={(event) => setTitle(event.target.value)}
@@ -114,9 +134,16 @@ export function TypingDeckForm({
             maxLength={120}
             placeholder="예: 아침 워밍업 문장"
           />
-        </label>
-        <label className={TYPING_SERVICE_COMMON_CLASS.formFieldGroup}>
-          <span className={TYPING_SERVICE_COMMON_CLASS.fieldLabel}>설명</span>
+        </YeonLabel>
+        <YeonLabel className={TYPING_SERVICE_COMMON_CLASS.formFieldGroup}>
+          <YeonText
+            as="span"
+            variant="unstyled"
+            tone="inherit"
+            className={TYPING_SERVICE_COMMON_CLASS.fieldLabel}
+          >
+            설명
+          </YeonText>
           <YeonField
             as="textarea"
             value={description ?? ""}
@@ -127,12 +154,17 @@ export function TypingDeckForm({
             className="resize-y leading-6"
             placeholder="어떤 연습에 쓰는 덱인지 적어주세요."
           />
-        </label>
-        <div className={TYPING_SERVICE_COMMON_CLASS.twoColumnFormGrid}>
-          <label className={TYPING_SERVICE_COMMON_CLASS.formFieldGroup}>
-            <span className={TYPING_SERVICE_COMMON_CLASS.fieldLabel}>
+        </YeonLabel>
+        <YeonView className={TYPING_SERVICE_COMMON_CLASS.twoColumnFormGrid}>
+          <YeonLabel className={TYPING_SERVICE_COMMON_CLASS.formFieldGroup}>
+            <YeonText
+              as="span"
+              variant="unstyled"
+              tone="inherit"
+              className={TYPING_SERVICE_COMMON_CLASS.fieldLabel}
+            >
               언어 태그
-            </span>
+            </YeonText>
             <YeonField
               as="select"
               value={languageTag}
@@ -142,16 +174,21 @@ export function TypingDeckForm({
               disabled={isDefaultDeck}
             >
               {TYPING_DECK_LANGUAGE_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
+                <YeonOption key={option.value} value={option.value}>
                   {option.label}
-                </option>
+                </YeonOption>
               ))}
             </YeonField>
-          </label>
-          <label className={TYPING_SERVICE_COMMON_CLASS.formFieldGroup}>
-            <span className={TYPING_SERVICE_COMMON_CLASS.fieldLabel}>
+          </YeonLabel>
+          <YeonLabel className={TYPING_SERVICE_COMMON_CLASS.formFieldGroup}>
+            <YeonText
+              as="span"
+              variant="unstyled"
+              tone="inherit"
+              className={TYPING_SERVICE_COMMON_CLASS.fieldLabel}
+            >
               공개 범위
-            </span>
+            </YeonText>
             <YeonField
               as="select"
               value={visibility}
@@ -161,26 +198,31 @@ export function TypingDeckForm({
               disabled={isDefaultDeck}
             >
               {TYPING_DECK_VISIBILITY_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
+                <YeonOption key={option.value} value={option.value}>
                   {option.label}
-                </option>
+                </YeonOption>
               ))}
             </YeonField>
-          </label>
-        </div>
-      </div>
+          </YeonLabel>
+        </YeonView>
+      </YeonView>
 
       {mutation.error ? (
-        <p className={TYPING_SERVICE_COMMON_CLASS.textErrorWithSpacing}>
+        <YeonText
+          as="p"
+          variant="unstyled"
+          tone="inherit"
+          className={TYPING_SERVICE_COMMON_CLASS.textErrorWithSpacing}
+        >
           {mutation.error.message}
-        </p>
+        </YeonText>
       ) : null}
 
-      <div className="mt-5 flex justify-end">
+      <YeonView className="mt-5 flex justify-end">
         <YeonButton type="submit" disabled={!canSubmit} variant="primary">
           {submitLabel}
         </YeonButton>
-      </div>
-    </form>
+      </YeonView>
+    </YeonForm>
   );
 }

@@ -220,8 +220,8 @@ export function LinkMemberModal({
         )}
 
         {mismatchWarning && (
-          <div className="mx-5 mt-3 rounded-lg border border-amber/30 bg-amber/10 px-4 py-3 flex-shrink-0">
-            <p className="m-0 text-[12px] font-semibold text-amber">
+          <div className="mx-5 mt-3 rounded-lg border border-border-light bg-surface-3 px-4 py-3 flex-shrink-0">
+            <p className="m-0 text-[12px] font-semibold text-text-secondary">
               {mismatchWarning.title}
             </p>
             <p className="mt-1 mb-0 text-[12px] leading-relaxed text-text-secondary">

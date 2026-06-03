@@ -1,7 +1,6 @@
-import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import type { YeonPageMetadata } from "@yeon/ui/runtime/YeonPageMetadata";
+import { showYeonNotFound } from "@yeon/ui/runtime/YeonRouteControl";
 import { cache } from "react";
-
 import { CommunityPostDetailPage } from "@/features/community/community-post-detail-page";
 import { parseCommunityPost } from "@/features/community/community-post-format";
 import { SITE_BRAND_NAME } from "@/lib/site-brand";
@@ -44,7 +43,7 @@ function buildDescription(content: string) {
 
 export async function generateMetadata({
   params,
-}: CommunityPostDetailRouteProps): Promise<Metadata> {
+}: CommunityPostDetailRouteProps): Promise<YeonPageMetadata> {
   const { postId } = await params;
   const post = await getCommunityPost(postId);
 
@@ -89,7 +88,7 @@ export default async function CommunityPostDetailRoute({
   const post = await getCommunityPost(postId);
 
   if (!post) {
-    notFound();
+    showYeonNotFound();
   }
 
   return <CommunityPostDetailPage postId={postId} initialPost={post} />;
