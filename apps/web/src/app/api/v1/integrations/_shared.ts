@@ -115,6 +115,9 @@ interface HandleOAuthStartRouteParams {
 interface ResolveOAuthCallbackContextParams {
   request: NextRequest;
   providerKey: CloudProvider;
+  // IDX 171: 콜백 시점의 현재 인증 사용자 id. state/user 쿠키가 세션과 암호학적으로 묶여 있지 않으므로,
+  // 쿠키의 userId 가 현재 로그인 사용자와 일치하는지 앱 레벨에서 재검증해 account-linking CSRF 를 막는다.
+  currentUserId: string;
 }
 
 type OAuthCallbackErrorCode =
@@ -194,13 +197,14 @@ export function createOAuthCallbackSuccessResponse(providerKey: CloudProvider) {
   return response;
 }
 
-// 보안 계약: 이 함수가 반환한 userId는 OAuth start 시 인증된 사용자의 ID다.
-// state==savedState 검증으로 CSRF를 완화하지만, state는 세션과 HMAC으로 바인딩되지 않는다.
-// 따라서 호출자는 반환된 userId를 신뢰하기 전에 현재 로그인 세션의 사용자와 일치하는지 별도로 확인해야 한다.
-// (보안 강화 시 state에 세션 토큰 해시를 포함하고 콜백에서 재검증하는 방식을 권장)
+// 보안 계약(IDX 171): state==savedState 검증으로 CSRF를 완화하지만, state는 세션과 HMAC으로 바인딩되지 않는다.
+// 따라서 콜백에서 user 쿠키의 userId가 "현재 로그인 세션의 사용자(currentUserId)"와 일치하는지 앱 레벨에서 함께 검증한다.
+// 불일치 시 invalid_state로 거부해, 쿠키 고정/주입으로 다른 계정에 토큰을 연결하는 account-linking CSRF를 막는다.
+// (추가 강화 시 state에 세션 토큰 해시를 포함하고 콜백에서 재검증하는 방식을 권장)
 export function resolveOAuthCallbackContext({
   request,
   providerKey,
+  currentUserId,
 }: ResolveOAuthCallbackContextParams):
   | { code: string; userId: string }
   | { response: Response } {
@@ -220,6 +224,13 @@ export function resolveOAuthCallbackContext({
   }
 
   if (state !== savedState) {
+    return {
+      response: createOAuthCallbackErrorResponse(providerKey, "invalid_state"),
+    };
+  }
+
+  // IDX 171: user 쿠키의 userId가 현재 로그인 사용자와 다르면 거부한다.
+  if (userId !== currentUserId) {
     return {
       response: createOAuthCallbackErrorResponse(providerKey, "invalid_state"),
     };

@@ -5,6 +5,8 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.UUID;
+import java.util.function.Function;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import world.yeon.backend.card_rooms.domain.CardRoomError;
@@ -104,14 +106,16 @@ public class CardRoomService {
     }
 
     OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
-    var room = repository.insertRoom(newPublicId(CardRoomIdPrefix.ROOM), title, deckTitle, sourceDeckId, userId, guestId, visibility, now);
+    String resolvedSourceDeckId = sourceDeckId;
+    var room = insertWithUniqueId(CardRoomIdPrefix.ROOM, (publicId) -> repository.insertRoom(publicId, title, deckTitle, resolvedSourceDeckId, userId, guestId, visibility, now));
     int index = 0;
     for (var item : items) {
       String front = normalizeText(item.frontText(), CardRoomTextRule.CARD_FACE);
       String back = normalizeText(item.backText(), CardRoomTextRule.CARD_FACE);
-      repository.insertCard(newPublicId(CardRoomIdPrefix.CARD), room.internalId(), index++, front, back);
+      int orderIndex = index++;
+      insertWithUniqueId(CardRoomIdPrefix.CARD, (publicId) -> { repository.insertCard(publicId, room.internalId(), orderIndex, front, back); return null; });
     }
-    var participant = repository.insertParticipant(newPublicId(CardRoomIdPrefix.PARTICIPANT), room.internalId(), userId, guestId, profile.nickname(), profile.characterId(), CardRoomParticipantRole.MEMORIZER, true, now);
+    var participant = insertWithUniqueId(CardRoomIdPrefix.PARTICIPANT, (publicId) -> repository.insertParticipant(publicId, room.internalId(), userId, guestId, profile.nickname(), profile.characterId(), CardRoomParticipantRole.MEMORIZER, true, now));
     repository.insertMessage(newPublicId(CardRoomIdPrefix.MESSAGE), room.internalId(), null, CardRoomSystemMessage.ROOM_CREATED.text(), CardRoomMessageType.SYSTEM, now);
     return new CardRoomResponse(detail(room.publicId()), toParticipant(participant));
   }
@@ -129,16 +133,24 @@ public class CardRoomService {
     }
     CardRoomParticipantRole role = normalizeRole(request == null ? null : request.role(), nextRole(room.internalId()));
     OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
-    var participant = repository.insertParticipant(newPublicId(CardRoomIdPrefix.PARTICIPANT), room.internalId(), userId, guestId, profile.nickname(), profile.characterId(), role, false, now);
+    var participant = insertWithUniqueId(CardRoomIdPrefix.PARTICIPANT, (publicId) -> repository.insertParticipant(publicId, room.internalId(), userId, guestId, profile.nickname(), profile.characterId(), role, false, now));
     repository.insertMessage(newPublicId(CardRoomIdPrefix.MESSAGE), room.internalId(), null, CardRoomSystemMessage.participantJoined(profile.nickname()), CardRoomMessageType.SYSTEM, now);
     return participantResponse(toParticipant(participant), room.publicId());
   }
 
   @Transactional
-  public CardRoomParticipantResponse updateParticipant(String roomId, String participantId, UpdateCardRoomParticipantRequest request) {
+  public CardRoomParticipantResponse updateParticipant(String roomId, String participantId, UUID callerUserId, String callerGuestId, UpdateCardRoomParticipantRequest request) {
     var room = requireLockedRoom(roomId);
     var participant = requireParticipantInRoom(room, participantId);
-    if (!CardRoomStatus.WAITING.matches(room.status()) && request != null && (request.role() != null || request.isReady() != null)) {
+    requireParticipantOwnership(participant, callerUserId, callerGuestId);
+    // 정책(finding 27): 학습 시작 후(status != WAITING)에는 역할/준비 상태뿐 아니라
+    // 프로필(닉네임/캐릭터)도 변경할 수 없게 막는다. 진행 중 닉네임이 바뀌면 시스템 메시지
+    // ('님이 입장했습니다')와 결과 화면 표시가 도중에 흔들려 기록 일관성이 깨지기 때문이다.
+    // 보수적 안전 기본값이며, 진행 중 프로필 변경을 허용해야 한다면 이 가드를 조정한다.
+    boolean mutatesProfile = request != null && request.profile() != null
+      && (request.profile().nickname() != null || request.profile().characterId() != null);
+    if (!CardRoomStatus.WAITING.matches(room.status()) && request != null
+      && (request.role() != null || request.isReady() != null || mutatesProfile)) {
       throw new CardRoomServiceException(CardRoomError.ROOM_ALREADY_STARTED);
     }
     CardRoomProfileRequest profile = request == null ? null : request.profile();
@@ -194,9 +206,10 @@ public class CardRoomService {
   }
 
   @Transactional
-  public CardRoomResponse leaveRoom(String roomId, String participantId) {
+  public CardRoomResponse leaveRoom(String roomId, String participantId, UUID callerUserId, String callerGuestId) {
     var room = requireLockedRoom(roomId);
     var participant = requireParticipantInRoom(room, participantId);
+    requireParticipantOwnership(participant, callerUserId, callerGuestId);
     OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
     repository.leaveParticipant(participant.internalId(), now);
     var remaining = repository.listParticipants(room.internalId());
@@ -343,6 +356,22 @@ public class CardRoomService {
     return participant;
   }
 
+  // finding 165(IDOR): participantId(publicId)는 detail 응답에 모든 참가자에게 공개되므로
+  // 비밀 토큰이 아니다. 따라서 참가자 변이/퇴장은 '참가자가 방에 있는지'뿐 아니라
+  // 호출자(X-Yeon-User-Id/X-Yeon-Guest-Id)가 그 participant의 실제 소유자인지까지 검증해야
+  // 같은 방의 악의적 사용자가 다른 참가자의 publicId로 역할 변경·강제 퇴장하는 것을 막는다.
+  // 로그인 사용자는 user_id, 게스트는 guest_id로 소유권을 판정한다.
+  private void requireParticipantOwnership(ParticipantRow participant, UUID callerUserId, String callerGuestId) {
+    if (callerUserId != null && callerUserId.equals(participant.userId())) {
+      return;
+    }
+    if (callerGuestId != null && !callerGuestId.isBlank()
+      && callerGuestId.equals(participant.guestId())) {
+      return;
+    }
+    throw new CardRoomServiceException(CardRoomError.PARTICIPANT_NOT_OWNED);
+  }
+
   private void requireHost(ParticipantRow participant) {
     if (!participant.isHost()) {
       throw new CardRoomServiceException(CardRoomError.HOST_ONLY);
@@ -404,6 +433,22 @@ public class CardRoomService {
 
   private String newPublicId(CardRoomIdPrefix prefix) {
     return prefix.value() + "_" + UUID.randomUUID().toString().replace("-", "");
+  }
+
+  // public_id는 UUID 기반이라 충돌 확률은 무시할 수준이지만, 이론상 충돌(또는 재실행)로 인한
+  // unique 제약 위반을 500으로 노출하지 않도록 새 public_id로 몇 번 재시도한다.
+  // 재시도를 모두 소진하면 다른 카드방 에러와 동일하게 일관된 에러 코드로 변환한다.
+  private static final int MAX_PUBLIC_ID_ATTEMPTS = 5;
+
+  private <T> T insertWithUniqueId(CardRoomIdPrefix prefix, Function<String, T> insert) {
+    for (int attempt = 0; attempt < MAX_PUBLIC_ID_ATTEMPTS; attempt++) {
+      try {
+        return insert.apply(newPublicId(prefix));
+      } catch (DuplicateKeyException ignored) {
+        // public_id 충돌: 다음 시도에서 새 UUID 기반 id로 재생성한다.
+      }
+    }
+    throw new CardRoomServiceException(409, "PUBLIC_ID_CONFLICT", "카드방 식별자 생성에 실패했습니다. 잠시 후 다시 시도해 주세요.");
   }
 
   private String iso(OffsetDateTime value) {

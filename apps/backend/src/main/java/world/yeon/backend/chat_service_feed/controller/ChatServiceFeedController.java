@@ -20,6 +20,10 @@ import world.yeon.backend.chat_service_feed.dto.ChatServiceFeedRepliesResponse;
 import world.yeon.backend.chat_service_feed.service.ChatServiceFeedService;
 import world.yeon.backend.chat_service_feed.service.ChatServiceFeedServiceException;
 
+// IDX 48 신뢰 경계: X-Yeon-Chat-Profile-Id 는 소유권/권한 판단의 근거로 쓰이지만 백엔드가 세션과 직접 대조하지 않는다.
+// 이 신뢰는 SecurityConfig 의 불변식(community-chat 외 모든 요청은 InternalServiceTokenAuthFilter 로 인증된 BFF 만 도달)에 의존한다.
+// 즉 BFF 가 chat_service_auth 세션 검증 후에만 이 헤더를 채운다는 전제가 깨지면 사칭이 가능하므로,
+// 이 헤더를 채우는 책임은 내부 토큰을 가진 BFF 에만 있어야 한다(헤더를 외부에서 직접 신뢰하지 않는다).
 @RestController
 public class ChatServiceFeedController {
 	private final ChatServiceFeedService service;

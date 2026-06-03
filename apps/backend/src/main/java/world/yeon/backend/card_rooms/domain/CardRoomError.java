@@ -21,6 +21,7 @@ public enum CardRoomError {
   ROOM_NOT_FOUND(404, "ROOM_NOT_FOUND", "카드방을 찾지 못했습니다."),
   PARTICIPANT_NOT_FOUND(404, "PARTICIPANT_NOT_FOUND", "참가자를 찾지 못했습니다."),
   PARTICIPANT_ROOM_MISMATCH(403, "PARTICIPANT_ROOM_MISMATCH", "참가자가 해당 카드방에 속해 있지 않습니다."),
+  PARTICIPANT_NOT_OWNED(403, "PARTICIPANT_NOT_OWNED", "본인 참가자 정보만 변경할 수 있습니다."),
   PROFILE_REQUIRED(400, "PROFILE_REQUIRED", "카드방 프로필이 필요합니다."),
   INVALID_RESULT(400, "INVALID_RESULT", "결과 값이 올바르지 않습니다.");
 

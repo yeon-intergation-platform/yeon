@@ -4,7 +4,9 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
+import world.yeon.backend.chat_service_blocks.repository.ChatServiceBlockRelationReader;
 
 @Repository
 public class ChatServiceProfileReadRepository {
@@ -20,6 +22,9 @@ public class ChatServiceProfileReadRepository {
 
 	@PersistenceContext
 	private EntityManager entityManager;
+
+	@Autowired
+	private ChatServiceBlockRelationReader blockRelationReader;
 
 	public ProfileRow findProfileById(UUID profileId) {
 		List<?> rows = entityManager.createNativeQuery("""
@@ -52,16 +57,7 @@ public class ChatServiceProfileReadRepository {
 	}
 
 	public boolean hasBlockedRelation(UUID currentProfileId, UUID targetProfileId) {
-		List<?> rows = entityManager.createNativeQuery("""
-			select 1
-			from public.chat_service_blocks b
-			where (b.blocker_id = :currentProfileId and b.blocked_id = :targetProfileId)
-			   or (b.blocker_id = :targetProfileId and b.blocked_id = :currentProfileId)
-			limit 1
-		""")
-			.setParameter("currentProfileId", currentProfileId)
-			.setParameter("targetProfileId", targetProfileId)
-			.getResultList();
-		return !rows.isEmpty();
+		// IDX 47: 양방향 차단 조회는 공용 reader 로 위임한다.
+		return blockRelationReader.hasBlockedRelation(currentProfileId, targetProfileId);
 	}
 }

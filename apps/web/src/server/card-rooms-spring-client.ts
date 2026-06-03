@@ -143,12 +143,17 @@ export function joinCardRoomInSpring(params: {
 export function updateCardRoomParticipantInSpring(params: {
   roomId: string;
   participantId: string;
+  userId?: string | null;
+  guestId?: string | null;
   payload: UpdateCardRoomParticipantBody;
 }) {
+  // finding 165(IDOR): Spring이 호출자 소유권을 검증할 수 있도록 userId/guestId를 함께 전달한다.
   return fetchSpring<CardRoomParticipantResponse>(
     `/api/v1/card-rooms/${encodeURIComponent(params.roomId)}/participants/${encodeURIComponent(params.participantId)}`,
     {
       method: "PATCH",
+      userId: params.userId,
+      guestId: params.guestId,
       headers: { "content-type": "application/json" },
       body: JSON.stringify(params.payload),
     },
@@ -156,10 +161,16 @@ export function updateCardRoomParticipantInSpring(params: {
   );
 }
 
-export function leaveCardRoomInSpring(roomId: string, participantId: string) {
+export function leaveCardRoomInSpring(params: {
+  roomId: string;
+  participantId: string;
+  userId?: string | null;
+  guestId?: string | null;
+}) {
+  // finding 165(IDOR): 퇴장도 본인 participant만 가능해야 하므로 userId/guestId를 전달한다.
   return fetchSpring<CardRoomResponse>(
-    `/api/v1/card-rooms/${encodeURIComponent(roomId)}/participants/${encodeURIComponent(participantId)}`,
-    { method: "DELETE" },
+    `/api/v1/card-rooms/${encodeURIComponent(params.roomId)}/participants/${encodeURIComponent(params.participantId)}`,
+    { method: "DELETE", userId: params.userId, guestId: params.guestId },
     "카드방에서 나가지 못했습니다."
   );
 }

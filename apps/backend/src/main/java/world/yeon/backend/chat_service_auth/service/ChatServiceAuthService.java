@@ -2,6 +2,8 @@ package world.yeon.backend.chat_service_auth.service;
 
 import java.security.MessageDigest;
 import java.security.SecureRandom;
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -29,16 +31,20 @@ public class ChatServiceAuthService {
 	private static final int MAX_VERIFY_ATTEMPTS = 5;
 	private final ChatServiceAuthRepository repository;
 	private final boolean bypassEnabled;
+	// IDX 173: 게스트 식별 키에 적용할 애플리케이션 비밀(pepper). 비어 있으면 무염 레거시 방식으로 동작한다.
+	private final String guestKeyPepper;
 	private final SecureRandom secureRandom = new SecureRandom();
 	private final Map<String, List<Long>> requestOtpBuckets = new ConcurrentHashMap<>();
 	private final Map<UUID, Integer> verifyAttempts = new ConcurrentHashMap<>();
 
 	public ChatServiceAuthService(
 		ChatServiceAuthRepository repository,
-		@Value("${CHAT_SERVICE_OTP_BYPASS:false}") boolean bypassEnabled
+		@Value("${CHAT_SERVICE_OTP_BYPASS:false}") boolean bypassEnabled,
+		@Value("${CHAT_SERVICE_GUEST_KEY_PEPPER:}") String guestKeyPepper
 	) {
 		this.repository = repository;
 		this.bypassEnabled = bypassEnabled;
+		this.guestKeyPepper = guestKeyPepper == null ? "" : guestKeyPepper.trim();
 	}
 
 	@Transactional
@@ -120,11 +126,21 @@ public class ChatServiceAuthService {
 	public ChatServiceSessionUserResponse resolveGuestProfile(String guestNicknameInput, String guestPasswordInput) {
 		String guestNickname = normalizeGuestValue(guestNicknameInput, "닉네임");
 		String guestPassword = normalizeGuestValue(guestPasswordInput, "비밀번호");
-		String phoneNumber = buildGuestPhoneNumber(guestNickname, guestPassword);
-		var profile = repository.findProfileByPhone(phoneNumber);
-		if (profile == null) {
-			profile = repository.createGuestProfile(UUID.randomUUID(), phoneNumber, guestNickname);
+		// IDX 173: 신규 게스트는 pepper(HMAC-SHA256)로 강화된 키를 쓴다. pepper 가 없으면 레거시 무염 키와 동일하다.
+		String pepperedPhoneNumber = buildGuestPhoneNumber(guestNickname, guestPassword);
+		var profile = repository.findProfileByPhone(pepperedPhoneNumber);
+		if (profile != null) {
+			return toUser(profile);
 		}
+		// IDX 173: 기존 게스트 lookup 키 호환 유지 — pepper 적용 전 무염 키로 만들어진 프로필을 마이그레이션 없이 그대로 찾는다.
+		String legacyPhoneNumber = buildLegacyGuestPhoneNumber(guestNickname, guestPassword);
+		if (!legacyPhoneNumber.equals(pepperedPhoneNumber)) {
+			profile = repository.findProfileByPhone(legacyPhoneNumber);
+			if (profile != null) {
+				return toUser(profile);
+			}
+		}
+		profile = repository.createGuestProfile(UUID.randomUUID(), pepperedPhoneNumber, guestNickname);
 		return toUser(profile);
 	}
 
@@ -177,8 +193,24 @@ public class ChatServiceAuthService {
 		return normalized;
 	}
 	private String buildGuestPhoneNumber(String guestNickname, String guestPassword) {
+		// IDX 173: pepper 가 설정돼 있으면 닉네임/비밀번호 조합에 서버 비밀을 섞은 HMAC-SHA256 키를 쓴다.
+		// 키 길이는 phone_number varchar(20) 제약(=guest:+14hex) 때문에 마이그레이션 없이 14 hex 로 유지한다.
+		// 무염 사전 공격은 서버 비밀(pepper)을 모르면 오프라인으로 재현할 수 없어 충돌·가장 위험이 크게 줄어든다.
+		String material = guestNickname + "\u0000" + guestPassword;
+		String digest = guestKeyPepper.isEmpty() ? hash(material) : hmacSha256(guestKeyPepper, material);
+		return GUEST_PHONE_PREFIX + digest.substring(0, GUEST_PHONE_KEY_LENGTH);
+	}
+	private String buildLegacyGuestPhoneNumber(String guestNickname, String guestPassword) {
+		// IDX 173: pepper 도입 전(무염 SHA-256) 키 — 기존 게스트 프로필 lookup 호환용.
 		String key = hash(guestNickname + "\u0000" + guestPassword).substring(0, GUEST_PHONE_KEY_LENGTH);
 		return GUEST_PHONE_PREFIX + key;
+	}
+	private String hmacSha256(String secret, String value) {
+		try {
+			Mac mac = Mac.getInstance("HmacSHA256");
+			mac.init(new SecretKeySpec(secret.getBytes(java.nio.charset.StandardCharsets.UTF_8), "HmacSHA256"));
+			return HexFormat.of().formatHex(mac.doFinal(value.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+		} catch (Exception e) { throw new RuntimeException(e); }
 	}
 	private String hash(String value) {
 		try {

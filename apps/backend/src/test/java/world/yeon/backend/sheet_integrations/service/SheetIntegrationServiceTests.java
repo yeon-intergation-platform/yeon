@@ -37,7 +37,7 @@ class SheetIntegrationServiceTests {
 
 	@BeforeEach
 	void setUp() {
-		service = new SheetIntegrationService(repository, spaceAccessService) {
+		service = new SheetIntegrationService(repository, spaceAccessService, java.net.http.HttpClient.newHttpClient(), new com.fasterxml.jackson.databind.ObjectMapper().findAndRegisterModules()) {
 			@Override
 			protected List<List<String>> fetchSheetValues(String sheetId) {
 				return List.of(
@@ -129,7 +129,7 @@ class SheetIntegrationServiceTests {
 
 	@Test
 	void 빈시트면동기화하지않는다() {
-		service = new SheetIntegrationService(repository, spaceAccessService) {
+		service = new SheetIntegrationService(repository, spaceAccessService, java.net.http.HttpClient.newHttpClient(), new com.fasterxml.jackson.databind.ObjectMapper().findAndRegisterModules()) {
 			@Override
 			protected List<List<String>> fetchSheetValues(String sheetId) {
 				return List.of();

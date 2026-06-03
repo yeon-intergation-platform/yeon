@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { updateCardRoomParticipantBodySchema } from "@yeon/api-contract/card-rooms";
+import { getCurrentAuthUser } from "@/server/auth/session";
 import { jsonError } from "@/app/api/v1/counseling-records/_shared";
 import {
   CardRoomsSpringBackendHttpError,
@@ -10,11 +11,16 @@ import {
 
 export const runtime = "nodejs";
 
-// 보안 참고: PATCH/DELETE 모두 인증 가드 없이 roomId/participantId만으로 Spring에 위임한다.
-// 완전한 소유권 보장을 위해 Spring 백엔드가 X-Yeon-User-Id / X-Yeon-Guest-Id를 기반으로
-// 해당 participantId가 호출자 소유인지 검증해야 한다.
-// (card-rooms-spring-client가 userId/guestId를 Spring에 전달하도록 확장하고,
-//  Spring CardRoomService.updateParticipant/leaveRoom이 소유권을 검증하도록 강화 필요)
+// finding 165(IDOR): PATCH/DELETE는 호출자(X-Yeon-User-Id/X-Yeon-Guest-Id)가 해당
+// participantId의 실제 소유자인지 Spring에서 검증해야 한다. 따라서 BFF는 join 라우트와
+// 동일하게 세션 사용자 id와 게스트 id를 추출해 Spring으로 전달한다(소유권 판정은 Spring).
+function resolveGuestId(request: NextRequest) {
+  return (
+    request.headers.get("x-yeon-guest-id") ||
+    request.cookies.get("yeon_card_room_guest_id")?.value ||
+    null
+  );
+}
 
 export async function PATCH(
   request: NextRequest,
@@ -33,11 +39,16 @@ export async function PATCH(
   if (!parsed.success)
     return jsonError("참가자 상태 요청이 올바르지 않습니다.", 400);
 
+  const user = await getCurrentAuthUser();
+  const guestId = resolveGuestId(request);
+
   try {
     return NextResponse.json(
       await updateCardRoomParticipantInSpring({
         roomId,
         participantId,
+        userId: user?.id ?? null,
+        guestId,
         payload: parsed.data,
       })
     );
@@ -50,14 +61,22 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ roomId: string; participantId: string }> }
 ) {
   const { roomId, participantId } = await params;
 
+  const user = await getCurrentAuthUser();
+  const guestId = resolveGuestId(request);
+
   try {
     return NextResponse.json(
-      await leaveCardRoomInSpring(roomId, participantId)
+      await leaveCardRoomInSpring({
+        roomId,
+        participantId,
+        userId: user?.id ?? null,
+        guestId,
+      })
     );
   } catch (error) {
     if (error instanceof CardRoomsSpringBackendHttpError)
