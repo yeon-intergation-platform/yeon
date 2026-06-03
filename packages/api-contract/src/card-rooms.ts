@@ -191,6 +191,9 @@ export type CardRoomListResponse = z.infer<typeof cardRoomListResponseSchema>;
 export const cardRoomResponseSchema = z.object({
   room: cardRoomDetailDtoSchema,
   participant: cardRoomParticipantDtoSchema.optional(),
+  // 방 생성 시 방장도 입장 응답과 동일하게 (roomId, participantId) 소유 증명 토큰을
+  // 함께 받아, 재입장 없이 곧바로 race-server 실시간에 연결할 수 있게 한다.
+  participantToken: z.string().nullish(),
 });
 export type CardRoomResponse = z.infer<typeof cardRoomResponseSchema>;
 

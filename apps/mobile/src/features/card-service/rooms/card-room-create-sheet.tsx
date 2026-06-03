@@ -19,7 +19,10 @@ import {
 import { useMemo, useState } from "react";
 import { cardServiceQueryKeys } from "../../../services/card-service/query-keys";
 import { cardRoomApi } from "../../../services/card-rooms/client";
-import { writeCardRoomParticipantId } from "../../../services/card-rooms/profile-storage";
+import {
+  writeCardRoomParticipantId,
+  writeCardRoomParticipantToken,
+} from "../../../services/card-rooms/profile-storage";
 import { CARD_SERVICE_TEXT } from "../card-service-copy";
 import { useCardSession } from "../card-session-context";
 import { createMobileCardDeckRepository } from "../runtime-adapters/card-deck-repository";
@@ -104,6 +107,13 @@ export function CardRoomCreateSheet({
           response.room.id,
           response.participant.id
         );
+        // 방장도 생성 응답의 토큰을 저장해 방 화면이 재입장 없이 실시간에 연결하게 한다.
+        if (response.participantToken) {
+          await writeCardRoomParticipantToken(
+            response.room.id,
+            response.participantToken
+          );
+        }
       }
       return response.room.id;
     },

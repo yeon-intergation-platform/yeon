@@ -57,7 +57,7 @@ public class CardRoomService {
   }
 
   public CardRoomResponse getRoom(String roomId) {
-    return new CardRoomResponse(detail(roomId), null);
+    return new CardRoomResponse(detail(roomId), null, null);
   }
 
   @Transactional
@@ -113,7 +113,8 @@ public class CardRoomService {
     }
     var participant = insertWithUniqueId(CardRoomIdPrefix.PARTICIPANT, (publicId) -> repository.insertParticipant(publicId, room.internalId(), userId, guestId, profile.nickname(), profile.characterId(), CardRoomParticipantRole.MEMORIZER, true, now));
     repository.insertMessage(newPublicId(CardRoomIdPrefix.MESSAGE), room.internalId(), null, CardRoomSystemMessage.ROOM_CREATED.text(), CardRoomMessageType.SYSTEM, now);
-    return new CardRoomResponse(detail(room.publicId()), toParticipant(participant));
+    // 방장도 입장과 동일하게 소유 증명 토큰을 발급받아 재입장 없이 실시간에 연결한다.
+    return new CardRoomResponse(detail(room.publicId()), toParticipant(participant), participantTokenService.issue(room.publicId(), participant.publicId()));
   }
 
   @Transactional
@@ -191,7 +192,7 @@ public class CardRoomService {
     OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
     repository.updateStatus(room.internalId(), CardRoomStatus.IN_PROGRESS, 0, false, now);
     repository.insertMessage(newPublicId(CardRoomIdPrefix.MESSAGE), room.internalId(), null, CardRoomSystemMessage.STUDY_STARTED.text(), CardRoomMessageType.SYSTEM, now);
-    return new CardRoomResponse(detail(roomId), null);
+    return new CardRoomResponse(detail(roomId), null, null);
   }
 
   @Transactional
@@ -202,7 +203,7 @@ public class CardRoomService {
     OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
     repository.updateStatus(room.internalId(), CardRoomStatus.CLOSED, room.currentCardIndex(), room.currentCardRevealed(), now);
     repository.insertMessage(newPublicId(CardRoomIdPrefix.MESSAGE), room.internalId(), null, CardRoomSystemMessage.ROOM_CLOSED.text(), CardRoomMessageType.SYSTEM, now);
-    return new CardRoomResponse(detail(roomId), null);
+    return new CardRoomResponse(detail(roomId), null, null);
   }
 
   @Transactional
@@ -222,7 +223,7 @@ public class CardRoomService {
         repository.assignHost(heir.internalId());
       }
     }
-    return new CardRoomResponse(detail(room.publicId()), null);
+    return new CardRoomResponse(detail(room.publicId()), null, null);
   }
 
   @Transactional
@@ -249,7 +250,7 @@ public class CardRoomService {
     }
     // finding 20: 방 status는 IN_PROGRESS를 유지하고 현재 카드의 공개 플래그만 set한다.
     repository.updateCurrentCardRevealed(room.internalId(), true, OffsetDateTime.now(ZoneOffset.UTC));
-    return new CardRoomResponse(detail(roomId), null);
+    return new CardRoomResponse(detail(roomId), null, null);
   }
 
   @Transactional
@@ -276,7 +277,7 @@ public class CardRoomService {
     CardRoomStatus nextStatus = isLastCard ? CardRoomStatus.FINISHED : CardRoomStatus.IN_PROGRESS;
     // 다음 카드로 진입하면 공개 플래그를 리셋한다. 종료 시에는 마지막 카드 인덱스에 고정한다.
     repository.updateStatus(room.internalId(), nextStatus, Math.min(nextIndex, Math.max(cardCount - 1, 0)), false, OffsetDateTime.now(ZoneOffset.UTC));
-    return new CardRoomResponse(detail(roomId), null);
+    return new CardRoomResponse(detail(roomId), null, null);
   }
 
   @Transactional
