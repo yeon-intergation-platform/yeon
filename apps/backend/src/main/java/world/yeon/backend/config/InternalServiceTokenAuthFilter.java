@@ -1,6 +1,8 @@
 package world.yeon.backend.config;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -51,6 +53,12 @@ public class InternalServiceTokenAuthFilter extends OncePerRequestFilter {
 		}
 
 		String provided = request.getHeader(INTERNAL_TOKEN_HEADER);
-		return expectedToken.equals(provided);
+		if (provided == null) {
+			return false;
+		}
+		return MessageDigest.isEqual(
+			expectedToken.getBytes(StandardCharsets.UTF_8),
+			provided.getBytes(StandardCharsets.UTF_8)
+		);
 	}
 }

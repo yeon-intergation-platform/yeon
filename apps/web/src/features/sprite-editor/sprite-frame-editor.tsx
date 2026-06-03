@@ -361,6 +361,10 @@ export function SpriteFrameEditor() {
     () => frames.filter((frame) => filter === "all" || frame.status === filter),
     [filter, frames]
   );
+  const frameIndexMap = useMemo(
+    () => new Map(frames.map((frame, index) => [frame.id, index])),
+    [frames]
+  );
   const summary = useMemo(() => statusSummary(frames), [frames]);
   const codexHandoffReport = useMemo(
     () => buildCodexHandoffReport({ frames, config }),
@@ -880,9 +884,7 @@ export function SpriteFrameEditor() {
             <YeonView className="mt-3 min-h-0 flex-1 overflow-auto pr-1">
               <YeonView className="flex flex-col gap-2">
                 {visibleFrames.map((frame) => {
-                  const index = frames.findIndex(
-                    (item) => item.id === frame.id
-                  );
+                  const index = frameIndexMap.get(frame.id) ?? -1;
                   const selected = frame.id === selectedFrame?.id;
                   return (
                     <YeonButton

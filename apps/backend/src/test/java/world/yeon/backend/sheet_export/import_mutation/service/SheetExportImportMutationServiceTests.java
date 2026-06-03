@@ -26,6 +26,7 @@ import world.yeon.backend.sheet_export.import_mutation.dto.SheetExportImportMuta
 import world.yeon.backend.sheet_export.import_mutation.dto.SheetExportImportMutationResponse;
 import world.yeon.backend.sheet_export.import_mutation.dto.SheetExportImportMutationValueRequest;
 import world.yeon.backend.sheet_export.import_mutation.repository.SheetExportImportMutationRepository;
+import world.yeon.backend.space_access.service.SpaceAccessService;
 
 @ExtendWith(MockitoExtension.class)
 class SheetExportImportMutationServiceTests {
@@ -34,12 +35,13 @@ class SheetExportImportMutationServiceTests {
 
 	@Mock private SheetExportImportMutationRepository repository;
 	@Mock private MemberFieldValueWriteService memberFieldValueWriteService;
+	@Mock private SpaceAccessService spaceAccessService;
 
 	private SheetExportImportMutationService service;
 
 	@BeforeEach
 	void setUp() {
-		service = new SheetExportImportMutationService(repository, memberFieldValueWriteService);
+		service = new SheetExportImportMutationService(repository, memberFieldValueWriteService, spaceAccessService);
 	}
 
 	@Test

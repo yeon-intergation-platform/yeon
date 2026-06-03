@@ -98,10 +98,13 @@ export function CardRoomCreateSheet({
       }
 
       const response = await cardRoomApi.createRoom(body, guestId);
-      await writeCardRoomParticipantId(
-        response.room.id,
-        response.participant?.id ?? ""
-      );
+      // idx-117: participant.id가 있을 때만 저장(빈 문자열 영구 저장 방지).
+      if (response.participant?.id) {
+        await writeCardRoomParticipantId(
+          response.room.id,
+          response.participant.id
+        );
+      }
       return response.room.id;
     },
     onSuccess: (roomId) => {

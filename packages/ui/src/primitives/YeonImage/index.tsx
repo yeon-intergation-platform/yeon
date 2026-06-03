@@ -5,7 +5,7 @@ export type YeonImageHandle = HTMLImageElement;
 export type YeonImageProps = ImgHTMLAttributes<HTMLImageElement>;
 
 export const YeonImage = forwardRef<YeonImageHandle, YeonImageProps>(
-  function YeonImage(props, ref) {
-    return <img ref={ref} {...props} />;
+  function YeonImage({ loading = "lazy", decoding = "async", ...props }, ref) {
+    return <img ref={ref} loading={loading} decoding={decoding} {...props} />;
   }
 );

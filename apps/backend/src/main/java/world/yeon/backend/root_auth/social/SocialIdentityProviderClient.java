@@ -2,6 +2,8 @@ package world.yeon.backend.root_auth.social;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.net.http.HttpClient;
@@ -14,6 +16,7 @@ import world.yeon.backend.root_auth.service.AuthSessionServiceException;
 
 @Component
 public class SocialIdentityProviderClient {
+	private static final Logger log = LoggerFactory.getLogger(SocialIdentityProviderClient.class);
 	private static final long OAUTH_PROVIDER_REQUEST_TIMEOUT_SECONDS = 10;
 	private final Environment environment;
 	private final ObjectMapper objectMapper;
@@ -56,7 +59,7 @@ public class SocialIdentityProviderClient {
 
 		return new SocialIdentityProfile(
 			"google",
-			requiredText(userInfo, "sub", "profile_fetch_failed", "구글 사용자 정보 조회"),
+			requiredProviderUserId(userInfo, "sub", "profile_fetch_failed", "구글 사용자 정보 조회"),
 			normalizeString(userInfo.path("email").asText(null), 320),
 			userInfo.path("email_verified").asBoolean(false),
 			normalizeString(userInfo.path("name").asText(null), 80),
@@ -88,7 +91,7 @@ public class SocialIdentityProviderClient {
 
 		return new SocialIdentityProfile(
 			"kakao",
-			requiredText(userInfo, "id", "profile_fetch_failed", "카카오 사용자 정보 조회"),
+			requiredProviderUserId(userInfo, "id", "profile_fetch_failed", "카카오 사용자 정보 조회"),
 			normalizeString(account.path("email").asText(null), 320),
 			account.path("is_email_verified").asBoolean(false),
 			normalizeString(profile.path("nickname").asText(null), 80),
@@ -122,14 +125,14 @@ public class SocialIdentityProviderClient {
 			HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 			JsonNode body = response.body() == null || response.body().isBlank() ? objectMapper.nullNode() : objectMapper.readTree(response.body());
 			if (response.statusCode() < 200 || response.statusCode() >= 300) {
-				System.err.println(label + " 실패: status=" + response.statusCode());
+				log.warn("소셜 로그인 provider 요청 실패: label={} status={}", label, response.statusCode());
 				throw new AuthSessionServiceException(502, errorCode, label + " 요청이 실패했습니다.");
 			}
 			return body;
 		} catch (AuthSessionServiceException error) {
 			throw error;
 		} catch (Exception error) {
-			System.err.println(label + " 오류: " + error.getMessage());
+			log.error("소셜 로그인 provider 요청 오류: label={}", label, error);
 			throw new AuthSessionServiceException(502, errorCode, label + " 요청이 실패했습니다.");
 		}
 	}
@@ -137,6 +140,15 @@ public class SocialIdentityProviderClient {
 	private String requiredText(JsonNode node, String field, String errorCode, String label) {
 		String value = node.path(field).asText(null);
 		if (value == null || value.isBlank()) {
+			throw new AuthSessionServiceException(502, errorCode, label + " 응답 형식이 올바르지 않습니다.");
+		}
+		return value;
+	}
+
+	// provider_user_id 컬럼(varchar(191)) 초과를 막기 위해 정규화/길이 제한 후 반환한다.
+	private String requiredProviderUserId(JsonNode node, String field, String errorCode, String label) {
+		String value = normalizeString(requiredText(node, field, errorCode, label), 191);
+		if (value == null) {
 			throw new AuthSessionServiceException(502, errorCode, label + " 응답 형식이 올바르지 않습니다.");
 		}
 		return value;
@@ -167,7 +179,14 @@ public class SocialIdentityProviderClient {
 	private String normalizeString(String value, int maxLength) {
 		if (value == null) return null;
 		String trimmed = value.trim();
-		return trimmed.isBlank() ? null : trimmed.substring(0, Math.min(trimmed.length(), maxLength));
+		if (trimmed.isBlank()) return null;
+		if (trimmed.length() <= maxLength) return trimmed;
+		// surrogate pair 중간에서 잘리지 않도록 경계를 한 칸 앞으로 보정한다.
+		int end = maxLength;
+		if (Character.isHighSurrogate(trimmed.charAt(end - 1))) {
+			end -= 1;
+		}
+		return trimmed.substring(0, end);
 	}
 
 	private String normalizeUrl(String value) {

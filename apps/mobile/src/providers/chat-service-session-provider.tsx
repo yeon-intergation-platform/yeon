@@ -6,7 +6,14 @@ import {
   useYeonQueryClient as useQueryClient,
 } from "@yeon/ui/native";
 import type { ReactNode } from "react";
-import { createContext, useContext, useEffect, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { isAnonymousApp } from "../lib/mobile-app-mode";
 import { chatServiceApi } from "../services/chat-service/client";
 import {
@@ -235,7 +242,7 @@ export function ChatServiceSessionProvider({
     }
   }
 
-  async function requestOtp(phoneNumber: string) {
+  const requestOtp = useCallback(async (phoneNumber: string) => {
     const response = await chatServiceApi.requestChatServiceOtp({
       phoneNumber,
     });
@@ -251,27 +258,30 @@ export function ChatServiceSessionProvider({
     setChallenge(nextChallenge);
     setStatus("awaiting_otp");
     return nextChallenge;
-  }
+  }, []);
 
-  async function verifyOtp(code: string) {
-    if (!challenge) {
-      throw new Error("인증 요청이 먼저 필요합니다.");
-    }
+  const verifyOtp = useCallback(
+    async (code: string) => {
+      if (!challenge) {
+        throw new Error("인증 요청이 먼저 필요합니다.");
+      }
 
-    const response = await chatServiceApi.verifyChatServiceOtp({
-      challengeId: challenge.challengeId,
-      phoneNumber: challenge.phoneNumber,
-      code,
-    });
+      const response = await chatServiceApi.verifyChatServiceOtp({
+        challengeId: challenge.challengeId,
+        phoneNumber: challenge.phoneNumber,
+        code,
+      });
 
-    await writeChatServiceSessionToken(response.session.token);
-    setChallenge(null);
-    setRealSession(response.session.token, response.session);
-    setStatus("signed_in");
-    queryClient.clear();
-  }
+      await writeChatServiceSessionToken(response.session.token);
+      setChallenge(null);
+      setRealSession(response.session.token, response.session);
+      setStatus("signed_in");
+      queryClient.clear();
+    },
+    [challenge]
+  );
 
-  async function refreshSession() {
+  const refreshSession = useCallback(async () => {
     const token = await readChatServiceSessionToken();
 
     if (!token) {
@@ -285,9 +295,9 @@ export function ChatServiceSessionProvider({
     }
 
     await restoreSession(token);
-  }
+  }, [skipPhoneVerification]);
 
-  async function logout() {
+  const logout = useCallback(async () => {
     const token = session?.token;
 
     if (token && !parseGuestProfileId(token)) {
@@ -309,20 +319,23 @@ export function ChatServiceSessionProvider({
     setSession(null);
     setChallenge(null);
     setStatus("signed_out");
-  }
+  }, [session?.token, skipPhoneVerification]);
+
+  const contextValue = useMemo(
+    () => ({
+      status,
+      session,
+      challenge,
+      requestOtp,
+      verifyOtp,
+      refreshSession,
+      logout,
+    }),
+    [status, session, challenge, requestOtp, verifyOtp, refreshSession, logout]
+  );
 
   return (
-    <ChatServiceSessionContext.Provider
-      value={{
-        status,
-        session,
-        challenge,
-        requestOtp,
-        verifyOtp,
-        refreshSession,
-        logout,
-      }}
-    >
+    <ChatServiceSessionContext.Provider value={contextValue}>
       {children}
     </ChatServiceSessionContext.Provider>
   );

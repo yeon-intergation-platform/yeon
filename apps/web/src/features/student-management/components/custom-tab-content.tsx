@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { LayoutPanelTop } from "lucide-react";
 import { FieldRenderer } from "./field-renderer";
 import {
@@ -56,9 +56,13 @@ export function CustomTabContent({
   const { fields, values, loading, saveValue } = useCustomTabFields(
     spaceId,
     memberId,
-    tabId,
+    tabId
   );
   const visibleFields = fields.filter((field) => !field.sourceKey);
+  const valuesMap = useMemo(
+    () => new Map(values.map((v) => [v.fieldDefinitionId, v])),
+    [values]
+  );
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editText, setEditText] = useState("");
   const [saving, setSaving] = useState(false);
@@ -126,7 +130,7 @@ export function CustomTabContent({
       ) : (
         <div className="space-y-0">
           {visibleFields.map((field) => {
-            const fv = values.find((v) => v.fieldDefinitionId === field.id);
+            const fv = valuesMap.get(field.id);
             const displayFieldType = resolveDisplayFieldType(field);
             const resolved = resolveValue(field.fieldType, fv);
             const isEditing = editingId === field.id;

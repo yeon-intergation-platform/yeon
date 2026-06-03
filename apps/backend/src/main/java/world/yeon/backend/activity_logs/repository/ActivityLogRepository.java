@@ -69,10 +69,8 @@ public class ActivityLogRepository {
 
 	public List<ActivityLogRow> findActivityLogs(Long spaceInternalId, Long memberInternalId, String type, Integer limit) {
 		String sql = """
-			select a.public_id, m.public_id, s.public_id, a.type, a.status, a.recorded_at, a.source, a.metadata, a.created_at
+			select a.public_id, a.type, a.status, a.recorded_at, a.source, a.metadata, a.created_at
 			from public.activity_logs a
-			inner join public.members m on m.id = a.member_id
-			inner join public.spaces s on s.id = a.space_id
 			where a.space_id = :spaceInternalId
 			  and a.member_id = :memberInternalId
 			""" + (type != null ? " and a.type = :type " : "") + """
@@ -83,7 +81,22 @@ public class ActivityLogRepository {
 			.setParameter("memberInternalId", memberInternalId);
 		if (type != null) query.setParameter("type", type);
 		if (limit != null) query.setMaxResults(limit);
-		return query.getResultList().stream().map(this::toActivityLogRow).toList();
+		return query.getResultList().stream().map(this::toActivityLogRowWithoutMember).toList();
+	}
+
+	private ActivityLogRow toActivityLogRowWithoutMember(Object row) {
+		if (!(row instanceof Object[] values) || values.length < 7) throw new IllegalStateException("activity log row를 해석하지 못했습니다.");
+		return new ActivityLogRow(
+			(String) values[0],
+			null,
+			null,
+			(String) values[1],
+			(String) values[2],
+			asOffsetDateTime(values[3]),
+			(String) values[4],
+			asMetadata(values[5]),
+			asOffsetDateTime(values[6])
+		);
 	}
 
 	public int countActivityLogs(Long spaceInternalId, Long memberInternalId, String type) {

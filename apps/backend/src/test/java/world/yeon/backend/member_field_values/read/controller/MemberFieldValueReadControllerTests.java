@@ -47,7 +47,7 @@ class MemberFieldValueReadControllerTests {
 
 	@Test
 	void values조회는values응답을반환한다() throws Exception {
-		when(service.listValues(eq("space_alpha"), eq("mtb_custom"), eq("mem_1")))
+		when(service.listValues(eq(OWNER_ID), eq("space_alpha"), eq("mtb_custom"), eq("mem_1")))
 			.thenReturn(new MemberFieldValueListResponse(List.of(
 				new MemberFieldValueItemResponse("mfd_status", null, null, null, List.of("in_progress"))
 			)));
@@ -62,7 +62,7 @@ class MemberFieldValueReadControllerTests {
 
 	@Test
 	void values조회는member가없으면404다() throws Exception {
-		when(service.listValues(eq("space_alpha"), eq("mtb_custom"), eq("missing")))
+		when(service.listValues(eq(OWNER_ID), eq("space_alpha"), eq("mtb_custom"), eq("missing")))
 			.thenThrow(new NoSuchElementException("수강생을 찾지 못했습니다."));
 		mockMvc.perform(get("/spaces/space_alpha/member-tabs/mtb_custom/field-values?memberId=missing")
 			.header("X-Yeon-User-Id", OWNER_ID.toString())

@@ -28,12 +28,25 @@ const AUTH_ERROR_STATUS: Record<AuthErrorCode, number> = {
 };
 
 export function getClientIp(request: NextRequest): string {
+  // idx-168: Cloudflare 뒤에서는 CF-Connecting-IP가 스푸핑 불가 신뢰 헤더.
+  // CF-Connecting-IP가 없으면(로컬/직접 연결) XFF의 마지막 hop(가장 신뢰 가능)을 사용한다.
+  // XFF 첫 번째 값은 클라이언트가 임의로 설정 가능하므로 IP 기반 rate limit에 사용하지 않는다.
+  const cfConnectingIp = request.headers.get("cf-connecting-ip");
+  if (cfConnectingIp) {
+    const trimmed = cfConnectingIp.trim();
+    if (trimmed) {
+      return trimmed;
+    }
+  }
+
   const forwarded = request.headers.get("x-forwarded-for");
 
   if (forwarded) {
-    const first = forwarded.split(",")[0]?.trim();
-    if (first) {
-      return first;
+    const hops = forwarded.split(",");
+    // 마지막 hop: 신뢰된 프록시가 추가한 가장 오른쪽 IP.
+    const last = hops[hops.length - 1]?.trim();
+    if (last) {
+      return last;
     }
   }
 

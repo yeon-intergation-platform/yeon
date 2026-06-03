@@ -32,7 +32,7 @@ public class MemberTabResetController {
 		@PathVariable String spaceId,
 		@RequestHeader("X-Yeon-User-Id") UUID userId
 	) {
-		return service.resetTabs(spaceId);
+		return service.resetTabs(userId, spaceId);
 	}
 
 	@ExceptionHandler(NoSuchElementException.class)

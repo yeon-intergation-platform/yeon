@@ -32,8 +32,20 @@ public class CommunityChatService {
 	}
 
 	private CommunityChatMessageResponse toResponse(CommunityChatRepository.MessageRow row) {
-		String senderId = row.senderUserId() != null ? "user:" + row.senderUserId() : "guest:" + row.guestSessionId();
+		String senderId = row.senderUserId() != null ? "user:" + row.senderUserId() : "guest:" + anonymizeGuestSessionId(row.guestSessionId());
 		return new CommunityChatMessageResponse(row.id(), senderId, row.senderNickname(), row.body(), row.createdAt());
+	}
+
+	private String anonymizeGuestSessionId(String guestSessionId) {
+		if (guestSessionId == null || guestSessionId.isBlank()) return "anonymous";
+		try {
+			var digest = java.security.MessageDigest.getInstance("SHA-256").digest(guestSessionId.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+			var hex = new StringBuilder(24);
+			for (int i = 0; i < 12; i++) hex.append(String.format("%02x", digest[i]));
+			return hex.toString();
+		} catch (java.security.NoSuchAlgorithmException error) {
+			throw new IllegalStateException("게스트 식별자 익명화에 실패했습니다.", error);
+		}
 	}
 
 	private String resolveNickname(UUID senderUserId, SendCommunityChatMessageRequest request) {

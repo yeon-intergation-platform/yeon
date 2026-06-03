@@ -107,6 +107,7 @@ public class ChatServiceChatRoomsRepository {
 				limit 1
 			) m on true
 			where r.id = :roomId
+			  and (r.user_a_id = :currentProfileId or r.user_b_id = :currentProfileId)
 			limit 1
 		""")
 			.setParameter("roomId", roomId)
@@ -130,14 +131,22 @@ public class ChatServiceChatRoomsRepository {
 			.isEmpty();
 	}
 
+	private static final int MESSAGE_PAGE_SIZE = 100;
+
 	public List<MessageRow> listMessages(UUID roomId) {
 		List<?> rows = entityManager.createNativeQuery("""
 			select id, room_id, sender_id, body, created_at
-			from public.chat_service_chat_messages
-			where room_id = :roomId
-			order by created_at asc
+			from (
+				select id, room_id, sender_id, body, created_at
+				from public.chat_service_chat_messages
+				where room_id = :roomId
+				order by created_at desc, id desc
+				limit :limit
+			) recent
+			order by created_at asc, id asc
 		""")
 			.setParameter("roomId", roomId)
+			.setParameter("limit", MESSAGE_PAGE_SIZE)
 			.getResultList();
 		return rows.stream().map(this::toMessageRow).toList();
 	}
@@ -191,7 +200,7 @@ public class ChatServiceChatRoomsRepository {
 
 	private OffsetDateTime asOffsetDateTime(Object value) {
 		if (value == null) return null;
-		if (value instanceof OffsetDateTime offsetDateTime) return offsetDateTime;
+		if (value instanceof OffsetDateTime offsetDateTime) return offsetDateTime.withOffsetSameInstant(ZoneOffset.UTC);
 		if (value instanceof Timestamp timestamp) return timestamp.toInstant().atOffset(ZoneOffset.UTC);
 		return OffsetDateTime.parse(String.valueOf(value));
 	}

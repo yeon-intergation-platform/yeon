@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import world.yeon.backend.space_access.service.SpaceAccessService;
 import world.yeon.backend.space_templates.read.dto.SpaceTemplateSummaryResponse;
 import world.yeon.backend.space_templates.read.mapper.SpaceTemplateReadMapper;
 import world.yeon.backend.space_templates.read.model.SpaceTemplateEntity;
@@ -29,18 +30,21 @@ public class SpaceTemplateWriteService {
 	private final SpaceTemplateSnapshotQueryRepository snapshotQueryRepository;
 	private final SpaceTemplateApplyRepository applyRepository;
 	private final SpaceTemplateReadMapper mapper;
+	private final SpaceAccessService spaceAccessService;
 	private final ObjectMapper objectMapper = new ObjectMapper().findAndRegisterModules();
 
 	public SpaceTemplateWriteService(
 		SpaceTemplateWriteRepository repository,
 		SpaceTemplateSnapshotQueryRepository snapshotQueryRepository,
 		SpaceTemplateApplyRepository applyRepository,
-		SpaceTemplateReadMapper mapper
+		SpaceTemplateReadMapper mapper,
+		SpaceAccessService spaceAccessService
 	) {
 		this.repository = repository;
 		this.snapshotQueryRepository = snapshotQueryRepository;
 		this.applyRepository = applyRepository;
 		this.mapper = mapper;
+		this.spaceAccessService = spaceAccessService;
 	}
 
 	@Transactional
@@ -113,9 +117,8 @@ public class SpaceTemplateWriteService {
 		UUID userId,
 		SnapshotSpaceTemplateRequest request
 	) {
-		if (!snapshotQueryRepository.existsSpace(spaceId)) {
-			throw new NoSuchElementException("스페이스를 찾지 못했습니다.");
-		}
+		// IDOR 방지: 소유자만 자기 스페이스를 스냅샷할 수 있다(미소유 시 NoSuchElementException).
+		spaceAccessService.requireOwnedSpace(spaceId, userId);
 
 		var tabs = snapshotQueryRepository.loadTabs(spaceId).stream()
 			.map(tab -> new CreateSpaceTemplateRequest.TemplateTabRequest(
@@ -150,6 +153,8 @@ public class SpaceTemplateWriteService {
 
 	@Transactional
 	public void applyTemplateToSpace(String templateId, String spaceId, UUID userId) {
+		// IDOR 방지: 타인 스페이스 필드 정의/탭 삭제(cascade)를 막기 위해 소유권을 먼저 검증한다.
+		spaceAccessService.requireOwnedSpace(spaceId, userId);
 		Long spaceInternalId = applyRepository.requireSpaceInternalId(spaceId);
 		SpaceTemplateEntity template = repository.findAccessibleTemplate(templateId, userId)
 			.orElseThrow(() -> new NoSuchElementException("템플릿을 찾지 못했습니다."));
@@ -166,7 +171,16 @@ public class SpaceTemplateWriteService {
 
 		for (CreateSpaceTemplateRequest.TemplateTabRequest tab : tabs) {
 			if ("system".equals(tab.tabType()) && tab.systemKey() != null && !tab.systemKey().isBlank()) {
-				Long tabId = applyRepository.findSystemTabId(spaceInternalId, tab.systemKey());
+				Long tabId;
+				try {
+					tabId = applyRepository.findSystemTabId(spaceInternalId, tab.systemKey());
+				} catch (org.springframework.dao.EmptyResultDataAccessException missing) {
+					// ensureSystemTabs 선행에도 시스템 탭이 없으면(비표준 systemKey 등) 트랜잭션 500 대신 명시적 예외로 처리.
+					throw new NoSuchElementException("시스템 탭을 찾지 못했습니다: " + tab.systemKey());
+				}
+				if (tabId == null) {
+					throw new NoSuchElementException("시스템 탭을 찾지 못했습니다: " + tab.systemKey());
+				}
 				applyRepository.updateSystemTab(tabId, tab.name(), tab.displayOrder(), now);
 				insertFields(tabId, spaceInternalId, userId, tab.fields(), now);
 			} else {

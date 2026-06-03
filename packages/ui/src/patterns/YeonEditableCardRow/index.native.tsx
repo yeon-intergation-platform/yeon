@@ -17,7 +17,8 @@ import { yeonMobileAppColors } from "../../theme";
 
 export type YeonEditableCardRowProps = {
   answerLabel: string;
-  answerText: string;
+  // content 제공 시 옵셔널(스크린리더 접근성 라벨로 활용). 미제공 시 평문 렌더에 필수.
+  answerText?: string;
   // 제공되면 평문 대신 렌더(예: 마크다운). 미제공 시 questionText/answerText 평문.
   questionContent?: ReactNode;
   answerContent?: ReactNode;
@@ -32,7 +33,8 @@ export type YeonEditableCardRowProps = {
   onToggleMenu: YeonButtonProps["onPress"];
   openAccessibilityLabel: string;
   questionLabel: string;
-  questionText: string;
+  // content 제공 시 옵셔널(스크린리더 접근성 라벨로 활용). 미제공 시 평문 렌더에 필수.
+  questionText?: string;
   style?: YeonViewProps["style"];
 };
 
@@ -131,7 +133,7 @@ export function YeonEditableCardRow({
                 tone="inherit"
                 style={styles.questionText}
               >
-                {questionText}
+                {questionText ?? ""}
               </YeonText>
             )}
           </YeonView>
@@ -147,7 +149,7 @@ export function YeonEditableCardRow({
                 tone="inherit"
                 style={styles.answerText}
               >
-                {answerText}
+                {answerText ?? ""}
               </YeonText>
             )}
           </YeonView>

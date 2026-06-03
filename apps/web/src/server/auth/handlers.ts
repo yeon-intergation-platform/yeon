@@ -197,9 +197,13 @@ export async function completeSocialAuth(
   const code = request.nextUrl.searchParams.get("code");
 
   if (providerError) {
+    // idx-152: error_description은 공급자·공격자 제어 문자열이므로 로그 인젝션 방지용 새니타이즈.
+    const safeErrorDescription = providerErrorDescription
+      ? providerErrorDescription.replace(/[\r\n]/g, " ").slice(0, 200)
+      : undefined;
     console.error(`${provider} 로그인 공급자 오류`, {
       error: providerError,
-      errorDescription: providerErrorDescription,
+      errorDescription: safeErrorDescription,
     });
 
     return redirectToAuthError(request, {
@@ -248,6 +252,9 @@ export async function completeSocialAuth(
     });
 
     // 모바일 플로우: 쿠키 대신 딥링크로 세션 토큰을 반환(앱이 SecureStore에 저장).
+    // idx-142: 세션 토큰이 쿼리스트링에 포함되어 프록시/OS 딥링크 로그에 평문 노출 위험.
+    // 개선 방향: URL fragment(#token=...) 또는 일회용 exchange code 방식으로 전환 권장.
+    // 현재 normalizeMobileReturnUrl이 화이트리스트 scheme/pathname을 강제해 open-redirect는 차단됨.
     if (oauthState.matchedEntry.mobileReturnUrl) {
       return redirectToMobileReturn(
         oauthState.matchedEntry.mobileReturnUrl,

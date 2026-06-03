@@ -2,12 +2,14 @@ package world.yeon.backend.member_tabs.reset.service;
 
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import world.yeon.backend.member_tabs.reset.dto.OkResponse;
 import world.yeon.backend.member_tabs.reset.repository.MemberTabResetRepository;
+import world.yeon.backend.space_access.service.SpaceAccessService;
 
 @Service
 public class MemberTabResetService {
@@ -23,13 +25,17 @@ public class MemberTabResetService {
 	);
 
 	private final MemberTabResetRepository repository;
+	private final SpaceAccessService spaceAccessService;
 
-	public MemberTabResetService(MemberTabResetRepository repository) {
+	public MemberTabResetService(MemberTabResetRepository repository, SpaceAccessService spaceAccessService) {
 		this.repository = repository;
+		this.spaceAccessService = spaceAccessService;
 	}
 
 	@Transactional
-	public OkResponse resetTabs(String spacePublicId) {
+	public OkResponse resetTabs(UUID userId, String spacePublicId) {
+		// IDOR 방지: 타인 스페이스의 커스텀 탭(및 cascade 하위 필드/값) 삭제를 막기 위해 소유권을 먼저 검증한다.
+		spaceAccessService.requireOwnedSpace(spacePublicId, userId);
 		Long spaceInternalId = repository.findSpaceInternalId(spacePublicId);
 		if (spaceInternalId == null) {
 			throw new NoSuchElementException("스페이스를 찾지 못했습니다.");

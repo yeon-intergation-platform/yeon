@@ -47,13 +47,14 @@ export function YeonReviewPanel({
           {questionLabel}
         </YeonText>
         <YeonView style={styles.questionBox}>
-          {typeof questionText === "string" ? (
+          {typeof questionText === "string" ||
+          typeof questionText === "number" ? (
             <YeonText
               variant="unstyled"
               tone="inherit"
               style={styles.questionText}
             >
-              {questionText}
+              {String(questionText)}
             </YeonText>
           ) : (
             questionText
@@ -67,13 +68,13 @@ export function YeonReviewPanel({
           {answerLabel}
         </YeonText>
         <YeonView style={styles.answerBox}>
-          {typeof answerText === "string" ? (
+          {typeof answerText === "string" || typeof answerText === "number" ? (
             <YeonText
               variant="unstyled"
               tone="inherit"
               style={styles.answerText}
             >
-              {answerText}
+              {String(answerText)}
             </YeonText>
           ) : (
             answerText

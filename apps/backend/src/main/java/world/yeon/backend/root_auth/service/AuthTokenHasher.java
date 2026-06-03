@@ -1,5 +1,6 @@
 package world.yeon.backend.root_auth.service;
 
+import jakarta.annotation.PostConstruct;
 import java.nio.charset.StandardCharsets;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -9,10 +10,19 @@ import org.springframework.stereotype.Component;
 @Component
 public class AuthTokenHasher {
 	private static final String HMAC_ALGORITHM = "HmacSHA256";
+	private static final int MIN_AUTH_SECRET_LENGTH = 16;
 	private final Environment environment;
 
 	public AuthTokenHasher(Environment environment) {
 		this.environment = environment;
+	}
+
+	@PostConstruct
+	void validateAuthSecret() {
+		String secret = resolveAuthSecret();
+		if (secret.length() < MIN_AUTH_SECRET_LENGTH) {
+			throw new IllegalStateException("AUTH_SECRET 환경변수는 최소 " + MIN_AUTH_SECRET_LENGTH + "자 이상이어야 합니다.");
+		}
 	}
 
 	public String hash(String token) {

@@ -44,6 +44,7 @@ import world.yeon.backend.card_rooms.repository.CardRoomRepository.RoomRow;
 @Service
 public class CardRoomService {
   private static final Duration DEFAULT_STALE_AFTER = Duration.ofHours(6);
+  private static final int MAX_DECK_ITEMS = 200;
 
   private final CardRoomRepository repository;
 
@@ -96,6 +97,9 @@ public class CardRoomService {
     if (items.isEmpty()) {
       throw new CardRoomServiceException(CardRoomError.EMPTY_DECK);
     }
+    if (items.size() > MAX_DECK_ITEMS) {
+      throw new CardRoomServiceException(400, "TOO_MANY_CARDS", "카드방에는 최대 " + MAX_DECK_ITEMS + "장까지 담을 수 있습니다.");
+    }
 
     OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
     var room = repository.insertRoom(newPublicId(CardRoomIdPrefix.ROOM), title, deckTitle, sourceDeckId, userId, guestId, visibility, now);
@@ -112,7 +116,8 @@ public class CardRoomService {
 
   @Transactional
   public CardRoomParticipantResponse joinRoom(String roomId, UUID userId, String guestId, JoinCardRoomRequest request) {
-    var room = requireRoom(roomId);
+    // 방 행 잠금으로 동일 식별자의 동시 입장 TOCTOU(중복 participant row)를 직렬화한다.
+    var room = requireLockedRoom(roomId);
     ensureRoomOpen(room);
     var profile = normalizeProfile(request == null ? null : request.profile());
     var existing = repository.findActiveParticipantByIdentity(room.internalId(), userId, guestId);
@@ -129,7 +134,7 @@ public class CardRoomService {
 
   @Transactional
   public CardRoomParticipantResponse updateParticipant(String roomId, String participantId, UpdateCardRoomParticipantRequest request) {
-    var room = requireRoom(roomId);
+    var room = requireLockedRoom(roomId);
     var participant = requireParticipantInRoom(room, participantId);
     if (!CardRoomStatus.WAITING.matches(room.status()) && request != null && (request.role() != null || request.isReady() != null)) {
       throw new CardRoomServiceException(CardRoomError.ROOM_ALREADY_STARTED);
@@ -151,7 +156,7 @@ public class CardRoomService {
 
   @Transactional
   public CardRoomResponse startRoom(String roomId, String participantId) {
-    var room = requireRoom(roomId);
+    var room = requireLockedRoom(roomId);
     var participant = requireParticipantInRoom(room, participantId);
     requireHost(participant);
     if (!CardRoomStatus.WAITING.matches(room.status())) {
@@ -177,7 +182,7 @@ public class CardRoomService {
 
   @Transactional
   public CardRoomResponse endRoom(String roomId, String participantId) {
-    var room = requireRoom(roomId);
+    var room = requireLockedRoom(roomId);
     var participant = requireParticipantInRoom(room, participantId);
     requireHost(participant);
     OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
@@ -188,12 +193,19 @@ public class CardRoomService {
 
   @Transactional
   public CardRoomResponse leaveRoom(String roomId, String participantId) {
-    var room = requireRoom(roomId);
+    var room = requireLockedRoom(roomId);
     var participant = requireParticipantInRoom(room, participantId);
     OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
     repository.leaveParticipant(participant.internalId(), now);
-    if (repository.listParticipants(room.internalId()).isEmpty()) {
+    var remaining = repository.listParticipants(room.internalId());
+    if (remaining.isEmpty()) {
       repository.updateStatus(room.internalId(), CardRoomStatus.CLOSED, room.currentCardIndex(), now);
+    } else if (participant.isHost() && remaining.stream().noneMatch(ParticipantRow::isHost)) {
+      // 호스트가 떠나면 남은 활성 참가자 중 최초 입장자에게 호스트를 승계해 방이 진행 불가로 고착되지 않게 한다.
+      var heir = repository.findEarliestActiveParticipant(room.internalId());
+      if (heir != null) {
+        repository.assignHost(heir.internalId());
+      }
     }
     return new CardRoomResponse(detail(room.publicId()), null);
   }
@@ -211,8 +223,9 @@ public class CardRoomService {
 
   @Transactional
   public CardRoomResponse reveal(String roomId, String participantId) {
-    var room = requireRoom(roomId);
+    var room = requireLockedRoom(roomId);
     var participant = requireParticipantInRoom(room, participantId);
+    ensureRoomActive(room);
     if (!CardRoomParticipantRole.CHECKER.matches(participant.role())) {
       throw new CardRoomServiceException(CardRoomError.CHECKER_ONLY);
     }
@@ -225,8 +238,9 @@ public class CardRoomService {
 
   @Transactional
   public CardRoomResponse next(String roomId, String participantId) {
-    var room = requireRoom(roomId);
+    var room = requireLockedRoom(roomId);
     requireParticipantInRoom(room, participantId);
+    ensureRoomActive(room);
     if (!CardRoomStatus.PASSED.matches(room.status()) && !CardRoomStatus.GIVEN_UP.matches(room.status()) && !CardRoomStatus.REVEALED.matches(room.status())) {
       throw new CardRoomServiceException(CardRoomError.CARD_NOT_RESOLVED);
     }
@@ -239,8 +253,9 @@ public class CardRoomService {
 
   @Transactional
   public CardRoomMessagesResponse addMessage(String roomId, String participantId, CreateCardRoomMessageRequest request) {
-    var room = requireRoom(roomId);
+    var room = requireLockedRoom(roomId);
     var participant = requireParticipantInRoom(room, participantId);
+    ensureRoomOpen(room);
     String content = normalizeText(request == null ? null : request.content(), CardRoomTextRule.CHAT_MESSAGE);
     repository.insertMessage(newPublicId(CardRoomIdPrefix.MESSAGE), room.internalId(), participant.internalId(), content, CardRoomMessageType.USER, OffsetDateTime.now(ZoneOffset.UTC));
     return new CardRoomMessagesResponse(detail(roomId).messages());
@@ -248,14 +263,24 @@ public class CardRoomService {
 
   @Transactional
   public CardRoomResultResponse submitResult(String roomId, String participantId, SubmitCardRoomResultRequest request) {
-    var room = requireRoom(roomId);
+    var room = requireLockedRoom(roomId);
     var participant = requireParticipantInRoom(room, participantId);
+    ensureRoomActive(room);
     if (!CardRoomStatus.ANSWERING.matches(room.status()) && !CardRoomStatus.REVEALED.matches(room.status())) {
       throw new CardRoomServiceException(CardRoomError.ROOM_NOT_IN_PROGRESS);
     }
-    var card = repository.findCard(request == null ? null : request.cardId());
-    if (card == null || !card.roomId().equals(room.internalId())) {
+    // 카드 조회를 방 스코프로 일원화해 다른 방 카드 publicId 탐색을 차단한다.
+    var card = repository.findCardInRoom(room.internalId(), request == null ? null : request.cardId());
+    if (card == null) {
       throw new CardRoomServiceException(CardRoomError.CARD_NOT_FOUND);
+    }
+    // 클라이언트가 보낸 cardId가 실제 진행 중인 현재 카드와 일치하는지 검증해 임의 카드 결과 주입을 막는다.
+    if (card.orderIndex() != room.currentCardIndex()) {
+      throw new CardRoomServiceException(CardRoomError.CARD_NOT_RESOLVED);
+    }
+    // 같은 카드에 대한 결과 중복 제출을 차단한다(이미 확정된 카드).
+    if (repository.existsResultForCard(room.internalId(), card.internalId())) {
+      throw new CardRoomServiceException(CardRoomError.CARD_NOT_RESOLVED);
     }
     CardRoomResult result = normalizeResult(request.result());
     if (result.requiresChecker() && !CardRoomParticipantRole.CHECKER.matches(participant.role())) {
@@ -286,6 +311,14 @@ public class CardRoomService {
     return room;
   }
 
+  // 상태 전이/입장처럼 read-modify-write가 있는 경로는 방 행을 잠근 뒤 최신 상태를 다시 읽어
+  // 동시 요청이 같은 status/current_card_index를 보고 덮어쓰는 race를 막는다.
+  private RoomRow requireLockedRoom(String roomId) {
+    var room = requireRoom(roomId);
+    repository.lockRoom(room.internalId());
+    return requireRoom(roomId);
+  }
+
   private ParticipantRow requireParticipant(String participantId) {
     var participant = repository.findParticipant(participantId);
     if (participant == null) {
@@ -314,6 +347,13 @@ public class CardRoomService {
     }
   }
 
+  // 진행 계열 전이(reveal/next/submitResult)는 종료된 방을 먼저 걸러 '이미 종료됨'을 명확히 알린다.
+  private void ensureRoomActive(RoomRow room) {
+    if (CardRoomStatus.CLOSED.matches(room.status()) || CardRoomStatus.FINISHED.matches(room.status())) {
+      throw new CardRoomServiceException(CardRoomError.ROOM_CLOSED);
+    }
+  }
+
   private CardRoomParticipantRole nextRole(Long roomId) {
     boolean hasChecker = repository.listParticipants(roomId).stream()
       .anyMatch((participant) -> CardRoomParticipantRole.CHECKER.matches(participant.role()));
@@ -335,7 +375,11 @@ public class CardRoomService {
       throw CardRoomServiceException.invalidText(rule.requiredMessage());
     }
     String trimmed = value.trim();
-    return trimmed.substring(0, Math.min(trimmed.length(), rule.maxLength()));
+    // 길이 초과를 조용히 잘라내지 않고 명시적 검증 에러로 알린다(코드포인트 기준).
+    if (trimmed.codePointCount(0, trimmed.length()) > rule.maxLength()) {
+      throw CardRoomServiceException.invalidText(rule.requiredMessage());
+    }
+    return trimmed;
   }
 
   private CardRoomVisibility normalizeVisibility(String value) {

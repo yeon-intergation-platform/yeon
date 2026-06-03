@@ -43,7 +43,7 @@ class SheetIntegrationControllerTests {
 
 	@Test
 	void get응답shape를반환한다() throws Exception {
-		when(service.getIntegrations(eq("space_alpha"))).thenReturn(new GetSheetIntegrationsResponse(List.of(
+		when(service.getIntegrations(eq("space_alpha"), eq(OWNER_ID))).thenReturn(new GetSheetIntegrationsResponse(List.of(
 			new SheetIntegrationResponse("sht_1", "https://docs.google.com/spreadsheets/d/sheet-1/edit", "sheet-1", "attendance", new SheetIntegrationColumnMappingDto(0, 1, 2, 3), null, OffsetDateTime.parse("2026-05-08T07:00:00Z"), OffsetDateTime.parse("2026-05-08T07:00:00Z"))
 		)));
 

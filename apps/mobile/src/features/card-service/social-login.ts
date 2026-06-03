@@ -8,7 +8,7 @@ WebBrowser.maybeCompleteAuthSession();
 export type MobileSocialProvider = "google" | "kakao";
 
 export type MobileSocialLoginResult =
-  | { status: "success"; sessionToken: string }
+  | { status: "success"; sessionToken: string; expiresAt: string | null }
   | { status: "cancelled" }
   | { status: "error"; message: string };
 
@@ -53,7 +53,23 @@ export async function startMobileSocialLogin(
     return { status: "cancelled" };
   }
 
-  const parsed = Linking.parse(result.url);
+  // idx-141: returnUrl scheme/host/path 일치 검증.
+  // Linking.parse는 커스텀 scheme URL을 host/path로 분해한다.
+  const expectedParsed = Linking.parse(returnUrl);
+  const resultParsed = Linking.parse(result.url);
+
+  if (
+    resultParsed.scheme !== expectedParsed.scheme ||
+    resultParsed.hostname !== expectedParsed.hostname ||
+    resultParsed.path !== expectedParsed.path
+  ) {
+    return {
+      status: "error",
+      message: "로그인 응답 URL이 유효하지 않습니다. 다시 시도해 주세요.",
+    };
+  }
+
+  const parsed = resultParsed;
   const errorCode = firstQueryValue(parsed.queryParams?.error);
 
   if (errorCode) {
@@ -69,5 +85,8 @@ export async function startMobileSocialLogin(
     };
   }
 
-  return { status: "success", sessionToken };
+  // idx-140: expiresAt도 파싱해 반환(SecureStore 저장은 호출부 책임).
+  const expiresAt = firstQueryValue(parsed.queryParams?.expiresAt);
+
+  return { status: "success", sessionToken, expiresAt };
 }

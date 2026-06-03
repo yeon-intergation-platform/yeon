@@ -28,7 +28,8 @@ public class SpaceService {
 	}
 
 	public SpaceMutationResponse getSpace(UUID userId, String spaceId) {
-		var row = repository.findByPublicId(spaceId);
+		// IDOR 방지: 소유자 스코프로만 조회한다(타인 스페이스 조회 차단).
+		var row = repository.findOwnedByPublicId(userId, spaceId);
 		if (row == null) {
 			throw new SpaceServiceException(404, "SPACE_NOT_FOUND", "스페이스를 찾지 못했습니다.");
 		}
@@ -210,7 +211,8 @@ public class SpaceService {
 	}
 
 	private int compareSpaceDateStrings(String left, String right) {
-		return left.compareTo(right);
+		// IDX 84: 형식 검증(isSpaceDateString)과 비교 의미를 일치시키기 위해 LocalDate로 비교한다.
+		return java.time.LocalDate.parse(left).compareTo(java.time.LocalDate.parse(right));
 	}
 
 	private record PeriodPatch(String startDate, String endDate) {}

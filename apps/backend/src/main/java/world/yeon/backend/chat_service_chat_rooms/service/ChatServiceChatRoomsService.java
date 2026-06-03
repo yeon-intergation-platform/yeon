@@ -45,8 +45,11 @@ public class ChatServiceChatRoomsService {
 		return toDetailResponse(room, repository.listMessages(roomId));
 	}
 
+	private static final int MAX_MESSAGE_LENGTH = 1000;
+
 	@Transactional
 	public ChatServiceChatMessageMutationResponse send(UUID currentProfileId, UUID roomId, String body) {
+		String normalizedBody = normalizeBody(body);
 		var participant = repository.findRoomParticipant(roomId);
 		if (participant == null) {
 			throw new ChatServiceChatRoomsServiceException(404, "CHAT_SERVICE_ROOM_NOT_FOUND", "채팅방을 찾지 못했습니다.");
@@ -58,8 +61,19 @@ public class ChatServiceChatRoomsService {
 		if (repository.hasBlockedRelation(currentProfileId, peerId)) {
 			throw new ChatServiceChatRoomsServiceException(403, "CHAT_SERVICE_BLOCKED_RELATION", "차단 관계에서는 메시지를 보낼 수 없습니다.");
 		}
-		var message = repository.insertMessage(UUID.randomUUID(), roomId, currentProfileId, body);
+		var message = repository.insertMessage(UUID.randomUUID(), roomId, currentProfileId, normalizedBody);
 		repository.updateRoomLastMessageAt(roomId, message.createdAt());
 		return toMutationResponse(message);
+	}
+
+	private String normalizeBody(String body) {
+		if (body == null) {
+			throw new ChatServiceChatRoomsServiceException(400, "CHAT_SERVICE_MESSAGE_BODY_INVALID", "메시지 내용을 입력해 주세요.");
+		}
+		String normalized = body.trim();
+		if (normalized.isEmpty() || normalized.length() > MAX_MESSAGE_LENGTH) {
+			throw new ChatServiceChatRoomsServiceException(400, "CHAT_SERVICE_MESSAGE_BODY_INVALID", "메시지는 1자 이상 " + MAX_MESSAGE_LENGTH + "자 이하로 입력해 주세요.");
+		}
+		return normalized;
 	}
 }

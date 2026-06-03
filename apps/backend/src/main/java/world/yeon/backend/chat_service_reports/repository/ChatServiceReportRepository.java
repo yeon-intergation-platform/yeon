@@ -25,7 +25,7 @@ public class ChatServiceReportRepository {
 			select r.id, r.user_a_id, r.user_b_id
 			from public.chat_service_chat_messages m
 			join public.chat_service_chat_rooms r on r.id = m.room_id
-			where m.id = :messageId
+			where m.id = cast(:messageId as uuid)
 			limit 1
 		""")
 			.setParameter("messageId", messageId)
@@ -52,7 +52,7 @@ public class ChatServiceReportRepository {
 	}
 
 	private boolean existsById(String tableName, String id) {
-		return !entityManager.createNativeQuery("select 1 from " + tableName + " where id = :id limit 1")
+		return !entityManager.createNativeQuery("select 1 from " + tableName + " where id = cast(:id as uuid) limit 1")
 			.setParameter("id", id)
 			.getResultList()
 			.isEmpty();
@@ -60,7 +60,7 @@ public class ChatServiceReportRepository {
 
 	private OffsetDateTime asOffsetDateTime(Object value) {
 		if (value == null) return null;
-		if (value instanceof OffsetDateTime offsetDateTime) return offsetDateTime;
+		if (value instanceof OffsetDateTime offsetDateTime) return offsetDateTime.withOffsetSameInstant(ZoneOffset.UTC);
 		if (value instanceof Timestamp timestamp) return timestamp.toInstant().atOffset(ZoneOffset.UTC);
 		return OffsetDateTime.parse(String.valueOf(value));
 	}

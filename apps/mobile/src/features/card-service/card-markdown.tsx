@@ -3,15 +3,33 @@ import {
   createYeonStyleSheet,
   yeonMobileAppColors,
 } from "@yeon/ui/native";
+import * as ExpoLinking from "expo-linking";
 import Markdown, { type RenderRules } from "react-native-markdown-display";
 import { getMobileApiBaseUrl } from "../../services/api-base-url";
 
-// 상대 경로(/api/...) 이미지는 모바일 API base로 절대화한다(웹은 상대 경로 저장).
-function resolveImageSrc(src: string) {
-  if (!src) return src;
-  if (/^https?:\/\//.test(src) || src.startsWith("data:")) return src;
+// data: URI 최대 허용 길이(5 MB base64 상당).
+const DATA_URI_MAX_LENGTH = 7_000_000;
+
+// 외부 이미지 src scheme 화이트리스트: http/https만 허용. data: URI는 길이 상한 내에서 허용.
+// 상대 경로(/api/...)는 자체 API base로 절대화한다.
+function resolveImageSrc(src: string): string | null {
+  if (!src) return null;
   if (src.startsWith("/")) return `${getMobileApiBaseUrl()}${src}`;
-  return src;
+  if (/^https?:\/\//i.test(src)) return src;
+  if (src.startsWith("data:")) {
+    return src.length <= DATA_URI_MAX_LENGTH ? src : null;
+  }
+  // 그 외 스킴(javascript:, file:, custom: 등)은 렌더하지 않는다.
+  return null;
+}
+
+// 링크 스킴 화이트리스트: http/https만 외부 브라우저로 열고 나머지는 차단한다.
+function handleLinkPress(url: string): boolean {
+  if (/^https?:\/\//i.test(url)) {
+    void ExpoLinking.openURL(url);
+  }
+  // true를 반환해 라이브러리 기본 동작(인앱 처리)을 막는다.
+  return true;
 }
 
 const rules: RenderRules = {
@@ -141,6 +159,7 @@ type CardMarkdownProps = {
 export function CardMarkdown({ source, tone = "default" }: CardMarkdownProps) {
   return (
     <Markdown
+      onLinkPress={handleLinkPress}
       rules={rules}
       style={
         tone === "inverted" ? invertedMarkdownStyles : defaultMarkdownStyles

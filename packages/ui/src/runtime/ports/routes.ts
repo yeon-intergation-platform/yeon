@@ -30,6 +30,9 @@ export function resolveYeonWebPath(
 }
 
 // 모바일(expo-router) 경로 해석: 템플릿 pathname + params 객체.
+// 모바일 화면이 YeonNavigationPort 어댑터를 통해 이동하도록 연결되면 이 헬퍼를 활성화한다.
+// 현재 모바일 화면은 직접 expo-router를 사용하므로 이 함수는 미사용(dead-code).
+// 모바일 어댑터 연결 시 각 화면의 navigate 호출부를 이 헬퍼로 교체한다.
 export function resolveYeonNativeRoute(
   name: YeonRouteName,
   params?: YeonRouteParams

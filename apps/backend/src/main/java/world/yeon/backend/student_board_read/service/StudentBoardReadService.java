@@ -8,7 +8,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import world.yeon.backend.student_board_read.dto.PublicCheckSessionSummaryResponse;
@@ -35,11 +34,11 @@ public class StudentBoardReadService {
 	public StudentBoardReadResponse getBoard(String spaceId, UUID userId, String historyPeriod) {
 		String period = historyPeriod == null || historyPeriod.isBlank() ? "7d" : historyPeriod;
 		if (!List.of("space", "7d", "30d", "365d").contains(period)) {
-			throw new IllegalArgumentException("보드 이력 기간 값이 올바르지 않습니다.");
+			throw new StudentBoardReadServiceException(400, "INVALID_PERIOD", "보드 이력 기간 값이 올바르지 않습니다.");
 		}
 
 		var space = repository.findOwnedSpaceContext(spaceId, userId);
-		if (space == null) throw new NoSuchElementException("스페이스를 찾지 못했습니다.");
+		if (space == null) throw new StudentBoardReadServiceException(404, "SPACE_NOT_FOUND", "스페이스를 찾을 수 없거나 접근 권한이 없습니다.");
 
 		OffsetDateTime from = resolveFrom(period, space.startDate());
 		OffsetDateTime to = resolveTo(period, space.endDate());
@@ -52,6 +51,7 @@ public class StudentBoardReadService {
 		for (var row : boardSnapshots) boardByMemberId.put(row.memberInternalId(), row);
 		Map<Long, LinkedHashMap<String, StudentBoardDailyCellResponse>> dailyCellMapByMember = new LinkedHashMap<>();
 		for (var row : historyRows) {
+			if (row.happenedAt() == null) continue;
 			String date = getHistoryDateKey(row.happenedAt());
 			var memberMap = dailyCellMapByMember.computeIfAbsent(row.memberInternalId(), ignored -> new LinkedHashMap<>());
 			memberMap.putIfAbsent(date, new StudentBoardDailyCellResponse(

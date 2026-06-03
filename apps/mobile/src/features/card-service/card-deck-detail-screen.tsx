@@ -107,11 +107,16 @@ export function CardDeckDetailScreen({ deckId }: CardDeckDetailScreenProps) {
 
   // 게스트/서버 분기는 repository 어댑터가 흡수한다(웹과 동일 포트 인터페이스).
   const itemRepository = useMemo(
-    () => createMobileCardItemRepository({ mode, sessionToken }),
+    () =>
+      createMobileCardItemRepository({
+        isSignedIn: mode === CARD_SERVICE_MODE.server,
+        sessionToken,
+      }),
     [mode, sessionToken]
   );
 
   const detailQuery = useQuery({
+    // deckId 없는 케이스는 enabled:false로 쿼리 자체를 비활성화한다(raw 배열 대신 SSOT 사용).
     enabled: !isBooting && Boolean(deckId),
     queryFn: async () => {
       if (!deckId) {
@@ -121,7 +126,10 @@ export function CardDeckDetailScreen({ deckId }: CardDeckDetailScreenProps) {
     },
     queryKey: deckId
       ? cardServiceQueryKeys.deck(deckId, mode === CARD_SERVICE_MODE.server)
-      : ["card-service", "deck", "missing", mode],
+      : cardServiceQueryKeys.deck(
+          "__missing__",
+          mode === CARD_SERVICE_MODE.server
+        ),
   });
 
   const createMutation = useMutation({

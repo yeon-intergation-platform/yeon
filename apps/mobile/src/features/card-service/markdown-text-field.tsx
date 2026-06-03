@@ -7,7 +7,7 @@ import {
   yeonMobileAppColors,
 } from "@yeon/ui/native";
 import * as ImagePicker from "expo-image-picker";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Svg, { Circle, Path, Rect } from "react-native-svg";
 import { uploadCardImageAsset } from "../../services/card-service/asset-upload";
 
@@ -174,15 +174,30 @@ export function MarkdownTextField({
   placeholder,
   maxLength,
 }: MarkdownTextFieldProps) {
-  const [selection, setSelection] = useState<Selection>({ start: 0, end: 0 });
+  // 툴바 삽입 직후에만 selection을 제어하고, 그 외에는 비제어(undefined)로 둔다.
+  // 이로써 onChangeText와 selection 간 동기화 문제(커서 점프)를 방지한다(idx=131).
+  const [controlledSelection, setControlledSelection] = useState<
+    Selection | undefined
+  >(undefined);
   const [isUploading, setUploading] = useState(false);
+
+  // 최신 value와 selection을 ref로 유지해 비동기 핸들러에서 stale closure를 방지한다(idx=132).
+  const valueRef = useRef(value);
+  const selectionRef = useRef<Selection>({ start: 0, end: 0 });
+  valueRef.current = value;
 
   function commit(result: InsertResult) {
     if (typeof maxLength === "number" && result.value.length > maxLength) {
+      // idx=130: 조용히 드롭하는 대신 사용자에게 안내한다.
+      showYeonAlert(
+        "내용이 너무 길어요",
+        `최대 ${maxLength}자까지 입력할 수 있어요. 이미지를 삽입하면 글자 수가 초과됩니다.`
+      );
       return;
     }
     onChangeText(result.value);
-    setSelection(result.selection);
+    // 삽입 후 커서 위치를 일시적으로 제어하고, 다음 onSelectionChange에서 해제한다(idx=131).
+    setControlledSelection(result.selection);
   }
 
   async function handleAction(action: ToolbarAction) {
@@ -190,7 +205,8 @@ export function MarkdownTextField({
       await handleInsertImage();
       return;
     }
-    commit(applyFormat(value, selection, action));
+    // 최신 value/selection을 ref에서 읽어 stale closure를 피한다(idx=132).
+    commit(applyFormat(valueRef.current, selectionRef.current, action));
   }
 
   async function handleInsertImage() {
@@ -218,7 +234,14 @@ export function MarkdownTextField({
         name: asset.fileName ?? "image.jpg",
         mimeType: asset.mimeType ?? "image/jpeg",
       });
-      commit(insertAtCursor(value, selection, `\n![](${uploaded.imageUrl})\n`));
+      // 업로드 완료 시점의 최신 value/selection을 ref에서 읽는다(idx=132).
+      commit(
+        insertAtCursor(
+          valueRef.current,
+          selectionRef.current,
+          `\n![](${uploaded.imageUrl})\n`
+        )
+      );
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "이미지를 첨부하지 못했어요.";
@@ -250,9 +273,16 @@ export function MarkdownTextField({
         multiline
         multilineMinHeight={136}
         onChangeText={onChangeText}
-        onSelectionChange={(event) => setSelection(event.nativeEvent.selection)}
+        onSelectionChange={(event) => {
+          const sel = event.nativeEvent.selection;
+          selectionRef.current = sel;
+          // 제어된 selection을 해제한다(커서가 자연스럽게 이동한 것으로 간주)(idx=131).
+          if (controlledSelection !== undefined) {
+            setControlledSelection(undefined);
+          }
+        }}
         placeholder={placeholder}
-        selection={selection}
+        selection={controlledSelection}
         showCounter={typeof maxLength === "number"}
         value={value}
       />

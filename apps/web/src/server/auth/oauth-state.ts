@@ -114,23 +114,37 @@ export function consumeOAuthStateCookieValue(options: {
   state?: string | null;
 }) {
   const entries = decodePayload(options.cookieValue);
-  const remainingEntries: OAuthStateEntry[] = [];
+
+  // 1단계: 매칭 entry 탐색.
   let matchedEntry: OAuthStateEntry | null = null;
 
-  for (const entry of entries) {
-    const isMatchingEntry =
-      !!options.state &&
-      !matchedEntry &&
-      entry.provider === options.provider &&
-      timingSafeEqualString(entry.state, options.state);
-
-    if (isMatchingEntry) {
-      matchedEntry = entry;
-      continue;
+  if (options.state) {
+    for (const entry of entries) {
+      if (
+        entry.provider === options.provider &&
+        timingSafeEqualString(entry.state, options.state)
+      ) {
+        matchedEntry = entry;
+        break;
+      }
     }
-
-    remainingEntries.push(entry);
   }
+
+  // 2단계: remaining 결정.
+  // idx-150: state가 제공됐으나 해당 provider의 어떤 entry와도 매칭되지 않으면
+  // 해당 provider의 pending entry 전체를 폐기해 replay 공격 창을 좁힌다.
+  // 매칭 성공 시에는 매칭된 entry만 소모하고 나머지는 보존(기존 동작).
+  const dropProviderEntries = !!options.state && !matchedEntry;
+
+  const remainingEntries = entries.filter((entry) => {
+    if (entry === matchedEntry) {
+      return false; // 소모됨.
+    }
+    if (dropProviderEntries && entry.provider === options.provider) {
+      return false; // 실패한 콜백 시도 → 동일 provider entry 전체 폐기.
+    }
+    return true;
+  });
 
   return {
     matchedEntry,

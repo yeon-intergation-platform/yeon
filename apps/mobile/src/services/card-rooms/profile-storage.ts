@@ -3,6 +3,9 @@ import {
   getYeonSecureStorage,
 } from "@yeon/ui/native";
 
+// idx-118: guestId 생성을 단일 in-flight Promise로 메모이즈해 동시 호출 경합 방지.
+let _guestIdInFlight: Promise<string> | null = null;
+
 // 카드방 정체성: 로그인과 무관한 게스트 ID + 표시 프로필(닉네임/캐릭터).
 // 서버는 X-Yeon-Guest-Id 헤더 + profile로 참가자를 식별한다(토큰 인증 불필요).
 const PROFILE_KEY = "yeon.card-room.profile";
@@ -60,6 +63,25 @@ async function writeItem(key: string, value: string): Promise<void> {
   inMemoryStorage.set(key, value);
 }
 
+async function deleteItem(key: string): Promise<void> {
+  const secureStorage = getYeonSecureStorage();
+  if (secureStorage) {
+    await secureStorage.deleteItemAsync(key);
+    return;
+  }
+  const browserStorage = getYeonOptionalLocalStorage();
+  if (browserStorage) {
+    try {
+      browserStorage.removeItem(key);
+      return;
+    } catch {
+      inMemoryStorage.delete(key);
+      return;
+    }
+  }
+  inMemoryStorage.delete(key);
+}
+
 function randomGuestId() {
   // Date.now/Math.random은 RN에서 사용 가능(워크플로 제약과 무관).
   const rand = Math.random().toString(36).slice(2);
@@ -88,13 +110,18 @@ export async function writeCardRoomProfile(
 }
 
 export async function readCardRoomGuestId(): Promise<string> {
-  const existing = await readItem(GUEST_ID_KEY);
-  if (existing) {
-    return existing;
-  }
-  const next = randomGuestId();
-  await writeItem(GUEST_ID_KEY, next);
-  return next;
+  // idx-118: 단일 in-flight Promise로 메모이즈해 동시 호출 시 서로 다른 guestId 생성 방지.
+  if (_guestIdInFlight) return _guestIdInFlight;
+  _guestIdInFlight = (async () => {
+    const existing = await readItem(GUEST_ID_KEY);
+    if (existing) return existing;
+    const next = randomGuestId();
+    await writeItem(GUEST_ID_KEY, next);
+    return next;
+  })().finally(() => {
+    _guestIdInFlight = null;
+  });
+  return _guestIdInFlight;
 }
 
 // 방별 내 참가자 ID(입장 후 재접속 시 동일 참가자로 연결).
@@ -113,4 +140,11 @@ export async function writeCardRoomParticipantId(
   participantId: string
 ): Promise<void> {
   await writeItem(participantKey(roomId), participantId);
+}
+
+// idx-112/113: 참가자 ID 삭제(stale ID 복구, 퇴장 시 정리).
+export async function deleteCardRoomParticipantId(
+  roomId: string
+): Promise<void> {
+  await deleteItem(participantKey(roomId));
 }

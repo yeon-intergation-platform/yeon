@@ -43,7 +43,14 @@ class ImportCommitServiceTests {
 		when(repository.findOwnedDraft(OWNER_ID, "draft-1")).thenReturn(new ImportCommitRepository.OwnedDraftRow("draft-1"));
 		when(repository.insertSpace(any(), eq("1기"), eq(null), eq(null), eq(OWNER_ID), any())).thenReturn(new ImportCommitRepository.CreatedSpaceRow(1L, "space-1"));
 		when(repository.insertDefaultTabs(eq(1L), eq(OWNER_ID), any(), any())).thenReturn(List.of(new ImportCommitRepository.InsertedTabRow(11L, "overview")));
-		when(repository.insertMember(eq(1L), any(), eq("홍길동"), eq(null), eq(null), eq("active"), any())).thenReturn(new ImportCommitRepository.InsertedMemberRow(101L));
+		when(repository.insertCustomFields(eq(1L), eq(11L), eq(OWNER_ID), any(), any())).thenAnswer(inv -> {
+			java.util.List<Object[]> fields = inv.getArgument(4);
+			return fields.stream().map(f -> new ImportCommitRepository.InsertedFieldRow(201L, (String) f[1], (String) f[2])).toList();
+		});
+		when(repository.insertMembers(eq(1L), any(), any())).thenAnswer(inv -> {
+			java.util.List<Object[]> rows = inv.getArgument(2);
+			return rows.stream().map(r -> new ImportCommitRepository.InsertedMemberRow(101L, (String) r[0])).toList();
+		});
 		var result = service.commitImport(OWNER_ID, new ImportCommitRequest("draft-1", new ImportPreviewRequest(List.of(new ImportCohortRequest("1기", null, null, List.of(new ImportStudentRequest("홍길동", null, null, null, Map.of("메모", "값"))))))));
 		assertThat(result.created().spaces()).isEqualTo(1);
 		assertThat(result.created().members()).isEqualTo(1);
@@ -53,7 +60,10 @@ class ImportCommitServiceTests {
 	@Test void draftId가없으면draft상태전이는건너뛴다() {
 		when(repository.insertSpace(any(), eq("1기"), eq(null), eq(null), eq(OWNER_ID), any())).thenReturn(new ImportCommitRepository.CreatedSpaceRow(1L, "space-1"));
 		when(repository.insertDefaultTabs(eq(1L), eq(OWNER_ID), any(), any())).thenReturn(List.of(new ImportCommitRepository.InsertedTabRow(11L, "overview")));
-		when(repository.insertMember(eq(1L), any(), eq("홍길동"), eq(null), eq(null), eq("active"), any())).thenReturn(new ImportCommitRepository.InsertedMemberRow(101L));
+		when(repository.insertMembers(eq(1L), any(), any())).thenAnswer(inv -> {
+			java.util.List<Object[]> rows = inv.getArgument(2);
+			return rows.stream().map(r -> new ImportCommitRepository.InsertedMemberRow(101L, (String) r[0])).toList();
+		});
 		service.commitImport(OWNER_ID, new ImportCommitRequest(null, new ImportPreviewRequest(List.of(new ImportCohortRequest("1기", null, null, List.of(new ImportStudentRequest("홍길동", null, null, null, null)))))));
 		verify(repository, never()).markDraftImporting(any(), any());
 	}

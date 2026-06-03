@@ -194,6 +194,10 @@ export function createOAuthCallbackSuccessResponse(providerKey: CloudProvider) {
   return response;
 }
 
+// 보안 계약: 이 함수가 반환한 userId는 OAuth start 시 인증된 사용자의 ID다.
+// state==savedState 검증으로 CSRF를 완화하지만, state는 세션과 HMAC으로 바인딩되지 않는다.
+// 따라서 호출자는 반환된 userId를 신뢰하기 전에 현재 로그인 세션의 사용자와 일치하는지 별도로 확인해야 한다.
+// (보안 강화 시 state에 세션 토큰 해시를 포함하고 콜백에서 재검증하는 방식을 권장)
 export function resolveOAuthCallbackContext({
   request,
   providerKey,

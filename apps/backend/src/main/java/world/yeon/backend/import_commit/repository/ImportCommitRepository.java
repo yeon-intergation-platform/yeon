@@ -12,7 +12,7 @@ public class ImportCommitRepository {
 	public record CreatedSpaceRow(Long id, String publicId) {}
 	public record InsertedTabRow(Long id, String systemKey) {}
 	public record InsertedFieldRow(Long id, String name, String fieldType) {}
-	public record InsertedMemberRow(Long id) {}
+	public record InsertedMemberRow(Long id, String publicId) {}
 	public record OwnedDraftRow(String publicId) {}
 	private final EntityManager entityManager;
 	public ImportCommitRepository(EntityManager entityManager) { this.entityManager = entityManager; }
@@ -36,21 +36,29 @@ public class ImportCommitRepository {
 	}
 
 	public List<InsertedTabRow> insertDefaultTabs(Long spaceId, UUID userId, OffsetDateTime now, List<Object[]> tabs) {
-		for (Object[] tab : tabs) {
-			entityManager.createNativeQuery("""
-				insert into public.member_tab_definitions (public_id, space_id, created_by_user_id, tab_type, system_key, name, is_visible, display_order, created_at, updated_at)
-				values (:publicId, :spaceId, :userId, 'system', :systemKey, :name, true, :displayOrder, :createdAt, :updatedAt)
-				""")
-				.setParameter("publicId", tab[0])
-				.setParameter("spaceId", spaceId)
-				.setParameter("userId", userId)
-				.setParameter("systemKey", tab[1])
-				.setParameter("name", tab[2])
-				.setParameter("displayOrder", tab[3])
-				.setParameter("createdAt", Timestamp.from(now.toInstant()))
-				.setParameter("updatedAt", Timestamp.from(now.toInstant()))
-				.executeUpdate();
+		if (tabs.isEmpty()) return List.of();
+		Timestamp ts = Timestamp.from(now.toInstant());
+		StringBuilder sql = new StringBuilder("""
+			insert into public.member_tab_definitions (public_id, space_id, created_by_user_id, tab_type, system_key, name, is_visible, display_order, created_at, updated_at)
+			values """);
+		for (int i = 0; i < tabs.size(); i++) {
+			if (i > 0) sql.append(", ");
+			sql.append("(:publicId").append(i).append(", :spaceId, :userId, 'system', :systemKey").append(i)
+				.append(", :name").append(i).append(", true, :displayOrder").append(i).append(", :createdAt, :updatedAt)");
 		}
+		var query = entityManager.createNativeQuery(sql.toString())
+			.setParameter("spaceId", spaceId)
+			.setParameter("userId", userId)
+			.setParameter("createdAt", ts)
+			.setParameter("updatedAt", ts);
+		for (int i = 0; i < tabs.size(); i++) {
+			Object[] tab = tabs.get(i);
+			query.setParameter("publicId" + i, tab[0])
+				.setParameter("systemKey" + i, tab[1])
+				.setParameter("name" + i, tab[2])
+				.setParameter("displayOrder" + i, tab[3]);
+		}
+		query.executeUpdate();
 		List<?> rows = entityManager.createNativeQuery("select id, system_key from public.member_tab_definitions where space_id = :spaceId order by display_order asc")
 			.setParameter("spaceId", spaceId)
 			.getResultList();
@@ -58,22 +66,30 @@ public class ImportCommitRepository {
 	}
 
 	public List<InsertedFieldRow> insertCustomFields(Long spaceId, Long tabId, UUID userId, OffsetDateTime now, List<Object[]> fields) {
-		for (Object[] field : fields) {
-			entityManager.createNativeQuery("""
-				insert into public.member_field_definitions (public_id, space_id, tab_id, created_by_user_id, name, source_key, field_type, options, is_required, display_order, created_at, updated_at)
-				values (:publicId, :spaceId, :tabId, :userId, :name, null, :fieldType, null, false, :displayOrder, :createdAt, :updatedAt)
-				""")
-				.setParameter("publicId", field[0])
-				.setParameter("spaceId", spaceId)
-				.setParameter("tabId", tabId)
-				.setParameter("userId", userId)
-				.setParameter("name", field[1])
-				.setParameter("fieldType", field[2])
-				.setParameter("displayOrder", field[3])
-				.setParameter("createdAt", Timestamp.from(now.toInstant()))
-				.setParameter("updatedAt", Timestamp.from(now.toInstant()))
-				.executeUpdate();
+		if (fields.isEmpty()) return List.of();
+		Timestamp ts = Timestamp.from(now.toInstant());
+		StringBuilder sql = new StringBuilder("""
+			insert into public.member_field_definitions (public_id, space_id, tab_id, created_by_user_id, name, source_key, field_type, options, is_required, display_order, created_at, updated_at)
+			values """);
+		for (int i = 0; i < fields.size(); i++) {
+			if (i > 0) sql.append(", ");
+			sql.append("(:publicId").append(i).append(", :spaceId, :tabId, :userId, :name").append(i)
+				.append(", null, :fieldType").append(i).append(", null, false, :displayOrder").append(i).append(", :createdAt, :updatedAt)");
 		}
+		var query = entityManager.createNativeQuery(sql.toString())
+			.setParameter("spaceId", spaceId)
+			.setParameter("tabId", tabId)
+			.setParameter("userId", userId)
+			.setParameter("createdAt", ts)
+			.setParameter("updatedAt", ts);
+		for (int i = 0; i < fields.size(); i++) {
+			Object[] field = fields.get(i);
+			query.setParameter("publicId" + i, field[0])
+				.setParameter("name" + i, field[1])
+				.setParameter("fieldType" + i, field[2])
+				.setParameter("displayOrder" + i, field[3]);
+		}
+		query.executeUpdate();
 		List<?> rows = entityManager.createNativeQuery("select id, name, field_type from public.member_field_definitions where space_id = :spaceId and tab_id = :tabId order by display_order asc")
 			.setParameter("spaceId", spaceId)
 			.setParameter("tabId", tabId)
@@ -81,40 +97,60 @@ public class ImportCommitRepository {
 		return rows.stream().map(row -> { Object[] v=(Object[])row; return new InsertedFieldRow(((Number)v[0]).longValue(), (String)v[1], (String)v[2]); }).toList();
 	}
 
-	public InsertedMemberRow insertMember(Long spaceId, String publicId, String name, String email, String phone, String status, OffsetDateTime now) {
-		List<?> rows = entityManager.createNativeQuery("""
+	public List<InsertedMemberRow> insertMembers(Long spaceId, OffsetDateTime now, List<Object[]> members) {
+		if (members.isEmpty()) return List.of();
+		Timestamp ts = Timestamp.from(now.toInstant());
+		StringBuilder sql = new StringBuilder("""
 			insert into public.members (public_id, space_id, name, email, phone, status, initial_risk_level, created_at, updated_at)
-			values (:publicId, :spaceId, :name, :email, :phone, :status, null, :createdAt, :updatedAt)
-			returning id
-			""")
-			.setParameter("publicId", publicId)
+			values """);
+		for (int i = 0; i < members.size(); i++) {
+			if (i > 0) sql.append(", ");
+			sql.append("(:publicId").append(i).append(", :spaceId, :name").append(i).append(", :email").append(i)
+				.append(", :phone").append(i).append(", :status").append(i).append(", null, :createdAt, :updatedAt)");
+		}
+		sql.append(" returning id, public_id");
+		var query = entityManager.createNativeQuery(sql.toString())
 			.setParameter("spaceId", spaceId)
-			.setParameter("name", name)
-			.setParameter("email", email)
-			.setParameter("phone", phone)
-			.setParameter("status", status)
-			.setParameter("createdAt", Timestamp.from(now.toInstant()))
-			.setParameter("updatedAt", Timestamp.from(now.toInstant()))
-			.getResultList();
-		Object[] row = (Object[]) rows.getFirst();
-		return new InsertedMemberRow(((Number) row[0]).longValue());
+			.setParameter("createdAt", ts)
+			.setParameter("updatedAt", ts);
+		for (int i = 0; i < members.size(); i++) {
+			Object[] member = members.get(i);
+			query.setParameter("publicId" + i, member[0])
+				.setParameter("name" + i, member[1])
+				.setParameter("email" + i, member[2])
+				.setParameter("phone" + i, member[3])
+				.setParameter("status" + i, member[4]);
+		}
+		List<?> rows = query.getResultList();
+		return rows.stream().map(row -> { Object[] v=(Object[])row; return new InsertedMemberRow(((Number) v[0]).longValue(), (String) v[1]); }).toList();
 	}
 
-	public void insertFieldValue(Long memberId, Long fieldDefinitionId, String publicId, String valueText, String valueNumber, Boolean valueBoolean, String valueJson, OffsetDateTime now) {
-		entityManager.createNativeQuery("""
+	public void insertFieldValues(OffsetDateTime now, List<Object[]> values) {
+		if (values.isEmpty()) return;
+		Timestamp ts = Timestamp.from(now.toInstant());
+		StringBuilder sql = new StringBuilder("""
 			insert into public.member_field_values (public_id, member_id, field_definition_id, value_text, value_number, value_boolean, value_json, created_at, updated_at)
-			values (:publicId, :memberId, :fieldDefinitionId, :valueText, :valueNumber, :valueBoolean, cast(:valueJson as jsonb), :createdAt, :updatedAt)
-			""")
-			.setParameter("publicId", publicId)
-			.setParameter("memberId", memberId)
-			.setParameter("fieldDefinitionId", fieldDefinitionId)
-			.setParameter("valueText", valueText)
-			.setParameter("valueNumber", valueNumber)
-			.setParameter("valueBoolean", valueBoolean)
-			.setParameter("valueJson", valueJson)
-			.setParameter("createdAt", Timestamp.from(now.toInstant()))
-			.setParameter("updatedAt", Timestamp.from(now.toInstant()))
-			.executeUpdate();
+			values """);
+		for (int i = 0; i < values.size(); i++) {
+			if (i > 0) sql.append(", ");
+			sql.append("(:publicId").append(i).append(", :memberId").append(i).append(", :fieldDefinitionId").append(i)
+				.append(", :valueText").append(i).append(", :valueNumber").append(i).append(", :valueBoolean").append(i)
+				.append(", cast(:valueJson").append(i).append(" as jsonb), :createdAt, :updatedAt)");
+		}
+		var query = entityManager.createNativeQuery(sql.toString())
+			.setParameter("createdAt", ts)
+			.setParameter("updatedAt", ts);
+		for (int i = 0; i < values.size(); i++) {
+			Object[] value = values.get(i);
+			query.setParameter("publicId" + i, value[0])
+				.setParameter("memberId" + i, value[1])
+				.setParameter("fieldDefinitionId" + i, value[2])
+				.setParameter("valueText" + i, value[3])
+				.setParameter("valueNumber" + i, value[4])
+				.setParameter("valueBoolean" + i, value[5])
+				.setParameter("valueJson" + i, value[6]);
+		}
+		query.executeUpdate();
 	}
 
 	public OwnedDraftRow findOwnedDraft(UUID userId, String draftId) {

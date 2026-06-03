@@ -16,6 +16,7 @@ import world.yeon.backend.member_fields.read.model.MemberFieldDefinitionEntity;
 import world.yeon.backend.member_fields.write.dto.CreateMemberFieldRequest;
 import world.yeon.backend.member_fields.write.dto.UpdateMemberFieldRequest;
 import world.yeon.backend.member_fields.write.repository.MemberFieldWriteRepository;
+import world.yeon.backend.space_access.service.SpaceAccessService;
 
 @Service
 public class MemberFieldWriteService {
@@ -25,20 +26,27 @@ public class MemberFieldWriteService {
 	);
 
 	private final MemberFieldWriteRepository repository;
+	private final SpaceAccessService spaceAccessService;
 	private final ObjectMapper objectMapper = new ObjectMapper().findAndRegisterModules();
 
-	public MemberFieldWriteService(MemberFieldWriteRepository repository) {
+	public MemberFieldWriteService(MemberFieldWriteRepository repository, SpaceAccessService spaceAccessService) {
 		this.repository = repository;
+		this.spaceAccessService = spaceAccessService;
 	}
 
 	@Transactional
 	public MemberFieldDefinitionEntity create(String spacePublicId, String tabPublicId, UUID userId, CreateMemberFieldRequest data) {
 		String name = normalizeName(data.name());
 		validateFieldType(data.fieldType());
+		requireOwnedSpace(spacePublicId, userId);
 		Long spaceInternalId = requireSpaceInternalId(spacePublicId);
 		var tabLookup = repository.findTabLookup(tabPublicId);
 		if (tabLookup == null) {
 			throw new MemberFieldWriteServiceException(404, "탭을 찾지 못했습니다.", "TAB_NOT_FOUND");
+		}
+		// IDX 71: 다른 스페이스의 탭 하위로 필드가 생성되지 않도록 탭-스페이스 일치를 검증한다.
+		if (!spaceInternalId.equals(tabLookup.spaceInternalId())) {
+			throw new MemberFieldWriteServiceException(400, "탭이 스페이스에 속하지 않습니다.", "TAB_SPACE_MISMATCH");
 		}
 		int maxOrder = repository.findMaxDisplayOrder(spaceInternalId, tabLookup.tabInternalId());
 		OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
@@ -63,7 +71,8 @@ public class MemberFieldWriteService {
 	}
 
 	@Transactional
-	public MemberFieldDefinitionEntity update(String fieldPublicId, String spacePublicId, UpdateMemberFieldRequest data) {
+	public MemberFieldDefinitionEntity update(String fieldPublicId, String spacePublicId, UUID userId, UpdateMemberFieldRequest data) {
+		requireOwnedSpace(spacePublicId, userId);
 		Long spaceInternalId = requireSpaceInternalId(spacePublicId);
 		MemberFieldDefinitionEntity existing = repository.findFieldByPublicIdInSpace(fieldPublicId, spaceInternalId);
 		if (existing == null || existing.getDeletedAt() != null) {
@@ -75,6 +84,10 @@ public class MemberFieldWriteService {
 			var tabLookup = repository.findTabLookup(data.tabId());
 			if (tabLookup == null) {
 				throw new MemberFieldWriteServiceException(404, "탭을 찾지 못했습니다.", "TAB_NOT_FOUND");
+			}
+			// IDX 71: 필드를 다른 스페이스의 탭으로 이동시키지 못하도록 탭-스페이스 일치를 검증한다.
+			if (!spaceInternalId.equals(tabLookup.spaceInternalId())) {
+				throw new MemberFieldWriteServiceException(400, "탭이 스페이스에 속하지 않습니다.", "TAB_SPACE_MISMATCH");
 			}
 			nextTabInternalId = tabLookup.tabInternalId();
 		}
@@ -107,7 +120,8 @@ public class MemberFieldWriteService {
 	}
 
 	@Transactional
-	public void delete(String fieldPublicId, String spacePublicId) {
+	public void delete(String fieldPublicId, String spacePublicId, UUID userId) {
+		requireOwnedSpace(spacePublicId, userId);
 		Long spaceInternalId = requireSpaceInternalId(spacePublicId);
 		MemberFieldDefinitionEntity existing = repository.findFieldByPublicIdInSpace(fieldPublicId, spaceInternalId);
 		if (existing == null || existing.getDeletedAt() != null) {
@@ -116,6 +130,15 @@ public class MemberFieldWriteService {
 		existing.setDeletedAt(OffsetDateTime.now(ZoneOffset.UTC));
 		existing.setUpdatedAt(OffsetDateTime.now(ZoneOffset.UTC));
 		repository.save(existing);
+	}
+
+	// IDX 72: 타인 스페이스의 필드 정의를 생성/수정/삭제하지 못하도록 소유권을 강제한다.
+	private void requireOwnedSpace(String spacePublicId, UUID userId) {
+		try {
+			spaceAccessService.requireOwnedSpace(spacePublicId, userId);
+		} catch (java.util.NoSuchElementException notOwned) {
+			throw new MemberFieldWriteServiceException(404, "스페이스를 찾지 못했습니다.", "SPACE_NOT_FOUND");
+		}
 	}
 
 	private Long requireSpaceInternalId(String spacePublicId) {

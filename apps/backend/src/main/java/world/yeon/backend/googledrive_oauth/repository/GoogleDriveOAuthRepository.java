@@ -29,27 +29,19 @@ public class GoogleDriveOAuthRepository {
 
 	@Transactional
 	public void upsertTokens(UUID userId, String accessToken, String refreshToken, OffsetDateTime expiresAt, OffsetDateTime now) {
-		int updated = entityManager.createNativeQuery("""
-			update public.googledrive_tokens
-			set access_token = :accessToken,
-			    refresh_token = :refreshToken,
-			    access_token_encrypted = null,
-			    refresh_token_encrypted = null,
-			    expires_at = :expiresAt,
-			    updated_at = :updatedAt
-			where user_id = :userId
-		""")
-			.setParameter("userId", userId)
-			.setParameter("accessToken", accessToken)
-			.setParameter("refreshToken", refreshToken)
-			.setParameter("expiresAt", Timestamp.from(expiresAt.toInstant()))
-			.setParameter("updatedAt", Timestamp.from(now.toInstant()))
-			.executeUpdate();
-		if (updated > 0) return;
+		// ON CONFLICT 단일 쿼리로 원자적 upsert(동시 콜백 시 unique 위반 경합 제거).
+		// refresh_token은 EXCLUDED 값이 비어 있으면 기존 값을 보존해 read-modify-write 윈도우를 닫는다.
 		entityManager.createNativeQuery("""
 			insert into public.googledrive_tokens
 			(public_id, user_id, access_token, refresh_token, access_token_encrypted, refresh_token_encrypted, expires_at, created_at, updated_at)
 			values (:publicId, :userId, :accessToken, :refreshToken, null, null, :expiresAt, :createdAt, :updatedAt)
+			on conflict (user_id) do update set
+			    access_token = excluded.access_token,
+			    refresh_token = coalesce(nullif(excluded.refresh_token, ''), public.googledrive_tokens.refresh_token),
+			    access_token_encrypted = null,
+			    refresh_token_encrypted = null,
+			    expires_at = excluded.expires_at,
+			    updated_at = excluded.updated_at
 		""")
 			.setParameter("publicId", "gdt_" + UUID.randomUUID())
 			.setParameter("userId", userId)

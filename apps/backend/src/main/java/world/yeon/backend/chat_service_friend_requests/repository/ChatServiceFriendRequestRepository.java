@@ -55,6 +55,7 @@ public class ChatServiceFriendRequestRepository {
 		entityManager.createNativeQuery("""
 			insert into public.chat_service_friend_links (id, requester_id, addressee_id, status)
 			values (:id, :requesterId, :addresseeId, 'pending')
+			on conflict (requester_id, addressee_id) do nothing
 		""")
 			.setParameter("id", id)
 			.setParameter("requesterId", requesterId)

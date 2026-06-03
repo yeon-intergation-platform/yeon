@@ -15,6 +15,7 @@ import {
   createYeonRandomUUID,
   fetchYeon,
   getYeonNow,
+  getYeonRandomUint32,
   readYeonLocalStorageItem,
   type YeonResponse,
   writeYeonLocalStorageItem,
@@ -208,11 +209,22 @@ function toRuleActionViewState(isPending: boolean) {
   };
 }
 
+function createFallbackRandomId() {
+  return [
+    getYeonRandomUint32(),
+    getYeonRandomUint32(),
+    getYeonRandomUint32(),
+    getYeonRandomUint32(),
+  ]
+    .map((n) => n.toString(16).padStart(8, "0"))
+    .join("-");
+}
+
 function ensureGuestSessionId() {
   const current = readYeonLocalStorageItem(GUEST_SESSION_STORAGE_KEY);
   if (current) return current;
 
-  const next = createYeonRandomUUID() ?? `guest-${getYeonNow()}`;
+  const next = createYeonRandomUUID() ?? createFallbackRandomId();
   writeYeonLocalStorageItem(GUEST_SESSION_STORAGE_KEY, next);
 
   return next;

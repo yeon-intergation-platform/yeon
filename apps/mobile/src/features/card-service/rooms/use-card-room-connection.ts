@@ -8,6 +8,7 @@ import {
 } from "@yeon/race-shared";
 import {
   createYeonRealtimeClient,
+  ensureYeonRealtimeSeatReservationCompat,
   type YeonRealtimeRoom,
 } from "@yeon/ui/runtime/YeonRealtimeClient";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -51,6 +52,8 @@ export function useCardRoomConnection(
   useEffect(() => {
     if (!roomId || !participantId) return;
     let cancelled = false;
+    // idx-120: colyseus seat reservation 호환 패치를 웹/모바일 일관 적용.
+    ensureYeonRealtimeSeatReservationCompat();
     setConnectionState("connecting");
     setError(null);
     const client = createYeonRealtimeClient(resolveMobileRaceServerUrl());
@@ -61,18 +64,24 @@ export function useCardRoomConnection(
       })
       .then((room) => {
         if (cancelled) {
-          room.leave();
+          room.leave().catch(() => {});
           return;
         }
         roomRef.current = room;
         setConnectionState("connected");
         if (room.state) setState(room.state as CardRoomRealtimeState);
-        room.onMessage(CARD_ROOM_EVENTS.STATE, (next: CardRoomRealtimeState) =>
-          setState(next)
+        // idx-114: cleanup 이후 inflight 메시지가 이전 방 상태를 덮어쓰지 않도록 가드.
+        room.onMessage(
+          CARD_ROOM_EVENTS.STATE,
+          (next: CardRoomRealtimeState) => {
+            if (!cancelled) setState(next);
+          }
         );
         room.onMessage(
           CARD_ROOM_EVENTS.ERROR,
-          (message: CardRoomErrorMessage) => setError(message.message)
+          (message: CardRoomErrorMessage) => {
+            if (!cancelled) setError(message.message);
+          }
         );
         room.onLeave(() => {
           if (!cancelled) setConnectionState("disconnected");
@@ -92,7 +101,8 @@ export function useCardRoomConnection(
       });
     return () => {
       cancelled = true;
-      roomRef.current?.leave();
+      // idx-121: leave() Promise 거부를 무해 처리해 unhandled rejection 경고 방지.
+      roomRef.current?.leave().catch(() => {});
       roomRef.current = null;
     };
   }, [roomId, participantId]);
@@ -133,6 +143,11 @@ export function useCardRoomConnection(
     () => roomRef.current?.send(CARD_ROOM_EVENTS.END, {}),
     []
   );
+  // idx-113: 웹 훅과 표면을 맞추기 위해 sendLeave 추가.
+  const sendLeave = useCallback(
+    () => roomRef.current?.send(CARD_ROOM_EVENTS.LEAVE, {}),
+    []
+  );
 
   return useMemo(
     () => ({
@@ -147,6 +162,7 @@ export function useCardRoomConnection(
       sendReady,
       sendStart,
       sendEnd,
+      sendLeave,
     }),
     [
       state,
@@ -160,6 +176,7 @@ export function useCardRoomConnection(
       sendReady,
       sendStart,
       sendEnd,
+      sendLeave,
     ]
   );
 }
