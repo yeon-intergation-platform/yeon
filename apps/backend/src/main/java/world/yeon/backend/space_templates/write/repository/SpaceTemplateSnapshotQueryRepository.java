@@ -36,6 +36,7 @@ public class SpaceTemplateSnapshotQueryRepository {
 	public List<TabSnapshotRow> loadTabs(String spacePublicId) {
 		return jdbcClient.sql("""
 			select
+				tab.id as tab_id,
 				tab.name,
 				tab.tab_type,
 				tab.system_key,
@@ -47,6 +48,7 @@ public class SpaceTemplateSnapshotQueryRepository {
 			""")
 			.param("spacePublicId", spacePublicId)
 			.query((rs, rowNum) -> new TabSnapshotRow(
+				rs.getLong("tab_id"),
 				rs.getString("name"),
 				rs.getString("tab_type"),
 				rs.getString("system_key"),
@@ -55,6 +57,48 @@ public class SpaceTemplateSnapshotQueryRepository {
 			.list();
 	}
 
+	/**
+	 * 스페이스의 모든 탭 필드를 1회 쿼리로 로드한다. tab_id 기준으로 그룹핑해 N+1을 방지한다.
+	 */
+	public java.util.Map<Long, List<FieldSnapshotRow>> loadAllFields(String spacePublicId) {
+		List<FieldWithTabId> rows = jdbcClient.sql("""
+			select
+				field.tab_id,
+				field.name,
+				field.field_type,
+				field.options::text as options_json,
+				field.is_required,
+				field.display_order
+			from member_field_definitions field
+			join member_tab_definitions tab on tab.id = field.tab_id
+			join spaces space on space.id = tab.space_id
+			where space.public_id = :spacePublicId
+			order by field.tab_id asc, field.display_order asc
+			""")
+			.param("spacePublicId", spacePublicId)
+			.query((rs, rowNum) -> new FieldWithTabId(
+				rs.getLong("tab_id"),
+				new FieldSnapshotRow(
+					rs.getString("name"),
+					rs.getString("field_type"),
+					parseOptions(rs.getString("options_json")),
+					rs.getBoolean("is_required"),
+					rs.getInt("display_order")
+				)
+			))
+			.list();
+
+		return rows.stream().collect(
+			java.util.stream.Collectors.groupingBy(
+				FieldWithTabId::tabId,
+				java.util.LinkedHashMap::new,
+				java.util.stream.Collectors.mapping(FieldWithTabId::field, java.util.stream.Collectors.toList())
+			)
+		);
+	}
+
+	/** @deprecated {@link #loadAllFields(String)} 를 사용해 N+1을 방지한다. */
+	@Deprecated
 	public List<FieldSnapshotRow> loadFields(String spacePublicId, String tabName, int displayOrder) {
 		return jdbcClient.sql("""
 			select
@@ -96,6 +140,7 @@ public class SpaceTemplateSnapshotQueryRepository {
 	}
 
 	public record TabSnapshotRow(
+		long tabId,
 		String name,
 		String tabType,
 		String systemKey,
@@ -113,5 +158,8 @@ public class SpaceTemplateSnapshotQueryRepository {
 	}
 
 	public record OptionRow(String value, String color) {
+	}
+
+	private record FieldWithTabId(long tabId, FieldSnapshotRow field) {
 	}
 }

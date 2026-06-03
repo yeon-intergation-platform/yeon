@@ -3,6 +3,7 @@ package world.yeon.backend.space_templates.write.service;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.UUID;
 
@@ -120,13 +121,19 @@ public class SpaceTemplateWriteService {
 		// IDOR 방지: 소유자만 자기 스페이스를 스냅샷할 수 있다(미소유 시 NoSuchElementException).
 		spaceAccessService.requireOwnedSpace(spaceId, userId);
 
-		var tabs = snapshotQueryRepository.loadTabs(spaceId).stream()
+		// N+1 방지: 탭 목록과 전체 필드를 각각 1회 쿼리로 로드한 뒤 tab_id 기준으로 매칭한다.
+		List<SpaceTemplateSnapshotQueryRepository.TabSnapshotRow> tabRows =
+			snapshotQueryRepository.loadTabs(spaceId);
+		Map<Long, List<SpaceTemplateSnapshotQueryRepository.FieldSnapshotRow>> fieldsByTabId =
+			snapshotQueryRepository.loadAllFields(spaceId);
+
+		var tabs = tabRows.stream()
 			.map(tab -> new CreateSpaceTemplateRequest.TemplateTabRequest(
 				tab.name(),
 				tab.tabType(),
 				tab.systemKey(),
 				tab.displayOrder(),
-				snapshotQueryRepository.loadFields(spaceId, tab.name(), tab.displayOrder()).stream()
+				fieldsByTabId.getOrDefault(tab.tabId(), List.of()).stream()
 					.map(field -> new CreateSpaceTemplateRequest.TemplateFieldRequest(
 						field.name(),
 						field.fieldType(),

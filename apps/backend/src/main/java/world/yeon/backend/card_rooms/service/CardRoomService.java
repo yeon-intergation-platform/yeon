@@ -47,9 +47,11 @@ public class CardRoomService {
   private static final int MAX_DECK_ITEMS = 200;
 
   private final CardRoomRepository repository;
+  private final CardRoomParticipantTokenService participantTokenService;
 
-  public CardRoomService(CardRoomRepository repository) {
+  public CardRoomService(CardRoomRepository repository, CardRoomParticipantTokenService participantTokenService) {
     this.repository = repository;
+    this.participantTokenService = participantTokenService;
   }
 
   public CardRoomListResponse listRooms() {
@@ -123,13 +125,13 @@ public class CardRoomService {
     var existing = repository.findActiveParticipantByIdentity(room.internalId(), userId, guestId);
     if (existing != null) {
       repository.updateParticipant(existing.internalId(), profile.nickname(), profile.characterId(), null, null);
-      return new CardRoomParticipantResponse(toParticipant(requireParticipant(existing.publicId())), detail(roomId));
+      return participantResponse(toParticipant(requireParticipant(existing.publicId())), room.publicId());
     }
     CardRoomParticipantRole role = normalizeRole(request == null ? null : request.role(), nextRole(room.internalId()));
     OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
     var participant = repository.insertParticipant(newPublicId(CardRoomIdPrefix.PARTICIPANT), room.internalId(), userId, guestId, profile.nickname(), profile.characterId(), role, false, now);
     repository.insertMessage(newPublicId(CardRoomIdPrefix.MESSAGE), room.internalId(), null, CardRoomSystemMessage.participantJoined(profile.nickname()), CardRoomMessageType.SYSTEM, now);
-    return new CardRoomParticipantResponse(toParticipant(participant), detail(roomId));
+    return participantResponse(toParticipant(participant), room.publicId());
   }
 
   @Transactional
@@ -151,7 +153,7 @@ public class CardRoomService {
       role,
       request == null ? null : request.isReady()
     );
-    return new CardRoomParticipantResponse(toParticipant(requireParticipant(participantId)), detail(roomId));
+    return participantResponse(toParticipant(requireParticipant(participantId)), room.publicId());
   }
 
   @Transactional
@@ -292,6 +294,12 @@ public class CardRoomService {
     var saved = repository.insertResult(newPublicId(CardRoomIdPrefix.RESULT), room.internalId(), card.internalId(), participant.internalId(), result, OffsetDateTime.now(ZoneOffset.UTC));
     repository.updateStatus(room.internalId(), result.nextStatus(), room.currentCardIndex(), OffsetDateTime.now(ZoneOffset.UTC));
     return new CardRoomResultResponse(toResult(saved), detail(roomId));
+  }
+
+  // 입장/참가자 갱신 응답에 (roomId, participantId)로 묶인 소유 증명 토큰을 함께 발급한다.
+  // race-server는 이 토큰을 검증해 임의 participantId 가장(finding 166)을 차단한다.
+  private CardRoomParticipantResponse participantResponse(CardRoomParticipantDto participant, String roomId) {
+    return new CardRoomParticipantResponse(participant, detail(roomId), participantTokenService.issue(roomId, participant.id()));
   }
 
   private CardRoomDetailDto detail(String roomId) {

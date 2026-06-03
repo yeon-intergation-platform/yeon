@@ -30,17 +30,21 @@ type CardRoomScreenProps = { roomId: string };
 export function CardRoomScreen({ roomId }: CardRoomScreenProps) {
   const { profile, guestId, loaded: profileLoaded } = useCardRoomProfile();
   const [participantId, setParticipantId] = useState<string | null>(null);
+  // finding 166: race-server 입장 시 participantId 소유를 증명하는 토큰.
+  const [participantToken, setParticipantToken] = useState<string | null>(null);
   const [joinError, setJoinError] = useState<string | null>(null);
   const [mobileTab, setMobileTab] = useState<"card" | "chat">("card");
   const [chatDraft, setChatDraft] = useState("");
-  const room = useCardRoomConnection(roomId, participantId);
+  const room = useCardRoomConnection(roomId, participantId, participantToken);
   const frameOverrides = useCharacterFrameOverrides();
 
   useEffect(() => {
     if (!profileLoaded) return;
     const key = `yeon-card-room-participant:${roomId}`;
+    const tokenKey = `yeon-card-room-participant-token:${roomId}`;
     const existing = readYeonSessionStorageItem(key);
     if (existing) {
+      setParticipantToken(readYeonSessionStorageItem(tokenKey));
       setParticipantId(existing);
       return;
     }
@@ -49,6 +53,13 @@ export function CardRoomScreen({ roomId }: CardRoomScreenProps) {
       .then((joined) => {
         if (cancelled) return;
         writeYeonSessionStorageItem(key, joined.participant.id);
+        const token = joined.participantToken ?? null;
+        if (token) {
+          writeYeonSessionStorageItem(tokenKey, token);
+        } else {
+          removeYeonSessionStorageItem(tokenKey);
+        }
+        setParticipantToken(token);
         setParticipantId(joined.participant.id);
       })
       .catch((error) => {
@@ -72,6 +83,8 @@ export function CardRoomScreen({ roomId }: CardRoomScreenProps) {
     );
     if (exists) return;
     removeYeonSessionStorageItem(`yeon-card-room-participant:${roomId}`);
+    removeYeonSessionStorageItem(`yeon-card-room-participant-token:${roomId}`);
+    setParticipantToken(null);
     setParticipantId(null);
   }, [participantId, roomId, state]);
 
@@ -126,6 +139,9 @@ export function CardRoomScreen({ roomId }: CardRoomScreenProps) {
   function leaveRoom() {
     if (participantId) {
       removeYeonSessionStorageItem(`yeon-card-room-participant:${roomId}`);
+      removeYeonSessionStorageItem(
+        `yeon-card-room-participant-token:${roomId}`
+      );
       room.sendLeave();
     }
   }

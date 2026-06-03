@@ -75,7 +75,7 @@ public class GoogleDriveBrowserService {
 				files.add(new GoogleDriveFileResponse(
 					file.path("id").asText(),
 					file.path("name").asText(),
-					parseInt(file.path("size").asText("0")),
+					parseLong(file.path("size").asText("0")),
 					file.path("modifiedTime").asText(),
 					file.path("mimeType").asText()
 				));
@@ -194,7 +194,7 @@ public class GoogleDriveBrowserService {
 		return value;
 	}
 	private String url(String value) { return URLEncoder.encode(value, StandardCharsets.UTF_8); }
-	private int parseInt(String value) { try { return Integer.parseInt(value); } catch (Exception e) { return 0; } }
+	private long parseLong(String value) { try { return Long.parseLong(value); } catch (Exception e) { return 0L; } }
 
 	public record DownloadedFile(byte[] bytes, String contentType) {}
 	private record RefreshedToken(String accessToken, String refreshToken, OffsetDateTime expiresAt) {}

@@ -148,3 +148,28 @@ export async function deleteCardRoomParticipantId(
 ): Promise<void> {
   await deleteItem(participantKey(roomId));
 }
+
+// finding 166: race-server 입장 시 participantId 가장을 막기 위한 소유 증명 토큰.
+// participantId와 동일 수명으로 보관/정리한다.
+function participantTokenKey(roomId: string) {
+  return `yeon.card-room.participant-token.${roomId}`;
+}
+
+export async function readCardRoomParticipantToken(
+  roomId: string
+): Promise<string | null> {
+  return readItem(participantTokenKey(roomId));
+}
+
+export async function writeCardRoomParticipantToken(
+  roomId: string,
+  participantToken: string
+): Promise<void> {
+  await writeItem(participantTokenKey(roomId), participantToken);
+}
+
+export async function deleteCardRoomParticipantToken(
+  roomId: string
+): Promise<void> {
+  await deleteItem(participantTokenKey(roomId));
+}

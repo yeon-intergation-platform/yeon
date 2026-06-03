@@ -71,6 +71,11 @@ export const CARD_ROOM_EVENTS = {
 export type CardRoomRealtimeJoinOptions = {
   cardRoomId: string;
   participantId: string;
+  // 서버(백엔드)가 입장 REST 응답에서 발급한 참가자 소유 증명 토큰.
+  // race-server는 이 값을 검증해 임의 participantId 가장(impersonation)을 차단한다.
+  // 하위호환을 위해 옵셔널: 토큰 미발급(레거시) 클라이언트도 연결 자체는 허용하되,
+  // 백엔드 검증 시크릿이 설정된 환경에서는 race-server가 필수로 요구한다.
+  participantToken?: string;
 };
 
 export type CardRoomRealtimeState = {

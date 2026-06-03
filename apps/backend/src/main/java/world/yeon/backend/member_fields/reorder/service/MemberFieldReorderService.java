@@ -31,8 +31,16 @@ public class MemberFieldReorderService {
 			throw new NoSuchElementException("스페이스를 찾지 못했습니다.");
 		}
 
-		for (int index = 0; index < order.size(); index++) {
-			repository.updateDisplayOrder(order.get(index), spaceInternalId, index);
+		if (order.isEmpty()) {
+			return OkResponse.success();
+		}
+
+		// N+1 방지: 행별 UPDATE 대신 단일 배치 UPDATE로 전체 순서를 반영한다.
+		int affected = repository.batchUpdateDisplayOrder(order, spaceInternalId);
+		if (affected != order.size()) {
+			throw new IllegalArgumentException(
+				"순서 배열에 이 스페이스에 속하지 않는 필드 ID가 포함되어 있습니다."
+			);
 		}
 
 		return OkResponse.success();

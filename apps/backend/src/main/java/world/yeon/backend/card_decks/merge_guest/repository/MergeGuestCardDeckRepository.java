@@ -46,11 +46,11 @@ public class MergeGuestCardDeckRepository {
 		for (Object[] row : rows) {
 			entityManager.createNativeQuery("""
 				insert into public.card_deck_items (
-				  public_id, deck_id, front_text, back_text,
+				  public_id, deck_id, front_text, back_text, image_storage_key,
 				  review_difficulty, last_reviewed_at, next_review_at, created_at, updated_at
 				)
 				values (
-				  :publicId, :deckId, :frontText, :backText,
+				  :publicId, :deckId, :frontText, :backText, :imageStorageKey,
 				  null, null, null, :createdAt, :updatedAt
 				)
 				""")
@@ -58,6 +58,7 @@ public class MergeGuestCardDeckRepository {
 				.setParameter("deckId", deckId)
 				.setParameter("frontText", row[1])
 				.setParameter("backText", row[2])
+				.setParameter("imageStorageKey", row[3])
 				.setParameter("createdAt", Timestamp.from(now.toInstant()))
 				.setParameter("updatedAt", Timestamp.from(now.toInstant()))
 				.executeUpdate();

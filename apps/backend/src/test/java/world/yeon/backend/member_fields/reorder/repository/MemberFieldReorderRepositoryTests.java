@@ -55,13 +55,20 @@ class MemberFieldReorderRepositoryTests {
 		assertThat(repository.findSpaceInternalId("space_alpha")).isNotNull();
 	}
 	@Test
-	void reorder대상필드들의displayOrder를bulk반영한다() {
+	void reorder대상필드들의displayOrder를단일배치UPDATE로반영한다() {
 		Long spaceInternalId = repository.findSpaceInternalId("space_alpha");
-		repository.updateDisplayOrder("mfd_c", spaceInternalId, 0);
-		repository.updateDisplayOrder("mfd_a", spaceInternalId, 1);
-		repository.updateDisplayOrder("mfd_b", spaceInternalId, 2);
+		int affected = repository.batchUpdateDisplayOrder(List.of("mfd_c", "mfd_a", "mfd_b"), spaceInternalId);
+		assertThat(affected).isEqualTo(3);
 		List<String> reordered = jdbcTemplate.query("select public_id from public.member_field_definitions where space_id = ? order by display_order asc, public_id asc", (rs, rowNum) -> rs.getString("public_id"), spaceInternalId);
 		assertThat(reordered).containsExactly("mfd_c", "mfd_a", "mfd_b");
+	}
+
+	@Test
+	void 다른스페이스필드는영향받지않는다() {
+		Long spaceAlphaId = repository.findSpaceInternalId("space_alpha");
+		// mfd_beta는 space_beta 소속 — space_alpha로 업데이트 시 0건
+		int affected = repository.batchUpdateDisplayOrder(List.of("mfd_beta"), spaceAlphaId);
+		assertThat(affected).isEqualTo(0);
 	}
 	private void createFixtureTables() {
 		jdbcTemplate.execute("create table if not exists public.users (id uuid primary key, email varchar(320) not null unique, display_name varchar(80), created_at timestamptz not null default now(), updated_at timestamptz not null default now(), role varchar(32) not null default 'user')");

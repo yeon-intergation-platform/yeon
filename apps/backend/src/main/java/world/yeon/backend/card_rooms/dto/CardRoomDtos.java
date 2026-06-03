@@ -10,7 +10,8 @@ public class CardRoomDtos {
   public record CardRoomDetailDto(String id, String title, String deckTitle, String hostLabel, String visibility, String status, int currentCardIndex, int cardCount, int memorizerCount, int checkerCount, String createdAt, String updatedAt, List<CardRoomParticipantDto> participants, List<CardRoomCardDto> cards, List<CardRoomMessageDto> messages, List<CardRoomResultDto> results) {}
   public record CardRoomListResponse(List<CardRoomSummaryDto> rooms) {}
   public record CardRoomResponse(CardRoomDetailDto room, CardRoomParticipantDto participant) {}
-  public record CardRoomParticipantResponse(CardRoomParticipantDto participant, CardRoomDetailDto room) {}
+  // participantToken: race-server가 참가자 가장(finding 166)을 차단하기 위해 검증하는 소유 증명. 시크릿 미설정 환경에서는 null.
+  public record CardRoomParticipantResponse(CardRoomParticipantDto participant, CardRoomDetailDto room, String participantToken) {}
   public record CardRoomMessagesResponse(List<CardRoomMessageDto> messages) {}
   public record CardRoomResultResponse(CardRoomResultDto result, CardRoomDetailDto room) {}
 }

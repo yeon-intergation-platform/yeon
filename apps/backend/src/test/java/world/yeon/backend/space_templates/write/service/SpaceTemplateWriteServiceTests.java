@@ -199,13 +199,14 @@ class SpaceTemplateWriteServiceTests {
 		UUID userId = UUID.randomUUID();
 		when(snapshotQueryRepository.loadTabs("spc_1")).thenReturn(List.of(
 			new SpaceTemplateSnapshotQueryRepository.TabSnapshotRow(
+				42L,
 				"개요",
 				"system",
 				"overview",
 				0
 			)
 		));
-		when(snapshotQueryRepository.loadFields("spc_1", "개요", 0)).thenReturn(List.of());
+		when(snapshotQueryRepository.loadAllFields("spc_1")).thenReturn(java.util.Map.of());
 		when(repository.save(any(SpaceTemplateEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
 		var response = service.snapshotSpaceAsTemplate(

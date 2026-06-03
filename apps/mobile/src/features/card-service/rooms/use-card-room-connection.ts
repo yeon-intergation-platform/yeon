@@ -39,9 +39,11 @@ export type CardRoomConnectionState =
   | "disconnected";
 
 // 웹 useCardRoomConnection의 모바일 포팅(동일 colyseus 프로토콜).
+// finding 166: participantToken을 join 옵션으로 전달해 race-server가 참가자 가장을 검증한다.
 export function useCardRoomConnection(
   roomId: string,
-  participantId: string | null
+  participantId: string | null,
+  participantToken: string | null
 ) {
   const [state, setState] = useState<CardRoomRealtimeState | null>(null);
   const [connectionState, setConnectionState] =
@@ -61,6 +63,7 @@ export function useCardRoomConnection(
       .joinOrCreate<CardRoomRealtimeState>(CARD_ROOM_NAME, {
         cardRoomId: roomId,
         participantId,
+        participantToken: participantToken ?? undefined,
       })
       .then((room) => {
         if (cancelled) {
@@ -105,7 +108,7 @@ export function useCardRoomConnection(
       roomRef.current?.leave().catch(() => {});
       roomRef.current = null;
     };
-  }, [roomId, participantId]);
+  }, [roomId, participantId, participantToken]);
 
   const sendChat = useCallback(
     (content: string) =>

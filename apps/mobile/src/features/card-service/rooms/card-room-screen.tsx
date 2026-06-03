@@ -17,8 +17,11 @@ import { useEffect, useState } from "react";
 import { cardRoomApi } from "../../../services/card-rooms/client";
 import {
   deleteCardRoomParticipantId,
+  deleteCardRoomParticipantToken,
   readCardRoomParticipantId,
+  readCardRoomParticipantToken,
   writeCardRoomParticipantId,
+  writeCardRoomParticipantToken,
 } from "../../../services/card-rooms/profile-storage";
 import { CARD_SERVICE_TEXT } from "../card-service-copy";
 import { useCardRoomConnection } from "./use-card-room-connection";
@@ -38,6 +41,8 @@ export function CardRoomScreen({ roomId }: CardRoomScreenProps) {
   const router = useRouter();
   const { profile, guestId, loaded } = useCardRoomIdentity();
   const [participantId, setParticipantId] = useState<string | null>(null);
+  // finding 166: race-server 입장 시 participantId 소유를 증명하는 토큰.
+  const [participantToken, setParticipantToken] = useState<string | null>(null);
   const [joinError, setJoinError] = useState<string | null>(null);
   const [chatDraft, setChatDraft] = useState("");
 
@@ -48,7 +53,11 @@ export function CardRoomScreen({ roomId }: CardRoomScreenProps) {
     void (async () => {
       const stored = await readCardRoomParticipantId(roomId);
       if (stored) {
-        if (!cancelled) setParticipantId(stored);
+        const storedToken = await readCardRoomParticipantToken(roomId);
+        if (!cancelled) {
+          setParticipantToken(storedToken);
+          setParticipantId(stored);
+        }
         return;
       }
       try {
@@ -58,7 +67,16 @@ export function CardRoomScreen({ roomId }: CardRoomScreenProps) {
           guestId
         );
         await writeCardRoomParticipantId(roomId, response.participant.id);
-        if (!cancelled) setParticipantId(response.participant.id);
+        const token = response.participantToken ?? null;
+        if (token) {
+          await writeCardRoomParticipantToken(roomId, token);
+        } else {
+          await deleteCardRoomParticipantToken(roomId);
+        }
+        if (!cancelled) {
+          setParticipantToken(token);
+          setParticipantId(response.participant.id);
+        }
       } catch (error) {
         if (!cancelled) {
           setJoinError(
@@ -72,24 +90,31 @@ export function CardRoomScreen({ roomId }: CardRoomScreenProps) {
     };
   }, [loaded, profile, guestId, participantId, roomId]);
 
-  const connection = useCardRoomConnection(roomId, participantId);
+  const connection = useCardRoomConnection(
+    roomId,
+    participantId,
+    participantToken
+  );
   const state = connection.state;
 
   // idx-112: stale participantId 복구 — 서버 participants에 내 ID가 없으면 저장된 ID를
-  // 삭제하고 setParticipantId(null)로 REST join을 재시도.
+  // 삭제하고 setParticipantId(null)로 REST join을 재시도(토큰도 함께 정리).
   useEffect(() => {
     if (!state || !participantId) return;
     const exists = state.participants.some((p) => p.id === participantId);
     if (exists) return;
     void deleteCardRoomParticipantId(roomId);
+    void deleteCardRoomParticipantToken(roomId);
+    setParticipantToken(null);
     setParticipantId(null);
   }, [state, participantId, roomId]);
 
-  // idx-113: 퇴장 시 서버에 LEAVE 이벤트 전송 + 저장된 participantId 정리.
+  // idx-113: 퇴장 시 서버에 LEAVE 이벤트 전송 + 저장된 participantId/토큰 정리.
   function handleLeave() {
     if (participantId) {
       connection.sendLeave();
       void deleteCardRoomParticipantId(roomId);
+      void deleteCardRoomParticipantToken(roomId);
     }
     router.back();
   }
