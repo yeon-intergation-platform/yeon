@@ -106,11 +106,18 @@ export function CardRoomCreateForm({
             };
           })();
       const created = await createCardRoom(payload, guestId);
-      if (created.participant)
+      if (created.participant) {
         writeYeonSessionStorageItem(
           `yeon-card-room-participant:${created.room.id}`,
           created.participant.id
         );
+        // 방장도 생성 응답의 토큰을 저장해 방 화면이 재입장 없이 실시간에 연결하게 한다.
+        if (created.participantToken)
+          writeYeonSessionStorageItem(
+            `yeon-card-room-participant-token:${created.room.id}`,
+            created.participantToken
+          );
+      }
       if (onCreated) {
         onCreated(created.room.id);
       } else {
