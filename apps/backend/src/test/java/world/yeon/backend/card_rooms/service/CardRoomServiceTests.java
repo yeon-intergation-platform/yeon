@@ -82,10 +82,26 @@ class CardRoomServiceTests {
     when(repository.listMessages(ROOM.internalId())).thenReturn(List.of());
     when(repository.listResults(ROOM.internalId())).thenReturn(List.of());
 
-    service.leaveRoom("room_1", "participant_1", HOST_USER_ID, null);
+    service.leaveRoom("room_1", "participant_1", HOST_USER_ID, null, null);
 
     verify(repository).leaveParticipant(ArgumentMatchers.eq(ROOM_PARTICIPANT.internalId()), ArgumentMatchers.any(OffsetDateTime.class));
     verify(repository).updateStatus(ArgumentMatchers.eq(ROOM.internalId()), ArgumentMatchers.eq(CardRoomStatus.CLOSED), ArgumentMatchers.eq(ROOM.currentCardIndex()), ArgumentMatchers.eq(ROOM.currentCardRevealed()), ArgumentMatchers.any(OffsetDateTime.class));
+  }
+
+  @Test
+  void racem서버경로_participantId로_본인_퇴장이_허용된다() {
+    // race-server는 게스트/유저 식별자 없이 HMAC 검증된 X-Yeon-Participant-Id만 보낸다.
+    // 이 경로가 막히면 정상 퇴장 자체가 불가능해 좀비 방이 된다.
+    when(repository.findRoom("room_1")).thenReturn(ROOM);
+    when(repository.findParticipant("participant_1")).thenReturn(ROOM_PARTICIPANT);
+    when(repository.listParticipants(ROOM.internalId())).thenReturn(List.of());
+    when(repository.listCards(ROOM.internalId())).thenReturn(List.of());
+    when(repository.listMessages(ROOM.internalId())).thenReturn(List.of());
+    when(repository.listResults(ROOM.internalId())).thenReturn(List.of());
+
+    service.leaveRoom("room_1", "participant_1", null, null, "participant_1");
+
+    verify(repository).leaveParticipant(ArgumentMatchers.eq(ROOM_PARTICIPANT.internalId()), ArgumentMatchers.any(OffsetDateTime.class));
   }
 
   @Test
@@ -93,7 +109,7 @@ class CardRoomServiceTests {
     when(repository.findRoom("room_1")).thenReturn(ROOM);
     when(repository.findParticipant("participant_1")).thenReturn(ROOM_PARTICIPANT);
 
-    assertThatThrownBy(() -> service.leaveRoom("room_1", "participant_1", UUID.fromString("00000000-0000-0000-0000-0000000000ff"), null))
+    assertThatThrownBy(() -> service.leaveRoom("room_1", "participant_1", UUID.fromString("00000000-0000-0000-0000-0000000000ff"), null, null))
       .isInstanceOf(CardRoomServiceException.class)
       .satisfies((error) -> assertThat(((CardRoomServiceException) error).status()).isEqualTo(403))
       .hasMessage("본인 참가자 정보만 변경할 수 있습니다.");

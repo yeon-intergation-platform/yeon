@@ -85,7 +85,11 @@ public class ChatServiceAuthService {
 			}
 		}
 		verifyAttempts.remove(challenge.id());
-		repository.consumeChallenge(challenge.id());
+		// 원자적 소비: 동시 요청 중 단 하나만 1을 받는다. 0이면 이미 다른 호출이 소비한 것이므로
+		// 세션을 발급하지 않는다(한 OTP로 다중 세션 방지).
+		if (repository.consumeChallenge(challenge.id()) != 1) {
+			throw new ChatServiceAuthServiceException(409, "CHAT_SERVICE_AUTH_CHALLENGE_CONSUMED", "이미 사용된 인증 요청입니다.");
+		}
 		var profile = repository.findProfileByPhone(phoneNumber);
 		if (profile == null) {
 			profile = repository.createProfile(UUID.randomUUID(), phoneNumber, createNickname(phoneNumber));

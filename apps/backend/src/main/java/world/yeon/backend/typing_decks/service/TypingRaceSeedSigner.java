@@ -49,12 +49,35 @@ public class TypingRaceSeedSigner {
 		);
 	}
 
+	// race-server는 서명 payload를 JS JSON.stringify로 만든다. 백엔드도 바이트 단위로 동일하게
+	// 이스케이프해야 HMAC가 일치한다. 과거엔 \\ \" \n 3종만 처리해, 탭/CR 등 제어문자가 든 문장은
+	// payload가 어긋나 검증 실패 → 사용자가 고른 덱 대신 데모 fallback이 나오는 무음 버그가 있었다.
 	private String jsonString(String value) {
 		if (value == null) return "null";
-		return "\"" + value
-			.replace("\\", "\\\\")
-			.replace("\"", "\\\"")
-			.replace("\n", "\\n") + "\"";
+		StringBuilder sb = new StringBuilder(value.length() + 2);
+		sb.append('"');
+		for (int i = 0; i < value.length(); i++) {
+			char c = value.charAt(i);
+			switch (c) {
+				case '"' -> sb.append("\\\"");
+				case '\\' -> sb.append("\\\\");
+				case '\b' -> sb.append("\\b");
+				case '\f' -> sb.append("\\f");
+				case '\n' -> sb.append("\\n");
+				case '\r' -> sb.append("\\r");
+				case '\t' -> sb.append("\\t");
+				default -> {
+					// JSON.stringify는 제어문자(0x00~0x1F) 중 위 특수문자 외에는 소문자 4자리 유니코드 이스케이프로 처리한다.
+					if (c < 0x20) {
+						sb.append(String.format("\\u%04x", (int) c));
+					} else {
+						sb.append(c);
+					}
+				}
+			}
+		}
+		sb.append('"');
+		return sb.toString();
 	}
 
 	public record UnsignedTypingRaceSeed(String passageId, String prompt, String roundLabel, String deckId, String deckVisibility, String lobbyDeckTitle, String participantDeckTitle, String languageTag) {}
