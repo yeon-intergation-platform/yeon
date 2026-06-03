@@ -1,14 +1,12 @@
 export const CARD_ROOM_STATUS_LABELS = {
   waiting: "대기중",
-  answering: "답변 중",
-  passed: "OK",
-  given_up: "포기",
-  revealed: "정답 공개",
+  in_progress: "진행 중",
   finished: "완료",
   closed: "종료",
 } as const;
 
 export const CARD_ROOM_ROLE_LABELS = {
+  UNASSIGNED: "역할 미정",
   MEMORIZER: "외우는 사람",
   CHECKER: "봐주는 사람",
 } as const;

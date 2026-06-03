@@ -6,9 +6,11 @@ import {
 } from "@yeon/api-contract/card-rooms";
 import type {
   CardRoomParticipantDto,
-  CardRoomRole,
   CardRoomRealtimeState,
 } from "@yeon/race-shared";
+
+// 클라이언트가 명시 선택할 수 있는 역할만(미배정 UNASSIGNED은 서버 측 개념). sendRole과 정합.
+type AssignableCardRoomRole = "MEMORIZER" | "CHECKER";
 import {
   getYeonButtonClassName,
   YeonBadge,
@@ -31,7 +33,7 @@ type CardRoomHeaderProps = {
   connectionState: string;
   myParticipant?: CardRoomParticipantDto | null;
   canStart: boolean;
-  onRoleChange: (role: CardRoomRole) => void;
+  onRoleChange: (role: AssignableCardRoomRole) => void;
   onReadyChange: (isReady: boolean) => void;
   onStart: () => void;
   onEnd: () => void;

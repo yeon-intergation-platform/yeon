@@ -4,6 +4,7 @@ import {
   yeonMobileAppColors,
 } from "@yeon/ui/native";
 import * as ExpoLinking from "expo-linking";
+import { memo, useState } from "react";
 import Markdown, { type RenderRules } from "react-native-markdown-display";
 import { getMobileApiBaseUrl } from "../../services/api-base-url";
 
@@ -32,18 +33,35 @@ function handleLinkPress(url: string): boolean {
   return true;
 }
 
+// idx=133: 종횡비 인지 이미지 컴포넌트. onLoad로 실제 크기를 받아 aspectRatio를 계산한다.
+// maxHeight로 세로로 지나치게 긴 이미지를 안전하게 제한하고 contain으로 잘림을 방지한다.
+function AdaptiveImage({ src, nodeKey }: { src: string; nodeKey: string }) {
+  const [aspectRatio, setAspectRatio] = useState<number | undefined>(undefined);
+
+  return (
+    <YeonImage
+      key={nodeKey}
+      resizeMode="contain"
+      source={{ uri: src }}
+      style={[
+        styles.image,
+        aspectRatio !== undefined ? { aspectRatio, height: undefined } : null,
+      ]}
+      onLoad={(e) => {
+        const { width, height } = e.nativeEvent.source;
+        if (width > 0 && height > 0) {
+          setAspectRatio(width / height);
+        }
+      }}
+    />
+  );
+}
+
 const rules: RenderRules = {
   image: (node) => {
     const src = resolveImageSrc(String(node.attributes?.src ?? ""));
     if (!src) return null;
-    return (
-      <YeonImage
-        key={node.key}
-        resizeMode="contain"
-        source={{ uri: src }}
-        style={styles.image}
-      />
-    );
+    return <AdaptiveImage key={node.key} src={src} nodeKey={node.key} />;
   },
 };
 
@@ -130,7 +148,8 @@ function buildMarkdownStyles(palette: {
 }
 
 const styles = createYeonStyleSheet({
-  image: { height: 180, marginVertical: 6, width: "100%" },
+  // height: 기본값(onLoad 전 fallback). 실제 종횡비 로드 후 undefined로 교체.
+  image: { height: 180, marginVertical: 6, maxHeight: 320, width: "100%" },
 });
 
 const defaultMarkdownStyles = createYeonStyleSheet(
@@ -156,7 +175,11 @@ type CardMarkdownProps = {
 };
 
 // 카드 본문(질문/답변) 마크다운 렌더러 — 이미지·표·서식을 웹과 동일하게 표시.
-export function CardMarkdown({ source, tone = "default" }: CardMarkdownProps) {
+// memo: 리스트에서 같은 source/tone이면 다른 카드의 메뉴 토글 시 리렌더되지 않게 한다.
+export const CardMarkdown = memo(function CardMarkdown({
+  source,
+  tone = "default",
+}: CardMarkdownProps) {
   return (
     <Markdown
       onLinkPress={handleLinkPress}
@@ -168,4 +191,4 @@ export function CardMarkdown({ source, tone = "default" }: CardMarkdownProps) {
       {source}
     </Markdown>
   );
-}
+});

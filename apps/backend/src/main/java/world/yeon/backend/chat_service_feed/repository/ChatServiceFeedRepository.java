@@ -8,7 +8,9 @@ import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
+import world.yeon.backend.chat_service_blocks.repository.ChatServiceBlockRelationReader;
 
 @Repository
 public class ChatServiceFeedRepository {
@@ -29,6 +31,9 @@ public class ChatServiceFeedRepository {
 	@PersistenceContext
 	private EntityManager entityManager;
 
+	@Autowired
+	private ChatServiceBlockRelationReader blockRelationReader;
+
 	public List<FeedPostRow> listRootFeed() {
 		List<?> rows = entityManager.createNativeQuery(baseSelect() + " where p.reply_to_post_id is null order by p.created_at desc limit 30").getResultList();
 		return rows.stream().map(this::toFeedPostRow).toList();
@@ -42,19 +47,8 @@ public class ChatServiceFeedRepository {
 	}
 
 	public Set<UUID> listBlockedRelationIds(UUID currentProfileId) {
-		List<?> rows = entityManager.createNativeQuery("""
-			select blocker_id, blocked_id
-			from public.chat_service_blocks
-			where blocker_id = :currentProfileId or blocked_id = :currentProfileId
-		""")
-			.setParameter("currentProfileId", currentProfileId)
-			.getResultList();
-		return rows.stream().map(row -> {
-			Object[] v = (Object[]) row;
-			UUID blockerId = (UUID) v[0];
-			UUID blockedId = (UUID) v[1];
-			return blockerId.equals(currentProfileId) ? blockedId : blockerId;
-		}).collect(java.util.stream.Collectors.toSet());
+		// IDX 47: 양방향 차단 조회는 공용 reader 로 위임한다.
+		return blockRelationReader.listBlockedRelationIds(currentProfileId);
 	}
 
 	public java.util.Map<UUID, Integer> listReplyCounts(List<UUID> postIds, Set<UUID> blockedRelationIds) {

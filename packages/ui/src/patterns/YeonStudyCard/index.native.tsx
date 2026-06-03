@@ -37,7 +37,13 @@ export function YeonStudyCard({
       <YeonText variant="unstyled" tone="inherit" style={styles.label}>
         {label}
       </YeonText>
-      <YeonScrollView contentContainerStyle={styles.scrollContent}>
+      {/* idx=138: scrollEnabled={false}로 ScrollView가 제스처를 소비하지 않게 하고
+          부모 YeonButton의 onPress만 탭을 처리한다. 본문이 실제로 잘릴 수 있을 때는
+          카드 탭 인터랙션과 스크롤 영역을 분리하는 방향으로 리팩토링 권장. */}
+      <YeonScrollView
+        contentContainerStyle={styles.scrollContent}
+        scrollEnabled={false}
+      >
         {typeof body === "string" ? (
           <YeonText variant="unstyled" tone="inherit" style={styles.body}>
             {body}

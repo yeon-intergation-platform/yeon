@@ -1,4 +1,4 @@
-import { type ReactNode, useState } from "react";
+import { memo, type ReactNode, useState } from "react";
 
 import {
   YeonButton,
@@ -38,7 +38,9 @@ export type YeonEditableCardRowProps = {
   style?: YeonViewProps["style"];
 };
 
-export function YeonEditableCardRow({
+// memo: 리스트에서 다른 행의 메뉴 토글 등으로 인한 전체 리렌더를 막는다.
+// 콜백은 상위에서 useCallback으로 안정화해야 효과가 있다.
+export const YeonEditableCardRow = memo(function YeonEditableCardRow({
   answerLabel,
   answerText,
   answerContent,
@@ -59,18 +61,27 @@ export function YeonEditableCardRow({
 }: YeonEditableCardRowProps) {
   const [isDeleteRevealed, setDeleteRevealed] = useState(false);
   const [startX, setStartX] = useState<number | null>(null);
+  const [startY, setStartY] = useState<number | null>(null);
 
   function handlePressIn(event: YeonGestureResponderEvent) {
     setStartX(event.nativeEvent.pageX);
+    setStartY(event.nativeEvent.pageY);
   }
 
   function handlePressOut(event: YeonGestureResponderEvent) {
-    if (startX === null) {
+    if (startX === null || startY === null) {
       return;
     }
 
     const deltaX = event.nativeEvent.pageX - startX;
+    const deltaY = event.nativeEvent.pageY - startY;
     setStartX(null);
+    setStartY(null);
+
+    // idx=137: 세로 이동이 가로 이동보다 크면 스크롤 의도로 보고 스와이프 판정 무시.
+    if (Math.abs(deltaY) > Math.abs(deltaX)) {
+      return;
+    }
 
     if (deltaX < -42) {
       setDeleteRevealed(true);
@@ -204,7 +215,7 @@ export function YeonEditableCardRow({
       ) : null}
     </YeonView>
   );
-}
+});
 
 const styles = createYeonStyleSheet({
   answerText: {

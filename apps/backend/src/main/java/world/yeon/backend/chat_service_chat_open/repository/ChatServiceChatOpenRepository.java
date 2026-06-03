@@ -7,7 +7,9 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
+import world.yeon.backend.chat_service_blocks.repository.ChatServiceBlockRelationReader;
 
 @Repository
 public class ChatServiceChatOpenRepository {
@@ -28,18 +30,12 @@ public class ChatServiceChatOpenRepository {
 	@PersistenceContext
 	private EntityManager entityManager;
 
+	@Autowired
+	private ChatServiceBlockRelationReader blockRelationReader;
+
 	public boolean hasBlockedRelation(UUID currentProfileId, UUID targetProfileId) {
-		return !entityManager.createNativeQuery("""
-			select 1
-			from public.chat_service_blocks
-			where (blocker_id = :currentProfileId and blocked_id = :targetProfileId)
-			   or (blocker_id = :targetProfileId and blocked_id = :currentProfileId)
-			limit 1
-		""")
-			.setParameter("currentProfileId", currentProfileId)
-			.setParameter("targetProfileId", targetProfileId)
-			.getResultList()
-			.isEmpty();
+		// IDX 47: 양방향 차단 조회는 공용 reader 로 위임한다.
+		return blockRelationReader.hasBlockedRelation(currentProfileId, targetProfileId);
 	}
 
 	public boolean existsProfile(UUID profileId) {

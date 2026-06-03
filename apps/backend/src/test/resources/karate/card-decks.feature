@@ -92,4 +92,6 @@ Feature: 카드 덱 라이프사이클 (사용자 소유 + 학습설정)
     And configure headers = internalHeaders
     And request { title: '익명 덱' }
     When method post
-    Then assert responseStatus == 401 || responseStatus == 400
+    # httpBasic 비활성화(전수 감사) 이후 미인증/식별 불가 요청의 차단 응답은
+    # 401(basic 챌린지) 대신 403(forbidden)으로도 내려온다. 셋 다 "차단됨"으로 허용.
+    Then assert responseStatus == 401 || responseStatus == 400 || responseStatus == 403

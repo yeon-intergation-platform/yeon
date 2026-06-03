@@ -36,6 +36,16 @@ function resolveSocialErrorMessage(code: string) {
   );
 }
 
+// URL fragment(# 이후)를 URLSearchParams로 파싱한다.
+// Linking.parse는 fragment를 queryParams로 노출하지 않아 직접 분해가 필요하다.
+function parseFragment(url: string): URLSearchParams {
+  const hashIndex = url.indexOf("#");
+  if (hashIndex === -1) {
+    return new URLSearchParams();
+  }
+  return new URLSearchParams(url.slice(hashIndex + 1));
+}
+
 // 웹 OAuth 콜백을 그대로 재사용하고, 마지막에 세션 토큰만 딥링크로 받는다.
 // ASWebAuthenticationSession(시스템 인증 세션)이라 Google disallowed_useragent를 피한다.
 export async function startMobileSocialLogin(
@@ -70,13 +80,17 @@ export async function startMobileSocialLogin(
   }
 
   const parsed = resultParsed;
+  // 에러 코드는 비민감 정보 → 쿼리스트링으로 전달됨.
   const errorCode = firstQueryValue(parsed.queryParams?.error);
 
   if (errorCode) {
     return { status: "error", message: resolveSocialErrorMessage(errorCode) };
   }
 
-  const sessionToken = firstQueryValue(parsed.queryParams?.token);
+  // idx=142: 세션 토큰은 URL fragment(#)로 전달된다(쿼리스트링 로그 노출 최소화).
+  // Linking.parse는 fragment를 queryParams로 노출하지 않으므로 result.url에서 직접 파싱한다.
+  const fragmentParams = parseFragment(result.url);
+  const sessionToken = fragmentParams.get("token");
 
   if (!sessionToken) {
     return {
@@ -85,8 +99,8 @@ export async function startMobileSocialLogin(
     };
   }
 
-  // idx-140: expiresAt도 파싱해 반환(SecureStore 저장은 호출부 책임).
-  const expiresAt = firstQueryValue(parsed.queryParams?.expiresAt);
+  // idx-140: expiresAt도 fragment에서 파싱해 반환(SecureStore 저장은 호출부 책임).
+  const expiresAt = fragmentParams.get("expiresAt");
 
   return { status: "success", sessionToken, expiresAt };
 }

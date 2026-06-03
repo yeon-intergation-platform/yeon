@@ -87,7 +87,10 @@ export function CardDeckPlayScreen({ deckId }: CardDeckPlayScreenProps) {
       };
     },
     queryKey: deckId
-      ? cardServiceQueryKeys.deck(deckId, mode === CARD_SERVICE_MODE.server)
+      ? cardServiceQueryKeys.deckDetail(
+          mode === CARD_SERVICE_MODE.server,
+          deckId
+        )
       : ["card-service", "deck", "missing", mode],
   });
 
@@ -119,9 +122,9 @@ export function CardDeckPlayScreen({ deckId }: CardDeckPlayScreenProps) {
     onSuccess: async () => {
       if (deckId) {
         await queryClient.invalidateQueries({
-          queryKey: cardServiceQueryKeys.deck(
-            deckId,
-            mode === CARD_SERVICE_MODE.server
+          queryKey: cardServiceQueryKeys.deckDetail(
+            mode === CARD_SERVICE_MODE.server,
+            deckId
           ),
         });
       }

@@ -1,9 +1,14 @@
 package world.yeon.backend.public_check_runtime.service;
 
+import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import world.yeon.backend.public_check_runtime.dto.*;
@@ -13,7 +18,12 @@ import world.yeon.backend.public_check_runtime.repository.PublicCheckRuntimeRepo
 public class PublicCheckRuntimeService {
 	private static final int MAX_NAME_LENGTH = 100;
 	private static final int MAX_ASSIGNMENT_LINK_LENGTH = 1000;
+	// IDX 172: capability-URL(token) 기반 비인증 제출은 토큰 유출 시 대량 위조 체크인 abuse 가 가능하다.
+	// 인프라 의존 없이 앱 레벨 인메모리 토큰버킷(슬라이딩 윈도우)으로 토큰 단위 제출 빈도를 제한한다.
+	private static final long SUBMIT_RATE_WINDOW_MILLIS = 60_000L;
+	private static final int SUBMIT_RATE_LIMIT_PER_WINDOW = 20;
 	private final PublicCheckRuntimeRepository repository;
+	private final Map<String, List<Long>> submitRateBuckets = new ConcurrentHashMap<>();
 
 	public PublicCheckRuntimeService(PublicCheckRuntimeRepository repository) {
 		this.repository = repository;
@@ -80,6 +90,10 @@ public class PublicCheckRuntimeService {
 
 	@Transactional
 	public SubmitPublicCheckResponse submit(String token, SubmitPublicCheckRequest request) {
+		// IDX 172: 토큰 단위 제출 rate limit. 인메모리라 단일 인스턴스 기준 best-effort 방어다.
+		if (isSubmitRateLimited(token)) {
+			throw new PublicCheckRuntimeServiceException(429, "PUBLIC_CHECK_RATE_LIMITED", "체크인 요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.");
+		}
 		var session = requireActiveSession(token);
 		if (!session.enabledMethods().contains(request.method())) {
 			throw new PublicCheckRuntimeServiceException(400, "INVALID_REQUEST", "이 체크인 방법은 현재 세션에서 사용할 수 없습니다.");
@@ -183,6 +197,24 @@ public class PublicCheckRuntimeService {
 			now
 		);
 		repository.insertBoardHistory(generatePublicId("smbh"), session.spaceInternalId(), matched.memberInternalId(), session.sessionInternalId(), nextAttendance, nextAssignment, nextAssignmentLink, source, now);
+	}
+
+	private boolean isSubmitRateLimited(String token) {
+		// IDX 172: requestOtp 와 동일한 슬라이딩 윈도우 토큰버킷 패턴. compute 로 윈도우 밖 타임스탬프를 제거하며 카운트한다.
+		String key = token == null ? "" : token;
+		long now = Instant.now().toEpochMilli();
+		long since = now - SUBMIT_RATE_WINDOW_MILLIS;
+		AtomicBoolean limited = new AtomicBoolean(false);
+		submitRateBuckets.compute(key, (bucketKey, values) -> {
+			List<Long> recent = values == null ? new ArrayList<>() : new ArrayList<>(values.stream().filter(timestamp -> timestamp > since).toList());
+			if (recent.size() >= SUBMIT_RATE_LIMIT_PER_WINDOW) {
+				limited.set(true);
+				return recent;
+			}
+			recent.add(now);
+			return recent;
+		});
+		return limited.get();
 	}
 
 	private PublicCheckRuntimeRepository.SessionContextRow requireActiveSession(String token) {

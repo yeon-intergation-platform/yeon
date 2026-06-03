@@ -279,6 +279,11 @@ export type {
   YeonScrollViewProps,
   YeonScrollViewHandle,
 } from "./primitives/YeonScrollView/index.native";
+export { YeonFlatList } from "./primitives/YeonFlatList/index.native";
+export type {
+  YeonFlatListProps,
+  YeonFlatListHandle,
+} from "./primitives/YeonFlatList/index.native";
 export { YeonKeyboardAvoidingView } from "./primitives/YeonKeyboardAvoidingView/index.native";
 export type {
   YeonKeyboardAvoidingViewProps,

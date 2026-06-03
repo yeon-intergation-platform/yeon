@@ -39,15 +39,16 @@ public class SheetIntegrationService {
 
 	private final SheetIntegrationRepository repository;
 	private final world.yeon.backend.space_access.service.SpaceAccessService spaceAccessService;
-	// IDX 66: connect timeout 부재 시 톰캣 스레드가 무기한 블로킹될 수 있어 연결 타임아웃을 설정한다.
-	private final HttpClient httpClient = HttpClient.newBuilder()
-		.connectTimeout(java.time.Duration.ofSeconds(5))
-		.build();
-	private final ObjectMapper objectMapper = new ObjectMapper().findAndRegisterModules();
+	// IDX 83: 공용 HttpClient/ObjectMapper Bean 을 주입해 재사용한다.
+	// IDX 66: 공용 HttpClient 에 connect timeout 이 설정돼 있어 톰캣 스레드가 무기한 블로킹되지 않는다.
+	private final HttpClient httpClient;
+	private final ObjectMapper objectMapper;
 
-	public SheetIntegrationService(SheetIntegrationRepository repository, world.yeon.backend.space_access.service.SpaceAccessService spaceAccessService) {
+	public SheetIntegrationService(SheetIntegrationRepository repository, world.yeon.backend.space_access.service.SpaceAccessService spaceAccessService, HttpClient httpClient, ObjectMapper objectMapper) {
 		this.repository = repository;
 		this.spaceAccessService = spaceAccessService;
+		this.httpClient = httpClient;
+		this.objectMapper = objectMapper;
 	}
 
 	public GetSheetIntegrationsResponse getIntegrations(String spaceId, UUID userId) {

@@ -173,10 +173,9 @@ export function CardRoomScreen({ roomId }: CardRoomScreenProps) {
   const isChecker = myRole === "CHECKER";
   const isWaiting = state.status === "waiting";
   const isFinished = state.status === "finished" || state.status === "closed";
+  // finding 20: 뒷면 공개는 방 status가 아니라 현재 카드의 공개/확정 상태로 판정한다.
   const isRevealed =
-    state.status === "revealed" ||
-    state.status === "passed" ||
-    state.status === "given_up";
+    state.currentCardRevealed || state.currentCardResult !== null;
   // idx-126: web canStart와 동등한 조건으로 클라이언트 검증(서버 에러 의존 최소화).
   const canStart = Boolean(
     isWaiting &&

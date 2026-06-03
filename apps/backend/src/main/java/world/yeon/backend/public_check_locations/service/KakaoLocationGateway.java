@@ -18,8 +18,15 @@ public class KakaoLocationGateway {
 	private static final int MAX_RESULTS = 6;
 	private static final Duration TIMEOUT = Duration.ofSeconds(7);
 
-	private final HttpClient httpClient = HttpClient.newHttpClient();
-	private final ObjectMapper objectMapper = new ObjectMapper();
+	// IDX 83: 공용 HttpClient/ObjectMapper Bean 을 주입해 재사용한다.
+	// (공용 HttpClient 는 connect timeout 이 설정돼 있어 기존 newHttpClient() 대비 무기한 블로킹도 방지한다.)
+	private final HttpClient httpClient;
+	private final ObjectMapper objectMapper;
+
+	public KakaoLocationGateway(HttpClient httpClient, ObjectMapper objectMapper) {
+		this.httpClient = httpClient;
+		this.objectMapper = objectMapper;
+	}
 
 	public JsonNode keywordSearch(String apiKey, String query) {
 		return fetch(apiKey, "keyword.json", query, "카카오 키워드 위치 검색");

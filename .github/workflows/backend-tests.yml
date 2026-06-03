@@ -103,6 +103,9 @@ jobs:
           SPRING_PROFILES_ACTIVE: dev.local
           DATABASE_URL: postgresql://yeon_local:yeon_local@localhost:5432/yeon_local
           SPRING_INTERNAL_TOKEN: local-dev-internal-token
+          # AuthTokenHasher @PostConstruct fail-fast(최소 길이 검증)로 앱 부팅이 막히지 않도록
+          # 로컬 dev 전용 AUTH_SECRET 을 주입한다(운영 비밀 아님, CI 기동 전용).
+          AUTH_SECRET: local-dev-karate-auth-secret-0123456789abcdef
           CARD_ASSET_LOCAL_FALLBACK: "true"
         run: |
           ./gradlew --no-daemon bootRun --args='--server.port=8081' > /tmp/backend-boot.log 2>&1 &

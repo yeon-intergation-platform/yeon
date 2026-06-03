@@ -1,3 +1,5 @@
+import { memo } from "react";
+
 import { YeonButton } from "../../primitives/YeonButton";
 import { YeonText } from "../../primitives/YeonText";
 import { YeonView } from "../../primitives/YeonView";
@@ -21,7 +23,7 @@ export type YeonEditableCardRowProps = {
   questionText: string;
 };
 
-export function YeonEditableCardRow({
+export const YeonEditableCardRow = memo(function YeonEditableCardRow({
   answerLabel,
   answerText,
   className,
@@ -103,4 +105,4 @@ export function YeonEditableCardRow({
       ) : null}
     </YeonView>
   );
-}
+});

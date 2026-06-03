@@ -4,14 +4,15 @@ import { cardServiceQueryKeys } from "./query-keys";
 describe("cardServiceQueryKeys", () => {
   it("로그인/비로그인 키가 구분되어 캐시 분할된다", () => {
     // queryKey SSOT(card-deck/query-keys.ts)로 통일: 상세도 "decks" 네임스페이스 하위.
-    expect(cardServiceQueryKeys.deck("deck-1", true)).toEqual([
+    // idx=158 fix: 인자 순서 (isAuthenticated, deckId) — web adapter와 동일.
+    expect(cardServiceQueryKeys.deckDetail(true, "deck-1")).toEqual([
       "card-service",
       "decks",
       "server",
       "deck-1",
     ]);
 
-    expect(cardServiceQueryKeys.deck("deck-1", false)).toEqual([
+    expect(cardServiceQueryKeys.deckDetail(false, "deck-1")).toEqual([
       "card-service",
       "decks",
       "guest",
