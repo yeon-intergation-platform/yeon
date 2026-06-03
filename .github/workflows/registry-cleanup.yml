@@ -40,8 +40,8 @@ jobs:
           # 운영/배포 캐시 태그는 삭제 대상에서 제외(보호).
           image-tags: "!latest !develop !buildcache-arm64"
           tag-selection: both
-          # 2주보다 오래된 버전만 후보.
-          cut-off: 2w
+          # 1주보다 오래된 버전만 후보.
+          cut-off: 1w
           # 후보 중 최신 15개는 보존(롤백 여유).
           keep-n-most-recent: 15
           dry-run: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || 'false' }}
