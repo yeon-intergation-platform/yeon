@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import world.yeon.backend.card_rooms.domain.CardRoomParticipantRole;
 import world.yeon.backend.card_rooms.domain.CardRoomStatus;
 import world.yeon.backend.card_rooms.dto.CardRoomProfileRequest;
 import world.yeon.backend.card_rooms.dto.CreateCardRoomMessageRequest;
@@ -212,5 +213,52 @@ class CardRoomServiceTests {
     assertThat(closedCount).isEqualTo(5);
     verify(repository).finishRoomsWithoutActiveParticipants(NOW);
     verify(repository).finishStaleRooms(NOW.minus(Duration.ofHours(6)), NOW);
+  }
+
+  @Test
+  void 대기방에서호스트가나가며필수역할이비면새호스트에게빠진역할을부여한다() {
+    // finding #5: CHECKER 호스트가 나가면 남은 두 MEMORIZER만 남아 봐주는 사람이 0이 된다.
+    // 입장 시 자동 역할 배정과 동일하게, 승계받은 새 호스트를 CHECKER로 돌려 방을 시작 가능 상태로 복구한다.
+    var checkerHost = new ParticipantRow(1L, "participant_host", 1L, null, "guest-host", "방장", "guga", "CHECKER", true, true, NOW);
+    var heir = new ParticipantRow(5L, "participant_heir", 1L, null, "guest-5", "후계", "guga", "MEMORIZER", false, true, NOW);
+    var other = new ParticipantRow(6L, "participant_other", 1L, null, "guest-6", "남은이", "guga", "MEMORIZER", false, true, NOW);
+
+    when(repository.findRoom("room_1")).thenReturn(WAITING_ROOM);
+    when(repository.findParticipant("participant_host")).thenReturn(checkerHost);
+    when(repository.listParticipants(WAITING_ROOM.internalId())).thenReturn(List.of(heir, other));
+    when(repository.findEarliestActiveParticipant(WAITING_ROOM.internalId())).thenReturn(heir);
+    when(repository.listCards(WAITING_ROOM.internalId())).thenReturn(List.of());
+    when(repository.listMessages(WAITING_ROOM.internalId())).thenReturn(List.of());
+    when(repository.listResults(WAITING_ROOM.internalId())).thenReturn(List.of());
+
+    service.leaveRoom("room_1", "participant_host", null, null, "participant_host");
+
+    verify(repository).assignHost(heir.internalId());
+    verify(repository).updateParticipant(
+      ArgumentMatchers.eq(heir.internalId()), ArgumentMatchers.isNull(), ArgumentMatchers.isNull(),
+      ArgumentMatchers.eq(CardRoomParticipantRole.CHECKER), ArgumentMatchers.isNull());
+  }
+
+  @Test
+  void 진행중방에서는호스트승계시역할을재배정하지않는다() {
+    // WAITING이 아닌 방(이미 시작)은 역할 재배정 대상이 아니다. 승계(assignHost)만 일어난다.
+    var checkerHost = new ParticipantRow(1L, "participant_host", 1L, null, "guest-host", "방장", "guga", "CHECKER", true, true, NOW);
+    var heir = new ParticipantRow(5L, "participant_heir", 1L, null, "guest-5", "후계", "guga", "MEMORIZER", false, true, NOW);
+    var other = new ParticipantRow(6L, "participant_other", 1L, null, "guest-6", "남은이", "guga", "MEMORIZER", false, true, NOW);
+
+    when(repository.findRoom("room_1")).thenReturn(ROOM);
+    when(repository.findParticipant("participant_host")).thenReturn(checkerHost);
+    when(repository.listParticipants(ROOM.internalId())).thenReturn(List.of(heir, other));
+    when(repository.findEarliestActiveParticipant(ROOM.internalId())).thenReturn(heir);
+    when(repository.listCards(ROOM.internalId())).thenReturn(List.of());
+    when(repository.listMessages(ROOM.internalId())).thenReturn(List.of());
+    when(repository.listResults(ROOM.internalId())).thenReturn(List.of());
+
+    service.leaveRoom("room_1", "participant_host", null, null, "participant_host");
+
+    verify(repository).assignHost(heir.internalId());
+    verify(repository, never()).updateParticipant(
+      ArgumentMatchers.any(), ArgumentMatchers.any(), ArgumentMatchers.any(),
+      ArgumentMatchers.any(), ArgumentMatchers.any());
   }
 }
