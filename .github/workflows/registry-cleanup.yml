@@ -1,0 +1,47 @@
+name: Registry Image Cleanup
+
+# ghcr.io 레지스트리 이미지 자동정리.
+# docker-build-*.yml은 셀프호스트 러너의 "로컬" Docker만 prune한다(레지스트리 무관).
+# main push마다 sha-* 태그 + push-by-digest의 untagged 매니페스트 + buildcache가
+# ghcr.io(yeon-web-app/yeon-race-server/yeon-backend)에 무한 누적되므로, 주기적으로
+# 오래된 버전을 보존 정책으로 삭제한다. latest/develop/buildcache-arm64는 보호한다.
+
+on:
+  schedule:
+    # 매주 일요일 18:00 UTC.
+    - cron: "0 18 * * 0"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "삭제 없이 대상만 출력(true/false)"
+        required: false
+        default: "false"
+
+permissions:
+  packages: write
+
+concurrency:
+  group: registry-cleanup
+  cancel-in-progress: false
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    name: ghcr 오래된 이미지 정리
+    steps:
+      - name: Prune old container image versions
+        uses: snok/container-retention-policy@v3.1.0
+        with:
+          account: ${{ github.repository_owner }}
+          # 기본은 GITHUB_TOKEN(packages: write). 조직 패키지 권한이 부족해 403이면
+          # delete:packages 권한의 PAT를 secrets.GHCR_CLEANUP_TOKEN 에 등록한다.
+          token: ${{ secrets.GHCR_CLEANUP_TOKEN || secrets.GITHUB_TOKEN }}
+          image-names: "yeon-web-app yeon-race-server yeon-backend"
+          # 운영/배포 캐시 태그는 삭제 대상에서 제외(보호).
+          image-tags: "!latest !develop !buildcache-arm64"
+          tag-selection: both
+          # 2주보다 오래된 버전만 후보.
+          cut-off: 2w
+          # 후보 중 최신 15개는 보존(롤백 여유).
+          keep-n-most-recent: 15
+          dry-run: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || 'false' }}

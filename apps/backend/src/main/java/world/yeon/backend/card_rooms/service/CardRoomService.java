@@ -18,10 +18,8 @@ import world.yeon.backend.card_rooms.domain.CardRoomStatus;
 import world.yeon.backend.card_rooms.domain.CardRoomSystemMessage;
 import world.yeon.backend.card_rooms.domain.CardRoomTextRule;
 import world.yeon.backend.card_rooms.domain.CardRoomVisibility;
-import world.yeon.backend.card_rooms.dto.CardRoomDtos.CardRoomCardDto;
 import world.yeon.backend.card_rooms.dto.CardRoomDtos.CardRoomDetailDto;
 import world.yeon.backend.card_rooms.dto.CardRoomDtos.CardRoomListResponse;
-import world.yeon.backend.card_rooms.dto.CardRoomDtos.CardRoomMessageDto;
 import world.yeon.backend.card_rooms.dto.CardRoomDtos.CardRoomMessagesResponse;
 import world.yeon.backend.card_rooms.dto.CardRoomDtos.CardRoomParticipantDto;
 import world.yeon.backend.card_rooms.dto.CardRoomDtos.CardRoomParticipantResponse;
@@ -37,8 +35,6 @@ import world.yeon.backend.card_rooms.dto.JoinCardRoomRequest;
 import world.yeon.backend.card_rooms.dto.SubmitCardRoomResultRequest;
 import world.yeon.backend.card_rooms.dto.UpdateCardRoomParticipantRequest;
 import world.yeon.backend.card_rooms.repository.CardRoomRepository;
-import world.yeon.backend.card_rooms.repository.CardRoomRepository.CardRow;
-import world.yeon.backend.card_rooms.repository.CardRoomRepository.MessageRow;
 import world.yeon.backend.card_rooms.repository.CardRoomRepository.ParticipantRow;
 import world.yeon.backend.card_rooms.repository.CardRoomRepository.ResultRow;
 import world.yeon.backend.card_rooms.repository.CardRoomRepository.RoomRow;
@@ -342,14 +338,13 @@ public class CardRoomService {
   // detail이 findRoom을 또 호출하지 않도록 RoomRow를 받는 오버로드로 중복 조회를 제거한다.
   private CardRoomDetailDto detail(RoomRow room) {
     var cards = repository.listCards(room.internalId());
-    var participants = repository.listParticipants(room.internalId()).stream().map(this::toParticipant).toList();
-    var messages = repository.listMessages(room.internalId()).stream().map(this::toMessage).toList();
-    var results = repository.listResults(room.internalId()).stream().map(this::toResult).toList();
+    var participants = repository.listParticipants(room.internalId());
+    var messages = repository.listMessages(room.internalId());
+    var results = repository.listResults(room.internalId());
     // finding 20: 현재 카드의 결과(resolved 판정)는 방 status가 아니라 (room_id, current_card_id)로 직접 조회한다.
     var currentCard = cards.stream().filter((card) -> card.orderIndex() == room.currentCardIndex()).findFirst().orElse(null);
     String currentCardResult = currentCard == null ? null : repository.findResultValueForCard(room.internalId(), currentCard.internalId());
-    var cardDtos = cards.stream().map(this::toCard).toList();
-    return new CardRoomDetailDto(room.publicId(), room.title(), room.deckTitle(), room.hostLabel(), room.visibility(), room.status(), room.currentCardIndex(), room.currentCardRevealed(), currentCardResult, cardDtos.size(), room.memorizerCount(), room.checkerCount(), iso(room.createdAt()), iso(room.updatedAt()), participants, cardDtos, messages, results);
+    return CardRoomDtoAssembler.toDetail(room, participants, cards, messages, results, currentCardResult);
   }
 
   private RoomRow requireRoom(String roomId) {
@@ -490,27 +485,15 @@ public class CardRoomService {
     throw new CardRoomServiceException(409, "PUBLIC_ID_CONFLICT", "카드방 식별자 생성에 실패했습니다. 잠시 후 다시 시도해 주세요.");
   }
 
-  private String iso(OffsetDateTime value) {
-    return value == null ? null : value.toString();
-  }
-
   private CardRoomSummaryDto toSummary(RoomRow row) {
-    return new CardRoomSummaryDto(row.publicId(), row.title(), row.deckTitle(), row.hostLabel(), row.visibility(), row.status(), row.currentCardIndex(), row.cardCount(), row.memorizerCount(), row.checkerCount(), iso(row.createdAt()), iso(row.updatedAt()));
+    return CardRoomDtoAssembler.toSummary(row);
   }
 
   private CardRoomParticipantDto toParticipant(ParticipantRow row) {
-    return new CardRoomParticipantDto(row.publicId(), row.nickname(), row.characterId(), row.role(), row.isHost(), row.isReady(), iso(row.joinedAt()));
-  }
-
-  private CardRoomCardDto toCard(CardRow row) {
-    return new CardRoomCardDto(row.publicId(), row.frontText(), row.backText(), row.orderIndex());
-  }
-
-  private CardRoomMessageDto toMessage(MessageRow row) {
-    return new CardRoomMessageDto(row.publicId(), row.senderParticipantId(), row.senderNickname(), row.content(), row.messageType(), iso(row.createdAt()));
+    return CardRoomDtoAssembler.toParticipant(row);
   }
 
   private CardRoomResultDto toResult(ResultRow row) {
-    return new CardRoomResultDto(row.publicId(), row.cardPublicId(), row.participantPublicId(), row.result(), iso(row.createdAt()));
+    return CardRoomDtoAssembler.toResult(row);
   }
 }
