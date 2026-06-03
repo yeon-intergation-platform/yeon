@@ -101,6 +101,10 @@ services:
       SPRING_BOOTSTRAP_BASE_URL: http://backend:8081
       SPRING_BACKEND_BASE_URL: http://backend:8081
       SPRING_INTERNAL_TOKEN: ${SPRING_INTERNAL_TOKEN}
+      # backend와 동일한 시드 서명 시크릿을 주입해 race-seed HMAC 검증을 일치시킨다.
+      # 누락 시 race-server가 공개 하드코딩 fallback으로 떨어져 모든 멀티 레이스가
+      # 데모 문장으로 추락하고 시드 위조가 가능해진다.
+      AUTH_SECRET: ${AUTH_SECRET}
     ports:
       - "${RACE_SERVER_PORT:-2567}:2567"
     networks:
