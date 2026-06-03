@@ -7,15 +7,16 @@ import {
   useYeonLocalSearchParams as useLocalSearchParams,
   useYeonRouter as useRouter,
 } from "@yeon/ui/native";
-import { useRef, useState } from "react";
-import { type YeonScrollViewHandle, showYeonAlert } from "@yeon/ui/native";
+import type { ChatServiceChatMessageDto } from "@yeon/api-contract/chat-service";
+import { useCallback, useMemo, useState } from "react";
+import { showYeonAlert } from "@yeon/ui/native";
 import {
   YeonActionButton as ActionButton,
   YeonChatComposer as ChatComposer,
   YeonChatMessageBubble as ChatMessageBubble,
-  YeonChatMessageScroll as ChatMessageScroll,
   YeonChatRoomHeader as ChatRoomHeader,
   YeonChatRoomInset as ChatRoomInset,
+  YeonFlatList as FlatList,
   YeonMobileScreen as MobileScreen,
   YeonStateBlock as StateBlock,
   YeonTextField as TextField,
@@ -29,7 +30,6 @@ import { chatServiceQueryKeys } from "../../../services/chat-service/query-keys"
 export function ChatRoomScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const scrollRef = useRef<YeonScrollViewHandle | null>(null);
   const { roomId: rawRoomId } = useLocalSearchParams();
   const roomId = parseOptionalString(rawRoomId) ?? "";
   const { session, status } = useChatServiceSession();
@@ -115,16 +115,51 @@ export function ChatRoomScreen() {
     }
   }
 
-  async function handleReportMessage(messageId: string) {
-    try {
-      await reportMutation.mutateAsync(messageId);
-      showYeonAlert("신고 접수", "메시지 신고가 접수됐습니다.");
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "메시지 신고에 실패했습니다.";
-      showYeonAlert("오류", message);
-    }
-  }
+  const handleReportMessage = useCallback(
+    async (messageId: string) => {
+      try {
+        await reportMutation.mutateAsync(messageId);
+        showYeonAlert("신고 접수", "메시지 신고가 접수됐습니다.");
+      } catch (error) {
+        const message =
+          error instanceof Error
+            ? error.message
+            : "메시지 신고에 실패했습니다.";
+        showYeonAlert("오류", message);
+      }
+    },
+    [reportMutation]
+  );
+
+  const currentUserId = session?.user.id;
+
+  // inverted FlatList는 시각적 하단(최신)이 데이터 0번이므로 역순 배열을 만든다.
+  const invertedMessages = useMemo(
+    () => (roomQuery.data ? [...roomQuery.data.messages].reverse() : []),
+    [roomQuery.data]
+  );
+
+  const keyExtractor = useCallback(
+    (message: ChatServiceChatMessageDto) => message.id,
+    []
+  );
+
+  const renderMessage = useCallback(
+    ({ item }: { item: ChatServiceChatMessageDto }) => {
+      const mine = item.senderId === currentUserId;
+      return (
+        <ChatMessageBubble
+          body={item.body}
+          meta={formatRelativeTime(item.createdAt)}
+          mine={mine}
+          onReportPress={
+            mine ? undefined : () => void handleReportMessage(item.id)
+          }
+        />
+      );
+    },
+    [currentUserId, handleReportMessage]
+  );
 
   return (
     <MobileScreen contentVariant="full" keyboardAvoiding scroll={false}>
@@ -196,30 +231,19 @@ export function ChatRoomScreen() {
 
       {roomQuery.data ? (
         <>
-          <ChatMessageScroll
-            onContentSizeChange={() => {
-              scrollRef.current?.scrollToEnd({ animated: false });
+          <FlatList
+            contentContainerStyle={{
+              gap: 12,
+              paddingBottom: 24,
+              paddingHorizontal: 18,
+              paddingTop: 18,
             }}
-            ref={scrollRef}
-          >
-            {roomQuery.data.messages.map((message) => {
-              const mine = message.senderId === session?.user.id;
-
-              return (
-                <ChatMessageBubble
-                  body={message.body}
-                  key={message.id}
-                  meta={formatRelativeTime(message.createdAt)}
-                  mine={mine}
-                  onReportPress={
-                    mine
-                      ? undefined
-                      : () => void handleReportMessage(message.id)
-                  }
-                />
-              );
-            })}
-          </ChatMessageScroll>
+            data={invertedMessages}
+            inverted
+            keyExtractor={keyExtractor}
+            renderItem={renderMessage}
+            style={{ flex: 1 }}
+          />
 
           <ChatComposer>
             <TextField

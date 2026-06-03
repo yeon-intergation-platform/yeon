@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { DEFAULT_POST_LOGIN_PATH } from "../constants";
 import { signAuthValue } from "../crypto";
 import {
   consumeOAuthStateCookieValue,
@@ -28,7 +29,8 @@ describe("oauth-state", () => {
     });
 
     expect(result.state.length).toBeGreaterThanOrEqual(16);
-    expect(result.nextPath).toBe("/");
+    // 외부 origin 경로는 거부되고 플랫폼 홈(DEFAULT_POST_LOGIN_PATH)으로 폴백한다.
+    expect(result.nextPath).toBe(DEFAULT_POST_LOGIN_PATH);
     expect(result.cookieValue).toContain(".");
   });
 
@@ -123,7 +125,9 @@ describe("oauth-state", () => {
     });
 
     expect(consumed.matchedEntry).toBeNull();
-    expect(consumed.nextCookieValue).toBe(created.cookieValue);
+    // idx-150: state가 제공됐으나 매칭 실패하면 해당 provider의 pending entry를 폐기해
+    // replay 창을 좁힌다. 따라서 동일 provider 단일 entry는 쿠키에서 사라진다.
+    expect(consumed.nextCookieValue).toBeNull();
   });
 
   it("같은 길이지만 다른 state는 매칭되지 않는다", () => {
@@ -143,7 +147,8 @@ describe("oauth-state", () => {
     });
 
     expect(consumed.matchedEntry).toBeNull();
-    expect(consumed.nextCookieValue).toBe(created.cookieValue);
+    // idx-150: 같은 길이의 다른 state로 매칭 실패해도 동일 provider entry를 폐기한다.
+    expect(consumed.nextCookieValue).toBeNull();
   });
 
   it("만료된 entry는 decode 단계에서 제거된다", () => {

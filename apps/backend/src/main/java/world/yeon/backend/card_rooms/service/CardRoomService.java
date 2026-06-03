@@ -177,6 +177,10 @@ public class CardRoomService {
       throw new CardRoomServiceException(CardRoomError.ROOM_NOT_WAITING);
     }
     var participants = repository.listParticipants(room.internalId());
+    // finding 21: 모든 활성 참가자가 유효 역할(외우는/봐주는)을 가져야 한다. 미배정(UNASSIGNED)이 있으면 막는다.
+    if (participants.stream().anyMatch((item) -> !CardRoomParticipantRole.fromNullable(item.role(), CardRoomParticipantRole.UNASSIGNED).isAssigned())) {
+      throw new CardRoomServiceException(CardRoomError.ROLE_UNASSIGNED);
+    }
     boolean hasMemorizer = participants.stream().anyMatch((item) -> CardRoomParticipantRole.MEMORIZER.matches(item.role()));
     boolean hasChecker = participants.stream().anyMatch((item) -> CardRoomParticipantRole.CHECKER.matches(item.role()));
     if (!hasMemorizer || !hasChecker) {
@@ -189,7 +193,7 @@ public class CardRoomService {
       throw new CardRoomServiceException(CardRoomError.EMPTY_DECK);
     }
     OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
-    repository.updateStatus(room.internalId(), CardRoomStatus.ANSWERING, 0, now);
+    repository.updateStatus(room.internalId(), CardRoomStatus.IN_PROGRESS, 0, false, now);
     repository.insertMessage(newPublicId(CardRoomIdPrefix.MESSAGE), room.internalId(), null, CardRoomSystemMessage.STUDY_STARTED.text(), CardRoomMessageType.SYSTEM, now);
     return new CardRoomResponse(detail(roomId), null);
   }
@@ -200,7 +204,7 @@ public class CardRoomService {
     var participant = requireParticipantInRoom(room, participantId);
     requireHost(participant);
     OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
-    repository.updateStatus(room.internalId(), CardRoomStatus.CLOSED, room.currentCardIndex(), now);
+    repository.updateStatus(room.internalId(), CardRoomStatus.CLOSED, room.currentCardIndex(), room.currentCardRevealed(), now);
     repository.insertMessage(newPublicId(CardRoomIdPrefix.MESSAGE), room.internalId(), null, CardRoomSystemMessage.ROOM_CLOSED.text(), CardRoomMessageType.SYSTEM, now);
     return new CardRoomResponse(detail(roomId), null);
   }
@@ -214,7 +218,7 @@ public class CardRoomService {
     repository.leaveParticipant(participant.internalId(), now);
     var remaining = repository.listParticipants(room.internalId());
     if (remaining.isEmpty()) {
-      repository.updateStatus(room.internalId(), CardRoomStatus.CLOSED, room.currentCardIndex(), now);
+      repository.updateStatus(room.internalId(), CardRoomStatus.CLOSED, room.currentCardIndex(), room.currentCardRevealed(), now);
     } else if (participant.isHost() && remaining.stream().noneMatch(ParticipantRow::isHost)) {
       // 호스트가 떠나면 남은 활성 참가자 중 최초 입장자에게 호스트를 승계해 방이 진행 불가로 고착되지 않게 한다.
       var heir = repository.findEarliestActiveParticipant(room.internalId());
@@ -244,10 +248,11 @@ public class CardRoomService {
     if (!CardRoomParticipantRole.CHECKER.matches(participant.role())) {
       throw new CardRoomServiceException(CardRoomError.CHECKER_ONLY);
     }
-    if (!CardRoomStatus.ANSWERING.matches(room.status())) {
-      throw new CardRoomServiceException(CardRoomError.ROOM_NOT_ANSWERING);
+    if (!CardRoomStatus.IN_PROGRESS.matches(room.status())) {
+      throw new CardRoomServiceException(CardRoomError.ROOM_NOT_IN_PROGRESS);
     }
-    repository.updateStatus(room.internalId(), CardRoomStatus.REVEALED, room.currentCardIndex(), OffsetDateTime.now(ZoneOffset.UTC));
+    // finding 20: 방 status는 IN_PROGRESS를 유지하고 현재 카드의 공개 플래그만 set한다.
+    repository.updateCurrentCardRevealed(room.internalId(), true, OffsetDateTime.now(ZoneOffset.UTC));
     return new CardRoomResponse(detail(roomId), null);
   }
 
@@ -256,13 +261,24 @@ public class CardRoomService {
     var room = requireLockedRoom(roomId);
     requireParticipantInRoom(room, participantId);
     ensureRoomActive(room);
-    if (!CardRoomStatus.PASSED.matches(room.status()) && !CardRoomStatus.GIVEN_UP.matches(room.status()) && !CardRoomStatus.REVEALED.matches(room.status())) {
+    if (!CardRoomStatus.IN_PROGRESS.matches(room.status())) {
+      throw new CardRoomServiceException(CardRoomError.ROOM_NOT_IN_PROGRESS);
+    }
+    // finding 20: '현재 카드 resolved' 판정을 방 status가 아니라 card_room_results의
+    // (room_id, current_card_id) 결과 존재 여부로 직접 한다. 다른 카드의 결과로는 통과하지 못한다.
+    var currentCard = repository.listCards(room.internalId()).stream()
+      .filter((card) -> card.orderIndex() == room.currentCardIndex())
+      .findFirst()
+      .orElse(null);
+    if (currentCard == null || !repository.existsResultForCard(room.internalId(), currentCard.internalId())) {
       throw new CardRoomServiceException(CardRoomError.CARD_NOT_RESOLVED);
     }
     int nextIndex = room.currentCardIndex() + 1;
     int cardCount = repository.listCards(room.internalId()).size();
-    CardRoomStatus nextStatus = nextIndex >= cardCount ? CardRoomStatus.FINISHED : CardRoomStatus.ANSWERING;
-    repository.updateStatus(room.internalId(), nextStatus, Math.min(nextIndex, Math.max(cardCount - 1, 0)), OffsetDateTime.now(ZoneOffset.UTC));
+    boolean isLastCard = nextIndex >= cardCount;
+    CardRoomStatus nextStatus = isLastCard ? CardRoomStatus.FINISHED : CardRoomStatus.IN_PROGRESS;
+    // 다음 카드로 진입하면 공개 플래그를 리셋한다. 종료 시에는 마지막 카드 인덱스에 고정한다.
+    repository.updateStatus(room.internalId(), nextStatus, Math.min(nextIndex, Math.max(cardCount - 1, 0)), false, OffsetDateTime.now(ZoneOffset.UTC));
     return new CardRoomResponse(detail(roomId), null);
   }
 
@@ -273,7 +289,8 @@ public class CardRoomService {
     ensureRoomOpen(room);
     String content = normalizeText(request == null ? null : request.content(), CardRoomTextRule.CHAT_MESSAGE);
     repository.insertMessage(newPublicId(CardRoomIdPrefix.MESSAGE), room.internalId(), participant.internalId(), content, CardRoomMessageType.USER, OffsetDateTime.now(ZoneOffset.UTC));
-    return new CardRoomMessagesResponse(detail(roomId).messages());
+    // finding 23: 메시지 추가는 방 row(status/count)를 바꾸지 않으므로 이미 잠근 RoomRow를 재사용해 findRoom 중복을 없앤다.
+    return new CardRoomMessagesResponse(detail(room).messages());
   }
 
   @Transactional
@@ -281,7 +298,7 @@ public class CardRoomService {
     var room = requireLockedRoom(roomId);
     var participant = requireParticipantInRoom(room, participantId);
     ensureRoomActive(room);
-    if (!CardRoomStatus.ANSWERING.matches(room.status()) && !CardRoomStatus.REVEALED.matches(room.status())) {
+    if (!CardRoomStatus.IN_PROGRESS.matches(room.status())) {
       throw new CardRoomServiceException(CardRoomError.ROOM_NOT_IN_PROGRESS);
     }
     // 카드 조회를 방 스코프로 일원화해 다른 방 카드 publicId 탐색을 차단한다.
@@ -304,8 +321,9 @@ public class CardRoomService {
     if (result.requiresMemorizer() && !CardRoomParticipantRole.MEMORIZER.matches(participant.role())) {
       throw new CardRoomServiceException(CardRoomError.MEMORIZER_ONLY);
     }
+    // finding 20: 결과는 card_room_results에만 기록한다. 방 status는 IN_PROGRESS를 유지하고
+    // 카드 단위 진행 상태는 detail에서 (room_id, current_card_id)로 다시 노출한다.
     var saved = repository.insertResult(newPublicId(CardRoomIdPrefix.RESULT), room.internalId(), card.internalId(), participant.internalId(), result, OffsetDateTime.now(ZoneOffset.UTC));
-    repository.updateStatus(room.internalId(), result.nextStatus(), room.currentCardIndex(), OffsetDateTime.now(ZoneOffset.UTC));
     return new CardRoomResultResponse(toResult(saved), detail(roomId));
   }
 
@@ -316,12 +334,21 @@ public class CardRoomService {
   }
 
   private CardRoomDetailDto detail(String roomId) {
-    var room = requireRoom(roomId);
-    var cards = repository.listCards(room.internalId()).stream().map(this::toCard).toList();
+    return detail(requireRoom(roomId));
+  }
+
+  // finding 23(n+1): mutation 경로는 requireLockedRoom으로 이미 RoomRow를 갖고 있으므로
+  // detail이 findRoom을 또 호출하지 않도록 RoomRow를 받는 오버로드로 중복 조회를 제거한다.
+  private CardRoomDetailDto detail(RoomRow room) {
+    var cards = repository.listCards(room.internalId());
     var participants = repository.listParticipants(room.internalId()).stream().map(this::toParticipant).toList();
     var messages = repository.listMessages(room.internalId()).stream().map(this::toMessage).toList();
     var results = repository.listResults(room.internalId()).stream().map(this::toResult).toList();
-    return new CardRoomDetailDto(room.publicId(), room.title(), room.deckTitle(), room.hostLabel(), room.visibility(), room.status(), room.currentCardIndex(), cards.size(), room.memorizerCount(), room.checkerCount(), iso(room.createdAt()), iso(room.updatedAt()), participants, cards, messages, results);
+    // finding 20: 현재 카드의 결과(resolved 판정)는 방 status가 아니라 (room_id, current_card_id)로 직접 조회한다.
+    var currentCard = cards.stream().filter((card) -> card.orderIndex() == room.currentCardIndex()).findFirst().orElse(null);
+    String currentCardResult = currentCard == null ? null : repository.findResultValueForCard(room.internalId(), currentCard.internalId());
+    var cardDtos = cards.stream().map(this::toCard).toList();
+    return new CardRoomDetailDto(room.publicId(), room.title(), room.deckTitle(), room.hostLabel(), room.visibility(), room.status(), room.currentCardIndex(), room.currentCardRevealed(), currentCardResult, cardDtos.size(), room.memorizerCount(), room.checkerCount(), iso(room.createdAt()), iso(room.updatedAt()), participants, cardDtos, messages, results);
   }
 
   private RoomRow requireRoom(String roomId) {

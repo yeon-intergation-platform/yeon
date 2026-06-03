@@ -19,7 +19,7 @@ public class CardRoomRepository {
   private final JdbcTemplate jdbc;
   public CardRoomRepository(JdbcTemplate jdbc) { this.jdbc = jdbc; }
 
-  public record RoomRow(Long internalId, String publicId, String title, String deckTitle, String visibility, String status, int currentCardIndex, OffsetDateTime createdAt, OffsetDateTime updatedAt, String hostLabel, int cardCount, int memorizerCount, int checkerCount) {}
+  public record RoomRow(Long internalId, String publicId, String title, String deckTitle, String visibility, String status, int currentCardIndex, boolean currentCardRevealed, OffsetDateTime createdAt, OffsetDateTime updatedAt, String hostLabel, int cardCount, int memorizerCount, int checkerCount) {}
   public record ParticipantRow(Long internalId, String publicId, Long roomId, UUID userId, String guestId, String nickname, String characterId, String role, boolean isHost, boolean isReady, OffsetDateTime joinedAt) {}
   public record CardRow(Long internalId, String publicId, Long roomId, int orderIndex, String frontText, String backText) {}
   public record MessageRow(Long internalId, String publicId, String senderParticipantId, String senderNickname, String content, String messageType, OffsetDateTime createdAt) {}
@@ -33,7 +33,7 @@ public class CardRoomRepository {
     // leaveRoom의 즉시 종료와 cleanup의 지연 종료 사이 빈 방이 노출되는 창을 닫는 보수적 기본값이다.
     // (실제 status 종료 처리는 여전히 cleanup이 맡으며, 여기서는 노출만 막는다.)
     return jdbc.query("""
-      select r.id, r.public_id, r.title, r.deck_title, r.visibility, r.status, r.current_card_index, r.created_at, r.updated_at,
+      select r.id, r.public_id, r.title, r.deck_title, r.visibility, r.status, r.current_card_index, r.current_card_revealed, r.created_at, r.updated_at,
         coalesce(h.nickname, ?) as host_label,
         (select count(*)::int from public.card_room_cards c where c.room_id = r.id) as card_count,
         (select count(*)::int from public.card_room_participants p where p.room_id = r.id and p.left_at is null and p.role = ?) as memorizer_count,
@@ -48,7 +48,7 @@ public class CardRoomRepository {
         )
       order by r.created_at desc
       limit 100
-      """, (rs, i) -> new RoomRow(rs.getLong(1), rs.getString(2), rs.getString(3), rs.getString(4), rs.getString(5), rs.getString(6), rs.getInt(7), toOffset(rs.getTimestamp(8)), toOffset(rs.getTimestamp(9)), rs.getString(10), rs.getInt(11), rs.getInt(12), rs.getInt(13)), CardRoomDisplayText.GUEST_HOST_LABEL, CardRoomParticipantRole.MEMORIZER.dbValue(), CardRoomParticipantRole.CHECKER.dbValue(), CardRoomVisibility.PUBLIC.dbValue(), CardRoomStatus.FINISHED.dbValue(), CardRoomStatus.CLOSED.dbValue());
+      """, (rs, i) -> mapRoom(rs), CardRoomDisplayText.GUEST_HOST_LABEL, CardRoomParticipantRole.MEMORIZER.dbValue(), CardRoomParticipantRole.CHECKER.dbValue(), CardRoomVisibility.PUBLIC.dbValue(), CardRoomStatus.FINISHED.dbValue(), CardRoomStatus.CLOSED.dbValue());
   }
 
   public void lockRoom(Long internalId) {
@@ -57,7 +57,7 @@ public class CardRoomRepository {
 
   public RoomRow findRoom(String publicId) {
     var rows = jdbc.query("""
-      select r.id, r.public_id, r.title, r.deck_title, r.visibility, r.status, r.current_card_index, r.created_at, r.updated_at,
+      select r.id, r.public_id, r.title, r.deck_title, r.visibility, r.status, r.current_card_index, r.current_card_revealed, r.created_at, r.updated_at,
         coalesce(h.nickname, ?) as host_label,
         (select count(*)::int from public.card_room_cards c where c.room_id = r.id) as card_count,
         (select count(*)::int from public.card_room_participants p where p.room_id = r.id and p.left_at is null and p.role = ?) as memorizer_count,
@@ -65,7 +65,7 @@ public class CardRoomRepository {
       from public.card_rooms r
       left join public.card_room_participants h on h.room_id = r.id and h.is_host = true and h.left_at is null
       where r.public_id = ?
-      """, (rs, i) -> new RoomRow(rs.getLong(1), rs.getString(2), rs.getString(3), rs.getString(4), rs.getString(5), rs.getString(6), rs.getInt(7), toOffset(rs.getTimestamp(8)), toOffset(rs.getTimestamp(9)), rs.getString(10), rs.getInt(11), rs.getInt(12), rs.getInt(13)), CardRoomDisplayText.GUEST_HOST_LABEL, CardRoomParticipantRole.MEMORIZER.dbValue(), CardRoomParticipantRole.CHECKER.dbValue(), publicId);
+      """, (rs, i) -> mapRoom(rs), CardRoomDisplayText.GUEST_HOST_LABEL, CardRoomParticipantRole.MEMORIZER.dbValue(), CardRoomParticipantRole.CHECKER.dbValue(), publicId);
     return rows.isEmpty() ? null : rows.getFirst();
   }
 
@@ -79,7 +79,7 @@ public class CardRoomRepository {
   }
 
   public RoomRow insertRoom(String publicId, String title, String deckTitle, String sourceDeckId, UUID ownerUserId, String ownerGuestId, CardRoomVisibility visibility, OffsetDateTime now) {
-    jdbc.update("insert into public.card_rooms(public_id,title,deck_title,source_deck_public_id,owner_user_id,owner_guest_id,visibility,status,current_card_index,created_at,updated_at) values (?,?,?,?,?,?,?,?,?,?,?)", publicId, title, deckTitle, sourceDeckId, ownerUserId, ownerGuestId, visibility.dbValue(), CardRoomStatus.WAITING.dbValue(), 0, now, now);
+    jdbc.update("insert into public.card_rooms(public_id,title,deck_title,source_deck_public_id,owner_user_id,owner_guest_id,visibility,status,current_card_index,current_card_revealed,created_at,updated_at) values (?,?,?,?,?,?,?,?,?,?,?,?)", publicId, title, deckTitle, sourceDeckId, ownerUserId, ownerGuestId, visibility.dbValue(), CardRoomStatus.WAITING.dbValue(), 0, false, now, now);
     return findRoom(publicId);
   }
 
@@ -132,6 +132,13 @@ public class CardRoomRepository {
     return !rows.isEmpty();
   }
 
+  // 현재 카드의 결과 값(finding 20). detail DTO에서 현재 카드의 resolved/result를 노출하기 위해
+  // (room_id, card_id) 조합으로 직접 조회한다. 결과가 없으면 null(미확정).
+  public String findResultValueForCard(Long roomId, Long cardId) {
+    var rows = jdbc.queryForList("select result from public.card_room_results where room_id = ? and card_id = ? order by created_at desc, id desc limit 1", String.class, roomId, cardId);
+    return rows.isEmpty() ? null : rows.getFirst();
+  }
+
   public List<MessageRow> listMessages(Long roomId) {
     return jdbc.query("""
       select m.id, m.public_id, p.public_id, p.nickname, m.content, m.message_type, m.created_at
@@ -182,8 +189,13 @@ public class CardRoomRepository {
     return rows.isEmpty() ? null : rows.getFirst();
   }
 
-  public void updateStatus(Long roomId, CardRoomStatus status, int currentCardIndex, OffsetDateTime now) {
-    jdbc.update("update public.card_rooms set status = ?, current_card_index = ?, updated_at = ? where id = ?", status.dbValue(), currentCardIndex, now, roomId);
+  public void updateStatus(Long roomId, CardRoomStatus status, int currentCardIndex, boolean currentCardRevealed, OffsetDateTime now) {
+    jdbc.update("update public.card_rooms set status = ?, current_card_index = ?, current_card_revealed = ?, updated_at = ? where id = ?", status.dbValue(), currentCardIndex, currentCardRevealed, now, roomId);
+  }
+
+  // 정답 공개 토글만 변경한다(finding 20). reveal()이 방 status를 바꾸지 않고 현재 카드 공개 상태만 set.
+  public void updateCurrentCardRevealed(Long roomId, boolean currentCardRevealed, OffsetDateTime now) {
+    jdbc.update("update public.card_rooms set current_card_revealed = ?, updated_at = ? where id = ?", currentCardRevealed, now, roomId);
   }
 
   public int finishRoomsWithoutActiveParticipants(OffsetDateTime now) {
@@ -222,6 +234,16 @@ public class CardRoomRepository {
 
   public void assignHost(Long participantId) {
     jdbc.update("update public.card_room_participants set is_host = true where id = ?", participantId);
+  }
+
+  // current_card_revealed 컬럼 추가(finding 20)로 RoomRow 매핑을 한 곳으로 모아 두 조회 쿼리의 컬럼 순서를 SSOT화한다.
+  private RoomRow mapRoom(java.sql.ResultSet rs) throws java.sql.SQLException {
+    return new RoomRow(
+      rs.getLong(1), rs.getString(2), rs.getString(3), rs.getString(4), rs.getString(5), rs.getString(6),
+      rs.getInt(7), rs.getBoolean(8),
+      toOffset(rs.getTimestamp(9)), toOffset(rs.getTimestamp(10)),
+      rs.getString(11), rs.getInt(12), rs.getInt(13), rs.getInt(14)
+    );
   }
 
   private ParticipantRow participant(java.sql.ResultSet rs) throws java.sql.SQLException {

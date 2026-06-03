@@ -4,7 +4,7 @@ import {
   yeonMobileAppColors,
 } from "@yeon/ui/native";
 import * as ExpoLinking from "expo-linking";
-import { useState } from "react";
+import { memo, useState } from "react";
 import Markdown, { type RenderRules } from "react-native-markdown-display";
 import { getMobileApiBaseUrl } from "../../services/api-base-url";
 
@@ -175,7 +175,11 @@ type CardMarkdownProps = {
 };
 
 // 카드 본문(질문/답변) 마크다운 렌더러 — 이미지·표·서식을 웹과 동일하게 표시.
-export function CardMarkdown({ source, tone = "default" }: CardMarkdownProps) {
+// memo: 리스트에서 같은 source/tone이면 다른 카드의 메뉴 토글 시 리렌더되지 않게 한다.
+export const CardMarkdown = memo(function CardMarkdown({
+  source,
+  tone = "default",
+}: CardMarkdownProps) {
   return (
     <Markdown
       onLinkPress={handleLinkPress}
@@ -187,4 +191,4 @@ export function CardMarkdown({ source, tone = "default" }: CardMarkdownProps) {
       {source}
     </Markdown>
   );
-}
+});

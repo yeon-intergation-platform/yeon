@@ -1,13 +1,8 @@
 export type CardRoomVisibility = "public" | "private";
-export type CardRoomStatus =
-  | "waiting"
-  | "answering"
-  | "passed"
-  | "given_up"
-  | "revealed"
-  | "finished"
-  | "closed";
-export type CardRoomRole = "MEMORIZER" | "CHECKER";
+// 방 수준 라이프사이클만 표현한다(finding 20). 카드 단위 진행 상태는
+// currentCardRevealed / currentCardResult로 분리한다.
+export type CardRoomStatus = "waiting" | "in_progress" | "finished" | "closed";
+export type CardRoomRole = "UNASSIGNED" | "MEMORIZER" | "CHECKER";
 export type CardRoomResult = "OK" | "GIVE_UP" | "HINTED_OK";
 export type CardRoomParticipantDto = {
   id: string;
@@ -46,6 +41,9 @@ export type CardRoomDetailDto = {
   visibility: CardRoomVisibility;
   status: CardRoomStatus;
   currentCardIndex: number;
+  // finding 20: 현재 카드의 진행 상태(방 status와 분리).
+  currentCardRevealed: boolean;
+  currentCardResult: CardRoomResult | null;
   participants: readonly CardRoomParticipantDto[];
   cards: readonly CardRoomCardDto[];
   messages: readonly CardRoomMessageDto[];
@@ -85,6 +83,9 @@ export type CardRoomRealtimeState = {
   visibility: CardRoomVisibility;
   status: CardRoomStatus;
   currentCardIndex: number;
+  // finding 20: 현재 카드의 진행 상태(방 status와 분리).
+  currentCardRevealed: boolean;
+  currentCardResult: CardRoomResult | null;
   participants: readonly CardRoomParticipantDto[];
   cards: readonly CardRoomCardDto[];
   messages: readonly CardRoomMessageDto[];
@@ -122,6 +123,8 @@ export function toCardRoomRealtimeState(
     visibility: room.visibility,
     status: room.status,
     currentCardIndex: room.currentCardIndex,
+    currentCardRevealed: room.currentCardRevealed,
+    currentCardResult: room.currentCardResult,
     participants: room.participants,
     cards: room.cards,
     messages: room.messages,

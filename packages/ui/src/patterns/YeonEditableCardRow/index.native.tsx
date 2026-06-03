@@ -1,4 +1,4 @@
-import { type ReactNode, useState } from "react";
+import { memo, type ReactNode, useState } from "react";
 
 import {
   YeonButton,
@@ -38,7 +38,9 @@ export type YeonEditableCardRowProps = {
   style?: YeonViewProps["style"];
 };
 
-export function YeonEditableCardRow({
+// memo: 리스트에서 다른 행의 메뉴 토글 등으로 인한 전체 리렌더를 막는다.
+// 콜백은 상위에서 useCallback으로 안정화해야 효과가 있다.
+export const YeonEditableCardRow = memo(function YeonEditableCardRow({
   answerLabel,
   answerText,
   answerContent,
@@ -213,7 +215,7 @@ export function YeonEditableCardRow({
       ) : null}
     </YeonView>
   );
-}
+});
 
 const styles = createYeonStyleSheet({
   answerText: {

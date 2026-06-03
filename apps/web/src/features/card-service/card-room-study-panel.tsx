@@ -163,8 +163,8 @@ export function CardRoomStudyPanel({
             </YeonText>
           </YeonButton>
           <YeonView className="mt-4 grid gap-3">
-            {state?.status === CARD_ROOM_STATUS.ANSWERING ||
-            state?.status === CARD_ROOM_STATUS.REVEALED ? (
+            {state?.status === CARD_ROOM_STATUS.IN_PROGRESS &&
+            state.currentCardResult === null ? (
               <YeonView className="grid gap-3 sm:grid-cols-2">
                 <YeonButton
                   type="button"

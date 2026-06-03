@@ -122,14 +122,12 @@ export function CardRoomScreen({ roomId }: CardRoomScreenProps) {
     ) &&
     state.participants.every((participant) => participant.isReady)
   );
-  const shouldShowBack =
-    state?.status === CARD_ROOM_STATUS.GIVEN_UP ||
-    state?.status === CARD_ROOM_STATUS.REVEALED ||
-    state?.status === CARD_ROOM_STATUS.PASSED;
-  const canMoveNext =
-    state?.status === CARD_ROOM_STATUS.PASSED ||
-    state?.status === CARD_ROOM_STATUS.GIVEN_UP ||
-    state?.status === CARD_ROOM_STATUS.REVEALED;
+  // finding 20: 뒷면 공개는 방 status가 아니라 현재 카드의 공개/확정 상태로 판정한다.
+  const isResolved = Boolean(state && state.currentCardResult !== null);
+  const isRevealed = Boolean(state?.currentCardRevealed);
+  const shouldShowBack = isRevealed || isResolved;
+  // 다음 카드로 넘어갈 수 있는지는 현재 카드가 확정(resolved)됐는지로 판정한다.
+  const canMoveNext = isResolved;
   function submitChat() {
     const text = chatDraft.trim();
     if (!text) return;

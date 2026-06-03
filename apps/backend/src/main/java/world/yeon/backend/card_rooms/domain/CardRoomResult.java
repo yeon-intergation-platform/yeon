@@ -2,25 +2,21 @@ package world.yeon.backend.card_rooms.domain;
 
 import java.util.Optional;
 
+// 카드별 결과 값(finding 20). 더 이상 방 status로 매핑하지 않는다.
+// 결과는 card_room_results에만 기록되고, 방 status는 IN_PROGRESS를 유지한다.
 public enum CardRoomResult {
-  OK("OK", CardRoomStatus.PASSED),
-  HINTED_OK("HINTED_OK", CardRoomStatus.PASSED),
-  GIVE_UP("GIVE_UP", CardRoomStatus.GIVEN_UP);
+  OK("OK"),
+  HINTED_OK("HINTED_OK"),
+  GIVE_UP("GIVE_UP");
 
   private final String dbValue;
-  private final CardRoomStatus nextStatus;
 
-  CardRoomResult(String dbValue, CardRoomStatus nextStatus) {
+  CardRoomResult(String dbValue) {
     this.dbValue = dbValue;
-    this.nextStatus = nextStatus;
   }
 
   public String dbValue() {
     return dbValue;
-  }
-
-  public CardRoomStatus nextStatus() {
-    return nextStatus;
   }
 
   public boolean matches(String value) {

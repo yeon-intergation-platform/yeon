@@ -5,10 +5,11 @@ import {
   useYeonQueryClient as useQueryClient,
 } from "@yeon/ui/native";
 import { useYeonRouter as useRouter } from "@yeon/ui/native";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { showYeonAlert } from "@yeon/ui/native";
 import {
   YeonActionButton as ActionButton,
+  YeonFlatList as FlatList,
   YeonFormIntro as FormIntro,
   YeonFormStack as FormStack,
   YeonMobileScreen as MobileScreen,
@@ -148,12 +149,84 @@ export function FeedScreen() {
     }
   }
 
-  function pushProfile(post: ChatServiceFeedPostDto) {
-    router.push(`/profile/${post.author.id}`);
-  }
+  const pushProfile = useCallback(
+    (post: ChatServiceFeedPostDto) => {
+      router.push(`/profile/${post.author.id}`);
+    },
+    [router]
+  );
 
-  return (
-    <MobileScreen>
+  const keyExtractor = useCallback(
+    (post: ChatServiceFeedPostDto) => post.id,
+    []
+  );
+
+  const renderPost = useCallback(
+    ({ item: post }: { item: ChatServiceFeedPostDto }) => (
+      <SectionCard>
+        <PostAuthorHeader
+          avatarTone="neutral"
+          imageUrl={post.author.avatarUrl}
+          label={post.author.nickname}
+          meta={`${post.author.regionLabel} ${post.author.ageLabel} · ${formatRelativeTime(post.createdAt)}`}
+          onPress={() => pushProfile(post)}
+          title={post.author.nickname}
+          titleSize="lg"
+          trailingSlot={
+            <>
+              <PillBadge
+                label="신고"
+                onPress={() => void handleReport(post.id)}
+              />
+              <PillBadge
+                label="차단"
+                onPress={() => void handleBlock(post.author.id)}
+              />
+            </>
+          }
+        />
+
+        <PostText>{post.body}</PostText>
+
+        <PostFooter
+          actionLabel={
+            activeReplyPostId === post.id ? "답글 닫기" : "답글 보기"
+          }
+          label={`답글 ${post.replyCount}`}
+          onActionPress={() => {
+            setReplyDraft("");
+            setActiveReplyPostId((current) =>
+              current === post.id ? null : post.id
+            );
+          }}
+        />
+
+        {activeReplyPostId === post.id ? (
+          <FeedRepliesPanel
+            onReply={() => void handleReply(post.id)}
+            postId={post.id}
+            replyDraft={replyDraft}
+            replyDraftPending={replyMutation.isPending}
+            setReplyDraft={setReplyDraft}
+            sessionToken={sessionToken}
+          />
+        ) : null}
+      </SectionCard>
+    ),
+    [
+      activeReplyPostId,
+      handleBlock,
+      handleReply,
+      handleReport,
+      pushProfile,
+      replyDraft,
+      replyMutation.isPending,
+      sessionToken,
+    ]
+  );
+
+  const listHeader = (
+    <>
       <TopBar
         rightLabel="새로고침"
         onRightPress={() => {
@@ -195,58 +268,25 @@ export function FeedScreen() {
           title="피드 로드 실패"
         />
       ) : null}
+    </>
+  );
 
-      {feedQuery.data?.posts.map((post) => (
-        <SectionCard key={post.id}>
-          <PostAuthorHeader
-            avatarTone="neutral"
-            imageUrl={post.author.avatarUrl}
-            label={post.author.nickname}
-            meta={`${post.author.regionLabel} ${post.author.ageLabel} · ${formatRelativeTime(post.createdAt)}`}
-            onPress={() => pushProfile(post)}
-            title={post.author.nickname}
-            titleSize="lg"
-            trailingSlot={
-              <>
-                <PillBadge
-                  label="신고"
-                  onPress={() => void handleReport(post.id)}
-                />
-                <PillBadge
-                  label="차단"
-                  onPress={() => void handleBlock(post.author.id)}
-                />
-              </>
-            }
-          />
-
-          <PostText>{post.body}</PostText>
-
-          <PostFooter
-            actionLabel={
-              activeReplyPostId === post.id ? "답글 닫기" : "답글 보기"
-            }
-            label={`답글 ${post.replyCount}`}
-            onActionPress={() => {
-              setReplyDraft("");
-              setActiveReplyPostId((current) =>
-                current === post.id ? null : post.id
-              );
-            }}
-          />
-
-          {activeReplyPostId === post.id ? (
-            <FeedRepliesPanel
-              onReply={() => void handleReply(post.id)}
-              postId={post.id}
-              replyDraft={replyDraft}
-              replyDraftPending={replyMutation.isPending}
-              setReplyDraft={setReplyDraft}
-              sessionToken={sessionToken}
-            />
-          ) : null}
-        </SectionCard>
-      ))}
+  return (
+    <MobileScreen contentVariant="full" scroll={false}>
+      <FlatList
+        contentContainerStyle={{
+          gap: 16,
+          paddingBottom: 120,
+          paddingHorizontal: 18,
+          paddingTop: 22,
+        }}
+        data={feedQuery.data?.posts ?? []}
+        initialNumToRender={6}
+        keyExtractor={keyExtractor}
+        ListHeaderComponent={listHeader}
+        renderItem={renderPost}
+        style={{ flex: 1 }}
+      />
     </MobileScreen>
   );
 }

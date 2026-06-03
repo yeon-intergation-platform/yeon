@@ -10,6 +10,14 @@ vi.mock("next/headers", () => ({
   cookies: (...args: unknown[]) => mockCookies(...args),
 }));
 
+// session.ts는 Universal UI 마이그레이션 후 next/headers 대신
+// @yeon/ui 런타임 포트(getYeonRequestCookies)로 요청 쿠키를 읽는다.
+// 같은 mockCookies로 라우팅해 요청 스코프 밖 cookies() 호출 오류를 피한다.
+vi.mock("@yeon/ui/runtime/YeonServerRequest", () => ({
+  getYeonRequestCookies: (...args: unknown[]) => mockCookies(...args),
+  getYeonRequestHeaders: vi.fn(),
+}));
+
 vi.mock("@/server/root-auth-spring-client", () => ({
   createRootAuthSessionInSpring: (...args: unknown[]) =>
     mockCreateRootAuthSessionInSpring(...args),

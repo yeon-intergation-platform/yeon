@@ -5,17 +5,18 @@ export const CARD_ROOM_VISIBILITY = {
   PRIVATE: "private",
 } as const;
 
+// 방 수준 라이프사이클만 표현한다(finding 20). 카드 단위 진행 상태(정답 공개/결과)는
+// status가 아니라 currentCardRevealed / currentCardResult로 분리한다.
 export const CARD_ROOM_STATUS = {
   WAITING: "waiting",
-  ANSWERING: "answering",
-  PASSED: "passed",
-  GIVEN_UP: "given_up",
-  REVEALED: "revealed",
+  IN_PROGRESS: "in_progress",
   FINISHED: "finished",
   CLOSED: "closed",
 } as const;
 
 export const CARD_ROOM_ROLE = {
+  // finding 21: 역할 미배정(UNASSIGNED)을 1급 상태로 표현한다. startRoom 검증에서 막힌다.
+  UNASSIGNED: "UNASSIGNED",
   MEMORIZER: "MEMORIZER",
   CHECKER: "CHECKER",
 } as const;
@@ -34,16 +35,14 @@ export type CardRoomVisibility = z.infer<typeof cardRoomVisibilitySchema>;
 
 export const cardRoomStatusSchema = z.enum([
   CARD_ROOM_STATUS.WAITING,
-  CARD_ROOM_STATUS.ANSWERING,
-  CARD_ROOM_STATUS.PASSED,
-  CARD_ROOM_STATUS.GIVEN_UP,
-  CARD_ROOM_STATUS.REVEALED,
+  CARD_ROOM_STATUS.IN_PROGRESS,
   CARD_ROOM_STATUS.FINISHED,
   CARD_ROOM_STATUS.CLOSED,
 ]);
 export type CardRoomStatus = z.infer<typeof cardRoomStatusSchema>;
 
 export const cardRoomRoleSchema = z.enum([
+  CARD_ROOM_ROLE.UNASSIGNED,
   CARD_ROOM_ROLE.MEMORIZER,
   CARD_ROOM_ROLE.CHECKER,
 ]);
@@ -173,6 +172,10 @@ export const cardRoomSummaryDtoSchema = z.object({
 export type CardRoomSummaryDto = z.infer<typeof cardRoomSummaryDtoSchema>;
 
 export const cardRoomDetailDtoSchema = cardRoomSummaryDtoSchema.extend({
+  // finding 20: 현재 카드의 진행 상태를 방 status와 분리해 노출한다.
+  // currentCardRevealed: 정답이 공개됐는지(reveal). currentCardResult: 현재 카드의 확정 결과(null이면 미확정).
+  currentCardRevealed: z.boolean(),
+  currentCardResult: cardRoomResultSchema.nullable(),
   participants: z.array(cardRoomParticipantDtoSchema),
   cards: z.array(cardRoomCardDtoSchema),
   messages: z.array(cardRoomMessageDtoSchema),

@@ -10,13 +10,14 @@ import {
 } from "@yeon/ui/native";
 import { YEON_ROUTE_TEMPLATES } from "@yeon/ui/runtime/ports";
 import { deriveCardDeckDetailViewState } from "@yeon/ui/runtime/ports/card-deck";
-import { useEffect, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { showYeonAlert } from "@yeon/ui/native";
 import {
   YeonActionButton as ActionButton,
   YeonBottomSheetForm as BottomSheetForm,
   YeonBottomSheetModal as BottomSheetModal,
   YeonEditableCardRow as EditableCardRow,
+  YeonFlatList as FlatList,
   YeonFloatingActionButton as FloatingActionButton,
   YeonFormIntro as FormIntro,
   YeonFormStack as FormStack,
@@ -91,6 +92,59 @@ function getModeBadge(mode: CardServiceMode): string {
     ? CARD_SERVICE_TEXT.detail.modeAuthenticatedLabel
     : CARD_SERVICE_TEXT.detail.modeGuestLabel;
 }
+
+type DeckCardRowProps = {
+  item: CardDeckItemDto;
+  index: number;
+  isBusy: boolean;
+  isMenuOpen: boolean;
+  onDelete: (itemId: string) => void;
+  onEdit: (item: CardDeckItemDto) => void;
+  onToggleMenu: (itemId: string) => void;
+};
+
+// memo: 한 카드의 메뉴 토글이 다른 카드(특히 CardMarkdown)까지 리렌더하지 않도록 분리한다.
+// 콜백은 상위에서 useCallback으로 안정화되고, 여기서 item별 닫힘 closure를 만든다.
+const DeckCardRow = memo(function DeckCardRow({
+  item,
+  index,
+  isBusy,
+  isMenuOpen,
+  onDelete,
+  onEdit,
+  onToggleMenu,
+}: DeckCardRowProps) {
+  const handleDelete = useCallback(
+    () => onDelete(item.id),
+    [onDelete, item.id]
+  );
+  const handleEdit = useCallback(() => onEdit(item), [onEdit, item]);
+  const handleToggleMenu = useCallback(
+    () => onToggleMenu(item.id),
+    [onToggleMenu, item.id]
+  );
+
+  return (
+    <EditableCardRow
+      answerLabel={CARD_SERVICE_TEXT.detail.answerLabel}
+      answerText={item.backText}
+      answerContent={<CardMarkdown source={item.backText} />}
+      questionContent={<CardMarkdown source={item.frontText} />}
+      deleteLabel={CARD_SERVICE_TEXT.shared.deleteLabel}
+      editLabel={CARD_SERVICE_TEXT.shared.editLabel}
+      index={index}
+      isBusy={isBusy}
+      isMenuOpen={isMenuOpen}
+      menuAccessibilityLabel={CARD_SERVICE_TEXT.shared.openCardMenuLabel}
+      onDelete={handleDelete}
+      onEdit={handleEdit}
+      onToggleMenu={handleToggleMenu}
+      openAccessibilityLabel={`${CARD_SERVICE_TEXT.shared.openCardLabel}: ${item.frontText}`}
+      questionLabel={CARD_SERVICE_TEXT.detail.questionLabel}
+      questionText={item.frontText}
+    />
+  );
+});
 
 export function CardDeckDetailScreen({ deckId }: CardDeckDetailScreenProps) {
   const queryClient = useQueryClient();
@@ -233,13 +287,19 @@ export function CardDeckDetailScreen({ deckId }: CardDeckDetailScreenProps) {
     setSheetState({ kind: "create" });
   }
 
-  function openEditSheet(item: CardDeckItemDto) {
+  const openEditSheet = useCallback((item: CardDeckItemDto) => {
     setFrontText(item.frontText);
     setBackText(item.backText);
     setSheetMode(SHEET_MODES.manual);
     setActiveMenuItemId(null);
     setSheetState({ item, kind: "edit" });
-  }
+  }, []);
+
+  const toggleMenu = useCallback((itemId: string) => {
+    setActiveMenuItemId((current) => (current === itemId ? null : itemId));
+  }, []);
+
+  const cardKeyExtractor = useCallback((item: CardDeckItemDto) => item.id, []);
 
   function closeSheet() {
     setSheetState({ kind: "closed" });
@@ -308,30 +368,33 @@ export function CardDeckDetailScreen({ deckId }: CardDeckDetailScreenProps) {
     }
   }
 
-  function handleDeleteCard(itemId: string) {
-    showYeonAlert(
-      CARD_SERVICE_TEXT.detail.deleteConfirmTitle,
-      CARD_SERVICE_TEXT.detail.deleteConfirmMessage,
-      [
-        { style: "cancel", text: CARD_SERVICE_TEXT.shared.closeLabel },
-        {
-          onPress: async () => {
-            try {
-              await deleteMutation.mutateAsync(itemId);
-            } catch (error) {
-              const message =
-                error instanceof Error
-                  ? error.message
-                  : CARD_SERVICE_TEXT.detail.deleteErrorMessage;
-              showYeonAlert(CARD_SERVICE_TEXT.state.errorTitle, message);
-            }
+  const handleDeleteCard = useCallback(
+    (itemId: string) => {
+      showYeonAlert(
+        CARD_SERVICE_TEXT.detail.deleteConfirmTitle,
+        CARD_SERVICE_TEXT.detail.deleteConfirmMessage,
+        [
+          { style: "cancel", text: CARD_SERVICE_TEXT.shared.closeLabel },
+          {
+            onPress: async () => {
+              try {
+                await deleteMutation.mutateAsync(itemId);
+              } catch (error) {
+                const message =
+                  error instanceof Error
+                    ? error.message
+                    : CARD_SERVICE_TEXT.detail.deleteErrorMessage;
+                showYeonAlert(CARD_SERVICE_TEXT.state.errorTitle, message);
+              }
+            },
+            style: "destructive",
+            text: CARD_SERVICE_TEXT.shared.deleteLabel,
           },
-          style: "destructive",
-          text: CARD_SERVICE_TEXT.shared.deleteLabel,
-        },
-      ]
-    );
-  }
+        ]
+      );
+    },
+    [deleteMutation]
+  );
 
   if (isBooting) {
     return (
@@ -369,9 +432,69 @@ export function CardDeckDetailScreen({ deckId }: CardDeckDetailScreenProps) {
   const canSubmitBulk =
     bulkText.trim().length > 0 && !bulkCreateMutation.isPending;
 
+  const rowBusy = updateMutation.isPending || deleteMutation.isPending;
+  const isReady = detailState.kind === "ready" && !detailState.isEmpty;
+  const listItems = isReady && detail ? detail.items : [];
+
+  const listHeader = (
+    <FormStack gap="roomy">
+      <MobileHeaderBar
+        leftLabel={CARD_SERVICE_TEXT.play.headerBackLabel}
+        onLeftPress={() => router.back()}
+        rightAccessibilityLabel={
+          CARD_SERVICE_TEXT.detail.cardSettingsAccessibilityLabel
+        }
+        rightLabel="⋮"
+        onRightPress={() =>
+          showYeonAlert(
+            CARD_SERVICE_TEXT.detail.cardSettingsTitle,
+            CARD_SERVICE_TEXT.detail.cardSettingsPreparingMessage
+          )
+        }
+        subtitle={`${getModeBadge(mode)} · ${CARD_SERVICE_TEXT.detail.metaCountLabel} ${cardCount}${CARD_SERVICE_TEXT.detail.metaSuffixCreatedAtLabel}${formatDate(detail?.deck.createdAt)}`}
+        title={detail?.deck.title ?? CARD_SERVICE_TEXT.detail.deckTitleFallback}
+      />
+
+      <ActionButton
+        disabled={!detail || cardCount === 0}
+        label={CARD_SERVICE_TEXT.detail.playButtonLabel}
+        onPress={() => {
+          if (!deckId) {
+            return;
+          }
+          router.push(getCardServiceDeckPlayHref(deckId));
+        }}
+        variant="dark"
+      />
+
+      {detailState.kind === "loading" ? (
+        <StateBlock
+          loading
+          message={CARD_SERVICE_TEXT.state.loading}
+          title={CARD_SERVICE_TEXT.state.loadingTitle}
+        />
+      ) : detailState.kind === "error" ? (
+        <StateBlock
+          message={detailState.message}
+          title={CARD_SERVICE_TEXT.state.errorTitle}
+        />
+      ) : detailState.kind === "ready" && detailState.isEmpty ? (
+        <StateBlock
+          message={CARD_SERVICE_TEXT.detail.emptyMessage}
+          title={CARD_SERVICE_TEXT.detail.emptyTitle}
+        />
+      ) : isReady && detail ? (
+        <SectionSummaryHeader
+          meta={`${CARD_SERVICE_TEXT.detail.allCardsLabel} ${detail.items.length}`}
+          title={CARD_SERVICE_TEXT.detail.itemLabel}
+        />
+      ) : null}
+    </FormStack>
+  );
+
   return (
     <MobileScreen
-      contentVariant="detail"
+      contentVariant="full"
       floatingSlot={
         <FloatingActionButton
           accessibilityLabel={
@@ -381,91 +504,26 @@ export function CardDeckDetailScreen({ deckId }: CardDeckDetailScreenProps) {
         />
       }
       safeAreaEdges={["top"]}
+      scroll={false}
     >
-      <FormStack gap="roomy">
-        <MobileHeaderBar
-          leftLabel={CARD_SERVICE_TEXT.play.headerBackLabel}
-          onLeftPress={() => router.back()}
-          rightAccessibilityLabel={
-            CARD_SERVICE_TEXT.detail.cardSettingsAccessibilityLabel
-          }
-          rightLabel="⋮"
-          onRightPress={() =>
-            showYeonAlert(
-              CARD_SERVICE_TEXT.detail.cardSettingsTitle,
-              CARD_SERVICE_TEXT.detail.cardSettingsPreparingMessage
-            )
-          }
-          subtitle={`${getModeBadge(mode)} · ${CARD_SERVICE_TEXT.detail.metaCountLabel} ${cardCount}${CARD_SERVICE_TEXT.detail.metaSuffixCreatedAtLabel}${formatDate(detail?.deck.createdAt)}`}
-          title={
-            detail?.deck.title ?? CARD_SERVICE_TEXT.detail.deckTitleFallback
-          }
-        />
-
-        <ActionButton
-          disabled={!detail || cardCount === 0}
-          label={CARD_SERVICE_TEXT.detail.playButtonLabel}
-          onPress={() => {
-            if (!deckId) {
-              return;
-            }
-            router.push(getCardServiceDeckPlayHref(deckId));
-          }}
-          variant="dark"
-        />
-
-        {detailState.kind === "loading" ? (
-          <StateBlock
-            loading
-            message={CARD_SERVICE_TEXT.state.loading}
-            title={CARD_SERVICE_TEXT.state.loadingTitle}
+      <FlatList
+        contentContainerStyle={{ gap: 12, padding: 24, paddingBottom: 110 }}
+        data={listItems}
+        keyExtractor={cardKeyExtractor}
+        ListHeaderComponent={listHeader}
+        renderItem={({ item, index }) => (
+          <DeckCardRow
+            index={index + 1}
+            isBusy={rowBusy}
+            isMenuOpen={activeMenuItemId === item.id}
+            item={item}
+            onDelete={handleDeleteCard}
+            onEdit={openEditSheet}
+            onToggleMenu={toggleMenu}
           />
-        ) : detailState.kind === "error" ? (
-          <StateBlock
-            message={detailState.message}
-            title={CARD_SERVICE_TEXT.state.errorTitle}
-          />
-        ) : detailState.kind === "ready" && detailState.isEmpty ? (
-          <StateBlock
-            message={CARD_SERVICE_TEXT.detail.emptyMessage}
-            title={CARD_SERVICE_TEXT.detail.emptyTitle}
-          />
-        ) : detail ? (
-          <FormStack>
-            <SectionSummaryHeader
-              meta={`${CARD_SERVICE_TEXT.detail.allCardsLabel} ${detail.items.length}`}
-              title={CARD_SERVICE_TEXT.detail.itemLabel}
-            />
-            {detail.items.map((item, index) => (
-              <EditableCardRow
-                answerLabel={CARD_SERVICE_TEXT.detail.answerLabel}
-                answerText={item.backText}
-                answerContent={<CardMarkdown source={item.backText} />}
-                questionContent={<CardMarkdown source={item.frontText} />}
-                deleteLabel={CARD_SERVICE_TEXT.shared.deleteLabel}
-                editLabel={CARD_SERVICE_TEXT.shared.editLabel}
-                index={index + 1}
-                isBusy={updateMutation.isPending || deleteMutation.isPending}
-                isMenuOpen={activeMenuItemId === item.id}
-                key={item.id}
-                menuAccessibilityLabel={
-                  CARD_SERVICE_TEXT.shared.openCardMenuLabel
-                }
-                onDelete={() => handleDeleteCard(item.id)}
-                onEdit={() => openEditSheet(item)}
-                onToggleMenu={() =>
-                  setActiveMenuItemId((current) =>
-                    current === item.id ? null : item.id
-                  )
-                }
-                openAccessibilityLabel={`${CARD_SERVICE_TEXT.shared.openCardLabel}: ${item.frontText}`}
-                questionLabel={CARD_SERVICE_TEXT.detail.questionLabel}
-                questionText={item.frontText}
-              />
-            ))}
-          </FormStack>
-        ) : null}
-      </FormStack>
+        )}
+        style={{ flex: 1 }}
+      />
 
       <BottomSheetModal
         closeAccessibilityLabel={CARD_SERVICE_TEXT.shared.closeModalLabel}
