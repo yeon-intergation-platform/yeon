@@ -2,13 +2,9 @@ import type {
   CardRoomListResponse,
   CardRoomResponse,
   CardRoomParticipantResponse,
-  CardRoomMessagesResponse,
-  CardRoomResultResponse,
   CreateCardRoomBody,
   JoinCardRoomBody,
   UpdateCardRoomParticipantBody,
-  CreateCardRoomMessageBody,
-  SubmitCardRoomResultBody,
 } from "@yeon/api-contract/card-rooms";
 import {
   createYeonHeaders,
@@ -56,7 +52,6 @@ export class CardRoomsSpringBackendHttpError extends Error {
 type SpringInit = YeonRequestInit & {
   userId?: string | null;
   guestId?: string | null;
-  participantId?: string | null;
 };
 
 async function fetchSpring<T>(
@@ -68,8 +63,6 @@ async function fetchSpring<T>(
   headers.set("accept", "application/json");
   if (init.userId) headers.set("X-Yeon-User-Id", init.userId);
   if (init.guestId) headers.set("X-Yeon-Guest-Id", init.guestId);
-  if (init.participantId)
-    headers.set("X-Yeon-Participant-Id", init.participantId);
 
   const response = await fetchYeon(`${resolveSpringBackendBaseUrl()}${path}`, {
     ...init,
@@ -175,71 +168,8 @@ export function leaveCardRoomInSpring(params: {
   );
 }
 
-export function startCardRoomInSpring(roomId: string, participantId: string) {
-  return fetchSpring<CardRoomResponse>(
-    `/api/v1/card-rooms/${encodeURIComponent(roomId)}/start`,
-    { method: "POST", participantId },
-    "카드방 학습을 시작하지 못했습니다."
-  );
-}
-
-export function endCardRoomInSpring(roomId: string, participantId: string) {
-  return fetchSpring<CardRoomResponse>(
-    `/api/v1/card-rooms/${encodeURIComponent(roomId)}/end`,
-    { method: "POST", participantId },
-    "카드방을 종료하지 못했습니다."
-  );
-}
-
-export function createCardRoomMessageInSpring(params: {
-  roomId: string;
-  participantId: string;
-  payload: CreateCardRoomMessageBody;
-}) {
-  return fetchSpring<CardRoomMessagesResponse>(
-    `/api/v1/card-rooms/${encodeURIComponent(params.roomId)}/messages`,
-    {
-      method: "POST",
-      participantId: params.participantId,
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(params.payload),
-    },
-    "메시지를 보내지 못했습니다."
-  );
-}
-
-export function submitCardRoomResultInSpring(params: {
-  roomId: string;
-  participantId: string;
-  payload: SubmitCardRoomResultBody;
-}) {
-  return fetchSpring<CardRoomResultResponse>(
-    `/api/v1/card-rooms/${encodeURIComponent(params.roomId)}/results`,
-    {
-      method: "POST",
-      participantId: params.participantId,
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(params.payload),
-    },
-    "카드 결과를 저장하지 못했습니다."
-  );
-}
-
-export function revealCardRoomInSpring(roomId: string, participantId: string) {
-  return fetchSpring<CardRoomResponse>(
-    `/api/v1/card-rooms/${encodeURIComponent(roomId)}/reveal`,
-    { method: "POST", participantId },
-    "정답을 공개하지 못했습니다."
-  );
-}
-
-export function nextCardRoomCardInSpring(
-  roomId: string,
-  participantId: string
-) {
-  return fetchSpring<CardRoomResponse>(
-    `/api/v1/card-rooms/${encodeURIComponent(roomId)}/next`,
-    { method: "POST", participantId },
-    "다음 카드로 이동하지 못했습니다."
-  );
-}
+// 방 상태 mutation(start/end/reveal/next/results/messages)은 클라이언트가 WS로
+// race-server에 보내고 race-server가 Spring을 직접 호출한다. 과거의 동명 웹 BFF
+// HTTP 라우트는 X-Yeon-Participant-Id를 소유권 검증 없이 패스스루하는 IDOR 공격면이라
+// 제거했다(어떤 클라이언트도 호출하지 않던 미사용 경로). 비실시간 HTTP 폴백이 필요해지면
+// HMAC participant 토큰 검증을 포함해 재설계한다.
