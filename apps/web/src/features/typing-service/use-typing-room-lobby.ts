@@ -26,6 +26,7 @@ export function useTypingRoomLobby() {
     queryKey: typingServiceQueryKeys.publicWaitingRooms(),
     queryFn: fetchTypingRooms,
     refetchInterval: 2500,
+    refetchIntervalInBackground: false,
   });
   const [hasConnectionFailure, setHasConnectionFailure] = useState(false);
 

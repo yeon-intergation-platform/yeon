@@ -78,13 +78,19 @@ public class ChatServiceFriendsOverviewRepository {
 			.toList();
 	}
 
-	public List<ProfileRow> listSuggestedProfiles() {
+	public List<ProfileRow> listSuggestedProfiles(Set<UUID> excludedIds, int limit) {
+		UUID[] excluded = excludedIds.isEmpty()
+			? new UUID[] { new UUID(0L, 0L) }
+			: excludedIds.toArray(UUID[]::new);
 		return entityManager.createNativeQuery("""
 			select id, nickname, age_label, region_label, avatar_url, bio, points
 			from public.chat_service_profiles
-			order by nickname asc
-			limit 20
+			where id <> all(:excludedIds)
+			order by created_at desc, id desc
+			limit :limit
 		""")
+			.setParameter("excludedIds", excluded)
+			.setParameter("limit", limit)
 			.getResultList()
 			.stream()
 			.map(this::toProfileRow)

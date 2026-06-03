@@ -42,6 +42,10 @@ public class CardRoomRepository {
       """, (rs, i) -> new RoomRow(rs.getLong(1), rs.getString(2), rs.getString(3), rs.getString(4), rs.getString(5), rs.getString(6), rs.getInt(7), toOffset(rs.getTimestamp(8)), toOffset(rs.getTimestamp(9)), rs.getString(10), rs.getInt(11), rs.getInt(12), rs.getInt(13)), CardRoomDisplayText.GUEST_HOST_LABEL, CardRoomParticipantRole.MEMORIZER.dbValue(), CardRoomParticipantRole.CHECKER.dbValue(), CardRoomVisibility.PUBLIC.dbValue(), CardRoomStatus.FINISHED.dbValue(), CardRoomStatus.CLOSED.dbValue());
   }
 
+  public void lockRoom(Long internalId) {
+    jdbc.queryForList("select id from public.card_rooms where id = ? for update", Long.class, internalId);
+  }
+
   public RoomRow findRoom(String publicId) {
     var rows = jdbc.query("""
       select r.id, r.public_id, r.title, r.deck_title, r.visibility, r.status, r.current_card_index, r.created_at, r.updated_at,
@@ -109,6 +113,16 @@ public class CardRoomRepository {
     return rows.isEmpty() ? null : rows.getFirst();
   }
 
+  public CardRow findCardInRoom(Long roomId, String cardPublicId) {
+    var rows = jdbc.query("select id, public_id, room_id, order_index, front_text, back_text from public.card_room_cards where public_id = ? and room_id = ? limit 1", (rs, i) -> new CardRow(rs.getLong(1), rs.getString(2), rs.getLong(3), rs.getInt(4), rs.getString(5), rs.getString(6)), cardPublicId, roomId);
+    return rows.isEmpty() ? null : rows.getFirst();
+  }
+
+  public boolean existsResultForCard(Long roomId, Long cardId) {
+    var rows = jdbc.queryForList("select 1 from public.card_room_results where room_id = ? and card_id = ? limit 1", Integer.class, roomId, cardId);
+    return !rows.isEmpty();
+  }
+
   public List<MessageRow> listMessages(Long roomId) {
     return jdbc.query("""
       select m.id, m.public_id, p.public_id, p.nickname, m.content, m.message_type, m.created_at
@@ -120,7 +134,17 @@ public class CardRoomRepository {
 
   public MessageRow insertMessage(String publicId, Long roomId, Long participantId, String content, CardRoomMessageType type, OffsetDateTime now) {
     jdbc.update("insert into public.card_room_messages(public_id,room_id,participant_id,content,message_type,created_at) values (?,?,?,?,?,?)", publicId, roomId, participantId, content, type.dbValue(), now);
-    return listMessages(roomId).stream().filter(m -> m.publicId().equals(publicId)).findFirst().orElse(null);
+    return findMessage(publicId);
+  }
+
+  public MessageRow findMessage(String publicId) {
+    var rows = jdbc.query("""
+      select m.id, m.public_id, p.public_id, p.nickname, m.content, m.message_type, m.created_at
+      from public.card_room_messages m
+      left join public.card_room_participants p on p.id = m.participant_id
+      where m.public_id = ? limit 1
+      """, (rs, i) -> new MessageRow(rs.getLong(1), rs.getString(2), rs.getString(3), rs.getString(4), rs.getString(5), rs.getString(6), toOffset(rs.getTimestamp(7))), publicId);
+    return rows.isEmpty() ? null : rows.getFirst();
   }
 
   public List<ResultRow> listResults(Long roomId) {
@@ -135,7 +159,18 @@ public class CardRoomRepository {
 
   public ResultRow insertResult(String publicId, Long roomId, Long cardId, Long participantId, CardRoomResult result, OffsetDateTime now) {
     jdbc.update("insert into public.card_room_results(public_id,room_id,card_id,participant_id,result,created_at) values (?,?,?,?,?,?)", publicId, roomId, cardId, participantId, result.dbValue(), now);
-    return listResults(roomId).stream().filter(r -> r.publicId().equals(publicId)).findFirst().orElse(null);
+    return findResult(publicId);
+  }
+
+  public ResultRow findResult(String publicId) {
+    var rows = jdbc.query("""
+      select r.id, r.public_id, c.public_id, p.public_id, r.result, r.created_at
+      from public.card_room_results r
+      join public.card_room_cards c on c.id = r.card_id
+      join public.card_room_participants p on p.id = r.participant_id
+      where r.public_id = ? limit 1
+      """, (rs, i) -> new ResultRow(rs.getLong(1), rs.getString(2), rs.getString(3), rs.getString(4), rs.getString(5), toOffset(rs.getTimestamp(6))), publicId);
+    return rows.isEmpty() ? null : rows.getFirst();
   }
 
   public void updateStatus(Long roomId, CardRoomStatus status, int currentCardIndex, OffsetDateTime now) {
@@ -169,6 +204,15 @@ public class CardRoomRepository {
 
   public void leaveParticipant(Long participantId, OffsetDateTime now) {
     jdbc.update("update public.card_room_participants set left_at = ? where id = ?", now, participantId);
+  }
+
+  public ParticipantRow findEarliestActiveParticipant(Long roomId) {
+    var rows = jdbc.query("select id, public_id, room_id, nickname, character_id, role, is_host, is_ready, joined_at from public.card_room_participants where room_id = ? and left_at is null order by joined_at asc, id asc limit 1", (rs, i) -> participant(rs), roomId);
+    return rows.isEmpty() ? null : rows.getFirst();
+  }
+
+  public void assignHost(Long participantId) {
+    jdbc.update("update public.card_room_participants set is_host = true where id = ?", participantId);
   }
 
   private ParticipantRow participant(java.sql.ResultSet rs) throws java.sql.SQLException {

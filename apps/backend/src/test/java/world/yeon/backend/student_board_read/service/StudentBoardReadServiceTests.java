@@ -26,7 +26,8 @@ class StudentBoardReadServiceTests {
 	@BeforeEach void setUp() { service = new StudentBoardReadService(repository); }
 
 	@Test void invalidPeriod면400이다() {
-		assertThatThrownBy(() -> service.getBoard("space_alpha", OWNER_ID, "bad")).isInstanceOf(IllegalArgumentException.class);
+		assertThatThrownBy(() -> service.getBoard("space_alpha", OWNER_ID, "bad"))
+			.isInstanceOf(StudentBoardReadServiceException.class);
 	}
 
 	@Test void board응답을조합한다() {

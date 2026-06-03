@@ -15,6 +15,7 @@ import {
   type CardRoomResultMessage,
   type CardRoomRoleMessage,
 } from "@yeon/race-shared";
+import { verifyParticipantToken } from "./card-room-participant-token";
 
 type CardRoomResponse = { room: import("@yeon/race-shared").CardRoomDetailDto };
 type JsonObject = Record<string, unknown>;
@@ -300,6 +301,21 @@ export class CardRoom extends Room {
 
   async onJoin(client: Client, options: Partial<CardRoomRealtimeJoinOptions>) {
     if (!options.participantId) throw new Error("참가자 식별자가 필요합니다.");
+    // finding 166: 클라이언트가 보낸 participantId를 그대로 신뢰하지 않는다.
+    // 토큰은 반드시 이 방의 권위 있는 식별자(this.cardRoomId)에 묶어 검증한다.
+    // 클라이언트가 보낸 options.cardRoomId를 신뢰하면 다른 방용 토큰을 재사용한 가장이 가능하다.
+    const cardRoomId = this.cardRoomId;
+    if (
+      !cardRoomId ||
+      (options.cardRoomId != null && options.cardRoomId !== cardRoomId) ||
+      !verifyParticipantToken(
+        cardRoomId,
+        options.participantId,
+        options.participantToken
+      )
+    ) {
+      throw new Error("참가자 인증에 실패했습니다.");
+    }
     this.participants.set(client.sessionId, options.participantId);
     await this.refreshState();
   }

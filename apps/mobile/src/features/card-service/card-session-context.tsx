@@ -56,12 +56,24 @@ export function CardSessionProvider({ children }: { children: ReactNode }) {
   const [sessionToken, setSessionToken] = useState<string | null>(null);
 
   useEffect(() => {
-    void boot();
+    // idx-149: unmount 가드 — 느린 네트워크 중 언마운트 시 setState 방지.
+    let mounted = true;
+
+    void boot(() => mounted);
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
-  async function boot() {
+  async function boot(isMounted: () => boolean) {
     setPhase("booting");
     const next = await resolveCardServiceSession();
+
+    if (!isMounted()) {
+      return;
+    }
+
     setSessionToken(next.sessionToken);
     const signedIn = next.mode === CARD_SERVICE_MODE.server;
     setSignedIn(signedIn);
@@ -73,6 +85,11 @@ export function CardSessionProvider({ children }: { children: ReactNode }) {
 
     // 토큰 없음 + 비회원 선택 기록 있으면 바로 홈, 없으면 게이트.
     const optedIn = await readCardGuestOptIn();
+
+    if (!isMounted()) {
+      return;
+    }
+
     setPhase(optedIn ? "ready" : "gate");
   }
 
@@ -91,6 +108,13 @@ export function CardSessionProvider({ children }: { children: ReactNode }) {
   }
 
   async function continueAsGuest() {
+    // idx-148: 세션 토큰이 남아 있는 상태에서 게스트 전환을 막아 모순 상태를 방지한다.
+    // openGate() 후 재진입 시 이미 인증된 상태라면 게스트 전환 대신 로그아웃 먼저 요구해야 하나,
+    // 정상 UX 흐름에서는 토큰이 없을 때만 이 함수가 호출되므로 방어 가드만 추가한다.
+    if (isSignedIn) {
+      return;
+    }
+
     await writeCardGuestOptIn();
     setPhase("ready");
   }
@@ -104,7 +128,12 @@ export function CardSessionProvider({ children }: { children: ReactNode }) {
       try {
         await cardServiceApi.logout(sessionToken);
       } catch {
-        // 로컬 로그아웃은 무조건 성공시킨다.
+        // idx-147: 서버 세션 무효화 실패는 로컬 로그아웃을 막지 않는다.
+        // 하지만 조용히 삼키지 않고 콘솔에 기록해 좀비 세션 추적이 가능하게 한다.
+        // 운영 환경에서는 telemetry 연동을 권장한다.
+        console.warn(
+          "[CardSession] 서버 세션 무효화 실패 — 로컬 토큰은 삭제되나 서버 세션이 남아있을 수 있습니다."
+        );
       }
     }
 

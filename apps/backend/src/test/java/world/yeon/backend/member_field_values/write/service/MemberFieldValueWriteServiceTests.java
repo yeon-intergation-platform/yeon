@@ -2,8 +2,6 @@ package world.yeon.backend.member_field_values.write.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -21,17 +19,19 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import world.yeon.backend.member_field_values.write.dto.BulkUpsertMemberFieldValuesRequest;
 import world.yeon.backend.member_field_values.write.dto.MemberFieldValuePayloadRequest;
 import world.yeon.backend.member_field_values.write.repository.MemberFieldValueWriteRepository;
+import world.yeon.backend.space_access.service.SpaceAccessService;
 
 @ExtendWith(MockitoExtension.class)
 class MemberFieldValueWriteServiceTests {
 
 	private static final UUID OWNER_ID = UUID.fromString("00000000-0000-0000-0000-000000000788");
 	@Mock private MemberFieldValueWriteRepository repository;
+	@Mock private SpaceAccessService spaceAccessService;
 	private MemberFieldValueWriteService service;
 	private final ObjectMapper objectMapper = new ObjectMapper();
 
 	@BeforeEach
-	void setUp() { service = new MemberFieldValueWriteService(repository); }
+	void setUp() { service = new MemberFieldValueWriteService(repository, spaceAccessService); }
 
 	@Test
 	void bulkUpsert는응답values를반환한다() throws Exception {
@@ -55,8 +55,23 @@ class MemberFieldValueWriteServiceTests {
 		assertThat(result.values()).hasSize(2);
 		assertThat(result.values().getFirst().fieldType()).isEqualTo("select");
 		assertThat(result.values().getFirst().valueJson()).isInstanceOf(List.class);
-		verify(repository).upsertValue(any(), eq(21L), eq(31L), eq(null), eq(null), eq(null), eq("[\"in_progress\"]"));
-		verify(repository).upsertValue(any(), eq(21L), eq(32L), eq("메모값"), eq(null), eq(null), eq(null));
+		org.mockito.ArgumentCaptor<List<MemberFieldValueWriteRepository.UpsertValueParams>> captor =
+			org.mockito.ArgumentCaptor.forClass(List.class);
+		verify(repository).upsertValues(captor.capture());
+		List<MemberFieldValueWriteRepository.UpsertValueParams> params = captor.getValue();
+		assertThat(params).hasSize(2);
+		assertThat(params).anySatisfy(param -> {
+			assertThat(param.memberInternalId()).isEqualTo(21L);
+			assertThat(param.definitionInternalId()).isEqualTo(31L);
+			assertThat(param.valueText()).isNull();
+			assertThat(param.valueJson()).isEqualTo("[\"in_progress\"]");
+		});
+		assertThat(params).anySatisfy(param -> {
+			assertThat(param.memberInternalId()).isEqualTo(21L);
+			assertThat(param.definitionInternalId()).isEqualTo(32L);
+			assertThat(param.valueText()).isEqualTo("메모값");
+			assertThat(param.valueJson()).isNull();
+		});
 	}
 
 	@Test

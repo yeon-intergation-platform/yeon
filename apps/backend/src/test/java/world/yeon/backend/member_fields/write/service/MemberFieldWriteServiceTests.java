@@ -19,6 +19,7 @@ import world.yeon.backend.member_fields.read.model.MemberFieldDefinitionEntity;
 import world.yeon.backend.member_fields.write.dto.CreateMemberFieldRequest;
 import world.yeon.backend.member_fields.write.dto.UpdateMemberFieldRequest;
 import world.yeon.backend.member_fields.write.repository.MemberFieldWriteRepository;
+import world.yeon.backend.space_access.service.SpaceAccessService;
 
 @ExtendWith(MockitoExtension.class)
 class MemberFieldWriteServiceTests {
@@ -28,12 +29,15 @@ class MemberFieldWriteServiceTests {
 	@Mock
 	private MemberFieldWriteRepository repository;
 
+	@Mock
+	private SpaceAccessService spaceAccessService;
+
 	private MemberFieldWriteService service;
 	private final ObjectMapper objectMapper = new ObjectMapper();
 
 	@BeforeEach
 	void setUp() {
-		service = new MemberFieldWriteService(repository);
+		service = new MemberFieldWriteService(repository, spaceAccessService);
 	}
 
 	@Test
@@ -62,7 +66,7 @@ class MemberFieldWriteServiceTests {
 		when(repository.findSpaceInternalId("space_alpha")).thenReturn(11L);
 		when(repository.findFieldByPublicIdInSpace("mfd_overview", 11L)).thenReturn(entity);
 
-		assertThatThrownBy(() -> service.update("mfd_overview", "space_alpha", new UpdateMemberFieldRequest("이름", "number", null, null, null, null)))
+		assertThatThrownBy(() -> service.update("mfd_overview", "space_alpha", OWNER_ID, new UpdateMemberFieldRequest("이름", "number", null, null, null, null)))
 			.isInstanceOf(MemberFieldWriteServiceException.class)
 			.hasMessage("기본 항목은 이름과 순서만 변경할 수 있습니다.");
 	}
@@ -79,7 +83,7 @@ class MemberFieldWriteServiceTests {
 		when(repository.findFieldByPublicIdInSpace("mfd_custom", 11L)).thenReturn(entity);
 		when(repository.save(entity)).thenReturn(entity);
 
-		var result = service.update("mfd_custom", "space_alpha", new UpdateMemberFieldRequest("변경", null, null, true, 5, null));
+		var result = service.update("mfd_custom", "space_alpha", OWNER_ID, new UpdateMemberFieldRequest("변경", null, null, true, 5, null));
 		assertThat(result.getName()).isEqualTo("변경");
 		assertThat(result.isRequired()).isTrue();
 		assertThat(result.getDisplayOrder()).isEqualTo(5);
@@ -94,7 +98,7 @@ class MemberFieldWriteServiceTests {
 		when(repository.findFieldByPublicIdInSpace("mfd_custom", 11L)).thenReturn(entity);
 		when(repository.save(entity)).thenReturn(entity);
 
-		service.delete("mfd_custom", "space_alpha");
+		service.delete("mfd_custom", "space_alpha", OWNER_ID);
 		assertThat(entity.getDeletedAt()).isNotNull();
 	}
 }

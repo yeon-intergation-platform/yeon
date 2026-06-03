@@ -11,18 +11,23 @@ import world.yeon.backend.member_field_values.read.dto.MemberFieldValueDetailedL
 import world.yeon.backend.member_field_values.read.dto.MemberFieldValueItemResponse;
 import world.yeon.backend.member_field_values.read.dto.MemberFieldValueListResponse;
 import world.yeon.backend.member_field_values.read.repository.MemberFieldValueReadRepository;
+import world.yeon.backend.space_access.service.SpaceAccessService;
 
 @Service
 public class MemberFieldValueReadService {
 
 	private final MemberFieldValueReadRepository repository;
+	private final SpaceAccessService spaceAccessService;
 	private final ObjectMapper objectMapper = new ObjectMapper().findAndRegisterModules();
 
-	public MemberFieldValueReadService(MemberFieldValueReadRepository repository) {
+	public MemberFieldValueReadService(MemberFieldValueReadRepository repository, SpaceAccessService spaceAccessService) {
 		this.repository = repository;
+		this.spaceAccessService = spaceAccessService;
 	}
 
-	public MemberFieldValueDetailedListResponse listMemberValues(String spacePublicId, String memberPublicId, java.util.List<String> fieldDefinitionPublicIds) {
+	public MemberFieldValueDetailedListResponse listMemberValues(java.util.UUID userId, String spacePublicId, String memberPublicId, java.util.List<String> fieldDefinitionPublicIds) {
+		// IDOR 방지: 타인 스페이스/수강생의 커스텀 필드 값을 조회하지 못하도록 소유권을 먼저 검증한다.
+		spaceAccessService.requireOwnedSpace(spacePublicId, userId);
 		Long spaceInternalId = repository.findSpaceInternalId(spacePublicId);
 		if (spaceInternalId == null) {
 			throw new NoSuchElementException("스페이스를 찾지 못했습니다.");
@@ -46,7 +51,9 @@ public class MemberFieldValueReadService {
 		return new MemberFieldValueDetailedListResponse(values);
 	}
 
-	public MemberFieldValueListResponse listValues(String spacePublicId, String tabPublicId, String memberPublicId) {
+	public MemberFieldValueListResponse listValues(java.util.UUID userId, String spacePublicId, String tabPublicId, String memberPublicId) {
+		// IDOR 방지: 타인 스페이스/수강생의 커스텀 필드 값을 조회하지 못하도록 소유권을 먼저 검증한다.
+		spaceAccessService.requireOwnedSpace(spacePublicId, userId);
 		Long spaceInternalId = repository.findSpaceInternalId(spacePublicId);
 		if (spaceInternalId == null) {
 			throw new NoSuchElementException("스페이스를 찾지 못했습니다.");

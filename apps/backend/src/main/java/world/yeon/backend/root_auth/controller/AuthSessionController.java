@@ -1,5 +1,7 @@
 package world.yeon.backend.root_auth.controller;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -17,6 +19,7 @@ import world.yeon.backend.root_auth.service.AuthSessionServiceException;
 @Validated
 @RestController
 public class AuthSessionController {
+	private static final Logger log = LoggerFactory.getLogger(AuthSessionController.class);
 	private static final String SESSION_TOKEN_HEADER = "X-Yeon-Session-Token";
 	private final AuthSessionService service;
 
@@ -67,6 +70,17 @@ public class AuthSessionController {
 	@ExceptionHandler(IllegalStateException.class)
 	public ResponseEntity<ErrorResponse> handleIllegalState(IllegalStateException error) {
 		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ErrorResponse("AUTH_SESSION_STATE_ERROR", "인증 세션 상태를 해석하지 못했습니다."));
+	}
+
+	@ExceptionHandler(IllegalArgumentException.class)
+	public ResponseEntity<ErrorResponse> handleBadRequest(IllegalArgumentException error) {
+		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse("AUTH_INVALID_REQUEST", "인증 요청이 올바르지 않습니다."));
+	}
+
+	@ExceptionHandler(Exception.class)
+	public ResponseEntity<ErrorResponse> handleUnexpected(Exception error) {
+		log.error("인증 세션 처리 중 예기치 못한 오류", error);
+		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ErrorResponse("AUTH_SESSION_ERROR", "인증 처리 중 오류가 발생했습니다."));
 	}
 
 	public record ErrorResponse(String code, String message) {}

@@ -45,7 +45,7 @@ class MemberTabResetControllerTests {
 
 	@Test
 	void reset은200과ok응답을반환한다() throws Exception {
-		when(service.resetTabs(eq("space_alpha"))).thenReturn(OkResponse.success());
+		when(service.resetTabs(eq(OWNER_ID), eq("space_alpha"))).thenReturn(OkResponse.success());
 
 		mockMvc.perform(
 			post("/spaces/space_alpha/member-tabs/reset")
@@ -58,7 +58,7 @@ class MemberTabResetControllerTests {
 
 	@Test
 	void reset은space가없으면404다() throws Exception {
-		when(service.resetTabs(eq("missing")))
+		when(service.resetTabs(eq(OWNER_ID), eq("missing")))
 			.thenThrow(new NoSuchElementException("스페이스를 찾지 못했습니다."));
 
 		mockMvc.perform(

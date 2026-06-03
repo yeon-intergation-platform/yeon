@@ -108,6 +108,7 @@ public class SheetIntegrationRepository {
 			from public.members
 			where space_id = :spaceInternalId
 			  and name = :memberName
+			order by id asc
 			limit 1
 			""")
 			.setParameter("spaceInternalId", spaceInternalId)
@@ -115,6 +116,110 @@ public class SheetIntegrationRepository {
 			.getResultList();
 		if (rows.isEmpty()) return null;
 		return asLong(rows.getFirst());
+	}
+
+	// IDX 67/68: 스페이스의 (name -> id) 매핑을 한 번에 로드한다.
+	// 동명이인은 모호하므로 매핑에서 제외하고 ambiguousNames 로 보고한다.
+	public record MemberNameIndex(java.util.Map<String, Long> nameToId, java.util.Set<String> ambiguousNames) {}
+
+	public MemberNameIndex loadMemberNameIndex(Long spaceInternalId) {
+		List<?> rows = entityManager.createNativeQuery("""
+			select name, count(*), min(id)
+			from public.members
+			where space_id = :spaceInternalId
+			group by name
+			""")
+			.setParameter("spaceInternalId", spaceInternalId)
+			.getResultList();
+		java.util.Map<String, Long> nameToId = new java.util.HashMap<>();
+		java.util.Set<String> ambiguous = new java.util.HashSet<>();
+		for (Object raw : rows) {
+			if (!(raw instanceof Object[] values) || values.length < 3) {
+				throw new IllegalStateException("member name index 행을 해석하지 못했습니다.");
+			}
+			String name = (String) values[0];
+			long count = asLong(values[1]);
+			if (count > 1) {
+				ambiguous.add(name);
+				continue;
+			}
+			nameToId.put(name, asLong(values[2]));
+		}
+		return new MemberNameIndex(nameToId, ambiguous);
+	}
+
+	// IDX 67: 기존 activity_logs 의 (member_id, recorded_at, type) 키를 한 번에 로드한다.
+	public java.util.Set<String> loadActivityLogKeys(Long spaceInternalId) {
+		List<?> rows = entityManager.createNativeQuery("""
+			select member_id, recorded_at, type
+			from public.activity_logs
+			where space_id = :spaceInternalId
+			""")
+			.setParameter("spaceInternalId", spaceInternalId)
+			.getResultList();
+		java.util.Set<String> keys = new java.util.HashSet<>();
+		for (Object raw : rows) {
+			if (!(raw instanceof Object[] values) || values.length < 3) {
+				throw new IllegalStateException("activity log 키 행을 해석하지 못했습니다.");
+			}
+			Long memberId = asLong(values[0]);
+			OffsetDateTime recordedAt = asOffsetDateTime(values[1]);
+			String type = (String) values[2];
+			keys.add(activityLogKey(memberId, recordedAt, type));
+		}
+		return keys;
+	}
+
+	public String activityLogKey(Long memberInternalId, OffsetDateTime recordedAt, String type) {
+		return memberInternalId + "|" + recordedAt.toInstant().toEpochMilli() + "|" + type;
+	}
+
+	public record ActivityLogInsert(
+		String publicId,
+		Long memberInternalId,
+		Long spaceInternalId,
+		String type,
+		String status,
+		OffsetDateTime recordedAt,
+		String source
+	) {}
+
+	// IDX 67: 동기화 행 단위 개별 INSERT 대신 일괄 INSERT 로 묶는다.
+	@Transactional
+	public void batchInsertActivityLogs(List<ActivityLogInsert> inserts) {
+		if (inserts == null || inserts.isEmpty()) {
+			return;
+		}
+		StringBuilder sql = new StringBuilder("""
+			insert into public.activity_logs (
+			  public_id, member_id, space_id, type, status, recorded_at, source, created_at
+			) values
+			""");
+		for (int index = 0; index < inserts.size(); index++) {
+			if (index > 0) {
+				sql.append(',');
+			}
+			sql.append("(:publicId").append(index)
+				.append(", :memberInternalId").append(index)
+				.append(", :spaceInternalId").append(index)
+				.append(", :type").append(index)
+				.append(", :status").append(index)
+				.append(", :recordedAt").append(index)
+				.append(", :source").append(index)
+				.append(", now())");
+		}
+		var query = entityManager.createNativeQuery(sql.toString());
+		for (int index = 0; index < inserts.size(); index++) {
+			ActivityLogInsert row = inserts.get(index);
+			query.setParameter("publicId" + index, row.publicId());
+			query.setParameter("memberInternalId" + index, row.memberInternalId());
+			query.setParameter("spaceInternalId" + index, row.spaceInternalId());
+			query.setParameter("type" + index, row.type());
+			query.setParameter("status" + index, row.status());
+			query.setParameter("recordedAt" + index, Timestamp.from(row.recordedAt().toInstant()));
+			query.setParameter("source" + index, row.source());
+		}
+		query.executeUpdate();
 	}
 
 	public boolean existsActivityLog(Long memberInternalId, OffsetDateTime recordedAt, String type) {

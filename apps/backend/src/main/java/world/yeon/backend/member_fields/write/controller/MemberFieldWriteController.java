@@ -51,18 +51,20 @@ public class MemberFieldWriteController {
 	public MemberFieldMutationResponse update(
 		@PathVariable String spaceId,
 		@PathVariable String fieldId,
+		@RequestHeader("X-Yeon-User-Id") UUID userId,
 		@RequestBody UpdateMemberFieldRequest request
 	) {
-		var field = service.update(fieldId, spaceId, request);
+		var field = service.update(fieldId, spaceId, userId, request);
 		return new MemberFieldMutationResponse(mapper.toItem(field));
 	}
 
 	@DeleteMapping("/member-fields/{fieldId}")
 	public ResponseEntity<Void> delete(
 		@PathVariable String spaceId,
-		@PathVariable String fieldId
+		@PathVariable String fieldId,
+		@RequestHeader("X-Yeon-User-Id") UUID userId
 	) {
-		service.delete(fieldId, spaceId);
+		service.delete(fieldId, spaceId, userId);
 		return ResponseEntity.noContent().build();
 	}
 

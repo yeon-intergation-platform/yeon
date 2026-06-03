@@ -8,6 +8,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.env.Environment;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
@@ -20,7 +22,10 @@ import world.yeon.backend.root_auth.social.SocialIdentityProviderClient;
 
 @Service
 public class AuthSessionService {
+	private static final Logger log = LoggerFactory.getLogger(AuthSessionService.class);
 	private static final long AUTH_SESSION_TTL_DAYS = 30;
+	private static final long SESSION_TOUCH_THROTTLE_MINUTES = 5;
+	private static final int SOCIAL_UPSERT_MAX_RETRIES = 3;
 	private static final String DEV_LOGIN_DEFAULT_ACCOUNT_KEY = "default";
 	private static final String DEV_USER_EMAIL = "dev@yeon.local";
 	private static final String DEV_USER_DISPLAY_NAME = "개발자 기본 계정";
@@ -81,7 +86,11 @@ public class AuthSessionService {
 			return unauthenticated();
 		}
 
-		repository.touchSession(session.id(), now);
+		// last_accessed_at는 매 요청이 아니라 일정 간격으로만 갱신해 핫패스 쓰기 부하를 줄인다.
+		OffsetDateTime lastAccessedAt = session.lastAccessedAt();
+		if (lastAccessedAt == null || !lastAccessedAt.isAfter(now.minusMinutes(SESSION_TOUCH_THROTTLE_MINUTES))) {
+			repository.touchSession(session.id(), now);
+		}
 		return authenticated(user, providers);
 	}
 
@@ -93,6 +102,8 @@ public class AuthSessionService {
 		return unauthenticated();
 	}
 
+	// 신뢰 경계: userId만으로 세션을 발급하므로 반드시 InternalServiceTokenAuthFilter(BFF) 뒤에서만 호출되어야 한다.
+	// 외부 입력 userId를 그대로 넘기면 임의 계정 가장이 가능하므로 게이트웨이에서 X-Yeon-User-Id를 strip한다는 전제가 필요하다.
 	@Transactional
 	public RootAuthSessionCreateResponse createSessionForUser(String userId) {
 		var user = userId == null || userId.isBlank() ? null : repository.findUserById(userId);
@@ -157,7 +168,6 @@ public class AuthSessionService {
 	@Transactional
 	public AdminCheckResponse checkAdmin(AdminCheckRequest request) {
 		String userId = normalizeString(request == null ? null : request.userId(), 64);
-		String email = normalizeEmail(request == null ? null : request.email());
 		var user = userId == null ? null : repository.findUserById(userId);
 		if (user == null) {
 			return new AdminCheckResponse(false);
@@ -165,7 +175,8 @@ public class AuthSessionService {
 		if (ROLE_ADMIN.equals(user.role())) {
 			return new AdminCheckResponse(true);
 		}
-		String effectiveEmail = email == null ? normalizeEmail(user.email()) : email;
+		// 권한 상승 판정은 호출자 입력 email이 아니라 DB의 실제 user.email로만 수행한다(헤더/본문 신뢰 금지).
+		String effectiveEmail = normalizeEmail(user.email());
 		if (isSeedAdminEmail(effectiveEmail)) {
 			repository.updateUserRole(user.id(), ROLE_ADMIN, OffsetDateTime.now(ZoneOffset.UTC));
 			return new AdminCheckResponse(true);
@@ -177,7 +188,8 @@ public class AuthSessionService {
 		try {
 			return upsertSocialLoginOnce(profile);
 		} catch (DataIntegrityViolationException error) {
-			if (attempt < 1) {
+			// 동시 요청으로 인한 unique 충돌은 재조회 후 재시도로 흡수한다.
+			if (attempt < SOCIAL_UPSERT_MAX_RETRIES) {
 				return upsertSocialLogin(profile, attempt + 1);
 			}
 			throw error;
@@ -217,6 +229,10 @@ public class AuthSessionService {
 
 		var sameProviderIdentity = repository.findIdentityByUserProvider(targetUser.id(), profile.provider());
 		if (sameProviderIdentity == null) {
+			if (reusableUser != null) {
+				// 검증된 이메일 일치로 기존 계정에 새 provider identity가 자동 연결됨 — takeover 추적용 감사 로그.
+				log.warn("social-link: 기존 계정({})에 새 provider({}) identity를 이메일 일치로 자동 연결", targetUser.id(), profile.provider());
+			}
 			repository.insertIdentity(UUID.randomUUID().toString(), targetUser.id(), profile.provider(), profile.providerUserId(), normalizedVerifiedEmail, normalizedDisplayName, normalizedAvatarUrl, now);
 		}
 		return targetUser;
@@ -343,7 +359,14 @@ public class AuthSessionService {
 	private String normalizeString(String value, int maxLength) {
 		if (value == null) return null;
 		String trimmed = value.trim();
-		return trimmed.isBlank() ? null : trimmed.substring(0, Math.min(trimmed.length(), maxLength));
+		if (trimmed.isBlank()) return null;
+		if (trimmed.length() <= maxLength) return trimmed;
+		// surrogate pair 중간에서 잘리지 않도록 경계를 한 칸 앞으로 보정한다.
+		int end = maxLength;
+		if (Character.isHighSurrogate(trimmed.charAt(end - 1))) {
+			end -= 1;
+		}
+		return trimmed.substring(0, end);
 	}
 
 	private String normalizeUrl(String value) {

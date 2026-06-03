@@ -38,20 +38,25 @@ public class SheetIntegrationService {
 	private static final String GOOGLE_SHEET_SOURCE = "google_sheet";
 
 	private final SheetIntegrationRepository repository;
-	private final HttpClient httpClient = HttpClient.newHttpClient();
+	private final world.yeon.backend.space_access.service.SpaceAccessService spaceAccessService;
+	// IDX 66: connect timeout 부재 시 톰캣 스레드가 무기한 블로킹될 수 있어 연결 타임아웃을 설정한다.
+	private final HttpClient httpClient = HttpClient.newBuilder()
+		.connectTimeout(java.time.Duration.ofSeconds(5))
+		.build();
 	private final ObjectMapper objectMapper = new ObjectMapper().findAndRegisterModules();
 
-	public SheetIntegrationService(SheetIntegrationRepository repository) {
+	public SheetIntegrationService(SheetIntegrationRepository repository, world.yeon.backend.space_access.service.SpaceAccessService spaceAccessService) {
 		this.repository = repository;
+		this.spaceAccessService = spaceAccessService;
 	}
 
-	public GetSheetIntegrationsResponse getIntegrations(String spaceId) {
-		requireSpace(spaceId);
+	public GetSheetIntegrationsResponse getIntegrations(String spaceId, UUID userId) {
+		requireSpace(spaceId, userId);
 		return new GetSheetIntegrationsResponse(repository.findIntegrations(spaceId).stream().map(this::toResponse).toList());
 	}
 
 	public CreateSheetIntegrationResponse createIntegration(String spaceId, UUID userId, CreateSheetIntegrationRequest request) {
-		Long spaceInternalId = requireSpace(spaceId);
+		Long spaceInternalId = requireSpace(spaceId, userId);
 		if (request == null || request.sheetUrl() == null || request.sheetUrl().isBlank()) {
 			throw new IllegalArgumentException("sheetUrl은 필수입니다.");
 		}
@@ -73,7 +78,7 @@ public class SheetIntegrationService {
 	}
 
 	public SyncSheetIntegrationResponse syncIntegration(String spaceId, String integrationId, UUID userId) {
-		requireSpace(spaceId);
+		requireSpace(spaceId, userId);
 		var integration = repository.findIntegration(spaceId, integrationId);
 		if (integration == null) {
 			throw new SheetIntegrationServiceException(404, "SHEET_INTEGRATION_NOT_FOUND", "시트 연동을 찾지 못했습니다.");
@@ -89,6 +94,12 @@ public class SheetIntegrationService {
 		int statusColIdx = mapping != null && mapping.statusColumn() != null ? mapping.statusColumn() : 2;
 		Integer typeColIdx = mapping == null ? null : mapping.typeColumn();
 		List<List<String>> dataRows = rows.size() > 1 ? rows.subList(1, rows.size()) : List.of();
+
+		// IDX 67: 행마다 개별 쿼리하지 않도록 member name→id 매핑과 기존 activity log 키를 한 번에 로드한다.
+		SheetIntegrationRepository.MemberNameIndex memberIndex = repository.loadMemberNameIndex(integration.spaceInternalId());
+		java.util.Set<String> existingLogKeys = repository.loadActivityLogKeys(integration.spaceInternalId());
+		java.util.Set<String> plannedLogKeys = new java.util.HashSet<>();
+		List<SheetIntegrationRepository.ActivityLogInsert> pendingInserts = new ArrayList<>();
 
 		int synced = 0;
 		int errors = 0;
@@ -111,18 +122,25 @@ public class SheetIntegrationService {
 				continue;
 			}
 
-			Long memberInternalId = repository.findMemberInternalIdByName(integration.spaceInternalId(), memberName);
+			// IDX 68: 동명이인은 어느 멤버에 매칭할지 모호하므로 잘못 매칭하지 않고 errors 로 보고한다.
+			if (memberIndex.ambiguousNames().contains(memberName)) {
+				errors++;
+				continue;
+			}
+			Long memberInternalId = memberIndex.nameToId().get(memberName);
 			if (memberInternalId == null) {
 				errors++;
 				continue;
 			}
 
 			String logType = typeValue == null || typeValue.isBlank() ? integration.dataType() : typeValue;
-			if (repository.existsActivityLog(memberInternalId, recordedAt, logType)) {
+			String logKey = repository.activityLogKey(memberInternalId, recordedAt, logType);
+			// 기존 로그 또는 이번 배치 내 중복은 건너뛴다(멱등성 유지).
+			if (existingLogKeys.contains(logKey) || !plannedLogKeys.add(logKey)) {
 				continue;
 			}
 
-			repository.insertActivityLog(
+			pendingInserts.add(new SheetIntegrationRepository.ActivityLogInsert(
 				generatePublicId("log"),
 				memberInternalId,
 				integration.spaceInternalId(),
@@ -130,10 +148,12 @@ public class SheetIntegrationService {
 				statusValue,
 				recordedAt,
 				GOOGLE_SHEET_SOURCE
-			);
+			));
 			synced++;
 		}
 
+		// IDX 67: 누적된 로그를 일괄 INSERT 한다.
+		repository.batchInsertActivityLogs(pendingInserts);
 		repository.updateLastSyncedAt(integration.integrationInternalId(), OffsetDateTime.now(ZoneOffset.UTC));
 		return new SyncSheetIntegrationResponse(synced, errors);
 	}
@@ -144,6 +164,8 @@ public class SheetIntegrationService {
 			SHEETS_URL + "/" + url(sheetId) + "/values/" + url("A1:Z1000")
 		))
 			.header("Authorization", "Bearer " + accessToken)
+			// IDX 66: 응답 지연 시 스레드 무기한 블로킹을 막기 위한 요청 타임아웃.
+			.timeout(java.time.Duration.ofSeconds(15))
 			.GET()
 			.build();
 		try {
@@ -173,7 +195,9 @@ public class SheetIntegrationService {
 		}
 	}
 
-	private Long requireSpace(String spaceId) {
+	private Long requireSpace(String spaceId, UUID userId) {
+		// IDX 64: 타인 스페이스의 시트 연동 조회/생성/동기화를 막기 위해 소유권을 강제한다.
+		spaceAccessService.requireOwnedSpace(spaceId, userId);
 		Long spaceInternalId = repository.findSpaceInternalId(spaceId);
 		if (spaceInternalId == null) {
 			throw new NoSuchElementException("스페이스를 찾지 못했습니다.");
@@ -259,11 +283,27 @@ public class SheetIntegrationService {
 	}
 
 	private OffsetDateTime parseRecordedAt(String raw) {
+		// IDX 69: 오프셋이 있는 표기 우선 처리.
 		try {
 			return OffsetDateTime.parse(raw);
 		} catch (Exception ignore) {
 		}
-		return java.time.Instant.parse(raw).atOffset(ZoneOffset.UTC);
+		try {
+			return java.time.Instant.parse(raw).atOffset(ZoneOffset.UTC);
+		} catch (Exception ignore) {
+		}
+		// 구글 시트에서 흔한 'YYYY-MM-DD HH:mm[:ss]' (오프셋 없음) → 기본 타임존 적용.
+		String normalized = raw.contains("T") ? raw : raw.replace(' ', 'T');
+		try {
+			return java.time.LocalDateTime.parse(normalized)
+				.atZone(java.time.ZoneId.systemDefault())
+				.toOffsetDateTime();
+		} catch (Exception ignore) {
+		}
+		// 'YYYY-MM-DD' (시간 없음) → 자정·기본 타임존 적용.
+		return java.time.LocalDate.parse(raw)
+			.atStartOfDay(java.time.ZoneId.systemDefault())
+			.toOffsetDateTime();
 	}
 
 	private String getCell(List<String> row, int index) {

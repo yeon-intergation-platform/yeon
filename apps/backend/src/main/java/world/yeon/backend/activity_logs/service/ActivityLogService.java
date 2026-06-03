@@ -8,6 +8,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import world.yeon.backend.activity_logs.dto.ActivityLogResponse;
 import world.yeon.backend.activity_logs.dto.CreateActivityLogRequest;
 import world.yeon.backend.activity_logs.dto.CreateActivityLogResponse;
@@ -25,10 +26,13 @@ public class ActivityLogService {
 		this.repository = repository;
 	}
 
+	@Transactional(readOnly = true)
 	public GetActivityLogsResponse getActivityLogs(String spaceId, String memberId, UUID userId, String type, Integer limit) {
 		if (limit != null && (limit <= 0 || limit > 500)) throw new IllegalArgumentException("limit은 1 이상 500 이하의 정수여야 합니다.");
 		var owned = requireOwnedMember(spaceId, memberId, userId);
-		var logs = repository.findActivityLogs(owned.spaceInternalId(), owned.memberInternalId(), type == null || type.isBlank() ? null : type, limit).stream().map(this::toResponse).toList();
+		var logs = repository.findActivityLogs(owned.spaceInternalId(), owned.memberInternalId(), type == null || type.isBlank() ? null : type, limit).stream()
+			.map(row -> toResponse(row, owned.memberId(), owned.spaceId()))
+			.toList();
 		int totalCount = repository.countActivityLogs(owned.spaceInternalId(), owned.memberInternalId(), type == null || type.isBlank() ? null : type);
 		return new GetActivityLogsResponse(logs, totalCount);
 	}
@@ -64,9 +68,14 @@ public class ActivityLogService {
 		return new ActivityLogResponse(row.id(), row.memberId(), row.spaceId(), row.type(), row.status(), row.recordedAt(), row.source(), row.metadata(), row.createdAt());
 	}
 
+	private ActivityLogResponse toResponse(ActivityLogRepository.ActivityLogRow row, String memberId, String spaceId) {
+		return new ActivityLogResponse(row.id(), memberId, spaceId, row.type(), row.status(), row.recordedAt(), row.source(), row.metadata(), row.createdAt());
+	}
+
 	private String normalizeMemoText(String raw) {
 		if (raw == null) return null;
-		return raw.replaceAll("\\s+", " ").trim().substring(0, Math.min(raw.replaceAll("\\s+", " ").trim().length(), 2000));
+		String normalized = raw.replaceAll("\\s+", " ").trim();
+		return normalized.substring(0, Math.min(normalized.length(), 2000));
 	}
 
 	private String normalizeNullable(String raw, int maxLength) {

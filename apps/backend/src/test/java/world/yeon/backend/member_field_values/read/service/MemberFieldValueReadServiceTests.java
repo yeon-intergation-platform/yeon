@@ -6,6 +6,7 @@ import static org.mockito.Mockito.when;
 
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -17,19 +18,25 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import world.yeon.backend.member_field_values.read.dto.MemberFieldValueListResponse;
 import world.yeon.backend.member_field_values.read.repository.MemberFieldValueReadRepository;
+import world.yeon.backend.space_access.service.SpaceAccessService;
 
 @ExtendWith(MockitoExtension.class)
 class MemberFieldValueReadServiceTests {
 
+	private static final UUID USER_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
+
 	@Mock
 	private MemberFieldValueReadRepository repository;
+
+	@Mock
+	private SpaceAccessService spaceAccessService;
 
 	private MemberFieldValueReadService service;
 	private final ObjectMapper objectMapper = new ObjectMapper();
 
 	@BeforeEach
 	void setUp() {
-		service = new MemberFieldValueReadService(repository);
+		service = new MemberFieldValueReadService(repository, spaceAccessService);
 	}
 
 	@Test
@@ -43,7 +50,7 @@ class MemberFieldValueReadServiceTests {
 			new MemberFieldValueReadRepository.ValueRow("mfd_note", "메모값", null, null, null)
 		));
 
-		MemberFieldValueListResponse result = service.listValues("space_alpha", "mtb_custom", "mem_1");
+		MemberFieldValueListResponse result = service.listValues(USER_ID, "space_alpha", "mtb_custom", "mem_1");
 		assertThat(result.values()).hasSize(2);
 		assertThat(result.values().getFirst().fieldDefinitionId()).isEqualTo("mfd_status");
 		assertThat(result.values().getFirst().valueJson()).isInstanceOf(List.class);
@@ -58,7 +65,7 @@ class MemberFieldValueReadServiceTests {
 		when(repository.findSpaceInternalId("space_alpha")).thenReturn(11L);
 		when(repository.findTabLookup("mtb_custom")).thenReturn(new MemberFieldValueReadRepository.TabLookup(21L, 11L));
 		when(repository.findMemberInternalId("missing", 11L)).thenReturn(null);
-		assertThatThrownBy(() -> service.listValues("space_alpha", "mtb_custom", "missing"))
+		assertThatThrownBy(() -> service.listValues(USER_ID, "space_alpha", "mtb_custom", "missing"))
 			.isInstanceOf(NoSuchElementException.class)
 			.hasMessage("수강생을 찾지 못했습니다.");
 	}

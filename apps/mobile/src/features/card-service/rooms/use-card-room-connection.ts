@@ -8,6 +8,7 @@ import {
 } from "@yeon/race-shared";
 import {
   createYeonRealtimeClient,
+  ensureYeonRealtimeSeatReservationCompat,
   type YeonRealtimeRoom,
 } from "@yeon/ui/runtime/YeonRealtimeClient";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -38,9 +39,11 @@ export type CardRoomConnectionState =
   | "disconnected";
 
 // 웹 useCardRoomConnection의 모바일 포팅(동일 colyseus 프로토콜).
+// finding 166: participantToken을 join 옵션으로 전달해 race-server가 참가자 가장을 검증한다.
 export function useCardRoomConnection(
   roomId: string,
-  participantId: string | null
+  participantId: string | null,
+  participantToken: string | null
 ) {
   const [state, setState] = useState<CardRoomRealtimeState | null>(null);
   const [connectionState, setConnectionState] =
@@ -51,6 +54,8 @@ export function useCardRoomConnection(
   useEffect(() => {
     if (!roomId || !participantId) return;
     let cancelled = false;
+    // idx-120: colyseus seat reservation 호환 패치를 웹/모바일 일관 적용.
+    ensureYeonRealtimeSeatReservationCompat();
     setConnectionState("connecting");
     setError(null);
     const client = createYeonRealtimeClient(resolveMobileRaceServerUrl());
@@ -58,21 +63,28 @@ export function useCardRoomConnection(
       .joinOrCreate<CardRoomRealtimeState>(CARD_ROOM_NAME, {
         cardRoomId: roomId,
         participantId,
+        participantToken: participantToken ?? undefined,
       })
       .then((room) => {
         if (cancelled) {
-          room.leave();
+          room.leave().catch(() => {});
           return;
         }
         roomRef.current = room;
         setConnectionState("connected");
         if (room.state) setState(room.state as CardRoomRealtimeState);
-        room.onMessage(CARD_ROOM_EVENTS.STATE, (next: CardRoomRealtimeState) =>
-          setState(next)
+        // idx-114: cleanup 이후 inflight 메시지가 이전 방 상태를 덮어쓰지 않도록 가드.
+        room.onMessage(
+          CARD_ROOM_EVENTS.STATE,
+          (next: CardRoomRealtimeState) => {
+            if (!cancelled) setState(next);
+          }
         );
         room.onMessage(
           CARD_ROOM_EVENTS.ERROR,
-          (message: CardRoomErrorMessage) => setError(message.message)
+          (message: CardRoomErrorMessage) => {
+            if (!cancelled) setError(message.message);
+          }
         );
         room.onLeave(() => {
           if (!cancelled) setConnectionState("disconnected");
@@ -92,10 +104,11 @@ export function useCardRoomConnection(
       });
     return () => {
       cancelled = true;
-      roomRef.current?.leave();
+      // idx-121: leave() Promise 거부를 무해 처리해 unhandled rejection 경고 방지.
+      roomRef.current?.leave().catch(() => {});
       roomRef.current = null;
     };
-  }, [roomId, participantId]);
+  }, [roomId, participantId, participantToken]);
 
   const sendChat = useCallback(
     (content: string) =>
@@ -133,6 +146,11 @@ export function useCardRoomConnection(
     () => roomRef.current?.send(CARD_ROOM_EVENTS.END, {}),
     []
   );
+  // idx-113: 웹 훅과 표면을 맞추기 위해 sendLeave 추가.
+  const sendLeave = useCallback(
+    () => roomRef.current?.send(CARD_ROOM_EVENTS.LEAVE, {}),
+    []
+  );
 
   return useMemo(
     () => ({
@@ -147,6 +165,7 @@ export function useCardRoomConnection(
       sendReady,
       sendStart,
       sendEnd,
+      sendLeave,
     }),
     [
       state,
@@ -160,6 +179,7 @@ export function useCardRoomConnection(
       sendReady,
       sendStart,
       sendEnd,
+      sendLeave,
     ]
   );
 }

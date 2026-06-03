@@ -84,9 +84,22 @@ public class ImportCommitService {
 				}
 				for (var field : repository.insertCustomFields(createdSpace.id(), overviewTabId, userId, now, insertFields)) fieldMap.put(field.name(), field);
 			}
+			List<Object[]> memberRows = new ArrayList<>();
+			List<String> memberPublicIds = new ArrayList<>();
 			for (ImportStudentRequest student : students) {
-				var insertedMember = repository.insertMember(createdSpace.id(), generatePublicId("mem"), normalizeName(student.name(), 100), trimToNull(student.email(), 255), trimToNull(student.phone(), 20), defaultStatus(student.status()), now);
-				Map<String, String> customFields = student.customFields() == null ? Map.of() : student.customFields();
+				String memberPublicId = generatePublicId("mem");
+				memberPublicIds.add(memberPublicId);
+				memberRows.add(new Object[]{memberPublicId, normalizeName(student.name(), 100), trimToNull(student.email(), 255), trimToNull(student.phone(), 20), defaultStatus(student.status())});
+			}
+			Map<String, Long> memberIdByPublicId = new LinkedHashMap<>();
+			for (var insertedMember : repository.insertMembers(createdSpace.id(), now, memberRows)) {
+				memberIdByPublicId.put(insertedMember.publicId(), insertedMember.id());
+			}
+			List<Object[]> fieldValueRows = new ArrayList<>();
+			for (int i = 0; i < students.size(); i++) {
+				Long memberInternalId = memberIdByPublicId.get(memberPublicIds.get(i));
+				if (memberInternalId == null) continue;
+				Map<String, String> customFields = students.get(i).customFields() == null ? Map.of() : students.get(i).customFields();
 				for (Map.Entry<String, String> entry : customFields.entrySet()) {
 					String fieldName = trimToNull(entry.getKey(), 80);
 					String value = trimToNull(entry.getValue(), 5000);
@@ -94,9 +107,10 @@ public class ImportCommitService {
 					var field = fieldMap.get(fieldName);
 					if (field == null) continue;
 					ValueColumns columns = buildValueColumns(field.fieldType(), value);
-					repository.insertFieldValue(insertedMember.id(), field.id(), generatePublicId("mfv"), columns.valueText, columns.valueNumber, columns.valueBoolean, columns.valueJson, now);
+					fieldValueRows.add(new Object[]{generatePublicId("mfv"), memberInternalId, field.id(), columns.valueText, columns.valueNumber, columns.valueBoolean, columns.valueJson});
 				}
 			}
+			repository.insertFieldValues(now, fieldValueRows);
 			spacesCreated += 1;
 			membersCreated += students.size();
 		}

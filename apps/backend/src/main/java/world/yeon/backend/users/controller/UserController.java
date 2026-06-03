@@ -25,6 +25,8 @@ public class UserController {
 		this.service = service;
 	}
 
+	// 신뢰 경계: X-Yeon-User-Id는 InternalServiceTokenAuthFilter(BFF) 뒤에서만 신뢰된다.
+	// 게이트웨이가 외부 유입 X-Yeon-User-Id 헤더를 strip한다는 전제 하에 신원으로 사용한다.
 	@GetMapping("/users")
 	public GetUsersResponse listUsers(@RequestHeader("X-Yeon-User-Id") UUID userId) {
 		return service.listUsers(userId);

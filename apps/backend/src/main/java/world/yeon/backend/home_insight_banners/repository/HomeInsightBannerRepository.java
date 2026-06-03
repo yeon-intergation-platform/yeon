@@ -1,7 +1,6 @@
 package world.yeon.backend.home_insight_banners.repository;
 
 import jakarta.persistence.EntityManager;
-import java.math.BigInteger;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.LocalDateTime;

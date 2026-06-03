@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import world.yeon.backend.chat_service_friends_overview.dto.ChatServiceFriendCardResponse;
 import world.yeon.backend.chat_service_friends_overview.dto.ChatServiceFriendsOverviewResponse;
 import world.yeon.backend.chat_service_friends_overview.dto.ChatServiceProfileSummaryResponse;
@@ -21,6 +22,7 @@ public class ChatServiceFriendsOverviewService {
 		this.repository = repository;
 	}
 
+	@Transactional(readOnly = true)
 	public ChatServiceFriendsOverviewResponse getOverview(UUID currentProfileId) {
 		List<ChatServiceFriendsOverviewRepository.FriendLinkRow> links = repository.listLinks(currentProfileId);
 		List<ChatServiceFriendsOverviewRepository.BlockPairRow> blockPairs = repository.listBlockPairs(currentProfileId);
@@ -56,10 +58,9 @@ public class ChatServiceFriendsOverviewService {
 			}
 		}
 
-		List<ChatServiceProfileSummaryResponse> suggested = repository.listSuggestedProfiles().stream()
-			.filter(profile -> !profile.id().equals(currentProfileId))
-			.filter(profile -> !relatedIds.contains(profile.id()))
-			.limit(8)
+		Set<UUID> excludedIds = new LinkedHashSet<>(relatedIds);
+		excludedIds.add(currentProfileId);
+		List<ChatServiceProfileSummaryResponse> suggested = repository.listSuggestedProfiles(excludedIds, 8).stream()
 			.map(this::toSummary)
 			.toList();
 

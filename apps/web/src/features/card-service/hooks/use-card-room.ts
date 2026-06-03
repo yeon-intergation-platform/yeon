@@ -99,7 +99,9 @@ export async function joinCardRoom(
 
 export function useCardRoomConnection(
   roomId: string,
-  participantId: string | null
+  participantId: string | null,
+  // finding 166: race-server가 참가자 가장을 검증하는 소유 증명 토큰.
+  participantToken: string | null
 ) {
   const [state, setState] = useState<CardRoomRealtimeState | null>(null);
   const [room, setRoom] =
@@ -120,6 +122,7 @@ export function useCardRoomConnection(
       .joinOrCreate<CardRoomRealtimeState>(CARD_ROOM_NAME, {
         cardRoomId: roomId,
         participantId,
+        participantToken: participantToken ?? undefined,
       })
       .then((room) => {
         if (cancelled) {
@@ -161,7 +164,7 @@ export function useCardRoomConnection(
       roomRef.current = null;
       setRoom(null);
     };
-  }, [roomId, participantId]);
+  }, [roomId, participantId, participantToken]);
 
   const sendChat = useCallback(
     (content: string) =>

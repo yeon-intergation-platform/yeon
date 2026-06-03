@@ -4,6 +4,8 @@ public record CardDeckItemDto(
 	String id,
 	String frontText,
 	String backText,
+	String imageStorageKey,
+	String imageUrl,
 	String reviewDifficulty,
 	String lastReviewedAt,
 	String nextReviewAt,

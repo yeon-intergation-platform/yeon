@@ -117,7 +117,11 @@ export function CardOnboardingGate({
         `${getMobileApiBaseUrl()}/auth/register`
       );
     } catch {
-      // 브라우저 오픈 실패는 조용히 무시.
+      // idx-151: 브라우저 오픈 실패 시 사용자에게 안내한다.
+      showYeonAlert(
+        "브라우저 오픈 실패",
+        "회원가입 페이지를 열 수 없습니다. 잠시 후 다시 시도해 주세요."
+      );
     }
   }
 

@@ -17,6 +17,17 @@ public class MemberFieldValueWriteRepository {
 	public record DefinitionRow(Long definitionInternalId, String definitionPublicId, String fieldType, String fieldName) {
 	}
 
+	public record UpsertValueParams(
+		String publicId,
+		Long memberInternalId,
+		Long definitionInternalId,
+		String valueText,
+		String valueNumber,
+		Boolean valueBoolean,
+		String valueJson
+	) {
+	}
+
 	public record ValueRow(
 		String fieldDefinitionPublicId,
 		String fieldType,
@@ -126,6 +137,63 @@ public class MemberFieldValueWriteRepository {
 			.setParameter("valueBoolean", valueBoolean)
 			.setParameter("valueJson", valueJson)
 			.executeUpdate();
+	}
+
+	// IDX 75/176: 멤버의 여러 필드 값을 단일 multi-row INSERT ... ON CONFLICT 로 일괄 upsert 한다.
+	// 주의(IDX 80): member-space 정합성은 서비스(bulkUpsert)에서 소유권/멤버/정의 검증으로 보장하는 신뢰 경계다.
+	@Transactional
+	public void upsertValues(List<UpsertValueParams> rows) {
+		if (rows == null || rows.isEmpty()) {
+			return;
+		}
+		StringBuilder sql = new StringBuilder("""
+			insert into public.member_field_values (
+			  public_id,
+			  member_id,
+			  field_definition_id,
+			  value_text,
+			  value_number,
+			  value_boolean,
+			  value_json,
+			  created_at,
+			  updated_at
+			) values
+			""");
+		for (int index = 0; index < rows.size(); index++) {
+			if (index > 0) {
+				sql.append(',');
+			}
+			sql.append("(:publicId").append(index)
+				.append(", :memberInternalId").append(index)
+				.append(", :definitionInternalId").append(index)
+				.append(", :valueText").append(index)
+				.append(", cast(:valueNumber").append(index).append(" as numeric)")
+				.append(", :valueBoolean").append(index)
+				.append(", cast(:valueJson").append(index).append(" as jsonb)")
+				.append(", now(), now())");
+		}
+		sql.append("""
+
+			on conflict (member_id, field_definition_id)
+			do update set
+			  value_text = excluded.value_text,
+			  value_number = excluded.value_number,
+			  value_boolean = excluded.value_boolean,
+			  value_json = excluded.value_json,
+			  updated_at = excluded.updated_at
+			""");
+		var query = entityManager.createNativeQuery(sql.toString());
+		for (int index = 0; index < rows.size(); index++) {
+			UpsertValueParams row = rows.get(index);
+			query.setParameter("publicId" + index, row.publicId());
+			query.setParameter("memberInternalId" + index, row.memberInternalId());
+			query.setParameter("definitionInternalId" + index, row.definitionInternalId());
+			query.setParameter("valueText" + index, row.valueText());
+			query.setParameter("valueNumber" + index, row.valueNumber());
+			query.setParameter("valueBoolean" + index, row.valueBoolean());
+			query.setParameter("valueJson" + index, row.valueJson());
+		}
+		query.executeUpdate();
 	}
 
 	public List<ValueRow> findValues(Long memberInternalId, Long spaceInternalId, List<Long> definitionInternalIds) {

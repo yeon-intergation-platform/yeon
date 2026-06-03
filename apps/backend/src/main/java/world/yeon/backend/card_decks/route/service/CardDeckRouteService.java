@@ -18,6 +18,7 @@ public class CardDeckRouteService {
 	private static final Base64.Encoder BASE64_URL = Base64.getUrlEncoder().withoutPadding();
 	private static final Set<String> STUDY_MODES = Set.of("flashcard", "review");
 	private static final Set<String> REVIEW_DIFFICULTIES = Set.of("hard", "good", "easy");
+	private static final String ASSET_URL_PREFIX = "/api/v1/card-decks/assets/";
 
 	private final CardDeckRouteRepository repository;
 
@@ -70,8 +71,9 @@ public class CardDeckRouteService {
 		var deck = findOwnedDeck(userId, deckPublicId);
 		String frontText = normalizeCardText(request == null ? null : request.frontText(), "앞면과 뒷면을 모두 입력해주세요.");
 		String backText = normalizeCardText(request == null ? null : request.backText(), "앞면과 뒷면을 모두 입력해주세요.");
+		String imageStorageKey = normalizeImageStorageKey(request == null ? null : request.imageStorageKey());
 		OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
-		var row = repository.insertItem(generatePublicId("dki"), deck.internalId(), frontText, backText, now);
+		var row = repository.insertItem(generatePublicId("dki"), deck.internalId(), frontText, backText, imageStorageKey, now);
 		repository.touchDeck(deck.internalId(), now);
 		if (row == null) throw new CardDeckRouteServiceException(500, "ITEM_CREATE_FAILED", "카드를 추가하지 못했습니다.");
 		return new CardDeckItemResponse(toItemDto(row));
@@ -87,7 +89,8 @@ public class CardDeckRouteService {
 		for (CreateCardDeckItemRequest item : items) {
 			String frontText = normalizeCardText(item.frontText(), "앞면과 뒷면을 모두 입력해주세요.");
 			String backText = normalizeCardText(item.backText(), "앞면과 뒷면을 모두 입력해주세요.");
-			created.add(toItemDto(repository.insertItem(generatePublicId("dki"), deck.internalId(), frontText, backText, now)));
+			String imageStorageKey = normalizeImageStorageKey(item.imageStorageKey());
+			created.add(toItemDto(repository.insertItem(generatePublicId("dki"), deck.internalId(), frontText, backText, imageStorageKey, now)));
 		}
 		repository.touchDeck(deck.internalId(), now);
 		return new CreateCardDeckItemsResponse(created);
@@ -98,8 +101,10 @@ public class CardDeckRouteService {
 		var owned = findOwnedItem(userId, deckPublicId, itemPublicId);
 		String frontText = request.hasFrontText() ? normalizeSingleSide(request.frontText(), "앞면을 입력해주세요.") : owned.frontText();
 		String backText = request.hasBackText() ? normalizeSingleSide(request.backText(), "뒷면을 입력해주세요.") : owned.backText();
+		boolean updateImageStorageKey = request.hasImageStorageKey();
+		String imageStorageKey = updateImageStorageKey ? normalizeImageStorageKey(request.imageStorageKey()) : null;
 		OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
-		var updated = repository.updateItem(owned.internalId(), frontText, backText, now);
+		var updated = repository.updateItem(owned.internalId(), frontText, backText, updateImageStorageKey, imageStorageKey, now);
 		repository.touchDeck(owned.deckId(), now);
 		if (updated == null) throw new CardDeckRouteServiceException(500, "ITEM_UPDATE_FAILED", "카드를 수정하지 못했습니다.");
 		return new CardDeckItemResponse(toItemDto(updated));
@@ -160,7 +165,9 @@ public class CardDeckRouteService {
 		return new CardDeckDto(row.publicId(), row.title(), row.description(), itemCount, toIso(row.createdAt()), toIso(row.updatedAt()));
 	}
 	private CardDeckItemDto toItemDto(CardDeckRouteRepository.CardDeckItemRow row) {
-		return new CardDeckItemDto(row.publicId(), row.frontText(), row.backText(), row.reviewDifficulty(), toIso(row.lastReviewedAt()), toIso(row.nextReviewAt()), toIso(row.createdAt()), toIso(row.updatedAt()));
+		String imageStorageKey = row.imageStorageKey();
+		String imageUrl = toImageUrl(imageStorageKey);
+		return new CardDeckItemDto(row.publicId(), row.frontText(), row.backText(), imageStorageKey, imageUrl, row.reviewDifficulty(), toIso(row.lastReviewedAt()), toIso(row.nextReviewAt()), toIso(row.createdAt()), toIso(row.updatedAt()));
 	}
 	private String toIso(OffsetDateTime value) { return value == null ? null : value.toInstant().toString(); }
 	private String normalizeDeckTitle(String value) {
@@ -176,6 +183,8 @@ public class CardDeckRouteService {
 		if (value == null || value.trim().isBlank()) throw new CardDeckRouteServiceException(400, "EMPTY_CARD_TEXT", message);
 		return value.trim();
 	}
+	private String normalizeImageStorageKey(String value) { return value == null || value.trim().isBlank() ? null : value.trim(); }
+	private String toImageUrl(String storageKey) { return storageKey == null || storageKey.isBlank() ? null : ASSET_URL_PREFIX + storageKey; }
 	private String toStudyMode(String value) { return "review".equals(value) ? "review" : "flashcard"; }
 	private String normalizeStudyMode(String value) {
 		if (value == null || !STUDY_MODES.contains(value)) throw new IllegalArgumentException("학습 모드 설정값이 올바르지 않습니다.");

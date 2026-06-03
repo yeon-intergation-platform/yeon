@@ -36,7 +36,7 @@ public class MemberFieldValueMemberReadController {
 		@RequestParam(name = "fieldDefinitionId", required = false) List<String> fieldDefinitionIds,
 		@RequestHeader("X-Yeon-User-Id") UUID userId
 	) {
-		return service.listMemberValues(spaceId, memberId, fieldDefinitionIds == null ? List.of() : fieldDefinitionIds);
+		return service.listMemberValues(userId, spaceId, memberId, fieldDefinitionIds == null ? List.of() : fieldDefinitionIds);
 	}
 
 	@ExceptionHandler(NoSuchElementException.class)

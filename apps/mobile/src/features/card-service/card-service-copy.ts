@@ -198,6 +198,8 @@ export const CARD_SERVICE_TEXT = {
     unreadyLabel: "준비 해제",
     startLabel: "시작하기",
     hostOnlyStart: "방장이 시작할 수 있어요.",
+    startNotReadyHint:
+      "외우기·확인 역할이 각 1명 이상 있고 모두 준비 완료여야 시작할 수 있어요.",
     memorizerHint: "카드를 외운 뒤 검사자에게 답해 주세요.",
     checkerHint: "외우는 사람의 답을 듣고 결과를 표시하세요.",
     revealLabel: "정답 보기",
@@ -213,6 +215,8 @@ export const CARD_SERVICE_TEXT = {
     frontLabel: "문제",
     backLabel: "정답",
     joinErrorTitle: "입장 실패",
+    retryLabel: "다시 시도",
+    disconnectedMessage: "연결이 끊겼습니다. 네트워크를 확인해 주세요.",
   },
   shared: {
     notFoundMessage: "덱을 찾을 수 없습니다.",

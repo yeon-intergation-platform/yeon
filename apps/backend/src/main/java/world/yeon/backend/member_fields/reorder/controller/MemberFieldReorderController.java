@@ -37,7 +37,7 @@ public class MemberFieldReorderController {
 		@RequestHeader("X-Yeon-User-Id") UUID userId,
 		@Valid @RequestBody ReorderMemberFieldsRequest request
 	) {
-		return service.reorderFields(spaceId, request.order());
+		return service.reorderFields(userId, spaceId, request.order());
 	}
 
 	@ExceptionHandler(NoSuchElementException.class)

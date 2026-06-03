@@ -194,6 +194,9 @@ export type CardRoomResponse = z.infer<typeof cardRoomResponseSchema>;
 export const cardRoomParticipantResponseSchema = z.object({
   participant: cardRoomParticipantDtoSchema,
   room: cardRoomDetailDtoSchema,
+  // race-server가 참가자 가장(impersonation)을 차단하기 위해 검증하는 소유 증명 토큰.
+  // 백엔드 시크릿 미설정 환경에서는 null이며, 하위호환을 위해 nullish 처리한다.
+  participantToken: z.string().nullish(),
 });
 export type CardRoomParticipantResponse = z.infer<
   typeof cardRoomParticipantResponseSchema

@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import world.yeon.backend.member_field_values.write.dto.BulkUpsertMemberFieldValuesRequest;
 import world.yeon.backend.member_field_values.write.dto.MemberFieldValuePayloadRequest;
 import world.yeon.backend.member_field_values.write.service.MemberFieldValueWriteService;
+import world.yeon.backend.space_access.service.SpaceAccessService;
 import world.yeon.backend.sheet_export.import_mutation.dto.SheetExportImportMutationItemRequest;
 import world.yeon.backend.sheet_export.import_mutation.dto.SheetExportImportMutationPayloadCoreRequest;
 import world.yeon.backend.sheet_export.import_mutation.dto.SheetExportImportMutationRequest;
@@ -20,13 +21,16 @@ public class SheetExportImportMutationService {
 
 	private final SheetExportImportMutationRepository repository;
 	private final MemberFieldValueWriteService memberFieldValueWriteService;
+	private final SpaceAccessService spaceAccessService;
 
 	public SheetExportImportMutationService(
 		SheetExportImportMutationRepository repository,
-		MemberFieldValueWriteService memberFieldValueWriteService
+		MemberFieldValueWriteService memberFieldValueWriteService,
+		SpaceAccessService spaceAccessService
 	) {
 		this.repository = repository;
 		this.memberFieldValueWriteService = memberFieldValueWriteService;
+		this.spaceAccessService = spaceAccessService;
 	}
 
 	@Transactional
@@ -34,6 +38,8 @@ public class SheetExportImportMutationService {
 		if (request.sheetId() == null || request.sheetId().isBlank()) {
 			throw new SheetExportImportMutationServiceException(400, "sheetId가 필요합니다.", "INVALID_REQUEST");
 		}
+		// IDOR 방지: sheetId만 아는 타인이 수강생 데이터를 변조/생성하지 못하도록 스페이스 소유권을 먼저 검증한다.
+		spaceAccessService.requireOwnedSpace(spaceId, userId);
 		Long spaceInternalId = repository.findLinkedExportSpaceInternalId(spaceId, request.sheetId());
 		if (spaceInternalId == null) {
 			throw new SheetExportImportMutationServiceException(404, "연동된 익스포트 시트를 찾지 못했습니다.", "SHEET_INTEGRATION_NOT_FOUND");

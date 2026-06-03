@@ -21,8 +21,11 @@ public class HomeInsightBannerService {
 		return new HomeInsightBannerStateResponse(BANNER_KEYS.stream().map(key -> new HomeInsightBannerDismissalResponse(key, map.get(key))).toList());
 	}
 	public DismissHomeInsightBannerResponse dismiss(UUID userId, DismissHomeInsightBannerRequest request) {
-		if (request == null || request.bannerKey() == null || !BANNER_KEYS.contains(request.bannerKey())) {
-			throw new IllegalArgumentException("배너 dismiss 요청 값이 올바르지 않습니다.");
+		if (request == null || request.bannerKey() == null) {
+			throw new IllegalArgumentException("배너 dismiss 요청에 bannerKey가 필요합니다.");
+		}
+		if (!BANNER_KEYS.contains(request.bannerKey())) {
+			throw new IllegalArgumentException("허용되지 않은 배너 키입니다: " + request.bannerKey());
 		}
 		OffsetDateTime hiddenUntil = OffsetDateTime.ofInstant(java.time.Instant.ofEpochMilli(System.currentTimeMillis() + HIDE_DURATION_MS), ZoneOffset.UTC);
 		OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);

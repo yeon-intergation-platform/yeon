@@ -4,20 +4,34 @@
 // 각 앱(apps/web, apps/mobile)이 주입한다. 포트 시그니처에는 프레임워크 타입
 // (next/expo/TanStack)을 노출하지 않는다 — 순수 타입 + Promise 만 둔다.
 //
+// ⚠ 연결 상태(2026-06-03): YeonNavigationPort/YeonSessionPort/YeonKeyValueStorePort/
+// YeonAppRuntimeProvider/useYeonNavigation/useYeonSession/useYeonKeyValueStore는
+// 포트 인터페이스 SSOT로 정의되어 있으나 아직 어댑터가 apps/에 주입되지 않았다.
+// 화면들은 현재 expo-router/TanStack Query를 직접 사용한다.
+// 어댑터 연결이 완료되면 이 주석을 제거한다.
+//
 // 설계 원장: docs/product/backlog/2026-06-03-universal-ui-screen-ports-ssot.md
 import { createContext, createElement, useContext } from "react";
 import type { ReactNode } from "react";
+import type { YeonRouteName } from "./routes";
 
 /* ───────────────── Navigation ───────────────── */
 
 // 라우트 디스크립터: 화면은 "어디로" 갈지만 알고, 플랫폼 경로 변환은 어댑터가 한다.
 // 웹은 `/card-service/decks/${deckId}`, 모바일은 `{ pathname, params }`로 각각 변환한다.
-// 도메인이 늘면 같은 패턴으로 union을 확장한다(typing-service / community).
+// 라우트 이름은 routes.ts의 YeonRouteName(YEON_ROUTE_TEMPLATES keyof)에서 파생한다 — drift 불가.
+// 도메인이 늘면 YEON_ROUTE_TEMPLATES에 추가하고 여기서 union member를 확장한다.
 export type YeonRouteTarget =
-  | { name: "cardDeckList" }
-  | { name: "cardDeckDetail"; params: { deckId: string } }
-  | { name: "cardDeckPlay"; params: { deckId: string } }
-  | { name: "cardRoomLobby"; params: { roomId: string } };
+  | { name: Extract<YeonRouteName, "cardDeckList"> }
+  | {
+      name: Extract<YeonRouteName, "cardDeckDetail">;
+      params: { deckId: string };
+    }
+  | { name: Extract<YeonRouteName, "cardDeckPlay">; params: { deckId: string } }
+  | {
+      name: Extract<YeonRouteName, "cardRoomDetail">;
+      params: { roomId: string };
+    };
 
 // route-state-contract Layer1: reload-safe 상태는 URL이 SoT.
 // 읽기/쓰기 한 쌍을 useState 시그니처와 같은 형태로 노출한다.

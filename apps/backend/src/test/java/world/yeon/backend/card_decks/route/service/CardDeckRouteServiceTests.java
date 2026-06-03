@@ -41,8 +41,8 @@ class CardDeckRouteServiceTests {
 	}
 
 	@Test void 복습결과를저장한다() {
-		when(repository.findOwnedItem(USER_ID, "dck_1", "dki_1")).thenReturn(new CardDeckRouteRepository.CardDeckItemRow(2L, "dki_1", 1L, "앞", "뒤", null, null, null, OffsetDateTime.parse("2026-05-08T00:00:00Z"), OffsetDateTime.parse("2026-05-08T00:00:00Z")));
-		when(repository.reviewItem(eq(2L), eq("good"), any(), any())).thenReturn(new CardDeckRouteRepository.CardDeckItemRow(2L, "dki_1", 1L, "앞", "뒤", "good", OffsetDateTime.parse("2026-05-08T00:00:00Z"), OffsetDateTime.parse("2026-05-11T00:00:00Z"), OffsetDateTime.parse("2026-05-08T00:00:00Z"), OffsetDateTime.parse("2026-05-08T00:00:00Z")));
+		when(repository.findOwnedItem(USER_ID, "dck_1", "dki_1")).thenReturn(new CardDeckRouteRepository.CardDeckItemRow(2L, "dki_1", 1L, "앞", "뒤", null, null, null, null, OffsetDateTime.parse("2026-05-08T00:00:00Z"), OffsetDateTime.parse("2026-05-08T00:00:00Z")));
+		when(repository.reviewItem(eq(2L), eq("good"), any(), any())).thenReturn(new CardDeckRouteRepository.CardDeckItemRow(2L, "dki_1", 1L, "앞", "뒤", null, "good", OffsetDateTime.parse("2026-05-08T00:00:00Z"), OffsetDateTime.parse("2026-05-11T00:00:00Z"), OffsetDateTime.parse("2026-05-08T00:00:00Z"), OffsetDateTime.parse("2026-05-08T00:00:00Z")));
 		assertThat(service.reviewItem(USER_ID, "dck_1", "dki_1", new ReviewCardDeckItemRequest("good")).item().reviewDifficulty()).isEqualTo("good");
 	}
 }

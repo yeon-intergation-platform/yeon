@@ -61,12 +61,33 @@ export function normalizeAuthRedirectPath(
 }
 
 // 모바일 소셜 로그인 복귀용 딥링크 허용 scheme.
-// prod는 앱 고정 scheme만, dev는 Expo Go 딥링크(exp://, exp+...://)도 허용해 시뮬레이터 테스트를 연다.
-// open-redirect 차단: 허용 외 scheme은 모두 null 처리.
+// prod는 앱 고정 scheme만, dev는 Expo Go 딥링크(exp://, exp+yeon:// 한정)도 허용해 시뮬레이터 테스트를 연다.
+// open-redirect 차단:
+//   - 허용 외 scheme은 모두 null 처리.
+//   - 허용 scheme이라도 host+path가 정상 앱 딥링크와 일치해야 하고, 미리 채워진 쿼리·프래그먼트는 거부.
+//   - idx-145: host/path 미검증 → (host, pathname) 쌍으로 화이트리스트 검증.
+//   - idx-146: exp+ 과범위 → 정확한 앱 slug(exp+yeon:)만 허용. exp:// (Expo Go)는 pathname 끝 검증으로 보완.
 const PRODUCTION_MOBILE_RETURN_PROTOCOLS = [
   "yeon-card-service:",
   "chat-service:",
 ];
+
+// 정상 앱 딥링크의 (host, pathname) 쌍.
+// Expo Linking.createURL("auth/social") → "<scheme>://auth/social"
+// URL API 파싱: host="auth", pathname="/social".
+const ALLOWED_MOBILE_RETURN_HOST = "auth";
+const ALLOWED_MOBILE_RETURN_PATHNAME = "/social";
+
+// Expo Go dev URL 형식: exp://127.0.0.1:<port>/--/auth/social
+// pathname 끝 suffix로 검증(host는 로컬 IP 가변).
+const EXPO_GO_ALLOWED_PATHNAME_SUFFIX = "/--/auth/social";
+
+function isAllowedMobileReturnPath(parsed: URL): boolean {
+  return (
+    parsed.host === ALLOWED_MOBILE_RETURN_HOST &&
+    parsed.pathname === ALLOWED_MOBILE_RETURN_PATHNAME
+  );
+}
 
 export function normalizeMobileReturnUrl(candidate: string | null | undefined) {
   if (!candidate) {
@@ -80,23 +101,45 @@ export function normalizeMobileReturnUrl(candidate: string | null | undefined) {
     return null;
   }
 
-  let protocol: string;
+  let parsed: URL;
 
   try {
-    protocol = createYeonUrl(trimmed).protocol;
+    parsed = createYeonUrl(trimmed);
   } catch {
     return null;
   }
 
+  const { protocol, search, hash } = parsed;
+
+  // 미리 채워진 쿼리·프래그먼트는 토큰 전달 경로 오염 위험 → 거부.
+  if (search || hash) {
+    return null;
+  }
+
   if (PRODUCTION_MOBILE_RETURN_PROTOCOLS.includes(protocol)) {
+    // host+pathname이 허용된 딥링크 경로와 일치해야만 통과.
+    if (!isAllowedMobileReturnPath(parsed)) {
+      return null;
+    }
     return trimmed;
   }
 
-  if (
-    process.env.NODE_ENV !== "production" &&
-    (protocol === "exp:" || protocol.startsWith("exp+"))
-  ) {
-    return trimmed;
+  if (process.env.NODE_ENV !== "production") {
+    // idx-146: exp+yeon: 정확한 slug만 허용(exp+anything 과범위 차단).
+    if (protocol === "exp+yeon:") {
+      if (!isAllowedMobileReturnPath(parsed)) {
+        return null;
+      }
+      return trimmed;
+    }
+
+    // Expo Go 개발용: exp:// (로컬 IP 가변) — pathname 끝 suffix 검증.
+    if (protocol === "exp:") {
+      if (!parsed.pathname.endsWith(EXPO_GO_ALLOWED_PATHNAME_SUFFIX)) {
+        return null;
+      }
+      return trimmed;
+    }
   }
 
   return null;

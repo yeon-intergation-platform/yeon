@@ -133,6 +133,8 @@ export function createWebCardItemRepository(
     },
     async updateStudyPreference(studyMode: CardStudyMode) {
       if (!isAuthenticated) {
+        // setGuestCardStudyMode는 동기 함수(zustand store 직접 갱신).
+        // 모바일 어댑터와 의미 통일: 저장 후 반환. 실패 시 예외 전파.
         setGuestCardStudyMode(studyMode);
         return { studyMode };
       }

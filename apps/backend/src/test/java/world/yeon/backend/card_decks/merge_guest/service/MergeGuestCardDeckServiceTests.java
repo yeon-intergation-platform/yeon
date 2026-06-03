@@ -36,8 +36,8 @@ class MergeGuestCardDeckServiceTests {
 
 		var result = service.merge(OWNER_ID, new MergeGuestRequest(List.of(
 			new MergeGuestCardDeckRequest("덱", null, List.of(
-				new MergeGuestCardDeckItemRequest("앞", "뒤"),
-				new MergeGuestCardDeckItemRequest("앞2", "뒤2")
+				new MergeGuestCardDeckItemRequest("앞", "뒤", null),
+				new MergeGuestCardDeckItemRequest("앞2", "뒤2", null)
 			))
 		)));
 
@@ -59,7 +59,7 @@ class MergeGuestCardDeckServiceTests {
 
 		assertThatThrownBy(() -> service.merge(OWNER_ID, new MergeGuestRequest(List.of(
 			new MergeGuestCardDeckRequest("덱", null, List.of(
-				new MergeGuestCardDeckItemRequest("앞", " ")
+				new MergeGuestCardDeckItemRequest("앞", " ", null)
 			))
 		))))
 			.isInstanceOf(MergeGuestCardDeckServiceException.class)

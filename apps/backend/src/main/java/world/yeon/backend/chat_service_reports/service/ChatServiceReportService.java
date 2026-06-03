@@ -17,28 +17,54 @@ public class ChatServiceReportService {
 		this.repository = repository;
 	}
 
+	private static final int MAX_REASON_LENGTH = 240;
+
 	@Transactional
 	public ChatServiceCreateReportResponse create(UUID currentProfileId, String targetType, String targetId, String reason) {
 		if (!TARGET_TYPES.contains(targetType)) {
 			throw new ChatServiceReportServiceException(400, "CHAT_SERVICE_REPORT_TARGET_INVALID", "신고 요청값이 올바르지 않습니다.");
 		}
+		String normalizedTargetId = requireUuid(targetId);
+		String normalizedReason = normalizeReason(reason);
 		switch (targetType) {
 			case "feed_post" -> {
-				if (!repository.existsFeedPost(targetId)) throw new ChatServiceReportServiceException(404, "CHAT_SERVICE_REPORT_FEED_NOT_FOUND", "신고 대상 피드 글을 찾지 못했습니다.");
+				if (!repository.existsFeedPost(normalizedTargetId)) throw new ChatServiceReportServiceException(404, "CHAT_SERVICE_REPORT_FEED_NOT_FOUND", "신고 대상 피드 글을 찾지 못했습니다.");
 			}
 			case "ask_post" -> {
-				if (!repository.existsAskPost(targetId)) throw new ChatServiceReportServiceException(404, "CHAT_SERVICE_REPORT_ASK_NOT_FOUND", "신고 대상 에스크 글을 찾지 못했습니다.");
+				if (!repository.existsAskPost(normalizedTargetId)) throw new ChatServiceReportServiceException(404, "CHAT_SERVICE_REPORT_ASK_NOT_FOUND", "신고 대상 에스크 글을 찾지 못했습니다.");
 			}
 			case "profile" -> {
-				if (!repository.existsProfile(UUID.fromString(targetId))) throw new ChatServiceReportServiceException(404, "CHAT_SERVICE_REPORT_PROFILE_NOT_FOUND", "신고 대상 프로필을 찾지 못했습니다.");
+				if (!repository.existsProfile(UUID.fromString(normalizedTargetId))) throw new ChatServiceReportServiceException(404, "CHAT_SERVICE_REPORT_PROFILE_NOT_FOUND", "신고 대상 프로필을 찾지 못했습니다.");
 			}
 			case "chat_message" -> {
-				var room = repository.findMessageRoom(targetId);
+				var room = repository.findMessageRoom(normalizedTargetId);
 				if (room == null) throw new ChatServiceReportServiceException(404, "CHAT_SERVICE_REPORT_MESSAGE_NOT_FOUND", "신고 대상 메시지를 찾지 못했습니다.");
 				if (!room.userAId().equals(currentProfileId) && !room.userBId().equals(currentProfileId)) throw new ChatServiceReportServiceException(403, "CHAT_SERVICE_REPORT_ROOM_FORBIDDEN", "참여 중인 대화방의 메시지만 신고할 수 있습니다.");
 			}
 		}
-		var report = repository.insertReport(UUID.randomUUID(), currentProfileId, targetType, targetId, reason);
+		var report = repository.insertReport(UUID.randomUUID(), currentProfileId, targetType, normalizedTargetId, normalizedReason);
 		return new ChatServiceCreateReportResponse(new ChatServiceReportResponse(report.id().toString(), report.targetType(), report.targetId(), report.reason(), report.status(), report.createdAt().toString()));
+	}
+
+	private String requireUuid(String targetId) {
+		if (targetId == null) {
+			throw new ChatServiceReportServiceException(400, "CHAT_SERVICE_REPORT_TARGET_INVALID", "신고 요청값이 올바르지 않습니다.");
+		}
+		try {
+			return UUID.fromString(targetId.trim()).toString();
+		} catch (IllegalArgumentException invalid) {
+			throw new ChatServiceReportServiceException(400, "CHAT_SERVICE_REPORT_TARGET_INVALID", "신고 요청값이 올바르지 않습니다.");
+		}
+	}
+
+	private String normalizeReason(String reason) {
+		if (reason == null) {
+			throw new ChatServiceReportServiceException(400, "CHAT_SERVICE_REPORT_REASON_INVALID", "신고 사유를 입력해 주세요.");
+		}
+		String normalized = reason.trim();
+		if (normalized.isEmpty() || normalized.length() > MAX_REASON_LENGTH) {
+			throw new ChatServiceReportServiceException(400, "CHAT_SERVICE_REPORT_REASON_INVALID", "신고 사유는 1자 이상 " + MAX_REASON_LENGTH + "자 이하로 입력해 주세요.");
+		}
+		return normalized;
 	}
 }

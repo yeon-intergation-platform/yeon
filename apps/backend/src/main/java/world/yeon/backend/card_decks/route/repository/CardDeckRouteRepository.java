@@ -16,7 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class CardDeckRouteRepository {
 	public record CardDeckRow(Long internalId, String publicId, String ownerUserId, String title, String description, OffsetDateTime createdAt, OffsetDateTime updatedAt) {}
 	public record CardDeckListRow(Long internalId, String publicId, String ownerUserId, String title, String description, OffsetDateTime createdAt, OffsetDateTime updatedAt, int itemCount) {}
-	public record CardDeckItemRow(Long internalId, String publicId, Long deckId, String frontText, String backText, String reviewDifficulty, OffsetDateTime lastReviewedAt, OffsetDateTime nextReviewAt, OffsetDateTime createdAt, OffsetDateTime updatedAt) {}
+	public record CardDeckItemRow(Long internalId, String publicId, Long deckId, String frontText, String backText, String imageStorageKey, String reviewDifficulty, OffsetDateTime lastReviewedAt, OffsetDateTime nextReviewAt, OffsetDateTime createdAt, OffsetDateTime updatedAt) {}
 
 	private final EntityManager entityManager;
 
@@ -56,7 +56,7 @@ public class CardDeckRouteRepository {
 
 	public List<CardDeckItemRow> listDeckItems(Long deckId) {
 		return entityManager.createNativeQuery("""
-			select id, public_id, deck_id, front_text, back_text, review_difficulty, last_reviewed_at, next_review_at, created_at, updated_at
+			select id, public_id, deck_id, front_text, back_text, image_storage_key, review_difficulty, last_reviewed_at, next_review_at, created_at, updated_at
 			from public.card_deck_items
 			where deck_id = :deckId
 			order by case when next_review_at is null then 0 when next_review_at <= now() then 0 else 1 end,
@@ -72,7 +72,7 @@ public class CardDeckRouteRepository {
 
 	public CardDeckItemRow findOwnedItem(UUID userId, String deckPublicId, String itemPublicId) {
 		List<?> rows = entityManager.createNativeQuery("""
-			select i.id, i.public_id, i.deck_id, i.front_text, i.back_text, i.review_difficulty, i.last_reviewed_at, i.next_review_at, i.created_at, i.updated_at
+			select i.id, i.public_id, i.deck_id, i.front_text, i.back_text, i.image_storage_key, i.review_difficulty, i.last_reviewed_at, i.next_review_at, i.created_at, i.updated_at
 			from public.card_deck_items i
 			join public.card_decks d on d.id = i.deck_id
 			where d.owner_user_id = :userId and d.public_id = :deckPublicId and i.public_id = :itemPublicId
@@ -145,16 +145,17 @@ public class CardDeckRouteRepository {
 	}
 
 	@Transactional
-	public CardDeckItemRow insertItem(String publicId, Long deckId, String frontText, String backText, OffsetDateTime now) {
+	public CardDeckItemRow insertItem(String publicId, Long deckId, String frontText, String backText, String imageStorageKey, OffsetDateTime now) {
 		List<?> rows = entityManager.createNativeQuery("""
-			insert into public.card_deck_items (public_id, deck_id, front_text, back_text, created_at, updated_at)
-			values (:publicId, :deckId, :frontText, :backText, :createdAt, :updatedAt)
-			returning id, public_id, deck_id, front_text, back_text, review_difficulty, last_reviewed_at, next_review_at, created_at, updated_at
+			insert into public.card_deck_items (public_id, deck_id, front_text, back_text, image_storage_key, created_at, updated_at)
+			values (:publicId, :deckId, :frontText, :backText, :imageStorageKey, :createdAt, :updatedAt)
+			returning id, public_id, deck_id, front_text, back_text, image_storage_key, review_difficulty, last_reviewed_at, next_review_at, created_at, updated_at
 		""")
 			.setParameter("publicId", publicId)
 			.setParameter("deckId", deckId)
 			.setParameter("frontText", frontText)
 			.setParameter("backText", backText)
+			.setParameter("imageStorageKey", imageStorageKey)
 			.setParameter("createdAt", Timestamp.from(now.toInstant()))
 			.setParameter("updatedAt", Timestamp.from(now.toInstant()))
 			.getResultList();
@@ -162,20 +163,25 @@ public class CardDeckRouteRepository {
 	}
 
 	@Transactional
-	public CardDeckItemRow updateItem(Long itemId, String frontText, String backText, OffsetDateTime now) {
-		List<?> rows = entityManager.createNativeQuery("""
+	public CardDeckItemRow updateItem(Long itemId, String frontText, String backText, boolean updateImageStorageKey, String imageStorageKey, OffsetDateTime now) {
+		String imageAssignment = updateImageStorageKey ? "    image_storage_key = :imageStorageKey,\n" : "";
+		var query = entityManager.createNativeQuery("""
 			update public.card_deck_items
 			set front_text = :frontText,
 			    back_text = :backText,
+			""" + imageAssignment + """
 			    updated_at = :updatedAt
 			where id = :itemId
-			returning id, public_id, deck_id, front_text, back_text, review_difficulty, last_reviewed_at, next_review_at, created_at, updated_at
+			returning id, public_id, deck_id, front_text, back_text, image_storage_key, review_difficulty, last_reviewed_at, next_review_at, created_at, updated_at
 		""")
 			.setParameter("itemId", itemId)
 			.setParameter("frontText", frontText)
 			.setParameter("backText", backText)
-			.setParameter("updatedAt", Timestamp.from(now.toInstant()))
-			.getResultList();
+			.setParameter("updatedAt", Timestamp.from(now.toInstant()));
+		if (updateImageStorageKey) {
+			query.setParameter("imageStorageKey", imageStorageKey);
+		}
+		List<?> rows = query.getResultList();
 		return rows.isEmpty() ? null : toItemRow(rows.getFirst());
 	}
 
@@ -188,7 +194,7 @@ public class CardDeckRouteRepository {
 			    next_review_at = :nextReviewAt,
 			    updated_at = :updatedAt
 			where id = :itemId
-			returning id, public_id, deck_id, front_text, back_text, review_difficulty, last_reviewed_at, next_review_at, created_at, updated_at
+			returning id, public_id, deck_id, front_text, back_text, image_storage_key, review_difficulty, last_reviewed_at, next_review_at, created_at, updated_at
 		""")
 			.setParameter("itemId", itemId)
 			.setParameter("difficulty", difficulty)
@@ -244,8 +250,8 @@ public class CardDeckRouteRepository {
 	}
 
 	private CardDeckItemRow toItemRow(Object raw) {
-		Object[] v = toValues(raw, 10, "card deck item row");
-		return new CardDeckItemRow(asLong(v[0]), asString(v[1]), asLong(v[2]), asString(v[3]), asString(v[4]), asString(v[5]), asOffsetDateTime(v[6]), asOffsetDateTime(v[7]), asOffsetDateTime(v[8]), asOffsetDateTime(v[9]));
+		Object[] v = toValues(raw, 11, "card deck item row");
+		return new CardDeckItemRow(asLong(v[0]), asString(v[1]), asLong(v[2]), asString(v[3]), asString(v[4]), asString(v[5]), asString(v[6]), asOffsetDateTime(v[7]), asOffsetDateTime(v[8]), asOffsetDateTime(v[9]), asOffsetDateTime(v[10]));
 	}
 
 	private Object[] toValues(Object raw, int min, String label) {

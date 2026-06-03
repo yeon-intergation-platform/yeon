@@ -34,7 +34,7 @@ class MergeGuestCardDeckControllerTests {
 
 	@Test void merge응답shape를반환한다() throws Exception {
 		when(service.merge(eq(OWNER_ID), eq(new MergeGuestRequest(List.of(
-			new MergeGuestCardDeckRequest("덱", null, List.of(new MergeGuestCardDeckItemRequest("앞", "뒤")))
+			new MergeGuestCardDeckRequest("덱", null, List.of(new MergeGuestCardDeckItemRequest("앞", "뒤", null)))
 		))))).thenReturn(new MergeGuestResponse(1, 1));
 
 		mockMvc.perform(post("/card-decks/merge-guest")

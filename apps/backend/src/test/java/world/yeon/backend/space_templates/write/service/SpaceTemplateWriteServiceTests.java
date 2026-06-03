@@ -24,6 +24,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import world.yeon.backend.space_access.service.SpaceAccessService;
 import world.yeon.backend.space_templates.read.mapper.SpaceTemplateReadMapper;
 import world.yeon.backend.space_templates.read.model.SpaceTemplateEntity;
 import world.yeon.backend.space_templates.write.dto.CreateSpaceTemplateRequest;
@@ -42,6 +43,8 @@ class SpaceTemplateWriteServiceTests {
 	private SpaceTemplateSnapshotQueryRepository snapshotQueryRepository;
 	@Mock
 	private SpaceTemplateApplyRepository applyRepository;
+	@Mock
+	private SpaceAccessService spaceAccessService;
 
 	private SpaceTemplateWriteService service;
 
@@ -51,7 +54,8 @@ class SpaceTemplateWriteServiceTests {
 			repository,
 			snapshotQueryRepository,
 			applyRepository,
-			new SpaceTemplateReadMapper()
+			new SpaceTemplateReadMapper(),
+			spaceAccessService
 		);
 	}
 
@@ -193,16 +197,16 @@ class SpaceTemplateWriteServiceTests {
 	@Test
 	void 스페이스를_스냅샷해서_템플릿을_생성한다() {
 		UUID userId = UUID.randomUUID();
-		when(snapshotQueryRepository.existsSpace("spc_1")).thenReturn(true);
 		when(snapshotQueryRepository.loadTabs("spc_1")).thenReturn(List.of(
 			new SpaceTemplateSnapshotQueryRepository.TabSnapshotRow(
+				42L,
 				"개요",
 				"system",
 				"overview",
 				0
 			)
 		));
-		when(snapshotQueryRepository.loadFields("spc_1", "개요", 0)).thenReturn(List.of());
+		when(snapshotQueryRepository.loadAllFields("spc_1")).thenReturn(java.util.Map.of());
 		when(repository.save(any(SpaceTemplateEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
 		var response = service.snapshotSpaceAsTemplate(
@@ -218,11 +222,13 @@ class SpaceTemplateWriteServiceTests {
 
 	@Test
 	void 없는_스페이스는_스냅샷할_수_없다() {
-		when(snapshotQueryRepository.existsSpace("missing")).thenReturn(false);
+		UUID userId = UUID.randomUUID();
+		org.mockito.Mockito.doThrow(new NoSuchElementException("스페이스를 찾지 못했습니다."))
+			.when(spaceAccessService).requireOwnedSpace("missing", userId);
 
 		assertThatThrownBy(() -> service.snapshotSpaceAsTemplate(
 			"missing",
-			UUID.randomUUID(),
+			userId,
 			new SnapshotSpaceTemplateRequest("스냅샷", null)
 		)).isInstanceOf(NoSuchElementException.class)
 			.hasMessage("스페이스를 찾지 못했습니다.");

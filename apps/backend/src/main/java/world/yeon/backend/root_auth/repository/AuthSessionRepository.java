@@ -19,7 +19,8 @@ public class AuthSessionRepository {
 	public record SessionRow(
 		String id,
 		String userId,
-		OffsetDateTime expiresAt
+		OffsetDateTime expiresAt,
+		OffsetDateTime lastAccessedAt
 	) {}
 
 	public record UserRow(
@@ -50,7 +51,7 @@ public class AuthSessionRepository {
 
 	public SessionRow findSessionByTokenHash(String tokenHash) {
 		List<?> rows = entityManager.createNativeQuery("""
-			select id, user_id, expires_at
+			select id, user_id, expires_at, last_accessed_at
 			from public.auth_sessions
 			where session_token_hash = :tokenHash
 			limit 1
@@ -61,6 +62,7 @@ public class AuthSessionRepository {
 	}
 
 	public UserRow findUserById(String userId) {
+		if (!isUuid(userId)) return null;
 		List<?> rows = entityManager.createNativeQuery("""
 			select id, email, display_name, avatar_url, last_login_at, role, created_at
 			from public.users
@@ -97,6 +99,7 @@ public class AuthSessionRepository {
 	}
 
 	public List<String> listProvidersByUserId(String userId) {
+		if (!isUuid(userId)) return List.of();
 		return entityManager.createNativeQuery("""
 			select distinct provider
 			from public.user_identities
@@ -111,6 +114,7 @@ public class AuthSessionRepository {
 	}
 
 	public List<IdentityRow> listIdentitiesByUserId(String userId) {
+		if (!isUuid(userId)) return List.of();
 		return entityManager.createNativeQuery("""
 			select id, user_id, provider, provider_user_id, email, display_name, avatar_url
 			from public.user_identities
@@ -152,6 +156,7 @@ public class AuthSessionRepository {
 	}
 
 	public IdentityRow findIdentityByUserProvider(String userId, String provider) {
+		if (!isUuid(userId)) return null;
 		List<?> rows = entityManager.createNativeQuery("""
 			select id, user_id, provider, provider_user_id, email, display_name, avatar_url
 			from public.user_identities
@@ -228,7 +233,7 @@ public class AuthSessionRepository {
 	public UserRow updateUserForLogin(String userId, String email, String displayName, String avatarUrl, OffsetDateTime now) {
 		List<?> rows = entityManager.createNativeQuery("""
 			update public.users
-			set email = :email,
+			set email = coalesce(:email, email),
 			    display_name = coalesce(:displayName, display_name),
 			    avatar_url = coalesce(:avatarUrl, avatar_url),
 			    last_login_at = :lastLoginAt,
@@ -294,10 +299,10 @@ public class AuthSessionRepository {
 	}
 
 	private SessionRow toSessionRow(Object row) {
-		if (!(row instanceof Object[] values) || values.length < 3) {
+		if (!(row instanceof Object[] values) || values.length < 4) {
 			throw new IllegalStateException("auth session row를 해석하지 못했습니다.");
 		}
-		return new SessionRow(asUuidString(values[0]), asUuidString(values[1]), asOffsetDateTime(values[2]));
+		return new SessionRow(asUuidString(values[0]), asUuidString(values[1]), asOffsetDateTime(values[2]), asOffsetDateTime(values[3]));
 	}
 
 	private UserRow toUserRow(Object row) {
@@ -328,6 +333,16 @@ public class AuthSessionRepository {
 			(String) values[5],
 			(String) values[6]
 		);
+	}
+
+	private boolean isUuid(String value) {
+		if (value == null || value.isBlank()) return false;
+		try {
+			UUID.fromString(value.trim());
+			return true;
+		} catch (IllegalArgumentException error) {
+			return false;
+		}
 	}
 
 	private String asUuidString(Object value) {

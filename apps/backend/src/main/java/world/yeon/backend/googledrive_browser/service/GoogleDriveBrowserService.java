@@ -8,13 +8,16 @@ import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.net.http.HttpTimeoutException;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.regex.Pattern;
 import org.springframework.stereotype.Service;
 import world.yeon.backend.googledrive_browser.dto.GoogleDriveFileResponse;
 import world.yeon.backend.googledrive_browser.dto.GoogleDriveFilesResponse;
@@ -31,9 +34,11 @@ public class GoogleDriveBrowserService {
 		"https://www.googleapis.com/auth/drive.file",
 		"https://www.googleapis.com/auth/drive"
 	);
+	private static final Duration REQUEST_TIMEOUT = Duration.ofSeconds(10);
+	private static final Pattern DRIVE_ID_PATTERN = Pattern.compile("[A-Za-z0-9_-]+");
 
 	private final GoogleDriveBrowserRepository repository;
-	private final HttpClient httpClient = HttpClient.newHttpClient();
+	private final HttpClient httpClient = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build();
 	private final ObjectMapper objectMapper = new ObjectMapper().findAndRegisterModules();
 
 	public GoogleDriveBrowserService(GoogleDriveBrowserRepository repository) {
@@ -50,10 +55,18 @@ public class GoogleDriveBrowserService {
 
 	public GoogleDriveFilesResponse listFiles(UUID userId, String folderId) {
 		String accessToken = getValidAccessToken(userId);
-		String parent = folderId != null && !folderId.isBlank() ? "'" + folderId + "' in parents" : "'root' in parents";
-		String q = parent + " and trashed=false";
+		String parentId;
+		if (folderId != null && !folderId.isBlank()) {
+			if (!DRIVE_ID_PATTERN.matcher(folderId).matches()) {
+				throw new GoogleDriveBrowserServiceException(400, "GOOGLE_DRIVE_INVALID_FOLDER_ID", "유효하지 않은 폴더 ID입니다.");
+			}
+			parentId = folderId;
+		} else {
+			parentId = "root";
+		}
+		String q = "'" + parentId + "' in parents and trashed=false";
 		String url = DRIVE_URL + "/files?q=" + url(q) + "&fields=" + url("files(id,name,size,modifiedTime,mimeType)") + "&pageSize=200&orderBy=" + url("folder,name");
-		HttpRequest request = HttpRequest.newBuilder(URI.create(url)).header("Authorization", "Bearer " + accessToken).GET().build();
+		HttpRequest request = HttpRequest.newBuilder(URI.create(url)).timeout(REQUEST_TIMEOUT).header("Authorization", "Bearer " + accessToken).GET().build();
 		String body = sendString(request, "Google Drive 파일 목록 조회 실패");
 		try {
 			JsonNode root = objectMapper.readTree(body);
@@ -62,7 +75,7 @@ public class GoogleDriveBrowserService {
 				files.add(new GoogleDriveFileResponse(
 					file.path("id").asText(),
 					file.path("name").asText(),
-					parseInt(file.path("size").asText("0")),
+					parseLong(file.path("size").asText("0")),
 					file.path("modifiedTime").asText(),
 					file.path("mimeType").asText()
 				));
@@ -79,7 +92,7 @@ public class GoogleDriveBrowserService {
 		String url = isGoogleSheet
 			? DRIVE_URL + "/files/" + fileId + "/export?mimeType=" + url("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 			: DRIVE_URL + "/files/" + fileId + "?alt=media";
-		HttpRequest request = HttpRequest.newBuilder(URI.create(url)).header("Authorization", "Bearer " + accessToken).GET().build();
+		HttpRequest request = HttpRequest.newBuilder(URI.create(url)).timeout(REQUEST_TIMEOUT).header("Authorization", "Bearer " + accessToken).GET().build();
 		byte[] body = sendBytes(request, "Google Drive 파일 다운로드 실패");
 		String contentType = isGoogleSheet
 			? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -88,7 +101,7 @@ public class GoogleDriveBrowserService {
 	}
 
 	private boolean hasGoogleSheetsAccess(String accessToken) {
-		String body = sendString(HttpRequest.newBuilder(URI.create(TOKEN_INFO_URL + "?access_token=" + url(accessToken))).GET().build(), "Google 권한 범위를 확인하지 못했습니다");
+		String body = sendString(HttpRequest.newBuilder(URI.create(TOKEN_INFO_URL)).timeout(REQUEST_TIMEOUT).header("Authorization", "Bearer " + accessToken).GET().build(), "Google 권한 범위를 확인하지 못했습니다");
 		try {
 			String scopeText = objectMapper.readTree(body).path("scope").asText("");
 			for (String scope : scopeText.split("\s+")) {
@@ -117,6 +130,7 @@ public class GoogleDriveBrowserService {
 	private RefreshedToken refreshAccessToken(String refreshToken) {
 		String body = "client_id=" + url(getClientId()) + "&client_secret=" + url(getClientSecret()) + "&refresh_token=" + url(refreshToken) + "&grant_type=refresh_token";
 		HttpRequest request = HttpRequest.newBuilder(URI.create(TOKEN_URL))
+			.timeout(REQUEST_TIMEOUT)
 			.header("Content-Type", "application/x-www-form-urlencoded")
 			.POST(HttpRequest.BodyPublishers.ofString(body))
 			.build();
@@ -142,6 +156,8 @@ public class GoogleDriveBrowserService {
 				throw new GoogleDriveBrowserServiceException(502, "GOOGLE_DRIVE_API_FAILED", failureMessage);
 			}
 			return response.body();
+		} catch (HttpTimeoutException error) {
+			throw new GoogleDriveBrowserServiceException(502, "GOOGLE_DRIVE_API_TIMEOUT", failureMessage);
 		} catch (InterruptedException error) {
 			Thread.currentThread().interrupt();
 			throw new GoogleDriveBrowserServiceException(502, "GOOGLE_DRIVE_API_FAILED", failureMessage);
@@ -157,6 +173,8 @@ public class GoogleDriveBrowserService {
 				throw new GoogleDriveBrowserServiceException(502, "GOOGLE_DRIVE_API_FAILED", failureMessage);
 			}
 			return response.body();
+		} catch (HttpTimeoutException error) {
+			throw new GoogleDriveBrowserServiceException(502, "GOOGLE_DRIVE_API_TIMEOUT", failureMessage);
 		} catch (InterruptedException error) {
 			Thread.currentThread().interrupt();
 			throw new GoogleDriveBrowserServiceException(502, "GOOGLE_DRIVE_API_FAILED", failureMessage);
@@ -176,7 +194,7 @@ public class GoogleDriveBrowserService {
 		return value;
 	}
 	private String url(String value) { return URLEncoder.encode(value, StandardCharsets.UTF_8); }
-	private int parseInt(String value) { try { return Integer.parseInt(value); } catch (Exception e) { return 0; } }
+	private long parseLong(String value) { try { return Long.parseLong(value); } catch (Exception e) { return 0L; } }
 
 	public record DownloadedFile(byte[] bytes, String contentType) {}
 	private record RefreshedToken(String accessToken, String refreshToken, OffsetDateTime expiresAt) {}

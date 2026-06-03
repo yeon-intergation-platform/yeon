@@ -22,6 +22,9 @@ type RouteContext = {
   params: Promise<{ token: string }>;
 };
 
+// 보안 참고: 이 엔드포인트는 capability-URL(token) 기반 비인증 제출을 허용한다.
+// 토큰·IP 단위 제출 빈도 제한(rate limit)이 없어 토큰 유출 시 대량 위조 체크인이 가능하다.
+// 운영 환경에서는 Cloudflare Rate Limiting 또는 미들웨어 레벨 rate limit 추가를 권장한다.
 export async function POST(request: NextRequest, context: RouteContext) {
   const { token } = await context.params;
 

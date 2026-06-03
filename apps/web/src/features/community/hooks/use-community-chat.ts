@@ -36,6 +36,7 @@ export function useCommunityChat({
     queryKey: communityQueryKeys.chatMessages(),
     queryFn: async () => communityChatApi.listMessages(),
     refetchInterval: pollIntervalMs,
+    refetchIntervalInBackground: false,
   });
 
   const presenceQuery = useQuery({

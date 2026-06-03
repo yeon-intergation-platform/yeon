@@ -1,6 +1,7 @@
 package world.yeon.backend.users.service;
 
 import jakarta.persistence.PersistenceException;
+import java.sql.SQLException;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.Arrays;
@@ -10,6 +11,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import world.yeon.backend.users.dto.CreateUserRequest;
 import world.yeon.backend.users.dto.CreateUserResponse;
 import world.yeon.backend.users.dto.GetUsersResponse;
@@ -36,6 +38,7 @@ public class UserService {
 		return new GetUsersResponse(repository.listUsers().stream().map(this::toResponse).toList());
 	}
 
+	@Transactional
 	public CreateUserResponse createUser(UUID userId, CreateUserRequest request) {
 		requireAdmin(userId);
 		String email = normalizeEmail(request == null ? null : request.email());
@@ -43,9 +46,7 @@ public class UserService {
 		if (email == null) {
 			throw new IllegalArgumentException("이메일을 입력해 주세요.");
 		}
-		if (repository.findByEmail(email) != null) {
-			throw new UserServiceException(409, "DUPLICATE_EMAIL", "이미 등록된 이메일입니다.");
-		}
+		// 사전 findByEmail 중복검사는 race를 막지 못하므로 제거하고 unique(23505) 처리에 일원화한다.
 		try {
 			var created = repository.insertUser(UUID.randomUUID().toString(), email, displayName, OffsetDateTime.now(ZoneOffset.UTC));
 			return new CreateUserResponse(toResponse(created));
@@ -98,11 +99,13 @@ public class UserService {
 		return trimmed.length() <= 80 ? trimmed : trimmed.substring(0, 80);
 	}
 
+	private static final String UNIQUE_VIOLATION_SQL_STATE = "23505";
+
 	private boolean isDuplicateEmailError(Throwable error) {
 		Throwable cursor = error;
 		while (cursor != null) {
-			String message = cursor.getMessage();
-			if (message != null && (message.contains("users_email") || message.contains("duplicate key") || message.contains("23505"))) {
+			if (cursor instanceof SQLException sqlException
+				&& UNIQUE_VIOLATION_SQL_STATE.equals(sqlException.getSQLState())) {
 				return true;
 			}
 			cursor = cursor.getCause();

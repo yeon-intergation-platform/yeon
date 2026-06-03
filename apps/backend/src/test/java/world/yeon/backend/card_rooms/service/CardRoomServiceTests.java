@@ -34,7 +34,7 @@ class CardRoomServiceTests {
 
   @BeforeEach
   void setUp() {
-    service = new CardRoomService(repository);
+    service = new CardRoomService(repository, new CardRoomParticipantTokenService(new org.springframework.mock.env.MockEnvironment()));
   }
 
   @Test

@@ -56,7 +56,8 @@ public class MergeGuestCardDeckService {
 						"앞면과 뒷면이 모두 있는 카드만 이관할 수 있습니다. 빈 카드를 정리한 뒤 다시 시도해 주세요."
 					);
 				}
-				insertRows.add(new Object[]{generatePublicId("dki"), frontText, backText});
+				String imageStorageKey = trimToNull(item.imageStorageKey(), 512);
+				insertRows.add(new Object[]{generatePublicId("dki"), frontText, backText, imageStorageKey});
 			}
 			createdItemCount += repository.insertItems(insertedDeck.id(), insertRows, now);
 		}

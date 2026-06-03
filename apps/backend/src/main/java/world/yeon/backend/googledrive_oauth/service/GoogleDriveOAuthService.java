@@ -5,10 +5,14 @@ import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.net.http.HttpTimeoutException;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import world.yeon.backend.googledrive_oauth.dto.GoogleDriveOAuthUrlResponse;
 import world.yeon.backend.googledrive_oauth.repository.GoogleDriveOAuthRepository;
@@ -21,15 +25,19 @@ public class GoogleDriveOAuthService {
 		"https://www.googleapis.com/auth/drive.readonly",
 		"https://www.googleapis.com/auth/spreadsheets"
 	);
+	private static final Duration REQUEST_TIMEOUT = Duration.ofSeconds(10);
+	private static final Logger log = LoggerFactory.getLogger(GoogleDriveOAuthService.class);
 
 	private final GoogleDriveOAuthRepository repository;
-	private final HttpClient httpClient = HttpClient.newHttpClient();
+	private final HttpClient httpClient = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build();
 
 	public GoogleDriveOAuthService(GoogleDriveOAuthRepository repository) {
 		this.repository = repository;
 	}
 
 	public GoogleDriveOAuthUrlResponse buildOAuthUrl(String state) {
+		// CSRF 방어: state는 web BFF 콜백이 세션/쿠키에 바인딩한 값을 콜백에서 반드시 검증해야 한다.
+		// 백엔드는 state를 그대로 전달만 하므로 OAuth state 검증 책임은 web BFF 콜백에 있다.
 		if (state == null || state.isBlank()) {
 			throw new GoogleDriveOAuthServiceException(400, "INVALID_REQUEST", "state가 필요합니다.");
 		}
@@ -50,13 +58,15 @@ public class GoogleDriveOAuthService {
 			+ "&redirect_uri=" + enc(getRedirectUri())
 			+ "&grant_type=authorization_code";
 		HttpRequest request = HttpRequest.newBuilder(URI.create(TOKEN_URL))
+			.timeout(REQUEST_TIMEOUT)
 			.header("Content-Type", "application/x-www-form-urlencoded")
 			.POST(HttpRequest.BodyPublishers.ofString(body))
 			.build();
 		try {
 			HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 			if (response.statusCode() < 200 || response.statusCode() >= 300) {
-				throw new GoogleDriveOAuthServiceException(502, "GOOGLE_OAUTH_EXCHANGE_FAILED", "Google 토큰 교환 실패: " + response.body());
+				log.warn("Google 토큰 교환 실패: status={} body={}", response.statusCode(), response.body());
+				throw new GoogleDriveOAuthServiceException(502, "GOOGLE_OAUTH_EXCHANGE_FAILED", "토큰 교환에 실패했습니다.");
 			}
 			String accessToken = extract(response.body(), "access_token");
 			String refreshToken = extract(response.body(), "refresh_token");
@@ -71,8 +81,10 @@ public class GoogleDriveOAuthService {
 			repository.upsertTokens(userId, accessToken, nextRefreshToken, OffsetDateTime.now(ZoneOffset.UTC).plusSeconds(expiresIn), OffsetDateTime.now(ZoneOffset.UTC));
 		} catch (GoogleDriveOAuthServiceException error) {
 			throw error;
+		} catch (HttpTimeoutException error) {
+			throw new GoogleDriveOAuthServiceException(502, "GOOGLE_OAUTH_EXCHANGE_TIMEOUT", "토큰 교환에 실패했습니다.");
 		} catch (Exception error) {
-			throw new GoogleDriveOAuthServiceException(502, "GOOGLE_OAUTH_EXCHANGE_FAILED", "Google 토큰 교환 실패");
+			throw new GoogleDriveOAuthServiceException(502, "GOOGLE_OAUTH_EXCHANGE_FAILED", "토큰 교환에 실패했습니다.");
 		}
 	}
 

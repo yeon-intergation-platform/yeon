@@ -21,6 +21,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import world.yeon.backend.sheet_integrations.dto.CreateSheetIntegrationRequest;
 import world.yeon.backend.sheet_integrations.dto.SheetIntegrationColumnMappingDto;
 import world.yeon.backend.sheet_integrations.repository.SheetIntegrationRepository;
+import world.yeon.backend.space_access.service.SpaceAccessService;
 
 @ExtendWith(MockitoExtension.class)
 class SheetIntegrationServiceTests {
@@ -31,11 +32,12 @@ class SheetIntegrationServiceTests {
 		""".strip();
 
 	@Mock private SheetIntegrationRepository repository;
+	@Mock private SpaceAccessService spaceAccessService;
 	private SheetIntegrationService service;
 
 	@BeforeEach
 	void setUp() {
-		service = new SheetIntegrationService(repository) {
+		service = new SheetIntegrationService(repository, spaceAccessService) {
 			@Override
 			protected List<List<String>> fetchSheetValues(String sheetId) {
 				return List.of(
@@ -102,19 +104,32 @@ class SheetIntegrationServiceTests {
 				OffsetDateTime.parse("2026-05-08T07:00:00Z"),
 				OffsetDateTime.parse("2026-05-08T07:00:00Z")
 			));
-		when(repository.findMemberInternalIdByName(11L, "홍길동")).thenReturn(51L);
-		when(repository.existsActivityLog(eq(51L), eq(OffsetDateTime.parse("2026-05-08T00:00:00Z")), eq("attendance"))).thenReturn(false);
+		when(repository.loadMemberNameIndex(11L)).thenReturn(
+			new SheetIntegrationRepository.MemberNameIndex(java.util.Map.of("홍길동", 51L), java.util.Set.of()));
+		when(repository.loadActivityLogKeys(11L)).thenReturn(java.util.Set.of());
+		when(repository.activityLogKey(any(), any(), any())).thenCallRealMethod();
 
 		var result = service.syncIntegration("space_alpha", "sht_1", OWNER_ID);
 		assertThat(result.synced()).isEqualTo(1);
 		assertThat(result.errors()).isEqualTo(0);
-		verify(repository).insertActivityLog(any(), eq(51L), eq(11L), eq("attendance"), eq("출석"), eq(OffsetDateTime.parse("2026-05-08T00:00:00Z")), eq("google_sheet"));
+		org.mockito.ArgumentCaptor<List<SheetIntegrationRepository.ActivityLogInsert>> captor =
+			org.mockito.ArgumentCaptor.forClass(List.class);
+		verify(repository).batchInsertActivityLogs(captor.capture());
+		List<SheetIntegrationRepository.ActivityLogInsert> inserts = captor.getValue();
+		assertThat(inserts).hasSize(1);
+		SheetIntegrationRepository.ActivityLogInsert insert = inserts.getFirst();
+		assertThat(insert.memberInternalId()).isEqualTo(51L);
+		assertThat(insert.spaceInternalId()).isEqualTo(11L);
+		assertThat(insert.type()).isEqualTo("attendance");
+		assertThat(insert.status()).isEqualTo("출석");
+		assertThat(insert.recordedAt()).isEqualTo(OffsetDateTime.parse("2026-05-08T00:00:00Z"));
+		assertThat(insert.source()).isEqualTo("google_sheet");
 		verify(repository).updateLastSyncedAt(eq(31L), any());
 	}
 
 	@Test
 	void 빈시트면동기화하지않는다() {
-		service = new SheetIntegrationService(repository) {
+		service = new SheetIntegrationService(repository, spaceAccessService) {
 			@Override
 			protected List<List<String>> fetchSheetValues(String sheetId) {
 				return List.of();

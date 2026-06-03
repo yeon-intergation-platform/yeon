@@ -43,7 +43,7 @@ class MemberFieldReorderControllerTests {
 
 	@Test
 	void reorder는200과ok응답을반환한다() throws Exception {
-		when(service.reorderFields(eq("space_alpha"), eq(List.of("mfd_c", "mfd_a", "mfd_b"))))
+		when(service.reorderFields(eq(OWNER_ID), eq("space_alpha"), eq(List.of("mfd_c", "mfd_a", "mfd_b"))))
 			.thenReturn(OkResponse.success());
 
 		mockMvc.perform(patch("/spaces/space_alpha/member-tabs/mtb_custom/fields/reorder")
@@ -57,7 +57,7 @@ class MemberFieldReorderControllerTests {
 
 	@Test
 	void reorder는space가없으면404다() throws Exception {
-		when(service.reorderFields(eq("missing"), eq(List.of("mfd_a"))))
+		when(service.reorderFields(eq(OWNER_ID), eq("missing"), eq(List.of("mfd_a"))))
 			.thenThrow(new NoSuchElementException("스페이스를 찾지 못했습니다."));
 
 		mockMvc.perform(patch("/spaces/missing/member-tabs/mtb_custom/fields/reorder")

@@ -35,7 +35,7 @@ public class MemberFieldValueReadController {
 		@RequestParam String memberId,
 		@RequestHeader("X-Yeon-User-Id") UUID userId
 	) {
-		return service.listValues(spaceId, tabId, memberId);
+		return service.listValues(userId, spaceId, tabId, memberId);
 	}
 
 	@ExceptionHandler(NoSuchElementException.class)

@@ -168,7 +168,7 @@ public class ChatServiceFeedRepository {
 
 	private OffsetDateTime asOffsetDateTime(Object value) {
 		if (value == null) return null;
-		if (value instanceof OffsetDateTime offsetDateTime) return offsetDateTime;
+		if (value instanceof OffsetDateTime offsetDateTime) return offsetDateTime.withOffsetSameInstant(ZoneOffset.UTC);
 		if (value instanceof Timestamp timestamp) return timestamp.toInstant().atOffset(ZoneOffset.UTC);
 		return OffsetDateTime.parse(String.valueOf(value));
 	}

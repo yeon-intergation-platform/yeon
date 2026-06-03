@@ -35,7 +35,7 @@ public class SheetIntegrationController {
 
 	@GetMapping
 	public GetSheetIntegrationsResponse getIntegrations(@PathVariable String spaceId, @RequestHeader("X-Yeon-User-Id") UUID userId) {
-		return service.getIntegrations(spaceId);
+		return service.getIntegrations(spaceId, userId);
 	}
 
 	@PostMapping

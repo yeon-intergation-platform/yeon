@@ -5,11 +5,14 @@ import java.time.ZoneOffset;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import world.yeon.backend.public_check_runtime.dto.*;
 import world.yeon.backend.public_check_runtime.repository.PublicCheckRuntimeRepository;
 
 @Service
 public class PublicCheckRuntimeService {
+	private static final int MAX_NAME_LENGTH = 100;
+	private static final int MAX_ASSIGNMENT_LINK_LENGTH = 1000;
 	private final PublicCheckRuntimeRepository repository;
 
 	public PublicCheckRuntimeService(PublicCheckRuntimeRepository repository) {
@@ -55,8 +58,12 @@ public class PublicCheckRuntimeService {
 		if (!session.enabledMethods().contains("qr")) {
 			throw new PublicCheckRuntimeServiceException(400, "INVALID_REQUEST", "이 세션은 QR 체크인을 지원하지 않습니다.");
 		}
+		var identity = getSubmittedIdentity(request.name(), request.phoneLast4());
+		if (identity == null) {
+			throw new PublicCheckRuntimeServiceException(400, "INVALID_REQUEST", "이름과 전화번호 뒤 4자리를 입력해 주세요.");
+		}
 		var memberList = repository.findMembersInSpace(session.spaceInternalId());
-		var match = matchMember(memberList, request.name(), request.phoneLast4());
+		var match = matchMember(memberList, identity.name(), identity.phoneLast4());
 		if (match.member() == null) {
 			return new VerifyPublicCheckIdentityResponse(
 				session.spacePublicId(),
@@ -71,11 +78,13 @@ public class PublicCheckRuntimeService {
 		);
 	}
 
+	@Transactional
 	public SubmitPublicCheckResponse submit(String token, SubmitPublicCheckRequest request) {
 		var session = requireActiveSession(token);
 		if (!session.enabledMethods().contains(request.method())) {
 			throw new PublicCheckRuntimeServiceException(400, "INVALID_REQUEST", "이 체크인 방법은 현재 세션에서 사용할 수 없습니다.");
 		}
+		validateAssignmentLinkLength(request.assignmentLink());
 
 		String rememberedMemberId = request.remembered() == null ? null : request.remembered().stream()
 			.map(this::parseRememberedEntry)
@@ -204,7 +213,17 @@ public class PublicCheckRuntimeService {
 		String normalizedName = normalizeNullable(name);
 		String normalizedPhoneLast4 = normalizeNullable(phoneLast4);
 		if (normalizedName == null || normalizedPhoneLast4 == null) return null;
+		if (normalizedName.length() > MAX_NAME_LENGTH) {
+			throw new PublicCheckRuntimeServiceException(400, "INVALID_REQUEST", "이름은 " + MAX_NAME_LENGTH + "자 이하로 입력해 주세요.");
+		}
 		return new SubmittedIdentity(normalizedName, normalizedPhoneLast4);
+	}
+
+	private void validateAssignmentLinkLength(String assignmentLink) {
+		String normalized = normalizeNullable(assignmentLink);
+		if (normalized != null && normalized.length() > MAX_ASSIGNMENT_LINK_LENGTH) {
+			throw new PublicCheckRuntimeServiceException(400, "INVALID_REQUEST", "과제 링크는 " + MAX_ASSIGNMENT_LINK_LENGTH + "자 이하로 입력해 주세요.");
+		}
 	}
 
 	private String getIdentityFailureMessage(String verificationStatus) {

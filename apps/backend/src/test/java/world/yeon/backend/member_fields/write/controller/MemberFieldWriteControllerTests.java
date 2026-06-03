@@ -53,9 +53,10 @@ class MemberFieldWriteControllerTests {
 	@Test
 	void update는200을반환한다() throws Exception {
 		MemberFieldDefinitionEntity entity = new MemberFieldDefinitionEntity();
-		when(service.update(eq("mfd_1"), eq("space_alpha"), any())).thenReturn(entity);
+		when(service.update(eq("mfd_1"), eq("space_alpha"), eq(OWNER_ID), any())).thenReturn(entity);
 		when(mapper.toItem(entity)).thenReturn(new world.yeon.backend.member_fields.read.dto.MemberFieldItemResponse("mfd_1", "변경", null, "text", null, false, 2));
 		mockMvc.perform(patch("/spaces/space_alpha/member-fields/mfd_1")
+			.header("X-Yeon-User-Id", OWNER_ID.toString())
 			.header("X-Yeon-Internal-Token", "test-internal-token")
 			.contentType("application/json")
 			.content(new ObjectMapper().writeValueAsString(java.util.Map.of("name", "변경"))))
@@ -66,15 +67,17 @@ class MemberFieldWriteControllerTests {
 	@Test
 	void delete는204를반환한다() throws Exception {
 		mockMvc.perform(delete("/spaces/space_alpha/member-fields/mfd_1")
+			.header("X-Yeon-User-Id", OWNER_ID.toString())
 			.header("X-Yeon-Internal-Token", "test-internal-token"))
 			.andExpect(status().isNoContent());
 	}
 
 	@Test
 	void protected오류는403이다() throws Exception {
-		when(service.update(eq("mfd_1"), eq("space_alpha"), any()))
+		when(service.update(eq("mfd_1"), eq("space_alpha"), eq(OWNER_ID), any()))
 			.thenThrow(new MemberFieldWriteServiceException(403, "기본 항목은 이름과 순서만 변경할 수 있습니다.", "FIELD_PROTECTED"));
 		mockMvc.perform(patch("/spaces/space_alpha/member-fields/mfd_1")
+			.header("X-Yeon-User-Id", OWNER_ID.toString())
 			.header("X-Yeon-Internal-Token", "test-internal-token")
 			.contentType("application/json")
 			.content(new ObjectMapper().writeValueAsString(java.util.Map.of("fieldType", "number"))))

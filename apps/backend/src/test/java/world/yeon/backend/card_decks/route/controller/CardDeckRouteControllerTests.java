@@ -44,7 +44,7 @@ class CardDeckRouteControllerTests {
 
 	@Test void create와review응답shape를반환한다() throws Exception {
 		when(service.createDeck(eq(USER_ID), eq(new CreateCardDeckRequest("덱", null)))).thenReturn(new CardDeckResponse(new CardDeckDto("dck_1", "덱", null, 0, "2026-05-08T00:00:00Z", "2026-05-08T00:00:00Z")));
-		when(service.reviewItem(eq(USER_ID), eq("dck_1"), eq("dki_1"), eq(new ReviewCardDeckItemRequest("good")))).thenReturn(new CardDeckItemResponse(new CardDeckItemDto("dki_1", "앞", "뒤", "good", "2026-05-08T00:00:00Z", "2026-05-11T00:00:00Z", "2026-05-08T00:00:00Z", "2026-05-08T00:00:00Z")));
+		when(service.reviewItem(eq(USER_ID), eq("dck_1"), eq("dki_1"), eq(new ReviewCardDeckItemRequest("good")))).thenReturn(new CardDeckItemResponse(new CardDeckItemDto("dki_1", "앞", "뒤", null, null, "good", "2026-05-08T00:00:00Z", "2026-05-11T00:00:00Z", "2026-05-08T00:00:00Z", "2026-05-08T00:00:00Z")));
 		mockMvc.perform(post("/card-decks").header("X-Yeon-User-Id", USER_ID.toString()).header("X-Yeon-Internal-Token", "test-internal-token").contentType(MediaType.APPLICATION_JSON).content("{\"title\":\"덱\",\"description\":null}"))
 			.andExpect(status().isCreated())
 			.andExpect(jsonPath("$.deck.id").value("dck_1"));
@@ -68,7 +68,7 @@ class CardDeckRouteControllerTests {
 	}
 
 	@Test void patch본문을카드아이템수정요청으로변환한다() throws Exception {
-		when(service.updateItem(eq(USER_ID), eq("dck_1"), eq("dki_1"), any(UpdateCardDeckItemRequest.class))).thenReturn(new CardDeckItemResponse(new CardDeckItemDto("dki_1", "새 앞", "뒤", null, null, null, "2026-05-08T00:00:00Z", "2026-05-18T00:00:00Z")));
+		when(service.updateItem(eq(USER_ID), eq("dck_1"), eq("dki_1"), any(UpdateCardDeckItemRequest.class))).thenReturn(new CardDeckItemResponse(new CardDeckItemDto("dki_1", "새 앞", "뒤", null, null, null, null, null, "2026-05-08T00:00:00Z", "2026-05-18T00:00:00Z")));
 
 		mockMvc.perform(patch("/card-decks/dck_1/items/dki_1").header("X-Yeon-User-Id", USER_ID.toString()).header("X-Yeon-Internal-Token", "test-internal-token").contentType(MediaType.APPLICATION_JSON).content("{\"frontText\":\"새 앞\"}"))
 			.andExpect(status().isOk())
