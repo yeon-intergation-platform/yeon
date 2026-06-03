@@ -36,6 +36,9 @@ jobs:
   quality:
     runs-on: ubuntu-latest
     name: 타입체크 · 린트 · 프론트 단위 테스트
+    env:
+      # 대형 web 앱 tsc/vitest가 러너 기본 Node 힙(~2GB)을 초과해 OOM(exit 134) 나는 것을 방지.
+      NODE_OPTIONS: --max-old-space-size=4096
     steps:
       - uses: actions/checkout@v6.0.2
 
