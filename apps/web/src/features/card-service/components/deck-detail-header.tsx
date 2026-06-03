@@ -1,11 +1,21 @@
 "use client";
-
-import Link from "next/link";
-import { useState, type FormEvent } from "react";
+import { useState } from "react";
 import type { CardDeckDto } from "@yeon/api-contract/card-decks";
-
+import { resolveYeonWebPath } from "@yeon/ui/runtime/ports";
 import { analyticsEvents, trackEvent } from "@/lib/analytics";
-import { SHARED_FEATURE_CLASS } from "@/features/shared-style-constants";
+import { YEON_WEB_SHARED_CLASS as SHARED_FEATURE_CLASS } from "@yeon/ui/theme/web-style-tokens";
+import {
+  getYeonButtonClassName,
+  YeonButton,
+  YeonField,
+  YeonText,
+  YeonForm,
+  YeonView,
+  YEON_WEB_SHADOW_CLASS,
+  YeonLink,
+  type YeonFormEvent,
+  type YeonFormElement,
+} from "@yeon/ui";
 import { CARD_SERVICE_COMMON_CLASS } from "../card-service-common.const";
 import { useUpdateDeck } from "../hooks";
 
@@ -42,7 +52,7 @@ export function DeckDetailHeader({
 
   const canSave = title.trim().length > 0 && !isSaving;
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (event: YeonFormEvent<YeonFormElement>) => {
     event.preventDefault();
     if (!canSave) return;
     updateMutation.mutate(
@@ -73,166 +83,233 @@ export function DeckDetailHeader({
   };
 
   return (
-    <section className="bg-white text-[#111]">
-      <div className="grid grid-cols-[44px_minmax(0,1fr)_44px] items-start md:flex md:items-center md:justify-between md:gap-4">
-        <Link
+    <YeonView as="section" className="bg-white text-[#111]">
+      <YeonView className="grid grid-cols-[44px_minmax(0,1fr)_44px] items-start md:flex md:items-center md:justify-between md:gap-4">
+        <YeonLink
           href="/card-service/decks"
-          className="flex h-11 w-11 items-center justify-start text-[28px] font-light leading-none text-[#111] no-underline hover:text-[#555] md:h-auto md:w-auto md:text-[14px] md:font-medium md:text-[#666]"
+          className="flex h-11 w-11 items-center justify-start text-[28px] font-light leading-none text-[#111] no-underline hover:opacity-80 md:h-auto md:w-auto md:text-[14px] md:font-medium md:text-[#666]"
           aria-label="내 덱으로 돌아가기"
         >
-          <span className="md:hidden">←</span>
-          <span className="hidden md:inline">← 내 덱</span>
-        </Link>
+          <YeonText
+            as="span"
+            variant="unstyled"
+            tone="inherit"
+            className="md:hidden"
+          >
+            ←
+          </YeonText>
+          <YeonText
+            as="span"
+            variant="unstyled"
+            tone="inherit"
+            className="hidden md:inline"
+          >
+            ← 내 덱
+          </YeonText>
+        </YeonLink>
 
-        <div className="min-w-0 text-center md:hidden">
-          <h1
+        <YeonView className="min-w-0 text-center md:hidden">
+          <YeonText
+            as="h1"
+            variant="unstyled"
+            tone="inherit"
             className={`${SHARED_FEATURE_CLASS.text28Emphasis} truncate leading-tight`}
           >
-            <button
+            <YeonButton
               type="button"
               onClick={startEditing}
               aria-label="덱 제목을 눌러 편집"
-              className={`${SHARED_FEATURE_CLASS.text28Emphasis} w-full max-w-full truncate rounded-lg px-1 leading-tight outline-none transition-colors hover:bg-[#fafafa] focus-visible:ring-2 focus-visible:ring-[#111]`}
+              variant="ghost"
+              size="sm"
+              className={`${SHARED_FEATURE_CLASS.text28Emphasis} w-full max-w-full truncate rounded-lg px-1 py-0 leading-tight`}
             >
               {deck.title}
-            </button>
-          </h1>
-          <p className="mt-2 text-[15px] leading-6 text-[#888]">
+            </YeonButton>
+          </YeonText>
+          <YeonText as="p" variant="body" tone="secondary" className="mt-2">
             카드 {deck.itemCount}장 · 생성일 {createdDate}
-          </p>
-        </div>
+          </YeonText>
+        </YeonView>
 
-        <div className="relative flex justify-end md:hidden">
-          <button
+        <YeonView className="relative flex justify-end md:hidden">
+          <YeonButton
             type="button"
             onClick={() => setMobileMenuOpen((prev) => !prev)}
-            className="flex h-11 w-11 items-center justify-end text-[28px] leading-none text-[#111]"
+            variant="icon"
+            size="icon"
+            className="h-11 w-11 justify-end text-[28px] leading-none text-[#111]"
             aria-label="덱 작업 더보기"
           >
             ⋮
-          </button>
+          </YeonButton>
           {isMobileMenuOpen ? (
-            <div className="absolute right-0 top-11 z-10 w-32 overflow-hidden rounded-xl border border-[#e5e5e5] bg-white text-[13px] shadow-[0_8px_24px_rgba(0,0,0,0.10)]">
-              <button
+            <YeonView
+              className={`absolute right-0 top-11 z-10 w-32 overflow-hidden rounded-xl border border-[#e5e5e5] bg-white text-[13px] ${YEON_WEB_SHADOW_CLASS.dropdown}`}
+            >
+              <YeonButton
                 type="button"
                 onClick={startEditing}
-                className="block w-full px-3 py-2 text-left text-[#111] hover:bg-[#fafafa]"
+                variant="ghost"
+                size="sm"
+                className="w-full justify-start rounded-none px-3 py-2 text-left text-[#111]"
               >
                 덱 편집
-              </button>
-              <button
+              </YeonButton>
+              <YeonButton
                 type="button"
                 onClick={() => {
                   setMobileMenuOpen(false);
                   onRequestExport?.();
                 }}
-                className="block w-full px-3 py-2 text-left text-[#111] hover:bg-[#fafafa]"
+                variant="ghost"
+                size="sm"
+                className="w-full justify-start rounded-none px-3 py-2 text-left text-[#111]"
               >
                 내보내기
-              </button>
-              <button
+              </YeonButton>
+              <YeonButton
                 type="button"
                 onClick={() => {
                   setMobileMenuOpen(false);
                   onOpenDelete();
                 }}
-                className="block w-full px-3 py-2 text-left text-red-600 hover:bg-red-50"
+                variant="danger"
+                size="sm"
+                className="w-full justify-start rounded-none px-3 py-2 text-left"
               >
                 덱 삭제
-              </button>
-            </div>
+              </YeonButton>
+            </YeonView>
           ) : null}
-        </div>
+        </YeonView>
 
-        <div className="hidden items-center gap-2 md:flex">
-          <button
+        <YeonView className="hidden items-center gap-2 md:flex">
+          <YeonButton
             type="button"
             onClick={onRequestExport}
-            className="rounded-xl border border-[#e5e5e5] px-3 py-1.5 text-[13px] font-medium text-[#777] transition-colors hover:border-[#111] hover:text-[#111]"
+            variant="secondary"
+            size="sm"
           >
             내보내기
-          </button>
-          <button
+          </YeonButton>
+          <YeonButton
             type="button"
             onClick={onOpenDelete}
-            className="rounded-xl border border-[#e5e5e5] px-3 py-1.5 text-[13px] font-medium text-[#777] transition-colors hover:border-red-200 hover:bg-[#fff5f5] hover:text-red-600"
+            variant="danger"
+            size="sm"
           >
             덱 삭제
-          </button>
-        </div>
-      </div>
+          </YeonButton>
+        </YeonView>
+      </YeonView>
 
       {isEditing ? (
-        <form onSubmit={handleSubmit} className="mt-5 flex flex-col gap-3">
-          <input
+        <YeonForm onSubmit={handleSubmit} className="mt-5 flex flex-col gap-3">
+          <YeonField
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             maxLength={120}
             autoFocus
-            className={`${SHARED_FEATURE_CLASS.text22Emphasis} rounded-2xl border border-[#e5e5e5] px-4 py-3 focus:border-[#111] outline-none`}
+            className={`${SHARED_FEATURE_CLASS.text22Emphasis} rounded-2xl px-4 py-3`}
           />
-          <textarea
+          <YeonField
+            as="textarea"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             maxLength={2000}
             rows={3}
             placeholder="설명 (선택)"
-            className="resize-none rounded-2xl border border-[#e5e5e5] px-4 py-3 text-[15px] leading-7 text-[#111] outline-none focus:border-[#111]"
+            className="resize-none rounded-2xl px-4 py-3 text-[15px] leading-7"
           />
           {updateMutation.error ? (
-            <p className={CARD_SERVICE_COMMON_CLASS.errorTextSm}>
+            <YeonText
+              as="p"
+              variant="caption"
+              tone="primary"
+              className="text-[13px] font-semibold"
+            >
               {updateMutation.error.message}
-            </p>
+            </YeonText>
           ) : null}
-          <div className="flex justify-end gap-2">
-            <button
+          <YeonView className="flex justify-end gap-2">
+            <YeonButton
               type="button"
               onClick={handleCancel}
-              className={`${CARD_SERVICE_COMMON_CLASS.panelTextEmphasis} rounded-2xl border border-[#e5e5e5] px-4 py-2 hover:border-[#111] hover:bg-[#fafafa]`}
+              variant="secondary"
+              size="md"
+              className={CARD_SERVICE_COMMON_CLASS.panelTextEmphasis}
             >
               취소
-            </button>
-            <button
+            </YeonButton>
+            <YeonButton
               type="submit"
               disabled={!canSave}
-              className="rounded-2xl bg-[#111] px-4 py-2 text-[14px] font-semibold text-white transition-colors hover:bg-[#333] disabled:opacity-50"
+              variant="primary"
+              size="md"
             >
               {isSaving ? "저장 중..." : "저장"}
-            </button>
-          </div>
-        </form>
+            </YeonButton>
+          </YeonView>
+        </YeonForm>
       ) : (
-        <div className="mt-6 hidden md:block">
-          <div className="min-w-0">
-            <h1
+        <YeonView className="mt-6 hidden md:block">
+          <YeonView className="min-w-0">
+            <YeonText
+              as="h1"
+              variant="unstyled"
+              tone="inherit"
               className={`${SHARED_FEATURE_CLASS.text34Emphasis} break-keep leading-tight`}
             >
-              <button
+              <YeonButton
                 type="button"
                 onClick={startEditing}
                 aria-label="덱 제목을 눌러 편집"
-                className={`${SHARED_FEATURE_CLASS.text34Emphasis} break-keep rounded-lg px-1 text-left leading-tight outline-none transition-colors hover:bg-[#fafafa] focus-visible:ring-2 focus-visible:ring-[#111]`}
+                variant="ghost"
+                size="sm"
+                className={`${SHARED_FEATURE_CLASS.text34Emphasis} break-keep rounded-lg px-1 py-0 text-left leading-tight`}
               >
                 {deck.title}
-              </button>
-            </h1>
+              </YeonButton>
+            </YeonText>
             {deck.description ? (
-              <p className="mt-3 whitespace-pre-wrap text-[16px] leading-7 text-[#666]">
+              <YeonText
+                as="p"
+                variant="unstyled"
+                tone="inherit"
+                className="mt-3 whitespace-pre-wrap text-[16px] leading-7 text-[#666]"
+              >
                 {deck.description}
-              </p>
+              </YeonText>
             ) : (
-              <p className="mt-3 text-[14px] text-[#aaa]">설명 없음</p>
+              <YeonText
+                as="p"
+                variant="unstyled"
+                tone="inherit"
+                className="mt-3 text-[14px] text-[#aaa]"
+              >
+                설명 없음
+              </YeonText>
             )}
-            <p className={`mt-4 ${SHARED_FEATURE_CLASS.text14Soft}`}>
+            <YeonText
+              as="p"
+              variant="unstyled"
+              tone="inherit"
+              className={`mt-4 ${SHARED_FEATURE_CLASS.text14Soft}`}
+            >
               카드 {deck.itemCount}장 · 학습 진행률 0% · 생성일 {createdDate}
-            </p>
-          </div>
-        </div>
+            </YeonText>
+          </YeonView>
+        </YeonView>
       )}
 
-      <Link
-        href={`/card-service/decks/${deck.id}/play`}
-        className="mt-8 flex w-full items-center justify-center rounded-[22px] bg-[#111] px-4 py-4 text-[20px] font-semibold text-white no-underline transition-colors hover:bg-[#333] md:mt-6 md:py-3.5 md:text-[16px]"
+      <YeonLink
+        href={resolveYeonWebPath("cardDeckPlay", { deckId: deck.id })}
+        className={getYeonButtonClassName({
+          variant: "primary",
+          size: "xl",
+          className:
+            "mt-8 flex w-full rounded-[22px] px-4 py-4 text-[20px] md:mt-6 md:py-3.5 md:text-[16px]",
+        })}
         onClick={() =>
           trackEvent(analyticsEvents.cardStudyStart, {
             deck_id: deck.id,
@@ -241,7 +318,7 @@ export function DeckDetailHeader({
         }
       >
         ▶ 학습 시작
-      </Link>
-    </section>
+      </YeonLink>
+    </YeonView>
   );
 }

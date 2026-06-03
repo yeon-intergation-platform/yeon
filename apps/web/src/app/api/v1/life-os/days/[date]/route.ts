@@ -4,7 +4,6 @@ import {
   lifeOsLocalDateSchema,
   upsertLifeOsDayBodySchema,
 } from "@yeon/api-contract/life-os";
-
 import {
   jsonError,
   requireAuthenticatedUser,
@@ -19,7 +18,7 @@ export const runtime = "nodejs";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ date: string }> },
+  { params }: { params: Promise<{ date: string }> }
 ) {
   const { currentUser, response } = await requireAuthenticatedUser(request);
   if (!currentUser) {
@@ -46,7 +45,7 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: Promise<{ date: string }> },
+  { params }: { params: Promise<{ date: string }> }
 ) {
   const { currentUser, response } = await requireAuthenticatedUser(request);
   if (!currentUser) {
@@ -81,7 +80,7 @@ export async function PUT(
     const day = await updateLifeOsDayInSpring(
       currentUser.id,
       parsedDate.data,
-      parsed.data,
+      parsed.data
     );
     return NextResponse.json(lifeOsDayResponseSchema.parse(day));
   } catch (error) {

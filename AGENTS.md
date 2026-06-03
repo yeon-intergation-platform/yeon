@@ -55,6 +55,11 @@ Prefer pointers to copies. Do not paste long policies, command catalogs, or code
 - **Next.js는 신규 백엔드 역할을 맡지 않는다. 백엔드 역할은 Spring(`apps/backend`)만 담당한다.** `apps/web`의 API route/server code는 기존 호환, 인증 쿠키 브리지, 외부 API 프록시, Spring 호출 BFF처럼 명시된 전환 역할만 허용한다. 신규 DB 스키마, 비즈니스 규칙, 도메인 쓰기 로직, 권한 판정, 장기 상태 원천은 Spring에 구현한다.
 - Multiple agents may be active. Do not overwrite unrelated human/agent changes; stage only owned paths and avoid `git add .`.
 - **유지보수 대상 서비스는 카드(`card-service`)·타자(`typing-service`)·커뮤니티(`community`) 3종뿐이다.** 상담 워크스페이스(`counseling-workspace` — 상담 기록·스페이스·수강생/학생관리·시트 연동 등 CRM 전반)는 **유지보수하지 않는다(동결)**: 신규 기능, 버그 수정, 리팩토링, 테스트 추가, 품질 게이트 확장의 대상이 아니다. 사용자의 명시적 지시가 없는 한 해당 코드/스키마/문서는 변경하지 않고 그대로 둔다. 추적성/커버리지/Karate 등 품질 도구의 범위도 위 3종 서비스에 한정한다.
+- **웹(`apps/web`)을 수정할 때는 모바일(`apps/mobile`) 패리티를 항상 함께 고려한다(역도 동일).** 위 3종 서비스는 Universal UI(`@yeon/ui`)로 web/mobile을 공유하므로, 공유 대상 개념(상태 로직·API 계약·queryKey·도메인 규칙·라우트 정체성·세션/저장소 포트 등)을 한쪽만 바꾸면 silent drift가 난다. 변경 전 **Universal UI Parity Registry**(`docs/architecture/universal-ui-parity-registry.yaml`)에서 그 개념의 동일성 요구 수준을 먼저 확인한다.
+  - `identical-value`(DTO·design-tokens·queryKey·라우트 정체성 등): **SSOT 한 곳에서만 선언하고 양 앱은 재수출/파생**한다. 복제·한쪽만 수정 금지.
+  - `shared-contract`(navigation·session·repository·KV 포트): 포트 인터페이스(SSOT)는 동일하게 두고 플랫폼 어댑터만 각 앱에서 구현한다.
+  - `platform-divergent`(경로 문자열·저장 백엔드·헤더 chrome 등): 의도적으로 다름. 강제 동일 금지.
+  - 새 공유 개념을 도입하면 먼저 레지스트리에 entry+parity를 추가한다. 설계 원장: `docs/product/backlog/2026-06-03-universal-ui-screen-ports-ssot.md`. 동결 상담 워크스페이스는 본 패리티 대상에서 제외한다.
 
 ## How agents should work here
 
@@ -106,6 +111,7 @@ Verify before claiming completion. Choose the smallest checks that prove the cha
   - `git diff --check`
   - `bash bin/sync-skills.sh --check`
   - `bash bin/verify-ssot.sh --project-only`
+- Universal UI(card/typing/community web↔mobile) 공유 개념·포트·queryKey·view-state를 건드리면 `node bin/verify-parity.mjs`(= `pnpm verify:parity`)를 추가로 실행한다. 이 검사와 eslint Universal UI 경계 규칙은 `.github/workflows/ssot-check.yml` CI에서 강제된다. identical-value 개념을 한쪽만 바꾸거나 raw로 재선언하면 게이트가 막는다.
 
 If a check cannot run, report the exact command and reason. Final reports should name changed files, verification evidence, and remaining risks.
 

@@ -1,7 +1,9 @@
 "use client";
-
 import { useEffect } from "react";
-
+import {
+  clearYeonInterval,
+  scheduleYeonInterval,
+} from "@yeon/ui/runtime/YeonBrowserRuntime";
 import {
   readPresenceSessionId,
   sendPresenceHeartbeat,
@@ -22,12 +24,12 @@ export function CommunityPresenceTracker() {
     };
 
     void heartbeat();
-    const intervalId = window.setInterval(() => {
+    const intervalId = scheduleYeonInterval(() => {
       void heartbeat();
     }, 10_000);
 
     return () => {
-      window.clearInterval(intervalId);
+      clearYeonInterval(intervalId);
       sendPresenceLeave(sessionId);
     };
   }, []);

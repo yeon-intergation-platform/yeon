@@ -1,29 +1,18 @@
 "use client";
-
 import {
-  Bold,
-  Code2,
-  ImagePlus,
-  Italic,
-  List,
-  ListOrdered,
-  Loader2,
-  Quote,
-  Redo2,
-  Table2,
-  Underline as UnderlineIcon,
-  Undo2,
-  type LucideIcon,
-} from "lucide-react";
-import { motion } from "framer-motion";
-
+  YeonButton,
+  YeonIcon,
+  type YeonIconName,
+  YeonText,
+  YeonView,
+} from "@yeon/ui";
 import { CARD_EDITOR_COMPACT_CLASS } from "./card-rich-markdown-editor-view";
 
 type CardEditorToolbarDensity = "default" | "compact";
 
 interface CardEditorToolbarButtonProps {
   label: string;
-  icon: LucideIcon;
+  icon: YeonIconName;
   active?: boolean;
   disabled?: boolean;
   isLoading?: boolean;
@@ -40,7 +29,7 @@ function CardEditorToolbarButton({
   density,
   onClick,
 }: CardEditorToolbarButtonProps) {
-  const DisplayIcon = isLoading ? Loader2 : Icon;
+  const displayIcon: YeonIconName = isLoading ? "loader" : Icon;
   const buttonSizeClassName =
     density === "compact"
       ? CARD_EDITOR_COMPACT_CLASS.toolbarButton
@@ -48,33 +37,27 @@ function CardEditorToolbarButton({
   const iconSizeClassName =
     density === "compact" ? CARD_EDITOR_COMPACT_CLASS.toolbarIcon : "h-4 w-4";
 
-  const buttonMotion = disabled
-    ? undefined
-    : ({
-        whileHover: { scale: 1.04, y: -1 },
-        whileTap: { scale: 0.96, y: 0 },
-        transition: { type: "spring", stiffness: 520, damping: 34 },
-      } as const);
-
   return (
-    <motion.button
+    <YeonButton
       type="button"
+      variant={active ? "primary" : "secondary"}
+      size="icon"
       disabled={disabled}
       onClick={onClick}
       aria-label={label}
       aria-pressed={typeof active === "boolean" ? active : undefined}
       title={label}
-      className={`flex ${buttonSizeClassName} items-center justify-center border text-[#111] transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
+      className={`flex ${buttonSizeClassName} items-center justify-center border text-[#111] disabled:cursor-not-allowed disabled:opacity-40 ${
         active
           ? "border-[#111] bg-[#111] text-white"
           : "border-[#e5e5e5] bg-white hover:border-[#111] hover:bg-[#fafafa]"
       }`}
-      {...buttonMotion}
     >
-      <DisplayIcon
+      <YeonIcon
+        name={displayIcon}
         className={`${iconSizeClassName} ${isLoading ? "animate-spin" : ""}`}
       />
-    </motion.button>
+    </YeonButton>
   );
 }
 
@@ -140,22 +123,27 @@ export function CardEditorToolbar({
     <>
       <CardEditorToolbarButton
         label="실행 취소"
-        icon={Undo2}
+        icon="undo"
         disabled={!canUseToolbar || !canUndo}
         density={density}
         onClick={onUndo}
       />
       <CardEditorToolbarButton
         label="다시 실행"
-        icon={Redo2}
+        icon="redo"
         disabled={!canUseToolbar || !canRedo}
         density={density}
         onClick={onRedo}
       />
-      <span className={dividerClassName} />
+      <YeonText
+        as="span"
+        variant="unstyled"
+        tone="inherit"
+        className={dividerClassName}
+      />
       <CardEditorToolbarButton
         label="굵게"
-        icon={Bold}
+        icon="bold"
         active={active.bold}
         disabled={!canUseToolbar}
         density={density}
@@ -163,7 +151,7 @@ export function CardEditorToolbar({
       />
       <CardEditorToolbarButton
         label="기울임"
-        icon={Italic}
+        icon="italic"
         active={active.italic}
         disabled={!canUseToolbar}
         density={density}
@@ -171,7 +159,7 @@ export function CardEditorToolbar({
       />
       <CardEditorToolbarButton
         label="밑줄"
-        icon={UnderlineIcon}
+        icon="underline"
         active={active.underline}
         disabled={!canUseToolbar}
         density={density}
@@ -179,7 +167,7 @@ export function CardEditorToolbar({
       />
       <CardEditorToolbarButton
         label="목록"
-        icon={List}
+        icon="list"
         active={active.bulletList}
         disabled={!canUseToolbar}
         density={density}
@@ -187,7 +175,7 @@ export function CardEditorToolbar({
       />
       <CardEditorToolbarButton
         label="번호 목록"
-        icon={ListOrdered}
+        icon="list-ordered"
         active={active.orderedList}
         disabled={!canUseToolbar}
         density={density}
@@ -195,7 +183,7 @@ export function CardEditorToolbar({
       />
       <CardEditorToolbarButton
         label="인용"
-        icon={Quote}
+        icon="quote"
         active={active.blockquote}
         disabled={!canUseToolbar}
         density={density}
@@ -203,7 +191,7 @@ export function CardEditorToolbar({
       />
       <CardEditorToolbarButton
         label="코드블록"
-        icon={Code2}
+        icon="code"
         active={active.codeBlock}
         disabled={!canUseToolbar}
         density={density}
@@ -211,14 +199,14 @@ export function CardEditorToolbar({
       />
       <CardEditorToolbarButton
         label="표 삽입"
-        icon={Table2}
+        icon="table"
         disabled={!canUseToolbar}
         density={density}
         onClick={onTable}
       />
       <CardEditorToolbarButton
         label={isUploading ? "이미지 업로드 중" : "이미지 삽입"}
-        icon={ImagePlus}
+        icon="image-plus"
         disabled={!canUseToolbar || isUploading}
         isLoading={isUploading}
         density={density}
@@ -229,20 +217,30 @@ export function CardEditorToolbar({
 
   if (density === "compact") {
     return (
-      <div className={toolbarClassName}>
+      <YeonView className={toolbarClassName}>
         {leadingLabel ? (
-          <span className={CARD_EDITOR_COMPACT_CLASS.fieldLabel}>
+          <YeonText
+            as="span"
+            variant="unstyled"
+            tone="inherit"
+            className={CARD_EDITOR_COMPACT_CLASS.fieldLabel}
+          >
             {leadingLabel}
-          </span>
+          </YeonText>
         ) : (
-          <span aria-hidden="true" />
+          <YeonText
+            as="span"
+            variant="unstyled"
+            tone="inherit"
+            aria-hidden="true"
+          />
         )}
-        <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+        <YeonView className="flex min-w-0 flex-wrap items-center gap-1.5">
           {toolbarControls}
-        </div>
-      </div>
+        </YeonView>
+      </YeonView>
     );
   }
 
-  return <div className={toolbarClassName}>{toolbarControls}</div>;
+  return <YeonView className={toolbarClassName}>{toolbarControls}</YeonView>;
 }

@@ -1,28 +1,21 @@
 "use client";
-
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import type {
-  CardDeckDto,
-  UpdateCardDeckBody,
-} from "@yeon/api-contract/card-decks";
-
 import {
-  deleteGuestDeck,
-  updateGuestDeck,
-} from "@/lib/guest-card-service-store";
-
+  useYeonMutation as useMutation,
+  useYeonQueryClient as useQueryClient,
+} from "@yeon/ui/runtime/YeonQuery";
+import {
+  useYeonCardDeckRepository,
+  type YeonCardDeckRepository,
+} from "@yeon/ui/runtime/ports/card-deck";
+import type { UpdateCardDeckBody } from "@yeon/api-contract/card-decks";
 import { useCardServiceAuth } from "../auth-context";
-import {
-  CardServiceApiError,
-  cardServiceFetchJson,
-  cardServiceFetchVoid,
-} from "../card-service-fetch";
+import { CardServiceApiError } from "../card-service-fetch";
 import { cardServiceQueryKeys } from "../card-service-query-keys";
 
 function invalidateDeckQueries(
   queryClient: ReturnType<typeof useQueryClient>,
   isAuthenticated: boolean,
-  deckId?: string,
+  deckId?: string
 ) {
   void queryClient.invalidateQueries({
     queryKey: cardServiceQueryKeys.decks(isAuthenticated),
@@ -34,43 +27,37 @@ function invalidateDeckQueries(
   }
 }
 
-function handleAuthError(
-  error: unknown,
+// 데이터 변형은 repository 포트가, 401 인증 오류 처리는 세션(auth-context)이 담당한다(관심사 분리).
+async function withAuthErrorHandling<T>(
+  run: () => Promise<T>,
   queryClient: ReturnType<typeof useQueryClient>,
   markUnauthenticated: () => void,
-  deckId?: string,
-) {
-  if (error instanceof CardServiceApiError && error.status === 401) {
-    markUnauthenticated();
-    invalidateDeckQueries(queryClient, true, deckId);
-    invalidateDeckQueries(queryClient, false, deckId);
+  deckId?: string
+): Promise<T> {
+  try {
+    return await run();
+  } catch (error) {
+    if (error instanceof CardServiceApiError && error.status === 401) {
+      markUnauthenticated();
+      invalidateDeckQueries(queryClient, true, deckId);
+      invalidateDeckQueries(queryClient, false, deckId);
+    }
+    throw error;
   }
 }
 
 export function useUpdateDeck(deckId: string) {
   const queryClient = useQueryClient();
   const { isAuthenticated, markUnauthenticated } = useCardServiceAuth();
+  const repository: YeonCardDeckRepository = useYeonCardDeckRepository();
   return useMutation({
-    mutationFn: async (body: UpdateCardDeckBody) => {
-      try {
-        if (isAuthenticated) {
-          const data = await cardServiceFetchJson<{ deck: CardDeckDto }>(
-            `/api/v1/card-decks/${deckId}`,
-            {
-              method: "PATCH",
-              headers: { "content-type": "application/json" },
-              body: JSON.stringify(body),
-            },
-            "덱을 수정하지 못했습니다."
-          );
-          return data.deck;
-        }
-        return updateGuestDeck(deckId, body);
-      } catch (error) {
-        handleAuthError(error, queryClient, markUnauthenticated, deckId);
-        throw error;
-      }
-    },
+    mutationFn: (body: UpdateCardDeckBody) =>
+      withAuthErrorHandling(
+        () => repository.updateDeck(deckId, body),
+        queryClient,
+        markUnauthenticated,
+        deckId
+      ),
     onSuccess: () => {
       invalidateDeckQueries(queryClient, isAuthenticated, deckId);
     },
@@ -80,23 +67,15 @@ export function useUpdateDeck(deckId: string) {
 export function useDeleteDeck() {
   const queryClient = useQueryClient();
   const { isAuthenticated, markUnauthenticated } = useCardServiceAuth();
+  const repository: YeonCardDeckRepository = useYeonCardDeckRepository();
   return useMutation({
-    mutationFn: async (deckId: string) => {
-      try {
-        if (isAuthenticated) {
-          await cardServiceFetchVoid(
-            `/api/v1/card-decks/${deckId}`,
-            { method: "DELETE" },
-            "덱을 삭제하지 못했습니다."
-          );
-          return;
-        }
-        await deleteGuestDeck(deckId);
-      } catch (error) {
-        handleAuthError(error, queryClient, markUnauthenticated, deckId);
-        throw error;
-      }
-    },
+    mutationFn: (deckId: string) =>
+      withAuthErrorHandling(
+        () => repository.deleteDeck(deckId),
+        queryClient,
+        markUnauthenticated,
+        deckId
+      ),
     onSuccess: () => {
       invalidateDeckQueries(queryClient, isAuthenticated);
     },

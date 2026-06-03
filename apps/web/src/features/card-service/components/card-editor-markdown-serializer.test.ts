@@ -1,13 +1,14 @@
-import ImageExtension from "@tiptap/extension-image";
-import { Table as TableExtension } from "@tiptap/extension-table";
-import TableCellExtension from "@tiptap/extension-table-cell";
-import TableHeaderExtension from "@tiptap/extension-table-header";
-import TableRowExtension from "@tiptap/extension-table-row";
-import { getSchema } from "@tiptap/core";
-import StarterKit from "@tiptap/starter-kit";
-import { Slice } from "@tiptap/pm/model";
+import {
+  getYeonTiptapSchema as getSchema,
+  YeonTiptapImageExtension as ImageExtension,
+  YeonTiptapSlice as Slice,
+  YeonTiptapStarterKit as StarterKit,
+  YeonTiptapTableCellExtension as TableCellExtension,
+  YeonTiptapTableExtension as TableExtension,
+  YeonTiptapTableHeaderExtension as TableHeaderExtension,
+  YeonTiptapTableRowExtension as TableRowExtension,
+} from "@yeon/ui/rich-content/YeonTiptap";
 import { describe, expect, it } from "vitest";
-
 import { serializeCardEditorSliceToMarkdown } from "./card-editor-markdown-serializer";
 
 const schema = getSchema([

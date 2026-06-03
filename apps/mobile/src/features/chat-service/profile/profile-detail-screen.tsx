@@ -1,18 +1,29 @@
 import { CHAT_SERVICE_DM_UNLOCK_AMOUNT } from "@yeon/api-contract/chat-service";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { Alert, ScrollView, StyleSheet, Text, View } from "react-native";
-
-import { ActionButton } from "../../../components/ui/action-button";
-import { AvatarCircle } from "../../../components/ui/avatar-circle";
-import { SectionCard } from "../../../components/ui/section-card";
-import { StateBlock } from "../../../components/ui/state-block";
-import { TopBar } from "../../../components/ui/top-bar";
+import {
+  useYeonMutation as useMutation,
+  useYeonQuery as useQuery,
+  useYeonQueryClient as useQueryClient,
+} from "@yeon/ui/native";
+import {
+  useYeonLocalSearchParams as useLocalSearchParams,
+  useYeonRouter as useRouter,
+} from "@yeon/ui/native";
+import { showYeonAlert } from "@yeon/ui/native";
+import {
+  YeonActionButton as ActionButton,
+  YeonDescriptionText as DescriptionText,
+  YeonFormStack as FormStack,
+  YeonMobileScreen as MobileScreen,
+  YeonProfileHero as ProfileHero,
+  YeonSectionCard as SectionCard,
+  YeonSectionTitle as SectionTitle,
+  YeonStateBlock as StateBlock,
+  YeonTopBar as TopBar,
+} from "@yeon/ui/native";
 import { parseOptionalString } from "../../../lib/format";
 import { useChatServiceSession } from "../../../providers/chat-service-session-provider";
 import { chatServiceApi } from "../../../services/chat-service/client";
 import { chatServiceQueryKeys } from "../../../services/chat-service/query-keys";
-import { colors } from "../../../theme/colors";
 
 export function ProfileDetailScreen() {
   const router = useRouter();
@@ -128,18 +139,18 @@ export function ProfileDetailScreen() {
   async function handleFriendRequest() {
     try {
       await friendMutation.mutateAsync();
-      Alert.alert("친구 요청 전송", "상대에게 요청을 보냈습니다.");
+      showYeonAlert("친구 요청 전송", "상대에게 요청을 보냈습니다.");
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "친구 요청에 실패했습니다.";
-      Alert.alert("오류", message);
+      showYeonAlert("오류", message);
     }
   }
 
   async function handleDmOpen() {
     try {
       const response = await dmMutation.mutateAsync();
-      Alert.alert(
+      showYeonAlert(
         "대화 오픈",
         response.room.unlockedByPayment
           ? `${CHAT_SERVICE_DM_UNLOCK_AMOUNT}원이 차감되고 대화방이 열렸습니다.`
@@ -149,18 +160,18 @@ export function ProfileDetailScreen() {
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "대화 오픈에 실패했습니다.";
-      Alert.alert("오류", message);
+      showYeonAlert("오류", message);
     }
   }
 
   async function handleReport() {
     try {
       await reportMutation.mutateAsync();
-      Alert.alert("신고 접수", "운영팀이 프로필을 검토합니다.");
+      showYeonAlert("신고 접수", "운영팀이 프로필을 검토합니다.");
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "프로필 신고에 실패했습니다.";
-      Alert.alert("오류", message);
+      showYeonAlert("오류", message);
     }
   }
 
@@ -168,10 +179,10 @@ export function ProfileDetailScreen() {
     try {
       if (isBlocked) {
         await unblockMutation.mutateAsync();
-        Alert.alert("차단 해제", "이제 다시 친구 요청과 대화가 가능합니다.");
+        showYeonAlert("차단 해제", "이제 다시 친구 요청과 대화가 가능합니다.");
       } else {
         await blockMutation.mutateAsync();
-        Alert.alert("차단 완료", "친구 요청과 대화 열기가 차단됩니다.", [
+        showYeonAlert("차단 완료", "친구 요청과 대화 열기가 차단됩니다.", [
           {
             onPress: () => {
               router.back();
@@ -183,12 +194,12 @@ export function ProfileDetailScreen() {
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "차단 처리에 실패했습니다.";
-      Alert.alert("오류", message);
+      showYeonAlert("오류", message);
     }
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.content} style={styles.screen}>
+    <MobileScreen>
       <TopBar
         rightLabel="뒤로"
         onRightPress={() => router.back()}
@@ -225,38 +236,31 @@ export function ProfileDetailScreen() {
       {profile ? (
         <>
           <SectionCard>
-            <View style={styles.hero}>
-              <AvatarCircle
-                imageUrl={profile.avatarUrl}
-                label={profile.nickname}
-                size={84}
-                tone="warm"
-              />
-              <View style={styles.heroMeta}>
-                <Text style={styles.nickname}>{profile.nickname}</Text>
-                <Text style={styles.meta}>
-                  {profile.regionLabel} {profile.ageLabel}
-                </Text>
-                <Text style={styles.points}>표시 포인트 {profile.points}P</Text>
-              </View>
-            </View>
+            <ProfileHero
+              highlight={`표시 포인트 ${profile.points}P`}
+              imageUrl={profile.avatarUrl}
+              label={profile.nickname}
+              meta={`${profile.regionLabel} ${profile.ageLabel}`}
+              size={84}
+              title={profile.nickname}
+            />
           </SectionCard>
 
           <SectionCard>
-            <Text style={styles.sectionTitle}>한 줄 소개</Text>
-            <Text style={styles.descriptionText}>
+            <SectionTitle spacing="sm">한 줄 소개</SectionTitle>
+            <DescriptionText line="roomy">
               {profile.bio || "아직 등록된 소개가 없습니다."}
-            </Text>
+            </DescriptionText>
           </SectionCard>
 
           <SectionCard>
-            <Text style={styles.sectionTitle}>바로 실행</Text>
-            <View style={styles.actionStack}>
+            <SectionTitle spacing="sm">바로 실행</SectionTitle>
+            <FormStack gap="compact">
               <ActionButton label="친구 요청" onPress={handleFriendRequest} />
               <ActionButton
                 label={`${CHAT_SERVICE_DM_UNLOCK_AMOUNT}원으로 대화 열기`}
                 onPress={() => {
-                  Alert.alert(
+                  showYeonAlert(
                     "대화를 열까요?",
                     `${CHAT_SERVICE_DM_UNLOCK_AMOUNT}원이 차감될 수 있습니다.`,
                     [
@@ -285,68 +289,19 @@ export function ProfileDetailScreen() {
                 onPress={handleReport}
                 variant="danger"
               />
-            </View>
+            </FormStack>
           </SectionCard>
 
           <SectionCard>
-            <Text style={styles.sectionTitle}>운영 메모</Text>
-            <Text style={styles.descriptionText}>
+            <SectionTitle spacing="sm">운영 메모</SectionTitle>
+            <DescriptionText line="roomy">
               상대 동의 없이도 프로필 진입 후 {CHAT_SERVICE_DM_UNLOCK_AMOUNT}원
               결제로 1:1 DM을 열 수 있습니다. 수신 거부 기능은 후속 차수에서
               추가됩니다.
-            </Text>
+            </DescriptionText>
           </SectionCard>
         </>
       ) : null}
-    </ScrollView>
+    </MobileScreen>
   );
 }
-
-const styles = StyleSheet.create({
-  screen: {
-    backgroundColor: colors.background,
-    flex: 1,
-  },
-  content: {
-    gap: 16,
-    paddingBottom: 120,
-    paddingHorizontal: 18,
-    paddingTop: 22,
-  },
-  hero: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: 16,
-  },
-  heroMeta: {
-    gap: 6,
-  },
-  nickname: {
-    color: colors.text,
-    fontSize: 26,
-    fontWeight: "900",
-  },
-  meta: {
-    color: colors.textMuted,
-    fontSize: 14,
-  },
-  points: {
-    color: colors.accent,
-    fontSize: 15,
-    fontWeight: "800",
-  },
-  sectionTitle: {
-    color: colors.text,
-    fontSize: 18,
-    fontWeight: "900",
-    marginBottom: 12,
-  },
-  actionStack: {
-    gap: 10,
-  },
-  descriptionText: {
-    color: colors.textMuted,
-    fontSize: 14,
-    lineHeight: 22,
-  },
-});

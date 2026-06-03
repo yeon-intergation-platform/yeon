@@ -1,5 +1,4 @@
-import { useLocalSearchParams } from "expo-router";
-
+import { useYeonLocalSearchParams as useLocalSearchParams } from "@yeon/ui/native";
 import { CardDeckDetailScreen } from "../../../src/features/card-service/card-deck-detail-screen";
 
 export default function CardDeckDetailRoute() {

@@ -1,13 +1,14 @@
 "use client";
-
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  useYeonMutation as useMutation,
+  useYeonQueryClient as useQueryClient,
+} from "@yeon/ui/runtime/YeonQuery";
 import type { MergeGuestResponse } from "@yeon/api-contract/card-deck-merge-guest";
-
+import { delayYeon } from "@yeon/ui/runtime/YeonBrowserRuntime";
 import {
   clearGuestCardDecksByPublicIds,
   dumpGuestCardDecksForMerge,
 } from "@/lib/guest-card-service-store";
-
 import { mergeGuestCardDecksToServer } from "../card-service-fetch";
 import { cardServiceQueryKeys } from "../card-service-query-keys";
 
@@ -28,9 +29,7 @@ async function clearWithRetry(publicIds: string[]): Promise<void> {
         );
         return;
       }
-      await new Promise<void>((resolve) =>
-        setTimeout(resolve, CLEAR_BACKOFF_MS * (attempt + 1))
-      );
+      await delayYeon(CLEAR_BACKOFF_MS * (attempt + 1));
     }
   }
 }

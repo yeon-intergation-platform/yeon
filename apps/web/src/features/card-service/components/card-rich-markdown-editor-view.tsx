@@ -1,8 +1,12 @@
 "use client";
-
+import {
+  YeonGlobalStyle,
+  YeonView,
+  YeonText,
+  YEON_WEB_CSS_VALUE,
+} from "@yeon/ui";
 import { memo } from "react";
 import type { ReactNode } from "react";
-
 import { SHARED_FEATURE_CLASS } from "../../shared-style-constants";
 import { isRenderableRichContent } from "./card-content-utils";
 import {
@@ -58,6 +62,160 @@ export const CARD_EDITOR_COMPACT_CLASS = {
     "min-h-0 flex-1 overflow-visible px-3 py-3 text-[13px] leading-6 text-[#111]",
 } as const;
 
+const CARD_RICH_EDITOR_GLOBAL_STYLE = `
+  .card-rich-editor-content .ProseMirror {
+    min-height: inherit;
+    outline: none;
+  }
+  .card-rich-editor-content .ProseMirror p.is-editor-empty:first-child::before {
+    color: #aaa;
+    content: attr(data-placeholder);
+    float: left;
+    height: 0;
+    pointer-events: none;
+  }
+  .card-rich-editor-content p {
+    margin: 0.5rem 0;
+  }
+  .card-rich-editor-content ul,
+  .card-rich-editor-content ol {
+    margin: 0.5rem 0;
+    padding-left: 1.35rem;
+  }
+  .card-rich-editor-content ul {
+    list-style: disc;
+  }
+  .card-rich-editor-content ol {
+    list-style: decimal;
+  }
+  .card-rich-editor-content blockquote {
+    border-left: 4px solid #e5e5e5;
+    color: #666;
+    margin: 0.75rem 0;
+    padding-left: 0.75rem;
+  }
+  .card-rich-editor-content a {
+    text-decoration: underline;
+  }
+  .card-rich-editor-content .tableWrapper {
+    max-width: 100%;
+    overflow-x: auto;
+  }
+  .card-rich-editor-content table {
+    border-collapse: collapse;
+    margin: 0.5rem 0;
+    max-width: 100%;
+    overflow: hidden;
+    table-layout: auto;
+    text-align: left;
+    width: max-content;
+  }
+  .card-rich-editor-content table colgroup {
+    display: none;
+  }
+  .card-rich-editor-content table col {
+    min-width: 0 !important;
+    width: auto !important;
+  }
+  .card-rich-editor-content th,
+  .card-rich-editor-content td {
+    border: 1px solid #e5e5e5;
+    box-sizing: border-box;
+    height: ${CARD_MARKDOWN_TABLE_MIN_CELL_HEIGHT}px;
+    line-height: 1.4;
+    min-width: ${CARD_MARKDOWN_TABLE_MIN_CELL_WIDTH}px;
+    padding: 0.25rem 0.4rem;
+    position: relative;
+    text-align: left;
+    vertical-align: top;
+    white-space: nowrap;
+    width: auto;
+  }
+  .card-rich-editor-content th > *,
+  .card-rich-editor-content td > * {
+    margin: 0;
+  }
+  .card-rich-editor-content th {
+    background: #fafafa;
+    font-weight: 700;
+  }
+  .card-rich-editor-content .selectedCell::after {
+    background: ${YEON_WEB_CSS_VALUE.selectedCellBackground};
+    bottom: 0;
+    content: "";
+    left: 0;
+    pointer-events: none;
+    position: absolute;
+    right: 0;
+    top: 0;
+    z-index: 2;
+  }
+  .card-rich-editor-content .column-resize-handle {
+    background: #111;
+    bottom: -1px;
+    pointer-events: none;
+    position: absolute;
+    right: -2px;
+    top: 0;
+    width: 3px;
+  }
+  .card-rich-editor-image {
+    display: block;
+    margin: 0.5rem 0;
+    max-width: 100%;
+    position: relative;
+  }
+  .card-rich-editor-image img {
+    border: 1px solid #e5e5e5;
+    border-radius: 14px;
+    cursor: pointer;
+    display: block;
+    height: auto;
+    max-width: 100%;
+  }
+  .card-rich-editor-image.is-selected img {
+    outline: 2px solid #111;
+    outline-offset: 2px;
+  }
+  .card-rich-editor-image-handle {
+    background: #111;
+    border: 2px solid #ffffff;
+    border-radius: 999px;
+    bottom: -9px;
+    box-shadow: ${YEON_WEB_CSS_VALUE.imageHandleShadow};
+    cursor: nwse-resize;
+    height: 18px;
+    opacity: 0;
+    pointer-events: none;
+    position: absolute;
+    right: -9px;
+    touch-action: none;
+    transition: opacity 0.12s ease;
+    width: 18px;
+  }
+  .card-rich-editor-image.is-selected .card-rich-editor-image-handle,
+  .card-rich-editor-image.is-resizing .card-rich-editor-image-handle {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .card-rich-editor-image-size {
+    background: ${YEON_WEB_CSS_VALUE.imageSizeBackground};
+    border-radius: 999px;
+    bottom: 8px;
+    color: #ffffff;
+    font-size: 11px;
+    left: 8px;
+    opacity: 0;
+    padding: 3px 8px;
+    pointer-events: none;
+    position: absolute;
+    transition: opacity 0.12s ease;
+  }
+  .card-rich-editor-image.is-resizing .card-rich-editor-image-size {
+    opacity: 1;
+  }
+`;
+
 export function getCardEditorHeightClass(
   density: keyof typeof CARD_EDITOR_HEIGHT_CLASS,
   layoutMode: "default" | "compact" = "default"
@@ -85,33 +243,52 @@ export function CardPreviewSurface({
   title,
   value,
   emptyText,
-  containerClassName = "flex h-full flex-col overflow-hidden rounded-2xl border border-[#e8e8e8] bg-white",
-  headerClassName = `${SHARED_FEATURE_CLASS.alignBetweenGap3} border-b border-[#eeeeee] bg-[#fafafa] px-5 py-3 md:px-6`,
+  containerClassName = "flex h-full flex-col overflow-hidden rounded-2xl border border-[#e5e5e5] bg-white",
+  headerClassName = `${SHARED_FEATURE_CLASS.alignBetweenGap3} border-b border-[#e5e5e5] bg-[#fafafa] px-5 py-3 md:px-6`,
   bodyClassName = "flex-1 p-5 md:p-6",
   contentClassName,
 }: CardPreviewSurfaceProps) {
   const hasContent = isRenderableRichContent(value);
 
   return (
-    <section className={containerClassName}>
-      <div className={headerClassName}>
-        <p className={SHARED_FEATURE_CLASS.text13Emphasis}>{title}</p>
+    <YeonView as="section" className={containerClassName}>
+      <YeonView className={headerClassName}>
+        <YeonText
+          as="p"
+          variant="unstyled"
+          tone="inherit"
+          className={SHARED_FEATURE_CLASS.text13Emphasis}
+        >
+          {title}
+        </YeonText>
         {eyebrow ? (
-          <p className="truncate text-[12px] font-medium text-[#888]">
+          <YeonText
+            as="p"
+            variant="unstyled"
+            tone="inherit"
+            className="truncate text-[12px] font-medium text-[#aaa]"
+          >
             {eyebrow}
-          </p>
+          </YeonText>
         ) : null}
-      </div>
-      <div className={bodyClassName}>
+      </YeonView>
+      <YeonView className={bodyClassName}>
         {hasContent ? (
           <MarkdownContent className={contentClassName}>
             {value}
           </MarkdownContent>
         ) : (
-          <p className="text-[13px] leading-6 text-[#999]">{emptyText}</p>
+          <YeonText
+            as="p"
+            variant="unstyled"
+            tone="inherit"
+            className="text-[13px] leading-6 text-[#aaa]"
+          >
+            {emptyText}
+          </YeonText>
         )}
-      </div>
-    </section>
+      </YeonView>
+    </YeonView>
   );
 }
 
@@ -140,160 +317,9 @@ CardEditorPreview.displayName = "CardEditorPreview";
 
 export function CardRichEditorGlobalStyles() {
   return (
-    <style jsx global>{`
-      .card-rich-editor-content .ProseMirror {
-        min-height: inherit;
-        outline: none;
-      }
-      .card-rich-editor-content
-        .ProseMirror
-        p.is-editor-empty:first-child::before {
-        color: #aaa;
-        content: attr(data-placeholder);
-        float: left;
-        height: 0;
-        pointer-events: none;
-      }
-      .card-rich-editor-content p {
-        margin: 0.5rem 0;
-      }
-      .card-rich-editor-content ul,
-      .card-rich-editor-content ol {
-        margin: 0.5rem 0;
-        padding-left: 1.35rem;
-      }
-      .card-rich-editor-content ul {
-        list-style: disc;
-      }
-      .card-rich-editor-content ol {
-        list-style: decimal;
-      }
-      .card-rich-editor-content blockquote {
-        border-left: 4px solid #e5e5e5;
-        color: #555;
-        margin: 0.75rem 0;
-        padding-left: 0.75rem;
-      }
-      .card-rich-editor-content a {
-        text-decoration: underline;
-      }
-      .card-rich-editor-content .tableWrapper {
-        max-width: 100%;
-        overflow-x: auto;
-      }
-      .card-rich-editor-content table {
-        border-collapse: collapse;
-        margin: 0.5rem 0;
-        overflow: hidden;
-        table-layout: auto;
-        text-align: left;
-        width: max-content;
-        max-width: 100%;
-      }
-      .card-rich-editor-content table colgroup {
-        display: none;
-      }
-      .card-rich-editor-content table col {
-        min-width: 0 !important;
-        width: auto !important;
-      }
-      .card-rich-editor-content th,
-      .card-rich-editor-content td {
-        border: 1px solid #dcdcdc;
-        box-sizing: border-box;
-        height: ${CARD_MARKDOWN_TABLE_MIN_CELL_HEIGHT}px;
-        line-height: 1.4;
-        min-width: ${CARD_MARKDOWN_TABLE_MIN_CELL_WIDTH}px;
-        padding: 0.25rem 0.4rem;
-        position: relative;
-        text-align: left;
-        vertical-align: top;
-        white-space: nowrap;
-        width: auto;
-      }
-      .card-rich-editor-content th > *,
-      .card-rich-editor-content td > * {
-        margin: 0;
-      }
-      .card-rich-editor-content th {
-        background: #f7f7f7;
-        font-weight: 700;
-      }
-      .card-rich-editor-content .selectedCell::after {
-        background: rgba(17, 17, 17, 0.08);
-        bottom: 0;
-        content: "";
-        left: 0;
-        pointer-events: none;
-        position: absolute;
-        right: 0;
-        top: 0;
-        z-index: 2;
-      }
-      .card-rich-editor-content .column-resize-handle {
-        background: #111;
-        bottom: -1px;
-        pointer-events: none;
-        position: absolute;
-        right: -2px;
-        top: 0;
-        width: 3px;
-      }
-      .card-rich-editor-image {
-        display: block;
-        margin: 0.5rem 0;
-        max-width: 100%;
-        position: relative;
-      }
-      .card-rich-editor-image img {
-        border: 1px solid #e5e5e5;
-        border-radius: 14px;
-        cursor: pointer;
-        display: block;
-        height: auto;
-        max-width: 100%;
-      }
-      .card-rich-editor-image.is-selected img {
-        outline: 2px solid #111;
-        outline-offset: 2px;
-      }
-      .card-rich-editor-image-handle {
-        background: #111;
-        border: 2px solid #fff;
-        border-radius: 999px;
-        bottom: -9px;
-        box-shadow: 0 2px 8px rgba(17, 17, 17, 0.22);
-        cursor: nwse-resize;
-        height: 18px;
-        opacity: 0;
-        pointer-events: none;
-        position: absolute;
-        right: -9px;
-        touch-action: none;
-        transition: opacity 0.12s ease;
-        width: 18px;
-      }
-      .card-rich-editor-image.is-selected .card-rich-editor-image-handle,
-      .card-rich-editor-image.is-resizing .card-rich-editor-image-handle {
-        opacity: 1;
-        pointer-events: auto;
-      }
-      .card-rich-editor-image-size {
-        background: rgba(17, 17, 17, 0.78);
-        border-radius: 999px;
-        bottom: 8px;
-        color: white;
-        font-size: 11px;
-        left: 8px;
-        opacity: 0;
-        padding: 3px 8px;
-        pointer-events: none;
-        position: absolute;
-        transition: opacity 0.12s ease;
-      }
-      .card-rich-editor-image.is-resizing .card-rich-editor-image-size {
-        opacity: 1;
-      }
-    `}</style>
+    <YeonGlobalStyle
+      id="card-rich-editor"
+      css={CARD_RICH_EDITOR_GLOBAL_STYLE}
+    />
   );
 }

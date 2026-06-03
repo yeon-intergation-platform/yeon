@@ -1,18 +1,19 @@
 "use client";
-
 import type { WritableCommunityCategory } from "../community-post-format";
+import { YeonText } from "@yeon/ui";
+import { getYeonNow } from "@yeon/ui/runtime/YeonBrowserRuntime";
 
 function getCategoryBadgeClassName(category: WritableCommunityCategory) {
   switch (category) {
     case "타자친구 모집":
-      return "inline-flex items-center rounded-full bg-[#e7f7ef] px-2.5 py-1 text-[12px] font-bold text-[#00875a]";
+      return "inline-flex items-center rounded-full border border-[#e5e5e5] bg-[#fafafa] px-2.5 py-1 text-[12px] font-bold text-[#111]";
     case "카드친구 모집":
-      return "inline-flex items-center rounded-full bg-[#f1f1f1] px-2.5 py-1 text-[12px] font-bold text-[#555]";
+      return "inline-flex items-center rounded-full border border-[#e5e5e5] bg-[#fafafa] px-2.5 py-1 text-[12px] font-bold text-[#111]";
     case "관리자에게 아무말/조언":
-      return "inline-flex items-center rounded-full bg-[#f1e8ff] px-2.5 py-1 text-[12px] font-bold text-[#6d28d9]";
+      return "inline-flex items-center rounded-full border border-[#e5e5e5] bg-[#fafafa] px-2.5 py-1 text-[12px] font-bold text-[#111]";
     case "잡담":
     default:
-      return "inline-flex items-center rounded-full bg-[#e8f5fd] px-2.5 py-1 text-[12px] font-bold text-[#1d4ed8]";
+      return "inline-flex items-center rounded-full border border-[#e5e5e5] bg-[#fafafa] px-2.5 py-1 text-[12px] font-bold text-[#111]";
   }
 }
 
@@ -27,7 +28,7 @@ function formatKoreanDateTime(isoDate: string) {
 }
 
 export function formatCommunityRelativeTime(isoDate: string) {
-  const diffMs = Date.now() - new Date(isoDate).getTime();
+  const diffMs = getYeonNow() - new Date(isoDate).getTime();
   const diffMinutes = Math.max(0, Math.floor(diffMs / 60000));
 
   if (diffMinutes < 1) return "방금 전";
@@ -45,6 +46,13 @@ export function CommunityCategoryBadge({
   category: WritableCommunityCategory;
 }) {
   return (
-    <span className={getCategoryBadgeClassName(category)}>{category}</span>
+    <YeonText
+      as="span"
+      variant="unstyled"
+      tone="inherit"
+      className={getCategoryBadgeClassName(category)}
+    >
+      {category}
+    </YeonText>
   );
 }

@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-
 import { resolveTypingRoomSelectedDeck } from "./typing-room-selection";
 import type { TypingDeckOption } from "./use-typing-settings";
 
@@ -27,7 +26,7 @@ describe("resolveTypingRoomSelectedDeck", () => {
       OLD_KO_DEFAULT_ID,
       [fallbackDeck, newDefaultDeck],
       fallbackDeck,
-      "ko",
+      "ko"
     );
 
     expect(selectedDeck).toEqual({
@@ -44,8 +43,8 @@ describe("resolveTypingRoomSelectedDeck", () => {
         undefined,
         [fallbackDeck, newDefaultDeck],
         fallbackDeck,
-        "ko",
-      ),
+        "ko"
+      )
     ).toBe(fallbackDeck);
   });
 });

@@ -1,6 +1,5 @@
 import { NextRequest } from "next/server";
 import { describe, expect, it } from "vitest";
-
 import {
   getAuthSessionTokenFromRequest,
   getAuthSessionTokensFromRequest,
@@ -21,16 +20,16 @@ describe("getAuthSessionTokenFromRequest", () => {
         createRequest({
           authorization: "Bearer bearer-token",
           cookie: "yeon.session=cookie-token",
-        }),
-      ),
+        })
+      )
     ).toEqual({ source: "authorization", token: "bearer-token" });
   });
 
   it("Bearer scheme은 대소문자를 구분하지 않는다", () => {
     expect(
       getAuthSessionTokenFromRequest(
-        createRequest({ authorization: "bEaReR mixed-token" }),
-      ),
+        createRequest({ authorization: "bEaReR mixed-token" })
+      )
     ).toEqual({ source: "authorization", token: "mixed-token" });
   });
 
@@ -40,8 +39,8 @@ describe("getAuthSessionTokenFromRequest", () => {
         createRequest({
           authorization: "Basic abc",
           cookie: "yeon.session=cookie-token",
-        }),
-      ),
+        })
+      )
     ).toEqual({ source: "cookie", token: "cookie-token" });
   });
 
@@ -51,16 +50,16 @@ describe("getAuthSessionTokenFromRequest", () => {
         createRequest({
           authorization: "Bearer   ",
           cookie: "yeon.session=cookie-token",
-        }),
-      ),
+        })
+      )
     ).toEqual({ source: "cookie", token: "cookie-token" });
   });
 });
 
-
 it("중복 세션 쿠키는 공백과 중복을 제거한 후보 목록으로 반환한다", () => {
   const request = createRequest({
-    cookie: "yeon.session=stale-token; yeon.session=valid-token; yeon.session=stale-token",
+    cookie:
+      "yeon.session=stale-token; yeon.session=valid-token; yeon.session=stale-token",
   });
 
   expect(getAuthSessionTokensFromRequest(request)).toEqual([

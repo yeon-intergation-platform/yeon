@@ -5,14 +5,12 @@ import {
 } from "@yeon/api-contract/chat-service";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-
 import {
   ChatServiceAskSpringBackendHttpError,
   createChatServiceAskPostInSpring,
   fetchChatServiceAskPostsFromSpring,
 } from "@/server/chat-service-ask-spring-client";
 import { ServiceError } from "@/server/errors/service-error";
-
 import {
   jsonChatServiceError,
   parseJsonBody,
@@ -25,7 +23,7 @@ export async function GET(request: NextRequest) {
     const response = await fetchChatServiceAskPostsFromSpring(profile.id);
 
     return NextResponse.json(
-      chatServiceListAskPostsResponseSchema.parse(response),
+      chatServiceListAskPostsResponseSchema.parse(response)
     );
   } catch (error) {
     if (error instanceof ServiceError) {
@@ -61,7 +59,7 @@ export async function POST(request: NextRequest) {
       chatServiceCreateAskPostResponseSchema.parse(response),
       {
         status: 201,
-      },
+      }
     );
   } catch (error) {
     if (error instanceof ServiceError) {

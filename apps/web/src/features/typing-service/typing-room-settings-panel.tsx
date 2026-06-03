@@ -1,6 +1,4 @@
 "use client";
-
-import type { ChangeEvent } from "react";
 import {
   TYPING_ROOM_DIFFICULTY,
   TYPING_ROOM_LANGUAGE,
@@ -15,7 +13,6 @@ import {
   type TypingRoomTextType,
   type TypingRoomVisibility,
 } from "@yeon/race-shared";
-
 import { normalizeDeckTitle } from "./typing-room-deck-format";
 import {
   TYPING_ROOM_DIFFICULTY_LABELS,
@@ -29,6 +26,16 @@ import {
   LOBBY_ROUND_COUNT_OPTIONS,
 } from "./typing-room-options";
 import { TYPING_SERVICE_COMMON_CLASS } from "./typing-service-common.const";
+import {
+  YeonField,
+  YeonSurface,
+  YeonText,
+  YeonLabel,
+  YeonView,
+  YeonOption,
+  type YeonChangeEvent,
+  type YeonSelectElement,
+} from "@yeon/ui";
 import { SHARED_FEATURE_CLASS } from "../shared-style-constants";
 import type { TypingDeckOption } from "./use-typing-settings";
 
@@ -40,11 +47,11 @@ type TypingRoomSettingsPanelProps = {
   deckOptions: readonly TypingDeckOption[];
   settingsError: string | null;
   onSendSetting: (payload: RoomSettingsUpdateMessage) => void;
-  onDeckChange: (event: ChangeEvent<HTMLSelectElement>) => void;
+  onDeckChange: (event: YeonChangeEvent<YeonSelectElement>) => void;
 };
 
 const SETTINGS_FIELD_CLASS = `${SHARED_FEATURE_CLASS.text12EmphasisNeutral} grid gap-1`;
-const SETTINGS_SELECT_CLASS = "h-9 rounded-lg border border-[#d7d7d7] px-2";
+const SETTINGS_SELECT_CLASS = "h-9 py-1.5";
 
 export function TypingRoomSettingsPanel({
   room,
@@ -57,13 +64,21 @@ export function TypingRoomSettingsPanel({
   onDeckChange,
 }: TypingRoomSettingsPanelProps) {
   return (
-    <section className="rounded-2xl border border-[#e5e5e5] bg-white p-3 xl:order-1">
-      <h2 className={TYPING_SERVICE_COMMON_CLASS.panelSubheading}>방 설정</h2>
-      <div className="grid grid-cols-2 gap-2">
-        <label className={SETTINGS_FIELD_CLASS}>
+    <YeonSurface as="section" className="p-3 xl:order-1">
+      <YeonText
+        as="h2"
+        variant="unstyled"
+        tone="inherit"
+        className={TYPING_SERVICE_COMMON_CLASS.panelSubheading}
+      >
+        방 설정
+      </YeonText>
+      <YeonView className="grid grid-cols-2 gap-2">
+        <YeonLabel className={SETTINGS_FIELD_CLASS}>
           공개 여부
           {isHost ? (
-            <select
+            <YeonField
+              as="select"
               value={room.visibility}
               onChange={(event) =>
                 onSendSetting({
@@ -73,22 +88,28 @@ export function TypingRoomSettingsPanel({
               className={SETTINGS_SELECT_CLASS}
             >
               {Object.values(TYPING_ROOM_VISIBILITY).map((value) => (
-                <option key={value} value={value}>
+                <YeonOption key={value} value={value}>
                   {TYPING_ROOM_VISIBILITY_LABELS[value]}
-                </option>
+                </YeonOption>
               ))}
-            </select>
+            </YeonField>
           ) : (
-            <p className={SHARED_FEATURE_CLASS.mutedInputPanel}>
+            <YeonText
+              as="p"
+              variant="unstyled"
+              tone="inherit"
+              className={SHARED_FEATURE_CLASS.mutedInputPanel}
+            >
               {TYPING_ROOM_VISIBILITY_LABELS[room.visibility]}
-            </p>
+            </YeonText>
           )}
-        </label>
+        </YeonLabel>
 
-        <label className={SETTINGS_FIELD_CLASS}>
+        <YeonLabel className={SETTINGS_FIELD_CLASS}>
           최대 인원
           {isHost ? (
-            <select
+            <YeonField
+              as="select"
               value={room.maxParticipants}
               onChange={(event) =>
                 onSendSetting({
@@ -98,26 +119,32 @@ export function TypingRoomSettingsPanel({
               className={SETTINGS_SELECT_CLASS}
             >
               {LOBBY_MAX_PARTICIPANT_OPTIONS.map((value) => (
-                <option
+                <YeonOption
                   key={value}
                   value={value}
                   disabled={value < room.currentParticipants}
                 >
                   {value}명
-                </option>
+                </YeonOption>
               ))}
-            </select>
+            </YeonField>
           ) : (
-            <p className={SHARED_FEATURE_CLASS.mutedInputPanel}>
+            <YeonText
+              as="p"
+              variant="unstyled"
+              tone="inherit"
+              className={SHARED_FEATURE_CLASS.mutedInputPanel}
+            >
               최대 {room.maxParticipants}명
-            </p>
+            </YeonText>
           )}
-        </label>
+        </YeonLabel>
 
-        <label className={SETTINGS_FIELD_CLASS}>
+        <YeonLabel className={SETTINGS_FIELD_CLASS}>
           언어
           {isHost ? (
-            <select
+            <YeonField
+              as="select"
               value={room.language}
               onChange={(event) =>
                 onSendSetting({
@@ -131,22 +158,28 @@ export function TypingRoomSettingsPanel({
                 TYPING_ROOM_LANGUAGE.EN,
                 TYPING_ROOM_LANGUAGE.CODE,
               ].map((value) => (
-                <option key={value} value={value}>
+                <YeonOption key={value} value={value}>
                   {TYPING_ROOM_LANGUAGE_LABELS[value]}
-                </option>
+                </YeonOption>
               ))}
-            </select>
+            </YeonField>
           ) : (
-            <p className={SHARED_FEATURE_CLASS.mutedInputPanel}>
+            <YeonText
+              as="p"
+              variant="unstyled"
+              tone="inherit"
+              className={SHARED_FEATURE_CLASS.mutedInputPanel}
+            >
               {TYPING_ROOM_LANGUAGE_LABELS[room.language]}
-            </p>
+            </YeonText>
           )}
-        </label>
+        </YeonLabel>
 
-        <label className={SETTINGS_FIELD_CLASS}>
+        <YeonLabel className={SETTINGS_FIELD_CLASS}>
           문장 길이
           {isHost ? (
-            <select
+            <YeonField
+              as="select"
               value={room.textType}
               onChange={(event) =>
                 onSendSetting({
@@ -156,22 +189,28 @@ export function TypingRoomSettingsPanel({
               className={SETTINGS_SELECT_CLASS}
             >
               {Object.values(TYPING_ROOM_TEXT_TYPE).map((value) => (
-                <option key={value} value={value}>
+                <YeonOption key={value} value={value}>
                   {TYPING_ROOM_TEXT_TYPE_LABELS[value]}
-                </option>
+                </YeonOption>
               ))}
-            </select>
+            </YeonField>
           ) : (
-            <p className={SHARED_FEATURE_CLASS.mutedInputPanel}>
+            <YeonText
+              as="p"
+              variant="unstyled"
+              tone="inherit"
+              className={SHARED_FEATURE_CLASS.mutedInputPanel}
+            >
               {TYPING_ROOM_TEXT_TYPE_LABELS[room.textType]}
-            </p>
+            </YeonText>
           )}
-        </label>
+        </YeonLabel>
 
-        <label className={SETTINGS_FIELD_CLASS}>
+        <YeonLabel className={SETTINGS_FIELD_CLASS}>
           난이도
           {isHost ? (
-            <select
+            <YeonField
+              as="select"
               value={room.difficulty}
               onChange={(event) =>
                 onSendSetting({
@@ -181,22 +220,28 @@ export function TypingRoomSettingsPanel({
               className={SETTINGS_SELECT_CLASS}
             >
               {Object.values(TYPING_ROOM_DIFFICULTY).map((value) => (
-                <option key={value} value={value}>
+                <YeonOption key={value} value={value}>
                   {TYPING_ROOM_DIFFICULTY_LABELS[value]}
-                </option>
+                </YeonOption>
               ))}
-            </select>
+            </YeonField>
           ) : (
-            <p className={SHARED_FEATURE_CLASS.mutedInputPanel}>
+            <YeonText
+              as="p"
+              variant="unstyled"
+              tone="inherit"
+              className={SHARED_FEATURE_CLASS.mutedInputPanel}
+            >
               {TYPING_ROOM_DIFFICULTY_LABELS[room.difficulty]}
-            </p>
+            </YeonText>
           )}
-        </label>
+        </YeonLabel>
 
-        <label className={SETTINGS_FIELD_CLASS}>
+        <YeonLabel className={SETTINGS_FIELD_CLASS}>
           판 수
           {isHost ? (
-            <select
+            <YeonField
+              as="select"
               value={room.roundCount}
               onChange={(event) =>
                 onSendSetting({ roundCount: Number(event.target.value) })
@@ -204,22 +249,28 @@ export function TypingRoomSettingsPanel({
               className={SETTINGS_SELECT_CLASS}
             >
               {LOBBY_ROUND_COUNT_OPTIONS.map((value) => (
-                <option key={value} value={value}>
+                <YeonOption key={value} value={value}>
                   {value}판
-                </option>
+                </YeonOption>
               ))}
-            </select>
+            </YeonField>
           ) : (
-            <p className={SHARED_FEATURE_CLASS.mutedInputPanel}>
+            <YeonText
+              as="p"
+              variant="unstyled"
+              tone="inherit"
+              className={SHARED_FEATURE_CLASS.mutedInputPanel}
+            >
               {room.roundCount}판
-            </p>
+            </YeonText>
           )}
-        </label>
+        </YeonLabel>
 
-        <label className={SETTINGS_FIELD_CLASS}>
+        <YeonLabel className={SETTINGS_FIELD_CLASS}>
           진행 방식
           {isHost ? (
-            <select
+            <YeonField
+              as="select"
               value={room.mode}
               onChange={(event) =>
                 onSendSetting({
@@ -230,46 +281,62 @@ export function TypingRoomSettingsPanel({
             >
               {[TYPING_ROOM_MODE.FINISH, TYPING_ROOM_MODE.TIME_LIMIT].map(
                 (value) => (
-                  <option key={value} value={value}>
+                  <YeonOption key={value} value={value}>
                     {TYPING_ROOM_MODE_LABELS[value]}
-                  </option>
+                  </YeonOption>
                 )
               )}
-            </select>
+            </YeonField>
           ) : (
-            <p className={SHARED_FEATURE_CLASS.mutedInputPanel}>
+            <YeonText
+              as="p"
+              variant="unstyled"
+              tone="inherit"
+              className={SHARED_FEATURE_CLASS.mutedInputPanel}
+            >
               {TYPING_ROOM_MODE_LABELS[room.mode]}
-            </p>
+            </YeonText>
           )}
-        </label>
+        </YeonLabel>
 
         {settingsError && (
-          <p className="col-span-2 rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-[12px] text-red-600">
+          <YeonText
+            as="p"
+            variant="caption"
+            tone="primary"
+            className="col-span-2 rounded-lg border border-[#e5e5e5] bg-[#fafafa] px-3 py-2 font-semibold"
+          >
             {settingsError}
-          </p>
+          </YeonText>
         )}
 
-        <label className={`col-span-2 ${SETTINGS_FIELD_CLASS}`}>
+        <YeonLabel className={`col-span-2 ${SETTINGS_FIELD_CLASS}`}>
           덱
           {isHost ? (
-            <select
+            <YeonField
+              as="select"
               value={room.selectedDeckId ?? selectedDeckId}
               onChange={onDeckChange}
               className={SETTINGS_SELECT_CLASS}
             >
               {deckOptions.map((deck) => (
-                <option key={deck.id} value={deck.id}>
+                <YeonOption key={deck.id} value={deck.id}>
                   {normalizeDeckTitle(deck)}
-                </option>
+                </YeonOption>
               ))}
-            </select>
+            </YeonField>
           ) : (
-            <p className={SHARED_FEATURE_CLASS.mutedInputPanel}>
+            <YeonText
+              as="p"
+              variant="unstyled"
+              tone="inherit"
+              className={SHARED_FEATURE_CLASS.mutedInputPanel}
+            >
               {roomDeckTitle}
-            </p>
+            </YeonText>
           )}
-        </label>
-      </div>
-    </section>
+        </YeonLabel>
+      </YeonView>
+    </YeonSurface>
   );
 }

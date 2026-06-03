@@ -1,5 +1,4 @@
 "use client";
-
 import {
   createContext,
   type ReactNode,
@@ -7,9 +6,13 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
-
+import {
+  useYeonDocumentEvent,
+  useYeonWindowEvent,
+} from "@yeon/ui/hooks/YeonBrowserHooks";
 import { fetchCurrentCardServiceAuthState } from "./auth-state";
 
 type CardServiceAuthContextValue = {
@@ -39,35 +42,36 @@ export function CardServiceAuthProvider({
     setCurrentIsAuthenticated(isAuthenticated);
   }, [isAuthenticated]);
 
+  const mountedRef = useRef(false);
+
   useEffect(() => {
-    let active = true;
-
-    async function refreshAuthState() {
-      try {
-        const nextIsAuthenticated = await fetchCurrentCardServiceAuthState();
-        if (active && nextIsAuthenticated !== null) {
-          setCurrentIsAuthenticated(nextIsAuthenticated);
-        }
-      } catch {
-        // 세션 확인 실패는 현재 서버 렌더 상태를 유지한다.
-      }
-    }
-
-    void refreshAuthState();
-
-    window.addEventListener("focus", refreshAuthState);
-    document.addEventListener("visibilitychange", refreshAuthState);
-
+    mountedRef.current = true;
     return () => {
-      active = false;
-      window.removeEventListener("focus", refreshAuthState);
-      document.removeEventListener("visibilitychange", refreshAuthState);
+      mountedRef.current = false;
     };
   }, []);
 
+  const refreshAuthState = useCallback(async () => {
+    try {
+      const nextIsAuthenticated = await fetchCurrentCardServiceAuthState();
+      if (mountedRef.current && nextIsAuthenticated !== null) {
+        setCurrentIsAuthenticated(nextIsAuthenticated);
+      }
+    } catch {
+      // 세션 확인 실패는 현재 서버 렌더 상태를 유지한다.
+    }
+  }, []);
+
+  useEffect(() => {
+    void refreshAuthState();
+  }, [refreshAuthState]);
+
+  useYeonWindowEvent("focus", refreshAuthState);
+  useYeonDocumentEvent("visibilitychange", refreshAuthState);
+
   const value = useMemo(
     () => ({ isAuthenticated: currentIsAuthenticated, markUnauthenticated }),
-    [currentIsAuthenticated, markUnauthenticated],
+    [currentIsAuthenticated, markUnauthenticated]
   );
 
   return (
@@ -81,7 +85,7 @@ export function useCardServiceAuth(): CardServiceAuthContextValue {
   const value = useContext(CardServiceAuthContext);
   if (value === null) {
     throw new Error(
-      "useCardServiceAuth는 CardServiceAuthProvider 내부에서만 사용할 수 있습니다.",
+      "useCardServiceAuth는 CardServiceAuthProvider 내부에서만 사용할 수 있습니다."
     );
   }
   return value;

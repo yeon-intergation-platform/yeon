@@ -2,7 +2,6 @@ import { credentialSetPasswordBodySchema } from "@yeon/api-contract/credential";
 import { errorResponseSchema } from "@yeon/api-contract/error";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-
 import { AuthFlowError } from "@/server/auth/auth-errors";
 import {
   respondWithAuthError,

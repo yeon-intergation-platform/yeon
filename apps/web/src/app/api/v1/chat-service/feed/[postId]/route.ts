@@ -6,7 +6,6 @@ import {
 import { z } from "zod";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-
 import {
   ChatServiceFeedSpringBackendHttpError,
   deleteChatServiceFeedPostInSpring,
@@ -18,7 +17,6 @@ import {
   resolveChatServiceGuestProfileInSpring,
 } from "@/server/chat-service-auth-spring-client";
 import { ServiceError } from "@/server/errors/service-error";
-
 import {
   getOptionalChatServiceAuth,
   jsonChatServiceError,

@@ -1,7 +1,15 @@
 "use client";
-
-import { useState, type FormEvent } from "react";
-
+import { useState } from "react";
+import {
+  YeonButton,
+  YeonField,
+  YeonText,
+  YeonForm,
+  YeonModal,
+  YeonView,
+  type YeonFormEvent,
+  type YeonFormElement,
+} from "@yeon/ui";
 import { CARD_SERVICE_COMMON_CLASS } from "../card-service-common.const";
 import { SHARED_FEATURE_CLASS } from "../../shared-style-constants";
 import { useDeleteDeck } from "../hooks";
@@ -24,7 +32,7 @@ export function DeleteDeckConfirm({
 
   const canSubmit = typed === deckTitle && !isPending;
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (event: YeonFormEvent<YeonFormElement>) => {
     event.preventDefault();
     if (!canSubmit) return;
     mutate(deckId, {
@@ -35,55 +43,76 @@ export function DeleteDeckConfirm({
   };
 
   return (
-    <div
+    <YeonModal
+      visible
+      aria-label="덱 삭제"
       className={SHARED_FEATURE_CLASS.modalOverlay}
-      role="dialog"
-      aria-modal="true"
       onClick={onClose}
+      onRequestClose={onClose}
     >
-      <div
+      <YeonView
         className={SHARED_FEATURE_CLASS.modalCard}
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className={CARD_SERVICE_COMMON_CLASS.panelBodyTitle}>덱 삭제</h2>
-        <p className={`mt-3 ${CARD_SERVICE_COMMON_CLASS.mutedErrorTextMd}`}>
+        <YeonText
+          as="h2"
+          variant="unstyled"
+          tone="inherit"
+          className={CARD_SERVICE_COMMON_CLASS.panelBodyTitle}
+        >
+          덱 삭제
+        </YeonText>
+        <YeonText
+          as="p"
+          variant="unstyled"
+          tone="inherit"
+          className={`mt-3 ${CARD_SERVICE_COMMON_CLASS.mutedErrorTextMd}`}
+        >
           이 작업은 되돌릴 수 없습니다. 덱과 카드가 모두 삭제됩니다.
-        </p>
-        <p className={`mt-3 ${CARD_SERVICE_COMMON_CLASS.mutedErrorTextMd}`}>
+        </YeonText>
+        <YeonText
+          as="p"
+          variant="unstyled"
+          tone="inherit"
+          className={`mt-3 ${CARD_SERVICE_COMMON_CLASS.mutedErrorTextMd}`}
+        >
           계속하려면 덱 제목{" "}
-          <span className="font-semibold text-[#111]">{deckTitle}</span>을(를)
-          아래에 그대로 입력해주세요.
-        </p>
-        <form onSubmit={handleSubmit} className="mt-4 flex flex-col gap-3">
-          <input
+          <YeonText
+            as="span"
+            variant="unstyled"
+            tone="inherit"
+            className="font-semibold text-[#111]"
+          >
+            {deckTitle}
+          </YeonText>
+          을(를) 아래에 그대로 입력해주세요.
+        </YeonText>
+        <YeonForm onSubmit={handleSubmit} className="mt-4 flex flex-col gap-3">
+          <YeonField
             value={typed}
             onChange={(e) => setTyped(e.target.value)}
             autoFocus
-            className={SHARED_FEATURE_CLASS.inputText14}
           />
           {error ? (
-            <p className={CARD_SERVICE_COMMON_CLASS.errorTextSm}>
+            <YeonText
+              as="p"
+              variant="caption"
+              tone="primary"
+              className="font-semibold"
+            >
               {error.message}
-            </p>
+            </YeonText>
           ) : null}
-          <div className="mt-2 flex justify-end gap-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className={SHARED_FEATURE_CLASS.ghostButtonMd14}
-            >
+          <YeonView className="mt-2 flex justify-end gap-2">
+            <YeonButton type="button" onClick={onClose} variant="secondary">
               취소
-            </button>
-            <button
-              type="submit"
-              disabled={!canSubmit}
-              className="rounded-xl bg-red-600 px-4 py-2 text-[14px] font-semibold text-white transition-colors hover:bg-red-700 disabled:opacity-50"
-            >
+            </YeonButton>
+            <YeonButton type="submit" disabled={!canSubmit} variant="danger">
               {isPending ? "삭제 중..." : "영구 삭제"}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+            </YeonButton>
+          </YeonView>
+        </YeonForm>
+      </YeonView>
+    </YeonModal>
   );
 }

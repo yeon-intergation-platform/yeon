@@ -1,13 +1,14 @@
-import type { Metadata } from "next";
-import Link from "next/link";
-
+import { YeonLink } from "@yeon/ui";
+import type { YeonPageMetadata } from "@yeon/ui/runtime/YeonPageMetadata";
+import { YeonText, YeonView } from "@yeon/ui";
+import { YEON_WEB_AUTH_CLASS } from "@yeon/ui/theme/web-style-tokens";
 import { NON_INDEXABLE_ROBOTS } from "@/lib/seo";
 import { SITE_BRAND_NAME } from "@/lib/site-brand";
 import { normalizeAuthRedirectPath } from "@/server/auth/constants";
 import { AuthShell } from "@/features/auth-credentials/auth-shell";
 import { LoginForm } from "@/features/auth-credentials/login-form";
 
-export const metadata: Metadata = {
+export const metadata: YeonPageMetadata = {
   title: `이메일 로그인 | ${SITE_BRAND_NAME}`,
   robots: NON_INDEXABLE_ROBOTS,
 };
@@ -34,36 +35,37 @@ export default async function CredentialLoginPage({ searchParams }: PageProps) {
       title="이메일로 로그인"
       description="가입한 이메일과 비밀번호로 로그인하세요."
       footer={
-        <div className="flex flex-wrap items-center justify-between gap-3 text-[13px] text-white/70">
-          <Link
+        <YeonView className={YEON_WEB_AUTH_CLASS.footerLinks}>
+          <YeonLink
             href={`/auth/register?next=${encodeURIComponent(nextPath)}`}
-            className="font-bold text-white/85 underline-offset-4 hover:underline"
+            className={YEON_WEB_AUTH_CLASS.inlineLinkStrong}
           >
             계정 만들기
-          </Link>
-          <Link
+          </YeonLink>
+          <YeonLink
             href="/auth/reset-request"
-            className="underline-offset-4 hover:underline"
+            className={YEON_WEB_AUTH_CLASS.inlineLink}
           >
             비밀번호 찾기
-          </Link>
-          <Link
+          </YeonLink>
+          <YeonLink
             href={`/?login=1&next=${encodeURIComponent(nextPath)}`}
-            className="underline-offset-4 hover:underline"
+            className={YEON_WEB_AUTH_CLASS.inlineLink}
           >
             소셜 로그인으로 돌아가기
-          </Link>
-        </div>
+          </YeonLink>
+        </YeonView>
       }
     >
       {showResetSuccess ? (
-        <div
-          role="status"
-          className="grid gap-1 rounded-[16px] border border-white/[0.1] bg-[rgba(248,247,243,0.08)] p-4 text-[13px] leading-[1.55] text-[#f8f7f3]"
-        >
-          <p className="m-0 font-bold">비밀번호가 재설정되었습니다.</p>
-          <p className="m-0">새 비밀번호로 로그인해 주세요.</p>
-        </div>
+        <YeonView role="status" className={YEON_WEB_AUTH_CLASS.alertPanel}>
+          <YeonText variant="unstyled" tone="inherit" className="m-0 font-bold">
+            비밀번호가 재설정되었습니다.
+          </YeonText>
+          <YeonText variant="unstyled" tone="inherit" className="m-0">
+            새 비밀번호로 로그인해 주세요.
+          </YeonText>
+        </YeonView>
       ) : null}
       <LoginForm nextPath={nextPath} />
     </AuthShell>

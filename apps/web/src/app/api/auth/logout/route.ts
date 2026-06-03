@@ -1,6 +1,6 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-
+import { createYeonUrl } from "@yeon/ui/runtime/YeonBrowserRuntime";
 import {
   AUTH_SESSION_COOKIE_NAME,
   getAppOrigin,
@@ -14,18 +14,18 @@ export async function POST(request: NextRequest) {
       request.cookies
         .getAll(AUTH_SESSION_COOKIE_NAME)
         .map((cookie) => cookie.value.trim())
-        .filter(Boolean),
-    ),
+        .filter(Boolean)
+    )
   );
 
   await Promise.all(
     sessionTokens.map((sessionToken) =>
-      deleteRootAuthSessionInSpring(sessionToken),
-    ),
+      deleteRootAuthSessionInSpring(sessionToken)
+    )
   );
 
   const response = NextResponse.redirect(
-    new URL("/", getAppOrigin(request.nextUrl.origin)),
+    createYeonUrl("/", getAppOrigin(request.nextUrl.origin)),
     { status: 303 }
   );
 

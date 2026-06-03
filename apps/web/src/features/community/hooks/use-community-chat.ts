@@ -1,8 +1,10 @@
 "use client";
-
 import { useCallback, useMemo } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-
+import {
+  useYeonMutation as useMutation,
+  useYeonQuery as useQuery,
+  useYeonQueryClient as useQueryClient,
+} from "@yeon/ui/runtime/YeonQuery";
 import { resolveCommunityGuestNickname } from "../community-guest-identity";
 import {
   readPresenceSessionId,

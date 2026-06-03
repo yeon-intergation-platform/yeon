@@ -1,7 +1,16 @@
 "use client";
-
-import { useState, type FormEvent } from "react";
-
+import { useState } from "react";
+import {
+  YeonButton,
+  YeonField,
+  YeonText,
+  YeonLabel,
+  YeonForm,
+  YeonModal,
+  YeonView,
+  type YeonFormEvent,
+  type YeonFormElement,
+} from "@yeon/ui";
 import { analyticsEvents, trackEvent } from "@/lib/analytics";
 import { CARD_SERVICE_COMMON_CLASS } from "../card-service-common.const";
 import { SHARED_FEATURE_CLASS } from "../../shared-style-constants";
@@ -21,7 +30,7 @@ export function CreateDeckDialog({ onClose }: CreateDeckDialogProps) {
   const trimmedTitle = title.trim();
   const canSubmit = trimmedTitle.length > 0 && !isPending;
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (event: YeonFormEvent<YeonFormElement>) => {
     event.preventDefault();
     if (!canSubmit) {
       return;
@@ -48,65 +57,80 @@ export function CreateDeckDialog({ onClose }: CreateDeckDialogProps) {
   };
 
   return (
-    <div
+    <YeonModal
+      visible
+      aria-label="새 덱 만들기"
       className={SHARED_FEATURE_CLASS.modalOverlay}
-      role="dialog"
-      aria-modal="true"
       onClick={onClose}
+      onRequestClose={onClose}
     >
-      <div
+      <YeonView
         className={SHARED_FEATURE_CLASS.modalCard}
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className={CARD_SERVICE_COMMON_CLASS.panelBodyTitle}>
+        <YeonText
+          as="h2"
+          variant="unstyled"
+          tone="inherit"
+          className={CARD_SERVICE_COMMON_CLASS.panelBodyTitle}
+        >
           새 덱 만들기
-        </h2>
-        <form onSubmit={handleSubmit} className="mt-5 flex flex-col gap-4">
-          <label className="flex flex-col gap-2">
-            <span className={SHARED_FEATURE_CLASS.text13Neutral}>제목</span>
-            <input
+        </YeonText>
+        <YeonForm onSubmit={handleSubmit} className="mt-5 flex flex-col gap-4">
+          <YeonLabel className="flex flex-col gap-2">
+            <YeonText
+              as="span"
+              variant="unstyled"
+              tone="inherit"
+              className={SHARED_FEATURE_CLASS.text13Neutral}
+            >
+              제목
+            </YeonText>
+            <YeonField
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               maxLength={120}
               autoFocus
-              className={SHARED_FEATURE_CLASS.inputText14}
             />
-          </label>
-          <label className="flex flex-col gap-2">
-            <span className={SHARED_FEATURE_CLASS.text13Neutral}>
+          </YeonLabel>
+          <YeonLabel className="flex flex-col gap-2">
+            <YeonText
+              as="span"
+              variant="unstyled"
+              tone="inherit"
+              className={SHARED_FEATURE_CLASS.text13Neutral}
+            >
               설명 (선택)
-            </span>
-            <textarea
+            </YeonText>
+            <YeonField
+              as="textarea"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               maxLength={2000}
               rows={3}
-              className={`resize-none ${SHARED_FEATURE_CLASS.inputText14}`}
+              className="resize-none"
             />
-          </label>
+          </YeonLabel>
           {error ? (
-            <p className={CARD_SERVICE_COMMON_CLASS.errorTextSm}>
+            <YeonText
+              as="p"
+              variant="caption"
+              tone="primary"
+              className="font-semibold"
+            >
               {error.message}
-            </p>
+            </YeonText>
           ) : null}
-          <div className="mt-2 flex justify-end gap-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className={SHARED_FEATURE_CLASS.ghostButtonMd14}
-            >
+          <YeonView className="mt-2 flex justify-end gap-2">
+            <YeonButton type="button" onClick={onClose} variant="secondary">
               취소
-            </button>
-            <button
-              type="submit"
-              disabled={!canSubmit}
-              className={`${SHARED_FEATURE_CLASS.primaryActionButtonMd14} disabled:opacity-50`}
-            >
+            </YeonButton>
+            <YeonButton type="submit" disabled={!canSubmit} variant="primary">
               {isPending ? "생성 중..." : "만들기"}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+            </YeonButton>
+          </YeonView>
+        </YeonForm>
+      </YeonView>
+    </YeonModal>
   );
 }

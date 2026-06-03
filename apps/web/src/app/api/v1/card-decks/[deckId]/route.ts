@@ -1,7 +1,6 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { updateCardDeckBodySchema } from "@yeon/api-contract/card-decks";
-
 import {
   jsonError,
   requireAuthenticatedUser,
@@ -17,7 +16,7 @@ export const runtime = "nodejs";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ deckId: string }> },
+  { params }: { params: Promise<{ deckId: string }> }
 ) {
   const { currentUser, response } = await requireAuthenticatedUser(request);
   if (!currentUser) return response;
@@ -37,7 +36,7 @@ export async function GET(
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: Promise<{ deckId: string }> },
+  { params }: { params: Promise<{ deckId: string }> }
 ) {
   const { currentUser, response } = await requireAuthenticatedUser(request);
   if (!currentUser) return response;
@@ -56,7 +55,11 @@ export async function PATCH(
   }
 
   try {
-    const deck = await updateCardDeckInSpring(currentUser.id, deckId, parsed.data);
+    const deck = await updateCardDeckInSpring(
+      currentUser.id,
+      deckId,
+      parsed.data
+    );
     return NextResponse.json(deck);
   } catch (error) {
     if (error instanceof CardDecksSpringBackendHttpError) {
@@ -69,7 +72,7 @@ export async function PATCH(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ deckId: string }> },
+  { params }: { params: Promise<{ deckId: string }> }
 ) {
   const { currentUser, response } = await requireAuthenticatedUser(request);
   if (!currentUser) return response;

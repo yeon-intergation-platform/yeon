@@ -1,7 +1,20 @@
 "use client";
-
-import { useEffect, type FormEventHandler, type ReactNode } from "react";
-import { X } from "lucide-react";
+import type { ReactNode } from "react";
+import {
+  YeonButton,
+  YeonIcon,
+  YeonForm,
+  YeonModal,
+  YeonText,
+  YeonView,
+  YEON_WEB_SHADOW_CLASS,
+  type YeonFormEventHandler,
+  type YeonFormElement,
+} from "@yeon/ui";
+import {
+  useYeonBodyScrollLock,
+  useYeonEscapeKey,
+} from "@yeon/ui/hooks/YeonBrowserHooks";
 
 type RoomCreateDialogProps = {
   open: boolean;
@@ -12,14 +25,13 @@ type RoomCreateDialogProps = {
   onClose: () => void;
   children: ReactNode;
   as?: "div" | "form";
-  onSubmit?: FormEventHandler<HTMLFormElement>;
+  onSubmit?: YeonFormEventHandler<YeonFormElement>;
   closeDisabled?: boolean;
   panelClassName?: string;
   bodyClassName?: string;
 };
 
-const DEFAULT_PANEL_CLASS =
-  "relative z-10 max-h-[calc(100vh-3rem)] w-full max-w-[560px] overflow-y-auto rounded-[28px] bg-white shadow-[0_24px_80px_rgba(0,0,0,0.22)]";
+const DEFAULT_PANEL_CLASS = `relative z-10 max-h-[calc(100vh-3rem)] w-full max-w-[560px] overflow-y-auto rounded-[28px] bg-white ${YEON_WEB_SHADOW_CLASS.popover}`;
 
 export function RoomCreateDialog({
   open,
@@ -35,81 +47,81 @@ export function RoomCreateDialog({
   panelClassName,
   bodyClassName = "p-5 md:p-6",
 }: RoomCreateDialogProps) {
-  useEffect(() => {
-    if (!open) return;
-
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== "Escape" || closeDisabled) return;
-      event.preventDefault();
-      onClose();
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [closeDisabled, onClose, open]);
+  useYeonBodyScrollLock(open);
+  useYeonEscapeKey(() => {
+    if (closeDisabled) return;
+    onClose();
+  }, open);
 
   if (!open) return null;
 
   const content = (
     <>
-      <div className="flex items-start justify-between gap-4 border-b border-[#e5e5e5] px-6 py-5">
-        <div>
-          <h2
+      <YeonView className="flex items-start justify-between gap-4 border-b border-[#e5e5e5] px-6 py-5">
+        <YeonView>
+          <YeonText
+            as="h2"
+            variant="unstyled"
+            tone="inherit"
             id={titleId}
             className="text-[22px] font-black tracking-[-0.04em] text-[#111]"
           >
             {title}
-          </h2>
+          </YeonText>
           {description ? (
-            <p className="mt-2 text-[13px] font-medium leading-5 text-[#666]">
+            <YeonText
+              as="p"
+              variant="unstyled"
+              tone="inherit"
+              className="mt-2 text-[13px] font-medium leading-5 text-[#666]"
+            >
               {description}
-            </p>
+            </YeonText>
           ) : null}
-        </div>
-        <button
+        </YeonView>
+        <YeonButton
           type="button"
+          variant="icon"
+          size="icon"
           onClick={onClose}
           aria-label={closeLabel}
           disabled={closeDisabled}
-          className="-mr-1 rounded-full p-1 text-[#444] transition-colors hover:bg-[#f5f5f5] hover:text-[#111] disabled:cursor-not-allowed disabled:opacity-40"
+          className="-mr-1 rounded-full p-1 text-[#666] hover:bg-[#fafafa] hover:text-[#111] disabled:cursor-not-allowed disabled:opacity-40"
         >
-          <X size={28} strokeWidth={1.8} />
-        </button>
-      </div>
-      <div className={bodyClassName}>{children}</div>
+          <YeonIcon name="x" size={28} strokeWidth={1.8} />
+        </YeonButton>
+      </YeonView>
+      <YeonView className={bodyClassName}>{children}</YeonView>
     </>
   );
 
   return (
-    <div
-      className="fixed inset-0 z-[80] flex items-center justify-center px-4 py-6"
-      role="dialog"
-      aria-modal="true"
+    <YeonModal
+      visible={open}
+      onRequestClose={closeDisabled ? undefined : onClose}
       aria-labelledby={titleId}
+      className="fixed inset-0 z-[80] m-0 flex h-auto max-h-none w-auto max-w-none items-center justify-center border-0 bg-transparent px-4 py-6"
     >
-      <button
+      <YeonButton
         type="button"
+        variant="ghost"
         aria-label={closeLabel}
         onClick={onClose}
         disabled={closeDisabled}
-        className="absolute inset-0 bg-[rgba(0,0,0,0.36)] disabled:cursor-not-allowed"
+        className="absolute inset-0 h-auto w-auto rounded-none bg-[#111]/40 p-0 hover:bg-[#111]/40 disabled:cursor-not-allowed"
       />
       {as === "form" ? (
-        <form
+        <YeonForm
           onSubmit={onSubmit}
           className={panelClassName ?? DEFAULT_PANEL_CLASS}
         >
           {content}
-        </form>
+        </YeonForm>
       ) : (
-        <div className={panelClassName ?? DEFAULT_PANEL_CLASS}>{content}</div>
+        <YeonView className={panelClassName ?? DEFAULT_PANEL_CLASS}>
+          {content}
+        </YeonView>
       )}
-    </div>
+    </YeonModal>
   );
 }

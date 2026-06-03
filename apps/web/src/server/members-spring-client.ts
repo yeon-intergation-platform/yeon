@@ -1,3 +1,4 @@
+import { fetchYeon } from "@yeon/ui/runtime/YeonBrowserRuntime";
 import type {
   BulkDeleteMembersBody,
   CreateMemberBody,
@@ -65,7 +66,7 @@ async function fetchJsonFromSpring(
   userId: string,
   init?: FetchInit
 ) {
-  const response = await fetch(`${resolveSpringBackendBaseUrl()}${path}`, {
+  const response = await fetchYeon(`${resolveSpringBackendBaseUrl()}${path}`, {
     method: init?.method ?? "GET",
     body: init?.body,
     cache: "no-store",

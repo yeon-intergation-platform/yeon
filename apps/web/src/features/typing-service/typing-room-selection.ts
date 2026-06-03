@@ -1,12 +1,11 @@
 import type { TypingRoomLanguage } from "@yeon/race-shared";
-
 import type { TypingDeckOption } from "./use-typing-settings";
 
 export function resolveTypingRoomSelectedDeck(
   selectedDeckId: string | undefined,
   decks: TypingDeckOption[],
   fallbackDeck: TypingDeckOption,
-  language: TypingRoomLanguage,
+  language: TypingRoomLanguage
 ): TypingDeckOption {
   const matchedDeck = decks.find((deck) => deck.id === selectedDeckId);
   if (matchedDeck) return matchedDeck;

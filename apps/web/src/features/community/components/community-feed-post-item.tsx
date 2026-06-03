@@ -1,10 +1,14 @@
 "use client";
-
-import Link from "next/link";
 import { useEffect, useState } from "react";
-import { MessageCircle } from "lucide-react";
-import { SHARED_FEATURE_CLASS } from "@/features/shared-style-constants";
-
+import { YEON_WEB_SHARED_CLASS as SHARED_FEATURE_CLASS } from "@yeon/ui/theme/web-style-tokens";
+import {
+  YeonButton,
+  YeonIcon,
+  YeonSurface,
+  YeonText,
+  YeonView,
+  YeonLink,
+} from "@yeon/ui";
 import { type ChatServiceFeedPost } from "../chat-service-api";
 import { parseCommunityPost } from "../community-post-format";
 import { FeedPostEditForm, FeedPostReplyForm } from "./community-feed-forms";
@@ -65,7 +69,7 @@ export function FeedPostItem(props: {
   }, [isEditing, post.body]);
 
   return (
-    <article className="rounded-2xl border border-[#e5e7eb] bg-white p-5 shadow-sm">
+    <YeonSurface as="article" className="p-5">
       {isEditing ? (
         <FeedPostEditForm
           draft={editDraft}
@@ -81,93 +85,152 @@ export function FeedPostItem(props: {
         />
       ) : (
         <>
-          <div
+          <YeonView
             className={`flex flex-wrap items-center gap-x-2 gap-y-1 ${SHARED_FEATURE_CLASS.text13Secondary}`}
           >
-            <span className="font-bold text-[#111827]">
+            <YeonText
+              as="span"
+              variant="unstyled"
+              tone="inherit"
+              className="font-bold text-[#111]"
+            >
               {post.author.nickname}
-            </span>
-            <span aria-hidden="true">·</span>
-            <time dateTime={post.createdAt}>
+            </YeonText>
+            <YeonText
+              as="span"
+              variant="unstyled"
+              tone="inherit"
+              aria-hidden="true"
+            >
+              ·
+            </YeonText>
+            <YeonText
+              as="time"
+              variant="unstyled"
+              tone="inherit"
+              dateTime={post.createdAt}
+            >
               {formatCommunityRelativeTime(post.createdAt)}
-            </time>
-            <span className="ml-auto">
+            </YeonText>
+            <YeonText
+              as="span"
+              variant="unstyled"
+              tone="inherit"
+              className="ml-auto"
+            >
               <CommunityCategoryBadge category={parsedPost.category} />
-            </span>
-          </div>
+            </YeonText>
+          </YeonView>
 
-          <Link
+          <YeonLink
             href={`/community/posts/${post.id}`}
             className="mt-3 block no-underline"
           >
-            <h2 className="line-clamp-2 text-[18px] font-bold tracking-[-0.02em] text-[#111827]">
+            <YeonText
+              as="h2"
+              variant="unstyled"
+              tone="inherit"
+              className="line-clamp-2 text-[18px] font-bold tracking-[-0.02em] text-[#111]"
+            >
               {parsedPost.title}
-            </h2>
+            </YeonText>
             {parsedPost.content && parsedPost.content !== parsedPost.title ? (
-              <p className="mt-2 line-clamp-2 whitespace-pre-wrap text-[15px] leading-[1.65] text-[#374151]">
+              <YeonText
+                as="p"
+                variant="unstyled"
+                tone="inherit"
+                className="mt-2 line-clamp-2 whitespace-pre-wrap text-[15px] leading-[1.65] text-[#666]"
+              >
                 {parsedPost.content}
-              </p>
+              </YeonText>
             ) : null}
-          </Link>
+          </YeonLink>
         </>
       )}
 
       {postError ? (
-        <p className="mt-2 text-[12px] text-red-600">{postError}</p>
+        <YeonText
+          variant="caption"
+          tone="danger"
+          className="mt-2 font-semibold"
+        >
+          {postError}
+        </YeonText>
       ) : null}
 
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-[#f3f4f6] pt-3">
-        <button
+      <YeonView className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-[#e5e5e5] pt-3">
+        <YeonButton
           type="button"
           onClick={onToggleReplies}
           disabled={isRepliesLoading}
           aria-expanded={expanded}
-          className="inline-flex min-h-[44px] items-center gap-1.5 rounded-xl px-3 py-2.5 text-[13px] font-bold text-[#4b5563] transition-colors hover:bg-[#f3f4f6] disabled:text-[#9ca3af]"
+          variant="ghost"
+          className="min-h-[44px] gap-1.5 px-3 py-2.5 text-[13px] font-bold"
         >
-          <MessageCircle size={16} aria-hidden="true" />
+          <YeonIcon name="message-circle" size={16} />
           {post.replyCount > 0 ? `댓글 ${post.replyCount}` : "댓글 달기"}
-        </button>
-        <div className="flex flex-wrap items-center gap-2">
-          <button
+        </YeonButton>
+        <YeonView className="flex flex-wrap items-center gap-2">
+          <YeonButton
             type="button"
+            size="sm"
+            variant="ghost"
             onClick={() => setIsEditing(true)}
             disabled={isUpdatingPost || isDeletingPost}
-            className="min-h-[44px] rounded-xl px-3 py-2.5 text-[12px] font-bold text-[#4b5563] transition-colors hover:bg-[#f3f4f6] hover:text-[#111827] disabled:text-[#9ca3af]"
+            className="min-h-[44px] px-3 py-2.5 text-[12px] font-bold"
           >
             수정
-          </button>
-          <button
+          </YeonButton>
+          <YeonButton
             type="button"
+            size="sm"
+            variant="ghost"
             onClick={() => {
               void onDeletePost(post.id);
             }}
             disabled={isUpdatingPost || isDeletingPost}
-            className="min-h-[44px] rounded-xl px-3 py-2.5 text-[12px] font-bold text-red-600 transition-colors hover:bg-red-50 disabled:text-[#9ca3af]"
+            className="min-h-[44px] px-3 py-2.5 text-[12px] font-bold"
           >
             {isDeletingPost ? "삭제 중" : "삭제"}
-          </button>
+          </YeonButton>
           {isRepliesLoading ? (
-            <span className="px-2 text-[12px] font-semibold text-[#6b7280]">
+            <YeonText
+              as="span"
+              variant="unstyled"
+              tone="inherit"
+              className="px-2 text-[12px] font-semibold text-[#666]"
+            >
               댓글 불러오는 중
-            </span>
+            </YeonText>
           ) : null}
-        </div>
-      </div>
+        </YeonView>
+      </YeonView>
 
       {replyError ? (
-        <p className="mt-2 text-[12px] text-red-600">{replyError}</p>
+        <YeonText
+          variant="caption"
+          tone="danger"
+          className="mt-2 font-semibold"
+        >
+          {replyError}
+        </YeonText>
       ) : null}
 
       {expanded ? (
-        <div className="mt-4 space-y-2 border-t border-[#f3f4f6] pt-4">
+        <YeonView className="mt-4 space-y-2 border-t border-[#e5e5e5] pt-4">
           {isRepliesLoading ? (
-            <p className={SHARED_FEATURE_CLASS.text13Secondary}>
+            <YeonText
+              as="p"
+              variant="unstyled"
+              tone="inherit"
+              className={SHARED_FEATURE_CLASS.text13Secondary}
+            >
               댓글을 불러오는 중...
-            </p>
+            </YeonText>
           ) : null}
 
           {replies.length ? (
-            <div className="space-y-2">
+            <YeonView className="space-y-2">
               {replies.map((reply) => (
                 <FeedReplyItem
                   key={reply.id}
@@ -179,7 +242,7 @@ export function FeedPostItem(props: {
                   }}
                 />
               ))}
-            </div>
+            </YeonView>
           ) : null}
 
           <FeedPostReplyForm
@@ -189,8 +252,8 @@ export function FeedPostItem(props: {
             onChange={(value) => onChangeReplyDraft(post.id, value)}
             onSubmit={() => onSubmitReply(post.id)}
           />
-        </div>
+        </YeonView>
       ) : null}
-    </article>
+    </YeonSurface>
   );
 }

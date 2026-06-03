@@ -1,13 +1,8 @@
+import { getYeonHtmlVisibleText } from "@yeon/ui/rich-content/YeonRichDom";
+
 export function htmlToVisibleText(value: string) {
   if (!value.trim()) return "";
-  if (typeof DOMParser === "undefined") {
-    return value
-      .replace(/<[^>]+>/g, " ")
-      .replace(/\s+/g, " ")
-      .trim();
-  }
-  const document = new DOMParser().parseFromString(value, "text/html");
-  return (document.body.textContent ?? "").replace(/\s+/g, " ").trim();
+  return getYeonHtmlVisibleText(value);
 }
 
 export function isEmptyRichContent(value: string) {

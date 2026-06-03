@@ -2,7 +2,6 @@ import { mergeGuestRequestSchema } from "@yeon/api-contract/card-deck-merge-gues
 import { errorResponseSchema } from "@yeon/api-contract/error";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-
 import {
   CardDeckMergeGuestSpringBackendHttpError,
   mergeGuestCardDecksInSpring,
@@ -52,7 +51,7 @@ export async function POST(request: NextRequest) {
     console.error("guest 덱 이관 처리 중 오류", error);
     return jsonError(
       "서버 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.",
-      500,
+      500
     );
   }
 }

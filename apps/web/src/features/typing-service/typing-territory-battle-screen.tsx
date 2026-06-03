@@ -1,8 +1,6 @@
 "use client";
-
 import { useEffect, useMemo, useState } from "react";
-import type { FormEvent } from "react";
-import { useRouter } from "next/navigation";
+import { useYeonRouter } from "@yeon/ui/runtime/YeonNavigation";
 import {
   TERRITORY_BATTLE_PHASE,
   TERRITORY_BATTLE_TEAM,
@@ -18,6 +16,23 @@ import {
   getTerritoryPhaseLabel,
   useTerritoryBattleRoom,
 } from "./use-territory-battle-room";
+import {
+  YeonBadge,
+  YeonButton,
+  YeonField,
+  YeonSurface,
+  YeonText,
+  YeonForm,
+  YeonView,
+  type YeonFormEvent,
+  type YeonFormElement,
+  YEON_WEB_SHADOW_CLASS,
+} from "@yeon/ui";
+import {
+  clearYeonInterval,
+  getYeonNow,
+  scheduleYeonInterval,
+} from "@yeon/ui/runtime/YeonBrowserRuntime";
 
 type TeamScore = {
   red: number;
@@ -39,20 +54,12 @@ const TEAM_VIEW = {
   red: {
     label: "빨강팀",
     shortLabel: "빨강",
-    gradient: "from-red-700 via-red-600 to-red-500",
-    border: "border-red-400/70",
-    text: "text-red-100",
-    tile: "border-red-300 bg-red-600 text-white",
-    glow: "shadow-[0_0_40px_rgba(199,92,92,0.18)]",
+    marker: "RED",
   },
   blue: {
     label: "파랑팀",
     shortLabel: "파랑",
-    gradient: "from-sky-600 via-sky-500 to-blue-400",
-    border: "border-sky-300/70",
-    text: "text-sky-100",
-    tile: "border-sky-300 bg-sky-600 text-white",
-    glow: "shadow-[0_0_40px_rgba(79,111,173,0.18)]",
+    marker: "BLUE",
   },
 } as const;
 
@@ -66,34 +73,45 @@ function getTeamDisplayLabel(team: TerritoryBattleTeam) {
 
 function getTeamResultClass(team: TerritoryBattleTeam) {
   return team === TERRITORY_BATTLE_TEAM.RED
-    ? "border-red-400 bg-red-600"
-    : "border-sky-400 bg-sky-600";
+    ? "border-[#111] bg-[#fafafa]"
+    : "border-[#e5e5e5] bg-white";
 }
 
 function TerritoryGateScreen() {
   return (
-    <div className="min-h-screen bg-white px-4 py-8 text-[#111]">
-      <main className="mx-auto flex min-h-[70vh] max-w-3xl flex-col items-center justify-center text-center">
-        <div className="rounded-3xl border border-[#e5e5e5] bg-[#fafafa] p-8">
-          <p className="text-[13px] font-black uppercase tracking-[0.24em] text-[#111]">
+    <YeonView className="min-h-screen bg-white px-4 py-8 text-[#111]">
+      <YeonView
+        as="main"
+        className="mx-auto flex min-h-[70vh] max-w-3xl flex-col items-center justify-center text-center"
+      >
+        <YeonSurface variant="panel" className="p-8">
+          <YeonText variant="label" className="uppercase tracking-[0.24em]">
             타자방 선입장 필요
-          </p>
-          <h1 className="mt-4 text-[34px] font-black tracking-[-0.06em]">
+          </YeonText>
+          <YeonText
+            as="h1"
+            variant="unstyled"
+            tone="inherit"
+            className="mt-4 text-[34px] font-black tracking-[-0.06em] text-[#111]"
+          >
             점령전은 타자방 참가 후 입장합니다.
-          </h1>
-          <p className="mt-3 text-[15px] font-medium leading-7 text-[#666]">
+          </YeonText>
+          <YeonText className="mt-3 font-medium">
             먼저 로비에서 타자방을 만들거나 참가한 다음, 대기방의 ‘점령전 입장’
             버튼으로 들어가 주세요.
-          </p>
-          <a
+          </YeonText>
+          <YeonButton
+            as="a"
             href="/typing-service/rooms"
-            className="mt-6 inline-flex rounded-2xl bg-[#111] px-6 py-3 text-[14px] font-black text-white"
+            variant="primary"
+            size="lg"
+            className="mt-6"
           >
             타자방 로비로 이동
-          </a>
-        </div>
-      </main>
-    </div>
+          </YeonButton>
+        </YeonSurface>
+      </YeonView>
+    </YeonView>
   );
 }
 
@@ -147,84 +165,117 @@ function TerritoryResultBoard({
   ];
 
   return (
-    <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/72 px-6 py-5">
-      <div className="relative grid h-full max-h-[760px] w-full max-w-[1360px] grid-rows-[96px_minmax(0,1fr)_96px] overflow-hidden rounded-[28px] border-2 border-sky-500/70 bg-black/80 shadow-[0_0_80px_rgba(250,204,21,0.35)]">
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-52 bg-[radial-gradient(circle_at_center,rgba(250,204,21,0.72)_0%,rgba(250,204,21,0.25)_34%,transparent_70%)]" />
-
-        <header className="relative flex items-center justify-center">
-          <div className="rounded-[28px] border-4 border-white bg-indigo-800 px-8 py-3 text-center shadow-[0_0_44px_rgba(250,204,21,0.72)]">
-            <p className="text-[44px] font-black leading-none tracking-[-0.08em] text-white [text-shadow:0_4px_0_rgba(0,0,0,0.55)]">
-              {winner === "draw" ? "무승부" : "승리"}
-            </p>
-          </div>
-        </header>
-
-        <section className="relative grid min-h-0 grid-cols-[minmax(220px,1fr)_minmax(420px,660px)_minmax(220px,1fr)] gap-6 px-8 pb-4">
-          {teamRows.map(({ team, players }) => (
-            <aside
-              key={team}
-              className="flex min-h-0 flex-col rounded-[24px] border-2 border-sky-500/60 bg-black/72 p-4"
+    <YeonView className="absolute inset-0 z-20 flex items-center justify-center bg-[#111]/70 px-6 py-5">
+      <YeonView
+        className={`relative grid h-full max-h-[760px] w-full max-w-[1360px] grid-rows-[96px_minmax(0,1fr)_96px] overflow-hidden rounded-[28px] border border-[#e5e5e5] bg-white ${YEON_WEB_SHADOW_CLASS.modal}`}
+      >
+        <YeonView
+          as="header"
+          className="relative flex items-center justify-center"
+        >
+          <YeonView className="rounded-[28px] border border-[#111] bg-[#111] px-8 py-3 text-center">
+            <YeonText
+              as="p"
+              variant="unstyled"
+              tone="inherit"
+              className="text-[44px] font-black leading-none tracking-[-0.08em] text-white"
             >
-              <div
-                className={`flex items-center gap-3 rounded-t-[18px] px-5 py-3 text-white ${
-                  team === TERRITORY_BATTLE_TEAM.RED ? "bg-[#111]" : "bg-[#666]"
-                }`}
-              >
-                <span className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-white bg-slate-900 text-[22px]">
-                  🚀
-                </span>
-                <p className="text-[24px] font-black tracking-[-0.05em]">
-                  {getTeamDisplayLabel(team)}
-                </p>
-              </div>
+              {winner === "draw" ? "무승부" : "승리"}
+            </YeonText>
+          </YeonView>
+        </YeonView>
 
-              <div className="mt-5 grid gap-3">
+        <YeonView
+          as="section"
+          className="relative grid min-h-0 grid-cols-[minmax(220px,1fr)_minmax(420px,660px)_minmax(220px,1fr)] gap-6 px-8 pb-4"
+        >
+          {teamRows.map(({ team, players }) => (
+            <YeonView
+              as="aside"
+              key={team}
+              className="flex min-h-0 flex-col rounded-[24px] border border-[#e5e5e5] bg-[#fafafa] p-4"
+            >
+              <YeonView className="flex items-center gap-3 rounded-t-[18px] border border-[#e5e5e5] bg-white px-5 py-3 text-[#111]">
+                <YeonText
+                  as="span"
+                  variant="unstyled"
+                  tone="inherit"
+                  className="flex h-12 w-12 items-center justify-center rounded-full border border-[#e5e5e5] bg-[#fafafa] text-[22px]"
+                >
+                  🚀
+                </YeonText>
+                <YeonText
+                  as="p"
+                  variant="unstyled"
+                  tone="inherit"
+                  className="text-[24px] font-black tracking-[-0.05em]"
+                >
+                  {getTeamDisplayLabel(team)}
+                </YeonText>
+              </YeonView>
+
+              <YeonView className="mt-5 grid gap-3">
                 {(players.length ? players : [null, null, null])
                   .slice(0, 3)
                   .map((player, index) => (
-                    <div
+                    <YeonView
                       key={player?.id ?? `${team}-empty-${index}`}
-                      className={`grid grid-cols-[42px_minmax(0,1fr)_auto] items-center gap-3 rounded-xl border border-white/20 bg-black/60 px-3 py-2 text-white ${
-                        index === 1 ? "ring-2 ring-purple-500" : ""
+                      className={`grid grid-cols-[42px_minmax(0,1fr)_auto] items-center gap-3 rounded-xl border border-[#e5e5e5] bg-white px-3 py-2 text-[#111] ${
+                        index === 1 ? "ring-2 ring-[#111]" : ""
                       }`}
                     >
-                      <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#fafafa] text-[20px] font-black text-[#111]">
+                      <YeonText
+                        as="span"
+                        variant="unstyled"
+                        tone="inherit"
+                        className="flex h-10 w-10 items-center justify-center rounded-full bg-[#fafafa] text-[20px] font-black text-[#111]"
+                      >
                         {index + 1}
-                      </span>
-                      <span className="truncate text-[14px] font-black">
+                      </YeonText>
+                      <YeonText
+                        as="span"
+                        variant="unstyled"
+                        tone="inherit"
+                        className="truncate text-[14px] font-black"
+                      >
                         {player?.nickname ?? "대기 중"}
-                      </span>
-                      <span className="text-[13px] font-black text-white/80">
+                      </YeonText>
+                      <YeonText
+                        as="span"
+                        variant="unstyled"
+                        tone="inherit"
+                        className="text-[13px] font-black text-[#666]"
+                      >
                         {player?.score ?? 0}
-                      </span>
-                    </div>
+                      </YeonText>
+                    </YeonView>
                   ))}
-              </div>
-            </aside>
+              </YeonView>
+            </YeonView>
           ))}
 
-          <div className="grid min-h-0 grid-cols-2 items-start gap-6 self-center">
+          <YeonView className="grid min-h-0 grid-cols-2 items-start gap-6 self-center">
             {teamRows.map(({ team, score, capturedCellCount }) => {
               const isWinner = winner === team;
 
               return (
-                <article
+                <YeonView
+                  as="article"
                   key={team}
-                  className={`rounded-[22px] border-4 bg-white p-2 shadow-xl ${
+                  className={`rounded-[22px] border bg-white p-2 shadow-xl ${
                     isWinner ? "scale-[1.02]" : "opacity-90"
                   } ${getTeamResultClass(team)}`}
                 >
-                  <div className="rounded-[18px] bg-white p-4">
-                    <h2
-                      className={`rounded-2xl px-4 py-3 text-center text-[30px] font-black tracking-[-0.08em] text-white ${
-                        team === TERRITORY_BATTLE_TEAM.RED
-                          ? "bg-[#111]"
-                          : "bg-[#666]"
-                      }`}
+                  <YeonView className="rounded-[18px] bg-white p-4">
+                    <YeonText
+                      as="h2"
+                      variant="unstyled"
+                      tone="inherit"
+                      className="rounded-2xl border border-[#e5e5e5] bg-[#fafafa] px-4 py-3 text-center text-[30px] font-black tracking-[-0.08em] text-[#111]"
                     >
                       {getTeamDisplayLabel(team)}
-                    </h2>
-                    <div className="mt-4 grid gap-4">
+                    </YeonText>
+                    <YeonView className="mt-4 grid gap-4">
                       <ResultScoreRow label="판 점수" value={`${score}P`} />
                       <ResultScoreRow
                         label="보너스 게임"
@@ -243,42 +294,70 @@ function TerritoryResultBoard({
                           />
                         </>
                       )}
-                    </div>
-                  </div>
-                </article>
+                    </YeonView>
+                  </YeonView>
+                </YeonView>
               );
             })}
-          </div>
-        </section>
+          </YeonView>
+        </YeonView>
 
-        <footer className="relative grid grid-cols-[220px_minmax(0,1fr)_220px] items-center gap-5 bg-slate-300/95 px-6">
-          <a
+        <YeonView
+          as="footer"
+          className="relative grid grid-cols-[220px_minmax(0,1fr)_220px] items-center gap-5 border-t border-[#e5e5e5] bg-[#fafafa] px-6"
+        >
+          <YeonButton
+            as="a"
             href="/typing-service/rooms"
-            className="rounded-[24px] bg-red-500 px-7 py-4 text-center text-[22px] font-black text-white shadow-lg"
+            variant="secondary"
+            size="xl"
+            className="rounded-[24px] text-[22px] font-black"
           >
             방 나가기
-          </a>
-          <p className="text-center text-[28px] font-black tracking-[-0.06em] text-white [text-shadow:0_2px_0_rgba(0,0,0,0.22)]">
+          </YeonButton>
+          <YeonText
+            as="p"
+            variant="unstyled"
+            tone="inherit"
+            className="text-center text-[28px] font-black tracking-[-0.06em] text-[#111]"
+          >
             {remainingSeconds}초 뒤 대기방으로 이동합니다.
-          </p>
-          <a
+          </YeonText>
+          <YeonButton
+            as="a"
             href={returnPath}
-            className="rounded-[24px] bg-sky-500 px-7 py-4 text-center text-[22px] font-black text-white shadow-lg"
+            variant="primary"
+            size="xl"
+            className="rounded-[24px] text-[22px] font-black"
           >
             대기방
-          </a>
-        </footer>
-      </div>
-    </div>
+          </YeonButton>
+        </YeonView>
+      </YeonView>
+    </YeonView>
   );
 }
 
 function ResultScoreRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-xl bg-[#111] px-4 py-2 text-white shadow-inner">
-      <span className="text-[18px] font-black tracking-[-0.04em]">{label}</span>
-      <span className="text-[20px] font-black tracking-[-0.04em]">{value}</span>
-    </div>
+    <YeonView className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-xl bg-[#111] px-4 py-2 text-white shadow-inner">
+      <YeonText
+        as="span"
+        variant="unstyled"
+        tone="inherit"
+        className="text-[18px] font-black tracking-[-0.04em]"
+      >
+        {label}
+      </YeonText>
+      <YeonText
+        as="span"
+        variant="unstyled"
+        tone="inherit"
+        className="text-[20px] font-black tracking-[-0.04em]"
+      >
+        {value}
+      </YeonText>
+    </YeonView>
   );
 }
 
@@ -310,9 +389,13 @@ function pickNextTargetWord(
 }
 
 function getCellClass(owner: TerritoryCellSnapshot["owner"]) {
-  if (owner === TERRITORY_BATTLE_TEAM.RED) return TEAM_VIEW.red.tile;
-  if (owner === TERRITORY_BATTLE_TEAM.BLUE) return TEAM_VIEW.blue.tile;
-  return "border-slate-600 bg-slate-800 text-white";
+  if (owner === TERRITORY_BATTLE_TEAM.RED) {
+    return "border-[#111] bg-[#fafafa] text-[#111]";
+  }
+  if (owner === TERRITORY_BATTLE_TEAM.BLUE) {
+    return "border-[#e5e5e5] bg-white text-[#111]";
+  }
+  return "border-[#e5e5e5] bg-[#fafafa] text-[#666]";
 }
 
 function getCellOwnerLabel(owner: TerritoryCellSnapshot["owner"]) {
@@ -339,71 +422,111 @@ function TerritoryCardBoard({
   const opponentTeam = getOpponentTeam(myTeam);
 
   return (
-    <div className="flex h-full min-h-0 flex-col rounded-[28px] border border-white/10 bg-[#111827] p-4 shadow-[0_30px_100px_rgba(0,0,0,0.28)]">
-      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 border-b border-white/10 pb-3">
-        <p className="text-left text-[14px] font-black text-red-200">
+    <YeonSurface
+      variant="outlined"
+      className={`flex h-full min-h-0 flex-col rounded-[28px] p-4 ${YEON_WEB_SHADOW_CLASS.territoryBoard}`}
+    >
+      <YeonView className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 border-b border-[#e5e5e5] pb-3">
+        <YeonText
+          as="p"
+          variant="unstyled"
+          tone="inherit"
+          className="text-left text-[14px] font-black text-[#111]"
+        >
           RED {redScore}P
-        </p>
-        <div className="text-center">
-          <p className="text-[26px] font-black leading-none tracking-[-0.06em] text-white">
+        </YeonText>
+        <YeonView className="text-center">
+          <YeonText
+            as="p"
+            variant="unstyled"
+            tone="inherit"
+            className="text-[26px] font-black leading-none tracking-[-0.06em] text-[#111]"
+          >
             {targetWord ? "READY" : "WAIT"}
-          </p>
-          <p className="mt-1 text-[11px] font-bold text-slate-300">
+          </YeonText>
+          <YeonText
+            as="p"
+            variant="unstyled"
+            tone="inherit"
+            className="mt-1 text-[11px] font-bold text-[#666]"
+          >
             상대팀 카드를 입력하면 내 팀 카드로 뒤집힙니다.
-          </p>
-        </div>
-        <p className="text-right text-[14px] font-black text-sky-200">
+          </YeonText>
+        </YeonView>
+        <YeonText
+          as="p"
+          variant="unstyled"
+          tone="inherit"
+          className="text-right text-[14px] font-black text-[#111]"
+        >
           BLUE {blueScore}P
-        </p>
-      </div>
+        </YeonText>
+      </YeonView>
 
-      <div className="flex min-h-0 flex-1 items-center justify-center py-4">
-        <div className="grid h-full max-h-[620px] w-full max-w-[720px] grid-cols-5 gap-2">
+      <YeonView className="flex min-h-0 flex-1 items-center justify-center py-4">
+        <YeonView className="grid h-full max-h-[620px] w-full max-w-[720px] grid-cols-5 gap-2">
           {board.map((cell) => {
             const isOpponentCard = cell.owner === opponentTeam;
             const isMyCard = cell.owner === myTeam;
             const isTarget = cell.word === targetWord;
 
             return (
-              <button
+              <YeonButton
                 key={cell.id}
                 type="button"
+                variant="secondary"
+                size="sm"
                 onClick={() => onPickWord(cell.word)}
-                className={`group relative min-h-20 rounded-[10px] border-2 px-2 py-3 text-center shadow-inner transition hover:-translate-y-0.5 hover:brightness-110 ${getCellClass(
+                className={`group relative min-h-20 rounded-[10px] border-2 px-2 py-3 text-center shadow-inner transition hover:-translate-y-0.5 ${getCellClass(
                   cell.owner
                 )} ${isTarget ? "ring-4 ring-[#111]" : ""} ${
                   isOpponentCard ? "cursor-pointer" : ""
                 } ${isMyCard ? "opacity-90" : ""}`}
               >
-                <span className="absolute left-2 top-2 rounded-full bg-black/30 px-2 py-0.5 text-[10px] font-black text-white/80">
+                <YeonText
+                  as="span"
+                  variant="unstyled"
+                  tone="inherit"
+                  className="absolute left-2 top-2 rounded-full border border-[#e5e5e5] bg-white px-2 py-0.5 text-[10px] font-black text-[#666]"
+                >
                   {getCellOwnerLabel(cell.owner)}
-                </span>
-                <span className="flex h-full items-center justify-center pt-3 text-[18px] font-black tracking-[-0.05em] text-white [text-shadow:0_2px_0_rgba(0,0,0,0.28)]">
+                </YeonText>
+                <YeonText
+                  as="span"
+                  variant="unstyled"
+                  tone="inherit"
+                  className="flex h-full items-center justify-center pt-3 text-[18px] font-black tracking-[-0.05em]"
+                >
                   {cell.word}
-                </span>
+                </YeonText>
                 {isOpponentCard && (
-                  <span className="absolute inset-x-2 bottom-2 rounded-full bg-white/18 py-0.5 text-[10px] font-black text-white opacity-0 transition group-hover:opacity-100">
+                  <YeonText
+                    as="span"
+                    variant="unstyled"
+                    tone="inherit"
+                    className="absolute inset-x-2 bottom-2 rounded-full border border-[#e5e5e5] bg-white py-0.5 text-[10px] font-black text-[#111] opacity-0 transition group-hover:opacity-100"
+                  >
                     뒤집기 타깃
-                  </span>
+                  </YeonText>
                 )}
-              </button>
+              </YeonButton>
             );
           })}
-        </div>
-      </div>
+        </YeonView>
+      </YeonView>
 
-      <div className="grid grid-cols-3 gap-2 border-t border-white/10 pt-3 text-center text-[12px] font-black">
-        <div className="rounded-xl border border-red-300/40 bg-red-600 px-3 py-2 text-white">
+      <YeonView className="grid grid-cols-3 gap-2 border-t border-[#e5e5e5] pt-3 text-center text-[12px] font-black">
+        <YeonView className="rounded-xl border border-[#111] bg-[#fafafa] px-3 py-2 text-[#111]">
           빨강 카드
-        </div>
-        <div className="rounded-xl border border-slate-500 bg-slate-800 px-3 py-2 text-white">
+        </YeonView>
+        <YeonView className="rounded-xl border border-[#e5e5e5] bg-[#fafafa] px-3 py-2 text-[#666]">
           중립 카드
-        </div>
-        <div className="rounded-xl border border-sky-300/40 bg-sky-600 px-3 py-2 text-white">
+        </YeonView>
+        <YeonView className="rounded-xl border border-[#e5e5e5] bg-white px-3 py-2 text-[#111]">
           파랑 카드
-        </div>
-      </div>
-    </div>
+        </YeonView>
+      </YeonView>
+    </YeonSurface>
   );
 }
 
@@ -428,76 +551,126 @@ function TeamPanel({
   const teamPlayers = players.filter((player) => player.team === team);
 
   return (
-    <aside
-      className={`flex min-h-0 flex-col rounded-[28px] border ${view.border} bg-[#0B1220]/78 p-4 ${view.glow} backdrop-blur-xl`}
+    <YeonSurface
+      as="aside"
+      variant="outlined"
+      className="flex min-h-0 flex-col rounded-[28px] p-4"
     >
-      <div className={`rounded-[22px] bg-gradient-to-br ${view.gradient} p-4`}>
-        <p className="text-[11px] font-black uppercase tracking-[0.28em] text-white/70">
+      <YeonView className="rounded-[22px] border border-[#e5e5e5] bg-[#fafafa] p-4">
+        <YeonText
+          as="p"
+          variant="unstyled"
+          tone="inherit"
+          className="text-[11px] font-black uppercase tracking-[0.28em] text-[#666]"
+        >
           {view.label}
-        </p>
-        <div className="mt-3 flex items-end justify-between gap-3">
-          <p className="text-[42px] font-black leading-none tracking-[-0.08em] text-white">
+        </YeonText>
+        <YeonView className="mt-3 flex items-end justify-between gap-3">
+          <YeonText
+            as="p"
+            variant="unstyled"
+            tone="inherit"
+            className="text-[42px] font-black leading-none tracking-[-0.08em] text-[#111]"
+          >
             {score}P
-          </p>
-          <p className="rounded-full border border-white/25 bg-white/10 px-3 py-1 text-[12px] font-black text-white/85">
+          </YeonText>
+          <YeonText
+            as="p"
+            variant="unstyled"
+            tone="inherit"
+            className="rounded-full border border-[#e5e5e5] bg-white px-3 py-1 text-[12px] font-black text-[#666]"
+          >
             {capturedCellCount} tiles
-          </p>
-        </div>
-      </div>
+          </YeonText>
+        </YeonView>
+      </YeonView>
 
-      <div className="mt-4 grid gap-3">
-        <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-3">
-          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#94A3B8]">
+      <YeonView className="mt-4 grid gap-3">
+        <YeonView className="rounded-2xl border border-[#e5e5e5] bg-white p-3">
+          <YeonText
+            as="p"
+            variant="unstyled"
+            tone="inherit"
+            className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#666]"
+          >
             Players
-          </p>
-          <div className="mt-3 grid gap-2">
+          </YeonText>
+          <YeonView className="mt-3 grid gap-2">
             {(teamPlayers.length ? teamPlayers : [null]).map(
               (player, index) => (
-                <div
+                <YeonView
                   key={player?.id ?? `${team}-empty-${index}`}
-                  className="flex items-center justify-between rounded-xl border border-white/10 bg-[#111827]/70 px-3 py-2"
+                  className="flex items-center justify-between rounded-xl border border-[#e5e5e5] bg-[#fafafa] px-3 py-2"
                 >
-                  <span className="truncate text-[13px] font-bold text-[#F8FAFC]">
+                  <YeonText
+                    as="span"
+                    variant="unstyled"
+                    tone="inherit"
+                    className="truncate text-[13px] font-bold text-[#111]"
+                  >
                     {player?.nickname ?? "대기 중"}
-                  </span>
-                  <span
+                  </YeonText>
+                  <YeonText
+                    as="span"
+                    variant="unstyled"
+                    tone="inherit"
                     className={`ml-2 h-2.5 w-2.5 rounded-full ${
-                      player?.isConnected ? "bg-[#A3E635]" : "bg-[#64748B]"
+                      player?.isConnected ? "bg-[#111]" : "bg-[#aaa]"
                     }`}
                   />
-                </div>
+                </YeonView>
               )
             )}
-          </div>
-        </div>
+          </YeonView>
+        </YeonView>
 
-        <div className="grid grid-cols-2 gap-2">
-          <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-3">
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#94A3B8]">
+        <YeonView className="grid grid-cols-2 gap-2">
+          <YeonView className="rounded-2xl border border-[#e5e5e5] bg-white p-3">
+            <YeonText
+              as="p"
+              variant="unstyled"
+              tone="inherit"
+              className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#666]"
+            >
               Accuracy
-            </p>
-            <p className="mt-1 text-[20px] font-black text-[#F8FAFC]">
+            </YeonText>
+            <YeonText
+              as="p"
+              variant="unstyled"
+              tone="inherit"
+              className="mt-1 text-[20px] font-black text-[#111]"
+            >
               {Math.round(
                 teamPlayers.reduce((sum, player) => sum + player.accuracy, 0) /
                   Math.max(teamPlayers.length, 1)
               )}
               %
-            </p>
-          </div>
-          <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-3">
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#94A3B8]">
+            </YeonText>
+          </YeonView>
+          <YeonView className="rounded-2xl border border-[#e5e5e5] bg-white p-3">
+            <YeonText
+              as="p"
+              variant="unstyled"
+              tone="inherit"
+              className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#666]"
+            >
               Combo
-            </p>
-            <p className="mt-1 text-[20px] font-black text-[#F8FAFC]">
+            </YeonText>
+            <YeonText
+              as="p"
+              variant="unstyled"
+              tone="inherit"
+              className="mt-1 text-[20px] font-black text-[#111]"
+            >
               {teamPlayers.reduce(
                 (max, player) => Math.max(max, player.combo),
                 0
               )}
-            </p>
-          </div>
-        </div>
-      </div>
-    </aside>
+            </YeonText>
+          </YeonView>
+        </YeonView>
+      </YeonView>
+    </YeonSurface>
   );
 }
 
@@ -516,7 +689,7 @@ function TypingTerritoryBattleGameScreen({
 }: {
   originRoomId: string;
 }) {
-  const router = useRouter();
+  const router = useYeonRouter();
   const [resultReturnSeconds, setResultReturnSeconds] = useState(
     RESULT_RETURN_SECONDS
   );
@@ -536,7 +709,7 @@ function TypingTerritoryBattleGameScreen({
   const [message, setMessage] = useState(
     "서버 연결 전에는 로컬 규칙으로 점령전을 체험할 수 있습니다."
   );
-  const [now, setNow] = useState(() => Date.now());
+  const [now, setNow] = useState(() => getYeonNow());
   const displayBoard = territoryRoom.snapshot?.board ?? board;
   const isServerConnected =
     territoryRoom.connectionState === "connected" && !!territoryRoom.snapshot;
@@ -614,8 +787,8 @@ function TypingTerritoryBattleGameScreen({
     Boolean(territoryRoom.result);
 
   useEffect(() => {
-    const intervalId = window.setInterval(() => setNow(Date.now()), 250);
-    return () => window.clearInterval(intervalId);
+    const intervalId = scheduleYeonInterval(() => setNow(getYeonNow()), 250);
+    return () => clearYeonInterval(intervalId);
   }, []);
 
   useEffect(() => {
@@ -624,11 +797,11 @@ function TypingTerritoryBattleGameScreen({
       return;
     }
 
-    const intervalId = window.setInterval(() => {
+    const intervalId = scheduleYeonInterval(() => {
       setResultReturnSeconds((seconds) => Math.max(0, seconds - 1));
     }, 1000);
 
-    return () => window.clearInterval(intervalId);
+    return () => clearYeonInterval(intervalId);
   }, [shouldShowResult]);
 
   useEffect(() => {
@@ -636,7 +809,7 @@ function TypingTerritoryBattleGameScreen({
     router.push(returnPath);
   }, [resultReturnSeconds, returnPath, router, shouldShowResult]);
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  function handleSubmit(event: YeonFormEvent<YeonFormElement>) {
     event.preventDefault();
 
     if (isServerConnected && territoryRoom.snapshot) {
@@ -677,7 +850,7 @@ function TypingTerritoryBattleGameScreen({
       team: myTeam,
       playerId: LOCAL_PLAYER_ID,
       combo: nextCombo,
-      capturedAt: Date.now(),
+      capturedAt: getYeonNow(),
     });
 
     setBoard(nextBoard);
@@ -696,43 +869,92 @@ function TypingTerritoryBattleGameScreen({
   }
 
   return (
-    <div className="relative h-screen w-screen overflow-hidden bg-[radial-gradient(circle_at_top,#1E293B_0%,#111827_42%,#0F172A_100%)] text-[#F8FAFC]">
-      <main className="grid h-full w-full grid-rows-[104px_minmax(0,1fr)_132px] gap-4 p-4">
-        <header className="grid grid-cols-[minmax(210px,1fr)_minmax(260px,420px)_minmax(210px,1fr)] items-center gap-4">
-          <div className="rounded-[26px] border border-[#C75C5C]/35 bg-[#0B1220]/72 px-5 py-4 shadow-[0_18px_60px_rgba(0,0,0,0.22)] backdrop-blur-xl">
-            <p className="text-[11px] font-black uppercase tracking-[0.28em] text-[#F6B7BE]">
+    <YeonView className="relative h-screen w-screen overflow-hidden bg-white text-[#111]">
+      <YeonView
+        as="main"
+        className="grid h-full w-full grid-rows-[104px_minmax(0,1fr)_132px] gap-4 p-4"
+      >
+        <YeonView
+          as="header"
+          className="grid grid-cols-[minmax(210px,1fr)_minmax(260px,420px)_minmax(210px,1fr)] items-center gap-4"
+        >
+          <YeonSurface variant="panel" className="rounded-[26px] px-5 py-4">
+            <YeonText
+              as="p"
+              variant="unstyled"
+              tone="inherit"
+              className="text-[11px] font-black uppercase tracking-[0.28em] text-[#666]"
+            >
               빨강팀 점수
-            </p>
-            <p className="mt-1 text-[38px] font-black leading-none tracking-[-0.07em] text-[#F8FAFC]">
+            </YeonText>
+            <YeonText
+              as="p"
+              variant="unstyled"
+              tone="inherit"
+              className="mt-1 text-[38px] font-black leading-none tracking-[-0.07em] text-[#111]"
+            >
               {redScore}P
-            </p>
-          </div>
+            </YeonText>
+          </YeonSurface>
 
-          <div className="relative overflow-hidden rounded-[32px] border border-white/12 bg-[#F8FAFC]/10 px-6 py-4 text-center shadow-[0_24px_80px_rgba(0,0,0,0.3)] backdrop-blur-2xl">
-            <div className="absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-[#F2C94C]/80 to-transparent" />
-            <p className="text-[11px] font-black uppercase tracking-[0.32em] text-[#CBD5E1]">
+          <YeonSurface
+            variant="outlined"
+            className={`relative overflow-hidden rounded-[32px] px-6 py-4 text-center ${YEON_WEB_SHADOW_CLASS.cardWide}`}
+          >
+            <YeonText
+              as="p"
+              variant="unstyled"
+              tone="inherit"
+              className="text-[11px] font-black uppercase tracking-[0.32em] text-[#666]"
+            >
               Card Flip Battle
-            </p>
-            <p className="mt-1 text-[42px] font-black leading-none tracking-[-0.08em] text-[#F8FAFC]">
+            </YeonText>
+            <YeonText
+              as="p"
+              variant="unstyled"
+              tone="inherit"
+              className="mt-1 text-[42px] font-black leading-none tracking-[-0.08em] text-[#111]"
+            >
               {timerLabel}
-            </p>
-            <p className="mt-2 text-[12px] font-bold text-[#94A3B8]">
+            </YeonText>
+            <YeonText
+              as="p"
+              variant="unstyled"
+              tone="inherit"
+              className="mt-2 text-[12px] font-bold text-[#666]"
+            >
               {getTerritoryPhaseLabel(territoryRoom.snapshot?.phase ?? null)} ·
               연결 {territoryRoom.connectionState}
-            </p>
-          </div>
+            </YeonText>
+          </YeonSurface>
 
-          <div className="rounded-[26px] border border-[#4F6FAD]/35 bg-[#0B1220]/72 px-5 py-4 text-right shadow-[0_18px_60px_rgba(0,0,0,0.22)] backdrop-blur-xl">
-            <p className="text-[11px] font-black uppercase tracking-[0.28em] text-[#C7D2FE]">
+          <YeonSurface
+            variant="panel"
+            className="rounded-[26px] px-5 py-4 text-right"
+          >
+            <YeonText
+              as="p"
+              variant="unstyled"
+              tone="inherit"
+              className="text-[11px] font-black uppercase tracking-[0.28em] text-[#666]"
+            >
               파랑팀 점수
-            </p>
-            <p className="mt-1 text-[38px] font-black leading-none tracking-[-0.07em] text-[#F8FAFC]">
+            </YeonText>
+            <YeonText
+              as="p"
+              variant="unstyled"
+              tone="inherit"
+              className="mt-1 text-[38px] font-black leading-none tracking-[-0.07em] text-[#111]"
+            >
               {blueScore}P
-            </p>
-          </div>
-        </header>
+            </YeonText>
+          </YeonSurface>
+        </YeonView>
 
-        <section className="grid min-h-0 grid-cols-[240px_minmax(0,1fr)_240px] gap-4 xl:grid-cols-[280px_minmax(0,1fr)_280px]">
+        <YeonView
+          as="section"
+          className="grid min-h-0 grid-cols-[240px_minmax(0,1fr)_240px] gap-4 xl:grid-cols-[280px_minmax(0,1fr)_280px]"
+        >
           <TeamPanel
             team={TERRITORY_BATTLE_TEAM.RED}
             score={redScore}
@@ -740,34 +962,47 @@ function TypingTerritoryBattleGameScreen({
             players={hudPlayers}
           />
 
-          <div className="min-h-0 overflow-hidden rounded-[34px] border border-white/12 bg-[#0B1220]/74 p-3 shadow-[0_30px_100px_rgba(0,0,0,0.36)] backdrop-blur-xl">
-            <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-[26px] border border-white/10 bg-[#111827]/80">
-              <div className="flex items-center justify-between border-b border-white/10 px-5 py-3">
-                <div>
-                  <p className="text-[11px] font-black uppercase tracking-[0.3em] text-[#94A3B8]">
+          <YeonSurface
+            variant="outlined"
+            className={`min-h-0 overflow-hidden rounded-[34px] p-3 ${YEON_WEB_SHADOW_CLASS.territoryBoard}`}
+          >
+            <YeonView className="flex h-full min-h-0 flex-col overflow-hidden rounded-[26px] border border-[#e5e5e5] bg-white">
+              <YeonView className="flex items-center justify-between border-b border-[#e5e5e5] px-5 py-3">
+                <YeonView>
+                  <YeonText
+                    as="p"
+                    variant="unstyled"
+                    tone="inherit"
+                    className="text-[11px] font-black uppercase tracking-[0.3em] text-[#666]"
+                  >
                     중앙 카드를 뒤집는 팀 점령전
-                  </p>
-                  <h1 className="mt-1 text-[24px] font-black tracking-[-0.05em] text-[#F8FAFC]">
+                  </YeonText>
+                  <YeonText
+                    as="h1"
+                    variant="unstyled"
+                    tone="inherit"
+                    className="mt-1 text-[24px] font-black tracking-[-0.05em] text-[#111]"
+                  >
                     상대팀 카드를 입력해 뒤집으세요
-                  </h1>
-                </div>
-                <div className="flex items-center gap-2 text-[12px] font-bold text-[#CBD5E1]">
-                  <span className="rounded-full border border-white/10 bg-white/[0.06] px-3 py-1">
+                  </YeonText>
+                </YeonView>
+                <YeonView className="flex items-center gap-2 text-[12px] font-bold text-[#666]">
+                  <YeonBadge variant="neutral">
                     {winner === "draw"
                       ? "동점"
                       : `${winner.toUpperCase()} 우세`}
-                  </span>
-                  <span className="rounded-full border border-[#e5e5e5] bg-[#fafafa] px-3 py-1 text-[#111]">
+                  </YeonBadge>
+                  <YeonBadge variant="accent">
                     내 팀 {getTeamDisplayLabel(myTeam)} · 타깃{" "}
                     {getTeamDisplayLabel(opponentTeam)}
-                  </span>
-                  <span className="rounded-full border border-[#A3E635]/20 bg-[#A3E635]/10 px-3 py-1 text-[#D9F99D]">
+                  </YeonBadge>
+                  <YeonBadge variant="success">
                     {isServerConnected ? "LIVE" : "LOCAL"}
-                  </span>
-                </div>
-              </div>
+                  </YeonBadge>
+                </YeonView>
+              </YeonView>
 
-              <div className="min-h-0 flex-1 p-3">
+              <YeonView className="min-h-0 flex-1 p-3">
                 <TerritoryCardBoard
                   board={displayBoard}
                   myTeam={myTeam}
@@ -776,13 +1011,18 @@ function TypingTerritoryBattleGameScreen({
                   blueScore={blueScore}
                   onPickWord={setInputValue}
                 />
-              </div>
+              </YeonView>
 
-              <div className="flex items-center justify-between gap-3 border-t border-white/10 bg-[#0B1220]/80 px-5 py-3">
-                <p className="text-[11px] font-black uppercase tracking-[0.24em] text-[#94A3B8]">
+              <YeonView className="flex items-center justify-between gap-3 border-t border-[#e5e5e5] bg-[#fafafa] px-5 py-3">
+                <YeonText
+                  as="p"
+                  variant="unstyled"
+                  tone="inherit"
+                  className="text-[11px] font-black uppercase tracking-[0.24em] text-[#666]"
+                >
                   뒤집을 판
-                </p>
-                <div className="flex min-w-0 flex-1 justify-end gap-2 overflow-hidden">
+                </YeonText>
+                <YeonView className="flex min-w-0 flex-1 justify-end gap-2 overflow-hidden">
                   {displayBoard
                     .filter((cell) => cell.owner === opponentTeam)
                     .concat(
@@ -790,23 +1030,30 @@ function TypingTerritoryBattleGameScreen({
                     )
                     .slice(0, 5)
                     .map((cell) => (
-                      <button
+                      <YeonButton
                         key={cell.id}
                         type="button"
+                        variant="secondary"
+                        size="sm"
                         className={`min-w-0 rounded-full border px-3 py-1.5 text-center text-[11px] font-black transition hover:scale-[1.02] ${getCellClass(
                           cell.owner
                         )}`}
                         onClick={() => setInputValue(cell.word)}
                       >
-                        <span className="block max-w-20 truncate">
+                        <YeonText
+                          as="span"
+                          variant="unstyled"
+                          tone="inherit"
+                          className="block max-w-20 truncate"
+                        >
                           {cell.word}
-                        </span>
-                      </button>
+                        </YeonText>
+                      </YeonButton>
                     ))}
-                </div>
-              </div>
-            </div>
-          </div>
+                </YeonView>
+              </YeonView>
+            </YeonView>
+          </YeonSurface>
 
           <TeamPanel
             team={TERRITORY_BATTLE_TEAM.BLUE}
@@ -814,78 +1061,121 @@ function TypingTerritoryBattleGameScreen({
             capturedCellCount={blueCapturedCells}
             players={hudPlayers}
           />
-        </section>
+        </YeonView>
 
-        <footer className="grid grid-cols-[220px_minmax(0,1fr)_220px] items-stretch gap-4 xl:grid-cols-[280px_minmax(0,1fr)_280px]">
-          <div className="rounded-[26px] border border-white/10 bg-[#0B1220]/72 p-4 backdrop-blur-xl">
-            <p className="text-[11px] font-black uppercase tracking-[0.25em] text-[#94A3B8]">
+        <YeonView
+          as="footer"
+          className="grid grid-cols-[220px_minmax(0,1fr)_220px] items-stretch gap-4 xl:grid-cols-[280px_minmax(0,1fr)_280px]"
+        >
+          <YeonSurface variant="panel" className="rounded-[26px] p-4">
+            <YeonText
+              as="p"
+              variant="unstyled"
+              tone="inherit"
+              className="text-[11px] font-black uppercase tracking-[0.25em] text-[#666]"
+            >
               내가 뒤집은 판
-            </p>
-            <p className="mt-2 text-[34px] font-black leading-none tracking-[-0.06em] text-[#F8FAFC]">
+            </YeonText>
+            <YeonText
+              as="p"
+              variant="unstyled"
+              tone="inherit"
+              className="mt-2 text-[34px] font-black leading-none tracking-[-0.06em] text-[#111]"
+            >
               {combo} combo
-            </p>
-            <p className="mt-2 text-[12px] font-bold text-[#CBD5E1]">
+            </YeonText>
+            <YeonText
+              as="p"
+              variant="unstyled"
+              tone="inherit"
+              className="mt-2 text-[12px] font-bold text-[#666]"
+            >
               뒤집은 판 {myCapturedCells}개
-            </p>
-          </div>
+            </YeonText>
+          </YeonSurface>
 
-          <form
-            className="grid grid-cols-[160px_minmax(0,1fr)_148px] items-center gap-3 rounded-[30px] border border-white/12 bg-[#F8FAFC]/10 p-4 shadow-[0_24px_80px_rgba(0,0,0,0.28)] backdrop-blur-2xl"
+          <YeonForm
+            className={`grid grid-cols-[160px_minmax(0,1fr)_148px] items-center gap-3 rounded-[30px] border border-[#e5e5e5] bg-white p-4 ${YEON_WEB_SHADOW_CLASS.cardWide}`}
             onSubmit={handleSubmit}
           >
-            <div className="rounded-2xl border border-[#F2C94C]/25 bg-[#F2C94C]/10 px-4 py-3">
-              <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#F8D86A]">
+            <YeonView className="rounded-2xl border border-[#e5e5e5] bg-[#fafafa] px-4 py-3">
+              <YeonText
+                as="p"
+                variant="unstyled"
+                tone="inherit"
+                className="text-[10px] font-black uppercase tracking-[0.24em] text-[#666]"
+              >
                 뒤집을 단어
-              </p>
-              <p className="mt-1 truncate text-[22px] font-black tracking-[-0.04em] text-[#F8FAFC]">
+              </YeonText>
+              <YeonText
+                as="p"
+                variant="unstyled"
+                tone="inherit"
+                className="mt-1 truncate text-[22px] font-black tracking-[-0.04em] text-[#111]"
+              >
                 {targetWord || "대기"}
-              </p>
-            </div>
-            <input
+              </YeonText>
+            </YeonView>
+            <YeonField
               value={inputValue}
               onChange={(event) => setInputValue(event.target.value)}
-              className="h-16 rounded-2xl border border-white/15 bg-[#F8FAFC] px-5 text-[22px] font-black tracking-[-0.04em] text-[#111827] outline-none ring-0 placeholder:text-[#64748B] focus:border-[#F2C94C]"
+              className="h-16 rounded-2xl px-5 text-[22px] font-black tracking-[-0.04em]"
               placeholder="뒤집을 판의 단어를 입력해주세요"
               autoComplete="off"
             />
-            <button
+            <YeonButton
               type="submit"
-              className="h-16 rounded-2xl border border-[#F2C94C]/30 bg-[#F2C94C] px-4 text-[16px] font-black tracking-[-0.03em] text-[#111827] transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-45"
+              variant="primary"
+              className="h-16 rounded-2xl px-4 text-[16px] font-black tracking-[-0.03em]"
             >
               입력하기 ↵
-            </button>
-          </form>
+            </YeonButton>
+          </YeonForm>
 
-          <div className="rounded-[26px] border border-white/10 bg-[#0B1220]/72 p-4 backdrop-blur-xl">
-            <p className="text-[11px] font-black uppercase tracking-[0.25em] text-[#94A3B8]">
+          <YeonSurface variant="panel" className="rounded-[26px] p-4">
+            <YeonText
+              as="p"
+              variant="unstyled"
+              tone="inherit"
+              className="text-[11px] font-black uppercase tracking-[0.25em] text-[#666]"
+            >
               Controls
-            </p>
-            <div className="mt-3 grid grid-cols-2 gap-2">
-              <button
+            </YeonText>
+            <YeonView className="mt-3 grid grid-cols-2 gap-2">
+              <YeonButton
                 type="button"
+                variant="secondary"
+                size="sm"
                 onClick={() => {
                   territoryRoom.sendStart();
                   setMessage("판 뒤집기 점령전 시작을 요청했습니다.");
                 }}
                 disabled={!isServerConnected}
-                className="rounded-xl border border-white/12 bg-white/[0.08] px-3 py-2 text-[12px] font-black text-[#F8FAFC] transition hover:bg-white/[0.14] disabled:opacity-40"
+                className="rounded-xl px-3 py-2 text-[12px] font-black"
               >
                 시작
-              </button>
-              <button
+              </YeonButton>
+              <YeonButton
                 type="button"
+                variant="secondary"
+                size="sm"
                 onClick={() => territoryRoom.rejoin()}
-                className="rounded-xl border border-white/12 bg-white/[0.08] px-3 py-2 text-[12px] font-black text-[#F8FAFC] transition hover:bg-white/[0.14]"
+                className="rounded-xl px-3 py-2 text-[12px] font-black"
               >
                 재연결
-              </button>
-            </div>
-            <p className="mt-3 line-clamp-2 text-[12px] font-medium leading-5 text-[#CBD5E1]">
+              </YeonButton>
+            </YeonView>
+            <YeonText
+              as="p"
+              variant="unstyled"
+              tone="inherit"
+              className="mt-3 line-clamp-2 text-[12px] font-medium leading-5 text-[#666]"
+            >
               {territoryRoom.roomError?.message ?? message}
-            </p>
-          </div>
-        </footer>
-      </main>
+            </YeonText>
+          </YeonSurface>
+        </YeonView>
+      </YeonView>
       {shouldShowResult && (
         <TerritoryResultBoard
           snapshot={engineSnapshot}
@@ -896,6 +1186,6 @@ function TypingTerritoryBattleGameScreen({
           remainingSeconds={resultReturnSeconds}
         />
       )}
-    </div>
+    </YeonView>
   );
 }

@@ -1,6 +1,5 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-
 import { getCurrentAuthUser } from "@/server/auth/session";
 import {
   TypingCharacterFramesSpringBackendHttpError,

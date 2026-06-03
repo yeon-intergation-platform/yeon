@@ -1,11 +1,14 @@
 "use client";
-
-import { SHARED_FEATURE_CLASS } from "@/features/shared-style-constants";
+import { YEON_WEB_SHARED_CLASS as SHARED_FEATURE_CLASS } from "@yeon/ui/theme/web-style-tokens";
 import { TYPING_SERVICE_COMMON_CLASS } from "./typing-service-common.const";
-
 import { useState } from "react";
-
-import { YeonButton, YeonSurface } from "@/components/yeon-ui";
+import {
+  YeonButton,
+  YeonSurface,
+  YeonView,
+  YeonText,
+  YeonLink,
+} from "@yeon/ui";
 import {
   type TypingDeckDto,
   type TypingDeckScope,
@@ -68,16 +71,19 @@ export function TypingDecksScreen({
   }
 
   return (
-    <div className={SHARED_FEATURE_CLASS.pageSurface}>
-      <header className="border-b border-[#e5e5e5] px-6 py-3 md:px-12">
-        <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-3">
-          <a
+    <YeonView className={SHARED_FEATURE_CLASS.pageSurface}>
+      <YeonView
+        as="header"
+        className="border-b border-[#e5e5e5] px-6 py-3 md:px-12"
+      >
+        <YeonView className="mx-auto flex max-w-[1400px] items-center justify-between gap-3">
+          <YeonLink
             href="/typing-service"
             className={`${TYPING_SERVICE_COMMON_CLASS.panelTextEmphasis} no-underline`}
           >
             YEON 타자연습
-          </a>
-          <div className="flex flex-wrap items-center justify-end gap-2">
+          </YeonLink>
+          <YeonView className="flex flex-wrap items-center justify-end gap-2">
             {showAdminEntry && !adminMode ? (
               <YeonButton as="a" href="/admin/typing-decks" variant="primary">
                 관리자
@@ -86,67 +92,96 @@ export function TypingDecksScreen({
             <YeonButton as="a" href="/typing-service/rooms">
               타자방으로
             </YeonButton>
-          </div>
-        </div>
-      </header>
+          </YeonView>
+        </YeonView>
+      </YeonView>
 
-      <main className="mx-auto max-w-[1400px] px-6 py-10 md:px-12">
-        <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-          <div>
-            <p className={TYPING_SERVICE_COMMON_CLASS.mutedInfoEmphasis}>
+      <YeonView
+        as="main"
+        className="mx-auto max-w-[1400px] px-6 py-10 md:px-12"
+      >
+        <YeonView className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+          <YeonView>
+            <YeonText
+              as="p"
+              variant="unstyled"
+              tone="inherit"
+              className={TYPING_SERVICE_COMMON_CLASS.mutedInfoEmphasis}
+            >
               Typing decks
-            </p>
-            <h1 className="mt-1 break-keep text-[28px] font-semibold tracking-[-0.03em] text-[#111]">
+            </YeonText>
+            <YeonText
+              as="h1"
+              variant="unstyled"
+              tone="inherit"
+              className="mt-1 break-keep text-[28px] font-semibold tracking-[-0.03em] text-[#111]"
+            >
               타자 덱 관리
-            </h1>
-            <p
+            </YeonText>
+            <YeonText
+              as="p"
+              variant="unstyled"
+              tone="inherit"
               className={`mt-2 max-w-[720px] break-keep ${SHARED_FEATURE_CLASS.text14Neutral} leading-6`}
             >
               기본 덱을 둘러보고, 내 덱을 만들고, AI가 생성한 문단을 붙여넣어
               타자 연습 문장을 빠르게 저장하세요.
-            </p>
-          </div>
-        </div>
+            </YeonText>
+          </YeonView>
+        </YeonView>
 
-        <div className="mt-8 grid gap-6 lg:grid-cols-[380px_minmax(0,1fr)] lg:items-start">
-          <aside className="space-y-5 lg:sticky lg:top-5">
+        <YeonView className="mt-8 grid gap-6 lg:grid-cols-[380px_minmax(0,1fr)] lg:items-start">
+          <YeonView as="aside" className="space-y-5 lg:sticky lg:top-5">
             <YeonSurface className="p-4">
-              <div
+              <YeonView
                 className={`grid gap-2 ${adminMode ? "grid-cols-4" : "grid-cols-3"}`}
               >
                 {scopeTabs.map((tab) => (
-                  <button
+                  <YeonButton
                     key={tab.value}
                     type="button"
                     onClick={() => {
                       setScope(tab.value);
                       setSelectedDeckId(null);
                     }}
-                    className={`flex min-h-11 items-center justify-center rounded-xl px-3 py-2 text-[13px] font-semibold transition-colors ${
-                      scope === tab.value
-                        ? "bg-[#111] text-white"
-                        : "bg-[#f6f6f6] text-[#666] hover:bg-[#ededed] hover:text-[#111]"
-                    }`}
+                    variant={scope === tab.value ? "primary" : "secondary"}
+                    size="md"
+                    className="min-h-11 rounded-xl px-3 py-2 text-[13px]"
                     title={tab.help}
                   >
                     {tab.label}
-                  </button>
+                  </YeonButton>
                 ))}
-              </div>
-              <p className="mt-3 break-keep text-[12px] leading-5 text-[#666]">
+              </YeonView>
+              <YeonText
+                as="p"
+                variant="unstyled"
+                tone="inherit"
+                className="mt-3 break-keep text-[12px] leading-5 text-[#666]"
+              >
                 {scopeTabs.find((tab) => tab.value === scope)?.help}
-              </p>
+              </YeonText>
             </YeonSurface>
 
             {decksQuery.isPending ? (
-              <p className={SHARED_FEATURE_CLASS.text14Soft}>
+              <YeonText
+                as="p"
+                variant="unstyled"
+                tone="inherit"
+                className={SHARED_FEATURE_CLASS.text14Soft}
+              >
                 목록을 불러오는 중...
-              </p>
+              </YeonText>
             ) : null}
             {decksQuery.isError ? (
-              <p className={TYPING_SERVICE_COMMON_CLASS.errorTextMd}>
+              <YeonText
+                as="p"
+                variant="unstyled"
+                tone="inherit"
+                className={TYPING_SERVICE_COMMON_CLASS.errorTextMd}
+              >
                 덱 목록을 불러오지 못했습니다.
-              </p>
+              </YeonText>
             ) : null}
             {decksQuery.isSuccess ? (
               <TypingDeckList
@@ -161,9 +196,9 @@ export function TypingDecksScreen({
               onSaved={handleCreated}
               adminMode={adminMode}
             />
-          </aside>
+          </YeonView>
 
-          <section className="min-w-0">
+          <YeonView as="section" className="min-w-0">
             {selectedDeckId ? (
               <TypingDeckDetailPanel
                 deckId={selectedDeckId}
@@ -174,24 +209,30 @@ export function TypingDecksScreen({
                 variant="empty"
                 className="flex min-h-[520px] items-center justify-center rounded-3xl bg-[#fafafa] p-10"
               >
-                <div>
-                  <p
+                <YeonView>
+                  <YeonText
+                    as="p"
+                    variant="unstyled"
+                    tone="inherit"
                     className={`break-keep ${TYPING_SERVICE_COMMON_CLASS.panelBodyTitle}`}
                   >
                     덱을 선택하세요.
-                  </p>
-                  <p
+                  </YeonText>
+                  <YeonText
+                    as="p"
+                    variant="unstyled"
+                    tone="inherit"
                     className={`mt-2 max-w-[420px] break-keep ${SHARED_FEATURE_CLASS.text14Neutral} leading-6`}
                   >
                     왼쪽 목록에서 기본/내/공개 덱을 선택하면 문단 목록, 직접
                     추가, AI 붙여넣기 패널을 사용할 수 있습니다.
-                  </p>
-                </div>
+                  </YeonText>
+                </YeonView>
               </YeonSurface>
             )}
-          </section>
-        </div>
-      </main>
-    </div>
+          </YeonView>
+        </YeonView>
+      </YeonView>
+    </YeonView>
   );
 }

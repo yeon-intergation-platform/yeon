@@ -1,6 +1,8 @@
+import { getYeonNow } from "@yeon/ui/runtime/YeonBrowserRuntime";
+
 export function formatRelativeTime(input: string) {
   const target = new Date(input).getTime();
-  const diffMinutes = Math.max(0, Math.floor((Date.now() - target) / 60_000));
+  const diffMinutes = Math.max(0, Math.floor((getYeonNow() - target) / 60_000));
 
   if (diffMinutes < 1) {
     return "방금전";

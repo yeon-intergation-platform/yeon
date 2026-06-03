@@ -1,5 +1,4 @@
 import type { NextRequest } from "next/server";
-
 import { getCurrentAuthUser } from "@/server/auth/session";
 
 const GUEST_SESSION_ID_HEADER = "x-yeon-guest-session-id";

@@ -11,7 +11,12 @@ import {
   TYPING_ROOM_STATUS,
   TYPING_ROOM_VISIBILITY,
 } from "@yeon/race-shared";
-
+import {
+  fetchYeon,
+  type YeonFetchInput,
+  type YeonRequestInit,
+  type YeonResponse,
+} from "@yeon/ui/runtime/YeonBrowserRuntime";
 import type { FrameSlot } from "./frame-slot";
 
 export type TypingCharacterFrameOverrideItem = {
@@ -22,7 +27,7 @@ export type TypingCharacterFrameOverrideItem = {
 export type TypingCharacterFrameOverrideMap = Record<string, FrameSlot[]>;
 
 async function readErrorMessage(
-  response: Response,
+  response: YeonResponse,
   fallbackErrorMessage: string
 ): Promise<string> {
   const text = await response.text().catch(() => "");
@@ -37,11 +42,11 @@ async function readErrorMessage(
 }
 
 export async function typingServiceFetchJson<T>(
-  input: RequestInfo | URL,
-  init: RequestInit,
+  input: YeonFetchInput,
+  init: YeonRequestInit,
   fallbackErrorMessage: string
 ): Promise<T> {
-  const response = await fetch(input, { credentials: "include", ...init });
+  const response = await fetchYeon(input, { credentials: "include", ...init });
 
   if (!response.ok) {
     throw new Error(await readErrorMessage(response, fallbackErrorMessage));
@@ -51,11 +56,11 @@ export async function typingServiceFetchJson<T>(
 }
 
 export async function typingServiceFetchVoid(
-  input: RequestInfo | URL,
-  init: RequestInit,
+  input: YeonFetchInput,
+  init: YeonRequestInit,
   fallbackErrorMessage: string
 ): Promise<void> {
-  const response = await fetch(input, { credentials: "include", ...init });
+  const response = await fetchYeon(input, { credentials: "include", ...init });
 
   if (!response.ok) {
     throw new Error(await readErrorMessage(response, fallbackErrorMessage));
@@ -84,7 +89,7 @@ export async function loadTypingDeckDetail(
 
 export async function requestTypingDeck(
   path: string,
-  init: RequestInit,
+  init: YeonRequestInit,
   fallbackErrorMessage: string
 ): Promise<TypingDeckResponse> {
   return typingServiceFetchJson<TypingDeckResponse>(
@@ -96,7 +101,7 @@ export async function requestTypingDeck(
 
 export async function requestTypingDeckPassage(
   path: string,
-  init: RequestInit,
+  init: YeonRequestInit,
   fallbackErrorMessage: string
 ): Promise<TypingDeckPassageResponse> {
   return typingServiceFetchJson<TypingDeckPassageResponse>(
@@ -161,7 +166,7 @@ function toSummary(room: AvailableTypingRoom): TypingRoomSummary | null {
 export async function loadPublicWaitingTypingRooms(
   raceServerHttpEndpoint: string
 ): Promise<TypingRoomSummary[]> {
-  const response = await fetch(
+  const response = await fetchYeon(
     `${raceServerHttpEndpoint}/rooms/${TYPING_RACE_ROOM_NAME}`
   );
   if (!response.ok) throw new Error(`HTTP ${response.status}`);

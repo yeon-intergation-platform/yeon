@@ -1,11 +1,10 @@
-import type { Metadata } from "next";
-import Script from "next/script";
-
+import { type YeonPageMetadata } from "@yeon/ui/runtime/YeonPageMetadata";
+import { YeonStructuredData } from "@yeon/ui";
 import { SITE_BRAND_NAME } from "@/lib/site-brand";
 import { buildServiceCanonicalUrl } from "@/lib/seo";
 import { CommunityPage } from "@/features/community/community-page";
 
-export const metadata: Metadata = {
+export const metadata: YeonPageMetadata = {
   title: "YEON 커뮤니티",
   description: "실시간 채팅과 커뮤니티 게시글을 함께 쓰는 공간입니다.",
   alternates: {
@@ -43,13 +42,7 @@ function getCommunityJsonLd() {
 export default function CommunityPageRoute() {
   return (
     <>
-      <Script
-        id="community-jsonld"
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(getCommunityJsonLd()),
-        }}
-      />
+      <YeonStructuredData id="community-jsonld" data={getCommunityJsonLd()} />
       <CommunityPage />
     </>
   );

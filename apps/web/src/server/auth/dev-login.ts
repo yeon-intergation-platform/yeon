@@ -1,8 +1,8 @@
+import type { YeonHeaders } from "@yeon/ui/runtime/YeonBrowserRuntime";
 import {
   createDevLoginSessionInSpring,
   listDevLoginOptionsInSpring,
 } from "@/server/root-auth-spring-client";
-
 import { timingSafeEqualString } from "./crypto";
 
 const DEV_LOGIN_SECRET_HEADER = "x-dev-login-secret";
@@ -73,7 +73,7 @@ export function isDevLoginAllowed(_hostname?: string | null) {
  * env가 비어 있으면 검증 없이 true (로컬 dev UX 유지).
  * 스테이징/공유 dev 환경은 secret만 설정해 두면 추가 보호가 활성화된다.
  */
-export function verifyDevLoginRequestSecret(request: { headers: Headers }) {
+export function verifyDevLoginRequestSecret(request: { headers: YeonHeaders }) {
   const requiredSecret = process.env.DEV_LOGIN_SECRET?.trim();
 
   if (!requiredSecret) {

@@ -1,34 +1,26 @@
 "use client";
-
-import LinkExtension from "@tiptap/extension-link";
-import Placeholder from "@tiptap/extension-placeholder";
-import { Table as TableExtension } from "@tiptap/extension-table";
-import TableCellExtension from "@tiptap/extension-table-cell";
-import TableHeaderExtension from "@tiptap/extension-table-header";
-import TableRowExtension from "@tiptap/extension-table-row";
-import UnderlineExtension from "@tiptap/extension-underline";
-import { type Editor, EditorContent, useEditor } from "@tiptap/react";
-import { NodeSelection } from "@tiptap/pm/state";
-import { CellSelection } from "@tiptap/pm/tables";
-import StarterKit from "@tiptap/starter-kit";
+import {
+  useYeonTiptapEditor as useEditor,
+  YeonTiptapCellSelection as CellSelection,
+  YeonTiptapEditorContent as EditorContent,
+  YeonTiptapLinkExtension as LinkExtension,
+  YeonTiptapNodeSelection as NodeSelection,
+  YeonTiptapPlaceholderExtension as Placeholder,
+  YeonTiptapStarterKit as StarterKit,
+  YeonTiptapTableCellExtension as TableCellExtension,
+  YeonTiptapTableExtension as TableExtension,
+  YeonTiptapTableHeaderExtension as TableHeaderExtension,
+  YeonTiptapTableRowExtension as TableRowExtension,
+  YeonTiptapUnderlineExtension as UnderlineExtension,
+  type YeonTiptapEditor as Editor,
+} from "@yeon/ui/rich-content/YeonTiptap";
 import {
   useCallback,
   useDeferredValue,
   useEffect,
   useRef,
   useState,
-  type ChangeEvent,
-  type MouseEvent,
 } from "react";
-import {
-  AlignHorizontalJustifyCenter,
-  Columns3,
-  Rows3,
-  Plus,
-  Trash2,
-  type LucideIcon,
-} from "lucide-react";
-
 import {
   CardEditorYouTubeEmbedExtension,
   ResizableCardEditorImageExtension,
@@ -67,10 +59,37 @@ import { serializeCardEditorSliceToMarkdown } from "./card-editor-markdown-seria
 import { isSingleCardEditorYouTubeUrlText } from "./card-editor-youtube-utils";
 import { useCardEditorImageUpload } from "./use-card-editor-image-upload";
 import {
+  YeonButton,
+  YeonField,
+  YeonIcon,
   YeonContextMenu,
+  YeonPositionedButton,
+  YeonText,
+  type YeonIconName,
   type YeonContextMenuPosition,
-} from "@/components/yeon-ui";
-
+  YeonLabel,
+  YeonView,
+  type YeonChangeEvent,
+  type YeonDocumentKeyboardEvent,
+  type YeonMouseEvent,
+  type YeonEventTarget,
+  type YeonInputElement,
+  type YeonTableElement,
+  type YeonElement,
+} from "@yeon/ui";
+import {
+  getYeonClosestElement,
+  isYeonElement,
+  isYeonElementTagName,
+} from "@yeon/ui/rich-content/YeonRichDom";
+import {
+  cancelYeonAnimationFrame,
+  fetchYeon,
+  requestYeonAnimationFrame,
+  scheduleYeonTimeout,
+  type YeonDataTransfer,
+  type YeonFile,
+} from "@yeon/ui/runtime/YeonBrowserRuntime";
 import { CARD_SERVICE_COMMON_CLASS } from "../card-service-common.const";
 
 interface CardRichMarkdownEditorProps {
@@ -114,23 +133,25 @@ interface CardEditorTableContextMenuState {
 
 function TableEditIconButton({
   label,
-  icon: Icon,
+  icon,
   onClick,
 }: {
   label: string;
-  icon: LucideIcon;
+  icon: YeonIconName;
   onClick: () => void;
 }) {
   return (
-    <button
+    <YeonButton
       type="button"
       aria-label={label}
       title={label}
-      className={`flex ${CARD_EDITOR_COMPACT_CLASS.toolbarButton} items-center justify-center border border-[#e5e5e5] bg-[#fafafa] text-[#333] transition-colors hover:border-[#cfcfcf] hover:bg-[#f2f2f2]`}
+      variant="icon"
+      size="icon"
+      className={`flex ${CARD_EDITOR_COMPACT_CLASS.toolbarButton} items-center justify-center border border-[#e5e5e5] bg-[#fafafa] text-[#111]`}
       onClick={onClick}
     >
-      <Icon className={CARD_EDITOR_COMPACT_CLASS.toolbarIcon} />
-    </button>
+      <YeonIcon name={icon} className={CARD_EDITOR_COMPACT_CLASS.toolbarIcon} />
+    </YeonButton>
   );
 }
 
@@ -201,7 +222,7 @@ function carryParagraphIndentOnEnter(editor: Editor | null) {
   return editor.chain().focus().splitBlock().insertContent(indent).run();
 }
 
-function isTableDeleteKeyboardEvent(event: KeyboardEvent) {
+function isTableDeleteKeyboardEvent(event: YeonDocumentKeyboardEvent) {
   return (
     (event.key === "Backspace" || event.key === "Delete") &&
     !event.altKey &&
@@ -284,23 +305,18 @@ function insertCardEditorTableFromMarkdown(
     .run();
 }
 
-function findClosestTableElement(target: EventTarget | null) {
-  if (!(target instanceof HTMLElement)) {
-    return null;
-  }
+function findClosestTableElement(target: YeonEventTarget | null) {
+  const tableElement = getYeonClosestElement<YeonTableElement>(target, "table");
 
-  const tableElement = target.closest("table");
-
-  return tableElement instanceof HTMLTableElement ? tableElement : null;
+  return isYeonElementTagName(tableElement, "table") ? tableElement : null;
 }
 
 function findSelectedTableElement(editor: Editor) {
   const { from } = editor.state.selection;
   const domAtPos = editor.view.domAtPos(from);
-  const node =
-    domAtPos.node instanceof HTMLElement
-      ? domAtPos.node
-      : domAtPos.node.parentElement;
+  const node = isYeonElement(domAtPos.node)
+    ? domAtPos.node
+    : domAtPos.node.parentElement;
 
   return findClosestTableElement(node);
 }
@@ -349,8 +365,8 @@ export function CardRichMarkdownEditor({
   const [tableContextMenu, setTableContextMenu] =
     useState<CardEditorTableContextMenuState | null>(null);
   const [mobilePane, setMobilePane] = useState<"edit" | "preview">("edit");
-  const editorPanelRef = useRef<HTMLDivElement | null>(null);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const editorPanelRef = useRef<YeonElement | null>(null);
+  const fileInputRef = useRef<YeonInputElement | null>(null);
   const isInternalUpdateRef = useRef(false);
   const onUploadingChangeRef = useRef(onUploadingChange);
   const toolbarRefreshFrameRef = useRef<number | null>(null);
@@ -377,7 +393,7 @@ export function CardRichMarkdownEditor({
   }, [isUploading]);
 
   const updateTableActionOverlay = useCallback(
-    (tableElement: HTMLTableElement | null) => {
+    (tableElement: YeonTableElement | null) => {
       const panelElement = editorPanelRef.current;
       if (!panelElement || !tableElement) {
         setTableActionOverlay(null);
@@ -401,7 +417,7 @@ export function CardRichMarkdownEditor({
       if (!targetEditor) return;
       if (toolbarRefreshFrameRef.current !== null) return;
 
-      toolbarRefreshFrameRef.current = window.requestAnimationFrame(() => {
+      toolbarRefreshFrameRef.current = requestYeonAnimationFrame(() => {
         toolbarRefreshFrameRef.current = null;
 
         setToolbarState({
@@ -431,7 +447,7 @@ export function CardRichMarkdownEditor({
   useEffect(() => {
     return () => {
       if (toolbarRefreshFrameRef.current === null) return;
-      window.cancelAnimationFrame(toolbarRefreshFrameRef.current);
+      cancelYeonAnimationFrame(toolbarRefreshFrameRef.current);
       toolbarRefreshFrameRef.current = null;
     };
   }, []);
@@ -464,7 +480,7 @@ export function CardRichMarkdownEditor({
       return undefined;
     }
 
-    const response = await fetch(source);
+    const response = await fetchYeon(source);
     const blob = await response.blob();
     const extension = getCardEditorExtensionFromMime(blob.type) || "png";
 
@@ -476,12 +492,12 @@ export function CardRichMarkdownEditor({
 
   const replaceMixedClipboardImagesAfterPaste = (
     editorInstance: Editor,
-    clipboardData: DataTransfer,
+    clipboardData: YeonDataTransfer,
     imageSourcesBeforePaste: string[]
   ) => {
     const imageFiles = extractCardEditorImageFiles(clipboardData);
 
-    window.setTimeout(() => {
+    scheduleYeonTimeout(() => {
       const imageSourcesAfterPaste = extractCardEditorHtmlImageSources(
         editorInstance.getHTML()
       );
@@ -520,7 +536,7 @@ export function CardRichMarkdownEditor({
             (
               replacement
             ): replacement is {
-              file: File;
+              file: YeonFile;
               source: string;
             } => replacement !== undefined
           );
@@ -826,7 +842,7 @@ export function CardRichMarkdownEditor({
   }, [editor, value]);
 
   const uploadCurrentInputFiles = async (
-    event: ChangeEvent<HTMLInputElement>
+    event: YeonChangeEvent<YeonInputElement>
   ) => {
     const selectedFiles = event.target.files;
     const files = selectedFiles ? Array.from(selectedFiles) : [];
@@ -857,33 +873,45 @@ export function CardRichMarkdownEditor({
     );
   });
   const tableEditBar = isTableToolbarVisible ? (
-    <div className="flex flex-wrap items-center gap-2 border-x border-[#e5e5e5] bg-[#fff] px-3 py-2 text-[12px] font-medium text-[#777] md:px-4">
-      <span className="mr-1 text-[#555]">표 편집</span>
+    <YeonView className="flex flex-wrap items-center gap-2 border-x border-[#e5e5e5] bg-white px-3 py-2 text-[12px] font-medium text-[#666] md:px-4">
+      <YeonText
+        as="span"
+        variant="unstyled"
+        tone="inherit"
+        className="mr-1 text-[#111]"
+      >
+        표 편집
+      </YeonText>
       <TableEditIconButton
         label="행 추가"
-        icon={Rows3}
+        icon="rows"
         onClick={withEditor((instance) =>
           instance.chain().focus().addRowAfter().run()
         )}
       />
       <TableEditIconButton
         label="열 추가"
-        icon={Columns3}
+        icon="columns"
         onClick={withEditor((instance) =>
           instance.chain().focus().addColumnAfter().run()
         )}
       />
       <TableEditIconButton
         label="헤더 행 전환"
-        icon={AlignHorizontalJustifyCenter}
+        icon="align-horizontal-center"
         onClick={withEditor((instance) =>
           instance.chain().focus().toggleHeaderRow().run()
         )}
       />
-      <span className="text-[#999]">
+      <YeonText
+        as="span"
+        variant="unstyled"
+        tone="inherit"
+        className="text-[#aaa]"
+      >
         표 위의 + 버튼으로도 행과 열을 추가할 수 있어요.
-      </span>
-    </div>
+      </YeonText>
+    </YeonView>
   ) : null;
   const shouldShowPreview = previewPlacement !== "none";
   const shouldShowDesktopInlinePreview = previewPlacement === "inline";
@@ -903,7 +931,7 @@ export function CardRichMarkdownEditor({
     ? "업로드 중"
     : "드롭·붙여넣기·버튼 삽입";
   const handleEditorMouseMove = useCallback(
-    (event: MouseEvent<HTMLDivElement>) => {
+    (event: YeonMouseEvent<YeonElement>) => {
       updateTableActionOverlay(findClosestTableElement(event.target));
     },
     [updateTableActionOverlay]
@@ -919,7 +947,7 @@ export function CardRichMarkdownEditor({
     setTableContextMenu(null);
   }, []);
   const handleEditorContextMenu = useCallback(
-    (event: MouseEvent<HTMLDivElement>) => {
+    (event: YeonMouseEvent<YeonElement>) => {
       if (!editor || disabled) {
         return;
       }
@@ -964,41 +992,41 @@ export function CardRichMarkdownEditor({
     ? CARD_EDITOR_COMPACT_CLASS.editorBody
     : undefined;
   const tableActionOverlayElement = tableActionOverlay ? (
-    <div className="pointer-events-none absolute inset-0 z-10">
-      <button
+    <YeonView className="pointer-events-none absolute inset-0 z-10">
+      <YeonPositionedButton
         type="button"
         aria-label="뒤에 열 추가하기"
         title="뒤에 열 추가하기"
-        className="pointer-events-auto absolute flex h-6 w-6 items-center justify-center rounded-md border border-[#d6d6d6] bg-[#111] text-white shadow-md transition-colors hover:bg-[#333]"
-        style={{
-          left: tableActionOverlay.left + tableActionOverlay.width + 6,
-          top: tableActionOverlay.top + tableActionOverlay.height / 2 - 12,
-        }}
+        variant="primary"
+        size="icon"
+        className="pointer-events-auto absolute h-6 w-6 rounded-md border border-[#e5e5e5] shadow-md"
+        left={tableActionOverlay.left + tableActionOverlay.width + 6}
+        top={tableActionOverlay.top + tableActionOverlay.height / 2 - 12}
         onClick={withEditor((instance) =>
           instance.chain().focus().addColumnAfter().run()
         )}
       >
-        <Plus className="h-3.5 w-3.5" />
-      </button>
-      <button
+        <YeonIcon name="plus" className="h-3.5 w-3.5" />
+      </YeonPositionedButton>
+      <YeonPositionedButton
         type="button"
         aria-label="아래에 행 추가하기"
         title="아래에 행 추가하기"
-        className="pointer-events-auto absolute flex h-6 w-6 items-center justify-center rounded-md border border-[#d6d6d6] bg-[#111] text-white shadow-md transition-colors hover:bg-[#333]"
-        style={{
-          left: tableActionOverlay.left + tableActionOverlay.width / 2 - 12,
-          top: tableActionOverlay.top + tableActionOverlay.height + 6,
-        }}
+        variant="primary"
+        size="icon"
+        className="pointer-events-auto absolute h-6 w-6 rounded-md border border-[#e5e5e5] shadow-md"
+        left={tableActionOverlay.left + tableActionOverlay.width / 2 - 12}
+        top={tableActionOverlay.top + tableActionOverlay.height + 6}
         onClick={withEditor((instance) =>
           instance.chain().focus().addRowAfter().run()
         )}
       >
-        <Plus className="h-3.5 w-3.5" />
-      </button>
-    </div>
+        <YeonIcon name="plus" className="h-3.5 w-3.5" />
+      </YeonPositionedButton>
+    </YeonView>
   ) : null;
   const editorPanel = (
-    <div ref={editorPanelRef} className={editorPanelClassName}>
+    <YeonView ref={editorPanelRef} className={editorPanelClassName}>
       <CardEditorToolbar
         canUseToolbar={canUseToolbar}
         isUploading={isUploading}
@@ -1036,14 +1064,14 @@ export function CardRichMarkdownEditor({
 
       {tableEditBar}
 
-      <div
+      <YeonView
         className={editorBodyClassName}
         onContextMenu={handleEditorContextMenu}
         onMouseLeave={handleEditorMouseLeave}
         onMouseMove={handleEditorMouseMove}
       >
         <EditorContent editor={editor} />
-      </div>
+      </YeonView>
       {tableActionOverlayElement}
 
       {tableContextMenu ? (
@@ -1056,14 +1084,14 @@ export function CardRichMarkdownEditor({
               key: "delete-table",
               label: "표 삭제",
               destructive: true,
-              icon: <Trash2 className="h-4 w-4" />,
+              icon: <YeonIcon name="trash" className="h-4 w-4" />,
               onSelect: deleteSelectedTable,
             },
           ]}
         />
       ) : null}
 
-      <input
+      <YeonField
         ref={fileInputRef}
         type="file"
         accept={CARD_EDITOR_IMAGE_ACCEPT}
@@ -1075,21 +1103,26 @@ export function CardRichMarkdownEditor({
       />
 
       {isUploading ? (
-        <p className="mt-2 text-[12px] font-medium text-[#777]">
+        <YeonText as="p" variant="caption" tone="secondary" className="mt-2">
           이미지 업로드 중입니다. 완료되면 커서 위치에 삽입됩니다.
-        </p>
+        </YeonText>
       ) : null}
 
       {errorMessage ? (
-        <p className="mt-2 text-[12px] font-medium text-red-600">
+        <YeonText
+          as="p"
+          variant="caption"
+          tone="primary"
+          className="mt-2 font-semibold"
+        >
           {errorMessage}
-        </p>
+        </YeonText>
       ) : null}
-    </div>
+    </YeonView>
   );
 
   return (
-    <div
+    <YeonView
       className={
         isCompactLayout
           ? "flex h-full min-h-full flex-col bg-white"
@@ -1097,60 +1130,65 @@ export function CardRichMarkdownEditor({
       }
     >
       {!isCompactLayout ? (
-        <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
-          <div className="min-w-0">
-            <label
+        <YeonView className="mb-3 flex flex-wrap items-end justify-between gap-2">
+          <YeonView className="min-w-0">
+            <YeonLabel
               className={`${CARD_SERVICE_COMMON_CLASS.panelTextEmphasis} md:text-[15px]`}
             >
               {label}
-            </label>
+            </YeonLabel>
             {helperText ? (
-              <p className="mt-1 text-[12px] leading-5 text-[#777]">
+              <YeonText
+                as="p"
+                variant="caption"
+                tone="secondary"
+                className="mt-1"
+              >
                 {helperText}
-              </p>
+              </YeonText>
             ) : null}
-          </div>
-          <span className="text-[12px] font-medium text-[#777]">
+          </YeonView>
+          <YeonText as="span" variant="caption" tone="secondary">
             {editorStatusText}
-          </span>
-        </div>
+          </YeonText>
+        </YeonView>
       ) : null}
 
       {shouldShowPreview ? (
-        <div className={mobilePaneClassName}>
-          <button
+        <YeonView className={mobilePaneClassName}>
+          <YeonButton
             type="button"
             onClick={() => setMobilePane("edit")}
+            variant={mobilePane === "edit" ? "secondary" : "ghost"}
+            size="sm"
             className={`${mobilePaneButtonClassName} ${
-              mobilePane === "edit"
-                ? "bg-white text-[#111] shadow-sm"
-                : "text-[#777]"
+              mobilePane === "edit" ? "bg-white text-[#111] shadow-sm" : ""
             }`}
           >
             작성
-          </button>
-          <button
+          </YeonButton>
+          <YeonButton
             type="button"
             onClick={() => setMobilePane("preview")}
+            variant={mobilePane === "preview" ? "secondary" : "ghost"}
+            size="sm"
             className={`${mobilePaneButtonClassName} ${
-              mobilePane === "preview"
-                ? "bg-white text-[#111] shadow-sm"
-                : "text-[#777]"
+              mobilePane === "preview" ? "bg-white text-[#111] shadow-sm" : ""
             }`}
           >
             미리보기
-          </button>
-        </div>
+          </YeonButton>
+        </YeonView>
       ) : null}
 
-      <div
+      <YeonView
         className={
           shouldShowDesktopInlinePreview
             ? "lg:grid lg:grid-cols-[minmax(0,1.35fr)_minmax(320px,1fr)] lg:items-stretch lg:gap-5"
             : ""
         }
       >
-        <div
+        <YeonView
           className={
             shouldShowPreview
               ? mobilePane === "edit"
@@ -1160,9 +1198,9 @@ export function CardRichMarkdownEditor({
           }
         >
           {editorPanel}
-        </div>
+        </YeonView>
         {shouldShowPreview ? (
-          <div
+          <YeonView
             className={
               mobilePane === "preview"
                 ? shouldShowDesktopInlinePreview
@@ -1178,11 +1216,11 @@ export function CardRichMarkdownEditor({
               value={deferredPreviewValue}
               previewHeightClassName={heightClassName.preview}
             />
-          </div>
+          </YeonView>
         ) : null}
-      </div>
+      </YeonView>
 
       <CardRichEditorGlobalStyles />
-    </div>
+    </YeonView>
   );
 }

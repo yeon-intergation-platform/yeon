@@ -1,3 +1,10 @@
+import {
+  createYeonFormData,
+  fetchYeon,
+  type YeonFile,
+  type YeonResponse,
+} from "@yeon/ui/runtime/YeonBrowserRuntime";
+
 const DEFAULT_BACKEND_BASE_URL = "http://127.0.0.1:8081";
 const INTERNAL_TOKEN_HEADER = "X-Yeon-Internal-Token";
 
@@ -51,7 +58,7 @@ function extractErrorMessage(parsed: unknown) {
   return null;
 }
 
-async function readError(response: Response, fallback: string) {
+async function readError(response: YeonResponse, fallback: string) {
   const raw = await response.text();
   const parsed = tryParseJson(raw);
   return new CardDeckAssetsSpringBackendHttpError(
@@ -60,11 +67,11 @@ async function readError(response: Response, fallback: string) {
   );
 }
 
-export async function uploadCardDeckAssetToSpring(file: File) {
-  const formData = new FormData();
+export async function uploadCardDeckAssetToSpring(file: YeonFile) {
+  const formData = createYeonFormData();
   formData.set("file", file);
 
-  const response = await fetch(
+  const response = await fetchYeon(
     `${resolveSpringBackendBaseUrl()}/card-decks/assets`,
     {
       method: "POST",
@@ -93,7 +100,7 @@ export async function fetchCardDeckAssetFromSpring(storageKey: string) {
     .map((segment) => encodeURIComponent(segment))
     .join("/");
 
-  const response = await fetch(
+  const response = await fetchYeon(
     `${resolveSpringBackendBaseUrl()}/card-decks/assets/${encodedPath}`,
     {
       method: "GET",

@@ -1,9 +1,15 @@
 "use client";
-
-import { useEffect, useState } from "react";
-
+import { useState } from "react";
+import {
+  YeonButton,
+  YeonModal,
+  YeonSurface,
+  YeonText,
+  YeonView,
+  YEON_WEB_SHADOW_CLASS,
+} from "@yeon/ui";
+import { useYeonEscapeKey } from "@yeon/ui/hooks/YeonBrowserHooks";
 import { GuestStoreMergeContractError } from "@/lib/guest-card-service-store";
-
 import { useMergeGuestDecks } from "../hooks/use-merge-guest";
 
 type MergeDialogViewState =
@@ -26,17 +32,7 @@ export function MergeGuestDialog({
 
   const isBusy = state.kind === "merging";
 
-  useEffect(() => {
-    function handleKeydown(event: KeyboardEvent) {
-      if (event.key === "Escape" && !isBusy) {
-        onClose();
-      }
-    }
-    window.addEventListener("keydown", handleKeydown);
-    return () => {
-      window.removeEventListener("keydown", handleKeydown);
-    };
-  }, [isBusy, onClose]);
+  useYeonEscapeKey(onClose, !isBusy);
 
   async function handleAccept() {
     setState({ kind: "merging" });
@@ -59,80 +55,107 @@ export function MergeGuestDialog({
   }
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
+    <YeonModal
+      visible
+      onRequestClose={isBusy ? undefined : onClose}
       aria-labelledby="merge-guest-dialog-title"
-      className="fixed inset-0 z-30 flex items-center justify-center bg-[rgba(8,10,14,0.6)] p-6"
+      className="fixed inset-0 z-30 m-0 flex h-auto max-h-none w-auto max-w-none items-center justify-center border-0 bg-[#111]/40 p-0"
     >
-      <div className="w-full max-w-[440px] rounded-[24px] border border-[rgba(17,19,24,0.08)] bg-white p-6 text-[#111318] shadow-[0_28px_80px_rgba(15,18,24,0.18)]">
+      <YeonSurface
+        className={`mx-6 w-full max-w-[440px] rounded-[24px] p-6 ${YEON_WEB_SHADOW_CLASS.dialog}`}
+      >
         {state.kind === "success" ? (
-          <div className="grid gap-4">
-            <h2
+          <YeonView className="grid gap-4">
+            <YeonText
+              as="h2"
+              variant="unstyled"
+              tone="inherit"
               id="merge-guest-dialog-title"
               className="m-0 text-[20px] font-black tracking-[-0.02em]"
             >
               계정에 덱을 추가했어요
-            </h2>
-            <p className="m-0 text-[14px] leading-[1.6] text-[#4b5563]">
+            </YeonText>
+            <YeonText
+              as="p"
+              variant="body"
+              tone="secondary"
+              className="m-0 text-[14px]"
+            >
               덱 {state.createdDeckCount}개 · 카드 {state.createdItemCount}장을
               계정으로 이관했습니다. 이제 다른 기기에서도 같은 덱으로 공부할 수
               있어요.
-            </p>
-            <button
+            </YeonText>
+            <YeonButton
               type="button"
               onClick={onClose}
-              className="min-h-12 rounded-[14px] bg-[#111318] px-4 text-[14px] font-bold text-white transition-transform duration-200 hover:-translate-y-px"
+              variant="primary"
+              size="lg"
+              className="min-h-12 rounded-[14px]"
             >
               확인
-            </button>
-          </div>
+            </YeonButton>
+          </YeonView>
         ) : (
-          <div className="grid gap-4">
-            <h2
+          <YeonView className="grid gap-4">
+            <YeonText
+              as="h2"
+              variant="unstyled"
+              tone="inherit"
               id="merge-guest-dialog-title"
               className="m-0 text-[20px] font-black tracking-[-0.02em]"
             >
               방금 만든 덱 {guestDeckCount}개를 계정에 추가할까요?
-            </h2>
-            <p className="m-0 text-[14px] leading-[1.6] text-[#4b5563]">
+            </YeonText>
+            <YeonText
+              as="p"
+              variant="body"
+              tone="secondary"
+              className="m-0 text-[14px]"
+            >
               로그인 전에 만들어 둔 덱을 계정으로 가져옵니다. 이관한 뒤에는 이
               기기에서만 보이던 덱이 다른 기기에서도 보이게 됩니다.
-            </p>
+            </YeonText>
 
             {state.kind === "error" ? (
-              <p
+              <YeonText
+                as="p"
                 role="alert"
-                className="m-0 rounded-[12px] border border-[rgba(248,247,243,0.16)] bg-[rgba(248,247,243,0.08)] px-3 py-2 text-[13px] leading-[1.55] text-[#555]"
+                variant="caption"
+                tone="primary"
+                className="m-0 rounded-[12px] border border-[#e5e5e5] bg-[#fafafa] px-3 py-2 text-[13px] leading-[1.55]"
               >
                 {state.message}
-              </p>
+              </YeonText>
             ) : null}
 
-            <div className="flex flex-wrap items-center justify-end gap-2">
-              <button
+            <YeonView className="flex flex-wrap items-center justify-end gap-2">
+              <YeonButton
                 type="button"
                 onClick={onClose}
                 disabled={isBusy}
-                className="min-h-12 rounded-[14px] border border-[rgba(17,19,24,0.12)] bg-white px-4 text-[14px] font-bold text-[#111318] transition-[transform,background-color] duration-200 hover:enabled:-translate-y-px hover:enabled:bg-[rgba(17,19,24,0.04)] disabled:cursor-not-allowed disabled:opacity-60"
+                variant="secondary"
+                size="lg"
+                className="min-h-12 rounded-[14px]"
               >
                 나중에
-              </button>
-              <button
+              </YeonButton>
+              <YeonButton
                 type="button"
                 onClick={() => {
                   void handleAccept();
                 }}
                 disabled={isBusy}
                 autoFocus
-                className="min-h-12 rounded-[14px] bg-[#111] px-5 text-[14px] font-bold text-white transition-transform duration-200 hover:enabled:-translate-y-px disabled:cursor-not-allowed disabled:opacity-70"
+                variant="primary"
+                size="lg"
+                className="min-h-12 rounded-[14px]"
               >
                 {isBusy ? "이관 중..." : "계정에 추가"}
-              </button>
-            </div>
-          </div>
+              </YeonButton>
+            </YeonView>
+          </YeonView>
         )}
-      </div>
-    </div>
+      </YeonSurface>
+    </YeonModal>
   );
 }

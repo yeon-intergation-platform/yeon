@@ -1,7 +1,5 @@
 "use client";
-
 import { useState } from "react";
-
 import { SlimeActionValidationRuntime } from "./slime-action-validation-runtime";
 import { SlimeCollisionValidationRuntime } from "./slime-collision-validation-runtime";
 import { SlimeCombatValidationRuntime } from "./slime-combat-validation-runtime";

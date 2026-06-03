@@ -1,6 +1,9 @@
 "use client";
-
 import { useCallback, useEffect, useState } from "react";
+import {
+  readYeonLocalStorageItem,
+  writeYeonLocalStorageItem,
+} from "@yeon/ui/runtime/YeonBrowserRuntime";
 import { DEFAULT_CHARACTER_ID, findCharacter } from "./characters";
 
 export type TypingProfile = {
@@ -22,7 +25,7 @@ function normalizeProfile(raw: unknown): TypingProfile {
     candidate.nickname.trim().length > 0
       ? candidate.nickname.trim()
       : DEFAULT_PROFILE.nickname;
-  // registry에서 사라진 캐릭터 ID는 기본값으로 폴백 — stale localStorage 방어.
+  // registry에서 사라진 캐릭터 ID는 기본값으로 폴백 — 오래된 저장소 값 방어.
   const characterId = findCharacter(
     typeof candidate.characterId === "string" ? candidate.characterId : null
   ).id;
@@ -35,10 +38,10 @@ export function useTypingProfile() {
 
   useEffect(() => {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
+      const raw = readYeonLocalStorageItem(STORAGE_KEY);
       if (raw) setProfile(normalizeProfile(JSON.parse(raw)));
     } catch {
-      // localStorage 접근 불가 환경 무시
+      // 저장소 접근 불가 환경 무시
     }
     setLoaded(true);
   }, []);
@@ -47,7 +50,7 @@ export function useTypingProfile() {
     setProfile((prev) => {
       const next = normalizeProfile({ ...prev, ...updates });
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+        writeYeonLocalStorageItem(STORAGE_KEY, JSON.stringify(next));
       } catch {
         /* ignore */
       }

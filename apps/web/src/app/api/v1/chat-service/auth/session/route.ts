@@ -1,14 +1,12 @@
 import { chatServiceSessionResponseSchema } from "@yeon/api-contract/chat-service";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-
 import {
   ChatServiceAuthSpringBackendHttpError,
   fetchChatServiceSessionFromSpring,
   logoutChatServiceSessionInSpring,
 } from "@/server/chat-service-auth-spring-client";
 import { ServiceError } from "@/server/errors/service-error";
-
 import {
   clearChatServiceSessionCookie,
   getChatServiceSessionToken,

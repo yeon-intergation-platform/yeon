@@ -1,6 +1,9 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-
+import {
+  isYeonFile,
+  type YeonFormData,
+} from "@yeon/ui/runtime/YeonBrowserRuntime";
 import { jsonError } from "@/app/api/v1/counseling-records/_shared";
 import {
   CardDeckAssetsSpringBackendHttpError,
@@ -10,7 +13,7 @@ import {
 export const runtime = "nodejs";
 
 export async function POST(request: NextRequest) {
-  let formData: FormData;
+  let formData: YeonFormData;
   try {
     formData = await request.formData();
   } catch {
@@ -18,7 +21,7 @@ export async function POST(request: NextRequest) {
   }
 
   const file = formData.get("file");
-  if (!(file instanceof File)) {
+  if (!isYeonFile(file)) {
     return jsonError("업로드할 이미지 파일이 필요합니다.", 400);
   }
 

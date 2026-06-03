@@ -1,15 +1,15 @@
 "use client";
-
-import { useMutation } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
-import { type FormEvent, useState } from "react";
-
+import { useState } from "react";
+import type { YeonFormElement, YeonFormEvent } from "@yeon/ui/types";
+import { YeonButton, YeonField, YeonForm, YeonLabel, YeonText } from "@yeon/ui";
+import { useYeonRouter } from "@yeon/ui/runtime/YeonNavigation";
+import { YEON_WEB_AUTH_CLASS } from "@yeon/ui/theme/web-style-tokens";
 import {
   credentialLogin,
   getCredentialErrorMessage,
 } from "@/lib/credential-client";
 import { analyticsEvents, trackEvent } from "@/lib/analytics";
-import { SHARED_FEATURE_CLASS } from "@/features/shared-style-constants";
+import { useYeonMutation as useMutation } from "@yeon/ui/runtime/YeonQuery";
 import { AUTH_CREDENTIALS_COMMON_CLASS } from "./auth-credentials-common.const";
 
 type LoginViewState =
@@ -22,7 +22,7 @@ type LoginFormProps = {
 };
 
 export function LoginForm({ nextPath }: LoginFormProps) {
-  const router = useRouter();
+  const router = useYeonRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [state, setState] = useState<LoginViewState>({ kind: "idle" });
@@ -32,7 +32,7 @@ export function LoginForm({ nextPath }: LoginFormProps) {
 
   const isSubmitting = state.kind === "submitting" || loginMutation.isPending;
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: YeonFormEvent<YeonFormElement>) {
     event.preventDefault();
     setState({ kind: "submitting" });
     trackEvent(analyticsEvents.credentialLoginSubmit, {
@@ -59,12 +59,17 @@ export function LoginForm({ nextPath }: LoginFormProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="grid gap-4">
-      <label className="grid gap-1.5">
-        <span className="text-[13px] font-bold tracking-[-0.01em] text-white/[0.82]">
+    <YeonForm onSubmit={handleSubmit} className="grid gap-4">
+      <YeonLabel className={YEON_WEB_AUTH_CLASS.label}>
+        <YeonText
+          as="span"
+          variant="unstyled"
+          tone="inherit"
+          className={YEON_WEB_AUTH_CLASS.labelText}
+        >
           이메일
-        </span>
-        <input
+        </YeonText>
+        <YeonField
           type="email"
           autoComplete="email"
           required
@@ -74,13 +79,18 @@ export function LoginForm({ nextPath }: LoginFormProps) {
           placeholder="you@yeon.world"
           disabled={isSubmitting}
         />
-      </label>
+      </YeonLabel>
 
-      <label className="grid gap-1.5">
-        <span className="text-[13px] font-bold tracking-[-0.01em] text-white/[0.82]">
+      <YeonLabel className={YEON_WEB_AUTH_CLASS.label}>
+        <YeonText
+          as="span"
+          variant="unstyled"
+          tone="inherit"
+          className={YEON_WEB_AUTH_CLASS.labelText}
+        >
           비밀번호
-        </span>
-        <input
+        </YeonText>
+        <YeonField
           type="password"
           autoComplete="current-password"
           required
@@ -90,21 +100,26 @@ export function LoginForm({ nextPath }: LoginFormProps) {
           placeholder="비밀번호 입력"
           disabled={isSubmitting}
         />
-      </label>
+      </YeonLabel>
 
       {state.kind === "error" ? (
-        <p role="alert" className={AUTH_CREDENTIALS_COMMON_CLASS.errorText13}>
+        <YeonText
+          role="alert"
+          variant="unstyled"
+          tone="inherit"
+          className={AUTH_CREDENTIALS_COMMON_CLASS.errorText13}
+        >
           {state.message}
-        </p>
+        </YeonText>
       ) : null}
 
-      <button
+      <YeonButton
         type="submit"
         disabled={isSubmitting}
-        className={`min-h-[52px] rounded-full bg-[#f8f7f3] px-[22px] text-[#080808] transition-transform duration-200 ease-[ease] hover:enabled:-translate-y-px disabled:cursor-not-allowed disabled:opacity-70 ${SHARED_FEATURE_CLASS.text15EmphasisOnCream}`}
+        className={YEON_WEB_AUTH_CLASS.primaryAction}
       >
         {isSubmitting ? "로그인 중..." : "로그인"}
-      </button>
-    </form>
+      </YeonButton>
+    </YeonForm>
   );
 }

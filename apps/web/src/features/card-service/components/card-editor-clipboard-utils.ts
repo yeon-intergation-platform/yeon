@@ -1,3 +1,15 @@
+import type { YeonImageElement } from "@yeon/ui/types";
+import type {
+  YeonDataTransfer,
+  YeonFile,
+} from "@yeon/ui/runtime/YeonBrowserRuntime";
+import {
+  getYeonElementAttribute,
+  parseYeonHtmlDocument,
+  queryYeonElements,
+} from "@yeon/ui/rich-content/YeonRichDom";
+import { isCardEditorImageFile } from "./card-editor-image-utils";
+
 const URL_PATTERNS = {
   image: /^https?:\/\/.+\.(jpg|jpeg|png|webp|gif|bmp|avif|svg)(\?[^\s]*)?$/i,
   dataImage: /^data:image\/[a-z0-9.+-]+;base64,/i,
@@ -27,7 +39,7 @@ function removeHtmlWrappers(html: string) {
     .trim();
 }
 
-function toUniqueImageFiles(files: File[]) {
+function toUniqueImageFiles(files: YeonFile[]) {
   const seen = new Set<string>();
 
   return files.filter((file) => {
@@ -45,30 +57,33 @@ function toUniqueImageFiles(files: File[]) {
   });
 }
 
-export function extractCardEditorImageFiles(dataTransfer: DataTransfer) {
+export function extractCardEditorImageFiles(dataTransfer: YeonDataTransfer) {
   const directFiles = Array.from(dataTransfer.files);
   const itemFiles = Array.from(dataTransfer.items)
     .filter((item) => item.kind === "file" && item.type.startsWith("image/"))
     .map((item) => item.getAsFile())
-    .filter((file): file is File => Boolean(file));
+    .filter((file): file is YeonFile => Boolean(file));
 
   return toUniqueImageFiles([...directFiles, ...itemFiles]);
 }
 
 export function extractCardEditorHtmlImageSources(html: string) {
-  if (!html.trim() || typeof window === "undefined") {
+  if (!html.trim()) {
     return [];
   }
 
-  const document = new window.DOMParser().parseFromString(html, "text/html");
+  const htmlDocument = parseYeonHtmlDocument(html);
+  if (!htmlDocument) {
+    return [];
+  }
 
-  return Array.from(document.querySelectorAll("img[src]"))
-    .map((image) => image.getAttribute("src")?.trim() ?? "")
+  return queryYeonElements<YeonImageElement>(htmlDocument, "img[src]")
+    .map((image) => getYeonElementAttribute(image, "src")?.trim() ?? "")
     .filter(Boolean);
 }
 
 export function extractCardEditorClipboardImageSource(
-  clipboardData: DataTransfer
+  clipboardData: YeonDataTransfer
 ) {
   const pastedHtml = clipboardData.getData("text/html").trim();
   if (pastedHtml) {
@@ -87,7 +102,9 @@ export function extractCardEditorClipboardImageSource(
   return "";
 }
 
-export function hasCardEditorClipboardImageHint(clipboardData: DataTransfer) {
+export function hasCardEditorClipboardImageHint(
+  clipboardData: YeonDataTransfer
+) {
   if (extractCardEditorImageFiles(clipboardData).length > 0) {
     return true;
   }
@@ -103,7 +120,9 @@ export function hasCardEditorClipboardImageHint(clipboardData: DataTransfer) {
   return isAllowedUrl(pastedText, ["image", "dataImage"]);
 }
 
-export function isCardEditorClipboardImageOnly(clipboardData: DataTransfer) {
+export function isCardEditorClipboardImageOnly(
+  clipboardData: YeonDataTransfer
+) {
   const pastedText = clipboardData.getData("text/plain").trim();
   const pastedHtml = clipboardData.getData("text/html").trim();
 
@@ -132,4 +151,3 @@ export function isCardEditorClipboardImageOnly(clipboardData: DataTransfer) {
 
   return true;
 }
-import { isCardEditorImageFile } from "./card-editor-image-utils";

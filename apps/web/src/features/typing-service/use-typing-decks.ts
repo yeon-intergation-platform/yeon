@@ -1,6 +1,9 @@
 "use client";
-
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useYeonMutation as useMutation,
+  useYeonQuery as useQuery,
+  useYeonQueryClient as useQueryClient,
+} from "@yeon/ui/runtime/YeonQuery";
 import type {
   CreateTypingDeckBody,
   CreateTypingDeckPassageBody,
@@ -16,7 +19,7 @@ import type {
   UpdateTypingDeckBody,
   UpdateTypingDeckPassageBody,
 } from "@yeon/api-contract/typing-decks";
-
+import { createYeonUrlSearchParams } from "@yeon/ui/runtime/YeonBrowserRuntime";
 import {
   loadTypingDeckDetail,
   loadTypingDeckList,
@@ -77,7 +80,7 @@ export function useTypingDecks(scope: TypingDeckScope, adminMode = false) {
   return useQuery({
     queryKey: typingDecksQueryKey(scope, adminMode),
     queryFn: async () => {
-      const params = new URLSearchParams({ scope });
+      const params = createYeonUrlSearchParams({ scope });
       if (adminMode) {
         params.set("admin", "1");
       }

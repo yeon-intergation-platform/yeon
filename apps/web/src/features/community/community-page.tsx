@@ -1,11 +1,11 @@
 "use client";
-
 import { useMemo, useState } from "react";
 import {
   CommonProductHeader,
   ProductHeaderDefaultSettingsButton,
 } from "@/components/product-shell/product-header";
-import { ServiceHelpDialog } from "@/components/product-shell/service-help-dialog";
+import { YeonServiceHelpDialog } from "@yeon/ui";
+import { YeonButton, YeonSurface, YeonText, YeonView } from "@yeon/ui";
 import {
   CommunityGuestIdentityConfirmModal,
   isCommunityGuestIdentityConfirmDismissed,
@@ -125,12 +125,12 @@ export function CommunityPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f7f8fa] text-[#111827]">
+    <YeonView className="min-h-screen bg-white text-[#111]">
       <CommonProductHeader
         activeService="community"
         settingsControl={
           <>
-            <ServiceHelpDialog
+            <YeonServiceHelpDialog
               content={{
                 title: COMMUNITY_SEO_HEADING,
                 intro: COMMUNITY_SEO_INTRO,
@@ -143,52 +143,68 @@ export function CommunityPage() {
         }
       />
 
-      <main className="mx-auto w-full max-w-[840px] px-4 py-6 sm:px-6 lg:px-8">
-        <section className="rounded-3xl border border-[#e5e7eb] bg-white shadow-sm">
-          <header className="border-b border-[#e5e7eb] px-5 py-4 sm:px-6">
-            <h1 className="text-[24px] font-black tracking-[-0.035em] text-[#111827]">
+      <YeonView
+        as="main"
+        className="mx-auto w-full max-w-[840px] px-4 py-6 sm:px-6 lg:px-8"
+      >
+        <YeonSurface as="section" className="rounded-3xl">
+          <YeonView
+            as="header"
+            className="border-b border-[#e5e5e5] px-5 py-4 sm:px-6"
+          >
+            <YeonText
+              as="h1"
+              variant="unstyled"
+              tone="inherit"
+              className="text-[24px] font-black tracking-[-0.035em] text-[#111]"
+            >
               YEON 커뮤니티
-            </h1>
-          </header>
+            </YeonText>
+          </YeonView>
 
-          <div className="border-b border-[#e5e7eb]" aria-label="실시간 채팅">
+          <YeonView
+            className="border-b border-[#e5e5e5]"
+            aria-label="실시간 채팅"
+          >
             <CommunityChatWidget variant="feed" guestNickname={guestNickname} />
-          </div>
+          </YeonView>
 
-          <div className="space-y-4 border-b border-[#e5e7eb] px-5 pb-4 pt-5 sm:px-6">
-            <h2 className="text-[16px] font-black tracking-[-0.02em] text-[#111827]">
+          <YeonView className="space-y-4 border-b border-[#e5e5e5] px-5 pb-4 pt-5 sm:px-6">
+            <YeonText
+              as="h2"
+              variant="unstyled"
+              tone="inherit"
+              className="text-[16px] font-black tracking-[-0.02em] text-[#111]"
+            >
               게시판
-            </h2>
-            <div className="relative">
-              <div
+            </YeonText>
+            <YeonView className="relative">
+              <YeonView
                 className="flex gap-2 overflow-x-auto scroll-pr-6 pb-1 pr-6"
                 role="group"
                 aria-label="게시글 분류 필터"
               >
                 {COMMUNITY_CATEGORIES.map((category) => (
-                  <button
+                  <YeonButton
                     key={category}
                     type="button"
                     onClick={() => setSelectedCategory(category)}
                     aria-pressed={selectedCategory === category}
-                    className={[
-                      "shrink-0 whitespace-nowrap rounded-full border px-4 py-2 text-[13px] font-bold transition-colors",
-                      selectedCategory === category
-                        ? "border-[#111827] bg-[#111827] text-white"
-                        : "border-[#e5e7eb] bg-white text-[#4b5563] hover:border-[#111827] hover:text-[#111827]",
-                    ].join(" ")}
+                    variant={selectedCategory === category ? "primary" : "pill"}
+                    size="sm"
+                    className="shrink-0 whitespace-nowrap px-4 py-2 text-[13px] font-bold"
                   >
                     {category}
-                  </button>
+                  </YeonButton>
                 ))}
-              </div>
-              <div
+              </YeonView>
+              <YeonView
                 aria-hidden
                 className="pointer-events-none absolute inset-y-0 right-0 w-6 bg-gradient-to-l from-white to-transparent"
               />
-            </div>
+            </YeonView>
 
-            <div>
+            <YeonView>
               <FeedGuestIdentityRow
                 guestNickname={guestNickname}
                 guestPassword={guestPassword}
@@ -211,22 +227,30 @@ export function CommunityPage() {
                   onSubmit={handleCreatePost}
                 />
               ) : null}
-            </div>
-          </div>
+            </YeonView>
+          </YeonView>
 
           {postsError ? (
-            <p className="border-b border-[#e5e7eb] px-5 py-3 text-[13px] font-semibold text-red-600 sm:px-6">
+            <YeonText
+              variant="caption"
+              tone="danger"
+              className="border-b border-[#e5e5e5] px-5 py-3 font-semibold sm:px-6"
+            >
               {postsError}
-            </p>
+            </YeonText>
           ) : null}
 
           {isPostsLoading ? (
-            <p className="border-b border-[#e5e7eb] px-5 py-6 text-center text-[14px] font-semibold text-[#6b7280] sm:px-6">
+            <YeonText
+              variant="body"
+              tone="secondary"
+              className="border-b border-[#e5e5e5] px-5 py-6 text-center font-semibold sm:px-6"
+            >
               글 목록을 불러오는 중...
-            </p>
+            </YeonText>
           ) : null}
 
-          <div className="space-y-4 px-5 py-5 sm:px-6">
+          <YeonView className="space-y-4 px-5 py-5 sm:px-6">
             {filteredPosts.map((post) => (
               <FeedPostItem
                 key={post.id}
@@ -273,13 +297,19 @@ export function CommunityPage() {
             ))}
 
             {!isPostsLoading && !hasFilteredPosts ? (
-              <p className="rounded-2xl border border-dashed border-[#d1d5db] px-4 py-8 text-center text-[14px] font-semibold text-[#6b7280]">
-                아직 게시글이 없습니다. 첫 글을 남겨보세요.
-              </p>
+              <YeonSurface variant="empty" className="px-4 py-8">
+                <YeonText
+                  variant="body"
+                  tone="secondary"
+                  className="text-center font-semibold"
+                >
+                  아직 게시글이 없습니다. 첫 글을 남겨보세요.
+                </YeonText>
+              </YeonSurface>
             ) : null}
-          </div>
-        </section>
-      </main>
+          </YeonView>
+        </YeonSurface>
+      </YeonView>
 
       <CommunityGuestIdentityConfirmModal
         isOpen={pendingGuestIdentityAction !== null}
@@ -307,6 +337,6 @@ export function CommunityPage() {
             .catch(() => pending.resolve(false));
         }}
       />
-    </div>
+    </YeonView>
   );
 }

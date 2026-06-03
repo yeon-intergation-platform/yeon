@@ -1,11 +1,11 @@
 import { DeckPlayScreen } from "@/features/card-service";
-import type { Metadata } from "next";
+import type { YeonPageMetadata } from "@yeon/ui/runtime/YeonPageMetadata";
 
 interface DeckPlayPageProps {
   params: Promise<{ deckId: string }>;
 }
 
-export const metadata: Metadata = {
+export const metadata: YeonPageMetadata = {
   robots: {
     index: false,
     follow: false,

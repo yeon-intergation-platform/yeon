@@ -1,9 +1,7 @@
 "use client";
-
-import { ArrowLeft, Play, Swords } from "lucide-react";
 import type { TypingRoomSnapshot } from "@yeon/race-shared";
-import { SHARED_FEATURE_CLASS } from "@/features/shared-style-constants";
-
+import { YeonButton, YeonIcon, YeonText, YeonView } from "@yeon/ui";
+import { YEON_WEB_SHARED_CLASS as SHARED_FEATURE_CLASS } from "@yeon/ui/theme/web-style-tokens";
 import { TYPING_ROOM_VISIBILITY_LABELS } from "./typing-room-labels";
 
 type TypingRoomWaitingHeaderProps = {
@@ -42,90 +40,132 @@ export function TypingRoomWaitingHeader({
   return (
     <>
       {copyError && (
-        <p className="mx-4 mt-2 rounded-md border border-red-100 bg-red-50 p-2 text-[12px] text-red-600 md:mx-8">
+        <YeonText
+          as="p"
+          variant="caption"
+          tone="primary"
+          className="mx-4 mt-2 rounded-md border border-[#e5e5e5] bg-[#fafafa] p-2 font-semibold md:mx-8"
+        >
           {copyError}
-        </p>
+        </YeonText>
       )}
 
-      <button
+      <YeonButton
         type="button"
         onClick={onLeaveRoom}
         disabled={isLeavingRoom}
-        className={`inline-flex w-fit items-center gap-2 ${SHARED_FEATURE_CLASS.text13EmphasisMuted} no-underline transition-colors hover:text-[#111]`}
+        variant="ghost"
+        size="sm"
+        className={`w-fit gap-2 ${SHARED_FEATURE_CLASS.text13EmphasisMuted} no-underline`}
       >
-        <ArrowLeft size={15} />
+        <YeonIcon name="arrow-left" size={15} />
         {isLeavingRoom ? "나가는 중..." : "타자방 나가기"}
-      </button>
+      </YeonButton>
 
-      <header className="rounded-2xl border border-[#e5e5e5] bg-white p-3 md:p-4">
-        <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(280px,420px)]">
-          <div>
-            <p className={SHARED_FEATURE_CLASS.text12EmphasisNeutral}>
+      <YeonView
+        as="header"
+        className="rounded-2xl border border-[#e5e5e5] bg-white p-3 md:p-4"
+      >
+        <YeonView className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(280px,420px)]">
+          <YeonView>
+            <YeonText
+              as="p"
+              variant="unstyled"
+              tone="inherit"
+              className={SHARED_FEATURE_CLASS.text12EmphasisNeutral}
+            >
               {waitingStateLabel} ·{" "}
               {TYPING_ROOM_VISIBILITY_LABELS[room.visibility]} ·{" "}
               {room.currentParticipants}/{room.maxParticipants}
-            </p>
-            <h1 className="mt-1 text-[22px] font-semibold tracking-[-0.03em] md:text-[26px]">
+            </YeonText>
+            <YeonText
+              as="h1"
+              variant="unstyled"
+              tone="inherit"
+              className="mt-1 text-[22px] font-semibold tracking-[-0.03em] md:text-[26px]"
+            >
               {room.title}
-            </h1>
-            <p className="mt-1 text-[12px] text-[#666]">{room.roomCode}</p>
-          </div>
-          <div className="flex h-full flex-col items-start justify-end gap-3 lg:items-end lg:text-right">
-            <p className={SHARED_FEATURE_CLASS.text12EmphasisNeutral}>
+            </YeonText>
+            <YeonText
+              as="p"
+              variant="unstyled"
+              tone="inherit"
+              className="mt-1 text-[12px] text-[#666]"
+            >
+              {room.roomCode}
+            </YeonText>
+          </YeonView>
+          <YeonView className="flex h-full flex-col items-start justify-end gap-3 lg:items-end lg:text-right">
+            <YeonText
+              as="p"
+              variant="unstyled"
+              tone="inherit"
+              className={SHARED_FEATURE_CLASS.text12EmphasisNeutral}
+            >
               참여자 {room.currentParticipants} / {room.maxParticipants}
-            </p>
-            <p className="max-w-[420px] text-[12px] leading-5 text-[#666]">
+            </YeonText>
+            <YeonText
+              as="p"
+              variant="unstyled"
+              tone="inherit"
+              className="max-w-[420px] text-[12px] leading-5 text-[#666]"
+            >
               {roomSummary}
-            </p>
+            </YeonText>
 
             {roomError && (
-              <div className="rounded-lg border border-red-100 bg-red-50 px-4 py-2 text-[12px] text-red-600">
+              <YeonView className="rounded-lg border border-[#e5e5e5] bg-[#fafafa] px-4 py-2 text-[12px] font-semibold text-[#111]">
                 {roomError}
-              </div>
+              </YeonView>
             )}
 
-            <div className="flex flex-wrap gap-2 lg:justify-end">
-              <button
+            <YeonView className="flex flex-wrap gap-2 lg:justify-end">
+              <YeonButton
                 type="button"
                 onClick={onCopyInvite}
-                className={`rounded-xl border border-[#e5e5e5] px-3 py-2 ${SHARED_FEATURE_CLASS.text12Emphasis} transition-colors hover:border-[#111] hover:bg-[#fafafa]`}
+                variant="secondary"
+                size="sm"
+                className={`rounded-xl px-3 py-2 ${SHARED_FEATURE_CLASS.text12Emphasis}`}
               >
                 {copied ? "초대 링크 복사됨" : "초대"}
-              </button>
-              <a
+              </YeonButton>
+              <YeonButton
+                as="a"
                 href={territoryHref}
-                className="inline-flex items-center gap-2 rounded-xl bg-[#111] px-4 py-2 text-[13px] font-semibold text-white transition-opacity hover:opacity-90"
+                variant="primary"
+                size="md"
+                className="gap-2 rounded-xl px-4 py-2 text-[13px]"
               >
-                <Swords size={14} />
+                <YeonIcon name="swords" size={14} />
                 점령전 입장
-              </a>
+              </YeonButton>
               {isHost ? (
-                <button
+                <YeonButton
                   type="button"
                   onClick={onStart}
                   disabled={!room.canStart}
-                  className={`inline-flex items-center gap-2 ${SHARED_FEATURE_CLASS.primaryActionButtonMd13} disabled:cursor-not-allowed disabled:bg-[#f1f1f1] disabled:text-[#aaa]`}
+                  variant="primary"
+                  size="md"
+                  className="gap-2"
                 >
-                  <Play size={14} />
+                  <YeonIcon name="play" size={14} />
                   시작하기
-                </button>
+                </YeonButton>
               ) : (
-                <button
+                <YeonButton
                   type="button"
                   onClick={onToggleReady}
-                  className={`rounded-xl px-4 py-2 text-[13px] font-semibold transition-colors ${
-                    isReady
-                      ? "border border-[#e5e5e5] bg-[#fafafa] text-[#666] hover:border-[#ddd]"
-                      : "bg-[#111] text-white hover:bg-[#333]"
-                  }`}
+                  variant={isReady ? "secondary" : "primary"}
+                  size="md"
+                  className="rounded-xl px-4 py-2 text-[13px]"
                 >
                   {isReady ? "준비 취소" : "준비하기"}
-                </button>
+                </YeonButton>
               )}
-            </div>
-          </div>
-        </div>
-      </header>
+            </YeonView>
+          </YeonView>
+        </YeonView>
+      </YeonView>
     </>
   );
 }

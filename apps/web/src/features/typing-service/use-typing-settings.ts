@@ -1,13 +1,19 @@
 "use client";
-
 import { useEffect, useMemo, useState } from "react";
-import { create } from "zustand";
 import type {
   TypingDeckLanguageTag as SharedTypingDeckLanguageTag,
   TypingDeckVisibility as SharedTypingDeckVisibility,
   TypingRaceSeed as SharedTypingRaceSeed,
 } from "@yeon/race-shared";
-import { persist, createJSONStorage } from "zustand/middleware";
+import {
+  getYeonLocalStorage,
+  getYeonRandom,
+} from "@yeon/ui/runtime/YeonBrowserRuntime";
+import {
+  createYeonJsonStorage,
+  createYeonStore,
+  persistYeonStore,
+} from "@yeon/ui/runtime/YeonStateStore";
 import { TYPING_PASSAGES, type TypingPassage } from "./typing-content";
 import { requestTypingRaceSeed } from "./typing-service-fetch";
 import { useTypingDeckDetail, useTypingDecks } from "./use-typing-decks";
@@ -252,7 +258,7 @@ function localRaceSeed(
       ? passages.filter((passage) => passage.id !== excludedPassageId)
       : passages;
   const passage =
-    candidates[Math.floor(Math.random() * candidates.length)] ?? passages[0]!;
+    candidates[Math.floor(getYeonRandom() * candidates.length)] ?? passages[0]!;
   return {
     passageId: passage.id,
     prompt: passage.prompt,
@@ -342,8 +348,8 @@ type TypingSettingsStore = {
   ) => void;
 };
 
-const useTypingSettingsStore = create<TypingSettingsStore>()(
-  persist(
+const useTypingSettingsStore = createYeonStore<TypingSettingsStore>()(
+  persistYeonStore(
     (set) => ({
       settings: DEFAULT_SETTINGS,
       updateSettings: (updates) =>
@@ -360,15 +366,7 @@ const useTypingSettingsStore = create<TypingSettingsStore>()(
     }),
     {
       name: STORAGE_KEY,
-      storage: createJSONStorage(() =>
-        typeof window === "undefined"
-          ? {
-              getItem: () => null,
-              setItem: () => undefined,
-              removeItem: () => undefined,
-            }
-          : window.localStorage
-      ),
+      storage: createYeonJsonStorage(() => getYeonLocalStorage()),
       partialize: (state) => ({ settings: state.settings }),
       merge: (persisted, current) => {
         if (!isRecord(persisted) || !isRecord(persisted.settings))

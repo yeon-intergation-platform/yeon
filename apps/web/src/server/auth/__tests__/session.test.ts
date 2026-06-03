@@ -21,7 +21,6 @@ vi.mock("@/server/auth-session-spring-client", () => ({
   deleteRootAuthSessionInSpring: (...args: unknown[]) =>
     mockDeleteRootAuthSessionInSpring(...args),
 }));
-
 import {
   applyAuthSessionCookie,
   clearAuthSessionCookie,
@@ -116,10 +115,9 @@ describe("auth session service", () => {
 
   it("중복 세션 쿠키가 있으면 유효한 후보를 찾아 현재 유저를 반환한다", async () => {
     mockCookies.mockResolvedValue({
-      getAll: vi.fn().mockReturnValue([
-        { value: "stale-token" },
-        { value: "valid-token" },
-      ]),
+      getAll: vi
+        .fn()
+        .mockReturnValue([{ value: "stale-token" }, { value: "valid-token" }]),
     });
     mockFetchRootAuthSessionFromSpring
       .mockResolvedValueOnce({ authenticated: false, user: null })
@@ -134,21 +132,23 @@ describe("auth session service", () => {
     });
     expect(mockFetchRootAuthSessionFromSpring).toHaveBeenNthCalledWith(
       1,
-      "stale-token",
+      "stale-token"
     );
     expect(mockFetchRootAuthSessionFromSpring).toHaveBeenNthCalledWith(
       2,
-      "valid-token",
+      "valid-token"
     );
   });
 
   it("deleteCurrentAuthSession은 중복 토큰을 한 번씩 삭제한다", async () => {
     mockCookies.mockResolvedValue({
-      getAll: vi.fn().mockReturnValue([
-        { value: "token-1" },
-        { value: "token-1" },
-        { value: "token-2" },
-      ]),
+      getAll: vi
+        .fn()
+        .mockReturnValue([
+          { value: "token-1" },
+          { value: "token-1" },
+          { value: "token-2" },
+        ]),
     });
 
     await expect(deleteCurrentAuthSession()).resolves.toBeUndefined();

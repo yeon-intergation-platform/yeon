@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-
+import { yeonColors } from "@yeon/design-tokens";
 import {
   MOBILE_WEB_PREVIEW,
   MOBILE_WEB_PREVIEW_WIDTH,
@@ -19,12 +19,14 @@ describe("mobile-preview", () => {
     expect(MOBILE_WEB_PREVIEW.transform.scaleMax).toBe(1);
     expect(MOBILE_WEB_PREVIEW.style.frameRadius).toBe(32);
     expect(MOBILE_WEB_PREVIEW.style.frameBorderWidth).toBe(1);
-    expect(MOBILE_WEB_PREVIEW.style.containerBackground).toBe("#0f172a");
-    expect(MOBILE_WEB_PREVIEW.style.frameBackground).toBe("#fff");
+    expect(MOBILE_WEB_PREVIEW.style.containerBackground).toBe(
+      yeonColors.neutral[50]
+    );
+    expect(MOBILE_WEB_PREVIEW.style.frameBackground).toBe(yeonColors.white);
   });
 
   it("타입은 단일 source-of-truth 객체 타입으로 고정된다", () => {
     const config: MobileWebPreviewConfig = MOBILE_WEB_PREVIEW;
-    expect(config.style.frameBackground).toBe("#fff");
+    expect(config.style.frameBackground).toBe(yeonColors.white);
   });
 });

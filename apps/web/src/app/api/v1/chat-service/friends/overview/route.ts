@@ -1,13 +1,11 @@
 import { chatServiceFriendsOverviewResponseSchema } from "@yeon/api-contract/chat-service";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-
 import {
   ChatServiceFriendsOverviewSpringBackendHttpError,
   fetchChatServiceFriendsOverviewFromSpring,
 } from "@/server/chat-service-friends-overview-spring-client";
 import { ServiceError } from "@/server/errors/service-error";
-
 import {
   jsonChatServiceError,
   requireChatServiceAuth,
@@ -16,10 +14,12 @@ import {
 export async function GET(request: NextRequest) {
   try {
     const { profile } = await requireChatServiceAuth(request);
-    const response = await fetchChatServiceFriendsOverviewFromSpring(profile.id);
+    const response = await fetchChatServiceFriendsOverviewFromSpring(
+      profile.id
+    );
 
     return NextResponse.json(
-      chatServiceFriendsOverviewResponseSchema.parse(response),
+      chatServiceFriendsOverviewResponseSchema.parse(response)
     );
   } catch (error) {
     if (error instanceof ServiceError) {

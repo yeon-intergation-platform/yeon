@@ -7,12 +7,47 @@ const nextConfig: NextConfig = {
   outputFileTracingRoot: path.join(__dirname, "../../"),
   transpilePackages: [
     "@yeon/api-contract",
+    "@yeon/design-tokens",
+    "@yeon/ui",
     "@yeon/race-shared",
     "@yeon/typing-race-engine",
+    "nativewind",
+    "react-native-css-interop",
     "@splinetool/react-spline",
     "@splinetool/runtime",
   ],
   serverExternalPackages: ["@aws-sdk/client-s3", "@aws-sdk/lib-storage"],
+  turbopack: {
+    resolveAlias: {
+      "@colyseus/sdk": "./src/lib/colyseus-browser-shim.ts",
+      "@tanstack/react-query": "./node_modules/@tanstack/react-query",
+      react: "./node_modules/react",
+      "react-dom": "./node_modules/react-dom",
+      "react-native": "react-native-web",
+    },
+  },
+  webpack(config) {
+    config.resolve = config.resolve ?? {};
+    config.resolve.alias = {
+      ...(config.resolve.alias ?? {}),
+      "@colyseus/sdk$": path.resolve(
+        __dirname,
+        "src/lib/colyseus-browser-shim.ts"
+      ),
+      "@tanstack/react-query$": path.resolve(
+        __dirname,
+        "node_modules/@tanstack/react-query"
+      ),
+      "@uiw/react-md-editor$": path.resolve(
+        __dirname,
+        "node_modules/@uiw/react-md-editor"
+      ),
+      react$: path.resolve(__dirname, "node_modules/react"),
+      "react-dom$": path.resolve(__dirname, "node_modules/react-dom"),
+      "react-native$": "react-native-web",
+    };
+    return config;
+  },
   experimental: {
     optimizePackageImports: ["lucide-react", "framer-motion"],
   },

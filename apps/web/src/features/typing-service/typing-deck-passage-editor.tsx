@@ -1,12 +1,16 @@
 "use client";
-
-import { useState, type FormEvent } from "react";
-
+import { useState } from "react";
 import {
   YeonButton,
   YeonField,
   getYeonSurfaceClassName,
-} from "@/components/yeon-ui";
+  YeonForm,
+  YeonText,
+  YeonView,
+  YeonOption,
+  type YeonFormEvent,
+  type YeonFormElement,
+} from "@yeon/ui";
 import { SHARED_FEATURE_CLASS } from "../shared-style-constants";
 import {
   type CreateTypingDeckPassageBody,
@@ -56,7 +60,7 @@ export function TypingDeckPassageEditor({
     setDifficulty("normal");
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  function handleSubmit(event: YeonFormEvent<YeonFormElement>) {
     event.preventDefault();
     if (!canSubmit) {
       return;
@@ -78,14 +82,19 @@ export function TypingDeckPassageEditor({
   }
 
   return (
-    <form
+    <YeonForm
       onSubmit={handleSubmit}
       className={getYeonSurfaceClassName({ className: "p-5" })}
     >
-      <div className={SHARED_FEATURE_CLASS.alignBetweenGap3}>
-        <h3 className={SHARED_FEATURE_CLASS.text16Emphasis}>
+      <YeonView className={SHARED_FEATURE_CLASS.alignBetweenGap3}>
+        <YeonText
+          as="h3"
+          variant="unstyled"
+          tone="inherit"
+          className={SHARED_FEATURE_CLASS.text16Emphasis}
+        >
           {editingPassage ? "문단 수정" : "문단 직접 추가"}
-        </h3>
+        </YeonText>
         {editingPassage ? (
           <YeonButton
             type="button"
@@ -96,8 +105,8 @@ export function TypingDeckPassageEditor({
             취소
           </YeonButton>
         ) : null}
-      </div>
-      <div className="mt-4 grid gap-3">
+      </YeonView>
+      <YeonView className="mt-4 grid gap-3">
         <YeonField
           value={title}
           onChange={(event) => setTitle(event.target.value)}
@@ -111,7 +120,7 @@ export function TypingDeckPassageEditor({
           placeholder="타이핑할 문장을 입력하세요."
           className="resize-y leading-6"
         />
-        <div className="grid gap-3 sm:grid-cols-2">
+        <YeonView className="grid gap-3 sm:grid-cols-2">
           <YeonField
             as="select"
             value={textType}
@@ -119,9 +128,9 @@ export function TypingDeckPassageEditor({
               setTextType(event.target.value as TypingPassageTextType)
             }
           >
-            <option value="short">짧은 글</option>
-            <option value="long">긴 글</option>
-            <option value="code">코드</option>
+            <YeonOption value="short">짧은 글</YeonOption>
+            <YeonOption value="long">긴 글</YeonOption>
+            <YeonOption value="code">코드</YeonOption>
           </YeonField>
           <YeonField
             as="select"
@@ -130,22 +139,27 @@ export function TypingDeckPassageEditor({
               setDifficulty(event.target.value as TypingPassageDifficulty)
             }
           >
-            <option value="easy">쉬움</option>
-            <option value="normal">보통</option>
-            <option value="hard">어려움</option>
+            <YeonOption value="easy">쉬움</YeonOption>
+            <YeonOption value="normal">보통</YeonOption>
+            <YeonOption value="hard">어려움</YeonOption>
           </YeonField>
-        </div>
-      </div>
+        </YeonView>
+      </YeonView>
       {mutation.error ? (
-        <p className={TYPING_SERVICE_COMMON_CLASS.textErrorWithSpacing}>
+        <YeonText
+          as="p"
+          variant="unstyled"
+          tone="inherit"
+          className={TYPING_SERVICE_COMMON_CLASS.textErrorWithSpacing}
+        >
           {mutation.error.message}
-        </p>
+        </YeonText>
       ) : null}
-      <div className="mt-4 flex justify-end">
+      <YeonView className="mt-4 flex justify-end">
         <YeonButton type="submit" disabled={!canSubmit} variant="primary">
           {submitLabel}
         </YeonButton>
-      </div>
-    </form>
+      </YeonView>
+    </YeonForm>
   );
 }

@@ -3,7 +3,16 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./tailwind-preset": "./tailwind-preset.cjs"
+  },
+  "scripts": {
+    "lint": "eslint src --ext .ts",
+    "typecheck": "tsc -p tsconfig.json"
+  },
   "devDependencies": {
-    "@yeon/config": "workspace:*"
+    "@yeon/config": "workspace:*",
+    "typescript": "^6.0.2"
   }
 }

@@ -1,4 +1,3 @@
-import * as SecureStore from "expo-secure-store";
 import {
   CARD_STUDY_MODES,
   type CardDeckDetailResponse,
@@ -12,8 +11,13 @@ import {
   type UpdateCardDeckBody,
   type UpdateCardDeckItemBody,
 } from "@yeon/api-contract/card-decks";
-
-import { Platform as RNPlatform } from "react-native";
+import {
+  createYeonRandomUUID,
+  getYeonNow,
+  getYeonOptionalLocalStorage,
+  getYeonRandom,
+  getYeonSecureStorage,
+} from "@yeon/ui/native";
 
 const GUEST_CARD_SERVICE_STORAGE_KEY = "yeon.mobile.guest.card-service";
 const inMemoryStorage = new Map<string, string>();
@@ -58,35 +62,20 @@ type StorageProvider = {
   setItemAsync(key: string, value: string): Promise<void>;
 };
 
-function canUseSecureStore(): boolean {
-  if (RNPlatform.OS === "web") {
-    return false;
-  }
-  if (
-    typeof SecureStore.getItemAsync !== "function" ||
-    typeof SecureStore.setItemAsync !== "function" ||
-    typeof SecureStore.deleteItemAsync !== "function"
-  ) {
-    return false;
-  }
-  return true;
-}
-
 function getStorageProvider(): StorageProvider {
-  if (canUseSecureStore()) {
-    return SecureStore as StorageProvider;
+  const secureStorage = getYeonSecureStorage();
+
+  if (secureStorage) {
+    return secureStorage;
   }
 
-  const localStorage =
-    RNPlatform.OS === "web" && typeof globalThis.localStorage !== "undefined"
-      ? globalThis.localStorage
-      : null;
-  if (localStorage) {
+  const browserStorage = getYeonOptionalLocalStorage();
+  if (browserStorage) {
     return {
-      deleteItemAsync: (key) => Promise.resolve(localStorage.removeItem(key)),
-      getItemAsync: (key) => Promise.resolve(localStorage.getItem(key)),
+      deleteItemAsync: (key) => Promise.resolve(browserStorage.removeItem(key)),
+      getItemAsync: (key) => Promise.resolve(browserStorage.getItem(key)),
       setItemAsync: (key, value) =>
-        Promise.resolve(localStorage.setItem(key, value)),
+        Promise.resolve(browserStorage.setItem(key, value)),
     };
   }
 
@@ -102,18 +91,17 @@ function getStorageProvider(): StorageProvider {
 }
 
 function nowIso(): string {
-  return new Date().toISOString();
+  return new Date(getYeonNow()).toISOString();
 }
 
 function randomId(): string {
-  if (
-    typeof crypto !== "undefined" &&
-    typeof crypto.randomUUID === "function"
-  ) {
-    return crypto.randomUUID();
+  const randomUUID = createYeonRandomUUID();
+
+  if (randomUUID) {
+    return randomUUID;
   }
 
-  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+  return `${getYeonNow().toString(36)}-${getYeonRandom().toString(36).slice(2, 10)}`;
 }
 
 function ensureDecksByCreatedAt(state: GuestCardServiceState): CardDeckDto[] {

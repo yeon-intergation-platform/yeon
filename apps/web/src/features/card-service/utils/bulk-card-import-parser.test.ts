@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-
 import { parseBulkCardImportInput } from "./bulk-card-import-parser";
 
 describe("parseBulkCardImportInput", () => {

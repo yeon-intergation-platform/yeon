@@ -1,8 +1,14 @@
 "use client";
-
 import { useEffect, useState } from "react";
-import { create } from "zustand";
-import { createJSONStorage, persist } from "zustand/middleware";
+import {
+  getYeonLocalStorage,
+  matchYeonMedia,
+} from "@yeon/ui/runtime/YeonBrowserRuntime";
+import {
+  createYeonJsonStorage,
+  createYeonStore,
+  persistYeonStore,
+} from "@yeon/ui/runtime/YeonStateStore";
 
 // 데스크톱 기준은 Tailwind lg(1024px). 모바일/태블릿은 좁은 화면으로 보고 기본 닫힘.
 const DESKTOP_MEDIA_QUERY = "(min-width: 1024px)";
@@ -15,23 +21,15 @@ type CommunityChatPanelStore = {
   setOpen: (open: boolean) => void;
 };
 
-const noopStorage = {
-  getItem: () => null,
-  setItem: () => undefined,
-  removeItem: () => undefined,
-};
-
-const useCommunityChatPanelStore = create<CommunityChatPanelStore>()(
-  persist(
+const useCommunityChatPanelStore = createYeonStore<CommunityChatPanelStore>()(
+  persistYeonStore(
     (set) => ({
       userPreference: null,
       setOpen: (open) => set({ userPreference: open }),
     }),
     {
       name: STORAGE_KEY,
-      storage: createJSONStorage(() =>
-        typeof window === "undefined" ? noopStorage : window.localStorage
-      ),
+      storage: createYeonJsonStorage(() => getYeonLocalStorage()),
       partialize: (state) => ({ userPreference: state.userPreference }),
     }
   )
@@ -42,10 +40,10 @@ function useIsDesktop(): boolean | null {
   const [isDesktop, setIsDesktop] = useState<boolean | null>(null);
 
   useEffect(() => {
-    if (typeof window === "undefined" || !window.matchMedia) {
+    const mediaQuery = matchYeonMedia(DESKTOP_MEDIA_QUERY);
+    if (!mediaQuery) {
       return;
     }
-    const mediaQuery = window.matchMedia(DESKTOP_MEDIA_QUERY);
     const update = () => setIsDesktop(mediaQuery.matches);
     update();
     mediaQuery.addEventListener("change", update);

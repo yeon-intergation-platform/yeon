@@ -1,8 +1,14 @@
 "use client";
-
-import { Mic, MicOff, Phone, PhoneOff, RefreshCw } from "lucide-react";
-import { SHARED_FEATURE_CLASS } from "@/features/shared-style-constants";
-
+import {
+  YeonAudio,
+  YeonButton,
+  YeonField,
+  YeonIcon,
+  YeonOption,
+  YeonText,
+  YeonView,
+} from "@yeon/ui";
+import { YEON_WEB_SHARED_CLASS as SHARED_FEATURE_CLASS } from "@yeon/ui/theme/web-style-tokens";
 import type { RoomVoiceCallResult } from "./use-room-voice-call";
 
 type RoomVoiceCallPanelProps = {
@@ -70,145 +76,193 @@ export function RoomVoiceCallPanel({
   const canControl = status === "connected" || status === "connecting";
 
   return (
-    <section className={SHARED_FEATURE_CLASS.panelCard}>
-      <audio ref={audioRef} autoPlay playsInline />
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h2 className="text-[14px] font-bold text-[#111]">{title}</h2>
-          <p className={`mt-1 ${SHARED_FEATURE_CLASS.text12Subtle}`}>
+    <YeonView as="section" className={SHARED_FEATURE_CLASS.panelCard}>
+      <YeonAudio ref={audioRef} autoPlay playsInline />
+      <YeonView className="flex items-start justify-between gap-3">
+        <YeonView>
+          <YeonText
+            as="h2"
+            variant="unstyled"
+            tone="inherit"
+            className="text-[14px] font-bold text-[#111]"
+          >
+            {title}
+          </YeonText>
+          <YeonText
+            variant="unstyled"
+            tone="inherit"
+            className={`mt-1 ${SHARED_FEATURE_CLASS.text12Subtle}`}
+          >
             1:1 브라우저 음성통화 · 텍스트 채팅은 그대로 유지됩니다.
-          </p>
-        </div>
-        <span
+          </YeonText>
+        </YeonView>
+        <YeonText
+          as="span"
+          variant="unstyled"
+          tone="inherit"
           className="rounded-full border border-[#e5e5e5] bg-[#fafafa] px-3 py-1 text-[11px] font-bold text-[#666]"
           data-status={status}
         >
           {STATUS_LABELS[status]}
-        </span>
-      </div>
+        </YeonText>
+      </YeonView>
 
       {isFeatureFlagLoading ? (
-        <p
-          className={`mt-3 rounded-xl border border-[#eee] bg-[#fafafa] px-3 py-2 ${SHARED_FEATURE_CLASS.text12EmphasisSubtle}`}
+        <YeonText
+          variant="unstyled"
+          tone="inherit"
+          className={`mt-3 rounded-xl border border-[#e5e5e5] bg-[#fafafa] px-3 py-2 ${SHARED_FEATURE_CLASS.text12EmphasisSubtle}`}
         >
           음성통화 설정을 확인하는 중입니다.
-        </p>
+        </YeonText>
       ) : null}
 
       {!isFeatureFlagLoading && !isFeatureEnabled ? (
-        <p
-          className={`mt-3 rounded-xl border border-[#eee] bg-[#fafafa] px-3 py-2 ${SHARED_FEATURE_CLASS.text12EmphasisSubtle}`}
+        <YeonText
+          variant="unstyled"
+          tone="inherit"
+          className={`mt-3 rounded-xl border border-[#e5e5e5] bg-[#fafafa] px-3 py-2 ${SHARED_FEATURE_CLASS.text12EmphasisSubtle}`}
         >
           음성통화 베타가 꺼져 있습니다. 운영 환경에서
           NEXT_PUBLIC_ENABLE_ROOM_VOICE_CALL=true 설정 시 활성화됩니다.
-        </p>
+        </YeonText>
       ) : null}
 
       {isFeatureEnabled && !isSupported ? (
-        <p className="mt-3 rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-[12px] font-semibold text-red-700">
+        <YeonText
+          variant="unstyled"
+          tone="inherit"
+          className="mt-3 rounded-xl border border-[#e5e5e5] bg-[#fafafa] px-3 py-2 text-[12px] font-semibold text-[#111]"
+        >
           현재 브라우저는 음성통화를 지원하지 않습니다.
-        </p>
+        </YeonText>
       ) : null}
 
       {incomingFrom && status === "ringing" ? (
-        <div className="mt-3 rounded-xl border border-[#d9ead3] bg-[#eef8ea] p-3">
-          <p className="text-[13px] font-bold text-[#2f7d32]">
+        <YeonView className="mt-3 rounded-xl border border-[#e5e5e5] bg-[#fafafa] p-3">
+          <YeonText
+            variant="unstyled"
+            tone="inherit"
+            className="text-[13px] font-bold text-[#111]"
+          >
             {incomingLabel}님이 통화를 요청했습니다.
-          </p>
-          <div className="mt-3 flex gap-2">
-            <button
+          </YeonText>
+          <YeonView className="mt-3 flex gap-2">
+            <YeonButton
               type="button"
               onClick={() => void accept()}
               className="inline-flex h-9 flex-1 items-center justify-center gap-2 rounded-lg bg-[#111] px-3 text-[12px] font-bold text-white"
+              variant="primary"
             >
-              <Phone size={14} /> 수락
-            </button>
-            <button
+              <YeonIcon name="phone" size={14} /> 수락
+            </YeonButton>
+            <YeonButton
               type="button"
               onClick={reject}
-              className="inline-flex h-9 flex-1 items-center justify-center gap-2 rounded-lg border border-[#d7d7d7] bg-white px-3 text-[12px] font-bold text-[#555]"
+              className="inline-flex h-9 flex-1 items-center justify-center gap-2 rounded-lg border border-[#e5e5e5] bg-white px-3 text-[12px] font-bold text-[#666]"
+              variant="secondary"
             >
-              <PhoneOff size={14} /> 거절
-            </button>
-          </div>
-        </div>
+              <YeonIcon name="phone-off" size={14} /> 거절
+            </YeonButton>
+          </YeonView>
+        </YeonView>
       ) : (
-        <div className="mt-3 grid gap-2">
-          <select
+        <YeonView className="mt-3 grid gap-2">
+          <YeonField
+            as="select"
             value={selectedTargetId ?? ""}
             onChange={(event) =>
               setSelectedTargetId(event.target.value || null)
             }
             disabled={!canStart}
-            className="h-10 rounded-xl border border-[#d7d7d7] bg-white px-3 text-[13px] font-semibold text-[#333] disabled:bg-[#f5f5f5] disabled:text-[#aaa]"
+            className="h-10 rounded-xl border border-[#e5e5e5] bg-white px-3 text-[13px] font-semibold text-[#111] disabled:bg-[#fafafa] disabled:text-[#aaa]"
           >
             {availableTargets.length === 0 ? (
-              <option value="">통화 가능한 상대 없음</option>
+              <YeonOption value="">통화 가능한 상대 없음</YeonOption>
             ) : null}
             {availableTargets.map((participant) => (
-              <option key={participant.id} value={participant.id}>
+              <YeonOption key={participant.id} value={participant.id}>
                 {participant.label}
-              </option>
+              </YeonOption>
             ))}
-          </select>
+          </YeonField>
 
-          <div className="flex gap-2">
-            <button
+          <YeonView className="flex gap-2">
+            <YeonButton
               type="button"
               onClick={() => void start()}
               disabled={!canStart}
-              className="inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-xl bg-[#111] px-3 text-[13px] font-bold text-white transition-colors hover:bg-[#333] disabled:cursor-not-allowed disabled:bg-[#ddd] disabled:text-[#999]"
+              className="inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-xl bg-[#111] px-3 text-[13px] font-bold text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-50"
+              variant="primary"
             >
-              <Phone size={15} /> 통화 시작
-            </button>
-            <button
+              <YeonIcon name="phone" size={15} /> 통화 시작
+            </YeonButton>
+            <YeonButton
               type="button"
               onClick={end}
               disabled={!canControl && status !== "calling"}
-              className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-[#d7d7d7] bg-white px-3 text-[13px] font-bold text-[#555] disabled:cursor-not-allowed disabled:text-[#bbb]"
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-[#e5e5e5] bg-white px-3 text-[13px] font-bold text-[#666] disabled:cursor-not-allowed disabled:text-[#aaa]"
+              variant="secondary"
             >
-              <PhoneOff size={15} /> 종료
-            </button>
-          </div>
-        </div>
+              <YeonIcon name="phone-off" size={15} /> 종료
+            </YeonButton>
+          </YeonView>
+        </YeonView>
       )}
 
       {canControl ? (
-        <div className="mt-2 flex gap-2">
-          <button
+        <YeonView className="mt-2 flex gap-2">
+          <YeonButton
             type="button"
             onClick={toggleMute}
-            className="inline-flex h-9 flex-1 items-center justify-center gap-2 rounded-lg border border-[#d7d7d7] bg-[#fafafa] px-3 text-[12px] font-bold text-[#555]"
+            className="inline-flex h-9 flex-1 items-center justify-center gap-2 rounded-lg border border-[#e5e5e5] bg-[#fafafa] px-3 text-[12px] font-bold text-[#666]"
+            variant="secondary"
           >
-            {isMuted ? <MicOff size={14} /> : <Mic size={14} />}
+            <YeonIcon name={isMuted ? "mic-off" : "mic"} size={14} />
             {isMuted ? "내 마이크 꺼짐" : "내 마이크 켜짐"}
-          </button>
+          </YeonButton>
           {isRemoteMuted ? (
-            <span className="inline-flex h-9 flex-1 items-center justify-center rounded-lg border border-[#e5e5e5] bg-[#fafafa] px-3 text-[12px] font-bold text-[#777]">
+            <YeonText
+              as="span"
+              variant="unstyled"
+              tone="inherit"
+              className="inline-flex h-9 flex-1 items-center justify-center rounded-lg border border-[#e5e5e5] bg-[#fafafa] px-3 text-[12px] font-bold text-[#666]"
+            >
               상대 마이크 꺼짐
-            </span>
+            </YeonText>
           ) : null}
-        </div>
+        </YeonView>
       ) : null}
 
       {activeLabel && status !== "ringing" ? (
-        <p className={`mt-2 ${SHARED_FEATURE_CLASS.text12EmphasisSubtle}`}>
+        <YeonText
+          variant="unstyled"
+          tone="inherit"
+          className={`mt-2 ${SHARED_FEATURE_CLASS.text12EmphasisSubtle}`}
+        >
           상대: {activeLabel}
-        </p>
+        </YeonText>
       ) : null}
 
       {error ? (
-        <div className="mt-3 flex items-center justify-between gap-2 rounded-xl border border-red-100 bg-red-50 px-3 py-2">
-          <p className="text-[12px] font-semibold text-red-700">{error}</p>
-          <button
+        <YeonView className="mt-3 flex items-center justify-between gap-2 rounded-xl border border-[#e5e5e5] bg-[#fafafa] px-3 py-2">
+          <YeonText
+            variant="unstyled"
+            tone="inherit"
+            className="text-[12px] font-semibold text-[#111]"
+          >
+            {error}
+          </YeonText>
+          <YeonButton
             type="button"
             onClick={retry}
-            className="inline-flex shrink-0 items-center gap-1 text-[12px] font-bold text-red-700"
+            className="inline-flex shrink-0 items-center gap-1 text-[12px] font-bold text-[#111]"
+            variant="ghost"
           >
-            <RefreshCw size={13} /> 재시도
-          </button>
-        </div>
+            <YeonIcon name="rotate-cw" size={13} /> 재시도
+          </YeonButton>
+        </YeonView>
       ) : null}
-    </section>
+    </YeonView>
   );
 }

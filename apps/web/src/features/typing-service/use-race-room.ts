@@ -1,7 +1,5 @@
 "use client";
-
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Client, type Room } from "@colyseus/sdk";
 import {
   RACE_EVENTS,
   TYPING_RACE_DEFAULTS,
@@ -21,6 +19,12 @@ import {
   type TypingRoomCreateMessage,
   type TypingRoomSnapshot,
 } from "@yeon/race-shared";
+import { delayYeon } from "@yeon/ui/runtime/YeonBrowserRuntime";
+import {
+  createYeonRealtimeClient,
+  ensureYeonRealtimeSeatReservationCompat,
+  type YeonRealtimeRoom,
+} from "@yeon/ui/runtime/YeonRealtimeClient";
 
 export type RaceConnectionState =
   | "idle"
@@ -41,7 +45,7 @@ export type UseRaceRoomOptions = {
 };
 
 export type UseRaceRoomResult = {
-  room: Room | null;
+  room: YeonRealtimeRoom | null;
   connectionState: RaceConnectionState;
   snapshot: TypingRaceSnapshot | null;
   roomSnapshot: TypingRoomSnapshot | null;
@@ -72,54 +76,6 @@ const ROOM_ERROR_MESSAGES = {
   network: "서버와의 연결이 끊어졌습니다.",
   unknown: "타자방에 연결할 수 없습니다.",
 } as const;
-
-type LegacySeatReservation = {
-  name?: string;
-  roomId?: string;
-  processId?: string;
-  publicAddress?: string;
-  room?: {
-    name?: string;
-    roomId?: string;
-    processId?: string;
-    publicAddress?: string;
-  };
-};
-
-type ColyseusClientPrototypeWithCompat = {
-  __yeonSeatReservationCompat?: boolean;
-  consumeSeatReservation?: (
-    response: LegacySeatReservation,
-    ...args: unknown[]
-  ) => unknown;
-};
-
-function ensureSeatReservationCompat() {
-  const prototype =
-    Client.prototype as unknown as ColyseusClientPrototypeWithCompat;
-  if (
-    prototype.__yeonSeatReservationCompat ||
-    !prototype.consumeSeatReservation
-  )
-    return;
-
-  const original = prototype.consumeSeatReservation;
-  prototype.consumeSeatReservation = function consumeSeatReservationCompat(
-    response: LegacySeatReservation,
-    ...args: unknown[]
-  ) {
-    if (!response.room && response.name && response.roomId) {
-      response.room = {
-        name: response.name,
-        roomId: response.roomId,
-        processId: response.processId,
-        publicAddress: response.publicAddress,
-      };
-    }
-    return original.call(this, response, ...args);
-  };
-  prototype.__yeonSeatReservationCompat = true;
-}
 
 function normalizeRoomErrorMessage(source: unknown): string {
   if (typeof source === "string" && source.trim().length > 0) {
@@ -214,7 +170,7 @@ export function useRaceRoom(options: UseRaceRoomOptions): UseRaceRoomResult {
   const [roomSnapshot, setRoomSnapshot] = useState<TypingRoomSnapshot | null>(
     null
   );
-  const [room, setRoom] = useState<Room | null>(null);
+  const [room, setRoom] = useState<YeonRealtimeRoom | null>(null);
   const [prompt, setPrompt] = useState<string | null>(null);
   const [results, setResults] = useState<readonly TypingResultSnapshot[]>([]);
   const [mySeat, setMySeat] = useState<string | null>(null);
@@ -222,7 +178,7 @@ export function useRaceRoom(options: UseRaceRoomOptions): UseRaceRoomResult {
   const [roomError, setRoomError] = useState<string | null>(null);
   const [rejoinToken, setRejoinToken] = useState(0);
 
-  const roomRef = useRef<Room | null>(null);
+  const roomRef = useRef<YeonRealtimeRoom | null>(null);
   const createRoomKey = createRoom ? JSON.stringify(createRoom) : "";
   const quickRoomKey = quickRoom ? JSON.stringify(quickRoom) : "";
 
@@ -246,8 +202,8 @@ export function useRaceRoom(options: UseRaceRoomOptions): UseRaceRoomResult {
     setRoomError(null);
     setRoom(null);
 
-    ensureSeatReservationCompat();
-    const client = new Client(resolveRaceServerUrl());
+    ensureYeonRealtimeSeatReservationCompat();
+    const client = createYeonRealtimeClient(resolveRaceServerUrl());
     const joinOptions = {
       playerLabel: playerLabelRef.current,
       playerId,
@@ -403,9 +359,7 @@ export function useRaceRoom(options: UseRaceRoomOptions): UseRaceRoomResult {
 
     try {
       room.send(RACE_EVENTS.ROOM_LEAVE, {});
-      await new Promise((resolve) =>
-        globalThis.setTimeout(resolve, EXPLICIT_LEAVE_FLUSH_DELAY_MS)
-      );
+      await delayYeon(EXPLICIT_LEAVE_FLUSH_DELAY_MS);
       await room.leave(true);
     } catch {
       try {

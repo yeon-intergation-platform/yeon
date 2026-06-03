@@ -1,5 +1,43 @@
 "use client";
-
+import {
+  YeonGlobalStyle,
+  YeonHtmlContent,
+  YeonList,
+  YeonListItem,
+  YeonText,
+  YeonView,
+  YEON_WEB_CSS_VALUE,
+  YeonLink,
+  type YeonAnchorElement,
+  type YeonImageElement,
+  type YeonPreElement,
+  type YeonElement,
+} from "@yeon/ui";
+import {
+  appendYeonChildren,
+  createYeonDomElement,
+  getYeonElementAttribute,
+  getYeonHtmlBodyInnerHtml,
+  getYeonNodeTextContent,
+  getYeonOwnerDocument,
+  hasYeonElementClass,
+  insertYeonBefore,
+  parseYeonHtmlDocument,
+  queryYeonElement,
+  queryYeonElements,
+  removeYeonElement,
+  removeYeonElementAttribute,
+  setYeonElementAttribute,
+  setYeonElementStyleProperty,
+  removeYeonElementStyleProperty,
+  setYeonNodeTextContent,
+} from "@yeon/ui/rich-content/YeonRichDom";
+import { mountYeonMermaidDiagram } from "@yeon/ui/rich-content/YeonMermaid";
+import {
+  copyYeonClipboardText,
+  getYeonNow,
+  scheduleYeonTimeout,
+} from "@yeon/ui/runtime/YeonBrowserRuntime";
 import {
   Children,
   isValidElement,
@@ -9,10 +47,10 @@ import {
   type ReactElement,
   type ReactNode,
 } from "react";
-import createDOMPurify from "dompurify";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-
+import {
+  sanitizeYeonHtml,
+  YeonMarkdownContent,
+} from "@yeon/ui/rich-content/YeonMarkdown";
 import { CardMarkdownCodeBlock } from "./card-markdown-code-block";
 import { getCardEditorCodeLanguageFromClassName } from "./card-editor-codeblock-utils";
 import {
@@ -39,11 +77,164 @@ interface MarkdownCodeElementProps {
 const baseTextClass = "whitespace-pre-wrap break-words";
 export const CARD_MARKDOWN_TABLE_MIN_CELL_WIDTH = 56;
 export const CARD_MARKDOWN_TABLE_MIN_CELL_HEIGHT = 56;
+const CARD_MARKDOWN_TABLE_CELL_CLASS = "h-[56px] min-w-[56px]";
 
-const CARD_MARKDOWN_TABLE_CELL_STYLE = {
-  minWidth: CARD_MARKDOWN_TABLE_MIN_CELL_WIDTH,
-  height: CARD_MARKDOWN_TABLE_MIN_CELL_HEIGHT,
-} as const;
+const CARD_MARKDOWN_HTML_GLOBAL_STYLE = `
+  .card-markdown-html p {
+    margin: 0.5rem 0;
+  }
+  .card-markdown-html p:first-child {
+    margin-top: 0;
+  }
+  .card-markdown-html p:last-child {
+    margin-bottom: 0;
+  }
+  .card-markdown-html ul,
+  .card-markdown-html ol {
+    margin: 0.5rem 0;
+    padding-left: 1.35rem;
+  }
+  .card-markdown-html ul {
+    list-style: disc;
+  }
+  .card-markdown-html ol {
+    list-style: decimal;
+  }
+  .card-markdown-html blockquote {
+    border-left: 4px solid #e5e5e5;
+    color: #666;
+    margin: 0.75rem 0;
+    padding-left: 0.75rem;
+  }
+  .card-markdown-html code {
+    background: #fafafa;
+    border-radius: 0.25rem;
+    font-family:
+      ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+      "Courier New", monospace;
+    padding: 0.125rem 0.25rem;
+  }
+  .card-markdown-html pre {
+    background: #fafafa;
+    border-radius: 0.75rem;
+    margin: 0.75rem 0;
+    overflow-x: auto;
+    padding: 0.75rem;
+  }
+  .card-markdown-html .card-code-block-wrapper {
+    background: #fafafa;
+    border: 1px solid #e5e5e5;
+    border-radius: 0.75rem;
+    margin: 0.75rem 0;
+    overflow: hidden;
+  }
+  .card-markdown-html .card-code-block-wrapper.is-inverted {
+    background: ${YEON_WEB_CSS_VALUE.invertedCodeBackground};
+    border-color: ${YEON_WEB_CSS_VALUE.invertedCodeBorder};
+  }
+  .card-markdown-html .card-code-block-header {
+    align-items: center;
+    border-bottom: 1px solid #e5e5e5;
+    color: #666;
+    display: flex;
+    font-size: 11px;
+    font-weight: 700;
+    justify-content: space-between;
+    padding: 0.5rem 0.75rem;
+  }
+  .card-markdown-html
+    .card-code-block-wrapper.is-inverted
+    .card-code-block-header {
+    border-bottom-color: ${YEON_WEB_CSS_VALUE.invertedCodeHeaderBorder};
+    color: ${YEON_WEB_CSS_VALUE.invertedCodeText};
+  }
+  .card-markdown-html .card-code-block-language {
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  .card-markdown-html .card-code-block-copy {
+    background: #ffffff;
+    border: 1px solid #e5e5e5;
+    border-radius: 0.5rem;
+    color: #111;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 0.25rem 0.5rem;
+  }
+  .card-markdown-html
+    .card-code-block-wrapper.is-inverted
+    .card-code-block-copy {
+    background: transparent;
+    border-color: ${YEON_WEB_CSS_VALUE.invertedCodeBorder};
+    color: #ffffff;
+  }
+  .card-markdown-html .card-code-block-wrapper pre {
+    border-radius: 0;
+    margin: 0;
+  }
+  .card-markdown-html .card-mermaid-html-body {
+    background: #ffffff;
+    color: #666;
+    font-size: 12px;
+    font-weight: 600;
+    overflow-x: auto;
+    padding: 1rem;
+  }
+  .card-markdown-html .card-mermaid-html-body svg,
+  .card-mermaid-diagram svg {
+    display: block;
+    height: auto;
+    max-width: 100%;
+  }
+  .card-markdown-html a {
+    text-decoration: underline;
+    text-decoration-color: #aaa;
+  }
+  .card-markdown-html img {
+    border: 1px solid #e5e5e5;
+    border-radius: 14px;
+    display: block;
+    height: auto;
+    margin: 0.5rem 0;
+    max-width: 100%;
+    object-fit: contain;
+  }
+  .card-markdown-html table {
+    border: 1px solid #e5e5e5;
+    border-collapse: collapse;
+    margin: 0.5rem 0;
+    max-width: 100%;
+    table-layout: auto;
+    text-align: left;
+    width: max-content;
+  }
+  .card-markdown-html th,
+  .card-markdown-html td {
+    border: 1px solid #e5e5e5;
+    box-sizing: border-box;
+    font-size: 13px;
+    height: ${CARD_MARKDOWN_TABLE_MIN_CELL_HEIGHT}px;
+    line-height: 1.4;
+    min-width: ${CARD_MARKDOWN_TABLE_MIN_CELL_WIDTH}px;
+    padding: 0.25rem 0.4rem;
+    vertical-align: top;
+    white-space: nowrap;
+  }
+  .card-markdown-html th {
+    background: #fafafa;
+    font-weight: 700;
+  }
+  .card-markdown-html iframe.card-youtube-embed {
+    aspect-ratio: 16 / 9;
+    border: 1px solid #e5e5e5;
+    border-radius: 14px;
+    display: block;
+    height: auto;
+    margin: 0.75rem 0;
+    max-width: 100%;
+    width: 100%;
+  }
+`;
 
 function looksLikeHtml(value: string) {
   return /<\/?(p|div|br|ul|ol|li|strong|em|u|s|blockquote|pre|code|h[1-6]|img|a|table|thead|tbody|tr|th|td|iframe)\b/i.test(
@@ -52,9 +243,7 @@ function looksLikeHtml(value: string) {
 }
 
 function sanitizeHtml(value: string) {
-  if (typeof window === "undefined") return "";
-  const sanitizer = createDOMPurify(window);
-  const sanitized = sanitizer.sanitize(value, {
+  const sanitized = sanitizeYeonHtml(value, {
     ALLOWED_TAGS: [
       "p",
       "br",
@@ -107,137 +296,132 @@ function sanitizeHtml(value: string) {
     ALLOW_DATA_ATTR: false,
   });
 
-  if (typeof DOMParser === "undefined") return sanitized;
-  const document = new DOMParser().parseFromString(sanitized, "text/html");
-  document.querySelectorAll("img").forEach((image) => {
-    const width = parseCardEditorImageWidth(image.getAttribute("width"));
-    image.setAttribute("width", String(width));
-    image.style.width = `${width}px`;
+  const htmlDocument = parseYeonHtmlDocument(sanitized);
+  if (!htmlDocument) return sanitized;
+
+  queryYeonElements<YeonImageElement>(htmlDocument, "img").forEach((image) => {
+    const width = parseCardEditorImageWidth(
+      getYeonElementAttribute(image, "width")
+    );
+    setYeonElementAttribute(image, "width", String(width));
+    setYeonElementStyleProperty(image, "width", `${width}px`);
 
     // 명시적 height(px)가 있으면 aspect-ratio + height:auto로 적용한다. 좁은 폭에서
     // max-width:100%로 줄어도 지정한 W:H 비율을 유지하며 함께 축소된다(고정 height 왜곡 방지).
     const height = parseOptionalCardEditorImageHeight(
-      image.getAttribute("height")
+      getYeonElementAttribute(image, "height")
     );
-    image.style.height = "auto";
+    setYeonElementStyleProperty(image, "height", "auto");
     if (height === null) {
-      image.removeAttribute("height");
-      image.style.removeProperty("aspect-ratio");
+      removeYeonElementAttribute(image, "height");
+      removeYeonElementStyleProperty(image, "aspect-ratio");
     } else {
-      image.setAttribute("height", String(height));
-      image.style.aspectRatio = `${width} / ${height}`;
+      setYeonElementAttribute(image, "height", String(height));
+      setYeonElementStyleProperty(
+        image,
+        "aspect-ratio",
+        `${width} / ${height}`
+      );
     }
 
-    image.setAttribute("loading", "lazy");
-    image.setAttribute("decoding", "async");
+    setYeonElementAttribute(image, "loading", "lazy");
+    setYeonElementAttribute(image, "decoding", "async");
   });
-  document.querySelectorAll("a").forEach((anchor) => {
-    anchor.setAttribute("target", "_blank");
-    anchor.setAttribute("rel", "noreferrer");
+  queryYeonElements<YeonAnchorElement>(htmlDocument, "a").forEach((anchor) => {
+    setYeonElementAttribute(anchor, "target", "_blank");
+    setYeonElementAttribute(anchor, "rel", "noreferrer");
   });
-  document.querySelectorAll("pre code").forEach((code) => {
+  queryYeonElements<YeonElement>(htmlDocument, "pre code").forEach((code) => {
     const language = getCardEditorCodeLanguageFromClassName(
-      code.getAttribute("class") ?? ""
+      getYeonElementAttribute(code, "class") ?? ""
     );
     if (language) {
-      code.setAttribute("class", `language-${language}`);
+      setYeonElementAttribute(code, "class", `language-${language}`);
       return;
     }
 
-    code.removeAttribute("class");
+    removeYeonElementAttribute(code, "class");
   });
-  applyCardEditorYouTubeIframeAttributes(document);
-  return document.body.innerHTML;
+  applyCardEditorYouTubeIframeAttributes(htmlDocument);
+  return getYeonHtmlBodyInnerHtml(htmlDocument);
 }
 
 function renderHtmlMermaidBlock(
-  host: HTMLDivElement,
+  host: YeonElement,
   code: string,
   elementId: string
 ) {
-  import("mermaid")
-    .then(async ({ default: mermaid }) => {
-      mermaid.initialize({
-        startOnLoad: false,
-        securityLevel: "strict",
-        theme: "neutral",
-        fontFamily:
-          'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-      });
-
-      const result = await mermaid.render(elementId, code);
-      host.innerHTML = result.svg;
-    })
-    .catch(() => {
-      host.innerHTML = "";
-      const fallback = document.createElement("pre");
-      const fallbackCode = document.createElement("code");
-      fallbackCode.textContent = code;
-      fallback.append(fallbackCode);
-      host.append(fallback);
-    });
+  void mountYeonMermaidDiagram(host, {
+    code,
+    elementId,
+    theme: "neutral",
+  });
 }
 
-function decorateHtmlCodeBlocks(container: HTMLDivElement, inverted: boolean) {
-  container.querySelectorAll("pre").forEach((pre, index) => {
-    if (pre.parentElement?.classList.contains("card-code-block-wrapper")) {
+function decorateHtmlCodeBlocks(container: YeonElement, inverted: boolean) {
+  queryYeonElements<YeonPreElement>(container, "pre").forEach((pre, index) => {
+    if (hasYeonElementClass(pre.parentElement, "card-code-block-wrapper")) {
       return;
     }
 
-    const code = pre.querySelector("code");
+    const code = queryYeonElement<YeonElement>(pre, "code");
     const language = getCardEditorCodeLanguageFromClassName(
-      code?.getAttribute("class") ?? ""
+      getYeonElementAttribute(code, "class") ?? ""
     );
-    const wrapper = document.createElement("div");
-    const header = document.createElement("div");
-    const languageLabel = document.createElement("span");
-    const copyButton = document.createElement("button");
-    const codeText = code?.textContent ?? pre.textContent ?? "";
+    const htmlDocument = getYeonOwnerDocument(container);
+    const wrapper = createYeonDomElement(htmlDocument, "div");
+    const header = createYeonDomElement(htmlDocument, "div");
+    const languageLabel = createYeonDomElement(htmlDocument, "span");
+    const copyButton = createYeonDomElement(htmlDocument, "button");
+    const codeText =
+      getYeonNodeTextContent(code) || getYeonNodeTextContent(pre);
 
     wrapper.className = `card-code-block-wrapper ${
       inverted ? "is-inverted" : ""
     }`;
     header.className = "card-code-block-header";
     languageLabel.className = "card-code-block-language";
-    languageLabel.textContent = language ?? "code";
+    setYeonNodeTextContent(languageLabel, language ?? "code");
     copyButton.type = "button";
     copyButton.className = "card-code-block-copy";
-    copyButton.textContent = "복사";
+    setYeonNodeTextContent(copyButton, "복사");
     copyButton.addEventListener("click", () => {
-      navigator.clipboard
-        .writeText(codeText.replace(/\n$/, ""))
-        .then(() => {
-          copyButton.textContent = "복사됨";
-          window.setTimeout(() => {
-            copyButton.textContent = "복사";
+      copyYeonClipboardText(codeText.replace(/\n$/, ""))
+        .then((copiedSuccessfully) => {
+          if (!copiedSuccessfully) {
+            throw new Error("클립보드 복사를 지원하지 않습니다.");
+          }
+          setYeonNodeTextContent(copyButton, "복사됨");
+          scheduleYeonTimeout(() => {
+            setYeonNodeTextContent(copyButton, "복사");
           }, 1200);
         })
         .catch(() => {
-          copyButton.textContent = "실패";
-          window.setTimeout(() => {
-            copyButton.textContent = "복사";
+          setYeonNodeTextContent(copyButton, "실패");
+          scheduleYeonTimeout(() => {
+            setYeonNodeTextContent(copyButton, "복사");
           }, 1200);
         });
     });
 
-    header.append(languageLabel, copyButton);
-    pre.parentNode?.insertBefore(wrapper, pre);
+    appendYeonChildren(header, languageLabel, copyButton);
+    insertYeonBefore(pre.parentNode, wrapper, pre);
 
     if (language === "mermaid") {
-      const mermaidBody = document.createElement("div");
+      const mermaidBody = createYeonDomElement(htmlDocument, "div");
       mermaidBody.className = "card-mermaid-html-body";
-      mermaidBody.textContent = "다이어그램 렌더링 중...";
-      wrapper.append(header, mermaidBody);
-      pre.remove();
+      setYeonNodeTextContent(mermaidBody, "다이어그램 렌더링 중...");
+      appendYeonChildren(wrapper, header, mermaidBody);
+      removeYeonElement(pre);
       renderHtmlMermaidBlock(
         mermaidBody,
         codeText.replace(/\n$/, ""),
-        `card-html-mermaid-${Date.now()}-${index}`
+        `card-html-mermaid-${getYeonNow()}-${index}`
       );
       return;
     }
 
-    wrapper.append(header, pre);
+    appendYeonChildren(wrapper, header, pre);
   });
 }
 
@@ -254,7 +438,7 @@ export function MarkdownContent({
   className,
   inverted = false,
 }: MarkdownContentProps) {
-  const htmlContainerRef = useRef<HTMLDivElement | null>(null);
+  const htmlContainerRef = useRef<YeonElement | null>(null);
   const colors = inverted
     ? {
         text: "text-white",
@@ -264,9 +448,9 @@ export function MarkdownContent({
       }
     : {
         text: "text-[#111]",
-        muted: "text-[#555]",
+        muted: "text-[#666]",
         border: "border-[#e5e5e5]",
-        code: "bg-[#f7f7f7]",
+        code: "bg-[#fafafa]",
       };
 
   const contentTextClassName = className ?? "text-[15px] leading-7";
@@ -290,213 +474,82 @@ export function MarkdownContent({
     decorateHtmlCodeBlocks(htmlContainerRef.current, inverted);
   }, [inverted, isHtml, safeHtml]);
 
-  const htmlStyles = (
-    <style jsx global>{`
-      .card-markdown-html p {
-        margin: 0.5rem 0;
-      }
-      .card-markdown-html p:first-child {
-        margin-top: 0;
-      }
-      .card-markdown-html p:last-child {
-        margin-bottom: 0;
-      }
-      .card-markdown-html ul,
-      .card-markdown-html ol {
-        margin: 0.5rem 0;
-        padding-left: 1.35rem;
-      }
-      .card-markdown-html ul {
-        list-style: disc;
-      }
-      .card-markdown-html ol {
-        list-style: decimal;
-      }
-      .card-markdown-html blockquote {
-        border-left: 4px solid #e5e5e5;
-        color: #555;
-        margin: 0.75rem 0;
-        padding-left: 0.75rem;
-      }
-      .card-markdown-html code {
-        background: #f7f7f7;
-        border-radius: 0.25rem;
-        font-family:
-          ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
-          "Liberation Mono", "Courier New", monospace;
-        padding: 0.125rem 0.25rem;
-      }
-      .card-markdown-html pre {
-        background: #f7f7f7;
-        border-radius: 0.75rem;
-        margin: 0.75rem 0;
-        overflow-x: auto;
-        padding: 0.75rem;
-      }
-      .card-markdown-html .card-code-block-wrapper {
-        background: #f7f7f7;
-        border: 1px solid #e5e5e5;
-        border-radius: 0.75rem;
-        margin: 0.75rem 0;
-        overflow: hidden;
-      }
-      .card-markdown-html .card-code-block-wrapper.is-inverted {
-        background: rgba(255, 255, 255, 0.1);
-        border-color: rgba(255, 255, 255, 0.2);
-      }
-      .card-markdown-html .card-code-block-header {
-        align-items: center;
-        border-bottom: 1px solid #e5e5e5;
-        color: #777;
-        display: flex;
-        font-size: 11px;
-        font-weight: 700;
-        justify-content: space-between;
-        padding: 0.5rem 0.75rem;
-      }
-      .card-markdown-html
-        .card-code-block-wrapper.is-inverted
-        .card-code-block-header {
-        border-bottom-color: rgba(255, 255, 255, 0.15);
-        color: rgba(255, 255, 255, 0.75);
-      }
-      .card-markdown-html .card-code-block-language {
-        letter-spacing: 0.12em;
-        text-transform: uppercase;
-      }
-      .card-markdown-html .card-code-block-copy {
-        background: #fff;
-        border: 1px solid #d8d8d8;
-        border-radius: 0.5rem;
-        color: #333;
-        font-size: 11px;
-        font-weight: 700;
-        padding: 0.25rem 0.5rem;
-      }
-      .card-markdown-html
-        .card-code-block-wrapper.is-inverted
-        .card-code-block-copy {
-        background: transparent;
-        border-color: rgba(255, 255, 255, 0.2);
-        color: #fff;
-      }
-      .card-markdown-html .card-code-block-wrapper pre {
-        border-radius: 0;
-        margin: 0;
-      }
-      .card-markdown-html .card-mermaid-html-body {
-        background: #fff;
-        color: #777;
-        font-size: 12px;
-        font-weight: 600;
-        overflow-x: auto;
-        padding: 1rem;
-      }
-      .card-markdown-html .card-mermaid-html-body svg,
-      .card-mermaid-diagram svg {
-        display: block;
-        height: auto;
-        max-width: 100%;
-      }
-      .card-markdown-html a {
-        text-decoration: underline;
-        text-decoration-color: #999;
-      }
-      .card-markdown-html img {
-        border: 1px solid #e5e5e5;
-        border-radius: 14px;
-        display: block;
-        height: auto;
-        margin: 0.5rem 0;
-        max-width: 100%;
-        object-fit: contain;
-      }
-      .card-markdown-html table {
-        border: 1px solid #dcdcdc;
-        border-collapse: collapse;
-        margin: 0.5rem 0;
-        max-width: 100%;
-        table-layout: auto;
-        text-align: left;
-        width: max-content;
-      }
-      .card-markdown-html th,
-      .card-markdown-html td {
-        border: 1px solid #dcdcdc;
-        box-sizing: border-box;
-        font-size: 13px;
-        height: ${CARD_MARKDOWN_TABLE_MIN_CELL_HEIGHT}px;
-        line-height: 1.4;
-        min-width: ${CARD_MARKDOWN_TABLE_MIN_CELL_WIDTH}px;
-        padding: 0.25rem 0.4rem;
-        vertical-align: top;
-        white-space: nowrap;
-      }
-      .card-markdown-html th {
-        background: #f7f7f7;
-        font-weight: 700;
-      }
-      .card-markdown-html iframe.card-youtube-embed {
-        aspect-ratio: 16 / 9;
-        border: 1px solid #e5e5e5;
-        border-radius: 14px;
-        display: block;
-        height: auto;
-        margin: 0.75rem 0;
-        max-width: 100%;
-        width: 100%;
-      }
-    `}</style>
-  );
-
   if (isHtml) {
     return (
       <>
-        <div
+        <YeonHtmlContent
           ref={htmlContainerRef}
           className={`${baseTextClass} card-markdown-html ${colors.text} ${contentTextClassName}`}
           suppressHydrationWarning
-          dangerouslySetInnerHTML={{ __html: safeHtml }}
+          html={safeHtml}
         />
-        {htmlStyles}
+        <YeonGlobalStyle
+          id="card-markdown-html"
+          css={CARD_MARKDOWN_HTML_GLOBAL_STYLE}
+        />
       </>
     );
   }
 
   return (
-    <div className={`${baseTextClass} ${colors.text} ${contentTextClassName}`}>
-      <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
+    <YeonView
+      className={`${baseTextClass} ${colors.text} ${contentTextClassName}`}
+    >
+      <YeonMarkdownContent
         components={{
           p: ({ children: nodeChildren }) => (
-            <p className="my-2 first:mt-0 last:mb-0">{nodeChildren}</p>
+            <YeonText
+              as="p"
+              variant="unstyled"
+              tone="inherit"
+              className="my-2 first:mt-0 last:mb-0"
+            >
+              {nodeChildren}
+            </YeonText>
           ),
           ul: ({ children: nodeChildren }) => (
-            <ul className="my-2 list-disc space-y-1 pl-5">{nodeChildren}</ul>
+            <YeonList className="my-2 list-disc space-y-1 pl-5">
+              {nodeChildren}
+            </YeonList>
           ),
           ol: ({ children: nodeChildren }) => (
-            <ol className="my-2 list-decimal space-y-1 pl-5">{nodeChildren}</ol>
+            <YeonList as="ol" className="my-2 list-decimal space-y-1 pl-5">
+              {nodeChildren}
+            </YeonList>
           ),
-          li: ({ children: nodeChildren }) => <li>{nodeChildren}</li>,
+          li: ({ children: nodeChildren }) => (
+            <YeonListItem>{nodeChildren}</YeonListItem>
+          ),
           blockquote: ({ children: nodeChildren }) => (
-            <blockquote
+            <YeonText
+              as="blockquote"
+              variant="unstyled"
+              tone="inherit"
               className={`my-3 border-l-4 ${colors.border} pl-3 ${colors.muted}`}
             >
               {nodeChildren}
-            </blockquote>
+            </YeonText>
           ),
           code: ({ children: nodeChildren, className }) => {
             return (
-              <code
+              <YeonText
+                as="code"
+                variant="unstyled"
+                tone="inherit"
                 className={`rounded px-1 py-0.5 font-mono text-[0.92em] ${colors.code} ${className ?? ""}`}
               >
                 {nodeChildren}
-              </code>
+              </YeonText>
             );
           },
           pre: ({ children: nodeChildren }) => {
             const codeChild = getMarkdownCodeChild(nodeChildren);
-            if (!codeChild) return <pre>{nodeChildren}</pre>;
+            if (!codeChild)
+              return (
+                <YeonText as="pre" variant="unstyled" tone="inherit">
+                  {nodeChildren}
+                </YeonText>
+              );
 
             return (
               <CardMarkdownCodeBlock
@@ -508,105 +561,53 @@ export function MarkdownContent({
             );
           },
           a: ({ children: nodeChildren, href }) => (
-            <a
+            <YeonLink
               className={
                 inverted
                   ? "underline decoration-white/60"
-                  : "underline decoration-[#999]"
+                  : "underline decoration-[#aaa]"
               }
-              href={href}
+              href={href ?? "#"}
               rel="noreferrer"
               target="_blank"
             >
               {nodeChildren}
-            </a>
+            </YeonLink>
           ),
           table: ({ children: nodeChildren }) => (
-            <div className="my-2 max-w-full overflow-x-auto">
-              <table
+            <YeonView className="my-2 max-w-full overflow-x-auto">
+              <YeonView
+                as="table"
                 className={`w-max max-w-full table-auto border-collapse border ${colors.border} text-left text-[13px]`}
               >
                 {nodeChildren}
-              </table>
-            </div>
+              </YeonView>
+            </YeonView>
           ),
           th: ({ children: nodeChildren }) => (
-            <th
-              className={`box-border whitespace-nowrap border ${colors.border} px-1.5 py-1 align-top font-semibold leading-[1.4]`}
-              style={CARD_MARKDOWN_TABLE_CELL_STYLE}
+            <YeonView
+              as="th"
+              className={`box-border whitespace-nowrap border ${colors.border} ${CARD_MARKDOWN_TABLE_CELL_CLASS} px-1.5 py-1 align-top font-semibold leading-[1.4]`}
             >
               {nodeChildren}
-            </th>
+            </YeonView>
           ),
           td: ({ children: nodeChildren }) => (
-            <td
-              className={`box-border whitespace-nowrap border ${colors.border} px-1.5 py-1 align-top leading-[1.4]`}
-              style={CARD_MARKDOWN_TABLE_CELL_STYLE}
+            <YeonView
+              as="td"
+              className={`box-border whitespace-nowrap border ${colors.border} ${CARD_MARKDOWN_TABLE_CELL_CLASS} px-1.5 py-1 align-top leading-[1.4]`}
             >
               {nodeChildren}
-            </td>
+            </YeonView>
           ),
         }}
       >
         {children}
-      </ReactMarkdown>
-
-      <style jsx global>{`
-        .card-markdown-html p {
-          margin: 0.5rem 0;
-        }
-        .card-markdown-html p:first-child {
-          margin-top: 0;
-        }
-        .card-markdown-html p:last-child {
-          margin-bottom: 0;
-        }
-        .card-markdown-html ul,
-        .card-markdown-html ol {
-          margin: 0.5rem 0;
-          padding-left: 1.35rem;
-        }
-        .card-markdown-html ul {
-          list-style: disc;
-        }
-        .card-markdown-html ol {
-          list-style: decimal;
-        }
-        .card-markdown-html blockquote {
-          border-left: 4px solid #e5e5e5;
-          color: #555;
-          margin: 0.75rem 0;
-          padding-left: 0.75rem;
-        }
-        .card-markdown-html code {
-          background: #f7f7f7;
-          border-radius: 0.25rem;
-          font-family:
-            ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
-            "Liberation Mono", "Courier New", monospace;
-          padding: 0.125rem 0.25rem;
-        }
-        .card-markdown-html pre {
-          background: #f7f7f7;
-          border-radius: 0.75rem;
-          margin: 0.75rem 0;
-          overflow-x: auto;
-          padding: 0.75rem;
-        }
-        .card-markdown-html a {
-          text-decoration: underline;
-          text-decoration-color: #999;
-        }
-        .card-markdown-html img {
-          border: 1px solid #e5e5e5;
-          border-radius: 14px;
-          display: block;
-          height: auto;
-          margin: 0.5rem 0;
-          max-width: 100%;
-          object-fit: contain;
-        }
-      `}</style>
-    </div>
+      </YeonMarkdownContent>
+      <YeonGlobalStyle
+        id="card-markdown-html"
+        css={CARD_MARKDOWN_HTML_GLOBAL_STYLE}
+      />
+    </YeonView>
   );
 }

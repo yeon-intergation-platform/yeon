@@ -1,13 +1,11 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { createTypingDeckPassagesBodySchema } from "@yeon/api-contract/typing-decks";
-
 import {
   TypingDecksSpringBackendHttpError,
   createTypingDeckPassagesInSpring,
 } from "@/server/typing-decks-spring-client";
 import { ServiceError } from "@/server/errors/service-error";
-
 import {
   getTypingDeckRequestContext,
   jsonError,
@@ -18,7 +16,7 @@ export const runtime = "nodejs";
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ deckId: string }> },
+  { params }: { params: Promise<{ deckId: string }> }
 ) {
   const { deckId } = await params;
 
@@ -40,7 +38,7 @@ export async function POST(
       currentUser?.id ?? null,
       deckId,
       parsed.data,
-      isAdmin,
+      isAdmin
     );
     return NextResponse.json(passages, { status: 201 });
   } catch (error) {

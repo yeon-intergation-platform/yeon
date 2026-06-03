@@ -1,14 +1,11 @@
 import { NextRequest } from "next/server";
 import { describe, expect, it } from "vitest";
-
 import {
   TYPING_DECK_SOURCE,
   TYPING_DECK_VISIBILITY,
   type TypingDeckDetailResponse,
 } from "@yeon/api-contract/typing-decks";
-
 import { DEFAULT_TYPING_DECKS } from "@/server/services/default-typing-decks";
-
 import { GET } from "../route";
 
 const EXPECTED_DEFAULT_DECKS = [

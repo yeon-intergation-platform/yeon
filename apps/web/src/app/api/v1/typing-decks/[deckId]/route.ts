@@ -1,7 +1,6 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { updateTypingDeckBodySchema } from "@yeon/api-contract/typing-decks";
-
 import {
   TypingDecksSpringBackendHttpError,
   deleteTypingDeckInSpring,
@@ -10,7 +9,6 @@ import {
 } from "@/server/typing-decks-spring-client";
 import { getDefaultTypingDeckDetail } from "@/server/typing-deck-defaults";
 import { ServiceError } from "@/server/errors/service-error";
-
 import {
   getTypingDeckRequestContext,
   jsonError,
@@ -21,7 +19,7 @@ export const runtime = "nodejs";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ deckId: string }> },
+  { params }: { params: Promise<{ deckId: string }> }
 ) {
   const { deckId } = await params;
   const defaultDetail = getDefaultTypingDeckDetail(deckId);
@@ -51,7 +49,7 @@ export async function GET(
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: Promise<{ deckId: string }> },
+  { params }: { params: Promise<{ deckId: string }> }
 ) {
   const { deckId } = await params;
 
@@ -73,7 +71,7 @@ export async function PATCH(
       currentUser?.id ?? null,
       deckId,
       parsed.data,
-      isAdmin,
+      isAdmin
     );
     return NextResponse.json(deck);
   } catch (error) {
@@ -90,7 +88,7 @@ export async function PATCH(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ deckId: string }> },
+  { params }: { params: Promise<{ deckId: string }> }
 ) {
   const { deckId } = await params;
 

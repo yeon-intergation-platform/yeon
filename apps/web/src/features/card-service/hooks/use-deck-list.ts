@@ -1,23 +1,15 @@
 "use client";
-
-import { useQuery } from "@tanstack/react-query";
-import type { CardDeckDto } from "@yeon/api-contract/card-decks";
-
-import { listGuestDecks } from "@/lib/guest-card-service-store";
-
+import { useYeonQuery as useQuery } from "@yeon/ui/runtime/YeonQuery";
+import { useYeonCardDeckRepository } from "@yeon/ui/runtime/ports/card-deck";
 import { useIsAuthenticated } from "../auth-context";
-import { listServerCardDecksOrNull } from "../card-service-fetch";
 import { cardServiceQueryKeys } from "../card-service-query-keys";
 
-async function fetchCardDecks(): Promise<CardDeckDto[]> {
-  const serverDecks = await listServerCardDecksOrNull();
-  return serverDecks ?? listGuestDecks();
-}
-
+// 게스트/서버 분기는 repository 어댑터가 흡수한다. 여기서는 포트 동사만 호출한다.
 export function useDeckList() {
   const isAuthenticated = useIsAuthenticated();
+  const repository = useYeonCardDeckRepository();
   return useQuery({
     queryKey: cardServiceQueryKeys.decks(isAuthenticated),
-    queryFn: isAuthenticated ? fetchCardDecks : listGuestDecks,
+    queryFn: () => repository.listDecks(),
   });
 }

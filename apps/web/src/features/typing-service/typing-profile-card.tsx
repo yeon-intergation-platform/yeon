@@ -1,6 +1,12 @@
 "use client";
-
 import { useEffect, useRef, useState } from "react";
+import {
+  YeonButton,
+  YeonField,
+  YeonText,
+  YeonView,
+  type YeonInputElement,
+} from "@yeon/ui";
 import { CharacterSprite } from "./character-sprite";
 import { TYPING_CHARACTERS, findCharacter } from "./characters";
 import { useCharacterFrameOverrides } from "./use-character-frame-overrides";
@@ -30,7 +36,7 @@ export function TypingProfileCard({
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState(profile.nickname);
   const [expanded, setExpanded] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<YeonInputElement>(null);
 
   useEffect(() => {
     setDraft(profile.nickname);
@@ -64,20 +70,20 @@ export function TypingProfileCard({
     }`;
 
   return (
-    <div className={TYPING_PROFILE_CARD_CLASS.root}>
+    <YeonView className={TYPING_PROFILE_CARD_CLASS.root}>
       {/* 캐릭터 애니메이션 */}
-      <div className={TYPING_PROFILE_CARD_CLASS.spriteWrapper}>
+      <YeonView className={TYPING_PROFILE_CARD_CLASS.spriteWrapper}>
         <CharacterSprite
           character={selectedChar}
           maxHeight={CARD_DISPLAY_MAX_HEIGHT}
           sequenceOverride={frameOverrides[selectedChar.id]}
         />
-      </div>
+      </YeonView>
 
       {/* 닉네임 */}
-      <div className={TYPING_PROFILE_CARD_CLASS.nicknameRow}>
+      <YeonView className={TYPING_PROFILE_CARD_CLASS.nicknameRow}>
         {isEditing ? (
-          <input
+          <YeonField
             ref={inputRef}
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
@@ -93,83 +99,121 @@ export function TypingProfileCard({
             className={TYPING_PROFILE_CARD_CLASS.nicknameInput}
           />
         ) : (
-          <button
+          <YeonButton
             type="button"
+            variant="ghost"
+            size="sm"
             className={TYPING_PROFILE_CARD_CLASS.nicknameButton}
             onClick={() => setIsEditing(true)}
             aria-label="닉네임 편집"
             title="닉네임 편집"
           >
             {profile.nickname}
-            <span
+            <YeonText
+              as="span"
+              variant="unstyled"
+              tone="inherit"
               aria-hidden="true"
               className={TYPING_PROFILE_CARD_CLASS.nicknameEditIcon}
             >
               ✎
-            </span>
-          </button>
+            </YeonText>
+          </YeonButton>
         )}
-      </div>
+      </YeonView>
 
       {/* 캐릭터 선택 */}
-      <div className={TYPING_PROFILE_CARD_CLASS.characterListWrapper}>
-        <span className={TYPING_PROFILE_CARD_CLASS.characterGroupLabel}>
+      <YeonView className={TYPING_PROFILE_CARD_CLASS.characterListWrapper}>
+        <YeonText
+          as="span"
+          variant="unstyled"
+          tone="inherit"
+          className={TYPING_PROFILE_CARD_CLASS.characterGroupLabel}
+        >
           캐릭터 선택
-        </span>
-        <div className={TYPING_PROFILE_CARD_CLASS.characterListStack}>
+        </YeonText>
+        <YeonView className={TYPING_PROFILE_CARD_CLASS.characterListStack}>
           {featured.map((char) => (
-            <button
+            <YeonButton
               key={char.id}
               type="button"
               onClick={() => onCharacterChange(char.id)}
+              variant="secondary"
+              size="sm"
               className={charBtnClass(char.id)}
             >
               {char.label[locale]}
-            </button>
+            </YeonButton>
           ))}
-        </div>
+        </YeonView>
         {expanded && (
-          <div className={TYPING_PROFILE_CARD_CLASS.characterListStack}>
+          <YeonView className={TYPING_PROFILE_CARD_CLASS.characterListStack}>
             {rest.map((char) => (
-              <button
+              <YeonButton
                 key={char.id}
                 type="button"
                 onClick={() => onCharacterChange(char.id)}
+                variant="secondary"
+                size="sm"
                 className={charBtnClass(char.id)}
               >
                 {char.label[locale]}
-              </button>
+              </YeonButton>
             ))}
-          </div>
+          </YeonView>
         )}
-        <button
+        <YeonButton
           type="button"
           onClick={() => setExpanded((v) => !v)}
+          variant="ghost"
+          size="sm"
           className={TYPING_PROFILE_CARD_CLASS.characterToggle}
         >
           {expanded ? "접기 ↑" : `더 보기 (${rest.length}개) ↓`}
-        </button>
-      </div>
-    </div>
+        </YeonButton>
+      </YeonView>
+    </YeonView>
   );
 }
 
 export function TypingProfileCardSkeleton() {
   return (
-    <div className={TYPING_PROFILE_CARD_CLASS.root} aria-busy="true">
-      <div className={TYPING_PROFILE_CARD_CLASS.skeletonSpriteWrapper}>
-        <span className={TYPING_PROFILE_CARD_CLASS.skeletonText}>
+    <YeonView className={TYPING_PROFILE_CARD_CLASS.root} aria-busy="true">
+      <YeonView className={TYPING_PROFILE_CARD_CLASS.skeletonSpriteWrapper}>
+        <YeonText
+          as="span"
+          variant="unstyled"
+          tone="inherit"
+          className={TYPING_PROFILE_CARD_CLASS.skeletonText}
+        >
           프로필을 불러오는 중
-        </span>
-      </div>
-      <div className={TYPING_PROFILE_CARD_CLASS.skeletonNickname}>profile</div>
-      <div className={TYPING_PROFILE_CARD_CLASS.characterListWrapper}>
-        <div className={TYPING_PROFILE_CARD_CLASS.skeletonButtonRow}>
-          <span className={TYPING_PROFILE_CARD_CLASS.skeletonButton} />
-          <span className={TYPING_PROFILE_CARD_CLASS.skeletonButton} />
-          <span className={TYPING_PROFILE_CARD_CLASS.skeletonButton} />
-        </div>
-      </div>
-    </div>
+        </YeonText>
+      </YeonView>
+      <YeonView className={TYPING_PROFILE_CARD_CLASS.skeletonNickname}>
+        profile
+      </YeonView>
+      <YeonView className={TYPING_PROFILE_CARD_CLASS.characterListWrapper}>
+        <YeonView className={TYPING_PROFILE_CARD_CLASS.skeletonButtonRow}>
+          <YeonText
+            as="span"
+            variant="unstyled"
+            tone="inherit"
+            className={TYPING_PROFILE_CARD_CLASS.skeletonButton}
+          />
+          <YeonText
+            as="span"
+            variant="unstyled"
+            tone="inherit"
+            className={TYPING_PROFILE_CARD_CLASS.skeletonButton}
+          />
+          <YeonText
+            as="span"
+            variant="unstyled"
+            tone="inherit"
+            className={TYPING_PROFILE_CARD_CLASS.skeletonButton}
+          />
+        </YeonView>
+      </YeonView>
+    </YeonView>
   );
 }

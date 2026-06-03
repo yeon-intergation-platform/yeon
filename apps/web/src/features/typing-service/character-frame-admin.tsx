@@ -1,7 +1,15 @@
 "use client";
-
 import { useState } from "react";
-import { SHARED_FEATURE_CLASS } from "@/features/shared-style-constants";
+import {
+  YeonButton,
+  YeonField,
+  YeonSurface,
+  YeonView,
+  YeonText,
+  YeonSpriteFrame,
+  joinClassNames,
+} from "@yeon/ui";
+import { YEON_WEB_SHARED_CLASS as SHARED_FEATURE_CLASS } from "@yeon/ui/theme/web-style-tokens";
 import { TYPING_SERVICE_COMMON_CLASS } from "./typing-service-common.const";
 import type { CharacterDef } from "./characters";
 import { TYPING_CHARACTERS } from "./characters";
@@ -21,22 +29,15 @@ function SpriteThumbnail({
   height: number;
 }) {
   const { sprite, frameWidth, frameHeight, frameCount, frameCols } = character;
-  const scale = height / frameHeight;
-  const w = Math.round(frameWidth * scale);
-  const sheetRows = Math.max(1, Math.ceil(frameCount / frameCols));
-  const col = frameIndex % frameCols;
-  const row = Math.floor(frameIndex / frameCols);
   return (
-    <div
-      style={{
-        width: w,
-        height,
-        backgroundImage: `url('${sprite}')`,
-        backgroundSize: `${w * frameCols}px ${height * sheetRows}px`,
-        backgroundPosition: `-${col * w}px -${row * height}px`,
-        imageRendering: "pixelated",
-        flexShrink: 0,
-      }}
+    <YeonSpriteFrame
+      displayHeight={height}
+      frameCols={frameCols}
+      frameCount={frameCount}
+      frameHeight={frameHeight}
+      frameIndex={frameIndex}
+      frameWidth={frameWidth}
+      source={sprite}
     />
   );
 }
@@ -117,56 +118,87 @@ function CharacterFrameCard({
     activeSpriteSeq && activeSpriteSeq.length > 0 ? activeSpriteSeq : undefined;
 
   return (
-    <div className="rounded-xl border border-[#e5e5e5] bg-white p-4">
+    <YeonSurface className="rounded-xl p-4">
       {/* Header */}
-      <div className="mb-3 flex items-center justify-between">
-        <div className={SHARED_FEATURE_CLASS.inlineItemsCenterGap2}>
-          <span className={TYPING_SERVICE_COMMON_CLASS.panelTextEmphasis}>
+      <YeonView className="mb-3 flex items-center justify-between">
+        <YeonView className={SHARED_FEATURE_CLASS.inlineItemsCenterGap2}>
+          <YeonText
+            as="span"
+            variant="unstyled"
+            tone="inherit"
+            className={TYPING_SERVICE_COMMON_CLASS.panelTextEmphasis}
+          >
             {character.label.ko}
-          </span>
-          <span className="text-[11px] text-[#bbb]">{character.id}</span>
+          </YeonText>
+          <YeonText
+            as="span"
+            variant="unstyled"
+            tone="inherit"
+            className="text-[11px] text-[#aaa]"
+          >
+            {character.id}
+          </YeonText>
           {isModified && (
-            <span className="rounded bg-[#f0fdf4] px-1.5 py-0.5 text-[10px] font-medium text-[#16a34a]">
+            <YeonText
+              as="span"
+              variant="unstyled"
+              tone="inherit"
+              className="rounded bg-[#fafafa] px-1.5 py-0.5 text-[10px] font-medium text-[#111]"
+            >
               수정됨
-            </span>
+            </YeonText>
           )}
-        </div>
+        </YeonView>
         {isModified && (
-          <button
+          <YeonButton
             type="button"
             onClick={() => onSequenceChange(null)}
-            className="text-[11px] text-[#aaa] hover:text-[#555]"
+            variant="ghost"
+            size="sm"
+            className="px-2 py-1 text-[11px]"
           >
             초기화
-          </button>
+          </YeonButton>
         )}
-      </div>
+      </YeonView>
 
       {/* 프레임 선택 영역 */}
-      <div className="mb-1 flex items-center gap-2">
-        <span className="text-[11px] font-medium text-[#555]">프레임 선택</span>
-        <span className="text-[10px] text-[#bbb]">
+      <YeonView className="mb-1 flex items-center gap-2">
+        <YeonText
+          as="span"
+          variant="unstyled"
+          tone="inherit"
+          className="text-[11px] font-medium text-[#666]"
+        >
+          프레임 선택
+        </YeonText>
+        <YeonText
+          as="span"
+          variant="unstyled"
+          tone="inherit"
+          className="text-[10px] text-[#aaa]"
+        >
           클릭해서 활성/비활성 전환, 드래그로 순서 변경
-        </span>
-      </div>
-      <div className="mb-3 flex flex-wrap items-end gap-3">
+        </YeonText>
+      </YeonView>
+      <YeonView className="mb-3 flex flex-wrap items-end gap-3">
         {/* 프리뷰 */}
-        <div className="flex h-[calc(80px+8px)] w-[64px] shrink-0 items-end justify-center rounded-lg bg-[#f5f5f5]">
+        <YeonView className="flex h-[calc(80px+8px)] w-[64px] shrink-0 items-end justify-center rounded-lg bg-[#fafafa]">
           <CharacterSprite
             character={character}
             maxHeight={76}
             sequenceOverride={spriteOverride}
           />
-        </div>
+        </YeonView>
         {/* 프레임 슬롯: 비활성 포함 전체 순서대로 표시 */}
-        <div className="flex flex-wrap gap-2">
+        <YeonView className="flex flex-wrap gap-2">
           {slots.map((slot, seqPos) => {
             const { frameIdx, enabled } = slot;
             const isDragging = dragSrcPos === seqPos;
             const isDropTarget =
               dragOverPos === seqPos && dragSrcPos !== seqPos;
             return (
-              <button
+              <YeonButton
                 key={`slot-${seqPos}`}
                 type="button"
                 draggable
@@ -175,43 +207,51 @@ function CharacterFrameCard({
                 onDragOver={(e) => handleDragOver(e, seqPos)}
                 onDrop={() => handleDrop(seqPos)}
                 onDragEnd={handleDragEnd}
-                className="relative"
-                style={{ cursor: "grab" }}
+                variant="ghost"
+                size="sm"
+                className="relative cursor-grab rounded-none p-0"
                 title={
                   enabled
                     ? `${seqPos + 1}번째 — 클릭해서 비활성화, 드래그로 순서 변경`
                     : `${seqPos + 1}번째 (비활성) — 클릭해서 활성화, 드래그로 순서 변경`
                 }
               >
-                <div
-                  style={{
-                    opacity: isDragging ? 0.4 : enabled ? 1 : 0.3,
-                    outline: isDropTarget
-                      ? "2px solid #111"
+                <YeonView
+                  className={joinClassNames(
+                    "outline outline-2 outline-offset-2",
+                    isDragging
+                      ? "opacity-40"
                       : enabled
-                        ? "2px solid #111"
-                        : "2px solid #e5e5e5",
-                    outlineOffset: "2px",
-                  }}
+                        ? "opacity-100"
+                        : "opacity-30",
+                    isDropTarget || enabled
+                      ? "outline-[#111]"
+                      : "outline-[#e5e5e5]"
+                  )}
                 >
                   <SpriteThumbnail
                     character={character}
                     frameIndex={frameIdx}
                     height={PICK_H}
                   />
-                </div>
-                <span
-                  className="absolute -right-1 -top-1 flex h-[18px] w-[18px] items-center justify-center rounded-full text-[10px] font-bold text-white"
-                  style={{ backgroundColor: enabled ? "#111" : "#bbb" }}
+                </YeonView>
+                <YeonText
+                  as="span"
+                  variant="unstyled"
+                  tone="inherit"
+                  className={joinClassNames(
+                    "absolute -right-1 -top-1 flex h-[18px] w-[18px] items-center justify-center rounded-full text-[10px] font-bold text-white",
+                    enabled ? "bg-[#111]" : "bg-[#aaa]"
+                  )}
                 >
                   {enabled ? seqPos + 1 : "×"}
-                </span>
-              </button>
+                </YeonText>
+              </YeonButton>
             );
           })}
-        </div>
-      </div>
-    </div>
+        </YeonView>
+      </YeonView>
+    </YeonSurface>
   );
 }
 
@@ -231,47 +271,69 @@ export function CharacterFrameAdmin() {
   const modifiedCount = Object.keys(store).length;
 
   return (
-    <main className="min-h-screen bg-[#fafafa] px-6 py-8">
-      <div className="mx-auto max-w-4xl">
-        <div className="mb-5 flex items-start justify-between">
-          <div>
-            <h1 className="text-[20px] font-bold text-[#111]">
+    <YeonView as="main" className="min-h-screen bg-[#fafafa] px-6 py-8">
+      <YeonView className="mx-auto max-w-4xl">
+        <YeonView className="mb-5 flex items-start justify-between">
+          <YeonView>
+            <YeonText
+              as="h1"
+              variant="unstyled"
+              tone="inherit"
+              className="text-[20px] font-bold text-[#111]"
+            >
               캐릭터 프레임 시퀀스
-            </h1>
-            <p className={`mt-1 ${SHARED_FEATURE_CLASS.text12Soft}`}>
+            </YeonText>
+            <YeonText
+              as="p"
+              variant="unstyled"
+              tone="inherit"
+              className={`mt-1 ${SHARED_FEATURE_CLASS.text12Soft}`}
+            >
               프레임 클릭해서 활성/비활성 전환, 드래그로 순서 변경 → 해당 캐릭터
               JSON의{" "}
-              <code className="rounded bg-[#f5f5f5] px-1 text-[11px]">
+              <YeonText
+                as="code"
+                variant="unstyled"
+                tone="inherit"
+                className="rounded bg-[#fafafa] px-1 text-[11px]"
+              >
                 frameSequence
-              </code>
+              </YeonText>
               에 적용
-            </p>
-          </div>
+            </YeonText>
+          </YeonView>
           {modifiedCount > 0 && (
-            <button
+            <YeonButton
               type="button"
               onClick={resetAll}
-              className="shrink-0 rounded-lg border border-[#e5e5e5] px-3 py-1.5 text-[12px] text-[#555] hover:border-[#aaa]"
+              variant="secondary"
+              size="sm"
+              className="shrink-0 rounded-lg px-3 py-1.5 text-[12px]"
             >
               전체 초기화 ({modifiedCount})
-            </button>
+            </YeonButton>
           )}
-        </div>
+        </YeonView>
 
-        <input
+        <YeonField
           type="text"
           placeholder="캐릭터 검색 (id / 이름)"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="mb-5 w-full rounded-lg border border-[#e5e5e5] bg-white px-3 py-2 text-[13px] text-[#111] outline-none focus:border-[#999]"
+          className="mb-5 rounded-lg px-3 py-2 text-[13px]"
         />
 
         {isLoading && (
-          <p className="text-[12px] text-[#bbb]">
+          <YeonText
+            as="p"
+            variant="unstyled"
+            tone="inherit"
+            className="text-[12px] text-[#aaa]"
+          >
             서버에서 프레임 데이터 로딩 중...
-          </p>
+          </YeonText>
         )}
-        <div className="flex flex-col gap-4">
+        <YeonView className="flex flex-col gap-4">
           {filtered.map((char) => (
             <CharacterFrameCard
               key={char.id}
@@ -280,8 +342,8 @@ export function CharacterFrameAdmin() {
               onSequenceChange={(seq) => setSequence(char.id, seq)}
             />
           ))}
-        </div>
-      </div>
-    </main>
+        </YeonView>
+      </YeonView>
+    </YeonView>
   );
 }

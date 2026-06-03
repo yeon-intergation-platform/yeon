@@ -1,8 +1,9 @@
 "use client";
-
-import { usePathname, useSearchParams } from "next/navigation";
+import {
+  useYeonPathname as usePathname,
+  useYeonSearchParams as useSearchParams,
+} from "@yeon/ui/runtime/YeonNavigation";
 import { useEffect, useRef } from "react";
-
 import { trackPageView } from "@/lib/analytics";
 
 export function GoogleAnalyticsPageTracker() {

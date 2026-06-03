@@ -1,6 +1,5 @@
 "use client";
-
-import { useQuery } from "@tanstack/react-query";
+import { useYeonQuery as useQuery } from "@yeon/ui/runtime/YeonQuery";
 import { loadTypingCharacterFrameOverrides } from "./typing-service-fetch";
 import { typingServiceQueryKeys } from "./typing-service-query-keys";
 

@@ -1,5 +1,4 @@
 import { createHmac, randomInt } from "node:crypto";
-
 import {
   TYPING_DECK_SOURCE,
   TYPING_DECK_VISIBILITY,
@@ -7,21 +6,21 @@ import {
   type TypingDeckPassageDto,
   type TypingRaceSeedDto,
 } from "@yeon/api-contract/typing-decks";
-
 import { ServiceError } from "@/server/errors/service-error";
 
 const PRIVATE_DECK_LOBBY_TITLE = "비공개 덱";
-const TYPING_RACE_SEED_FALLBACK_SECRET =
-  "yeon-local-typing-race-seed-secret";
+const TYPING_RACE_SEED_FALLBACK_SECRET = "yeon-local-typing-race-seed-secret";
 
 type UnsignedTypingRaceSeed = Omit<TypingRaceSeedDto, "seedToken">;
 
 function pickPassage(
   passages: TypingDeckPassageDto[],
-  requestedPassageId: string | undefined,
+  requestedPassageId: string | undefined
 ) {
   if (requestedPassageId) {
-    const requested = passages.find((passage) => passage.id === requestedPassageId);
+    const requested = passages.find(
+      (passage) => passage.id === requestedPassageId
+    );
     if (!requested) {
       throw new ServiceError(404, "연습 문장을 찾지 못했습니다.");
     }
@@ -65,7 +64,7 @@ function signTypingRaceSeed(seed: UnsignedTypingRaceSeed) {
 
 export function createTypingRaceSeedFromDetail(
   detail: TypingDeckDetailResponse,
-  requestedPassageId: string | undefined,
+  requestedPassageId: string | undefined
 ): TypingRaceSeedDto {
   const passage = pickPassage(detail.passages, requestedPassageId);
   const seed: UnsignedTypingRaceSeed = {

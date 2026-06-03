@@ -1,11 +1,17 @@
 "use client";
-
-import { SHARED_FEATURE_CLASS } from "@/features/shared-style-constants";
-
-import Link from "next/link";
+import { YEON_WEB_SHARED_CLASS as SHARED_FEATURE_CLASS } from "@yeon/ui/theme/web-style-tokens";
 import { useEffect, useMemo, useState } from "react";
-
 import { CommonProductHeader } from "@/components/product-shell/product-header";
+import {
+  YeonBadge,
+  YeonButton,
+  YeonField,
+  YeonSurface,
+  YeonText,
+  YeonForm,
+  YeonView,
+  YeonLink,
+} from "@yeon/ui";
 import {
   CommunityGuestIdentityConfirmModal,
   isCommunityGuestIdentityConfirmDismissed,
@@ -101,61 +107,85 @@ export function CommunityPostDetailPage({
   };
 
   return (
-    <div className={SHARED_FEATURE_CLASS.pageSurface}>
+    <YeonView className={SHARED_FEATURE_CLASS.pageSurface}>
       <CommonProductHeader activeService="community" />
 
-      <main className="mx-auto max-w-[900px] px-4 py-6 md:px-8">
-        <Link
+      <YeonView as="main" className="mx-auto max-w-[900px] px-4 py-6 md:px-8">
+        <YeonLink
           href="/community"
           className={`no-underline hover:text-[#111] ${SHARED_FEATURE_CLASS.text13EmphasisMuted}`}
         >
           ← 커뮤니티로 돌아가기
-        </Link>
+        </YeonLink>
 
         {isPostsLoading ? (
-          <p className="mt-6 text-[13px] text-[#777]">글을 불러오는 중...</p>
+          <YeonText
+            as="p"
+            variant="unstyled"
+            tone="inherit"
+            className="mt-6 text-[13px] text-[#666]"
+          >
+            글을 불러오는 중...
+          </YeonText>
         ) : null}
 
         {postsError ? (
-          <p className="mt-6 text-[13px] text-red-600">{postsError}</p>
+          <YeonText
+            variant="caption"
+            tone="danger"
+            className="mt-6 font-semibold"
+          >
+            {postsError}
+          </YeonText>
         ) : null}
 
         {post && parsedPost ? (
-          <article className="mt-4 rounded-2xl border border-[#e7e7e7] bg-white p-5">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <span
-                className={`rounded-full border border-[#e5e5e5] bg-[#fafafa] px-3 py-1 ${SHARED_FEATURE_CLASS.text12EmphasisMuted}`}
-              >
+          <YeonSurface as="article" className="mt-4 p-5">
+            <YeonView className="flex flex-wrap items-center justify-between gap-3">
+              <YeonBadge className={SHARED_FEATURE_CLASS.text12EmphasisMuted}>
                 {parsedPost.category}
-              </span>
-              <p className={SHARED_FEATURE_CLASS.text12Subtle}>
+              </YeonBadge>
+              <YeonText
+                as="p"
+                variant="unstyled"
+                tone="inherit"
+                className={SHARED_FEATURE_CLASS.text12Subtle}
+              >
                 {post.author.nickname} · {formatKoreanDateTime(post.createdAt)}
-              </p>
-            </div>
+              </YeonText>
+            </YeonView>
 
-            <h1 className="mt-4 text-[24px] font-black tracking-[-0.03em] text-[#111] md:text-[30px]">
+            <YeonText
+              as="h1"
+              variant="unstyled"
+              tone="inherit"
+              className="mt-4 text-[24px] font-black tracking-[-0.03em] text-[#111] md:text-[30px]"
+            >
               {parsedPost.title}
-            </h1>
+            </YeonText>
 
             {isEditing ? (
-              <div className="mt-4 space-y-3">
-                <textarea
+              <YeonView className="mt-4 space-y-3">
+                <YeonField
+                  as="textarea"
                   value={editDraft}
                   onChange={(event) => setEditDraft(event.target.value)}
                   rows={6}
                   maxLength={400}
-                  className="w-full rounded-xl border border-[#ddd] px-3 py-2 text-[14px] outline-none focus:border-[#111]"
+                  className="min-h-[160px]"
                 />
-                <div className="flex justify-end gap-2">
-                  <button
+                <YeonView className="flex justify-end gap-2">
+                  <YeonButton
                     type="button"
+                    size="sm"
                     onClick={() => setIsEditing(false)}
-                    className="rounded-xl border border-[#ddd] px-3 py-2 text-[12px] font-semibold text-[#333]"
                   >
                     취소
-                  </button>
-                  <button
+                  </YeonButton>
+                  <YeonButton
                     type="button"
+                    size="sm"
+                    variant="primary"
                     disabled={!!isUpdatingPost[post.id] || !editDraft.trim()}
                     onClick={() => {
                       void runWithGuestIdentityConfirm(
@@ -167,73 +197,90 @@ export function CommunityPostDetailPage({
                         }
                       });
                     }}
-                    className="rounded-xl bg-[#111] px-3 py-2 text-[12px] font-semibold text-white disabled:bg-[#d0d0d0]"
                   >
                     {isUpdatingPost[post.id] ? "저장 중" : "저장"}
-                  </button>
-                </div>
-              </div>
+                  </YeonButton>
+                </YeonView>
+              </YeonView>
             ) : (
-              <p className="mt-4 whitespace-pre-wrap text-[15px] leading-[1.8] text-[#333]">
+              <YeonText
+                as="p"
+                variant="unstyled"
+                tone="inherit"
+                className="mt-4 whitespace-pre-wrap text-[15px] leading-[1.8] text-[#111]"
+              >
                 {parsedPost.content}
-              </p>
+              </YeonText>
             )}
 
             {postErrors[post.id] ? (
-              <p className="mt-3 text-[12px] text-red-600">
+              <YeonText
+                variant="caption"
+                tone="danger"
+                className="mt-3 font-semibold"
+              >
                 {postErrors[post.id]}
-              </p>
+              </YeonText>
             ) : null}
 
-            <div className="mt-5 flex gap-3 border-t border-[#f0f0f0] pt-4">
-              <button
+            <YeonView className="mt-5 flex gap-3 border-t border-[#e5e5e5] pt-4">
+              <YeonButton
                 type="button"
+                size="sm"
+                variant="ghost"
                 onClick={() => setIsEditing(true)}
-                className={`${SHARED_FEATURE_CLASS.text12EmphasisMuted} underline-offset-4 hover:underline`}
+                className={`h-auto px-0 py-0 underline-offset-4 hover:underline ${SHARED_FEATURE_CLASS.text12EmphasisMuted}`}
               >
                 수정
-              </button>
-              <button
+              </YeonButton>
+              <YeonButton
                 type="button"
+                size="sm"
+                variant="ghost"
                 disabled={!!isDeletingPost[post.id]}
                 onClick={() => {
                   void runWithGuestIdentityConfirm("글을 삭제", (identity) =>
                     deletePost(post.id, identity)
                   );
                 }}
-                className="text-[12px] font-semibold text-red-600 underline-offset-4 hover:underline disabled:text-[#aaa]"
+                className="h-auto px-0 py-0 underline-offset-4 hover:underline"
               >
                 {isDeletingPost[post.id] ? "삭제 중" : "삭제"}
-              </button>
-            </div>
-          </article>
+              </YeonButton>
+            </YeonView>
+          </YeonSurface>
         ) : null}
 
         {post ? (
-          <section className="mt-4 rounded-2xl border border-[#e7e7e7] bg-white p-5">
-            <h2 className="text-[17px] font-black tracking-[-0.02em] text-[#111]">
+          <YeonSurface as="section" className="mt-4 p-5">
+            <YeonText
+              as="h2"
+              variant="unstyled"
+              tone="inherit"
+              className="text-[17px] font-black tracking-[-0.02em] text-[#111]"
+            >
               댓글 {post.replyCount}
-            </h2>
+            </YeonText>
 
-            <div className="mt-4 grid gap-2 md:grid-cols-2">
-              <input
+            <YeonView className="mt-4 grid gap-2 md:grid-cols-2">
+              <YeonField
                 value={guestNickname}
                 onChange={(event) => setGuestNickname(event.target.value)}
                 placeholder="닉네임 입력"
                 maxLength={40}
-                className="h-9 rounded-xl border border-[#ddd] px-3 text-[13px] outline-none focus:border-[#111]"
+                className="h-9"
               />
-              <input
+              <YeonField
                 value={guestPassword}
                 onChange={(event) => setGuestPassword(event.target.value)}
                 placeholder="수정/삭제용 비밀번호"
                 type="password"
                 maxLength={128}
-                className="h-9 rounded-xl border border-[#ddd] px-3 text-[13px] outline-none focus:border-[#111]"
+                className="h-9"
               />
-            </div>
+            </YeonView>
 
-            <form
+            <YeonForm
               className="mt-3 grid gap-2 md:grid-cols-[minmax(0,1fr)_70px]"
               onSubmit={(event) => {
                 event.preventDefault();
@@ -242,58 +289,87 @@ export function CommunityPostDetailPage({
                 );
               }}
             >
-              <textarea
+              <YeonField
+                as="textarea"
                 value={replyDrafts[post.id] ?? ""}
                 onChange={(event) => setReplyDraft(post.id, event.target.value)}
                 rows={2}
                 maxLength={400}
                 placeholder="댓글을 입력하세요"
-                className="min-h-[70px] rounded-xl border border-[#ddd] px-3 py-2 text-[13px] outline-none focus:border-[#111]"
+                className="min-h-[70px]"
               />
-              <button
+              <YeonButton
                 type="submit"
+                size="sm"
+                variant="primary"
                 disabled={
                   !!isSubmittingReply[post.id] ||
                   !(replyDrafts[post.id] ?? "").trim()
                 }
-                className="h-10 rounded-xl bg-[#111] px-3 text-[12px] font-semibold text-white disabled:bg-[#d0d0d0]"
+                className="h-10"
               >
                 {isSubmittingReply[post.id] ? "등록 중" : "등록"}
-              </button>
-            </form>
+              </YeonButton>
+            </YeonForm>
 
             {replyErrors[post.id] ? (
-              <p className="mt-2 text-[12px] text-red-600">
+              <YeonText
+                variant="caption"
+                tone="danger"
+                className="mt-2 font-semibold"
+              >
                 {replyErrors[post.id]}
-              </p>
+              </YeonText>
             ) : null}
 
-            <div className="mt-4 space-y-2">
+            <YeonView className="mt-4 space-y-2">
               {isRepliesLoading[post.id] ? (
-                <p className={SHARED_FEATURE_CLASS.text12Subtle}>
+                <YeonText
+                  as="p"
+                  variant="unstyled"
+                  tone="inherit"
+                  className={SHARED_FEATURE_CLASS.text12Subtle}
+                >
                   댓글을 불러오는 중...
-                </p>
+                </YeonText>
               ) : null}
               {replies.map((reply) => (
-                <div
+                <YeonSurface
+                  as="div"
                   key={reply.id}
-                  className="rounded-xl border border-[#ededed] bg-[#fafafa] p-3"
+                  variant="panel"
+                  className="p-3"
                 >
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <p
+                  <YeonView className="flex flex-wrap items-center justify-between gap-2">
+                    <YeonText
+                      as="p"
+                      variant="unstyled"
+                      tone="inherit"
                       className={`${SHARED_FEATURE_CLASS.text12EmphasisMuted}`}
                     >
                       {reply.author.nickname}
-                    </p>
-                    <p className="text-[11px] text-[#999]">
+                    </YeonText>
+                    <YeonText
+                      as="p"
+                      variant="unstyled"
+                      tone="inherit"
+                      className="text-[11px] text-[#aaa]"
+                    >
                       {formatKoreanDateTime(reply.createdAt)}
-                    </p>
-                  </div>
-                  <p className="mt-1 whitespace-pre-wrap text-[13px] leading-[1.6] text-[#111]">
+                    </YeonText>
+                  </YeonView>
+                  <YeonText
+                    as="p"
+                    variant="unstyled"
+                    tone="inherit"
+                    className="mt-1 whitespace-pre-wrap text-[13px] leading-[1.6] text-[#111]"
+                  >
                     {reply.body}
-                  </p>
-                  <button
+                  </YeonText>
+                  <YeonButton
                     type="button"
+                    size="sm"
+                    variant="ghost"
                     disabled={!!isDeletingReply[reply.id]}
                     onClick={() => {
                       void runWithGuestIdentityConfirm(
@@ -301,21 +377,25 @@ export function CommunityPostDetailPage({
                         (identity) => deleteReply(post.id, reply.id, identity)
                       );
                     }}
-                    className="mt-2 text-[12px] font-semibold text-red-600 underline-offset-4 hover:underline disabled:text-[#aaa]"
+                    className="mt-2 h-auto px-0 py-0 underline-offset-4 hover:underline"
                   >
                     {isDeletingReply[reply.id] ? "삭제 중" : "삭제"}
-                  </button>
+                  </YeonButton>
                   {replyDeleteErrors[reply.id] ? (
-                    <p className="mt-1 text-[12px] text-red-600">
+                    <YeonText
+                      variant="caption"
+                      tone="danger"
+                      className="mt-1 font-semibold"
+                    >
                       {replyDeleteErrors[reply.id]}
-                    </p>
+                    </YeonText>
                   ) : null}
-                </div>
+                </YeonSurface>
               ))}
-            </div>
-          </section>
+            </YeonView>
+          </YeonSurface>
         ) : null}
-      </main>
+      </YeonView>
 
       <CommunityGuestIdentityConfirmModal
         isOpen={pendingGuestIdentityAction !== null}
@@ -343,6 +423,6 @@ export function CommunityPostDetailPage({
             .catch(() => pending.resolve(false));
         }}
       />
-    </div>
+    </YeonView>
   );
 }

@@ -1,7 +1,5 @@
 "use client";
-
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Client, type Room } from "@colyseus/sdk";
 import {
   TERRITORY_BATTLE_EVENTS,
   TERRITORY_BATTLE_PHASE,
@@ -13,6 +11,15 @@ import {
   type TerritoryBattleWinnerResult,
 } from "@yeon/race-shared";
 import { resolveRaceServerUrl } from "./use-race-room";
+import {
+  createYeonRealtimeClient,
+  type YeonRealtimeRoom,
+} from "@yeon/ui/runtime/YeonRealtimeClient";
+import {
+  readYeonLocalStorageItem,
+  removeYeonLocalStorageItem,
+  writeYeonLocalStorageItem,
+} from "@yeon/ui/runtime/YeonBrowserRuntime";
 
 export type TerritoryBattleConnectionState =
   | "idle"
@@ -53,23 +60,18 @@ function getReconnectionTokenStorageKey(originRoomId: string) {
 }
 
 function readReconnectionToken(originRoomId: string) {
-  if (typeof window === "undefined") return null;
-  return window.localStorage.getItem(
-    getReconnectionTokenStorageKey(originRoomId)
-  );
+  return readYeonLocalStorageItem(getReconnectionTokenStorageKey(originRoomId));
 }
 
 function writeReconnectionToken(originRoomId: string, token: string) {
-  if (typeof window === "undefined") return;
-  window.localStorage.setItem(
+  writeYeonLocalStorageItem(
     getReconnectionTokenStorageKey(originRoomId),
     token
   );
 }
 
 function clearReconnectionToken(originRoomId: string) {
-  if (typeof window === "undefined") return;
-  window.localStorage.removeItem(getReconnectionTokenStorageKey(originRoomId));
+  removeYeonLocalStorageItem(getReconnectionTokenStorageKey(originRoomId));
 }
 
 function normalizeRoomError(error: unknown): TerritoryBattleRoomError {
@@ -115,7 +117,7 @@ export function useTerritoryBattleRoom({
     null
   );
   const [rejoinToken, setRejoinToken] = useState(0);
-  const roomRef = useRef<Room | null>(null);
+  const roomRef = useRef<YeonRealtimeRoom | null>(null);
   const nicknameRef = useRef(nickname);
 
   useEffect(() => {
@@ -132,7 +134,7 @@ export function useTerritoryBattleRoom({
     setRoomId(null);
     setRoomError(null);
 
-    const client = new Client(resolveRaceServerUrl());
+    const client = createYeonRealtimeClient(resolveRaceServerUrl());
     const storedReconnectionToken = readReconnectionToken(originRoomId);
     const connectRoom = storedReconnectionToken
       ? client.reconnect<unknown>(storedReconnectionToken).catch(() => {

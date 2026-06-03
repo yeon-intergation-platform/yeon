@@ -6,7 +6,6 @@ import {
 } from "@yeon/api-contract/chat-service";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-
 import {
   ChatServiceMyProfileSpringBackendHttpError,
   deleteMyChatServiceProfileInSpring,
@@ -14,7 +13,6 @@ import {
   updateMyChatServiceProfileInSpring,
 } from "@/server/chat-service-my-profile-spring-client";
 import { ServiceError } from "@/server/errors/service-error";
-
 import {
   clearChatServiceSessionCookie,
   jsonChatServiceError,
@@ -28,7 +26,7 @@ export async function GET(request: NextRequest) {
     const response = await fetchMyChatServiceProfileFromSpring(profile.id);
 
     return NextResponse.json(
-      chatServiceGetMyProfileResponseSchema.parse(response),
+      chatServiceGetMyProfileResponseSchema.parse(response)
     );
   } catch (error) {
     if (error instanceof ServiceError) {
@@ -52,7 +50,7 @@ export async function PATCH(request: NextRequest) {
     if (!parsedBody.success) {
       return jsonChatServiceError(
         "프로필 수정 입력값이 올바르지 않습니다.",
-        400,
+        400
       );
     }
 
@@ -66,7 +64,7 @@ export async function PATCH(request: NextRequest) {
     });
 
     return NextResponse.json(
-      chatServiceUpdateMyProfileResponseSchema.parse(response),
+      chatServiceUpdateMyProfileResponseSchema.parse(response)
     );
   } catch (error) {
     if (error instanceof ServiceError) {
@@ -86,7 +84,7 @@ export async function DELETE(request: NextRequest) {
     const { profile } = await requireChatServiceAuth(request);
     const response = await deleteMyChatServiceProfileInSpring(profile.id);
     const nextResponse = NextResponse.json(
-      chatServiceDeleteAccountResponseSchema.parse(response),
+      chatServiceDeleteAccountResponseSchema.parse(response)
     );
 
     clearChatServiceSessionCookie(nextResponse);

@@ -1,7 +1,10 @@
-import { cookies, headers } from "next/headers";
-import { redirect } from "next/navigation";
-import Script from "next/script";
-
+import { YeonStructuredData } from "@yeon/ui";
+import { createYeonUrlSearchParams } from "@yeon/ui/runtime/YeonBrowserRuntime";
+import { redirectYeon } from "@yeon/ui/runtime/YeonRouteControl";
+import {
+  getYeonRequestCookies,
+  getYeonRequestHeaders,
+} from "@yeon/ui/runtime/YeonServerRequest";
 import { LandingHome } from "@/features/landing-home";
 import {
   AUTH_SESSION_COOKIE_NAME,
@@ -36,7 +39,7 @@ function buildHomeRedirectPath(options: {
   hasNextPath: boolean;
   openLoginModalOnLoad: boolean;
 }) {
-  const searchParams = new URLSearchParams();
+  const searchParams = createYeonUrlSearchParams();
 
   if (options.openLoginModalOnLoad) {
     searchParams.set("login", "1");
@@ -101,19 +104,19 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   const hasRequestedNextPath = !!requestedNextPath;
   const requestedLoginModalOpen =
     pickFirstValue(resolvedSearchParams.login) === "1";
-  const cookieStore = await cookies();
-  const headerStore = await headers();
+  const cookieStore = await getYeonRequestCookies();
+  const headerStore = await getYeonRequestHeaders();
   const hasSessionCookie =
     cookieStore.getAll(AUTH_SESSION_COOKIE_NAME).length > 0;
   const currentUser = await getCurrentAuthUser();
   const openLoginModalOnLoad = requestedLoginModalOpen && !currentUser;
 
   if (currentUser && hasRequestedNextPath) {
-    redirect(nextPath);
+    redirectYeon(nextPath);
   }
 
   if (hasSessionCookie && !currentUser) {
-    redirect(
+    redirectYeon(
       buildAuthSessionCleanupHref(
         buildHomeRedirectPath({
           nextPath,
@@ -132,13 +135,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
   return (
     <>
-      <Script
-        id="home-jsonld"
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(getHomeJsonLd()),
-        }}
-      />
+      <YeonStructuredData id="home-jsonld" data={getHomeJsonLd()} />
       <LandingHome
         nextPath={hasRequestedNextPath ? nextPath : PLATFORM_HOME_HREF}
         initialLoginModalOpen={openLoginModalOnLoad}

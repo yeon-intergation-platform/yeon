@@ -1,5 +1,38 @@
 "use client";
-
+import {
+  YeonBadge,
+  YeonButton,
+  YeonCanvas,
+  type YeonCanvasHandle,
+  YeonCheckbox,
+  YeonField,
+  YeonImage,
+  YeonLabel,
+  YeonSurface,
+  YeonText,
+  YeonView,
+} from "@yeon/ui";
+import {
+  clearYeonInterval,
+  copyYeonClipboardText,
+  createYeonAnchorElement,
+  createYeonBlob,
+  createYeonCanvasElement,
+  createYeonImageElement,
+  createYeonObjectUrl,
+  getYeonNow,
+  getYeonRandom,
+  isYeonInputElement,
+  revokeYeonObjectUrl,
+  scheduleYeonInterval,
+  scheduleYeonTimeout,
+  type YeonBlob,
+  type YeonCanvasElement,
+  type YeonCanvasRenderingContext2D,
+  type YeonFile,
+  type YeonImageElement,
+  type YeonInputElement,
+} from "@yeon/ui/runtime/YeonBrowserRuntime";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type FrameStatus = "unchecked" | "pass" | "needs-fix";
@@ -28,7 +61,7 @@ type GuideConfig = {
 const SAMPLE_GUIDE_SHEET = "/sprite-editor/slime-bounce-guide-sample.png";
 const GUIDE_FRAME_COUNT = 8;
 const GUIDE_GUTTER_WIDTH = 4;
-const GUIDE_GUTTER_COLOR = "#ff00ff";
+const GUIDE_GUTTER_COLOR = "#111";
 const CHECKER_SIZE = 16;
 const DEFAULT_GUIDE: GuideConfig = {
   fps: 12,
@@ -49,9 +82,9 @@ const STATUS_LABEL: Record<FrameStatus, string> = {
 };
 
 const STATUS_CLASS: Record<FrameStatus, string> = {
-  unchecked: "border-slate-200 bg-slate-50 text-slate-500",
-  pass: "border-emerald-200 bg-emerald-50 text-emerald-700",
-  "needs-fix": "border-rose-200 bg-rose-50 text-rose-700",
+  unchecked: "border-[#e5e5e5] bg-[#fafafa] text-[#666]",
+  pass: "border-[#111] bg-white text-[#111]",
+  "needs-fix": "border-[#e5e5e5] bg-white text-[#111]",
 };
 
 function clamp(value: number, min: number, max: number) {
@@ -59,14 +92,18 @@ function clamp(value: number, min: number, max: number) {
 }
 
 function makeCanvas(width: number, height: number) {
-  const canvas = document.createElement("canvas");
+  const canvas = createYeonCanvasElement();
+  if (!canvas) {
+    throw new Error("캔버스 런타임을 사용할 수 없습니다.");
+  }
+
   canvas.width = width;
   canvas.height = height;
   return canvas;
 }
 
 function drawCheckerboard(
-  ctx: CanvasRenderingContext2D,
+  ctx: YeonCanvasRenderingContext2D,
   width: number,
   height: number,
   size = CHECKER_SIZE
@@ -74,23 +111,36 @@ function drawCheckerboard(
   ctx.clearRect(0, 0, width, height);
   for (let y = 0; y < height; y += size) {
     for (let x = 0; x < width; x += size) {
-      ctx.fillStyle = (x / size + y / size) % 2 === 0 ? "#e2e8f0" : "#f8fafc";
+      ctx.fillStyle = (x / size + y / size) % 2 === 0 ? "#e5e5e5" : "#fafafa";
       ctx.fillRect(x, y, size, size);
     }
   }
 }
 
-function downloadBlob(blob: Blob, filename: string) {
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
+function createRequiredObjectUrl(blob: YeonBlob | YeonFile) {
+  const url = createYeonObjectUrl(blob);
+  if (!url) {
+    throw new Error("파일 URL을 만들 수 없습니다.");
+  }
+  return url;
+}
+
+function downloadBlob(blob: YeonBlob, filename: string) {
+  const url = createRequiredObjectUrl(blob);
+  const link = createYeonAnchorElement();
+  if (!link) {
+    revokeYeonObjectUrl(url);
+    throw new Error("다운로드 런타임을 사용할 수 없습니다.");
+  }
+
   link.href = url;
   link.download = filename;
   link.click();
-  URL.revokeObjectURL(url);
+  revokeYeonObjectUrl(url);
 }
 
-function canvasToBlob(canvas: HTMLCanvasElement) {
-  return new Promise<Blob>((resolve, reject) => {
+function canvasToBlob(canvas: YeonCanvasElement) {
+  return new Promise<YeonBlob>((resolve, reject) => {
     canvas.toBlob((blob) => {
       if (blob) resolve(blob);
       else reject(new Error("PNG 변환에 실패했습니다."));
@@ -99,18 +149,22 @@ function canvasToBlob(canvas: HTMLCanvasElement) {
 }
 
 async function loadImage(url: string) {
-  const image = new Image();
+  const image = createYeonImageElement();
+  if (!image) {
+    throw new Error("이미지 런타임을 사용할 수 없습니다.");
+  }
+
   image.src = url;
   await image.decode();
   return image;
 }
 
-async function fileToImage(file: File) {
-  const url = URL.createObjectURL(file);
+async function fileToImage(file: YeonFile) {
+  const url = createRequiredObjectUrl(file);
   try {
     return await loadImage(url);
   } finally {
-    URL.revokeObjectURL(url);
+    revokeYeonObjectUrl(url);
   }
 }
 
@@ -128,22 +182,24 @@ function NumericField({
   onChange: (value: number) => void;
 }) {
   return (
-    <label className="flex flex-col gap-1 text-[11px] font-bold text-slate-500">
-      {label}
-      <input
+    <YeonLabel className="flex flex-col gap-1 text-[11px] font-bold text-[#666]">
+      <YeonText as="span" variant="caption" className="font-bold text-[#666]">
+        {label}
+      </YeonText>
+      <YeonField
         type="number"
         value={value}
         min={min}
         max={max}
         onChange={(event) => onChange(Number(event.target.value))}
-        className="h-9 rounded-xl border border-slate-200 bg-white px-2 text-[13px] font-semibold text-slate-950 outline-none focus:border-slate-500"
+        className="h-9 rounded-xl px-2 text-[13px] font-semibold"
       />
-    </label>
+    </YeonLabel>
   );
 }
 
 function frameId() {
-  return `frame-${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+  return `frame-${getYeonNow().toString(36)}-${getYeonRandom().toString(36).slice(2)}`;
 }
 
 function statusSummary(frames: FrameItem[]) {
@@ -179,7 +235,7 @@ async function imageUrlToCanvas(url: string, width: number, height: number) {
 }
 
 function makeFrameItemFromCanvas(
-  canvas: HTMLCanvasElement,
+  canvas: YeonCanvasElement,
   index: number,
   namePrefix: string
 ): FrameItem {
@@ -193,7 +249,7 @@ function makeFrameItemFromCanvas(
 }
 
 function extractGuideSheetFramesFromImage(
-  image: HTMLImageElement,
+  image: YeonImageElement,
   config: GuideConfig,
   namePrefix: string,
   frameCount = GUIDE_FRAME_COUNT
@@ -232,7 +288,7 @@ function extractGuideSheetFramesFromImage(
   });
 }
 
-async function extractGuideSheetFrames(file: File, config: GuideConfig) {
+async function extractGuideSheetFrames(file: YeonFile, config: GuideConfig) {
   const image = await fileToImage(file);
   return extractGuideSheetFramesFromImage(image, config, "guide-frame");
 }
@@ -290,10 +346,10 @@ export function SpriteFrameEditor() {
   );
   const [copied, setCopied] = useState(false);
 
-  const uploadInputRef = useRef<HTMLInputElement | null>(null);
-  const guideSheetInputRef = useRef<HTMLInputElement | null>(null);
-  const replaceInputRef = useRef<HTMLInputElement | null>(null);
-  const previewCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const uploadInputRef = useRef<YeonInputElement | null>(null);
+  const guideSheetInputRef = useRef<YeonInputElement | null>(null);
+  const replaceInputRef = useRef<YeonInputElement | null>(null);
+  const previewCanvasRef = useRef<YeonCanvasHandle | null>(null);
   const initialSampleLoadedRef = useRef(false);
 
   const selectedIndex = Math.max(
@@ -353,7 +409,7 @@ export function SpriteFrameEditor() {
         .map((file) => ({
           id: frameId(),
           name: file.name,
-          url: URL.createObjectURL(file),
+          url: createRequiredObjectUrl(file),
           status: "unchecked" as FrameStatus,
           note: "",
         }));
@@ -374,7 +430,7 @@ export function SpriteFrameEditor() {
     async (files: FileList | null) => {
       const file = files?.[0];
       if (!file || !selectedFrame) return;
-      const url = URL.createObjectURL(file);
+      const url = createRequiredObjectUrl(file);
       updateSelectedFrame({
         name: file.name,
         url,
@@ -396,7 +452,7 @@ export function SpriteFrameEditor() {
         setFrames(guideFrames);
         setSelectedFrameId(guideFrames[0]?.id ?? null);
         setMessage(
-          `${file.name}에서 magenta gutter를 제거하고 ${guideFrames.length}개 64x64 프레임을 추출했습니다.`
+          `${file.name}에서 guide gutter를 제거하고 ${guideFrames.length}개 64x64 프레임을 추출했습니다.`
         );
       } catch (error) {
         setMessage(
@@ -484,18 +540,18 @@ export function SpriteFrameEditor() {
     if (showGuides) {
       ctx.save();
       ctx.lineWidth = 1;
-      ctx.strokeStyle = "rgba(14, 165, 233, 0.95)";
+      ctx.strokeStyle = "rgba(17, 17, 17, 0.95)";
       ctx.beginPath();
       ctx.moveTo(config.centerX * scale + 0.5, 0);
       ctx.lineTo(config.centerX * scale + 0.5, canvas.height);
       ctx.stroke();
-      ctx.strokeStyle = "rgba(239, 68, 68, 0.95)";
+      ctx.strokeStyle = "rgba(102, 102, 102, 0.95)";
       ctx.beginPath();
       ctx.moveTo(0, config.baselineY * scale + 0.5);
       ctx.lineTo(canvas.width, config.baselineY * scale + 0.5);
       ctx.stroke();
       if (showBoundingBox) {
-        ctx.strokeStyle = "rgba(250, 204, 21, 0.95)";
+        ctx.strokeStyle = "rgba(170, 170, 170, 0.95)";
         ctx.strokeRect(
           config.boundingBoxX * scale + 0.5,
           config.boundingBoxY * scale + 0.5,
@@ -560,7 +616,7 @@ export function SpriteFrameEditor() {
 
     downloadBlob(
       await canvasToBlob(template),
-      "ai_sprite_8x64_magenta_gutter_template.png"
+      "ai_sprite_8x64_guide_gutter_template.png"
     );
   }, [config.frameHeight, config.frameWidth]);
 
@@ -605,7 +661,7 @@ export function SpriteFrameEditor() {
       })),
     };
     downloadBlob(
-      new Blob([JSON.stringify(manifest, null, 2)], {
+      createYeonBlob([JSON.stringify(manifest, null, 2)], {
         type: "application/json",
       }),
       "ai_sprite_frames_qa_manifest.json"
@@ -614,9 +670,15 @@ export function SpriteFrameEditor() {
 
   const copyCodexReport = useCallback(async () => {
     if (!codexHandoffReport) return;
-    await navigator.clipboard.writeText(codexHandoffReport);
+    const copiedToClipboard = await copyYeonClipboardText(codexHandoffReport);
+    if (!copiedToClipboard) {
+      setMessage("클립보드에 리포트를 복사하지 못했습니다.");
+      return;
+    }
+
     setCopied(true);
-    window.setTimeout(() => setCopied(false), 1200);
+    const timer = scheduleYeonTimeout(() => setCopied(false), 1200);
+    if (!timer) setCopied(false);
   }, [codexHandoffReport]);
 
   const loadSample = useCallback(async () => {
@@ -624,7 +686,7 @@ export function SpriteFrameEditor() {
     setFrames(sampleFrames);
     setSelectedFrameId(sampleFrames[0]?.id ?? null);
     setMessage(
-      "magenta gutter 슬라임 샘플 시트를 8개 QA 프레임으로 분해했습니다. 재생해서 튀는 프레임을 검수하세요."
+      "guide gutter 슬라임 샘플 시트를 8개 QA 프레임으로 분해했습니다. 재생해서 튀는 프레임을 검수하세요."
     );
   }, [config]);
 
@@ -636,7 +698,7 @@ export function SpriteFrameEditor() {
 
   useEffect(() => {
     if (!isPlaying || frames.length === 0) return;
-    const id = window.setInterval(
+    const id = scheduleYeonInterval(
       () => {
         setSelectedFrameId((currentId) => {
           const currentIndex = Math.max(
@@ -648,7 +710,7 @@ export function SpriteFrameEditor() {
       },
       Math.max(40, Math.round(1000 / Math.max(1, config.fps)))
     );
-    return () => window.clearInterval(id);
+    return () => clearYeonInterval(id);
   }, [config.fps, frames, isPlaying]);
 
   useEffect(() => {
@@ -656,80 +718,92 @@ export function SpriteFrameEditor() {
   }, [drawPreview]);
 
   return (
-    <main className="min-h-screen bg-slate-950 px-5 py-5 text-slate-50">
-      <div className="mx-auto flex max-w-[1500px] flex-col gap-4">
-        <header className="rounded-3xl border border-white/10 bg-white/[0.04] p-5 shadow-2xl shadow-black/20">
-          <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
-            <div>
-              <p className="text-[12px] font-black uppercase tracking-[0.24em] text-cyan-300">
+    <YeonView as="main" className="min-h-screen bg-white px-5 py-5 text-[#111]">
+      <YeonView className="mx-auto flex max-w-[1500px] flex-col gap-4">
+        <YeonSurface
+          as="header"
+          className="rounded-3xl p-5 shadow-[0_18px_45px_rgba(17,17,17,0.08)]"
+        >
+          <YeonView className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+            <YeonView>
+              <YeonText
+                variant="caption"
+                className="font-black uppercase tracking-[0.24em] text-[#666]"
+              >
                 AI sprite QA pipeline
-              </p>
-              <h1 className="mt-2 text-2xl font-black tracking-[-0.03em] text-white">
+              </YeonText>
+              <YeonText as="h1" variant="subtitle" className="mt-2">
                 AI 생성 스프라이트 재생 검수·수정 큐 도구
-              </h1>
-              <p className="mt-2 max-w-4xl text-[13px] leading-6 text-slate-300">
+              </YeonText>
+              <YeonText className="mt-2 max-w-4xl text-[13px] leading-6 text-[#666]">
                 사람이 픽셀을 찍는 그림판이 아니라, AI가 만든 프레임들을
                 순서대로 재생하고 흔들리는 프레임을 표시한 뒤 Codex에게 따로
                 요청할 수정 큐 리포트를 정리하는 내부 QA 도구입니다. 현재 샘플은
-                64x64 프레임 8개와 4px magenta gutter(#ff00ff)를 기준으로 맞춘
-                슬라임 바운스 스프라이트입니다.
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <button
+                64x64 프레임 8개와 4px guide gutter를 기준으로 맞춘 슬라임
+                바운스 스프라이트입니다.
+              </YeonText>
+            </YeonView>
+            <YeonView className="flex flex-wrap gap-2">
+              <YeonButton
                 type="button"
                 onClick={() => uploadInputRef.current?.click()}
-                className="rounded-xl bg-white px-4 py-2 text-[13px] font-black text-slate-950 hover:bg-cyan-100"
+                variant="primary"
               >
                 프레임 다중 업로드
-              </button>
-              <button
+              </YeonButton>
+              <YeonButton
                 type="button"
                 onClick={() => guideSheetInputRef.current?.click()}
-                className="rounded-xl border border-fuchsia-300/70 px-4 py-2 text-[13px] font-bold text-fuchsia-100 hover:bg-fuchsia-400/10"
+                variant="secondary"
               >
-                magenta guide sheet import
-              </button>
-              <button
+                guide sheet import
+              </YeonButton>
+              <YeonButton
                 type="button"
                 onClick={() => void exportGuideTemplate()}
-                className="rounded-xl border border-fuchsia-300/70 px-4 py-2 text-[13px] font-bold text-fuchsia-100 hover:bg-fuchsia-400/10"
+                variant="secondary"
               >
                 guide template export
-              </button>
-              <button
+              </YeonButton>
+              <YeonButton
                 type="button"
                 onClick={loadSample}
-                className="rounded-xl border border-white/15 px-4 py-2 text-[13px] font-bold text-white hover:bg-white/10"
+                variant="secondary"
               >
                 샘플 다시 불러오기
-              </button>
-              <button
+              </YeonButton>
+              <YeonButton
                 type="button"
                 onClick={exportSheet}
-                className="rounded-xl border border-white/15 px-4 py-2 text-[13px] font-bold text-white hover:bg-white/10"
+                variant="secondary"
               >
                 스프라이트시트 export
-              </button>
-              <button
+              </YeonButton>
+              <YeonButton
                 type="button"
                 onClick={exportManifest}
-                className="rounded-xl border border-white/15 px-4 py-2 text-[13px] font-bold text-white hover:bg-white/10"
+                variant="secondary"
               >
                 수정 큐 JSON export
-              </button>
-            </div>
-          </div>
-          <input
-            ref={uploadInputRef}
+              </YeonButton>
+            </YeonView>
+          </YeonView>
+          <YeonField
+            ref={(node) => {
+              uploadInputRef.current = isYeonInputElement(node) ? node : null;
+            }}
             type="file"
             accept="image/*"
             multiple
             className="hidden"
             onChange={(event) => void handleUpload(event.target.files)}
           />
-          <input
-            ref={guideSheetInputRef}
+          <YeonField
+            ref={(node) => {
+              guideSheetInputRef.current = isYeonInputElement(node)
+                ? node
+                : null;
+            }}
             type="file"
             accept="image/png,image/*"
             className="hidden"
@@ -737,187 +811,220 @@ export function SpriteFrameEditor() {
               void handleGuideSheetImport(event.target.files)
             }
           />
-          <input
-            ref={replaceInputRef}
+          <YeonField
+            ref={(node) => {
+              replaceInputRef.current = isYeonInputElement(node) ? node : null;
+            }}
             type="file"
             accept="image/*"
             className="hidden"
             onChange={(event) => void handleReplace(event.target.files)}
           />
-        </header>
+        </YeonSurface>
 
-        <section className="grid min-h-[720px] gap-4 xl:grid-cols-[280px_1fr_360px]">
-          <aside className="flex min-h-0 flex-col rounded-3xl border border-white/10 bg-white p-4 text-slate-950">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <h2 className="text-[15px] font-black">프레임 목록</h2>
-                <p className="mt-1 text-[12px] text-slate-500">
+        <YeonView
+          as="section"
+          className="grid min-h-[720px] gap-4 xl:grid-cols-[280px_1fr_360px]"
+        >
+          <YeonSurface as="aside" className="flex min-h-0 flex-col p-4">
+            <YeonView className="flex items-start justify-between gap-3">
+              <YeonView>
+                <YeonText as="h2" variant="label">
+                  프레임 목록
+                </YeonText>
+                <YeonText variant="caption" className="mt-1 text-[#666]">
                   문제 프레임을 빠르게 찾고 순서를 조정합니다.
-                </p>
-              </div>
-              <span className="rounded-full bg-slate-950 px-2 py-1 text-[11px] font-black text-white">
-                {frames.length}
-              </span>
-            </div>
+                </YeonText>
+              </YeonView>
+              <YeonBadge variant="accent">{frames.length}</YeonBadge>
+            </YeonView>
 
-            <div className="mt-3 grid grid-cols-3 gap-2 text-center text-[11px] font-bold">
-              <div className="rounded-xl bg-slate-50 p-2 text-slate-500">
-                미검수 {summary.unchecked}
-              </div>
-              <div className="rounded-xl bg-emerald-50 p-2 text-emerald-700">
-                통과 {summary.pass}
-              </div>
-              <div className="rounded-xl bg-rose-50 p-2 text-rose-700">
-                수정 {summary["needs-fix"]}
-              </div>
-            </div>
+            <YeonView className="mt-3 grid grid-cols-3 gap-2 text-center">
+              <YeonSurface variant="panel" className="p-2">
+                <YeonText variant="caption" className="font-bold text-[#666]">
+                  미검수 {summary.unchecked}
+                </YeonText>
+              </YeonSurface>
+              <YeonSurface variant="panel" className="p-2">
+                <YeonText variant="caption" className="font-bold text-[#111]">
+                  통과 {summary.pass}
+                </YeonText>
+              </YeonSurface>
+              <YeonSurface variant="panel" className="p-2">
+                <YeonText variant="caption" className="font-bold text-[#111]">
+                  수정 {summary["needs-fix"]}
+                </YeonText>
+              </YeonSurface>
+            </YeonView>
 
-            <div className="mt-3 grid grid-cols-2 gap-2">
+            <YeonView className="mt-3 grid grid-cols-2 gap-2">
               {(["all", "unchecked", "pass", "needs-fix"] as FrameFilter[]).map(
                 (item) => (
-                  <button
+                  <YeonButton
                     key={item}
                     type="button"
                     onClick={() => setFilter(item)}
-                    className={`rounded-xl px-3 py-2 text-[12px] font-bold ${filter === item ? "bg-slate-950 text-white" : "bg-slate-100 text-slate-500"}`}
+                    className={
+                      filter === item
+                        ? "bg-[#111] text-white"
+                        : "bg-[#fafafa] text-[#666]"
+                    }
+                    variant={filter === item ? "primary" : "secondary"}
                   >
                     {item === "all" ? "전체" : STATUS_LABEL[item]}
-                  </button>
+                  </YeonButton>
                 )
               )}
-            </div>
+            </YeonView>
 
-            <div className="mt-3 min-h-0 flex-1 overflow-auto pr-1">
-              <div className="flex flex-col gap-2">
+            <YeonView className="mt-3 min-h-0 flex-1 overflow-auto pr-1">
+              <YeonView className="flex flex-col gap-2">
                 {visibleFrames.map((frame) => {
                   const index = frames.findIndex(
                     (item) => item.id === frame.id
                   );
                   const selected = frame.id === selectedFrame?.id;
                   return (
-                    <button
+                    <YeonButton
                       key={frame.id}
                       type="button"
                       onClick={() => setSelectedFrameId(frame.id)}
-                      className={`flex items-center gap-3 rounded-2xl border p-2 text-left transition ${selected ? "border-cyan-400 bg-cyan-50" : "border-slate-200 bg-white hover:bg-slate-50"}`}
+                      variant="secondary"
+                      className={
+                        selected
+                          ? "justify-start border-[#111] bg-[#fafafa] p-2 text-left"
+                          : "justify-start border-[#e5e5e5] bg-white p-2 text-left hover:bg-[#fafafa]"
+                      }
                     >
-                      <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-slate-100">
-                        <img
-                          src={frame.url}
-                          alt=""
-                          className="max-h-12 max-w-12 [image-rendering:pixelated]"
-                        />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className="text-[12px] font-black">
-                            #{index + 1}
-                          </span>
-                          <span
-                            className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${STATUS_CLASS[frame.status]}`}
+                      <YeonView className="flex w-full items-center gap-3">
+                        <YeonView className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border border-[#e5e5e5] bg-[#fafafa]">
+                          <YeonImage
+                            src={frame.url}
+                            alt=""
+                            className="max-h-12 max-w-12 [image-rendering:pixelated]"
+                          />
+                        </YeonView>
+                        <YeonView className="min-w-0 flex-1">
+                          <YeonView className="flex items-center gap-2">
+                            <YeonText
+                              as="span"
+                              variant="caption"
+                              className="font-black text-[#111]"
+                            >
+                              #{index + 1}
+                            </YeonText>
+                            <YeonBadge
+                              variant="neutral"
+                              className={`border px-2 py-0.5 text-[10px] ${STATUS_CLASS[frame.status]}`}
+                            >
+                              {STATUS_LABEL[frame.status]}
+                            </YeonBadge>
+                          </YeonView>
+                          <YeonText
+                            variant="caption"
+                            className="mt-1 truncate text-[#666]"
                           >
-                            {STATUS_LABEL[frame.status]}
-                          </span>
-                        </div>
-                        <p className="mt-1 truncate text-[11px] text-slate-500">
-                          {frame.name}
-                        </p>
-                        {frame.note && (
-                          <p className="mt-1 truncate text-[11px] text-rose-600">
-                            {frame.note}
-                          </p>
-                        )}
-                      </div>
-                    </button>
+                            {frame.name}
+                          </YeonText>
+                          {frame.note ? (
+                            <YeonText
+                              variant="caption"
+                              className="mt-1 truncate text-[#111]"
+                            >
+                              {frame.note}
+                            </YeonText>
+                          ) : null}
+                        </YeonView>
+                      </YeonView>
+                    </YeonButton>
                   );
                 })}
-              </div>
-            </div>
-          </aside>
+              </YeonView>
+            </YeonView>
+          </YeonSurface>
 
-          <section className="flex min-h-0 flex-col gap-4">
-            <div className="flex flex-1 flex-col rounded-3xl border border-white/10 bg-white p-4 text-slate-950">
-              <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <h2 className="text-[15px] font-black">재생 검수 프리뷰</h2>
-                  <p className="mt-1 text-[12px] text-slate-500">
+          <YeonView as="section" className="flex min-h-0 flex-col gap-4">
+            <YeonSurface className="flex flex-1 flex-col p-4">
+              <YeonView className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                <YeonView>
+                  <YeonText as="h2" variant="label">
+                    재생 검수 프리뷰
+                  </YeonText>
+                  <YeonText variant="caption" className="mt-1 text-[#666]">
                     기준선/중심선/onion skin으로 프레임 간 흔들림을 확인합니다.
-                  </p>
-                </div>
-                <div className="flex flex-wrap gap-2 text-[12px] font-bold text-slate-600">
-                  <label className="flex items-center gap-2 rounded-xl bg-slate-100 px-3 py-2">
-                    <input
-                      type="checkbox"
+                  </YeonText>
+                </YeonView>
+                <YeonView className="flex flex-wrap gap-2">
+                  <YeonLabel className="flex items-center gap-2 rounded-xl border border-[#e5e5e5] bg-[#fafafa] px-3 py-2 text-[12px] font-bold text-[#666]">
+                    <YeonCheckbox
                       checked={showGuides}
                       onChange={(event) => setShowGuides(event.target.checked)}
-                    />{" "}
+                    />
                     기준선
-                  </label>
-                  <label className="flex items-center gap-2 rounded-xl bg-slate-100 px-3 py-2">
-                    <input
-                      type="checkbox"
+                  </YeonLabel>
+                  <YeonLabel className="flex items-center gap-2 rounded-xl border border-[#e5e5e5] bg-[#fafafa] px-3 py-2 text-[12px] font-bold text-[#666]">
+                    <YeonCheckbox
                       checked={showOnionSkin}
                       onChange={(event) =>
                         setShowOnionSkin(event.target.checked)
                       }
-                    />{" "}
+                    />
                     onion
-                  </label>
-                  <label className="flex items-center gap-2 rounded-xl bg-slate-100 px-3 py-2">
-                    <input
-                      type="checkbox"
+                  </YeonLabel>
+                  <YeonLabel className="flex items-center gap-2 rounded-xl border border-[#e5e5e5] bg-[#fafafa] px-3 py-2 text-[12px] font-bold text-[#666]">
+                    <YeonCheckbox
                       checked={showBoundingBox}
                       onChange={(event) =>
                         setShowBoundingBox(event.target.checked)
                       }
-                    />{" "}
+                    />
                     bbox
-                  </label>
-                </div>
-              </div>
+                  </YeonLabel>
+                </YeonView>
+              </YeonView>
 
-              <div className="flex flex-1 items-center justify-center overflow-auto rounded-3xl border border-slate-200 bg-slate-100 p-4">
+              <YeonView className="flex flex-1 items-center justify-center overflow-auto rounded-3xl border border-[#e5e5e5] bg-[#fafafa] p-4">
                 {selectedFrame ? (
-                  <canvas
+                  <YeonCanvas
                     ref={previewCanvasRef}
                     className="max-h-full max-w-full rounded-2xl [image-rendering:pixelated]"
                   />
                 ) : (
-                  <p className="text-[13px] text-slate-500">
+                  <YeonText variant="caption" className="text-[#666]">
                     프레임을 업로드하세요.
-                  </p>
+                  </YeonText>
                 )}
-              </div>
-            </div>
+              </YeonView>
+            </YeonSurface>
 
-            <div className="rounded-3xl border border-white/10 bg-white p-4 text-slate-950">
-              <div className="flex flex-wrap items-center gap-2">
-                <button
+            <YeonSurface className="p-4">
+              <YeonView className="flex flex-wrap items-center gap-2">
+                <YeonButton
                   type="button"
                   onClick={() => setIsPlaying((value) => !value)}
-                  className="rounded-xl bg-slate-950 px-4 py-2 text-[13px] font-black text-white"
+                  variant="primary"
                 >
                   {isPlaying ? "정지" : "재생"}
-                </button>
-                <button
+                </YeonButton>
+                <YeonButton
                   type="button"
                   onClick={() => selectIndex(selectedIndex - 1)}
-                  className="rounded-xl bg-slate-100 px-3 py-2 text-[13px] font-bold text-slate-700"
+                  variant="secondary"
                 >
                   이전
-                </button>
-                <button
+                </YeonButton>
+                <YeonButton
                   type="button"
                   onClick={() => selectIndex(selectedIndex + 1)}
-                  className="rounded-xl bg-slate-100 px-3 py-2 text-[13px] font-bold text-slate-700"
+                  variant="secondary"
                 >
                   다음
-                </button>
-                <div className="ml-0 flex items-center gap-2 md:ml-4">
-                  <span className="text-[12px] font-bold text-slate-500">
+                </YeonButton>
+                <YeonView className="ml-0 flex items-center gap-2 md:ml-4">
+                  <YeonText variant="caption" className="font-bold text-[#666]">
                     FPS
-                  </span>
-                  <input
+                  </YeonText>
+                  <YeonField
                     type="range"
                     min={1}
                     max={30}
@@ -925,129 +1032,164 @@ export function SpriteFrameEditor() {
                     onChange={(event) =>
                       setConfigField("fps", Number(event.target.value))
                     }
+                    className="h-9 w-32 p-0"
                   />
-                  <span className="w-8 text-[12px] font-black text-slate-950">
+                  <YeonText
+                    as="span"
+                    variant="caption"
+                    className="w-8 font-black text-[#111]"
+                  >
                     {config.fps}
-                  </span>
-                </div>
-                <span className="ml-auto text-[12px] font-semibold text-slate-500">
+                  </YeonText>
+                </YeonView>
+                <YeonText
+                  as="span"
+                  variant="caption"
+                  className="ml-auto font-semibold text-[#666]"
+                >
                   현재 {selectedFrame ? selectedIndex + 1 : 0}/{frames.length}
-                </span>
-              </div>
-              <div className="mt-3 flex gap-1 overflow-x-auto pb-1">
+                </YeonText>
+              </YeonView>
+              <YeonView className="mt-3 flex gap-1 overflow-x-auto pb-1">
                 {frames.map((frame, index) => (
-                  <button
+                  <YeonButton
                     key={frame.id}
                     type="button"
                     onClick={() => setSelectedFrameId(frame.id)}
-                    className={`h-3 min-w-8 rounded-full ${index === selectedIndex ? "bg-cyan-500" : frame.status === "pass" ? "bg-emerald-400" : frame.status === "needs-fix" ? "bg-rose-400" : "bg-slate-300"}`}
+                    className={`h-3 min-h-0 min-w-8 rounded-full border-none p-0 ${
+                      index === selectedIndex
+                        ? "bg-[#111]"
+                        : frame.status === "pass"
+                          ? "bg-[#666]"
+                          : frame.status === "needs-fix"
+                            ? "bg-[#aaa]"
+                            : "bg-[#e5e5e5]"
+                    }`}
                     title={`${index + 1}: ${STATUS_LABEL[frame.status]}`}
+                    variant="ghost"
                   />
                 ))}
-              </div>
-            </div>
-          </section>
+              </YeonView>
+            </YeonSurface>
+          </YeonView>
 
-          <aside className="flex min-h-0 flex-col gap-4 rounded-3xl border border-white/10 bg-white p-4 text-slate-950">
-            <div>
-              <h2 className="text-[15px] font-black">현재 프레임 QA</h2>
-              <p className="mt-1 text-[12px] text-slate-500">
+          <YeonSurface as="aside" className="flex min-h-0 flex-col gap-4 p-4">
+            <YeonView>
+              <YeonText as="h2" variant="label">
+                현재 프레임 QA
+              </YeonText>
+              <YeonText variant="caption" className="mt-1 text-[#666]">
                 문제를 기록하고 Codex에게 넘길 수정 큐를 정리합니다.
-              </p>
-            </div>
+              </YeonText>
+            </YeonView>
 
             {selectedFrame ? (
               <>
-                <div className="rounded-2xl bg-slate-50 p-3">
-                  <p className="text-[12px] font-black text-slate-950">
+                <YeonSurface variant="panel" className="p-3">
+                  <YeonText
+                    variant="caption"
+                    className="font-black text-[#111]"
+                  >
                     #{selectedIndex + 1} {selectedFrame.name}
-                  </p>
-                  <div className="mt-3 grid grid-cols-3 gap-2">
+                  </YeonText>
+                  <YeonView className="mt-3 grid grid-cols-3 gap-2">
                     {(["unchecked", "pass", "needs-fix"] as FrameStatus[]).map(
                       (status) => (
-                        <button
+                        <YeonButton
                           key={status}
                           type="button"
                           onClick={() => updateSelectedFrame({ status })}
-                          className={`rounded-xl border px-2 py-2 text-[11px] font-black ${selectedFrame.status === status ? STATUS_CLASS[status] : "border-slate-200 bg-white text-slate-500"}`}
+                          className={
+                            selectedFrame.status === status
+                              ? STATUS_CLASS[status]
+                              : "border-[#e5e5e5] bg-white text-[#666]"
+                          }
+                          size="sm"
+                          variant="secondary"
                         >
                           {STATUS_LABEL[status]}
-                        </button>
+                        </YeonButton>
                       )
                     )}
-                  </div>
-                </div>
+                  </YeonView>
+                </YeonSurface>
 
-                <label className="flex flex-col gap-2 text-[12px] font-bold text-slate-600">
+                <YeonLabel className="flex flex-col gap-2 text-[12px] font-bold text-[#666]">
                   검수 메모
-                  <textarea
+                  <YeonField
+                    as="textarea"
                     value={selectedFrame.note}
                     onChange={(event) =>
                       updateSelectedFrame({ note: event.target.value })
                     }
-                    placeholder="예: 7번 프레임에서 오른발이 기준선 위로 뜸, 머리 크기가 1~6번보다 큼, 초록 스카프 누락"
-                    className="min-h-28 resize-none rounded-2xl border border-slate-200 bg-white p-3 text-[13px] font-medium leading-6 text-slate-950 outline-none focus:border-slate-500"
+                    placeholder="예: 7번 프레임에서 오른발이 기준선 위로 뜸, 머리 크기가 1~6번보다 큼, 스카프 누락"
+                    className="min-h-28 resize-none rounded-2xl p-3 text-[13px] font-medium leading-6"
                   />
-                </label>
+                </YeonLabel>
 
-                <div className="grid grid-cols-3 gap-2">
-                  <button
+                <YeonView className="grid grid-cols-3 gap-2">
+                  <YeonButton
                     type="button"
                     onClick={() => moveSelected(-1)}
-                    className="rounded-xl bg-slate-100 px-3 py-2 text-[12px] font-bold text-slate-700"
+                    size="sm"
+                    variant="secondary"
                   >
                     앞으로
-                  </button>
-                  <button
+                  </YeonButton>
+                  <YeonButton
                     type="button"
                     onClick={() => moveSelected(1)}
-                    className="rounded-xl bg-slate-100 px-3 py-2 text-[12px] font-bold text-slate-700"
+                    size="sm"
+                    variant="secondary"
                   >
                     뒤로
-                  </button>
-                  <button
+                  </YeonButton>
+                  <YeonButton
                     type="button"
                     onClick={removeSelected}
-                    className="rounded-xl bg-rose-50 px-3 py-2 text-[12px] font-bold text-rose-700"
+                    size="sm"
+                    variant="danger"
                   >
                     삭제
-                  </button>
-                </div>
+                  </YeonButton>
+                </YeonView>
 
-                <button
+                <YeonButton
                   type="button"
                   onClick={() => replaceInputRef.current?.click()}
-                  className="rounded-xl bg-cyan-500 px-4 py-2 text-[13px] font-black text-cyan-950 hover:bg-cyan-400"
+                  variant="primary"
                 >
                   수정된 프레임으로 교체
-                </button>
+                </YeonButton>
 
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
-                  <div className="mb-2 flex items-center justify-between gap-2">
-                    <h3 className="text-[13px] font-black">
+                <YeonSurface variant="panel" className="p-3">
+                  <YeonView className="mb-2 flex items-center justify-between gap-2">
+                    <YeonText as="h3" variant="label">
                       Codex 수정 큐 리포트
-                    </h3>
-                    <button
+                    </YeonText>
+                    <YeonButton
                       type="button"
                       onClick={() => void copyCodexReport()}
-                      className="rounded-lg bg-slate-950 px-3 py-1.5 text-[11px] font-bold text-white"
+                      size="sm"
+                      variant="primary"
                     >
                       {copied ? "복사됨" : "리포트 복사"}
-                    </button>
-                  </div>
-                  <p className="mb-2 text-[11px] leading-5 text-slate-500">
+                    </YeonButton>
+                  </YeonView>
+                  <YeonText variant="caption" className="mb-2 text-[#666]">
                     이 사이트는 외부 이미지 API를 호출하지 않습니다. 프레임
                     수정은 Codex 채팅에서 별도로 요청하고, 여기서는 수정 필요
                     프레임과 검수 메모만 정리합니다.
-                  </p>
-                  <textarea
+                  </YeonText>
+                  <YeonField
+                    as="textarea"
                     readOnly
                     value={codexHandoffReport}
-                    className="h-56 w-full resize-none rounded-xl border border-slate-200 bg-white p-3 text-[12px] leading-5 text-slate-700 outline-none"
+                    className="h-56 resize-none rounded-xl p-3 text-[12px] leading-5 text-[#666]"
                   />
-                </div>
+                </YeonSurface>
 
-                <div className="grid grid-cols-2 gap-2">
+                <YeonView className="grid grid-cols-2 gap-2">
                   <NumericField
                     label="중심 X"
                     value={config.centerX}
@@ -1100,21 +1242,25 @@ export function SpriteFrameEditor() {
                       setConfigField("boundingBoxHeight", value)
                     }
                   />
-                </div>
+                </YeonView>
               </>
             ) : (
-              <p className="rounded-2xl bg-slate-50 p-4 text-[13px] text-slate-500">
-                프레임을 업로드하면 상태/메모/Codex 수정 큐를 정리할 수
-                있습니다.
-              </p>
+              <YeonSurface variant="empty" className="p-4 text-left">
+                <YeonText variant="caption" className="text-[#666]">
+                  프레임을 업로드하면 상태/메모/Codex 수정 큐를 정리할 수
+                  있습니다.
+                </YeonText>
+              </YeonSurface>
             )}
-          </aside>
-        </section>
+          </YeonSurface>
+        </YeonView>
 
-        <p className="rounded-2xl border border-cyan-300/20 bg-cyan-300/10 px-4 py-3 text-[12px] leading-6 text-cyan-50">
-          {message}
-        </p>
-      </div>
-    </main>
+        <YeonSurface variant="panel" className="px-4 py-3">
+          <YeonText variant="caption" className="text-[#666]">
+            {message}
+          </YeonText>
+        </YeonSurface>
+      </YeonView>
+    </YeonView>
   );
 }

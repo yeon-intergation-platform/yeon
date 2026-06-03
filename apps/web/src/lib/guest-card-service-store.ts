@@ -1,5 +1,4 @@
 "use client";
-
 import { CARD_STUDY_MODES } from "@yeon/api-contract/card-decks";
 import type {
   CardReviewDifficulty,
@@ -16,6 +15,13 @@ import type {
 import type { MergeGuestRequest } from "@yeon/api-contract/card-deck-merge-guest";
 import { mergeGuestLimits } from "@yeon/api-contract/card-deck-merge-guest";
 import { type DBSchema, type IDBPDatabase, openDB } from "idb";
+import {
+  createYeonRandomUUID,
+  getYeonNow,
+  getYeonRandom,
+  readYeonLocalStorageItem,
+  writeYeonLocalStorageItem,
+} from "@yeon/ui/runtime/YeonBrowserRuntime";
 
 // DB_VERSION: 스키마 변경 시 openDB upgrade 콜백에서 분기 처리 추가 필요.
 // 1 = decks(by-created-at) + items(by-deck) 초기 스키마.
@@ -116,20 +122,14 @@ async function getDb(): Promise<IDBPDatabase<GuestCardServiceDb>> {
 }
 
 export function getGuestCardStudyMode() {
-  if (typeof localStorage === "undefined") {
-    return CARD_STUDY_MODES.flashcard;
-  }
-  return localStorage.getItem(STUDY_MODE_STORAGE_KEY) ===
+  return readYeonLocalStorageItem(STUDY_MODE_STORAGE_KEY) ===
     CARD_STUDY_MODES.review
     ? CARD_STUDY_MODES.review
     : CARD_STUDY_MODES.flashcard;
 }
 
 export function setGuestCardStudyMode(studyMode: CardStudyMode) {
-  if (typeof localStorage === "undefined") {
-    return;
-  }
-  localStorage.setItem(STUDY_MODE_STORAGE_KEY, studyMode);
+  writeYeonLocalStorageItem(STUDY_MODE_STORAGE_KEY, studyMode);
 }
 
 function nowIso(): string {
@@ -137,13 +137,10 @@ function nowIso(): string {
 }
 
 function randomId(): string {
-  if (
-    typeof crypto !== "undefined" &&
-    typeof crypto.randomUUID === "function"
-  ) {
-    return crypto.randomUUID();
-  }
-  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+  return (
+    createYeonRandomUUID() ??
+    `${getYeonNow().toString(36)}-${getYeonRandom().toString(36).slice(2, 10)}`
+  );
 }
 
 function toDeckDto(row: GuestDeckRow, itemCount: number): CardDeckDto {

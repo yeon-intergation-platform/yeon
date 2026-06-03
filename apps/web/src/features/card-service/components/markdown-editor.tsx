@@ -1,11 +1,7 @@
 "use client";
-
-import dynamic from "next/dynamic";
-import { SHARED_FEATURE_CLASS } from "@/features/shared-style-constants";
-
-const MDEditor = dynamic(() => import("@uiw/react-md-editor"), {
-  ssr: false,
-});
+import { YeonLegacyMarkdownEditor } from "@yeon/ui/rich-content/YeonMarkdownEditor";
+import { YEON_WEB_SHARED_CLASS as SHARED_FEATURE_CLASS } from "@yeon/ui/theme/web-style-tokens";
+import { YeonText, YeonView } from "@yeon/ui";
 
 const DISALLOWED_MARKDOWN_ELEMENTS = [
   "script",
@@ -37,17 +33,27 @@ export function MarkdownEditor({
   const editorHeight = Math.max(180, minRows * 28 + 70);
 
   return (
-    <div className="flex flex-col gap-2">
-      <div className={SHARED_FEATURE_CLASS.alignBetweenGap3}>
-        <span className={SHARED_FEATURE_CLASS.text13PrimaryMedium}>
+    <YeonView className="flex flex-col gap-2">
+      <YeonView className={SHARED_FEATURE_CLASS.alignBetweenGap3}>
+        <YeonText
+          as="span"
+          variant="unstyled"
+          tone="inherit"
+          className={SHARED_FEATURE_CLASS.text13PrimaryMedium}
+        >
           {label}
-        </span>
-        <span className={SHARED_FEATURE_CLASS.text12Soft}>
+        </YeonText>
+        <YeonText
+          as="span"
+          variant="unstyled"
+          tone="inherit"
+          className={SHARED_FEATURE_CLASS.text12Soft}
+        >
           {value.length}/{maxLength}
-        </span>
-      </div>
-      <div data-color-mode="light" className="yeon-markdown-editor">
-        <MDEditor
+        </YeonText>
+      </YeonView>
+      <YeonView data-color-mode="light" className="yeon-markdown-editor">
+        <YeonLegacyMarkdownEditor
           value={value}
           onChange={(nextValue) => onChange(nextValue ?? "")}
           preview="edit"
@@ -64,7 +70,7 @@ export function MarkdownEditor({
             unwrapDisallowed: true,
           }}
         />
-      </div>
-    </div>
+      </YeonView>
+    </YeonView>
   );
 }

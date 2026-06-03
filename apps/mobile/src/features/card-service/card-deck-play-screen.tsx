@@ -4,30 +4,44 @@ import {
   type CardReviewDifficulty,
   type CardStudyMode,
 } from "@yeon/api-contract/card-decks";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { type Href, useRouter } from "expo-router";
-import { useEffect, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-
-import { StateBlock } from "../../components/ui/state-block";
+import {
+  useYeonMutation as useMutation,
+  useYeonQuery as useQuery,
+  useYeonQueryClient as useQueryClient,
+} from "@yeon/ui/native";
+import {
+  type YeonHref as Href,
+  useYeonRouter as useRouter,
+} from "@yeon/ui/native";
+import { useEffect, useMemo, useState } from "react";
+import {
+  YeonCardNavigationControls as CardNavigationControls,
+  YeonFormStack as FormStack,
+  YeonMobileHeaderBar as MobileHeaderBar,
+  YeonReviewPanel as ReviewPanel,
+  YeonMobileScreen as MobileScreen,
+  YeonSegmentedControl as SegmentedControl,
+  YeonStateBlock as StateBlock,
+  YeonStudyCard as StudyCard,
+} from "@yeon/ui/native";
+import { YEON_ROUTE_TEMPLATES } from "@yeon/ui/runtime/ports";
+import { deriveCardDeckPlayViewState } from "@yeon/ui/runtime/ports/card-deck";
 import { cardServiceApi } from "../../services/card-service/client";
 import { cardServiceQueryKeys } from "../../services/card-service/query-keys";
 import {
   getGuestCardStudyMode,
   getGuestDeckDetail,
-  reviewGuestCard,
-  setGuestCardStudyMode,
 } from "../../services/card-service/storage";
-import { colors } from "../../theme/colors";
+import { createMobileCardItemRepository } from "./runtime-adapters/card-item-repository";
 import { CARD_SERVICE_TEXT } from "./card-service-copy";
+import { CardMarkdown } from "./card-markdown";
 import {
   CARD_SERVICE_MODE,
   type CardServiceMode,
   resolveCardServiceSession,
 } from "./card-service-session";
 
-const CARD_SERVICE_ROUTE = "/card-service" as Href;
+const CARD_SERVICE_ROUTE = YEON_ROUTE_TEMPLATES.cardHome as Href;
 
 interface CardDeckPlayScreenProps {
   deckId?: string;
@@ -77,20 +91,15 @@ export function CardDeckPlayScreen({ deckId }: CardDeckPlayScreenProps) {
       : ["card-service", "deck", "missing", mode],
   });
 
+  // 게스트/서버 분기는 repository 어댑터가 흡수한다(웹과 동일 포트 인터페이스).
+  const itemRepository = useMemo(
+    () => createMobileCardItemRepository({ mode, sessionToken }),
+    [mode, sessionToken]
+  );
+
   const studyModeMutation = useMutation({
-    mutationFn: async (nextMode: CardStudyMode) => {
-      if (!detailQuery.data || mode === CARD_SERVICE_MODE.guest) {
-        await setGuestCardStudyMode(nextMode);
-        return { studyMode: nextMode };
-      }
-      if (!sessionToken) {
-        throw new Error(CARD_SERVICE_TEXT.detail.loginRequiredMessage);
-      }
-      return cardServiceApi.updateCardStudyPreference(
-        { studyMode: nextMode },
-        sessionToken
-      );
-    },
+    mutationFn: (nextMode: CardStudyMode) =>
+      itemRepository.updateStudyPreference(nextMode),
   });
 
   const reviewMutation = useMutation({
@@ -101,16 +110,11 @@ export function CardDeckPlayScreen({ deckId }: CardDeckPlayScreenProps) {
       if (!deckId) {
         throw new Error(CARD_SERVICE_TEXT.detail.missingDeckIdMessage);
       }
-      if (mode === CARD_SERVICE_MODE.server && sessionToken) {
-        return cardServiceApi.reviewCardDeckItem(
-          deckId,
-          params.itemId,
-          { difficulty: params.difficulty },
-          sessionToken
-        );
-      }
-
-      return reviewGuestCard(params.itemId, params.difficulty);
+      return itemRepository.reviewCard(
+        deckId,
+        params.itemId,
+        params.difficulty
+      );
     },
     onSuccess: async () => {
       if (deckId) {
@@ -173,6 +177,20 @@ export function CardDeckPlayScreen({ deckId }: CardDeckPlayScreenProps) {
 
   const currentCard = detailQuery.data?.items[currentIndex] ?? null;
   const detail = detailQuery.data;
+  // 로딩/에러 분기는 web/mobile 공용 SSOT에서 파생한다(empty는 currentCard 가드 유지).
+  const playState = deriveCardDeckPlayViewState(
+    {
+      isPending: detailQuery.isPending,
+      isError: detailQuery.isError,
+      data: detailQuery.data,
+    },
+    {
+      errorMessage:
+        detailQuery.error instanceof Error
+          ? detailQuery.error.message
+          : CARD_SERVICE_TEXT.play.errorMessage,
+    }
+  );
   const canMovePrev = currentIndex > 0;
   const canMoveNext = detail ? currentIndex < detail.items.length - 1 : false;
 
@@ -190,64 +208,43 @@ export function CardDeckPlayScreen({ deckId }: CardDeckPlayScreenProps) {
 
   if (isBooting) {
     return (
-      <View style={[styles.screen, styles.center]}>
+      <MobileScreen contentVariant="centered" scroll={false}>
         <StateBlock
           loading
           message={CARD_SERVICE_TEXT.state.bootLoadingMessage}
           title={CARD_SERVICE_TEXT.state.loadingTitle}
         />
-      </View>
+      </MobileScreen>
     );
   }
 
   return (
-    <SafeAreaView edges={["top"]} style={styles.screen}>
-      <View style={styles.content}>
-        <View style={styles.header}>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={CARD_SERVICE_TEXT.shared.backLabel}
-            onPress={() => router.back()}
-            style={styles.headerButton}
-          >
-            <Text style={styles.headerButtonText}>
-              {CARD_SERVICE_TEXT.play.headerBackLabel}
-            </Text>
-          </Pressable>
-          <View style={styles.titleBox}>
-            <Text numberOfLines={1} style={styles.title}>
-              {detail?.deck.title ?? CARD_SERVICE_TEXT.play.titleFallback}
-            </Text>
-            <Text style={styles.subtitle}>
-              {detail ? `${currentIndex + 1} / ${detail.items.length}` : ""}
-            </Text>
-            <Text style={styles.subtitle}>{getModeBadge(mode)}</Text>
-          </View>
-          <Pressable
-            accessibilityLabel={CARD_SERVICE_TEXT.play.homeLabel}
-            accessibilityRole="button"
-            onPress={() => router.replace(CARD_SERVICE_ROUTE)}
-            style={styles.headerButton}
-          >
-            <Text style={styles.headerButtonText}>
-              {CARD_SERVICE_TEXT.play.homeLabel}
-            </Text>
-          </Pressable>
-        </View>
+    <MobileScreen contentVariant="play" safeAreaEdges={["top"]} scroll={false}>
+      <FormStack fill gap="roomy">
+        <MobileHeaderBar
+          leftAccessibilityLabel={CARD_SERVICE_TEXT.shared.backLabel}
+          leftLabel={CARD_SERVICE_TEXT.play.headerBackLabel}
+          onLeftPress={() => router.back()}
+          rightAccessibilityLabel={CARD_SERVICE_TEXT.play.homeLabel}
+          rightLabel={CARD_SERVICE_TEXT.play.homeLabel}
+          onRightPress={() => router.replace(CARD_SERVICE_ROUTE)}
+          subtitle={
+            detail
+              ? `${currentIndex + 1} / ${detail.items.length} · ${getModeBadge(mode)}`
+              : getModeBadge(mode)
+          }
+          title={detail?.deck.title ?? CARD_SERVICE_TEXT.play.titleFallback}
+        />
 
-        {detailQuery.isPending ? (
+        {playState.kind === "loading" ? (
           <StateBlock
             loading
             message={CARD_SERVICE_TEXT.state.loading}
             title={CARD_SERVICE_TEXT.state.loadingTitle}
           />
-        ) : detailQuery.isError ? (
+        ) : playState.kind === "error" ? (
           <StateBlock
-            message={
-              detailQuery.error instanceof Error
-                ? detailQuery.error.message
-                : CARD_SERVICE_TEXT.play.errorMessage
-            }
+            message={playState.message}
             title={CARD_SERVICE_TEXT.state.errorTitle}
           />
         ) : !currentCard ? (
@@ -257,405 +254,97 @@ export function CardDeckPlayScreen({ deckId }: CardDeckPlayScreenProps) {
           />
         ) : (
           <>
-            <View style={styles.modeTabs}>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={
-                  CARD_SERVICE_TEXT.play.studyModeFlashcardLabel
-                }
-                onPress={() =>
-                  handleStudyModeChange(CARD_STUDY_MODES.flashcard)
-                }
-                style={[
-                  styles.modeTab,
-                  studyMode === CARD_STUDY_MODES.flashcard &&
-                    styles.modeTabActive,
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.modeTabText,
-                    studyMode === CARD_STUDY_MODES.flashcard &&
-                      styles.modeTabTextActive,
-                  ]}
-                >
-                  {CARD_SERVICE_TEXT.play.studyModeFlashcardLabel}
-                </Text>
-              </Pressable>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={CARD_SERVICE_TEXT.play.studyModeReviewLabel}
-                onPress={() => handleStudyModeChange(CARD_STUDY_MODES.review)}
-                style={[
-                  styles.modeTab,
-                  studyMode === CARD_STUDY_MODES.review && styles.modeTabActive,
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.modeTabText,
-                    studyMode === CARD_STUDY_MODES.review &&
-                      styles.modeTabTextActive,
-                  ]}
-                >
-                  {CARD_SERVICE_TEXT.play.studyModeReviewLabel}
-                </Text>
-              </Pressable>
-            </View>
+            <SegmentedControl
+              onValueChange={handleStudyModeChange}
+              options={[
+                {
+                  label: CARD_SERVICE_TEXT.play.studyModeFlashcardLabel,
+                  value: CARD_STUDY_MODES.flashcard,
+                },
+                {
+                  label: CARD_SERVICE_TEXT.play.studyModeReviewLabel,
+                  value: CARD_STUDY_MODES.review,
+                },
+              ]}
+              value={studyMode}
+            />
 
             {studyMode === CARD_STUDY_MODES.review ? (
-              <ReviewModeCard
-                isSaving={reviewMutation.isPending}
-                onReview={handleReview}
-                backText={currentCard.backText}
-                frontText={currentCard.frontText}
+              <ReviewPanel
+                actions={[
+                  {
+                    disabled: reviewMutation.isPending,
+                    label: reviewMutation.isPending
+                      ? CARD_SERVICE_TEXT.play.reviewSavingLabel
+                      : CARD_SERVICE_TEXT.play.reviewHardLabel,
+                    onPress: () => handleReview(CARD_REVIEW_DIFFICULTIES.hard),
+                    tone: "primary",
+                  },
+                  {
+                    disabled: reviewMutation.isPending,
+                    label: reviewMutation.isPending
+                      ? CARD_SERVICE_TEXT.play.reviewSavingLabel
+                      : CARD_SERVICE_TEXT.play.reviewGoodLabel,
+                    onPress: () => handleReview(CARD_REVIEW_DIFFICULTIES.good),
+                  },
+                  {
+                    disabled: reviewMutation.isPending,
+                    label: reviewMutation.isPending
+                      ? CARD_SERVICE_TEXT.play.reviewSavingLabel
+                      : CARD_SERVICE_TEXT.play.reviewEasyLabel,
+                    onPress: () => handleReview(CARD_REVIEW_DIFFICULTIES.easy),
+                  },
+                ]}
+                answerLabel={CARD_SERVICE_TEXT.play.reviewModeAnswerLabel}
+                answerText={
+                  <CardMarkdown source={currentCard.backText} tone="inverted" />
+                }
+                questionLabel={CARD_SERVICE_TEXT.play.reviewModeQuestionLabel}
+                questionText={<CardMarkdown source={currentCard.frontText} />}
               />
             ) : (
               <>
-                <Pressable
-                  accessibilityRole="button"
+                <StudyCard
                   accessibilityLabel={
                     isAnswerVisible
                       ? CARD_SERVICE_TEXT.play.flipQuestionLabel
                       : CARD_SERVICE_TEXT.play.flipAnswerLabel
                   }
-                  onPress={() => setAnswerVisible((prev) => !prev)}
-                  style={styles.studyCard}
-                >
-                  <Text style={styles.cardLabel}>
-                    {isAnswerVisible
-                      ? CARD_SERVICE_TEXT.play.flipAnswerLabel
-                      : CARD_SERVICE_TEXT.play.flipQuestionLabel}
-                  </Text>
-                  <ScrollView contentContainerStyle={styles.cardScrollContent}>
-                    <Text style={styles.cardText}>
-                      {isAnswerVisible
-                        ? currentCard.backText
-                        : currentCard.frontText}
-                    </Text>
-                  </ScrollView>
-                  <Text style={styles.cardHint}>
-                    {CARD_SERVICE_TEXT.play.flipHint}
-                    {isAnswerVisible
+                  body={
+                    <CardMarkdown
+                      source={
+                        isAnswerVisible
+                          ? currentCard.backText
+                          : currentCard.frontText
+                      }
+                    />
+                  }
+                  hint={`${CARD_SERVICE_TEXT.play.flipHint}${
+                    isAnswerVisible
                       ? CARD_SERVICE_TEXT.play.flipQuestionLabel
-                      : CARD_SERVICE_TEXT.play.flipAnswerLabel}
-                    {CARD_SERVICE_TEXT.play.flipHintPostfix}
-                  </Text>
-                </Pressable>
+                      : CARD_SERVICE_TEXT.play.flipAnswerLabel
+                  }${CARD_SERVICE_TEXT.play.flipHintPostfix}`}
+                  label={
+                    isAnswerVisible
+                      ? CARD_SERVICE_TEXT.play.flipAnswerLabel
+                      : CARD_SERVICE_TEXT.play.flipQuestionLabel
+                  }
+                  onPress={() => setAnswerVisible((prev) => !prev)}
+                />
 
-                <View style={styles.controls}>
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel={CARD_SERVICE_TEXT.play.prevLabel}
-                    onPress={movePrev}
-                    disabled={!canMovePrev}
-                    style={({ pressed }) => [
-                      styles.secondaryButton,
-                      !canMovePrev && styles.disabledButton,
-                      pressed && canMovePrev ? styles.pressedButton : null,
-                    ]}
-                  >
-                    <Text style={styles.secondaryButtonText}>
-                      {CARD_SERVICE_TEXT.play.prevLabel}
-                    </Text>
-                  </Pressable>
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel={CARD_SERVICE_TEXT.play.nextLabel}
-                    onPress={moveNext}
-                    disabled={!canMoveNext}
-                    style={({ pressed }) => [
-                      styles.primaryButton,
-                      !canMoveNext && styles.disabledButton,
-                      pressed && canMoveNext ? styles.pressedButton : null,
-                    ]}
-                  >
-                    <Text style={styles.primaryButtonText}>
-                      {CARD_SERVICE_TEXT.play.nextLabel}
-                    </Text>
-                  </Pressable>
-                </View>
+                <CardNavigationControls
+                  canMoveNext={canMoveNext}
+                  canMovePrev={canMovePrev}
+                  nextLabel={CARD_SERVICE_TEXT.play.nextLabel}
+                  onNext={moveNext}
+                  onPrev={movePrev}
+                  prevLabel={CARD_SERVICE_TEXT.play.prevLabel}
+                />
               </>
             )}
           </>
         )}
-      </View>
-    </SafeAreaView>
+      </FormStack>
+    </MobileScreen>
   );
 }
-
-function ReviewModeCard({
-  backText,
-  frontText,
-  isSaving,
-  onReview,
-}: {
-  backText: string;
-  frontText: string;
-  isSaving: boolean;
-  onReview: (difficulty: CardReviewDifficulty) => void;
-}) {
-  return (
-    <View style={styles.reviewCard}>
-      <ScrollView contentContainerStyle={styles.reviewScrollContent}>
-        <Text style={styles.cardLabel}>
-          {CARD_SERVICE_TEXT.play.reviewModeQuestionLabel}
-        </Text>
-        <Text style={styles.reviewQuestion}>{frontText}</Text>
-        <Text style={[styles.cardLabel, styles.reviewAnswerLabel]}>
-          {CARD_SERVICE_TEXT.play.reviewModeAnswerLabel}
-        </Text>
-        <Text style={styles.reviewAnswer}>{backText}</Text>
-      </ScrollView>
-      <View style={styles.reviewButtons}>
-        <ReviewButton
-          disabled={isSaving}
-          label={CARD_SERVICE_TEXT.play.reviewHardLabel}
-          onPress={() => onReview(CARD_REVIEW_DIFFICULTIES.hard)}
-          tone="hard"
-        />
-        <ReviewButton
-          disabled={isSaving}
-          label={CARD_SERVICE_TEXT.play.reviewGoodLabel}
-          onPress={() => onReview(CARD_REVIEW_DIFFICULTIES.good)}
-          tone="good"
-        />
-        <ReviewButton
-          disabled={isSaving}
-          label={CARD_SERVICE_TEXT.play.reviewEasyLabel}
-          onPress={() => onReview(CARD_REVIEW_DIFFICULTIES.easy)}
-          tone="easy"
-        />
-      </View>
-    </View>
-  );
-}
-
-function ReviewButton({
-  disabled,
-  label,
-  onPress,
-  tone,
-}: {
-  disabled: boolean;
-  label: string;
-  onPress: () => void;
-  tone: "hard" | "good" | "easy";
-}) {
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      disabled={disabled}
-      onPress={onPress}
-      style={[
-        styles.reviewButton,
-        styles[`reviewButton_${tone}`],
-        disabled && styles.disabledButton,
-      ]}
-    >
-      <Text style={styles.reviewButtonText}>
-        {disabled ? CARD_SERVICE_TEXT.play.reviewSavingLabel : label}
-      </Text>
-    </Pressable>
-  );
-}
-
-const styles = StyleSheet.create({
-  cardHint: {
-    color: colors.textMuted,
-    fontSize: 13,
-    marginTop: 18,
-    textAlign: "center",
-  },
-  cardLabel: {
-    color: colors.textMuted,
-    fontSize: 13,
-    fontWeight: "900",
-    letterSpacing: 1,
-  },
-  cardScrollContent: {
-    flexGrow: 1,
-    justifyContent: "center",
-  },
-  cardText: {
-    color: colors.text,
-    fontSize: 22,
-    fontWeight: "700",
-    lineHeight: 34,
-    marginTop: 20,
-    textAlign: "left",
-  },
-  center: {
-    gap: 14,
-    justifyContent: "center",
-    padding: 24,
-  },
-  content: {
-    flex: 1,
-    padding: 24,
-  },
-  pressedButton: {
-    opacity: 0.9,
-  },
-  controls: {
-    flexDirection: "row",
-    gap: 12,
-    marginTop: 18,
-  },
-  disabledButton: {
-    opacity: 0.5,
-  },
-  header: {
-    alignItems: "center",
-    flexDirection: "row",
-    marginBottom: 18,
-  },
-  headerButton: {
-    alignItems: "center",
-    height: 44,
-    justifyContent: "center",
-    width: 44,
-  },
-  headerButtonText: {
-    color: colors.text,
-    fontSize: 20,
-    fontWeight: "300",
-  },
-  modeTab: {
-    alignItems: "center",
-    borderColor: colors.borderStrong,
-    borderRadius: 12,
-    borderWidth: 1,
-    flex: 1,
-    paddingVertical: 12,
-  },
-  modeTabActive: {
-    backgroundColor: colors.black,
-    borderColor: colors.black,
-  },
-  modeTabText: {
-    color: colors.text,
-    fontSize: 14,
-    fontWeight: "900",
-  },
-  modeTabTextActive: {
-    color: colors.white,
-  },
-  modeTabs: {
-    flexDirection: "row",
-    gap: 10,
-    marginBottom: 16,
-  },
-  primaryButton: {
-    alignItems: "center",
-    backgroundColor: colors.black,
-    borderRadius: 14,
-    flex: 1,
-    justifyContent: "center",
-    minHeight: 56,
-  },
-  primaryButtonText: {
-    color: colors.white,
-    fontSize: 16,
-    fontWeight: "900",
-  },
-  reviewAnswer: {
-    backgroundColor: colors.black,
-    borderRadius: 16,
-    color: colors.white,
-    fontSize: 16,
-    lineHeight: 28,
-    marginTop: 8,
-    padding: 18,
-  },
-  reviewAnswerLabel: {
-    marginTop: 24,
-  },
-  reviewButton: {
-    alignItems: "center",
-    borderRadius: 12,
-    justifyContent: "center",
-    minHeight: 54,
-  },
-  reviewButton_easy: {
-    backgroundColor: "#49ad4f",
-  },
-  reviewButton_good: {
-    backgroundColor: "#1f8fe5",
-  },
-  reviewButton_hard: {
-    backgroundColor: colors.black,
-  },
-  reviewButtonText: {
-    color: colors.white,
-    fontSize: 14,
-    fontWeight: "900",
-  },
-  reviewButtons: {
-    gap: 10,
-    marginTop: 14,
-  },
-  reviewCard: {
-    borderColor: colors.borderStrong,
-    borderRadius: 22,
-    borderWidth: 1,
-    flex: 1,
-    padding: 18,
-  },
-  reviewQuestion: {
-    backgroundColor: "#FAFAFA",
-    borderColor: colors.border,
-    borderRadius: 16,
-    borderWidth: 1,
-    color: colors.text,
-    fontSize: 16,
-    lineHeight: 28,
-    marginTop: 8,
-    padding: 18,
-  },
-  reviewScrollContent: {
-    paddingBottom: 8,
-  },
-  screen: {
-    backgroundColor: colors.background,
-    flex: 1,
-  },
-  secondaryButton: {
-    alignItems: "center",
-    borderColor: colors.borderStrong,
-    borderRadius: 14,
-    borderWidth: 1,
-    flex: 1,
-    justifyContent: "center",
-    minHeight: 56,
-  },
-  secondaryButtonText: {
-    color: colors.text,
-    fontSize: 16,
-    fontWeight: "900",
-  },
-  studyCard: {
-    borderColor: colors.borderStrong,
-    borderRadius: 20,
-    borderWidth: 1,
-    flex: 1,
-    padding: 24,
-  },
-  subtitle: {
-    color: colors.textMuted,
-    fontSize: 14,
-    marginTop: 4,
-    textAlign: "center",
-  },
-  title: {
-    color: colors.text,
-    fontSize: 17,
-    fontWeight: "900",
-    textAlign: "center",
-  },
-  titleBox: {
-    flex: 1,
-    minWidth: 0,
-  },
-});

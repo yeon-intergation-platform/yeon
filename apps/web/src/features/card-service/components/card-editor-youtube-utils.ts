@@ -1,3 +1,17 @@
+import type { YeonIFrameElement, YeonDocument } from "@yeon/ui/types";
+import {
+  createYeonUrl,
+  createYeonUrlSearchParams,
+  type YeonUrl,
+  type YeonUrlSearchParams,
+} from "@yeon/ui/runtime/YeonBrowserRuntime";
+import {
+  getYeonElementAttribute,
+  queryYeonElements,
+  removeYeonElement,
+  setYeonElementAttribute,
+} from "@yeon/ui/rich-content/YeonRichDom";
+
 const YOUTUBE_IFRAME_TITLE = "YouTube video player";
 const YOUTUBE_IFRAME_CLASS = "card-youtube-embed";
 const YOUTUBE_IFRAME_ALLOW =
@@ -74,7 +88,7 @@ function extractVideoIdFromPath(pathname: string, prefix: string) {
 function extractVideoId(
   host: string,
   pathname: string,
-  searchParams: URLSearchParams
+  searchParams: YeonUrlSearchParams
 ) {
   if (host === "youtu.be") {
     return extractVideoIdFromPath(pathname, "/");
@@ -129,14 +143,16 @@ function getHashSearchParams(hash: string) {
 
   if (!trimmedHash) return undefined;
 
-  return new URLSearchParams(trimmedHash);
+  return createYeonUrlSearchParams(trimmedHash);
 }
 
 function buildYouTubeEmbedUrl({
   videoId,
   startAt,
 }: Pick<CardEditorYouTubeEmbedInfo, "videoId" | "startAt">) {
-  const url = new URL(`https://www.youtube-nocookie.com/embed/${videoId}`);
+  const url = createYeonUrl(
+    `https://www.youtube-nocookie.com/embed/${videoId}`
+  );
 
   if (startAt) {
     url.searchParams.set("start", String(startAt));
@@ -152,9 +168,9 @@ export function extractCardEditorYouTubeEmbedInfo(value: string) {
     return undefined;
   }
 
-  let parsedUrl: URL;
+  let parsedUrl: YeonUrl;
   try {
-    parsedUrl = new URL(normalizedUrl);
+    parsedUrl = createYeonUrl(normalizedUrl);
   } catch {
     return undefined;
   }
@@ -217,21 +233,25 @@ export function createCardEditorYouTubeEmbedHtml(value: string) {
   return `<iframe ${serializedAttrs}></iframe>`;
 }
 
-export function applyCardEditorYouTubeIframeAttributes(document: Document) {
-  document.querySelectorAll("iframe").forEach((iframeElement) => {
-    const attrs = buildCardEditorYouTubeEmbedAttrs(
-      iframeElement.getAttribute("src") ?? ""
-    );
+export function applyCardEditorYouTubeIframeAttributes(
+  yeonDocument: YeonDocument
+) {
+  queryYeonElements<YeonIFrameElement>(yeonDocument, "iframe").forEach(
+    (iframeElement) => {
+      const attrs = buildCardEditorYouTubeEmbedAttrs(
+        getYeonElementAttribute(iframeElement, "src") ?? ""
+      );
 
-    if (!attrs) {
-      iframeElement.remove();
-      return;
+      if (!attrs) {
+        removeYeonElement(iframeElement);
+        return;
+      }
+
+      Object.entries(attrs).forEach(([key, value]) => {
+        setYeonElementAttribute(iframeElement, key, value);
+      });
     }
-
-    Object.entries(attrs).forEach(([key, value]) => {
-      iframeElement.setAttribute(key, value);
-    });
-  });
+  );
 }
 
 function replaceStandaloneMarkdownYoutubeLinks(content: string) {

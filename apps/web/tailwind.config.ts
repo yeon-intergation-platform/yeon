@@ -1,7 +1,10 @@
+import nativewindPreset from "nativewind/preset";
+import { yeonTailwindPreset } from "@yeon/design-tokens/tailwind-preset";
 import type { Config } from "tailwindcss";
 
 export default {
-  content: ["./src/**/*.{ts,tsx}"],
+  content: ["./src/**/*.{ts,tsx}", "../../packages/ui/src/**/*.{ts,tsx}"],
+  presets: [nativewindPreset, yeonTailwindPreset],
   theme: {
     extend: {
       colors: {

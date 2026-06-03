@@ -3,7 +3,6 @@ import {
   lifeOsDailyReportQuerySchema,
   lifeOsReportResponseSchema,
 } from "@yeon/api-contract/life-os";
-
 import {
   jsonError,
   requireAuthenticatedUser,
@@ -32,7 +31,7 @@ export async function GET(request: NextRequest) {
   try {
     const report = await fetchLifeOsDailyReportFromSpring(
       currentUser.id,
-      parsed.data.localDate,
+      parsed.data.localDate
     );
     return NextResponse.json(lifeOsReportResponseSchema.parse(report));
   } catch (error) {

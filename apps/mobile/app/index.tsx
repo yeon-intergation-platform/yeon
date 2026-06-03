@@ -1,5 +1,4 @@
-import { Redirect } from "expo-router";
-
+import { YeonRedirect as Redirect } from "@yeon/ui/native";
 import { isCardApp } from "../src/lib/mobile-app-mode";
 import { useChatServiceSession } from "../src/providers/chat-service-session-provider";
 

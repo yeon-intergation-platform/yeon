@@ -1,3 +1,8 @@
+import {
+  createYeonUrl,
+  fetchYeon,
+  type YeonRequestInit,
+} from "@yeon/ui/runtime/YeonBrowserRuntime";
 const DEFAULT_BACKEND_BASE_URL = "http://127.0.0.1:8081";
 const INTERNAL_TOKEN_HEADER = "X-Yeon-Internal-Token";
 const CHAT_SESSION_TOKEN_HEADER = "X-Yeon-Chat-Session-Token";
@@ -46,9 +51,13 @@ function extractErrorMessage(parsed: unknown) {
   return null;
 }
 
-async function fetchSpring(path: string, init: RequestInit, fallback: string) {
-  const response = await fetch(
-    new URL(`${resolveSpringBackendBaseUrl()}${path}`),
+async function fetchSpring(
+  path: string,
+  init: YeonRequestInit,
+  fallback: string
+) {
+  const response = await fetchYeon(
+    createYeonUrl(`${resolveSpringBackendBaseUrl()}${path}`),
     {
       cache: "no-store",
       ...init,

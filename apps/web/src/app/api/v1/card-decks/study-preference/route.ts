@@ -1,7 +1,6 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { updateCardStudyPreferenceBodySchema } from "@yeon/api-contract/card-decks";
-
 import {
   jsonError,
   requireAuthenticatedUser,
@@ -47,7 +46,10 @@ export async function PATCH(request: NextRequest) {
   }
 
   try {
-    const studyMode = await updateCardStudyPreferenceInSpring(currentUser.id, parsed.data);
+    const studyMode = await updateCardStudyPreferenceInSpring(
+      currentUser.id,
+      parsed.data
+    );
     return NextResponse.json(studyMode);
   } catch (error) {
     if (error instanceof CardDecksSpringBackendHttpError) {

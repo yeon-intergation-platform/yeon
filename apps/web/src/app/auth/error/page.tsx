@@ -1,12 +1,13 @@
-import type { Metadata } from "next";
-import Link from "next/link";
-
+import { YeonLink } from "@yeon/ui";
+import type { YeonPageMetadata } from "@yeon/ui/runtime/YeonPageMetadata";
+import { YeonText, YeonView } from "@yeon/ui";
+import { YEON_WEB_AUTH_CLASS } from "@yeon/ui/theme/web-style-tokens";
 import { NON_INDEXABLE_ROBOTS } from "@/lib/seo";
 import { SITE_BRAND_NAME } from "@/lib/site-brand";
 import { getAuthErrorCopy } from "@/server/auth/auth-errors";
 import { normalizeAuthRedirectPath } from "@/server/auth/constants";
 
-export const metadata: Metadata = {
+export const metadata: YeonPageMetadata = {
   title: `로그인 오류 | ${SITE_BRAND_NAME}`,
   robots: NON_INDEXABLE_ROBOTS,
 };
@@ -36,49 +37,57 @@ export default async function AuthErrorPage({
   const retryHref = `/?login=1&next=${encodeURIComponent(nextPath)}`;
 
   return (
-    <main
-      className="min-h-screen text-[#f8f7f3]"
-      style={{
-        background:
-          "radial-gradient(circle at top, rgba(248,247,243,0.08), transparent 28%), linear-gradient(180deg, #080808 0%, #0f0f11 100%)",
-      }}
-    >
-      <div className="w-[min(720px,calc(100%-32px))] mx-auto min-h-screen grid place-items-center py-10">
-        <section className="w-full grid gap-6 p-8 rounded-[28px] border border-white/[0.08] bg-[rgba(16,17,20,0.88)] shadow-[0_28px_80px_rgba(0,0,0,0.32)] md:p-6">
-          <div>
-            <p className="m-0 text-xs font-bold tracking-[0.16em] uppercase text-white/[0.58]">
+    <YeonView as="main" className={YEON_WEB_AUTH_CLASS.pageSurface}>
+      <YeonView className={YEON_WEB_AUTH_CLASS.frame720}>
+        <YeonView as="section" className={YEON_WEB_AUTH_CLASS.panel}>
+          <YeonView>
+            <YeonText
+              variant="unstyled"
+              tone="inherit"
+              className={YEON_WEB_AUTH_CLASS.eyebrow}
+            >
               Authentication Error
-            </p>
-            <h1
-              className="m-0 leading-[0.96] tracking-[-0.05em]"
-              style={{ fontSize: "clamp(30px, 6vw, 52px)" }}
+            </YeonText>
+            <YeonText
+              as="h1"
+              variant="unstyled"
+              tone="inherit"
+              className={YEON_WEB_AUTH_CLASS.titleWide}
             >
               {copy.title}
-            </h1>
-          </div>
-          <p className="m-0 text-base leading-[1.75] text-white/[0.74]">
+            </YeonText>
+          </YeonView>
+          <YeonText
+            variant="unstyled"
+            tone="inherit"
+            className={YEON_WEB_AUTH_CLASS.description}
+          >
             {copy.description}
-          </p>
-          <p className="m-0 text-[13px] leading-relaxed text-white/50">
+          </YeonText>
+          <YeonText
+            variant="unstyled"
+            tone="inherit"
+            className={YEON_WEB_AUTH_CLASS.body13Dim}
+          >
             문제가 반복되면 공급자 콘솔의 리다이렉트 URI와 환경변수 설정을 함께
             확인해야 합니다.
-          </p>
-          <div className="flex flex-wrap gap-3 md:flex-col">
-            <Link
+          </YeonText>
+          <YeonView className="flex flex-wrap gap-3 md:flex-col">
+            <YeonLink
               href={retryHref}
-              className="min-h-[52px] px-[22px] rounded-full inline-flex items-center justify-center font-bold transition-transform duration-200 ease-[ease] hover:-translate-y-px bg-[#f8f7f3] text-[#080808]"
+              className={YEON_WEB_AUTH_CLASS.primaryAction}
             >
               다시 로그인
-            </Link>
-            <Link
+            </YeonLink>
+            <YeonLink
               href="/"
-              className="min-h-[52px] px-[22px] rounded-full inline-flex items-center justify-center font-bold transition-transform duration-200 ease-[ease] hover:-translate-y-px border border-white/[0.12] text-white/[0.88] bg-white/[0.04]"
+              className={YEON_WEB_AUTH_CLASS.secondaryAction52}
             >
               홈으로 돌아가기
-            </Link>
-          </div>
-        </section>
-      </div>
-    </main>
+            </YeonLink>
+          </YeonView>
+        </YeonView>
+      </YeonView>
+    </YeonView>
   );
 }

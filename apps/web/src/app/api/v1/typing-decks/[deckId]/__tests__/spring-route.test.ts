@@ -15,9 +15,9 @@ vi.mock("../_shared", () => ({
 }));
 
 vi.mock("@/server/typing-decks-spring-client", async () => {
-  const actual = await vi.importActual<typeof import("@/server/typing-decks-spring-client")>(
-    "@/server/typing-decks-spring-client",
-  );
+  const actual = await vi.importActual<
+    typeof import("@/server/typing-decks-spring-client")
+  >("@/server/typing-decks-spring-client");
   return {
     ...actual,
     fetchTypingDeckDetailFromSpring: (...args: unknown[]) =>
@@ -28,7 +28,6 @@ vi.mock("@/server/typing-decks-spring-client", async () => {
       mockDeleteTypingDeckInSpring(...args),
   };
 });
-
 import { DELETE, GET, PATCH } from "../route";
 
 describe("api/v1/typing-decks/[deckId] spring route", () => {
@@ -46,9 +45,12 @@ describe("api/v1/typing-decks/[deckId] spring route", () => {
       passages: [],
     });
 
-    const response = await GET(new NextRequest("http://localhost/api/v1/typing-decks/tdk_1"), {
-      params: Promise.resolve({ deckId: "tdk_1" }),
-    });
+    const response = await GET(
+      new NextRequest("http://localhost/api/v1/typing-decks/tdk_1"),
+      {
+        params: Promise.resolve({ deckId: "tdk_1" }),
+      }
+    );
 
     expect(response.status).toBe(200);
     expect(mockFetchTypingDeckDetailFromSpring).toHaveBeenCalledWith({
@@ -69,7 +71,7 @@ describe("api/v1/typing-decks/[deckId] spring route", () => {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ title: "변경 덱" }),
       }),
-      { params: Promise.resolve({ deckId: "tdk_1" }) },
+      { params: Promise.resolve({ deckId: "tdk_1" }) }
     );
 
     expect(response.status).toBe(200);
@@ -77,7 +79,7 @@ describe("api/v1/typing-decks/[deckId] spring route", () => {
       null,
       "tdk_1",
       { title: "변경 덱" },
-      false,
+      false
     );
   });
 
@@ -88,7 +90,7 @@ describe("api/v1/typing-decks/[deckId] spring route", () => {
       new NextRequest("http://localhost/api/v1/typing-decks/tdk_1", {
         method: "DELETE",
       }),
-      { params: Promise.resolve({ deckId: "tdk_1" }) },
+      { params: Promise.resolve({ deckId: "tdk_1" }) }
     );
 
     expect(response.status).toBe(204);

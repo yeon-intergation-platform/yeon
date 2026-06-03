@@ -1,14 +1,12 @@
 import { chatServiceBlockProfileResponseSchema } from "@yeon/api-contract/chat-service";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-
 import {
   ChatServiceBlockSpringBackendHttpError,
   blockChatServiceProfileInSpring,
   unblockChatServiceProfileInSpring,
 } from "@/server/chat-service-block-spring-client";
 import { ServiceError } from "@/server/errors/service-error";
-
 import {
   jsonChatServiceError,
   requireChatServiceAuth,
@@ -24,10 +22,13 @@ export async function POST(request: NextRequest, { params }: Params) {
   try {
     const { profile } = await requireChatServiceAuth(request);
     const { profileId } = await params;
-    const response = await blockChatServiceProfileInSpring(profile.id, profileId);
+    const response = await blockChatServiceProfileInSpring(
+      profile.id,
+      profileId
+    );
 
     return NextResponse.json(
-      chatServiceBlockProfileResponseSchema.parse(response),
+      chatServiceBlockProfileResponseSchema.parse(response)
     );
   } catch (error) {
     if (error instanceof ServiceError) {
@@ -46,10 +47,13 @@ export async function DELETE(request: NextRequest, { params }: Params) {
   try {
     const { profile } = await requireChatServiceAuth(request);
     const { profileId } = await params;
-    const response = await unblockChatServiceProfileInSpring(profile.id, profileId);
+    const response = await unblockChatServiceProfileInSpring(
+      profile.id,
+      profileId
+    );
 
     return NextResponse.json(
-      chatServiceBlockProfileResponseSchema.parse(response),
+      chatServiceBlockProfileResponseSchema.parse(response)
     );
   } catch (error) {
     if (error instanceof ServiceError) {

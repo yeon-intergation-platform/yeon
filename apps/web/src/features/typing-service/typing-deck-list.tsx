@@ -1,12 +1,16 @@
 "use client";
-
 import {
   YeonBadge,
+  YeonButton,
   YeonSurface,
   getYeonSurfaceClassName,
   joinClassNames,
-} from "@/components/yeon-ui";
-import { SHARED_FEATURE_CLASS } from "@/features/shared-style-constants";
+  YeonList,
+  YeonListItem,
+  YeonText,
+  YeonView,
+} from "@yeon/ui";
+import { YEON_WEB_SHARED_CLASS as SHARED_FEATURE_CLASS } from "@yeon/ui/theme/web-style-tokens";
 import { TYPING_SERVICE_COMMON_CLASS } from "./typing-service-common.const";
 import type { TypingDeckDto } from "./use-typing-decks";
 import { typingDeckBadge, typingDeckLanguageLabel } from "./typing-deck-meta";
@@ -25,23 +29,35 @@ export function TypingDeckList({
   if (decks.length === 0) {
     return (
       <YeonSurface variant="empty" className="p-8">
-        <p className={TYPING_SERVICE_COMMON_CLASS.panelTextEmphasis}>
+        <YeonText
+          as="p"
+          variant="unstyled"
+          tone="inherit"
+          className={TYPING_SERVICE_COMMON_CLASS.panelTextEmphasis}
+        >
           표시할 덱이 없습니다.
-        </p>
-        <p className={`mt-2 ${SHARED_FEATURE_CLASS.text13Neutral}`}>
+        </YeonText>
+        <YeonText
+          as="p"
+          variant="unstyled"
+          tone="inherit"
+          className={`mt-2 ${SHARED_FEATURE_CLASS.text13Neutral}`}
+        >
           내 덱 탭에서 새 덱을 만들거나 공개 덱을 둘러보세요.
-        </p>
+        </YeonText>
       </YeonSurface>
     );
   }
 
   return (
-    <ul className="grid gap-3">
+    <YeonList className="grid gap-3">
       {decks.map((deck) => (
-        <li key={deck.id}>
-          <button
+        <YeonListItem key={deck.id}>
+          <YeonButton
             type="button"
             onClick={() => onSelectDeck(deck.id)}
+            variant="ghost"
+            size="sm"
             className={joinClassNames(
               getYeonSurfaceClassName({
                 variant: selectedDeckId === deck.id ? "panel" : "card",
@@ -51,36 +67,52 @@ export function TypingDeckList({
               selectedDeckId === deck.id && "border-[#111]"
             )}
           >
-            <div className={SHARED_FEATURE_CLASS.alignBetweenStartGap3}>
-              <div className="min-w-0">
-                <h3
+            <YeonView className={SHARED_FEATURE_CLASS.alignBetweenStartGap3}>
+              <YeonView className="min-w-0">
+                <YeonText
+                  as="h3"
+                  variant="unstyled"
+                  tone="inherit"
                   className={`truncate ${TYPING_SERVICE_COMMON_CLASS.panelTextEmphasis15}`}
                 >
                   {deck.title}
-                </h3>
-                <p
+                </YeonText>
+                <YeonText
+                  as="p"
+                  variant="unstyled"
+                  tone="inherit"
                   className={`${SHARED_FEATURE_CLASS.text13Neutral} mt-1 line-clamp-2 break-keep leading-5`}
                 >
                   {deck.description || "설명이 없습니다."}
-                </p>
-              </div>
+                </YeonText>
+              </YeonView>
               <YeonBadge className="shrink-0">
                 {typingDeckBadge(deck)}
               </YeonBadge>
-            </div>
-            <div
+            </YeonView>
+            <YeonView
               className={`mt-3 flex flex-wrap gap-2 ${SHARED_FEATURE_CLASS.text12Neutral}`}
             >
-              <span className={SHARED_FEATURE_CLASS.tagPill}>
+              <YeonText
+                as="span"
+                variant="unstyled"
+                tone="inherit"
+                className={SHARED_FEATURE_CLASS.tagPill}
+              >
                 {typingDeckLanguageLabel(deck.languageTag)}
-              </span>
-              <span className={SHARED_FEATURE_CLASS.tagPill}>
+              </YeonText>
+              <YeonText
+                as="span"
+                variant="unstyled"
+                tone="inherit"
+                className={SHARED_FEATURE_CLASS.tagPill}
+              >
                 문단 {deck.passageCount ?? 0}개
-              </span>
-            </div>
-          </button>
-        </li>
+              </YeonText>
+            </YeonView>
+          </YeonButton>
+        </YeonListItem>
       ))}
-    </ul>
+    </YeonList>
   );
 }

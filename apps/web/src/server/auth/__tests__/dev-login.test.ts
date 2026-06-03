@@ -1,5 +1,4 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-
 import {
   getRequestHostnameFromHostHeader,
   isDevLoginAllowed,
@@ -44,17 +43,17 @@ describe("server/auth/dev-login", () => {
   describe("getRequestHostnameFromHostHeader", () => {
     it("host 헤더에서 포트를 제거해 hostname만 추출한다", () => {
       expect(getRequestHostnameFromHostHeader("localhost:3000")).toBe(
-        "localhost",
+        "localhost"
       );
       expect(getRequestHostnameFromHostHeader("127.0.0.1:4000")).toBe(
-        "127.0.0.1",
+        "127.0.0.1"
       );
       expect(getRequestHostnameFromHostHeader("[::1]:3000")).toBe("::1");
     });
 
     it("proxy 체인의 첫 host만 사용한다", () => {
       expect(
-        getRequestHostnameFromHostHeader("localhost:3000, example.com"),
+        getRequestHostnameFromHostHeader("localhost:3000, example.com")
       ).toBe("localhost");
     });
   });
@@ -123,8 +122,8 @@ describe("server/auth/dev-login", () => {
 
       expect(
         verifyDevLoginRequestSecret(
-          makeRequest({ "x-dev-login-secret": "shared-secret" }),
-        ),
+          makeRequest({ "x-dev-login-secret": "shared-secret" })
+        )
       ).toBe(true);
     });
 
@@ -133,14 +132,14 @@ describe("server/auth/dev-login", () => {
 
       expect(
         verifyDevLoginRequestSecret(
-          makeRequest({ "x-dev-login-secret": "wrong-value-equal-len" }),
-        ),
+          makeRequest({ "x-dev-login-secret": "wrong-value-equal-len" })
+        )
       ).toBe(false);
 
       expect(
         verifyDevLoginRequestSecret(
-          makeRequest({ "x-dev-login-secret": "short" }),
-        ),
+          makeRequest({ "x-dev-login-secret": "short" })
+        )
       ).toBe(false);
     });
   });

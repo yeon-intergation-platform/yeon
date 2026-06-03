@@ -1,11 +1,20 @@
 "use client";
-
-import { SHARED_FEATURE_CLASS } from "@/features/shared-style-constants";
+import { YEON_WEB_SHARED_CLASS as SHARED_FEATURE_CLASS } from "@yeon/ui/theme/web-style-tokens";
 import { CARD_SERVICE_COMMON_CLASS } from "./card-service-common.const";
-
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useYeonRouter } from "@yeon/ui/runtime/YeonNavigation";
+import { resolveYeonWebPath } from "@yeon/ui/runtime/ports";
+import { writeYeonSessionStorageItem } from "@yeon/ui/runtime/YeonBrowserRuntime";
 import { CommonProductHeader } from "@/components/product-shell/product-header";
+import {
+  YeonButton,
+  YeonField,
+  YeonSurface,
+  YeonText,
+  YeonLabel,
+  YeonView,
+  YeonOption,
+} from "@yeon/ui";
 import { CharacterSprite } from "@/features/typing-service/character-sprite";
 import { findCharacter } from "@/features/typing-service/characters";
 import { useCharacterFrameOverrides } from "@/features/typing-service/use-character-frame-overrides";
@@ -25,7 +34,7 @@ export function CardRoomCreateForm({
   onCreated,
   submitLabel = "실제 카드방 만들기",
 }: CardRoomCreateFormProps) {
-  const router = useRouter();
+  const router = useYeonRouter();
   const [title, setTitle] = useState("서로 확인하는 카드방");
   const [visibility, setVisibility] = useState<"public" | "private">("public");
   const [selectedDeckId, setSelectedDeckId] = useState("");
@@ -98,14 +107,16 @@ export function CardRoomCreateForm({
           })();
       const created = await createCardRoom(payload, guestId);
       if (created.participant)
-        sessionStorage.setItem(
+        writeYeonSessionStorageItem(
           `yeon-card-room-participant:${created.room.id}`,
           created.participant.id
         );
       if (onCreated) {
         onCreated(created.room.id);
       } else {
-        router.push(`/card-service/rooms/${created.room.id}`);
+        router.push(
+          resolveYeonWebPath("cardRoomDetail", { roomId: created.room.id })
+        );
       }
     } catch (error) {
       setErrorMessage(
@@ -117,19 +128,21 @@ export function CardRoomCreateForm({
   }
 
   return (
-    <form
-      className="rounded-[28px] border border-[#e5e5e5] bg-white p-6"
+    <YeonSurface
+      as="form"
+      variant="outlined"
+      className="rounded-[28px] p-6"
       onSubmit={(event) => {
         event.preventDefault();
         void submit();
       }}
     >
-      <div className="rounded-2xl border border-[#e5e5e5] bg-[#fafafa] p-4">
-        <p className={SHARED_FEATURE_CLASS.text13MediumSecondary}>
+      <YeonSurface variant="panel" className="p-4">
+        <YeonText variant="label" tone="secondary">
           카드방 프로필
-        </p>
-        <div className="mt-4 flex items-center gap-4">
-          <div className="flex h-[76px] w-[76px] items-end justify-center overflow-hidden rounded-xl bg-white">
+        </YeonText>
+        <YeonView className="mt-4 flex items-center gap-4">
+          <YeonView className="flex h-[76px] w-[76px] items-end justify-center overflow-hidden rounded-xl bg-white">
             {profileLoaded ? (
               <CharacterSprite
                 character={character}
@@ -137,139 +150,187 @@ export function CardRoomCreateForm({
                 sequenceOverride={frameOverrides[character.id]}
               />
             ) : null}
-          </div>
-          <div>
-            <p className="text-[17px] font-bold text-[#111]">
+          </YeonView>
+          <YeonView>
+            <YeonText as="p" variant="label" className="text-[17px]">
               {profileLoaded ? profile.nickname : "프로필 불러오는 중"}
-            </p>
-            <p className={`mt-1 ${SHARED_FEATURE_CLASS.text13EmphasisSubtle}`}>
+            </YeonText>
+            <YeonText
+              as="p"
+              variant="caption"
+              tone="secondary"
+              className={`mt-1 ${SHARED_FEATURE_CLASS.text13EmphasisSubtle}`}
+            >
               {profileLoaded
                 ? character.label[settings.locale]
                 : "잠시만 기다려주세요"}
-            </p>
-          </div>
-        </div>
-      </div>
+            </YeonText>
+          </YeonView>
+        </YeonView>
+      </YeonSurface>
 
-      <h2 className={`mt-6 ${CARD_SERVICE_COMMON_CLASS.panelTitleStrong}`}>
+      <YeonText
+        as="h2"
+        variant="unstyled"
+        tone="inherit"
+        className={`mt-6 ${CARD_SERVICE_COMMON_CLASS.panelTitleStrong}`}
+      >
         실제 방 설정
-      </h2>
-      <div className="mt-6 grid gap-5">
-        <label className={CARD_SERVICE_COMMON_CLASS.panelFieldLabel}>
+      </YeonText>
+      <YeonView className="mt-6 grid gap-5">
+        <YeonLabel className={CARD_SERVICE_COMMON_CLASS.panelFieldLabel}>
           방 제목
-          <input
+          <YeonField
             value={title}
             onChange={(event) => setTitle(event.target.value)}
             maxLength={80}
             disabled={isSubmitting}
-            className={CARD_SERVICE_COMMON_CLASS.formControlLarge}
+            className="min-h-[52px]"
           />
-        </label>
-        <label className={CARD_SERVICE_COMMON_CLASS.panelFieldLabel}>
+        </YeonLabel>
+        <YeonLabel className={CARD_SERVICE_COMMON_CLASS.panelFieldLabel}>
           닉네임
-          <input
+          <YeonField
             value={nickname}
             onChange={(event) => setNickname(event.target.value)}
             maxLength={40}
             disabled={isSubmitting}
-            className={CARD_SERVICE_COMMON_CLASS.formControlLarge}
+            className="min-h-[52px]"
           />
-        </label>
-        <label className={CARD_SERVICE_COMMON_CLASS.panelFieldLabel}>
+        </YeonLabel>
+        <YeonLabel className={CARD_SERVICE_COMMON_CLASS.panelFieldLabel}>
           사용할 덱
-          <select
+          <YeonField
+            as="select"
             value={selectedDeck?.id ?? ""}
             onChange={(event) => setSelectedDeckId(event.target.value)}
             disabled={isSubmitting}
-            className={CARD_SERVICE_COMMON_CLASS.formControlLarge}
+            className="min-h-[52px]"
           >
-            <option value="" disabled>
+            <YeonOption value="" disabled>
               {decksQuery.isLoading ? "덱 불러오는 중" : "덱 선택"}
-            </option>
+            </YeonOption>
             {decks.map((deck) => (
-              <option key={deck.id} value={deck.id}>
+              <YeonOption key={deck.id} value={deck.id}>
                 {deck.title} · {deck.itemCount}장
-              </option>
+              </YeonOption>
             ))}
-          </select>
-        </label>
-        <fieldset className="grid gap-2">
-          <legend className={SHARED_FEATURE_CLASS.text13EmphasisMuted}>
+          </YeonField>
+        </YeonLabel>
+        <YeonView as="fieldset" className="grid gap-2">
+          <YeonText
+            as="legend"
+            variant="unstyled"
+            tone="inherit"
+            className={SHARED_FEATURE_CLASS.text13EmphasisMuted}
+          >
             공개 여부
-          </legend>
-          <div className="grid gap-3 sm:grid-cols-2">
+          </YeonText>
+          <YeonView className="grid gap-3 sm:grid-cols-2">
             {(["public", "private"] as const).map((option) => (
-              <button
+              <YeonButton
                 key={option}
                 type="button"
                 onClick={() => setVisibility(option)}
-                data-active={visibility === option}
                 disabled={isSubmitting}
-                className="rounded-2xl border border-[#e5e5e5] bg-white px-4 py-4 text-left transition-colors hover:border-[#111] disabled:cursor-not-allowed disabled:opacity-60 data-[active=true]:border-[#111] data-[active=true]:bg-[#111] data-[active=true]:text-white"
+                variant={visibility === option ? "primary" : "secondary"}
+                size="lg"
+                className="h-auto flex-col items-start rounded-2xl px-4 py-4 text-left"
               >
-                <span className="block text-[15px] font-bold">
+                <YeonText
+                  as="span"
+                  variant="unstyled"
+                  tone="inherit"
+                  className="block text-[15px] font-bold"
+                >
                   {option === "public" ? "공개방" : "비공개방"}
-                </span>
-                <span className="mt-1 block text-[12px] leading-[1.5] opacity-70">
+                </YeonText>
+                <YeonText
+                  as="span"
+                  variant="unstyled"
+                  tone="inherit"
+                  className="mt-1 block text-[12px] leading-[1.5] opacity-70"
+                >
                   {option === "public" ? "로비에 표시" : "초대 링크로 입장"}
-                </span>
-              </button>
+                </YeonText>
+              </YeonButton>
             ))}
-          </div>
-        </fieldset>
-      </div>
+          </YeonView>
+        </YeonView>
+      </YeonView>
       {errorMessage ? (
-        <p className="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-[13px] font-bold text-red-700">
+        <YeonText
+          as="p"
+          variant="label"
+          tone="primary"
+          className="mt-5 rounded-xl border border-[#e5e5e5] bg-[#fafafa] px-4 py-3"
+        >
           {errorMessage}
-        </p>
+        </YeonText>
       ) : null}
-      <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-end">
-        <button
+      <YeonView className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-end">
+        <YeonButton
           type="button"
           onClick={() => router.push("/card-service/decks")}
           disabled={isSubmitting}
-          className={CARD_SERVICE_COMMON_CLASS.buttonSecondaryDark}
+          variant="secondary"
+          size="lg"
         >
           내 덱 보기
-        </button>
-        <button
+        </YeonButton>
+        <YeonButton
           type="button"
-          onClick={onCancel ?? (() => router.push("/card-service/rooms"))}
+          onClick={
+            onCancel ?? (() => router.push(resolveYeonWebPath("cardRoomList")))
+          }
           disabled={isSubmitting}
-          className={CARD_SERVICE_COMMON_CLASS.buttonSecondaryDark}
+          variant="secondary"
+          size="lg"
         >
           로비로 돌아가기
-        </button>
-        <button
+        </YeonButton>
+        <YeonButton
           type="submit"
           disabled={isSubmitting || !profileLoaded || !selectedDeck}
-          className={CARD_SERVICE_COMMON_CLASS.buttonPrimarySubmit}
+          variant="primary"
+          size="lg"
         >
           {isSubmitting ? "생성 중..." : submitLabel}
-        </button>
-      </div>
-    </form>
+        </YeonButton>
+      </YeonView>
+    </YeonSurface>
   );
 }
 
 export function CardRoomCreateScreen() {
   return (
-    <div className={SHARED_FEATURE_CLASS.pageSurface}>
+    <YeonView className={SHARED_FEATURE_CLASS.pageSurface}>
       <CommonProductHeader activeService="card" />
-      <main className="mx-auto grid max-w-[760px] gap-8 px-6 py-10 md:px-10">
-        <section>
-          <h1 className="text-[28px] font-black tracking-[-0.04em] text-[#111]">
+      <YeonView
+        as="main"
+        className="mx-auto grid max-w-[760px] gap-8 px-6 py-10 md:px-10"
+      >
+        <YeonView as="section">
+          <YeonText
+            as="h1"
+            variant="unstyled"
+            tone="inherit"
+            className="text-[28px] font-black tracking-[-0.04em] text-[#111]"
+          >
             카드방 만들기
-          </h1>
-          <p
+          </YeonText>
+          <YeonText
+            as="p"
+            variant="unstyled"
+            tone="inherit"
             className={`mt-3 ${SHARED_FEATURE_CLASS.text14Neutral} leading-[1.7]`}
           >
             방을 만들면 현재 덱 내용이 카드방 학습 스냅샷으로 고정됩니다. 이후
             덱을 수정해도 이 방의 카드는 바뀌지 않습니다.
-          </p>
-        </section>
+          </YeonText>
+        </YeonView>
         <CardRoomCreateForm />
-      </main>
-    </div>
+      </YeonView>
+    </YeonView>
   );
 }

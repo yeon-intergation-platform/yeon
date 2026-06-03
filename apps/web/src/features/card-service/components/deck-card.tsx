@@ -1,26 +1,22 @@
-import Link from "next/link";
+import { YeonLink } from "@yeon/ui";
+import { resolveYeonWebPath } from "@yeon/ui/runtime/ports";
+import { formatCardDeckMeta } from "@yeon/ui/runtime/ports/card-deck";
 import type { CardDeckDto } from "@yeon/api-contract/card-decks";
-
 import { analyticsEvents, trackEvent } from "@/lib/analytics";
-import { SHARED_FEATURE_CLASS } from "@/features/shared-style-constants";
-
+import { YEON_WEB_SHARED_CLASS as SHARED_FEATURE_CLASS } from "@yeon/ui/theme/web-style-tokens";
+import { getYeonSurfaceClassName, YeonText } from "@yeon/ui";
 interface DeckCardProps {
   deck: CardDeckDto;
 }
 
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("ko-KR", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
-}
-
 export function DeckCard({ deck }: DeckCardProps) {
   return (
-    <Link
-      href={`/card-service/decks/${deck.id}`}
-      className="block rounded-xl border border-[#e5e5e5] p-5 text-[#111] no-underline transition-colors hover:border-[#111]"
+    <YeonLink
+      href={resolveYeonWebPath("cardDeckDetail", { deckId: deck.id })}
+      className={getYeonSurfaceClassName({
+        className:
+          "block p-5 text-[#111] no-underline transition-colors hover:border-[#111]",
+      })}
       onClick={() =>
         trackEvent(analyticsEvents.cardDeckOpen, {
           deck_id: deck.id,
@@ -29,17 +25,32 @@ export function DeckCard({ deck }: DeckCardProps) {
         })
       }
     >
-      <h3 className="text-[16px] font-semibold">{deck.title}</h3>
+      <YeonText
+        as="h3"
+        variant="unstyled"
+        tone="inherit"
+        className="text-[16px] font-semibold"
+      >
+        {deck.title}
+      </YeonText>
       {deck.description ? (
-        <p
+        <YeonText
+          as="p"
+          variant="unstyled"
+          tone="inherit"
           className={`mt-2 line-clamp-2 ${SHARED_FEATURE_CLASS.text13Neutral}`}
         >
           {deck.description}
-        </p>
+        </YeonText>
       ) : null}
-      <p className={`mt-4 ${SHARED_FEATURE_CLASS.text12Soft}`}>
-        카드 {deck.itemCount}장 · 업데이트 {formatDate(deck.updatedAt)}
-      </p>
-    </Link>
+      <YeonText
+        as="p"
+        variant="unstyled"
+        tone="inherit"
+        className={`mt-4 ${SHARED_FEATURE_CLASS.text12Soft}`}
+      >
+        {formatCardDeckMeta(deck)}
+      </YeonText>
+    </YeonLink>
   );
 }

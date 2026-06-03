@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-
 import {
   CARD_EDITOR_IMAGE_DEFAULT_WIDTH,
   CARD_EDITOR_IMAGE_MAX_HEIGHT,

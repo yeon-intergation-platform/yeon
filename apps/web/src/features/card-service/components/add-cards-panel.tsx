@@ -1,8 +1,10 @@
 "use client";
-
 import { useCallback, useId, useMemo, useState } from "react";
-import { motion } from "framer-motion";
-
+import { YeonButton, YeonText, YeonView } from "@yeon/ui";
+import {
+  showYeonAlert,
+  showYeonConfirm,
+} from "@yeon/ui/runtime/YeonBrowserRuntime";
 import { CARD_SERVICE_COMMON_CLASS } from "../card-service-common.const";
 import {
   ADD_CARD_FORM_INITIAL_ACTION_STATE,
@@ -11,12 +13,6 @@ import {
 } from "./add-card-form";
 import { BulkAddCardsForm } from "./bulk-add-cards-form";
 import { ResponsiveModal } from "./responsive-modal";
-
-const MODE_TAB_MOTION = {
-  whileHover: { scale: 1.01, y: -1 },
-  whileTap: { scale: 0.985, y: 0 },
-  transition: { type: "spring", stiffness: 420, damping: 32 },
-} as const;
 
 const ADD_CARD_MODES = {
   manual: "manual",
@@ -58,37 +54,41 @@ function ManualAddCardFooter({
     : state.actionLabel;
 
   return (
-    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-      <div className="min-h-5 min-w-0">
+    <YeonView className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+      <YeonView className="min-h-5 min-w-0">
         {state.errorMessage ? (
-          <p className="text-[13px] font-medium leading-5 text-red-600">
+          <YeonText
+            variant="caption"
+            tone="danger"
+            className="font-medium leading-5"
+          >
             {state.errorMessage}
-          </p>
+          </YeonText>
         ) : (
-          <p className="text-[12px] leading-5 text-[#888]">
+          <YeonText variant="caption" tone="secondary" className="leading-5">
             질문과 답변을 모두 작성하면 저장할 수 있습니다.
-          </p>
+          </YeonText>
         )}
-      </div>
-      <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-end">
-        <button
+      </YeonView>
+      <YeonView className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-end">
+        <YeonButton
           type="button"
           onClick={onCancel}
           disabled={isActionPending}
-          className={`${CARD_SERVICE_COMMON_CLASS.panelTextEmphasis} rounded-xl border border-[#e5e5e5] px-4 py-2.5 transition-colors hover:bg-[#fafafa] disabled:cursor-not-allowed disabled:opacity-50`}
+          className={CARD_SERVICE_COMMON_CLASS.panelTextEmphasis}
         >
           취소
-        </button>
-        <button
+        </YeonButton>
+        <YeonButton
           type="submit"
           form={formId}
+          variant="primary"
           disabled={!state.canSubmit}
-          className="rounded-xl bg-[#111] px-4 py-2.5 text-[14px] font-semibold text-white transition-colors hover:bg-[#333] disabled:cursor-not-allowed disabled:opacity-50"
         >
           {buttonLabel}
-        </button>
-      </div>
-    </div>
+        </YeonButton>
+      </YeonView>
+    </YeonView>
   );
 }
 
@@ -123,7 +123,7 @@ export function AddCardsPanel({ deckId, onClose }: AddCardsPanelProps) {
 
   const handleRequestClose = useCallback(() => {
     if (manualActionState.isPending) {
-      window.alert(
+      showYeonAlert(
         "이미지 업로드 또는 저장이 진행 중입니다. 완료 후 닫아주세요."
       );
       return;
@@ -131,7 +131,7 @@ export function AddCardsPanel({ deckId, onClose }: AddCardsPanelProps) {
 
     if (
       isDirty &&
-      !window.confirm(
+      !showYeonConfirm(
         "작성 중인 카드 내용이 있습니다. 지금 닫으면 임시 저장본만 남고 저장은 되지 않습니다. 닫을까요?"
       )
     ) {
@@ -158,36 +158,36 @@ export function AddCardsPanel({ deckId, onClose }: AddCardsPanelProps) {
       footer={footer}
       density="compact"
     >
-      <div className="flex h-full min-h-0 flex-col">
-        <div className="flex shrink-0 rounded-xl bg-[#f3f3f3] p-1 text-[13px] font-semibold">
-          <motion.button
+      <YeonView className="flex h-full min-h-0 flex-col">
+        <YeonView className="flex shrink-0 rounded-xl bg-[#fafafa] p-1 text-[13px] font-semibold">
+          <YeonButton
             type="button"
+            size="sm"
             onClick={() => setMode(ADD_CARD_MODES.manual)}
             className={`flex-1 rounded-lg px-3 py-2 transition-colors ${
               mode === ADD_CARD_MODES.manual
                 ? "bg-white text-[#111] shadow-sm"
                 : "text-[#666] hover:text-[#111]"
             }`}
-            {...MODE_TAB_MOTION}
           >
             직접 작성
-          </motion.button>
-          <motion.button
+          </YeonButton>
+          <YeonButton
             type="button"
+            size="sm"
             onClick={() => setMode(ADD_CARD_MODES.bulk)}
             className={`flex-1 rounded-lg px-3 py-2 transition-colors ${
               mode === ADD_CARD_MODES.bulk
                 ? "bg-white text-[#111] shadow-sm"
                 : "text-[#666] hover:text-[#111]"
             }`}
-            {...MODE_TAB_MOTION}
           >
             일괄 추가
-          </motion.button>
-        </div>
+          </YeonButton>
+        </YeonView>
 
-        <div className="mt-3 min-h-0 flex-1">
-          <div
+        <YeonView className="mt-3 min-h-0 flex-1">
+          <YeonView
             hidden={mode !== ADD_CARD_MODES.manual}
             aria-hidden={mode !== ADD_CARD_MODES.manual}
             className="h-full min-h-0"
@@ -199,8 +199,8 @@ export function AddCardsPanel({ deckId, onClose }: AddCardsPanelProps) {
               onDirtyChange={setManualDirty}
               onActionStateChange={handleManualActionStateChange}
             />
-          </div>
-          <div
+          </YeonView>
+          <YeonView
             hidden={mode !== ADD_CARD_MODES.bulk}
             aria-hidden={mode !== ADD_CARD_MODES.bulk}
             className="h-full min-h-0"
@@ -210,9 +210,9 @@ export function AddCardsPanel({ deckId, onClose }: AddCardsPanelProps) {
               onSuccess={onClose}
               onDirtyChange={setBulkDirty}
             />
-          </div>
-        </div>
-      </div>
+          </YeonView>
+        </YeonView>
+      </YeonView>
     </ResponsiveModal>
   );
 }

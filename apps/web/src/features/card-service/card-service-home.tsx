@@ -1,20 +1,22 @@
 "use client";
-
-import Link from "next/link";
 import { useState } from "react";
 import { analyticsEvents, trackEvent } from "@/lib/analytics";
+import { CommonProductHeader } from "@/components/product-shell/product-header";
 import {
-  CommonProductHeader,
-  ProductHeaderSettingsButton,
-} from "@/components/product-shell/product-header";
-import { ServiceHelpDialog } from "@/components/product-shell/service-help-dialog";
+  YeonButton,
+  YeonView,
+  YeonText,
+  YeonProductHeaderActionButton,
+  YeonLink,
+} from "@yeon/ui";
+import { YeonServiceHelpDialog } from "@yeon/ui";
+import { resolveYeonWebPath } from "@yeon/ui/runtime/ports";
 import {
   TypingProfileCard,
   TypingProfileCardSkeleton,
 } from "@/features/typing-service/typing-profile-card";
 import { useTypingProfile } from "@/features/typing-service/use-typing-profile";
 import { useTypingSettings } from "@/features/typing-service/use-typing-settings";
-
 import { useIsAuthenticated } from "./auth-context";
 import { CardServiceSettingsDialog, CreateDeckDialog } from "./components";
 import { useDeckList } from "./hooks";
@@ -57,12 +59,12 @@ export function CardServiceHome() {
   };
 
   return (
-    <div className={CARD_SERVICE_HOME_CLASS.root}>
+    <YeonView className={CARD_SERVICE_HOME_CLASS.root}>
       <CommonProductHeader
         activeService="card"
         settingsControl={
           <>
-            <ServiceHelpDialog
+            <YeonServiceHelpDialog
               content={{
                 title: CARD_SERVICE_SEO_HEADING,
                 intro: CARD_SERVICE_SEO_INTRO,
@@ -70,7 +72,7 @@ export function CardServiceHome() {
                 faqs: CARD_SERVICE_FAQS,
               }}
             />
-            <ProductHeaderSettingsButton
+            <YeonProductHeaderActionButton
               onClick={() => setSettingsOpen(true)}
               aria-label="카드 설정"
             />
@@ -78,25 +80,40 @@ export function CardServiceHome() {
         }
       />
 
-      <main className={CARD_SERVICE_HOME_CLASS.main}>
-        <section className={CARD_SERVICE_HOME_CLASS.introSection}>
-          <div className={CARD_SERVICE_HOME_CLASS.introCopy}>
-            <h1 className={`${CARD_SERVICE_HOME_CLASS.introTitle} break-keep`}>
+      <YeonView as="main" className={CARD_SERVICE_HOME_CLASS.main}>
+        <YeonView as="section" className={CARD_SERVICE_HOME_CLASS.introSection}>
+          <YeonView className={CARD_SERVICE_HOME_CLASS.introCopy}>
+            <YeonText
+              as="h1"
+              variant="unstyled"
+              tone="inherit"
+              className={`${CARD_SERVICE_HOME_CLASS.introTitle} break-keep`}
+            >
               바로 시작하는 카드공부
-            </h1>
-            <p
+            </YeonText>
+            <YeonText
+              as="p"
+              variant="unstyled"
+              tone="inherit"
               className={`${CARD_SERVICE_HOME_CLASS.introDescription} break-keep`}
             >
               카드를 넘기기 전에 먼저 떠올리고, 친구와 함께 답을 확인해보세요.
               혼자 복습하거나 카드방에서 함께 공부할 수 있어요.
-            </p>
-          </div>
-        </section>
+            </YeonText>
+          </YeonView>
+        </YeonView>
 
-        <section className={CARD_SERVICE_HOME_CLASS.boardSection}>
-          <div className={CARD_SERVICE_HOME_CLASS.profilePanel}>
-            <h2 className={CARD_SERVICE_HOME_CLASS.sectionTitle}>내 프로필</h2>
-            <div className={CARD_SERVICE_HOME_CLASS.sectionBody}>
+        <YeonView as="section" className={CARD_SERVICE_HOME_CLASS.boardSection}>
+          <YeonView className={CARD_SERVICE_HOME_CLASS.profilePanel}>
+            <YeonText
+              as="h2"
+              variant="unstyled"
+              tone="inherit"
+              className={CARD_SERVICE_HOME_CLASS.sectionTitle}
+            >
+              내 프로필
+            </YeonText>
+            <YeonView className={CARD_SERVICE_HOME_CLASS.sectionBody}>
               {loaded ? (
                 <TypingProfileCard
                   profile={profile}
@@ -109,81 +126,120 @@ export function CardServiceHome() {
               ) : (
                 <TypingProfileCardSkeleton />
               )}
-            </div>
-          </div>
+            </YeonView>
+          </YeonView>
 
-          <div className={CARD_SERVICE_HOME_CLASS.actionPanel}>
-            <h2 className={CARD_SERVICE_HOME_CLASS.sectionTitle}>
+          <YeonView className={CARD_SERVICE_HOME_CLASS.actionPanel}>
+            <YeonText
+              as="h2"
+              variant="unstyled"
+              tone="inherit"
+              className={CARD_SERVICE_HOME_CLASS.sectionTitle}
+            >
               오늘의 시작
-            </h2>
-            <div className={CARD_SERVICE_HOME_CLASS.ctaWrap}>
-              <Link
-                href="/card-service/rooms"
+            </YeonText>
+            <YeonView className={CARD_SERVICE_HOME_CLASS.ctaWrap}>
+              <YeonLink
+                href={resolveYeonWebPath("cardRoomList")}
                 className={`${CARD_SERVICE_HOME_CLASS.ctaBase} ${CARD_SERVICE_HOME_CLASS.ctaPrimary}`}
                 onClick={() => trackHomeClick("rooms")}
               >
-                <span className={CARD_SERVICE_HOME_CLASS.ctaTextPrimary}>
+                <YeonText
+                  as="span"
+                  variant="unstyled"
+                  tone="inherit"
+                  className={CARD_SERVICE_HOME_CLASS.ctaTextPrimary}
+                >
                   카드방 입장
-                </span>
-                <span
+                </YeonText>
+                <YeonText
+                  as="span"
+                  variant="unstyled"
+                  tone="inherit"
                   className={`${CARD_SERVICE_HOME_CLASS.ctaTextSecondary} break-keep`}
                 >
                   친구와 역할을 나눠 채팅으로 암기 답변을 검증해요.
-                </span>
-              </Link>
+                </YeonText>
+              </YeonLink>
 
               {isDeckStateLoading ? (
-                <button
+                <YeonButton
                   type="button"
                   disabled
+                  variant="secondary"
                   className={CARD_SERVICE_HOME_CLASS.ctaLoading}
                 >
-                  <span className={CARD_SERVICE_HOME_CLASS.ctaTextPrimary}>
+                  <YeonText
+                    as="span"
+                    variant="unstyled"
+                    tone="inherit"
+                    className={CARD_SERVICE_HOME_CLASS.ctaTextPrimary}
+                  >
                     덱 확인 중
-                  </span>
-                  <span
+                  </YeonText>
+                  <YeonText
+                    as="span"
+                    variant="unstyled"
+                    tone="inherit"
                     className={`${CARD_SERVICE_HOME_CLASS.ctaTextSecondaryGray} break-keep`}
                   >
                     저장된 덱이 있는지 확인하고 있어요.
-                  </span>
-                </button>
+                  </YeonText>
+                </YeonButton>
               ) : shouldShowDeckListAction ? (
-                <Link
+                <YeonLink
                   href="/card-service/decks"
                   className={`${CARD_SERVICE_HOME_CLASS.ctaBase} ${CARD_SERVICE_HOME_CLASS.ctaDefault}`}
                   onClick={() => trackHomeClick("decks")}
                 >
-                  <span className={CARD_SERVICE_HOME_CLASS.ctaTextPrimary}>
+                  <YeonText
+                    as="span"
+                    variant="unstyled"
+                    tone="inherit"
+                    className={CARD_SERVICE_HOME_CLASS.ctaTextPrimary}
+                  >
                     내 덱 보기
-                  </span>
-                  <span
+                  </YeonText>
+                  <YeonText
+                    as="span"
+                    variant="unstyled"
+                    tone="inherit"
                     className={`${CARD_SERVICE_HOME_CLASS.ctaTextSecondaryMuted} break-keep`}
                   >
                     {decksQuery.isError
                       ? "덱 목록에서 저장된 카드를 다시 확인해요."
                       : "기존 덱을 열어 카드를 추가하거나 혼자 복습해요."}
-                  </span>
-                </Link>
+                  </YeonText>
+                </YeonLink>
               ) : (
-                <button
+                <YeonButton
                   type="button"
                   onClick={openCreate}
+                  variant="secondary"
                   className={`${CARD_SERVICE_HOME_CLASS.ctaBase} ${CARD_SERVICE_HOME_CLASS.ctaDefault}`}
                 >
-                  <span className={CARD_SERVICE_HOME_CLASS.ctaTextPrimary}>
+                  <YeonText
+                    as="span"
+                    variant="unstyled"
+                    tone="inherit"
+                    className={CARD_SERVICE_HOME_CLASS.ctaTextPrimary}
+                  >
                     새 덱 만들기
-                  </span>
-                  <span
+                  </YeonText>
+                  <YeonText
+                    as="span"
+                    variant="unstyled"
+                    tone="inherit"
                     className={`${CARD_SERVICE_HOME_CLASS.ctaTextSecondaryMuted} break-keep`}
                   >
                     카드방에서 사용할 앞면/뒷면 덱을 먼저 준비해요.
-                  </span>
-                </button>
+                  </YeonText>
+                </YeonButton>
               )}
-            </div>
-          </div>
-        </section>
-      </main>
+            </YeonView>
+          </YeonView>
+        </YeonView>
+      </YeonView>
 
       {isCreateOpen ? (
         <CreateDeckDialog onClose={() => setCreateOpen(false)} />
@@ -192,6 +248,6 @@ export function CardServiceHome() {
       {isSettingsOpen ? (
         <CardServiceSettingsDialog onClose={() => setSettingsOpen(false)} />
       ) : null}
-    </div>
+    </YeonView>
   );
 }

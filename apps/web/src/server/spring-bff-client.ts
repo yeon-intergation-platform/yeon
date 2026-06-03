@@ -1,3 +1,8 @@
+import {
+  createYeonHeaders,
+  type YeonHeadersInit,
+} from "@yeon/ui/runtime/YeonBrowserRuntime";
+
 const INTERNAL_TOKEN_HEADER = "X-Yeon-Internal-Token";
 const USER_ID_HEADER = "X-Yeon-User-Id";
 
@@ -6,10 +11,10 @@ type SpringBffHeaderParams = {
 };
 
 export function buildSpringBffHeaders(
-  initHeaders?: HeadersInit,
+  initHeaders?: YeonHeadersInit,
   params: SpringBffHeaderParams = {}
 ) {
-  const headers = new Headers(initHeaders);
+  const headers = createYeonHeaders(initHeaders);
 
   if (!headers.has("accept")) {
     headers.set("accept", "application/json");

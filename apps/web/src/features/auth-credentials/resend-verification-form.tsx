@@ -1,12 +1,20 @@
 "use client";
-
-import { useMutation } from "@tanstack/react-query";
-import { type FormEvent, useState } from "react";
-
+import { useState } from "react";
+import type { YeonFormElement, YeonFormEvent } from "@yeon/ui/types";
+import {
+  YeonButton,
+  YeonField,
+  YeonForm,
+  YeonLabel,
+  YeonText,
+  YeonView,
+} from "@yeon/ui";
+import { YEON_WEB_AUTH_CLASS } from "@yeon/ui/theme/web-style-tokens";
 import {
   credentialResendVerification,
   getCredentialErrorMessage,
 } from "@/lib/credential-client";
+import { useYeonMutation as useMutation } from "@yeon/ui/runtime/YeonQuery";
 import { AUTH_CREDENTIALS_COMMON_CLASS } from "./auth-credentials-common.const";
 
 type ResendViewState =
@@ -30,7 +38,7 @@ export function ResendVerificationForm({
 
   const isSubmitting = state.kind === "submitting" || resendMutation.isPending;
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: YeonFormEvent<YeonFormElement>) {
     event.preventDefault();
     setState({ kind: "submitting" });
 
@@ -48,28 +56,34 @@ export function ResendVerificationForm({
 
   if (state.kind === "sent") {
     return (
-      <div
-        role="status"
-        className="grid gap-2 rounded-[18px] border border-white/[0.1] bg-[rgba(16,17,20,0.6)] p-4 text-[13px] leading-[1.6] text-white/[0.78]"
-      >
-        <p className="m-0 font-bold text-white/85">
+      <YeonView role="status" className={YEON_WEB_AUTH_CLASS.statusPanel}>
+        <YeonText
+          variant="unstyled"
+          tone="inherit"
+          className={YEON_WEB_AUTH_CLASS.statusTitle13}
+        >
           인증 메일을 다시 보냈습니다.
-        </p>
-        <p className="m-0">
+        </YeonText>
+        <YeonText variant="unstyled" tone="inherit" className="m-0">
           받은 편지함을 확인해 주세요. 스팸함도 함께 살펴보시면 좋아요. 메일이
           도착하지 않으면 잠시 후 한 번 더 요청할 수 있습니다.
-        </p>
-      </div>
+        </YeonText>
+      </YeonView>
     );
   }
 
   return (
-    <form onSubmit={handleSubmit} className="grid gap-3">
-      <label className="grid gap-1.5">
-        <span className="text-[13px] font-bold tracking-[-0.01em] text-white/[0.82]">
+    <YeonForm onSubmit={handleSubmit} className="grid gap-3">
+      <YeonLabel className={YEON_WEB_AUTH_CLASS.label}>
+        <YeonText
+          as="span"
+          variant="unstyled"
+          tone="inherit"
+          className={YEON_WEB_AUTH_CLASS.labelText}
+        >
           가입에 사용한 이메일
-        </span>
-        <input
+        </YeonText>
+        <YeonField
           type="email"
           autoComplete="email"
           required
@@ -79,21 +93,26 @@ export function ResendVerificationForm({
           placeholder="you@yeon.world"
           disabled={isSubmitting}
         />
-      </label>
+      </YeonLabel>
 
       {state.kind === "error" ? (
-        <p role="alert" className={AUTH_CREDENTIALS_COMMON_CLASS.errorText13}>
+        <YeonText
+          role="alert"
+          variant="unstyled"
+          tone="inherit"
+          className={AUTH_CREDENTIALS_COMMON_CLASS.errorText13}
+        >
           {state.message}
-        </p>
+        </YeonText>
       ) : null}
 
-      <button
+      <YeonButton
         type="submit"
         disabled={isSubmitting}
-        className="min-h-[48px] rounded-full border border-white/[0.14] bg-white/[0.04] px-5 text-[14px] font-bold text-white/90 transition-[transform,background-color] duration-200 ease-[ease] hover:enabled:-translate-y-px hover:enabled:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-70"
+        className={YEON_WEB_AUTH_CLASS.secondaryAction}
       >
         {isSubmitting ? "재발송 중..." : "인증 메일 다시 받기"}
-      </button>
-    </form>
+      </YeonButton>
+    </YeonForm>
   );
 }

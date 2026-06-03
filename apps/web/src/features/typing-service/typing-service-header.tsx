@@ -1,10 +1,7 @@
 "use client";
-
 import type { ReactNode } from "react";
-
 import { CommonProductHeader } from "@/components/product-shell/product-header";
-import { ServiceHelpDialog } from "@/components/product-shell/service-help-dialog";
-
+import { YeonServiceHelpDialog } from "@yeon/ui";
 import { TypingSettingsButton } from "./typing-settings-button";
 import {
   TYPING_FAQS,
@@ -27,7 +24,7 @@ export function TypingServiceHeader({ controls }: TypingServiceHeaderProps) {
       activeService="typing"
       settingsControl={
         <>
-          <ServiceHelpDialog
+          <YeonServiceHelpDialog
             content={{
               title: TYPING_SEO_HEADING,
               intro: TYPING_SEO_INTRO,

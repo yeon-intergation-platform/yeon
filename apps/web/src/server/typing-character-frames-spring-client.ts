@@ -1,3 +1,7 @@
+import {
+  fetchYeon,
+  type YeonRequestInit,
+} from "@yeon/ui/runtime/YeonBrowserRuntime";
 import type { FrameSlot } from "@/features/typing-service/frame-slot";
 import { buildSpringBffHeaders } from "@/server/spring-bff-client";
 
@@ -50,9 +54,9 @@ function extractErrorMessage(parsed: unknown) {
 
 async function fetchJson(
   path: string,
-  init?: RequestInit & { userId?: string | null }
+  init?: YeonRequestInit & { userId?: string | null }
 ) {
-  const response = await fetch(`${resolveSpringBackendBaseUrl()}${path}`, {
+  const response = await fetchYeon(`${resolveSpringBackendBaseUrl()}${path}`, {
     ...init,
     cache: "no-store",
     headers: buildSpringBffHeaders(init?.headers, { userId: init?.userId }),

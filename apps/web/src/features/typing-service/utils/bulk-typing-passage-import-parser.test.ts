@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-
 import {
   parseBulkTypingPassageImportInput,
   TYPING_PASSAGE_BULK_IMPORT_MAX_ITEMS,
@@ -102,19 +101,19 @@ Keep your eyes one word ahead.`);
     const longResult = parseBulkTypingPassageImportInput(`[[TEXT]]
 ${"가".repeat(TYPING_PASSAGE_TEXT_MAX_LENGTH + 1)}`);
     expect(longResult.errors[0]).toContain(
-      `${TYPING_PASSAGE_TEXT_MAX_LENGTH}자`,
+      `${TYPING_PASSAGE_TEXT_MAX_LENGTH}자`
     );
 
     const tooMany = Array.from(
       { length: TYPING_PASSAGE_BULK_IMPORT_MAX_ITEMS + 1 },
-      (_, index) => `문단 ${index + 1}`,
+      (_, index) => `문단 ${index + 1}`
     ).join("\n\n");
     const countResult = parseBulkTypingPassageImportInput(tooMany);
     expect(countResult.passages).toHaveLength(
-      TYPING_PASSAGE_BULK_IMPORT_MAX_ITEMS,
+      TYPING_PASSAGE_BULK_IMPORT_MAX_ITEMS
     );
     expect(countResult.errors[0]).toContain(
-      `${TYPING_PASSAGE_BULK_IMPORT_MAX_ITEMS}개`,
+      `${TYPING_PASSAGE_BULK_IMPORT_MAX_ITEMS}개`
     );
   });
 });

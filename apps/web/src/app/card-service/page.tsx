@@ -1,6 +1,5 @@
-import type { Metadata } from "next";
-import Script from "next/script";
-
+import { type YeonPageMetadata } from "@yeon/ui/runtime/YeonPageMetadata";
+import { YeonStructuredData } from "@yeon/ui";
 import { SITE_BRAND_NAME } from "@/lib/site-brand";
 import { buildServiceCanonicalUrl } from "@/lib/seo";
 import {
@@ -11,7 +10,7 @@ import {
   CardServiceHome,
 } from "@/features/card-service";
 
-export const metadata: Metadata = {
+export const metadata: YeonPageMetadata = {
   title: CARD_SERVICE_PAGE_TITLE,
   description: CARD_SERVICE_PAGE_DESCRIPTION,
   keywords: [...CARD_SERVICE_SEO_KEYWORDS],
@@ -79,12 +78,9 @@ function getCardServiceJsonLd() {
 export default function CardServicePage() {
   return (
     <>
-      <Script
+      <YeonStructuredData
         id="card-service-jsonld"
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(getCardServiceJsonLd()),
-        }}
+        data={getCardServiceJsonLd()}
       />
       <CardServiceHome />
     </>

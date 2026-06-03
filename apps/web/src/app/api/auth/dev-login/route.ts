@@ -1,4 +1,5 @@
 import { errorResponseSchema } from "@yeon/api-contract/error";
+import { createYeonUrl } from "@yeon/ui/runtime/YeonBrowserRuntime";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import {
@@ -43,7 +44,7 @@ export async function GET(request: NextRequest) {
   }
 
   const response = NextResponse.redirect(
-    new URL(nextPath, getAppOrigin(request.nextUrl.origin))
+    createYeonUrl(nextPath, getAppOrigin(request.nextUrl.origin))
   );
 
   applyAuthSessionCookie(response, session);

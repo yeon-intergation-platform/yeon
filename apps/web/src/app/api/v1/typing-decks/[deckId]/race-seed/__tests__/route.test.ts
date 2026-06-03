@@ -12,16 +12,15 @@ vi.mock("../../_shared", () => ({
 }));
 
 vi.mock("@/server/typing-decks-spring-client", async () => {
-  const actual = await vi.importActual<typeof import("@/server/typing-decks-spring-client")>(
-    "@/server/typing-decks-spring-client",
-  );
+  const actual = await vi.importActual<
+    typeof import("@/server/typing-decks-spring-client")
+  >("@/server/typing-decks-spring-client");
   return {
     ...actual,
     createTypingRaceSeedInSpring: (...args: unknown[]) =>
       mockCreateTypingRaceSeedInSpring(...args),
   };
 });
-
 import { POST } from "../route";
 
 describe("typing deck race seed route", () => {
@@ -43,12 +42,16 @@ describe("typing deck race seed route", () => {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ passageId: "tps_1" }),
       }),
-      { params: Promise.resolve({ deckId: "tdk_1" }) },
+      { params: Promise.resolve({ deckId: "tdk_1" }) }
     );
 
     expect(response.status).toBe(200);
-    expect(mockCreateTypingRaceSeedInSpring).toHaveBeenCalledWith(null, "tdk_1", {
-      passageId: "tps_1",
-    });
+    expect(mockCreateTypingRaceSeedInSpring).toHaveBeenCalledWith(
+      null,
+      "tdk_1",
+      {
+        passageId: "tps_1",
+      }
+    );
   });
 });

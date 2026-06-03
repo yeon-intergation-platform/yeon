@@ -6,7 +6,6 @@ import {
   type TypingDeckDto,
   type TypingDeckPassageDto,
 } from "@yeon/api-contract/typing-decks";
-
 import { DEFAULT_TYPING_DECK_SOURCES } from "./default-typing-deck-sources";
 
 export type DefaultTypingDeck = Omit<

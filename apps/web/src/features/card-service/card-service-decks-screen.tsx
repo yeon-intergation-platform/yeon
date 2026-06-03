@@ -1,20 +1,20 @@
 "use client";
-
-import Link from "next/link";
-
-import { CARD_SERVICE_COMMON_CLASS } from "./card-service-common.const";
-import { SHARED_FEATURE_CLASS } from "@/features/shared-style-constants";
-
+import { YEON_WEB_SHARED_CLASS as SHARED_FEATURE_CLASS } from "@yeon/ui/theme/web-style-tokens";
 import { useCallback, useEffect, useState } from "react";
-import type { UseQueryResult } from "@tanstack/react-query";
+import type { YeonUseQueryResult as UseQueryResult } from "@yeon/ui/runtime/YeonQuery";
 import type { CardDeckDto } from "@yeon/api-contract/card-decks";
+import { deriveCardDeckListViewState } from "@yeon/ui/runtime/ports/card-deck";
+import { resolveYeonWebPath } from "@yeon/ui/runtime/ports";
 import { analyticsEvents, trackEvent } from "@/lib/analytics";
+import { CommonProductHeader } from "@/components/product-shell/product-header";
 import {
-  CommonProductHeader,
-  ProductHeaderSettingsButton,
-} from "@/components/product-shell/product-header";
+  YeonButton,
+  YeonText,
+  YeonView,
+  YeonProductHeaderActionButton,
+  YeonLink,
+} from "@yeon/ui";
 import { countGuestCardDecks } from "@/lib/guest-card-service-store";
-
 import { useIsAuthenticated } from "./auth-context";
 import {
   CardServiceSettingsDialog,
@@ -29,16 +29,12 @@ import type { CardServiceHomeViewState } from "./types";
 function toViewState(
   query: UseQueryResult<CardDeckDto[]>
 ): CardServiceHomeViewState {
-  if (query.isPending) {
-    return { kind: "loading" };
-  }
-  if (query.isError) {
-    return { kind: "error", message: "덱 목록을 불러오지 못했습니다." };
-  }
-  if (!query.data || query.data.length === 0) {
-    return { kind: "empty" };
-  }
-  return { kind: "ready", decks: query.data };
+  // 분기 로직은 SSOT에서 파생한다(web/mobile 공용). 복제 금지.
+  return deriveCardDeckListViewState({
+    isPending: query.isPending,
+    isError: query.isError,
+    data: query.data,
+  });
 }
 
 export function CardServiceDecksScreen() {
@@ -102,13 +98,13 @@ export function CardServiceDecksScreen() {
   };
 
   return (
-    <div className={SHARED_FEATURE_CLASS.pageSurface}>
+    <YeonView className={SHARED_FEATURE_CLASS.pageSurface}>
       <CommonProductHeader
         activeService="card"
         rightExtras={
           <>
             {showManualMergeButton ? (
-              <button
+              <YeonButton
                 type="button"
                 onClick={() => {
                   setMergeDialogOpen(true);
@@ -118,81 +114,123 @@ export function CardServiceDecksScreen() {
                     guest_deck_count: guestDeckCount,
                   });
                 }}
-                className="rounded-xl border border-[rgba(17,19,24,0.12)] bg-[rgba(248,247,243,0.08)] px-3 py-2 text-[12px] font-semibold text-[#555] transition-colors hover:bg-[rgba(248,247,243,0.08)]"
+                variant="secondary"
+                size="sm"
+                className="rounded-xl px-3 py-2 text-[12px]"
               >
                 게스트 덱 {guestDeckCount}개 계정에 추가
-              </button>
+              </YeonButton>
             ) : null}
           </>
         }
         settingsControl={
-          <ProductHeaderSettingsButton
+          <YeonProductHeaderActionButton
             onClick={() => setSettingsOpen(true)}
             aria-label="카드 설정"
           />
         }
       />
 
-      <main className="mx-auto max-w-[1400px] px-6 pb-28 pt-7 md:px-12">
-        <section className="max-w-[820px]">
-          <Link
-            href="/card-service"
+      <YeonView
+        as="main"
+        className="mx-auto max-w-[1400px] px-6 pb-28 pt-7 md:px-12"
+      >
+        <YeonView as="section" className="max-w-[820px]">
+          <YeonLink
+            href={resolveYeonWebPath("cardHome")}
             className="-ml-1 inline-flex min-h-11 items-center gap-1.5 rounded-lg px-1 py-1 text-[13px] font-semibold text-[#666] no-underline transition-colors hover:text-[#111]"
           >
-            <span aria-hidden="true">←</span>
+            <YeonText
+              as="span"
+              variant="unstyled"
+              tone="inherit"
+              aria-hidden="true"
+            >
+              ←
+            </YeonText>
             카드 홈으로
-          </Link>
-          <h1 className="mt-3 break-keep text-[28px] font-black tracking-[-0.04em] text-[#111] md:text-[34px]">
+          </YeonLink>
+          <YeonText
+            as="h1"
+            variant="unstyled"
+            tone="inherit"
+            className="mt-3 break-keep text-[28px] font-black tracking-[-0.04em] text-[#111] md:text-[34px]"
+          >
             덱을 만들고 바로 복습하세요
-          </h1>
-          <p
+          </YeonText>
+          <YeonText
+            as="p"
+            variant="unstyled"
+            tone="inherit"
             className={`mt-4 max-w-[720px] break-keep ${SHARED_FEATURE_CLASS.text14Neutral} leading-[1.8] md:text-[15px]`}
           >
             필요한 덱을 선택하거나 새로 만들어 바로 시작해보세요.
-          </p>
-        </section>
+          </YeonText>
+        </YeonView>
 
-        <section className="mt-9 border-t border-[#e5e5e5] pt-8">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <h2 className="break-keep text-[18px] font-bold text-[#111]">
+        <YeonView as="section" className="mt-9 border-t border-[#e5e5e5] pt-8">
+          <YeonView className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <YeonView>
+              <YeonText
+                as="h2"
+                variant="unstyled"
+                tone="inherit"
+                className="break-keep text-[18px] font-bold text-[#111]"
+              >
                 {isAuthenticated ? "내 덱" : "로그인 없이 만드는 덱"}
-              </h2>
-              <p
+              </YeonText>
+              <YeonText
+                as="p"
+                variant="unstyled"
+                tone="inherit"
                 className={`${SHARED_FEATURE_CLASS.text13Neutral} mt-2 break-keep leading-[1.7]`}
               >
                 덱을 열어 카드를 추가하고 바로 복습을 시작할 수 있습니다.
                 {!isAuthenticated
                   ? " 지금 만든 덱은 이 기기에만 저장되며, 로그인하면 계정으로 옮겨 계속 학습할 수 있어요."
                   : " 만든 덱과 카드를 열어 바로 복습 흐름으로 이어갈 수 있어요."}
-              </p>
-            </div>
+              </YeonText>
+            </YeonView>
             {state.kind === "empty" ? null : (
-              <button
+              <YeonButton
                 type="button"
                 onClick={() => openCreate("deck_section")}
-                className="inline-flex h-11 shrink-0 items-center justify-center rounded-xl bg-[#111] px-5 text-[13px] font-semibold text-white transition-colors hover:bg-[#333]"
+                variant="primary"
+                size="md"
+                className="h-11 shrink-0 rounded-xl px-5 text-[13px]"
               >
                 새 덱 만들기
-              </button>
+              </YeonButton>
             )}
-          </div>
-          <div className="mt-6">
+          </YeonView>
+          <YeonView className="mt-6">
             {state.kind === "loading" ? (
-              <p className={SHARED_FEATURE_CLASS.text14Soft}>불러오는 중...</p>
+              <YeonText
+                as="p"
+                variant="unstyled"
+                tone="inherit"
+                className={SHARED_FEATURE_CLASS.text14Soft}
+              >
+                불러오는 중...
+              </YeonText>
             ) : null}
             {state.kind === "error" ? (
-              <p className={CARD_SERVICE_COMMON_CLASS.errorTextMd}>
+              <YeonText
+                as="p"
+                variant="caption"
+                tone="primary"
+                className="text-[14px] font-semibold"
+              >
                 {state.message}
-              </p>
+              </YeonText>
             ) : null}
             {state.kind === "empty" ? (
               <EmptyDecksScreen onCreate={() => openCreate("empty_state")} />
             ) : null}
             {state.kind === "ready" ? <DeckList decks={state.decks} /> : null}
-          </div>
-        </section>
-      </main>
+          </YeonView>
+        </YeonView>
+      </YeonView>
 
       {isCreateOpen ? (
         <CreateDeckDialog onClose={() => setCreateOpen(false)} />
@@ -210,6 +248,6 @@ export function CardServiceDecksScreen() {
           }}
         />
       ) : null}
-    </div>
+    </YeonView>
   );
 }

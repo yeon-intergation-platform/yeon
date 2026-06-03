@@ -1,14 +1,12 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { updateTypingDeckPassageBodySchema } from "@yeon/api-contract/typing-decks";
-
 import {
   TypingDecksSpringBackendHttpError,
   deleteTypingDeckPassageInSpring,
   updateTypingDeckPassageInSpring,
 } from "@/server/typing-decks-spring-client";
 import { ServiceError } from "@/server/errors/service-error";
-
 import {
   getTypingDeckRequestContext,
   jsonError,
@@ -19,7 +17,7 @@ export const runtime = "nodejs";
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: Promise<{ deckId: string; passageId: string }> },
+  { params }: { params: Promise<{ deckId: string; passageId: string }> }
 ) {
   const { deckId, passageId } = await params;
 
@@ -42,7 +40,7 @@ export async function PATCH(
       deckId,
       passageId,
       parsed.data,
-      isAdmin,
+      isAdmin
     );
     return NextResponse.json(passage);
   } catch (error) {
@@ -59,7 +57,7 @@ export async function PATCH(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ deckId: string; passageId: string }> },
+  { params }: { params: Promise<{ deckId: string; passageId: string }> }
 ) {
   const { deckId, passageId } = await params;
 
@@ -69,7 +67,7 @@ export async function DELETE(
       currentUser?.id ?? null,
       deckId,
       passageId,
-      isAdmin,
+      isAdmin
     );
     return new NextResponse(null, { status: 204 });
   } catch (error) {

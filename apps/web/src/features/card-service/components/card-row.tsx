@@ -1,8 +1,6 @@
 "use client";
-
-import { useEffect, useMemo, useRef, useState, type TouchEvent } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { CardDeckItemDto } from "@yeon/api-contract/card-decks";
-
 import { useDeleteCard, useUpdateCard } from "../hooks";
 import { isEmptyRichContent, normalizeRichContent } from "./card-content-utils";
 import {
@@ -11,6 +9,13 @@ import {
   CardRowReadView,
   CardRowSwipeDeleteAction,
 } from "./card-row-views";
+import {
+  YeonView,
+  YEON_WEB_SHADOW_CLASS,
+  type YeonTouchEvent,
+  type YeonElement,
+} from "@yeon/ui";
+import { showYeonConfirm } from "@yeon/ui/runtime/YeonBrowserRuntime";
 
 interface CardRowProps {
   deckId: string;
@@ -83,12 +88,12 @@ export function CardRow({
     onDirtyChange?.(item.id, isDirty && isEditing);
   }, [isDirty, isEditing, item.id, onDirtyChange]);
 
-  const handleTouchStart = (event: TouchEvent<HTMLDivElement>) => {
+  const handleTouchStart = (event: YeonTouchEvent<YeonElement>) => {
     if (isEditing) return;
     touchStateRef.current.startX = event.touches[0]?.clientX ?? null;
   };
 
-  const handleTouchEnd = (event: TouchEvent<HTMLDivElement>) => {
+  const handleTouchEnd = (event: YeonTouchEvent<YeonElement>) => {
     if (isEditing) return;
     const startX = touchStateRef.current.startX;
     touchStateRef.current.startX = null;
@@ -143,7 +148,9 @@ export function CardRow({
   const cancelEdit = () => {
     if (
       isDirty &&
-      !window.confirm("수정 중인 카드 내용이 있습니다. 저장하지 않고 닫을까요?")
+      !showYeonConfirm(
+        "수정 중인 카드 내용이 있습니다. 저장하지 않고 닫을까요?"
+      )
     ) {
       return;
     }
@@ -173,8 +180,10 @@ export function CardRow({
   };
 
   return (
-    <div className="relative overflow-hidden rounded-[24px] border border-[#e8e8e8] bg-white shadow-[0_6px_22px_rgba(17,17,17,0.04)]">
-      <div
+    <YeonView
+      className={`relative overflow-hidden rounded-[24px] border border-[#e5e5e5] bg-white ${YEON_WEB_SHADOW_CLASS.cardTiny}`}
+    >
+      <YeonView
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
         onClick={() => {
@@ -188,11 +197,11 @@ export function CardRow({
           isDeleteRevealed && !isEditing ? "-translate-x-24" : "translate-x-0"
         }`}
       >
-        <div className="flex items-start justify-center border-r border-[#efefef] pt-5 text-[15px] font-semibold text-[#888] md:text-[16px]">
+        <YeonView className="flex items-start justify-center border-r border-[#e5e5e5] pt-5 text-[15px] font-semibold text-[#aaa] md:text-[16px]">
           {index ?? "-"}
-        </div>
+        </YeonView>
 
-        <div
+        <YeonView
           className="min-w-0 px-4 py-4 md:px-5 md:py-5"
           onClick={(event) => {
             if (isEditing) event.stopPropagation();
@@ -242,9 +251,9 @@ export function CardRow({
               onConfirmDelete={handleDelete}
             />
           )}
-        </div>
+        </YeonView>
 
-        <div className="flex items-start justify-center pt-4 pr-1 md:pr-2">
+        <YeonView className="flex items-start justify-center pt-4 pr-1 md:pr-2">
           {!isEditing ? (
             <CardRowDeleteIconButton
               isDeleteConfirming={isDeleteConfirming}
@@ -254,8 +263,8 @@ export function CardRow({
               }}
             />
           ) : null}
-        </div>
-      </div>
+        </YeonView>
+      </YeonView>
 
       {!isEditing ? (
         <CardRowSwipeDeleteAction
@@ -265,6 +274,6 @@ export function CardRow({
           onDelete={handleDelete}
         />
       ) : null}
-    </div>
+    </YeonView>
   );
 }

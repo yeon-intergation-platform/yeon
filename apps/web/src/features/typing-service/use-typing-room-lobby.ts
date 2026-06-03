@@ -1,7 +1,6 @@
 "use client";
-
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useYeonQuery as useQuery } from "@yeon/ui/runtime/YeonQuery";
 import type { TypingRoomSummary } from "@yeon/race-shared";
 import { loadPublicWaitingTypingRooms } from "./typing-service-fetch";
 import { typingServiceQueryKeys } from "./typing-service-query-keys";

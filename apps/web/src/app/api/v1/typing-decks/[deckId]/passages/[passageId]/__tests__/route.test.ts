@@ -14,9 +14,9 @@ vi.mock("../../../_shared", () => ({
 }));
 
 vi.mock("@/server/typing-decks-spring-client", async () => {
-  const actual = await vi.importActual<typeof import("@/server/typing-decks-spring-client")>(
-    "@/server/typing-decks-spring-client",
-  );
+  const actual = await vi.importActual<
+    typeof import("@/server/typing-decks-spring-client")
+  >("@/server/typing-decks-spring-client");
   return {
     ...actual,
     updateTypingDeckPassageInSpring: (...args: unknown[]) =>
@@ -25,7 +25,6 @@ vi.mock("@/server/typing-decks-spring-client", async () => {
       mockDeleteTypingDeckPassageInSpring(...args),
   };
 });
-
 import { DELETE, PATCH } from "../route";
 
 describe("typing deck passage item route", () => {
@@ -43,12 +42,15 @@ describe("typing deck passage item route", () => {
     });
 
     const response = await PATCH(
-      new NextRequest("http://localhost/api/v1/typing-decks/tdk_1/passages/tps_1", {
-        method: "PATCH",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ prompt: "수정 문장" }),
-      }),
-      { params: Promise.resolve({ deckId: "tdk_1", passageId: "tps_1" }) },
+      new NextRequest(
+        "http://localhost/api/v1/typing-decks/tdk_1/passages/tps_1",
+        {
+          method: "PATCH",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ prompt: "수정 문장" }),
+        }
+      ),
+      { params: Promise.resolve({ deckId: "tdk_1", passageId: "tps_1" }) }
     );
 
     expect(response.status).toBe(200);
@@ -57,7 +59,7 @@ describe("typing deck passage item route", () => {
       "tdk_1",
       "tps_1",
       { prompt: "수정 문장" },
-      false,
+      false
     );
   });
 
@@ -65,10 +67,13 @@ describe("typing deck passage item route", () => {
     mockDeleteTypingDeckPassageInSpring.mockResolvedValue({ ok: true });
 
     const response = await DELETE(
-      new NextRequest("http://localhost/api/v1/typing-decks/tdk_1/passages/tps_1", {
-        method: "DELETE",
-      }),
-      { params: Promise.resolve({ deckId: "tdk_1", passageId: "tps_1" }) },
+      new NextRequest(
+        "http://localhost/api/v1/typing-decks/tdk_1/passages/tps_1",
+        {
+          method: "DELETE",
+        }
+      ),
+      { params: Promise.resolve({ deckId: "tdk_1", passageId: "tps_1" }) }
     );
 
     expect(response.status).toBe(204);

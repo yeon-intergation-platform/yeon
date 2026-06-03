@@ -1,11 +1,20 @@
 "use client";
-
-import { SHARED_FEATURE_CLASS } from "@/features/shared-style-constants";
-
-import Link from "next/link";
+import { YEON_WEB_SHARED_CLASS as SHARED_FEATURE_CLASS } from "@yeon/ui/theme/web-style-tokens";
 import { useCallback, useMemo, useState } from "react";
-import { Search, Users } from "lucide-react";
 import { CommonProductHeader } from "@/components/product-shell/product-header";
+import {
+  getYeonButtonClassName,
+  YeonBadge,
+  YeonButton,
+  YeonField,
+  YeonIcon,
+  YeonSurface,
+  YeonText,
+  YeonLabel,
+  YeonView,
+  YeonLink,
+} from "@yeon/ui";
+import { resolveYeonWebPath } from "@yeon/ui/runtime/ports";
 import { useTypingSettings } from "@/features/typing-service/use-typing-settings";
 import {
   RoomCharacterSummaryCard,
@@ -62,145 +71,216 @@ export function CardRoomLobbyScreen() {
     filteredRooms[0] === undefined;
 
   return (
-    <div className={SHARED_FEATURE_CLASS.pageSurface}>
+    <YeonView className={SHARED_FEATURE_CLASS.pageSurface}>
       <CommonProductHeader activeService="card" />
-      <main>
-        <section className={ROOM_LOBBY_CLASS.heroSection}>
-          <div>
-            <h1 className={ROOM_LOBBY_CLASS.heroTitle}>카드방</h1>
-            <p className={ROOM_LOBBY_CLASS.heroDescription}>
+      <YeonView as="main">
+        <YeonView as="section" className={ROOM_LOBBY_CLASS.heroSection}>
+          <YeonView>
+            <YeonText
+              as="h1"
+              variant="unstyled"
+              tone="inherit"
+              className={ROOM_LOBBY_CLASS.heroTitle}
+            >
+              카드방
+            </YeonText>
+            <YeonText
+              as="p"
+              variant="unstyled"
+              tone="inherit"
+              className={ROOM_LOBBY_CLASS.heroDescription}
+            >
               저장된 실제 덱 스냅샷으로 카드방을 만들고, 실시간으로 답변을
               확인합니다.
-            </p>
-          </div>
+            </YeonText>
+          </YeonView>
           <RoomCharacterSummaryCard
             loaded={profileLoaded}
             nickname={profile.nickname}
             characterId={profile.characterId}
             locale={settings.locale}
-            changeHref="/card-service"
+            changeHref={resolveYeonWebPath("cardHome")}
           />
-        </section>
+        </YeonView>
 
-        <section className={ROOM_LOBBY_CLASS.listTopBorder}>
-          <div className={ROOM_LOBBY_CLASS.filterRow}>
-            <div className={ROOM_LOBBY_CLASS.filterScroller}>
+        <YeonView as="section" className={ROOM_LOBBY_CLASS.listTopBorder}>
+          <YeonView className={ROOM_LOBBY_CLASS.filterRow}>
+            <YeonView className={ROOM_LOBBY_CLASS.filterScroller}>
               {FILTERS.map((filter) => (
-                <button
+                <YeonButton
                   key={filter.value}
                   type="button"
                   onClick={() => setSelectedFilter(filter.value)}
-                  data-active={selectedFilter === filter.value}
-                  className="h-[50px] shrink-0 rounded-full border border-[#e5e5e5] bg-white px-7 text-[16px] font-semibold text-[#666] transition-colors hover:border-[#111] hover:bg-[#fafafa] hover:text-[#111] data-[active=true]:border-[#111] data-[active=true]:bg-[#fafafa] data-[active=true]:font-bold data-[active=true]:text-[#111] data-[active=true]:shadow-[inset_0_0_0_1px_#111]"
+                  variant={
+                    selectedFilter === filter.value ? "pill" : "secondary"
+                  }
+                  size="lg"
+                  className="h-[50px] shrink-0 rounded-full px-7 text-[16px]"
                 >
                   {filter.label}
-                </button>
+                </YeonButton>
               ))}
-            </div>
-            <div className={ROOM_LOBBY_CLASS.inputButtonRow}>
-              <label className={ROOM_LOBBY_CLASS.searchField}>
-                <Search
-                  aria-hidden="true"
+            </YeonView>
+            <YeonView className={ROOM_LOBBY_CLASS.inputButtonRow}>
+              <YeonLabel className={ROOM_LOBBY_CLASS.searchField}>
+                <YeonIcon
+                  name="search"
                   size={22}
                   className={ROOM_LOBBY_CLASS.searchIcon}
                 />
-                <input
+                <YeonField
                   value={searchKeyword}
                   onChange={(event) => setSearchKeyword(event.target.value)}
                   placeholder="방 검색"
-                  className="h-[50px] w-full rounded-lg border border-[#d7d7d7] bg-white pl-12 pr-4 text-[16px] font-medium text-[#111] outline-none placeholder:text-[#aaa] focus:border-[#111]"
+                  className="h-[50px] rounded-lg pl-12 pr-4 text-[16px] font-medium"
                 />
-              </label>
+              </YeonLabel>
               {!isEmptyState ? (
-                <button
+                <YeonButton
                   type="button"
                   onClick={openCreateModal}
-                  className="inline-flex h-[50px] items-center justify-center rounded-lg bg-[#111] px-8 text-[16px] font-bold text-white no-underline transition-opacity hover:opacity-90"
+                  variant="primary"
+                  size="lg"
+                  className="h-[50px] rounded-lg px-8 text-[16px]"
                 >
                   카드방 만들기
-                </button>
+                </YeonButton>
               ) : null}
-            </div>
-          </div>
+            </YeonView>
+          </YeonView>
 
-          <div className="mt-7 rounded-2xl border border-[#d9d9d9] bg-white">
+          <YeonSurface className="mt-7">
             {roomsQuery.isLoading ? (
-              <div className="flex min-h-[280px] items-center justify-center text-[16px] font-bold text-[#666]">
+              <YeonText
+                as="p"
+                variant="label"
+                tone="secondary"
+                className="flex min-h-[280px] items-center justify-center text-[16px]"
+              >
                 실제 카드방 목록을 불러오는 중...
-              </div>
+              </YeonText>
             ) : roomsQuery.isError ? (
-              <div className="flex min-h-[280px] flex-col items-center justify-center px-6 py-16 text-center">
-                <h2 className="text-[28px] font-black tracking-[-0.05em]">
+              <YeonView className="flex min-h-[280px] flex-col items-center justify-center px-6 py-16 text-center">
+                <YeonText
+                  as="h2"
+                  variant="unstyled"
+                  tone="inherit"
+                  className="text-[28px] font-black tracking-[-0.05em]"
+                >
                   목록을 불러오지 못했어요
-                </h2>
-                <p className="mt-3 text-[#666]">
+                </YeonText>
+                <YeonText
+                  as="p"
+                  variant="unstyled"
+                  tone="inherit"
+                  className="mt-3 text-[#666]"
+                >
                   카드방 서버 상태를 확인해 주세요.
-                </p>
-              </div>
+                </YeonText>
+              </YeonView>
             ) : isEmptyState ? (
-              <div className="flex flex-col items-center justify-center px-6 py-20 text-center">
-                <h2 className="break-keep text-[32px] font-black tracking-[-0.05em] text-[#111]">
+              <YeonView className="flex flex-col items-center justify-center px-6 py-20 text-center">
+                <YeonText
+                  as="h2"
+                  variant="unstyled"
+                  tone="inherit"
+                  className="break-keep text-[32px] font-black tracking-[-0.05em] text-[#111]"
+                >
                   열린 카드방이 없어요
-                </h2>
-                <p className="mt-3 max-w-[300px] break-keep text-[16px] font-medium leading-6 text-[#666]">
+                </YeonText>
+                <YeonText
+                  as="p"
+                  variant="unstyled"
+                  tone="inherit"
+                  className="mt-3 max-w-[300px] break-keep text-[16px] font-medium leading-6 text-[#666]"
+                >
                   내 덱 또는 게스트 덱 스냅샷으로 첫 카드방을 만들어 보세요.
-                </p>
-                <button
+                </YeonText>
+                <YeonButton
                   type="button"
                   onClick={openCreateModal}
-                  className="mx-auto mt-8 rounded-lg bg-[#050505] px-8 py-4 text-[17px] font-bold text-white no-underline transition-colors hover:bg-[#222]"
+                  variant="primary"
+                  size="xl"
+                  className="mx-auto mt-8 rounded-lg px-8 py-4 text-[17px]"
                 >
                   카드방 만들기
-                </button>
-              </div>
+                </YeonButton>
+              </YeonView>
             ) : (
-              <div className={ROOM_LOBBY_CLASS.roomListRow}>
+              <YeonView className={ROOM_LOBBY_CLASS.roomListRow}>
                 {filteredRooms.map((room) => (
-                  <Link
+                  <YeonLink
                     key={room.id}
-                    href={`/card-service/rooms/${room.id}`}
+                    href={resolveYeonWebPath("cardRoomDetail", {
+                      roomId: room.id,
+                    })}
                     className="group grid gap-5 rounded-2xl border border-[#e5e5e5] bg-[#fafafa] p-5 no-underline transition-colors hover:border-[#111] hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#111] md:grid-cols-[1fr_auto]"
                   >
-                    <div>
-                      <div className={SHARED_FEATURE_CLASS.wrapItemsCenterGap2}>
-                        <span className="rounded-full border border-[#d9ead3] bg-[#eef8ea] px-2.5 py-1 text-[11px] font-bold text-[#2f7d32]">
+                    <YeonView>
+                      <YeonView
+                        className={SHARED_FEATURE_CLASS.wrapItemsCenterGap2}
+                      >
+                        <YeonBadge variant="neutral" className="text-[11px]">
                           {room.status === "waiting"
                             ? "대기중"
                             : room.status === "finished"
                               ? "완료"
                               : "학습중"}
-                        </span>
-                        <span className="rounded-full border border-[#e5e5e5] bg-white px-2.5 py-1 text-[11px] font-bold text-[#111]">
+                        </YeonBadge>
+                        <YeonBadge
+                          variant="neutral"
+                          className="text-[11px] text-[#111]"
+                        >
                           {room.cardCount}장
-                        </span>
-                      </div>
-                      <h2 className={ROOM_LOBBY_CLASS.roomMetaRow}>
+                        </YeonBadge>
+                      </YeonView>
+                      <YeonText
+                        as="h2"
+                        variant="unstyled"
+                        tone="inherit"
+                        className={ROOM_LOBBY_CLASS.roomMetaRow}
+                      >
                         {room.title}
-                      </h2>
-                      <p
+                      </YeonText>
+                      <YeonText
+                        as="p"
+                        variant="unstyled"
+                        tone="inherit"
                         className={`mt-2 ${SHARED_FEATURE_CLASS.text13MediumSecondary}`}
                       >
                         {room.deckTitle} · 방장 {room.hostLabel}
-                      </p>
-                    </div>
-                    <div className={ROOM_LOBBY_CLASS.roomStatusArea}>
-                      <span
-                        className={`inline-flex items-center gap-2 rounded-full border border-[#ddd] bg-white px-3 py-1.5 ${SHARED_FEATURE_CLASS.text13PrimaryBold}`}
+                      </YeonText>
+                    </YeonView>
+                    <YeonView className={ROOM_LOBBY_CLASS.roomStatusArea}>
+                      <YeonText
+                        as="span"
+                        variant="unstyled"
+                        tone="inherit"
+                        className={`inline-flex items-center gap-2 rounded-full border border-[#e5e5e5] bg-white px-3 py-1.5 ${SHARED_FEATURE_CLASS.text13PrimaryBold}`}
                       >
-                        <Users size={14} /> 외우기 {room.memorizerCount} · 확인{" "}
-                        {room.checkerCount}
-                      </span>
-                      <span className="rounded-xl bg-[#111] px-4 py-2 text-[13px] font-bold text-white transition-colors group-hover:bg-[#333]">
+                        <YeonIcon name="users" size={14} /> 외우기{" "}
+                        {room.memorizerCount} · 확인 {room.checkerCount}
+                      </YeonText>
+                      <YeonText
+                        as="span"
+                        variant="unstyled"
+                        tone="inherit"
+                        className={getYeonButtonClassName({
+                          variant: "primary",
+                          size: "sm",
+                          className: "rounded-xl px-4 py-2 text-[13px]",
+                        })}
+                      >
                         입장하기
-                      </span>
-                    </div>
-                  </Link>
+                      </YeonText>
+                    </YeonView>
+                  </YeonLink>
                 ))}
-              </div>
+              </YeonView>
             )}
-          </div>
-        </section>
-      </main>
+          </YeonSurface>
+        </YeonView>
+      </YeonView>
 
       <RoomCreateDialog
         open={isCreateModalOpen}
@@ -215,6 +295,6 @@ export function CardRoomLobbyScreen() {
           submitLabel="카드방 만들고 입장하기"
         />
       </RoomCreateDialog>
-    </div>
+    </YeonView>
   );
 }

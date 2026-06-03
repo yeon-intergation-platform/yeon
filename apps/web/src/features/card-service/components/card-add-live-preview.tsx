@@ -1,6 +1,6 @@
 "use client";
-
-import { SHARED_FEATURE_CLASS } from "@/features/shared-style-constants";
+import { YeonView, YeonText } from "@yeon/ui";
+import { YEON_WEB_SHARED_CLASS as SHARED_FEATURE_CLASS } from "@yeon/ui/theme/web-style-tokens";
 import { isRenderableRichContent } from "./card-content-utils";
 import { CARD_EDITOR_COMPACT_CLASS } from "./card-rich-markdown-editor-view";
 import { MarkdownContent } from "./markdown-content";
@@ -24,19 +24,40 @@ export function CardAddPreviewFace({
   const hasContent = isRenderableRichContent(value);
 
   return (
-    <section className={CARD_EDITOR_COMPACT_CLASS.previewFace}>
-      <div className={CARD_EDITOR_COMPACT_CLASS.previewFaceHeader}>
-        <p className={SHARED_FEATURE_CLASS.text13Emphasis}>{title}</p>
-        <span className={CARD_EDITOR_COMPACT_CLASS.statusPill}>{label}</span>
-      </div>
-      <div className={CARD_EDITOR_COMPACT_CLASS.previewFaceBody}>
+    <YeonView as="section" className={CARD_EDITOR_COMPACT_CLASS.previewFace}>
+      <YeonView className={CARD_EDITOR_COMPACT_CLASS.previewFaceHeader}>
+        <YeonText
+          as="p"
+          variant="unstyled"
+          tone="inherit"
+          className={SHARED_FEATURE_CLASS.text13Emphasis}
+        >
+          {title}
+        </YeonText>
+        <YeonText
+          as="span"
+          variant="unstyled"
+          tone="inherit"
+          className={CARD_EDITOR_COMPACT_CLASS.statusPill}
+        >
+          {label}
+        </YeonText>
+      </YeonView>
+      <YeonView className={CARD_EDITOR_COMPACT_CLASS.previewFaceBody}>
         {hasContent ? (
           <MarkdownContent>{value}</MarkdownContent>
         ) : (
-          <p className={SHARED_FEATURE_CLASS.text13Soft}>{emptyText}</p>
+          <YeonText
+            as="p"
+            variant="unstyled"
+            tone="inherit"
+            className={SHARED_FEATURE_CLASS.text13Soft}
+          >
+            {emptyText}
+          </YeonText>
         )}
-      </div>
-    </section>
+      </YeonView>
+    </YeonView>
   );
 }
 
@@ -45,8 +66,8 @@ export function CardAddLivePreview({
   backText,
 }: CardAddLivePreviewProps) {
   return (
-    <aside className={CARD_EDITOR_COMPACT_CLASS.previewRail}>
-      <div className="grid min-h-0 flex-1 grid-rows-[minmax(0,1fr)_minmax(0,1fr)]">
+    <YeonView as="aside" className={CARD_EDITOR_COMPACT_CLASS.previewRail}>
+      <YeonView className="grid min-h-0 flex-1 grid-rows-[minmax(0,1fr)_minmax(0,1fr)]">
         <CardAddPreviewFace
           label="앞면"
           title="카드 질문"
@@ -59,7 +80,7 @@ export function CardAddLivePreview({
           value={backText}
           emptyText="답변을 작성하면 카드 뒷면에 표시됩니다."
         />
-      </div>
-    </aside>
+      </YeonView>
+    </YeonView>
   );
 }

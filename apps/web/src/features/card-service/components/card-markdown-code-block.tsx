@@ -1,7 +1,10 @@
 "use client";
-
 import { useState, type ReactNode } from "react";
-
+import { YeonButton, YeonText, YeonView } from "@yeon/ui";
+import {
+  copyYeonClipboardText,
+  scheduleYeonTimeout,
+} from "@yeon/ui/runtime/YeonBrowserRuntime";
 import {
   getCardEditorCodeLanguageFromClassName,
   normalizeCardEditorCodeLanguage,
@@ -43,47 +46,69 @@ export function CardMarkdownCodeBlock({
 
   const handleCopy = async () => {
     try {
-      await navigator.clipboard.writeText(codeText);
+      const copiedSuccessfully = await copyYeonClipboardText(codeText);
+      if (!copiedSuccessfully) {
+        throw new Error("클립보드 복사를 지원하지 않습니다.");
+      }
       setCopied(true);
-      window.setTimeout(() => setCopied(false), 1200);
+      scheduleYeonTimeout(() => setCopied(false), 1200);
     } catch {
       setCopied(false);
     }
   };
 
   return (
-    <div
+    <YeonView
       className={`my-3 overflow-hidden rounded-xl border ${
         inverted
           ? "border-white/20 bg-white/10"
-          : "border-[#e5e5e5] bg-[#f7f7f7]"
+          : "border-[#e5e5e5] bg-[#fafafa]"
       }`}
     >
-      <div
+      <YeonView
         className={`flex items-center justify-between border-b px-3 py-2 text-[11px] font-semibold ${
           inverted
             ? "border-white/15 text-white/75"
-            : "border-[#e5e5e5] text-[#777]"
+            : "border-[#e5e5e5] text-[#666]"
         }`}
       >
-        <span className="uppercase tracking-[0.12em]">
+        <YeonText
+          as="span"
+          variant="unstyled"
+          tone="inherit"
+          className="uppercase tracking-[0.12em]"
+        >
           {language ?? "code"}
-        </span>
-        <button
+        </YeonText>
+        <YeonButton
           type="button"
           onClick={handleCopy}
+          variant={inverted ? "ghost" : "secondary"}
+          size="sm"
           className={`rounded-lg border px-2 py-1 text-[11px] font-semibold transition-colors ${
             inverted
               ? "border-white/20 text-white hover:bg-white/10"
-              : "border-[#d8d8d8] bg-white text-[#333] hover:border-[#bdbdbd] hover:bg-[#f2f2f2]"
+              : "border-[#e5e5e5] bg-white text-[#111]"
           }`}
         >
           {copied ? "복사됨" : "복사"}
-        </button>
-      </div>
-      <pre className="overflow-x-auto p-3 text-left">
-        <code className="font-mono text-[13px] leading-6">{codeText}</code>
-      </pre>
-    </div>
+        </YeonButton>
+      </YeonView>
+      <YeonText
+        as="pre"
+        variant="unstyled"
+        tone="inherit"
+        className="overflow-x-auto p-3 text-left"
+      >
+        <YeonText
+          as="code"
+          variant="unstyled"
+          tone="inherit"
+          className="font-mono text-[13px] leading-6"
+        >
+          {codeText}
+        </YeonText>
+      </YeonText>
+    </YeonView>
   );
 }

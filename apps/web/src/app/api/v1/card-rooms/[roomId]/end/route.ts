@@ -1,5 +1,5 @@
+import type { YeonRequest } from "@yeon/ui/runtime/YeonBrowserRuntime";
 import { NextResponse } from "next/server";
-
 import {
   CardRoomsSpringBackendHttpError,
   endCardRoomInSpring,
@@ -7,7 +7,7 @@ import {
 import { jsonError } from "@/app/api/v1/counseling-records/_shared";
 
 export async function POST(
-  request: Request,
+  request: YeonRequest,
   { params }: { params: Promise<{ roomId: string }> }
 ) {
   const { roomId } = await params;

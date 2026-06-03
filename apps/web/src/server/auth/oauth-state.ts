@@ -1,9 +1,10 @@
 import { authProviderSchema } from "@yeon/api-contract/auth";
 import { z } from "zod";
-
+import { getYeonNow } from "@yeon/ui/runtime/YeonBrowserRuntime";
 import {
   AUTH_OAUTH_STATE_TTL_SECONDS,
   normalizeAuthRedirectPath,
+  normalizeMobileReturnUrl,
   type SocialProvider,
 } from "./constants";
 import {
@@ -18,6 +19,8 @@ const oauthStateEntrySchema = z.object({
   state: z.string().min(16),
   provider: authProviderSchema,
   nextPath: z.string().min(1),
+  // 모바일 소셜 로그인일 때만 채워지는 복귀 딥링크. 없으면 기존 웹 쿠키 플로우.
+  mobileReturnUrl: z.string().min(1).nullish(),
   expiresAt: z.string().datetime(),
   codeVerifier: z.string().min(43).max(128),
 });
@@ -32,7 +35,7 @@ function encodePayload(entries: OAuthStateEntry[]) {
   const encodedPayload = Buffer.from(
     JSON.stringify({ entries } satisfies z.infer<
       typeof oauthStateCookiePayloadSchema
-    >),
+    >)
   ).toString("base64url");
 
   return `${encodedPayload}.${signAuthValue(encodedPayload)}`;
@@ -61,10 +64,10 @@ function decodePayload(cookieValue?: string | null) {
       return [];
     }
 
-    const now = Date.now();
+    const now = getYeonNow();
 
     return parsed.data.entries.filter(
-      (entry) => new Date(entry.expiresAt).getTime() > now,
+      (entry) => new Date(entry.expiresAt).getTime() > now
     );
   } catch {
     return [];
@@ -78,14 +81,16 @@ function encodePayloadOrNull(entries: OAuthStateEntry[]) {
 export function createOAuthStateCookieValue(options: {
   provider: SocialProvider;
   nextPath?: string | null;
+  mobileReturnUrl?: string | null;
   existingCookieValue?: string | null;
 }) {
   const payload = {
     state: createAuthRandomToken(24),
     provider: options.provider,
     nextPath: normalizeAuthRedirectPath(options.nextPath),
+    mobileReturnUrl: normalizeMobileReturnUrl(options.mobileReturnUrl),
     expiresAt: new Date(
-      Date.now() + AUTH_OAUTH_STATE_TTL_SECONDS * 1000,
+      getYeonNow() + AUTH_OAUTH_STATE_TTL_SECONDS * 1000
     ).toISOString(),
     codeVerifier: createPkceCodeVerifier(),
   } satisfies OAuthStateEntry;
@@ -97,6 +102,7 @@ export function createOAuthStateCookieValue(options: {
   return {
     state: payload.state,
     nextPath: payload.nextPath,
+    mobileReturnUrl: payload.mobileReturnUrl,
     codeVerifier: payload.codeVerifier,
     cookieValue: encodePayload(nextEntries),
   };

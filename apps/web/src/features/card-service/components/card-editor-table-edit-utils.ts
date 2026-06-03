@@ -1,5 +1,4 @@
-import { type Editor } from "@tiptap/react";
-
+import { type YeonTiptapEditor as Editor } from "@yeon/ui/rich-content/YeonTiptap";
 import {
   createCardEditorMarkdownTableRow,
   isCardEditorMarkdownTableBlock,
@@ -30,9 +29,9 @@ interface MarkdownTableRange {
   columnCount: number;
 }
 
-function collectParagraphLines(document: ProseMirrorNodeLike) {
+function collectParagraphLines(proseMirrorDocument: ProseMirrorNodeLike) {
   const lines: ParagraphLine[] = [];
-  document.descendants((node, pos) => {
+  proseMirrorDocument.descendants((node, pos) => {
     if (node.type.name !== "paragraph") {
       return;
     }

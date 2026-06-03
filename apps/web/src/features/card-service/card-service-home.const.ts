@@ -19,7 +19,7 @@ export const CARD_SERVICE_HOME_CLASS = {
   ctaWrap: "mt-5 grid gap-4",
   ctaBase:
     "block w-full rounded-2xl px-5 py-5 text-left transition-colors no-underline",
-  ctaPrimary: "border border-[#111] bg-[#111] text-white hover:bg-[#333]",
+  ctaPrimary: "border border-[#111] bg-[#111] text-white hover:opacity-90",
   ctaDefault:
     "border border-[#e5e5e5] bg-white text-[#111] hover:border-[#111]",
   ctaLoading:

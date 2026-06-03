@@ -1,5 +1,4 @@
 import type { ReactNode } from "react";
-
 import { QueryProvider } from "@/lib/query-provider";
 
 export default function LifeOsLayout({ children }: { children: ReactNode }) {

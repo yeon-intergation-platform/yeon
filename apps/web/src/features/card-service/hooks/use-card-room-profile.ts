@@ -1,7 +1,14 @@
 "use client";
-
 import { useEffect, useMemo, useState } from "react";
 import { findCharacter } from "@/features/typing-service/characters";
+import {
+  createYeonRandomUUID,
+  getYeonNow,
+  getYeonRandom,
+  readYeonLocalStorageItem,
+  removeYeonLocalStorageItem,
+  writeYeonLocalStorageItem,
+} from "@yeon/ui/runtime/YeonBrowserRuntime";
 
 const PROFILE_KEY = "yeon-card-room-profile";
 const GUEST_ID_KEY = "yeon-card-room-guest-id";
@@ -13,9 +20,10 @@ export type CardRoomLocalProfile = {
 };
 
 function randomId() {
-  if (typeof crypto !== "undefined" && crypto.randomUUID)
-    return crypto.randomUUID();
-  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+  return (
+    createYeonRandomUUID() ??
+    `${getYeonNow().toString(36)}-${getYeonRandom().toString(36).slice(2)}`
+  );
 }
 
 function normalizeProfile(
@@ -28,24 +36,20 @@ function normalizeProfile(
 }
 
 function readJsonProfile(key: string): Partial<CardRoomLocalProfile> | null {
-  const raw = localStorage.getItem(key);
+  const raw = readYeonLocalStorageItem(key);
   if (!raw) return null;
 
   try {
     const parsed = JSON.parse(raw) as Partial<CardRoomLocalProfile>;
     if (parsed.nickname || parsed.characterId) return parsed;
   } catch {
-    localStorage.removeItem(key);
+    removeYeonLocalStorageItem(key);
   }
 
   return null;
 }
 
 function readProfile(): CardRoomLocalProfile {
-  if (typeof localStorage === "undefined") {
-    return normalizeProfile(null);
-  }
-
   const cardRoomProfile = readJsonProfile(PROFILE_KEY);
   const typingProfile = readJsonProfile(TYPING_PROFILE_KEY);
 
@@ -56,11 +60,10 @@ function readProfile(): CardRoomLocalProfile {
 }
 
 function readGuestId() {
-  if (typeof localStorage === "undefined") return "guest-browser";
-  const existing = localStorage.getItem(GUEST_ID_KEY);
+  const existing = readYeonLocalStorageItem(GUEST_ID_KEY);
   if (existing) return existing;
   const next = `guest_${randomId().replaceAll("-", "")}`;
-  localStorage.setItem(GUEST_ID_KEY, next);
+  writeYeonLocalStorageItem(GUEST_ID_KEY, next);
   return next;
 }
 
@@ -80,7 +83,7 @@ export function useCardRoomProfile() {
   const setProfile = (next: CardRoomLocalProfile) => {
     const normalized = normalizeProfile(next);
     setProfileState(normalized);
-    localStorage.setItem(PROFILE_KEY, JSON.stringify(normalized));
+    writeYeonLocalStorageItem(PROFILE_KEY, JSON.stringify(normalized));
   };
 
   return useMemo(

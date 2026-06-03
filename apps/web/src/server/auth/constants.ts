@@ -1,3 +1,7 @@
+import {
+  createYeonUrl,
+  type YeonUrl,
+} from "@yeon/ui/runtime/YeonBrowserRuntime";
 import { PLATFORM_HOME_HREF } from "@/lib/platform-services";
 
 export const socialProviders = {
@@ -20,7 +24,7 @@ function isLegacyHomePath(pathname: string) {
   return pathname === "/home" || pathname.startsWith("/home/");
 }
 
-function isAllowedAuthRedirectPath(url: URL) {
+function isAllowedAuthRedirectPath(url: YeonUrl) {
   const pathname = url.pathname;
 
   return (
@@ -40,7 +44,7 @@ export function normalizeAuthRedirectPath(
   }
 
   try {
-    const url = new URL(candidate, REDIRECT_PATH_BASE_URL);
+    const url = createYeonUrl(candidate, REDIRECT_PATH_BASE_URL);
 
     if (url.origin !== REDIRECT_PATH_BASE_URL) {
       return DEFAULT_POST_LOGIN_PATH;
@@ -56,8 +60,53 @@ export function normalizeAuthRedirectPath(
   }
 }
 
+// 모바일 소셜 로그인 복귀용 딥링크 허용 scheme.
+// prod는 앱 고정 scheme만, dev는 Expo Go 딥링크(exp://, exp+...://)도 허용해 시뮬레이터 테스트를 연다.
+// open-redirect 차단: 허용 외 scheme은 모두 null 처리.
+const PRODUCTION_MOBILE_RETURN_PROTOCOLS = [
+  "yeon-card-service:",
+  "chat-service:",
+];
+
+export function normalizeMobileReturnUrl(candidate: string | null | undefined) {
+  if (!candidate) {
+    return null;
+  }
+
+  const trimmed = candidate.trim();
+
+  // 줄바꿈/공백은 헤더 인젝션 위험 → 거부.
+  if (trimmed.length === 0 || /\s/.test(trimmed)) {
+    return null;
+  }
+
+  let protocol: string;
+
+  try {
+    protocol = createYeonUrl(trimmed).protocol;
+  } catch {
+    return null;
+  }
+
+  if (PRODUCTION_MOBILE_RETURN_PROTOCOLS.includes(protocol)) {
+    return trimmed;
+  }
+
+  if (
+    process.env.NODE_ENV !== "production" &&
+    (protocol === "exp:" || protocol.startsWith("exp+"))
+  ) {
+    return trimmed;
+  }
+
+  return null;
+}
+
 export function buildAuthSessionCleanupHref(nextPath: string) {
-  const url = new URL("/api/auth/session/cleanup", REDIRECT_PATH_BASE_URL);
+  const url = createYeonUrl(
+    "/api/auth/session/cleanup",
+    REDIRECT_PATH_BASE_URL
+  );
 
   url.searchParams.set("next", nextPath);
 
@@ -71,15 +120,16 @@ export function getAppOrigin(originFallback?: string) {
     throw new Error("NEXT_PUBLIC_APP_URL 또는 요청 origin이 필요합니다.");
   }
 
-  return new URL(rawAppUrl).origin;
+  return createYeonUrl(rawAppUrl).origin;
 }
 
 function getAuthCookieDeploymentHostname() {
   try {
-    return new URL(process.env.NEXT_PUBLIC_APP_URL ?? REDIRECT_PATH_BASE_URL)
-      .hostname;
+    return createYeonUrl(
+      process.env.NEXT_PUBLIC_APP_URL ?? REDIRECT_PATH_BASE_URL
+    ).hostname;
   } catch {
-    return new URL(REDIRECT_PATH_BASE_URL).hostname;
+    return createYeonUrl(REDIRECT_PATH_BASE_URL).hostname;
   }
 }
 

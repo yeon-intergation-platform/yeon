@@ -1,13 +1,20 @@
 "use client";
-
-import { useMutation } from "@tanstack/react-query";
-import { type FormEvent, useState } from "react";
-
+import { useState } from "react";
+import type { YeonFormElement, YeonFormEvent } from "@yeon/ui/types";
+import {
+  YeonButton,
+  YeonField,
+  YeonForm,
+  YeonLabel,
+  YeonText,
+  YeonView,
+} from "@yeon/ui";
+import { YEON_WEB_AUTH_CLASS } from "@yeon/ui/theme/web-style-tokens";
 import {
   credentialRequestReset,
   getCredentialErrorMessage,
 } from "@/lib/credential-client";
-import { SHARED_FEATURE_CLASS } from "@/features/shared-style-constants";
+import { useYeonMutation as useMutation } from "@yeon/ui/runtime/YeonQuery";
 import { AUTH_CREDENTIALS_COMMON_CLASS } from "./auth-credentials-common.const";
 
 type ResetRequestViewState =
@@ -26,7 +33,7 @@ export function ResetRequestForm() {
   const isSubmitting =
     state.kind === "submitting" || requestResetMutation.isPending;
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: YeonFormEvent<YeonFormElement>) {
     event.preventDefault();
     setState({ kind: "submitting" });
 
@@ -44,26 +51,34 @@ export function ResetRequestForm() {
 
   if (state.kind === "sent") {
     return (
-      <div
-        role="status"
-        className="grid gap-2 rounded-[18px] border border-white/[0.1] bg-[rgba(16,17,20,0.6)] p-4 text-[13px] leading-[1.6] text-white/[0.78]"
-      >
-        <p className="m-0 font-bold text-white/85">재설정 메일을 보냈습니다.</p>
-        <p className="m-0">
+      <YeonView role="status" className={YEON_WEB_AUTH_CLASS.statusPanel}>
+        <YeonText
+          variant="unstyled"
+          tone="inherit"
+          className={YEON_WEB_AUTH_CLASS.statusTitle13}
+        >
+          재설정 메일을 보냈습니다.
+        </YeonText>
+        <YeonText variant="unstyled" tone="inherit" className="m-0">
           입력한 이메일이 가입된 계정이라면 1시간 내 유효한 재설정 링크가 포함된
           메일이 도착합니다. 받은 편지함과 스팸함을 함께 확인해 주세요.
-        </p>
-      </div>
+        </YeonText>
+      </YeonView>
     );
   }
 
   return (
-    <form onSubmit={handleSubmit} className="grid gap-4">
-      <label className="grid gap-1.5">
-        <span className="text-[13px] font-bold tracking-[-0.01em] text-white/[0.82]">
+    <YeonForm onSubmit={handleSubmit} className="grid gap-4">
+      <YeonLabel className={YEON_WEB_AUTH_CLASS.label}>
+        <YeonText
+          as="span"
+          variant="unstyled"
+          tone="inherit"
+          className={YEON_WEB_AUTH_CLASS.labelText}
+        >
           가입에 사용한 이메일
-        </span>
-        <input
+        </YeonText>
+        <YeonField
           type="email"
           autoComplete="email"
           required
@@ -73,21 +88,26 @@ export function ResetRequestForm() {
           placeholder="you@yeon.world"
           disabled={isSubmitting}
         />
-      </label>
+      </YeonLabel>
 
       {state.kind === "error" ? (
-        <p role="alert" className={AUTH_CREDENTIALS_COMMON_CLASS.errorText13}>
+        <YeonText
+          role="alert"
+          variant="unstyled"
+          tone="inherit"
+          className={AUTH_CREDENTIALS_COMMON_CLASS.errorText13}
+        >
           {state.message}
-        </p>
+        </YeonText>
       ) : null}
 
-      <button
+      <YeonButton
         type="submit"
         disabled={isSubmitting}
-        className={`min-h-[52px] rounded-full bg-[#f8f7f3] px-[22px] text-[#080808] transition-transform duration-200 ease-[ease] hover:enabled:-translate-y-px disabled:cursor-not-allowed disabled:opacity-70 ${SHARED_FEATURE_CLASS.text15EmphasisOnCream}`}
+        className={YEON_WEB_AUTH_CLASS.primaryAction}
       >
         {isSubmitting ? "요청 중..." : "재설정 링크 받기"}
-      </button>
-    </form>
+      </YeonButton>
+    </YeonForm>
   );
 }

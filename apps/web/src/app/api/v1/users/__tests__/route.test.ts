@@ -1,6 +1,5 @@
 import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-
 import { UsersSpringBackendHttpError } from "@/server/users-spring-client";
 
 const mockGetAuthUserBySessionToken = vi.fn();
@@ -27,7 +26,6 @@ vi.mock("@/server/users-spring-client", async () => {
     createUserInSpring: (...args: unknown[]) => mockCreateUserInSpring(...args),
   };
 });
-
 import { GET, POST } from "../route";
 
 describe("api/v1/users route", () => {

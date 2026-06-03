@@ -1,5 +1,4 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-
 import { FieldDecryptError, decryptField, encryptField } from "../field-crypto";
 
 describe("field-crypto", () => {
@@ -85,7 +84,7 @@ describe("field-crypto", () => {
     delete process.env.AUTH_SECRET;
 
     expect(() => encryptField("payload")).toThrow(
-      "AUTH_SECRET 환경변수가 필요합니다.",
+      "AUTH_SECRET 환경변수가 필요합니다."
     );
   });
 });

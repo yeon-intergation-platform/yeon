@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
+import { redirectYeon } from "@yeon/ui/runtime/YeonRouteControl";
 
 export default function AdminHomePage() {
-  redirect("/admin/members");
+  redirectYeon("/admin/members");
 }

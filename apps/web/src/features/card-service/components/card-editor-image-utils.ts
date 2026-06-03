@@ -1,3 +1,10 @@
+import { convertYeonHeicImageBlobToJpegBlob } from "@yeon/ui/runtime/YeonImageConversion";
+import {
+  createYeonFile,
+  type YeonBlob,
+  type YeonFile,
+} from "@yeon/ui/runtime/YeonBrowserRuntime";
+
 export const CARD_EDITOR_ALLOWED_IMAGE_EXTENSIONS = [
   "jpg",
   "jpeg",
@@ -56,7 +63,7 @@ const IMAGE_MIME_TO_EXTS = {
   "image/webp": ["webp"],
 } as const;
 
-type CardEditorFileLike = Pick<File, "name" | "size" | "type">;
+type CardEditorFileLike = Pick<YeonFile, "name" | "size" | "type">;
 type SupportedImageMimeType = keyof typeof IMAGE_MIME_TO_EXTS;
 
 export function clampCardEditorImageWidth(value: number) {
@@ -140,8 +147,8 @@ export function getCardEditorExtensionFromMime(mimeType: string) {
   );
 }
 
-export function toCardEditorFileFromBlob(blob: Blob, fileName: string) {
-  return new File([blob], fileName, { type: blob.type });
+export function toCardEditorFileFromBlob(blob: YeonBlob, fileName: string) {
+  return createYeonFile([blob], fileName, { type: blob.type });
 }
 
 export function isAllowedCardEditorImageExtension(extension: string) {
@@ -273,24 +280,26 @@ function isHeicLikeImageMimeType(
   return mimeType === "image/heic" || mimeType === "image/heif";
 }
 
-async function convertHeicImageFileToJpeg(file: File) {
+async function convertHeicImageFileToJpeg(file: YeonFile) {
   try {
-    const { default: heic2any } = await import("heic2any");
-    const converted = await heic2any({
+    const convertedBlob = await convertYeonHeicImageBlobToJpegBlob({
       blob: file,
       toType: "image/jpeg",
       quality: 0.92,
     });
-    const convertedBlob = Array.isArray(converted) ? converted[0] : converted;
 
-    if (!(convertedBlob instanceof Blob)) {
+    if (!convertedBlob) {
       throw new Error();
     }
 
-    return new File([convertedBlob], replaceFileExtension(file.name, "jpg"), {
-      type: "image/jpeg",
-      lastModified: file.lastModified,
-    });
+    return createYeonFile(
+      [convertedBlob],
+      replaceFileExtension(file.name, "jpg"),
+      {
+        type: "image/jpeg",
+        lastModified: file.lastModified,
+      }
+    );
   } catch {
     throw new Error(
       "HEIC/HEIF 이미지를 처리하지 못했습니다. 다른 이미지로 다시 시도해 주세요."
@@ -298,7 +307,7 @@ async function convertHeicImageFileToJpeg(file: File) {
   }
 }
 
-export async function normalizeCardEditorImageFileForUpload(file: File) {
+export async function normalizeCardEditorImageFileForUpload(file: YeonFile) {
   const detectedMimeType = detectImageMimeTypeFromHeader(
     new Uint8Array(await file.slice(0, IMAGE_HEADER_BYTE_LENGTH).arrayBuffer())
   );
@@ -324,7 +333,7 @@ export async function normalizeCardEditorImageFileForUpload(file: File) {
     return file;
   }
 
-  return new File(
+  return createYeonFile(
     [file],
     replaceFileExtension(
       file.name,

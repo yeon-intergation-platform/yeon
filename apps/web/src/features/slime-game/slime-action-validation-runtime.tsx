@@ -1,5 +1,4 @@
 "use client";
-
 import { SLIME_CONTROLS } from "./slime-game-domain";
 import { INITIAL_STATE, nextState } from "./slime-game-state";
 import { SlimeGameStage } from "./slime-game-stage";

@@ -1,20 +1,19 @@
 "use client";
-
-import { SHARED_FEATURE_CLASS } from "@/features/shared-style-constants";
+import { YEON_WEB_SHARED_CLASS as SHARED_FEATURE_CLASS } from "@yeon/ui/theme/web-style-tokens";
 import { CARD_SERVICE_COMMON_CLASS } from "./card-service-common.const";
-
-import Link from "next/link";
 import { useEffect, useState } from "react";
-import type { UseQueryResult } from "@tanstack/react-query";
-import {
-  CARD_STUDY_MODES,
-  type CardReviewDifficulty,
-  type CardStudyMode,
-  type CardDeckDetailResponse,
-  type CardDeckDto,
-  type CardDeckItemDto,
+import type { YeonUseQueryResult as UseQueryResult } from "@yeon/ui/runtime/YeonQuery";
+import { resolveYeonWebPath } from "@yeon/ui/runtime/ports";
+import { deriveCardDeckPlayViewState } from "@yeon/ui/runtime/ports/card-deck";
+import { CARD_STUDY_MODES } from "@yeon/api-contract/card-decks";
+import type {
+  CardReviewDifficulty,
+  CardStudyMode,
+  CardDeckDetailResponse,
+  CardDeckDto,
+  CardDeckItemDto,
 } from "@yeon/api-contract/card-decks";
-
+import { YeonButton, YeonLink, YeonView, YeonText } from "@yeon/ui";
 import { PlayCard, PlayControls } from "./components";
 import { DeckPlayReviewModeCard } from "./components/deck-play-review-mode-card";
 import {
@@ -25,31 +24,13 @@ import {
 } from "./hooks";
 import { PLATFORM_HOME_HREF } from "@/lib/platform-services";
 
-type DeckPlayViewState =
-  | { kind: "loading" }
-  | { kind: "error"; message: string }
-  | { kind: "empty"; deck: CardDeckDto }
-  | {
-      kind: "ready";
-      deck: CardDeckDto;
-      items: CardDeckItemDto[];
-      studyMode: CardStudyMode;
-    };
-
-function toViewState(
-  query: UseQueryResult<CardDeckDetailResponse>
-): DeckPlayViewState {
-  if (query.isPending) {
-    return { kind: "loading" };
-  }
-  if (query.isError || !query.data) {
-    return { kind: "error", message: "덱을 불러오지 못했습니다." };
-  }
-  const { deck, items, studyMode } = query.data;
-  if (items.length === 0) {
-    return { kind: "empty", deck };
-  }
-  return { kind: "ready", deck, items, studyMode };
+// 분기 로직은 SSOT에서 파생한다(web/mobile 공용). 복제 금지.
+function toViewState(query: UseQueryResult<CardDeckDetailResponse>) {
+  return deriveCardDeckPlayViewState({
+    isPending: query.isPending,
+    isError: query.isError,
+    data: query.data,
+  });
 }
 
 interface DeckPlayScreenProps {
@@ -61,33 +42,51 @@ export function DeckPlayScreen({ deckId }: DeckPlayScreenProps) {
   const state = toViewState(detailQuery);
 
   return (
-    <div className={SHARED_FEATURE_CLASS.pageSurface}>
-      <header className="border-b border-[#e5e5e5] px-6 py-3 md:px-12">
-        <div className="mx-auto flex max-w-[1200px] items-center justify-between">
-          <Link
-            href={`/card-service/decks/${deckId}`}
+    <YeonView className={SHARED_FEATURE_CLASS.pageSurface}>
+      <YeonView
+        as="header"
+        className="border-b border-[#e5e5e5] px-6 py-3 md:px-12"
+      >
+        <YeonView className="mx-auto flex max-w-[1200px] items-center justify-between">
+          <YeonLink
+            href={resolveYeonWebPath("cardDeckDetail", { deckId })}
             className={`${SHARED_FEATURE_CLASS.text14Neutral} no-underline hover:text-[#111]`}
           >
             ← 덱으로
-          </Link>
-          <Link
+          </YeonLink>
+          <YeonLink
             href={PLATFORM_HOME_HREF}
             className={`${CARD_SERVICE_COMMON_CLASS.panelTextEmphasis} no-underline hover:opacity-70`}
           >
             YEON 카드 · 실행
-          </Link>
-        </div>
-      </header>
+          </YeonLink>
+        </YeonView>
+      </YeonView>
 
-      <main className="mx-auto flex max-w-[1200px] flex-col items-center px-6 py-12 md:px-12">
+      <YeonView
+        as="main"
+        className="mx-auto flex max-w-[1200px] flex-col items-center px-6 py-12 md:px-12"
+      >
         {state.kind === "loading" ? (
-          <p className={SHARED_FEATURE_CLASS.text14Soft}>불러오는 중...</p>
+          <YeonText
+            as="p"
+            variant="unstyled"
+            tone="inherit"
+            className={SHARED_FEATURE_CLASS.text14Soft}
+          >
+            불러오는 중...
+          </YeonText>
         ) : null}
 
         {state.kind === "error" ? (
-          <p className={CARD_SERVICE_COMMON_CLASS.errorTextMd}>
+          <YeonText
+            as="p"
+            variant="unstyled"
+            tone="inherit"
+            className={CARD_SERVICE_COMMON_CLASS.errorTextMd}
+          >
             {state.message}
-          </p>
+          </YeonText>
         ) : null}
 
         {state.kind === "empty" ? (
@@ -102,8 +101,8 @@ export function DeckPlayScreen({ deckId }: DeckPlayScreenProps) {
             items={state.items}
           />
         ) : null}
-      </main>
-    </div>
+      </YeonView>
+    </YeonView>
   );
 }
 
@@ -115,18 +114,30 @@ function EmptyPlayScreen({
   deckId: string;
 }) {
   return (
-    <div className="flex flex-col items-center text-center">
-      <h2 className={CARD_SERVICE_COMMON_CLASS.panelBodyTitle}>{deck.title}</h2>
-      <p className={`mt-3 ${CARD_SERVICE_COMMON_CLASS.mutedErrorTextMd}`}>
+    <YeonView className="flex flex-col items-center text-center">
+      <YeonText
+        as="h2"
+        variant="unstyled"
+        tone="inherit"
+        className={CARD_SERVICE_COMMON_CLASS.panelBodyTitle}
+      >
+        {deck.title}
+      </YeonText>
+      <YeonText
+        as="p"
+        variant="unstyled"
+        tone="inherit"
+        className={`mt-3 ${CARD_SERVICE_COMMON_CLASS.mutedErrorTextMd}`}
+      >
         아직 카드가 없습니다. 덱에 카드를 먼저 추가해주세요.
-      </p>
-      <Link
-        href={`/card-service/decks/${deckId}`}
-        className="mt-6 rounded-xl bg-[#111] px-5 py-3 text-[14px] font-semibold text-white no-underline hover:bg-[#333]"
+      </YeonText>
+      <YeonLink
+        href={resolveYeonWebPath("cardDeckDetail", { deckId })}
+        className="mt-6 rounded-xl bg-[#111] px-5 py-3 text-[14px] font-semibold text-white no-underline hover:opacity-90"
       >
         덱으로 돌아가기
-      </Link>
-    </div>
+      </YeonLink>
+    </YeonView>
   );
 }
 
@@ -173,41 +184,53 @@ function ReadyPlayBody({
   }
 
   return (
-    <div className="flex w-full flex-col items-center gap-6">
-      <div className="flex w-full max-w-[760px] flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h2 className={SHARED_FEATURE_CLASS.text16Emphasis}>{deckTitle}</h2>
-          <p className={`mt-1 ${SHARED_FEATURE_CLASS.text12Soft}`}>
+    <YeonView className="flex w-full flex-col items-center gap-6">
+      <YeonView className="flex w-full max-w-[760px] flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <YeonView>
+          <YeonText
+            as="h2"
+            variant="unstyled"
+            tone="inherit"
+            className={SHARED_FEATURE_CLASS.text16Emphasis}
+          >
+            {deckTitle}
+          </YeonText>
+          <YeonText
+            as="p"
+            variant="unstyled"
+            tone="inherit"
+            className={`mt-1 ${SHARED_FEATURE_CLASS.text12Soft}`}
+          >
             {studyMode === CARD_STUDY_MODES.review
               ? "문제와 정답을 함께 확인하고 난이도로 다음 복습일을 저장합니다."
               : "카드를 클릭하거나 Space·Enter를 눌러 뒤집을 수 있어요."}
-          </p>
-        </div>
-        <div className="flex gap-2">
+          </YeonText>
+        </YeonView>
+        <YeonView className="flex gap-2">
           {STUDY_MODE_OPTIONS.map(({ mode, label }) => (
-            <button
+            <YeonButton
               key={mode}
               type="button"
               aria-pressed={studyMode === mode}
               onClick={() => handleStudyModeChange(mode)}
-              className={`rounded-xl border px-4 py-2 text-[13px] font-semibold ${
-                studyMode === mode
-                  ? "border-[#111] bg-[#111] text-white"
-                  : "border-[#e5e5e5] text-[#111] hover:border-[#111]"
-              }`}
+              variant={studyMode === mode ? "primary" : "secondary"}
+              size="md"
+              className="rounded-xl px-4 py-2 text-[13px]"
             >
               {label}
-            </button>
+            </YeonButton>
           ))}
-          <button
+          <YeonButton
             type="button"
             onClick={play.handleToggleShuffle}
-            className={`rounded-xl border border-[#e5e5e5] px-4 py-2 ${SHARED_FEATURE_CLASS.text13Primary} hover:border-[#111]`}
+            variant="secondary"
+            size="md"
+            className={`rounded-xl px-4 py-2 ${SHARED_FEATURE_CLASS.text13Primary}`}
           >
             {play.isShuffled ? "섞기 해제" : "섞기"}
-          </button>
-        </div>
-      </div>
+          </YeonButton>
+        </YeonView>
+      </YeonView>
 
       {studyMode === CARD_STUDY_MODES.review ? (
         <DeckPlayReviewModeCard
@@ -236,10 +259,15 @@ function ReadyPlayBody({
       )}
 
       {reviewMutation.error || studyModeMutation.error ? (
-        <p className={CARD_SERVICE_COMMON_CLASS.errorTextSm}>
+        <YeonText
+          as="p"
+          variant="unstyled"
+          tone="inherit"
+          className={CARD_SERVICE_COMMON_CLASS.errorTextSm}
+        >
           {(reviewMutation.error ?? studyModeMutation.error)?.message}
-        </p>
+        </YeonText>
       ) : null}
-    </div>
+    </YeonView>
   );
 }

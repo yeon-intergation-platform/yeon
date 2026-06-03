@@ -1,8 +1,13 @@
 "use client";
-
-import { type Editor } from "@tiptap/react";
+import { type YeonTiptapEditor as Editor } from "@yeon/ui/rich-content/YeonTiptap";
 import { useCallback, useState } from "react";
-
+import {
+  canReadYeonClipboardItems,
+  fetchYeon,
+  readYeonClipboardItems,
+  type YeonDataTransfer,
+  type YeonFile,
+} from "@yeon/ui/runtime/YeonBrowserRuntime";
 import { uploadCardDeckImage } from "../card-service-fetch";
 import {
   extractCardEditorClipboardImageSource,
@@ -26,7 +31,7 @@ interface ImageInsertRange {
 }
 
 interface ImageSourceFileReplacement {
-  file: File;
+  file: YeonFile;
   source: string;
 }
 
@@ -101,17 +106,13 @@ function replaceCardEditorImageSources(
 }
 
 async function readClipboardImageFiles() {
-  if (
-    typeof navigator === "undefined" ||
-    !navigator.clipboard ||
-    typeof navigator.clipboard.read !== "function"
-  ) {
+  if (!canReadYeonClipboardItems()) {
     return [];
   }
 
   try {
-    const clipboardItems = await navigator.clipboard.read();
-    const files: File[] = [];
+    const clipboardItems = await readYeonClipboardItems();
+    const files: YeonFile[] = [];
 
     for (const clipboardItem of clipboardItems) {
       const imageType = clipboardItem.types.find((type) =>
@@ -135,7 +136,7 @@ async function toDataImageFile(source: string, index = 0) {
     return undefined;
   }
 
-  const response = await fetch(source);
+  const response = await fetchYeon(source);
   const blob = await response.blob();
   const extension = getCardEditorExtensionFromMime(blob.type) || "png";
 
@@ -151,14 +152,14 @@ export function useCardEditorImageUpload() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isUploading, setUploading] = useState(false);
 
-  const uploadNormalizedFile = useCallback(async (file: File) => {
+  const uploadNormalizedFile = useCallback(async (file: YeonFile) => {
     return uploadCardDeckImage(file);
   }, []);
 
   const handleImageFiles = useCallback(
     async (
       editor: Editor,
-      files: File[],
+      files: YeonFile[],
       insertRange = getCurrentImageInsertRange(editor)
     ) => {
       if (files.length === 0 || isUploading) {
@@ -176,10 +177,10 @@ export function useCardEditorImageUpload() {
 
       const selectedFiles = files.slice(0, remainingSlots);
       const errors: string[] = [];
-      const validFiles: File[] = [];
+      const validFiles: YeonFile[] = [];
 
       for (const file of selectedFiles) {
-        let normalizedFile: File;
+        let normalizedFile: YeonFile;
         try {
           normalizedFile = await normalizeCardEditorImageFileForUpload(file);
         } catch (error) {
@@ -264,7 +265,7 @@ export function useCardEditorImageUpload() {
       const validReplacements: ImageSourceFileReplacement[] = [];
 
       for (const replacement of selectedReplacements) {
-        let normalizedFile: File;
+        let normalizedFile: YeonFile;
         try {
           normalizedFile = await normalizeCardEditorImageFileForUpload(
             replacement.file
@@ -356,7 +357,7 @@ export function useCardEditorImageUpload() {
         let file = dataImageFile;
 
         if (!file) {
-          const response = await fetch(source);
+          const response = await fetchYeon(source);
           if (!response.ok) {
             throw new Error("이미지를 가져올 수 없습니다.");
           }
@@ -399,7 +400,7 @@ export function useCardEditorImageUpload() {
   );
 
   const handleClipboardPaste = useCallback(
-    async (editor: Editor, clipboardData: DataTransfer) => {
+    async (editor: Editor, clipboardData: YeonDataTransfer) => {
       const directFiles = extractCardEditorImageFiles(clipboardData);
       if (directFiles.length > 0) {
         return handleImageFiles(editor, directFiles);

@@ -1,31 +1,20 @@
-import * as SecureStore from "expo-secure-store";
-import { Platform } from "react-native";
+import {
+  getYeonOptionalLocalStorage,
+  getYeonSecureStorage,
+} from "@yeon/ui/native";
 
 const PRIMARY_AUTH_SESSION_TOKEN_KEY = "yeon.primary-auth.session-token";
 const inMemoryStorage = new Map<string, string>();
 
-function canUseSecureStore() {
-  return (
-    Platform.OS !== "web" &&
-    typeof SecureStore.getItemAsync === "function" &&
-    typeof SecureStore.setItemAsync === "function" &&
-    typeof SecureStore.deleteItemAsync === "function"
-  );
-}
-
 function getBrowserStorage() {
-  if (Platform.OS !== "web") {
-    return null;
-  }
-
-  return typeof globalThis.localStorage !== "undefined"
-    ? globalThis.localStorage
-    : null;
+  return getYeonOptionalLocalStorage();
 }
 
 export async function readPrimaryAuthSessionToken() {
-  if (canUseSecureStore()) {
-    return SecureStore.getItemAsync(PRIMARY_AUTH_SESSION_TOKEN_KEY);
+  const secureStorage = getYeonSecureStorage();
+
+  if (secureStorage) {
+    return secureStorage.getItemAsync(PRIMARY_AUTH_SESSION_TOKEN_KEY);
   }
 
   const browserStorage = getBrowserStorage();
@@ -42,10 +31,12 @@ export async function readPrimaryAuthSessionToken() {
 }
 
 export async function writePrimaryAuthSessionToken(sessionToken: string) {
-  if (canUseSecureStore()) {
-    await SecureStore.setItemAsync(
+  const secureStorage = getYeonSecureStorage();
+
+  if (secureStorage) {
+    await secureStorage.setItemAsync(
       PRIMARY_AUTH_SESSION_TOKEN_KEY,
-      sessionToken,
+      sessionToken
     );
     return;
   }
@@ -66,8 +57,10 @@ export async function writePrimaryAuthSessionToken(sessionToken: string) {
 }
 
 export async function clearPrimaryAuthSessionToken() {
-  if (canUseSecureStore()) {
-    await SecureStore.deleteItemAsync(PRIMARY_AUTH_SESSION_TOKEN_KEY);
+  const secureStorage = getYeonSecureStorage();
+
+  if (secureStorage) {
+    await secureStorage.deleteItemAsync(PRIMARY_AUTH_SESSION_TOKEN_KEY);
     return;
   }
 

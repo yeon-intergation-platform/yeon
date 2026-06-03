@@ -1,3 +1,4 @@
+import { fetchYeon } from "@yeon/ui/runtime/YeonBrowserRuntime";
 import {
   credentialLoginResponseSchema,
   credentialRegisterResponseSchema,
@@ -12,7 +13,6 @@ import {
   type CredentialResendVerificationBody,
   type CredentialSetPasswordBody,
 } from "@yeon/api-contract/credential";
-
 import {
   AuthFlowError,
   authErrorCodes,
@@ -83,7 +83,7 @@ async function requestCredentialSpring({
     headers.set(SESSION_TOKEN_HEADER, sessionToken);
   }
 
-  const response = await fetch(`${resolveSpringBackendBaseUrl()}${path}`, {
+  const response = await fetchYeon(`${resolveSpringBackendBaseUrl()}${path}`, {
     method,
     cache: "no-store",
     headers,

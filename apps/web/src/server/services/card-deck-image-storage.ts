@@ -4,7 +4,11 @@ import {
   PutObjectCommand,
   S3Client,
 } from "@aws-sdk/client-s3";
-
+import {
+  createYeonRandomUUID,
+  getYeonNow,
+  getYeonRandom,
+} from "@yeon/ui/runtime/YeonBrowserRuntime";
 import { ServiceError } from "./service-error";
 
 const R2_REGION = "auto";
@@ -81,13 +85,11 @@ function getR2Client() {
 }
 
 function randomId() {
-  if (
-    typeof crypto !== "undefined" &&
-    typeof crypto.randomUUID === "function"
-  ) {
-    return crypto.randomUUID();
+  const uuid = createYeonRandomUUID();
+  if (uuid) {
+    return uuid;
   }
-  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+  return `${getYeonNow().toString(36)}-${getYeonRandom().toString(36).slice(2, 10)}`;
 }
 
 function extensionForMimeType(mimeType: string) {
