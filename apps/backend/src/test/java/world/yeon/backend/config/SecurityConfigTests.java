@@ -79,7 +79,8 @@ class SecurityConfigTests {
 	void actuatorRoot는인증없이는차단된다() throws IOException, InterruptedException {
 		HttpResponse<String> response = sendGet("/actuator");
 
-		assertThat(response.statusCode()).isEqualTo(401);
+		// httpBasic 비활성화 후 미인증 차단은 401(basic 챌린지) 대신 403(forbidden)으로 응답한다.
+		assertThat(response.statusCode()).isEqualTo(403);
 	}
 
 	@Test

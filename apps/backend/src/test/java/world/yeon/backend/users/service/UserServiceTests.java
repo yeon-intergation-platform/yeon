@@ -41,7 +41,6 @@ class UserServiceTests {
 
 	@Test void 생성시이메일을정규화한다() {
 		when(repository.findById(OWNER_ID)).thenReturn(adminRow());
-		when(repository.findByEmail("user@yeon.world")).thenReturn(null);
 		when(repository.insertUser(any(), eq("user@yeon.world"), eq("유저"), any()))
 			.thenReturn(userRow("550e8400-e29b-41d4-a716-446655440000", "user@yeon.world", "유저", "user"));
 
@@ -51,10 +50,11 @@ class UserServiceTests {
 	}
 
 	@Test void 중복이메일이면409다() {
+		// 사전 findByEmail 검사를 제거하고 unique(23505) 충돌로 일원화했으므로 insert가 unique 위반을 던진다.
 		when(repository.findById(OWNER_ID)).thenReturn(adminRow());
-		when(repository.findByEmail("user@yeon.world")).thenReturn(
-			userRow("550e8400-e29b-41d4-a716-446655440000", "user@yeon.world", "유저", "user")
-		);
+		when(repository.insertUser(any(), eq("user@yeon.world"), eq("유저"), any()))
+			.thenThrow(new PersistenceException("duplicate key",
+				new java.sql.SQLException("duplicate key value violates unique constraint \"users_email_key\"", "23505")));
 
 		assertThatThrownBy(() -> service.createUser(OWNER_ID, new CreateUserRequest("user@yeon.world", "유저")))
 			.isInstanceOf(UserServiceException.class)
@@ -63,9 +63,9 @@ class UserServiceTests {
 
 	@Test void dbUnique충돌도409다() {
 		when(repository.findById(OWNER_ID)).thenReturn(adminRow());
-		when(repository.findByEmail("user@yeon.world")).thenReturn(null);
 		when(repository.insertUser(any(), eq("user@yeon.world"), eq(null), any()))
-			.thenThrow(new PersistenceException("duplicate key value violates unique constraint \"users_email_key\""));
+			.thenThrow(new PersistenceException("duplicate key",
+				new java.sql.SQLException("duplicate key value violates unique constraint \"users_email_key\"", "23505")));
 
 		assertThatThrownBy(() -> service.createUser(OWNER_ID, new CreateUserRequest("user@yeon.world", null)))
 			.isInstanceOf(UserServiceException.class)
