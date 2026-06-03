@@ -266,7 +266,8 @@ public class CardRoomService {
     }
     // finding 20: '현재 카드 resolved' 판정을 방 status가 아니라 card_room_results의
     // (room_id, current_card_id) 결과 존재 여부로 직접 한다. 다른 카드의 결과로는 통과하지 못한다.
-    var currentCard = repository.listCards(room.internalId()).stream()
+    var cards = repository.listCards(room.internalId());
+    var currentCard = cards.stream()
       .filter((card) -> card.orderIndex() == room.currentCardIndex())
       .findFirst()
       .orElse(null);
@@ -274,7 +275,7 @@ public class CardRoomService {
       throw new CardRoomServiceException(CardRoomError.CARD_NOT_RESOLVED);
     }
     int nextIndex = room.currentCardIndex() + 1;
-    int cardCount = repository.listCards(room.internalId()).size();
+    int cardCount = cards.size();
     boolean isLastCard = nextIndex >= cardCount;
     CardRoomStatus nextStatus = isLastCard ? CardRoomStatus.FINISHED : CardRoomStatus.IN_PROGRESS;
     // 다음 카드로 진입하면 공개 플래그를 리셋한다. 종료 시에는 마지막 카드 인덱스에 고정한다.
