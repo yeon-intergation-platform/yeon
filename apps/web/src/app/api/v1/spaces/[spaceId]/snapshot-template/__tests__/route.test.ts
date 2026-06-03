@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, test, vi } from "vitest";
+import { beforeEach, describe, expect, test, vi, type Mock } from "vitest";
 
 const requireAuthenticatedUser = vi.fn();
 
@@ -24,11 +24,14 @@ describe("POST /api/v1/spaces/[spaceId]/snapshot-template", () => {
     vi.stubGlobal(
       "fetch",
       vi.fn().mockResolvedValue(
-        new Response(JSON.stringify({ template: { id: "tpl_snapshot", name: "스냅샷" } }), {
-          status: 201,
-          headers: { "content-type": "application/json" },
-        }),
-      ),
+        new Response(
+          JSON.stringify({ template: { id: "tpl_snapshot", name: "스냅샷" } }),
+          {
+            status: 201,
+            headers: { "content-type": "application/json" },
+          }
+        )
+      )
     );
 
     const { POST } = await import("../route");
@@ -38,7 +41,7 @@ describe("POST /api/v1/spaces/[spaceId]/snapshot-template", () => {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ name: "스냅샷", description: "설명" }),
       }) as never,
-      { params: Promise.resolve({ spaceId: "spc_1" }) },
+      { params: Promise.resolve({ spaceId: "spc_1" }) }
     );
     const body = await response.json();
 
@@ -48,13 +51,14 @@ describe("POST /api/v1/spaces/[spaceId]/snapshot-template", () => {
       "http://127.0.0.1:8081/spaces/spc_1/snapshot-template",
       expect.objectContaining({
         method: "POST",
-        headers: expect.objectContaining({
-          "X-Yeon-User-Id": "user-1",
-          "X-Yeon-Internal-Token": "internal-token",
-          "content-type": "application/json",
-        }),
-      }),
+        headers: expect.any(Headers),
+      })
     );
+    const requestHeaders = (fetch as unknown as Mock).mock.calls[0][1]
+      .headers as Headers;
+    expect(requestHeaders.get("X-Yeon-User-Id")).toBe("user-1");
+    expect(requestHeaders.get("X-Yeon-Internal-Token")).toBe("internal-token");
+    expect(requestHeaders.get("content-type")).toBe("application/json");
   });
 
   test("Spring 404는 jsonError로 번역한다", async () => {
@@ -65,11 +69,17 @@ describe("POST /api/v1/spaces/[spaceId]/snapshot-template", () => {
     vi.stubGlobal(
       "fetch",
       vi.fn().mockResolvedValue(
-        new Response(JSON.stringify({ code: "SPACE_NOT_FOUND", message: "스페이스를 찾지 못했습니다." }), {
-          status: 404,
-          headers: { "content-type": "application/json" },
-        }),
-      ),
+        new Response(
+          JSON.stringify({
+            code: "SPACE_NOT_FOUND",
+            message: "스페이스를 찾지 못했습니다.",
+          }),
+          {
+            status: 404,
+            headers: { "content-type": "application/json" },
+          }
+        )
+      )
     );
 
     const { POST } = await import("../route");
@@ -79,7 +89,7 @@ describe("POST /api/v1/spaces/[spaceId]/snapshot-template", () => {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ name: "스냅샷" }),
       }) as never,
-      { params: Promise.resolve({ spaceId: "missing" }) },
+      { params: Promise.resolve({ spaceId: "missing" }) }
     );
     const body = await response.json();
 

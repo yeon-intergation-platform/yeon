@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, test, vi } from "vitest";
+import { beforeEach, describe, expect, test, vi, type Mock } from "vitest";
 
 const requireAuthenticatedUser = vi.fn();
 
@@ -27,12 +27,14 @@ describe("/api/v1/space-templates", () => {
         new Response(JSON.stringify({ templates: [{ id: "tmpl-1" }] }), {
           status: 200,
           headers: { "content-type": "application/json" },
-        }),
-      ),
+        })
+      )
     );
 
     const { GET } = await import("../route");
-    const response = await GET(new Request("http://localhost/api/v1/space-templates") as never);
+    const response = await GET(
+      new Request("http://localhost/api/v1/space-templates") as never
+    );
     const body = await response.json();
 
     expect(response.status).toBe(200);
@@ -40,12 +42,13 @@ describe("/api/v1/space-templates", () => {
     expect(fetch).toHaveBeenCalledWith(
       "http://127.0.0.1:8081/space-templates",
       expect.objectContaining({
-        headers: expect.objectContaining({
-          "X-Yeon-User-Id": "user-1",
-          "X-Yeon-Internal-Token": "internal-token",
-        }),
-      }),
+        headers: expect.any(Headers),
+      })
     );
+    const requestHeaders = (fetch as unknown as Mock).mock.calls[0][1]
+      .headers as Headers;
+    expect(requestHeaders.get("X-Yeon-User-Id")).toBe("user-1");
+    expect(requestHeaders.get("X-Yeon-Internal-Token")).toBe("internal-token");
   });
 
   test("GET: Spring 404는 그대로 jsonError로 번역한다", async () => {
@@ -63,13 +66,15 @@ describe("/api/v1/space-templates", () => {
           {
             status: 404,
             headers: { "content-type": "application/json" },
-          },
-        ),
-      ),
+          }
+        )
+      )
     );
 
     const { GET } = await import("../route");
-    const response = await GET(new Request("http://localhost/api/v1/space-templates") as never);
+    const response = await GET(
+      new Request("http://localhost/api/v1/space-templates") as never
+    );
     const body = await response.json();
 
     expect(response.status).toBe(404);
@@ -85,11 +90,16 @@ describe("/api/v1/space-templates", () => {
     vi.stubGlobal(
       "fetch",
       vi.fn().mockResolvedValue(
-        new Response(JSON.stringify({ template: { id: "tpl_created", name: "새 템플릿" } }), {
-          status: 201,
-          headers: { "content-type": "application/json" },
-        }),
-      ),
+        new Response(
+          JSON.stringify({
+            template: { id: "tpl_created", name: "새 템플릿" },
+          }),
+          {
+            status: 201,
+            headers: { "content-type": "application/json" },
+          }
+        )
+      )
     );
 
     const { POST } = await import("../route");
@@ -111,24 +121,27 @@ describe("/api/v1/space-templates", () => {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify(body),
-      }) as never,
+      }) as never
     );
     const parsed = await response.json();
 
     expect(response.status).toBe(201);
-    expect(parsed).toEqual({ template: { id: "tpl_created", name: "새 템플릿" } });
+    expect(parsed).toEqual({
+      template: { id: "tpl_created", name: "새 템플릿" },
+    });
     expect(fetch).toHaveBeenCalledWith(
       "http://127.0.0.1:8081/space-templates",
       expect.objectContaining({
         method: "POST",
         body: JSON.stringify(body),
-        headers: expect.objectContaining({
-          "X-Yeon-User-Id": "user-1",
-          "X-Yeon-Internal-Token": "internal-token",
-          "content-type": "application/json",
-        }),
-      }),
+        headers: expect.any(Headers),
+      })
     );
+    const requestHeaders = (fetch as unknown as Mock).mock.calls[0][1]
+      .headers as Headers;
+    expect(requestHeaders.get("X-Yeon-User-Id")).toBe("user-1");
+    expect(requestHeaders.get("X-Yeon-Internal-Token")).toBe("internal-token");
+    expect(requestHeaders.get("content-type")).toBe("application/json");
   });
 
   test("POST: Spring validation 400은 그대로 jsonError로 번역한다", async () => {
@@ -139,11 +152,17 @@ describe("/api/v1/space-templates", () => {
     vi.stubGlobal(
       "fetch",
       vi.fn().mockResolvedValue(
-        new Response(JSON.stringify({ code: "INVALID_REQUEST", message: "요청 데이터가 올바르지 않습니다." }), {
-          status: 400,
-          headers: { "content-type": "application/json" },
-        }),
-      ),
+        new Response(
+          JSON.stringify({
+            code: "INVALID_REQUEST",
+            message: "요청 데이터가 올바르지 않습니다.",
+          }),
+          {
+            status: 400,
+            headers: { "content-type": "application/json" },
+          }
+        )
+      )
     );
 
     const { POST } = await import("../route");
@@ -152,7 +171,7 @@ describe("/api/v1/space-templates", () => {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ name: "" }),
-      }) as never,
+      }) as never
     );
     const parsed = await response.json();
 

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, test, vi } from "vitest";
+import { beforeEach, describe, expect, test, vi, type Mock } from "vitest";
 
 const requireAuthenticatedUser = vi.fn();
 
@@ -27,8 +27,8 @@ describe("POST /api/v1/spaces/[spaceId]/apply-template", () => {
         new Response(JSON.stringify({ ok: true }), {
           status: 200,
           headers: { "content-type": "application/json" },
-        }),
-      ),
+        })
+      )
     );
 
     const { POST } = await import("../route");
@@ -38,7 +38,7 @@ describe("POST /api/v1/spaces/[spaceId]/apply-template", () => {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ templateId: "tpl_1" }),
       }) as never,
-      { params: Promise.resolve({ spaceId: "spc_1" }) },
+      { params: Promise.resolve({ spaceId: "spc_1" }) }
     );
     const body = await response.json();
 
@@ -48,14 +48,15 @@ describe("POST /api/v1/spaces/[spaceId]/apply-template", () => {
       "http://127.0.0.1:8081/spaces/spc_1/apply-template",
       expect.objectContaining({
         method: "POST",
-        headers: expect.objectContaining({
-          "X-Yeon-User-Id": "user-1",
-          "X-Yeon-Internal-Token": "internal-token",
-          "content-type": "application/json",
-        }),
+        headers: expect.any(Headers),
         body: JSON.stringify({ templateId: "tpl_1" }),
-      }),
+      })
     );
+    const requestHeaders = (fetch as unknown as Mock).mock.calls[0][1]
+      .headers as Headers;
+    expect(requestHeaders.get("X-Yeon-User-Id")).toBe("user-1");
+    expect(requestHeaders.get("X-Yeon-Internal-Token")).toBe("internal-token");
+    expect(requestHeaders.get("content-type")).toBe("application/json");
   });
 
   test("Spring 404는 jsonError로 번역한다", async () => {
@@ -66,11 +67,17 @@ describe("POST /api/v1/spaces/[spaceId]/apply-template", () => {
     vi.stubGlobal(
       "fetch",
       vi.fn().mockResolvedValue(
-        new Response(JSON.stringify({ code: "SPACE_TEMPLATE_NOT_FOUND", message: "템플릿을 찾지 못했습니다." }), {
-          status: 404,
-          headers: { "content-type": "application/json" },
-        }),
-      ),
+        new Response(
+          JSON.stringify({
+            code: "SPACE_TEMPLATE_NOT_FOUND",
+            message: "템플릿을 찾지 못했습니다.",
+          }),
+          {
+            status: 404,
+            headers: { "content-type": "application/json" },
+          }
+        )
+      )
     );
 
     const { POST } = await import("../route");
@@ -80,7 +87,7 @@ describe("POST /api/v1/spaces/[spaceId]/apply-template", () => {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ templateId: "missing" }),
       }) as never,
-      { params: Promise.resolve({ spaceId: "spc_1" }) },
+      { params: Promise.resolve({ spaceId: "spc_1" }) }
     );
     const body = await response.json();
 

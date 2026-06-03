@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, test, vi } from "vitest";
+import { beforeEach, describe, expect, test, vi, type Mock } from "vitest";
 
 vi.mock("@/app/api/v1/counseling-records/_shared", () => ({
   jsonError: (message: string, status: number) =>
@@ -58,10 +58,11 @@ describe("/api/v1/public-check-sessions/[token]", () => {
     expect(fetch).toHaveBeenCalledWith(
       "http://127.0.0.1:8081/public-check-sessions/token123?entry=qr&remembered=space-1%3Amember-1",
       expect.objectContaining({
-        headers: expect.objectContaining({
-          "X-Yeon-Internal-Token": "internal-token",
-        }),
+        headers: expect.any(Headers),
       })
     );
+    const requestHeaders = (fetch as unknown as Mock).mock.calls[0][1]
+      .headers as Headers;
+    expect(requestHeaders.get("X-Yeon-Internal-Token")).toBe("internal-token");
   });
 });

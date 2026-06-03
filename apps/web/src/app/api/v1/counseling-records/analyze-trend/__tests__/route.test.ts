@@ -4,34 +4,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { CounselingRecordTrendSpringBackendHttpError } from "@/server/counseling-record-trend-spring-client";
 
 const mockRequireAuthenticatedUser = vi.fn();
-const mockFetchCounselingRecordTrendSourcesFromSpring = vi.fn();
-const mockStreamTrendAnalysis = vi.fn();
+const mockStreamCounselingRecordTrendAnalysisFromSpring = vi.fn();
 
 vi.mock("../../_shared", () => ({
   jsonError: (message: string, status: number) =>
     Response.json({ message }, { status }),
   requireAuthenticatedUser: (...args: unknown[]) =>
     mockRequireAuthenticatedUser(...args),
-  withHandler: async (fn: () => Promise<Response>) => {
-    try {
-      return await fn();
-    } catch (error) {
-      if (
-        error &&
-        typeof error === "object" &&
-        "status" in error &&
-        typeof error.status === "number" &&
-        "message" in error &&
-        typeof error.message === "string"
-      ) {
-        return Response.json(
-          { message: error.message as string },
-          { status: error.status as number },
-        );
-      }
-      throw error;
-    }
-  },
 }));
 
 vi.mock("@/server/counseling-record-trend-spring-client", async () => {
@@ -40,14 +19,10 @@ vi.mock("@/server/counseling-record-trend-spring-client", async () => {
   >("@/server/counseling-record-trend-spring-client");
   return {
     ...actual,
-    fetchCounselingRecordTrendSourcesFromSpring: (...args: unknown[]) =>
-      mockFetchCounselingRecordTrendSourcesFromSpring(...args),
+    streamCounselingRecordTrendAnalysisFromSpring: (...args: unknown[]) =>
+      mockStreamCounselingRecordTrendAnalysisFromSpring(...args),
   };
 });
-
-vi.mock("@/server/services/counseling-ai-service", () => ({
-  streamTrendAnalysis: (...args: unknown[]) => mockStreamTrendAnalysis(...args),
-}));
 
 import { POST } from "../route";
 
@@ -68,54 +43,45 @@ describe("counseling-records/analyze-trend route", () => {
   it("비인증이면 guard 응답을 그대로 반환한다", async () => {
     mockRequireAuthenticatedUser.mockResolvedValue({
       currentUser: null,
-      response: Response.json({ message: "로그인이 필요합니다." }, { status: 401 }),
+      response: Response.json(
+        { message: "로그인이 필요합니다." },
+        { status: 401 }
+      ),
     });
     const response = await POST(
-      new NextRequest("http://localhost/api/v1/counseling-records/analyze-trend", {
-        method: "POST",
-        body: JSON.stringify({ recordIds: ["cr-1"] }),
-      }),
+      new NextRequest(
+        "http://localhost/api/v1/counseling-records/analyze-trend",
+        {
+          method: "POST",
+          body: JSON.stringify({ recordIds: ["cr-1"] }),
+        }
+      )
     );
     expect(response.status).toBe(401);
   });
 
-  it("Spring trend sources로 SSE 응답을 만든다", async () => {
+  it("Spring trend 분석 스트림으로 SSE 응답을 만든다", async () => {
     mockRequireAuthenticatedUser.mockResolvedValue({
       currentUser: { id: "user-1" },
       response: null,
     });
-    mockFetchCounselingRecordTrendSourcesFromSpring.mockResolvedValue({
-      records: [
-        {
-          studentName: "홍길동",
-          sessionTitle: "1회기",
-          counselingType: "대면 상담",
-          createdAt: "2026-05-01T00:00:00Z",
-          segments: [{ speakerLabel: "멘토", text: "안녕", startMs: 0 }],
-        },
-      ],
-    });
-    mockStreamTrendAnalysis.mockResolvedValue(createSseStream("data: hi\n\n"));
-
-    const response = await POST(
-      new NextRequest("http://localhost/api/v1/counseling-records/analyze-trend", {
-        method: "POST",
-        body: JSON.stringify({ recordIds: ["cr-1"] }),
-      }),
+    mockStreamCounselingRecordTrendAnalysisFromSpring.mockResolvedValue(
+      createSseStream("data: hi\n\n")
     );
 
-    expect(mockFetchCounselingRecordTrendSourcesFromSpring).toHaveBeenCalledWith("user-1", {
-      recordIds: ["cr-1"],
-    });
-    expect(mockStreamTrendAnalysis).toHaveBeenCalledWith("홍길동", [
-      {
-        studentName: "홍길동",
-        sessionTitle: "1회기",
-        counselingType: "대면 상담",
-        createdAt: "2026-05-01T00:00:00Z",
-        segments: [{ speakerLabel: "멘토", text: "안녕", startMs: 0 }],
-      },
-    ]);
+    const response = await POST(
+      new NextRequest(
+        "http://localhost/api/v1/counseling-records/analyze-trend",
+        {
+          method: "POST",
+          body: JSON.stringify({ recordIds: ["cr-1"] }),
+        }
+      )
+    );
+
+    expect(
+      mockStreamCounselingRecordTrendAnalysisFromSpring
+    ).toHaveBeenCalledWith("user-1", { recordIds: ["cr-1"] });
     expect(response.headers.get("Content-Type")).toBe("text/event-stream");
   });
 
@@ -124,18 +90,21 @@ describe("counseling-records/analyze-trend route", () => {
       currentUser: { id: "user-1" },
       response: null,
     });
-    mockFetchCounselingRecordTrendSourcesFromSpring.mockRejectedValue(
+    mockStreamCounselingRecordTrendAnalysisFromSpring.mockRejectedValue(
       new CounselingRecordTrendSpringBackendHttpError(
         400,
-        "같은 수강생의 기록만 추이 분석할 수 있습니다.",
-      ),
+        "같은 수강생의 기록만 추이 분석할 수 있습니다."
+      )
     );
 
     const response = await POST(
-      new NextRequest("http://localhost/api/v1/counseling-records/analyze-trend", {
-        method: "POST",
-        body: JSON.stringify({ recordIds: ["cr-1", "cr-2"] }),
-      }),
+      new NextRequest(
+        "http://localhost/api/v1/counseling-records/analyze-trend",
+        {
+          method: "POST",
+          body: JSON.stringify({ recordIds: ["cr-1", "cr-2"] }),
+        }
+      )
     );
     expect(response.status).toBe(400);
   });

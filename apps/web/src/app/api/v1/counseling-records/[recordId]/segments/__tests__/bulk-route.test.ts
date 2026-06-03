@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ServiceError } from "@/server/errors/service-error";
 
 const mockRequireAuthenticatedUser = vi.fn();
-const mockBulkUpdateSpeakerLabel = vi.fn();
+const mockBulkUpdateSpeakerInSpring = vi.fn();
 
 vi.mock("@/app/api/v1/counseling-records/_shared", () => ({
   jsonError: (message: string, status: number) =>
@@ -12,10 +12,16 @@ vi.mock("@/app/api/v1/counseling-records/_shared", () => ({
   requireAuthenticatedUser: (...args: unknown[]) =>
     mockRequireAuthenticatedUser(...args),
 }));
-vi.mock("@/server/services/counseling-records-service", () => ({
-  bulkUpdateSpeakerLabel: (...args: unknown[]) =>
-    mockBulkUpdateSpeakerLabel(...args),
-}));
+vi.mock("@/server/counseling-record-mutation-spring-client", async () => {
+  const actual = await vi.importActual<
+    typeof import("@/server/counseling-record-mutation-spring-client")
+  >("@/server/counseling-record-mutation-spring-client");
+  return {
+    ...actual,
+    bulkUpdateSpeakerInSpring: (...args: unknown[]) =>
+      mockBulkUpdateSpeakerInSpring(...args),
+  };
+});
 
 import { PATCH } from "../bulk/route";
 
@@ -29,16 +35,16 @@ describe("bulk speaker route", () => {
       currentUser: null,
       response: Response.json(
         { message: "로그인이 필요합니다." },
-        { status: 401 },
+        { status: 401 }
       ),
     });
 
     const response = await PATCH(
       new NextRequest(
         "http://localhost/api/v1/counseling-records/record-1/segments/bulk",
-        { method: "PATCH" },
+        { method: "PATCH" }
       ),
-      { params: Promise.resolve({ recordId: "record-1" }) },
+      { params: Promise.resolve({ recordId: "record-1" }) }
     );
 
     expect(response.status).toBe(401);
@@ -57,9 +63,9 @@ describe("bulk speaker route", () => {
           method: "PATCH",
           headers: { "content-type": "application/json" },
           body: "{bad json",
-        },
+        }
       ),
-      { params: Promise.resolve({ recordId: "record-1" }) },
+      { params: Promise.resolve({ recordId: "record-1" }) }
     );
 
     expect(response.status).toBe(400);
@@ -78,9 +84,9 @@ describe("bulk speaker route", () => {
           method: "PATCH",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({ fromSpeakerLabel: "", toSpeakerLabel: "" }),
-        },
+        }
       ),
-      { params: Promise.resolve({ recordId: "record-1" }) },
+      { params: Promise.resolve({ recordId: "record-1" }) }
     );
 
     expect(response.status).toBe(400);
@@ -91,8 +97,8 @@ describe("bulk speaker route", () => {
       currentUser: { id: "user-1" },
       response: null,
     });
-    mockBulkUpdateSpeakerLabel.mockRejectedValue(
-      new ServiceError(404, "레코드를 찾지 못했습니다."),
+    mockBulkUpdateSpeakerInSpring.mockRejectedValue(
+      new ServiceError(404, "레코드를 찾지 못했습니다.")
     );
 
     const response = await PATCH(
@@ -105,9 +111,9 @@ describe("bulk speaker route", () => {
             fromSpeakerLabel: "화자1",
             toSpeakerLabel: "멘토",
           }),
-        },
+        }
       ),
-      { params: Promise.resolve({ recordId: "record-1" }) },
+      { params: Promise.resolve({ recordId: "record-1" }) }
     );
 
     expect(response.status).toBe(404);
