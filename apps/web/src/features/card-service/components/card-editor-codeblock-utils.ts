@@ -8,14 +8,82 @@ export interface CardEditorCodeBlockInfo {
   language?: string;
 }
 
+export const CARD_EDITOR_CODE_LANGUAGE_GROUPS = [
+  {
+    label: "자주 사용",
+    options: [
+      ["code", "일반 코드"],
+      ["javascript", "JavaScript"],
+      ["typescript", "TypeScript"],
+      ["html", "HTML"],
+      ["css", "CSS"],
+      ["python", "Python"],
+      ["java", "Java"],
+      ["mermaid", "Mermaid"],
+    ],
+  },
+  {
+    label: "서버/앱",
+    options: [
+      ["c", "C"],
+      ["cpp", "C++"],
+      ["csharp", "C#"],
+      ["go", "Go"],
+      ["kotlin", "Kotlin"],
+      ["swift", "Swift"],
+      ["rust", "Rust"],
+      ["php", "PHP"],
+      ["ruby", "Ruby"],
+    ],
+  },
+  {
+    label: "데이터/문서",
+    options: [
+      ["json", "JSON"],
+      ["yaml", "YAML"],
+      ["sql", "SQL"],
+      ["bash", "Bash"],
+      ["markdown", "Markdown"],
+      ["xml", "XML"],
+    ],
+  },
+] as const;
+
+const CARD_EDITOR_CODE_LANGUAGE_ALIASES: Record<string, string> = {
+  "": "code",
+  text: "code",
+  plain: "code",
+  plaintext: "code",
+  js: "javascript",
+  jsx: "javascript",
+  ts: "typescript",
+  tsx: "typescript",
+  py: "python",
+  cxx: "cpp",
+  "c++": "cpp",
+  cs: "csharp",
+  "c#": "csharp",
+  sh: "bash",
+  shell: "bash",
+  zsh: "bash",
+  yml: "yaml",
+  md: "markdown",
+};
+
 export function normalizeCardEditorCodeLanguage(value: unknown) {
   if (typeof value !== "string") return undefined;
   const normalized = value
     .trim()
     .replace(/^language-/i, "")
     .toLowerCase();
-  if (!/^[a-z0-9_+#.-]{1,32}$/.test(normalized)) return undefined;
-  return normalized;
+  const aliased = CARD_EDITOR_CODE_LANGUAGE_ALIASES[normalized] ?? normalized;
+  if (aliased === "code") return undefined;
+  if (!/^[a-z0-9_+#.-]{1,32}$/.test(aliased)) return undefined;
+  return aliased;
+}
+
+export function getCardEditorCodeLanguageSelectValue(value: unknown) {
+  return normalizeCardEditorCodeLanguage(value) ?? "code";
 }
 
 export function getCardEditorCodeLanguageFromClassName(value: unknown) {
@@ -37,4 +105,54 @@ export function parseSingleCardEditorMarkdownCodeFence(
     code,
     language,
   };
+}
+
+function replaceMarkdownFenceLanguage(
+  value: string,
+  targetIndex: number,
+  language: string | undefined
+) {
+  let currentIndex = 0;
+  return value.replace(
+    /(^|\n)(```|~~~)([a-z0-9_+#.-]+)?([^\n]*)\n/gim,
+    (
+      match,
+      lineStart: string,
+      fence: string,
+      _oldLanguage: string,
+      rest: string
+    ) => {
+      if (currentIndex !== targetIndex) {
+        currentIndex += 1;
+        return match;
+      }
+      currentIndex += 1;
+      return `${lineStart}${fence}${language ?? ""}${rest}\n`;
+    }
+  );
+}
+
+export function updateCardEditorCodeBlockLanguageInRichContent(
+  value: string,
+  targetIndex: number,
+  nextLanguageValue: string
+) {
+  const language = normalizeCardEditorCodeLanguage(nextLanguageValue);
+
+  if (typeof DOMParser !== "undefined") {
+    const document = new DOMParser().parseFromString(value, "text/html");
+    const codeBlocks = Array.from(document.querySelectorAll("pre code"));
+    const target = codeBlocks[targetIndex];
+
+    if (target) {
+      if (language) {
+        target.setAttribute("class", `language-${language}`);
+      } else {
+        target.removeAttribute("class");
+      }
+      return document.body.innerHTML;
+    }
+  }
+
+  return replaceMarkdownFenceLanguage(value, targetIndex, language);
 }

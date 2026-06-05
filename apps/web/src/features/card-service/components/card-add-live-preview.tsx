@@ -15,11 +15,13 @@ export function CardAddPreviewFace({
   title,
   value,
   emptyText,
+  onCodeLanguageChange,
 }: {
   label: string;
   title: string;
   value: string;
   emptyText: string;
+  onCodeLanguageChange?: (index: number, language: string) => void;
 }) {
   const hasContent = isRenderableRichContent(value);
 
@@ -45,7 +47,9 @@ export function CardAddPreviewFace({
       </YeonView>
       <YeonView className={CARD_EDITOR_COMPACT_CLASS.previewFaceBody}>
         {hasContent ? (
-          <MarkdownContent>{value}</MarkdownContent>
+          <MarkdownContent onCodeLanguageChange={onCodeLanguageChange}>
+            {value}
+          </MarkdownContent>
         ) : (
           <YeonText
             as="p"
