@@ -348,6 +348,38 @@ function positionEditorSelectionFromDropEvent(
   editor.chain().setTextSelection(position.pos).focus().run();
 }
 
+function toggleCardEditorSelectedTextCodeBlock(editor: Editor) {
+  const { selection, doc } = editor.state;
+
+  if (selection.empty) {
+    return editor.chain().focus().toggleCodeBlock().run();
+  }
+
+  const selectedText = doc.textBetween(
+    selection.from,
+    selection.to,
+    "\n",
+    "\n"
+  );
+
+  if (!selectedText.trim()) {
+    return editor.chain().focus().toggleCodeBlock().run();
+  }
+
+  return editor
+    .chain()
+    .focus()
+    .insertContentAt(
+      { from: selection.from, to: selection.to },
+      {
+        type: "codeBlock",
+        attrs: { language: null },
+        content: [{ type: "text", text: selectedText }],
+      }
+    )
+    .run();
+}
+
 export function CardRichMarkdownEditor({
   label,
   value,
@@ -1064,9 +1096,7 @@ export function CardRichMarkdownEditor({
         onBlockquote={withEditor((instance) =>
           instance.chain().focus().toggleBlockquote().run()
         )}
-        onCodeBlock={withEditor((instance) =>
-          instance.chain().focus().toggleCodeBlock().run()
-        )}
+        onCodeBlock={withEditor(toggleCardEditorSelectedTextCodeBlock)}
         onTable={handleInsertTable}
         onImage={() => fileInputRef.current?.click()}
         onUndo={withEditor((instance) => instance.chain().focus().undo().run())}
