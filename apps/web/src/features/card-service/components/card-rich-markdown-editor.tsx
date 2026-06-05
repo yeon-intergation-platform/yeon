@@ -39,7 +39,10 @@ import {
   hasCardEditorClipboardImageHint,
   isCardEditorClipboardImageOnly,
 } from "./card-editor-clipboard-utils";
-import { parseSingleCardEditorMarkdownCodeFence } from "./card-editor-codeblock-utils";
+import {
+  parseSingleCardEditorMarkdownCodeFence,
+  updateCardEditorCodeBlockLanguageInRichContent,
+} from "./card-editor-codeblock-utils";
 import { getCardEditorLineLeadingIndentBeforeCursor } from "./card-editor-enter-indent-utils";
 import {
   CARD_EDITOR_IMAGE_ACCEPT,
@@ -860,6 +863,16 @@ export function CardRichMarkdownEditor({
     [disabled, editor, scheduleToolbarStateRefresh]
   );
 
+  const handlePreviewCodeLanguageChange = useCallback(
+    (index: number, language: string) => {
+      if (disabled) return;
+      onChange(
+        updateCardEditorCodeBlockLanguageInRichContent(value, index, language)
+      );
+    },
+    [disabled, onChange, value]
+  );
+
   const canUseToolbar = Boolean(editor && !disabled);
   const toolbarActiveState = toolbarState.active;
   const isTableToolbarVisible =
@@ -1215,6 +1228,7 @@ export function CardRichMarkdownEditor({
               label={label}
               value={deferredPreviewValue}
               previewHeightClassName={heightClassName.preview}
+              onCodeLanguageChange={handlePreviewCodeLanguageChange}
             />
           </YeonView>
         ) : null}

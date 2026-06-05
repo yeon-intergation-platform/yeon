@@ -55,11 +55,11 @@ export const CARD_EDITOR_COMPACT_CLASS = {
     "card-rich-editor-content h-full bg-white px-3 py-3 text-[14px] leading-6 text-[#111] outline-none",
   previewRail: "hidden min-h-0 flex-col gap-3 lg:flex lg:min-h-full",
   previewFace:
-    "flex h-full min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-[#e5e5e5] bg-white",
+    "flex h-full min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-[#e5e5e5] bg-white [contain:layout_paint]",
   previewFaceHeader:
     "flex min-h-12 items-center justify-between gap-2 border-b border-[#e5e5e5] px-3 py-2",
   previewFaceBody:
-    "min-h-0 flex-1 overflow-visible px-3 py-3 text-[13px] leading-6 text-[#111]",
+    "min-h-0 flex-1 overflow-auto px-3 py-3 text-[13px] leading-6 text-[#111]",
 } as const;
 
 const CARD_RICH_EDITOR_GLOBAL_STYLE = `
@@ -94,6 +94,46 @@ const CARD_RICH_EDITOR_GLOBAL_STYLE = `
     margin: 0.75rem 0;
     padding-left: 0.75rem;
   }
+  .card-rich-editor-content pre {
+    background: #fafafa;
+    border: 1px solid #e5e5e5;
+    border-radius: 0.875rem;
+    color: #111;
+    font-family:
+      ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+      "Courier New", monospace;
+    line-height: 1.65;
+    margin: 0.75rem 0;
+    overflow-x: auto;
+    padding: 2.25rem 0.875rem 0.875rem;
+    position: relative;
+    white-space: pre;
+  }
+  .card-rich-editor-content pre::before {
+    background: #ffffff;
+    border: 1px solid #e5e5e5;
+    border-radius: 999px;
+    color: #666;
+    content: "코드 블록";
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 700;
+    left: 0.75rem;
+    letter-spacing: 0.08em;
+    line-height: 1;
+    padding: 0.3rem 0.55rem;
+    position: absolute;
+    text-transform: uppercase;
+    top: 0.55rem;
+  }
+  .card-rich-editor-content pre code {
+    background: transparent;
+    border-radius: 0;
+    display: block;
+    font-family: inherit;
+    padding: 0;
+  }
+
   .card-rich-editor-content a {
     text-decoration: underline;
   }
@@ -236,6 +276,7 @@ interface CardPreviewSurfaceProps {
   headerClassName?: string;
   bodyClassName?: string;
   contentClassName?: string;
+  onCodeLanguageChange?: (index: number, language: string) => void;
 }
 
 export function CardPreviewSurface({
@@ -247,6 +288,7 @@ export function CardPreviewSurface({
   headerClassName = `${SHARED_FEATURE_CLASS.alignBetweenGap3} border-b border-[#e5e5e5] bg-[#fafafa] px-5 py-3 md:px-6`,
   bodyClassName = "flex-1 p-5 md:p-6",
   contentClassName,
+  onCodeLanguageChange,
 }: CardPreviewSurfaceProps) {
   const hasContent = isRenderableRichContent(value);
 
@@ -274,7 +316,10 @@ export function CardPreviewSurface({
       </YeonView>
       <YeonView className={bodyClassName}>
         {hasContent ? (
-          <MarkdownContent className={contentClassName}>
+          <MarkdownContent
+            className={contentClassName}
+            onCodeLanguageChange={onCodeLanguageChange}
+          >
             {value}
           </MarkdownContent>
         ) : (
@@ -296,10 +341,12 @@ function CardEditorPreviewComponent({
   label,
   value,
   previewHeightClassName,
+  onCodeLanguageChange,
 }: {
   label: string;
   value: string;
   previewHeightClassName: string;
+  onCodeLanguageChange?: (index: number, language: string) => void;
 }) {
   return (
     <CardPreviewSurface
@@ -307,7 +354,8 @@ function CardEditorPreviewComponent({
       eyebrow={label}
       value={value}
       emptyText="작성한 내용이 오른쪽에 실제 카드처럼 표시됩니다."
-      bodyClassName={`flex-1 p-3 md:p-4 ${previewHeightClassName}`}
+      bodyClassName={`flex-1 overflow-auto p-3 md:p-4 ${previewHeightClassName}`}
+      onCodeLanguageChange={onCodeLanguageChange}
     />
   );
 }

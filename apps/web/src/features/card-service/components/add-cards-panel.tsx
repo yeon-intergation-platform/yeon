@@ -110,7 +110,9 @@ export function AddCardsPanel({ deckId, onClose }: AddCardsPanelProps) {
     [mode]
   );
   const modalWidthClassName =
-    mode === ADD_CARD_MODES.manual ? "max-w-[1180px]" : "max-w-[880px]";
+    mode === ADD_CARD_MODES.manual
+      ? "max-w-[1180px] md:h-[min(90vh,760px)]"
+      : "max-w-[880px]";
 
   const handleManualActionStateChange = useCallback(
     (nextState: AddCardFormActionState) => {

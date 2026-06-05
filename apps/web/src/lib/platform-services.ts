@@ -70,6 +70,17 @@ export const PLATFORM_SERVICES = [
     accessPolicy: platformServiceAccessPolicies.mixed,
     status: platformServiceStatuses.live,
   },
+  {
+    slug: "discord-ai",
+    href: "https://discord-ai.yeon.world",
+    publicHref: "https://discord-ai.yeon.world",
+    title: "Discord AI 어시스턴트",
+    summary:
+      "디스코드 서버에서 AI 응답과 자동화 흐름을 바로 사용할 수 있는 봇 서비스입니다.",
+    audience: "Discord AI",
+    accessPolicy: platformServiceAccessPolicies.anonymous,
+    status: platformServiceStatuses.live,
+  },
 ] as const satisfies readonly PlatformServiceDescriptor[];
 
 const CANONICAL_ROOT_HOSTS = new Set(["yeon.world", "www.yeon.world"]);

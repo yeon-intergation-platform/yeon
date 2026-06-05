@@ -52,7 +52,13 @@ import {
   YeonMarkdownContent,
 } from "@yeon/ui/rich-content/YeonMarkdown";
 import { CardMarkdownCodeBlock } from "./card-markdown-code-block";
-import { getCardEditorCodeLanguageFromClassName } from "./card-editor-codeblock-utils";
+import { highlightCardEditorCodeHtml } from "./card-code-syntax-highlight";
+import {
+  CARD_EDITOR_CODE_LANGUAGE_GROUPS,
+  getCardEditorCodeLanguageFromClassName,
+  getCardEditorCodeLanguageSelectValue,
+  normalizeCardEditorCodeLanguage,
+} from "./card-editor-codeblock-utils";
 import {
   parseCardEditorImageWidth,
   parseOptionalCardEditorImageHeight,
@@ -67,6 +73,7 @@ interface MarkdownContentProps {
   children: string;
   className?: string;
   inverted?: boolean;
+  onCodeLanguageChange?: (index: number, language: string) => void;
 }
 
 interface MarkdownCodeElementProps {
@@ -149,8 +156,28 @@ const CARD_MARKDOWN_HTML_GLOBAL_STYLE = `
     color: ${YEON_WEB_CSS_VALUE.invertedCodeText};
   }
   .card-markdown-html .card-code-block-language {
-    letter-spacing: 0.12em;
+    background: #ffffff;
+    border: 1px solid #e5e5e5;
+    border-radius: 0.5rem;
+    color: #111;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    max-width: 180px;
+    outline: none;
+    padding: 0.25rem 0.5rem;
     text-transform: uppercase;
+  }
+  .card-markdown-html .card-code-block-language:disabled {
+    background: #fafafa;
+    color: #666;
+  }
+  .card-markdown-html
+    .card-code-block-wrapper.is-inverted
+    .card-code-block-language {
+    background: transparent;
+    border-color: ${YEON_WEB_CSS_VALUE.invertedCodeBorder};
+    color: #ffffff;
   }
   .card-markdown-html .card-code-block-copy {
     background: #ffffff;
@@ -358,20 +385,45 @@ function renderHtmlMermaidBlock(
   });
 }
 
-function decorateHtmlCodeBlocks(container: YeonElement, inverted: boolean) {
+function appendCodeLanguageOptions(select: HTMLSelectElement) {
+  CARD_EDITOR_CODE_LANGUAGE_GROUPS.forEach((group) => {
+    const optionGroup = document.createElement("optgroup");
+    optionGroup.label = group.label;
+
+    group.options.forEach(([value, label]) => {
+      const option = document.createElement("option");
+      option.value = value;
+      option.textContent = label;
+      optionGroup.appendChild(option);
+    });
+
+    select.appendChild(optionGroup);
+  });
+}
+
+function decorateHtmlCodeBlocks(
+  container: YeonElement,
+  inverted: boolean,
+  onCodeLanguageChange?: (index: number, language: string) => void
+) {
   queryYeonElements<YeonPreElement>(container, "pre").forEach((pre, index) => {
     if (hasYeonElementClass(pre.parentElement, "card-code-block-wrapper")) {
       return;
     }
 
     const code = queryYeonElement<YeonElement>(pre, "code");
+    if (!code) return;
+
     const language = getCardEditorCodeLanguageFromClassName(
       getYeonElementAttribute(code, "class") ?? ""
     );
     const htmlDocument = getYeonOwnerDocument(container);
     const wrapper = createYeonDomElement(htmlDocument, "div");
     const header = createYeonDomElement(htmlDocument, "div");
-    const languageLabel = createYeonDomElement(htmlDocument, "span");
+    const languageSelect = createYeonDomElement(
+      htmlDocument,
+      "select"
+    ) as HTMLSelectElement;
     const copyButton = createYeonDomElement(htmlDocument, "button");
     const codeText =
       getYeonNodeTextContent(code) || getYeonNodeTextContent(pre);
@@ -380,8 +432,32 @@ function decorateHtmlCodeBlocks(container: YeonElement, inverted: boolean) {
       inverted ? "is-inverted" : ""
     }`;
     header.className = "card-code-block-header";
-    languageLabel.className = "card-code-block-language";
-    setYeonNodeTextContent(languageLabel, language ?? "code");
+    languageSelect.className = "card-code-block-language";
+    languageSelect.setAttribute("aria-label", "코드 언어 선택");
+    languageSelect.disabled = !onCodeLanguageChange;
+    appendCodeLanguageOptions(languageSelect);
+    languageSelect.value = getCardEditorCodeLanguageSelectValue(language);
+    languageSelect.addEventListener("change", () => {
+      const nextLanguage = normalizeCardEditorCodeLanguage(
+        languageSelect.value
+      );
+      if (nextLanguage) {
+        setYeonElementAttribute(code, "class", `language-${nextLanguage}`);
+      } else {
+        removeYeonElementAttribute(code, "class");
+      }
+      code.innerHTML = highlightCardEditorCodeHtml(
+        codeText.replace(/\n$/, ""),
+        nextLanguage
+      );
+      onCodeLanguageChange?.(index, languageSelect.value);
+    });
+    if (language) {
+      code.innerHTML = highlightCardEditorCodeHtml(
+        codeText.replace(/\n$/, ""),
+        language
+      );
+    }
     copyButton.type = "button";
     copyButton.className = "card-code-block-copy";
     setYeonNodeTextContent(copyButton, "복사");
@@ -404,7 +480,7 @@ function decorateHtmlCodeBlocks(container: YeonElement, inverted: boolean) {
         });
     });
 
-    appendYeonChildren(header, languageLabel, copyButton);
+    appendYeonChildren(header, languageSelect, copyButton);
     insertYeonBefore(pre.parentNode, wrapper, pre);
 
     if (language === "mermaid") {
@@ -437,6 +513,7 @@ export function MarkdownContent({
   children,
   className,
   inverted = false,
+  onCodeLanguageChange,
 }: MarkdownContentProps) {
   const htmlContainerRef = useRef<YeonElement | null>(null);
   const colors = inverted
@@ -471,8 +548,14 @@ export function MarkdownContent({
 
   useEffect(() => {
     if (!isHtml || !htmlContainerRef.current) return;
-    decorateHtmlCodeBlocks(htmlContainerRef.current, inverted);
-  }, [inverted, isHtml, safeHtml]);
+    decorateHtmlCodeBlocks(
+      htmlContainerRef.current,
+      inverted,
+      onCodeLanguageChange
+    );
+  }, [inverted, isHtml, onCodeLanguageChange, safeHtml]);
+
+  let markdownCodeBlockIndex = 0;
 
   if (isHtml) {
     return (
@@ -551,10 +634,15 @@ export function MarkdownContent({
                 </YeonText>
               );
 
+            const codeBlockIndex = markdownCodeBlockIndex;
+            markdownCodeBlockIndex += 1;
+
             return (
               <CardMarkdownCodeBlock
                 className={codeChild.props.className}
                 inverted={inverted}
+                codeBlockIndex={codeBlockIndex}
+                onLanguageChange={onCodeLanguageChange}
               >
                 {codeChild.props.children}
               </CardMarkdownCodeBlock>

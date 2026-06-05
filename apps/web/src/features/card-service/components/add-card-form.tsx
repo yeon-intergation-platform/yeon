@@ -16,6 +16,7 @@ import { analyticsEvents, trackEvent } from "@/lib/analytics";
 import { useAddCard } from "../hooks";
 import { CardAddPreviewFace } from "./card-add-live-preview";
 import { CardRichMarkdownEditor } from "./card-rich-markdown-editor";
+import { updateCardEditorCodeBlockLanguageInRichContent } from "./card-editor-codeblock-utils";
 import {
   isEmptyRichContent,
   isRenderableRichContent,
@@ -164,6 +165,18 @@ export function AddCardForm({
     onDirtyChange?.(false);
   };
 
+  const handleFrontCodeLanguageChange = (index: number, language: string) => {
+    setFrontText((current) =>
+      updateCardEditorCodeBlockLanguageInRichContent(current, index, language)
+    );
+  };
+
+  const handleBackCodeLanguageChange = (index: number, language: string) => {
+    setBackText((current) =>
+      updateCardEditorCodeBlockLanguageInRichContent(current, index, language)
+    );
+  };
+
   const handleSubmit = (event: YeonFormEvent<YeonFormElement>) => {
     event.preventDefault();
     if (!canSubmit) return;
@@ -242,6 +255,7 @@ export function AddCardForm({
             title="카드 질문"
             value={deferredFrontText}
             emptyText="질문을 작성하면 카드 앞면에 표시됩니다."
+            onCodeLanguageChange={handleFrontCodeLanguageChange}
           />
         </YeonView>
         <YeonView className="min-w-0">
@@ -272,6 +286,7 @@ export function AddCardForm({
             title="카드 답변"
             value={deferredBackText}
             emptyText="답변을 작성하면 카드 뒷면에 표시됩니다."
+            onCodeLanguageChange={handleBackCodeLanguageChange}
           />
         </YeonView>
       </YeonView>
