@@ -269,6 +269,111 @@ function looksLikeHtml(value: string) {
   );
 }
 
+const CARD_EDITOR_HTML_CODE_FENCE_PATTERN =
+  /(```|~~~)([a-z0-9_+#.-]+)?\s*([\s\S]*?)\s*\1/gim;
+
+function getHtmlElementTextWithLineBreaks(element: YeonElement): string {
+  const parts: string[] = [];
+
+  Array.from(element.childNodes).forEach((node) => {
+    if (node.nodeType === Node.TEXT_NODE) {
+      parts.push(node.textContent ?? "");
+      return;
+    }
+
+    if (node.nodeType !== Node.ELEMENT_NODE) {
+      return;
+    }
+
+    const childElement = node as YeonElement;
+    if (childElement.tagName.toLowerCase() === "br") {
+      parts.push("\n");
+      return;
+    }
+
+    parts.push(getHtmlElementTextWithLineBreaks(childElement));
+  });
+
+  return parts.join("");
+}
+
+function createCardEditorHtmlParagraph(
+  htmlDocument: Document,
+  text: string
+): YeonElement | null {
+  const normalizedText = text.replace(/\s+/g, " ").trim();
+  if (!normalizedText) return null;
+
+  const paragraph = createYeonDomElement(htmlDocument, "p");
+  setYeonNodeTextContent(paragraph, normalizedText);
+  return paragraph;
+}
+
+function createCardEditorHtmlCodeBlock(
+  htmlDocument: Document,
+  languageValue: string | undefined,
+  codeValue: string | undefined
+): YeonElement {
+  const language = normalizeCardEditorCodeLanguage(languageValue);
+  const pre = createYeonDomElement(htmlDocument, "pre");
+  const code = createYeonDomElement(htmlDocument, "code");
+
+  if (language) {
+    setYeonElementAttribute(code, "class", `language-${language}`);
+  }
+  setYeonNodeTextContent(code, codeValue?.trim() ?? "");
+  appendYeonChildren(pre, code);
+  return pre;
+}
+
+function renderCardEditorMarkdownCodeFencesInHtml(value: string) {
+  const htmlDocument = parseYeonHtmlDocument(value);
+  if (!htmlDocument) return value;
+
+  queryYeonElements<YeonElement>(htmlDocument, "p").forEach((paragraph) => {
+    if (queryYeonElement(paragraph, "pre, code, img, iframe, table")) {
+      return;
+    }
+
+    const text = getHtmlElementTextWithLineBreaks(paragraph).replace(
+      /\r\n?/g,
+      "\n"
+    );
+    const replacements: YeonElement[] = [];
+    let lastIndex = 0;
+
+    for (const match of text.matchAll(CARD_EDITOR_HTML_CODE_FENCE_PATTERN)) {
+      const matchStart = match.index ?? 0;
+      const leadingText = text.slice(lastIndex, matchStart);
+      const leadingParagraph = createCardEditorHtmlParagraph(
+        htmlDocument,
+        leadingText
+      );
+      if (leadingParagraph) replacements.push(leadingParagraph);
+
+      replacements.push(
+        createCardEditorHtmlCodeBlock(htmlDocument, match[2], match[3])
+      );
+      lastIndex = matchStart + match[0].length;
+    }
+
+    if (replacements.length === 0) return;
+
+    const trailingParagraph = createCardEditorHtmlParagraph(
+      htmlDocument,
+      text.slice(lastIndex)
+    );
+    if (trailingParagraph) replacements.push(trailingParagraph);
+
+    replacements.forEach((replacement) => {
+      insertYeonBefore(paragraph.parentNode, replacement, paragraph);
+    });
+    removeYeonElement(paragraph);
+  });
+
+  return getYeonHtmlBodyInnerHtml(htmlDocument);
+}
+
 function sanitizeHtml(value: string) {
   const sanitized = sanitizeYeonHtml(value, {
     ALLOWED_TAGS: [
@@ -541,7 +646,11 @@ export function MarkdownContent({
   const safeHtml = useMemo(
     () =>
       isHtml
-        ? sanitizeHtml(renderCardEditorMarkdownTablesInHtml(contentWithEmbeds))
+        ? sanitizeHtml(
+            renderCardEditorMarkdownCodeFencesInHtml(
+              renderCardEditorMarkdownTablesInHtml(contentWithEmbeds)
+            )
+          )
         : "",
     [contentWithEmbeds, isHtml]
   );
