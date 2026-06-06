@@ -1,7 +1,7 @@
 "use client";
 import { YEON_WEB_SHARED_CLASS as SHARED_FEATURE_CLASS } from "@yeon/ui/theme/web-style-tokens";
 import { CARD_SERVICE_COMMON_CLASS } from "./card-service-common.const";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { YeonUseQueryResult as UseQueryResult } from "@yeon/ui/runtime/YeonQuery";
 import { resolveYeonWebPath } from "@yeon/ui/runtime/ports";
 import { deriveCardDeckPlayViewState } from "@yeon/ui/runtime/ports/card-deck";
@@ -23,6 +23,12 @@ import {
   useUpdateCardStudyPreference,
 } from "./hooks";
 import { PLATFORM_HOME_HREF } from "@/lib/platform-services";
+import {
+  DEFAULT_CARD_PLAY_CARD_SIZE,
+  readStoredCardPlayCardSize,
+  type CardPlayCardSize,
+  writeStoredCardPlayCardSize,
+} from "./utils/card-play-card-size";
 
 // 분기 로직은 SSOT에서 파생한다(web/mobile 공용). 복제 금지.
 function toViewState(query: UseQueryResult<CardDeckDetailResponse>) {
@@ -161,10 +167,25 @@ function ReadyPlayBody({
   const reviewMutation = useReviewCard(deckId);
   const studyModeMutation = useUpdateCardStudyPreference(deckId);
   const [studyMode, setStudyMode] = useState<CardStudyMode>(initialStudyMode);
+  const [cardSize, setCardSize] = useState<CardPlayCardSize>(
+    DEFAULT_CARD_PLAY_CARD_SIZE
+  );
 
   useEffect(() => {
     setStudyMode(initialStudyMode);
   }, [initialStudyMode]);
+
+  useEffect(() => {
+    setCardSize(readStoredCardPlayCardSize(deckId));
+  }, [deckId]);
+
+  const handleCardSizeChange = useCallback(
+    (nextSize: CardPlayCardSize) => {
+      const normalizedSize = writeStoredCardPlayCardSize(deckId, nextSize);
+      setCardSize(normalizedSize);
+    },
+    [deckId]
+  );
 
   if (!play.currentItem) {
     return null;
@@ -246,7 +267,9 @@ function ReadyPlayBody({
             frontText={play.currentItem.frontText}
             backText={play.currentItem.backText}
             isFlipped={play.isFlipped}
+            size={cardSize}
             onFlip={play.handleFlip}
+            onSizeChange={handleCardSizeChange}
           />
 
           <PlayControls
