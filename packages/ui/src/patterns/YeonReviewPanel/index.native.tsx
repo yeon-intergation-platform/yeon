@@ -27,8 +27,11 @@ export type YeonReviewPanelProps = {
   actions: YeonReviewPanelAction[];
   answerLabel: ReactNode;
   answerText: ReactNode;
+  answerVisible?: boolean;
+  onRevealAnswer?: YeonButtonProps["onPress"];
   questionLabel: ReactNode;
   questionText: ReactNode;
+  revealActionLabel?: ReactNode;
   style?: YeonViewProps["style"];
 };
 
@@ -36,8 +39,11 @@ export function YeonReviewPanel({
   actions,
   answerLabel,
   answerText,
+  answerVisible = true,
+  onRevealAnswer,
   questionLabel,
   questionText,
+  revealActionLabel,
   style,
 }: YeonReviewPanelProps) {
   return (
@@ -60,59 +66,80 @@ export function YeonReviewPanel({
             questionText
           )}
         </YeonView>
-        <YeonText
-          variant="unstyled"
-          tone="inherit"
-          style={[styles.label, styles.answerLabel]}
-        >
-          {answerLabel}
-        </YeonText>
-        <YeonView style={styles.answerBox}>
-          {typeof answerText === "string" || typeof answerText === "number" ? (
+        {answerVisible ? (
+          <>
             <YeonText
               variant="unstyled"
               tone="inherit"
-              style={styles.answerText}
+              style={[styles.label, styles.answerLabel]}
             >
-              {String(answerText)}
+              {answerLabel}
             </YeonText>
-          ) : (
-            answerText
-          )}
-        </YeonView>
+            <YeonView style={styles.answerBox}>
+              {typeof answerText === "string" ||
+              typeof answerText === "number" ? (
+                <YeonText
+                  variant="unstyled"
+                  tone="inherit"
+                  style={styles.answerText}
+                >
+                  {String(answerText)}
+                </YeonText>
+              ) : (
+                answerText
+              )}
+            </YeonView>
+          </>
+        ) : null}
       </YeonScrollView>
       <YeonView style={styles.actions}>
-        {actions.map((action, index) => {
-          const isPrimary = action.tone === "primary";
+        {answerVisible ? (
+          actions.map((action, index) => {
+            const isPrimary = action.tone === "primary";
 
-          return (
-            <YeonButton
-              accessibilityLabel={action.accessibilityLabel}
-              disabled={action.disabled}
-              key={index}
-              onPress={action.onPress}
-              variant={isPrimary ? "primary" : "secondary"}
-              style={[
-                styles.actionButton,
-                isPrimary
-                  ? styles.actionButtonPrimary
-                  : styles.actionButtonSecondary,
-                action.disabled ? styles.actionButtonDisabled : null,
-              ]}
-            >
-              <YeonText
-                variant="unstyled"
-                tone="inherit"
+            return (
+              <YeonButton
+                accessibilityLabel={action.accessibilityLabel}
+                disabled={action.disabled}
+                key={index}
+                onPress={action.onPress}
+                variant={isPrimary ? "primary" : "secondary"}
                 style={[
-                  styles.actionText,
-                  isPrimary ? styles.actionTextPrimary : null,
+                  styles.actionButton,
+                  isPrimary
+                    ? styles.actionButtonPrimary
+                    : styles.actionButtonSecondary,
+                  action.disabled ? styles.actionButtonDisabled : null,
                 ]}
               >
-                {action.label}
-              </YeonText>
-            </YeonButton>
-          );
-        })}
+                <YeonText
+                  variant="unstyled"
+                  tone="inherit"
+                  style={[
+                    styles.actionText,
+                    isPrimary ? styles.actionTextPrimary : null,
+                  ]}
+                >
+                  {action.label}
+                </YeonText>
+              </YeonButton>
+            );
+          })
+        ) : onRevealAnswer ? (
+          <YeonButton
+            onPress={onRevealAnswer}
+            variant="primary"
+            style={[styles.actionButton, styles.actionButtonPrimary]}
+          >
+            <YeonText
+              variant="unstyled"
+              tone="inherit"
+              style={[styles.actionText, styles.actionTextPrimary]}
+            >
+              {revealActionLabel ?? answerLabel}
+            </YeonText>
+          </YeonButton>
+        ) : null}
       </YeonView>
     </YeonView>
   );

@@ -123,6 +123,8 @@ export const CARD_SERVICE_TEXT = {
     reviewHardLabel: "어려움 · 1일 후",
     reviewGoodLabel: "좋음 · 3일 후",
     reviewEasyLabel: "쉬움 · 4일 후",
+    reviewRevealAnswerLabel: "정답 확인하기",
+    reviewSkipLabel: "스킵",
     reviewSavingLabel: "저장 중...",
     prevLabel: "← 이전",
     nextLabel: "다음 →",

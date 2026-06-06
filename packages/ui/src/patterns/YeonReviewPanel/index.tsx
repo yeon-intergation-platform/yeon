@@ -19,18 +19,24 @@ export type YeonReviewPanelProps = {
   actions: YeonReviewPanelAction[];
   answerLabel: ReactNode;
   answerText: ReactNode;
+  answerVisible?: boolean;
   className?: string;
+  onRevealAnswer?: () => void;
   questionLabel: ReactNode;
   questionText: ReactNode;
+  revealActionLabel?: ReactNode;
 };
 
 export function YeonReviewPanel({
   actions,
   answerLabel,
   answerText,
+  answerVisible = true,
   className,
+  onRevealAnswer,
   questionLabel,
   questionText,
+  revealActionLabel,
 }: YeonReviewPanelProps) {
   return (
     <YeonView
@@ -49,39 +55,53 @@ export function YeonReviewPanel({
         <YeonText className="mt-2 rounded-2xl border border-[#e5e5e5] bg-[#fafafa] p-[18px] text-[16px] leading-7 text-[#111]">
           {questionText}
         </YeonText>
-        <YeonText
-          tone="secondary"
-          className="mt-6 text-[13px] font-black tracking-[0.08em]"
-        >
-          {answerLabel}
-        </YeonText>
-        <YeonText className="mt-2 rounded-2xl bg-[#111] p-[18px] text-[16px] leading-7 text-white">
-          {answerText}
-        </YeonText>
+        {answerVisible ? (
+          <>
+            <YeonText
+              tone="secondary"
+              className="mt-6 text-[13px] font-black tracking-[0.08em]"
+            >
+              {answerLabel}
+            </YeonText>
+            <YeonText className="mt-2 rounded-2xl bg-[#111] p-[18px] text-[16px] leading-7 text-white">
+              {answerText}
+            </YeonText>
+          </>
+        ) : null}
       </YeonView>
       <YeonView className="mt-3.5 grid gap-2.5">
-        {actions.map((action, index) => {
-          const isPrimary = action.tone === "primary";
+        {answerVisible ? (
+          actions.map((action, index) => {
+            const isPrimary = action.tone === "primary";
 
-          return (
-            <YeonButton
-              aria-label={action.accessibilityLabel}
-              disabled={action.disabled}
-              key={index}
-              onClick={action.onPress}
-              variant={isPrimary ? "primary" : "secondary"}
-              className={joinClassNames(
-                "min-h-[54px] rounded-xl text-[14px] font-black",
-                isPrimary
-                  ? "border-[#111] bg-[#111] text-white"
-                  : "border-[#e5e5e5] bg-white text-[#111]",
-                action.disabled ? "opacity-50" : undefined
-              )}
-            >
-              {action.label}
-            </YeonButton>
-          );
-        })}
+            return (
+              <YeonButton
+                aria-label={action.accessibilityLabel}
+                disabled={action.disabled}
+                key={index}
+                onClick={action.onPress}
+                variant={isPrimary ? "primary" : "secondary"}
+                className={joinClassNames(
+                  "min-h-[54px] rounded-xl text-[14px] font-black",
+                  isPrimary
+                    ? "border-[#111] bg-[#111] text-white"
+                    : "border-[#e5e5e5] bg-white text-[#111]",
+                  action.disabled ? "opacity-50" : undefined
+                )}
+              >
+                {action.label}
+              </YeonButton>
+            );
+          })
+        ) : onRevealAnswer ? (
+          <YeonButton
+            onClick={onRevealAnswer}
+            variant="primary"
+            className="min-h-[54px] rounded-xl border-[#111] bg-[#111] text-[14px] font-black text-white"
+          >
+            {revealActionLabel ?? answerLabel}
+          </YeonButton>
+        ) : null}
       </YeonView>
     </YeonView>
   );
