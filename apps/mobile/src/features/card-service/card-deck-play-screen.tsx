@@ -61,6 +61,7 @@ export function CardDeckPlayScreen({ deckId }: CardDeckPlayScreenProps) {
   const [sessionToken, setSessionToken] = useState<string | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isAnswerVisible, setAnswerVisible] = useState(false);
+  const [isReviewAnswerVisible, setReviewAnswerVisible] = useState(false);
   const [studyMode, setStudyMode] = useState<CardStudyMode>(
     CARD_STUDY_MODES.flashcard
   );
@@ -128,8 +129,7 @@ export function CardDeckPlayScreen({ deckId }: CardDeckPlayScreenProps) {
           ),
         });
       }
-      setCurrentIndex(0);
-      setAnswerVisible(false);
+      moveToNextReviewCard();
     },
   });
 
@@ -145,6 +145,7 @@ export function CardDeckPlayScreen({ deckId }: CardDeckPlayScreenProps) {
     if (currentIndex >= detailQuery.data.items.length) {
       setCurrentIndex(0);
       setAnswerVisible(false);
+      setReviewAnswerVisible(false);
     }
   }, [currentIndex, detailQuery.data]);
 
@@ -165,6 +166,7 @@ export function CardDeckPlayScreen({ deckId }: CardDeckPlayScreenProps) {
     }
     setCurrentIndex((prev) => prev + 1);
     setAnswerVisible(false);
+    setReviewAnswerVisible(false);
   }
 
   function movePrev() {
@@ -176,6 +178,7 @@ export function CardDeckPlayScreen({ deckId }: CardDeckPlayScreenProps) {
     }
     setCurrentIndex((prev) => prev - 1);
     setAnswerVisible(false);
+    setReviewAnswerVisible(false);
   }
 
   const currentCard = detailQuery.data?.items[currentIndex] ?? null;
@@ -199,7 +202,29 @@ export function CardDeckPlayScreen({ deckId }: CardDeckPlayScreenProps) {
 
   function handleStudyModeChange(nextMode: CardStudyMode) {
     setStudyMode(nextMode);
+    setReviewAnswerVisible(false);
     studyModeMutation.mutate(nextMode);
+  }
+
+  function moveToNextReviewCard() {
+    if (!detailQuery.data || detailQuery.data.items.length === 0) {
+      setReviewAnswerVisible(false);
+      return;
+    }
+
+    setCurrentIndex((prev) =>
+      prev + 1 >= detailQuery.data.items.length ? 0 : prev + 1
+    );
+    setAnswerVisible(false);
+    setReviewAnswerVisible(false);
+  }
+
+  function handleSkipReview() {
+    if (reviewMutation.isPending) {
+      return;
+    }
+
+    moveToNextReviewCard();
   }
 
   function handleReview(difficulty: CardReviewDifficulty) {
@@ -208,6 +233,9 @@ export function CardDeckPlayScreen({ deckId }: CardDeckPlayScreenProps) {
     }
     reviewMutation.mutate({ difficulty, itemId: currentCard.id });
   }
+
+  const isReviewModeReady =
+    studyMode === CARD_STUDY_MODES.review && Boolean(currentCard);
 
   if (isBooting) {
     return (
@@ -228,9 +256,21 @@ export function CardDeckPlayScreen({ deckId }: CardDeckPlayScreenProps) {
           leftAccessibilityLabel={CARD_SERVICE_TEXT.shared.backLabel}
           leftLabel={CARD_SERVICE_TEXT.play.headerBackLabel}
           onLeftPress={() => router.back()}
-          rightAccessibilityLabel={CARD_SERVICE_TEXT.play.homeLabel}
-          rightLabel={CARD_SERVICE_TEXT.play.homeLabel}
-          onRightPress={() => router.replace(CARD_SERVICE_ROUTE)}
+          rightAccessibilityLabel={
+            isReviewModeReady
+              ? CARD_SERVICE_TEXT.play.reviewSkipLabel
+              : CARD_SERVICE_TEXT.play.homeLabel
+          }
+          rightLabel={
+            isReviewModeReady
+              ? CARD_SERVICE_TEXT.play.reviewSkipLabel
+              : CARD_SERVICE_TEXT.play.homeLabel
+          }
+          onRightPress={() =>
+            isReviewModeReady
+              ? handleSkipReview()
+              : router.replace(CARD_SERVICE_ROUTE)
+          }
           subtitle={
             detail
               ? `${currentIndex + 1} / ${detail.items.length} · ${getModeBadge(mode)}`
@@ -302,8 +342,13 @@ export function CardDeckPlayScreen({ deckId }: CardDeckPlayScreenProps) {
                 answerText={
                   <CardMarkdown source={currentCard.backText} tone="inverted" />
                 }
+                answerVisible={isReviewAnswerVisible}
+                onRevealAnswer={() => setReviewAnswerVisible(true)}
                 questionLabel={CARD_SERVICE_TEXT.play.reviewModeQuestionLabel}
                 questionText={<CardMarkdown source={currentCard.frontText} />}
+                revealActionLabel={
+                  CARD_SERVICE_TEXT.play.reviewRevealAnswerLabel
+                }
               />
             ) : (
               <>

@@ -152,6 +152,17 @@ const STUDY_MODE_OPTIONS = [
   { mode: CARD_STUDY_MODES.review, label: "복습 모드" },
 ] as const;
 
+function isReviewShortcutBlockedTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) {
+    return false;
+  }
+
+  return (
+    target.isContentEditable ||
+    ["A", "BUTTON", "INPUT", "SELECT", "TEXTAREA"].includes(target.tagName)
+  );
+}
+
 function ReadyPlayBody({
   deckId,
   deckTitle,
@@ -170,6 +181,8 @@ function ReadyPlayBody({
   const [cardSize, setCardSize] = useState<CardPlayCardSize>(
     DEFAULT_CARD_PLAY_CARD_SIZE
   );
+  const [isReviewAnswerVisible, setReviewAnswerVisible] = useState(false);
+  const currentItemId = play.currentItem?.id ?? null;
 
   useEffect(() => {
     setStudyMode(initialStudyMode);
@@ -179,6 +192,10 @@ function ReadyPlayBody({
     setCardSize(readStoredCardPlayCardSize(deckId));
   }, [deckId]);
 
+  useEffect(() => {
+    setReviewAnswerVisible(false);
+  }, [currentItemId, studyMode]);
+
   const handleCardSizeChange = useCallback(
     (nextSize: CardPlayCardSize) => {
       const normalizedSize = writeStoredCardPlayCardSize(deckId, nextSize);
@@ -187,12 +204,73 @@ function ReadyPlayBody({
     [deckId]
   );
 
-  if (!play.currentItem) {
-    return null;
-  }
+  const moveToNextReviewCard = useCallback(() => {
+    setReviewAnswerVisible(false);
+
+    if (play.currentIndex >= play.items.length - 1) {
+      play.handleFirst();
+      return;
+    }
+
+    play.handleNext();
+  }, [play]);
+
+  const handleRevealReviewAnswer = useCallback(() => {
+    setReviewAnswerVisible(true);
+  }, []);
+
+  const handleSkipReview = useCallback(() => {
+    if (reviewMutation.isPending) {
+      return;
+    }
+
+    moveToNextReviewCard();
+  }, [moveToNextReviewCard, reviewMutation.isPending]);
+
+  useEffect(() => {
+    if (studyMode !== CARD_STUDY_MODES.review || !currentItemId) {
+      return;
+    }
+
+    function handleReviewShortcut(event: KeyboardEvent) {
+      if (
+        event.defaultPrevented ||
+        event.altKey ||
+        event.ctrlKey ||
+        event.metaKey ||
+        isReviewShortcutBlockedTarget(event.target)
+      ) {
+        return;
+      }
+
+      if (event.key.toLowerCase() === "s") {
+        event.preventDefault();
+        handleSkipReview();
+        return;
+      }
+
+      if (
+        !isReviewAnswerVisible &&
+        (event.code === "Space" || event.key === " ")
+      ) {
+        event.preventDefault();
+        handleRevealReviewAnswer();
+      }
+    }
+
+    window.addEventListener("keydown", handleReviewShortcut);
+    return () => window.removeEventListener("keydown", handleReviewShortcut);
+  }, [
+    currentItemId,
+    handleRevealReviewAnswer,
+    handleSkipReview,
+    isReviewAnswerVisible,
+    studyMode,
+  ]);
 
   function handleStudyModeChange(nextMode: CardStudyMode) {
     setStudyMode(nextMode);
+    setReviewAnswerVisible(false);
     studyModeMutation.mutate(nextMode);
   }
 
@@ -200,8 +278,12 @@ function ReadyPlayBody({
     if (!play.currentItem) return;
     reviewMutation.mutate(
       { difficulty, itemId: play.currentItem.id },
-      { onSuccess: () => play.handleFirst() }
+      { onSuccess: moveToNextReviewCard }
     );
+  }
+
+  if (!play.currentItem) {
+    return null;
   }
 
   return (
@@ -256,9 +338,12 @@ function ReadyPlayBody({
       {studyMode === CARD_STUDY_MODES.review ? (
         <DeckPlayReviewModeCard
           currentIndex={play.currentIndex}
+          isAnswerVisible={isReviewAnswerVisible}
           isSaving={reviewMutation.isPending}
           item={play.currentItem}
+          onRevealAnswer={handleRevealReviewAnswer}
           onReview={handleReview}
+          onSkip={handleSkipReview}
           totalCount={play.items.length}
         />
       ) : (
