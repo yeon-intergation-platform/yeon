@@ -2,6 +2,7 @@ import { createElement } from "react";
 import { YeonText } from "../../primitives/YeonText/index.native";
 
 export const YeonTiptapImageExtension = undefined;
+export const YeonTiptapCodeBlockExtension = undefined;
 export const YeonTiptapLinkExtension = undefined;
 export const YeonTiptapPlaceholderExtension = undefined;
 export const YeonTiptapTableExtension = undefined;

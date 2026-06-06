@@ -2,12 +2,15 @@ import type {
   YeonDocumentPointerEvent,
   YeonElement,
   YeonEventTarget,
+  YeonSelectElement,
 } from "@yeon/ui/types";
 import {
   mergeAttributes,
+  YeonTiptapCodeBlockExtension as CodeBlockExtension,
   YeonTiptapImageExtension as ImageExtension,
   YeonTiptapNode as Node,
   type YeonTiptapNodeViewRendererProps as NodeViewRendererProps,
+  type YeonTiptapProseMirrorNode as ProseMirrorNode,
 } from "@yeon/ui/rich-content/YeonTiptap";
 import { addYeonDocumentEventListener } from "@yeon/ui/hooks/YeonBrowserHooks";
 import {
@@ -33,6 +36,120 @@ import {
   buildCardEditorYouTubeEmbedAttrs,
   extractCardEditorYouTubeEmbedInfo,
 } from "./card-editor-youtube-utils";
+import {
+  CARD_EDITOR_CODE_LANGUAGE_GROUPS,
+  getCardEditorCodeLanguageSelectValue,
+  normalizeCardEditorCodeLanguage,
+} from "./card-editor-codeblock-utils";
+
+function updateCodeBlockNodeLanguage(
+  props: NodeViewRendererProps,
+  nextLanguageValue: string
+) {
+  const pos = props.getPos();
+  if (typeof pos !== "number") return;
+
+  const currentNode = props.view.state.doc.nodeAt(pos);
+  if (!currentNode) return;
+
+  props.view.dispatch(
+    props.view.state.tr.setNodeMarkup(pos, undefined, {
+      ...currentNode.attrs,
+      language: normalizeCardEditorCodeLanguage(nextLanguageValue) ?? null,
+    })
+  );
+}
+
+function appendCodeLanguageOptions(select: YeonSelectElement) {
+  const htmlDocument = getYeonOwnerDocument(select);
+
+  CARD_EDITOR_CODE_LANGUAGE_GROUPS.forEach((group) => {
+    const optionGroup = createYeonDomElement(htmlDocument, "optgroup");
+    optionGroup.label = group.label;
+
+    group.options.forEach(([value, label]) => {
+      const option = createYeonDomElement(htmlDocument, "option");
+      option.value = value;
+      option.textContent = label;
+      optionGroup.appendChild(option);
+    });
+
+    select.appendChild(optionGroup);
+  });
+}
+
+function createCardEditorCodeBlockNodeView(props: NodeViewRendererProps) {
+  const htmlDocument = getYeonOwnerDocument(props.view.dom);
+  const wrapperElement = createYeonDomElement(htmlDocument, "div");
+  const headerElement = createYeonDomElement(htmlDocument, "div");
+  const labelElement = createYeonDomElement(htmlDocument, "label");
+  const selectElement = createYeonDomElement(
+    htmlDocument,
+    "select"
+  ) as YeonSelectElement;
+  const preElement = createYeonDomElement(htmlDocument, "pre");
+  const codeElement = createYeonDomElement(htmlDocument, "code");
+  const codeContentClassName = "card-rich-editor-code-block-content";
+
+  const renderLanguage = (languageValue: unknown) => {
+    const language = normalizeCardEditorCodeLanguage(languageValue);
+    selectElement.value = getCardEditorCodeLanguageSelectValue(language);
+    if (language) {
+      setYeonElementAttribute(
+        codeElement,
+        "class",
+        `${codeContentClassName} language-${language}`
+      );
+      wrapperElement.dataset.language = language;
+      return;
+    }
+
+    setYeonElementAttribute(codeElement, "class", codeContentClassName);
+    delete wrapperElement.dataset.language;
+  };
+
+  wrapperElement.className = "card-rich-editor-code-block-node";
+  headerElement.className = "card-rich-editor-code-block-header";
+  headerElement.contentEditable = "false";
+  labelElement.className = "card-rich-editor-code-block-label";
+  setYeonNodeTextContent(labelElement, "코드 언어");
+  selectElement.className = "card-rich-editor-code-block-language";
+  selectElement.setAttribute("aria-label", "코드 언어 선택");
+  appendCodeLanguageOptions(selectElement);
+  selectElement.addEventListener("change", () => {
+    updateCodeBlockNodeLanguage(props, selectElement.value);
+    props.view.focus();
+  });
+
+  preElement.spellcheck = false;
+  codeElement.className = codeContentClassName;
+
+  headerElement.appendChild(labelElement);
+  headerElement.appendChild(selectElement);
+  preElement.appendChild(codeElement);
+  wrapperElement.appendChild(headerElement);
+  wrapperElement.appendChild(preElement);
+  renderLanguage(props.node.attrs.language);
+
+  return {
+    dom: wrapperElement,
+    contentDOM: codeElement,
+    update: (node: ProseMirrorNode) => {
+      if (node.type !== props.node.type) return false;
+      renderLanguage(node.attrs.language);
+      return true;
+    },
+  };
+}
+
+export const CardEditorCodeBlockExtension = CodeBlockExtension.extend({
+  addNodeView() {
+    return (props) => createCardEditorCodeBlockNodeView(props);
+  },
+}).configure({
+  enableTabIndentation: true,
+  tabSize: 4,
+});
 
 function updateImageNodeSize(
   props: NodeViewRendererProps,

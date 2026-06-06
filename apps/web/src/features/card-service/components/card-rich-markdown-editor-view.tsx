@@ -133,6 +133,53 @@ const CARD_RICH_EDITOR_GLOBAL_STYLE = `
     font-family: inherit;
     padding: 0;
   }
+  .card-rich-editor-content .card-rich-editor-code-block-node {
+    background: #fafafa;
+    border: 1px solid #e5e5e5;
+    border-radius: 0.875rem;
+    margin: 0.75rem 0;
+    overflow: hidden;
+  }
+  .card-rich-editor-content .card-rich-editor-code-block-header {
+    align-items: center;
+    background: #fff;
+    border-bottom: 1px solid #e5e5e5;
+    display: flex;
+    gap: 0.5rem;
+    justify-content: space-between;
+    padding: 0.45rem 0.65rem;
+  }
+  .card-rich-editor-content .card-rich-editor-code-block-label {
+    color: #666;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    line-height: 1;
+    text-transform: uppercase;
+  }
+  .card-rich-editor-content .card-rich-editor-code-block-language {
+    background: #fff;
+    border: 1px solid #e5e5e5;
+    border-radius: 0.5rem;
+    color: #111;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    line-height: 1;
+    max-width: 180px;
+    outline: none;
+    padding: 0.3rem 0.45rem;
+    text-transform: uppercase;
+  }
+  .card-rich-editor-content .card-rich-editor-code-block-node pre {
+    border: 0;
+    border-radius: 0;
+    margin: 0;
+    padding: 0.875rem;
+  }
+  .card-rich-editor-content .card-rich-editor-code-block-node pre::before {
+    content: none;
+  }
 
   .card-rich-editor-content a {
     text-decoration: underline;

@@ -1,4 +1,5 @@
 export { default as YeonTiptapImageExtension } from "@tiptap/extension-image";
+export { default as YeonTiptapCodeBlockExtension } from "@tiptap/extension-code-block";
 export { default as YeonTiptapLinkExtension } from "@tiptap/extension-link";
 export { default as YeonTiptapPlaceholderExtension } from "@tiptap/extension-placeholder";
 export { Table as YeonTiptapTableExtension } from "@tiptap/extension-table";

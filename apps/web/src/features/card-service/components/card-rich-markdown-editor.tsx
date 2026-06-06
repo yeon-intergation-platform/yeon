@@ -22,6 +22,7 @@ import {
   useState,
 } from "react";
 import {
+  CardEditorCodeBlockExtension,
   CardEditorYouTubeEmbedExtension,
   ResizableCardEditorImageExtension,
 } from "./card-editor-extensions";
@@ -596,12 +597,10 @@ export function CardRichMarkdownEditor({
     editable: !disabled,
     extensions: [
       StarterKit.configure({
-        codeBlock: {
-          enableTabIndentation: true,
-          tabSize: 4,
-        },
+        codeBlock: false,
         heading: { levels: [2, 3] },
       }),
+      CardEditorCodeBlockExtension,
       UnderlineExtension,
       LinkExtension.configure({
         openOnClick: false,
