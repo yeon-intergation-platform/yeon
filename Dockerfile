@@ -5,7 +5,11 @@ FROM node:22-bookworm-slim AS base
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 
-RUN corepack enable
+ARG PNPM_VERSION=11.5.2
+
+RUN corepack enable \
+    && corepack prepare "pnpm@${PNPM_VERSION}" --activate \
+    && pnpm config set store-dir /pnpm/store --global
 
 # ── Stage 1: turbo prune ──────────────────────────────────────────────────────
 # @yeon/web에 필요한 workspace 패키지만 추출한다.
