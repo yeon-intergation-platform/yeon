@@ -58,8 +58,12 @@ export function useDeckPlayState(items: CardDeckItemDto[]) {
   const currentIndex = clampIndex(rawIndex, visibleItems.length);
   const [isFlipped, setFlipped] = useState(false);
 
-  // 인덱스가 바뀌면 카드 뒷면 상태 리셋
+  // 인덱스 변경 렌더에서는 이전 카드의 뒷면 상태를 보여주지 않고 즉시 앞면을 보여준다.
   const prevIndexRef = useRef(currentIndex);
+  const isNavigatingToAnotherCard = prevIndexRef.current !== currentIndex;
+  const visibleIsFlipped = isNavigatingToAnotherCard ? false : isFlipped;
+  const shouldAnimateFlip = !isNavigatingToAnotherCard;
+
   useEffect(() => {
     if (prevIndexRef.current !== currentIndex) {
       prevIndexRef.current = currentIndex;
@@ -120,7 +124,8 @@ export function useDeckPlayState(items: CardDeckItemDto[]) {
       items: visibleItems,
       currentIndex,
       currentItem,
-      isFlipped,
+      isFlipped: visibleIsFlipped,
+      shouldAnimateFlip,
       isShuffled,
       handleFlip,
       handlePrev,
@@ -132,7 +137,8 @@ export function useDeckPlayState(items: CardDeckItemDto[]) {
       visibleItems,
       currentIndex,
       currentItem,
-      isFlipped,
+      visibleIsFlipped,
+      shouldAnimateFlip,
       isShuffled,
       handleFlip,
       handlePrev,
