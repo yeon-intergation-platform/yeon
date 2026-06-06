@@ -23,6 +23,7 @@ interface PlayCardProps {
   frontText: string;
   backText: string;
   isFlipped: boolean;
+  shouldAnimateFlip: boolean;
   size: CardPlayCardSize;
   onFlip: () => void;
   onSizeChange: (size: CardPlayCardSize) => void;
@@ -44,6 +45,7 @@ export function PlayCard({
   frontText,
   backText,
   isFlipped,
+  shouldAnimateFlip,
   size,
   onFlip,
   onSizeChange,
@@ -137,7 +139,9 @@ export function PlayCard({
         className="relative h-full w-full cursor-pointer rounded-2xl border-0 bg-transparent p-0 text-left outline-none [perspective:1200px] focus-visible:ring-2 focus-visible:ring-[#111]"
       >
         <YeonView
-          className={`relative h-full w-full [transform-style:preserve-3d] transition-transform duration-[350ms] ease-in-out ${
+          className={`relative h-full w-full [transform-style:preserve-3d] ${
+            shouldAnimateFlip ? "transition-transform duration-[350ms] ease-in-out" : ""
+          } ${
             isFlipped
               ? "[transform:rotateY(180deg)]"
               : "[transform:rotateY(0deg)]"

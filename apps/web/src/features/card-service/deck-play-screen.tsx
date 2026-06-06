@@ -267,6 +267,7 @@ function ReadyPlayBody({
             frontText={play.currentItem.frontText}
             backText={play.currentItem.backText}
             isFlipped={play.isFlipped}
+            shouldAnimateFlip={play.shouldAnimateFlip}
             size={cardSize}
             onFlip={play.handleFlip}
             onSizeChange={handleCardSizeChange}
