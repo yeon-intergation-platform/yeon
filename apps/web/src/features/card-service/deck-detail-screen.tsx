@@ -97,7 +97,7 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
         as="header"
         className="hidden border-b border-[#e5e5e5] px-5 py-3 md:block md:px-12"
       >
-        <YeonView className="mx-auto flex max-w-[1280px] items-center justify-between">
+        <YeonView className="mx-auto flex max-w-5xl items-center justify-between">
           <YeonLink
             href={PLATFORM_HOME_HREF}
             className={`${CARD_SERVICE_COMMON_CLASS.panelTextEmphasis} no-underline transition-colors hover:opacity-70`}
@@ -119,7 +119,7 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
 
       <YeonView
         as="main"
-        className="mx-auto max-w-[1280px] px-5 py-5 md:px-8 md:py-6 lg:px-10"
+        className="mx-auto max-w-5xl px-5 py-5 md:px-8 md:py-6 lg:px-10"
       >
         {state.kind === "loading" ? (
           <YeonText
