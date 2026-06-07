@@ -72,26 +72,16 @@ export function DeckPlayReviewModeCard({
         <YeonText as="span" variant="unstyled" tone="inherit">
           카드 {currentIndex + 1}/{totalCount}
         </YeonText>
-        <YeonView className="flex items-center gap-3">
-          <YeonText
-            as="span"
-            variant="unstyled"
-            tone="inherit"
-            className="hidden text-[#666] sm:inline"
-          >
-            자기평가형 복습
-          </YeonText>
-          <YeonButton
-            type="button"
-            variant="secondary"
-            onClick={onSkip}
-            disabled={isSaving}
-            aria-label="현재 복습 카드 스킵"
-            className="rounded-xl px-3 py-2 text-[13px]"
-          >
-            스킵
-          </YeonButton>
-        </YeonView>
+        <YeonButton
+          type="button"
+          variant="secondary"
+          onClick={onSkip}
+          disabled={isSaving}
+          aria-label="현재 복습 카드 스킵"
+          className="rounded-xl px-3 py-2 text-[13px]"
+        >
+          스킵
+        </YeonButton>
       </YeonView>
 
       <YeonView className="mt-6 grid gap-5">
@@ -161,7 +151,7 @@ export function DeckPlayReviewModeCard({
           onClick={onRevealAnswer}
           className="mt-6 w-full px-4 py-4 text-[14px]"
         >
-          정답 확인하기
+          정답보기
         </YeonButton>
       )}
     </YeonSurface>

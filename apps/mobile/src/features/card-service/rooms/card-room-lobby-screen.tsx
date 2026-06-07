@@ -35,7 +35,7 @@ function getCardRoomHref(roomId: string): Href {
   return {
     pathname: YEON_ROUTE_TEMPLATES.cardRoomDetail,
     params: { roomId },
-  } as Href;
+  } as unknown as Href;
 }
 
 function statusLabel(status: CardRoomSummaryDto["status"]) {

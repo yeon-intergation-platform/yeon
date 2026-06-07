@@ -305,7 +305,7 @@ function ReadyPlayBody({
             className={`mt-1 ${SHARED_FEATURE_CLASS.text12Soft}`}
           >
             {studyMode === CARD_STUDY_MODES.review
-              ? "문제와 정답을 함께 확인하고 난이도로 다음 복습일을 저장합니다."
+              ? "먼저 문제를 보고 정답보기 후 난이도로 다음 복습일을 저장합니다."
               : "카드를 클릭하거나 Space·Enter를 눌러 뒤집을 수 있어요."}
           </YeonText>
         </YeonView>
