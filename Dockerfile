@@ -3,7 +3,7 @@
 FROM node:22-bookworm-slim AS base
 
 ENV PNPM_HOME="/pnpm"
-ENV PATH="$PNPM_HOME:$PATH"
+ENV PATH="$PNPM_HOME/bin:$PNPM_HOME:$PATH"
 
 ARG PNPM_VERSION=11.5.2
 
