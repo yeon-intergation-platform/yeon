@@ -94,7 +94,7 @@ function parseVoiceOffer(
   const base = parseVoiceBase(payload);
   if (!base) return null;
   const obj = payload as JsonObject;
-  if (typeof obj.sdp !== "string" || obj.sdp.trim().length === 0) return null;
+  if (!isNonEmptyString(obj.sdp)) return null;
   return {
     ...base,
     sdp: obj.sdp,
