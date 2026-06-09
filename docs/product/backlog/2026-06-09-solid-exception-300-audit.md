@@ -500,7 +500,7 @@
 204. **[완료][P2] 긴 함수 책임 분리** `apps/mobile/src/features/card-service/runtime-adapters/card-item-repository.ts:39` — 원칙 `S`. 세션 토큰 해석, 게스트 저장소 repository, 서버 API repository 책임을 `card-item-session.ts`, `card-item-guest-repository.ts`, `card-item-server-repository.ts`로 분리해 public factory는 구현 선택만 담당하게 축소했다. 근거: `return token ? createMobileServerCardItemRepository(token) : createMobileGuestCardItemRepository();`
 205. **[완료][P2] 큰 파일 책임 분리** `apps/race-server/src/rooms/territory-battle-room.ts:1` — 원칙 `S`. 점령전 payload 파싱, player 생성/스냅샷, team/snapshot 집계 책임을 `territory-battle-message.ts`, `territory-battle-players.ts`, `territory-battle-snapshot.ts`로 분리해 Room 클래스는 Colyseus lifecycle과 라운드/단어 제출 흐름만 담당하게 축소했다. 근거: `createTerritoryBattleSnapshot({`
 206. **[완료][P2] 컴포넌트 hook 책임 분리** `apps/web/src/features/card-service/auth-context.tsx:31` — 원칙 `S`. 인증 상태 동기화, mounted guard, focus/visibility refresh hook 책임을 `use-card-service-auth-state.ts`로 분리해 context 파일은 Provider wiring과 context read만 담당하게 축소했다. 근거: `const value = useCardServiceAuthState(isAuthenticated);`
-207. **[P2] 긴 함수 책임 분리** `apps/web/src/features/card-service/card-room-chat-panel.tsx:24` — 원칙 `S`. 90라인 함수다. 검증/변환/부수효과를 작은 함수로 분리한다. 근거: `export function CardRoomChatPanel({`
+207. **[완료][P2] 긴 함수 책임 분리** `apps/web/src/features/card-service/card-room-chat-panel.tsx:24` — 원칙 `S`. 채팅 패널 class 계산, 헤더, 메시지 리스트/버블, 입력 composer를 `card-room-chat-panel-parts.tsx`로 분리해 panel 함수는 섹션 조립만 담당하게 축소했다. 근거: `CardRoomChatMessageList`, `CardRoomChatComposer`
 208. **[P2] 컴포넌트 hook 책임 분리** `apps/web/src/features/card-service/card-room-create-screen.tsx:32` — 원칙 `S`. 컴포넌트 인근 hook 호출 후보 12개다. 데이터/폼/이벤트 hook으로 분리한다. 근거: `export function CardRoomCreateForm({`
 209. **[P2] 긴 함수 책임 분리** `apps/web/src/features/card-service/card-room-create-screen.tsx:32` — 원칙 `S`. 279라인 함수다. 검증/변환/부수효과를 작은 함수로 분리한다. 근거: `export function CardRoomCreateForm({`
 210. **[P2] 긴 함수 책임 분리** `apps/web/src/features/card-service/card-room-header.tsx:43` — 원칙 `S`. 123라인 함수다. 검증/변환/부수효과를 작은 함수로 분리한다. 근거: `export function CardRoomHeader({`
@@ -620,3 +620,7 @@
 ## 51차 적용 완료
 
 - 항목 206 완료: 웹 카드 인증 context에서 인증 상태 동기화, mounted guard, 세션 refresh, focus/visibility 이벤트 hook 책임을 `use-card-service-auth-state.ts`로 이동했다. `auth-context.tsx`는 context 생성, Provider wiring, context read helper만 담당한다.
+
+## 52차 적용 완료
+
+- 항목 207 완료: 웹 카드방 채팅 패널에서 panel class 계산, 헤더, 메시지 리스트/버블, 채팅 입력 composer를 `card-room-chat-panel-parts.tsx`로 분리했다. `CardRoomChatPanel`은 props를 받아 섹션을 조립하는 책임만 담당한다.
