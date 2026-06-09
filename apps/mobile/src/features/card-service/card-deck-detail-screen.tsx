@@ -137,6 +137,16 @@ function parseBulkCardsOrThrow(
   return cards;
 }
 
+function getCardDetailErrorMessage(error: unknown, fallbackMessage: string) {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  if (typeof error === "string" && error.trim().length > 0) {
+    return `${fallbackMessage} 원인: ${error.trim()}`;
+  }
+  return `${fallbackMessage} 원인: 처리할 수 없는 오류 형식(${String(error)})`;
+}
+
 type DeckCardRowProps = {
   item: CardDeckItemDto;
   index: number;
@@ -391,11 +401,13 @@ export function CardDeckDetailScreen({ deckId }: CardDeckDetailScreenProps) {
       });
       closeSheet();
     } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : CARD_SERVICE_TEXT.detail.createErrorMessage;
-      showYeonAlert(CARD_SERVICE_TEXT.state.errorTitle, message);
+      showYeonAlert(
+        CARD_SERVICE_TEXT.state.errorTitle,
+        getCardDetailErrorMessage(
+          error,
+          CARD_SERVICE_TEXT.detail.createErrorMessage
+        )
+      );
     }
   }
 
@@ -403,11 +415,13 @@ export function CardDeckDetailScreen({ deckId }: CardDeckDetailScreenProps) {
     try {
       await bulkCreateMutation.mutateAsync();
     } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : CARD_SERVICE_TEXT.detail.createErrorMessage;
-      showYeonAlert(CARD_SERVICE_TEXT.state.errorTitle, message);
+      showYeonAlert(
+        CARD_SERVICE_TEXT.state.errorTitle,
+        getCardDetailErrorMessage(
+          error,
+          CARD_SERVICE_TEXT.detail.createErrorMessage
+        )
+      );
     }
   }
 
@@ -433,11 +447,13 @@ export function CardDeckDetailScreen({ deckId }: CardDeckDetailScreenProps) {
             try {
               await bulkReplaceMutation.mutateAsync();
             } catch (error) {
-              const message =
-                error instanceof Error
-                  ? error.message
-                  : CARD_SERVICE_TEXT.detail.createErrorMessage;
-              showYeonAlert(CARD_SERVICE_TEXT.state.errorTitle, message);
+              showYeonAlert(
+                CARD_SERVICE_TEXT.state.errorTitle,
+                getCardDetailErrorMessage(
+                  error,
+                  CARD_SERVICE_TEXT.detail.createErrorMessage
+                )
+              );
             }
           },
         },
@@ -463,11 +479,13 @@ export function CardDeckDetailScreen({ deckId }: CardDeckDetailScreenProps) {
         itemId: sheetState.item.id,
       });
     } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : CARD_SERVICE_TEXT.detail.updateErrorMessage;
-      showYeonAlert(CARD_SERVICE_TEXT.state.errorTitle, message);
+      showYeonAlert(
+        CARD_SERVICE_TEXT.state.errorTitle,
+        getCardDetailErrorMessage(
+          error,
+          CARD_SERVICE_TEXT.detail.updateErrorMessage
+        )
+      );
     }
   }
 
@@ -483,11 +501,13 @@ export function CardDeckDetailScreen({ deckId }: CardDeckDetailScreenProps) {
               try {
                 await deleteMutation.mutateAsync(itemId);
               } catch (error) {
-                const message =
-                  error instanceof Error
-                    ? error.message
-                    : CARD_SERVICE_TEXT.detail.deleteErrorMessage;
-                showYeonAlert(CARD_SERVICE_TEXT.state.errorTitle, message);
+                showYeonAlert(
+                  CARD_SERVICE_TEXT.state.errorTitle,
+                  getCardDetailErrorMessage(
+                    error,
+                    CARD_SERVICE_TEXT.detail.deleteErrorMessage
+                  )
+                );
               }
             },
             style: "destructive",

@@ -83,6 +83,10 @@
 
 - 항목 71~78 완료: 모바일 카드 상세 화면의 deckId 누락/일괄 입력 파싱 실패를 `CardDeckDetailInputError`와 operation별 guard로 변환했다. 반복 `덱 ID가 없습니다.`/`인식할 수 있는 카드가 없습니다.` 대신 실패 동작과 원인(경로 deckId 누락, 인식된 카드 0장, 필요 마커)을 메시지에 포함한다.
 
+## 10차 적용 완료
+
+- 항목 79~83 완료: 모바일 카드 상세 화면의 반복 catch 분기를 `getCardDetailErrorMessage`로 통합했다. `Error`는 원 메시지를 보존하고, string/기타 unknown 값은 fallback 메시지에 원인 문자열을 붙여 예외 정보를 숨기지 않게 했다.
+
 ## 300개 TODO
 
 > 아래 항목은 실제 코드 경로/라인을 기준으로 작성한다. `원칙`은 SOLID 또는 예외 처리 원칙 번호를 표시한다.
@@ -183,11 +187,11 @@
 76. **[완료][P2] 일반 Error 메시지 구체화** `apps/mobile/src/features/card-service/card-deck-detail-screen.tsx:234` — 원칙 `E4/E6`. 오류 메시지에 실패한 입력/외부 의존/상태 원인을 드러낸다. 근거: `throw new Error(CARD_SERVICE_TEXT.detail.noParseResultMessage);`
 77. **[완료][P2] 일반 Error 메시지 구체화** `apps/mobile/src/features/card-service/card-deck-detail-screen.tsx:253` — 원칙 `E4/E6`. 오류 메시지에 실패한 입력/외부 의존/상태 원인을 드러낸다. 근거: `throw new Error(CARD_SERVICE_TEXT.detail.missingDeckIdMessage);`
 78. **[완료][P2] 일반 Error 메시지 구체화** `apps/mobile/src/features/card-service/card-deck-detail-screen.tsx:269` — 원칙 `E4/E6`. 오류 메시지에 실패한 입력/외부 의존/상태 원인을 드러낸다. 근거: `throw new Error(CARD_SERVICE_TEXT.detail.missingDeckIdMessage);`
-79. **[P2] TypeScript catch 처리 책임 명확화** `apps/mobile/src/features/card-service/card-deck-detail-screen.tsx:347` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
-80. **[P2] TypeScript catch 처리 책임 명확화** `apps/mobile/src/features/card-service/card-deck-detail-screen.tsx:359` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
-81. **[P2] TypeScript catch 처리 책임 명확화** `apps/mobile/src/features/card-service/card-deck-detail-screen.tsx:389` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
-82. **[P2] TypeScript catch 처리 책임 명확화** `apps/mobile/src/features/card-service/card-deck-detail-screen.tsx:419` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
-83. **[P2] TypeScript catch 처리 책임 명확화** `apps/mobile/src/features/card-service/card-deck-detail-screen.tsx:439` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
+79. **[완료][P2] TypeScript catch 처리 책임 명확화** `apps/mobile/src/features/card-service/card-deck-detail-screen.tsx:347` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
+80. **[완료][P2] TypeScript catch 처리 책임 명확화** `apps/mobile/src/features/card-service/card-deck-detail-screen.tsx:359` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
+81. **[완료][P2] TypeScript catch 처리 책임 명확화** `apps/mobile/src/features/card-service/card-deck-detail-screen.tsx:389` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
+82. **[완료][P2] TypeScript catch 처리 책임 명확화** `apps/mobile/src/features/card-service/card-deck-detail-screen.tsx:419` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
+83. **[완료][P2] TypeScript catch 처리 책임 명확화** `apps/mobile/src/features/card-service/card-deck-detail-screen.tsx:439` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
 84. **[P2] TypeScript catch 처리 책임 명확화** `apps/mobile/src/features/card-service/card-deck-list-screen.tsx:140` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
 85. **[P2] 일반 Error 메시지 구체화** `apps/mobile/src/features/card-service/card-deck-play-screen.tsx:73` — 원칙 `E4/E6`. 오류 메시지에 실패한 입력/외부 의존/상태 원인을 드러낸다. 근거: `throw new Error(CARD_SERVICE_TEXT.detail.missingDeckIdMessage);`
 86. **[P2] 일반 Error 메시지 구체화** `apps/mobile/src/features/card-service/card-deck-play-screen.tsx:82` — 원칙 `E4/E6`. 오류 메시지에 실패한 입력/외부 의존/상태 원인을 드러낸다. 근거: `throw new Error(CARD_SERVICE_TEXT.shared.notFoundMessage);`
