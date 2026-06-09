@@ -555,9 +555,9 @@
 
 ### OCP
 
-256. **[P3] 상태 분기 매핑/전략화** `apps/backend/src/main/java/world/yeon/backend/card_decks/assets/service/CardDeckAssetStorage.java:68` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (attempt == 3 || !RETRYABLE_STATUS_CODES.contains(error.statusCode())) {`
-257. **[P3] 상태 분기 매핑/전략화** `apps/backend/src/main/java/world/yeon/backend/card_decks/assets/service/CardDeckAssetStorage.java:99` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (error.statusCode() == 404) {`
-258. **[P3] 상태 분기 매핑/전략화** `apps/backend/src/main/java/world/yeon/backend/card_decks/assets/service/CardDeckAssetStorage.java:102` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (attempt == 3 || !RETRYABLE_STATUS_CODES.contains(error.statusCode())) {`
+256. **[완료][P3] 상태 분기 매핑/전략화** `apps/backend/src/main/java/world/yeon/backend/card_decks/assets/service/CardDeckAssetStorage.java:68` — 원칙 `O`. 업로드 재시도/실패 판단을 `StorageOperation.UPLOAD` 정책으로 옮겨 S3 상태 코드 분기를 호출 흐름에서 분리했다. 근거: `StorageOperation.UPLOAD`
+257. **[완료][P3] 상태 분기 매핑/전략화** `apps/backend/src/main/java/world/yeon/backend/card_decks/assets/service/CardDeckAssetStorage.java:99` — 원칙 `O`. 다운로드 404 변환을 `NotFoundPolicy.CARD_ASSET`로 분리해 not-found 상태 처리를 정책 값으로 확장 가능하게 했다. 근거: `NotFoundPolicy.CARD_ASSET`
+258. **[완료][P3] 상태 분기 매핑/전략화** `apps/backend/src/main/java/world/yeon/backend/card_decks/assets/service/CardDeckAssetStorage.java:102` — 원칙 `O`. 다운로드 재시도/실패 판단을 `StorageOperation.DOWNLOAD` 정책으로 옮기고 원인 예외를 보존하게 했다. 근거: `StorageOperation.DOWNLOAD`
 259. **[P3] 상태 분기 매핑/전략화** `apps/backend/src/main/java/world/yeon/backend/card_rooms/service/CardRoomService.java:157` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (!CardRoomStatus.WAITING.matches(room.status()) && request != null`
 260. **[P3] 상태 분기 매핑/전략화** `apps/backend/src/main/java/world/yeon/backend/card_rooms/service/CardRoomService.java:181` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (!CardRoomStatus.WAITING.matches(room.status())) {`
 261. **[P3] 상태 분기 매핑/전략화** `apps/backend/src/main/java/world/yeon/backend/card_rooms/service/CardRoomService.java:186` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (participants.stream().anyMatch((item) -> !CardRoomParticipantRole.fromNullable(item.role(), CardRoomParticipantRole.UNASSIGNED).isAssigned())) {`
@@ -657,3 +657,9 @@
 
 - 항목 254 완료: `YeonRichDom`의 DOMParser 생성자 조회를 `YeonDomParserPort`로 감싸 HTML 파싱 유틸이 브라우저 전역 구현 대신 포트에 의존하게 했다.
 - 항목 255 완료: `YeonBrowserRuntime`의 local/session storage 조회를 `YeonBrowserStoragePort`로 감싸 storage 접근 실패 처리와 noop fallback 경계를 한 곳으로 모았다.
+
+## 76차 적용 완료
+
+- 항목 256 완료: 카드 에셋 업로드의 S3 상태 코드/최대 시도 분기를 `StorageOperation.UPLOAD` 재시도 정책으로 분리했다.
+- 항목 257 완료: 카드 에셋 다운로드의 404 변환을 `NotFoundPolicy.CARD_ASSET`로 분리했다.
+- 항목 258 완료: 카드 에셋 다운로드의 재시도/실패 판단을 `StorageOperation.DOWNLOAD`로 분리하고 변환 예외에 원인 예외를 보존했다.
