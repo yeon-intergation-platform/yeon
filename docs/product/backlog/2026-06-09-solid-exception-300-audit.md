@@ -537,7 +537,7 @@
 238. **[완료][P3] 브라우저 전역 직접 의존 점검** `apps/web/src/features/card-service/components/play-card.tsx:104` — 원칙 `D`. pointercancel listener 등록을 포트 내부로 이동했다. 근거: `browserWindow.addEventListener("pointercancel", stopDrag);`
 239. **[완료][P3] 브라우저 전역 직접 의존 점검** `apps/web/src/features/card-service/deck-play-screen.tsx:261` — 원칙 `D`. 복습 단축키 keydown 등록을 `CardReviewShortcutBrowserPort.subscribeKeydown`으로 감싸 화면 로직이 `window` 구체 구현에 직접 의존하지 않게 했다. 근거: `return CARD_REVIEW_SHORTCUT_BROWSER_PORT.subscribeKeydown(`
 240. **[완료][P3] 브라우저 전역 직접 의존 점검** `apps/web/src/features/card-service/deck-play-screen.tsx:262` — 원칙 `D`. 복습 단축키 keydown 해제를 포트의 unsubscribe 반환값으로 통일해 이벤트 자원 정리 경계를 숨겼다. 근거: `return () => browserWindow.removeEventListener("keydown", handler);`
-241. **[P3] 브라우저 전역 직접 의존 점검** `packages/domain/src/life-os.ts:672` — 원칙 `D`. 브라우저 전역 직접 접근을 런타임 포트로 감싸 SSR/테스트 안전성을 높인다. 근거: `const plannedCount = window.filter(`
+241. **[완료][P3] 브라우저 전역 직접 의존 점검** `packages/domain/src/life-os.ts:672` — 원칙 `D`. 실제 브라우저 전역 접근은 아니고 지역 변수 `window`가 전역처럼 보인 오탐이라 `classificationWindow`로 변경해 domain 순수 로직이 브라우저 전역을 shadowing하지 않게 했다. 근거: `const classificationWindow = classifications.slice(index, index + 3);`
 242. **[P3] 브라우저 전역 직접 의존 점검** `packages/ui/src/hooks/YeonBrowserHooks/index.ts:9` — 원칙 `D`. 브라우저 전역 직접 접근을 런타임 포트로 감싸 SSR/테스트 안전성을 높인다. 근거: `const previousOverflow = document.body.style.overflow;`
 243. **[P3] 브라우저 전역 직접 의존 점검** `packages/ui/src/hooks/YeonBrowserHooks/index.ts:10` — 원칙 `D`. 브라우저 전역 직접 접근을 런타임 포트로 감싸 SSR/테스트 안전성을 높인다. 근거: `document.body.style.overflow = "hidden";`
 244. **[P3] 브라우저 전역 직접 의존 점검** `packages/ui/src/hooks/YeonBrowserHooks/index.ts:13` — 원칙 `D`. 브라우저 전역 직접 접근을 런타임 포트로 감싸 SSR/테스트 안전성을 높인다. 근거: `document.body.style.overflow = previousOverflow;`
