@@ -95,6 +95,10 @@
 
 - 항목 85~87 완료: 모바일 카드 학습 화면의 deckId 누락과 비회원 덱 미존재 오류를 `CardDeckPlayInputError`와 operation별 guard로 변환했다. 학습 상세 조회/비회원 상세 조회/복습 저장 실패 메시지에 실패 동작과 경로 deckId 누락 또는 저장소 미존재 원인을 포함한다.
 
+## 13차 적용 완료
+
+- 항목 88~89 완료: 모바일 카드 온보딩 게이트의 이메일/소셜 로그인 catch 메시지 변환을 `getCardLoginErrorMessage`로 통합했다. `Error`는 원 메시지를 보존하고 string/기타 unknown 값은 fallback 메시지에 원인 문자열을 붙인다.
+
 ## 300개 TODO
 
 > 아래 항목은 실제 코드 경로/라인을 기준으로 작성한다. `원칙`은 SOLID 또는 예외 처리 원칙 번호를 표시한다.
@@ -204,8 +208,8 @@
 85. **[완료][P2] 일반 Error 메시지 구체화** `apps/mobile/src/features/card-service/card-deck-play-screen.tsx:73` — 원칙 `E4/E6`. 오류 메시지에 실패한 입력/외부 의존/상태 원인을 드러낸다. 근거: `throw new Error(CARD_SERVICE_TEXT.detail.missingDeckIdMessage);`
 86. **[완료][P2] 일반 Error 메시지 구체화** `apps/mobile/src/features/card-service/card-deck-play-screen.tsx:82` — 원칙 `E4/E6`. 오류 메시지에 실패한 입력/외부 의존/상태 원인을 드러낸다. 근거: `throw new Error(CARD_SERVICE_TEXT.shared.notFoundMessage);`
 87. **[완료][P2] 일반 Error 메시지 구체화** `apps/mobile/src/features/card-service/card-deck-play-screen.tsx:115` — 원칙 `E4/E6`. 오류 메시지에 실패한 입력/외부 의존/상태 원인을 드러낸다. 근거: `throw new Error(CARD_SERVICE_TEXT.detail.missingDeckIdMessage);`
-88. **[P2] TypeScript catch 처리 책임 명확화** `apps/mobile/src/features/card-service/card-onboarding-gate.tsx:73` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
-89. **[P2] TypeScript catch 처리 책임 명확화** `apps/mobile/src/features/card-service/card-onboarding-gate.tsx:102` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
+88. **[완료][P2] TypeScript catch 처리 책임 명확화** `apps/mobile/src/features/card-service/card-onboarding-gate.tsx:73` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
+89. **[완료][P2] TypeScript catch 처리 책임 명확화** `apps/mobile/src/features/card-service/card-onboarding-gate.tsx:102` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
 90. **[P2] TypeScript catch 처리 책임 명확화** `apps/mobile/src/features/card-service/card-service-session.ts:50` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
 91. **[P2] 일반 Error 메시지 구체화** `apps/mobile/src/features/card-service/card-session-context.tsx:44` — 원칙 `E4/E6`. 오류 메시지에 실패한 입력/외부 의존/상태 원인을 드러낸다. 근거: `throw new Error(`
 92. **[P2] TypeScript catch 처리 책임 명확화** `apps/mobile/src/features/card-service/markdown-text-field.tsx:245` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`

@@ -40,6 +40,16 @@ type CardOnboardingGateProps = {
   onContinueAsGuest: () => void | Promise<void>;
 };
 
+function getCardLoginErrorMessage(error: unknown, fallbackMessage: string) {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  if (typeof error === "string" && error.trim().length > 0) {
+    return `${fallbackMessage} 원인: ${error.trim()}`;
+  }
+  return `${fallbackMessage} 원인: 처리할 수 없는 오류 형식(${String(error)})`;
+}
+
 // 첫 진입(또는 로그인 재진입) 게이트. 소셜 로그인 우선 레이아웃.
 export function CardOnboardingGate({
   onAuthenticated,
@@ -71,11 +81,13 @@ export function CardOnboardingGate({
     try {
       await loginMutation.mutateAsync();
     } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : CARD_SERVICE_TEXT.list.loginErrorMessage;
-      showYeonAlert(CARD_SERVICE_TEXT.list.loginErrorTitle, message);
+      showYeonAlert(
+        CARD_SERVICE_TEXT.list.loginErrorTitle,
+        getCardLoginErrorMessage(
+          error,
+          CARD_SERVICE_TEXT.list.loginErrorMessage
+        )
+      );
     }
   }
 
@@ -100,11 +112,13 @@ export function CardOnboardingGate({
       }
       // cancelled: 사용자가 닫은 것이므로 조용히 무시.
     } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : CARD_SERVICE_TEXT.list.loginErrorMessage;
-      showYeonAlert(CARD_SERVICE_TEXT.list.loginErrorTitle, message);
+      showYeonAlert(
+        CARD_SERVICE_TEXT.list.loginErrorTitle,
+        getCardLoginErrorMessage(
+          error,
+          CARD_SERVICE_TEXT.list.loginErrorMessage
+        )
+      );
     } finally {
       setSocialPendingProvider(null);
     }
