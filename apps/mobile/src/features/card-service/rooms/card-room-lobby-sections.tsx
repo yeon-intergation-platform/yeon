@@ -1,4 +1,8 @@
-import type { CardRoomSummaryDto } from "@yeon/api-contract/card-rooms";
+import {
+  CARD_ROOM_STATUS,
+  type CardRoomStatus,
+  type CardRoomSummaryDto,
+} from "@yeon/api-contract/card-rooms";
 import {
   YeonButton,
   YeonFormStack as FormStack,
@@ -15,12 +19,15 @@ import {
 } from "./card-room-lobby-state";
 import { cardRoomLobbyStyles as styles } from "./card-room-lobby-styles";
 
+const CARD_ROOM_STATUS_LABELS: Record<CardRoomStatus, string> = {
+  [CARD_ROOM_STATUS.CLOSED]: CARD_SERVICE_TEXT.rooms.statusFinished,
+  [CARD_ROOM_STATUS.FINISHED]: CARD_SERVICE_TEXT.rooms.statusFinished,
+  [CARD_ROOM_STATUS.IN_PROGRESS]: CARD_SERVICE_TEXT.rooms.statusStudying,
+  [CARD_ROOM_STATUS.WAITING]: CARD_SERVICE_TEXT.rooms.statusWaiting,
+};
+
 function statusLabel(status: CardRoomSummaryDto["status"]) {
-  if (status === "waiting") return CARD_SERVICE_TEXT.rooms.statusWaiting;
-  if (status === "finished" || status === "closed") {
-    return CARD_SERVICE_TEXT.rooms.statusFinished;
-  }
-  return CARD_SERVICE_TEXT.rooms.statusStudying;
+  return CARD_ROOM_STATUS_LABELS[status];
 }
 
 type RoomCardProps = {
