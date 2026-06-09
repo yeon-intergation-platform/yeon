@@ -115,6 +115,10 @@
 
 - 항목 100~108 완료: race-server 카드방 leave/request catch는 16차 helper 반영 상태를 확인해 완료 처리했고, typing-race-room의 기존 catch 후보는 현재 코드에서 제거된 상태를 확인했다. 웹 커뮤니티 404 catch는 처리 가능한 Spring 404만 null로 변환하고 나머지는 재전파하는 경계로 유지했다. 웹 카드 인증 Provider 누락, 카드방 생성/입장, 게스트 덱 개수 확인 실패는 원인을 포함한 helper/전용 Error/사용자 실패 메시지로 구체화했다.
 
+## 45차 적용 완료
+
+- 항목 200 완료: 모바일 `CardRoomLobbyScreen`의 카드방 목록 조회, 필터/검색 파생 상태, 카드방 라우팅, 생성 sheet 열림 상태를 `card-room-lobby-state.ts`로 이동했다. Header/filter/search/list/card UI는 `card-room-lobby-sections.tsx`, 스타일은 `card-room-lobby-styles.ts`, route helper는 `card-room-lobby-route.ts`로 분리해 screen 컴포넌트는 로비 섹션 조립만 담당한다.
+
 ## 44차 적용 완료
 
 - 항목 199 완료: 모바일 `CardRoomCreateSheet`의 덱 조회, 생성 body 구성, 게스트 덱 스냅샷 변환, 참가자 토큰 저장, 오류 표시 부수효과를 `use-card-room-create-sheet-state.ts` hook으로 이동했다. 덱/공개범위 선택 UI와 스타일은 section/style 파일로 분리해 sheet 컴포넌트는 bottom sheet form 조립만 담당한다.
@@ -485,7 +489,7 @@
 197. **[완료][P2] 긴 함수 책임 분리** `apps/mobile/src/features/card-service/card-session-context.tsx:52` — 원칙 `S`. 세션 boot/authenticate/guest/logout 상태 전이와 부수효과를 `use-card-session-state.ts`로 분리해 Provider는 Context 연결만 담당하게 축소했다. 근거: `const session = useCardSessionState();`
 198. **[완료][P2] 긴 함수 책임 분리** `apps/mobile/src/features/card-service/markdown-text-field.tsx:170` — 원칙 `S`. selection/업로드/서식 삽입 상태를 `use-markdown-text-field-controller.ts`로, 툴바/아이콘/스타일/서식 helper를 `markdown-text-field-toolbar.tsx`/`markdown-text-field-styles.ts`/`markdown-text-field-formatting.ts`로 분리해 화면 함수는 텍스트 필드 조립만 담당하게 축소했다. 근거: `const controller = useMarkdownTextFieldController({`
 199. **[완료][P2] 긴 함수 책임 분리** `apps/mobile/src/features/card-service/rooms/card-room-create-sheet.tsx:38` — 원칙 `S`. 카드방 생성 입력 검증/덱 조회/게스트 스냅샷 변환/참가자 토큰 저장/오류 표시를 `use-card-room-create-sheet-state.ts`로, 덱·공개범위 선택 UI와 스타일을 `card-room-create-sheet-sections.tsx`/`card-room-create-sheet-styles.ts`로 분리해 sheet 컴포넌트는 form 조립만 담당하게 축소했다. 근거: `const state = useCardRoomCreateSheetState({ onCreated, visible });`
-200. **[P2] 긴 함수 책임 분리** `apps/mobile/src/features/card-service/rooms/card-room-lobby-screen.tsx:88` — 원칙 `S`. 118라인 함수다. 검증/변환/부수효과를 작은 함수로 분리한다. 근거: `export function CardRoomLobbyScreen() {`
+200. **[완료][P2] 긴 함수 책임 분리** `apps/mobile/src/features/card-service/rooms/card-room-lobby-screen.tsx:88` — 원칙 `S`. 카드방 목록 조회/필터·검색 파생/라우팅/생성 sheet 상태를 `card-room-lobby-state.ts`로, 카드·필터·검색·목록 UI를 `card-room-lobby-sections.tsx`로, 스타일과 route helper를 `card-room-lobby-styles.ts`/`card-room-lobby-route.ts`로 분리해 screen은 로비 섹션 조립만 담당하게 축소했다. 근거: `const lobby = useCardRoomLobbyState();`
 201. **[P2] 큰 파일 책임 분리** `apps/mobile/src/features/card-service/rooms/card-room-screen.tsx:1` — 원칙 `S`. 691라인 파일이다. 단일 책임 원칙 기준으로 화면/상태/IO/변환 책임 분리 후보다. 근거: `import type { CardRoomRole } from "@yeon/race-shared";`
 202. **[P2] 긴 함수 책임 분리** `apps/mobile/src/features/card-service/rooms/card-room-screen.tsx:40` — 원칙 `S`. 353라인 함수다. 검증/변환/부수효과를 작은 함수로 분리한다. 근거: `export function CardRoomScreen({ roomId }: CardRoomScreenProps) {`
 203. **[P2] 긴 함수 책임 분리** `apps/mobile/src/features/card-service/rooms/use-card-room-connection.ts:43` — 원칙 `S`. 143라인 함수다. 검증/변환/부수효과를 작은 함수로 분리한다. 근거: `export function useCardRoomConnection(`
