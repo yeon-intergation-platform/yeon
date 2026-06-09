@@ -12,6 +12,20 @@ import {
   type ToolbarAction,
 } from "./markdown-text-field-formatting";
 
+function createMarkdownInsertionLengthPolicy(maxLength?: number): {
+  getExceededMessage: () => string;
+  isExceeded: (result: InsertResult) => boolean;
+} {
+  return {
+    getExceededMessage: () =>
+      typeof maxLength === "number"
+        ? `최대 ${maxLength}자까지 입력할 수 있어요. 이미지를 삽입하면 글자 수가 초과됩니다.`
+        : "입력 가능한 글자 수를 초과했습니다.",
+    isExceeded: (result) =>
+      typeof maxLength === "number" && result.value.length > maxLength,
+  };
+}
+
 interface UseMarkdownTextFieldControllerParams {
   maxLength?: number;
   onChangeText: (value: string) => void;
@@ -36,12 +50,10 @@ export function useMarkdownTextFieldController({
   valueRef.current = value;
 
   function commit(result: InsertResult) {
-    if (typeof maxLength === "number" && result.value.length > maxLength) {
+    const lengthPolicy = createMarkdownInsertionLengthPolicy(maxLength);
+    if (lengthPolicy.isExceeded(result)) {
       // idx=130: 조용히 드롭하는 대신 사용자에게 안내한다.
-      showYeonAlert(
-        "내용이 너무 길어요",
-        `최대 ${maxLength}자까지 입력할 수 있어요. 이미지를 삽입하면 글자 수가 초과됩니다.`
-      );
+      showYeonAlert("내용이 너무 길어요", lengthPolicy.getExceededMessage());
       return;
     }
     onChangeText(result.value);
