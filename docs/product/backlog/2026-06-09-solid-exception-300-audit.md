@@ -496,7 +496,7 @@
 200. **[완료][P2] 긴 함수 책임 분리** `apps/mobile/src/features/card-service/rooms/card-room-lobby-screen.tsx:88` — 원칙 `S`. 카드방 목록 조회/필터·검색 파생/라우팅/생성 sheet 상태를 `card-room-lobby-state.ts`로, 카드·필터·검색·목록 UI를 `card-room-lobby-sections.tsx`로, 스타일과 route helper를 `card-room-lobby-styles.ts`/`card-room-lobby-route.ts`로 분리해 screen은 로비 섹션 조립만 담당하게 축소했다. 근거: `const lobby = useCardRoomLobbyState();`
 201. **[완료][P2] 큰 파일 책임 분리** `apps/mobile/src/features/card-service/rooms/card-room-screen.tsx:1` — 원칙 `S`. 헤더/참가자/대기 컨트롤/학습 카드/완료/채팅 렌더링을 `card-room-screen-sections.tsx`로, 스타일을 `card-room-screen-styles.ts`로 분리해 screen 파일은 연결·입장 상태와 섹션 조립만 담당하게 축소했다. 근거: `CardRoomHeader`, `CardRoomParticipantsSection`, `StudyCardSection`, `CardRoomChatSection`
 202. **[완료][P2] 긴 함수 책임 분리** `apps/mobile/src/features/card-service/rooms/card-room-screen.tsx:40` — 원칙 `S`. join/rejoin, stale participant 정리, leave/start/chat 핸들러, 현재 카드방 파생 상태를 `use-card-room-screen-state.ts`로 분리해 screen 함수는 에러/연결/본문 렌더링 분기만 담당하게 축소했다. 근거: `const { ... } = useCardRoomScreenState(roomId);`
-203. **[P2] 긴 함수 책임 분리** `apps/mobile/src/features/card-service/rooms/use-card-room-connection.ts:43` — 원칙 `S`. 143라인 함수다. 검증/변환/부수효과를 작은 함수로 분리한다. 근거: `export function useCardRoomConnection(`
+203. **[완료][P2] 긴 함수 책임 분리** `apps/mobile/src/features/card-service/rooms/use-card-room-connection.ts:43` — 원칙 `S`. 연결 오류 정규화, realtime 세션 effect, room send 액션 생성 책임을 `card-room-connection-errors.ts`, `use-card-room-realtime-session.ts`, `use-card-room-connection-actions.ts`로 분리해 public hook은 세션과 액션 조립만 담당하게 축소했다. 근거: `const { connectionState, error, roomRef, state } = useCardRoomRealtimeSession({`
 204. **[P2] 긴 함수 책임 분리** `apps/mobile/src/features/card-service/runtime-adapters/card-item-repository.ts:39` — 원칙 `S`. 110라인 함수다. 검증/변환/부수효과를 작은 함수로 분리한다. 근거: `export function createMobileCardItemRepository(`
 205. **[P2] 큰 파일 책임 분리** `apps/race-server/src/rooms/territory-battle-room.ts:1` — 원칙 `S`. 366라인 파일이다. 단일 책임 원칙 기준으로 화면/상태/IO/변환 책임 분리 후보다. 근거: `import { type Client, Room } from "@colyseus/core";`
 206. **[P2] 컴포넌트 hook 책임 분리** `apps/web/src/features/card-service/auth-context.tsx:31` — 원칙 `S`. 컴포넌트 인근 hook 호출 후보 14개다. 데이터/폼/이벤트 hook으로 분리한다. 근거: `export function CardServiceAuthProvider({`
@@ -604,3 +604,7 @@
 ## 47차 적용 완료
 
 - 항목 202 완료: 모바일 `CardRoomScreen` 내부의 입장/재입장 effect, stale participant 정리, 퇴장/시작/역할/준비/채팅 핸들러, 현재 카드·역할·시작 가능 여부 파생 상태를 `use-card-room-screen-state.ts`로 이동했다. Screen 파일은 연결 상태별 안내와 섹션 조립만 담당한다.
+
+## 48차 적용 완료
+
+- 항목 203 완료: 모바일 카드방 realtime 연결 훅에서 네트워크 오류 메시지 정규화, Colyseus 세션 연결/cleanup effect, room send 액션 생성을 별도 모듈로 분리했다. `useCardRoomConnection`은 세션 상태와 액션을 반환하는 조립 훅만 담당한다.
