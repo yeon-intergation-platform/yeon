@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.stereotype.Repository;
-import world.yeon.backend.common.repository.NativeQueryRow;
 
 @Repository
 public class AuthSessionRepository {
@@ -41,9 +40,11 @@ public class AuthSessionRepository {
 
 
 	private final EntityManager entityManager;
+	private final AuthSessionRowMapper rowMapper;
 
-	public AuthSessionRepository(EntityManager entityManager) {
+	public AuthSessionRepository(EntityManager entityManager, AuthSessionRowMapper rowMapper) {
 		this.entityManager = entityManager;
+		this.rowMapper = rowMapper;
 	}
 
 	public SessionRow findSessionByTokenHash(String tokenHash) {
@@ -55,7 +56,7 @@ public class AuthSessionRepository {
 			""")
 			.setParameter("tokenHash", tokenHash)
 			.getResultList();
-		return rows.isEmpty() ? null : toSessionRow(rows.getFirst());
+		return rows.isEmpty() ? null : rowMapper.toSessionRow(rows.getFirst());
 	}
 
 	public UserRow findUserById(String userId) {
@@ -68,7 +69,7 @@ public class AuthSessionRepository {
 			""")
 			.setParameter("userId", userId)
 			.getResultList();
-		return rows.isEmpty() ? null : toUserRow(rows.getFirst());
+		return rows.isEmpty() ? null : rowMapper.toUserRow(rows.getFirst());
 	}
 
 	public UserRow findUserByEmail(String email) {
@@ -80,7 +81,7 @@ public class AuthSessionRepository {
 			""")
 			.setParameter("email", email)
 			.getResultList();
-		return rows.isEmpty() ? null : toUserRow(rows.getFirst());
+		return rows.isEmpty() ? null : rowMapper.toUserRow(rows.getFirst());
 	}
 
 	public List<UserRow> listUsersForDevLogin() {
@@ -91,7 +92,7 @@ public class AuthSessionRepository {
 			""")
 			.getResultList()
 			.stream()
-			.map(this::toUserRow)
+			.map(rowMapper::toUserRow)
 			.toList();
 	}
 
@@ -120,7 +121,7 @@ public class AuthSessionRepository {
 			.setParameter("userId", userId)
 			.getResultList()
 			.stream()
-			.map(this::toIdentityRow)
+			.map(rowMapper::toIdentityRow)
 			.toList();
 	}
 
@@ -134,7 +135,7 @@ public class AuthSessionRepository {
 			.setParameter("userIds", String.join(",", userIds))
 			.getResultList()
 			.stream()
-			.map(this::toIdentityRow)
+			.map(rowMapper::toIdentityRow)
 			.toList();
 	}
 
@@ -149,7 +150,7 @@ public class AuthSessionRepository {
 			.setParameter("provider", provider)
 			.setParameter("providerUserId", providerUserId)
 			.getResultList();
-		return rows.isEmpty() ? null : toIdentityRow(rows.getFirst());
+		return rows.isEmpty() ? null : rowMapper.toIdentityRow(rows.getFirst());
 	}
 
 	public IdentityRow findIdentityByUserProvider(String userId, String provider) {
@@ -164,7 +165,7 @@ public class AuthSessionRepository {
 			.setParameter("userId", userId)
 			.setParameter("provider", provider)
 			.getResultList();
-		return rows.isEmpty() ? null : toIdentityRow(rows.getFirst());
+		return rows.isEmpty() ? null : rowMapper.toIdentityRow(rows.getFirst());
 	}
 
 	public void touchSession(String sessionId, OffsetDateTime now) {
@@ -224,7 +225,7 @@ public class AuthSessionRepository {
 			.setParameter("createdAt", Timestamp.from(now.toInstant()))
 			.setParameter("updatedAt", Timestamp.from(now.toInstant()))
 			.getResultList();
-		return toUserRow(rows.getFirst());
+		return rowMapper.toUserRow(rows.getFirst());
 	}
 
 	public UserRow updateUserForLogin(String userId, String email, String displayName, String avatarUrl, OffsetDateTime now) {
@@ -245,7 +246,7 @@ public class AuthSessionRepository {
 			.setParameter("lastLoginAt", Timestamp.from(now.toInstant()))
 			.setParameter("updatedAt", Timestamp.from(now.toInstant()))
 			.getResultList();
-		return toUserRow(rows.getFirst());
+		return rowMapper.toUserRow(rows.getFirst());
 	}
 
 	public void updateIdentity(String identityId, String email, String displayName, String avatarUrl, OffsetDateTime now) {
@@ -293,42 +294,6 @@ public class AuthSessionRepository {
 			.setParameter("role", role)
 			.setParameter("updatedAt", Timestamp.from(now.toInstant()))
 			.executeUpdate();
-	}
-
-	private SessionRow toSessionRow(Object row) {
-		NativeQueryRow values = NativeQueryRow.require(row, 4, "auth session row");
-		return new SessionRow(
-			values.valueAt(0).asUuidString(),
-			values.valueAt(1).asUuidString(),
-			values.valueAt(2).asOffsetDateTime(),
-			values.valueAt(3).asOffsetDateTime()
-		);
-	}
-
-	private UserRow toUserRow(Object row) {
-		NativeQueryRow values = NativeQueryRow.require(row, 7, "auth user row");
-		return new UserRow(
-			values.valueAt(0).asUuidString(),
-			values.valueAt(1).asString(),
-			values.valueAt(2).asString(),
-			values.valueAt(3).asString(),
-			values.valueAt(4).asOffsetDateTime(),
-			values.valueAt(5).asString(),
-			values.valueAt(6).asOffsetDateTime()
-		);
-	}
-
-	private IdentityRow toIdentityRow(Object row) {
-		NativeQueryRow values = NativeQueryRow.require(row, 7, "auth identity row");
-		return new IdentityRow(
-			values.valueAt(0).asUuidString(),
-			values.valueAt(1).asUuidString(),
-			values.valueAt(2).asString(),
-			values.valueAt(3).asString(),
-			values.valueAt(4).asString(),
-			values.valueAt(5).asString(),
-			values.valueAt(6).asString()
-		);
 	}
 
 	private boolean isUuid(String value) {
