@@ -1,14 +1,10 @@
 import type { CardDeckItemDto } from "@yeon/api-contract/card-decks";
 import {
-  useYeonMutation as useMutation,
-  useYeonQueryClient as useQueryClient,
-} from "@yeon/ui/native";
-import {
   type YeonHref as Href,
   useYeonRouter as useRouter,
 } from "@yeon/ui/native";
 import { YEON_ROUTE_TEMPLATES } from "@yeon/ui/runtime/ports";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo } from "react";
 import { showYeonAlert } from "@yeon/ui/native";
 import {
   YeonActionButton as ActionButton,
@@ -25,13 +21,12 @@ import {
   YeonStateBlock as StateBlock,
   YeonTextField as TextField,
 } from "@yeon/ui/native";
-import { cardServiceQueryKeys } from "../../services/card-service/query-keys";
-import { parseAiCardInput } from "./card-input-parser";
 import { createMobileCardItemRepository } from "./runtime-adapters/card-item-repository";
 import { CARD_SERVICE_TEXT } from "./card-service-copy";
-import { getCardServiceErrorMessage } from "./error-message";
 import { DeckCardRow } from "./card-deck-detail-card-row";
+import { useCardDeckDetailActions } from "./use-card-deck-detail-actions";
 import { useCardDeckDetailQuery } from "./use-card-deck-detail-query";
+import { useCardServiceResolvedSession } from "./use-card-service-resolved-session";
 import {
   SHEET_MODES,
   useCardDeckDetailSheetState,
@@ -40,37 +35,12 @@ import { MarkdownTextField } from "./markdown-text-field";
 import {
   CARD_SERVICE_MODE,
   type CardServiceMode,
-  resolveCardServiceSession,
 } from "./card-service-session";
 
 const CARD_SERVICE_DECK_PLAY_ROUTE = YEON_ROUTE_TEMPLATES.cardDeckPlay as Href;
 
-const CARD_DECK_DETAIL_OPERATION = {
-  bulkCreate: "카드 일괄 추가",
-  bulkReplace: "카드 일괄 덮어쓰기",
-  create: "카드 추가",
-  delete: "카드 삭제",
-  detail: "카드 상세 조회",
-  update: "카드 수정",
-} as const;
-
-type CardDeckDetailOperation =
-  (typeof CARD_DECK_DETAIL_OPERATION)[keyof typeof CARD_DECK_DETAIL_OPERATION];
-
-interface ParsedCardInput {
-  backText: string;
-  frontText: string;
-}
-
 interface CardDeckDetailScreenProps {
   deckId?: string;
-}
-
-class CardDeckDetailInputError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = "CardDeckDetailInputError";
-  }
 }
 
 function getCardServiceDeckPlayHref(deckId: string): Href {
@@ -104,38 +74,9 @@ function getModeBadge(mode: CardServiceMode): string {
     : CARD_SERVICE_TEXT.detail.modeGuestLabel;
 }
 
-function requireDeckId(
-  deckId: string | undefined,
-  operation: CardDeckDetailOperation
-): string {
-  const normalizedDeckId = deckId?.trim();
-  if (!normalizedDeckId) {
-    throw new CardDeckDetailInputError(
-      `${operation}을 실행할 수 없습니다. 화면 경로에 덱 ID가 없습니다.`
-    );
-  }
-  return normalizedDeckId;
-}
-
-function parseBulkCardsOrThrow(
-  rawText: string,
-  operation: CardDeckDetailOperation
-): ParsedCardInput[] {
-  const cards = parseAiCardInput(rawText);
-  if (cards.length === 0) {
-    throw new CardDeckDetailInputError(
-      `${operation}을 실행할 수 없습니다. 인식된 카드가 0장입니다. [[Q]], [[A]], [[CARD]] 마커를 확인해 주세요.`
-    );
-  }
-  return cards;
-}
-
 export function CardDeckDetailScreen({ deckId }: CardDeckDetailScreenProps) {
-  const queryClient = useQueryClient();
   const router = useRouter();
-  const [mode, setMode] = useState<CardServiceMode>(CARD_SERVICE_MODE.guest);
-  const [isBooting, setBooting] = useState(true);
-  const [sessionToken, setSessionToken] = useState<string | null>(null);
+  const { isBooting, mode, sessionToken } = useCardServiceResolvedSession();
   const {
     activeMenuItemId,
     backText,
@@ -173,255 +114,32 @@ export function CardDeckDetailScreen({ deckId }: CardDeckDetailScreenProps) {
       itemRepository,
     });
 
-  const createMutation = useMutation({
-    mutationFn: async (params: ParsedCardInput) => {
-      return itemRepository.addCard(
-        requireDeckId(deckId, CARD_DECK_DETAIL_OPERATION.create),
-        params
-      );
-    },
-    onSuccess: async () => {
-      await invalidateDeck();
-    },
+  const {
+    bulkCreateButtonLabel,
+    bulkReplaceButtonLabel,
+    canSubmitBulk,
+    canSubmitManual,
+    handleBulkCreateCards,
+    handleBulkReplaceCards,
+    handleCreateCard,
+    handleDeleteCard,
+    handleUpdateCard,
+    manualSubmitButtonLabel,
+    rowBusy,
+  } = useCardDeckDetailActions({
+    backText,
+    bulkText,
+    closeSheet,
+    deckId,
+    frontText,
+    itemRepository,
+    mode,
+    setActiveMenuItemId,
+    setBulkText,
+    sheetState,
   });
 
-  const bulkCreateMutation = useMutation({
-    mutationFn: async () => {
-      const targetDeckId = requireDeckId(
-        deckId,
-        CARD_DECK_DETAIL_OPERATION.bulkCreate
-      );
-      const cards = parseBulkCardsOrThrow(
-        bulkText,
-        CARD_DECK_DETAIL_OPERATION.bulkCreate
-      );
-      await itemRepository.addCards(targetDeckId, { items: cards });
-      return cards.length;
-    },
-    onSuccess: async (createdCount) => {
-      setBulkText("");
-      closeSheet();
-      await invalidateDeck();
-      showYeonAlert(
-        CARD_SERVICE_TEXT.detail.addCompleteTitle,
-        `${createdCount}${CARD_SERVICE_TEXT.detail.addCompleteMessageSuffix}`
-      );
-    },
-  });
-
-  const bulkReplaceMutation = useMutation({
-    mutationFn: async () => {
-      const targetDeckId = requireDeckId(
-        deckId,
-        CARD_DECK_DETAIL_OPERATION.bulkReplace
-      );
-      const cards = parseBulkCardsOrThrow(
-        bulkText,
-        CARD_DECK_DETAIL_OPERATION.bulkReplace
-      );
-      await itemRepository.replaceCards(targetDeckId, { items: cards });
-      return cards.length;
-    },
-    onSuccess: async (createdCount) => {
-      setBulkText("");
-      closeSheet();
-      await invalidateDeck();
-      showYeonAlert(
-        CARD_SERVICE_TEXT.detail.addCompleteTitle,
-        `${createdCount}${CARD_SERVICE_TEXT.detail.bulkOverwriteCompleteMessageSuffix}`
-      );
-    },
-  });
-
-  const updateMutation = useMutation({
-    mutationFn: async (params: ParsedCardInput & { itemId: string }) => {
-      return itemRepository.updateCard(
-        requireDeckId(deckId, CARD_DECK_DETAIL_OPERATION.update),
-        params.itemId,
-        {
-          backText: params.backText,
-          frontText: params.frontText,
-        }
-      );
-    },
-    onSuccess: async () => {
-      closeSheet();
-      await invalidateDeck();
-    },
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: async (itemId: string) => {
-      await itemRepository.deleteCard(
-        requireDeckId(deckId, CARD_DECK_DETAIL_OPERATION.delete),
-        itemId
-      );
-    },
-    onSuccess: async () => {
-      setActiveMenuItemId(null);
-      await invalidateDeck();
-    },
-  });
-
-  useEffect(() => {
-    void bootstrapSession();
-  }, []);
-
-  async function bootstrapSession() {
-    setBooting(true);
-    const resolved = await resolveCardServiceSession();
-    setMode(resolved.mode);
-    setSessionToken(resolved.sessionToken);
-    setBooting(false);
-  }
-
-  async function invalidateDeck() {
-    if (!deckId) {
-      return;
-    }
-    await queryClient.invalidateQueries({
-      queryKey: cardServiceQueryKeys.deckDetail(
-        mode === CARD_SERVICE_MODE.server,
-        deckId
-      ),
-    });
-    await queryClient.invalidateQueries({
-      queryKey: cardServiceQueryKeys.decks(mode === CARD_SERVICE_MODE.server),
-    });
-  }
-
-  async function handleCreateCard() {
-    if (!frontText.trim() || !backText.trim()) {
-      showYeonAlert(
-        CARD_SERVICE_TEXT.shared.inputRequiredTitle,
-        CARD_SERVICE_TEXT.detail.updateRequiredHint
-      );
-      return;
-    }
-    try {
-      await createMutation.mutateAsync({
-        backText: backText.trim(),
-        frontText: frontText.trim(),
-      });
-      closeSheet();
-    } catch (error) {
-      showYeonAlert(
-        CARD_SERVICE_TEXT.state.errorTitle,
-        getCardServiceErrorMessage(
-          error,
-          CARD_SERVICE_TEXT.detail.createErrorMessage
-        )
-      );
-    }
-  }
-
-  async function handleBulkCreateCards() {
-    try {
-      await bulkCreateMutation.mutateAsync();
-    } catch (error) {
-      showYeonAlert(
-        CARD_SERVICE_TEXT.state.errorTitle,
-        getCardServiceErrorMessage(
-          error,
-          CARD_SERVICE_TEXT.detail.createErrorMessage
-        )
-      );
-    }
-  }
-
-  async function handleBulkReplaceCards() {
-    const cards = parseAiCardInput(bulkText);
-    if (cards.length === 0) {
-      showYeonAlert(
-        CARD_SERVICE_TEXT.state.errorTitle,
-        CARD_SERVICE_TEXT.detail.noParseResultMessage
-      );
-      return;
-    }
-
-    showYeonAlert(
-      CARD_SERVICE_TEXT.detail.bulkOverwriteConfirmTitle,
-      CARD_SERVICE_TEXT.detail.bulkOverwriteConfirmMessage(cards.length),
-      [
-        { text: "취소", style: "cancel" },
-        {
-          text: CARD_SERVICE_TEXT.detail.bulkOverwriteLabel,
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await bulkReplaceMutation.mutateAsync();
-            } catch (error) {
-              showYeonAlert(
-                CARD_SERVICE_TEXT.state.errorTitle,
-                getCardServiceErrorMessage(
-                  error,
-                  CARD_SERVICE_TEXT.detail.createErrorMessage
-                )
-              );
-            }
-          },
-        },
-      ]
-    );
-  }
-
-  async function handleUpdateCard() {
-    if (sheetState.kind !== "edit") {
-      return;
-    }
-    if (!frontText.trim() || !backText.trim()) {
-      showYeonAlert(
-        CARD_SERVICE_TEXT.shared.inputRequiredTitle,
-        CARD_SERVICE_TEXT.detail.updateRequiredHint
-      );
-      return;
-    }
-    try {
-      await updateMutation.mutateAsync({
-        backText: backText.trim(),
-        frontText: frontText.trim(),
-        itemId: sheetState.item.id,
-      });
-    } catch (error) {
-      showYeonAlert(
-        CARD_SERVICE_TEXT.state.errorTitle,
-        getCardServiceErrorMessage(
-          error,
-          CARD_SERVICE_TEXT.detail.updateErrorMessage
-        )
-      );
-    }
-  }
-
-  const handleDeleteCard = useCallback(
-    (itemId: string) => {
-      showYeonAlert(
-        CARD_SERVICE_TEXT.detail.deleteConfirmTitle,
-        CARD_SERVICE_TEXT.detail.deleteConfirmMessage,
-        [
-          { style: "cancel", text: CARD_SERVICE_TEXT.shared.closeLabel },
-          {
-            onPress: async () => {
-              try {
-                await deleteMutation.mutateAsync(itemId);
-              } catch (error) {
-                showYeonAlert(
-                  CARD_SERVICE_TEXT.state.errorTitle,
-                  getCardServiceErrorMessage(
-                    error,
-                    CARD_SERVICE_TEXT.detail.deleteErrorMessage
-                  )
-                );
-              }
-            },
-            style: "destructive",
-            text: CARD_SERVICE_TEXT.shared.deleteLabel,
-          },
-        ]
-      );
-    },
-    [deleteMutation]
-  );
+  const cardKeyExtractor = useCallback((item: CardDeckItemDto) => item.id, []);
 
   if (isBooting) {
     return (
@@ -435,18 +153,6 @@ export function CardDeckDetailScreen({ deckId }: CardDeckDetailScreenProps) {
     );
   }
 
-  const canSubmitManual =
-    frontText.trim().length > 0 &&
-    backText.trim().length > 0 &&
-    !createMutation.isPending &&
-    !updateMutation.isPending;
-  const canSubmitBulk =
-    bulkText.trim().length > 0 &&
-    !bulkCreateMutation.isPending &&
-    !bulkReplaceMutation.isPending;
-
-  const rowBusy = updateMutation.isPending || deleteMutation.isPending;
-  const cardKeyExtractor = useCallback((item: CardDeckItemDto) => item.id, []);
   const listHeader = (
     <FormStack gap="roomy">
       <MobileHeaderBar
@@ -584,15 +290,7 @@ export function CardDeckDetailScreen({ deckId }: CardDeckDetailScreenProps) {
               />
               <ActionButton
                 disabled={!canSubmitManual}
-                label={
-                  sheetState.kind === "edit"
-                    ? updateMutation.isPending
-                      ? CARD_SERVICE_TEXT.detail.submitEditBusyLabel
-                      : CARD_SERVICE_TEXT.detail.submitEditLabel
-                    : createMutation.isPending
-                      ? CARD_SERVICE_TEXT.detail.submitBusyLabel
-                      : CARD_SERVICE_TEXT.detail.submitCreateLabel
-                }
+                label={manualSubmitButtonLabel}
                 onPress={
                   sheetState.kind === "edit"
                     ? handleUpdateCard
@@ -618,21 +316,13 @@ export function CardDeckDetailScreen({ deckId }: CardDeckDetailScreenProps) {
               <FormStack gap="compact">
                 <ActionButton
                   disabled={!canSubmitBulk}
-                  label={
-                    bulkCreateMutation.isPending
-                      ? CARD_SERVICE_TEXT.detail.submitBusyLabel
-                      : CARD_SERVICE_TEXT.detail.bulkSaveLabel
-                  }
+                  label={bulkCreateButtonLabel}
                   onPress={handleBulkCreateCards}
                   variant="dark"
                 />
                 <ActionButton
                   disabled={!canSubmitBulk}
-                  label={
-                    bulkReplaceMutation.isPending
-                      ? CARD_SERVICE_TEXT.detail.bulkOverwriteBusyLabel
-                      : CARD_SERVICE_TEXT.detail.bulkOverwriteLabel
-                  }
+                  label={bulkReplaceButtonLabel}
                   onPress={handleBulkReplaceCards}
                   variant="danger"
                 />
