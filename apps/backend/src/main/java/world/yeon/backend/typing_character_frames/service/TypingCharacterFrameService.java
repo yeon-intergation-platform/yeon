@@ -52,7 +52,7 @@ public class TypingCharacterFrameService {
 		if (user == null) {
 			throw new TypingCharacterFrameServiceException(403, "ADMIN_REQUIRED", "관리자 권한이 필요합니다.");
 		}
-		if (ADMIN_ROLE.equals(user.role()) || adminSeedEmails.contains(normalizeEmail(user.email()))) {
+		if (TypingCharacterFrameAdminPolicy.from(adminSeedEmails).allows(user)) {
 			return;
 		}
 		throw new TypingCharacterFrameServiceException(403, "ADMIN_REQUIRED", "관리자 권한이 필요합니다.");
@@ -67,6 +67,24 @@ public class TypingCharacterFrameService {
 
 	private TypingCharacterFrameOverrideResponse toResponse(TypingCharacterFrameRepository.OverrideRow row) {
 		return row == null ? null : new TypingCharacterFrameOverrideResponse(row.characterId(), row.frameSlots());
+	}
+
+	private record TypingCharacterFrameAdminPolicy(Set<String> seedEmails) {
+		static TypingCharacterFrameAdminPolicy from(Set<String> seedEmails) {
+			return new TypingCharacterFrameAdminPolicy(seedEmails == null ? Set.of() : seedEmails);
+		}
+
+		boolean allows(TypingCharacterFrameRepository.UserAdminRow user) {
+			return hasAdminRole(user) || hasSeedAdminEmail(user);
+		}
+
+		private boolean hasAdminRole(TypingCharacterFrameRepository.UserAdminRow user) {
+			return ADMIN_ROLE.equals(user.role());
+		}
+
+		private boolean hasSeedAdminEmail(TypingCharacterFrameRepository.UserAdminRow user) {
+			return seedEmails.contains(normalizeEmail(user.email()));
+		}
 	}
 
 	private static Set<String> parseAdminSeedEmails(String value) {
