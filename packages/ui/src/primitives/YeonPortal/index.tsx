@@ -5,10 +5,22 @@ export type YeonPortalProps = {
   children?: ReactNode;
 };
 
+interface YeonPortalContainerPort {
+  getPortalContainer(): HTMLElement | null;
+}
+
+const YEON_PORTAL_CONTAINER_PORT: YeonPortalContainerPort = {
+  getPortalContainer() {
+    return globalThis.document?.body ?? null;
+  },
+};
+
 export function YeonPortal({ children }: YeonPortalProps) {
-  if (typeof document === "undefined") {
+  const portalContainer = YEON_PORTAL_CONTAINER_PORT.getPortalContainer();
+
+  if (!portalContainer) {
     return null;
   }
 
-  return createPortal(children, document.body);
+  return createPortal(children, portalContainer);
 }
