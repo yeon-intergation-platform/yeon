@@ -10,6 +10,7 @@ import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.function.Function;
 import java.util.UUID;
 import org.springframework.stereotype.Repository;
 
@@ -42,6 +43,75 @@ public class AuthSessionRepository {
 		String displayName,
 		String avatarUrl
 	) {}
+
+
+	private record NativeQueryRow(Object[] values, String label) {
+		static NativeQueryRow require(Object raw, int min, String label) {
+			Object[] values = raw instanceof Object[] rowValues ? rowValues : new Object[]{raw};
+			if (values.length < min) {
+				throw new IllegalStateException(label + "를 해석하지 못했습니다. 필요한 컬럼: " + min + ", 실제 컬럼: " + values.length);
+			}
+			return new NativeQueryRow(values, label);
+		}
+
+		NativeQueryValue valueAt(int index) {
+			if (index >= values.length) {
+				throw new IllegalStateException(label + "의 " + index + "번째 컬럼을 읽을 수 없습니다.");
+			}
+			return new NativeQueryValue(values[index], label + "[" + index + "]");
+		}
+	}
+
+	private record NativeValueReader<T, R>(Class<T> type, Function<T, R> mapper) {
+		R readIfSupported(Object value) {
+			return type.isInstance(value) ? mapper.apply(type.cast(value)) : null;
+		}
+	}
+
+	private static final List<NativeValueReader<?, String>> NATIVE_UUID_VALUE_READERS = List.of(
+		new NativeValueReader<>(UUID.class, UUID::toString)
+	);
+
+	private static final List<NativeValueReader<?, OffsetDateTime>> NATIVE_TIME_VALUE_READERS = List.of(
+		new NativeValueReader<>(OffsetDateTime.class, Function.identity()),
+		new NativeValueReader<>(Timestamp.class, value -> value.toInstant().atOffset(ZoneOffset.UTC)),
+		new NativeValueReader<>(Instant.class, value -> value.atOffset(ZoneOffset.UTC)),
+		new NativeValueReader<>(Date.class, value -> value.toInstant().atOffset(ZoneOffset.UTC)),
+		new NativeValueReader<>(LocalDateTime.class, value -> value.atOffset(ZoneOffset.UTC)),
+		new NativeValueReader<>(ZonedDateTime.class, ZonedDateTime::toOffsetDateTime)
+	);
+
+	private record NativeQueryValue(Object value, String label) {
+		String asString() {
+			return value == null ? null : value.toString();
+		}
+
+		String asUuidString() {
+			if (value == null) {
+				return null;
+			}
+			for (NativeValueReader<?, String> reader : NATIVE_UUID_VALUE_READERS) {
+				String converted = reader.readIfSupported(value);
+				if (converted != null) {
+					return converted;
+				}
+			}
+			return value.toString();
+		}
+
+		OffsetDateTime asOffsetDateTime() {
+			if (value == null) {
+				return null;
+			}
+			for (NativeValueReader<?, OffsetDateTime> reader : NATIVE_TIME_VALUE_READERS) {
+				OffsetDateTime converted = reader.readIfSupported(value);
+				if (converted != null) {
+					return converted;
+				}
+			}
+			return OffsetDateTime.parse(value.toString());
+		}
+	}
 
 	private final EntityManager entityManager;
 
@@ -299,39 +369,38 @@ public class AuthSessionRepository {
 	}
 
 	private SessionRow toSessionRow(Object row) {
-		if (!(row instanceof Object[] values) || values.length < 4) {
-			throw new IllegalStateException("auth session row를 해석하지 못했습니다.");
-		}
-		return new SessionRow(asUuidString(values[0]), asUuidString(values[1]), asOffsetDateTime(values[2]), asOffsetDateTime(values[3]));
+		NativeQueryRow values = NativeQueryRow.require(row, 4, "auth session row");
+		return new SessionRow(
+			values.valueAt(0).asUuidString(),
+			values.valueAt(1).asUuidString(),
+			values.valueAt(2).asOffsetDateTime(),
+			values.valueAt(3).asOffsetDateTime()
+		);
 	}
 
 	private UserRow toUserRow(Object row) {
-		if (!(row instanceof Object[] values) || values.length < 7) {
-			throw new IllegalStateException("auth user row를 해석하지 못했습니다.");
-		}
+		NativeQueryRow values = NativeQueryRow.require(row, 7, "auth user row");
 		return new UserRow(
-			asUuidString(values[0]),
-			(String) values[1],
-			(String) values[2],
-			(String) values[3],
-			asOffsetDateTime(values[4]),
-			(String) values[5],
-			asOffsetDateTime(values[6])
+			values.valueAt(0).asUuidString(),
+			values.valueAt(1).asString(),
+			values.valueAt(2).asString(),
+			values.valueAt(3).asString(),
+			values.valueAt(4).asOffsetDateTime(),
+			values.valueAt(5).asString(),
+			values.valueAt(6).asOffsetDateTime()
 		);
 	}
 
 	private IdentityRow toIdentityRow(Object row) {
-		if (!(row instanceof Object[] values) || values.length < 7) {
-			throw new IllegalStateException("auth identity row를 해석하지 못했습니다.");
-		}
+		NativeQueryRow values = NativeQueryRow.require(row, 7, "auth identity row");
 		return new IdentityRow(
-			asUuidString(values[0]),
-			asUuidString(values[1]),
-			(String) values[2],
-			(String) values[3],
-			(String) values[4],
-			(String) values[5],
-			(String) values[6]
+			values.valueAt(0).asUuidString(),
+			values.valueAt(1).asUuidString(),
+			values.valueAt(2).asString(),
+			values.valueAt(3).asString(),
+			values.valueAt(4).asString(),
+			values.valueAt(5).asString(),
+			values.valueAt(6).asString()
 		);
 	}
 
@@ -345,20 +414,4 @@ public class AuthSessionRepository {
 		}
 	}
 
-	private String asUuidString(Object value) {
-		if (value == null) return null;
-		if (value instanceof UUID uuid) return uuid.toString();
-		return value.toString();
-	}
-
-	private OffsetDateTime asOffsetDateTime(Object value) {
-		if (value == null) return null;
-		if (value instanceof OffsetDateTime offsetDateTime) return offsetDateTime;
-		if (value instanceof Timestamp timestamp) return timestamp.toInstant().atOffset(ZoneOffset.UTC);
-		if (value instanceof Instant instant) return instant.atOffset(ZoneOffset.UTC);
-		if (value instanceof Date date) return date.toInstant().atOffset(ZoneOffset.UTC);
-		if (value instanceof LocalDateTime localDateTime) return localDateTime.atOffset(ZoneOffset.UTC);
-		if (value instanceof ZonedDateTime zonedDateTime) return zonedDateTime.toOffsetDateTime();
-		return OffsetDateTime.parse(value.toString());
-	}
 }

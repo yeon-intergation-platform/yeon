@@ -6,12 +6,42 @@ import java.sql.Timestamp;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.function.Function;
 import java.util.UUID;
 import org.springframework.stereotype.Repository;
 
 @Repository
 public class CommunityChatRepository {
 	public record MessageRow(UUID id, UUID senderUserId, String guestSessionId, String senderNickname, String body, OffsetDateTime createdAt) {}
+
+
+	private record NativeQueryRow(Object[] values, String label) {
+		static NativeQueryRow require(Object raw, int min, String label) {
+			Object[] values = raw instanceof Object[] rowValues ? rowValues : new Object[]{raw};
+			if (values.length < min) {
+				throw new IllegalStateException(label + "를 해석하지 못했습니다. 필요한 컬럼: " + min + ", 실제 컬럼: " + values.length);
+			}
+			return new NativeQueryRow(values, label);
+		}
+
+		Object valueAt(int index) {
+			if (index >= values.length) {
+				throw new IllegalStateException(label + "의 " + index + "번째 컬럼을 읽을 수 없습니다.");
+			}
+			return values[index];
+		}
+	}
+
+	private record NativeTimeValueReader<T>(Class<T> type, Function<T, OffsetDateTime> mapper) {
+		OffsetDateTime readIfSupported(Object value) {
+			return type.isInstance(value) ? mapper.apply(type.cast(value)) : null;
+		}
+	}
+
+	private static final List<NativeTimeValueReader<?>> NATIVE_TIME_VALUE_READERS = List.of(
+		new NativeTimeValueReader<>(OffsetDateTime.class, Function.identity()),
+		new NativeTimeValueReader<>(Timestamp.class, value -> value.toInstant().atOffset(ZoneOffset.UTC))
+	);
 
 	@PersistenceContext
 	private EntityManager entityManager;
@@ -58,14 +88,25 @@ public class CommunityChatRepository {
 	}
 
 	private MessageRow toMessageRow(Object row) {
-		Object[] v = (Object[]) row;
-		return new MessageRow((UUID) v[0], (UUID) v[1], (String) v[2], (String) v[3], (String) v[4], asOffsetDateTime(v[5]));
+		NativeQueryRow values = NativeQueryRow.require(row, 6, "community chat message row");
+		return new MessageRow(
+			(UUID) values.valueAt(0),
+			(UUID) values.valueAt(1),
+			(String) values.valueAt(2),
+			(String) values.valueAt(3),
+			(String) values.valueAt(4),
+			asOffsetDateTime(values.valueAt(5))
+		);
 	}
 
 	private OffsetDateTime asOffsetDateTime(Object value) {
 		if (value == null) return null;
-		if (value instanceof OffsetDateTime offsetDateTime) return offsetDateTime;
-		if (value instanceof Timestamp timestamp) return timestamp.toInstant().atOffset(ZoneOffset.UTC);
+		for (NativeTimeValueReader<?> reader : NATIVE_TIME_VALUE_READERS) {
+			OffsetDateTime converted = reader.readIfSupported(value);
+			if (converted != null) {
+				return converted;
+			}
+		}
 		return OffsetDateTime.parse(String.valueOf(value));
 	}
 }
