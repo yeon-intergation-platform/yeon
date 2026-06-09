@@ -35,6 +35,25 @@ type CardRoomCreateSheetProps = {
   onCreated: (roomId: string) => void;
 };
 
+class CardRoomCreateInputError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "CardRoomCreateInputError";
+  }
+}
+
+function getCardRoomCreateErrorMessage(error: unknown) {
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  if (typeof error === "string" && error.trim().length > 0) {
+    return `${CARD_SERVICE_TEXT.rooms.createErrorTitle}: ${error.trim()}`;
+  }
+
+  return `${CARD_SERVICE_TEXT.rooms.createErrorTitle}: 처리할 수 없는 오류 형식(${String(error)})`;
+}
+
 export function CardRoomCreateSheet({
   visible,
   onClose,
@@ -69,13 +88,15 @@ export function CardRoomCreateSheet({
   const createMutation = useMutation({
     mutationFn: async () => {
       if (!profile || !guestId) {
-        throw new Error(
-          "프로필을 불러오는 중입니다. 잠시 후 다시 시도해 주세요."
+        throw new CardRoomCreateInputError(
+          "카드방 생성에 필요한 참가자 프로필 또는 게스트 식별자를 아직 불러오지 못했습니다. 잠시 후 다시 시도해 주세요."
         );
       }
       const deck = decks.find((entry) => entry.id === selectedDeckId);
       if (!deck) {
-        throw new Error("덱을 선택해 주세요.");
+        throw new CardRoomCreateInputError(
+          "카드방을 만들 덱을 선택하지 않았습니다. 카드가 1장 이상 있는 덱을 선택해 주세요."
+        );
       }
 
       const roomTitle = title.trim() || deck.title;
@@ -128,11 +149,10 @@ export function CardRoomCreateSheet({
     try {
       await createMutation.mutateAsync();
     } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : CARD_SERVICE_TEXT.rooms.createErrorTitle;
-      showYeonAlert(CARD_SERVICE_TEXT.rooms.createErrorTitle, message);
+      showYeonAlert(
+        CARD_SERVICE_TEXT.rooms.createErrorTitle,
+        getCardRoomCreateErrorMessage(error)
+      );
     }
   }
 

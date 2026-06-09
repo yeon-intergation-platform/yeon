@@ -41,6 +41,18 @@ const TABLE_TEMPLATE = "\n| 제목 | 제목 |\n| --- | --- |\n| 내용 | 내용 
 type Selection = { start: number; end: number };
 type InsertResult = { value: string; selection: Selection };
 
+function getImageAttachmentErrorMessage(error: unknown) {
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  if (typeof error === "string" && error.trim().length > 0) {
+    return `이미지를 첨부하지 못했어요. 원인: ${error.trim()}`;
+  }
+
+  return `이미지를 첨부하지 못했어요. 원인: 처리할 수 없는 오류 형식(${String(error)})`;
+}
+
 // 텍스트 서식 아이콘(lucide 스타일).
 function ToolbarIcon({ action }: { action: ToolbarAction }) {
   const stroke = yeonMobileAppColors.text;
@@ -243,9 +255,7 @@ export function MarkdownTextField({
         )
       );
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "이미지를 첨부하지 못했어요.";
-      showYeonAlert("이미지 첨부 실패", message);
+      showYeonAlert("이미지 첨부 실패", getImageAttachmentErrorMessage(error));
     } finally {
       setUploading(false);
     }
