@@ -2,27 +2,97 @@
 
 import { useEffect } from "react";
 
+type YeonBrowserEventUnsubscribe = () => void;
+
+type YeonBrowserBodyStyleProperty = "overflow";
+
+interface YeonBrowserBodyPort {
+  getStyleProperty(property: YeonBrowserBodyStyleProperty): string;
+  setStyleProperty(property: YeonBrowserBodyStyleProperty, value: string): void;
+  addClass(className: string): void;
+  removeClass(className: string): void;
+}
+
+interface YeonBrowserEventPort {
+  subscribeDocument(
+    type: string,
+    listener: (event: Event) => void
+  ): YeonBrowserEventUnsubscribe;
+  subscribeWindow(
+    type: string,
+    listener: (event: Event) => void,
+    options?: boolean | AddEventListenerOptions
+  ): YeonBrowserEventUnsubscribe;
+}
+
+interface YeonBrowserHooksPort {
+  body: YeonBrowserBodyPort;
+  events: YeonBrowserEventPort;
+}
+
+const emptyYeonBrowserUnsubscribe: YeonBrowserEventUnsubscribe = () =>
+  undefined;
+
+const YEON_BROWSER_HOOKS_PORT: YeonBrowserHooksPort = {
+  body: {
+    getStyleProperty(property) {
+      return globalThis.document?.body.style[property] ?? "";
+    },
+    setStyleProperty(property, value) {
+      const body = globalThis.document?.body;
+      if (!body) return;
+      body.style[property] = value;
+    },
+    addClass(className) {
+      globalThis.document?.body.classList.add(className);
+    },
+    removeClass(className) {
+      globalThis.document?.body.classList.remove(className);
+    },
+  },
+  events: {
+    subscribeDocument(type, listener) {
+      const browserDocument = globalThis.document;
+      if (!browserDocument) return emptyYeonBrowserUnsubscribe;
+
+      browserDocument.addEventListener(type, listener);
+      return () => browserDocument.removeEventListener(type, listener);
+    },
+    subscribeWindow(type, listener, options) {
+      const browserWindow = globalThis.window;
+      if (!browserWindow) return emptyYeonBrowserUnsubscribe;
+
+      browserWindow.addEventListener(type, listener, options);
+      return () => browserWindow.removeEventListener(type, listener, options);
+    },
+  },
+};
+
 export function useYeonBodyScrollLock(enabled = true) {
   useEffect(() => {
-    if (!enabled || typeof document === "undefined") return;
+    if (!enabled) return;
 
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    const previousOverflow =
+      YEON_BROWSER_HOOKS_PORT.body.getStyleProperty("overflow");
+    YEON_BROWSER_HOOKS_PORT.body.setStyleProperty("overflow", "hidden");
 
     return () => {
-      document.body.style.overflow = previousOverflow;
+      YEON_BROWSER_HOOKS_PORT.body.setStyleProperty(
+        "overflow",
+        previousOverflow
+      );
     };
   }, [enabled]);
 }
 
 export function useYeonBodyClass(className: string, enabled = true) {
   useEffect(() => {
-    if (!enabled || typeof document === "undefined") return;
+    if (!enabled) return;
 
-    document.body.classList.add(className);
+    YEON_BROWSER_HOOKS_PORT.body.addClass(className);
 
     return () => {
-      document.body.classList.remove(className);
+      YEON_BROWSER_HOOKS_PORT.body.removeClass(className);
     };
   }, [className, enabled]);
 }
@@ -39,10 +109,7 @@ export function addYeonDocumentEventListener(
   type: string,
   listener: (event: Event) => void
 ) {
-  if (typeof document === "undefined") return () => undefined;
-
-  document.addEventListener(type, listener);
-  return () => document.removeEventListener(type, listener);
+  return YEON_BROWSER_HOOKS_PORT.events.subscribeDocument(type, listener);
 }
 
 export function useYeonDocumentEvent<K extends keyof DocumentEventMap>(
@@ -61,10 +128,9 @@ export function useYeonDocumentEvent(
   enabled = true
 ) {
   useEffect(() => {
-    if (!enabled || typeof document === "undefined") return;
+    if (!enabled) return;
 
-    document.addEventListener(type, listener);
-    return () => document.removeEventListener(type, listener);
+    return YEON_BROWSER_HOOKS_PORT.events.subscribeDocument(type, listener);
   }, [enabled, listener, type]);
 }
 
@@ -87,10 +153,13 @@ export function useYeonWindowEvent(
   options?: boolean | AddEventListenerOptions
 ) {
   useEffect(() => {
-    if (!enabled || typeof window === "undefined") return;
+    if (!enabled) return;
 
-    window.addEventListener(type, listener, options);
-    return () => window.removeEventListener(type, listener, options);
+    return YEON_BROWSER_HOOKS_PORT.events.subscribeWindow(
+      type,
+      listener,
+      options
+    );
   }, [enabled, listener, options, type]);
 }
 
