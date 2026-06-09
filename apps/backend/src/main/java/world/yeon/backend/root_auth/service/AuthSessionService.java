@@ -14,18 +14,14 @@ import org.springframework.core.env.Environment;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import world.yeon.backend.credential_auth.service.AuthSessionTokenFactory;
 import world.yeon.backend.root_auth.dto.*;
 import world.yeon.backend.root_auth.repository.AuthSessionRepository;
 import world.yeon.backend.root_auth.social.SocialIdentityProfile;
 import world.yeon.backend.root_auth.social.SocialIdentityProviderClient;
-import world.yeon.backend.user_experience.domain.ExperienceActivity;
-import world.yeon.backend.user_experience.service.ExperienceService;
 
 @Service
 public class AuthSessionService {
 	private static final Logger log = LoggerFactory.getLogger(AuthSessionService.class);
-	private static final long AUTH_SESSION_TTL_DAYS = 30;
 	private static final long SESSION_TOUCH_THROTTLE_MINUTES = 5;
 	private static final int SOCIAL_UPSERT_MAX_RETRIES = 3;
 	private static final String DEV_LOGIN_DEFAULT_ACCOUNT_KEY = "default";
@@ -41,25 +37,22 @@ public class AuthSessionService {
 
 	private final AuthSessionRepository repository;
 	private final AuthTokenHasher tokenHasher;
-	private final AuthSessionTokenFactory tokenFactory;
+	private final AuthSessionIssuer sessionIssuer;
 	private final SocialIdentityProviderClient socialIdentityProviderClient;
 	private final Environment environment;
-	private final ExperienceService experienceService;
 
 	public AuthSessionService(
 		AuthSessionRepository repository,
 		AuthTokenHasher tokenHasher,
-		AuthSessionTokenFactory tokenFactory,
+		AuthSessionIssuer sessionIssuer,
 		SocialIdentityProviderClient socialIdentityProviderClient,
-		Environment environment,
-		ExperienceService experienceService
+		Environment environment
 	) {
 		this.repository = repository;
 		this.tokenHasher = tokenHasher;
-		this.tokenFactory = tokenFactory;
+		this.sessionIssuer = sessionIssuer;
 		this.socialIdentityProviderClient = socialIdentityProviderClient;
 		this.environment = environment;
-		this.experienceService = experienceService;
 	}
 
 	@Transactional
@@ -115,7 +108,7 @@ public class AuthSessionService {
 		if (user == null || repository.listProvidersByUserId(user.id()).isEmpty()) {
 			throw new AuthSessionServiceException(404, "AUTH_USER_NOT_FOUND", "인증 사용자를 찾지 못했습니다.");
 		}
-		return createSession(user.id());
+		return sessionIssuer.createSession(user.id());
 	}
 
 	@Transactional
@@ -128,7 +121,7 @@ public class AuthSessionService {
 		}
 		SocialIdentityProfile profile = socialIdentityProviderClient.fetchProfile(provider, code, codeVerifier, request.appOrigin());
 		var user = upsertSocialLogin(profile, 0);
-		return createSession(user.id());
+		return sessionIssuer.createSession(user.id());
 	}
 
 	@Transactional
@@ -167,7 +160,7 @@ public class AuthSessionService {
 		if (userId == null) {
 			throw new AuthSessionServiceException(404, "DEV_LOGIN_USER_NOT_FOUND", "선택한 테스트 계정을 찾지 못했습니다.");
 		}
-		return createSession(userId);
+		return sessionIssuer.createSession(userId);
 	}
 
 	@Transactional
@@ -285,27 +278,6 @@ public class AuthSessionService {
 		repository.insertUser(userId, email, displayName, null, OffsetDateTime.now(ZoneOffset.UTC));
 		repository.insertIdentity(UUID.randomUUID().toString(), userId, DEV_PROVIDER, providerUserId, email, displayName, null, OffsetDateTime.now(ZoneOffset.UTC));
 		return userId;
-	}
-
-	private RootAuthSessionCreateResponse createSession(String userId) {
-		String sessionToken = tokenFactory.createToken();
-		OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
-		OffsetDateTime expiresAt = now.plusDays(AUTH_SESSION_TTL_DAYS);
-		repository.insertAuthSession(UUID.randomUUID().toString(), userId, tokenHasher.hash(sessionToken), expiresAt, now);
-		awardDailyLogin(userId, now);
-		return new RootAuthSessionCreateResponse(userId, sessionToken, expiresAt);
-	}
-
-	// 출석 경험치(하루 1회). 멱등 키는 오늘 UTC 날짜(yyyy-MM-dd)라 같은 날 여러 번 로그인해도 1회만 적립된다.
-	// 적립 실패가 세션 발급(로그인)을 깨지 않도록 별도 트랜잭션(REQUIRES_NEW) + try/catch로 방어한다.
-	private void awardDailyLogin(String userId, OffsetDateTime now) {
-		try {
-			UUID parsedUserId = UUID.fromString(userId);
-			String today = now.toLocalDate().toString();
-			experienceService.award(parsedUserId, ExperienceActivity.DAILY_LOGIN, today);
-		} catch (RuntimeException error) {
-			log.warn("출석 경험치 적립에 실패했습니다(로그인은 정상). userId={}", userId, error);
-		}
 	}
 
 	private AuthSessionResponse authenticated(AuthSessionRepository.UserRow user, List<String> providers) {
