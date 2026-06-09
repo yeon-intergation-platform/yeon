@@ -15,9 +15,12 @@ import {
   type CardRoomResultMessage,
   type CardRoomRoleMessage,
 } from "@yeon/race-shared";
+import {
+  loadCardRoomDetail,
+  requestCardRoomBackend,
+} from "./card-room-backend-client";
 import { verifyParticipantToken } from "./card-room-participant-token";
 
-type CardRoomResponse = { room: import("@yeon/race-shared").CardRoomDetailDto };
 type JsonObject = Record<string, unknown>;
 type ClockTimer = { clear: () => void };
 type VoiceSession = {
@@ -25,7 +28,6 @@ type VoiceSession = {
   timeout: ClockTimer | null;
 };
 
-const DEFAULT_BACKEND_BASE_URL = "http://127.0.0.1:8081";
 const MAX_CHAT_MESSAGE_LENGTH = 500;
 const VOICE_SESSION_TIMEOUT_MS = 30_000;
 
@@ -145,39 +147,6 @@ function parseVoiceMute(
 
 function isValidSessionId(sessionId: string | null | undefined) {
   return isNonEmptyString(sessionId);
-}
-
-function backendBaseUrl() {
-  const raw =
-    process.env.SPRING_BACKEND_BASE_URL?.trim() ||
-    process.env.SPRING_BOOTSTRAP_BASE_URL?.trim();
-  return raw && raw.length > 0
-    ? raw.replace(/\/$/, "")
-    : DEFAULT_BACKEND_BASE_URL;
-}
-
-function springHeaders(participantId?: string) {
-  const headers: Record<string, string> = { accept: "application/json" };
-  const token = process.env.SPRING_INTERNAL_TOKEN?.trim();
-  if (token) headers["X-Yeon-Internal-Token"] = token;
-  if (participantId) headers["X-Yeon-Participant-Id"] = participantId;
-  return headers;
-}
-
-async function readJson<T>(path: string, init: RequestInit = {}) {
-  const response = await fetch(`${backendBaseUrl()}${path}`, {
-    ...init,
-    headers: {
-      ...springHeaders(),
-      ...(init.headers as Record<string, string> | undefined),
-    },
-  });
-  const text = await response.text();
-  const parsed = text ? JSON.parse(text) : null;
-  if (!response.ok) {
-    throw new Error(parsed?.message || "카드방 서버 요청에 실패했습니다.");
-  }
-  return parsed as T;
 }
 
 export class CardRoom extends Room {
@@ -791,21 +760,13 @@ export class CardRoom extends Room {
   }
 
   private async spring(path: string, participantId: string, init: RequestInit) {
-    return readJson<unknown>(path, {
-      ...init,
-      headers: {
-        ...springHeaders(participantId),
-        "content-type": "application/json",
-      },
-    });
+    return requestCardRoomBackend(path, participantId, init);
   }
 
   private async refreshState() {
     if (!this.cardRoomId) return;
-    const response = await readJson<CardRoomResponse>(
-      `/api/v1/card-rooms/${this.cardRoomId}`
-    );
-    const state = toCardRoomRealtimeState(response.room);
+    const room = await loadCardRoomDetail(this.cardRoomId);
+    const state = toCardRoomRealtimeState(room);
     this.setState(state as never);
     this.broadcast(CARD_ROOM_EVENTS.STATE, state);
   }
