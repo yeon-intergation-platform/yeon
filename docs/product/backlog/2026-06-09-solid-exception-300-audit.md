@@ -497,7 +497,7 @@
 201. **[완료][P2] 큰 파일 책임 분리** `apps/mobile/src/features/card-service/rooms/card-room-screen.tsx:1` — 원칙 `S`. 헤더/참가자/대기 컨트롤/학습 카드/완료/채팅 렌더링을 `card-room-screen-sections.tsx`로, 스타일을 `card-room-screen-styles.ts`로 분리해 screen 파일은 연결·입장 상태와 섹션 조립만 담당하게 축소했다. 근거: `CardRoomHeader`, `CardRoomParticipantsSection`, `StudyCardSection`, `CardRoomChatSection`
 202. **[완료][P2] 긴 함수 책임 분리** `apps/mobile/src/features/card-service/rooms/card-room-screen.tsx:40` — 원칙 `S`. join/rejoin, stale participant 정리, leave/start/chat 핸들러, 현재 카드방 파생 상태를 `use-card-room-screen-state.ts`로 분리해 screen 함수는 에러/연결/본문 렌더링 분기만 담당하게 축소했다. 근거: `const { ... } = useCardRoomScreenState(roomId);`
 203. **[완료][P2] 긴 함수 책임 분리** `apps/mobile/src/features/card-service/rooms/use-card-room-connection.ts:43` — 원칙 `S`. 연결 오류 정규화, realtime 세션 effect, room send 액션 생성 책임을 `card-room-connection-errors.ts`, `use-card-room-realtime-session.ts`, `use-card-room-connection-actions.ts`로 분리해 public hook은 세션과 액션 조립만 담당하게 축소했다. 근거: `const { connectionState, error, roomRef, state } = useCardRoomRealtimeSession({`
-204. **[P2] 긴 함수 책임 분리** `apps/mobile/src/features/card-service/runtime-adapters/card-item-repository.ts:39` — 원칙 `S`. 110라인 함수다. 검증/변환/부수효과를 작은 함수로 분리한다. 근거: `export function createMobileCardItemRepository(`
+204. **[완료][P2] 긴 함수 책임 분리** `apps/mobile/src/features/card-service/runtime-adapters/card-item-repository.ts:39` — 원칙 `S`. 세션 토큰 해석, 게스트 저장소 repository, 서버 API repository 책임을 `card-item-session.ts`, `card-item-guest-repository.ts`, `card-item-server-repository.ts`로 분리해 public factory는 구현 선택만 담당하게 축소했다. 근거: `return token ? createMobileServerCardItemRepository(token) : createMobileGuestCardItemRepository();`
 205. **[P2] 큰 파일 책임 분리** `apps/race-server/src/rooms/territory-battle-room.ts:1` — 원칙 `S`. 366라인 파일이다. 단일 책임 원칙 기준으로 화면/상태/IO/변환 책임 분리 후보다. 근거: `import { type Client, Room } from "@colyseus/core";`
 206. **[P2] 컴포넌트 hook 책임 분리** `apps/web/src/features/card-service/auth-context.tsx:31` — 원칙 `S`. 컴포넌트 인근 hook 호출 후보 14개다. 데이터/폼/이벤트 hook으로 분리한다. 근거: `export function CardServiceAuthProvider({`
 207. **[P2] 긴 함수 책임 분리** `apps/web/src/features/card-service/card-room-chat-panel.tsx:24` — 원칙 `S`. 90라인 함수다. 검증/변환/부수효과를 작은 함수로 분리한다. 근거: `export function CardRoomChatPanel({`
@@ -608,3 +608,7 @@
 ## 48차 적용 완료
 
 - 항목 203 완료: 모바일 카드방 realtime 연결 훅에서 네트워크 오류 메시지 정규화, Colyseus 세션 연결/cleanup effect, room send 액션 생성을 별도 모듈로 분리했다. `useCardRoomConnection`은 세션 상태와 액션을 반환하는 조립 훅만 담당한다.
+
+## 49차 적용 완료
+
+- 항목 204 완료: 모바일 카드 아이템 repository 어댑터에서 세션 판정, 게스트 저장소 구현, 서버 API 구현을 별도 모듈로 분리했다. `createMobileCardItemRepository`는 token 존재 여부에 따라 guest/server repository 구현을 선택하는 조립 책임만 담당한다.
