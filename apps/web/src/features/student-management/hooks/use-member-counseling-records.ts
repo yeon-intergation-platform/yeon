@@ -22,7 +22,7 @@ export function useMemberCounselingRecords(
           `/api/v1/spaces/${spaceId}/members/${memberId}/counseling-records`
         ),
         { method: "GET" },
-        "상담 기록을 불러오지 못했습니다."
+        "운영 메모를 불러오지 못했습니다."
       ),
   });
 }

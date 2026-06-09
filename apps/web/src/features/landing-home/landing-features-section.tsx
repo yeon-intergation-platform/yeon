@@ -24,7 +24,7 @@ export function LandingFeaturesSection() {
             tone="inherit"
             className="m-0 whitespace-pre-line text-[clamp(28px,4vw,48px)] font-black leading-[1.15] tracking-[-0.025em] text-[#111]"
           >
-            {"상담기록이 관리와 보고로\n바로 이어집니다"}
+            {"각 서비스가 독립된 경험으로\n바로 이어집니다"}
           </YeonText>
         </YeonView>
 

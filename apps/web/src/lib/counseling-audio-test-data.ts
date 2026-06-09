@@ -14,7 +14,7 @@ export const COUNSELING_AUDIO_TEST_DATA = [
     label: "경량 테스트 데이터",
     shortLabel: "경량",
     description: "20분 전사 품질 확인용",
-    fileName: "상담기록_테스트음성_20분.mp3",
+    fileName: "운영 메모_테스트음성_20분.mp3",
     href: PUBLIC_MP3_ASSET_URLS.counselingTestLight,
   },
   {

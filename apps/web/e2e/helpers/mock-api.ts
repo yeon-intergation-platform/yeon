@@ -36,7 +36,7 @@ export function makeRecord(overrides: Record<string, unknown> = {}) {
     spaceId: "space-001",
     memberId: null,
     studentName: "",
-    sessionTitle: "상담 기록",
+    sessionTitle: "운영 메모",
     counselingType: "",
     status: "ready",
     recordSource: "audio_upload",
@@ -56,7 +56,7 @@ export async function setupHomeMocks(
     records?: object[];
     members?: object[];
     spaces?: object[];
-  } = {},
+  } = {}
 ) {
   const records = opts.records ?? [];
   const members = opts.members ?? [];
@@ -75,7 +75,7 @@ export async function setupHomeMocks(
   });
 
   await page.route("/api/v1/counseling-records/**", (route) =>
-    route.continue(),
+    route.continue()
   );
 
   await page.route("/api/v1/spaces", async (route) => {

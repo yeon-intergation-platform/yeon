@@ -24,7 +24,7 @@ export const STATS = [
     value: 3,
     suffix: "+",
     description:
-      "상담 워크스페이스부터 타자연습, 실험형 공개 서비스까지 같은 구조로 붙입니다.",
+      "타자연습, 플래시카드, 커뮤니티처럼 공개 서비스와 계정형 서비스를 같은 구조로 붙입니다.",
   },
 ] as const;
 
@@ -51,7 +51,7 @@ export const FEATURES: readonly LandingFeature[] = [
     icon: "folder-open",
     title: "서비스별 깊은 경험 설계",
     description:
-      "상담, 타자연습, 랭킹처럼 서로 다른 UX를 하나의 앱 안에서도 서비스 경계 기준으로 분리합니다.",
+      "타자연습, 카드 학습, 커뮤니티처럼 서로 다른 UX를 하나의 앱 안에서도 서비스 경계 기준으로 분리합니다.",
   },
 ] as const;
 

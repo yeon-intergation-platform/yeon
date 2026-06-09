@@ -38,11 +38,11 @@ export async function GET(request: NextRequest, context: RouteContext) {
   try {
     const springResponse = await fetchCounselingRecordDetailFromSpring(
       currentUser.id,
-      recordId,
+      recordId
     );
 
     return NextResponse.json(
-      counselingRecordDetailResponseSchema.parse(springResponse),
+      counselingRecordDetailResponseSchema.parse(springResponse)
     );
   } catch (error) {
     if (error instanceof CounselingRecordDetailsSpringBackendHttpError) {
@@ -50,7 +50,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
     }
 
     console.error(error);
-    return jsonError("상담 기록 상세를 불러오지 못했습니다.", 500);
+    return jsonError("운영 메모 상세를 불러오지 못했습니다.", 500);
   }
 }
 
@@ -79,7 +79,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     await linkCounselingRecordMemberInSpring(
       currentUser.id,
       recordId,
-      parsed.data.memberId,
+      parsed.data.memberId
     );
 
     return NextResponse.json(linkMemberResponseSchema.parse({ ok: true }));
@@ -112,6 +112,6 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
     }
 
     console.error(error);
-    return jsonError("상담 기록을 삭제하지 못했습니다.", 500);
+    return jsonError("운영 메모를 삭제하지 못했습니다.", 500);
   }
 }

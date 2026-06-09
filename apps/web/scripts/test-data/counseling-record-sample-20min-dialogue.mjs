@@ -1,5 +1,5 @@
 export const counselingRecordSample20Min = {
-  title: "상담 기록 테스트 음성 20분 샘플",
+  title: "운영 메모 테스트 음성 20분 샘플",
   targetDurationSeconds: 1200,
   personas: {
     mentor: {

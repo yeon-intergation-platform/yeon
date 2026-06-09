@@ -138,7 +138,7 @@ export function useCounselingSidebarSelection({
     if (contextMenu.kind === "member") {
       return count > 1 ? `선택한 수강생 ${count}명 삭제` : "수강생 삭제";
     }
-    return count > 1 ? `선택한 상담 기록 ${count}개 삭제` : "상담 기록 삭제";
+    return count > 1 ? `선택한 운영 메모 ${count}개 삭제` : "운영 메모 삭제";
   }, [contextMenu]);
 
   function getOrderedIdsForKind(kind: CounselingSidebarSelectionKind) {
@@ -183,8 +183,8 @@ export function useCounselingSidebarSelection({
     }
 
     return count > 1
-      ? `선택한 상담 기록 ${count}개를 삭제하시겠습니까?`
-      : `상담 기록 "${resolvedLabel}"을 삭제하시겠습니까?`;
+      ? `선택한 운영 메모 ${count}개를 삭제하시겠습니까?`
+      : `운영 메모 "${resolvedLabel}"을 삭제하시겠습니까?`;
   }
 
   async function deleteSelection(params: {

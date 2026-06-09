@@ -208,7 +208,7 @@ function createSseResponse(chunks: Array<{ content: string }>) {
       start(controller) {
         for (const chunk of chunks) {
           controller.enqueue(
-            encoder.encode(`data: ${JSON.stringify(chunk)}\n\n`),
+            encoder.encode(`data: ${JSON.stringify(chunk)}\n\n`)
           );
         }
         controller.enqueue(encoder.encode("data: [DONE]\n\n"));
@@ -220,7 +220,7 @@ function createSseResponse(chunks: Array<{ content: string }>) {
         "content-type": "text/event-stream",
         "cache-control": "no-cache",
       },
-    },
+    }
   );
 }
 
@@ -251,7 +251,7 @@ function createInitialStore(): DemoStore {
     id: space.id,
     name: `${space.name} 스페이스`,
     description:
-      index === 0 ? "상담 기록 워크스페이스 데모" : "보조 데모 스페이스",
+      index === 0 ? "운영 메모 워크스페이스 데모" : "보조 데모 스페이스",
     startDate: "2026-03-01",
     endDate: null,
     createdAt: `2026-03-0${index + 1}T09:00:00.000Z`,
@@ -331,7 +331,7 @@ function createInitialStore(): DemoStore {
               ? buildAnalysisResult(record.studentName)
               : null,
       },
-    ]),
+    ])
   ) as Record<string, DemoRecordDetail>;
 
   const boardRows: DemoStore["boardRows"] = members.map((member, index) => ({
@@ -366,7 +366,7 @@ function createInitialStore(): DemoStore {
       publicPath: `/check/demo-${index + 1}`,
       locationLabel: session.detail,
       radiusMeters: 120,
-    }),
+    })
   );
 
   const memberTabs = [
@@ -380,7 +380,7 @@ function createInitialStore(): DemoStore {
     },
     {
       id: "tab-counseling",
-      name: "상담기록",
+      name: "운영 메모",
       tabType: "system" as const,
       systemKey: "counseling",
       isVisible: true,
@@ -423,7 +423,7 @@ function createInitialStore(): DemoStore {
           createdAt: `2026-04-1${Math.min(index + 1, 9)}T09:00:00.000Z`,
         },
       ],
-    ]),
+    ])
   ) as DemoStore["memberMemos"];
 
   return {
@@ -469,13 +469,13 @@ async function handleMockApi(request: Request): Promise<Response | null> {
   }
 
   const recordDetailMatch = path.match(
-    /^\/api\/v1\/counseling-records\/([^/]+)$/,
+    /^\/api\/v1\/counseling-records\/([^/]+)$/
   );
   if (recordDetailMatch && method === "GET") {
     const record = demoStore.recordDetails[recordDetailMatch[1]];
     return record
       ? createJsonResponse({ record })
-      : createJsonResponse({ message: "상담 기록을 찾지 못했습니다." }, 404);
+      : createJsonResponse({ message: "운영 메모를 찾지 못했습니다." }, 404);
   }
 
   if (path === "/api/v1/counseling-records/details" && method === "POST") {
@@ -490,14 +490,14 @@ async function handleMockApi(request: Request): Promise<Response | null> {
   }
 
   const chatMatch = path.match(
-    /^\/api\/v1\/counseling-records\/([^/]+)\/chat$/,
+    /^\/api\/v1\/counseling-records\/([^/]+)\/chat$/
   );
   if (chatMatch && method === "DELETE") {
     const record = demoStore.recordDetails[chatMatch[1]];
     if (!record) {
       return createJsonResponse(
-        { message: "상담 기록을 찾지 못했습니다." },
-        404,
+        { message: "운영 메모를 찾지 못했습니다." },
+        404
       );
     }
     demoStore.recordDetails[chatMatch[1]] = {
@@ -511,8 +511,8 @@ async function handleMockApi(request: Request): Promise<Response | null> {
     const record = demoStore.recordDetails[chatMatch[1]];
     if (!record) {
       return createJsonResponse(
-        { message: "상담 기록을 찾지 못했습니다." },
-        404,
+        { message: "운영 메모를 찾지 못했습니다." },
+        404
       );
     }
     const body = (await request.json().catch(() => ({ messages: [] }))) as {
@@ -528,25 +528,25 @@ async function handleMockApi(request: Request): Promise<Response | null> {
       },
       {
         role: "assistant",
-        content: `원문 기준 답변입니다: ${lastUserMessage}에 대해 현재 상담 기록의 핵심 포인트를 정리했습니다.`,
+        content: `원문 기준 답변입니다: ${lastUserMessage}에 대해 현재 운영 메모의 핵심 포인트를 정리했습니다.`,
         createdAt: nowIso,
       },
     ];
     return createSseResponse([
       { content: `원문 기준 답변입니다: ${lastUserMessage}` },
-      { content: "에 대해 현재 상담 기록의 핵심 포인트를 정리했습니다." },
+      { content: "에 대해 현재 운영 메모의 핵심 포인트를 정리했습니다." },
     ]);
   }
 
   const analyzeMatch = path.match(
-    /^\/api\/v1\/counseling-records\/([^/]+)\/analyze$/,
+    /^\/api\/v1\/counseling-records\/([^/]+)\/analyze$/
   );
   if (analyzeMatch && method === "POST") {
     const record = demoStore.recordDetails[analyzeMatch[1]];
     if (!record) {
       return createJsonResponse(
-        { message: "상담 기록을 찾지 못했습니다." },
-        404,
+        { message: "운영 메모를 찾지 못했습니다." },
+        404
       );
     }
     const analysisResult =
@@ -580,7 +580,7 @@ async function handleMockApi(request: Request): Promise<Response | null> {
   if (membersMatch && method === "GET") {
     return createJsonResponse({
       members: demoStore.members.filter(
-        (member) => member.spaceId === membersMatch[1],
+        (member) => member.spaceId === membersMatch[1]
       ),
     });
   }
@@ -637,7 +637,7 @@ async function handleMockApi(request: Request): Promise<Response | null> {
   const singleMemberMatch = path.match(/^\/api\/v1\/members\/([^/]+)$/);
   if (singleMemberMatch && method === "GET") {
     const member = demoStore.members.find(
-      (item) => item.id === singleMemberMatch[1],
+      (item) => item.id === singleMemberMatch[1]
     );
     return member
       ? createJsonResponse({ member })
@@ -645,25 +645,25 @@ async function handleMockApi(request: Request): Promise<Response | null> {
   }
 
   const memberTabsMatch = path.match(
-    /^\/api\/v1\/spaces\/([^/]+)\/member-tabs$/,
+    /^\/api\/v1\/spaces\/([^/]+)\/member-tabs$/
   );
   if (memberTabsMatch && method === "GET") {
     return createJsonResponse({ tabs: demoStore.memberTabs });
   }
 
   const memberRecordsMatch = path.match(
-    /^\/api\/v1\/spaces\/([^/]+)\/members\/([^/]+)\/counseling-records$/,
+    /^\/api\/v1\/spaces\/([^/]+)\/members\/([^/]+)\/counseling-records$/
   );
   if (memberRecordsMatch && method === "GET") {
     return createJsonResponse({
       records: demoStore.records.filter(
-        (record) => record.memberId === memberRecordsMatch[2],
+        (record) => record.memberId === memberRecordsMatch[2]
       ),
     });
   }
 
   const memberLogsMatch = path.match(
-    /^\/api\/v1\/spaces\/([^/]+)\/members\/([^/]+)\/activity-logs$/,
+    /^\/api\/v1\/spaces\/([^/]+)\/members\/([^/]+)\/activity-logs$/
   );
   if (memberLogsMatch && method === "GET") {
     const logs = demoStore.memberMemos[memberLogsMatch[2]]
@@ -696,7 +696,7 @@ async function handleMockApi(request: Request): Promise<Response | null> {
   }
 
   const publicCheckLocationMatch = path.match(
-    /^\/api\/v1\/spaces\/([^/]+)\/public-check-locations$/,
+    /^\/api\/v1\/spaces\/([^/]+)\/public-check-locations$/
   );
   if (publicCheckLocationMatch && method === "GET") {
     const query = url.searchParams.get("query")?.trim() ?? "";
@@ -712,7 +712,7 @@ async function handleMockApi(request: Request): Promise<Response | null> {
               result.addressName,
             ]
               .filter(Boolean)
-              .some((value) => value!.toLowerCase().includes(loweredQuery)),
+              .some((value) => value!.toLowerCase().includes(loweredQuery))
           );
 
     return createJsonResponse({ results });
@@ -755,7 +755,7 @@ async function handleMockApi(request: Request): Promise<Response | null> {
   }
 
   const boardMemberMatch = path.match(
-    /^\/api\/v1\/spaces\/([^/]+)\/student-board\/([^/]+)$/,
+    /^\/api\/v1\/spaces\/([^/]+)\/student-board\/([^/]+)$/
   );
   if (boardMemberMatch && method === "PATCH") {
     const body = (await request.json().catch(() => ({}))) as {
@@ -772,7 +772,7 @@ async function handleMockApi(request: Request): Promise<Response | null> {
             assignmentLink: body.assignmentLink ?? row.assignmentLink,
             lastPublicCheckAt: nowIso,
           }
-        : row,
+        : row
     );
     return createJsonResponse({
       rows: demoStore.boardRows,
@@ -782,7 +782,7 @@ async function handleMockApi(request: Request): Promise<Response | null> {
   }
 
   const sessionMatch = path.match(
-    /^\/api\/v1\/spaces\/([^/]+)\/public-check-sessions\/([^/]+)$/,
+    /^\/api\/v1\/spaces\/([^/]+)\/public-check-sessions\/([^/]+)$/
   );
   if (sessionMatch && method === "PATCH") {
     const body = (await request.json().catch(() => ({}))) as {
@@ -791,7 +791,7 @@ async function handleMockApi(request: Request): Promise<Response | null> {
     demoStore.boardSessions = demoStore.boardSessions.map((session) =>
       session.id === sessionMatch[2]
         ? { ...session, status: body.status ?? session.status }
-        : session,
+        : session
     );
     return createJsonResponse({ ok: true });
   }
@@ -813,7 +813,7 @@ export function MockDemoProvider({ children }: { children: React.ReactNode }) {
           ? input
           : new Request(
               typeof input === "string" ? input : input.toString(),
-              init,
+              init
             );
 
       const mockedResponse = await handleMockApi(request);

@@ -70,7 +70,7 @@ function getHomeJsonLd() {
         url: "https://yeon.world",
         inLanguage: "ko-KR",
         description:
-          "상담 기록 워크스페이스, 타자연습, 플래시카드 학습을 한곳에서 운영하는 멀티 서비스 플랫폼",
+          "타자연습, 플래시카드 학습, 커뮤니티를 한곳에서 운영하는 멀티 서비스 플랫폼",
       },
       {
         "@type": "Organization",

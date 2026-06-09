@@ -81,7 +81,7 @@ export async function createCounselingRecordInSpring(params: {
   if (!response.ok) {
     throw new CounselingRecordCreateSpringBackendHttpError(
       response.status,
-      extractErrorMessage(parsed) ?? "상담 기록 생성에 실패했습니다."
+      extractErrorMessage(parsed) ?? "운영 메모 생성에 실패했습니다."
     );
   }
 

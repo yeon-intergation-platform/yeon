@@ -2,15 +2,14 @@ export const SITE_BRAND_NAME = "YEON";
 
 export const SITE_SUPPORT_EMAIL = "hiclaudepro@gmail.com";
 
-export const SITE_TITLE = `${SITE_BRAND_NAME} | 상담 기록, 타자연습, 플래시카드 학습`;
+export const SITE_TITLE = `${SITE_BRAND_NAME} | 타자연습, 플래시카드 학습, 커뮤니티`;
 
-export const SITE_DESCRIPTION = `${SITE_BRAND_NAME}에서 상담 기록 워크스페이스, 타자연습, 플래시카드 학습을 한곳에서 이용할 수 있습니다. 공통 계정으로 연결되며 각 서비스는 독립된 경험으로 바로 이동할 수 있습니다.`;
+export const SITE_DESCRIPTION = `${SITE_BRAND_NAME}에서 타자연습, 플래시카드 학습, 커뮤니티를 한곳에서 이용할 수 있습니다. 공통 계정으로 연결되며 각 서비스는 독립된 경험으로 바로 이동할 수 있습니다.`;
 
 export const SITE_KEYWORDS = [
   "YEON",
   "yeon",
   "yeon world",
-  "상담 기록",
   "학생 관리",
   "타자연습",
   "플래시카드",

@@ -26,7 +26,7 @@ export function Gnav({ activeMenu }: GnavProps) {
   } = useCounselingSidebarLayout();
   const menuRef = useClickOutside<HTMLDivElement>(
     () => setShowMenu(false),
-    showMenu,
+    showMenu
   );
   const isStudentsMenu = activeMenu === "students";
   const isCurrentSidebarCollapsed = isStudentsMenu
@@ -78,7 +78,7 @@ export function Gnav({ activeMenu }: GnavProps) {
               ? "bg-accent-dim text-accent"
               : "text-text-dim hover:bg-surface-3 hover:text-text-secondary"
           }`}
-          title="상담 기록"
+          title="운영 메모"
         >
           <RecordIcon size={16} />
         </Link>

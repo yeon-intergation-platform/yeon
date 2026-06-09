@@ -29,7 +29,7 @@ const RECORD_SCOPE_OPTIONS: Array<{
 }> = [
   { value: 3, label: "최근 상담 3건" },
   { value: 5, label: "최근 상담 5건" },
-  { value: "all", label: "전체 상담 기록" },
+  { value: "all", label: "전체 운영 메모" },
 ];
 
 export function TabReport({ member }: TabReportProps) {
@@ -167,12 +167,12 @@ export function TabReport({ member }: TabReportProps) {
 
       {!canLoadRecords ? (
         <div className="border-t border-border px-5 py-12 text-center text-[13px] text-text-dim">
-          레거시 수강생 상세에서는 아직 상담 기록 기반 리포트를 만들 수
+          레거시 수강생 상세에서는 아직 운영 메모 기반 리포트를 만들 수
           없습니다.
         </div>
       ) : recordsLoading ? (
         <div className="flex items-center justify-center gap-2 border-t border-border px-5 py-12 text-[13px] text-text-dim">
-          <Loader2 size={15} className="animate-spin" /> 상담 기록 불러오는
+          <Loader2 size={15} className="animate-spin" /> 운영 메모 불러오는
           중...
         </div>
       ) : recordsErrorMessage ? (
@@ -186,10 +186,10 @@ export function TabReport({ member }: TabReportProps) {
               <div className="grid gap-3">
                 <div className="grid gap-1">
                   <span className="text-[12px] font-medium text-text-secondary">
-                    리포트에 포함할 상담 기록
+                    리포트에 포함할 운영 메모
                   </span>
                   <p className="m-0 text-[12px] leading-5 text-text-dim">
-                    여러 상담 기록을 최신 상담일 순으로 묶어 반영합니다.
+                    여러 운영 메모를 최신 상담일 순으로 묶어 반영합니다.
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">

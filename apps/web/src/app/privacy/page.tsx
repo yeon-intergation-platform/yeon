@@ -64,12 +64,12 @@ export default function PrivacyPage() {
             </YeonTableRow>
             <YeonTableRow>
               <YeonTableCell>수강생 이름, 이메일, 전화번호</YeonTableCell>
-              <YeonTableCell>수강생 관리 및 상담 기록</YeonTableCell>
+              <YeonTableCell>수강생 관리 및 운영 메모</YeonTableCell>
               <YeonTableCell>서비스 이용 종료 시까지</YeonTableCell>
             </YeonTableRow>
             <YeonTableRow>
               <YeonTableCell>멘토링 녹음 파일 및 AI 요약본</YeonTableCell>
-              <YeonTableCell>상담 기록 보관 및 분석</YeonTableCell>
+              <YeonTableCell>운영 메모 보관 및 분석</YeonTableCell>
               <YeonTableCell>삭제 요청 시까지</YeonTableCell>
             </YeonTableRow>
             <YeonTableRow>

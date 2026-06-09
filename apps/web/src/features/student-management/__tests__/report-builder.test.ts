@@ -103,10 +103,10 @@ describe("buildStudentReportDocument", () => {
     expect(document.summary).toContain("상담 1건을 묶어");
     expect(document.sections.map((section) => section.title)).toEqual([
       "핵심 요약",
-      "상담 기록 요약",
+      "운영 메모 요약",
     ]);
     expect(document.sections[0]?.bullets).toContain(
-      "시간 관리 흔들림: 과제 제출 리듬이 무너짐",
+      "시간 관리 흔들림: 과제 제출 리듬이 무너짐"
     );
     expect(document.sections[1]?.bullets.join(" ")).toContain("3월 진도 점검");
   });
@@ -120,13 +120,13 @@ describe("buildStudentReportDocument", () => {
 
     expect(document.sections.map((section) => section.title)).toEqual([
       "핵심 요약",
-      "상담 기록 요약",
+      "운영 메모 요약",
     ]);
     expect(document.sections[0]?.bullets[0]).toContain(
-      "최근 과제 누락이 있었지만 회복 의지가 확인됨.",
+      "최근 과제 누락이 있었지만 회복 의지가 확인됨."
     );
     expect(document.sections[1]?.bullets[0]).toContain(
-      "최근 과제 누락이 있었지만 회복 의지가 확인됨.",
+      "최근 과제 누락이 있었지만 회복 의지가 확인됨."
     );
   });
 
@@ -139,16 +139,16 @@ describe("buildStudentReportDocument", () => {
     });
 
     expect(document.meta.some((item) => item.label === "운영 메모")).toBe(
-      false,
+      false
     );
     expect(document.meta.some((item) => item.label === "AI 분석 반영")).toBe(
-      false,
+      false
     );
     expect(
-      document.sections.some((section) => section.title === "후속 액션"),
+      document.sections.some((section) => section.title === "후속 액션")
     ).toBe(false);
     expect(
-      document.sections.some((section) => section.title === "최근 운영 메모"),
+      document.sections.some((section) => section.title === "최근 운영 메모")
     ).toBe(false);
   });
 });

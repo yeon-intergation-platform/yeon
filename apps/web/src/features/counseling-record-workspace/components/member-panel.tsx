@@ -138,10 +138,10 @@ export function MemberPanel({
         </div>
       </div>
 
-      {/* 상담 기록 목록 */}
+      {/* 운영 메모 목록 */}
       <div>
         <div className="text-[10px] font-semibold text-text-dim uppercase tracking-widest mb-3">
-          상담 기록 ({memberRecords.length})
+          운영 메모 ({memberRecords.length})
         </div>
 
         {hasProcessingRecord && (
@@ -156,7 +156,7 @@ export function MemberPanel({
             <div className="w-12 h-12 rounded-full bg-surface-3 border border-border flex items-center justify-center">
               <span className="text-xl">🎙</span>
             </div>
-            <p className="text-sm text-text-dim">아직 상담 기록이 없습니다</p>
+            <p className="text-sm text-text-dim">아직 운영 메모가 없습니다</p>
             <button
               className="px-4 py-2 bg-accent text-white text-sm font-medium rounded-md hover:opacity-90 transition-opacity border-none cursor-pointer font-[inherit]"
               onClick={onOpenNewRecordEntry}

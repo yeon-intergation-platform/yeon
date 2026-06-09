@@ -2,9 +2,18 @@ import { listCounselingRecordsResponseSchema } from "@yeon/api-contract/counseli
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
-import { jsonError, requireAuthenticatedUser } from "@/app/api/v1/counseling-records/_shared";
-import { fetchMemberInSpaceFromSpring, MembersSpringBackendHttpError } from "@/server/members-spring-client";
-import { fetchMemberCounselingRecordsFromSpring, MemberCounselingRecordsSpringBackendHttpError } from "@/server/member-counseling-records-spring-client";
+import {
+  jsonError,
+  requireAuthenticatedUser,
+} from "@/app/api/v1/counseling-records/_shared";
+import {
+  fetchMemberInSpaceFromSpring,
+  MembersSpringBackendHttpError,
+} from "@/server/members-spring-client";
+import {
+  fetchMemberCounselingRecordsFromSpring,
+  MemberCounselingRecordsSpringBackendHttpError,
+} from "@/server/member-counseling-records-spring-client";
 
 export const runtime = "nodejs";
 type RouteContext = { params: Promise<{ spaceId: string; memberId: string }> };
@@ -19,7 +28,10 @@ export async function GET(request: NextRequest, context: RouteContext) {
 
   try {
     const limit = rawLimit ? Number(rawLimit) : undefined;
-    if (limit !== undefined && (!Number.isInteger(limit) || limit <= 0 || limit > 500)) {
+    if (
+      limit !== undefined &&
+      (!Number.isInteger(limit) || limit <= 0 || limit > 500)
+    ) {
       return jsonError("limit은 1 이상 500 이하의 정수여야 합니다.", 400);
     }
     const beforeCreatedAt = rawBefore ? new Date(rawBefore) : undefined;
@@ -35,11 +47,15 @@ export async function GET(request: NextRequest, context: RouteContext) {
       limit,
       before: rawBefore ?? undefined,
     });
-    return NextResponse.json(listCounselingRecordsResponseSchema.parse(payload));
+    return NextResponse.json(
+      listCounselingRecordsResponseSchema.parse(payload)
+    );
   } catch (error) {
-    if (error instanceof MembersSpringBackendHttpError) return jsonError(error.message, error.status);
-    if (error instanceof MemberCounselingRecordsSpringBackendHttpError) return jsonError(error.message, error.status);
+    if (error instanceof MembersSpringBackendHttpError)
+      return jsonError(error.message, error.status);
+    if (error instanceof MemberCounselingRecordsSpringBackendHttpError)
+      return jsonError(error.message, error.status);
     console.error(error);
-    return jsonError("수강생의 상담 기록을 불러오지 못했습니다.", 500);
+    return jsonError("수강생의 운영 메모를 불러오지 못했습니다.", 500);
   }
 }

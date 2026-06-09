@@ -21,8 +21,6 @@ type LandingHomeProps = {
   isAuthenticated: boolean;
 };
 
-const COUNSELING_SERVICE_SLUG = "counseling-service";
-
 export function LandingHome({
   nextPath,
   initialLoginModalOpen = false,
@@ -34,8 +32,6 @@ export function LandingHome({
     initialLoginModalOpen
   );
   const [loginNextPath, setLoginNextPath] = useState(nextPath);
-  const [isCounselingServiceHidden, setIsCounselingServiceHidden] =
-    useState(true);
 
   useEffect(() => {
     setLoginNextPath(nextPath);
@@ -68,13 +64,7 @@ export function LandingHome({
     setIsLoginModalOpen(false);
   }, []);
 
-  const visibleServices = isCounselingServiceHidden
-    ? services.filter((service) => service.slug !== COUNSELING_SERVICE_SLUG)
-    : services;
-  const hasHiddenCounselingService = services.some(
-    (service) => service.slug === COUNSELING_SERVICE_SLUG
-  );
-  const hiddenServiceCount = services.length - visibleServices.length;
+  const visibleServices = services;
 
   return (
     <>
@@ -122,26 +112,6 @@ export function LandingHome({
             >
               필요한 서비스를 선택해 바로 이용해보세요.
             </YeonText>
-            {hasHiddenCounselingService ? (
-              <YeonButton
-                type="button"
-                variant="secondary"
-                className="mt-5 inline-flex min-h-[44px] items-center rounded-xl border border-[#e5e5e5] bg-white px-4 py-2 text-[13px] font-semibold text-[#666] transition-colors hover:border-[#111] hover:text-[#111]"
-                aria-pressed={!isCounselingServiceHidden}
-                aria-label={
-                  isCounselingServiceHidden
-                    ? "숨겨진 서비스 보기"
-                    : "상담 기록 워크스페이스 숨기기"
-                }
-                onClick={() =>
-                  setIsCounselingServiceHidden((hidden) => !hidden)
-                }
-              >
-                {isCounselingServiceHidden
-                  ? `숨겨진 서비스 ${hiddenServiceCount}개 보기`
-                  : "상담 기록 워크스페이스 숨기기"}
-              </YeonButton>
-            ) : null}
           </YeonView>
 
           <YeonView as="section" className="mt-8">

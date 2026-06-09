@@ -84,7 +84,7 @@ export default function TermsPage() {
           <YeonListItem>
             OneDrive · Google Drive 연동을 통한 수강생 일괄 가져오기
           </YeonListItem>
-          <YeonListItem>수강생 위험도 분석 및 상담 기록 관리</YeonListItem>
+          <YeonListItem>수강생 위험도 분석 및 운영 메모 관리</YeonListItem>
         </YeonLegalList>
         <YeonText variant="unstyled" tone="inherit">
           서비스는 점검, 장애, 또는 기타 사유로 일시적으로 중단될 수 있습니다.

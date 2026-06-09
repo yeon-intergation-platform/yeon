@@ -27,7 +27,7 @@ export function fetchCounselingRecords() {
   return counselingWorkspaceFetchJson<CounselingRecordsListResponse>(
     resolveApiHrefForCurrentPath("/api/v1/counseling-records"),
     {},
-    "상담 기록 목록을 조회하지 못했습니다."
+    "운영 메모 목록을 조회하지 못했습니다."
   );
 }
 
@@ -35,7 +35,7 @@ export function fetchCounselingRecordDetail(recordId: string) {
   return counselingWorkspaceFetchJson<CounselingRecordDetailResponse>(
     resolveApiHrefForCurrentPath(`/api/v1/counseling-records/${recordId}`),
     {},
-    "상담 기록 상세를 조회하지 못했습니다."
+    "운영 메모 상세를 조회하지 못했습니다."
   );
 }
 

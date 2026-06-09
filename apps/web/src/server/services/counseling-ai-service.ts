@@ -86,14 +86,14 @@ function buildTranscriptBlock(segments: TranscriptSegmentInput[]) {
   return segments
     .map(
       (segment) =>
-        `[${formatTimestamp(segment.startMs)}] ${segment.speakerLabel}: ${segment.text}`,
+        `[${formatTimestamp(segment.startMs)}] ${segment.speakerLabel}: ${segment.text}`
     )
     .join("\n");
 }
 
 function splitTranscriptSegmentsForAnalysis(
   segments: TranscriptSegmentInput[],
-  maxChars: number,
+  maxChars: number
 ) {
   const groups: TranscriptSegmentInput[][] = [];
   let currentGroup: TranscriptSegmentInput[] = [];
@@ -122,13 +122,13 @@ function splitTranscriptSegmentsForAnalysis(
 /** 화자 분리 여부 — generic 라벨(원문/unknown)만 있으면 미분리로 판단 */
 function hasDiarization(segments: TranscriptSegmentInput[]): boolean {
   return segments.some(
-    (s) => s.speakerLabel !== "원문" && s.speakerLabel !== "unknown",
+    (s) => s.speakerLabel !== "원문" && s.speakerLabel !== "unknown"
   );
 }
 
 function buildChatSystemPrompt(
   meta: RecordMetaInput,
-  segments: TranscriptSegmentInput[],
+  segments: TranscriptSegmentInput[]
 ) {
   const transcriptBlock = buildTranscriptBlock(segments);
 
@@ -139,7 +139,7 @@ function buildChatSystemPrompt(
 이 녹음은 화자 분리가 수행되지 않아 전체가 하나의 원문으로 제공됩니다.
 대화 맥락(질문↔응답, 존댓말↔반말, 호칭 등)을 바탕으로 멘토와 수강생의 발화를 추론하여 분석에 반영하세요.`;
 
-  return `당신은 부트캠프/교육 프로그램 상담 기록 분석 전문 AI 도우미입니다.
+  return `당신은 부트캠프/교육 프로그램 운영 메모 분석 전문 AI 도우미입니다.
 
 ## 역할
 - 멘토/운영자가 업로드한 상담 녹음의 전사 원문을 바탕으로 분석, 요약, 후속 조치 제안을 합니다.
@@ -147,7 +147,7 @@ function buildChatSystemPrompt(
 - 실무에 바로 쓸 수 있는 구체적이고 실용적인 답변을 합니다.
 - 대상은 20~30대 성인 수강생입니다. 학교/초중고 맥락이 아닙니다.
 
-## 현재 상담 기록 정보
+## 현재 운영 메모 정보
 - 수강생: ${meta.studentName || "(미지정)"}
 - 상담 제목: ${meta.sessionTitle}
 - 상담 유형: ${meta.counselingType}
@@ -174,7 +174,7 @@ export type SpeakerMapping = Record<
 >;
 
 export async function resolveSpeakerNames(
-  segments: TranscriptSegmentInput[],
+  segments: TranscriptSegmentInput[]
 ): Promise<{ mapping: SpeakerMapping; studentName: string | null }> {
   const apiKey = getOpenAiApiKey();
   const model =
@@ -188,7 +188,7 @@ export async function resolveSpeakerNames(
       l === "원문" ||
       /^화자\s/.test(l) ||
       /^[A-Z]$/.test(l) ||
-      /^speaker/i.test(l),
+      /^speaker/i.test(l)
   );
   if (!isGeneric) {
     return { mapping: {}, studentName: null };
@@ -266,7 +266,7 @@ function getOpenAiApiKey() {
   if (!apiKey) {
     throw new ServiceError(
       500,
-      "OPENAI_API_KEY 환경변수가 설정되지 않아 AI 도우미를 사용할 수 없습니다.",
+      "OPENAI_API_KEY 환경변수가 설정되지 않아 AI 도우미를 사용할 수 없습니다."
     );
   }
 
@@ -398,7 +398,7 @@ function formatCitationsMarkdown(citations: UrlCitation[]) {
   }
 
   const lines = citations.map(
-    (citation) => `- [${citation.title}](${citation.url})`,
+    (citation) => `- [${citation.title}](${citation.url})`
   );
 
   return `\n\n---\n\n**출처**\n${lines.join("\n")}`;
@@ -410,7 +410,7 @@ function createTextEventStream(text: string): ReadableStream<Uint8Array> {
   return new ReadableStream<Uint8Array>({
     start(controller) {
       controller.enqueue(
-        encoder.encode(`data: ${JSON.stringify({ content: text })}\n\n`),
+        encoder.encode(`data: ${JSON.stringify({ content: text })}\n\n`)
       );
       controller.enqueue(encoder.encode("data: [DONE]\n\n"));
       controller.close();
@@ -432,7 +432,7 @@ async function requestResponsesApi(params: {
   const controller = new AbortController();
   const timeout = setTimeout(
     () => controller.abort(),
-    params.timeoutMs ?? WEB_SEARCH_REQUEST_TIMEOUT_MS,
+    params.timeoutMs ?? WEB_SEARCH_REQUEST_TIMEOUT_MS
   );
 
   try {
@@ -459,7 +459,7 @@ async function requestResponsesApi(params: {
 
       throw new ServiceError(
         response.status >= 500 ? 502 : response.status,
-        errorMessage,
+        errorMessage
       );
     }
 
@@ -506,7 +506,7 @@ async function requestChatCompletion(params: {
     }
     throw new ServiceError(
       response.status >= 500 ? 502 : response.status,
-      errorMessage,
+      errorMessage
     );
   }
 
@@ -567,11 +567,11 @@ ${transcriptBlock}`,
   });
 }
 
-/** 상담 기록을 JSON 구조로 분석하여 반환 (비스트리밍) */
+/** 운영 메모를 JSON 구조로 분석하여 반환 (비스트리밍) */
 export async function analyzeCounselingRecord(
   meta: RecordMetaInput,
   segments: TranscriptSegmentInput[],
-  onProgress?: (progress: number) => Promise<void> | void,
+  onProgress?: (progress: number) => Promise<void> | void
 ): Promise<AnalysisResult> {
   const apiKey = getOpenAiApiKey();
   const model =
@@ -583,7 +583,7 @@ export async function analyzeCounselingRecord(
     ? ""
     : `\n화자 분리가 수행되지 않아 전체가 하나의 원문으로 제공됩니다. 대화 맥락을 바탕으로 멘토와 수강생의 발화를 추론하세요.`;
 
-  const systemPrompt = `당신은 부트캠프/교육 프로그램 상담 기록 분석 전문 AI입니다.
+  const systemPrompt = `당신은 부트캠프/교육 프로그램 운영 메모 분석 전문 AI입니다.
 
 ## 역할
 멘토/운영자가 업로드한 상담 녹음의 전사 원문을 분석하여 구조화된 JSON으로 반환합니다.
@@ -591,7 +591,7 @@ export async function analyzeCounselingRecord(
 대상은 20~30대 성인 수강생입니다.
 ${diarizationGuide}
 
-## 현재 상담 기록
+## 현재 운영 메모
 - 수강생: ${meta.studentName || "(미지정)"}
 - 상담 제목: ${meta.sessionTitle}
 - 상담 유형: ${meta.counselingType}
@@ -653,14 +653,14 @@ ${transcriptBlock}
             { role: "system", content: systemPrompt },
             {
               role: "user",
-              content: "위 상담 기록을 분석하여 JSON으로 반환하세요.",
+              content: "위 운영 메모를 분석하여 JSON으로 반환하세요.",
             },
           ],
         })
       : await (async () => {
           const sections = splitTranscriptSegmentsForAnalysis(
             segments,
-            MAX_SECTION_ANALYSIS_CHARS,
+            MAX_SECTION_ANALYSIS_CHARS
           );
           const sectionSummaries: string[] = [];
 
@@ -676,7 +676,7 @@ ${transcriptBlock}
             sectionSummaries.push(`### 구간 ${index + 1}\n${summary}`);
             const progress = Math.min(
               80,
-              15 + Math.round(((index + 1) / sections.length) * 55),
+              15 + Math.round(((index + 1) / sections.length) * 55)
             );
             await onProgress?.(progress);
           }
@@ -725,7 +725,7 @@ ${transcriptBlock}
 export async function streamCounselingAiChat(
   meta: RecordMetaInput,
   segments: TranscriptSegmentInput[],
-  conversationMessages: ConversationMessage[],
+  conversationMessages: ConversationMessage[]
 ): Promise<ReadableStream<Uint8Array>> {
   const apiKey = getOpenAiApiKey();
   const model =
@@ -766,7 +766,7 @@ export async function streamCounselingAiChat(
 
     throw new ServiceError(
       response.status >= 500 ? 502 : response.status,
-      errorMessage,
+      errorMessage
     );
   }
 
@@ -778,7 +778,7 @@ export async function streamCounselingAiChat(
 }
 
 async function streamGeneralAiChat(
-  conversationMessages: ConversationMessage[],
+  conversationMessages: ConversationMessage[]
 ): Promise<ReadableStream<Uint8Array>> {
   const apiKey = getOpenAiApiKey();
   const model =
@@ -819,7 +819,7 @@ async function streamGeneralAiChat(
 
     throw new ServiceError(
       response.status >= 500 ? 502 : response.status,
-      errorMessage,
+      errorMessage
     );
   }
 
@@ -831,7 +831,7 @@ async function streamGeneralAiChat(
 }
 
 export async function streamWebSearchAiChat(
-  conversationMessages: ConversationMessage[],
+  conversationMessages: ConversationMessage[]
 ): Promise<ReadableStream<Uint8Array>> {
   const apiKey = getOpenAiApiKey();
   const model =
@@ -863,12 +863,12 @@ export async function streamWebSearchAiChat(
     if (!hasWebSearchCall || citations.length === 0 || !text) {
       throw new ServiceError(
         502,
-        "웹 검색 응답에서 검색 결과 또는 출처를 확인하지 못했습니다.",
+        "웹 검색 응답에서 검색 결과 또는 출처를 확인하지 못했습니다."
       );
     }
 
     return createTextEventStream(
-      `${text}${formatCitationsMarkdown(citations)}`,
+      `${text}${formatCitationsMarkdown(citations)}`
     );
   } catch (error) {
     if (isAbortError(error)) {
@@ -889,21 +889,21 @@ function buildTrendAnalysisSystemPrompt(
     counselingType: string;
     createdAt: string;
     transcriptBlock: string;
-  }[],
+  }[]
 ) {
   const recordBlocks = recordSummaries
     .map(
       (r, i) =>
-        `### ${i + 1}차 상담 (${r.createdAt})\n- 제목: ${r.sessionTitle}\n- 유형: ${r.counselingType}\n\n${r.transcriptBlock}`,
+        `### ${i + 1}차 상담 (${r.createdAt})\n- 제목: ${r.sessionTitle}\n- 유형: ${r.counselingType}\n\n${r.transcriptBlock}`
     )
     .join("\n\n---\n\n");
 
-  return `당신은 부트캠프/교육 프로그램 상담 기록 분석 전문 AI 도우미입니다.
+  return `당신은 부트캠프/교육 프로그램 운영 메모 분석 전문 AI 도우미입니다.
 
 ## 역할
 아래는 "${studentName}" 수강생의 여러 차례 상담 원문입니다. 시간 순서로 수강생의 변화 추이, 반복되는 이슈, 개선된 점, 주의 필요 사항을 분석해주세요.
 
-## 상담 기록들
+## 운영 메모들
 ${recordBlocks}
 
 ## 응답 가이드라인
@@ -926,7 +926,7 @@ export async function streamTrendAnalysis(
     counselingType: string;
     createdAt: string;
     segments: TranscriptSegmentInput[];
-  }[],
+  }[]
 ): Promise<ReadableStream<Uint8Array>> {
   const apiKey = getOpenAiApiKey();
   const model =
@@ -939,14 +939,14 @@ export async function streamTrendAnalysis(
       counselingType: r.counselingType,
       createdAt: r.createdAt,
       transcriptBlock: buildTranscriptBlock(r.segments),
-    })),
+    }))
   );
 
   const messages: ChatMessage[] = [
     { role: "system", content: systemPrompt },
     {
       role: "user",
-      content: "위 상담 기록들을 바탕으로 수강생의 변화 추이를 분석해주세요.",
+      content: "위 운영 메모들을 바탕으로 수강생의 변화 추이를 분석해주세요.",
     },
   ];
 
@@ -980,7 +980,7 @@ export async function streamTrendAnalysis(
 
     throw new ServiceError(
       response.status >= 500 ? 502 : response.status,
-      errorMessage,
+      errorMessage
     );
   }
 
@@ -992,7 +992,7 @@ export async function streamTrendAnalysis(
 }
 
 function transformOpenAiStream(
-  upstream: ReadableStream<Uint8Array>,
+  upstream: ReadableStream<Uint8Array>
 ): ReadableStream<Uint8Array> {
   const decoder = new TextDecoder();
   const encoder = new TextEncoder();
@@ -1039,7 +1039,7 @@ function transformOpenAiStream(
 
               if (content) {
                 controller.enqueue(
-                  encoder.encode(`data: ${JSON.stringify({ content })}\n\n`),
+                  encoder.encode(`data: ${JSON.stringify({ content })}\n\n`)
                 );
               }
             } catch {

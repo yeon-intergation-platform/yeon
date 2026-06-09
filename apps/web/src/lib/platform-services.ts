@@ -24,6 +24,7 @@ export type PlatformServiceDescriptor = {
   audience: string;
   accessPolicy: PlatformServiceAccessPolicy;
   status: PlatformServiceStatus;
+  listedInPlatformHome: boolean;
 };
 
 export const PLATFORM_SERVICES = [
@@ -31,12 +32,13 @@ export const PLATFORM_SERVICES = [
     slug: "counseling-service",
     href: "/counseling-service",
     publicHref: "/counseling-service",
-    title: "상담 기록 워크스페이스",
+    title: "운영 워크스페이스",
     summary:
-      "녹음 업로드, 원문 열람, 구조화 요약, AI 질의를 하나의 워크스페이스에서 다룹니다.",
+      "원문 열람, 구조화 요약, AI 질의를 하나의 워크스페이스에서 다룹니다.",
     audience: "교육 운영자 · 멘토",
     accessPolicy: platformServiceAccessPolicies.authRequired,
     status: platformServiceStatuses.live,
+    listedInPlatformHome: false,
   },
   {
     slug: "typing-service",
@@ -48,6 +50,7 @@ export const PLATFORM_SERVICES = [
     audience: "타자 연습",
     accessPolicy: platformServiceAccessPolicies.anonymous,
     status: platformServiceStatuses.live,
+    listedInPlatformHome: true,
   },
   {
     slug: "card-service",
@@ -59,6 +62,7 @@ export const PLATFORM_SERVICES = [
     audience: "카드 학습",
     accessPolicy: platformServiceAccessPolicies.mixed,
     status: platformServiceStatuses.live,
+    listedInPlatformHome: true,
   },
   {
     slug: "community",
@@ -69,6 +73,7 @@ export const PLATFORM_SERVICES = [
     audience: "커뮤니티",
     accessPolicy: platformServiceAccessPolicies.mixed,
     status: platformServiceStatuses.live,
+    listedInPlatformHome: true,
   },
   {
     slug: "discord-ai",
@@ -80,6 +85,7 @@ export const PLATFORM_SERVICES = [
     audience: "Discord AI",
     accessPolicy: platformServiceAccessPolicies.anonymous,
     status: platformServiceStatuses.live,
+    listedInPlatformHome: true,
   },
 ] as const satisfies readonly PlatformServiceDescriptor[];
 
@@ -114,7 +120,9 @@ export function resolvePlatformServiceEntryHref(
 export function getPlatformServicesForRequest(
   hostname: string | null | undefined
 ): PlatformServiceDescriptor[] {
-  return PLATFORM_SERVICES.map((service) => ({
+  return PLATFORM_SERVICES.filter(
+    (service) => service.listedInPlatformHome
+  ).map((service) => ({
     ...service,
     publicHref: resolvePlatformServiceEntryHref(service, hostname),
   }));
@@ -124,7 +132,7 @@ export const PLATFORM_HOME_HREF = "https://yeon.world";
 export const DEFAULT_COUNSELING_SERVICE_HREF = "/counseling-service";
 
 export function getPlatformServices() {
-  return PLATFORM_SERVICES;
+  return PLATFORM_SERVICES.filter((service) => service.listedInPlatformHome);
 }
 
 export function getPlatformServiceBySlug(slug: string) {

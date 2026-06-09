@@ -348,7 +348,7 @@ export function Sidebar({
             onClick={onOpenNewRecordEntry}
             data-tutorial="new-record-btn"
           >
-            + 새 상담 기록
+            + 새 운영 메모
           </button>
         </div>
       ) : null}

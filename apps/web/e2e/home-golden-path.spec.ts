@@ -13,7 +13,7 @@ test.describe("홈 화면 골든 패스", () => {
 
     // 빈 상태: 녹음 시작 또는 파일 업로드 안내
     await expect(
-      page.getByRole("button", { name: /녹음 시작|새 상담 기록/ }).first(),
+      page.getByRole("button", { name: /녹음 시작|새 운영 메모/ }).first()
     ).toBeVisible({ timeout: 5000 });
   });
 
@@ -52,7 +52,7 @@ test.describe("홈 화면 골든 패스", () => {
             },
           }),
         });
-      },
+      }
     );
     await setupHomeMocks(page, { records: [record] });
     await page.goto("/home");

@@ -14,6 +14,6 @@ export const SPACE_FULL_TEST_DATA = {
 
 export const AUDIO_SAMPLE_TEST_DATA = {
   href: PUBLIC_MP3_ASSET_URLS.counselingRecordSample20Min,
-  downloadName: "상담기록_테스트음성_20분.mp3",
+  downloadName: "운영 메모_테스트음성_20분.mp3",
   label: "20분 테스트 음성",
 } as const;

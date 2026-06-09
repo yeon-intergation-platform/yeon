@@ -312,7 +312,7 @@ export function CreateSpaceModal({
                 {(
                   selectedTemplate?.tabPreviewNames ?? [
                     "개요",
-                    "상담기록",
+                    "운영 메모",
                     "메모",
                     "리포트",
                   ]

@@ -1,5 +1,5 @@
 export function formatDaysSince(days: number | null): string {
-  if (days === null) return "상담 기록 없음";
+  if (days === null) return "운영 메모 없음";
   if (days === 0) return "오늘 상담";
   if (days === 1) return "어제 상담";
   return `${days}일 전 상담`;
