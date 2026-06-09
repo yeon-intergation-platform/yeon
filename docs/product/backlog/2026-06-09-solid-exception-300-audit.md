@@ -507,7 +507,7 @@
 211. **[완료][P2] 컴포넌트 hook 책임 분리** `apps/web/src/features/card-service/card-room-lobby-screen.tsx:35` — 원칙 `S`. 필터/검색/모달 상태, 프로필/타이핑 설정/방 목록 query, 검색 필터링과 list state 파생을 `use-card-room-lobby-state.ts`로 분리해 `CardRoomLobbyScreen`은 로비 레이아웃 렌더링만 담당하게 축소했다. 근거: `const lobby = useCardRoomLobbyState();`
 212. **[완료][P2] 긴 함수 책임 분리** `apps/web/src/features/card-service/card-room-lobby-screen.tsx:35` — 원칙 `S`. 카드방 로비의 hero, 필터/검색 바, 목록 상태 surface, 방 목록 item, 생성 dialog 렌더링을 `card-room-lobby-parts.tsx`로 분리해 `CardRoomLobbyScreen`은 page shell과 섹션 조립만 담당하게 축소했다. 근거: `CardRoomLobbyRoomSection lobby={lobby}`
 213. **[완료][P2] 컴포넌트 hook 책임 분리** `apps/web/src/features/card-service/card-room-screen.tsx:30` — 원칙 `S`. 카드방 프로필/참가자 세션 저장소/자동 입장 join/연결/voice call/채팅 draft와 역할·카드·시작 가능 여부 파생을 `use-card-room-screen-state.ts`로 분리해 `CardRoomScreen`은 패널 배치와 props 연결만 담당하게 축소했다. 근거: `const screen = useCardRoomScreenState(roomId);`
-214. **[P2] 긴 함수 책임 분리** `apps/web/src/features/card-service/card-room-screen.tsx:30` — 원칙 `S`. 205라인 함수다. 검증/변환/부수효과를 작은 함수로 분리한다. 근거: `export function CardRoomScreen({ roomId }: CardRoomScreenProps) {`
+214. **[완료][P2] 긴 함수 책임 분리** `apps/web/src/features/card-service/card-room-screen.tsx:30` — 원칙 `S`. 카드방 화면의 오류 표시, 모바일 탭, 좌측 참가자/음성/학습 패널, 채팅 workspace 렌더링을 `card-room-screen-parts.tsx`로 분리해 `CardRoomScreen`은 page shell과 header/workspace 조립만 담당하게 축소했다. 근거: `CardRoomScreenWorkspace screen={screen}`
 215. **[P2] 긴 함수 책임 분리** `apps/web/src/features/card-service/card-room-study-panel.tsx:23` — 원칙 `S`. 193라인 함수다. 검증/변환/부수효과를 작은 함수로 분리한다. 근거: `export function CardRoomStudyPanel({`
 216. **[P2] 긴 함수 책임 분리** `apps/web/src/features/card-service/card-service-decks-screen.tsx:40` — 원칙 `S`. 214라인 함수다. 검증/변환/부수효과를 작은 함수로 분리한다. 근거: `export function CardServiceDecksScreen() {`
 217. **[P2] 긴 함수 책임 분리** `apps/web/src/features/card-service/card-service-home.tsx:31` — 원칙 `S`. 223라인 함수다. 검증/변환/부수효과를 작은 함수로 분리한다. 근거: `export function CardServiceHome() {`
@@ -648,3 +648,7 @@
 ## 58차 적용 완료
 
 - 항목 213 완료: `CardRoomScreen`의 입장 세션 복구/저장, participant 이탈 정리, voice participant 파생, 채팅 submit/leave 이벤트를 `useCardRoomScreenState`로 분리했다.
+
+## 59차 적용 완료
+
+- 항목 214 완료: `CardRoomScreen`의 오류 메시지와 workspace 렌더링을 `CardRoomScreenError`, `CardRoomScreenWorkspace`, `CardRoomScreenSidePanel`, `CardRoomScreenMobileTabs`로 분리했다.
