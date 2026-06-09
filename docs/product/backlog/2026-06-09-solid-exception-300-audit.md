@@ -115,6 +115,10 @@
 
 - 항목 100~108 완료: race-server 카드방 leave/request catch는 16차 helper 반영 상태를 확인해 완료 처리했고, typing-race-room의 기존 catch 후보는 현재 코드에서 제거된 상태를 확인했다. 웹 커뮤니티 404 catch는 처리 가능한 Spring 404만 null로 변환하고 나머지는 재전파하는 경계로 유지했다. 웹 카드 인증 Provider 누락, 카드방 생성/입장, 게스트 덱 개수 확인 실패는 원인을 포함한 helper/전용 Error/사용자 실패 메시지로 구체화했다.
 
+## 41차 적용 완료
+
+- 항목 196 완료: 모바일 `CardOnboardingGate`의 이메일 로그인 mutation, 소셜 로그인, 회원가입 브라우저 오픈, 입력/sheet 상태를 `use-card-onboarding-gate-state.ts` hook으로 분리했다. 게이트 화면은 62라인 렌더링 조립 책임으로 축소했다.
+
 ## 40차 적용 완료
 
 - 항목 195 완료: 모바일 `CardOnboardingGate`의 hero/social/secondary/guest/email sheet 렌더링 섹션과 스타일을 `card-onboarding-gate-sections.tsx`, `card-onboarding-gate-styles.ts`로 분리했다. 게이트 파일은 인증 상태와 액션 조정 중심으로 축소했다.
@@ -465,7 +469,7 @@
 193. **[완료][P2] 컴포넌트 hook 책임 분리** `apps/mobile/src/features/card-service/card-deck-play-screen.tsx:56` — 원칙 `S`. 화면 인근 세션/query/mutation/학습 상태 hook을 `use-card-deck-play-state.ts`로 분리했다. 화면은 `useCardDeckPlayState` 1개와 router만 조합한다. 근거: `const play = useCardDeckPlayState({ deckId });`
 194. **[완료][P2] 긴 함수 책임 분리** `apps/mobile/src/features/card-service/card-deck-play-screen.tsx:56` — 원칙 `S`. 343라인 함수에서 상태/검증/부수효과를 `useCardDeckPlayState`로 분리해 화면 파일을 124라인 렌더링 조립으로 축소했다. 근거: `useCardDeckPlayState`, `resetCurrentCardVisibility`, `handleReview`
 195. **[완료][P2] 큰 파일 책임 분리** `apps/mobile/src/features/card-service/card-onboarding-gate.tsx:1` — 원칙 `S`. 380라인 파일에서 hero/social/secondary/guest/email sheet 섹션과 스타일을 `card-onboarding-gate-sections.tsx`, `card-onboarding-gate-styles.ts`로 분리해 게이트 파일을 157라인으로 축소했다. 근거: `CardOnboardingHero`, `CardOnboardingSocialButtons`, `CardEmailLoginSheet`
-196. **[P2] 긴 함수 책임 분리** `apps/mobile/src/features/card-service/card-onboarding-gate.tsx:44` — 원칙 `S`. 225라인 함수다. 검증/변환/부수효과를 작은 함수로 분리한다. 근거: `export function CardOnboardingGate({`
+196. **[완료][P2] 긴 함수 책임 분리** `apps/mobile/src/features/card-service/card-onboarding-gate.tsx:44` — 원칙 `S`. 이메일/소셜 로그인/회원가입 브라우저 오픈 부수효과와 입력 상태를 `use-card-onboarding-gate-state.ts`로 분리해 화면 함수는 62라인 렌더링 조립으로 축소했다. 근거: `const gate = useCardOnboardingGateState({ onAuthenticated });`
 197. **[P2] 긴 함수 책임 분리** `apps/mobile/src/features/card-service/card-session-context.tsx:52` — 원칙 `S`. 113라인 함수다. 검증/변환/부수효과를 작은 함수로 분리한다. 근거: `export function CardSessionProvider({ children }: { children: ReactNode }) {`
 198. **[P2] 긴 함수 책임 분리** `apps/mobile/src/features/card-service/markdown-text-field.tsx:170` — 원칙 `S`. 122라인 함수다. 검증/변환/부수효과를 작은 함수로 분리한다. 근거: `export function MarkdownTextField({`
 199. **[P2] 긴 함수 책임 분리** `apps/mobile/src/features/card-service/rooms/card-room-create-sheet.tsx:38` — 원칙 `S`. 207라인 함수다. 검증/변환/부수효과를 작은 함수로 분리한다. 근거: `export function CardRoomCreateSheet({`
