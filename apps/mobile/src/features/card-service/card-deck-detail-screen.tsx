@@ -47,7 +47,18 @@ const SHEET_MODES = {
   manual: "manual",
 } as const;
 
+const CARD_DECK_DETAIL_OPERATION = {
+  bulkCreate: "카드 일괄 추가",
+  bulkReplace: "카드 일괄 덮어쓰기",
+  create: "카드 추가",
+  delete: "카드 삭제",
+  detail: "카드 상세 조회",
+  update: "카드 수정",
+} as const;
+
 type SheetMode = (typeof SHEET_MODES)[keyof typeof SHEET_MODES];
+type CardDeckDetailOperation =
+  (typeof CARD_DECK_DETAIL_OPERATION)[keyof typeof CARD_DECK_DETAIL_OPERATION];
 type SheetState =
   | { kind: "closed" }
   | { kind: "create" }
@@ -60,6 +71,13 @@ interface ParsedCardInput {
 
 interface CardDeckDetailScreenProps {
   deckId?: string;
+}
+
+class CardDeckDetailInputError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "CardDeckDetailInputError";
+  }
 }
 
 function getCardServiceDeckPlayHref(deckId: string): Href {
@@ -91,6 +109,32 @@ function getModeBadge(mode: CardServiceMode): string {
   return mode === CARD_SERVICE_MODE.server
     ? CARD_SERVICE_TEXT.detail.modeAuthenticatedLabel
     : CARD_SERVICE_TEXT.detail.modeGuestLabel;
+}
+
+function requireDeckId(
+  deckId: string | undefined,
+  operation: CardDeckDetailOperation
+): string {
+  const normalizedDeckId = deckId?.trim();
+  if (!normalizedDeckId) {
+    throw new CardDeckDetailInputError(
+      `${operation}을 실행할 수 없습니다. 화면 경로에 덱 ID가 없습니다.`
+    );
+  }
+  return normalizedDeckId;
+}
+
+function parseBulkCardsOrThrow(
+  rawText: string,
+  operation: CardDeckDetailOperation
+): ParsedCardInput[] {
+  const cards = parseAiCardInput(rawText);
+  if (cards.length === 0) {
+    throw new CardDeckDetailInputError(
+      `${operation}을 실행할 수 없습니다. 인식된 카드가 0장입니다. [[Q]], [[A]], [[CARD]] 마커를 확인해 주세요.`
+    );
+  }
+  return cards;
 }
 
 type DeckCardRowProps = {
@@ -173,10 +217,9 @@ export function CardDeckDetailScreen({ deckId }: CardDeckDetailScreenProps) {
     // deckId 없는 케이스는 enabled:false로 쿼리 자체를 비활성화한다(raw 배열 대신 SSOT 사용).
     enabled: !isBooting && Boolean(deckId),
     queryFn: async () => {
-      if (!deckId) {
-        throw new Error(CARD_SERVICE_TEXT.detail.missingDeckIdMessage);
-      }
-      return itemRepository.getDeckDetail(deckId);
+      return itemRepository.getDeckDetail(
+        requireDeckId(deckId, CARD_DECK_DETAIL_OPERATION.detail)
+      );
     },
     queryKey: deckId
       ? cardServiceQueryKeys.deckDetail(
@@ -191,10 +234,10 @@ export function CardDeckDetailScreen({ deckId }: CardDeckDetailScreenProps) {
 
   const createMutation = useMutation({
     mutationFn: async (params: ParsedCardInput) => {
-      if (!deckId) {
-        throw new Error(CARD_SERVICE_TEXT.detail.missingDeckIdMessage);
-      }
-      return itemRepository.addCard(deckId, params);
+      return itemRepository.addCard(
+        requireDeckId(deckId, CARD_DECK_DETAIL_OPERATION.create),
+        params
+      );
     },
     onSuccess: async () => {
       await invalidateDeck();
@@ -203,14 +246,15 @@ export function CardDeckDetailScreen({ deckId }: CardDeckDetailScreenProps) {
 
   const bulkCreateMutation = useMutation({
     mutationFn: async () => {
-      if (!deckId) {
-        throw new Error(CARD_SERVICE_TEXT.detail.missingDeckIdMessage);
-      }
-      const cards = parseAiCardInput(bulkText);
-      if (cards.length === 0) {
-        throw new Error(CARD_SERVICE_TEXT.detail.noParseResultMessage);
-      }
-      await itemRepository.addCards(deckId, { items: cards });
+      const targetDeckId = requireDeckId(
+        deckId,
+        CARD_DECK_DETAIL_OPERATION.bulkCreate
+      );
+      const cards = parseBulkCardsOrThrow(
+        bulkText,
+        CARD_DECK_DETAIL_OPERATION.bulkCreate
+      );
+      await itemRepository.addCards(targetDeckId, { items: cards });
       return cards.length;
     },
     onSuccess: async (createdCount) => {
@@ -226,14 +270,15 @@ export function CardDeckDetailScreen({ deckId }: CardDeckDetailScreenProps) {
 
   const bulkReplaceMutation = useMutation({
     mutationFn: async () => {
-      if (!deckId) {
-        throw new Error(CARD_SERVICE_TEXT.detail.missingDeckIdMessage);
-      }
-      const cards = parseAiCardInput(bulkText);
-      if (cards.length === 0) {
-        throw new Error(CARD_SERVICE_TEXT.detail.noParseResultMessage);
-      }
-      await itemRepository.replaceCards(deckId, { items: cards });
+      const targetDeckId = requireDeckId(
+        deckId,
+        CARD_DECK_DETAIL_OPERATION.bulkReplace
+      );
+      const cards = parseBulkCardsOrThrow(
+        bulkText,
+        CARD_DECK_DETAIL_OPERATION.bulkReplace
+      );
+      await itemRepository.replaceCards(targetDeckId, { items: cards });
       return cards.length;
     },
     onSuccess: async (createdCount) => {
@@ -249,13 +294,14 @@ export function CardDeckDetailScreen({ deckId }: CardDeckDetailScreenProps) {
 
   const updateMutation = useMutation({
     mutationFn: async (params: ParsedCardInput & { itemId: string }) => {
-      if (!deckId) {
-        throw new Error(CARD_SERVICE_TEXT.detail.missingDeckIdMessage);
-      }
-      return itemRepository.updateCard(deckId, params.itemId, {
-        backText: params.backText,
-        frontText: params.frontText,
-      });
+      return itemRepository.updateCard(
+        requireDeckId(deckId, CARD_DECK_DETAIL_OPERATION.update),
+        params.itemId,
+        {
+          backText: params.backText,
+          frontText: params.frontText,
+        }
+      );
     },
     onSuccess: async () => {
       closeSheet();
@@ -265,10 +311,10 @@ export function CardDeckDetailScreen({ deckId }: CardDeckDetailScreenProps) {
 
   const deleteMutation = useMutation({
     mutationFn: async (itemId: string) => {
-      if (!deckId) {
-        throw new Error(CARD_SERVICE_TEXT.detail.missingDeckIdMessage);
-      }
-      await itemRepository.deleteCard(deckId, itemId);
+      await itemRepository.deleteCard(
+        requireDeckId(deckId, CARD_DECK_DETAIL_OPERATION.delete),
+        itemId
+      );
     },
     onSuccess: async () => {
       setActiveMenuItemId(null);

@@ -79,6 +79,10 @@
 
 - 항목 63 완료: `useTypingRoomLobby`에서 race-server endpoint 해석과 public waiting room HTTP 로더 조합을 제거하고 `typing-room-lobby-client.ts`의 `loadTypingRoomLobbyRooms`로 분리했다. 훅은 query 상태/표시 상태 조합에 집중한다.
 
+## 9차 적용 완료
+
+- 항목 71~78 완료: 모바일 카드 상세 화면의 deckId 누락/일괄 입력 파싱 실패를 `CardDeckDetailInputError`와 operation별 guard로 변환했다. 반복 `덱 ID가 없습니다.`/`인식할 수 있는 카드가 없습니다.` 대신 실패 동작과 원인(경로 deckId 누락, 인식된 카드 0장, 필요 마커)을 메시지에 포함한다.
+
 ## 300개 TODO
 
 > 아래 항목은 실제 코드 경로/라인을 기준으로 작성한다. `원칙`은 SOLID 또는 예외 처리 원칙 번호를 표시한다.
@@ -171,14 +175,14 @@
 
 ### Exception
 
-71. **[P2] 일반 Error 메시지 구체화** `apps/mobile/src/features/card-service/card-deck-detail-screen.tsx:177` — 원칙 `E4/E6`. 오류 메시지에 실패한 입력/외부 의존/상태 원인을 드러낸다. 근거: `throw new Error(CARD_SERVICE_TEXT.detail.missingDeckIdMessage);`
-72. **[P2] 일반 Error 메시지 구체화** `apps/mobile/src/features/card-service/card-deck-detail-screen.tsx:195` — 원칙 `E4/E6`. 오류 메시지에 실패한 입력/외부 의존/상태 원인을 드러낸다. 근거: `throw new Error(CARD_SERVICE_TEXT.detail.missingDeckIdMessage);`
-73. **[P2] 일반 Error 메시지 구체화** `apps/mobile/src/features/card-service/card-deck-detail-screen.tsx:207` — 원칙 `E4/E6`. 오류 메시지에 실패한 입력/외부 의존/상태 원인을 드러낸다. 근거: `throw new Error(CARD_SERVICE_TEXT.detail.missingDeckIdMessage);`
-74. **[P2] 일반 Error 메시지 구체화** `apps/mobile/src/features/card-service/card-deck-detail-screen.tsx:211` — 원칙 `E4/E6`. 오류 메시지에 실패한 입력/외부 의존/상태 원인을 드러낸다. 근거: `throw new Error(CARD_SERVICE_TEXT.detail.noParseResultMessage);`
-75. **[P2] 일반 Error 메시지 구체화** `apps/mobile/src/features/card-service/card-deck-detail-screen.tsx:230` — 원칙 `E4/E6`. 오류 메시지에 실패한 입력/외부 의존/상태 원인을 드러낸다. 근거: `throw new Error(CARD_SERVICE_TEXT.detail.missingDeckIdMessage);`
-76. **[P2] 일반 Error 메시지 구체화** `apps/mobile/src/features/card-service/card-deck-detail-screen.tsx:234` — 원칙 `E4/E6`. 오류 메시지에 실패한 입력/외부 의존/상태 원인을 드러낸다. 근거: `throw new Error(CARD_SERVICE_TEXT.detail.noParseResultMessage);`
-77. **[P2] 일반 Error 메시지 구체화** `apps/mobile/src/features/card-service/card-deck-detail-screen.tsx:253` — 원칙 `E4/E6`. 오류 메시지에 실패한 입력/외부 의존/상태 원인을 드러낸다. 근거: `throw new Error(CARD_SERVICE_TEXT.detail.missingDeckIdMessage);`
-78. **[P2] 일반 Error 메시지 구체화** `apps/mobile/src/features/card-service/card-deck-detail-screen.tsx:269` — 원칙 `E4/E6`. 오류 메시지에 실패한 입력/외부 의존/상태 원인을 드러낸다. 근거: `throw new Error(CARD_SERVICE_TEXT.detail.missingDeckIdMessage);`
+71. **[완료][P2] 일반 Error 메시지 구체화** `apps/mobile/src/features/card-service/card-deck-detail-screen.tsx:177` — 원칙 `E4/E6`. 오류 메시지에 실패한 입력/외부 의존/상태 원인을 드러낸다. 근거: `throw new Error(CARD_SERVICE_TEXT.detail.missingDeckIdMessage);`
+72. **[완료][P2] 일반 Error 메시지 구체화** `apps/mobile/src/features/card-service/card-deck-detail-screen.tsx:195` — 원칙 `E4/E6`. 오류 메시지에 실패한 입력/외부 의존/상태 원인을 드러낸다. 근거: `throw new Error(CARD_SERVICE_TEXT.detail.missingDeckIdMessage);`
+73. **[완료][P2] 일반 Error 메시지 구체화** `apps/mobile/src/features/card-service/card-deck-detail-screen.tsx:207` — 원칙 `E4/E6`. 오류 메시지에 실패한 입력/외부 의존/상태 원인을 드러낸다. 근거: `throw new Error(CARD_SERVICE_TEXT.detail.missingDeckIdMessage);`
+74. **[완료][P2] 일반 Error 메시지 구체화** `apps/mobile/src/features/card-service/card-deck-detail-screen.tsx:211` — 원칙 `E4/E6`. 오류 메시지에 실패한 입력/외부 의존/상태 원인을 드러낸다. 근거: `throw new Error(CARD_SERVICE_TEXT.detail.noParseResultMessage);`
+75. **[완료][P2] 일반 Error 메시지 구체화** `apps/mobile/src/features/card-service/card-deck-detail-screen.tsx:230` — 원칙 `E4/E6`. 오류 메시지에 실패한 입력/외부 의존/상태 원인을 드러낸다. 근거: `throw new Error(CARD_SERVICE_TEXT.detail.missingDeckIdMessage);`
+76. **[완료][P2] 일반 Error 메시지 구체화** `apps/mobile/src/features/card-service/card-deck-detail-screen.tsx:234` — 원칙 `E4/E6`. 오류 메시지에 실패한 입력/외부 의존/상태 원인을 드러낸다. 근거: `throw new Error(CARD_SERVICE_TEXT.detail.noParseResultMessage);`
+77. **[완료][P2] 일반 Error 메시지 구체화** `apps/mobile/src/features/card-service/card-deck-detail-screen.tsx:253` — 원칙 `E4/E6`. 오류 메시지에 실패한 입력/외부 의존/상태 원인을 드러낸다. 근거: `throw new Error(CARD_SERVICE_TEXT.detail.missingDeckIdMessage);`
+78. **[완료][P2] 일반 Error 메시지 구체화** `apps/mobile/src/features/card-service/card-deck-detail-screen.tsx:269` — 원칙 `E4/E6`. 오류 메시지에 실패한 입력/외부 의존/상태 원인을 드러낸다. 근거: `throw new Error(CARD_SERVICE_TEXT.detail.missingDeckIdMessage);`
 79. **[P2] TypeScript catch 처리 책임 명확화** `apps/mobile/src/features/card-service/card-deck-detail-screen.tsx:347` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
 80. **[P2] TypeScript catch 처리 책임 명확화** `apps/mobile/src/features/card-service/card-deck-detail-screen.tsx:359` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
 81. **[P2] TypeScript catch 처리 책임 명확화** `apps/mobile/src/features/card-service/card-deck-detail-screen.tsx:389` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
