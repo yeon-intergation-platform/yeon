@@ -311,10 +311,21 @@ public class TypingDeckService {
 		if (row == null || (!adminMode && !currentUserId.toString().equals(row.ownerUserId()))) {
 			throw new TypingDeckServiceException(404, "DECK_NOT_FOUND", "타자 덱을 찾지 못했습니다.");
 		}
-		if (!SOURCE_USER.equals(row.source())) {
+		TypingDeckEditSourcePolicy.from(row).requireEditable();
+		return row;
+	}
+
+	private record TypingDeckEditSourcePolicy(String source) {
+		static TypingDeckEditSourcePolicy from(TypingDeckRepository.TypingDeckRow row) {
+			return new TypingDeckEditSourcePolicy(row.source());
+		}
+
+		void requireEditable() {
+			if (SOURCE_USER.equals(source)) {
+				return;
+			}
 			throw new TypingDeckServiceException(403, "DECK_EDIT_FORBIDDEN", "기본 덱은 수정할 수 없습니다.");
 		}
-		return row;
 	}
 
 	private OwnedPassage findOwnedPassage(UUID currentUserId, String deckPublicId, String passagePublicId, boolean adminMode) {
