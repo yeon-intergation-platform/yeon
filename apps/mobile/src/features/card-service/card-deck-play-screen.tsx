@@ -1,5 +1,4 @@
 import {
-  CARD_REVIEW_DIFFICULTIES,
   CARD_STUDY_MODES,
   type CardReviewDifficulty,
   type CardStudyMode,
@@ -15,14 +14,10 @@ import {
 } from "@yeon/ui/native";
 import { useEffect, useMemo, useState } from "react";
 import {
-  YeonCardNavigationControls as CardNavigationControls,
   YeonFormStack as FormStack,
   YeonMobileHeaderBar as MobileHeaderBar,
-  YeonReviewPanel as ReviewPanel,
   YeonMobileScreen as MobileScreen,
-  YeonSegmentedControl as SegmentedControl,
   YeonStateBlock as StateBlock,
-  YeonStudyCard as StudyCard,
 } from "@yeon/ui/native";
 import { YEON_ROUTE_TEMPLATES } from "@yeon/ui/runtime/ports";
 import { deriveCardDeckPlayViewState } from "@yeon/ui/runtime/ports/card-deck";
@@ -35,52 +30,27 @@ import {
 import { createMobileCardItemRepository } from "./runtime-adapters/card-item-repository";
 import { CARD_SERVICE_TEXT } from "./card-service-copy";
 import { getCardServiceErrorMessage } from "./error-message";
-import { CardMarkdown } from "./card-markdown";
 import {
   CARD_SERVICE_MODE,
   type CardServiceMode,
   resolveCardServiceSession,
 } from "./card-service-session";
+import {
+  CARD_DECK_PLAY_OPERATION,
+  CardDeckPlayInputError,
+  getModeBadge,
+  requirePlayDeckId,
+} from "./card-deck-play-helpers";
+import {
+  CardDeckFlashcardPanel,
+  CardDeckPlayModeControl,
+  CardDeckReviewModePanel,
+} from "./card-deck-play-mode-panels";
 
 const CARD_SERVICE_ROUTE = YEON_ROUTE_TEMPLATES.cardHome as Href;
 
 interface CardDeckPlayScreenProps {
   deckId?: string;
-}
-
-const CARD_DECK_PLAY_OPERATION = {
-  detail: "카드 학습 상세 조회",
-  guestDetail: "비회원 카드 학습 상세 조회",
-  review: "카드 복습 저장",
-} as const;
-
-type CardDeckPlayOperation =
-  (typeof CARD_DECK_PLAY_OPERATION)[keyof typeof CARD_DECK_PLAY_OPERATION];
-
-class CardDeckPlayInputError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = "CardDeckPlayInputError";
-  }
-}
-
-function getModeBadge(mode: CardServiceMode): string {
-  return mode === CARD_SERVICE_MODE.server
-    ? CARD_SERVICE_TEXT.play.modeAuthenticatedLabel
-    : CARD_SERVICE_TEXT.play.modeGuestLabel;
-}
-
-function requirePlayDeckId(
-  deckId: string | undefined,
-  operation: CardDeckPlayOperation
-): string {
-  const normalizedDeckId = deckId?.trim();
-  if (!normalizedDeckId) {
-    throw new CardDeckPlayInputError(
-      `${operation}를 실행할 수 없습니다. 화면 경로에 덱 ID가 없습니다.`
-    );
-  }
-  return normalizedDeckId;
 }
 
 export function CardDeckPlayScreen({ deckId }: CardDeckPlayScreenProps) {
@@ -331,98 +301,29 @@ export function CardDeckPlayScreen({ deckId }: CardDeckPlayScreenProps) {
           />
         ) : (
           <>
-            <SegmentedControl
-              onValueChange={handleStudyModeChange}
-              options={[
-                {
-                  label: CARD_SERVICE_TEXT.play.studyModeFlashcardLabel,
-                  value: CARD_STUDY_MODES.flashcard,
-                },
-                {
-                  label: CARD_SERVICE_TEXT.play.studyModeReviewLabel,
-                  value: CARD_STUDY_MODES.review,
-                },
-              ]}
+            <CardDeckPlayModeControl
+              onChange={handleStudyModeChange}
               value={studyMode}
             />
 
             {studyMode === CARD_STUDY_MODES.review ? (
-              <ReviewPanel
-                actions={[
-                  {
-                    disabled: reviewMutation.isPending,
-                    label: reviewMutation.isPending
-                      ? CARD_SERVICE_TEXT.play.reviewSavingLabel
-                      : CARD_SERVICE_TEXT.play.reviewHardLabel,
-                    onPress: () => handleReview(CARD_REVIEW_DIFFICULTIES.hard),
-                    tone: "primary",
-                  },
-                  {
-                    disabled: reviewMutation.isPending,
-                    label: reviewMutation.isPending
-                      ? CARD_SERVICE_TEXT.play.reviewSavingLabel
-                      : CARD_SERVICE_TEXT.play.reviewGoodLabel,
-                    onPress: () => handleReview(CARD_REVIEW_DIFFICULTIES.good),
-                  },
-                  {
-                    disabled: reviewMutation.isPending,
-                    label: reviewMutation.isPending
-                      ? CARD_SERVICE_TEXT.play.reviewSavingLabel
-                      : CARD_SERVICE_TEXT.play.reviewEasyLabel,
-                    onPress: () => handleReview(CARD_REVIEW_DIFFICULTIES.easy),
-                  },
-                ]}
-                answerLabel={CARD_SERVICE_TEXT.play.reviewModeAnswerLabel}
-                answerText={
-                  <CardMarkdown source={currentCard.backText} tone="inverted" />
-                }
-                answerVisible={isReviewAnswerVisible}
+              <CardDeckReviewModePanel
+                currentCard={currentCard}
+                isAnswerVisible={isReviewAnswerVisible}
+                isPending={reviewMutation.isPending}
                 onRevealAnswer={() => setReviewAnswerVisible(true)}
-                questionLabel={CARD_SERVICE_TEXT.play.reviewModeQuestionLabel}
-                questionText={<CardMarkdown source={currentCard.frontText} />}
-                revealActionLabel={
-                  CARD_SERVICE_TEXT.play.reviewRevealAnswerLabel
-                }
+                onReview={handleReview}
               />
             ) : (
-              <>
-                <StudyCard
-                  accessibilityLabel={
-                    isAnswerVisible
-                      ? CARD_SERVICE_TEXT.play.flipQuestionLabel
-                      : CARD_SERVICE_TEXT.play.flipAnswerLabel
-                  }
-                  body={
-                    <CardMarkdown
-                      source={
-                        isAnswerVisible
-                          ? currentCard.backText
-                          : currentCard.frontText
-                      }
-                    />
-                  }
-                  hint={`${CARD_SERVICE_TEXT.play.flipHint}${
-                    isAnswerVisible
-                      ? CARD_SERVICE_TEXT.play.flipQuestionLabel
-                      : CARD_SERVICE_TEXT.play.flipAnswerLabel
-                  }${CARD_SERVICE_TEXT.play.flipHintPostfix}`}
-                  label={
-                    isAnswerVisible
-                      ? CARD_SERVICE_TEXT.play.flipAnswerLabel
-                      : CARD_SERVICE_TEXT.play.flipQuestionLabel
-                  }
-                  onPress={() => setAnswerVisible((prev) => !prev)}
-                />
-
-                <CardNavigationControls
-                  canMoveNext={canMoveNext}
-                  canMovePrev={canMovePrev}
-                  nextLabel={CARD_SERVICE_TEXT.play.nextLabel}
-                  onNext={moveNext}
-                  onPrev={movePrev}
-                  prevLabel={CARD_SERVICE_TEXT.play.prevLabel}
-                />
-              </>
+              <CardDeckFlashcardPanel
+                canMoveNext={canMoveNext}
+                canMovePrev={canMovePrev}
+                currentCard={currentCard}
+                isAnswerVisible={isAnswerVisible}
+                onFlip={() => setAnswerVisible((prev) => !prev)}
+                onNext={moveNext}
+                onPrev={movePrev}
+              />
             )}
           </>
         )}
