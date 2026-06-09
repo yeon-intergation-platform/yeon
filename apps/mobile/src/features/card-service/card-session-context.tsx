@@ -14,6 +14,7 @@ import { CARD_SERVICE_TEXT } from "./card-service-copy";
 import {
   CARD_SERVICE_MODE,
   resolveCardServiceSession,
+  type CardServiceSessionState,
 } from "./card-service-session";
 import {
   clearCardGuestOptIn,
@@ -37,13 +38,32 @@ type CardSessionValue = {
 
 const CardSessionContext = createContext<CardSessionValue | null>(null);
 
+class MissingCardSessionProviderError extends Error {
+  constructor() {
+    super(
+      "useCardSession은 CardSessionProvider 내부에서만 사용해야 합니다. 카드 서비스 세션 상태를 읽으려면 앱 루트에 CardSessionProvider를 먼저 배치하세요."
+    );
+    this.name = "MissingCardSessionProviderError";
+  }
+}
+
+function getCardSessionBootErrorMessage(error: unknown) {
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  if (typeof error === "string" && error.trim().length > 0) {
+    return `카드 서비스 세션 확인에 실패했습니다. 원인: ${error.trim()}`;
+  }
+
+  return `카드 서비스 세션 확인에 실패했습니다. 원인: 처리할 수 없는 오류 형식(${String(error)})`;
+}
+
 export function useCardSession() {
   const value = useContext(CardSessionContext);
 
   if (!value) {
-    throw new Error(
-      "useCardSession은 CardSessionProvider 내부에서만 사용합니다."
-    );
+    throw new MissingCardSessionProviderError();
   }
 
   return value;
@@ -68,7 +88,29 @@ export function CardSessionProvider({ children }: { children: ReactNode }) {
 
   async function boot(isMounted: () => boolean) {
     setPhase("booting");
-    const next = await resolveCardServiceSession();
+    let next: CardServiceSessionState;
+
+    try {
+      next = await resolveCardServiceSession();
+    } catch (error) {
+      if (!isMounted()) {
+        return;
+      }
+
+      console.warn(
+        "[CardSession] 저장된 세션 검증 실패 — 게이트로 전환합니다.",
+        error
+      );
+      await clearPrimaryAuthSessionToken();
+      setSessionToken(null);
+      setSignedIn(false);
+      setPhase("gate");
+      showYeonAlert(
+        CARD_SERVICE_TEXT.state.errorTitle,
+        getCardSessionBootErrorMessage(error)
+      );
+      return;
+    }
 
     if (!isMounted()) {
       return;
