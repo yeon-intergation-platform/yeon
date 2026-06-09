@@ -37,20 +37,35 @@ export type RaceConnectionState =
   | "error"
   | "disconnected";
 
-export type UseRaceRoomOptions = {
+export type UseRaceRoomConnectionOptions = {
   enabled: boolean;
+  roomId?: string | null;
+};
+
+export type UseRaceRoomPlayerOptions = {
   playerLabel: string;
   playerId: string | null;
   characterId?: string;
   locale: "ko" | "en";
-  roomId?: string | null;
+};
+
+export type UseRaceRoomCreationOptions = {
   createRoom?: TypingRoomCreateMessage | null;
   quickRoom?: TypingRoomCreateMessage | null;
 };
 
-export type UseRaceRoomResult = {
+export type UseRaceRoomOptions = UseRaceRoomConnectionOptions &
+  UseRaceRoomPlayerOptions &
+  UseRaceRoomCreationOptions;
+
+export type UseRaceRoomConnectionResult = {
   room: YeonRealtimeRoom | null;
   connectionState: RaceConnectionState;
+  roomId: string | null;
+  roomError: string | null;
+};
+
+export type UseRaceRoomSnapshotResult = {
   snapshot: TypingRaceSnapshot | null;
   roomSnapshot: TypingRoomSnapshot | null;
   results: readonly TypingResultSnapshot[];
@@ -58,17 +73,26 @@ export type UseRaceRoomResult = {
   countdownRemaining: number;
   stage: TypingRaceStage;
   mySeat: string | null;
-  roomId: string | null;
-  roomError: string | null;
+};
+
+export type UseRaceRoomMessageActions = {
   sendProgress: (payload: RaceProgressMessage) => void;
   sendFinish: (payload: RaceFinishMessage) => void;
   sendReady: (isReady: boolean) => void;
   sendStart: (payload?: RoomStartMessage) => void;
   sendChat: (content: string) => void;
   sendRoomSettings: (payload: RoomSettingsUpdateMessage) => void;
+};
+
+export type UseRaceRoomLifecycleActions = {
   leaveRoom: () => Promise<void>;
   rejoin: () => void;
 };
+
+export type UseRaceRoomResult = UseRaceRoomConnectionResult &
+  UseRaceRoomSnapshotResult &
+  UseRaceRoomMessageActions &
+  UseRaceRoomLifecycleActions;
 
 const DEFAULT_SERVER_URL = "ws://localhost:2567";
 const EXPLICIT_LEAVE_FLUSH_DELAY_MS = 80;

@@ -115,6 +115,10 @@
 
 - 항목 100~108 완료: race-server 카드방 leave/request catch는 16차 helper 반영 상태를 확인해 완료 처리했고, typing-race-room의 기존 catch 후보는 현재 코드에서 제거된 상태를 확인했다. 웹 커뮤니티 404 catch는 처리 가능한 Spring 404만 null로 변환하고 나머지는 재전파하는 경계로 유지했다. 웹 카드 인증 Provider 누락, 카드방 생성/입장, 게스트 덱 개수 확인 실패는 원인을 포함한 helper/전용 Error/사용자 실패 메시지로 구체화했다.
 
+## 20차 적용 완료
+
+- 항목 129~140 완료: 타이핑 서비스 캐릭터/솔로 연습/방 대기/레이스 훅/영토전 훅 타입과 domain LifeOS 지표/리포트 타입을 표시·상태·액션·측정 단위로 분리해 큰 인터페이스 의존을 줄였다. 기존 export 이름은 조합 타입으로 유지해 호출부 런타임 동작과 API 형태를 보존했다.
+
 ## 19차 적용 완료
 
 - 항목 119~128 완료: race-server 참가자 타입과 웹 카드 서비스 헤더/학습/에디터/카드 행/복습 카드 props를 상태·액션·표시·정체성 단위의 작은 타입으로 분리해 ISP 위반 후보를 줄였다. 런타임 동작은 유지하고 큰 prop/interface만 조합 타입으로 대체했다.
@@ -276,18 +280,18 @@
 126. **[완료][P2] 큰 타입/인터페이스 분리** `apps/web/src/features/card-service/components/card-row-views.tsx:16` — 원칙 `I`. 멤버 후보 13개다. 읽기/쓰기/이벤트/상태 전용 타입으로 분리할 후보다. 근거: `type CardRowEditViewProps = {`
 127. **[완료][P2] 큰 타입/인터페이스 분리** `apps/web/src/features/card-service/components/card-row.tsx:20` — 원칙 `I`. 멤버 후보 8개다. 읽기/쓰기/이벤트/상태 전용 타입으로 분리할 후보다. 근거: `interface CardRowProps {`
 128. **[완료][P2] 큰 타입/인터페이스 분리** `apps/web/src/features/card-service/components/deck-play-review-mode-card.tsx:43` — 원칙 `I`. 멤버 후보 8개다. 읽기/쓰기/이벤트/상태 전용 타입으로 분리할 후보다. 근거: `interface DeckPlayReviewModeCardProps {`
-129. **[P2] 큰 타입/인터페이스 분리** `apps/web/src/features/typing-service/characters/types.ts:3` — 원칙 `I`. 멤버 후보 10개다. 읽기/쓰기/이벤트/상태 전용 타입으로 분리할 후보다. 근거: `export type CharacterDef = {`
-130. **[P2] 큰 타입/인터페이스 분리** `apps/web/src/features/typing-service/typing-race-solo-practice-panel.tsx:15` — 원칙 `I`. 멤버 후보 24개다. 읽기/쓰기/이벤트/상태 전용 타입으로 분리할 후보다. 근거: `interface TypingRaceSoloPracticePanelProps {`
-131. **[P2] 큰 타입/인터페이스 분리** `apps/web/src/features/typing-service/typing-race-solo-screen.tsx:109` — 원칙 `I`. 멤버 후보 8개다. 읽기/쓰기/이벤트/상태 전용 타입으로 분리할 후보다. 근거: `type BenchmarkNoiseState = {`
-132. **[P2] 큰 타입/인터페이스 분리** `apps/web/src/features/typing-service/typing-room-screen.tsx:98` — 원칙 `I`. 멤버 후보 9개다. 읽기/쓰기/이벤트/상태 전용 타입으로 분리할 후보다. 근거: `type TerritoryLobbyPanelProps = {`
-133. **[P2] 큰 타입/인터페이스 분리** `apps/web/src/features/typing-service/typing-room-settings-panel.tsx:42` — 원칙 `I`. 멤버 후보 8개다. 읽기/쓰기/이벤트/상태 전용 타입으로 분리할 후보다. 근거: `type TypingRoomSettingsPanelProps = {`
-134. **[P2] 큰 타입/인터페이스 분리** `apps/web/src/features/typing-service/typing-room-waiting-header.tsx:7` — 원칙 `I`. 멤버 후보 14개다. 읽기/쓰기/이벤트/상태 전용 타입으로 분리할 후보다. 근거: `type TypingRoomWaitingHeaderProps = {`
-135. **[P2] 큰 타입/인터페이스 분리** `apps/web/src/features/typing-service/use-race-room.ts:40` — 원칙 `I`. 멤버 후보 8개다. 읽기/쓰기/이벤트/상태 전용 타입으로 분리할 후보다. 근거: `export type UseRaceRoomOptions = {`
-136. **[P2] 큰 타입/인터페이스 분리** `apps/web/src/features/typing-service/use-race-room.ts:51` — 원칙 `I`. 멤버 후보 19개다. 읽기/쓰기/이벤트/상태 전용 타입으로 분리할 후보다. 근거: `export type UseRaceRoomResult = {`
-137. **[P2] 큰 타입/인터페이스 분리** `apps/web/src/features/typing-service/use-territory-battle-room.ts:46` — 원칙 `I`. 멤버 후보 9개다. 읽기/쓰기/이벤트/상태 전용 타입으로 분리할 후보다. 근거: `export type UseTerritoryBattleRoomResult = {`
-138. **[P2] 큰 타입/인터페이스 분리** `packages/domain/src/life-os.ts:81` — 원칙 `I`. 멤버 후보 12개다. 읽기/쓰기/이벤트/상태 전용 타입으로 분리할 후보다. 근거: `export type LifeOsDailyMetrics = {`
-139. **[P2] 큰 타입/인터페이스 분리** `packages/domain/src/life-os.ts:96` — 원칙 `I`. 멤버 후보 9개다. 읽기/쓰기/이벤트/상태 전용 타입으로 분리할 후보다. 근거: `export type LifeOsWeeklyMetrics = {`
-140. **[P2] 큰 타입/인터페이스 분리** `packages/domain/src/life-os.ts:126` — 원칙 `I`. 멤버 후보 8개다. 읽기/쓰기/이벤트/상태 전용 타입으로 분리할 후보다. 근거: `export type LifeOsReport = {`
+129. **[완료][P2] 큰 타입/인터페이스 분리** `apps/web/src/features/typing-service/characters/types.ts:3` — 원칙 `I`. 멤버 후보 10개다. 읽기/쓰기/이벤트/상태 전용 타입으로 분리할 후보다. 근거: `export type CharacterDef = {`
+130. **[완료][P2] 큰 타입/인터페이스 분리** `apps/web/src/features/typing-service/typing-race-solo-practice-panel.tsx:15` — 원칙 `I`. 멤버 후보 24개다. 읽기/쓰기/이벤트/상태 전용 타입으로 분리할 후보다. 근거: `interface TypingRaceSoloPracticePanelProps {`
+131. **[완료][P2] 큰 타입/인터페이스 분리** `apps/web/src/features/typing-service/typing-race-solo-screen.tsx:109` — 원칙 `I`. 멤버 후보 8개다. 읽기/쓰기/이벤트/상태 전용 타입으로 분리할 후보다. 근거: `type BenchmarkNoiseState = {`
+132. **[완료][P2] 큰 타입/인터페이스 분리** `apps/web/src/features/typing-service/typing-room-screen.tsx:98` — 원칙 `I`. 멤버 후보 9개다. 읽기/쓰기/이벤트/상태 전용 타입으로 분리할 후보다. 근거: `type TerritoryLobbyPanelProps = {`
+133. **[완료][P2] 큰 타입/인터페이스 분리** `apps/web/src/features/typing-service/typing-room-settings-panel.tsx:42` — 원칙 `I`. 멤버 후보 8개다. 읽기/쓰기/이벤트/상태 전용 타입으로 분리할 후보다. 근거: `type TypingRoomSettingsPanelProps = {`
+134. **[완료][P2] 큰 타입/인터페이스 분리** `apps/web/src/features/typing-service/typing-room-waiting-header.tsx:7` — 원칙 `I`. 멤버 후보 14개다. 읽기/쓰기/이벤트/상태 전용 타입으로 분리할 후보다. 근거: `type TypingRoomWaitingHeaderProps = {`
+135. **[완료][P2] 큰 타입/인터페이스 분리** `apps/web/src/features/typing-service/use-race-room.ts:40` — 원칙 `I`. 멤버 후보 8개다. 읽기/쓰기/이벤트/상태 전용 타입으로 분리할 후보다. 근거: `export type UseRaceRoomOptions = {`
+136. **[완료][P2] 큰 타입/인터페이스 분리** `apps/web/src/features/typing-service/use-race-room.ts:51` — 원칙 `I`. 멤버 후보 19개다. 읽기/쓰기/이벤트/상태 전용 타입으로 분리할 후보다. 근거: `export type UseRaceRoomResult = {`
+137. **[완료][P2] 큰 타입/인터페이스 분리** `apps/web/src/features/typing-service/use-territory-battle-room.ts:46` — 원칙 `I`. 멤버 후보 9개다. 읽기/쓰기/이벤트/상태 전용 타입으로 분리할 후보다. 근거: `export type UseTerritoryBattleRoomResult = {`
+138. **[완료][P2] 큰 타입/인터페이스 분리** `packages/domain/src/life-os.ts:81` — 원칙 `I`. 멤버 후보 12개다. 읽기/쓰기/이벤트/상태 전용 타입으로 분리할 후보다. 근거: `export type LifeOsDailyMetrics = {`
+139. **[완료][P2] 큰 타입/인터페이스 분리** `packages/domain/src/life-os.ts:96` — 원칙 `I`. 멤버 후보 9개다. 읽기/쓰기/이벤트/상태 전용 타입으로 분리할 후보다. 근거: `export type LifeOsWeeklyMetrics = {`
+140. **[완료][P2] 큰 타입/인터페이스 분리** `packages/domain/src/life-os.ts:126` — 원칙 `I`. 멤버 후보 8개다. 읽기/쓰기/이벤트/상태 전용 타입으로 분리할 후보다. 근거: `export type LifeOsReport = {`
 141. **[P2] 큰 타입/인터페이스 분리** `packages/ui/src/patterns/YeonBottomSheetModal/index.tsx:8` — 원칙 `I`. 멤버 후보 8개다. 읽기/쓰기/이벤트/상태 전용 타입으로 분리할 후보다. 근거: `export type YeonBottomSheetModalProps = {`
 142. **[P2] 큰 타입/인터페이스 분리** `packages/ui/src/patterns/YeonEditableCardRow/index.native.tsx:18` — 원칙 `I`. 멤버 후보 17개다. 읽기/쓰기/이벤트/상태 전용 타입으로 분리할 후보다. 근거: `export type YeonEditableCardRowProps = {`
 143. **[P2] 큰 타입/인터페이스 분리** `packages/ui/src/patterns/YeonEditableCardRow/index.tsx:8` — 원칙 `I`. 멤버 후보 15개다. 읽기/쓰기/이벤트/상태 전용 타입으로 분리할 후보다. 근거: `export type YeonEditableCardRowProps = {`

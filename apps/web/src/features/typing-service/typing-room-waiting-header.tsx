@@ -4,22 +4,32 @@ import { YeonButton, YeonIcon, YeonText, YeonView } from "@yeon/ui";
 import { YEON_WEB_SHARED_CLASS as SHARED_FEATURE_CLASS } from "@yeon/ui/theme/web-style-tokens";
 import { TYPING_ROOM_VISIBILITY_LABELS } from "./typing-room-labels";
 
-type TypingRoomWaitingHeaderProps = {
+type TypingRoomWaitingHeaderRoomProps = {
   room: TypingRoomSnapshot;
   roomSummary: string;
   waitingStateLabel: string;
+  territoryHref: string;
+};
+
+type TypingRoomWaitingHeaderStatusProps = {
   copyError: string | null;
   copied: boolean;
   isHost: boolean;
   isReady: boolean;
   isLeavingRoom: boolean;
   roomError: string | null;
-  territoryHref: string;
+};
+
+type TypingRoomWaitingHeaderActions = {
   onLeaveRoom: () => void;
   onCopyInvite: () => void;
   onStart: () => void;
   onToggleReady: () => void;
 };
+
+type TypingRoomWaitingHeaderProps = TypingRoomWaitingHeaderRoomProps &
+  TypingRoomWaitingHeaderStatusProps &
+  TypingRoomWaitingHeaderActions;
 
 export function TypingRoomWaitingHeader({
   room,

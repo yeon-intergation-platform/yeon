@@ -106,16 +106,22 @@ function pickNextPassage(
   );
 }
 
-type BenchmarkNoiseState = {
-  noise: number;
+type BenchmarkNoiseTimingState = {
   nextChangeAt: number;
-  accChars: number;
   prevEffectiveSec: number;
-  finishedCpm: number | null;
-  giveUpAt: number | null;
   pauseAt: number | null;
   pausedUntil: number | null;
 };
+
+type BenchmarkNoiseProgressState = {
+  noise: number;
+  accChars: number;
+  finishedCpm: number | null;
+  giveUpAt: number | null;
+};
+
+type BenchmarkNoiseState = BenchmarkNoiseTimingState &
+  BenchmarkNoiseProgressState;
 
 function createBenchmarkNoiseStates(): BenchmarkNoiseState[] {
   return BENCHMARK_LANES.map(() => ({

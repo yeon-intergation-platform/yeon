@@ -95,24 +95,35 @@ type DeckAwareCreateMessage = TypingRoomCreateMessage & {
   raceSeed?: TypingRaceSeed;
 };
 
-type TerritoryLobbyPanelProps = {
-  room: NonNullable<ReturnType<typeof useRaceRoom>["roomSnapshot"]>;
-  participants: (
-    | NonNullable<
-        ReturnType<typeof useRaceRoom>["roomSnapshot"]
-      >["participants"][number]
-    | null
-  )[];
+type TerritoryLobbyRoomSnapshot = NonNullable<
+  ReturnType<typeof useRaceRoom>["roomSnapshot"]
+>;
+
+type TerritoryLobbyParticipant =
+  | TerritoryLobbyRoomSnapshot["participants"][number]
+  | null;
+
+type TerritoryLobbyPanelStateProps = {
+  room: TerritoryLobbyRoomSnapshot;
+  participants: TerritoryLobbyParticipant[];
+  messages: TerritoryLobbyRoomSnapshot["messages"];
+};
+
+type TerritoryLobbyPanelDisplayProps = {
   roomSummary: string;
-  messages: NonNullable<
-    ReturnType<typeof useRaceRoom>["roomSnapshot"]
-  >["messages"];
+  territoryHref: string;
+};
+
+type TerritoryLobbyPanelActionProps = {
   isReady: boolean;
   isLeavingRoom: boolean;
-  territoryHref: string;
   onLeaveRoom: () => void;
   onToggleReady: () => void;
 };
+
+type TerritoryLobbyPanelProps = TerritoryLobbyPanelStateProps &
+  TerritoryLobbyPanelDisplayProps &
+  TerritoryLobbyPanelActionProps;
 
 function TerritoryLobbyPanel({
   room,
