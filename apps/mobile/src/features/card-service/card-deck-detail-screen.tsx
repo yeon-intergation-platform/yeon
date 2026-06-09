@@ -32,6 +32,10 @@ import { CARD_SERVICE_TEXT } from "./card-service-copy";
 import { getCardServiceErrorMessage } from "./error-message";
 import { DeckCardRow } from "./card-deck-detail-card-row";
 import { useCardDeckDetailQuery } from "./use-card-deck-detail-query";
+import {
+  SHEET_MODES,
+  useCardDeckDetailSheetState,
+} from "./use-card-deck-detail-sheet-state";
 import { MarkdownTextField } from "./markdown-text-field";
 import {
   CARD_SERVICE_MODE,
@@ -40,11 +44,6 @@ import {
 } from "./card-service-session";
 
 const CARD_SERVICE_DECK_PLAY_ROUTE = YEON_ROUTE_TEMPLATES.cardDeckPlay as Href;
-
-const SHEET_MODES = {
-  bulk: "bulk",
-  manual: "manual",
-} as const;
 
 const CARD_DECK_DETAIL_OPERATION = {
   bulkCreate: "카드 일괄 추가",
@@ -55,13 +54,8 @@ const CARD_DECK_DETAIL_OPERATION = {
   update: "카드 수정",
 } as const;
 
-type SheetMode = (typeof SHEET_MODES)[keyof typeof SHEET_MODES];
 type CardDeckDetailOperation =
   (typeof CARD_DECK_DETAIL_OPERATION)[keyof typeof CARD_DECK_DETAIL_OPERATION];
-type SheetState =
-  | { kind: "closed" }
-  | { kind: "create" }
-  | { kind: "edit"; item: CardDeckItemDto };
 
 interface ParsedCardInput {
   backText: string;
@@ -142,12 +136,23 @@ export function CardDeckDetailScreen({ deckId }: CardDeckDetailScreenProps) {
   const [mode, setMode] = useState<CardServiceMode>(CARD_SERVICE_MODE.guest);
   const [isBooting, setBooting] = useState(true);
   const [sessionToken, setSessionToken] = useState<string | null>(null);
-  const [frontText, setFrontText] = useState("");
-  const [backText, setBackText] = useState("");
-  const [bulkText, setBulkText] = useState("");
-  const [sheetMode, setSheetMode] = useState<SheetMode>(SHEET_MODES.manual);
-  const [sheetState, setSheetState] = useState<SheetState>({ kind: "closed" });
-  const [activeMenuItemId, setActiveMenuItemId] = useState<string | null>(null);
+  const {
+    activeMenuItemId,
+    backText,
+    bulkText,
+    closeSheet,
+    frontText,
+    openCreateSheet,
+    openEditSheet,
+    setActiveMenuItemId,
+    setBackText,
+    setBulkText,
+    setFrontText,
+    setSheetMode,
+    sheetMode,
+    sheetState,
+    toggleMenu,
+  } = useCardDeckDetailSheetState();
 
   // 게스트/서버 분기는 repository 어댑터가 흡수한다(웹과 동일 포트 인터페이스).
   const itemRepository = useMemo(
@@ -283,33 +288,6 @@ export function CardDeckDetailScreen({ deckId }: CardDeckDetailScreenProps) {
     await queryClient.invalidateQueries({
       queryKey: cardServiceQueryKeys.decks(mode === CARD_SERVICE_MODE.server),
     });
-  }
-
-  function openCreateSheet() {
-    setFrontText("");
-    setBackText("");
-    setSheetMode(SHEET_MODES.manual);
-    setSheetState({ kind: "create" });
-  }
-
-  const openEditSheet = useCallback((item: CardDeckItemDto) => {
-    setFrontText(item.frontText);
-    setBackText(item.backText);
-    setSheetMode(SHEET_MODES.manual);
-    setActiveMenuItemId(null);
-    setSheetState({ item, kind: "edit" });
-  }, []);
-
-  const toggleMenu = useCallback((itemId: string) => {
-    setActiveMenuItemId((current) => (current === itemId ? null : itemId));
-  }, []);
-
-  const cardKeyExtractor = useCallback((item: CardDeckItemDto) => item.id, []);
-
-  function closeSheet() {
-    setSheetState({ kind: "closed" });
-    setFrontText("");
-    setBackText("");
   }
 
   async function handleCreateCard() {
@@ -468,6 +446,7 @@ export function CardDeckDetailScreen({ deckId }: CardDeckDetailScreenProps) {
     !bulkReplaceMutation.isPending;
 
   const rowBusy = updateMutation.isPending || deleteMutation.isPending;
+  const cardKeyExtractor = useCallback((item: CardDeckItemDto) => item.id, []);
   const listHeader = (
     <FormStack gap="roomy">
       <MobileHeaderBar
