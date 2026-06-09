@@ -495,7 +495,7 @@
 199. **[완료][P2] 긴 함수 책임 분리** `apps/mobile/src/features/card-service/rooms/card-room-create-sheet.tsx:38` — 원칙 `S`. 카드방 생성 입력 검증/덱 조회/게스트 스냅샷 변환/참가자 토큰 저장/오류 표시를 `use-card-room-create-sheet-state.ts`로, 덱·공개범위 선택 UI와 스타일을 `card-room-create-sheet-sections.tsx`/`card-room-create-sheet-styles.ts`로 분리해 sheet 컴포넌트는 form 조립만 담당하게 축소했다. 근거: `const state = useCardRoomCreateSheetState({ onCreated, visible });`
 200. **[완료][P2] 긴 함수 책임 분리** `apps/mobile/src/features/card-service/rooms/card-room-lobby-screen.tsx:88` — 원칙 `S`. 카드방 목록 조회/필터·검색 파생/라우팅/생성 sheet 상태를 `card-room-lobby-state.ts`로, 카드·필터·검색·목록 UI를 `card-room-lobby-sections.tsx`로, 스타일과 route helper를 `card-room-lobby-styles.ts`/`card-room-lobby-route.ts`로 분리해 screen은 로비 섹션 조립만 담당하게 축소했다. 근거: `const lobby = useCardRoomLobbyState();`
 201. **[완료][P2] 큰 파일 책임 분리** `apps/mobile/src/features/card-service/rooms/card-room-screen.tsx:1` — 원칙 `S`. 헤더/참가자/대기 컨트롤/학습 카드/완료/채팅 렌더링을 `card-room-screen-sections.tsx`로, 스타일을 `card-room-screen-styles.ts`로 분리해 screen 파일은 연결·입장 상태와 섹션 조립만 담당하게 축소했다. 근거: `CardRoomHeader`, `CardRoomParticipantsSection`, `StudyCardSection`, `CardRoomChatSection`
-202. **[P2] 긴 함수 책임 분리** `apps/mobile/src/features/card-service/rooms/card-room-screen.tsx:40` — 원칙 `S`. 353라인 함수다. 검증/변환/부수효과를 작은 함수로 분리한다. 근거: `export function CardRoomScreen({ roomId }: CardRoomScreenProps) {`
+202. **[완료][P2] 긴 함수 책임 분리** `apps/mobile/src/features/card-service/rooms/card-room-screen.tsx:40` — 원칙 `S`. join/rejoin, stale participant 정리, leave/start/chat 핸들러, 현재 카드방 파생 상태를 `use-card-room-screen-state.ts`로 분리해 screen 함수는 에러/연결/본문 렌더링 분기만 담당하게 축소했다. 근거: `const { ... } = useCardRoomScreenState(roomId);`
 203. **[P2] 긴 함수 책임 분리** `apps/mobile/src/features/card-service/rooms/use-card-room-connection.ts:43` — 원칙 `S`. 143라인 함수다. 검증/변환/부수효과를 작은 함수로 분리한다. 근거: `export function useCardRoomConnection(`
 204. **[P2] 긴 함수 책임 분리** `apps/mobile/src/features/card-service/runtime-adapters/card-item-repository.ts:39` — 원칙 `S`. 110라인 함수다. 검증/변환/부수효과를 작은 함수로 분리한다. 근거: `export function createMobileCardItemRepository(`
 205. **[P2] 큰 파일 책임 분리** `apps/race-server/src/rooms/territory-battle-room.ts:1` — 원칙 `S`. 366라인 파일이다. 단일 책임 원칙 기준으로 화면/상태/IO/변환 책임 분리 후보다. 근거: `import { type Client, Room } from "@colyseus/core";`
@@ -600,3 +600,7 @@
 298. **[P3] 상태 분기 매핑/전략화** `apps/race-server/src/rooms/typing-race-room.ts:153` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `prompt: "if (!room || room.status !== 'waiting') return null;",`
 299. **[P3] 상태 분기 매핑/전략화** `apps/race-server/src/rooms/typing-race-room.ts:236` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (typeof obj.sdp !== "string" || !obj.sdp.trim()) {`
 300. **[P3] 상태 분기 매핑/전략화** `apps/race-server/src/rooms/typing-race-room.ts:265` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (!candidateObj || typeof candidateObj !== "object") {`
+
+## 47차 적용 완료
+
+- 항목 202 완료: 모바일 `CardRoomScreen` 내부의 입장/재입장 effect, stale participant 정리, 퇴장/시작/역할/준비/채팅 핸들러, 현재 카드·역할·시작 가능 여부 파생 상태를 `use-card-room-screen-state.ts`로 이동했다. Screen 파일은 연결 상태별 안내와 섹션 조립만 담당한다.
