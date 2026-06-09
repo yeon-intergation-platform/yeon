@@ -65,6 +65,16 @@ function getCardServiceDeckPlayHref(deckId: string): Href {
   } as Href;
 }
 
+function getCardDeckListErrorMessage(error: unknown, fallbackMessage: string) {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  if (typeof error === "string" && error.trim().length > 0) {
+    return `${fallbackMessage} 원인: ${error.trim()}`;
+  }
+  return `${fallbackMessage} 원인: 처리할 수 없는 오류 형식(${String(error)})`;
+}
+
 type DeckCardProps = {
   deck: CardDeckDto;
   index: number;
@@ -138,11 +148,13 @@ export function CardDeckListScreen() {
       setCreateSheetOpen(false);
       await createDeckMutation.mutateAsync(title.trim());
     } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : CARD_SERVICE_TEXT.list.createDeckErrorMessage;
-      showYeonAlert(CARD_SERVICE_TEXT.state.errorTitle, message);
+      showYeonAlert(
+        CARD_SERVICE_TEXT.state.errorTitle,
+        getCardDeckListErrorMessage(
+          error,
+          CARD_SERVICE_TEXT.list.createDeckErrorMessage
+        )
+      );
     }
   }
 
@@ -154,10 +166,10 @@ export function CardDeckListScreen() {
       data: decksQuery.data,
     },
     {
-      errorMessage:
-        decksQuery.error instanceof Error
-          ? decksQuery.error.message
-          : CARD_SERVICE_TEXT.list.errorMessage,
+      errorMessage: getCardDeckListErrorMessage(
+        decksQuery.error,
+        CARD_SERVICE_TEXT.list.errorMessage
+      ),
     }
   );
 
