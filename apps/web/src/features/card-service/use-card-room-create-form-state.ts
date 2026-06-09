@@ -105,6 +105,9 @@ export function useCardRoomCreateFormState({
   const { settings } = useTypingSettings();
   const frameOverrides = useCharacterFrameOverrides();
   const character = findCharacter(profile.characterId);
+  const deckSelectPlaceholder = decksQuery.isLoading
+    ? "덱 불러오는 중"
+    : "덱 선택";
 
   const selectedDeck = useMemo(
     () => decks.find((deck) => deck.id === selectedDeckId) ?? decks[0],
@@ -201,6 +204,7 @@ export function useCardRoomCreateFormState({
     setNickname,
     decks,
     decksQuery,
+    deckSelectPlaceholder,
     settings,
     frameOverrides,
     character,
