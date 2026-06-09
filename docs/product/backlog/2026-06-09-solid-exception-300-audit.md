@@ -115,6 +115,10 @@
 
 - 항목 100~108 완료: race-server 카드방 leave/request catch는 16차 helper 반영 상태를 확인해 완료 처리했고, typing-race-room의 기존 catch 후보는 현재 코드에서 제거된 상태를 확인했다. 웹 커뮤니티 404 catch는 처리 가능한 Spring 404만 null로 변환하고 나머지는 재전파하는 경계로 유지했다. 웹 카드 인증 Provider 누락, 카드방 생성/입장, 게스트 덱 개수 확인 실패는 원인을 포함한 helper/전용 Error/사용자 실패 메시지로 구체화했다.
 
+## 21차 적용 완료
+
+- 항목 141~150 완료: UI bottom sheet/editable card row props를 content/state/action/style 단위로 분리하고, 카드 Spring repository의 native query row/scalar 변환을 작은 어댑터로 모아 호출부의 Object[]/Number/시간 타입 instanceof 분기를 줄였다. row 길이/빈 값 오류 메시지는 필요한 컬럼과 실제 컬럼/위치를 포함하도록 구체화했다.
+
 ## 20차 적용 완료
 
 - 항목 129~140 완료: 타이핑 서비스 캐릭터/솔로 연습/방 대기/레이스 훅/영토전 훅 타입과 domain LifeOS 지표/리포트 타입을 표시·상태·액션·측정 단위로 분리해 큰 인터페이스 의존을 줄였다. 기존 export 이름은 조합 타입으로 유지해 호출부 런타임 동작과 API 형태를 보존했다.
@@ -292,19 +296,19 @@
 138. **[완료][P2] 큰 타입/인터페이스 분리** `packages/domain/src/life-os.ts:81` — 원칙 `I`. 멤버 후보 12개다. 읽기/쓰기/이벤트/상태 전용 타입으로 분리할 후보다. 근거: `export type LifeOsDailyMetrics = {`
 139. **[완료][P2] 큰 타입/인터페이스 분리** `packages/domain/src/life-os.ts:96` — 원칙 `I`. 멤버 후보 9개다. 읽기/쓰기/이벤트/상태 전용 타입으로 분리할 후보다. 근거: `export type LifeOsWeeklyMetrics = {`
 140. **[완료][P2] 큰 타입/인터페이스 분리** `packages/domain/src/life-os.ts:126` — 원칙 `I`. 멤버 후보 8개다. 읽기/쓰기/이벤트/상태 전용 타입으로 분리할 후보다. 근거: `export type LifeOsReport = {`
-141. **[P2] 큰 타입/인터페이스 분리** `packages/ui/src/patterns/YeonBottomSheetModal/index.tsx:8` — 원칙 `I`. 멤버 후보 8개다. 읽기/쓰기/이벤트/상태 전용 타입으로 분리할 후보다. 근거: `export type YeonBottomSheetModalProps = {`
-142. **[P2] 큰 타입/인터페이스 분리** `packages/ui/src/patterns/YeonEditableCardRow/index.native.tsx:18` — 원칙 `I`. 멤버 후보 17개다. 읽기/쓰기/이벤트/상태 전용 타입으로 분리할 후보다. 근거: `export type YeonEditableCardRowProps = {`
-143. **[P2] 큰 타입/인터페이스 분리** `packages/ui/src/patterns/YeonEditableCardRow/index.tsx:8` — 원칙 `I`. 멤버 후보 15개다. 읽기/쓰기/이벤트/상태 전용 타입으로 분리할 후보다. 근거: `export type YeonEditableCardRowProps = {`
+141. **[완료][P2] 큰 타입/인터페이스 분리** `packages/ui/src/patterns/YeonBottomSheetModal/index.tsx:8` — 원칙 `I`. 멤버 후보 8개다. 읽기/쓰기/이벤트/상태 전용 타입으로 분리할 후보다. 근거: `export type YeonBottomSheetModalProps = {`
+142. **[완료][P2] 큰 타입/인터페이스 분리** `packages/ui/src/patterns/YeonEditableCardRow/index.native.tsx:18` — 원칙 `I`. 멤버 후보 17개다. 읽기/쓰기/이벤트/상태 전용 타입으로 분리할 후보다. 근거: `export type YeonEditableCardRowProps = {`
+143. **[완료][P2] 큰 타입/인터페이스 분리** `packages/ui/src/patterns/YeonEditableCardRow/index.tsx:8` — 원칙 `I`. 멤버 후보 15개다. 읽기/쓰기/이벤트/상태 전용 타입으로 분리할 후보다. 근거: `export type YeonEditableCardRowProps = {`
 
 ### LSP
 
-144. **[P2] instanceof 분기 축소** `apps/backend/src/main/java/world/yeon/backend/card_decks/merge_guest/repository/MergeGuestCardDeckRepository.java:40` — 원칙 `L`. 하위 타입 검사 대신 공통 인터페이스/판별된 union으로 안전하게 다룬다. 근거: `Object[] row = value instanceof Object[] arr ? arr : new Object[]{value};`
-145. **[P2] instanceof 분기 축소** `apps/backend/src/main/java/world/yeon/backend/card_decks/route/repository/CardDeckRouteRepository.java:101` — 원칙 `L`. 하위 타입 검사 대신 공통 인터페이스/판별된 union으로 안전하게 다룬다. 근거: `if (raw instanceof Object[] values) return values[0] == null ? null : values[0].toString();`
-146. **[P2] instanceof 분기 축소** `apps/backend/src/main/java/world/yeon/backend/card_decks/route/repository/CardDeckRouteRepository.java:238` — 원칙 `L`. 하위 타입 검사 대신 공통 인터페이스/판별된 union으로 안전하게 다룬다. 근거: `if (raw instanceof Object[] values) return values[0] == null ? null : values[0].toString();`
-147. **[P2] instanceof 분기 축소** `apps/backend/src/main/java/world/yeon/backend/card_decks/route/repository/CardDeckRouteRepository.java:258` — 원칙 `L`. 하위 타입 검사 대신 공통 인터페이스/판별된 union으로 안전하게 다룬다. 근거: `if (!(raw instanceof Object[] values) || values.length < min) {`
-148. **[P2] instanceof 분기 축소** `apps/backend/src/main/java/world/yeon/backend/card_decks/route/repository/CardDeckRouteRepository.java:265` — 원칙 `L`. 하위 타입 검사 대신 공통 인터페이스/판별된 union으로 안전하게 다룬다. 근거: `private Long asLong(Object value) { return value instanceof Number n ? n.longValue() : Long.parseLong(value.toString()); }`
-149. **[P2] instanceof 분기 축소** `apps/backend/src/main/java/world/yeon/backend/card_decks/route/repository/CardDeckRouteRepository.java:266` — 원칙 `L`. 하위 타입 검사 대신 공통 인터페이스/판별된 union으로 안전하게 다룬다. 근거: `private int asInt(Object value) { return value instanceof Number n ? n.intValue() : Integer.parseInt(value.toString()); }`
-150. **[P2] instanceof 분기 축소** `apps/backend/src/main/java/world/yeon/backend/card_decks/route/repository/CardDeckRouteRepository.java:269` — 원칙 `L`. 하위 타입 검사 대신 공통 인터페이스/판별된 union으로 안전하게 다룬다. 근거: `if (value instanceof OffsetDateTime offsetDateTime) return offsetDateTime;`
+144. **[완료][P2] instanceof 분기 축소** `apps/backend/src/main/java/world/yeon/backend/card_decks/merge_guest/repository/MergeGuestCardDeckRepository.java:40` — 원칙 `L`. 하위 타입 검사 대신 공통 인터페이스/판별된 union으로 안전하게 다룬다. 근거: `Object[] row = value instanceof Object[] arr ? arr : new Object[]{value};`
+145. **[완료][P2] instanceof 분기 축소** `apps/backend/src/main/java/world/yeon/backend/card_decks/route/repository/CardDeckRouteRepository.java:101` — 원칙 `L`. 하위 타입 검사 대신 공통 인터페이스/판별된 union으로 안전하게 다룬다. 근거: `if (raw instanceof Object[] values) return values[0] == null ? null : values[0].toString();`
+146. **[완료][P2] instanceof 분기 축소** `apps/backend/src/main/java/world/yeon/backend/card_decks/route/repository/CardDeckRouteRepository.java:238` — 원칙 `L`. 하위 타입 검사 대신 공통 인터페이스/판별된 union으로 안전하게 다룬다. 근거: `if (raw instanceof Object[] values) return values[0] == null ? null : values[0].toString();`
+147. **[완료][P2] instanceof 분기 축소** `apps/backend/src/main/java/world/yeon/backend/card_decks/route/repository/CardDeckRouteRepository.java:258` — 원칙 `L`. 하위 타입 검사 대신 공통 인터페이스/판별된 union으로 안전하게 다룬다. 근거: `if (!(raw instanceof Object[] values) || values.length < min) {`
+148. **[완료][P2] instanceof 분기 축소** `apps/backend/src/main/java/world/yeon/backend/card_decks/route/repository/CardDeckRouteRepository.java:265` — 원칙 `L`. 하위 타입 검사 대신 공통 인터페이스/판별된 union으로 안전하게 다룬다. 근거: `private Long asLong(Object value) { return value instanceof Number n ? n.longValue() : Long.parseLong(value.toString()); }`
+149. **[완료][P2] instanceof 분기 축소** `apps/backend/src/main/java/world/yeon/backend/card_decks/route/repository/CardDeckRouteRepository.java:266` — 원칙 `L`. 하위 타입 검사 대신 공통 인터페이스/판별된 union으로 안전하게 다룬다. 근거: `private int asInt(Object value) { return value instanceof Number n ? n.intValue() : Integer.parseInt(value.toString()); }`
+150. **[완료][P2] instanceof 분기 축소** `apps/backend/src/main/java/world/yeon/backend/card_decks/route/repository/CardDeckRouteRepository.java:269` — 원칙 `L`. 하위 타입 검사 대신 공통 인터페이스/판별된 union으로 안전하게 다룬다. 근거: `if (value instanceof OffsetDateTime offsetDateTime) return offsetDateTime;`
 151. **[P2] instanceof 분기 축소** `apps/backend/src/main/java/world/yeon/backend/card_decks/route/repository/CardDeckRouteRepository.java:270` — 원칙 `L`. 하위 타입 검사 대신 공통 인터페이스/판별된 union으로 안전하게 다룬다. 근거: `if (value instanceof Timestamp timestamp) return timestamp.toInstant().atOffset(ZoneOffset.UTC);`
 152. **[P2] instanceof 분기 축소** `apps/backend/src/main/java/world/yeon/backend/card_decks/route/repository/CardDeckRouteRepository.java:271` — 원칙 `L`. 하위 타입 검사 대신 공통 인터페이스/판별된 union으로 안전하게 다룬다. 근거: `if (value instanceof Instant instant) return instant.atOffset(ZoneOffset.UTC);`
 153. **[P2] instanceof 분기 축소** `apps/backend/src/main/java/world/yeon/backend/card_decks/route/repository/CardDeckRouteRepository.java:272` — 원칙 `L`. 하위 타입 검사 대신 공통 인터페이스/판별된 union으로 안전하게 다룬다. 근거: `if (value instanceof Date date) return date.toInstant().atOffset(ZoneOffset.UTC);`

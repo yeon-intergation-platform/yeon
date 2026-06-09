@@ -15,28 +15,50 @@ import {
 } from "../../runtime/YeonBrowserRuntime/index.native";
 import { yeonMobileAppColors } from "../../theme";
 
-export type YeonEditableCardRowProps = {
+export type YeonEditableCardRowPlainContentProps = {
   answerLabel: string;
   // content 제공 시 옵셔널(스크린리더 접근성 라벨로 활용). 미제공 시 평문 렌더에 필수.
   answerText?: string;
-  // 제공되면 평문 대신 렌더(예: 마크다운). 미제공 시 questionText/answerText 평문.
-  questionContent?: ReactNode;
-  answerContent?: ReactNode;
-  deleteLabel: string;
-  editLabel: string;
   index: number | string;
-  isBusy?: boolean;
-  isMenuOpen?: boolean;
-  menuAccessibilityLabel: string;
-  onDelete: YeonButtonProps["onPress"];
-  onEdit: YeonButtonProps["onPress"];
-  onToggleMenu: YeonButtonProps["onPress"];
-  openAccessibilityLabel: string;
   questionLabel: string;
   // content 제공 시 옵셔널(스크린리더 접근성 라벨로 활용). 미제공 시 평문 렌더에 필수.
   questionText?: string;
+};
+
+export type YeonEditableCardRowRichContentProps = {
+  // 제공되면 평문 대신 렌더(예: 마크다운). 미제공 시 questionText/answerText 평문.
+  questionContent?: ReactNode;
+  answerContent?: ReactNode;
+};
+
+export type YeonEditableCardRowStateProps = {
+  isBusy?: boolean;
+  isMenuOpen?: boolean;
+};
+
+export type YeonEditableCardRowActionLabels = {
+  deleteLabel: string;
+  editLabel: string;
+  menuAccessibilityLabel: string;
+  openAccessibilityLabel: string;
+};
+
+export type YeonEditableCardRowActions = {
+  onDelete: YeonButtonProps["onPress"];
+  onEdit: YeonButtonProps["onPress"];
+  onToggleMenu: YeonButtonProps["onPress"];
+};
+
+export type YeonEditableCardRowStyleProps = {
   style?: YeonViewProps["style"];
 };
+
+export type YeonEditableCardRowProps = YeonEditableCardRowPlainContentProps &
+  YeonEditableCardRowRichContentProps &
+  YeonEditableCardRowStateProps &
+  YeonEditableCardRowActionLabels &
+  YeonEditableCardRowActions &
+  YeonEditableCardRowStyleProps;
 
 // memo: 리스트에서 다른 행의 메뉴 토글 등으로 인한 전체 리렌더를 막는다.
 // 콜백은 상위에서 useCallback으로 안정화해야 효과가 있다.

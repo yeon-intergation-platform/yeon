@@ -5,16 +5,26 @@ import { YeonModal } from "../../primitives/YeonModal";
 import { YeonView } from "../../primitives/YeonView";
 import { joinClassNames } from "../../utils";
 
-export type YeonBottomSheetModalProps = {
+export type YeonBottomSheetModalVisibilityProps = {
+  visible: boolean;
+  onClose: () => void;
+};
+
+export type YeonBottomSheetModalContentProps = {
   children: ReactNode;
   closeAccessibilityLabel: string;
+};
+
+export type YeonBottomSheetModalStyleProps = {
   className?: string;
   keyboardStyle?: CSSProperties;
-  onClose: () => void;
   sheetClassName?: string;
   sheetStyle?: CSSProperties;
-  visible: boolean;
 };
+
+export type YeonBottomSheetModalProps = YeonBottomSheetModalVisibilityProps &
+  YeonBottomSheetModalContentProps &
+  YeonBottomSheetModalStyleProps;
 
 export function YeonBottomSheetModal({
   children,
