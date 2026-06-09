@@ -3,6 +3,59 @@ const CARD_EDITOR_CODE_LANGUAGE_CLASS_PATTERN =
 const CARD_EDITOR_MARKDOWN_FENCE_PATTERN =
   /^\s*(```|~~~)([a-z0-9_+#.-]+)?[^\n]*\n([\s\S]*?)\n\1\s*$/i;
 
+interface CardEditorRichContentCodeBlockPort {
+  setLanguageClass(language: string | undefined): void;
+}
+
+interface CardEditorRichContentDocumentPort {
+  getCodeBlocks(): CardEditorRichContentCodeBlockPort[];
+  serializeBody(): string;
+}
+
+export interface CardEditorRichContentParserPort {
+  parseHtml(value: string): CardEditorRichContentDocumentPort | undefined;
+}
+
+function createBrowserCardEditorRichContentParserPort(): CardEditorRichContentParserPort {
+  return {
+    parseHtml(value) {
+      const DomParserConstructor = globalThis.DOMParser;
+
+      if (!DomParserConstructor) {
+        return undefined;
+      }
+
+      const parsedDocument = new DomParserConstructor().parseFromString(
+        value,
+        "text/html"
+      );
+
+      return {
+        getCodeBlocks() {
+          return Array.from(parsedDocument.querySelectorAll("pre code")).map(
+            (codeBlock) => ({
+              setLanguageClass(language) {
+                if (language) {
+                  codeBlock.setAttribute("class", `language-${language}`);
+                  return;
+                }
+
+                codeBlock.removeAttribute("class");
+              },
+            })
+          );
+        },
+        serializeBody() {
+          return parsedDocument.body.innerHTML;
+        },
+      };
+    },
+  };
+}
+
+const CARD_EDITOR_RICH_CONTENT_PARSER_PORT =
+  createBrowserCardEditorRichContentParserPort();
+
 export interface CardEditorCodeBlockInfo {
   code: string;
   language?: string;
@@ -135,23 +188,16 @@ function replaceMarkdownFenceLanguage(
 export function updateCardEditorCodeBlockLanguageInRichContent(
   value: string,
   targetIndex: number,
-  nextLanguageValue: string
+  nextLanguageValue: string,
+  parserPort: CardEditorRichContentParserPort = CARD_EDITOR_RICH_CONTENT_PARSER_PORT
 ) {
   const language = normalizeCardEditorCodeLanguage(nextLanguageValue);
+  const richContentDocument = parserPort.parseHtml(value);
+  const target = richContentDocument?.getCodeBlocks()[targetIndex];
 
-  if (typeof DOMParser !== "undefined") {
-    const document = new DOMParser().parseFromString(value, "text/html");
-    const codeBlocks = Array.from(document.querySelectorAll("pre code"));
-    const target = codeBlocks[targetIndex];
-
-    if (target) {
-      if (language) {
-        target.setAttribute("class", `language-${language}`);
-      } else {
-        target.removeAttribute("class");
-      }
-      return document.body.innerHTML;
-    }
+  if (target && richContentDocument) {
+    target.setLanguageClass(language);
+    return richContentDocument.serializeBody();
   }
 
   return replaceMarkdownFenceLanguage(value, targetIndex, language);
