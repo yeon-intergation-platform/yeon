@@ -3,16 +3,14 @@ package world.yeon.backend.typing_decks.repository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceException;
 import java.sql.Timestamp;
-import java.time.Instant;
 import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
-import java.time.ZonedDateTime;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
+import world.yeon.backend.common.repository.NativeQueryRow;
+import world.yeon.backend.common.repository.NativeQueryValue;
 
 @Repository
 public class TypingDeckRepository {
@@ -112,7 +110,7 @@ public class TypingDeckRepository {
 		Object value = entityManager.createNativeQuery("select count(id)::int from public.typing_deck_passages where deck_id = :deckId")
 			.setParameter("deckId", deckId)
 			.getSingleResult();
-		return asInt(value);
+		return new NativeQueryValue(value, "typing passage count").asInt();
 	}
 
 	@Transactional
@@ -265,85 +263,52 @@ public class TypingDeckRepository {
 	}
 
 	private TypingDeckRow toTypingDeckRow(Object rawRow) {
-		Object[] values = toValues(rawRow, 10, "typing deck row");
+		NativeQueryRow row = NativeQueryRow.require(rawRow, 10, "typing deck row");
 		return new TypingDeckRow(
-			asLong(values[0]),
-			asString(values[1]),
-			asString(values[2]),
-			asString(values[3]),
-			asString(values[4]),
-			asString(values[5]),
-			asString(values[6]),
-			asString(values[7]),
-			asOffsetDateTime(values[8]),
-			asOffsetDateTime(values[9])
+			row.valueAt(0).asLong(),
+			row.valueAt(1).asString(),
+			row.valueAt(2).asString(),
+			row.valueAt(3).asString(),
+			row.valueAt(4).asString(),
+			row.valueAt(5).asString(),
+			row.valueAt(6).asString(),
+			row.valueAt(7).asString(),
+			row.valueAt(8).asOffsetDateTime(),
+			row.valueAt(9).asOffsetDateTime()
 		);
 	}
 
 	private TypingDeckListRow toTypingDeckListRow(Object rawRow) {
-		Object[] values = toValues(rawRow, 11, "typing deck list row");
+		NativeQueryRow row = NativeQueryRow.require(rawRow, 11, "typing deck list row");
 		return new TypingDeckListRow(
-			asLong(values[0]),
-			asString(values[1]),
-			asString(values[2]),
-			asString(values[3]),
-			asString(values[4]),
-			asString(values[5]),
-			asString(values[6]),
-			asString(values[7]),
-			asOffsetDateTime(values[8]),
-			asOffsetDateTime(values[9]),
-			asInt(values[10])
+			row.valueAt(0).asLong(),
+			row.valueAt(1).asString(),
+			row.valueAt(2).asString(),
+			row.valueAt(3).asString(),
+			row.valueAt(4).asString(),
+			row.valueAt(5).asString(),
+			row.valueAt(6).asString(),
+			row.valueAt(7).asString(),
+			row.valueAt(8).asOffsetDateTime(),
+			row.valueAt(9).asOffsetDateTime(),
+			row.valueAt(10).asInt()
 		);
 	}
 
 	private TypingDeckPassageRow toTypingDeckPassageRow(Object rawRow) {
-		Object[] values = toValues(rawRow, 10, "typing deck passage row");
+		NativeQueryRow row = NativeQueryRow.require(rawRow, 10, "typing deck passage row");
 		return new TypingDeckPassageRow(
-			asLong(values[0]),
-			asString(values[1]),
-			asLong(values[2]),
-			asString(values[3]),
-			asString(values[4]),
-			asString(values[5]),
-			asString(values[6]),
-			asInt(values[7]),
-			asOffsetDateTime(values[8]),
-			asOffsetDateTime(values[9])
+			row.valueAt(0).asLong(),
+			row.valueAt(1).asString(),
+			row.valueAt(2).asLong(),
+			row.valueAt(3).asString(),
+			row.valueAt(4).asString(),
+			row.valueAt(5).asString(),
+			row.valueAt(6).asString(),
+			row.valueAt(7).asInt(),
+			row.valueAt(8).asOffsetDateTime(),
+			row.valueAt(9).asOffsetDateTime()
 		);
-	}
-
-	private Object[] toValues(Object rawRow, int minLength, String rowName) {
-		if (!(rawRow instanceof Object[] values) || values.length < minLength) {
-			throw new IllegalStateException(rowName + "를 해석하지 못했습니다.");
-		}
-		return values;
-	}
-
-	private String asString(Object value) {
-		return value == null ? null : value.toString();
-	}
-
-	private Long asLong(Object value) {
-		if (value == null) return null;
-		if (value instanceof Number number) return number.longValue();
-		return Long.parseLong(value.toString());
-	}
-
-	private int asInt(Object value) {
-		if (value == null) return 0;
-		if (value instanceof Number number) return number.intValue();
-		return Integer.parseInt(value.toString());
-	}
-
-	private OffsetDateTime asOffsetDateTime(Object value) {
-		if (value == null) return null;
-		if (value instanceof OffsetDateTime offsetDateTime) return offsetDateTime;
-		if (value instanceof Timestamp timestamp) return timestamp.toInstant().atOffset(ZoneOffset.UTC);
-		if (value instanceof Instant instant) return instant.atOffset(ZoneOffset.UTC);
-		if (value instanceof Date date) return date.toInstant().atOffset(ZoneOffset.UTC);
-		if (value instanceof ZonedDateTime zonedDateTime) return zonedDateTime.toOffsetDateTime();
-		return OffsetDateTime.parse(value.toString());
 	}
 
 	private record SqlParam(String name, Object value) {}
