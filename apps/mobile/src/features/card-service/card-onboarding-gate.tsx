@@ -22,6 +22,7 @@ import { cardServiceApi } from "../../services/card-service/client";
 import { getMobileApiBaseUrl } from "../../services/api-base-url";
 import { writePrimaryAuthSessionToken } from "../../services/primary-auth/storage";
 import { CARD_SERVICE_TEXT } from "./card-service-copy";
+import { getCardServiceErrorMessage } from "./error-message";
 import {
   type MobileSocialProvider,
   startMobileSocialLogin,
@@ -39,16 +40,6 @@ type CardOnboardingGateProps = {
   // 비회원으로 계속 — 게스트 모드로 홈 진입.
   onContinueAsGuest: () => void | Promise<void>;
 };
-
-function getCardLoginErrorMessage(error: unknown, fallbackMessage: string) {
-  if (error instanceof Error) {
-    return error.message;
-  }
-  if (typeof error === "string" && error.trim().length > 0) {
-    return `${fallbackMessage} 원인: ${error.trim()}`;
-  }
-  return `${fallbackMessage} 원인: 처리할 수 없는 오류 형식(${String(error)})`;
-}
 
 // 첫 진입(또는 로그인 재진입) 게이트. 소셜 로그인 우선 레이아웃.
 export function CardOnboardingGate({
@@ -83,7 +74,7 @@ export function CardOnboardingGate({
     } catch (error) {
       showYeonAlert(
         CARD_SERVICE_TEXT.list.loginErrorTitle,
-        getCardLoginErrorMessage(
+        getCardServiceErrorMessage(
           error,
           CARD_SERVICE_TEXT.list.loginErrorMessage
         )
@@ -114,7 +105,7 @@ export function CardOnboardingGate({
     } catch (error) {
       showYeonAlert(
         CARD_SERVICE_TEXT.list.loginErrorTitle,
-        getCardLoginErrorMessage(
+        getCardServiceErrorMessage(
           error,
           CARD_SERVICE_TEXT.list.loginErrorMessage
         )

@@ -24,6 +24,7 @@ import {
   writeCardRoomParticipantToken,
 } from "../../../services/card-rooms/profile-storage";
 import { CARD_SERVICE_TEXT } from "../card-service-copy";
+import { getCardServiceErrorMessage } from "../error-message";
 import { useCardSession } from "../card-session-context";
 import { createMobileCardDeckRepository } from "../runtime-adapters/card-deck-repository";
 import { createMobileCardItemRepository } from "../runtime-adapters/card-item-repository";
@@ -40,18 +41,6 @@ class CardRoomCreateInputError extends Error {
     super(message);
     this.name = "CardRoomCreateInputError";
   }
-}
-
-function getCardRoomCreateErrorMessage(error: unknown) {
-  if (error instanceof Error) {
-    return error.message;
-  }
-
-  if (typeof error === "string" && error.trim().length > 0) {
-    return `${CARD_SERVICE_TEXT.rooms.createErrorTitle}: ${error.trim()}`;
-  }
-
-  return `${CARD_SERVICE_TEXT.rooms.createErrorTitle}: 처리할 수 없는 오류 형식(${String(error)})`;
 }
 
 export function CardRoomCreateSheet({
@@ -151,7 +140,10 @@ export function CardRoomCreateSheet({
     } catch (error) {
       showYeonAlert(
         CARD_SERVICE_TEXT.rooms.createErrorTitle,
-        getCardRoomCreateErrorMessage(error)
+        getCardServiceErrorMessage(
+          error,
+          CARD_SERVICE_TEXT.rooms.createErrorTitle
+        )
       );
     }
   }

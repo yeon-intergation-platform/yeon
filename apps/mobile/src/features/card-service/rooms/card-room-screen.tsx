@@ -24,6 +24,7 @@ import {
   writeCardRoomParticipantToken,
 } from "../../../services/card-rooms/profile-storage";
 import { CARD_SERVICE_TEXT } from "../card-service-copy";
+import { getCardServiceErrorMessage } from "../error-message";
 import { useCardRoomConnection } from "./use-card-room-connection";
 import { useCardRoomIdentity } from "./use-card-room-identity";
 
@@ -33,18 +34,6 @@ const T = CARD_SERVICE_TEXT.rooms;
 function sanitizeChatText(text: string, maxLen: number): string {
   // eslint-disable-next-line no-control-regex
   return text.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, "").slice(0, maxLen);
-}
-
-function getCardRoomJoinErrorMessage(error: unknown) {
-  if (error instanceof Error) {
-    return error.message;
-  }
-
-  if (typeof error === "string" && error.trim().length > 0) {
-    return `${T.joinErrorTitle}: ${error.trim()}`;
-  }
-
-  return `${T.joinErrorTitle}: 처리할 수 없는 오류 형식(${String(error)})`;
 }
 
 type CardRoomScreenProps = { roomId: string };
@@ -91,7 +80,7 @@ export function CardRoomScreen({ roomId }: CardRoomScreenProps) {
         }
       } catch (error) {
         if (!cancelled) {
-          setJoinError(getCardRoomJoinErrorMessage(error));
+          setJoinError(getCardServiceErrorMessage(error, T.joinErrorTitle));
         }
       }
     })();

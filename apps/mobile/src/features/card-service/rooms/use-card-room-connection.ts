@@ -13,6 +13,7 @@ import {
 } from "@yeon/ui/runtime/YeonRealtimeClient";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { resolveMobileRaceServerUrl } from "../../../services/card-rooms/race-server-url";
+import { getCardServiceCauseMessage } from "../error-message";
 
 const CARD_ROOM_NETWORK_ERROR_PATTERNS = [
   "failed to fetch",
@@ -22,20 +23,8 @@ const CARD_ROOM_NETWORK_ERROR_PATTERNS = [
   "econnrefused",
 ] as const;
 
-function getConnectionErrorCauseMessage(error: unknown) {
-  if (error instanceof Error) {
-    return error.message;
-  }
-
-  if (typeof error === "string" && error.trim().length > 0) {
-    return error.trim();
-  }
-
-  return `처리할 수 없는 오류 형식(${String(error)})`;
-}
-
 function normalizeConnectionError(error: unknown) {
-  const message = getConnectionErrorCauseMessage(error);
+  const message = getCardServiceCauseMessage(error);
   const lower = message.toLowerCase();
   if (CARD_ROOM_NETWORK_ERROR_PATTERNS.some((p) => lower.includes(p))) {
     return "카드방 연결에 실패했습니다. 잠시 후 다시 입장해 주세요.";
