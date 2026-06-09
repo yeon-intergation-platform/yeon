@@ -428,7 +428,7 @@ public class CardRoomService {
   // 수 없으므로 새 입장자를 기다린다. WAITING이 아닌 방(이미 시작/종료)은 건드리지 않는다.
   // remaining은 역할 재배정 전 스냅샷이라 '무엇이 빠졌는지' 판정에 그대로 쓴다.
   private void rebalanceRolesAfterHostSuccession(RoomRow room, List<ParticipantRow> remaining, ParticipantRow heir) {
-    if (!CardRoomStatus.WAITING.matches(room.status()) || remaining.size() < 2) {
+    if (!CardRoomStatePolicy.from(room).canRebalanceRolesAfterHostSuccession(remaining.size())) {
       return;
     }
     boolean hasMemorizer = remaining.stream().anyMatch((item) -> CardRoomParticipantRole.MEMORIZER.matches(item.role()));
@@ -494,16 +494,12 @@ public class CardRoomService {
   }
 
   private void ensureRoomOpen(RoomRow room) {
-    if (CardRoomStatus.CLOSED.matches(room.status())) {
-      throw new CardRoomServiceException(CardRoomError.ROOM_CLOSED);
-    }
+    CardRoomStatePolicy.from(room).requireOpen();
   }
 
   // 진행 계열 전이(reveal/next/submitResult)는 종료된 방을 먼저 걸러 '이미 종료됨'을 명확히 알린다.
   private void ensureRoomActive(RoomRow room) {
-    if (CardRoomStatus.CLOSED.matches(room.status()) || CardRoomStatus.FINISHED.matches(room.status())) {
-      throw new CardRoomServiceException(CardRoomError.ROOM_CLOSED);
-    }
+    CardRoomStatePolicy.from(room).requireActive();
   }
 
   private CardRoomParticipantRole nextRole(Long roomId) {
@@ -544,6 +540,28 @@ public class CardRoomService {
 
   private CardRoomResult normalizeResult(String value) {
     return CardRoomResult.find(value).orElseThrow(() -> new CardRoomServiceException(CardRoomError.INVALID_RESULT));
+  }
+
+  private record CardRoomStatePolicy(String status) {
+    static CardRoomStatePolicy from(RoomRow room) {
+      return new CardRoomStatePolicy(room.status());
+    }
+
+    boolean canRebalanceRolesAfterHostSuccession(int remainingParticipantCount) {
+      return CardRoomStatus.WAITING.matches(status) && remainingParticipantCount >= 2;
+    }
+
+    void requireOpen() {
+      if (CardRoomStatus.CLOSED.matches(status)) {
+        throw new CardRoomServiceException(CardRoomError.ROOM_CLOSED);
+      }
+    }
+
+    void requireActive() {
+      if (CardRoomStatus.CLOSED.matches(status) || CardRoomStatus.FINISHED.matches(status)) {
+        throw new CardRoomServiceException(CardRoomError.ROOM_CLOSED);
+      }
+    }
   }
 
   private record ParticipantUpdateChange(boolean role, boolean ready, boolean profile) {
