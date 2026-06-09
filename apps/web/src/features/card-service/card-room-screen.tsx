@@ -25,6 +25,18 @@ import { CardRoomHeader } from "./card-room-header";
 import { CardRoomParticipantsPanel } from "./card-room-participants-panel";
 import { CardRoomStudyPanel } from "./card-room-study-panel";
 
+function getCardRoomJoinErrorMessage(error: unknown) {
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  if (typeof error === "string" && error.trim().length > 0) {
+    return `카드방에 입장하지 못했습니다. 원인: ${error.trim()}`;
+  }
+
+  return `카드방에 입장하지 못했습니다. 원인: 처리할 수 없는 오류 형식(${String(error)})`;
+}
+
 type CardRoomScreenProps = { roomId: string };
 
 export function CardRoomScreen({ roomId }: CardRoomScreenProps) {
@@ -62,13 +74,10 @@ export function CardRoomScreen({ roomId }: CardRoomScreenProps) {
         setParticipantToken(token);
         setParticipantId(joined.participant.id);
       })
-      .catch((error) => {
-        if (!cancelled)
-          setJoinError(
-            error instanceof Error
-              ? error.message
-              : "카드방에 입장하지 못했습니다."
-          );
+      .catch((error: unknown) => {
+        if (!cancelled) {
+          setJoinError(getCardRoomJoinErrorMessage(error));
+        }
       });
     return () => {
       cancelled = true;
