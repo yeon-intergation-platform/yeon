@@ -68,7 +68,7 @@ export function BulkAddCardsForm({
     !isPending;
   const replaceButtonLabel = replaceCardsMutation.isPending
     ? "덮어쓰는 중..."
-    : "덮어쓰기";
+    : `${parseResult.cards.length || 0}장 덮어쓰기`;
   const addButtonLabel = addCardsMutation.isPending
     ? "추가 중..."
     : `${parseResult.cards.length || 0}장 추가`;
@@ -301,24 +301,36 @@ export function BulkAddCardsForm({
         </YeonSurface>
       ) : null}
 
-      <YeonView className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-        <YeonButton
-          type="button"
-          disabled={!canSubmit}
-          onClick={handleReplace}
-          size="lg"
-          className={CARD_SERVICE_COMMON_CLASS.panelTextEmphasis}
+      <YeonView className="flex flex-col gap-3 border-t border-[#e5e5e5] pt-4 sm:flex-row sm:items-center sm:justify-between">
+        <YeonText
+          as="p"
+          variant="caption"
+          tone="secondary"
+          className="leading-5"
         >
-          {replaceButtonLabel}
-        </YeonButton>
-        <YeonButton
-          type="submit"
-          disabled={!canSubmit}
-          variant="primary"
-          size="lg"
-        >
-          {addButtonLabel}
-        </YeonButton>
+          덮어쓰기는 기존 카드를 모두 삭제하고, 인식된 카드 목록으로 완전히
+          교체합니다.
+        </YeonText>
+        <YeonView className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+          <YeonButton
+            type="button"
+            disabled={!canSubmit}
+            onClick={handleReplace}
+            variant="danger"
+            size="lg"
+            className={CARD_SERVICE_COMMON_CLASS.panelTextEmphasis}
+          >
+            {replaceButtonLabel}
+          </YeonButton>
+          <YeonButton
+            type="submit"
+            disabled={!canSubmit}
+            variant="primary"
+            size="lg"
+          >
+            {addButtonLabel}
+          </YeonButton>
+        </YeonView>
       </YeonView>
     </YeonForm>
   );
