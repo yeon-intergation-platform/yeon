@@ -1,0 +1,380 @@
+# SOLID / 예외 원칙 300개 감사 백로그
+
+## 배경
+
+사용자 지시: SOLID 원칙(SRP/OCP/LSP/ISP/DIP)과 예외 처리 원칙 10개를 모두 지키도록, 지켜지지 않는 곳은 고치고 적용하면 좋은 곳을 300개 찾아 리스트업한다.
+
+## 범위
+
+- 유지보수 대상 서비스: 카드(`card-service`), 타자(`typing-service`), 커뮤니티(`community`) 및 공유 패키지/공통 런타임.
+- 상담 워크스페이스는 프로젝트 동결 정책에 따라 신규 리팩토링/수정 대상에서 제외한다.
+
+## 차수 1
+
+### 작업내용
+
+- 정적 검색과 파일 근거로 300개 TODO를 수집한다.
+- 안전한 소규모 개선은 같은 브랜치에서 바로 적용한다.
+
+### 논의 필요
+
+- 300개 전체를 한 번에 코드 수정할 경우 회귀 위험이 크므로, 이번 차수는 공식 항목화와 저위험 수정으로 제한할지 여부.
+
+### 선택지
+
+1. 300개 전체를 즉시 대규모 수정한다.
+2. 300개를 공식 백로그로 만들고, 저위험/반복성 높은 항목부터 일부 수정한다.
+3. 300개를 서비스별 후속 이슈로 쪼갠다.
+
+### 추천
+
+- 선택지 2. 현재 제품 코드가 넓고 web/mobile/backend를 모두 건드리므로, 먼저 근거 있는 300개 항목을 공식화하고 자동 검증 가능한 저위험 개선부터 적용한다.
+
+### 사용자 방향
+
+- 추천 기준으로 진행.
+
+## 이번 차수 적용 완료
+
+- `AuthSessionServiceException`에 cause 보존 생성자를 추가해 원래 예외 정보를 잃지 않게 했다.
+- `AuthTokenHasher`의 HMAC 실패 처리를 `Exception`에서 `GeneralSecurityException`으로 좁히고 cause를 보존했다.
+- `CardRoomParticipantTokenService`와 `TypingRaceSeedSigner`의 HMAC 실패 처리를 `GeneralSecurityException`으로 좁혔다.
+- `SocialIdentityProviderClient`의 OAuth provider 호출 실패를 `InterruptedException`/`JsonProcessingException`/`IOException`으로 나누고, 인터럽트 복원 및 cause 보존을 적용했다.
+
+## 300개 TODO
+
+> 아래 항목은 실제 코드 경로/라인을 기준으로 작성한다. `원칙`은 SOLID 또는 예외 처리 원칙 번호를 표시한다.
+
+### 수집 요약
+
+- 후보 검색 결과: 유지보수 범위에서 835개 후보 중 300개를 우선순위/원칙 균형으로 선별.
+- 원칙별 선별 수: Exception 95개, SRP 55개, DIP 45개, ISP 25개, LSP 35개, OCP 45개.
+- 우선순위: P1 즉시 점검, P2 구조 개선, P3 적용하면 좋은 확장성 개선.
+- `E1~E10`은 사용자 예외 처리 원칙 1~10을 의미한다.
+
+### Exception
+
+1. **[완료][P1] 광범위 예외 포착 축소** `apps/backend/src/main/java/world/yeon/backend/card_rooms/service/CardRoomParticipantTokenService.java:49` — 원칙 `E2`. Exception/Throwable 포착은 처리 가능한 구체 예외로 좁힌다. 근거: `} catch (Exception error) {`
+2. **[완료][P1] 광범위 예외 포착 축소** `apps/backend/src/main/java/world/yeon/backend/root_auth/service/AuthTokenHasher.java:35` — 원칙 `E2`. Exception/Throwable 포착은 처리 가능한 구체 예외로 좁힌다. 근거: `} catch (Exception error) {`
+3. **[완료][P1] 광범위 예외 포착 축소** `apps/backend/src/main/java/world/yeon/backend/root_auth/social/SocialIdentityProviderClient.java:134` — 원칙 `E2`. Exception/Throwable 포착은 처리 가능한 구체 예외로 좁힌다. 근거: `} catch (Exception error) {`
+4. **[P1] 광범위 예외 포착 축소** `apps/backend/src/main/java/world/yeon/backend/typing_character_frames/repository/TypingCharacterFrameRepository.java:87` — 원칙 `E2`. Exception/Throwable 포착은 처리 가능한 구체 예외로 좁힌다. 근거: `} catch (Exception error) {`
+5. **[P1] 광범위 예외 포착 축소** `apps/backend/src/main/java/world/yeon/backend/typing_character_frames/repository/TypingCharacterFrameRepository.java:95` — 원칙 `E2`. Exception/Throwable 포착은 처리 가능한 구체 예외로 좁힌다. 근거: `} catch (Exception error) {`
+6. **[완료][P1] 광범위 예외 포착 축소** `apps/backend/src/main/java/world/yeon/backend/typing_decks/service/TypingRaceSeedSigner.java:33` — 원칙 `E2`. Exception/Throwable 포착은 처리 가능한 구체 예외로 좁힌다. 근거: `} catch (Exception error) {`
+7. **[P1] 빈 catch 금지** `apps/mobile/src/features/card-service/card-onboarding-gate.tsx:119` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
+8. **[P1] 빈 catch 금지** `apps/mobile/src/features/card-service/card-session-context.tsx:130` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
+9. **[P1] 빈 catch 금지** `apps/mobile/src/features/card-service/onboarding-storage.ts:29` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
+10. **[P1] 빈 catch 금지** `apps/mobile/src/features/card-service/onboarding-storage.ts:51` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
+11. **[P1] 빈 catch 금지** `apps/race-server/src/index.ts:55` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
+12. **[P1] 빈 catch 금지** `apps/web/src/features/card-service/auth-context.tsx:60` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
+13. **[P1] 빈 catch 금지** `apps/web/src/features/card-service/card-service-fetch.ts:65` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
+14. **[P1] 빈 catch 금지** `apps/web/src/features/card-service/components/add-card-form.tsx:132` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
+15. **[P1] 빈 catch 금지** `apps/web/src/features/card-service/components/card-editor-image-utils.ts:303` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
+16. **[P1] 빈 catch 금지** `apps/web/src/features/card-service/components/card-editor-youtube-utils.ts:174` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
+17. **[P1] 빈 catch 금지** `apps/web/src/features/card-service/components/card-markdown-code-block.tsx:64` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
+18. **[P1] 빈 catch 금지** `apps/web/src/features/card-service/components/use-card-editor-image-upload.ts:65` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
+19. **[P1] 빈 catch 금지** `apps/web/src/features/card-service/components/use-card-editor-image-upload.ts:129` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
+20. **[P1] 빈 catch 금지** `apps/web/src/features/card-service/hooks/use-card-room-profile.ts:45` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
+21. **[P1] 빈 catch 금지** `apps/web/src/features/card-service/utils/card-play-card-size.ts:71` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
+22. **[P1] 빈 catch 금지** `apps/web/src/features/community/community-guest-identity.ts:55` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
+23. **[P1] 빈 catch 금지** `apps/web/src/features/community/components/community-presence-tracker.tsx:20` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
+24. **[P1] 빈 catch 금지** `apps/web/src/features/typing-service/typing-room-screen.tsx:738` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
+25. **[P1] 빈 catch 금지** `apps/web/src/features/typing-service/typing-service-fetch.ts:39` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
+26. **[P1] 빈 catch 금지** `apps/web/src/features/typing-service/typing-service-fetch.ts:126` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
+27. **[P1] 빈 catch 금지** `apps/web/src/features/typing-service/typing-service-fetch.ts:216` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
+28. **[P1] 빈 catch 금지** `apps/web/src/features/typing-service/use-player-identity.ts:31` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
+29. **[P1] 빈 catch 금지** `apps/web/src/features/typing-service/use-race-room.ts:256` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
+30. **[P1] 빈 catch 금지** `apps/web/src/features/typing-service/use-race-room.ts:321` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
+31. **[P1] 빈 catch 금지** `apps/web/src/features/typing-service/use-race-room.ts:384` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
+32. **[P1] 빈 catch 금지** `apps/web/src/features/typing-service/use-race-room.ts:387` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
+33. **[P1] 빈 catch 금지** `apps/web/src/features/typing-service/use-territory-battle-room.ts:239` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
+34. **[P1] 빈 catch 금지** `apps/web/src/features/typing-service/use-typing-profile.ts:43` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
+35. **[P1] 빈 catch 금지** `apps/web/src/features/typing-service/use-typing-profile.ts:54` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
+36. **[P1] 빈 catch 금지** `apps/web/src/features/typing-service/use-typing-settings.ts:531` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
+37. **[P1] 빈 catch 금지** `packages/api-client/src/index.ts:153` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
+38. **[P1] 빈 catch 금지** `packages/ui/src/rich-content/YeonMermaid/index.ts:37` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
+39. **[P1] 빈 catch 금지** `packages/ui/src/runtime/YeonBrowserRuntime/index.native.ts:136` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
+40. **[P1] 빈 catch 금지** `packages/ui/src/runtime/YeonBrowserRuntime/index.ts:163` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
+41. **[P1] 빈 catch 금지** `packages/ui/src/runtime/YeonBrowserRuntime/index.ts:175` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
+42. **[P1] 빈 catch 금지** `packages/ui/src/runtime/YeonBrowserRuntime/index.ts:183` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
+43. **[P1] 빈 catch 금지** `packages/ui/src/runtime/YeonBrowserRuntime/index.ts:191` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
+44. **[P1] 빈 catch 금지** `packages/ui/src/runtime/YeonBrowserRuntime/index.ts:199` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
+45. **[P1] 빈 catch 금지** `packages/ui/src/runtime/YeonBrowserRuntime/index.ts:207` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
+46. **[P1] 빈 catch 금지** `packages/ui/src/runtime/YeonBrowserRuntime/index.ts:215` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
+47. **[P1] 빈 catch 금지** `packages/ui/src/runtime/YeonBrowserRuntime/index.ts:787` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
+
+### SRP
+
+48. **[P1] 큰 파일 책임 분리** `apps/race-server/src/rooms/card-room.ts:1` — 원칙 `S`. 812라인 파일이다. 단일 책임 원칙 기준으로 화면/상태/IO/변환 책임 분리 후보다. 근거: `import { type Client, Room } from "@colyseus/core";`
+49. **[P1] 큰 파일 책임 분리** `apps/race-server/src/rooms/typing-race-room.ts:1` — 원칙 `S`. 2069라인 파일이다. 단일 책임 원칙 기준으로 화면/상태/IO/변환 책임 분리 후보다. 근거: `import {`
+50. **[P1] 큰 파일 책임 분리** `apps/web/src/features/card-service/components/card-rich-markdown-editor.tsx:1` — 원칙 `S`. 1269라인 파일이다. 단일 책임 원칙 기준으로 화면/상태/IO/변환 책임 분리 후보다. 근거: `"use client";`
+51. **[P1] 큰 파일 책임 분리** `apps/web/src/features/card-service/components/markdown-content.tsx:1` — 원칙 `S`. 810라인 파일이다. 단일 책임 원칙 기준으로 화면/상태/IO/변환 책임 분리 후보다. 근거: `"use client";`
+52. **[P1] 큰 파일 책임 분리** `apps/web/src/features/typing-service/typing-race-multiplayer-screen.tsx:1` — 원칙 `S`. 747라인 파일이다. 단일 책임 원칙 기준으로 화면/상태/IO/변환 책임 분리 후보다. 근거: `"use client";`
+53. **[P1] 큰 파일 책임 분리** `apps/web/src/features/typing-service/typing-race-solo-screen.tsx:1` — 원칙 `S`. 821라인 파일이다. 단일 책임 원칙 기준으로 화면/상태/IO/변환 책임 분리 후보다. 근거: `"use client";`
+54. **[P1] 큰 파일 책임 분리** `apps/web/src/features/typing-service/typing-room-screen.tsx:1` — 원칙 `S`. 1084라인 파일이다. 단일 책임 원칙 기준으로 화면/상태/IO/변환 책임 분리 후보다. 근거: `"use client";`
+55. **[P1] 큰 파일 책임 분리** `apps/web/src/features/typing-service/typing-territory-battle-screen.tsx:1` — 원칙 `S`. 1191라인 파일이다. 단일 책임 원칙 기준으로 화면/상태/IO/변환 책임 분리 후보다. 근거: `"use client";`
+56. **[P1] 큰 파일 책임 분리** `packages/api-client/src/index.ts:1` — 원칙 `S`. 960라인 파일이다. 단일 책임 원칙 기준으로 화면/상태/IO/변환 책임 분리 후보다. 근거: `import { authSessionResponseSchema } from "@yeon/api-contract/auth";`
+57. **[P1] 큰 파일 책임 분리** `packages/domain/src/life-os.ts:1` — 원칙 `S`. 714라인 파일이다. 단일 책임 원칙 기준으로 화면/상태/IO/변환 책임 분리 후보다. 근거: `export const lifeOsCategories = [`
+58. **[P1] 큰 파일 책임 분리** `packages/ui/src/runtime/YeonBrowserRuntime/index.ts:1` — 원칙 `S`. 843라인 파일이다. 단일 책임 원칙 기준으로 화면/상태/IO/변환 책임 분리 후보다. 근거: `export type YeonBrowserStorage = Pick<`
+
+### DIP
+
+59. **[P2] 필드 주입 제거** `apps/backend/src/main/java/world/yeon/backend/typing_decks/service/TypingDeckService.java:48` — 원칙 `D`. 필드 주입 대신 생성자 주입과 인터페이스 의존으로 바꾼다. 근거: `@Autowired`
+60. **[P2] fetch 직접 의존 포트화** `apps/race-server/src/rooms/card-room.ts:168` — 원칙 `D`. 구체 fetch 호출을 repository/client 포트 뒤로 숨긴다. 근거: `const response = await fetch(\`${backendBaseUrl()}${path}\`, {`
+61. **[P2] fetch 직접 의존 포트화** `apps/race-server/src/rooms/typing-race-room.ts:479` — 원칙 `D`. 구체 fetch 호출을 repository/client 포트 뒤로 숨긴다. 근거: `const response = await fetch(`
+62. **[P2] 브라우저 저장소 직접 의존 분리** `apps/web/src/features/community/hooks/use-community-chat-panel.ts:59` — 원칙 `D`. 구체 저장소 접근을 KV/storage 포트로 격리한다. 근거: `/** 사용자가 직접 열고/닫을 때 호출. 선택은 localStorage에 보존되어 라우트 이동 후에도 유지된다. */`
+63. **[P2] fetch 직접 의존 포트화** `apps/web/src/features/typing-service/use-typing-room-lobby.ts:63` — 원칙 `D`. 구체 fetch 호출을 repository/client 포트 뒤로 숨긴다. 근거: `void roomsQuery.refetch();`
+64. **[P2] 브라우저 저장소 직접 의존 분리** `packages/ui/src/runtime/YeonBrowserRuntime/index.native.ts:133` — 원칙 `D`. 구체 저장소 접근을 KV/storage 포트로 격리한다. 근거: `return typeof globalThis.localStorage === "undefined"`
+65. **[P2] 브라우저 저장소 직접 의존 분리** `packages/ui/src/runtime/YeonBrowserRuntime/index.native.ts:135` — 원칙 `D`. 구체 저장소 접근을 KV/storage 포트로 격리한다. 근거: `: globalThis.localStorage;`
+66. **[P2] fetch 직접 의존 포트화** `packages/ui/src/runtime/YeonBrowserRuntime/index.native.ts:203` — 원칙 `D`. 구체 fetch 호출을 repository/client 포트 뒤로 숨긴다. 근거: `return fetch(input, init);`
+67. **[P2] 브라우저 저장소 직접 의존 분리** `packages/ui/src/runtime/YeonBrowserRuntime/index.ts:139` — 원칙 `D`. 구체 저장소 접근을 KV/storage 포트로 격리한다. 근거: `return kind === "local" ? window.localStorage : window.sessionStorage;`
+68. **[P2] 브라우저 저장소 직접 의존 분리** `packages/ui/src/runtime/YeonBrowserRuntime/index.ts:162` — 원칙 `D`. 구체 저장소 접근을 KV/storage 포트로 격리한다. 근거: `return typeof window === "undefined" ? null : window.localStorage;`
+69. **[P2] fetch 직접 의존 포트화** `packages/ui/src/runtime/YeonBrowserRuntime/index.ts:279` — 원칙 `D`. 구체 fetch 호출을 repository/client 포트 뒤로 숨긴다. 근거: `return fetch(input, init);`
+70. **[P2] 브라우저 저장소 직접 의존 분리** `packages/ui/src/runtime/ports/shared.ts:67` — 원칙 `D`. 구체 저장소 접근을 KV/storage 포트로 격리한다. 근거: `// 비동기로 통일(모바일 SecureStore 친화). 웹 localStorage는 Promise로 감싼다.`
+
+### Exception
+
+71. **[P2] 일반 Error 메시지 구체화** `apps/mobile/src/features/card-service/card-deck-detail-screen.tsx:177` — 원칙 `E4/E6`. 오류 메시지에 실패한 입력/외부 의존/상태 원인을 드러낸다. 근거: `throw new Error(CARD_SERVICE_TEXT.detail.missingDeckIdMessage);`
+72. **[P2] 일반 Error 메시지 구체화** `apps/mobile/src/features/card-service/card-deck-detail-screen.tsx:195` — 원칙 `E4/E6`. 오류 메시지에 실패한 입력/외부 의존/상태 원인을 드러낸다. 근거: `throw new Error(CARD_SERVICE_TEXT.detail.missingDeckIdMessage);`
+73. **[P2] 일반 Error 메시지 구체화** `apps/mobile/src/features/card-service/card-deck-detail-screen.tsx:207` — 원칙 `E4/E6`. 오류 메시지에 실패한 입력/외부 의존/상태 원인을 드러낸다. 근거: `throw new Error(CARD_SERVICE_TEXT.detail.missingDeckIdMessage);`
+74. **[P2] 일반 Error 메시지 구체화** `apps/mobile/src/features/card-service/card-deck-detail-screen.tsx:211` — 원칙 `E4/E6`. 오류 메시지에 실패한 입력/외부 의존/상태 원인을 드러낸다. 근거: `throw new Error(CARD_SERVICE_TEXT.detail.noParseResultMessage);`
+75. **[P2] 일반 Error 메시지 구체화** `apps/mobile/src/features/card-service/card-deck-detail-screen.tsx:230` — 원칙 `E4/E6`. 오류 메시지에 실패한 입력/외부 의존/상태 원인을 드러낸다. 근거: `throw new Error(CARD_SERVICE_TEXT.detail.missingDeckIdMessage);`
+76. **[P2] 일반 Error 메시지 구체화** `apps/mobile/src/features/card-service/card-deck-detail-screen.tsx:234` — 원칙 `E4/E6`. 오류 메시지에 실패한 입력/외부 의존/상태 원인을 드러낸다. 근거: `throw new Error(CARD_SERVICE_TEXT.detail.noParseResultMessage);`
+77. **[P2] 일반 Error 메시지 구체화** `apps/mobile/src/features/card-service/card-deck-detail-screen.tsx:253` — 원칙 `E4/E6`. 오류 메시지에 실패한 입력/외부 의존/상태 원인을 드러낸다. 근거: `throw new Error(CARD_SERVICE_TEXT.detail.missingDeckIdMessage);`
+78. **[P2] 일반 Error 메시지 구체화** `apps/mobile/src/features/card-service/card-deck-detail-screen.tsx:269` — 원칙 `E4/E6`. 오류 메시지에 실패한 입력/외부 의존/상태 원인을 드러낸다. 근거: `throw new Error(CARD_SERVICE_TEXT.detail.missingDeckIdMessage);`
+79. **[P2] TypeScript catch 처리 책임 명확화** `apps/mobile/src/features/card-service/card-deck-detail-screen.tsx:347` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
+80. **[P2] TypeScript catch 처리 책임 명확화** `apps/mobile/src/features/card-service/card-deck-detail-screen.tsx:359` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
+81. **[P2] TypeScript catch 처리 책임 명확화** `apps/mobile/src/features/card-service/card-deck-detail-screen.tsx:389` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
+82. **[P2] TypeScript catch 처리 책임 명확화** `apps/mobile/src/features/card-service/card-deck-detail-screen.tsx:419` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
+83. **[P2] TypeScript catch 처리 책임 명확화** `apps/mobile/src/features/card-service/card-deck-detail-screen.tsx:439` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
+84. **[P2] TypeScript catch 처리 책임 명확화** `apps/mobile/src/features/card-service/card-deck-list-screen.tsx:140` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
+85. **[P2] 일반 Error 메시지 구체화** `apps/mobile/src/features/card-service/card-deck-play-screen.tsx:73` — 원칙 `E4/E6`. 오류 메시지에 실패한 입력/외부 의존/상태 원인을 드러낸다. 근거: `throw new Error(CARD_SERVICE_TEXT.detail.missingDeckIdMessage);`
+86. **[P2] 일반 Error 메시지 구체화** `apps/mobile/src/features/card-service/card-deck-play-screen.tsx:82` — 원칙 `E4/E6`. 오류 메시지에 실패한 입력/외부 의존/상태 원인을 드러낸다. 근거: `throw new Error(CARD_SERVICE_TEXT.shared.notFoundMessage);`
+87. **[P2] 일반 Error 메시지 구체화** `apps/mobile/src/features/card-service/card-deck-play-screen.tsx:115` — 원칙 `E4/E6`. 오류 메시지에 실패한 입력/외부 의존/상태 원인을 드러낸다. 근거: `throw new Error(CARD_SERVICE_TEXT.detail.missingDeckIdMessage);`
+88. **[P2] TypeScript catch 처리 책임 명확화** `apps/mobile/src/features/card-service/card-onboarding-gate.tsx:73` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
+89. **[P2] TypeScript catch 처리 책임 명확화** `apps/mobile/src/features/card-service/card-onboarding-gate.tsx:102` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
+90. **[P2] TypeScript catch 처리 책임 명확화** `apps/mobile/src/features/card-service/card-service-session.ts:50` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
+91. **[P2] 일반 Error 메시지 구체화** `apps/mobile/src/features/card-service/card-session-context.tsx:44` — 원칙 `E4/E6`. 오류 메시지에 실패한 입력/외부 의존/상태 원인을 드러낸다. 근거: `throw new Error(`
+92. **[P2] TypeScript catch 처리 책임 명확화** `apps/mobile/src/features/card-service/markdown-text-field.tsx:245` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
+93. **[P2] 일반 Error 메시지 구체화** `apps/mobile/src/features/card-service/rooms/card-room-create-sheet.tsx:72` — 원칙 `E4/E6`. 오류 메시지에 실패한 입력/외부 의존/상태 원인을 드러낸다. 근거: `throw new Error(`
+94. **[P2] TypeScript catch 처리 책임 명확화** `apps/mobile/src/features/card-service/rooms/card-room-create-sheet.tsx:130` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
+95. **[P2] TypeScript catch 처리 책임 명확화** `apps/mobile/src/features/card-service/rooms/card-room-screen.tsx:80` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
+96. **[P2] TypeScript catch 처리 책임 명확화** `apps/mobile/src/features/card-service/rooms/use-card-room-connection.ts:99` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `.catch((err) => {`
+97. **[P2] TypeScript catch 처리 책임 명확화** `apps/race-server/src/index.ts:127` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
+98. **[P2] 일반 Error 메시지 구체화** `apps/race-server/src/rooms/card-room.ts:303` — 원칙 `E4/E6`. 오류 메시지에 실패한 입력/외부 의존/상태 원인을 드러낸다. 근거: `if (!options.participantId) throw new Error("참가자 식별자가 필요합니다.");`
+99. **[P2] 일반 Error 메시지 구체화** `apps/race-server/src/rooms/card-room.ts:317` — 원칙 `E4/E6`. 오류 메시지에 실패한 입력/외부 의존/상태 원인을 드러낸다. 근거: `throw new Error("참가자 인증에 실패했습니다.");`
+100. **[P2] TypeScript catch 처리 책임 명확화** `apps/race-server/src/rooms/card-room.ts:357` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
+101. **[P2] TypeScript catch 처리 책임 명확화** `apps/race-server/src/rooms/card-room.ts:783` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
+102. **[P2] TypeScript catch 처리 책임 명확화** `apps/race-server/src/rooms/typing-race-room.ts:496` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
+103. **[P2] TypeScript catch 처리 책임 명확화** `apps/web/src/app/community/posts/[postId]/page.tsx:23` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
+104. **[P2] 일반 Error 메시지 구체화** `apps/web/src/features/card-service/auth-context.tsx:87` — 원칙 `E4/E6`. 오류 메시지에 실패한 입력/외부 의존/상태 원인을 드러낸다. 근거: `throw new Error(`
+105. **[P2] TypeScript catch 처리 책임 명확화** `apps/web/src/features/card-service/card-room-create-screen.tsx:128` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
+106. **[P2] TypeScript catch 처리 책임 명확화** `apps/web/src/features/card-service/card-room-screen.tsx:65` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `.catch((error) => {`
+107. **[P2] TypeScript catch 처리 책임 명확화** `apps/web/src/features/card-service/card-service-decks-screen.tsx:53` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
+108. **[P2] 로컬 로그 후 실패 상태 연결** `apps/web/src/features/card-service/card-service-decks-screen.tsx:53` — 원칙 `E3/E9`. console.error 후 반환만 하면 전역 오류 정책과 사용자 실패 상태가 분리될 수 있다. 근거: `} catch (error) {`
+109. **[P2] 일반 Error 메시지 구체화** `apps/web/src/features/card-service/components/card-editor-image-utils.ts:292` — 원칙 `E4/E6`. 오류 메시지에 실패한 입력/외부 의존/상태 원인을 드러낸다. 근거: `throw new Error();`
+110. **[P2] 일반 Error 메시지 구체화** `apps/web/src/features/card-service/components/card-editor-image-utils.ts:304` — 원칙 `E4/E6`. 오류 메시지에 실패한 입력/외부 의존/상태 원인을 드러낸다. 근거: `throw new Error(`
+111. **[P2] 일반 Error 메시지 구체화** `apps/web/src/features/card-service/components/card-markdown-code-block.tsx:60` — 원칙 `E4/E6`. 오류 메시지에 실패한 입력/외부 의존/상태 원인을 드러낸다. 근거: `throw new Error("클립보드 복사를 지원하지 않습니다.");`
+112. **[P2] 일반 Error 메시지 구체화** `apps/web/src/features/card-service/components/export-deck-panel.tsx:34` — 원칙 `E4/E6`. 오류 메시지에 실패한 입력/외부 의존/상태 원인을 드러낸다. 근거: `throw new Error("클립보드 복사를 지원하지 않습니다.");`
+113. **[P2] 일반 Error 메시지 구체화** `apps/web/src/features/card-service/components/markdown-content.tsx:573` — 원칙 `E4/E6`. 오류 메시지에 실패한 입력/외부 의존/상태 원인을 드러낸다. 근거: `throw new Error("클립보드 복사를 지원하지 않습니다.");`
+114. **[P2] TypeScript catch 처리 책임 명확화** `apps/web/src/features/card-service/components/merge-guest-dialog.tsx:46` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
+115. **[P2] TypeScript catch 처리 책임 명확화** `apps/web/src/features/card-service/components/use-card-editor-image-upload.ts:186` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
+116. **[P2] TypeScript catch 처리 책임 명확화** `apps/web/src/features/card-service/components/use-card-editor-image-upload.ts:217` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
+117. **[P2] TypeScript catch 처리 책임 명확화** `apps/web/src/features/card-service/components/use-card-editor-image-upload.ts:273` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
+118. **[P2] TypeScript catch 처리 책임 명확화** `apps/web/src/features/card-service/components/use-card-editor-image-upload.ts:316` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
+
+### ISP
+
+119. **[P2] 큰 타입/인터페이스 분리** `apps/race-server/src/rooms/typing-race-room.ts:73` — 원칙 `I`. 멤버 후보 17개다. 읽기/쓰기/이벤트/상태 전용 타입으로 분리할 후보다. 근거: `type RoomParticipant = {`
+120. **[P2] 큰 타입/인터페이스 분리** `apps/web/src/features/card-service/card-room-header.tsx:30` — 원칙 `I`. 멤버 후보 10개다. 읽기/쓰기/이벤트/상태 전용 타입으로 분리할 후보다. 근거: `type CardRoomHeaderProps = {`
+121. **[P2] 큰 타입/인터페이스 분리** `apps/web/src/features/card-service/card-room-study-panel.tsx:11` — 원칙 `I`. 멤버 후보 9개다. 읽기/쓰기/이벤트/상태 전용 타입으로 분리할 후보다. 근거: `type CardRoomStudyPanelProps = {`
+122. **[P2] 큰 타입/인터페이스 분리** `apps/web/src/features/card-service/components/card-editor-toolbar.tsx:64` — 원칙 `I`. 멤버 후보 25개다. 읽기/쓰기/이벤트/상태 전용 타입으로 분리할 후보다. 근거: `interface CardEditorToolbarProps {`
+123. **[P2] 큰 타입/인터페이스 분리** `apps/web/src/features/card-service/components/card-rich-markdown-editor-view.tsx:317` — 원칙 `I`. 멤버 후보 9개다. 읽기/쓰기/이벤트/상태 전용 타입으로 분리할 후보다. 근거: `interface CardPreviewSurfaceProps {`
+124. **[P2] 큰 타입/인터페이스 분리** `apps/web/src/features/card-service/components/card-rich-markdown-editor.tsx:99` — 원칙 `I`. 멤버 후보 10개다. 읽기/쓰기/이벤트/상태 전용 타입으로 분리할 후보다. 근거: `interface CardRichMarkdownEditorProps {`
+125. **[P2] 큰 타입/인터페이스 분리** `apps/web/src/features/card-service/components/card-rich-markdown-editor.tsx:112` — 원칙 `I`. 멤버 후보 11개다. 읽기/쓰기/이벤트/상태 전용 타입으로 분리할 후보다. 근거: `type CardEditorToolbarState = {`
+126. **[P2] 큰 타입/인터페이스 분리** `apps/web/src/features/card-service/components/card-row-views.tsx:16` — 원칙 `I`. 멤버 후보 13개다. 읽기/쓰기/이벤트/상태 전용 타입으로 분리할 후보다. 근거: `type CardRowEditViewProps = {`
+127. **[P2] 큰 타입/인터페이스 분리** `apps/web/src/features/card-service/components/card-row.tsx:20` — 원칙 `I`. 멤버 후보 8개다. 읽기/쓰기/이벤트/상태 전용 타입으로 분리할 후보다. 근거: `interface CardRowProps {`
+128. **[P2] 큰 타입/인터페이스 분리** `apps/web/src/features/card-service/components/deck-play-review-mode-card.tsx:43` — 원칙 `I`. 멤버 후보 8개다. 읽기/쓰기/이벤트/상태 전용 타입으로 분리할 후보다. 근거: `interface DeckPlayReviewModeCardProps {`
+129. **[P2] 큰 타입/인터페이스 분리** `apps/web/src/features/typing-service/characters/types.ts:3` — 원칙 `I`. 멤버 후보 10개다. 읽기/쓰기/이벤트/상태 전용 타입으로 분리할 후보다. 근거: `export type CharacterDef = {`
+130. **[P2] 큰 타입/인터페이스 분리** `apps/web/src/features/typing-service/typing-race-solo-practice-panel.tsx:15` — 원칙 `I`. 멤버 후보 24개다. 읽기/쓰기/이벤트/상태 전용 타입으로 분리할 후보다. 근거: `interface TypingRaceSoloPracticePanelProps {`
+131. **[P2] 큰 타입/인터페이스 분리** `apps/web/src/features/typing-service/typing-race-solo-screen.tsx:109` — 원칙 `I`. 멤버 후보 8개다. 읽기/쓰기/이벤트/상태 전용 타입으로 분리할 후보다. 근거: `type BenchmarkNoiseState = {`
+132. **[P2] 큰 타입/인터페이스 분리** `apps/web/src/features/typing-service/typing-room-screen.tsx:98` — 원칙 `I`. 멤버 후보 9개다. 읽기/쓰기/이벤트/상태 전용 타입으로 분리할 후보다. 근거: `type TerritoryLobbyPanelProps = {`
+133. **[P2] 큰 타입/인터페이스 분리** `apps/web/src/features/typing-service/typing-room-settings-panel.tsx:42` — 원칙 `I`. 멤버 후보 8개다. 읽기/쓰기/이벤트/상태 전용 타입으로 분리할 후보다. 근거: `type TypingRoomSettingsPanelProps = {`
+134. **[P2] 큰 타입/인터페이스 분리** `apps/web/src/features/typing-service/typing-room-waiting-header.tsx:7` — 원칙 `I`. 멤버 후보 14개다. 읽기/쓰기/이벤트/상태 전용 타입으로 분리할 후보다. 근거: `type TypingRoomWaitingHeaderProps = {`
+135. **[P2] 큰 타입/인터페이스 분리** `apps/web/src/features/typing-service/use-race-room.ts:40` — 원칙 `I`. 멤버 후보 8개다. 읽기/쓰기/이벤트/상태 전용 타입으로 분리할 후보다. 근거: `export type UseRaceRoomOptions = {`
+136. **[P2] 큰 타입/인터페이스 분리** `apps/web/src/features/typing-service/use-race-room.ts:51` — 원칙 `I`. 멤버 후보 19개다. 읽기/쓰기/이벤트/상태 전용 타입으로 분리할 후보다. 근거: `export type UseRaceRoomResult = {`
+137. **[P2] 큰 타입/인터페이스 분리** `apps/web/src/features/typing-service/use-territory-battle-room.ts:46` — 원칙 `I`. 멤버 후보 9개다. 읽기/쓰기/이벤트/상태 전용 타입으로 분리할 후보다. 근거: `export type UseTerritoryBattleRoomResult = {`
+138. **[P2] 큰 타입/인터페이스 분리** `packages/domain/src/life-os.ts:81` — 원칙 `I`. 멤버 후보 12개다. 읽기/쓰기/이벤트/상태 전용 타입으로 분리할 후보다. 근거: `export type LifeOsDailyMetrics = {`
+139. **[P2] 큰 타입/인터페이스 분리** `packages/domain/src/life-os.ts:96` — 원칙 `I`. 멤버 후보 9개다. 읽기/쓰기/이벤트/상태 전용 타입으로 분리할 후보다. 근거: `export type LifeOsWeeklyMetrics = {`
+140. **[P2] 큰 타입/인터페이스 분리** `packages/domain/src/life-os.ts:126` — 원칙 `I`. 멤버 후보 8개다. 읽기/쓰기/이벤트/상태 전용 타입으로 분리할 후보다. 근거: `export type LifeOsReport = {`
+141. **[P2] 큰 타입/인터페이스 분리** `packages/ui/src/patterns/YeonBottomSheetModal/index.tsx:8` — 원칙 `I`. 멤버 후보 8개다. 읽기/쓰기/이벤트/상태 전용 타입으로 분리할 후보다. 근거: `export type YeonBottomSheetModalProps = {`
+142. **[P2] 큰 타입/인터페이스 분리** `packages/ui/src/patterns/YeonEditableCardRow/index.native.tsx:18` — 원칙 `I`. 멤버 후보 17개다. 읽기/쓰기/이벤트/상태 전용 타입으로 분리할 후보다. 근거: `export type YeonEditableCardRowProps = {`
+143. **[P2] 큰 타입/인터페이스 분리** `packages/ui/src/patterns/YeonEditableCardRow/index.tsx:8` — 원칙 `I`. 멤버 후보 15개다. 읽기/쓰기/이벤트/상태 전용 타입으로 분리할 후보다. 근거: `export type YeonEditableCardRowProps = {`
+
+### LSP
+
+144. **[P2] instanceof 분기 축소** `apps/backend/src/main/java/world/yeon/backend/card_decks/merge_guest/repository/MergeGuestCardDeckRepository.java:40` — 원칙 `L`. 하위 타입 검사 대신 공통 인터페이스/판별된 union으로 안전하게 다룬다. 근거: `Object[] row = value instanceof Object[] arr ? arr : new Object[]{value};`
+145. **[P2] instanceof 분기 축소** `apps/backend/src/main/java/world/yeon/backend/card_decks/route/repository/CardDeckRouteRepository.java:101` — 원칙 `L`. 하위 타입 검사 대신 공통 인터페이스/판별된 union으로 안전하게 다룬다. 근거: `if (raw instanceof Object[] values) return values[0] == null ? null : values[0].toString();`
+146. **[P2] instanceof 분기 축소** `apps/backend/src/main/java/world/yeon/backend/card_decks/route/repository/CardDeckRouteRepository.java:238` — 원칙 `L`. 하위 타입 검사 대신 공통 인터페이스/판별된 union으로 안전하게 다룬다. 근거: `if (raw instanceof Object[] values) return values[0] == null ? null : values[0].toString();`
+147. **[P2] instanceof 분기 축소** `apps/backend/src/main/java/world/yeon/backend/card_decks/route/repository/CardDeckRouteRepository.java:258` — 원칙 `L`. 하위 타입 검사 대신 공통 인터페이스/판별된 union으로 안전하게 다룬다. 근거: `if (!(raw instanceof Object[] values) || values.length < min) {`
+148. **[P2] instanceof 분기 축소** `apps/backend/src/main/java/world/yeon/backend/card_decks/route/repository/CardDeckRouteRepository.java:265` — 원칙 `L`. 하위 타입 검사 대신 공통 인터페이스/판별된 union으로 안전하게 다룬다. 근거: `private Long asLong(Object value) { return value instanceof Number n ? n.longValue() : Long.parseLong(value.toString()); }`
+149. **[P2] instanceof 분기 축소** `apps/backend/src/main/java/world/yeon/backend/card_decks/route/repository/CardDeckRouteRepository.java:266` — 원칙 `L`. 하위 타입 검사 대신 공통 인터페이스/판별된 union으로 안전하게 다룬다. 근거: `private int asInt(Object value) { return value instanceof Number n ? n.intValue() : Integer.parseInt(value.toString()); }`
+150. **[P2] instanceof 분기 축소** `apps/backend/src/main/java/world/yeon/backend/card_decks/route/repository/CardDeckRouteRepository.java:269` — 원칙 `L`. 하위 타입 검사 대신 공통 인터페이스/판별된 union으로 안전하게 다룬다. 근거: `if (value instanceof OffsetDateTime offsetDateTime) return offsetDateTime;`
+151. **[P2] instanceof 분기 축소** `apps/backend/src/main/java/world/yeon/backend/card_decks/route/repository/CardDeckRouteRepository.java:270` — 원칙 `L`. 하위 타입 검사 대신 공통 인터페이스/판별된 union으로 안전하게 다룬다. 근거: `if (value instanceof Timestamp timestamp) return timestamp.toInstant().atOffset(ZoneOffset.UTC);`
+152. **[P2] instanceof 분기 축소** `apps/backend/src/main/java/world/yeon/backend/card_decks/route/repository/CardDeckRouteRepository.java:271` — 원칙 `L`. 하위 타입 검사 대신 공통 인터페이스/판별된 union으로 안전하게 다룬다. 근거: `if (value instanceof Instant instant) return instant.atOffset(ZoneOffset.UTC);`
+153. **[P2] instanceof 분기 축소** `apps/backend/src/main/java/world/yeon/backend/card_decks/route/repository/CardDeckRouteRepository.java:272` — 원칙 `L`. 하위 타입 검사 대신 공통 인터페이스/판별된 union으로 안전하게 다룬다. 근거: `if (value instanceof Date date) return date.toInstant().atOffset(ZoneOffset.UTC);`
+154. **[P2] instanceof 분기 축소** `apps/backend/src/main/java/world/yeon/backend/card_decks/route/repository/CardDeckRouteRepository.java:273` — 원칙 `L`. 하위 타입 검사 대신 공통 인터페이스/판별된 union으로 안전하게 다룬다. 근거: `if (value instanceof ZonedDateTime zonedDateTime) return zonedDateTime.toOffsetDateTime();`
+155. **[P2] instanceof 분기 축소** `apps/backend/src/main/java/world/yeon/backend/community_chat/repository/CommunityChatRepository.java:67` — 원칙 `L`. 하위 타입 검사 대신 공통 인터페이스/판별된 union으로 안전하게 다룬다. 근거: `if (value instanceof OffsetDateTime offsetDateTime) return offsetDateTime;`
+156. **[P2] instanceof 분기 축소** `apps/backend/src/main/java/world/yeon/backend/community_chat/repository/CommunityChatRepository.java:68` — 원칙 `L`. 하위 타입 검사 대신 공통 인터페이스/판별된 union으로 안전하게 다룬다. 근거: `if (value instanceof Timestamp timestamp) return timestamp.toInstant().atOffset(ZoneOffset.UTC);`
+157. **[P2] instanceof 분기 축소** `apps/backend/src/main/java/world/yeon/backend/root_auth/repository/AuthSessionRepository.java:302` — 원칙 `L`. 하위 타입 검사 대신 공통 인터페이스/판별된 union으로 안전하게 다룬다. 근거: `if (!(row instanceof Object[] values) || values.length < 4) {`
+158. **[P2] instanceof 분기 축소** `apps/backend/src/main/java/world/yeon/backend/root_auth/repository/AuthSessionRepository.java:309` — 원칙 `L`. 하위 타입 검사 대신 공통 인터페이스/판별된 union으로 안전하게 다룬다. 근거: `if (!(row instanceof Object[] values) || values.length < 7) {`
+159. **[P2] instanceof 분기 축소** `apps/backend/src/main/java/world/yeon/backend/root_auth/repository/AuthSessionRepository.java:324` — 원칙 `L`. 하위 타입 검사 대신 공통 인터페이스/판별된 union으로 안전하게 다룬다. 근거: `if (!(row instanceof Object[] values) || values.length < 7) {`
+160. **[P2] instanceof 분기 축소** `apps/backend/src/main/java/world/yeon/backend/root_auth/repository/AuthSessionRepository.java:350` — 원칙 `L`. 하위 타입 검사 대신 공통 인터페이스/판별된 union으로 안전하게 다룬다. 근거: `if (value instanceof UUID uuid) return uuid.toString();`
+161. **[P2] instanceof 분기 축소** `apps/backend/src/main/java/world/yeon/backend/root_auth/repository/AuthSessionRepository.java:356` — 원칙 `L`. 하위 타입 검사 대신 공통 인터페이스/판별된 union으로 안전하게 다룬다. 근거: `if (value instanceof OffsetDateTime offsetDateTime) return offsetDateTime;`
+162. **[P2] instanceof 분기 축소** `apps/backend/src/main/java/world/yeon/backend/root_auth/repository/AuthSessionRepository.java:357` — 원칙 `L`. 하위 타입 검사 대신 공통 인터페이스/판별된 union으로 안전하게 다룬다. 근거: `if (value instanceof Timestamp timestamp) return timestamp.toInstant().atOffset(ZoneOffset.UTC);`
+163. **[P2] instanceof 분기 축소** `apps/backend/src/main/java/world/yeon/backend/root_auth/repository/AuthSessionRepository.java:358` — 원칙 `L`. 하위 타입 검사 대신 공통 인터페이스/판별된 union으로 안전하게 다룬다. 근거: `if (value instanceof Instant instant) return instant.atOffset(ZoneOffset.UTC);`
+164. **[P2] instanceof 분기 축소** `apps/backend/src/main/java/world/yeon/backend/root_auth/repository/AuthSessionRepository.java:359` — 원칙 `L`. 하위 타입 검사 대신 공통 인터페이스/판별된 union으로 안전하게 다룬다. 근거: `if (value instanceof Date date) return date.toInstant().atOffset(ZoneOffset.UTC);`
+165. **[P2] instanceof 분기 축소** `apps/backend/src/main/java/world/yeon/backend/root_auth/repository/AuthSessionRepository.java:360` — 원칙 `L`. 하위 타입 검사 대신 공통 인터페이스/판별된 union으로 안전하게 다룬다. 근거: `if (value instanceof LocalDateTime localDateTime) return localDateTime.atOffset(ZoneOffset.UTC);`
+166. **[P2] instanceof 분기 축소** `apps/backend/src/main/java/world/yeon/backend/root_auth/repository/AuthSessionRepository.java:361` — 원칙 `L`. 하위 타입 검사 대신 공통 인터페이스/판별된 union으로 안전하게 다룬다. 근거: `if (value instanceof ZonedDateTime zonedDateTime) return zonedDateTime.toOffsetDateTime();`
+167. **[P2] instanceof 분기 축소** `apps/backend/src/main/java/world/yeon/backend/typing_decks/repository/TypingDeckRepository.java:317` — 원칙 `L`. 하위 타입 검사 대신 공통 인터페이스/판별된 union으로 안전하게 다룬다. 근거: `if (!(rawRow instanceof Object[] values) || values.length < minLength) {`
+168. **[P2] instanceof 분기 축소** `apps/backend/src/main/java/world/yeon/backend/typing_decks/repository/TypingDeckRepository.java:329` — 원칙 `L`. 하위 타입 검사 대신 공통 인터페이스/판별된 union으로 안전하게 다룬다. 근거: `if (value instanceof Number number) return number.longValue();`
+169. **[P2] instanceof 분기 축소** `apps/backend/src/main/java/world/yeon/backend/typing_decks/repository/TypingDeckRepository.java:335` — 원칙 `L`. 하위 타입 검사 대신 공통 인터페이스/판별된 union으로 안전하게 다룬다. 근거: `if (value instanceof Number number) return number.intValue();`
+170. **[P2] instanceof 분기 축소** `apps/backend/src/main/java/world/yeon/backend/typing_decks/repository/TypingDeckRepository.java:341` — 원칙 `L`. 하위 타입 검사 대신 공통 인터페이스/판별된 union으로 안전하게 다룬다. 근거: `if (value instanceof OffsetDateTime offsetDateTime) return offsetDateTime;`
+171. **[P2] instanceof 분기 축소** `apps/backend/src/main/java/world/yeon/backend/typing_decks/repository/TypingDeckRepository.java:342` — 원칙 `L`. 하위 타입 검사 대신 공통 인터페이스/판별된 union으로 안전하게 다룬다. 근거: `if (value instanceof Timestamp timestamp) return timestamp.toInstant().atOffset(ZoneOffset.UTC);`
+172. **[P2] instanceof 분기 축소** `apps/backend/src/main/java/world/yeon/backend/typing_decks/repository/TypingDeckRepository.java:343` — 원칙 `L`. 하위 타입 검사 대신 공통 인터페이스/판별된 union으로 안전하게 다룬다. 근거: `if (value instanceof Instant instant) return instant.atOffset(ZoneOffset.UTC);`
+173. **[P2] instanceof 분기 축소** `apps/backend/src/main/java/world/yeon/backend/typing_decks/repository/TypingDeckRepository.java:344` — 원칙 `L`. 하위 타입 검사 대신 공통 인터페이스/판별된 union으로 안전하게 다룬다. 근거: `if (value instanceof Date date) return date.toInstant().atOffset(ZoneOffset.UTC);`
+174. **[P2] instanceof 분기 축소** `apps/backend/src/main/java/world/yeon/backend/typing_decks/repository/TypingDeckRepository.java:345` — 원칙 `L`. 하위 타입 검사 대신 공통 인터페이스/판별된 union으로 안전하게 다룬다. 근거: `if (value instanceof ZonedDateTime zonedDateTime) return zonedDateTime.toOffsetDateTime();`
+175. **[P2] instanceof 분기 축소** `apps/mobile/src/features/card-service/card-deck-detail-screen.tsx:349` — 원칙 `L`. 하위 타입 검사 대신 공통 인터페이스/판별된 union으로 안전하게 다룬다. 근거: `error instanceof Error`
+176. **[P2] instanceof 분기 축소** `apps/mobile/src/features/card-service/card-deck-detail-screen.tsx:361` — 원칙 `L`. 하위 타입 검사 대신 공통 인터페이스/판별된 union으로 안전하게 다룬다. 근거: `error instanceof Error`
+177. **[P2] instanceof 분기 축소** `apps/mobile/src/features/card-service/card-deck-detail-screen.tsx:391` — 원칙 `L`. 하위 타입 검사 대신 공통 인터페이스/판별된 union으로 안전하게 다룬다. 근거: `error instanceof Error`
+178. **[P2] instanceof 분기 축소** `apps/mobile/src/features/card-service/card-deck-detail-screen.tsx:421` — 원칙 `L`. 하위 타입 검사 대신 공통 인터페이스/판별된 union으로 안전하게 다룬다. 근거: `error instanceof Error`
+
+### SRP
+
+179. **[P2] 큰 파일 책임 분리** `apps/backend/src/main/java/world/yeon/backend/card_rooms/service/CardRoomService.java:1` — 원칙 `S`. 551라인 파일이다. 단일 책임 원칙 기준으로 화면/상태/IO/변환 책임 분리 후보다. 근거: `package world.yeon.backend.card_rooms.service;`
+180. **[P2] 큰 파일 책임 분리** `apps/backend/src/main/java/world/yeon/backend/root_auth/repository/AuthSessionRepository.java:1` — 원칙 `S`. 364라인 파일이다. 단일 책임 원칙 기준으로 화면/상태/IO/변환 책임 분리 후보다. 근거: `package world.yeon.backend.root_auth.repository;`
+181. **[P2] 큰 파일 책임 분리** `apps/backend/src/main/java/world/yeon/backend/root_auth/service/AuthSessionService.java:1` — 원칙 `S`. 399라인 파일이다. 단일 책임 원칙 기준으로 화면/상태/IO/변환 책임 분리 후보다. 근거: `package world.yeon.backend.root_auth.service;`
+182. **[P2] 큰 파일 책임 분리** `apps/backend/src/main/java/world/yeon/backend/typing_decks/repository/TypingDeckRepository.java:1` — 원칙 `S`. 350라인 파일이다. 단일 책임 원칙 기준으로 화면/상태/IO/변환 책임 분리 후보다. 근거: `package world.yeon.backend.typing_decks.repository;`
+183. **[P2] 큰 파일 책임 분리** `apps/backend/src/main/java/world/yeon/backend/typing_decks/service/TypingDeckService.java:1` — 원칙 `S`. 384라인 파일이다. 단일 책임 원칙 기준으로 화면/상태/IO/변환 책임 분리 후보다. 근거: `package world.yeon.backend.typing_decks.service;`
+184. **[P2] 큰 파일 책임 분리** `apps/mobile/src/features/card-service/card-deck-detail-screen.tsx:1` — 원칙 `S`. 694라인 파일이다. 단일 책임 원칙 기준으로 화면/상태/IO/변환 책임 분리 후보다. 근거: `import type { CardDeckItemDto } from "@yeon/api-contract/card-decks";`
+185. **[P2] 컴포넌트 hook 책임 분리** `apps/mobile/src/features/card-service/card-deck-detail-screen.tsx:108` — 원칙 `S`. 컴포넌트 인근 hook 호출 후보 20개다. 데이터/폼/이벤트 hook으로 분리한다. 근거: `const DeckCardRow = memo(function DeckCardRow({`
+186. **[P2] 컴포넌트 hook 책임 분리** `apps/mobile/src/features/card-service/card-deck-detail-screen.tsx:149` — 원칙 `S`. 컴포넌트 인근 hook 호출 후보 17개다. 데이터/폼/이벤트 hook으로 분리한다. 근거: `export function CardDeckDetailScreen({ deckId }: CardDeckDetailScreenProps) {`
+187. **[P2] 긴 함수 책임 분리** `apps/mobile/src/features/card-service/card-deck-detail-screen.tsx:149` — 원칙 `S`. 546라인 함수다. 검증/변환/부수효과를 작은 함수로 분리한다. 근거: `export function CardDeckDetailScreen({ deckId }: CardDeckDetailScreenProps) {`
+188. **[P2] 큰 파일 책임 분리** `apps/mobile/src/features/card-service/card-deck-list-screen.tsx:1` — 원칙 `S`. 523라인 파일이다. 단일 책임 원칙 기준으로 화면/상태/IO/변환 책임 분리 후보다. 근거: `import type { CardDeckDto } from "@yeon/api-contract/card-decks";`
+189. **[P2] 컴포넌트 hook 책임 분리** `apps/mobile/src/features/card-service/card-deck-list-screen.tsx:74` — 원칙 `S`. 컴포넌트 인근 hook 호출 후보 8개다. 데이터/폼/이벤트 hook으로 분리한다. 근거: `function DeckCard({ deck, index, onOpen }: DeckCardProps) {`
+190. **[P2] 컴포넌트 hook 책임 분리** `apps/mobile/src/features/card-service/card-deck-list-screen.tsx:104` — 원칙 `S`. 컴포넌트 인근 hook 호출 후보 8개다. 데이터/폼/이벤트 hook으로 분리한다. 근거: `export function CardDeckListScreen() {`
+191. **[P2] 긴 함수 책임 분리** `apps/mobile/src/features/card-service/card-deck-list-screen.tsx:104` — 원칙 `S`. 239라인 함수다. 검증/변환/부수효과를 작은 함수로 분리한다. 근거: `export function CardDeckListScreen() {`
+192. **[P2] 큰 파일 책임 분리** `apps/mobile/src/features/card-service/card-deck-play-screen.tsx:1` — 원칙 `S`. 398라인 파일이다. 단일 책임 원칙 기준으로 화면/상태/IO/변환 책임 분리 후보다. 근거: `import {`
+193. **[P2] 컴포넌트 hook 책임 분리** `apps/mobile/src/features/card-service/card-deck-play-screen.tsx:56` — 원칙 `S`. 컴포넌트 인근 hook 호출 후보 12개다. 데이터/폼/이벤트 hook으로 분리한다. 근거: `export function CardDeckPlayScreen({ deckId }: CardDeckPlayScreenProps) {`
+194. **[P2] 긴 함수 책임 분리** `apps/mobile/src/features/card-service/card-deck-play-screen.tsx:56` — 원칙 `S`. 343라인 함수다. 검증/변환/부수효과를 작은 함수로 분리한다. 근거: `export function CardDeckPlayScreen({ deckId }: CardDeckPlayScreenProps) {`
+195. **[P2] 큰 파일 책임 분리** `apps/mobile/src/features/card-service/card-onboarding-gate.tsx:1` — 원칙 `S`. 380라인 파일이다. 단일 책임 원칙 기준으로 화면/상태/IO/변환 책임 분리 후보다. 근거: `import { useYeonMutation as useMutation } from "@yeon/ui/native";`
+196. **[P2] 긴 함수 책임 분리** `apps/mobile/src/features/card-service/card-onboarding-gate.tsx:44` — 원칙 `S`. 225라인 함수다. 검증/변환/부수효과를 작은 함수로 분리한다. 근거: `export function CardOnboardingGate({`
+197. **[P2] 긴 함수 책임 분리** `apps/mobile/src/features/card-service/card-session-context.tsx:52` — 원칙 `S`. 113라인 함수다. 검증/변환/부수효과를 작은 함수로 분리한다. 근거: `export function CardSessionProvider({ children }: { children: ReactNode }) {`
+198. **[P2] 긴 함수 책임 분리** `apps/mobile/src/features/card-service/markdown-text-field.tsx:170` — 원칙 `S`. 122라인 함수다. 검증/변환/부수효과를 작은 함수로 분리한다. 근거: `export function MarkdownTextField({`
+199. **[P2] 긴 함수 책임 분리** `apps/mobile/src/features/card-service/rooms/card-room-create-sheet.tsx:38` — 원칙 `S`. 207라인 함수다. 검증/변환/부수효과를 작은 함수로 분리한다. 근거: `export function CardRoomCreateSheet({`
+200. **[P2] 긴 함수 책임 분리** `apps/mobile/src/features/card-service/rooms/card-room-lobby-screen.tsx:88` — 원칙 `S`. 118라인 함수다. 검증/변환/부수효과를 작은 함수로 분리한다. 근거: `export function CardRoomLobbyScreen() {`
+201. **[P2] 큰 파일 책임 분리** `apps/mobile/src/features/card-service/rooms/card-room-screen.tsx:1` — 원칙 `S`. 691라인 파일이다. 단일 책임 원칙 기준으로 화면/상태/IO/변환 책임 분리 후보다. 근거: `import type { CardRoomRole } from "@yeon/race-shared";`
+202. **[P2] 긴 함수 책임 분리** `apps/mobile/src/features/card-service/rooms/card-room-screen.tsx:40` — 원칙 `S`. 353라인 함수다. 검증/변환/부수효과를 작은 함수로 분리한다. 근거: `export function CardRoomScreen({ roomId }: CardRoomScreenProps) {`
+203. **[P2] 긴 함수 책임 분리** `apps/mobile/src/features/card-service/rooms/use-card-room-connection.ts:43` — 원칙 `S`. 143라인 함수다. 검증/변환/부수효과를 작은 함수로 분리한다. 근거: `export function useCardRoomConnection(`
+204. **[P2] 긴 함수 책임 분리** `apps/mobile/src/features/card-service/runtime-adapters/card-item-repository.ts:39` — 원칙 `S`. 110라인 함수다. 검증/변환/부수효과를 작은 함수로 분리한다. 근거: `export function createMobileCardItemRepository(`
+205. **[P2] 큰 파일 책임 분리** `apps/race-server/src/rooms/territory-battle-room.ts:1` — 원칙 `S`. 366라인 파일이다. 단일 책임 원칙 기준으로 화면/상태/IO/변환 책임 분리 후보다. 근거: `import { type Client, Room } from "@colyseus/core";`
+206. **[P2] 컴포넌트 hook 책임 분리** `apps/web/src/features/card-service/auth-context.tsx:31` — 원칙 `S`. 컴포넌트 인근 hook 호출 후보 14개다. 데이터/폼/이벤트 hook으로 분리한다. 근거: `export function CardServiceAuthProvider({`
+207. **[P2] 긴 함수 책임 분리** `apps/web/src/features/card-service/card-room-chat-panel.tsx:24` — 원칙 `S`. 90라인 함수다. 검증/변환/부수효과를 작은 함수로 분리한다. 근거: `export function CardRoomChatPanel({`
+208. **[P2] 컴포넌트 hook 책임 분리** `apps/web/src/features/card-service/card-room-create-screen.tsx:32` — 원칙 `S`. 컴포넌트 인근 hook 호출 후보 12개다. 데이터/폼/이벤트 hook으로 분리한다. 근거: `export function CardRoomCreateForm({`
+209. **[P2] 긴 함수 책임 분리** `apps/web/src/features/card-service/card-room-create-screen.tsx:32` — 원칙 `S`. 279라인 함수다. 검증/변환/부수효과를 작은 함수로 분리한다. 근거: `export function CardRoomCreateForm({`
+210. **[P2] 긴 함수 책임 분리** `apps/web/src/features/card-service/card-room-header.tsx:43` — 원칙 `S`. 123라인 함수다. 검증/변환/부수효과를 작은 함수로 분리한다. 근거: `export function CardRoomHeader({`
+211. **[P2] 컴포넌트 hook 책임 분리** `apps/web/src/features/card-service/card-room-lobby-screen.tsx:35` — 원칙 `S`. 컴포넌트 인근 hook 호출 후보 8개다. 데이터/폼/이벤트 hook으로 분리한다. 근거: `export function CardRoomLobbyScreen() {`
+212. **[P2] 긴 함수 책임 분리** `apps/web/src/features/card-service/card-room-lobby-screen.tsx:35` — 원칙 `S`. 266라인 함수다. 검증/변환/부수효과를 작은 함수로 분리한다. 근거: `export function CardRoomLobbyScreen() {`
+213. **[P2] 컴포넌트 hook 책임 분리** `apps/web/src/features/card-service/card-room-screen.tsx:30` — 원칙 `S`. 컴포넌트 인근 hook 호출 후보 8개다. 데이터/폼/이벤트 hook으로 분리한다. 근거: `export function CardRoomScreen({ roomId }: CardRoomScreenProps) {`
+214. **[P2] 긴 함수 책임 분리** `apps/web/src/features/card-service/card-room-screen.tsx:30` — 원칙 `S`. 205라인 함수다. 검증/변환/부수효과를 작은 함수로 분리한다. 근거: `export function CardRoomScreen({ roomId }: CardRoomScreenProps) {`
+215. **[P2] 긴 함수 책임 분리** `apps/web/src/features/card-service/card-room-study-panel.tsx:23` — 원칙 `S`. 193라인 함수다. 검증/변환/부수효과를 작은 함수로 분리한다. 근거: `export function CardRoomStudyPanel({`
+216. **[P2] 긴 함수 책임 분리** `apps/web/src/features/card-service/card-service-decks-screen.tsx:40` — 원칙 `S`. 214라인 함수다. 검증/변환/부수효과를 작은 함수로 분리한다. 근거: `export function CardServiceDecksScreen() {`
+217. **[P2] 긴 함수 책임 분리** `apps/web/src/features/card-service/card-service-home.tsx:31` — 원칙 `S`. 223라인 함수다. 검증/변환/부수효과를 작은 함수로 분리한다. 근거: `export function CardServiceHome() {`
+218. **[P2] 컴포넌트 hook 책임 분리** `apps/web/src/features/card-service/components/add-card-form.tsx:77` — 원칙 `S`. 컴포넌트 인근 hook 호출 후보 14개다. 데이터/폼/이벤트 hook으로 분리한다. 근거: `export function AddCardForm({`
+219. **[P2] 긴 함수 책임 분리** `apps/web/src/features/card-service/components/add-card-form.tsx:77` — 원칙 `S`. 219라인 함수다. 검증/변환/부수효과를 작은 함수로 분리한다. 근거: `export function AddCardForm({`
+220. **[P2] 긴 함수 책임 분리** `apps/web/src/features/card-service/components/add-cards-panel.tsx:95` — 원칙 `S`. 126라인 함수다. 검증/변환/부수효과를 작은 함수로 분리한다. 근거: `export function AddCardsPanel({ deckId, onClose }: AddCardsPanelProps) {`
+221. **[P2] 컴포넌트 hook 책임 분리** `apps/web/src/features/card-service/components/bulk-add-cards-form.tsx:49` — 원칙 `S`. 컴포넌트 인근 hook 호출 후보 8개다. 데이터/폼/이벤트 hook으로 분리한다. 근거: `export function BulkAddCardsForm({`
+222. **[P2] 긴 함수 책임 분리** `apps/web/src/features/card-service/components/bulk-add-cards-form.tsx:49` — 원칙 `S`. 277라인 함수다. 검증/변환/부수효과를 작은 함수로 분리한다. 근거: `export function BulkAddCardsForm({`
+
+### DIP
+
+223. **[P3] 브라우저 전역 직접 의존 점검** `apps/web/src/features/card-service/components/card-editor-codeblock-utils.ts:144` — 원칙 `D`. 브라우저 전역 직접 접근을 런타임 포트로 감싸 SSR/테스트 안전성을 높인다. 근거: `const codeBlocks = Array.from(document.querySelectorAll("pre code"));`
+224. **[P3] 브라우저 전역 직접 의존 점검** `apps/web/src/features/card-service/components/card-editor-codeblock-utils.ts:153` — 원칙 `D`. 브라우저 전역 직접 접근을 런타임 포트로 감싸 SSR/테스트 안전성을 높인다. 근거: `return document.body.innerHTML;`
+225. **[P3] 브라우저 전역 직접 의존 점검** `apps/web/src/features/card-service/components/markdown-content.tsx:495` — 원칙 `D`. 브라우저 전역 직접 접근을 런타임 포트로 감싸 SSR/테스트 안전성을 높인다. 근거: `const optionGroup = document.createElement("optgroup");`
+226. **[P3] 브라우저 전역 직접 의존 점검** `apps/web/src/features/card-service/components/markdown-content.tsx:499` — 원칙 `D`. 브라우저 전역 직접 접근을 런타임 포트로 감싸 SSR/테스트 안전성을 높인다. 근거: `const option = document.createElement("option");`
+227. **[P3] 브라우저 전역 직접 의존 점검** `apps/web/src/features/card-service/components/play-card.tsx:78` — 원칙 `D`. 브라우저 전역 직접 접근을 런타임 포트로 감싸 SSR/테스트 안전성을 높인다. 근거: `const previousCursor = document.body.style.cursor;`
+228. **[P3] 브라우저 전역 직접 의존 점검** `apps/web/src/features/card-service/components/play-card.tsx:79` — 원칙 `D`. 브라우저 전역 직접 접근을 런타임 포트로 감싸 SSR/테스트 안전성을 높인다. 근거: `const previousUserSelect = document.body.style.userSelect;`
+229. **[P3] 브라우저 전역 직접 의존 점검** `apps/web/src/features/card-service/components/play-card.tsx:81` — 원칙 `D`. 브라우저 전역 직접 접근을 런타임 포트로 감싸 SSR/테스트 안전성을 높인다. 근거: `document.body.style.cursor = "nwse-resize";`
+230. **[P3] 브라우저 전역 직접 의존 점검** `apps/web/src/features/card-service/components/play-card.tsx:82` — 원칙 `D`. 브라우저 전역 직접 접근을 런타임 포트로 감싸 SSR/테스트 안전성을 높인다. 근거: `document.body.style.userSelect = "none";`
+231. **[P3] 브라우저 전역 직접 의존 점검** `apps/web/src/features/card-service/components/play-card.tsx:95` — 원칙 `D`. 브라우저 전역 직접 접근을 런타임 포트로 감싸 SSR/테스트 안전성을 높인다. 근거: `document.body.style.cursor = previousCursor;`
+232. **[P3] 브라우저 전역 직접 의존 점검** `apps/web/src/features/card-service/components/play-card.tsx:96` — 원칙 `D`. 브라우저 전역 직접 접근을 런타임 포트로 감싸 SSR/테스트 안전성을 높인다. 근거: `document.body.style.userSelect = previousUserSelect;`
+233. **[P3] 브라우저 전역 직접 의존 점검** `apps/web/src/features/card-service/components/play-card.tsx:97` — 원칙 `D`. 브라우저 전역 직접 접근을 런타임 포트로 감싸 SSR/테스트 안전성을 높인다. 근거: `window.removeEventListener("pointermove", handlePointerMove);`
+234. **[P3] 브라우저 전역 직접 의존 점검** `apps/web/src/features/card-service/components/play-card.tsx:98` — 원칙 `D`. 브라우저 전역 직접 접근을 런타임 포트로 감싸 SSR/테스트 안전성을 높인다. 근거: `window.removeEventListener("pointerup", handlePointerUp);`
+235. **[P3] 브라우저 전역 직접 의존 점검** `apps/web/src/features/card-service/components/play-card.tsx:99` — 원칙 `D`. 브라우저 전역 직접 접근을 런타임 포트로 감싸 SSR/테스트 안전성을 높인다. 근거: `window.removeEventListener("pointercancel", handlePointerUp);`
+236. **[P3] 브라우저 전역 직접 의존 점검** `apps/web/src/features/card-service/components/play-card.tsx:102` — 원칙 `D`. 브라우저 전역 직접 접근을 런타임 포트로 감싸 SSR/테스트 안전성을 높인다. 근거: `window.addEventListener("pointermove", handlePointerMove);`
+237. **[P3] 브라우저 전역 직접 의존 점검** `apps/web/src/features/card-service/components/play-card.tsx:103` — 원칙 `D`. 브라우저 전역 직접 접근을 런타임 포트로 감싸 SSR/테스트 안전성을 높인다. 근거: `window.addEventListener("pointerup", handlePointerUp);`
+238. **[P3] 브라우저 전역 직접 의존 점검** `apps/web/src/features/card-service/components/play-card.tsx:104` — 원칙 `D`. 브라우저 전역 직접 접근을 런타임 포트로 감싸 SSR/테스트 안전성을 높인다. 근거: `window.addEventListener("pointercancel", handlePointerUp);`
+239. **[P3] 브라우저 전역 직접 의존 점검** `apps/web/src/features/card-service/deck-play-screen.tsx:261` — 원칙 `D`. 브라우저 전역 직접 접근을 런타임 포트로 감싸 SSR/테스트 안전성을 높인다. 근거: `window.addEventListener("keydown", handleReviewShortcut);`
+240. **[P3] 브라우저 전역 직접 의존 점검** `apps/web/src/features/card-service/deck-play-screen.tsx:262` — 원칙 `D`. 브라우저 전역 직접 접근을 런타임 포트로 감싸 SSR/테스트 안전성을 높인다. 근거: `return () => window.removeEventListener("keydown", handleReviewShortcut);`
+241. **[P3] 브라우저 전역 직접 의존 점검** `packages/domain/src/life-os.ts:672` — 원칙 `D`. 브라우저 전역 직접 접근을 런타임 포트로 감싸 SSR/테스트 안전성을 높인다. 근거: `const plannedCount = window.filter(`
+242. **[P3] 브라우저 전역 직접 의존 점검** `packages/ui/src/hooks/YeonBrowserHooks/index.ts:9` — 원칙 `D`. 브라우저 전역 직접 접근을 런타임 포트로 감싸 SSR/테스트 안전성을 높인다. 근거: `const previousOverflow = document.body.style.overflow;`
+243. **[P3] 브라우저 전역 직접 의존 점검** `packages/ui/src/hooks/YeonBrowserHooks/index.ts:10` — 원칙 `D`. 브라우저 전역 직접 접근을 런타임 포트로 감싸 SSR/테스트 안전성을 높인다. 근거: `document.body.style.overflow = "hidden";`
+244. **[P3] 브라우저 전역 직접 의존 점검** `packages/ui/src/hooks/YeonBrowserHooks/index.ts:13` — 원칙 `D`. 브라우저 전역 직접 접근을 런타임 포트로 감싸 SSR/테스트 안전성을 높인다. 근거: `document.body.style.overflow = previousOverflow;`
+245. **[P3] 브라우저 전역 직접 의존 점검** `packages/ui/src/hooks/YeonBrowserHooks/index.ts:22` — 원칙 `D`. 브라우저 전역 직접 접근을 런타임 포트로 감싸 SSR/테스트 안전성을 높인다. 근거: `document.body.classList.add(className);`
+246. **[P3] 브라우저 전역 직접 의존 점검** `packages/ui/src/hooks/YeonBrowserHooks/index.ts:25` — 원칙 `D`. 브라우저 전역 직접 접근을 런타임 포트로 감싸 SSR/테스트 안전성을 높인다. 근거: `document.body.classList.remove(className);`
+247. **[P3] 브라우저 전역 직접 의존 점검** `packages/ui/src/hooks/YeonBrowserHooks/index.ts:44` — 원칙 `D`. 브라우저 전역 직접 접근을 런타임 포트로 감싸 SSR/테스트 안전성을 높인다. 근거: `document.addEventListener(type, listener);`
+248. **[P3] 브라우저 전역 직접 의존 점검** `packages/ui/src/hooks/YeonBrowserHooks/index.ts:45` — 원칙 `D`. 브라우저 전역 직접 접근을 런타임 포트로 감싸 SSR/테스트 안전성을 높인다. 근거: `return () => document.removeEventListener(type, listener);`
+249. **[P3] 브라우저 전역 직접 의존 점검** `packages/ui/src/hooks/YeonBrowserHooks/index.ts:66` — 원칙 `D`. 브라우저 전역 직접 접근을 런타임 포트로 감싸 SSR/테스트 안전성을 높인다. 근거: `document.addEventListener(type, listener);`
+250. **[P3] 브라우저 전역 직접 의존 점검** `packages/ui/src/hooks/YeonBrowserHooks/index.ts:67` — 원칙 `D`. 브라우저 전역 직접 접근을 런타임 포트로 감싸 SSR/테스트 안전성을 높인다. 근거: `return () => document.removeEventListener(type, listener);`
+251. **[P3] 브라우저 전역 직접 의존 점검** `packages/ui/src/hooks/YeonBrowserHooks/index.ts:92` — 원칙 `D`. 브라우저 전역 직접 접근을 런타임 포트로 감싸 SSR/테스트 안전성을 높인다. 근거: `window.addEventListener(type, listener, options);`
+252. **[P3] 브라우저 전역 직접 의존 점검** `packages/ui/src/hooks/YeonBrowserHooks/index.ts:93` — 원칙 `D`. 브라우저 전역 직접 접근을 런타임 포트로 감싸 SSR/테스트 안전성을 높인다. 근거: `return () => window.removeEventListener(type, listener, options);`
+253. **[P3] 브라우저 전역 직접 의존 점검** `packages/ui/src/primitives/YeonPortal/index.tsx:13` — 원칙 `D`. 브라우저 전역 직접 접근을 런타임 포트로 감싸 SSR/테스트 안전성을 높인다. 근거: `return createPortal(children, document.body);`
+254. **[P3] 브라우저 전역 직접 의존 점검** `packages/ui/src/rich-content/YeonRichDom/index.ts:5` — 원칙 `D`. 브라우저 전역 직접 접근을 런타임 포트로 감싸 SSR/테스트 안전성을 높인다. 근거: `return window.DOMParser;`
+255. **[P3] 브라우저 전역 직접 의존 점검** `packages/ui/src/runtime/YeonBrowserRuntime/index.ts:139` — 원칙 `D`. 브라우저 전역 직접 접근을 런타임 포트로 감싸 SSR/테스트 안전성을 높인다. 근거: `return kind === "local" ? window.localStorage : window.sessionStorage;`
+
+### OCP
+
+256. **[P3] 상태 분기 매핑/전략화** `apps/backend/src/main/java/world/yeon/backend/card_decks/assets/service/CardDeckAssetStorage.java:68` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (attempt == 3 || !RETRYABLE_STATUS_CODES.contains(error.statusCode())) {`
+257. **[P3] 상태 분기 매핑/전략화** `apps/backend/src/main/java/world/yeon/backend/card_decks/assets/service/CardDeckAssetStorage.java:99` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (error.statusCode() == 404) {`
+258. **[P3] 상태 분기 매핑/전략화** `apps/backend/src/main/java/world/yeon/backend/card_decks/assets/service/CardDeckAssetStorage.java:102` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (attempt == 3 || !RETRYABLE_STATUS_CODES.contains(error.statusCode())) {`
+259. **[P3] 상태 분기 매핑/전략화** `apps/backend/src/main/java/world/yeon/backend/card_rooms/service/CardRoomService.java:157` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (!CardRoomStatus.WAITING.matches(room.status()) && request != null`
+260. **[P3] 상태 분기 매핑/전략화** `apps/backend/src/main/java/world/yeon/backend/card_rooms/service/CardRoomService.java:181` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (!CardRoomStatus.WAITING.matches(room.status())) {`
+261. **[P3] 상태 분기 매핑/전략화** `apps/backend/src/main/java/world/yeon/backend/card_rooms/service/CardRoomService.java:186` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (participants.stream().anyMatch((item) -> !CardRoomParticipantRole.fromNullable(item.role(), CardRoomParticipantRole.UNASSIGNED).isAssigned())) {`
+262. **[P3] 상태 분기 매핑/전략화** `apps/backend/src/main/java/world/yeon/backend/card_rooms/service/CardRoomService.java:256` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (!CardRoomParticipantRole.CHECKER.matches(participant.role())) {`
+263. **[P3] 상태 분기 매핑/전략화** `apps/backend/src/main/java/world/yeon/backend/card_rooms/service/CardRoomService.java:259` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (!CardRoomStatus.IN_PROGRESS.matches(room.status())) {`
+264. **[P3] 상태 분기 매핑/전략화** `apps/backend/src/main/java/world/yeon/backend/card_rooms/service/CardRoomService.java:272` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (!CardRoomStatus.IN_PROGRESS.matches(room.status())) {`
+265. **[P3] 상태 분기 매핑/전략화** `apps/backend/src/main/java/world/yeon/backend/card_rooms/service/CardRoomService.java:329` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (!CardRoomStatus.IN_PROGRESS.matches(room.status())) {`
+266. **[P3] 상태 분기 매핑/전략화** `apps/backend/src/main/java/world/yeon/backend/card_rooms/service/CardRoomService.java:346` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (result.requiresChecker() && !CardRoomParticipantRole.CHECKER.matches(participant.role())) {`
+267. **[P3] 상태 분기 매핑/전략화** `apps/backend/src/main/java/world/yeon/backend/card_rooms/service/CardRoomService.java:349` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (result.requiresMemorizer() && !CardRoomParticipantRole.MEMORIZER.matches(participant.role())) {`
+268. **[P3] 상태 분기 매핑/전략화** `apps/backend/src/main/java/world/yeon/backend/card_rooms/service/CardRoomService.java:453` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (!CardRoomStatus.WAITING.matches(room.status()) || remaining.size() < 2) {`
+269. **[P3] 상태 분기 매핑/전략화** `apps/backend/src/main/java/world/yeon/backend/card_rooms/service/CardRoomService.java:468` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (CardRoomStatus.CLOSED.matches(room.status())) {`
+270. **[P3] 상태 분기 매핑/전략화** `apps/backend/src/main/java/world/yeon/backend/card_rooms/service/CardRoomService.java:475` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (CardRoomStatus.CLOSED.matches(room.status()) || CardRoomStatus.FINISHED.matches(room.status())) {`
+271. **[P3] 상태 분기 매핑/전략화** `apps/backend/src/main/java/world/yeon/backend/root_auth/service/AuthSessionService.java:89` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (providers.isEmpty()) {`
+272. **[P3] 상태 분기 매핑/전략화** `apps/backend/src/main/java/world/yeon/backend/root_auth/service/AuthSessionService.java:126` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (!isSocialProvider(provider) || code == null || codeVerifier == null) {`
+273. **[P3] 상태 분기 매핑/전략화** `apps/backend/src/main/java/world/yeon/backend/root_auth/service/AuthSessionService.java:151` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (providers.isEmpty() || isDefaultDevAccount(user, providers)) {`
+274. **[P3] 상태 분기 매핑/전략화** `apps/backend/src/main/java/world/yeon/backend/root_auth/service/AuthSessionService.java:180` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (ROLE_ADMIN.equals(user.role())) {`
+275. **[P3] 상태 분기 매핑/전략화** `apps/backend/src/main/java/world/yeon/backend/root_auth/service/AuthSessionService.java:251` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (provider.equals(identity.provider()) && !providerUserId.equals(identity.providerUserId())) {`
+276. **[P3] 상태 분기 매핑/전략화** `apps/backend/src/main/java/world/yeon/backend/root_auth/social/SocialIdentityProviderClient.java:32` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `return switch (provider) {`
+277. **[P3] 상태 분기 매핑/전략화** `apps/backend/src/main/java/world/yeon/backend/root_auth/social/SocialIdentityProviderClient.java:127` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (response.statusCode() < 200 || response.statusCode() >= 300) {`
+278. **[P3] 상태 분기 매핑/전략화** `apps/backend/src/main/java/world/yeon/backend/typing_character_frames/service/TypingCharacterFrameService.java:55` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (ADMIN_ROLE.equals(user.role()) || adminSeedEmails.contains(normalizeEmail(user.email()))) {`
+279. **[P3] 상태 분기 매핑/전략화** `apps/backend/src/main/java/world/yeon/backend/typing_decks/service/TypingDeckService.java:312` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (!SOURCE_USER.equals(row.source())) {`
+280. **[P3] 상태 분기 매핑/전략화** `apps/mobile/src/features/card-service/card-deck-detail-screen.tsx:403` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (sheetState.kind !== "edit") {`
+281. **[P3] 상태 분기 매핑/전략화** `apps/mobile/src/features/card-service/card-deck-play-screen.tsx:76` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (mode === CARD_SERVICE_MODE.server && sessionToken) {`
+282. **[P3] 상태 분기 매핑/전략화** `apps/mobile/src/features/card-service/card-onboarding-gate.tsx:91` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (result.status === "success") {`
+283. **[P3] 상태 분기 매핑/전략화** `apps/mobile/src/features/card-service/card-onboarding-gate.tsx:98` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (result.status === "error") {`
+284. **[P3] 상태 분기 매핑/전략화** `apps/mobile/src/features/card-service/markdown-text-field.tsx:190` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (typeof maxLength === "number" && result.value.length > maxLength) {`
+285. **[P3] 상태 분기 매핑/전략화** `apps/mobile/src/features/card-service/rooms/card-room-lobby-screen.tsx:42` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (status === "waiting") return CARD_SERVICE_TEXT.rooms.statusWaiting;`
+286. **[P3] 상태 분기 매핑/전략화** `apps/mobile/src/features/card-service/rooms/card-room-lobby-screen.tsx:43` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (status === "finished" || status === "closed")`
+287. **[P3] 상태 분기 매핑/전략화** `apps/mobile/src/features/card-service/social-login.ts:61` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (result.type !== "success") {`
+288. **[P3] 상태 분기 매핑/전략화** `apps/race-server/src/rooms/card-room-participant-token.ts:43` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (typeof token !== "string" || token.length === 0) {`
+289. **[P3] 상태 분기 매핑/전략화** `apps/race-server/src/rooms/card-room.ts:58` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (typeof obj.sdp !== "string" || obj.sdp.trim().length === 0) return null;`
+290. **[P3] 상태 분기 매핑/전략화** `apps/race-server/src/rooms/card-room.ts:84` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (!candidateObj || typeof candidateObj !== "object") return null;`
+291. **[P3] 상태 분기 매핑/전략화** `apps/race-server/src/rooms/card-room.ts:139` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (typeof muted !== "boolean") return null;`
+292. **[P3] 상태 분기 매핑/전략화** `apps/race-server/src/rooms/star-lobby-room.ts:62` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (event.type !== STAR_LOBBY_LIVE_EVENT_TYPE.ROOM_OBSERVED) return false;`
+293. **[P3] 상태 분기 매핑/전략화** `apps/race-server/src/rooms/star-lobby-room.ts:90` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (event.type === STAR_LOBBY_LIVE_EVENT_TYPE.ROOM_OBSERVED) {`
+294. **[P3] 상태 분기 매핑/전략화** `apps/race-server/src/rooms/star-lobby-room.ts:93` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (event.type === STAR_LOBBY_LIVE_EVENT_TYPE.ROOM_DISAPPEARED) {`
+295. **[P3] 상태 분기 매핑/전략화** `apps/race-server/src/rooms/star-lobby-room.ts:113` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (payload.type === STAR_LOBBY_LIVE_EVENT_TYPE.ALERT_MATCHED) {`
+296. **[P3] 상태 분기 매핑/전략화** `apps/race-server/src/rooms/star-lobby-room.ts:172` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (event.type === STAR_LOBBY_LIVE_EVENT_TYPE.ALERT_MATCHED) {`
+297. **[P3] 상태 분기 매핑/전략화** `apps/race-server/src/rooms/territory-battle-room.ts:39` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (!isRecord(payload) || typeof payload.word !== "string") return null;`
+298. **[P3] 상태 분기 매핑/전략화** `apps/race-server/src/rooms/typing-race-room.ts:153` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `prompt: "if (!room || room.status !== 'waiting') return null;",`
+299. **[P3] 상태 분기 매핑/전략화** `apps/race-server/src/rooms/typing-race-room.ts:236` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (typeof obj.sdp !== "string" || !obj.sdp.trim()) {`
+300. **[P3] 상태 분기 매핑/전략화** `apps/race-server/src/rooms/typing-race-room.ts:265` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (!candidateObj || typeof candidateObj !== "object") {`

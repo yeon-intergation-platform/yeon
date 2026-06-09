@@ -1,6 +1,7 @@
 package world.yeon.backend.card_rooms.service;
 
 import java.nio.charset.StandardCharsets;
+import java.security.GeneralSecurityException;
 import java.util.Base64;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -46,7 +47,7 @@ public class CardRoomParticipantTokenService {
       String payload = roomId + "." + participantId;
       byte[] signature = mac.doFinal(payload.getBytes(StandardCharsets.UTF_8));
       return URL_ENCODER.encodeToString(signature);
-    } catch (Exception error) {
+    } catch (GeneralSecurityException error) {
       throw new IllegalStateException("참가자 토큰 발급에 실패했습니다.", error);
     }
   }
