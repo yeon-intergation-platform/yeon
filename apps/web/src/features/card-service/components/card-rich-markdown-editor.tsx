@@ -96,33 +96,48 @@ import {
 } from "@yeon/ui/runtime/YeonBrowserRuntime";
 import { CARD_SERVICE_COMMON_CLASS } from "../card-service-common.const";
 
-interface CardRichMarkdownEditorProps {
+type CardRichMarkdownEditorContentProps = {
   label: string;
   value: string;
   onChange: (nextValue: string) => void;
   placeholder?: string;
   helperText?: string;
+};
+
+type CardRichMarkdownEditorLayoutProps = {
   density?: keyof typeof CARD_EDITOR_HEIGHT_CLASS;
   layoutMode?: "default" | "compact";
   previewPlacement?: "inline" | "mobile" | "none";
+};
+
+type CardRichMarkdownEditorUploadProps = {
   disabled?: boolean;
   onUploadingChange?: (isUploading: boolean) => void;
-}
+};
 
-type CardEditorToolbarState = {
-  active: {
-    bold?: boolean;
-    italic?: boolean;
-    underline?: boolean;
-    bulletList?: boolean;
-    orderedList?: boolean;
-    blockquote?: boolean;
-    codeBlock?: boolean;
-  };
+type CardRichMarkdownEditorProps = CardRichMarkdownEditorContentProps &
+  CardRichMarkdownEditorLayoutProps &
+  CardRichMarkdownEditorUploadProps;
+
+type CardEditorToolbarMarksState = {
+  bold?: boolean;
+  italic?: boolean;
+  underline?: boolean;
+  bulletList?: boolean;
+  orderedList?: boolean;
+  blockquote?: boolean;
+  codeBlock?: boolean;
+};
+
+type CardEditorToolbarHistoryState = {
   canUndo?: boolean;
   canRedo?: boolean;
-  isTableToolbarVisible: boolean;
 };
+
+type CardEditorToolbarState = {
+  active: CardEditorToolbarMarksState;
+  isTableToolbarVisible: boolean;
+} & CardEditorToolbarHistoryState;
 
 interface CardEditorTableActionOverlayState {
   top: number;

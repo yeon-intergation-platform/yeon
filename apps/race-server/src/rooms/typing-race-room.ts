@@ -71,27 +71,45 @@ type VoiceSession = {
 
 const VOICE_SESSION_TIMEOUT_MS = 30_000;
 
-type RoomParticipant = {
+type RoomParticipantIdentity = {
   id: string;
   label: string;
   characterId?: string;
   accent: string;
   kind: "player" | "benchmark";
+};
+
+type RoomParticipantProgressMetrics = {
   progress: number;
   cpm: number;
   wpm: number;
   accuracy: number;
   mistakeCount: number;
+};
+
+type RoomParticipantRaceResult = {
   elapsedTimeMs: number;
   finishedAt: number | null;
   score: number;
   rank: number | null;
+};
+
+type RoomParticipantSessionState = {
   isReady: boolean;
   joinedAt: number;
+};
+
+type RoomParticipantAuthState = {
   // 검증된 로그인 userId. options.userId + options.userToken 이 HMAC 검증을 통과할 때만 저장.
   // 토큰 없음/위조 → null → 경험치 적립 대상에서 제외(익명/게스트도 null).
   verifiedUserId: string | null;
 };
+
+type RoomParticipant = RoomParticipantIdentity &
+  RoomParticipantProgressMetrics &
+  RoomParticipantRaceResult &
+  RoomParticipantSessionState &
+  RoomParticipantAuthState;
 
 const DEMO_PROMPT_OPTIONS: Record<
   TypingRoomLanguage,

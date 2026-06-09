@@ -27,18 +27,28 @@ import {
   CARD_ROOM_STATUS_LABELS,
 } from "./card-room-labels";
 
-type CardRoomHeaderProps = {
+type CardRoomHeaderIdentityProps = {
   roomId: string;
+};
+
+type CardRoomHeaderStateProps = {
   state: CardRoomRealtimeState | null;
   connectionState: string;
   myParticipant?: CardRoomParticipantDto | null;
   canStart: boolean;
+};
+
+type CardRoomHeaderActionProps = {
   onRoleChange: (role: AssignableCardRoomRole) => void;
   onReadyChange: (isReady: boolean) => void;
   onStart: () => void;
   onEnd: () => void;
   onLeave: () => void;
 };
+
+type CardRoomHeaderProps = CardRoomHeaderIdentityProps &
+  CardRoomHeaderStateProps &
+  CardRoomHeaderActionProps;
 
 export function CardRoomHeader({
   roomId,

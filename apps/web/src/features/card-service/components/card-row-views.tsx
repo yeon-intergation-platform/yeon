@@ -13,21 +13,35 @@ import { CardRichMarkdownEditor } from "./card-rich-markdown-editor";
 import { MarkdownContent } from "./markdown-content";
 import { SHARED_FEATURE_CLASS } from "../../shared-style-constants";
 
-type CardRowEditViewProps = {
+type CardRowEditContentProps = {
   item: CardDeckItemDto;
   frontText: string;
   backText: string;
+};
+
+type CardRowEditStatusProps = {
   isSaving: boolean;
   isUploading: boolean;
   canSave: boolean;
   updateErrorMessage?: string;
+};
+
+type CardRowEditTextActions = {
   onFrontTextChange: (value: string) => void;
   onBackTextChange: (value: string) => void;
   onUploadingFrontChange: (value: boolean) => void;
   onUploadingBackChange: (value: boolean) => void;
+};
+
+type CardRowEditSubmitActions = {
   onCancelEdit: () => void;
   onSaveEdit: () => void;
 };
+
+type CardRowEditViewProps = CardRowEditContentProps &
+  CardRowEditStatusProps &
+  CardRowEditTextActions &
+  CardRowEditSubmitActions;
 
 export function CardRowEditView({
   item,

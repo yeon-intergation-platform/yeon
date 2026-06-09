@@ -40,16 +40,26 @@ const REVIEW_ACTIONS: Array<{
   },
 ];
 
-interface DeckPlayReviewModeCardProps {
+type DeckPlayReviewModeCardProgressProps = {
   currentIndex: number;
+  totalCount: number;
+};
+
+type DeckPlayReviewModeCardStateProps = {
   isAnswerVisible: boolean;
   isSaving: boolean;
   item: CardDeckItemDto;
-  totalCount: number;
+};
+
+type DeckPlayReviewModeCardActions = {
   onRevealAnswer: () => void;
   onReview: (difficulty: CardReviewDifficulty) => void;
   onSkip: () => void;
-}
+};
+
+type DeckPlayReviewModeCardProps = DeckPlayReviewModeCardProgressProps &
+  DeckPlayReviewModeCardStateProps &
+  DeckPlayReviewModeCardActions;
 
 export function DeckPlayReviewModeCard({
   currentIndex,

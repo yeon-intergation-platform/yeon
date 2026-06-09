@@ -314,17 +314,27 @@ export function getCardEditorHeightClass(
   return CARD_EDITOR_HEIGHT_CLASS[density];
 }
 
-interface CardPreviewSurfaceProps {
+type CardPreviewSurfaceContentProps = {
   eyebrow?: ReactNode;
   title: ReactNode;
   value: string;
   emptyText: string;
+};
+
+type CardPreviewSurfaceClassNameProps = {
   containerClassName?: string;
   headerClassName?: string;
   bodyClassName?: string;
   contentClassName?: string;
+};
+
+type CardPreviewSurfaceInteractionProps = {
   onCodeLanguageChange?: (index: number, language: string) => void;
-}
+};
+
+type CardPreviewSurfaceProps = CardPreviewSurfaceContentProps &
+  CardPreviewSurfaceClassNameProps &
+  CardPreviewSurfaceInteractionProps;
 
 export function CardPreviewSurface({
   eyebrow,
