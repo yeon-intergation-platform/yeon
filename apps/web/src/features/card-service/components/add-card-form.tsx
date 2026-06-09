@@ -129,7 +129,10 @@ export function AddCardForm({
       setFrontText(parsed.frontText);
       setBackText(parsed.backText);
       setDraftLoaded(true);
-    } catch {
+    } catch (error) {
+      if (!(error instanceof SyntaxError)) {
+        throw error;
+      }
       removeYeonLocalStorageItem(draftKey);
       setFrontText(initialSnapshot.frontText);
       setBackText(initialSnapshot.backText);

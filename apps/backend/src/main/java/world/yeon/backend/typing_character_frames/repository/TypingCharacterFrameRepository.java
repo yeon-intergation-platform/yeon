@@ -1,5 +1,6 @@
 package world.yeon.backend.typing_character_frames.repository;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.EntityManager;
@@ -84,7 +85,7 @@ public class TypingCharacterFrameRepository {
 	private List<TypingCharacterFrameSlotResponse> readFrameSlots(Object value) {
 		try {
 			return objectMapper.readValue(value.toString(), FRAME_SLOTS_TYPE);
-		} catch (Exception error) {
+		} catch (JsonProcessingException error) {
 			throw new IllegalStateException("타자 캐릭터 프레임 슬롯 JSON을 해석하지 못했습니다.", error);
 		}
 	}
@@ -92,7 +93,7 @@ public class TypingCharacterFrameRepository {
 	private String writeJson(Object value) {
 		try {
 			return objectMapper.writeValueAsString(value);
-		} catch (Exception error) {
+		} catch (JsonProcessingException error) {
 			throw new IllegalStateException("타자 캐릭터 프레임 슬롯 JSON 직렬화에 실패했습니다.", error);
 		}
 	}

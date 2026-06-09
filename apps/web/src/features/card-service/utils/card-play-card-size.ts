@@ -68,8 +68,11 @@ export function parseCardPlayCardSize(raw: string | null): CardPlayCardSize {
     const parsed = JSON.parse(raw) as unknown;
     if (!isCardPlayCardSize(parsed)) return DEFAULT_CARD_PLAY_CARD_SIZE;
     return clampCardPlayCardSize(parsed);
-  } catch {
-    return DEFAULT_CARD_PLAY_CARD_SIZE;
+  } catch (error) {
+    if (error instanceof SyntaxError) {
+      return DEFAULT_CARD_PLAY_CARD_SIZE;
+    }
+    throw error;
   }
 }
 

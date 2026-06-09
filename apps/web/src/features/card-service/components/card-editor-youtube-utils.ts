@@ -171,8 +171,11 @@ export function extractCardEditorYouTubeEmbedInfo(value: string) {
   let parsedUrl: YeonUrl;
   try {
     parsedUrl = createYeonUrl(normalizedUrl);
-  } catch {
-    return undefined;
+  } catch (error) {
+    if (error instanceof TypeError) {
+      return undefined;
+    }
+    throw error;
   }
 
   const host = parsedUrl.hostname.replace(/^(?:www\.|m\.)/i, "").toLowerCase();

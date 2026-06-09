@@ -62,7 +62,11 @@ function insertCardEditorImages(
 
   try {
     editor.chain().focus().insertContentAt(insertRange, blockContents).run();
-  } catch {
+  } catch (error) {
+    console.warn(
+      "[CardEditorImageUpload] 선택 위치 이미지 삽입 실패 — 현재 커서 위치에 다시 삽입합니다.",
+      error
+    );
     editor.chain().focus().insertContent(blockContents).run();
   }
 }
@@ -126,7 +130,8 @@ async function readClipboardImageFiles() {
     }
 
     return files;
-  } catch {
+  } catch (error) {
+    console.warn("[CardEditorImageUpload] 클립보드 이미지 읽기 실패", error);
     return [];
   }
 }

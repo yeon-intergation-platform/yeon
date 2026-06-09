@@ -52,7 +52,11 @@ export function readCommunityGuestNickname() {
     const createdNickname = createRandomCommunityGuestNickname();
     writeCommunityGuestNickname(createdNickname);
     return createdNickname;
-  } catch {
+  } catch (error) {
+    console.warn(
+      "[CommunityGuestIdentity] 게스트 닉네임 저장소 접근 실패 — 임시 닉네임을 생성합니다.",
+      error
+    );
     return createRandomCommunityGuestNickname();
   }
 }

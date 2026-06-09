@@ -42,7 +42,10 @@ function readJsonProfile(key: string): Partial<CardRoomLocalProfile> | null {
   try {
     const parsed = JSON.parse(raw) as Partial<CardRoomLocalProfile>;
     if (parsed.nickname || parsed.characterId) return parsed;
-  } catch {
+  } catch (error) {
+    if (!(error instanceof SyntaxError)) {
+      throw error;
+    }
     removeYeonLocalStorageItem(key);
   }
 

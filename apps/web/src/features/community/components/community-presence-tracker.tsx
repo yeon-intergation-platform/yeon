@@ -17,9 +17,10 @@ export function CommunityPresenceTracker() {
     const heartbeat = async () => {
       try {
         await sendPresenceHeartbeat(sessionId);
-      } catch {
+      } catch (error) {
         // 앱 부팅 직후/포트 미구동 구간에도 페이지 동작을 방해하지 않도록
-        // presence heartbeats는 실패를 무시합니다.
+        // presence heartbeats는 실패를 무시하되 원인은 숨기지 않습니다.
+        console.warn("[CommunityPresence] heartbeat 실패", error);
       }
     };
 
