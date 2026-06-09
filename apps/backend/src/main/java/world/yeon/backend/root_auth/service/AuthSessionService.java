@@ -79,7 +79,7 @@ public class AuthSessionService {
 		}
 
 		List<String> providers = repository.listProvidersByUserId(user.id());
-		if (providers.isEmpty()) {
+		if (!AuthProviderSet.from(providers).hasAny()) {
 			repository.deleteSessionById(session.id());
 			return unauthenticated();
 		}
@@ -113,12 +113,13 @@ public class AuthSessionService {
 
 	@Transactional
 	public RootAuthSessionCreateResponse completeSocialAuth(SocialAuthCompleteRequest request) {
-		String provider = normalizeString(request == null ? null : request.provider(), 20);
-		String code = normalizeString(request == null ? null : request.code(), 4096);
-		String codeVerifier = normalizeString(request == null ? null : request.codeVerifier(), 128);
-		if (!isSocialProvider(provider) || code == null || codeVerifier == null) {
+		var socialRequest = SocialAuthRequestParts.from(request, this::normalizeProviderInput, this::normalizeCodeInput, this::normalizeCodeVerifierInput);
+		if (!socialRequest.isComplete(SocialProviderPolicy.INSTANCE)) {
 			throw new AuthSessionServiceException(400, "missing_code", "소셜 로그인 요청이 올바르지 않습니다.");
 		}
+		String provider = socialRequest.provider();
+		String code = socialRequest.code();
+		String codeVerifier = socialRequest.codeVerifier();
 		SocialIdentityProfile profile = socialIdentityProviderClient.fetchProfile(provider, code, codeVerifier, request.appOrigin());
 		var user = upsertSocialLogin(profile, 0);
 		return sessionIssuer.createSession(user.id());
@@ -141,7 +142,7 @@ public class AuthSessionService {
 		options.add(new DevLoginOptionResponse(DEV_LOGIN_DEFAULT_ACCOUNT_KEY, DEV_USER_EMAIL, DEV_USER_DISPLAY_NAME, List.of(DEV_PROVIDER)));
 		for (var user : users) {
 			List<String> providers = normalizeProviders(identitiesByUserId.getOrDefault(user.id(), List.of()));
-			if (providers.isEmpty() || isDefaultDevAccount(user, providers)) {
+			if (!DevLoginOptionPolicy.from(user, providers).shouldExpose()) {
 				continue;
 			}
 			options.add(new DevLoginOptionResponse(user.id(), user.email(), user.displayName(), providers));
@@ -170,7 +171,7 @@ public class AuthSessionService {
 		if (user == null) {
 			return new AdminCheckResponse(false);
 		}
-		if (ROLE_ADMIN.equals(user.role())) {
+		if (AuthRolePolicy.from(user).isAdmin()) {
 			return new AdminCheckResponse(true);
 		}
 		// 권한 상승 판정은 호출자 입력 email이 아니라 DB의 실제 user.email로만 수행한다(헤더/본문 신뢰 금지).
@@ -241,7 +242,7 @@ public class AuthSessionService {
 		if (candidate == null) return null;
 		var identities = repository.listIdentitiesByUserId(candidate.id());
 		for (var identity : identities) {
-			if (provider.equals(identity.provider()) && !providerUserId.equals(identity.providerUserId())) {
+			if (IdentityReusePolicy.from(provider, providerUserId).conflictsWith(identity)) {
 				return null;
 			}
 		}
@@ -305,11 +306,23 @@ public class AuthSessionService {
 	}
 
 	private boolean isDefaultDevAccount(AuthSessionRepository.UserRow user, List<String> providers) {
-		return DEV_USER_EMAIL.equals(user.email()) && providers.size() == 1 && DEV_PROVIDER.equals(providers.getFirst());
+		return DEV_USER_EMAIL.equals(user.email()) && AuthProviderSet.from(providers).hasOnly(DEV_PROVIDER);
+	}
+
+	private String normalizeProviderInput(String value) {
+		return normalizeString(value, 20);
+	}
+
+	private String normalizeCodeInput(String value) {
+		return normalizeString(value, 4096);
+	}
+
+	private String normalizeCodeVerifierInput(String value) {
+		return normalizeString(value, 128);
 	}
 
 	private boolean isSocialProvider(String provider) {
-		return "google".equals(provider) || "kakao".equals(provider);
+		return SocialProviderPolicy.INSTANCE.supports(provider);
 	}
 
 	private boolean isKnownProvider(String provider) {
@@ -330,6 +343,86 @@ public class AuthSessionService {
 			if (normalized.equals(entry.trim().toLowerCase())) return true;
 		}
 		return false;
+	}
+
+	private record AuthProviderSet(List<String> providers) {
+		static AuthProviderSet from(List<String> providers) {
+			return new AuthProviderSet(providers == null ? List.of() : providers);
+		}
+
+		boolean hasAny() {
+			return !providers.isEmpty();
+		}
+
+		boolean hasOnly(String provider) {
+			return providers.size() == 1 && provider.equals(providers.getFirst());
+		}
+	}
+
+	@FunctionalInterface
+	private interface StringNormalizer {
+		String normalize(String value);
+	}
+
+	private record SocialAuthRequestParts(String provider, String code, String codeVerifier) {
+		static SocialAuthRequestParts from(
+			SocialAuthCompleteRequest request,
+			StringNormalizer providerNormalizer,
+			StringNormalizer codeNormalizer,
+			StringNormalizer codeVerifierNormalizer
+		) {
+			return new SocialAuthRequestParts(
+				providerNormalizer.normalize(request == null ? null : request.provider()),
+				codeNormalizer.normalize(request == null ? null : request.code()),
+				codeVerifierNormalizer.normalize(request == null ? null : request.codeVerifier())
+			);
+		}
+
+		boolean isComplete(SocialProviderPolicy providerPolicy) {
+			return providerPolicy.supports(provider) && code != null && codeVerifier != null;
+		}
+	}
+
+	private enum SocialProviderPolicy {
+		INSTANCE;
+
+		boolean supports(String provider) {
+			return "google".equals(provider) || "kakao".equals(provider);
+		}
+	}
+
+	private record DevLoginOptionPolicy(AuthSessionRepository.UserRow user, AuthProviderSet providers) {
+		static DevLoginOptionPolicy from(AuthSessionRepository.UserRow user, List<String> providers) {
+			return new DevLoginOptionPolicy(user, AuthProviderSet.from(providers));
+		}
+
+		boolean shouldExpose() {
+			return providers.hasAny() && !isDefaultDevAccount();
+		}
+
+		private boolean isDefaultDevAccount() {
+			return DEV_USER_EMAIL.equals(user.email()) && providers.hasOnly(DEV_PROVIDER);
+		}
+	}
+
+	private record AuthRolePolicy(AuthSessionRepository.UserRow user) {
+		static AuthRolePolicy from(AuthSessionRepository.UserRow user) {
+			return new AuthRolePolicy(user);
+		}
+
+		boolean isAdmin() {
+			return ROLE_ADMIN.equals(user.role());
+		}
+	}
+
+	private record IdentityReusePolicy(String provider, String providerUserId) {
+		static IdentityReusePolicy from(String provider, String providerUserId) {
+			return new IdentityReusePolicy(provider, providerUserId);
+		}
+
+		boolean conflictsWith(AuthSessionRepository.IdentityRow identity) {
+			return provider.equals(identity.provider()) && !providerUserId.equals(identity.providerUserId());
+		}
 	}
 
 	private String resolveEnv(String name) {
