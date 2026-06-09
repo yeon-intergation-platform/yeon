@@ -52,32 +52,17 @@ public class CardDeckAssetStorage {
 			return;
 		}
 
-		for (int attempt = 1; attempt <= 3; attempt += 1) {
-			try {
-				client().putObject(
-					PutObjectRequest.builder()
-						.bucket(bucketName)
-						.key(objectKey)
-						.contentType(contentType)
-						.cacheControl(cacheControl)
-						.build(),
-					RequestBody.fromBytes(bytes)
-				);
-				return;
-			} catch (AwsServiceException error) {
-				if (attempt == 3 || !RETRYABLE_STATUS_CODES.contains(error.statusCode())) {
-					throw storageError("CARD_ASSET_UPLOAD_FAILED", "이미지를 업로드하지 못했습니다.");
-				}
-			} catch (SdkException error) {
-				if (attempt == 3) {
-					throw storageError("CARD_ASSET_UPLOAD_FAILED", "이미지를 업로드하지 못했습니다.");
-				}
-			} catch (RuntimeException error) {
-				if (attempt == 3) {
-					throw storageError("CARD_ASSET_UPLOAD_FAILED", "이미지를 업로드하지 못했습니다.");
-				}
-			}
-		}
+		runWithRetry(StorageOperation.UPLOAD, () ->
+			client().putObject(
+				PutObjectRequest.builder()
+					.bucket(bucketName)
+					.key(objectKey)
+					.contentType(contentType)
+					.cacheControl(cacheControl)
+					.build(),
+				RequestBody.fromBytes(bytes)
+			)
+		);
 	}
 
 	public StoredAsset read(String objectKey) {
@@ -85,38 +70,36 @@ public class CardDeckAssetStorage {
 			return readLocal(objectKey);
 		}
 
-		for (int attempt = 1; attempt <= 3; attempt += 1) {
-			try {
-				ResponseBytes<GetObjectResponse> response = client().getObjectAsBytes(
-					GetObjectRequest.builder().bucket(bucketName).key(objectKey).build()
-				);
-				return new StoredAsset(
-					response.asByteArray(),
-					response.response().contentType() == null ? "application/octet-stream" : response.response().contentType(),
-					response.response().cacheControl() == null ? CardDeckAssetService.IMMUTABLE_CACHE_CONTROL : response.response().cacheControl()
-				);
-			} catch (AwsServiceException error) {
-				if (error.statusCode() == 404) {
-					throw new CardDeckAssetServiceException(404, "CARD_ASSET_NOT_FOUND", "이미지를 찾지 못했습니다.");
-				}
-				if (attempt == 3 || !RETRYABLE_STATUS_CODES.contains(error.statusCode())) {
-					throw storageError("CARD_ASSET_DOWNLOAD_FAILED", "이미지를 불러오지 못했습니다.");
-				}
-			} catch (SdkException error) {
-				if (attempt == 3) {
-					throw storageError("CARD_ASSET_DOWNLOAD_FAILED", "이미지를 불러오지 못했습니다.");
-				}
-			} catch (RuntimeException error) {
-				if (attempt == 3) {
-					throw storageError("CARD_ASSET_DOWNLOAD_FAILED", "이미지를 불러오지 못했습니다.");
-				}
-			}
-		}
-		throw storageError("CARD_ASSET_DOWNLOAD_FAILED", "이미지를 불러오지 못했습니다.");
+		return runWithRetry(StorageOperation.DOWNLOAD, () -> {
+			ResponseBytes<GetObjectResponse> response = client().getObjectAsBytes(
+				GetObjectRequest.builder().bucket(bucketName).key(objectKey).build()
+			);
+			return new StoredAsset(
+				response.asByteArray(),
+				response.response().contentType() == null ? "application/octet-stream" : response.response().contentType(),
+				response.response().cacheControl() == null ? CardDeckAssetService.IMMUTABLE_CACHE_CONTROL : response.response().cacheControl()
+			);
+		});
 	}
 
-	private CardDeckAssetServiceException storageError(String code, String message) {
-		return new CardDeckAssetServiceException(502, code, message);
+	private <T> T runWithRetry(StorageOperation operation, StorageAttempt<T> storageAttempt) {
+		for (int attempt = 1; attempt <= operation.maxAttempts(); attempt += 1) {
+			try {
+				return storageAttempt.run();
+			} catch (AwsServiceException error) {
+				operation.awsFailureDecision(error, attempt).throwIfFailed();
+			} catch (SdkException error) {
+				operation.sdkFailureDecision(error, attempt).throwIfFailed();
+			} catch (RuntimeException error) {
+				operation.runtimeFailureDecision(error, attempt).throwIfFailed();
+			}
+		}
+
+		throw operation.failure(null);
+	}
+
+	private CardDeckAssetServiceException storageError(String code, String message, Throwable cause) {
+		return new CardDeckAssetServiceException(502, code, message, cause);
 	}
 
 	private boolean isRemoteStorageConfigured() {
@@ -159,7 +142,7 @@ public class CardDeckAssetStorage {
 			Files.write(imagePath, bytes);
 			Files.writeString(imagePath.resolveSibling(imagePath.getFileName() + ".content-type"), contentType);
 		} catch (IOException error) {
-			throw storageError("CARD_ASSET_LOCAL_UPLOAD_FAILED", "로컬 이미지 저장소에 이미지를 저장하지 못했습니다.");
+			throw storageError("CARD_ASSET_LOCAL_UPLOAD_FAILED", "로컬 이미지 저장소에 이미지를 저장하지 못했습니다.", error);
 		}
 	}
 
@@ -174,7 +157,7 @@ public class CardDeckAssetStorage {
 			String contentType = Files.exists(contentTypePath) ? Files.readString(contentTypePath).trim() : inferContentType(objectKey);
 			return new StoredAsset(Files.readAllBytes(imagePath), contentType.isEmpty() ? "application/octet-stream" : contentType, CardDeckAssetService.IMMUTABLE_CACHE_CONTROL);
 		} catch (IOException error) {
-			throw storageError("CARD_ASSET_LOCAL_DOWNLOAD_FAILED", "로컬 이미지 저장소에서 이미지를 읽지 못했습니다.");
+			throw storageError("CARD_ASSET_LOCAL_DOWNLOAD_FAILED", "로컬 이미지 저장소에서 이미지를 읽지 못했습니다.", error);
 		}
 	}
 
@@ -218,6 +201,97 @@ public class CardDeckAssetStorage {
 		}
 		String trimmed = value.trim();
 		return trimmed.isEmpty() ? null : trimmed;
+	}
+
+	@FunctionalInterface
+	private interface StorageAttempt<T> {
+		T run();
+	}
+
+	private record StorageFailureDecision(CardDeckAssetServiceException failure) {
+		void throwIfFailed() {
+			if (failure != null) {
+				throw failure;
+			}
+		}
+	}
+
+	private enum StorageOperation {
+		UPLOAD("CARD_ASSET_UPLOAD_FAILED", "이미지를 업로드하지 못했습니다.", null),
+		DOWNLOAD("CARD_ASSET_DOWNLOAD_FAILED", "이미지를 불러오지 못했습니다.", NotFoundPolicy.CARD_ASSET);
+
+		private static final int MAX_ATTEMPTS = 3;
+		private final String failureCode;
+		private final String failureMessage;
+		private final NotFoundPolicy notFoundPolicy;
+
+		StorageOperation(String failureCode, String failureMessage, NotFoundPolicy notFoundPolicy) {
+			this.failureCode = failureCode;
+			this.failureMessage = failureMessage;
+			this.notFoundPolicy = notFoundPolicy;
+		}
+
+		int maxAttempts() {
+			return MAX_ATTEMPTS;
+		}
+
+		StorageFailureDecision awsFailureDecision(AwsServiceException error, int attempt) {
+			if (notFoundPolicy != null && notFoundPolicy.matches(error.statusCode())) {
+				return fail(notFoundPolicy.failure(error));
+			}
+
+			return retryableFailureDecision(error, attempt, RETRYABLE_STATUS_CODES.contains(error.statusCode()));
+		}
+
+		StorageFailureDecision sdkFailureDecision(SdkException error, int attempt) {
+			return retryableFailureDecision(error, attempt, true);
+		}
+
+		StorageFailureDecision runtimeFailureDecision(RuntimeException error, int attempt) {
+			return retryableFailureDecision(error, attempt, true);
+		}
+
+		private StorageFailureDecision retryableFailureDecision(Throwable error, int attempt, boolean retryable) {
+			if (attempt >= MAX_ATTEMPTS || !retryable) {
+				return fail(failure(error));
+			}
+
+			return retry();
+		}
+
+		private StorageFailureDecision retry() {
+			return new StorageFailureDecision(null);
+		}
+
+		private StorageFailureDecision fail(CardDeckAssetServiceException failure) {
+			return new StorageFailureDecision(failure);
+		}
+
+		private CardDeckAssetServiceException failure(Throwable cause) {
+			return new CardDeckAssetServiceException(502, failureCode, failureMessage, cause);
+		}
+	}
+
+	private enum NotFoundPolicy {
+		CARD_ASSET(404, "CARD_ASSET_NOT_FOUND", "이미지를 찾지 못했습니다.");
+
+		private final int status;
+		private final String code;
+		private final String message;
+
+		NotFoundPolicy(int status, String code, String message) {
+			this.status = status;
+			this.code = code;
+			this.message = message;
+		}
+
+		boolean matches(int statusCode) {
+			return status == statusCode;
+		}
+
+		CardDeckAssetServiceException failure(Throwable cause) {
+			return new CardDeckAssetServiceException(status, code, message, cause);
+		}
 	}
 
 	public record StoredAsset(byte[] bytes, String contentType, String cacheControl) {}
