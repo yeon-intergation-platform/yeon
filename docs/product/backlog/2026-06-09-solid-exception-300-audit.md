@@ -51,6 +51,11 @@
 - 웹 카드 HEIC 변환 실패는 사용자 메시지와 함께 원래 오류를 `cause`로 보존하도록 바꿨다.
 - 웹 카드 클립보드 이미지 읽기와 커뮤니티 게스트/presence 실패는 원인 로그를 남기도록 바꿨다.
 
+## 3차 적용 완료
+
+- 항목 24~36 완료: 웹 타자 서비스의 빈 catch를 제거하고, 초대 링크 복사·오류 응답 파싱·캐릭터 프레임 fallback·레이스 사용자 토큰 fallback·로컬 저장소 fallback·룸 cleanup/퇴장 fallback·레이스 seed fallback에 원인 로그를 추가했다.
+- UX fallback은 유지하되 `E3`(예외 숨김 금지)와 `E7`(원래 예외 정보 보존)을 만족하도록 실패 원인을 `console.warn`에 남긴다.
+
 ## 300개 TODO
 
 > 아래 항목은 실제 코드 경로/라인을 기준으로 작성한다. `원칙`은 SOLID 또는 예외 처리 원칙 번호를 표시한다.
@@ -87,19 +92,19 @@
 21. **[완료][P1] 빈 catch 금지** `apps/web/src/features/card-service/utils/card-play-card-size.ts:71` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
 22. **[완료][P1] 빈 catch 금지** `apps/web/src/features/community/community-guest-identity.ts:55` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
 23. **[완료][P1] 빈 catch 금지** `apps/web/src/features/community/components/community-presence-tracker.tsx:20` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
-24. **[P1] 빈 catch 금지** `apps/web/src/features/typing-service/typing-room-screen.tsx:738` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
-25. **[P1] 빈 catch 금지** `apps/web/src/features/typing-service/typing-service-fetch.ts:39` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
-26. **[P1] 빈 catch 금지** `apps/web/src/features/typing-service/typing-service-fetch.ts:126` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
-27. **[P1] 빈 catch 금지** `apps/web/src/features/typing-service/typing-service-fetch.ts:216` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
-28. **[P1] 빈 catch 금지** `apps/web/src/features/typing-service/use-player-identity.ts:31` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
-29. **[P1] 빈 catch 금지** `apps/web/src/features/typing-service/use-race-room.ts:256` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
-30. **[P1] 빈 catch 금지** `apps/web/src/features/typing-service/use-race-room.ts:321` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
-31. **[P1] 빈 catch 금지** `apps/web/src/features/typing-service/use-race-room.ts:384` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
-32. **[P1] 빈 catch 금지** `apps/web/src/features/typing-service/use-race-room.ts:387` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
-33. **[P1] 빈 catch 금지** `apps/web/src/features/typing-service/use-territory-battle-room.ts:239` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
-34. **[P1] 빈 catch 금지** `apps/web/src/features/typing-service/use-typing-profile.ts:43` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
-35. **[P1] 빈 catch 금지** `apps/web/src/features/typing-service/use-typing-profile.ts:54` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
-36. **[P1] 빈 catch 금지** `apps/web/src/features/typing-service/use-typing-settings.ts:531` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
+24. **[완료][P1] 빈 catch 금지** `apps/web/src/features/typing-service/typing-room-screen.tsx:738` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
+25. **[완료][P1] 빈 catch 금지** `apps/web/src/features/typing-service/typing-service-fetch.ts:39` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
+26. **[완료][P1] 빈 catch 금지** `apps/web/src/features/typing-service/typing-service-fetch.ts:126` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
+27. **[완료][P1] 빈 catch 금지** `apps/web/src/features/typing-service/typing-service-fetch.ts:216` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
+28. **[완료][P1] 빈 catch 금지** `apps/web/src/features/typing-service/use-player-identity.ts:31` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
+29. **[완료][P1] 빈 catch 금지** `apps/web/src/features/typing-service/use-race-room.ts:256` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
+30. **[완료][P1] 빈 catch 금지** `apps/web/src/features/typing-service/use-race-room.ts:321` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
+31. **[완료][P1] 빈 catch 금지** `apps/web/src/features/typing-service/use-race-room.ts:384` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
+32. **[완료][P1] 빈 catch 금지** `apps/web/src/features/typing-service/use-race-room.ts:387` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
+33. **[완료][P1] 빈 catch 금지** `apps/web/src/features/typing-service/use-territory-battle-room.ts:239` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
+34. **[완료][P1] 빈 catch 금지** `apps/web/src/features/typing-service/use-typing-profile.ts:43` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
+35. **[완료][P1] 빈 catch 금지** `apps/web/src/features/typing-service/use-typing-profile.ts:54` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
+36. **[완료][P1] 빈 catch 금지** `apps/web/src/features/typing-service/use-typing-settings.ts:531` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
 37. **[P1] 빈 catch 금지** `packages/api-client/src/index.ts:153` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
 38. **[P1] 빈 catch 금지** `packages/ui/src/rich-content/YeonMermaid/index.ts:37` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
 39. **[P1] 빈 catch 금지** `packages/ui/src/runtime/YeonBrowserRuntime/index.native.ts:136` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`

@@ -30,13 +30,17 @@ async function readErrorMessage(
   response: YeonResponse,
   fallbackErrorMessage: string
 ): Promise<string> {
-  const text = await response.text().catch(() => "");
+  const text = await response.text().catch((error) => {
+    console.warn("[typing-service] 오류 응답 본문을 읽지 못했습니다.", error);
+    return "";
+  });
   if (!text) return fallbackErrorMessage;
 
   try {
     const parsed = JSON.parse(text) as { message?: string };
     return parsed.message || fallbackErrorMessage;
-  } catch {
+  } catch (error) {
+    console.warn("[typing-service] 오류 응답 JSON 파싱 실패", error);
     return fallbackErrorMessage;
   }
 }
@@ -123,7 +127,8 @@ export async function loadTypingCharacterFrameOverrides(): Promise<
       "캐릭터 프레임 설정을 불러오지 못했습니다."
     );
     return data.overrides;
-  } catch {
+  } catch (error) {
+    console.warn("[typing-service] 캐릭터 프레임 설정 로드 실패", error);
     return [];
   }
 }
@@ -213,7 +218,8 @@ export async function loadTypingRaceUserToken(): Promise<TypingRaceUserToken> {
       userId: typeof data.userId === "string" ? data.userId : null,
       userToken: typeof data.userToken === "string" ? data.userToken : null,
     };
-  } catch {
+  } catch (error) {
+    console.warn("[typing-service] 레이스 사용자 토큰 발급 실패", error);
     return { userId: null, userToken: null };
   }
 }

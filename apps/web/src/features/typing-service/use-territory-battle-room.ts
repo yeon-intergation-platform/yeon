@@ -74,6 +74,10 @@ function clearReconnectionToken(originRoomId: string) {
   removeYeonLocalStorageItem(getReconnectionTokenStorageKey(originRoomId));
 }
 
+function warnTerritoryRoomCleanupFailure(context: string, error: unknown) {
+  console.warn(`[typing-territory] ${context}`, error);
+}
+
 function normalizeRoomError(error: unknown): TerritoryBattleRoomError {
   if (typeof error === "object" && error !== null) {
     const record = error as { code?: unknown; message?: unknown };
@@ -137,7 +141,11 @@ export function useTerritoryBattleRoom({
     const client = createYeonRealtimeClient(resolveRaceServerUrl());
     const storedReconnectionToken = readReconnectionToken(originRoomId);
     const connectRoom = storedReconnectionToken
-      ? client.reconnect<unknown>(storedReconnectionToken).catch(() => {
+      ? client.reconnect<unknown>(storedReconnectionToken).catch((error) => {
+          console.warn(
+            "[typing-territory] 재접속 실패, 새 방 참가로 전환",
+            error
+          );
           clearReconnectionToken(originRoomId);
           if (!cancelled) setConnectionState("connecting");
           return client.joinOrCreate<unknown>(TERRITORY_BATTLE_ROOM_NAME, {
@@ -236,8 +244,16 @@ export function useTerritoryBattleRoom({
 
     try {
       await room.leave(true);
-    } catch {
-      await room.leave(false);
+    } catch (error) {
+      warnTerritoryRoomCleanupFailure(
+        "명시적 퇴장 처리 실패, 강제 퇴장으로 전환",
+        error
+      );
+      try {
+        await room.leave(false);
+      } catch (fallbackError) {
+        warnTerritoryRoomCleanupFailure("강제 퇴장 처리 실패", fallbackError);
+      }
     } finally {
       setConnectionState("disconnected");
     }

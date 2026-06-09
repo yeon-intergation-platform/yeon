@@ -81,6 +81,10 @@ const ROOM_ERROR_MESSAGES = {
   unknown: "타자방에 연결할 수 없습니다.",
 } as const;
 
+function warnRaceRoomCleanupFailure(context: string, error: unknown) {
+  console.warn(`[typing-race] ${context}`, error);
+}
+
 function normalizeRoomErrorMessage(source: unknown): string {
   if (typeof source === "string" && source.trim().length > 0) {
     const lower = source.toLowerCase();
@@ -253,8 +257,8 @@ export function useRaceRoom(options: UseRaceRoomOptions): UseRaceRoomResult {
         if (cancelled) {
           try {
             void room.leave(false);
-          } catch {
-            /* ignore */
+          } catch (error) {
+            warnRaceRoomCleanupFailure("취소된 접속의 룸 정리 실패", error);
           }
           return;
         }
@@ -318,8 +322,8 @@ export function useRaceRoom(options: UseRaceRoomOptions): UseRaceRoomResult {
       if (room) {
         try {
           void room.leave(false);
-        } catch {
-          /* ignore */
+        } catch (error) {
+          warnRaceRoomCleanupFailure("언마운트 룸 정리 실패", error);
         }
       }
     };
@@ -381,11 +385,15 @@ export function useRaceRoom(options: UseRaceRoomOptions): UseRaceRoomResult {
       room.send(RACE_EVENTS.ROOM_LEAVE, {});
       await delayYeon(EXPLICIT_LEAVE_FLUSH_DELAY_MS);
       await room.leave(true);
-    } catch {
+    } catch (error) {
+      warnRaceRoomCleanupFailure(
+        "명시적 퇴장 처리 실패, 강제 퇴장으로 전환",
+        error
+      );
       try {
         await room.leave(false);
-      } catch {
-        /* ignore */
+      } catch (fallbackError) {
+        warnRaceRoomCleanupFailure("강제 퇴장 처리 실패", fallbackError);
       }
     } finally {
       setConnectionState("disconnected");

@@ -735,7 +735,8 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
       setCopied(true);
       setCopyError(null);
       scheduleYeonTimeout(() => setCopied(false), 1600);
-    } catch {
+    } catch (error) {
+      console.warn("[typing-room] 초대 링크 복사 실패", error);
       setCopied(false);
       setCopyError("링크를 복사할 수 없습니다.");
     }

@@ -40,8 +40,8 @@ export function useTypingProfile() {
     try {
       const raw = readYeonLocalStorageItem(STORAGE_KEY);
       if (raw) setProfile(normalizeProfile(JSON.parse(raw)));
-    } catch {
-      // 저장소 접근 불가 환경 무시
+    } catch (error) {
+      console.warn("[typing-service] 프로필 저장소 읽기 실패", error);
     }
     setLoaded(true);
   }, []);
@@ -51,8 +51,8 @@ export function useTypingProfile() {
       const next = normalizeProfile({ ...prev, ...updates });
       try {
         writeYeonLocalStorageItem(STORAGE_KEY, JSON.stringify(next));
-      } catch {
-        /* ignore */
+      } catch (error) {
+        console.warn("[typing-service] 프로필 저장소 쓰기 실패", error);
       }
       return next;
     });
