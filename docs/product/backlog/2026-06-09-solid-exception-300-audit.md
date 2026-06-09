@@ -115,6 +115,10 @@
 
 - 항목 100~108 완료: race-server 카드방 leave/request catch는 16차 helper 반영 상태를 확인해 완료 처리했고, typing-race-room의 기존 catch 후보는 현재 코드에서 제거된 상태를 확인했다. 웹 커뮤니티 404 catch는 처리 가능한 Spring 404만 null로 변환하고 나머지는 재전파하는 경계로 유지했다. 웹 카드 인증 Provider 누락, 카드방 생성/입장, 게스트 덱 개수 확인 실패는 원인을 포함한 helper/전용 Error/사용자 실패 메시지로 구체화했다.
 
+## 43차 적용 완료
+
+- 항목 198 완료: 모바일 `MarkdownTextField`의 선택 상태/업로드/서식 삽입 부수효과를 전용 controller hook으로 이동하고, 마크다운 서식 helper·툴바·스타일을 별도 파일로 분리했다. 화면 컴포넌트는 컨트롤러 연결과 `TextField` 조립만 담당한다.
+
 ## 42차 적용 완료
 
 - 항목 197 완료: 모바일 `CardSessionProvider`의 세션 boot/authenticate/guest/logout 상태 전이와 query/cache/storage 부수효과를 `use-card-session-state.ts` hook으로 분리했다. Context 파일은 Provider 연결과 `useCardSession` 접근 가드만 담당한다.
@@ -475,7 +479,7 @@
 195. **[완료][P2] 큰 파일 책임 분리** `apps/mobile/src/features/card-service/card-onboarding-gate.tsx:1` — 원칙 `S`. 380라인 파일에서 hero/social/secondary/guest/email sheet 섹션과 스타일을 `card-onboarding-gate-sections.tsx`, `card-onboarding-gate-styles.ts`로 분리해 게이트 파일을 157라인으로 축소했다. 근거: `CardOnboardingHero`, `CardOnboardingSocialButtons`, `CardEmailLoginSheet`
 196. **[완료][P2] 긴 함수 책임 분리** `apps/mobile/src/features/card-service/card-onboarding-gate.tsx:44` — 원칙 `S`. 이메일/소셜 로그인/회원가입 브라우저 오픈 부수효과와 입력 상태를 `use-card-onboarding-gate-state.ts`로 분리해 화면 함수는 62라인 렌더링 조립으로 축소했다. 근거: `const gate = useCardOnboardingGateState({ onAuthenticated });`
 197. **[완료][P2] 긴 함수 책임 분리** `apps/mobile/src/features/card-service/card-session-context.tsx:52` — 원칙 `S`. 세션 boot/authenticate/guest/logout 상태 전이와 부수효과를 `use-card-session-state.ts`로 분리해 Provider는 Context 연결만 담당하게 축소했다. 근거: `const session = useCardSessionState();`
-198. **[P2] 긴 함수 책임 분리** `apps/mobile/src/features/card-service/markdown-text-field.tsx:170` — 원칙 `S`. 122라인 함수다. 검증/변환/부수효과를 작은 함수로 분리한다. 근거: `export function MarkdownTextField({`
+198. **[완료][P2] 긴 함수 책임 분리** `apps/mobile/src/features/card-service/markdown-text-field.tsx:170` — 원칙 `S`. selection/업로드/서식 삽입 상태를 `use-markdown-text-field-controller.ts`로, 툴바/아이콘/스타일/서식 helper를 `markdown-text-field-toolbar.tsx`/`markdown-text-field-styles.ts`/`markdown-text-field-formatting.ts`로 분리해 화면 함수는 텍스트 필드 조립만 담당하게 축소했다. 근거: `const controller = useMarkdownTextFieldController({`
 199. **[P2] 긴 함수 책임 분리** `apps/mobile/src/features/card-service/rooms/card-room-create-sheet.tsx:38` — 원칙 `S`. 207라인 함수다. 검증/변환/부수효과를 작은 함수로 분리한다. 근거: `export function CardRoomCreateSheet({`
 200. **[P2] 긴 함수 책임 분리** `apps/mobile/src/features/card-service/rooms/card-room-lobby-screen.tsx:88` — 원칙 `S`. 118라인 함수다. 검증/변환/부수효과를 작은 함수로 분리한다. 근거: `export function CardRoomLobbyScreen() {`
 201. **[P2] 큰 파일 책임 분리** `apps/mobile/src/features/card-service/rooms/card-room-screen.tsx:1` — 원칙 `S`. 691라인 파일이다. 단일 책임 원칙 기준으로 화면/상태/IO/변환 책임 분리 후보다. 근거: `import type { CardRoomRole } from "@yeon/race-shared";`
