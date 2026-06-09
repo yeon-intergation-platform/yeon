@@ -131,16 +131,39 @@ const noopStorage: YeonBrowserStorage = {
   removeItem: () => undefined,
 };
 
+type YeonBrowserStorageKind = "local" | "session";
+
+interface YeonBrowserStoragePort {
+  getStorage(kind: YeonBrowserStorageKind): YeonBrowserStorage | null;
+}
+
 function warnYeonRuntimeFallback(context: string, error: unknown) {
   console.warn(`[yeon-runtime] ${context}`, error);
 }
 
-function getBrowserStorage(kind: "local" | "session"): YeonBrowserStorage {
-  if (typeof window === "undefined") {
-    return noopStorage;
-  }
+const YEON_BROWSER_STORAGE_PORT: YeonBrowserStoragePort = {
+  getStorage(kind) {
+    if (typeof globalThis.window === "undefined") {
+      return null;
+    }
 
-  return kind === "local" ? window.localStorage : window.sessionStorage;
+    return kind === "local"
+      ? globalThis.window.localStorage
+      : globalThis.window.sessionStorage;
+  },
+};
+
+function getOptionalBrowserStorage(kind: YeonBrowserStorageKind) {
+  try {
+    return YEON_BROWSER_STORAGE_PORT.getStorage(kind);
+  } catch (error) {
+    warnYeonRuntimeFallback(`${kind}Storage 접근 실패`, error);
+    return null;
+  }
+}
+
+function getBrowserStorage(kind: YeonBrowserStorageKind): YeonBrowserStorage {
+  return getOptionalBrowserStorage(kind) ?? noopStorage;
 }
 
 function findMountedStyleElement(id: string) {
@@ -162,12 +185,7 @@ export function getYeonLocalStorage() {
 }
 
 export function getYeonOptionalLocalStorage() {
-  try {
-    return typeof window === "undefined" ? null : window.localStorage;
-  } catch (error) {
-    warnYeonRuntimeFallback("localStorage 접근 실패", error);
-    return null;
-  }
+  return getOptionalBrowserStorage("local");
 }
 
 export function getYeonSessionStorage() {

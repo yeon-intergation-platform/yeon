@@ -1,15 +1,23 @@
 const YEON_HTML_MIME_TYPE = "text/html";
 
+type YeonDomParserConstructor = typeof DOMParser;
+
+interface YeonDomParserPort {
+  getParserConstructor(): YeonDomParserConstructor | undefined;
+}
+
+const YEON_DOM_PARSER_PORT: YeonDomParserPort = {
+  getParserConstructor() {
+    if (typeof globalThis.DOMParser !== "undefined") {
+      return globalThis.DOMParser;
+    }
+
+    return undefined;
+  },
+};
+
 function getYeonDomParser() {
-  if (typeof window !== "undefined" && "DOMParser" in window) {
-    return window.DOMParser;
-  }
-
-  if (typeof DOMParser !== "undefined") {
-    return DOMParser;
-  }
-
-  return undefined;
+  return YEON_DOM_PARSER_PORT.getParserConstructor();
 }
 
 export function parseYeonHtmlDocument(html: string) {
