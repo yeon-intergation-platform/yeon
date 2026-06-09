@@ -355,5 +355,9 @@ export function getCardEditorImageNormalizationErrorMessage(
     return `${fileName}: ${error.message.trim()}`;
   }
 
-  return `${fileName}: 이미지를 처리하지 못했습니다. 다른 이미지로 다시 시도해 주세요.`;
+  if (typeof error === "string" && error.trim().length > 0) {
+    return `${fileName}: 이미지를 처리하지 못했습니다. 원인: ${error.trim()}`;
+  }
+
+  return `${fileName}: 이미지를 처리하지 못했습니다. 원인: 처리할 수 없는 오류 형식(${String(error)})`;
 }

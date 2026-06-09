@@ -115,6 +115,10 @@
 
 - 항목 100~108 완료: race-server 카드방 leave/request catch는 16차 helper 반영 상태를 확인해 완료 처리했고, typing-race-room의 기존 catch 후보는 현재 코드에서 제거된 상태를 확인했다. 웹 커뮤니티 404 catch는 처리 가능한 Spring 404만 null로 변환하고 나머지는 재전파하는 경계로 유지했다. 웹 카드 인증 Provider 누락, 카드방 생성/입장, 게스트 덱 개수 확인 실패는 원인을 포함한 helper/전용 Error/사용자 실패 메시지로 구체화했다.
 
+## 18차 적용 완료
+
+- 항목 109~118 완료: 웹 카드 에디터 이미지 정규화/업로드/붙여넣기, 코드 블록 복사, 덱 내보내기, 게스트 덱 이관 실패 메시지를 helper로 통합해 Error/string/기타 unknown 원인을 보존했다. 클립보드 실패는 복사 대상 길이/카드 수와 브라우저 권한 원인을 사용자 메시지 또는 로그로 드러낸다.
+
 ## 300개 TODO
 
 > 아래 항목은 실제 코드 경로/라인을 기준으로 작성한다. `원칙`은 SOLID 또는 예외 처리 원칙 번호를 표시한다.
@@ -245,16 +249,16 @@
 106.  **[완료][P2] TypeScript catch 처리 책임 명확화** `apps/web/src/features/card-service/card-room-screen.tsx:65` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `.catch((error) => {`
 107.  **[완료][P2] TypeScript catch 처리 책임 명확화** `apps/web/src/features/card-service/card-service-decks-screen.tsx:53` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
 108.  **[완료][P2] 로컬 로그 후 실패 상태 연결** `apps/web/src/features/card-service/card-service-decks-screen.tsx:53` — 원칙 `E3/E9`. console.error 후 반환만 하면 전역 오류 정책과 사용자 실패 상태가 분리될 수 있다. 근거: `} catch (error) {`
-109.  **[P2] 일반 Error 메시지 구체화** `apps/web/src/features/card-service/components/card-editor-image-utils.ts:292` — 원칙 `E4/E6`. 오류 메시지에 실패한 입력/외부 의존/상태 원인을 드러낸다. 근거: `throw new Error();`
-110.  **[P2] 일반 Error 메시지 구체화** `apps/web/src/features/card-service/components/card-editor-image-utils.ts:304` — 원칙 `E4/E6`. 오류 메시지에 실패한 입력/외부 의존/상태 원인을 드러낸다. 근거: `throw new Error(`
-111.  **[P2] 일반 Error 메시지 구체화** `apps/web/src/features/card-service/components/card-markdown-code-block.tsx:60` — 원칙 `E4/E6`. 오류 메시지에 실패한 입력/외부 의존/상태 원인을 드러낸다. 근거: `throw new Error("클립보드 복사를 지원하지 않습니다.");`
-112.  **[P2] 일반 Error 메시지 구체화** `apps/web/src/features/card-service/components/export-deck-panel.tsx:34` — 원칙 `E4/E6`. 오류 메시지에 실패한 입력/외부 의존/상태 원인을 드러낸다. 근거: `throw new Error("클립보드 복사를 지원하지 않습니다.");`
-113.  **[P2] 일반 Error 메시지 구체화** `apps/web/src/features/card-service/components/markdown-content.tsx:573` — 원칙 `E4/E6`. 오류 메시지에 실패한 입력/외부 의존/상태 원인을 드러낸다. 근거: `throw new Error("클립보드 복사를 지원하지 않습니다.");`
-114.  **[P2] TypeScript catch 처리 책임 명확화** `apps/web/src/features/card-service/components/merge-guest-dialog.tsx:46` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
-115.  **[P2] TypeScript catch 처리 책임 명확화** `apps/web/src/features/card-service/components/use-card-editor-image-upload.ts:186` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
-116.  **[P2] TypeScript catch 처리 책임 명확화** `apps/web/src/features/card-service/components/use-card-editor-image-upload.ts:217` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
-117.  **[P2] TypeScript catch 처리 책임 명확화** `apps/web/src/features/card-service/components/use-card-editor-image-upload.ts:273` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
-118.  **[P2] TypeScript catch 처리 책임 명확화** `apps/web/src/features/card-service/components/use-card-editor-image-upload.ts:316` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
+109.  **[완료][P2] 일반 Error 메시지 구체화** `apps/web/src/features/card-service/components/card-editor-image-utils.ts:292` — 원칙 `E4/E6`. 오류 메시지에 실패한 입력/외부 의존/상태 원인을 드러낸다. 근거: `throw new Error();`
+110.  **[완료][P2] 일반 Error 메시지 구체화** `apps/web/src/features/card-service/components/card-editor-image-utils.ts:304` — 원칙 `E4/E6`. 오류 메시지에 실패한 입력/외부 의존/상태 원인을 드러낸다. 근거: `throw new Error(`
+111.  **[완료][P2] 일반 Error 메시지 구체화** `apps/web/src/features/card-service/components/card-markdown-code-block.tsx:60` — 원칙 `E4/E6`. 오류 메시지에 실패한 입력/외부 의존/상태 원인을 드러낸다. 근거: `throw new Error("클립보드 복사를 지원하지 않습니다.");`
+112.  **[완료][P2] 일반 Error 메시지 구체화** `apps/web/src/features/card-service/components/export-deck-panel.tsx:34` — 원칙 `E4/E6`. 오류 메시지에 실패한 입력/외부 의존/상태 원인을 드러낸다. 근거: `throw new Error("클립보드 복사를 지원하지 않습니다.");`
+113.  **[완료][P2] 일반 Error 메시지 구체화** `apps/web/src/features/card-service/components/markdown-content.tsx:573` — 원칙 `E4/E6`. 오류 메시지에 실패한 입력/외부 의존/상태 원인을 드러낸다. 근거: `throw new Error("클립보드 복사를 지원하지 않습니다.");`
+114.  **[완료][P2] TypeScript catch 처리 책임 명확화** `apps/web/src/features/card-service/components/merge-guest-dialog.tsx:46` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
+115.  **[완료][P2] TypeScript catch 처리 책임 명확화** `apps/web/src/features/card-service/components/use-card-editor-image-upload.ts:186` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
+116.  **[완료][P2] TypeScript catch 처리 책임 명확화** `apps/web/src/features/card-service/components/use-card-editor-image-upload.ts:217` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
+117.  **[완료][P2] TypeScript catch 처리 책임 명확화** `apps/web/src/features/card-service/components/use-card-editor-image-upload.ts:273` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
+118.  **[완료][P2] TypeScript catch 처리 책임 명확화** `apps/web/src/features/card-service/components/use-card-editor-image-upload.ts:316` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
 
 ### ISP
 

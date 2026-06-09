@@ -81,6 +81,10 @@ interface MarkdownCodeElementProps {
   className?: string;
 }
 
+function buildMarkdownCodeCopyErrorMessage(codeLength: number) {
+  return `마크다운 코드 클립보드 복사에 실패했습니다. 복사 대상 길이: ${codeLength}자. 브라우저 클립보드 권한 또는 보안 컨텍스트를 확인해 주세요.`;
+}
+
 const baseTextClass = "whitespace-pre-wrap break-words";
 export const CARD_MARKDOWN_TABLE_MIN_CELL_WIDTH = 56;
 export const CARD_MARKDOWN_TABLE_MIN_CELL_HEIGHT = 56;
@@ -570,14 +574,15 @@ function decorateHtmlCodeBlocks(
       copyYeonClipboardText(codeText.replace(/\n$/, ""))
         .then((copiedSuccessfully) => {
           if (!copiedSuccessfully) {
-            throw new Error("클립보드 복사를 지원하지 않습니다.");
+            throw new Error(buildMarkdownCodeCopyErrorMessage(codeText.length));
           }
           setYeonNodeTextContent(copyButton, "복사됨");
           scheduleYeonTimeout(() => {
             setYeonNodeTextContent(copyButton, "복사");
           }, 1200);
         })
-        .catch(() => {
+        .catch((error: unknown) => {
+          console.warn("[MarkdownContent] 코드 복사 실패", error);
           setYeonNodeTextContent(copyButton, "실패");
           scheduleYeonTimeout(() => {
             setYeonNodeTextContent(copyButton, "복사");

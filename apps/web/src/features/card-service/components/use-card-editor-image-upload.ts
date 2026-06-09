@@ -35,6 +35,33 @@ interface ImageSourceFileReplacement {
   source: string;
 }
 
+function getCardEditorImageUploadErrorMessage(
+  fileName: string,
+  error: unknown
+) {
+  if (error instanceof Error && error.message.trim()) {
+    return `${fileName}: ${error.message.trim()}`;
+  }
+
+  if (typeof error === "string" && error.trim().length > 0) {
+    return `${fileName}: 이미지 업로드에 실패했습니다. 원인: ${error.trim()}`;
+  }
+
+  return `${fileName}: 이미지 업로드에 실패했습니다. 원인: 처리할 수 없는 오류 형식(${String(error)})`;
+}
+
+function getCardEditorPasteImageSourceErrorMessage(error: unknown) {
+  if (error instanceof Error && error.message.trim()) {
+    return error.message.trim();
+  }
+
+  if (typeof error === "string" && error.trim().length > 0) {
+    return `이미지 URL을 가져올 수 없습니다. 원인: ${error.trim()}`;
+  }
+
+  return `이미지 URL을 가져올 수 없습니다. 원인: 처리할 수 없는 오류 형식(${String(error)})`;
+}
+
 function getCurrentImageInsertRange(editor: Editor): ImageInsertRange {
   return {
     from: editor.state.selection.from,
@@ -220,11 +247,7 @@ export function useCardEditorImageUpload() {
             const uploaded = await uploadNormalizedFile(file);
             uploadedImageUrls.push(uploaded.imageUrl);
           } catch (error) {
-            errors.push(
-              error instanceof Error
-                ? `${file.name}: ${error.message}`
-                : `${file.name}: 이미지 업로드에 실패했습니다.`
-            );
+            errors.push(getCardEditorImageUploadErrorMessage(file.name, error));
           }
         }
 
@@ -320,9 +343,7 @@ export function useCardEditorImageUpload() {
             });
           } catch (error) {
             errors.push(
-              error instanceof Error
-                ? `${replacement.file.name}: ${error.message}`
-                : `${replacement.file.name}: 이미지 업로드에 실패했습니다.`
+              getCardEditorImageUploadErrorMessage(replacement.file.name, error)
             );
           }
         }
@@ -388,14 +409,7 @@ export function useCardEditorImageUpload() {
         );
         return true;
       } catch (error) {
-        if (error instanceof Error && error.message.trim()) {
-          setErrorMessage(error.message.trim());
-          return true;
-        }
-
-        setErrorMessage(
-          "이미지 URL을 가져올 수 없습니다. 이미지를 직접 복사하거나 파일로 업로드해주세요."
-        );
+        setErrorMessage(getCardEditorPasteImageSourceErrorMessage(error));
         return true;
       } finally {
         setUploading(false);
