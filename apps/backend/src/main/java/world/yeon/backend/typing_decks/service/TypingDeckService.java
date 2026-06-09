@@ -22,7 +22,6 @@ import world.yeon.backend.typing_decks.dto.CreateTypingDeckPassagesResponse;
 import world.yeon.backend.typing_decks.dto.CreateTypingDeckRequest;
 import world.yeon.backend.typing_decks.dto.CreateTypingRaceSeedRequest;
 import world.yeon.backend.typing_decks.dto.TypingDeckDetailResponse;
-import world.yeon.backend.typing_decks.dto.TypingDeckDto;
 import world.yeon.backend.typing_decks.dto.TypingDeckListResponse;
 import world.yeon.backend.typing_decks.dto.TypingDeckPassageDto;
 import world.yeon.backend.typing_decks.dto.TypingDeckPassageResponse;
@@ -36,24 +35,29 @@ import world.yeon.backend.typing_decks.repository.TypingDeckRepository;
 @Service
 public class TypingDeckService {
 	private static final String SOURCE_USER = "user";
-	private static final String SOURCE_DEFAULT = "default";
 	private static final String LOBBY_PRIVATE_TITLE = "비공개 덱";
 	private static final SecureRandom ID_RANDOM = new SecureRandom();
 	private static final Base64.Encoder BASE64_URL = Base64.getUrlEncoder().withoutPadding();
 
 	private final TypingDeckRepository repository;
 	private final TypingRaceSeedSigner raceSeedSigner;
+	private final TypingDeckResponseMapper responseMapper;
 
-	public TypingDeckService(TypingDeckRepository repository, TypingRaceSeedSigner raceSeedSigner) {
+	public TypingDeckService(
+		TypingDeckRepository repository,
+		TypingRaceSeedSigner raceSeedSigner,
+		TypingDeckResponseMapper responseMapper
+	) {
 		this.repository = repository;
 		this.raceSeedSigner = raceSeedSigner;
+		this.responseMapper = responseMapper;
 	}
 
 	// 단위 테스트(TypingDeckServiceTests)가 협력자 없이 서비스를 직접 구성할 수 있도록 유지한다.
 	// 시드 시그너는 StandardEnvironment(OS env + 프로퍼티)로 시크릿을 해석한다. 테스트 태스크는
 	// build.gradle에서 AUTH_SECRET을 주입하므로 fail-closed 해석이 정상 통과한다.
 	static TypingDeckService createForTest(TypingDeckRepository repository) {
-		return new TypingDeckService(repository, new TypingRaceSeedSigner(new StandardEnvironment()));
+		return new TypingDeckService(repository, new TypingRaceSeedSigner(new StandardEnvironment()), new TypingDeckResponseMapper());
 	}
 
 	public TypingDeckListResponse listTypingDecks(UUID currentUserId, String scope, String languageTag, boolean adminMode) {
@@ -64,7 +68,7 @@ public class TypingDeckService {
 		String normalizedLanguageTag = normalizeOptionalLanguageTag(languageTag);
 		return new TypingDeckListResponse(repository.listDecks(currentUserId, normalizedScope, normalizedLanguageTag, adminMode)
 			.stream()
-			.map(row -> toDeckDto(row, currentUserId, adminMode))
+			.map(row -> responseMapper.toDeckDto(row, currentUserId, adminMode))
 			.toList());
 	}
 
@@ -82,13 +86,13 @@ public class TypingDeckService {
 		if (row == null) {
 			throw new TypingDeckServiceException(500, "DECK_CREATE_FAILED", "타자 덱을 생성하지 못했습니다.");
 		}
-		return new TypingDeckResponse(toDeckDto(row, 0, currentUserId, adminMode));
+		return new TypingDeckResponse(responseMapper.toDeckDto(row, 0, currentUserId, adminMode));
 	}
 
 	public TypingDeckDetailResponse getTypingDeckDetail(UUID currentUserId, String deckPublicId, boolean adminMode) {
 		var deck = findReadableDeck(currentUserId, deckPublicId, adminMode);
-		var passages = repository.listPassagesByDeckId(deck.internalId()).stream().map(this::toPassageDto).toList();
-		return new TypingDeckDetailResponse(toDeckDto(deck, passages.size(), currentUserId, adminMode), passages);
+		var passages = repository.listPassagesByDeckId(deck.internalId()).stream().map(responseMapper::toPassageDto).toList();
+		return new TypingDeckDetailResponse(responseMapper.toDeckDto(deck, passages.size(), currentUserId, adminMode), passages);
 	}
 
 	@Transactional
@@ -103,7 +107,7 @@ public class TypingDeckService {
 		if (updated == null) {
 			throw new TypingDeckServiceException(500, "DECK_UPDATE_FAILED", "타자 덱을 수정하지 못했습니다.");
 		}
-		return new TypingDeckResponse(toDeckDto(updated, repository.countPassages(updated.internalId()), currentUserId, adminMode));
+		return new TypingDeckResponse(responseMapper.toDeckDto(updated, repository.countPassages(updated.internalId()), currentUserId, adminMode));
 	}
 
 	@Transactional
@@ -133,7 +137,7 @@ public class TypingDeckService {
 			throw new TypingDeckServiceException(500, "PASSAGE_CREATE_FAILED", "연습 문장을 추가하지 못했습니다.");
 		}
 		repository.touchDeck(deck.internalId(), now);
-		return new TypingDeckPassageResponse(toPassageDto(row));
+		return new TypingDeckPassageResponse(responseMapper.toPassageDto(row));
 	}
 
 	@Transactional
@@ -158,7 +162,7 @@ public class TypingDeckService {
 				body.sortOrder() != null ? body.sortOrder() : count + index,
 				now
 			);
-			rows.add(toPassageDto(row));
+			rows.add(responseMapper.toPassageDto(row));
 		}
 		repository.touchDeck(deck.internalId(), now);
 		return new CreateTypingDeckPassagesResponse(rows);
@@ -178,7 +182,7 @@ public class TypingDeckService {
 			throw new TypingDeckServiceException(500, "PASSAGE_UPDATE_FAILED", "연습 문장을 수정하지 못했습니다.");
 		}
 		repository.touchDeck(owned.deck().internalId(), now);
-		return new TypingDeckPassageResponse(toPassageDto(updated));
+		return new TypingDeckPassageResponse(responseMapper.toPassageDto(updated));
 	}
 
 	@Transactional
@@ -320,45 +324,6 @@ public class TypingDeckService {
 			throw new TypingDeckServiceException(404, "PASSAGE_NOT_FOUND", "연습 문장을 찾지 못했습니다.");
 		}
 		return new OwnedPassage(deck, passage);
-	}
-
-	private TypingDeckDto toDeckDto(TypingDeckRepository.TypingDeckListRow row, UUID currentUserId, boolean adminMode) {
-		return toDeckDto(new TypingDeckRepository.TypingDeckRow(row.internalId(), row.publicId(), row.ownerUserId(), row.title(), row.description(), row.languageTag(), row.visibility(), row.source(), row.createdAt(), row.updatedAt()), row.passageCount(), currentUserId, adminMode);
-	}
-
-	private TypingDeckDto toDeckDto(TypingDeckRepository.TypingDeckRow row, int passageCount, UUID currentUserId, boolean adminMode) {
-		boolean isOwner = currentUserId != null && currentUserId.toString().equals(row.ownerUserId());
-		boolean canManage = adminMode || isOwner;
-		return new TypingDeckDto(
-			row.publicId(),
-			row.title(),
-			row.description(),
-			row.languageTag(),
-			row.visibility(),
-			row.source(),
-			passageCount,
-			isOwner,
-			canManage && SOURCE_USER.equals(row.source()),
-			toIso(row.createdAt()),
-			toIso(row.updatedAt())
-		);
-	}
-
-	private TypingDeckPassageDto toPassageDto(TypingDeckRepository.TypingDeckPassageRow row) {
-		return new TypingDeckPassageDto(
-			row.publicId(),
-			row.title(),
-			row.prompt(),
-			row.textType(),
-			row.difficulty(),
-			row.sortOrder(),
-			toIso(row.createdAt()),
-			toIso(row.updatedAt())
-		);
-	}
-
-	private String toIso(OffsetDateTime value) {
-		return value == null ? null : value.toInstant().toString();
 	}
 
 	private TypingDeckPassageDto pickPassage(List<TypingDeckPassageDto> passages, String requestedPassageId) {
