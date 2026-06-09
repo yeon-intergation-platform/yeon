@@ -66,6 +66,11 @@
 - 항목 48 완료: `card-room.ts`에서 Spring backend base URL, internal token/participant header, JSON fetch/오류 응답 처리 책임을 `card-room-backend-client.ts`로 분리했다. Room 클래스는 realtime room state/protocol/voice session 조정에 집중한다.
 - 항목 60 완료: `card-room.ts`의 직접 `fetch` 의존을 제거하고 카드방 backend client 함수(`loadCardRoomDetail`, `requestCardRoomBackend`) 뒤로 숨겼다.
 
+## 6차 적용 완료
+
+- 항목 49 완료: `typing-race-room.ts`에서 Spring backend base URL, internal token header, experience award fetch 책임을 `typing-race-room-backend-client.ts`로 분리했다. Room 파일은 seed/protocol/state/voice session 조정에 더 집중한다.
+- 항목 61 완료: `typing-race-room.ts`의 직접 `fetch` 의존을 제거하고 typing race backend client 함수(`awardTypingRaceFinished`) 뒤로 숨겼다.
+
 ## 300개 TODO
 
 > 아래 항목은 실제 코드 경로/라인을 기준으로 작성한다. `원칙`은 SOLID 또는 예외 처리 원칙 번호를 표시한다.
@@ -130,7 +135,7 @@
 ### SRP
 
 48. **[완료][P1] 큰 파일 책임 분리** `apps/race-server/src/rooms/card-room.ts:1` — 원칙 `S`. 812라인 파일이다. 단일 책임 원칙 기준으로 화면/상태/IO/변환 책임 분리 후보다. 근거: `import { type Client, Room } from "@colyseus/core";`
-49. **[P1] 큰 파일 책임 분리** `apps/race-server/src/rooms/typing-race-room.ts:1` — 원칙 `S`. 2069라인 파일이다. 단일 책임 원칙 기준으로 화면/상태/IO/변환 책임 분리 후보다. 근거: `import {`
+49. **[완료][P1] 큰 파일 책임 분리** `apps/race-server/src/rooms/typing-race-room.ts:1` — 원칙 `S`. 2069라인 파일이다. 단일 책임 원칙 기준으로 화면/상태/IO/변환 책임 분리 후보다. 근거: `import {`
 50. **[P1] 큰 파일 책임 분리** `apps/web/src/features/card-service/components/card-rich-markdown-editor.tsx:1` — 원칙 `S`. 1269라인 파일이다. 단일 책임 원칙 기준으로 화면/상태/IO/변환 책임 분리 후보다. 근거: `"use client";`
 51. **[P1] 큰 파일 책임 분리** `apps/web/src/features/card-service/components/markdown-content.tsx:1` — 원칙 `S`. 810라인 파일이다. 단일 책임 원칙 기준으로 화면/상태/IO/변환 책임 분리 후보다. 근거: `"use client";`
 52. **[P1] 큰 파일 책임 분리** `apps/web/src/features/typing-service/typing-race-multiplayer-screen.tsx:1` — 원칙 `S`. 747라인 파일이다. 단일 책임 원칙 기준으로 화면/상태/IO/변환 책임 분리 후보다. 근거: `"use client";`
@@ -145,7 +150,7 @@
 
 59. **[P2] 필드 주입 제거** `apps/backend/src/main/java/world/yeon/backend/typing_decks/service/TypingDeckService.java:48` — 원칙 `D`. 필드 주입 대신 생성자 주입과 인터페이스 의존으로 바꾼다. 근거: `@Autowired`
 60. **[완료][P2] fetch 직접 의존 포트화** `apps/race-server/src/rooms/card-room.ts:168` — 원칙 `D`. 구체 fetch 호출을 repository/client 포트 뒤로 숨긴다. 근거: `const response = await fetch(\`${backendBaseUrl()}${path}\`, {`
-61. **[P2] fetch 직접 의존 포트화** `apps/race-server/src/rooms/typing-race-room.ts:479` — 원칙 `D`. 구체 fetch 호출을 repository/client 포트 뒤로 숨긴다. 근거: `const response = await fetch(`
+61. **[완료][P2] fetch 직접 의존 포트화** `apps/race-server/src/rooms/typing-race-room.ts:479` — 원칙 `D`. 구체 fetch 호출을 repository/client 포트 뒤로 숨긴다. 근거: `const response = await fetch(`
 62. **[P2] 브라우저 저장소 직접 의존 분리** `apps/web/src/features/community/hooks/use-community-chat-panel.ts:59` — 원칙 `D`. 구체 저장소 접근을 KV/storage 포트로 격리한다. 근거: `/** 사용자가 직접 열고/닫을 때 호출. 선택은 localStorage에 보존되어 라우트 이동 후에도 유지된다. */`
 63. **[P2] fetch 직접 의존 포트화** `apps/web/src/features/typing-service/use-typing-room-lobby.ts:63` — 원칙 `D`. 구체 fetch 호출을 repository/client 포트 뒤로 숨긴다. 근거: `void roomsQuery.refetch();`
 64. **[P2] 브라우저 저장소 직접 의존 분리** `packages/ui/src/runtime/YeonBrowserRuntime/index.native.ts:133` — 원칙 `D`. 구체 저장소 접근을 KV/storage 포트로 격리한다. 근거: `return typeof globalThis.localStorage === "undefined"`
