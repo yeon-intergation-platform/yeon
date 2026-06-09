@@ -160,12 +160,7 @@ public class CardRoomService {
     // 프로필(닉네임/캐릭터)도 변경할 수 없게 막는다. 진행 중 닉네임이 바뀌면 시스템 메시지
     // ('님이 입장했습니다')와 결과 화면 표시가 도중에 흔들려 기록 일관성이 깨지기 때문이다.
     // 보수적 안전 기본값이며, 진행 중 프로필 변경을 허용해야 한다면 이 가드를 조정한다.
-    boolean mutatesProfile = request != null && request.profile() != null
-      && (request.profile().nickname() != null || request.profile().characterId() != null);
-    if (!CardRoomStatus.WAITING.matches(room.status()) && request != null
-      && (request.role() != null || request.isReady() != null || mutatesProfile)) {
-      throw new CardRoomServiceException(CardRoomError.ROOM_ALREADY_STARTED);
-    }
+    requireParticipantUpdateAllowed(room, request);
     CardRoomProfileRequest profile = request == null ? null : request.profile();
     CardRoomParticipantRole role = request == null || request.role() == null
       ? null
@@ -186,19 +181,9 @@ public class CardRoomService {
     var room = requireLockedRoom(roomId);
     var participant = requireParticipantInRoom(room, participantId);
     requireHost(participant);
-    if (!CardRoomStatus.WAITING.matches(room.status())) {
-      throw new CardRoomServiceException(CardRoomError.ROOM_NOT_WAITING);
-    }
+    requireStartAllowed(room);
     var participants = repository.listParticipants(room.internalId());
-    // finding 21: 모든 활성 참가자가 유효 역할(외우는/봐주는)을 가져야 한다. 미배정(UNASSIGNED)이 있으면 막는다.
-    if (participants.stream().anyMatch((item) -> !CardRoomParticipantRole.fromNullable(item.role(), CardRoomParticipantRole.UNASSIGNED).isAssigned())) {
-      throw new CardRoomServiceException(CardRoomError.ROLE_UNASSIGNED);
-    }
-    boolean hasMemorizer = participants.stream().anyMatch((item) -> CardRoomParticipantRole.MEMORIZER.matches(item.role()));
-    boolean hasChecker = participants.stream().anyMatch((item) -> CardRoomParticipantRole.CHECKER.matches(item.role()));
-    if (!hasMemorizer || !hasChecker) {
-      throw new CardRoomServiceException(CardRoomError.ROLE_REQUIRED);
-    }
+    requireStartRolesAssigned(participants);
     if (participants.stream().anyMatch((item) -> !item.isReady())) {
       throw new CardRoomServiceException(CardRoomError.READY_REQUIRED);
     }
@@ -261,12 +246,7 @@ public class CardRoomService {
     var room = requireLockedRoom(roomId);
     var participant = requireParticipantInRoom(room, participantId);
     ensureRoomActive(room);
-    if (!CardRoomParticipantRole.CHECKER.matches(participant.role())) {
-      throw new CardRoomServiceException(CardRoomError.CHECKER_ONLY);
-    }
-    if (!CardRoomStatus.IN_PROGRESS.matches(room.status())) {
-      throw new CardRoomServiceException(CardRoomError.ROOM_NOT_IN_PROGRESS);
-    }
+    requireRevealAllowed(room, participant);
     // finding 20: 방 status는 IN_PROGRESS를 유지하고 현재 카드의 공개 플래그만 set한다.
     repository.updateCurrentCardRevealed(room.internalId(), true, OffsetDateTime.now(ZoneOffset.UTC));
     return new CardRoomResponse(detail(roomId), null, null);
@@ -277,9 +257,7 @@ public class CardRoomService {
     var room = requireLockedRoom(roomId);
     requireParticipantInRoom(room, participantId);
     ensureRoomActive(room);
-    if (!CardRoomStatus.IN_PROGRESS.matches(room.status())) {
-      throw new CardRoomServiceException(CardRoomError.ROOM_NOT_IN_PROGRESS);
-    }
+    requireRoomInProgress(room);
     // finding 20: '현재 카드 resolved' 판정을 방 status가 아니라 card_room_results의
     // (room_id, current_card_id) 결과 존재 여부로 직접 한다. 다른 카드의 결과로는 통과하지 못한다.
     var cards = repository.listCards(room.internalId());
@@ -334,9 +312,7 @@ public class CardRoomService {
     var room = requireLockedRoom(roomId);
     var participant = requireParticipantInRoom(room, participantId);
     ensureRoomActive(room);
-    if (!CardRoomStatus.IN_PROGRESS.matches(room.status())) {
-      throw new CardRoomServiceException(CardRoomError.ROOM_NOT_IN_PROGRESS);
-    }
+    requireRoomInProgress(room);
     // 카드 조회를 방 스코프로 일원화해 다른 방 카드 publicId 탐색을 차단한다.
     var card = repository.findCardInRoom(room.internalId(), request == null ? null : request.cardId());
     if (card == null) {
@@ -351,12 +327,7 @@ public class CardRoomService {
       throw new CardRoomServiceException(CardRoomError.CARD_NOT_RESOLVED);
     }
     CardRoomResult result = normalizeResult(request.result());
-    if (result.requiresChecker() && !CardRoomParticipantRole.CHECKER.matches(participant.role())) {
-      throw new CardRoomServiceException(CardRoomError.CHECKER_ONLY);
-    }
-    if (result.requiresMemorizer() && !CardRoomParticipantRole.MEMORIZER.matches(participant.role())) {
-      throw new CardRoomServiceException(CardRoomError.MEMORIZER_ONLY);
-    }
+    requireResultSubmitterRole(result, participant);
     // finding 20: 결과는 card_room_results에만 기록한다. 방 status는 IN_PROGRESS를 유지하고
     // 카드 단위 진행 상태는 detail에서 (room_id, current_card_id)로 다시 노출한다.
     var saved = repository.insertResult(publicIdService.newPublicId(CardRoomIdPrefix.RESULT), room.internalId(), card.internalId(), participant.internalId(), result, OffsetDateTime.now(ZoneOffset.UTC));
@@ -471,6 +442,57 @@ public class CardRoomService {
     repository.updateParticipant(heir.internalId(), null, null, missingRole, null);
   }
 
+  private void requireParticipantUpdateAllowed(RoomRow room, UpdateCardRoomParticipantRequest request) {
+    if (request == null || CardRoomStatus.WAITING.matches(room.status())) {
+      return;
+    }
+
+    var requestedChange = ParticipantUpdateChange.from(request);
+    if (requestedChange.changesLockedField()) {
+      throw new CardRoomServiceException(CardRoomError.ROOM_ALREADY_STARTED);
+    }
+  }
+
+  private void requireStartAllowed(RoomRow room) {
+    if (!CardRoomStatus.WAITING.matches(room.status())) {
+      throw new CardRoomServiceException(CardRoomError.ROOM_NOT_WAITING);
+    }
+  }
+
+  // finding 21: 모든 활성 참가자가 유효 역할(외우는/봐주는)을 가져야 한다. 미배정(UNASSIGNED)이 있으면 막는다.
+  private void requireStartRolesAssigned(List<ParticipantRow> participants) {
+    if (participants.stream().anyMatch((item) -> !CardRoomParticipantRole.fromNullable(item.role(), CardRoomParticipantRole.UNASSIGNED).isAssigned())) {
+      throw new CardRoomServiceException(CardRoomError.ROLE_UNASSIGNED);
+    }
+
+    var roleCoverage = CardRoomRoleCoverage.from(participants);
+    if (!roleCoverage.canStart()) {
+      throw new CardRoomServiceException(CardRoomError.ROLE_REQUIRED);
+    }
+  }
+
+  private void requireRevealAllowed(RoomRow room, ParticipantRow participant) {
+    if (!CardRoomParticipantRole.CHECKER.matches(participant.role())) {
+      throw new CardRoomServiceException(CardRoomError.CHECKER_ONLY);
+    }
+    requireRoomInProgress(room);
+  }
+
+  private void requireRoomInProgress(RoomRow room) {
+    if (!CardRoomStatus.IN_PROGRESS.matches(room.status())) {
+      throw new CardRoomServiceException(CardRoomError.ROOM_NOT_IN_PROGRESS);
+    }
+  }
+
+  private void requireResultSubmitterRole(CardRoomResult result, ParticipantRow participant) {
+    if (result.requiresChecker() && !CardRoomParticipantRole.CHECKER.matches(participant.role())) {
+      throw new CardRoomServiceException(CardRoomError.CHECKER_ONLY);
+    }
+    if (result.requiresMemorizer() && !CardRoomParticipantRole.MEMORIZER.matches(participant.role())) {
+      throw new CardRoomServiceException(CardRoomError.MEMORIZER_ONLY);
+    }
+  }
+
   private void ensureRoomOpen(RoomRow room) {
     if (CardRoomStatus.CLOSED.matches(room.status())) {
       throw new CardRoomServiceException(CardRoomError.ROOM_CLOSED);
@@ -522,6 +544,30 @@ public class CardRoomService {
 
   private CardRoomResult normalizeResult(String value) {
     return CardRoomResult.find(value).orElseThrow(() -> new CardRoomServiceException(CardRoomError.INVALID_RESULT));
+  }
+
+  private record ParticipantUpdateChange(boolean role, boolean ready, boolean profile) {
+    static ParticipantUpdateChange from(UpdateCardRoomParticipantRequest request) {
+      var profile = request.profile();
+      boolean mutatesProfile = profile != null && (profile.nickname() != null || profile.characterId() != null);
+      return new ParticipantUpdateChange(request.role() != null, request.isReady() != null, mutatesProfile);
+    }
+
+    boolean changesLockedField() {
+      return role || ready || profile;
+    }
+  }
+
+  private record CardRoomRoleCoverage(boolean memorizer, boolean checker) {
+    static CardRoomRoleCoverage from(List<ParticipantRow> participants) {
+      boolean hasMemorizer = participants.stream().anyMatch((item) -> CardRoomParticipantRole.MEMORIZER.matches(item.role()));
+      boolean hasChecker = participants.stream().anyMatch((item) -> CardRoomParticipantRole.CHECKER.matches(item.role()));
+      return new CardRoomRoleCoverage(hasMemorizer, hasChecker);
+    }
+
+    boolean canStart() {
+      return memorizer && checker;
+    }
   }
 
   private CardRoomSummaryDto toSummary(RoomRow row) {

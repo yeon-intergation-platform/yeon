@@ -558,15 +558,15 @@
 256. **[완료][P3] 상태 분기 매핑/전략화** `apps/backend/src/main/java/world/yeon/backend/card_decks/assets/service/CardDeckAssetStorage.java:68` — 원칙 `O`. 업로드 재시도/실패 판단을 `StorageOperation.UPLOAD` 정책으로 옮겨 S3 상태 코드 분기를 호출 흐름에서 분리했다. 근거: `StorageOperation.UPLOAD`
 257. **[완료][P3] 상태 분기 매핑/전략화** `apps/backend/src/main/java/world/yeon/backend/card_decks/assets/service/CardDeckAssetStorage.java:99` — 원칙 `O`. 다운로드 404 변환을 `NotFoundPolicy.CARD_ASSET`로 분리해 not-found 상태 처리를 정책 값으로 확장 가능하게 했다. 근거: `NotFoundPolicy.CARD_ASSET`
 258. **[완료][P3] 상태 분기 매핑/전략화** `apps/backend/src/main/java/world/yeon/backend/card_decks/assets/service/CardDeckAssetStorage.java:102` — 원칙 `O`. 다운로드 재시도/실패 판단을 `StorageOperation.DOWNLOAD` 정책으로 옮기고 원인 예외를 보존하게 했다. 근거: `StorageOperation.DOWNLOAD`
-259. **[P3] 상태 분기 매핑/전략화** `apps/backend/src/main/java/world/yeon/backend/card_rooms/service/CardRoomService.java:157` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (!CardRoomStatus.WAITING.matches(room.status()) && request != null`
-260. **[P3] 상태 분기 매핑/전략화** `apps/backend/src/main/java/world/yeon/backend/card_rooms/service/CardRoomService.java:181` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (!CardRoomStatus.WAITING.matches(room.status())) {`
-261. **[P3] 상태 분기 매핑/전략화** `apps/backend/src/main/java/world/yeon/backend/card_rooms/service/CardRoomService.java:186` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (participants.stream().anyMatch((item) -> !CardRoomParticipantRole.fromNullable(item.role(), CardRoomParticipantRole.UNASSIGNED).isAssigned())) {`
-262. **[P3] 상태 분기 매핑/전략화** `apps/backend/src/main/java/world/yeon/backend/card_rooms/service/CardRoomService.java:256` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (!CardRoomParticipantRole.CHECKER.matches(participant.role())) {`
-263. **[P3] 상태 분기 매핑/전략화** `apps/backend/src/main/java/world/yeon/backend/card_rooms/service/CardRoomService.java:259` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (!CardRoomStatus.IN_PROGRESS.matches(room.status())) {`
-264. **[P3] 상태 분기 매핑/전략화** `apps/backend/src/main/java/world/yeon/backend/card_rooms/service/CardRoomService.java:272` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (!CardRoomStatus.IN_PROGRESS.matches(room.status())) {`
-265. **[P3] 상태 분기 매핑/전략화** `apps/backend/src/main/java/world/yeon/backend/card_rooms/service/CardRoomService.java:329` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (!CardRoomStatus.IN_PROGRESS.matches(room.status())) {`
-266. **[P3] 상태 분기 매핑/전략화** `apps/backend/src/main/java/world/yeon/backend/card_rooms/service/CardRoomService.java:346` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (result.requiresChecker() && !CardRoomParticipantRole.CHECKER.matches(participant.role())) {`
-267. **[P3] 상태 분기 매핑/전략화** `apps/backend/src/main/java/world/yeon/backend/card_rooms/service/CardRoomService.java:349` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (result.requiresMemorizer() && !CardRoomParticipantRole.MEMORIZER.matches(participant.role())) {`
+259. **[완료][P3] 상태 분기 매핑/전략화** `apps/backend/src/main/java/world/yeon/backend/card_rooms/service/CardRoomService.java:157` — 원칙 `O`. 참가자 갱신 잠금 필드 판정을 `ParticipantUpdateChange`와 `requireParticipantUpdateAllowed`로 분리했다. 근거: `ParticipantUpdateChange.from(request)`
+260. **[완료][P3] 상태 분기 매핑/전략화** `apps/backend/src/main/java/world/yeon/backend/card_rooms/service/CardRoomService.java:181` — 원칙 `O`. 시작 가능 상태 guard를 `requireStartAllowed`로 분리했다. 근거: `requireStartAllowed(room)`
+261. **[완료][P3] 상태 분기 매핑/전략화** `apps/backend/src/main/java/world/yeon/backend/card_rooms/service/CardRoomService.java:186` — 원칙 `O`. 시작 역할 검증과 역할 커버리지 판정을 `requireStartRolesAssigned`/`CardRoomRoleCoverage`로 분리했다. 근거: `CardRoomRoleCoverage.from(participants)`
+262. **[완료][P3] 상태 분기 매핑/전략화** `apps/backend/src/main/java/world/yeon/backend/card_rooms/service/CardRoomService.java:256` — 원칙 `O`. 정답 공개 역할 guard를 `requireRevealAllowed`로 분리했다. 근거: `requireRevealAllowed(room, participant)`
+263. **[완료][P3] 상태 분기 매핑/전략화** `apps/backend/src/main/java/world/yeon/backend/card_rooms/service/CardRoomService.java:259` — 원칙 `O`. 진행 중 상태 guard를 `requireRoomInProgress`로 분리해 reveal/next/submitResult에서 재사용하게 했다. 근거: `requireRoomInProgress(room)`
+264. **[완료][P3] 상태 분기 매핑/전략화** `apps/backend/src/main/java/world/yeon/backend/card_rooms/service/CardRoomService.java:272` — 원칙 `O`. 다음 카드 전이의 진행 중 상태 guard를 `requireRoomInProgress`로 통일했다. 근거: `requireRoomInProgress(room)`
+265. **[완료][P3] 상태 분기 매핑/전략화** `apps/backend/src/main/java/world/yeon/backend/card_rooms/service/CardRoomService.java:329` — 원칙 `O`. 결과 제출 전이의 진행 중 상태 guard를 `requireRoomInProgress`로 통일했다. 근거: `requireRoomInProgress(room)`
+266. **[완료][P3] 상태 분기 매핑/전략화** `apps/backend/src/main/java/world/yeon/backend/card_rooms/service/CardRoomService.java:346` — 원칙 `O`. 결과 제출 checker 역할 guard를 `requireResultSubmitterRole`로 분리했다. 근거: `requireResultSubmitterRole(result, participant)`
+267. **[완료][P3] 상태 분기 매핑/전략화** `apps/backend/src/main/java/world/yeon/backend/card_rooms/service/CardRoomService.java:349` — 원칙 `O`. 결과 제출 memorizer 역할 guard를 `requireResultSubmitterRole`로 분리했다. 근거: `requireResultSubmitterRole(result, participant)`
 268. **[P3] 상태 분기 매핑/전략화** `apps/backend/src/main/java/world/yeon/backend/card_rooms/service/CardRoomService.java:453` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (!CardRoomStatus.WAITING.matches(room.status()) || remaining.size() < 2) {`
 269. **[P3] 상태 분기 매핑/전략화** `apps/backend/src/main/java/world/yeon/backend/card_rooms/service/CardRoomService.java:468` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (CardRoomStatus.CLOSED.matches(room.status())) {`
 270. **[P3] 상태 분기 매핑/전략화** `apps/backend/src/main/java/world/yeon/backend/card_rooms/service/CardRoomService.java:475` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (CardRoomStatus.CLOSED.matches(room.status()) || CardRoomStatus.FINISHED.matches(room.status())) {`
@@ -663,3 +663,10 @@
 - 항목 256 완료: 카드 에셋 업로드의 S3 상태 코드/최대 시도 분기를 `StorageOperation.UPLOAD` 재시도 정책으로 분리했다.
 - 항목 257 완료: 카드 에셋 다운로드의 404 변환을 `NotFoundPolicy.CARD_ASSET`로 분리했다.
 - 항목 258 완료: 카드 에셋 다운로드의 재시도/실패 판단을 `StorageOperation.DOWNLOAD`로 분리하고 변환 예외에 원인 예외를 보존했다.
+
+## 77차 적용 완료
+
+- 항목 259 완료: 참가자 갱신 시 진행 후 잠금 필드 판정을 `ParticipantUpdateChange`와 `requireParticipantUpdateAllowed`로 분리했다.
+- 항목 260-261 완료: 카드방 시작 상태/역할 커버리지 guard를 `requireStartAllowed`, `requireStartRolesAssigned`, `CardRoomRoleCoverage`로 분리했다.
+- 항목 262-265 완료: reveal/next/submitResult의 진행 중 상태 guard를 `requireRoomInProgress`로 통일했다.
+- 항목 266-267 완료: 결과 제출자 역할 guard를 `requireResultSubmitterRole`로 분리했다.
