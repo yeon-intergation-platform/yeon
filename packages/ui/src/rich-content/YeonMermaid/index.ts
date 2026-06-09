@@ -34,7 +34,8 @@ export async function mountYeonMermaidDiagram(
   try {
     host.innerHTML = await renderYeonMermaidSvg(options);
     return true;
-  } catch {
+  } catch (error) {
+    console.warn("[yeon-mermaid] 다이어그램 렌더링 실패", error);
     host.innerHTML = "";
     const fallback = host.ownerDocument.createElement("pre");
     const fallbackCode = host.ownerDocument.createElement("code");

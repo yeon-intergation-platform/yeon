@@ -120,6 +120,10 @@ const noopStorage: YeonBrowserStorage = {
   removeItem: () => undefined,
 };
 
+function warnYeonRuntimeFallback(context: string, error: unknown) {
+  console.warn(`[yeon-runtime/native] ${context}`, error);
+}
+
 export function getYeonLocalStorage() {
   return noopStorage;
 }
@@ -133,7 +137,8 @@ export function getYeonOptionalLocalStorage() {
     return typeof globalThis.localStorage === "undefined"
       ? null
       : globalThis.localStorage;
-  } catch {
+  } catch (error) {
+    warnYeonRuntimeFallback("웹 localStorage 접근 실패", error);
     return null;
   }
 }
