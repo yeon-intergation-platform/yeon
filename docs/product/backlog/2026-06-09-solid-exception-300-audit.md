@@ -519,8 +519,8 @@
 
 ### DIP
 
-223. **[P3] 브라우저 전역 직접 의존 점검** `apps/web/src/features/card-service/components/card-editor-codeblock-utils.ts:144` — 원칙 `D`. 브라우저 전역 직접 접근을 런타임 포트로 감싸 SSR/테스트 안전성을 높인다. 근거: `const codeBlocks = Array.from(document.querySelectorAll("pre code"));`
-224. **[P3] 브라우저 전역 직접 의존 점검** `apps/web/src/features/card-service/components/card-editor-codeblock-utils.ts:153` — 원칙 `D`. 브라우저 전역 직접 접근을 런타임 포트로 감싸 SSR/테스트 안전성을 높인다. 근거: `return document.body.innerHTML;`
+223. **[완료][P3] 브라우저 전역 직접 의존 점검** `apps/web/src/features/card-service/components/card-editor-codeblock-utils.ts:144` — 원칙 `D`. rich content HTML 파싱/코드블록 조회를 `CardEditorRichContentParserPort`로 감싸 `updateCardEditorCodeBlockLanguageInRichContent`가 DOM 구체 구현 대신 포트에 의존하게 했다. 근거: `parserPort: CardEditorRichContentParserPort =`
+224. **[완료][P3] 브라우저 전역 직접 의존 점검** `apps/web/src/features/card-service/components/card-editor-codeblock-utils.ts:153` — 원칙 `D`. rich content body 직렬화를 `CardEditorRichContentDocumentPort.serializeBody()`로 숨겨 호출부가 `document.body.innerHTML`에 직접 의존하지 않게 했다. 근거: `return richContentDocument.serializeBody();`
 225. **[P3] 브라우저 전역 직접 의존 점검** `apps/web/src/features/card-service/components/markdown-content.tsx:495` — 원칙 `D`. 브라우저 전역 직접 접근을 런타임 포트로 감싸 SSR/테스트 안전성을 높인다. 근거: `const optionGroup = document.createElement("optgroup");`
 226. **[P3] 브라우저 전역 직접 의존 점검** `apps/web/src/features/card-service/components/markdown-content.tsx:499` — 원칙 `D`. 브라우저 전역 직접 접근을 런타임 포트로 감싸 SSR/테스트 안전성을 높인다. 근거: `const option = document.createElement("option");`
 227. **[P3] 브라우저 전역 직접 의존 점검** `apps/web/src/features/card-service/components/play-card.tsx:78` — 원칙 `D`. 브라우저 전역 직접 접근을 런타임 포트로 감싸 SSR/테스트 안전성을 높인다. 근거: `const previousCursor = document.body.style.cursor;`
