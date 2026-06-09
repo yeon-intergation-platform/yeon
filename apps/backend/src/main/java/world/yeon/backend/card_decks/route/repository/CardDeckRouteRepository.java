@@ -8,6 +8,7 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.List;
+import java.util.function.Function;
 import java.util.UUID;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,6 +36,21 @@ public class CardDeckRouteRepository {
 		}
 	}
 
+
+	private record NativeTimeValueReader<T>(Class<T> type, Function<T, OffsetDateTime> mapper) {
+		OffsetDateTime readIfSupported(Object value) {
+			return type.isInstance(value) ? mapper.apply(type.cast(value)) : null;
+		}
+	}
+
+	private static final List<NativeTimeValueReader<?>> NATIVE_TIME_VALUE_READERS = List.of(
+		new NativeTimeValueReader<>(OffsetDateTime.class, Function.identity()),
+		new NativeTimeValueReader<>(Timestamp.class, value -> value.toInstant().atOffset(ZoneOffset.UTC)),
+		new NativeTimeValueReader<>(Instant.class, value -> value.atOffset(ZoneOffset.UTC)),
+		new NativeTimeValueReader<>(Date.class, value -> value.toInstant().atOffset(ZoneOffset.UTC)),
+		new NativeTimeValueReader<>(ZonedDateTime.class, ZonedDateTime::toOffsetDateTime)
+	);
+
 	private record NativeQueryValue(Object value, String label) {
 		String asString() {
 			return value == null ? null : value.toString();
@@ -58,20 +74,11 @@ public class CardDeckRouteRepository {
 			if (value == null) {
 				return null;
 			}
-			if (value instanceof OffsetDateTime offsetDateTime) {
-				return offsetDateTime;
-			}
-			if (value instanceof Timestamp timestamp) {
-				return timestamp.toInstant().atOffset(ZoneOffset.UTC);
-			}
-			if (value instanceof Instant instant) {
-				return instant.atOffset(ZoneOffset.UTC);
-			}
-			if (value instanceof Date date) {
-				return date.toInstant().atOffset(ZoneOffset.UTC);
-			}
-			if (value instanceof ZonedDateTime zonedDateTime) {
-				return zonedDateTime.toOffsetDateTime();
+			for (NativeTimeValueReader<?> reader : NATIVE_TIME_VALUE_READERS) {
+				OffsetDateTime converted = reader.readIfSupported(value);
+				if (converted != null) {
+					return converted;
+				}
 			}
 			return OffsetDateTime.parse(requiredText());
 		}
