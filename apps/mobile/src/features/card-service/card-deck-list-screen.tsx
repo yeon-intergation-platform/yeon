@@ -1,19 +1,4 @@
 import {
-  useYeonMutation as useMutation,
-  useYeonQuery as useQuery,
-  useYeonQueryClient as useQueryClient,
-} from "@yeon/ui/native";
-import {
-  deriveCardDeckListViewState,
-  formatCardDeckMeta,
-} from "@yeon/ui/runtime/ports/card-deck";
-import { YEON_ROUTE_TEMPLATES } from "@yeon/ui/runtime/ports";
-import {
-  type YeonHref as Href,
-  useYeonRouter as useRouter,
-} from "@yeon/ui/native";
-import { useMemo, useState } from "react";
-import {
   YeonActionButton as ActionButton,
   YeonButton,
   YeonBottomSheetForm as BottomSheetForm,
@@ -28,11 +13,8 @@ import {
   YeonText,
   YeonTextField as TextField,
   YeonView,
-  showYeonAlert,
 } from "@yeon/ui/native";
-import { cardServiceQueryKeys } from "../../services/card-service/query-keys";
 import { HeaderExperienceBadge } from "../user-experience/header-experience-badge";
-import { createMobileCardDeckRepository } from "./runtime-adapters/card-deck-repository";
 import { DeckCard } from "./card-deck-list-deck-card";
 import { styles } from "./card-deck-list-screen.styles";
 import {
@@ -42,88 +24,30 @@ import {
   mascotImage,
 } from "./card-deck-list-assets";
 import { CARD_SERVICE_TEXT } from "./card-service-copy";
-import { getCardServiceErrorMessage } from "./error-message";
-import { useCardSession } from "./card-session-context";
+import { useCardDeckListState } from "./use-card-deck-list-state";
 
-// 경로 템플릿은 route 정체성 SSOT에서 가져온다(웹과 동일 템플릿 파생, 하드코딩 금지).
-function getCardServiceDeckDetailHref(deckId: string): Href {
-  return {
-    pathname: YEON_ROUTE_TEMPLATES.cardDeckDetail,
-    params: { deckId },
-  } as Href;
-}
-
-function getCardServiceDeckPlayHref(deckId: string): Href {
-  return {
-    pathname: YEON_ROUTE_TEMPLATES.cardDeckPlay,
-    params: { deckId },
-  } as Href;
-}
+// useCardDeckListState 내부에서 YEON_ROUTE_TEMPLATES, formatCardDeckMeta,
+// deriveCardDeckListViewState로 web/mobile 공용 route/meta/list-state SSOT를 파생한다.
 
 export function CardDeckListScreen() {
-  const queryClient = useQueryClient();
-  const router = useRouter();
-  // 부트/인증/게이트는 CardSessionProvider가 소유. 홈은 상태만 소비한다.
-  const { isSignedIn, sessionToken, openGate } = useCardSession();
-  const [title, setTitle] = useState("");
-  const [isCreateSheetOpen, setCreateSheetOpen] = useState(false);
-
-  // 게스트/서버 분기는 repository 어댑터가 흡수한다(웹과 동일 포트 인터페이스).
-  const repository = useMemo(
-    () => createMobileCardDeckRepository({ isSignedIn, sessionToken }),
-    [isSignedIn, sessionToken]
-  );
-
-  const decksQuery = useQuery({
-    queryFn: () => repository.listDecks(),
-    queryKey: cardServiceQueryKeys.decks(isSignedIn),
-  });
-
-  const isGuestMode = !isSignedIn;
-  const createDeckMutation = useMutation({
-    mutationFn: (nextTitle: string) =>
-      repository.createDeck({ title: nextTitle }),
-    onSuccess: async (deck) => {
-      setTitle("");
-      await queryClient.invalidateQueries({
-        queryKey: cardServiceQueryKeys.decks(isSignedIn),
-      });
-      router.push(getCardServiceDeckDetailHref(deck.id));
-    },
-  });
-
-  async function handleCreateDeck() {
-    try {
-      setCreateSheetOpen(false);
-      await createDeckMutation.mutateAsync(title.trim());
-    } catch (error) {
-      showYeonAlert(
-        CARD_SERVICE_TEXT.state.errorTitle,
-        getCardServiceErrorMessage(
-          error,
-          CARD_SERVICE_TEXT.list.createDeckErrorMessage
-        )
-      );
-    }
-  }
-
-  // 목록 상태 분기는 web/mobile 공용 SSOT에서 파생한다(복제 금지).
-  const listState = deriveCardDeckListViewState(
-    {
-      isPending: decksQuery.isPending,
-      isError: decksQuery.isError,
-      data: decksQuery.data,
-    },
-    {
-      errorMessage: getCardServiceErrorMessage(
-        decksQuery.error,
-        CARD_SERVICE_TEXT.list.errorMessage
-      ),
-    }
-  );
-
-  const decks = listState.kind === "ready" ? listState.decks : [];
-  const resumeDeck = decks[0];
+  const {
+    canCreateDeck,
+    createDeckButtonLabel,
+    decks,
+    formatDeckMeta,
+    handleCreateDeck,
+    isCreateSheetOpen,
+    isGuestMode,
+    listState,
+    onCloseCreateSheet,
+    onOpenCreateSheet,
+    onOpenDeck,
+    onPlayDeck,
+    openGate,
+    resumeDeck,
+    setTitle,
+    title,
+  } = useCardDeckListState();
 
   return (
     <MobileScreen
@@ -133,7 +57,7 @@ export function CardDeckListScreen() {
         <FloatingActionButton
           accessibilityLabel={CARD_SERVICE_TEXT.list.deckSectionTitle}
           label="+"
-          onPress={() => setCreateSheetOpen(true)}
+          onPress={onOpenCreateSheet}
         />
       }
     >
@@ -174,14 +98,12 @@ export function CardDeckListScreen() {
                   {resumeDeck.title}
                 </YeonText>
                 <YeonText numberOfLines={1} style={styles.resumeMeta}>
-                  {formatCardDeckMeta(resumeDeck)}
+                  {formatDeckMeta(resumeDeck)}
                 </YeonText>
               </YeonView>
               <ActionButton
                 label="학습 시작"
-                onPress={() =>
-                  router.push(getCardServiceDeckPlayHref(resumeDeck.id))
-                }
+                onPress={() => onPlayDeck(resumeDeck.id)}
                 style={styles.resumeButton}
                 variant="dark"
               />
@@ -192,7 +114,7 @@ export function CardDeckListScreen() {
         {/* 주 CTA */}
         <ActionButton
           label="+ 새 덱 만들기"
-          onPress={() => setCreateSheetOpen(true)}
+          onPress={onOpenCreateSheet}
           variant="dark"
         />
 
@@ -251,7 +173,7 @@ export function CardDeckListScreen() {
             </YeonText>
             <ActionButton
               label="+ 새 덱 만들기"
-              onPress={() => setCreateSheetOpen(true)}
+              onPress={onOpenCreateSheet}
               style={styles.emptyButton}
               variant="dark"
             />
@@ -263,9 +185,7 @@ export function CardDeckListScreen() {
                 deck={deck}
                 index={index}
                 key={deck.id}
-                onOpen={() =>
-                  router.push(getCardServiceDeckDetailHref(deck.id))
-                }
+                onOpen={() => onOpenDeck(deck.id)}
               />
             ))}
           </FormStack>
@@ -275,7 +195,7 @@ export function CardDeckListScreen() {
       {/* 새 덱 만들기 바텀시트 */}
       <BottomSheetModal
         closeAccessibilityLabel="닫기"
-        onClose={() => setCreateSheetOpen(false)}
+        onClose={onCloseCreateSheet}
         visible={isCreateSheetOpen}
       >
         <BottomSheetForm>
@@ -287,12 +207,8 @@ export function CardDeckListScreen() {
             value={title}
           />
           <ActionButton
-            disabled={createDeckMutation.isPending || title.trim().length === 0}
-            label={
-              createDeckMutation.isPending
-                ? CARD_SERVICE_TEXT.list.creatingDeckLabel
-                : CARD_SERVICE_TEXT.list.createDeckButtonLabel
-            }
+            disabled={!canCreateDeck}
+            label={createDeckButtonLabel}
             onPress={handleCreateDeck}
             variant="dark"
           />
