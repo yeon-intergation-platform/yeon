@@ -578,7 +578,7 @@
 276. **[완료][P3] 상태 분기 매핑/전략화** `apps/backend/src/main/java/world/yeon/backend/root_auth/social/SocialIdentityProviderClient.java:32` — 원칙 `O`. provider별 profile fetch 분기를 `SocialProviderRegistry`로 분리해 provider 추가 시 registry entry 확장으로 처리하게 했다. 근거: `SocialProviderRegistry.from(...).fetch(provider)`
 277. **[완료][P3] 상태 분기 매핑/전략화** `apps/backend/src/main/java/world/yeon/backend/root_auth/social/SocialIdentityProviderClient.java:127` — 원칙 `O`. provider HTTP 응답 성공/실패 판정을 `SocialProviderHttpStatus.throwIfFailed`로 분리했다. 근거: `SocialProviderHttpStatus.from(response.statusCode()).throwIfFailed(...)`
 278. **[완료][P3] 상태 분기 매핑/전략화** `apps/backend/src/main/java/world/yeon/backend/typing_character_frames/service/TypingCharacterFrameService.java:55` — 원칙 `O`. 캐릭터 프레임 관리자 권한 판정을 `TypingCharacterFrameAdminPolicy`로 분리했다. 근거: `TypingCharacterFrameAdminPolicy.from(adminSeedEmails).allows(user)`
-279. **[P3] 상태 분기 매핑/전략화** `apps/backend/src/main/java/world/yeon/backend/typing_decks/service/TypingDeckService.java:312` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (!SOURCE_USER.equals(row.source())) {`
+279. **[완료][P3] 상태 분기 매핑/전략화** `apps/backend/src/main/java/world/yeon/backend/typing_decks/service/TypingDeckService.java:312` — 원칙 `O`. 타자 덱 수정 가능 source 판정을 `TypingDeckEditSourcePolicy`로 분리했다. 근거: `TypingDeckEditSourcePolicy.from(row).requireEditable()`
 280. **[P3] 상태 분기 매핑/전략화** `apps/mobile/src/features/card-service/card-deck-detail-screen.tsx:403` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (sheetState.kind !== "edit") {`
 281. **[P3] 상태 분기 매핑/전략화** `apps/mobile/src/features/card-service/card-deck-play-screen.tsx:76` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (mode === CARD_SERVICE_MODE.server && sessionToken) {`
 282. **[P3] 상태 분기 매핑/전략화** `apps/mobile/src/features/card-service/card-onboarding-gate.tsx:91` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (result.status === "success") {`
@@ -693,3 +693,7 @@
 ## 81차 적용 완료
 
 - 항목 278 완료: 타자 캐릭터 프레임 관리자 권한 판정을 `TypingCharacterFrameAdminPolicy`로 분리했다.
+
+## 82차 적용 완료
+
+- 항목 279 완료: 타자 덱 수정 가능 source 판정을 `TypingDeckEditSourcePolicy`로 분리했다.
