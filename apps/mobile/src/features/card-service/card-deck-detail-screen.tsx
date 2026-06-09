@@ -1,7 +1,6 @@
 import type { CardDeckItemDto } from "@yeon/api-contract/card-decks";
 import {
   useYeonMutation as useMutation,
-  useYeonQuery as useQuery,
   useYeonQueryClient as useQueryClient,
 } from "@yeon/ui/native";
 import {
@@ -9,7 +8,6 @@ import {
   useYeonRouter as useRouter,
 } from "@yeon/ui/native";
 import { YEON_ROUTE_TEMPLATES } from "@yeon/ui/runtime/ports";
-import { deriveCardDeckDetailViewState } from "@yeon/ui/runtime/ports/card-deck";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { showYeonAlert } from "@yeon/ui/native";
 import {
@@ -33,6 +31,7 @@ import { createMobileCardItemRepository } from "./runtime-adapters/card-item-rep
 import { CARD_SERVICE_TEXT } from "./card-service-copy";
 import { getCardServiceErrorMessage } from "./error-message";
 import { DeckCardRow } from "./card-deck-detail-card-row";
+import { useCardDeckDetailQuery } from "./use-card-deck-detail-query";
 import { MarkdownTextField } from "./markdown-text-field";
 import {
   CARD_SERVICE_MODE,
@@ -160,24 +159,14 @@ export function CardDeckDetailScreen({ deckId }: CardDeckDetailScreenProps) {
     [mode, sessionToken]
   );
 
-  const detailQuery = useQuery({
-    // deckId 없는 케이스는 enabled:false로 쿼리 자체를 비활성화한다(raw 배열 대신 SSOT 사용).
-    enabled: !isBooting && Boolean(deckId),
-    queryFn: async () => {
-      return itemRepository.getDeckDetail(
-        requireDeckId(deckId, CARD_DECK_DETAIL_OPERATION.detail)
-      );
-    },
-    queryKey: deckId
-      ? cardServiceQueryKeys.deckDetail(
-          mode === CARD_SERVICE_MODE.server,
-          deckId
-        )
-      : cardServiceQueryKeys.deckDetail(
-          mode === CARD_SERVICE_MODE.server,
-          "__missing__"
-        ),
-  });
+  // useCardDeckDetailQuery 내부에서 deriveCardDeckDetailViewState로 web/mobile 공용 상태를 파생한다.
+  const { cardCount, detail, detailState, isReady, listItems } =
+    useCardDeckDetailQuery({
+      deckId,
+      isBooting,
+      isServerMode: mode === CARD_SERVICE_MODE.server,
+      itemRepository,
+    });
 
   const createMutation = useMutation({
     mutationFn: async (params: ParsedCardInput) => {
@@ -468,22 +457,6 @@ export function CardDeckDetailScreen({ deckId }: CardDeckDetailScreenProps) {
     );
   }
 
-  const detail = detailQuery.data;
-  // 상태 분기는 web/mobile 공용 SSOT에서 파생한다(복제 금지).
-  const detailState = deriveCardDeckDetailViewState(
-    {
-      isPending: detailQuery.isPending,
-      isError: detailQuery.isError,
-      data: detailQuery.data,
-    },
-    {
-      errorMessage: getCardServiceErrorMessage(
-        detailQuery.error,
-        CARD_SERVICE_TEXT.detail.errorMessage
-      ),
-    }
-  );
-  const cardCount = detail?.items.length ?? detail?.deck.itemCount ?? 0;
   const canSubmitManual =
     frontText.trim().length > 0 &&
     backText.trim().length > 0 &&
@@ -495,9 +468,6 @@ export function CardDeckDetailScreen({ deckId }: CardDeckDetailScreenProps) {
     !bulkReplaceMutation.isPending;
 
   const rowBusy = updateMutation.isPending || deleteMutation.isPending;
-  const isReady = detailState.kind === "ready" && !detailState.isEmpty;
-  const listItems = isReady && detail ? detail.items : [];
-
   const listHeader = (
     <FormStack gap="roomy">
       <MobileHeaderBar
