@@ -1,50 +1,15 @@
 "use client";
-import { useYeonWindowEvent } from "@yeon/ui/hooks/YeonBrowserHooks";
-import {
-  readYeonLocalStorageItem,
-  removeYeonLocalStorageItem,
-  writeYeonLocalStorageItem,
-} from "@yeon/ui/runtime/YeonBrowserRuntime";
-import {
-  YeonForm,
-  YeonView,
-  type YeonFormEvent,
-  type YeonFormElement,
-} from "@yeon/ui";
-import { useDeferredValue, useEffect, useMemo, useState } from "react";
-import { analyticsEvents, trackEvent } from "@/lib/analytics";
-import { useAddCard } from "../hooks";
+import { YeonForm, YeonView } from "@yeon/ui";
 import { CardAddPreviewFace } from "./card-add-live-preview";
 import { CardRichMarkdownEditor } from "./card-rich-markdown-editor";
-import { updateCardEditorCodeBlockLanguageInRichContent } from "./card-editor-codeblock-utils";
 import {
-  isEmptyRichContent,
-  isRenderableRichContent,
-  normalizeRichContent,
-} from "./card-content-utils";
+  ADD_CARD_FORM_INITIAL_ACTION_STATE,
+  useAddCardFormState,
+  type AddCardFormActionState,
+} from "./use-add-card-form-state";
 
-const CARD_EDITOR_DRAFT_STORAGE_KEY = "yeon-card-service-editor-draft";
-
-interface CardEditorValue {
-  frontText: string;
-  backText: string;
-}
-
-export interface AddCardFormActionState {
-  canSubmit: boolean;
-  isPending: boolean;
-  actionLabel: string;
-  pendingActionLabel: string;
-  errorMessage: string | null;
-}
-
-export const ADD_CARD_FORM_INITIAL_ACTION_STATE: AddCardFormActionState = {
-  canSubmit: false,
-  isPending: false,
-  actionLabel: "카드 저장",
-  pendingActionLabel: "저장 중...",
-  errorMessage: null,
-};
+export { ADD_CARD_FORM_INITIAL_ACTION_STATE };
+export type { AddCardFormActionState };
 
 interface AddCardFormProps {
   deckId: string;
@@ -56,24 +21,6 @@ interface AddCardFormProps {
   onActionStateChange?: (state: AddCardFormActionState) => void;
 }
 
-function normalizeValue(value?: Partial<CardEditorValue>): CardEditorValue {
-  return {
-    frontText: value?.frontText ?? "",
-    backText: value?.backText ?? "",
-  };
-}
-
-function buildDraftKey(deckId: string) {
-  return `${CARD_EDITOR_DRAFT_STORAGE_KEY}:${deckId}:new`;
-}
-
-function hasAnyDraftContent(value: CardEditorValue) {
-  return (
-    isRenderableRichContent(value.frontText) ||
-    isRenderableRichContent(value.backText)
-  );
-}
-
 export function AddCardForm({
   deckId,
   formId,
@@ -83,213 +30,64 @@ export function AddCardForm({
   onDirtyChange,
   onActionStateChange,
 }: AddCardFormProps) {
-  const draftKey = useMemo(() => buildDraftKey(deckId), [deckId]);
-  const initialSnapshot = useMemo(() => normalizeValue(), []);
-
-  const [frontText, setFrontText] = useState(initialSnapshot.frontText);
-  const [backText, setBackText] = useState(initialSnapshot.backText);
-  const [isDraftLoaded, setDraftLoaded] = useState(false);
-  const [uploadingSides, setUploadingSides] = useState({
-    front: false,
-    back: false,
+  const form = useAddCardFormState({
+    deckId,
+    submitLabel,
+    pendingLabel,
+    onSaved,
+    onDirtyChange,
+    onActionStateChange,
   });
-
-  const addMutation = useAddCard(deckId);
-  const isUploading = uploadingSides.front || uploadingSides.back;
-  const isPending = addMutation.isPending || isUploading;
-  const deferredFrontText = useDeferredValue(frontText);
-  const deferredBackText = useDeferredValue(backText);
-
-  const currentValue = useMemo<CardEditorValue>(
-    () => ({ frontText, backText }),
-    [frontText, backText]
-  );
-  const hasUnsavedContent = hasAnyDraftContent(currentValue);
-  const isDirty = isDraftLoaded && hasUnsavedContent;
-  const canSubmit =
-    !isEmptyRichContent(frontText) &&
-    !isEmptyRichContent(backText) &&
-    !isPending;
-
-  useEffect(() => {
-    setDraftLoaded(false);
-    onDirtyChange?.(false);
-    const savedDraft = readYeonLocalStorageItem(draftKey);
-    if (!savedDraft) {
-      setFrontText(initialSnapshot.frontText);
-      setBackText(initialSnapshot.backText);
-      setDraftLoaded(true);
-      return;
-    }
-
-    try {
-      const parsed = normalizeValue(
-        JSON.parse(savedDraft) as Partial<CardEditorValue>
-      );
-      setFrontText(parsed.frontText);
-      setBackText(parsed.backText);
-      setDraftLoaded(true);
-    } catch (error) {
-      if (!(error instanceof SyntaxError)) {
-        throw error;
-      }
-      removeYeonLocalStorageItem(draftKey);
-      setFrontText(initialSnapshot.frontText);
-      setBackText(initialSnapshot.backText);
-      setDraftLoaded(true);
-    }
-  }, [draftKey, initialSnapshot, onDirtyChange]);
-
-  useEffect(() => {
-    if (!isDraftLoaded) return;
-    onDirtyChange?.(hasUnsavedContent);
-  }, [hasUnsavedContent, isDraftLoaded, onDirtyChange]);
-
-  useEffect(() => {
-    if (!isDraftLoaded) return;
-    if (hasAnyDraftContent(currentValue)) {
-      writeYeonLocalStorageItem(draftKey, JSON.stringify(currentValue));
-      return;
-    }
-    removeYeonLocalStorageItem(draftKey);
-  }, [currentValue, draftKey, isDraftLoaded]);
-
-  useYeonWindowEvent(
-    "beforeunload",
-    (event) => {
-      event.preventDefault();
-      event.returnValue = "작성 중인 카드 내용이 있습니다.";
-    },
-    isDirty
-  );
-
-  const resetDraft = () => {
-    removeYeonLocalStorageItem(draftKey);
-    onDirtyChange?.(false);
-  };
-
-  const handleFrontCodeLanguageChange = (index: number, language: string) => {
-    setFrontText((current) =>
-      updateCardEditorCodeBlockLanguageInRichContent(current, index, language)
-    );
-  };
-
-  const handleBackCodeLanguageChange = (index: number, language: string) => {
-    setBackText((current) =>
-      updateCardEditorCodeBlockLanguageInRichContent(current, index, language)
-    );
-  };
-
-  const handleSubmit = (event: YeonFormEvent<YeonFormElement>) => {
-    event.preventDefault();
-    if (!canSubmit) return;
-
-    const body = {
-      frontText: normalizeRichContent(frontText),
-      backText: normalizeRichContent(backText),
-    };
-
-    addMutation.mutate(body, {
-      onSuccess: () => {
-        trackEvent(analyticsEvents.cardCreated, {
-          deck_id: deckId,
-          has_image:
-            /<img\b/i.test(body.frontText) || /<img\b/i.test(body.backText),
-        });
-        resetDraft();
-        setFrontText("");
-        setBackText("");
-        onSaved?.();
-      },
-    });
-  };
-
-  const actionLabel = submitLabel ?? "카드 저장";
-  const pendingActionLabel =
-    pendingLabel ?? (isUploading ? "이미지 업로드 중..." : "저장 중...");
-  const errorMessage = addMutation.error?.message || null;
-  const actionState = useMemo<AddCardFormActionState>(
-    () => ({
-      canSubmit,
-      isPending,
-      actionLabel,
-      pendingActionLabel,
-      errorMessage,
-    }),
-    [actionLabel, canSubmit, errorMessage, isPending, pendingActionLabel]
-  );
-
-  useEffect(() => {
-    onActionStateChange?.(actionState);
-  }, [actionState, onActionStateChange]);
 
   return (
     <YeonForm
       id={formId}
-      onSubmit={handleSubmit}
+      onSubmit={form.handleSubmit}
       className="flex h-full min-h-0 flex-col gap-3"
     >
       <YeonView className="grid min-h-0 flex-1 gap-3 lg:grid-cols-2 lg:grid-rows-[auto_auto] lg:items-stretch">
         <YeonView className="min-w-0">
           <CardRichMarkdownEditor
             label="카드 질문"
-            value={frontText}
-            onChange={setFrontText}
+            value={form.frontText}
+            onChange={form.setFrontText}
             placeholder="질문 또는 앞면 내용을 작성하고 이미지는 문장 사이에 붙여넣으세요."
             helperText="이미지는 드래그·붙여넣기·버튼으로 본문에 삽입됩니다."
             density="question"
             layoutMode="compact"
             previewPlacement="mobile"
-            onUploadingChange={(isUploadingFront) =>
-              setUploadingSides((prev) =>
-                prev.front === isUploadingFront
-                  ? prev
-                  : {
-                      ...prev,
-                      front: isUploadingFront,
-                    }
-              )
-            }
+            onUploadingChange={form.setFrontUploading}
           />
         </YeonView>
         <YeonView className="hidden min-w-0 lg:block">
           <CardAddPreviewFace
             label="앞면"
             title="카드 질문"
-            value={deferredFrontText}
+            value={form.deferredFrontText}
             emptyText="질문을 작성하면 카드 앞면에 표시됩니다."
-            onCodeLanguageChange={handleFrontCodeLanguageChange}
+            onCodeLanguageChange={form.handleFrontCodeLanguageChange}
           />
         </YeonView>
         <YeonView className="min-w-0">
           <CardRichMarkdownEditor
             label="카드 답변"
-            value={backText}
-            onChange={setBackText}
+            value={form.backText}
+            onChange={form.setBackText}
             placeholder="답변 또는 본문을 작성하세요."
             helperText="삽입 이미지는 크기 조절 후 저장하면 본문과 함께 유지됩니다."
             density="answer"
             layoutMode="compact"
             previewPlacement="mobile"
-            onUploadingChange={(isUploadingBack) =>
-              setUploadingSides((prev) =>
-                prev.back === isUploadingBack
-                  ? prev
-                  : {
-                      ...prev,
-                      back: isUploadingBack,
-                    }
-              )
-            }
+            onUploadingChange={form.setBackUploading}
           />
         </YeonView>
         <YeonView className="hidden min-w-0 lg:block">
           <CardAddPreviewFace
             label="뒷면"
             title="카드 답변"
-            value={deferredBackText}
+            value={form.deferredBackText}
             emptyText="답변을 작성하면 카드 뒷면에 표시됩니다."
-            onCodeLanguageChange={handleBackCodeLanguageChange}
+            onCodeLanguageChange={form.handleBackCodeLanguageChange}
           />
         </YeonView>
       </YeonView>
