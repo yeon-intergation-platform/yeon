@@ -11,6 +11,7 @@ import { cardServiceApi } from "../../services/card-service/client";
 import { cardServiceQueryKeys } from "../../services/card-service/query-keys";
 import { clearPrimaryAuthSessionToken } from "../../services/primary-auth/storage";
 import { CARD_SERVICE_TEXT } from "./card-service-copy";
+import { getCardServiceErrorMessage } from "./error-message";
 import {
   CARD_SERVICE_MODE,
   resolveCardServiceSession,
@@ -45,18 +46,6 @@ class MissingCardSessionProviderError extends Error {
     );
     this.name = "MissingCardSessionProviderError";
   }
-}
-
-function getCardSessionBootErrorMessage(error: unknown) {
-  if (error instanceof Error) {
-    return error.message;
-  }
-
-  if (typeof error === "string" && error.trim().length > 0) {
-    return `카드 서비스 세션 확인에 실패했습니다. 원인: ${error.trim()}`;
-  }
-
-  return `카드 서비스 세션 확인에 실패했습니다. 원인: 처리할 수 없는 오류 형식(${String(error)})`;
 }
 
 export function useCardSession() {
@@ -107,7 +96,10 @@ export function CardSessionProvider({ children }: { children: ReactNode }) {
       setPhase("gate");
       showYeonAlert(
         CARD_SERVICE_TEXT.state.errorTitle,
-        getCardSessionBootErrorMessage(error)
+        getCardServiceErrorMessage(
+          error,
+          "카드 서비스 세션 확인에 실패했습니다."
+        )
       );
       return;
     }

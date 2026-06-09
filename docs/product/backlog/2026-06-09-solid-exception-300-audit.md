@@ -115,6 +115,12 @@
 
 - 항목 100~108 완료: race-server 카드방 leave/request catch는 16차 helper 반영 상태를 확인해 완료 처리했고, typing-race-room의 기존 catch 후보는 현재 코드에서 제거된 상태를 확인했다. 웹 커뮤니티 404 catch는 처리 가능한 Spring 404만 null로 변환하고 나머지는 재전파하는 경계로 유지했다. 웹 카드 인증 Provider 누락, 카드방 생성/입장, 게스트 덱 개수 확인 실패는 원인을 포함한 helper/전용 Error/사용자 실패 메시지로 구체화했다.
 
+## 24차 적용 완료
+
+- 항목 175~178 완료: `CardDeckDetailScreen`의 생성/일괄추가/일괄덮어쓰기/수정/삭제/상세조회 오류 메시지 분기를 `getCardServiceErrorMessage` 공용 어댑터로 이동했다.
+- 추가 적용: 모바일 카드 서비스의 목록, 온보딩, 세션, 이미지 첨부, 학습 화면, 카드방 생성/입장/연결 오류 메시지 분기도 같은 어댑터를 사용하게 정리했다.
+- 예외 원칙 보강: 화면 컴포넌트가 `unknown` 오류 타입을 직접 판별하지 않고, 메시지는 fallback과 원인을 함께 포함하도록 통일했다.
+
 ## 23차 적용 완료
 
 - 항목 161~166 완료: `AuthSessionRepository`의 native query row/time/UUID 변환 책임을 저장소 내부 분기에서 공용 `NativeQueryRow`/`NativeQueryValue` 어댑터 의존으로 끌어올렸다.
@@ -343,10 +349,10 @@
 172. **[완료][P2] instanceof 분기 축소** `apps/backend/src/main/java/world/yeon/backend/typing_decks/repository/TypingDeckRepository.java:343` — 원칙 `L`. 하위 타입 검사 대신 공통 인터페이스/판별된 union으로 안전하게 다룬다. 근거: `if (value instanceof Instant instant) return instant.atOffset(ZoneOffset.UTC);`
 173. **[완료][P2] instanceof 분기 축소** `apps/backend/src/main/java/world/yeon/backend/typing_decks/repository/TypingDeckRepository.java:344` — 원칙 `L`. 하위 타입 검사 대신 공통 인터페이스/판별된 union으로 안전하게 다룬다. 근거: `if (value instanceof Date date) return date.toInstant().atOffset(ZoneOffset.UTC);`
 174. **[완료][P2] instanceof 분기 축소** `apps/backend/src/main/java/world/yeon/backend/typing_decks/repository/TypingDeckRepository.java:345` — 원칙 `L`. 하위 타입 검사 대신 공통 인터페이스/판별된 union으로 안전하게 다룬다. 근거: `if (value instanceof ZonedDateTime zonedDateTime) return zonedDateTime.toOffsetDateTime();`
-175. **[P2] instanceof 분기 축소** `apps/mobile/src/features/card-service/card-deck-detail-screen.tsx:349` — 원칙 `L`. 하위 타입 검사 대신 공통 인터페이스/판별된 union으로 안전하게 다룬다. 근거: `error instanceof Error`
-176. **[P2] instanceof 분기 축소** `apps/mobile/src/features/card-service/card-deck-detail-screen.tsx:361` — 원칙 `L`. 하위 타입 검사 대신 공통 인터페이스/판별된 union으로 안전하게 다룬다. 근거: `error instanceof Error`
-177. **[P2] instanceof 분기 축소** `apps/mobile/src/features/card-service/card-deck-detail-screen.tsx:391` — 원칙 `L`. 하위 타입 검사 대신 공통 인터페이스/판별된 union으로 안전하게 다룬다. 근거: `error instanceof Error`
-178. **[P2] instanceof 분기 축소** `apps/mobile/src/features/card-service/card-deck-detail-screen.tsx:421` — 원칙 `L`. 하위 타입 검사 대신 공통 인터페이스/판별된 union으로 안전하게 다룬다. 근거: `error instanceof Error`
+175. **[완료][P2] instanceof 분기 축소** `apps/mobile/src/features/card-service/card-deck-detail-screen.tsx:349` — 원칙 `L`. 하위 타입 검사 대신 공통 인터페이스/판별된 union으로 안전하게 다룬다. 근거: `error instanceof Error`
+176. **[완료][P2] instanceof 분기 축소** `apps/mobile/src/features/card-service/card-deck-detail-screen.tsx:361` — 원칙 `L`. 하위 타입 검사 대신 공통 인터페이스/판별된 union으로 안전하게 다룬다. 근거: `error instanceof Error`
+177. **[완료][P2] instanceof 분기 축소** `apps/mobile/src/features/card-service/card-deck-detail-screen.tsx:391` — 원칙 `L`. 하위 타입 검사 대신 공통 인터페이스/판별된 union으로 안전하게 다룬다. 근거: `error instanceof Error`
+178. **[완료][P2] instanceof 분기 축소** `apps/mobile/src/features/card-service/card-deck-detail-screen.tsx:421` — 원칙 `L`. 하위 타입 검사 대신 공통 인터페이스/판별된 union으로 안전하게 다룬다. 근거: `error instanceof Error`
 
 ### SRP
 

@@ -34,6 +34,7 @@ import {
 } from "../../services/card-service/storage";
 import { createMobileCardItemRepository } from "./runtime-adapters/card-item-repository";
 import { CARD_SERVICE_TEXT } from "./card-service-copy";
+import { getCardServiceErrorMessage } from "./error-message";
 import { CardMarkdown } from "./card-markdown";
 import {
   CARD_SERVICE_MODE,
@@ -224,10 +225,10 @@ export function CardDeckPlayScreen({ deckId }: CardDeckPlayScreenProps) {
       data: detailQuery.data,
     },
     {
-      errorMessage:
-        detailQuery.error instanceof Error
-          ? detailQuery.error.message
-          : CARD_SERVICE_TEXT.play.errorMessage,
+      errorMessage: getCardServiceErrorMessage(
+        detailQuery.error,
+        CARD_SERVICE_TEXT.play.errorMessage
+      ),
     }
   );
   const canMovePrev = currentIndex > 0;

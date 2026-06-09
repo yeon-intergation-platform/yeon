@@ -1,5 +1,6 @@
 import { ApiClientError } from "@yeon/api-client";
 import { cardServiceApi } from "../../services/card-service/client";
+import { getCardServiceCauseMessage } from "./error-message";
 import {
   clearPrimaryAuthSessionToken,
   readPrimaryAuthSessionToken,
@@ -19,18 +20,6 @@ export type CardServiceSessionState = {
   isBooting: boolean;
 };
 
-function getSessionResolutionCauseMessage(error: unknown) {
-  if (error instanceof Error) {
-    return error.message;
-  }
-
-  if (typeof error === "string" && error.trim().length > 0) {
-    return error.trim();
-  }
-
-  return `처리할 수 없는 오류 형식(${String(error)})`;
-}
-
 function isExpiredCardServiceSessionError(error: unknown) {
   return (
     error instanceof ApiClientError &&
@@ -43,7 +32,7 @@ export class CardServiceSessionResolutionError extends Error {
 
   constructor(cause: unknown) {
     super(
-      `카드 서비스 세션 확인에 실패했습니다. 저장된 인증 토큰으로 서버 세션을 검증하지 못했습니다. 원인: ${getSessionResolutionCauseMessage(cause)}`
+      `카드 서비스 세션 확인에 실패했습니다. 저장된 인증 토큰으로 서버 세션을 검증하지 못했습니다. 원인: ${getCardServiceCauseMessage(cause)}`
     );
     this.name = "CardServiceSessionResolutionError";
     this.cause = cause;

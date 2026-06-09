@@ -32,6 +32,7 @@ import { cardServiceQueryKeys } from "../../services/card-service/query-keys";
 import { parseAiCardInput } from "./card-input-parser";
 import { createMobileCardItemRepository } from "./runtime-adapters/card-item-repository";
 import { CARD_SERVICE_TEXT } from "./card-service-copy";
+import { getCardServiceErrorMessage } from "./error-message";
 import { CardMarkdown } from "./card-markdown";
 import { MarkdownTextField } from "./markdown-text-field";
 import {
@@ -135,16 +136,6 @@ function parseBulkCardsOrThrow(
     );
   }
   return cards;
-}
-
-function getCardDetailErrorMessage(error: unknown, fallbackMessage: string) {
-  if (error instanceof Error) {
-    return error.message;
-  }
-  if (typeof error === "string" && error.trim().length > 0) {
-    return `${fallbackMessage} 원인: ${error.trim()}`;
-  }
-  return `${fallbackMessage} 원인: 처리할 수 없는 오류 형식(${String(error)})`;
 }
 
 type DeckCardRowProps = {
@@ -403,7 +394,7 @@ export function CardDeckDetailScreen({ deckId }: CardDeckDetailScreenProps) {
     } catch (error) {
       showYeonAlert(
         CARD_SERVICE_TEXT.state.errorTitle,
-        getCardDetailErrorMessage(
+        getCardServiceErrorMessage(
           error,
           CARD_SERVICE_TEXT.detail.createErrorMessage
         )
@@ -417,7 +408,7 @@ export function CardDeckDetailScreen({ deckId }: CardDeckDetailScreenProps) {
     } catch (error) {
       showYeonAlert(
         CARD_SERVICE_TEXT.state.errorTitle,
-        getCardDetailErrorMessage(
+        getCardServiceErrorMessage(
           error,
           CARD_SERVICE_TEXT.detail.createErrorMessage
         )
@@ -449,7 +440,7 @@ export function CardDeckDetailScreen({ deckId }: CardDeckDetailScreenProps) {
             } catch (error) {
               showYeonAlert(
                 CARD_SERVICE_TEXT.state.errorTitle,
-                getCardDetailErrorMessage(
+                getCardServiceErrorMessage(
                   error,
                   CARD_SERVICE_TEXT.detail.createErrorMessage
                 )
@@ -481,7 +472,7 @@ export function CardDeckDetailScreen({ deckId }: CardDeckDetailScreenProps) {
     } catch (error) {
       showYeonAlert(
         CARD_SERVICE_TEXT.state.errorTitle,
-        getCardDetailErrorMessage(
+        getCardServiceErrorMessage(
           error,
           CARD_SERVICE_TEXT.detail.updateErrorMessage
         )
@@ -503,7 +494,7 @@ export function CardDeckDetailScreen({ deckId }: CardDeckDetailScreenProps) {
               } catch (error) {
                 showYeonAlert(
                   CARD_SERVICE_TEXT.state.errorTitle,
-                  getCardDetailErrorMessage(
+                  getCardServiceErrorMessage(
                     error,
                     CARD_SERVICE_TEXT.detail.deleteErrorMessage
                   )
@@ -540,10 +531,10 @@ export function CardDeckDetailScreen({ deckId }: CardDeckDetailScreenProps) {
       data: detailQuery.data,
     },
     {
-      errorMessage:
-        detailQuery.error instanceof Error
-          ? detailQuery.error.message
-          : CARD_SERVICE_TEXT.detail.errorMessage,
+      errorMessage: getCardServiceErrorMessage(
+        detailQuery.error,
+        CARD_SERVICE_TEXT.detail.errorMessage
+      ),
     }
   );
   const cardCount = detail?.items.length ?? detail?.deck.itemCount ?? 0;

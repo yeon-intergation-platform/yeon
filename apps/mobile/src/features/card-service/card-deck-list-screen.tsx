@@ -37,6 +37,7 @@ import { cardServiceQueryKeys } from "../../services/card-service/query-keys";
 import { HeaderExperienceBadge } from "../user-experience/header-experience-badge";
 import { createMobileCardDeckRepository } from "./runtime-adapters/card-deck-repository";
 import { CARD_SERVICE_TEXT } from "./card-service-copy";
+import { getCardServiceErrorMessage } from "./error-message";
 import { useCardSession } from "./card-session-context";
 
 // 홈 화면 이미지 에셋(사용자 제공 디자인 팩).
@@ -63,16 +64,6 @@ function getCardServiceDeckPlayHref(deckId: string): Href {
     pathname: YEON_ROUTE_TEMPLATES.cardDeckPlay,
     params: { deckId },
   } as Href;
-}
-
-function getCardDeckListErrorMessage(error: unknown, fallbackMessage: string) {
-  if (error instanceof Error) {
-    return error.message;
-  }
-  if (typeof error === "string" && error.trim().length > 0) {
-    return `${fallbackMessage} 원인: ${error.trim()}`;
-  }
-  return `${fallbackMessage} 원인: 처리할 수 없는 오류 형식(${String(error)})`;
 }
 
 type DeckCardProps = {
@@ -150,7 +141,7 @@ export function CardDeckListScreen() {
     } catch (error) {
       showYeonAlert(
         CARD_SERVICE_TEXT.state.errorTitle,
-        getCardDeckListErrorMessage(
+        getCardServiceErrorMessage(
           error,
           CARD_SERVICE_TEXT.list.createDeckErrorMessage
         )
@@ -166,7 +157,7 @@ export function CardDeckListScreen() {
       data: decksQuery.data,
     },
     {
-      errorMessage: getCardDeckListErrorMessage(
+      errorMessage: getCardServiceErrorMessage(
         decksQuery.error,
         CARD_SERVICE_TEXT.list.errorMessage
       ),
