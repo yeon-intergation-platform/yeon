@@ -1,10 +1,6 @@
 "use client";
 import { YEON_WEB_SHARED_CLASS as SHARED_FEATURE_CLASS } from "@yeon/ui/theme/web-style-tokens";
 import { CARD_SERVICE_COMMON_CLASS } from "./card-service-common.const";
-import { useEffect, useMemo, useState } from "react";
-import { useYeonRouter } from "@yeon/ui/runtime/YeonNavigation";
-import { resolveYeonWebPath } from "@yeon/ui/runtime/ports";
-import { writeYeonSessionStorageItem } from "@yeon/ui/runtime/YeonBrowserRuntime";
 import { CommonProductHeader } from "@/components/product-shell/product-header";
 import {
   YeonButton,
@@ -16,24 +12,7 @@ import {
   YeonOption,
 } from "@yeon/ui";
 import { CharacterSprite } from "@/features/typing-service/character-sprite";
-import { findCharacter } from "@/features/typing-service/characters";
-import { useCharacterFrameOverrides } from "@/features/typing-service/use-character-frame-overrides";
-import { useTypingSettings } from "@/features/typing-service/use-typing-settings";
-import { getGuestDeckDetail } from "@/lib/guest-card-service-store";
-import { useIsAuthenticated } from "./auth-context";
-import { createCardRoom, useCardRoomProfile, useDeckList } from "./hooks";
-
-function getCardRoomCreateErrorMessage(error: unknown) {
-  if (error instanceof Error) {
-    return error.message;
-  }
-
-  if (typeof error === "string" && error.trim().length > 0) {
-    return `카드방을 만들지 못했습니다. 원인: ${error.trim()}`;
-  }
-
-  return `카드방을 만들지 못했습니다. 원인: 처리할 수 없는 오류 형식(${String(error)})`;
-}
+import { useCardRoomCreateFormState } from "./use-card-room-create-form-state";
 
 type CardRoomCreateFormProps = {
   onCancel?: () => void;
@@ -46,103 +25,7 @@ export function CardRoomCreateForm({
   onCreated,
   submitLabel = "실제 카드방 만들기",
 }: CardRoomCreateFormProps) {
-  const router = useYeonRouter();
-  const [title, setTitle] = useState("서로 확인하는 카드방");
-  const [visibility, setVisibility] = useState<"public" | "private">("public");
-  const [selectedDeckId, setSelectedDeckId] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const {
-    profile,
-    guestId,
-    loaded: profileLoaded,
-    setProfile,
-  } = useCardRoomProfile();
-  const [nickname, setNickname] = useState(profile.nickname);
-  const isAuthenticated = useIsAuthenticated();
-  const decksQuery = useDeckList();
-  const decks = decksQuery.data ?? [];
-  const { settings } = useTypingSettings();
-  const frameOverrides = useCharacterFrameOverrides();
-  const character = findCharacter(profile.characterId);
-
-  const selectedDeck = useMemo(
-    () => decks.find((deck) => deck.id === selectedDeckId) ?? decks[0],
-    [decks, selectedDeckId]
-  );
-
-  useEffect(() => {
-    if (profileLoaded) setNickname(profile.nickname);
-  }, [profile.nickname, profileLoaded]);
-
-  async function submit() {
-    if (isSubmitting) return;
-    if (!profileLoaded) {
-      setErrorMessage("카드방 프로필을 불러오는 중입니다.");
-      return;
-    }
-    if (!selectedDeck) {
-      setErrorMessage("카드가 있는 덱을 먼저 만들어 주세요.");
-      return;
-    }
-    setIsSubmitting(true);
-    setErrorMessage(null);
-    const nextProfile = {
-      nickname: nickname.trim() || "Guest",
-      characterId: profile.characterId,
-    };
-    setProfile(nextProfile);
-    try {
-      const payload = isAuthenticated
-        ? {
-            title: title.trim() || "카드방",
-            visibility,
-            deckId: selectedDeck.id,
-            profile: nextProfile,
-          }
-        : await (async () => {
-            const detail = await getGuestDeckDetail(selectedDeck.id);
-            if (!detail || detail.items.length === 0)
-              throw new Error("카드가 있는 게스트 덱이 필요합니다.");
-            return {
-              title: title.trim() || "카드방",
-              visibility,
-              guestDeck: {
-                title: detail.deck.title,
-                items: detail.items.map((item) => ({
-                  frontText: item.frontText,
-                  backText: item.backText,
-                })),
-              },
-              profile: nextProfile,
-            };
-          })();
-      const created = await createCardRoom(payload, guestId);
-      if (created.participant) {
-        writeYeonSessionStorageItem(
-          `yeon-card-room-participant:${created.room.id}`,
-          created.participant.id
-        );
-        // 방장도 생성 응답의 토큰을 저장해 방 화면이 재입장 없이 실시간에 연결하게 한다.
-        if (created.participantToken)
-          writeYeonSessionStorageItem(
-            `yeon-card-room-participant-token:${created.room.id}`,
-            created.participantToken
-          );
-      }
-      if (onCreated) {
-        onCreated(created.room.id);
-      } else {
-        router.push(
-          resolveYeonWebPath("cardRoomDetail", { roomId: created.room.id })
-        );
-      }
-    } catch (error) {
-      setErrorMessage(getCardRoomCreateErrorMessage(error));
-    } finally {
-      setIsSubmitting(false);
-    }
-  }
+  const form = useCardRoomCreateFormState({ onCreated });
 
   return (
     <YeonSurface
@@ -151,7 +34,7 @@ export function CardRoomCreateForm({
       className="rounded-[28px] p-6"
       onSubmit={(event) => {
         event.preventDefault();
-        void submit();
+        void form.submit();
       }}
     >
       <YeonSurface variant="panel" className="p-4">
@@ -160,17 +43,19 @@ export function CardRoomCreateForm({
         </YeonText>
         <YeonView className="mt-4 flex items-center gap-4">
           <YeonView className="flex h-[76px] w-[76px] items-end justify-center overflow-hidden rounded-xl bg-white">
-            {profileLoaded ? (
+            {form.profileLoaded ? (
               <CharacterSprite
-                character={character}
+                character={form.character}
                 maxHeight={72}
-                sequenceOverride={frameOverrides[character.id]}
+                sequenceOverride={form.frameOverrides[form.character.id]}
               />
             ) : null}
           </YeonView>
           <YeonView>
             <YeonText as="p" variant="label" className="text-[17px]">
-              {profileLoaded ? profile.nickname : "프로필 불러오는 중"}
+              {form.profileLoaded
+                ? form.profile.nickname
+                : "프로필 불러오는 중"}
             </YeonText>
             <YeonText
               as="p"
@@ -178,8 +63,8 @@ export function CardRoomCreateForm({
               tone="secondary"
               className={`mt-1 ${SHARED_FEATURE_CLASS.text13EmphasisSubtle}`}
             >
-              {profileLoaded
-                ? character.label[settings.locale]
+              {form.profileLoaded
+                ? form.character.label[form.settings.locale]
                 : "잠시만 기다려주세요"}
             </YeonText>
           </YeonView>
@@ -198,20 +83,20 @@ export function CardRoomCreateForm({
         <YeonLabel className={CARD_SERVICE_COMMON_CLASS.panelFieldLabel}>
           방 제목
           <YeonField
-            value={title}
-            onChange={(event) => setTitle(event.target.value)}
+            value={form.title}
+            onChange={(event) => form.setTitle(event.target.value)}
             maxLength={80}
-            disabled={isSubmitting}
+            disabled={form.isSubmitting}
             className="min-h-[52px]"
           />
         </YeonLabel>
         <YeonLabel className={CARD_SERVICE_COMMON_CLASS.panelFieldLabel}>
           닉네임
           <YeonField
-            value={nickname}
-            onChange={(event) => setNickname(event.target.value)}
+            value={form.nickname}
+            onChange={(event) => form.setNickname(event.target.value)}
             maxLength={40}
-            disabled={isSubmitting}
+            disabled={form.isSubmitting}
             className="min-h-[52px]"
           />
         </YeonLabel>
@@ -219,15 +104,15 @@ export function CardRoomCreateForm({
           사용할 덱
           <YeonField
             as="select"
-            value={selectedDeck?.id ?? ""}
-            onChange={(event) => setSelectedDeckId(event.target.value)}
-            disabled={isSubmitting}
+            value={form.selectedDeck?.id ?? ""}
+            onChange={(event) => form.setSelectedDeckId(event.target.value)}
+            disabled={form.isSubmitting}
             className="min-h-[52px]"
           >
             <YeonOption value="" disabled>
-              {decksQuery.isLoading ? "덱 불러오는 중" : "덱 선택"}
+              {form.decksQuery.isLoading ? "덱 불러오는 중" : "덱 선택"}
             </YeonOption>
-            {decks.map((deck) => (
+            {form.decks.map((deck) => (
               <YeonOption key={deck.id} value={deck.id}>
                 {deck.title} · {deck.itemCount}장
               </YeonOption>
@@ -248,9 +133,9 @@ export function CardRoomCreateForm({
               <YeonButton
                 key={option}
                 type="button"
-                onClick={() => setVisibility(option)}
-                disabled={isSubmitting}
-                variant={visibility === option ? "primary" : "secondary"}
+                onClick={() => form.setVisibility(option)}
+                disabled={form.isSubmitting}
+                variant={form.visibility === option ? "primary" : "secondary"}
                 size="lg"
                 className="h-auto flex-col items-start rounded-2xl px-4 py-4 text-left"
               >
@@ -275,21 +160,21 @@ export function CardRoomCreateForm({
           </YeonView>
         </YeonView>
       </YeonView>
-      {errorMessage ? (
+      {form.errorMessage ? (
         <YeonText
           as="p"
           variant="label"
           tone="primary"
           className="mt-5 rounded-xl border border-[#e5e5e5] bg-[#fafafa] px-4 py-3"
         >
-          {errorMessage}
+          {form.errorMessage}
         </YeonText>
       ) : null}
       <YeonView className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-end">
         <YeonButton
           type="button"
-          onClick={() => router.push("/card-service/decks")}
-          disabled={isSubmitting}
+          onClick={form.goToDecks}
+          disabled={form.isSubmitting}
           variant="secondary"
           size="lg"
         >
@@ -297,10 +182,8 @@ export function CardRoomCreateForm({
         </YeonButton>
         <YeonButton
           type="button"
-          onClick={
-            onCancel ?? (() => router.push(resolveYeonWebPath("cardRoomList")))
-          }
-          disabled={isSubmitting}
+          onClick={onCancel ?? form.goToLobby}
+          disabled={form.isSubmitting}
           variant="secondary"
           size="lg"
         >
@@ -308,11 +191,13 @@ export function CardRoomCreateForm({
         </YeonButton>
         <YeonButton
           type="submit"
-          disabled={isSubmitting || !profileLoaded || !selectedDeck}
+          disabled={
+            form.isSubmitting || !form.profileLoaded || !form.selectedDeck
+          }
           variant="primary"
           size="lg"
         >
-          {isSubmitting ? "생성 중..." : submitLabel}
+          {form.isSubmitting ? "생성 중..." : submitLabel}
         </YeonButton>
       </YeonView>
     </YeonSurface>
