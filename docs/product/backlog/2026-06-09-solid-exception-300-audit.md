@@ -581,8 +581,8 @@
 279. **[완료][P3] 상태 분기 매핑/전략화** `apps/backend/src/main/java/world/yeon/backend/typing_decks/service/TypingDeckService.java:312` — 원칙 `O`. 타자 덱 수정 가능 source 판정을 `TypingDeckEditSourcePolicy`로 분리했다. 근거: `TypingDeckEditSourcePolicy.from(row).requireEditable()`
 280. **[완료][P3] 상태 분기 매핑/전략화** `apps/mobile/src/features/card-service/card-deck-detail-screen.tsx:403` — 원칙 `O`. 카드 상세 sheet mode 잠금 판정을 `deriveSheetModeSwitchPolicy`와 `SHEET_MODE_LOCKED_KINDS`로 분리했다. 근거: `sheetModeSwitchPolicy.isDisabled`
 281. **[완료][P3] 상태 분기 매핑/전략화** `apps/mobile/src/features/card-service/card-deck-play-screen.tsx:76` — 원칙 `O`. 카드 학습 상세 조회 source 판정을 `createCardDeckPlayDetailReader`로 분리했다. 근거: `createCardDeckPlayDetailReader(mode, sessionToken).read(targetDeckId)`
-282. **[P3] 상태 분기 매핑/전략화** `apps/mobile/src/features/card-service/card-onboarding-gate.tsx:91` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (result.status === "success") {`
-283. **[P3] 상태 분기 매핑/전략화** `apps/mobile/src/features/card-service/card-onboarding-gate.tsx:98` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (result.status === "error") {`
+282. **[완료][P3] 상태 분기 매핑/전략화** `apps/mobile/src/features/card-service/card-onboarding-gate.tsx:91` — 원칙 `O`. 소셜 로그인 성공 결과 처리를 `applySocialLoginResult` handler map으로 분리했다. 근거: `success: async (successResult) => {`
+283. **[완료][P3] 상태 분기 매핑/전략화** `apps/mobile/src/features/card-service/card-onboarding-gate.tsx:98` — 원칙 `O`. 소셜 로그인 오류 결과 처리를 `applySocialLoginResult` handler map으로 분리했다. 근거: `error: (errorResult) =>`
 284. **[P3] 상태 분기 매핑/전략화** `apps/mobile/src/features/card-service/markdown-text-field.tsx:190` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (typeof maxLength === "number" && result.value.length > maxLength) {`
 285. **[P3] 상태 분기 매핑/전략화** `apps/mobile/src/features/card-service/rooms/card-room-lobby-screen.tsx:42` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (status === "waiting") return CARD_SERVICE_TEXT.rooms.statusWaiting;`
 286. **[P3] 상태 분기 매핑/전략화** `apps/mobile/src/features/card-service/rooms/card-room-lobby-screen.tsx:43` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (status === "finished" || status === "closed")`
@@ -705,3 +705,7 @@
 ## 84차 적용 완료
 
 - 항목 281 완료: 카드 학습 상세 조회 source 판정을 `createCardDeckPlayDetailReader`로 분리했다.
+
+## 85차 적용 완료
+
+- 항목 282~283 완료: 소셜 로그인 성공/오류 결과 처리를 `applySocialLoginResult` handler map으로 분리했다.
