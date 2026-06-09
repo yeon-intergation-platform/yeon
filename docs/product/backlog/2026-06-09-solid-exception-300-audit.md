@@ -570,11 +570,11 @@
 268. **[완료][P3] 상태 분기 매핑/전략화** `apps/backend/src/main/java/world/yeon/backend/card_rooms/service/CardRoomService.java:453` — 원칙 `O`. 호스트 승계 역할 재배정 가능 여부를 `CardRoomStatePolicy.canRebalanceRolesAfterHostSuccession`로 분리했다. 근거: `CardRoomStatePolicy.from(room).canRebalanceRolesAfterHostSuccession`
 269. **[완료][P3] 상태 분기 매핑/전략화** `apps/backend/src/main/java/world/yeon/backend/card_rooms/service/CardRoomService.java:468` — 원칙 `O`. 열린 방 guard를 `CardRoomStatePolicy.requireOpen`으로 분리했다. 근거: `CardRoomStatePolicy.from(room).requireOpen()`
 270. **[완료][P3] 상태 분기 매핑/전략화** `apps/backend/src/main/java/world/yeon/backend/card_rooms/service/CardRoomService.java:475` — 원칙 `O`. 진행 가능 방 guard를 `CardRoomStatePolicy.requireActive`로 분리했다. 근거: `CardRoomStatePolicy.from(room).requireActive()`
-271. **[P3] 상태 분기 매핑/전략화** `apps/backend/src/main/java/world/yeon/backend/root_auth/service/AuthSessionService.java:89` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (providers.isEmpty()) {`
-272. **[P3] 상태 분기 매핑/전략화** `apps/backend/src/main/java/world/yeon/backend/root_auth/service/AuthSessionService.java:126` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (!isSocialProvider(provider) || code == null || codeVerifier == null) {`
-273. **[P3] 상태 분기 매핑/전략화** `apps/backend/src/main/java/world/yeon/backend/root_auth/service/AuthSessionService.java:151` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (providers.isEmpty() || isDefaultDevAccount(user, providers)) {`
-274. **[P3] 상태 분기 매핑/전략화** `apps/backend/src/main/java/world/yeon/backend/root_auth/service/AuthSessionService.java:180` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (ROLE_ADMIN.equals(user.role())) {`
-275. **[P3] 상태 분기 매핑/전략화** `apps/backend/src/main/java/world/yeon/backend/root_auth/service/AuthSessionService.java:251` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (provider.equals(identity.provider()) && !providerUserId.equals(identity.providerUserId())) {`
+271. **[완료][P3] 상태 분기 매핑/전략화** `apps/backend/src/main/java/world/yeon/backend/root_auth/service/AuthSessionService.java:89` — 원칙 `O`. 세션 provider 존재 판정을 `AuthProviderSet.hasAny`로 분리했다. 근거: `AuthProviderSet.from(providers).hasAny()`
+272. **[완료][P3] 상태 분기 매핑/전략화** `apps/backend/src/main/java/world/yeon/backend/root_auth/service/AuthSessionService.java:126` — 원칙 `O`. 소셜 인증 요청 구성/지원 provider 판정을 `SocialAuthRequestParts`와 `SocialProviderPolicy`로 분리했다. 근거: `socialRequest.isComplete(SocialProviderPolicy.INSTANCE)`
+273. **[완료][P3] 상태 분기 매핑/전략화** `apps/backend/src/main/java/world/yeon/backend/root_auth/service/AuthSessionService.java:151` — 원칙 `O`. dev-login 옵션 노출 조건을 `DevLoginOptionPolicy.shouldExpose`로 분리했다. 근거: `DevLoginOptionPolicy.from(user, providers).shouldExpose()`
+274. **[완료][P3] 상태 분기 매핑/전략화** `apps/backend/src/main/java/world/yeon/backend/root_auth/service/AuthSessionService.java:180` — 원칙 `O`. 관리자 역할 판정을 `AuthRolePolicy.isAdmin`으로 분리했다. 근거: `AuthRolePolicy.from(user).isAdmin()`
+275. **[완료][P3] 상태 분기 매핑/전략화** `apps/backend/src/main/java/world/yeon/backend/root_auth/service/AuthSessionService.java:251` — 원칙 `O`. 동일 provider 다른 providerUserId 충돌 판정을 `IdentityReusePolicy.conflictsWith`로 분리했다. 근거: `IdentityReusePolicy.from(provider, providerUserId).conflictsWith(identity)`
 276. **[P3] 상태 분기 매핑/전략화** `apps/backend/src/main/java/world/yeon/backend/root_auth/social/SocialIdentityProviderClient.java:32` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `return switch (provider) {`
 277. **[P3] 상태 분기 매핑/전략화** `apps/backend/src/main/java/world/yeon/backend/root_auth/social/SocialIdentityProviderClient.java:127` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (response.statusCode() < 200 || response.statusCode() >= 300) {`
 278. **[P3] 상태 분기 매핑/전략화** `apps/backend/src/main/java/world/yeon/backend/typing_character_frames/service/TypingCharacterFrameService.java:55` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (ADMIN_ROLE.equals(user.role()) || adminSeedEmails.contains(normalizeEmail(user.email()))) {`
@@ -676,3 +676,11 @@
 - 항목 268 완료: 호스트 승계 역할 재배정 가능 여부를 `CardRoomStatePolicy.canRebalanceRolesAfterHostSuccession`로 분리했다.
 - 항목 269 완료: 열린 방 guard를 `CardRoomStatePolicy.requireOpen`으로 분리했다.
 - 항목 270 완료: 진행 가능 방 guard를 `CardRoomStatePolicy.requireActive`로 분리했다.
+
+## 79차 적용 완료
+
+- 항목 271 완료: 세션 provider 존재 판정을 `AuthProviderSet.hasAny`로 분리했다.
+- 항목 272 완료: 소셜 인증 요청 구성/지원 provider 판정을 `SocialAuthRequestParts`와 `SocialProviderPolicy`로 분리했다.
+- 항목 273 완료: dev-login 옵션 노출 조건을 `DevLoginOptionPolicy.shouldExpose`로 분리했다.
+- 항목 274 완료: 관리자 역할 판정을 `AuthRolePolicy.isAdmin`으로 분리했다.
+- 항목 275 완료: 동일 provider 다른 providerUserId 충돌 판정을 `IdentityReusePolicy.conflictsWith`로 분리했다.
