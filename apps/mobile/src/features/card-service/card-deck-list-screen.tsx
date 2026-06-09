@@ -1,4 +1,3 @@
-import type { CardDeckDto } from "@yeon/api-contract/card-decks";
 import {
   useYeonMutation as useMutation,
   useYeonQuery as useQuery,
@@ -16,9 +15,9 @@ import {
 import { useMemo, useState } from "react";
 import {
   YeonActionButton as ActionButton,
+  YeonButton,
   YeonBottomSheetForm as BottomSheetForm,
   YeonBottomSheetModal as BottomSheetModal,
-  YeonButton,
   YeonFloatingActionButton as FloatingActionButton,
   YeonFormIntro as FormIntro,
   YeonFormStack as FormStack,
@@ -29,27 +28,22 @@ import {
   YeonText,
   YeonTextField as TextField,
   YeonView,
-  createYeonStyleSheet,
   showYeonAlert,
-  yeonMobileAppColors,
 } from "@yeon/ui/native";
 import { cardServiceQueryKeys } from "../../services/card-service/query-keys";
 import { HeaderExperienceBadge } from "../user-experience/header-experience-badge";
 import { createMobileCardDeckRepository } from "./runtime-adapters/card-deck-repository";
+import { DeckCard } from "./card-deck-list-deck-card";
+import { styles } from "./card-deck-list-screen.styles";
+import {
+  iconReviewImage,
+  iconSyncImage,
+  mascotEmptyImage,
+  mascotImage,
+} from "./card-deck-list-assets";
 import { CARD_SERVICE_TEXT } from "./card-service-copy";
 import { getCardServiceErrorMessage } from "./error-message";
 import { useCardSession } from "./card-session-context";
-
-// 홈 화면 이미지 에셋(사용자 제공 디자인 팩).
-import mascotImage from "../../../assets/images/card-home/mascot-home.png";
-import mascotEmptyImage from "../../../assets/images/card-home/mascot-empty.png";
-import iconReviewImage from "../../../assets/images/card-home/icon-review.png";
-import iconSyncImage from "../../../assets/images/card-home/icon-sync.png";
-import deckThumb1 from "../../../assets/images/card-home/deck-thumb-1.png";
-import deckThumb2 from "../../../assets/images/card-home/deck-thumb-2.png";
-import deckThumb3 from "../../../assets/images/card-home/deck-thumb-3.png";
-
-const DECK_THUMBS = [deckThumb1, deckThumb2, deckThumb3];
 
 // 경로 템플릿은 route 정체성 SSOT에서 가져온다(웹과 동일 템플릿 파생, 하드코딩 금지).
 function getCardServiceDeckDetailHref(deckId: string): Href {
@@ -64,42 +58,6 @@ function getCardServiceDeckPlayHref(deckId: string): Href {
     pathname: YEON_ROUTE_TEMPLATES.cardDeckPlay,
     params: { deckId },
   } as Href;
-}
-
-type DeckCardProps = {
-  deck: CardDeckDto;
-  index: number;
-  onOpen: () => void;
-};
-
-function DeckCard({ deck, index, onOpen }: DeckCardProps) {
-  return (
-    <YeonButton
-      accessibilityRole="button"
-      aria-label={`${CARD_SERVICE_TEXT.shared.openDeckLabel}: ${deck.title}`}
-      onPress={onOpen}
-      style={styles.deckCard}
-    >
-      <YeonImage
-        resizeMode="contain"
-        source={DECK_THUMBS[index % DECK_THUMBS.length]}
-        style={styles.deckThumb}
-      />
-      <YeonView style={styles.deckBody}>
-        <YeonText numberOfLines={1} style={styles.deckTitle}>
-          {deck.title}
-        </YeonText>
-        <YeonText numberOfLines={1} style={styles.deckMeta}>
-          {formatCardDeckMeta(deck)}
-        </YeonText>
-      </YeonView>
-      <YeonView style={styles.deckAction}>
-        <YeonText style={styles.deckActionText}>
-          {CARD_SERVICE_TEXT.shared.openDeckLabel}
-        </YeonText>
-      </YeonView>
-    </YeonButton>
-  );
 }
 
 export function CardDeckListScreen() {
@@ -343,184 +301,3 @@ export function CardDeckListScreen() {
     </MobileScreen>
   );
 }
-
-const styles = createYeonStyleSheet({
-  header: {
-    alignItems: "flex-start",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 28,
-    minHeight: 96,
-    paddingTop: 4,
-  },
-  headerTextBlock: {
-    flex: 1,
-    gap: 8,
-    paddingRight: 12,
-    paddingTop: 6,
-  },
-  brand: {
-    color: yeonMobileAppColors.text,
-    fontSize: 24,
-    fontWeight: "800",
-    letterSpacing: -0.6,
-    lineHeight: 30,
-  },
-  welcome: {
-    color: yeonMobileAppColors.textMuted,
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  headerRight: {
-    alignItems: "flex-end",
-    gap: 8,
-  },
-  headerMascot: {
-    height: 84,
-    marginTop: 2,
-    width: 84,
-  },
-  resumeCard: {
-    padding: 16,
-  },
-  resumeRow: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: 12,
-    justifyContent: "space-between",
-  },
-  resumeIcon: {
-    height: 30,
-    width: 30,
-  },
-  resumeBody: {
-    flex: 1,
-    gap: 3,
-  },
-  resumeLabel: {
-    color: yeonMobileAppColors.textMuted,
-    fontSize: 12,
-    fontWeight: "700",
-  },
-  resumeTitle: {
-    color: yeonMobileAppColors.text,
-    fontSize: 16,
-    fontWeight: "700",
-  },
-  resumeMeta: {
-    color: yeonMobileAppColors.textMuted,
-    fontSize: 12,
-  },
-  resumeButton: {
-    paddingHorizontal: 18,
-  },
-  syncBanner: {
-    alignItems: "center",
-    backgroundColor: yeonMobileAppColors.surface,
-    borderColor: yeonMobileAppColors.border,
-    borderRadius: 14,
-    borderWidth: 1,
-    flexDirection: "row",
-    gap: 10,
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-  },
-  syncIcon: {
-    height: 22,
-    width: 24,
-  },
-  syncText: {
-    color: yeonMobileAppColors.textMuted,
-    flex: 1,
-    fontSize: 13,
-    lineHeight: 18,
-  },
-  syncLink: {
-    color: yeonMobileAppColors.text,
-    fontSize: 13,
-    fontWeight: "700",
-  },
-  sectionHeader: {
-    alignItems: "baseline",
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-  sectionTitle: {
-    color: yeonMobileAppColors.text,
-    fontSize: 18,
-    fontWeight: "800",
-  },
-  sectionCount: {
-    color: yeonMobileAppColors.textMuted,
-    fontSize: 13,
-    fontWeight: "600",
-  },
-  emptyCard: {
-    alignItems: "center",
-    gap: 8,
-    paddingHorizontal: 20,
-    paddingVertical: 32,
-  },
-  emptyMascot: {
-    height: 160,
-    marginBottom: 8,
-    width: 160,
-  },
-  emptyTitle: {
-    color: yeonMobileAppColors.text,
-    fontSize: 18,
-    fontWeight: "800",
-    textAlign: "center",
-  },
-  emptyMessage: {
-    color: yeonMobileAppColors.textMuted,
-    fontSize: 14,
-    lineHeight: 20,
-    textAlign: "center",
-  },
-  emptyButton: {
-    marginTop: 12,
-    paddingHorizontal: 22,
-  },
-  deckCard: {
-    alignItems: "center",
-    backgroundColor: yeonMobileAppColors.surfaceStrong,
-    borderColor: yeonMobileAppColors.border,
-    borderRadius: 14,
-    borderWidth: 1,
-    flexDirection: "row",
-    gap: 14,
-    padding: 16,
-  },
-  deckThumb: {
-    height: 46,
-    width: 46,
-  },
-  deckBody: {
-    flex: 1,
-    gap: 4,
-  },
-  deckTitle: {
-    color: yeonMobileAppColors.text,
-    fontSize: 16,
-    fontWeight: "700",
-  },
-  deckMeta: {
-    color: yeonMobileAppColors.textMuted,
-    fontSize: 12,
-  },
-  deckAction: {
-    alignItems: "center",
-    borderColor: yeonMobileAppColors.border,
-    borderRadius: 10,
-    borderWidth: 1,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
-  deckActionText: {
-    color: yeonMobileAppColors.text,
-    fontSize: 13,
-    fontWeight: "700",
-  },
-});
