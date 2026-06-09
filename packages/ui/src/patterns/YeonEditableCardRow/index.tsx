@@ -5,23 +5,41 @@ import { YeonText } from "../../primitives/YeonText";
 import { YeonView } from "../../primitives/YeonView";
 import { joinClassNames } from "../../utils";
 
-export type YeonEditableCardRowProps = {
+export type YeonEditableCardRowContentProps = {
   answerLabel: string;
   answerText: string;
-  className?: string;
-  deleteLabel: string;
-  editLabel: string;
   index: number | string;
-  isBusy?: boolean;
-  isMenuOpen?: boolean;
-  menuAccessibilityLabel?: string;
-  onDelete?: () => void;
-  onEdit?: () => void;
-  onToggleMenu?: () => void;
-  openAccessibilityLabel?: string;
   questionLabel: string;
   questionText: string;
 };
+
+export type YeonEditableCardRowStateProps = {
+  isBusy?: boolean;
+  isMenuOpen?: boolean;
+};
+
+export type YeonEditableCardRowActionLabels = {
+  deleteLabel: string;
+  editLabel: string;
+  menuAccessibilityLabel?: string;
+  openAccessibilityLabel?: string;
+};
+
+export type YeonEditableCardRowActions = {
+  onDelete?: () => void;
+  onEdit?: () => void;
+  onToggleMenu?: () => void;
+};
+
+export type YeonEditableCardRowStyleProps = {
+  className?: string;
+};
+
+export type YeonEditableCardRowProps = YeonEditableCardRowContentProps &
+  YeonEditableCardRowStateProps &
+  YeonEditableCardRowActionLabels &
+  YeonEditableCardRowActions &
+  YeonEditableCardRowStyleProps;
 
 export const YeonEditableCardRow = memo(function YeonEditableCardRow({
   answerLabel,

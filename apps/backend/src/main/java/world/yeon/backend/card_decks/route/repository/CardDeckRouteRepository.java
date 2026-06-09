@@ -18,6 +18,72 @@ public class CardDeckRouteRepository {
 	public record CardDeckListRow(Long internalId, String publicId, String ownerUserId, String title, String description, OffsetDateTime createdAt, OffsetDateTime updatedAt, int itemCount) {}
 	public record CardDeckItemRow(Long internalId, String publicId, Long deckId, String frontText, String backText, String imageStorageKey, String reviewDifficulty, OffsetDateTime lastReviewedAt, OffsetDateTime nextReviewAt, OffsetDateTime createdAt, OffsetDateTime updatedAt) {}
 
+	private record NativeQueryRow(Object[] values, String label) {
+		static NativeQueryRow require(Object raw, int min, String label) {
+			Object[] values = raw instanceof Object[] rowValues ? rowValues : new Object[]{raw};
+			if (values.length < min) {
+				throw new IllegalStateException(label + "를 해석하지 못했습니다. 필요한 컬럼: " + min + ", 실제 컬럼: " + values.length);
+			}
+			return new NativeQueryRow(values, label);
+		}
+
+		NativeQueryValue valueAt(int index) {
+			if (index >= values.length) {
+				throw new IllegalStateException(label + "의 " + index + "번째 컬럼을 읽을 수 없습니다.");
+			}
+			return new NativeQueryValue(values[index], label + "[" + index + "]");
+		}
+	}
+
+	private record NativeQueryValue(Object value, String label) {
+		String asString() {
+			return value == null ? null : value.toString();
+		}
+
+		Long asLong() {
+			if (value instanceof Number number) {
+				return number.longValue();
+			}
+			return Long.parseLong(requiredText());
+		}
+
+		int asInt() {
+			if (value instanceof Number number) {
+				return number.intValue();
+			}
+			return Integer.parseInt(requiredText());
+		}
+
+		OffsetDateTime asOffsetDateTime() {
+			if (value == null) {
+				return null;
+			}
+			if (value instanceof OffsetDateTime offsetDateTime) {
+				return offsetDateTime;
+			}
+			if (value instanceof Timestamp timestamp) {
+				return timestamp.toInstant().atOffset(ZoneOffset.UTC);
+			}
+			if (value instanceof Instant instant) {
+				return instant.atOffset(ZoneOffset.UTC);
+			}
+			if (value instanceof Date date) {
+				return date.toInstant().atOffset(ZoneOffset.UTC);
+			}
+			if (value instanceof ZonedDateTime zonedDateTime) {
+				return zonedDateTime.toOffsetDateTime();
+			}
+			return OffsetDateTime.parse(requiredText());
+		}
+
+		private String requiredText() {
+			if (value == null) {
+				throw new IllegalStateException(label + " 값이 비어 있습니다.");
+			}
+			return value.toString();
+		}
+	}
+
 	private final EntityManager entityManager;
 
 	public CardDeckRouteRepository(EntityManager entityManager) {
@@ -97,9 +163,7 @@ public class CardDeckRouteRepository {
 			.setParameter("userId", userId)
 			.getResultList();
 		if (rows.isEmpty()) return null;
-		Object raw = rows.getFirst();
-		if (raw instanceof Object[] values) return values[0] == null ? null : values[0].toString();
-		return raw == null ? null : raw.toString();
+		return scalarValue(rows.getFirst(), "user card study mode").asString();
 	}
 
 	@Transactional
@@ -234,43 +298,27 @@ public class CardDeckRouteRepository {
 			.setParameter("updatedAt", Timestamp.from(now.toInstant()))
 			.getResultList();
 		if (rows.isEmpty()) return null;
-		Object raw = rows.getFirst();
-		if (raw instanceof Object[] values) return values[0] == null ? null : values[0].toString();
-		return raw == null ? null : raw.toString();
+		return scalarValue(rows.getFirst(), "updated user card study mode").asString();
 	}
 
 	private CardDeckRow toDeckRow(Object raw) {
-		Object[] v = toValues(raw, 7, "card deck row");
-		return new CardDeckRow(asLong(v[0]), asString(v[1]), asString(v[2]), asString(v[3]), asString(v[4]), asOffsetDateTime(v[5]), asOffsetDateTime(v[6]));
+		NativeQueryRow row = NativeQueryRow.require(raw, 7, "card deck row");
+		return new CardDeckRow(row.valueAt(0).asLong(), row.valueAt(1).asString(), row.valueAt(2).asString(), row.valueAt(3).asString(), row.valueAt(4).asString(), row.valueAt(5).asOffsetDateTime(), row.valueAt(6).asOffsetDateTime());
 	}
 
 	private CardDeckListRow toDeckListRow(Object raw) {
-		Object[] v = toValues(raw, 8, "card deck list row");
-		return new CardDeckListRow(asLong(v[0]), asString(v[1]), asString(v[2]), asString(v[3]), asString(v[4]), asOffsetDateTime(v[5]), asOffsetDateTime(v[6]), asInt(v[7]));
+		NativeQueryRow row = NativeQueryRow.require(raw, 8, "card deck list row");
+		return new CardDeckListRow(row.valueAt(0).asLong(), row.valueAt(1).asString(), row.valueAt(2).asString(), row.valueAt(3).asString(), row.valueAt(4).asString(), row.valueAt(5).asOffsetDateTime(), row.valueAt(6).asOffsetDateTime(), row.valueAt(7).asInt());
 	}
 
 	private CardDeckItemRow toItemRow(Object raw) {
-		Object[] v = toValues(raw, 11, "card deck item row");
-		return new CardDeckItemRow(asLong(v[0]), asString(v[1]), asLong(v[2]), asString(v[3]), asString(v[4]), asString(v[5]), asString(v[6]), asOffsetDateTime(v[7]), asOffsetDateTime(v[8]), asOffsetDateTime(v[9]), asOffsetDateTime(v[10]));
+		NativeQueryRow row = NativeQueryRow.require(raw, 11, "card deck item row");
+		return new CardDeckItemRow(row.valueAt(0).asLong(), row.valueAt(1).asString(), row.valueAt(2).asLong(), row.valueAt(3).asString(), row.valueAt(4).asString(), row.valueAt(5).asString(), row.valueAt(6).asString(), row.valueAt(7).asOffsetDateTime(), row.valueAt(8).asOffsetDateTime(), row.valueAt(9).asOffsetDateTime(), row.valueAt(10).asOffsetDateTime());
 	}
 
-	private Object[] toValues(Object raw, int min, String label) {
-		if (!(raw instanceof Object[] values) || values.length < min) {
-			throw new IllegalStateException(label + "를 해석하지 못했습니다.");
-		}
-		return values;
+	private NativeQueryValue scalarValue(Object raw, String label) {
+		return NativeQueryRow.require(raw, 1, label).valueAt(0);
 	}
 
-	private String asString(Object value) { return value == null ? null : value.toString(); }
-	private Long asLong(Object value) { return value instanceof Number n ? n.longValue() : Long.parseLong(value.toString()); }
-	private int asInt(Object value) { return value instanceof Number n ? n.intValue() : Integer.parseInt(value.toString()); }
-	private OffsetDateTime asOffsetDateTime(Object value) {
-		if (value == null) return null;
-		if (value instanceof OffsetDateTime offsetDateTime) return offsetDateTime;
-		if (value instanceof Timestamp timestamp) return timestamp.toInstant().atOffset(ZoneOffset.UTC);
-		if (value instanceof Instant instant) return instant.atOffset(ZoneOffset.UTC);
-		if (value instanceof Date date) return date.toInstant().atOffset(ZoneOffset.UTC);
-		if (value instanceof ZonedDateTime zonedDateTime) return zonedDateTime.toOffsetDateTime();
-		return OffsetDateTime.parse(value.toString());
-	}
+	private int asInt(Object value) { return new NativeQueryValue(value, "integer scalar").asInt(); }
 }

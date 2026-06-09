@@ -11,6 +11,20 @@ import org.springframework.stereotype.Repository;
 public class MergeGuestCardDeckRepository {
 	public record InsertedDeckRow(Long id) {}
 
+	private record NativeQueryRow(Object[] values) {
+		static NativeQueryRow of(Object raw) {
+			return raw instanceof Object[] values ? new NativeQueryRow(values) : new NativeQueryRow(new Object[]{raw});
+		}
+
+		Long longAt(int index) {
+			Object value = values[index];
+			if (value instanceof Number number) {
+				return number.longValue();
+			}
+			return Long.parseLong(value.toString());
+		}
+	}
+
 	private final EntityManager entityManager;
 
 	public MergeGuestCardDeckRepository(EntityManager entityManager) {
@@ -36,9 +50,8 @@ public class MergeGuestCardDeckRepository {
 			.setParameter("createdAt", Timestamp.from(now.toInstant()))
 			.setParameter("updatedAt", Timestamp.from(now.toInstant()))
 			.getResultList();
-		Object value = rows.getFirst();
-		Object[] row = value instanceof Object[] arr ? arr : new Object[]{value};
-		return new InsertedDeckRow(((Number) row[0]).longValue());
+		NativeQueryRow row = NativeQueryRow.of(rows.getFirst());
+		return new InsertedDeckRow(row.longAt(0));
 	}
 
 	public int insertItems(Long deckId, List<Object[]> rows, OffsetDateTime now) {
