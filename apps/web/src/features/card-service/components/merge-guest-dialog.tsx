@@ -23,6 +23,22 @@ type MergeGuestDialogProps = {
   onClose: () => void;
 };
 
+function getMergeGuestDialogErrorMessage(error: unknown) {
+  if (error instanceof GuestStoreMergeContractError) {
+    return error.message;
+  }
+
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  if (typeof error === "string" && error.trim().length > 0) {
+    return `덱 이관에 실패했습니다. 원인: ${error.trim()}`;
+  }
+
+  return `덱 이관에 실패했습니다. 원인: 처리할 수 없는 오류 형식(${String(error)})`;
+}
+
 export function MergeGuestDialog({
   guestDeckCount,
   onClose,
@@ -44,13 +60,10 @@ export function MergeGuestDialog({
         createdItemCount: result.createdItemCount,
       });
     } catch (error) {
-      const message =
-        error instanceof GuestStoreMergeContractError
-          ? error.message
-          : error instanceof Error
-            ? error.message
-            : "덱 이관에 실패했습니다. 다시 시도해 주세요.";
-      setState({ kind: "error", message });
+      setState({
+        kind: "error",
+        message: getMergeGuestDialogErrorMessage(error),
+      });
     }
   }
 

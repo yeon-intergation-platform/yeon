@@ -14,6 +14,10 @@ interface ExportDeckPanelProps {
   onClose: () => void;
 }
 
+function buildExportDeckCopyErrorMessage(itemCount: number) {
+  return `덱 내보내기 텍스트를 클립보드에 복사하지 못했습니다. 복사 대상 카드 수: ${itemCount}장. 브라우저 클립보드 권한 또는 보안 컨텍스트를 확인해 주세요.`;
+}
+
 function toExportText(items: CardDeckItemDto[]): string {
   return items
     .map((item, i) =>
@@ -26,13 +30,16 @@ function toExportText(items: CardDeckItemDto[]): string {
 
 export function ExportDeckPanel({ items, onClose }: ExportDeckPanelProps) {
   const [copied, setCopied] = useState(false);
+  const [copyErrorMessage, setCopyErrorMessage] = useState<string | null>(null);
   const text = toExportText(items);
 
   const handleCopy = async () => {
     const copiedSuccessfully = await copyYeonClipboardText(text);
     if (!copiedSuccessfully) {
-      throw new Error("클립보드 복사를 지원하지 않습니다.");
+      setCopyErrorMessage(buildExportDeckCopyErrorMessage(items.length));
+      return;
     }
+    setCopyErrorMessage(null);
     setCopied(true);
     scheduleYeonTimeout(() => setCopied(false), 2000);
   };
@@ -54,6 +61,17 @@ export function ExportDeckPanel({ items, onClose }: ExportDeckPanelProps) {
           draggable={false}
           className="mt-1 resize-none rounded-2xl bg-[#fafafa] px-4 py-3 font-mono text-[13px] leading-6 select-text md:text-[14px]"
         />
+
+        {copyErrorMessage ? (
+          <YeonText
+            as="p"
+            variant="caption"
+            tone="primary"
+            className="mt-3 font-semibold"
+          >
+            {copyErrorMessage}
+          </YeonText>
+        ) : null}
 
         <YeonView className={SHARED_FEATURE_CLASS.alignBetweenGap3WithMargin4}>
           <YeonText
