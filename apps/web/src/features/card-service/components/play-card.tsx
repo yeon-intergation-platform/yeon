@@ -31,6 +31,59 @@ interface PlayCardProps {
 
 const CARD_RESIZE_KEYBOARD_STEP = 24;
 
+interface CardResizePointerDragSnapshot {
+  startX: number;
+  startY: number;
+  startSize: CardPlayCardSize;
+}
+
+interface CardResizePointerDragPort {
+  beginDrag(
+    snapshot: CardResizePointerDragSnapshot,
+    onSizeChange: (size: CardPlayCardSize) => void
+  ): void;
+}
+
+const CARD_RESIZE_POINTER_DRAG_PORT: CardResizePointerDragPort = {
+  beginDrag(snapshot, onSizeChange) {
+    const browserDocument = globalThis.document;
+    const browserWindow = globalThis.window;
+
+    if (!browserDocument?.body || !browserWindow) {
+      return;
+    }
+
+    const previousCursor = browserDocument.body.style.cursor;
+    const previousUserSelect = browserDocument.body.style.userSelect;
+
+    browserDocument.body.style.cursor = "nwse-resize";
+    browserDocument.body.style.userSelect = "none";
+
+    const stopDrag = () => {
+      browserDocument.body.style.cursor = previousCursor;
+      browserDocument.body.style.userSelect = previousUserSelect;
+      browserWindow.removeEventListener("pointermove", handlePointerMove);
+      browserWindow.removeEventListener("pointerup", stopDrag);
+      browserWindow.removeEventListener("pointercancel", stopDrag);
+    };
+
+    const handlePointerMove = (moveEvent: PointerEvent) => {
+      moveEvent.preventDefault();
+      onSizeChange(
+        clampCardPlayCardSize({
+          width: snapshot.startSize.width + moveEvent.clientX - snapshot.startX,
+          height:
+            snapshot.startSize.height + moveEvent.clientY - snapshot.startY,
+        })
+      );
+    };
+
+    browserWindow.addEventListener("pointermove", handlePointerMove);
+    browserWindow.addEventListener("pointerup", stopDrag);
+    browserWindow.addEventListener("pointercancel", stopDrag);
+  },
+};
+
 function getCardResizeStyle(size: CardPlayCardSize): CSSProperties {
   return {
     width: size.width,
@@ -72,36 +125,14 @@ export function PlayCard({
     event.preventDefault();
     event.stopPropagation();
 
-    const startX = event.clientX;
-    const startY = event.clientY;
-    const startSize = size;
-    const previousCursor = document.body.style.cursor;
-    const previousUserSelect = document.body.style.userSelect;
-
-    document.body.style.cursor = "nwse-resize";
-    document.body.style.userSelect = "none";
-
-    const handlePointerMove = (moveEvent: PointerEvent) => {
-      moveEvent.preventDefault();
-      onSizeChange(
-        clampCardPlayCardSize({
-          width: startSize.width + moveEvent.clientX - startX,
-          height: startSize.height + moveEvent.clientY - startY,
-        })
-      );
-    };
-
-    const handlePointerUp = () => {
-      document.body.style.cursor = previousCursor;
-      document.body.style.userSelect = previousUserSelect;
-      window.removeEventListener("pointermove", handlePointerMove);
-      window.removeEventListener("pointerup", handlePointerUp);
-      window.removeEventListener("pointercancel", handlePointerUp);
-    };
-
-    window.addEventListener("pointermove", handlePointerMove);
-    window.addEventListener("pointerup", handlePointerUp);
-    window.addEventListener("pointercancel", handlePointerUp);
+    CARD_RESIZE_POINTER_DRAG_PORT.beginDrag(
+      {
+        startX: event.clientX,
+        startY: event.clientY,
+        startSize: size,
+      },
+      onSizeChange
+    );
   };
 
   const handleResizeKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
@@ -140,7 +171,9 @@ export function PlayCard({
       >
         <YeonView
           className={`relative h-full w-full [transform-style:preserve-3d] ${
-            shouldAnimateFlip ? "transition-transform duration-[350ms] ease-in-out" : ""
+            shouldAnimateFlip
+              ? "transition-transform duration-[350ms] ease-in-out"
+              : ""
           } ${
             isFlipped
               ? "[transform:rotateY(180deg)]"
