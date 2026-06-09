@@ -5,46 +5,30 @@ import {
   TERRITORY_BATTLE_EVENTS,
   TERRITORY_BATTLE_PHASE,
   TERRITORY_BATTLE_TEAM,
-  assignTerritoryTeam,
   captureTerritoryCell,
   createTerritoryBoard,
   findTerritoryCellByWord,
   resolveTerritoryWinner,
   type TerritoryBattlePhase,
-  type TerritoryBattlePlayerSnapshot,
-  type TerritoryBattleSnapshot,
   type TerritoryBattleSubmitWordMessage,
-  type TerritoryBattleTeam,
-  type TerritoryBattleTeamSnapshot,
   type TerritoryCellSnapshot,
 } from "@yeon/race-shared";
 
-type TerritoryPlayer = TerritoryBattlePlayerSnapshot & {
-  joinedAt: number;
-};
+import { parseTerritoryBattleSubmitWordMessage } from "./territory-battle-message";
+import {
+  createTerritoryPlayer,
+  type TerritoryPlayer,
+} from "./territory-battle-players";
+import {
+  createTerritoryBattleSnapshot,
+  createTerritoryTeamSnapshots,
+} from "./territory-battle-snapshot";
 
 type TerritoryBattleRoomOptions = {
   seed?: string;
   sourceRoomId?: string;
   durationSeconds?: number;
 };
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
-}
-
-function parseSubmitWordMessage(
-  payload: unknown
-): TerritoryBattleSubmitWordMessage | null {
-  if (!isRecord(payload) || typeof payload.word !== "string") return null;
-
-  return {
-    word: payload.word,
-    cellId: typeof payload.cellId === "string" ? payload.cellId : undefined,
-    submittedAt:
-      typeof payload.submittedAt === "number" ? payload.submittedAt : undefined,
-  };
-}
 
 export class TerritoryBattleRoom extends Room {
   maxClients = TERRITORY_BATTLE_DEFAULTS.maxPlayers;
@@ -80,7 +64,7 @@ export class TerritoryBattleRoom extends Room {
     });
 
     this.onMessage(TERRITORY_BATTLE_EVENTS.SUBMIT_WORD, (client, payload) => {
-      this.submitWord(client, parseSubmitWordMessage(payload));
+      this.submitWord(client, parseTerritoryBattleSubmitWordMessage(payload));
     });
 
     this.setState(this.createSnapshot());
@@ -94,22 +78,11 @@ export class TerritoryBattleRoom extends Room {
   onJoin(client: Client, options?: { nickname?: string }) {
     const playerIndex = this.players.size;
     const playerId = client.sessionId;
-    const team = assignTerritoryTeam(playerIndex);
-    const player: TerritoryPlayer = {
-      id: playerId,
-      nickname:
-        typeof options?.nickname === "string" && options.nickname.trim()
-          ? options.nickname.trim().slice(0, 24)
-          : `Guest ${playerIndex + 1}`,
-      team,
-      score: 0,
-      combo: 0,
-      capturedCellCount: 0,
-      accuracy: 100,
-      cpm: 0,
-      isConnected: true,
-      joinedAt: Date.now(),
-    };
+    const player = createTerritoryPlayer({
+      nickname: options?.nickname,
+      playerId,
+      playerIndex,
+    });
 
     this.players.set(playerId, player);
     this.clientPlayerIds.set(client.sessionId, playerId);
@@ -288,7 +261,10 @@ export class TerritoryBattleRoom extends Room {
     if (this.phase === TERRITORY_BATTLE_PHASE.FINISHED) return;
 
     this.phase = TERRITORY_BATTLE_PHASE.FINISHED;
-    const scores = this.createTeamSnapshots();
+    const scores = createTerritoryTeamSnapshots({
+      board: this.board,
+      players: this.players.values(),
+    });
     const redScore =
       scores.find((score) => score.team === TERRITORY_BATTLE_TEAM.RED)?.score ??
       0;
@@ -299,58 +275,21 @@ export class TerritoryBattleRoom extends Room {
 
     this.broadcast(TERRITORY_BATTLE_EVENTS.RESULT, {
       ...result,
-      players: Array.from(this.players.values()).map((player) =>
-        this.createPlayerSnapshot(player)
-      ),
+      players: this.createSnapshot().players,
       board: this.board,
     });
     this.broadcastState();
   }
 
-  private createPlayerSnapshot(
-    player: TerritoryPlayer
-  ): TerritoryBattlePlayerSnapshot {
-    return {
-      id: player.id,
-      nickname: player.nickname,
-      team: player.team,
-      score: player.score,
-      combo: player.combo,
-      capturedCellCount: player.capturedCellCount,
-      accuracy: player.accuracy,
-      cpm: player.cpm,
-      lastSubmittedAt: player.lastSubmittedAt,
-      isConnected: player.isConnected,
-      disconnectedAt: player.disconnectedAt,
-    };
-  }
-
-  private createTeamSnapshots(): TerritoryBattleTeamSnapshot[] {
-    return [TERRITORY_BATTLE_TEAM.RED, TERRITORY_BATTLE_TEAM.BLUE].map(
-      (team: TerritoryBattleTeam) => ({
-        team,
-        score: Array.from(this.players.values())
-          .filter((player) => player.team === team)
-          .reduce((sum, player) => sum + player.score, 0),
-        capturedCellCount: this.board.filter((cell) => cell.owner === team)
-          .length,
-      })
-    );
-  }
-
-  private createSnapshot(): TerritoryBattleSnapshot {
-    return {
+  private createSnapshot() {
+    return createTerritoryBattleSnapshot({
       phase: this.phase,
       seed: this.seed,
-      boardSize: TERRITORY_BATTLE_DEFAULTS.boardSize,
       startsAt: this.startsAt,
       endsAt: this.endsAt,
       board: this.board,
-      players: Array.from(this.players.values()).map((player) =>
-        this.createPlayerSnapshot(player)
-      ),
-      teams: this.createTeamSnapshots(),
-    };
+      players: this.players.values(),
+    });
   }
 
   private broadcastState() {
