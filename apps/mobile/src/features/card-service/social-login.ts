@@ -12,6 +12,19 @@ export type MobileSocialLoginResult =
   | { status: "cancelled" }
   | { status: "error"; message: string };
 
+type MobileAuthSessionResult = Awaited<
+  ReturnType<typeof WebBrowser.openAuthSessionAsync>
+>;
+
+function getSuccessfulAuthSessionUrl(
+  result: MobileAuthSessionResult
+): string | null {
+  if (result.type !== "success") {
+    return null;
+  }
+  return result.url;
+}
+
 // 웹 OAuth 콜백이 딥링크로 돌려주는 오류 코드 → 한국어 메시지.
 // 코드 자체는 buildAuthErrorRedirectPath/authErrorCodes와 동일 어휘.
 const SOCIAL_ERROR_MESSAGES: Record<string, string> = {
@@ -58,7 +71,8 @@ export async function startMobileSocialLogin(
 
   const result = await WebBrowser.openAuthSessionAsync(startUrl, returnUrl);
 
-  if (result.type !== "success") {
+  const successUrl = getSuccessfulAuthSessionUrl(result);
+  if (!successUrl) {
     // dismiss/cancel/locked 등은 사용자 취소로 본다.
     return { status: "cancelled" };
   }
@@ -66,7 +80,7 @@ export async function startMobileSocialLogin(
   // idx-141: returnUrl scheme/host/path 일치 검증.
   // Linking.parse는 커스텀 scheme URL을 host/path로 분해한다.
   const expectedParsed = Linking.parse(returnUrl);
-  const resultParsed = Linking.parse(result.url);
+  const resultParsed = Linking.parse(successUrl);
 
   if (
     resultParsed.scheme !== expectedParsed.scheme ||
@@ -89,7 +103,7 @@ export async function startMobileSocialLogin(
 
   // idx=142: 세션 토큰은 URL fragment(#)로 전달된다(쿼리스트링 로그 노출 최소화).
   // Linking.parse는 fragment를 queryParams로 노출하지 않으므로 result.url에서 직접 파싱한다.
-  const fragmentParams = parseFragment(result.url);
+  const fragmentParams = parseFragment(successUrl);
   const sessionToken = fragmentParams.get("token");
 
   if (!sessionToken) {
