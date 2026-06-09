@@ -47,10 +47,39 @@ interface CardDeckPlayScreenProps {
   deckId?: string;
 }
 
+const CARD_DECK_PLAY_OPERATION = {
+  detail: "카드 학습 상세 조회",
+  guestDetail: "비회원 카드 학습 상세 조회",
+  review: "카드 복습 저장",
+} as const;
+
+type CardDeckPlayOperation =
+  (typeof CARD_DECK_PLAY_OPERATION)[keyof typeof CARD_DECK_PLAY_OPERATION];
+
+class CardDeckPlayInputError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "CardDeckPlayInputError";
+  }
+}
+
 function getModeBadge(mode: CardServiceMode): string {
   return mode === CARD_SERVICE_MODE.server
     ? CARD_SERVICE_TEXT.play.modeAuthenticatedLabel
     : CARD_SERVICE_TEXT.play.modeGuestLabel;
+}
+
+function requirePlayDeckId(
+  deckId: string | undefined,
+  operation: CardDeckPlayOperation
+): string {
+  const normalizedDeckId = deckId?.trim();
+  if (!normalizedDeckId) {
+    throw new CardDeckPlayInputError(
+      `${operation}를 실행할 수 없습니다. 화면 경로에 덱 ID가 없습니다.`
+    );
+  }
+  return normalizedDeckId;
 }
 
 export function CardDeckPlayScreen({ deckId }: CardDeckPlayScreenProps) {
@@ -69,17 +98,20 @@ export function CardDeckPlayScreen({ deckId }: CardDeckPlayScreenProps) {
   const detailQuery = useQuery({
     enabled: !isBooting && Boolean(deckId),
     queryFn: async () => {
-      if (!deckId) {
-        throw new Error(CARD_SERVICE_TEXT.detail.missingDeckIdMessage);
-      }
+      const targetDeckId = requirePlayDeckId(
+        deckId,
+        CARD_DECK_PLAY_OPERATION.detail
+      );
 
       if (mode === CARD_SERVICE_MODE.server && sessionToken) {
-        return cardServiceApi.getCardDeckDetail(deckId, sessionToken);
+        return cardServiceApi.getCardDeckDetail(targetDeckId, sessionToken);
       }
 
-      const guestDetail = await getGuestDeckDetail(deckId);
+      const guestDetail = await getGuestDeckDetail(targetDeckId);
       if (!guestDetail) {
-        throw new Error(CARD_SERVICE_TEXT.shared.notFoundMessage);
+        throw new CardDeckPlayInputError(
+          `${CARD_DECK_PLAY_OPERATION.guestDetail}를 실행할 수 없습니다. 비회원 저장소에서 덱을 찾지 못했습니다. deckId=${targetDeckId}`
+        );
       }
       const studyMode = await getGuestCardStudyMode();
       return {
@@ -111,11 +143,12 @@ export function CardDeckPlayScreen({ deckId }: CardDeckPlayScreenProps) {
       difficulty: CardReviewDifficulty;
       itemId: string;
     }) => {
-      if (!deckId) {
-        throw new Error(CARD_SERVICE_TEXT.detail.missingDeckIdMessage);
-      }
-      return itemRepository.reviewCard(
+      const targetDeckId = requirePlayDeckId(
         deckId,
+        CARD_DECK_PLAY_OPERATION.review
+      );
+      return itemRepository.reviewCard(
+        targetDeckId,
         params.itemId,
         params.difficulty
       );
