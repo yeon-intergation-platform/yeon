@@ -494,13 +494,16 @@ function renderHtmlMermaidBlock(
   });
 }
 
-function appendCodeLanguageOptions(select: HTMLSelectElement) {
+function appendCodeLanguageOptions(
+  htmlDocument: Document,
+  select: HTMLSelectElement
+) {
   CARD_EDITOR_CODE_LANGUAGE_GROUPS.forEach((group) => {
-    const optionGroup = document.createElement("optgroup");
+    const optionGroup = createYeonDomElement(htmlDocument, "optgroup");
     optionGroup.label = group.label;
 
     group.options.forEach(([value, label]) => {
-      const option = document.createElement("option");
+      const option = createYeonDomElement(htmlDocument, "option");
       option.value = value;
       option.textContent = label;
       optionGroup.appendChild(option);
@@ -544,7 +547,7 @@ function decorateHtmlCodeBlocks(
     languageSelect.className = "card-code-block-language";
     languageSelect.setAttribute("aria-label", "코드 언어 선택");
     languageSelect.disabled = !onCodeLanguageChange;
-    appendCodeLanguageOptions(languageSelect);
+    appendCodeLanguageOptions(htmlDocument, languageSelect);
     languageSelect.value = getCardEditorCodeLanguageSelectValue(language);
     languageSelect.addEventListener("change", () => {
       const nextLanguage = normalizeCardEditorCodeLanguage(
