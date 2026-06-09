@@ -115,6 +115,11 @@
 
 - 항목 100~108 완료: race-server 카드방 leave/request catch는 16차 helper 반영 상태를 확인해 완료 처리했고, typing-race-room의 기존 catch 후보는 현재 코드에서 제거된 상태를 확인했다. 웹 커뮤니티 404 catch는 처리 가능한 Spring 404만 null로 변환하고 나머지는 재전파하는 경계로 유지했다. 웹 카드 인증 Provider 누락, 카드방 생성/입장, 게스트 덱 개수 확인 실패는 원인을 포함한 helper/전용 Error/사용자 실패 메시지로 구체화했다.
 
+## 39차 적용 완료
+
+- 항목 193 완료: 모바일 카드 학습 화면의 세션/query/mutation/학습 상태 hook 호출을 `use-card-deck-play-state.ts`로 분리했다.
+- 항목 194 완료: 기존 긴 화면 함수에서 검증/변환/부수효과와 이동/복습 이벤트를 hook으로 옮겨 화면 파일을 124라인 렌더링 조립 책임으로 축소했다.
+
 ## 38차 적용 완료
 
 - 항목 192 완료: `card-deck-play-screen.tsx`의 입력 검증/모드 배지 helper와 학습 모드 패널 렌더링을 별도 파일로 분리했다. 화면은 세션/query/mutation 상태 조정에 집중하고, 복습/플래시카드 UI 조립은 `card-deck-play-mode-panels.tsx`가 담당한다.
@@ -453,8 +458,8 @@
 190. **[완료][P2] 컴포넌트 hook 책임 분리** `apps/mobile/src/features/card-service/card-deck-list-screen.tsx:104` — 원칙 `S`. 컴포넌트 인근 hook 호출 후보 8개다. 데이터/폼/이벤트 hook으로 분리한다. 근거: `export function CardDeckListScreen() {`
 191. **[완료][P2] 긴 함수 책임 분리** `apps/mobile/src/features/card-service/card-deck-list-screen.tsx:104` — 원칙 `S`. 239라인 함수다. 검증/변환/부수효과를 작은 함수로 분리한다. 근거: `export function CardDeckListScreen() {`
 192. **[완료][P2] 큰 파일 책임 분리** `apps/mobile/src/features/card-service/card-deck-play-screen.tsx:1` — 원칙 `S`. 398라인 파일에서 입력 검증/모드 배지 helper와 학습 모드 패널 렌더링을 `card-deck-play-helpers.ts`, `card-deck-play-mode-panels.tsx`로 분리해 화면 파일을 333라인으로 축소했다. 근거: `CardDeckPlayModeControl`, `CardDeckReviewModePanel`, `CardDeckFlashcardPanel`, `requirePlayDeckId`
-193. **[P2] 컴포넌트 hook 책임 분리** `apps/mobile/src/features/card-service/card-deck-play-screen.tsx:56` — 원칙 `S`. 컴포넌트 인근 hook 호출 후보 12개다. 데이터/폼/이벤트 hook으로 분리한다. 근거: `export function CardDeckPlayScreen({ deckId }: CardDeckPlayScreenProps) {`
-194. **[P2] 긴 함수 책임 분리** `apps/mobile/src/features/card-service/card-deck-play-screen.tsx:56` — 원칙 `S`. 343라인 함수다. 검증/변환/부수효과를 작은 함수로 분리한다. 근거: `export function CardDeckPlayScreen({ deckId }: CardDeckPlayScreenProps) {`
+193. **[완료][P2] 컴포넌트 hook 책임 분리** `apps/mobile/src/features/card-service/card-deck-play-screen.tsx:56` — 원칙 `S`. 화면 인근 세션/query/mutation/학습 상태 hook을 `use-card-deck-play-state.ts`로 분리했다. 화면은 `useCardDeckPlayState` 1개와 router만 조합한다. 근거: `const play = useCardDeckPlayState({ deckId });`
+194. **[완료][P2] 긴 함수 책임 분리** `apps/mobile/src/features/card-service/card-deck-play-screen.tsx:56` — 원칙 `S`. 343라인 함수에서 상태/검증/부수효과를 `useCardDeckPlayState`로 분리해 화면 파일을 124라인 렌더링 조립으로 축소했다. 근거: `useCardDeckPlayState`, `resetCurrentCardVisibility`, `handleReview`
 195. **[P2] 큰 파일 책임 분리** `apps/mobile/src/features/card-service/card-onboarding-gate.tsx:1` — 원칙 `S`. 380라인 파일이다. 단일 책임 원칙 기준으로 화면/상태/IO/변환 책임 분리 후보다. 근거: `import { useYeonMutation as useMutation } from "@yeon/ui/native";`
 196. **[P2] 긴 함수 책임 분리** `apps/mobile/src/features/card-service/card-onboarding-gate.tsx:44` — 원칙 `S`. 225라인 함수다. 검증/변환/부수효과를 작은 함수로 분리한다. 근거: `export function CardOnboardingGate({`
 197. **[P2] 긴 함수 책임 분리** `apps/mobile/src/features/card-service/card-session-context.tsx:52` — 원칙 `S`. 113라인 함수다. 검증/변환/부수효과를 작은 함수로 분리한다. 근거: `export function CardSessionProvider({ children }: { children: ReactNode }) {`
