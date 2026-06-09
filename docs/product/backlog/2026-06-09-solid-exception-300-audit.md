@@ -575,8 +575,8 @@
 273. **[완료][P3] 상태 분기 매핑/전략화** `apps/backend/src/main/java/world/yeon/backend/root_auth/service/AuthSessionService.java:151` — 원칙 `O`. dev-login 옵션 노출 조건을 `DevLoginOptionPolicy.shouldExpose`로 분리했다. 근거: `DevLoginOptionPolicy.from(user, providers).shouldExpose()`
 274. **[완료][P3] 상태 분기 매핑/전략화** `apps/backend/src/main/java/world/yeon/backend/root_auth/service/AuthSessionService.java:180` — 원칙 `O`. 관리자 역할 판정을 `AuthRolePolicy.isAdmin`으로 분리했다. 근거: `AuthRolePolicy.from(user).isAdmin()`
 275. **[완료][P3] 상태 분기 매핑/전략화** `apps/backend/src/main/java/world/yeon/backend/root_auth/service/AuthSessionService.java:251` — 원칙 `O`. 동일 provider 다른 providerUserId 충돌 판정을 `IdentityReusePolicy.conflictsWith`로 분리했다. 근거: `IdentityReusePolicy.from(provider, providerUserId).conflictsWith(identity)`
-276. **[P3] 상태 분기 매핑/전략화** `apps/backend/src/main/java/world/yeon/backend/root_auth/social/SocialIdentityProviderClient.java:32` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `return switch (provider) {`
-277. **[P3] 상태 분기 매핑/전략화** `apps/backend/src/main/java/world/yeon/backend/root_auth/social/SocialIdentityProviderClient.java:127` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (response.statusCode() < 200 || response.statusCode() >= 300) {`
+276. **[완료][P3] 상태 분기 매핑/전략화** `apps/backend/src/main/java/world/yeon/backend/root_auth/social/SocialIdentityProviderClient.java:32` — 원칙 `O`. provider별 profile fetch 분기를 `SocialProviderRegistry`로 분리해 provider 추가 시 registry entry 확장으로 처리하게 했다. 근거: `SocialProviderRegistry.from(...).fetch(provider)`
+277. **[완료][P3] 상태 분기 매핑/전략화** `apps/backend/src/main/java/world/yeon/backend/root_auth/social/SocialIdentityProviderClient.java:127` — 원칙 `O`. provider HTTP 응답 성공/실패 판정을 `SocialProviderHttpStatus.throwIfFailed`로 분리했다. 근거: `SocialProviderHttpStatus.from(response.statusCode()).throwIfFailed(...)`
 278. **[P3] 상태 분기 매핑/전략화** `apps/backend/src/main/java/world/yeon/backend/typing_character_frames/service/TypingCharacterFrameService.java:55` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (ADMIN_ROLE.equals(user.role()) || adminSeedEmails.contains(normalizeEmail(user.email()))) {`
 279. **[P3] 상태 분기 매핑/전략화** `apps/backend/src/main/java/world/yeon/backend/typing_decks/service/TypingDeckService.java:312` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (!SOURCE_USER.equals(row.source())) {`
 280. **[P3] 상태 분기 매핑/전략화** `apps/mobile/src/features/card-service/card-deck-detail-screen.tsx:403` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (sheetState.kind !== "edit") {`
@@ -684,3 +684,8 @@
 - 항목 273 완료: dev-login 옵션 노출 조건을 `DevLoginOptionPolicy.shouldExpose`로 분리했다.
 - 항목 274 완료: 관리자 역할 판정을 `AuthRolePolicy.isAdmin`으로 분리했다.
 - 항목 275 완료: 동일 provider 다른 providerUserId 충돌 판정을 `IdentityReusePolicy.conflictsWith`로 분리했다.
+
+## 80차 적용 완료
+
+- 항목 276 완료: 소셜 provider별 profile fetch 분기를 `SocialProviderRegistry`로 분리했다.
+- 항목 277 완료: 소셜 provider HTTP status 성공/실패 판정을 `SocialProviderHttpStatus`로 분리했다.

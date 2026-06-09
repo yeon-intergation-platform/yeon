@@ -12,6 +12,8 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
+import java.util.function.Supplier;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 import world.yeon.backend.root_auth.service.AuthSessionServiceException;
@@ -31,11 +33,10 @@ public class SocialIdentityProviderClient {
 	}
 
 	public SocialIdentityProfile fetchProfile(String provider, String code, String codeVerifier, String appOrigin) {
-		return switch (provider) {
-			case "google" -> fetchGoogleProfile(code, codeVerifier, appOrigin);
-			case "kakao" -> fetchKakaoProfile(code, codeVerifier, appOrigin);
-			default -> throw new AuthSessionServiceException(400, "provider_not_configured", "지원하지 않는 로그인 공급자입니다.");
-		};
+		return SocialProviderRegistry.from(Map.of(
+			"google", () -> fetchGoogleProfile(code, codeVerifier, appOrigin),
+			"kakao", () -> fetchKakaoProfile(code, codeVerifier, appOrigin)
+		)).fetch(provider);
 	}
 
 	private SocialIdentityProfile fetchGoogleProfile(String code, String codeVerifier, String appOrigin) {
@@ -126,10 +127,7 @@ public class SocialIdentityProviderClient {
 		try {
 			HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 			JsonNode body = response.body() == null || response.body().isBlank() ? objectMapper.nullNode() : objectMapper.readTree(response.body());
-			if (response.statusCode() < 200 || response.statusCode() >= 300) {
-				log.warn("소셜 로그인 provider 요청 실패: label={} status={}", label, response.statusCode());
-				throw new AuthSessionServiceException(502, errorCode, label + " 요청이 실패했습니다.");
-			}
+			SocialProviderHttpStatus.from(response.statusCode()).throwIfFailed(errorCode, label);
 			return body;
 		} catch (AuthSessionServiceException error) {
 			throw error;
@@ -143,6 +141,38 @@ public class SocialIdentityProviderClient {
 		} catch (IOException error) {
 			log.error("소셜 로그인 provider 네트워크 오류: label={}", label, error);
 			throw new AuthSessionServiceException(502, errorCode, label + " 요청이 실패했습니다.", error);
+		}
+	}
+
+	private record SocialProviderRegistry(Map<String, Supplier<SocialIdentityProfile>> fetchers) {
+		static SocialProviderRegistry from(Map<String, Supplier<SocialIdentityProfile>> fetchers) {
+			return new SocialProviderRegistry(fetchers);
+		}
+
+		SocialIdentityProfile fetch(String provider) {
+			Supplier<SocialIdentityProfile> fetcher = fetchers.get(provider);
+			if (fetcher == null) {
+				throw new AuthSessionServiceException(400, "provider_not_configured", "지원하지 않는 로그인 공급자입니다.");
+			}
+			return fetcher.get();
+		}
+	}
+
+	private record SocialProviderHttpStatus(int value) {
+		static SocialProviderHttpStatus from(int value) {
+			return new SocialProviderHttpStatus(value);
+		}
+
+		void throwIfFailed(String errorCode, String label) {
+			if (isSuccess()) {
+				return;
+			}
+			log.warn("소셜 로그인 provider 요청 실패: label={} status={}", label, value);
+			throw new AuthSessionServiceException(502, errorCode, label + " 요청이 실패했습니다.");
+		}
+
+		private boolean isSuccess() {
+			return value >= 200 && value < 300;
 		}
 	}
 
