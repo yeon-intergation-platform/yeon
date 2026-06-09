@@ -74,6 +74,12 @@ export const CARD_SERVICE_TEXT = {
     submitBusyLabel: "추가 중...",
     submitEditBusyLabel: "저장 중...",
     bulkSaveLabel: "미리보기 후 추가",
+    bulkOverwriteLabel: "덮어쓰기",
+    bulkOverwriteBusyLabel: "덮어쓰는 중...",
+    bulkOverwriteConfirmTitle: "기존 카드 덮어쓰기",
+    bulkOverwriteConfirmMessage: (count: number) =>
+      `기존 카드를 모두 삭제하고 ${count}장으로 덮어쓸까요? 이 작업은 되돌릴 수 없습니다.`,
+    bulkOverwriteCompleteMessageSuffix: "장의 카드로 덮어썼습니다.",
     bulkInputLabel: "붙여넣기 내용",
     bulkHelp:
       "마커가 한 줄 전체가 [[Q]], [[A]], [[CARD]]일 때만 카드로 인식합니다.",

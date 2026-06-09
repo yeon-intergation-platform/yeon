@@ -18,6 +18,7 @@ import {
   createGuestCards,
   deleteGuestCard,
   getGuestDeckDetail,
+  replaceGuestCards,
   reviewGuestCard,
   setGuestCardStudyMode,
   updateGuestCard,
@@ -67,6 +68,25 @@ export function createMobileCardItemRepository(
         return createGuestCards(deckId, body);
       }
       // 모바일은 bulk 엔드포인트가 없으므로 루프로 생성한다(기존 동작 보존).
+      const created: CardDeckItemDto[] = [];
+      for (const item of body.items) {
+        const response = await cardServiceApi.createCardDeckItem(
+          deckId,
+          item,
+          token
+        );
+        created.push(response.item);
+      }
+      return created;
+    },
+    async replaceCards(deckId: string, body: CreateCardDeckItemsBody) {
+      if (!token) {
+        return replaceGuestCards(deckId, body);
+      }
+      const detail = await cardServiceApi.getCardDeckDetail(deckId, token);
+      for (const item of detail.items) {
+        await cardServiceApi.deleteCardDeckItem(deckId, item.id, token);
+      }
       const created: CardDeckItemDto[] = [];
       for (const item of body.items) {
         const response = await cardServiceApi.createCardDeckItem(

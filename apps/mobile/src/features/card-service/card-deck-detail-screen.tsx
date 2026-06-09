@@ -224,6 +224,29 @@ export function CardDeckDetailScreen({ deckId }: CardDeckDetailScreenProps) {
     },
   });
 
+  const bulkReplaceMutation = useMutation({
+    mutationFn: async () => {
+      if (!deckId) {
+        throw new Error(CARD_SERVICE_TEXT.detail.missingDeckIdMessage);
+      }
+      const cards = parseAiCardInput(bulkText);
+      if (cards.length === 0) {
+        throw new Error(CARD_SERVICE_TEXT.detail.noParseResultMessage);
+      }
+      await itemRepository.replaceCards(deckId, { items: cards });
+      return cards.length;
+    },
+    onSuccess: async (createdCount) => {
+      setBulkText("");
+      closeSheet();
+      await invalidateDeck();
+      showYeonAlert(
+        CARD_SERVICE_TEXT.detail.addCompleteTitle,
+        `${createdCount}${CARD_SERVICE_TEXT.detail.bulkOverwriteCompleteMessageSuffix}`
+      );
+    },
+  });
+
   const updateMutation = useMutation({
     mutationFn: async (params: ParsedCardInput & { itemId: string }) => {
       if (!deckId) {
@@ -342,6 +365,40 @@ export function CardDeckDetailScreen({ deckId }: CardDeckDetailScreenProps) {
     }
   }
 
+  async function handleBulkReplaceCards() {
+    const cards = parseAiCardInput(bulkText);
+    if (cards.length === 0) {
+      showYeonAlert(
+        CARD_SERVICE_TEXT.state.errorTitle,
+        CARD_SERVICE_TEXT.detail.noParseResultMessage
+      );
+      return;
+    }
+
+    showYeonAlert(
+      CARD_SERVICE_TEXT.detail.bulkOverwriteConfirmTitle,
+      CARD_SERVICE_TEXT.detail.bulkOverwriteConfirmMessage(cards.length),
+      [
+        { text: "취소", style: "cancel" },
+        {
+          text: CARD_SERVICE_TEXT.detail.bulkOverwriteLabel,
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await bulkReplaceMutation.mutateAsync();
+            } catch (error) {
+              const message =
+                error instanceof Error
+                  ? error.message
+                  : CARD_SERVICE_TEXT.detail.createErrorMessage;
+              showYeonAlert(CARD_SERVICE_TEXT.state.errorTitle, message);
+            }
+          },
+        },
+      ]
+    );
+  }
+
   async function handleUpdateCard() {
     if (sheetState.kind !== "edit") {
       return;
@@ -430,7 +487,9 @@ export function CardDeckDetailScreen({ deckId }: CardDeckDetailScreenProps) {
     !createMutation.isPending &&
     !updateMutation.isPending;
   const canSubmitBulk =
-    bulkText.trim().length > 0 && !bulkCreateMutation.isPending;
+    bulkText.trim().length > 0 &&
+    !bulkCreateMutation.isPending &&
+    !bulkReplaceMutation.isPending;
 
   const rowBusy = updateMutation.isPending || deleteMutation.isPending;
   const isReady = detailState.kind === "ready" && !detailState.isEmpty;
@@ -604,16 +663,28 @@ export function CardDeckDetailScreen({ deckId }: CardDeckDetailScreenProps) {
                 placeholder={CARD_SERVICE_TEXT.detail.bulkPlaceholder}
                 value={bulkText}
               />
-              <ActionButton
-                disabled={!canSubmitBulk}
-                label={
-                  bulkCreateMutation.isPending
-                    ? CARD_SERVICE_TEXT.detail.submitBusyLabel
-                    : CARD_SERVICE_TEXT.detail.bulkSaveLabel
-                }
-                onPress={handleBulkCreateCards}
-                variant="dark"
-              />
+              <FormStack gap="compact">
+                <ActionButton
+                  disabled={!canSubmitBulk}
+                  label={
+                    bulkCreateMutation.isPending
+                      ? CARD_SERVICE_TEXT.detail.submitBusyLabel
+                      : CARD_SERVICE_TEXT.detail.bulkSaveLabel
+                  }
+                  onPress={handleBulkCreateCards}
+                  variant="dark"
+                />
+                <ActionButton
+                  disabled={!canSubmitBulk}
+                  label={
+                    bulkReplaceMutation.isPending
+                      ? CARD_SERVICE_TEXT.detail.bulkOverwriteBusyLabel
+                      : CARD_SERVICE_TEXT.detail.bulkOverwriteLabel
+                  }
+                  onPress={handleBulkReplaceCards}
+                  variant="danger"
+                />
+              </FormStack>
             </>
           )}
         </BottomSheetForm>

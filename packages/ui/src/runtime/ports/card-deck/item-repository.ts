@@ -25,6 +25,10 @@ export interface YeonCardItemRepository {
     deckId: string,
     body: CreateCardDeckItemsBody
   ): Promise<CardDeckItemDto[]>;
+  replaceCards(
+    deckId: string,
+    body: CreateCardDeckItemsBody
+  ): Promise<CardDeckItemDto[]>;
   updateCard(
     deckId: string,
     itemId: string,

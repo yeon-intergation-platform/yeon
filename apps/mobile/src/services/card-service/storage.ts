@@ -356,6 +356,41 @@ export async function createGuestCards(
   return cards.map(toGuestCardItemDto);
 }
 
+export async function replaceGuestCards(
+  deckId: string,
+  body: CreateCardDeckItemsBody
+): Promise<CardDeckItemDto[]> {
+  const state = await readState();
+  const deck = state.decks.find((item) => item.id === deckId);
+  if (!deck) {
+    throw new Error("덱을 찾을 수 없습니다.");
+  }
+
+  const now = nowIso();
+  const cards = body.items.map((item) => ({
+    id: randomId(),
+    deckId,
+    frontText: item.frontText,
+    backText: item.backText,
+    imageStorageKey: item.imageStorageKey ?? null,
+    reviewDifficulty: null,
+    lastReviewedAt: null,
+    nextReviewAt: null,
+    createdAt: now,
+    updatedAt: now,
+  }));
+
+  await writeState({
+    ...state,
+    decks: state.decks.map((item) =>
+      item.id === deckId ? { ...item, updatedAt: now } : item
+    ),
+    items: [...state.items.filter((item) => item.deckId !== deckId), ...cards],
+  });
+
+  return cards.map(toGuestCardItemDto);
+}
+
 export async function updateGuestCard(
   itemId: string,
   body: UpdateCardDeckItemBody
