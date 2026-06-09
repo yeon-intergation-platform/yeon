@@ -10,13 +10,12 @@ import {
 } from "@yeon/ui/native";
 import { YEON_ROUTE_TEMPLATES } from "@yeon/ui/runtime/ports";
 import { deriveCardDeckDetailViewState } from "@yeon/ui/runtime/ports/card-deck";
-import { memo, useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { showYeonAlert } from "@yeon/ui/native";
 import {
   YeonActionButton as ActionButton,
   YeonBottomSheetForm as BottomSheetForm,
   YeonBottomSheetModal as BottomSheetModal,
-  YeonEditableCardRow as EditableCardRow,
   YeonFlatList as FlatList,
   YeonFloatingActionButton as FloatingActionButton,
   YeonFormIntro as FormIntro,
@@ -33,7 +32,7 @@ import { parseAiCardInput } from "./card-input-parser";
 import { createMobileCardItemRepository } from "./runtime-adapters/card-item-repository";
 import { CARD_SERVICE_TEXT } from "./card-service-copy";
 import { getCardServiceErrorMessage } from "./error-message";
-import { CardMarkdown } from "./card-markdown";
+import { DeckCardRow } from "./card-deck-detail-card-row";
 import { MarkdownTextField } from "./markdown-text-field";
 import {
   CARD_SERVICE_MODE,
@@ -137,59 +136,6 @@ function parseBulkCardsOrThrow(
   }
   return cards;
 }
-
-type DeckCardRowProps = {
-  item: CardDeckItemDto;
-  index: number;
-  isBusy: boolean;
-  isMenuOpen: boolean;
-  onDelete: (itemId: string) => void;
-  onEdit: (item: CardDeckItemDto) => void;
-  onToggleMenu: (itemId: string) => void;
-};
-
-// memo: 한 카드의 메뉴 토글이 다른 카드(특히 CardMarkdown)까지 리렌더하지 않도록 분리한다.
-// 콜백은 상위에서 useCallback으로 안정화되고, 여기서 item별 닫힘 closure를 만든다.
-const DeckCardRow = memo(function DeckCardRow({
-  item,
-  index,
-  isBusy,
-  isMenuOpen,
-  onDelete,
-  onEdit,
-  onToggleMenu,
-}: DeckCardRowProps) {
-  const handleDelete = useCallback(
-    () => onDelete(item.id),
-    [onDelete, item.id]
-  );
-  const handleEdit = useCallback(() => onEdit(item), [onEdit, item]);
-  const handleToggleMenu = useCallback(
-    () => onToggleMenu(item.id),
-    [onToggleMenu, item.id]
-  );
-
-  return (
-    <EditableCardRow
-      answerLabel={CARD_SERVICE_TEXT.detail.answerLabel}
-      answerText={item.backText}
-      answerContent={<CardMarkdown source={item.backText} />}
-      questionContent={<CardMarkdown source={item.frontText} />}
-      deleteLabel={CARD_SERVICE_TEXT.shared.deleteLabel}
-      editLabel={CARD_SERVICE_TEXT.shared.editLabel}
-      index={index}
-      isBusy={isBusy}
-      isMenuOpen={isMenuOpen}
-      menuAccessibilityLabel={CARD_SERVICE_TEXT.shared.openCardMenuLabel}
-      onDelete={handleDelete}
-      onEdit={handleEdit}
-      onToggleMenu={handleToggleMenu}
-      openAccessibilityLabel={`${CARD_SERVICE_TEXT.shared.openCardLabel}: ${item.frontText}`}
-      questionLabel={CARD_SERVICE_TEXT.detail.questionLabel}
-      questionText={item.frontText}
-    />
-  );
-});
 
 export function CardDeckDetailScreen({ deckId }: CardDeckDetailScreenProps) {
   const queryClient = useQueryClient();
