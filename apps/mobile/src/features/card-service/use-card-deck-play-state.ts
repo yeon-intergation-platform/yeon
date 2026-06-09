@@ -1,5 +1,6 @@
 import {
   CARD_STUDY_MODES,
+  type CardDeckDetailResponse,
   type CardReviewDifficulty,
   type CardStudyMode,
 } from "@yeon/api-contract/card-decks";
@@ -31,6 +32,40 @@ import {
 import { getCardServiceErrorMessage } from "./error-message";
 import { createMobileCardItemRepository } from "./runtime-adapters/card-item-repository";
 
+async function loadGuestCardDeckPlayDetail(
+  targetDeckId: string
+): Promise<CardDeckDetailResponse> {
+  const guestDetail = await getGuestDeckDetail(targetDeckId);
+  if (!guestDetail) {
+    throw new CardDeckPlayInputError(
+      `${CARD_DECK_PLAY_OPERATION.guestDetail}를 실행할 수 없습니다. 비회원 저장소에서 덱을 찾지 못했습니다. deckId=${targetDeckId}`
+    );
+  }
+  const studyMode = await getGuestCardStudyMode();
+  return {
+    ...guestDetail,
+    studyMode,
+  };
+}
+
+function createCardDeckPlayDetailReader(
+  mode: CardServiceMode,
+  sessionToken: string | null
+): {
+  read: (targetDeckId: string) => Promise<CardDeckDetailResponse>;
+} {
+  if (mode === CARD_SERVICE_MODE.server && sessionToken) {
+    return {
+      read: (targetDeckId) =>
+        cardServiceApi.getCardDeckDetail(targetDeckId, sessionToken),
+    };
+  }
+
+  return {
+    read: loadGuestCardDeckPlayDetail,
+  };
+}
+
 interface UseCardDeckPlayStateParams {
   deckId?: string;
 }
@@ -55,21 +90,9 @@ export function useCardDeckPlayState({ deckId }: UseCardDeckPlayStateParams) {
         CARD_DECK_PLAY_OPERATION.detail
       );
 
-      if (mode === CARD_SERVICE_MODE.server && sessionToken) {
-        return cardServiceApi.getCardDeckDetail(targetDeckId, sessionToken);
-      }
-
-      const guestDetail = await getGuestDeckDetail(targetDeckId);
-      if (!guestDetail) {
-        throw new CardDeckPlayInputError(
-          `${CARD_DECK_PLAY_OPERATION.guestDetail}를 실행할 수 없습니다. 비회원 저장소에서 덱을 찾지 못했습니다. deckId=${targetDeckId}`
-        );
-      }
-      const studyMode = await getGuestCardStudyMode();
-      return {
-        ...guestDetail,
-        studyMode,
-      };
+      return createCardDeckPlayDetailReader(mode, sessionToken).read(
+        targetDeckId
+      );
     },
     queryKey: deckId
       ? cardServiceQueryKeys.deckDetail(
