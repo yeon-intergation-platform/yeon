@@ -13,6 +13,9 @@ import {
 } from "./card-service-decks-screen-parts";
 import { useCardServiceDecksScreenState } from "./use-card-service-decks-screen-state";
 
+// useCardServiceDecksScreenState 내부에서 deriveCardDeckListViewState로
+// web/mobile 공용 list-state SSOT를 파생한다. 화면은 hook 결과만 조립한다.
+
 export function CardServiceDecksScreen() {
   const screen = useCardServiceDecksScreenState();
 
