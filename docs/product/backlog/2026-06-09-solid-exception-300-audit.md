@@ -115,6 +115,12 @@
 
 - 항목 100~108 완료: race-server 카드방 leave/request catch는 16차 helper 반영 상태를 확인해 완료 처리했고, typing-race-room의 기존 catch 후보는 현재 코드에서 제거된 상태를 확인했다. 웹 커뮤니티 404 catch는 처리 가능한 Spring 404만 null로 변환하고 나머지는 재전파하는 경계로 유지했다. 웹 카드 인증 Provider 누락, 카드방 생성/입장, 게스트 덱 개수 확인 실패는 원인을 포함한 helper/전용 Error/사용자 실패 메시지로 구체화했다.
 
+## 28차 적용 완료
+
+- 항목 182 완료: `TypingDeckRepository`의 native query row 조립 책임을 `TypingDeckRowMapper` Spring 컴포넌트로 분리했다.
+- `TypingDeckRepository`는 SQL 조립/파라미터 바인딩/저장소 접근에 집중하고, `TypingDeckRow`/`TypingDeckListRow`/`TypingDeckPassageRow` 변환은 mapper에 위임한다.
+- Spring bean 추가에 따라 타자 덱 도메인 테스트와 ApplicationContext 부팅 검증을 수행한다.
+
 ## 27차 적용 완료
 
 - 항목 181 완료: `AuthSessionService`에서 세션 토큰 발급, 만료시각 계산, 세션 저장, 출석 경험치 적립 책임을 `AuthSessionIssuer` Spring 서비스로 분리했다.
@@ -378,7 +384,7 @@
 179. **[완료][P2] 큰 파일 책임 분리** `apps/backend/src/main/java/world/yeon/backend/card_rooms/service/CardRoomService.java:1` — 원칙 `S`. 551라인 파일이다. 단일 책임 원칙 기준으로 화면/상태/IO/변환 책임 분리 후보다. 근거: `package world.yeon.backend.card_rooms.service;`
 180. **[완료][P2] 큰 파일 책임 분리** `apps/backend/src/main/java/world/yeon/backend/root_auth/repository/AuthSessionRepository.java:1` — 원칙 `S`. 364라인 파일이다. 단일 책임 원칙 기준으로 화면/상태/IO/변환 책임 분리 후보다. 근거: `package world.yeon.backend.root_auth.repository;`
 181. **[완료][P2] 큰 파일 책임 분리** `apps/backend/src/main/java/world/yeon/backend/root_auth/service/AuthSessionService.java:1` — 원칙 `S`. 399라인 파일이다. 단일 책임 원칙 기준으로 화면/상태/IO/변환 책임 분리 후보다. 근거: `package world.yeon.backend.root_auth.service;`
-182. **[P2] 큰 파일 책임 분리** `apps/backend/src/main/java/world/yeon/backend/typing_decks/repository/TypingDeckRepository.java:1` — 원칙 `S`. 350라인 파일이다. 단일 책임 원칙 기준으로 화면/상태/IO/변환 책임 분리 후보다. 근거: `package world.yeon.backend.typing_decks.repository;`
+182. **[완료][P2] 큰 파일 책임 분리** `apps/backend/src/main/java/world/yeon/backend/typing_decks/repository/TypingDeckRepository.java:1` — 원칙 `S`. 350라인 파일이다. 단일 책임 원칙 기준으로 화면/상태/IO/변환 책임 분리 후보다. 근거: `package world.yeon.backend.typing_decks.repository;`
 183. **[P2] 큰 파일 책임 분리** `apps/backend/src/main/java/world/yeon/backend/typing_decks/service/TypingDeckService.java:1` — 원칙 `S`. 384라인 파일이다. 단일 책임 원칙 기준으로 화면/상태/IO/변환 책임 분리 후보다. 근거: `package world.yeon.backend.typing_decks.service;`
 184. **[P2] 큰 파일 책임 분리** `apps/mobile/src/features/card-service/card-deck-detail-screen.tsx:1` — 원칙 `S`. 694라인 파일이다. 단일 책임 원칙 기준으로 화면/상태/IO/변환 책임 분리 후보다. 근거: `import type { CardDeckItemDto } from "@yeon/api-contract/card-decks";`
 185. **[P2] 컴포넌트 hook 책임 분리** `apps/mobile/src/features/card-service/card-deck-detail-screen.tsx:108` — 원칙 `S`. 컴포넌트 인근 hook 호출 후보 20개다. 데이터/폼/이벤트 hook으로 분리한다. 근거: `const DeckCardRow = memo(function DeckCardRow({`

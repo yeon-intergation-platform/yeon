@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.UUID;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
-import world.yeon.backend.common.repository.NativeQueryRow;
 import world.yeon.backend.common.repository.NativeQueryValue;
 
 @Repository
@@ -55,9 +54,11 @@ public class TypingDeckRepository {
 	) {}
 
 	private final EntityManager entityManager;
+	private final TypingDeckRowMapper rowMapper;
 
-	public TypingDeckRepository(EntityManager entityManager) {
+	public TypingDeckRepository(EntityManager entityManager, TypingDeckRowMapper rowMapper) {
 		this.entityManager = entityManager;
+		this.rowMapper = rowMapper;
 	}
 
 	public List<TypingDeckListRow> listDecks(UUID currentUserId, String scope, String languageTag, boolean adminMode) {
@@ -74,7 +75,7 @@ public class TypingDeckRepository {
 		sql.append(" group by d.id order by d.created_at desc");
 		var query = entityManager.createNativeQuery(sql.toString());
 		bind(query, params);
-		return query.getResultList().stream().map(this::toTypingDeckListRow).toList();
+		return query.getResultList().stream().map(rowMapper::toTypingDeckListRow).toList();
 	}
 
 	public TypingDeckRow findDeckByPublicId(String deckPublicId) {
@@ -84,7 +85,7 @@ public class TypingDeckRepository {
 			where public_id = :deckPublicId
 			limit 1
 		""").setParameter("deckPublicId", deckPublicId).getResultList();
-		return rows.isEmpty() ? null : toTypingDeckRow(rows.getFirst());
+		return rows.isEmpty() ? null : rowMapper.toTypingDeckRow(rows.getFirst());
 	}
 
 	public List<TypingDeckPassageRow> listPassagesByDeckId(Long deckId) {
@@ -93,7 +94,7 @@ public class TypingDeckRepository {
 			from public.typing_deck_passages
 			where deck_id = :deckId
 			order by sort_order asc, created_at asc
-		""").setParameter("deckId", deckId).getResultList().stream().map(this::toTypingDeckPassageRow).toList();
+		""").setParameter("deckId", deckId).getResultList().stream().map(rowMapper::toTypingDeckPassageRow).toList();
 	}
 
 	public TypingDeckPassageRow findPassageByPublicIdAndDeckId(String passagePublicId, Long deckId) {
@@ -103,7 +104,7 @@ public class TypingDeckRepository {
 			where public_id = :passagePublicId and deck_id = :deckId
 			limit 1
 		""").setParameter("passagePublicId", passagePublicId).setParameter("deckId", deckId).getResultList();
-		return rows.isEmpty() ? null : toTypingDeckPassageRow(rows.getFirst());
+		return rows.isEmpty() ? null : rowMapper.toTypingDeckPassageRow(rows.getFirst());
 	}
 
 	public int countPassages(Long deckId) {
@@ -130,7 +131,7 @@ public class TypingDeckRepository {
 			.setParameter("createdAt", Timestamp.from(now.toInstant()))
 			.setParameter("updatedAt", Timestamp.from(now.toInstant()))
 			.getResultList();
-		return rows.isEmpty() ? null : toTypingDeckRow(rows.getFirst());
+		return rows.isEmpty() ? null : rowMapper.toTypingDeckRow(rows.getFirst());
 	}
 
 	@Transactional
@@ -152,7 +153,7 @@ public class TypingDeckRepository {
 			.setParameter("visibility", visibility)
 			.setParameter("updatedAt", Timestamp.from(now.toInstant()))
 			.getResultList();
-		return rows.isEmpty() ? null : toTypingDeckRow(rows.getFirst());
+		return rows.isEmpty() ? null : rowMapper.toTypingDeckRow(rows.getFirst());
 	}
 
 	@Transactional
@@ -180,7 +181,7 @@ public class TypingDeckRepository {
 			.setParameter("createdAt", Timestamp.from(now.toInstant()))
 			.setParameter("updatedAt", Timestamp.from(now.toInstant()))
 			.getResultList();
-		return rows.isEmpty() ? null : toTypingDeckPassageRow(rows.getFirst());
+		return rows.isEmpty() ? null : rowMapper.toTypingDeckPassageRow(rows.getFirst());
 	}
 
 	@Transactional
@@ -204,7 +205,7 @@ public class TypingDeckRepository {
 			.setParameter("sortOrder", sortOrder)
 			.setParameter("updatedAt", Timestamp.from(now.toInstant()))
 			.getResultList();
-		return rows.isEmpty() ? null : toTypingDeckPassageRow(rows.getFirst());
+		return rows.isEmpty() ? null : rowMapper.toTypingDeckPassageRow(rows.getFirst());
 	}
 
 	@Transactional
@@ -260,55 +261,6 @@ public class TypingDeckRepository {
 		for (SqlParam param : params) {
 			query.setParameter(param.name(), param.value());
 		}
-	}
-
-	private TypingDeckRow toTypingDeckRow(Object rawRow) {
-		NativeQueryRow row = NativeQueryRow.require(rawRow, 10, "typing deck row");
-		return new TypingDeckRow(
-			row.valueAt(0).asLong(),
-			row.valueAt(1).asString(),
-			row.valueAt(2).asString(),
-			row.valueAt(3).asString(),
-			row.valueAt(4).asString(),
-			row.valueAt(5).asString(),
-			row.valueAt(6).asString(),
-			row.valueAt(7).asString(),
-			row.valueAt(8).asOffsetDateTime(),
-			row.valueAt(9).asOffsetDateTime()
-		);
-	}
-
-	private TypingDeckListRow toTypingDeckListRow(Object rawRow) {
-		NativeQueryRow row = NativeQueryRow.require(rawRow, 11, "typing deck list row");
-		return new TypingDeckListRow(
-			row.valueAt(0).asLong(),
-			row.valueAt(1).asString(),
-			row.valueAt(2).asString(),
-			row.valueAt(3).asString(),
-			row.valueAt(4).asString(),
-			row.valueAt(5).asString(),
-			row.valueAt(6).asString(),
-			row.valueAt(7).asString(),
-			row.valueAt(8).asOffsetDateTime(),
-			row.valueAt(9).asOffsetDateTime(),
-			row.valueAt(10).asInt()
-		);
-	}
-
-	private TypingDeckPassageRow toTypingDeckPassageRow(Object rawRow) {
-		NativeQueryRow row = NativeQueryRow.require(rawRow, 10, "typing deck passage row");
-		return new TypingDeckPassageRow(
-			row.valueAt(0).asLong(),
-			row.valueAt(1).asString(),
-			row.valueAt(2).asLong(),
-			row.valueAt(3).asString(),
-			row.valueAt(4).asString(),
-			row.valueAt(5).asString(),
-			row.valueAt(6).asString(),
-			row.valueAt(7).asInt(),
-			row.valueAt(8).asOffsetDateTime(),
-			row.valueAt(9).asOffsetDateTime()
-		);
 	}
 
 	private record SqlParam(String name, Object value) {}
