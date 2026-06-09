@@ -17,16 +17,30 @@ import {
 } from "@yeon/ui";
 import { showYeonConfirm } from "@yeon/ui/runtime/YeonBrowserRuntime";
 
-interface CardRowProps {
+type CardRowIdentityProps = {
   deckId: string;
   item: CardDeckItemDto;
   index?: number;
+};
+
+type CardRowEditStateProps = {
   isEditing?: boolean;
+};
+
+type CardRowEditActions = {
   onRequestEdit?: (itemId: string) => boolean;
   onCloseEdit?: () => void;
   onDirtyChange?: (itemId: string, dirty: boolean) => void;
+};
+
+type CardRowDeleteActions = {
   onDeleted?: () => void;
-}
+};
+
+type CardRowProps = CardRowIdentityProps &
+  CardRowEditStateProps &
+  CardRowEditActions &
+  CardRowDeleteActions;
 
 function snapshot(frontText: string, backText: string) {
   return JSON.stringify({

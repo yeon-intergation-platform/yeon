@@ -61,20 +61,25 @@ function CardEditorToolbarButton({
   );
 }
 
-interface CardEditorToolbarProps {
+type CardEditorToolbarMarksState = {
+  bold?: boolean;
+  italic?: boolean;
+  underline?: boolean;
+  bulletList?: boolean;
+  orderedList?: boolean;
+  blockquote?: boolean;
+  codeBlock?: boolean;
+};
+
+type CardEditorToolbarAvailabilityProps = {
   canUseToolbar: boolean;
   isUploading: boolean;
-  active: {
-    bold?: boolean;
-    italic?: boolean;
-    underline?: boolean;
-    bulletList?: boolean;
-    orderedList?: boolean;
-    blockquote?: boolean;
-    codeBlock?: boolean;
-  };
+  active: CardEditorToolbarMarksState;
   canUndo?: boolean;
   canRedo?: boolean;
+};
+
+type CardEditorToolbarFormatActions = {
   onBold: () => void;
   onItalic: () => void;
   onUnderline: () => void;
@@ -82,13 +87,28 @@ interface CardEditorToolbarProps {
   onOrderedList: () => void;
   onBlockquote: () => void;
   onCodeBlock: () => void;
+};
+
+type CardEditorToolbarInsertActions = {
   onTable: () => void;
   onImage: () => void;
+};
+
+type CardEditorToolbarHistoryActions = {
   onUndo: () => void;
   onRedo: () => void;
+};
+
+type CardEditorToolbarDisplayProps = {
   density?: CardEditorToolbarDensity;
   leadingLabel?: string;
-}
+};
+
+type CardEditorToolbarProps = CardEditorToolbarAvailabilityProps &
+  CardEditorToolbarFormatActions &
+  CardEditorToolbarInsertActions &
+  CardEditorToolbarHistoryActions &
+  CardEditorToolbarDisplayProps;
 
 export function CardEditorToolbar({
   canUseToolbar,

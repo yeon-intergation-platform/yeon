@@ -8,17 +8,27 @@ import { YeonButton, YeonText, YeonView } from "@yeon/ui";
 import { YEON_WEB_SHARED_CLASS as SHARED_FEATURE_CLASS } from "@yeon/ui/theme/web-style-tokens";
 import { MarkdownContent } from "./components/markdown-content";
 
-type CardRoomStudyPanelProps = {
+type CardRoomStudyPanelStateProps = {
   state: CardRoomRealtimeState | null;
   currentCard: CardRoomCardDto | null;
+};
+
+type CardRoomStudyPanelPermissionProps = {
   isChecker: boolean;
   isMemorizer: boolean;
   shouldShowBack: boolean;
   canMoveNext: boolean;
+};
+
+type CardRoomStudyPanelActionProps = {
   onReveal: () => void;
   onResult: (cardId: string, result: "OK" | "GIVE_UP" | "HINTED_OK") => void;
   onNext: () => void;
 };
+
+type CardRoomStudyPanelProps = CardRoomStudyPanelStateProps &
+  CardRoomStudyPanelPermissionProps &
+  CardRoomStudyPanelActionProps;
 
 export function CardRoomStudyPanel({
   state,

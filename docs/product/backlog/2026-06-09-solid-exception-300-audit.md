@@ -115,6 +115,10 @@
 
 - 항목 100~108 완료: race-server 카드방 leave/request catch는 16차 helper 반영 상태를 확인해 완료 처리했고, typing-race-room의 기존 catch 후보는 현재 코드에서 제거된 상태를 확인했다. 웹 커뮤니티 404 catch는 처리 가능한 Spring 404만 null로 변환하고 나머지는 재전파하는 경계로 유지했다. 웹 카드 인증 Provider 누락, 카드방 생성/입장, 게스트 덱 개수 확인 실패는 원인을 포함한 helper/전용 Error/사용자 실패 메시지로 구체화했다.
 
+## 19차 적용 완료
+
+- 항목 119~128 완료: race-server 참가자 타입과 웹 카드 서비스 헤더/학습/에디터/카드 행/복습 카드 props를 상태·액션·표시·정체성 단위의 작은 타입으로 분리해 ISP 위반 후보를 줄였다. 런타임 동작은 유지하고 큰 prop/interface만 조합 타입으로 대체했다.
+
 ## 18차 적용 완료
 
 - 항목 109~118 완료: 웹 카드 에디터 이미지 정규화/업로드/붙여넣기, 코드 블록 복사, 덱 내보내기, 게스트 덱 이관 실패 메시지를 helper로 통합해 Error/string/기타 unknown 원인을 보존했다. 클립보드 실패는 복사 대상 길이/카드 수와 브라우저 권한 원인을 사용자 메시지 또는 로그로 드러낸다.
@@ -262,16 +266,16 @@
 
 ### ISP
 
-119. **[P2] 큰 타입/인터페이스 분리** `apps/race-server/src/rooms/typing-race-room.ts:73` — 원칙 `I`. 멤버 후보 17개다. 읽기/쓰기/이벤트/상태 전용 타입으로 분리할 후보다. 근거: `type RoomParticipant = {`
-120. **[P2] 큰 타입/인터페이스 분리** `apps/web/src/features/card-service/card-room-header.tsx:30` — 원칙 `I`. 멤버 후보 10개다. 읽기/쓰기/이벤트/상태 전용 타입으로 분리할 후보다. 근거: `type CardRoomHeaderProps = {`
-121. **[P2] 큰 타입/인터페이스 분리** `apps/web/src/features/card-service/card-room-study-panel.tsx:11` — 원칙 `I`. 멤버 후보 9개다. 읽기/쓰기/이벤트/상태 전용 타입으로 분리할 후보다. 근거: `type CardRoomStudyPanelProps = {`
-122. **[P2] 큰 타입/인터페이스 분리** `apps/web/src/features/card-service/components/card-editor-toolbar.tsx:64` — 원칙 `I`. 멤버 후보 25개다. 읽기/쓰기/이벤트/상태 전용 타입으로 분리할 후보다. 근거: `interface CardEditorToolbarProps {`
-123. **[P2] 큰 타입/인터페이스 분리** `apps/web/src/features/card-service/components/card-rich-markdown-editor-view.tsx:317` — 원칙 `I`. 멤버 후보 9개다. 읽기/쓰기/이벤트/상태 전용 타입으로 분리할 후보다. 근거: `interface CardPreviewSurfaceProps {`
-124. **[P2] 큰 타입/인터페이스 분리** `apps/web/src/features/card-service/components/card-rich-markdown-editor.tsx:99` — 원칙 `I`. 멤버 후보 10개다. 읽기/쓰기/이벤트/상태 전용 타입으로 분리할 후보다. 근거: `interface CardRichMarkdownEditorProps {`
-125. **[P2] 큰 타입/인터페이스 분리** `apps/web/src/features/card-service/components/card-rich-markdown-editor.tsx:112` — 원칙 `I`. 멤버 후보 11개다. 읽기/쓰기/이벤트/상태 전용 타입으로 분리할 후보다. 근거: `type CardEditorToolbarState = {`
-126. **[P2] 큰 타입/인터페이스 분리** `apps/web/src/features/card-service/components/card-row-views.tsx:16` — 원칙 `I`. 멤버 후보 13개다. 읽기/쓰기/이벤트/상태 전용 타입으로 분리할 후보다. 근거: `type CardRowEditViewProps = {`
-127. **[P2] 큰 타입/인터페이스 분리** `apps/web/src/features/card-service/components/card-row.tsx:20` — 원칙 `I`. 멤버 후보 8개다. 읽기/쓰기/이벤트/상태 전용 타입으로 분리할 후보다. 근거: `interface CardRowProps {`
-128. **[P2] 큰 타입/인터페이스 분리** `apps/web/src/features/card-service/components/deck-play-review-mode-card.tsx:43` — 원칙 `I`. 멤버 후보 8개다. 읽기/쓰기/이벤트/상태 전용 타입으로 분리할 후보다. 근거: `interface DeckPlayReviewModeCardProps {`
+119. **[완료][P2] 큰 타입/인터페이스 분리** `apps/race-server/src/rooms/typing-race-room.ts:73` — 원칙 `I`. 멤버 후보 17개다. 읽기/쓰기/이벤트/상태 전용 타입으로 분리할 후보다. 근거: `type RoomParticipant = {`
+120. **[완료][P2] 큰 타입/인터페이스 분리** `apps/web/src/features/card-service/card-room-header.tsx:30` — 원칙 `I`. 멤버 후보 10개다. 읽기/쓰기/이벤트/상태 전용 타입으로 분리할 후보다. 근거: `type CardRoomHeaderProps = {`
+121. **[완료][P2] 큰 타입/인터페이스 분리** `apps/web/src/features/card-service/card-room-study-panel.tsx:11` — 원칙 `I`. 멤버 후보 9개다. 읽기/쓰기/이벤트/상태 전용 타입으로 분리할 후보다. 근거: `type CardRoomStudyPanelProps = {`
+122. **[완료][P2] 큰 타입/인터페이스 분리** `apps/web/src/features/card-service/components/card-editor-toolbar.tsx:64` — 원칙 `I`. 멤버 후보 25개다. 읽기/쓰기/이벤트/상태 전용 타입으로 분리할 후보다. 근거: `interface CardEditorToolbarProps {`
+123. **[완료][P2] 큰 타입/인터페이스 분리** `apps/web/src/features/card-service/components/card-rich-markdown-editor-view.tsx:317` — 원칙 `I`. 멤버 후보 9개다. 읽기/쓰기/이벤트/상태 전용 타입으로 분리할 후보다. 근거: `interface CardPreviewSurfaceProps {`
+124. **[완료][P2] 큰 타입/인터페이스 분리** `apps/web/src/features/card-service/components/card-rich-markdown-editor.tsx:99` — 원칙 `I`. 멤버 후보 10개다. 읽기/쓰기/이벤트/상태 전용 타입으로 분리할 후보다. 근거: `interface CardRichMarkdownEditorProps {`
+125. **[완료][P2] 큰 타입/인터페이스 분리** `apps/web/src/features/card-service/components/card-rich-markdown-editor.tsx:112` — 원칙 `I`. 멤버 후보 11개다. 읽기/쓰기/이벤트/상태 전용 타입으로 분리할 후보다. 근거: `type CardEditorToolbarState = {`
+126. **[완료][P2] 큰 타입/인터페이스 분리** `apps/web/src/features/card-service/components/card-row-views.tsx:16` — 원칙 `I`. 멤버 후보 13개다. 읽기/쓰기/이벤트/상태 전용 타입으로 분리할 후보다. 근거: `type CardRowEditViewProps = {`
+127. **[완료][P2] 큰 타입/인터페이스 분리** `apps/web/src/features/card-service/components/card-row.tsx:20` — 원칙 `I`. 멤버 후보 8개다. 읽기/쓰기/이벤트/상태 전용 타입으로 분리할 후보다. 근거: `interface CardRowProps {`
+128. **[완료][P2] 큰 타입/인터페이스 분리** `apps/web/src/features/card-service/components/deck-play-review-mode-card.tsx:43` — 원칙 `I`. 멤버 후보 8개다. 읽기/쓰기/이벤트/상태 전용 타입으로 분리할 후보다. 근거: `interface DeckPlayReviewModeCardProps {`
 129. **[P2] 큰 타입/인터페이스 분리** `apps/web/src/features/typing-service/characters/types.ts:3` — 원칙 `I`. 멤버 후보 10개다. 읽기/쓰기/이벤트/상태 전용 타입으로 분리할 후보다. 근거: `export type CharacterDef = {`
 130. **[P2] 큰 타입/인터페이스 분리** `apps/web/src/features/typing-service/typing-race-solo-practice-panel.tsx:15` — 원칙 `I`. 멤버 후보 24개다. 읽기/쓰기/이벤트/상태 전용 타입으로 분리할 후보다. 근거: `interface TypingRaceSoloPracticePanelProps {`
 131. **[P2] 큰 타입/인터페이스 분리** `apps/web/src/features/typing-service/typing-race-solo-screen.tsx:109` — 원칙 `I`. 멤버 후보 8개다. 읽기/쓰기/이벤트/상태 전용 타입으로 분리할 후보다. 근거: `type BenchmarkNoiseState = {`
