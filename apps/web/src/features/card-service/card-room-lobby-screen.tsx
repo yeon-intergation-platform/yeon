@@ -1,6 +1,5 @@
 "use client";
 import { YEON_WEB_SHARED_CLASS as SHARED_FEATURE_CLASS } from "@yeon/ui/theme/web-style-tokens";
-import { useCallback, useMemo, useState } from "react";
 import { CommonProductHeader } from "@/components/product-shell/product-header";
 import {
   getYeonButtonClassName,
@@ -15,60 +14,19 @@ import {
   YeonLink,
 } from "@yeon/ui";
 import { resolveYeonWebPath } from "@yeon/ui/runtime/ports";
-import { useTypingSettings } from "@/features/typing-service/use-typing-settings";
 import {
   RoomCharacterSummaryCard,
   RoomCreateDialog,
   ROOM_LOBBY_CLASS,
 } from "@/features/room-shared";
 import { CardRoomCreateForm } from "./card-room-create-screen";
-import { useCardRoomList, useCardRoomProfile } from "./hooks";
-
-const FILTERS = [
-  { label: "전체", value: "all" },
-  { label: "공개방", value: "public" },
-  { label: "입장 가능", value: "available" },
-] as const;
-
-type LobbyFilter = (typeof FILTERS)[number]["value"];
+import {
+  CARD_ROOM_LOBBY_FILTERS,
+  useCardRoomLobbyState,
+} from "./use-card-room-lobby-state";
 
 export function CardRoomLobbyScreen() {
-  const [selectedFilter, setSelectedFilter] = useState<LobbyFilter>("all");
-  const [searchKeyword, setSearchKeyword] = useState("");
-  const [isCreateModalOpen, setCreateModalOpen] = useState(false);
-  const { profile, loaded: profileLoaded } = useCardRoomProfile();
-  const { settings } = useTypingSettings();
-  const roomsQuery = useCardRoomList();
-  const rooms = roomsQuery.data ?? [];
-
-  const openCreateModal = useCallback(() => {
-    setCreateModalOpen(true);
-  }, []);
-
-  const closeCreateModal = useCallback(() => {
-    setCreateModalOpen(false);
-  }, []);
-
-  const filteredRooms = useMemo(() => {
-    const keyword = searchKeyword.trim().toLowerCase();
-    return rooms.filter((room) => {
-      const matchesFilter =
-        selectedFilter === "all" ||
-        (selectedFilter === "public" && room.visibility === "public") ||
-        (selectedFilter === "available" && room.status === "waiting");
-      const matchesSearch =
-        keyword.length === 0 ||
-        room.title.toLowerCase().includes(keyword) ||
-        room.deckTitle.toLowerCase().includes(keyword) ||
-        room.hostLabel.toLowerCase().includes(keyword);
-      return matchesFilter && matchesSearch;
-    });
-  }, [rooms, searchKeyword, selectedFilter]);
-
-  const isEmptyState =
-    !roomsQuery.isLoading &&
-    !roomsQuery.isError &&
-    filteredRooms[0] === undefined;
+  const lobby = useCardRoomLobbyState();
 
   return (
     <YeonView className={SHARED_FEATURE_CLASS.pageSurface}>
@@ -95,10 +53,10 @@ export function CardRoomLobbyScreen() {
             </YeonText>
           </YeonView>
           <RoomCharacterSummaryCard
-            loaded={profileLoaded}
-            nickname={profile.nickname}
-            characterId={profile.characterId}
-            locale={settings.locale}
+            loaded={lobby.profileLoaded}
+            nickname={lobby.profile.nickname}
+            characterId={lobby.profile.characterId}
+            locale={lobby.locale}
             changeHref={resolveYeonWebPath("cardHome")}
           />
         </YeonView>
@@ -106,13 +64,13 @@ export function CardRoomLobbyScreen() {
         <YeonView as="section" className={ROOM_LOBBY_CLASS.listTopBorder}>
           <YeonView className={ROOM_LOBBY_CLASS.filterRow}>
             <YeonView className={ROOM_LOBBY_CLASS.filterScroller}>
-              {FILTERS.map((filter) => (
+              {CARD_ROOM_LOBBY_FILTERS.map((filter) => (
                 <YeonButton
                   key={filter.value}
                   type="button"
-                  onClick={() => setSelectedFilter(filter.value)}
+                  onClick={() => lobby.setSelectedFilter(filter.value)}
                   variant={
-                    selectedFilter === filter.value ? "pill" : "secondary"
+                    lobby.selectedFilter === filter.value ? "pill" : "secondary"
                   }
                   size="lg"
                   className="h-[50px] shrink-0 rounded-full px-7 text-[16px]"
@@ -129,16 +87,18 @@ export function CardRoomLobbyScreen() {
                   className={ROOM_LOBBY_CLASS.searchIcon}
                 />
                 <YeonField
-                  value={searchKeyword}
-                  onChange={(event) => setSearchKeyword(event.target.value)}
+                  value={lobby.searchKeyword}
+                  onChange={(event) =>
+                    lobby.setSearchKeyword(event.target.value)
+                  }
                   placeholder="방 검색"
                   className="h-[50px] rounded-lg pl-12 pr-4 text-[16px] font-medium"
                 />
               </YeonLabel>
-              {!isEmptyState ? (
+              {!lobby.isEmptyState ? (
                 <YeonButton
                   type="button"
-                  onClick={openCreateModal}
+                  onClick={lobby.openCreateModal}
                   variant="primary"
                   size="lg"
                   className="h-[50px] rounded-lg px-8 text-[16px]"
@@ -150,7 +110,7 @@ export function CardRoomLobbyScreen() {
           </YeonView>
 
           <YeonSurface className="mt-7">
-            {roomsQuery.isLoading ? (
+            {lobby.listState === "loading" ? (
               <YeonText
                 as="p"
                 variant="label"
@@ -159,7 +119,7 @@ export function CardRoomLobbyScreen() {
               >
                 실제 카드방 목록을 불러오는 중...
               </YeonText>
-            ) : roomsQuery.isError ? (
+            ) : lobby.listState === "error" ? (
               <YeonView className="flex min-h-[280px] flex-col items-center justify-center px-6 py-16 text-center">
                 <YeonText
                   as="h2"
@@ -178,7 +138,7 @@ export function CardRoomLobbyScreen() {
                   카드방 서버 상태를 확인해 주세요.
                 </YeonText>
               </YeonView>
-            ) : isEmptyState ? (
+            ) : lobby.listState === "empty" ? (
               <YeonView className="flex flex-col items-center justify-center px-6 py-20 text-center">
                 <YeonText
                   as="h2"
@@ -198,7 +158,7 @@ export function CardRoomLobbyScreen() {
                 </YeonText>
                 <YeonButton
                   type="button"
-                  onClick={openCreateModal}
+                  onClick={lobby.openCreateModal}
                   variant="primary"
                   size="xl"
                   className="mx-auto mt-8 rounded-lg px-8 py-4 text-[17px]"
@@ -208,7 +168,7 @@ export function CardRoomLobbyScreen() {
               </YeonView>
             ) : (
               <YeonView className={ROOM_LOBBY_CLASS.roomListRow}>
-                {filteredRooms.map((room) => (
+                {lobby.filteredRooms.map((room) => (
                   <YeonLink
                     key={room.id}
                     href={resolveYeonWebPath("cardRoomDetail", {
@@ -283,15 +243,15 @@ export function CardRoomLobbyScreen() {
       </YeonView>
 
       <RoomCreateDialog
-        open={isCreateModalOpen}
+        open={lobby.isCreateModalOpen}
         titleId="create-card-room-title"
         title="카드방 만들기"
         description="현재 덱 내용을 고정해 함께 확인할 카드방을 만듭니다."
         closeLabel="카드방 만들기 닫기"
-        onClose={closeCreateModal}
+        onClose={lobby.closeCreateModal}
       >
         <CardRoomCreateForm
-          onCancel={closeCreateModal}
+          onCancel={lobby.closeCreateModal}
           submitLabel="카드방 만들고 입장하기"
         />
       </RoomCreateDialog>
