@@ -115,6 +115,12 @@
 
 - 항목 100~108 완료: race-server 카드방 leave/request catch는 16차 helper 반영 상태를 확인해 완료 처리했고, typing-race-room의 기존 catch 후보는 현재 코드에서 제거된 상태를 확인했다. 웹 커뮤니티 404 catch는 처리 가능한 Spring 404만 null로 변환하고 나머지는 재전파하는 경계로 유지했다. 웹 카드 인증 Provider 누락, 카드방 생성/입장, 게스트 덱 개수 확인 실패는 원인을 포함한 helper/전용 Error/사용자 실패 메시지로 구체화했다.
 
+## 25차 적용 완료
+
+- 항목 179 완료: `CardRoomService`에서 public id 생성/중복 재시도 책임을 `CardRoomPublicIdService`로 분리했다.
+- 항목 179 완료: 카드방 참가자 응답의 participant token 조립 책임을 `CardRoomParticipantResponseFactory`로 분리했다.
+- Spring bean 추가에 따라 `CardRoomServiceTests` fixture를 새 의존성 조합으로 갱신하고 ApplicationContext 부팅 검증을 수행했다.
+
 ## 24차 적용 완료
 
 - 항목 175~178 완료: `CardDeckDetailScreen`의 생성/일괄추가/일괄덮어쓰기/수정/삭제/상세조회 오류 메시지 분기를 `getCardServiceErrorMessage` 공용 어댑터로 이동했다.
@@ -356,7 +362,7 @@
 
 ### SRP
 
-179. **[P2] 큰 파일 책임 분리** `apps/backend/src/main/java/world/yeon/backend/card_rooms/service/CardRoomService.java:1` — 원칙 `S`. 551라인 파일이다. 단일 책임 원칙 기준으로 화면/상태/IO/변환 책임 분리 후보다. 근거: `package world.yeon.backend.card_rooms.service;`
+179. **[완료][P2] 큰 파일 책임 분리** `apps/backend/src/main/java/world/yeon/backend/card_rooms/service/CardRoomService.java:1` — 원칙 `S`. 551라인 파일이다. 단일 책임 원칙 기준으로 화면/상태/IO/변환 책임 분리 후보다. 근거: `package world.yeon.backend.card_rooms.service;`
 180. **[P2] 큰 파일 책임 분리** `apps/backend/src/main/java/world/yeon/backend/root_auth/repository/AuthSessionRepository.java:1` — 원칙 `S`. 364라인 파일이다. 단일 책임 원칙 기준으로 화면/상태/IO/변환 책임 분리 후보다. 근거: `package world.yeon.backend.root_auth.repository;`
 181. **[P2] 큰 파일 책임 분리** `apps/backend/src/main/java/world/yeon/backend/root_auth/service/AuthSessionService.java:1` — 원칙 `S`. 399라인 파일이다. 단일 책임 원칙 기준으로 화면/상태/IO/변환 책임 분리 후보다. 근거: `package world.yeon.backend.root_auth.service;`
 182. **[P2] 큰 파일 책임 분리** `apps/backend/src/main/java/world/yeon/backend/typing_decks/repository/TypingDeckRepository.java:1` — 원칙 `S`. 350라인 파일이다. 단일 책임 원칙 기준으로 화면/상태/IO/변환 책임 분리 후보다. 근거: `package world.yeon.backend.typing_decks.repository;`

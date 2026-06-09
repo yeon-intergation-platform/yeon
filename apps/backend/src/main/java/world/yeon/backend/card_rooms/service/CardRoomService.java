@@ -5,10 +5,8 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.UUID;
-import java.util.function.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import world.yeon.backend.user_experience.domain.ExperienceActivity;
@@ -51,12 +49,19 @@ public class CardRoomService {
   private static final Logger log = LoggerFactory.getLogger(CardRoomService.class);
 
   private final CardRoomRepository repository;
-  private final CardRoomParticipantTokenService participantTokenService;
+  private final CardRoomPublicIdService publicIdService;
+  private final CardRoomParticipantResponseFactory participantResponseFactory;
   private final ExperienceService experienceService;
 
-  public CardRoomService(CardRoomRepository repository, CardRoomParticipantTokenService participantTokenService, ExperienceService experienceService) {
+  public CardRoomService(
+    CardRoomRepository repository,
+    CardRoomPublicIdService publicIdService,
+    CardRoomParticipantResponseFactory participantResponseFactory,
+    ExperienceService experienceService
+  ) {
     this.repository = repository;
-    this.participantTokenService = participantTokenService;
+    this.publicIdService = publicIdService;
+    this.participantResponseFactory = participantResponseFactory;
     this.experienceService = experienceService;
   }
 
@@ -111,18 +116,21 @@ public class CardRoomService {
 
     OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
     String resolvedSourceDeckId = sourceDeckId;
-    var room = insertWithUniqueId(CardRoomIdPrefix.ROOM, (publicId) -> repository.insertRoom(publicId, title, deckTitle, resolvedSourceDeckId, userId, guestId, visibility, now));
+    var room = publicIdService.insertWithUniqueId(CardRoomIdPrefix.ROOM, (publicId) -> repository.insertRoom(publicId, title, deckTitle, resolvedSourceDeckId, userId, guestId, visibility, now));
     int index = 0;
     for (var item : items) {
       String front = normalizeText(item.frontText(), CardRoomTextRule.CARD_FACE);
       String back = normalizeText(item.backText(), CardRoomTextRule.CARD_FACE);
       int orderIndex = index++;
-      insertWithUniqueId(CardRoomIdPrefix.CARD, (publicId) -> { repository.insertCard(publicId, room.internalId(), orderIndex, front, back); return null; });
+      publicIdService.insertWithUniqueId(CardRoomIdPrefix.CARD, (publicId) -> { repository.insertCard(publicId, room.internalId(), orderIndex, front, back); return null; });
     }
-    var participant = insertWithUniqueId(CardRoomIdPrefix.PARTICIPANT, (publicId) -> repository.insertParticipant(publicId, room.internalId(), userId, guestId, profile.nickname(), profile.characterId(), CardRoomParticipantRole.MEMORIZER, true, now));
-    repository.insertMessage(newPublicId(CardRoomIdPrefix.MESSAGE), room.internalId(), null, CardRoomSystemMessage.ROOM_CREATED.text(), CardRoomMessageType.SYSTEM, now);
+    var participant = publicIdService.insertWithUniqueId(CardRoomIdPrefix.PARTICIPANT, (publicId) -> repository.insertParticipant(publicId, room.internalId(), userId, guestId, profile.nickname(), profile.characterId(), CardRoomParticipantRole.MEMORIZER, true, now));
+    repository.insertMessage(publicIdService.newPublicId(CardRoomIdPrefix.MESSAGE), room.internalId(), null, CardRoomSystemMessage.ROOM_CREATED.text(), CardRoomMessageType.SYSTEM, now);
     // 방장도 입장과 동일하게 소유 증명 토큰을 발급받아 재입장 없이 실시간에 연결한다.
-    return new CardRoomResponse(detail(room.publicId()), toParticipant(participant), participantTokenService.issue(room.publicId(), participant.publicId()));
+    var roomDetail = detail(room.publicId());
+    var participantDto = toParticipant(participant);
+    var participantResponse = participantResponseFactory.create(participantDto, roomDetail);
+    return new CardRoomResponse(roomDetail, participantDto, participantResponse.participantToken());
   }
 
   @Transactional
@@ -138,8 +146,8 @@ public class CardRoomService {
     }
     CardRoomParticipantRole role = normalizeRole(request == null ? null : request.role(), nextRole(room.internalId()));
     OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
-    var participant = insertWithUniqueId(CardRoomIdPrefix.PARTICIPANT, (publicId) -> repository.insertParticipant(publicId, room.internalId(), userId, guestId, profile.nickname(), profile.characterId(), role, false, now));
-    repository.insertMessage(newPublicId(CardRoomIdPrefix.MESSAGE), room.internalId(), null, CardRoomSystemMessage.participantJoined(profile.nickname()), CardRoomMessageType.SYSTEM, now);
+    var participant = publicIdService.insertWithUniqueId(CardRoomIdPrefix.PARTICIPANT, (publicId) -> repository.insertParticipant(publicId, room.internalId(), userId, guestId, profile.nickname(), profile.characterId(), role, false, now));
+    repository.insertMessage(publicIdService.newPublicId(CardRoomIdPrefix.MESSAGE), room.internalId(), null, CardRoomSystemMessage.participantJoined(profile.nickname()), CardRoomMessageType.SYSTEM, now);
     return participantResponse(toParticipant(participant), room.publicId());
   }
 
@@ -199,7 +207,7 @@ public class CardRoomService {
     }
     OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
     repository.updateStatus(room.internalId(), CardRoomStatus.IN_PROGRESS, 0, false, now);
-    repository.insertMessage(newPublicId(CardRoomIdPrefix.MESSAGE), room.internalId(), null, CardRoomSystemMessage.STUDY_STARTED.text(), CardRoomMessageType.SYSTEM, now);
+    repository.insertMessage(publicIdService.newPublicId(CardRoomIdPrefix.MESSAGE), room.internalId(), null, CardRoomSystemMessage.STUDY_STARTED.text(), CardRoomMessageType.SYSTEM, now);
     return new CardRoomResponse(detail(roomId), null, null);
   }
 
@@ -210,7 +218,7 @@ public class CardRoomService {
     requireHost(participant);
     OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
     repository.updateStatus(room.internalId(), CardRoomStatus.CLOSED, room.currentCardIndex(), room.currentCardRevealed(), now);
-    repository.insertMessage(newPublicId(CardRoomIdPrefix.MESSAGE), room.internalId(), null, CardRoomSystemMessage.ROOM_CLOSED.text(), CardRoomMessageType.SYSTEM, now);
+    repository.insertMessage(publicIdService.newPublicId(CardRoomIdPrefix.MESSAGE), room.internalId(), null, CardRoomSystemMessage.ROOM_CLOSED.text(), CardRoomMessageType.SYSTEM, now);
     return new CardRoomResponse(detail(roomId), null, null);
   }
 
@@ -316,7 +324,7 @@ public class CardRoomService {
     var participant = requireParticipantInRoom(room, participantId);
     ensureRoomOpen(room);
     String content = normalizeText(request == null ? null : request.content(), CardRoomTextRule.CHAT_MESSAGE);
-    repository.insertMessage(newPublicId(CardRoomIdPrefix.MESSAGE), room.internalId(), participant.internalId(), content, CardRoomMessageType.USER, OffsetDateTime.now(ZoneOffset.UTC));
+    repository.insertMessage(publicIdService.newPublicId(CardRoomIdPrefix.MESSAGE), room.internalId(), participant.internalId(), content, CardRoomMessageType.USER, OffsetDateTime.now(ZoneOffset.UTC));
     // finding 23: 메시지 추가는 방 row(status/count)를 바꾸지 않으므로 이미 잠근 RoomRow를 재사용해 findRoom 중복을 없앤다.
     return new CardRoomMessagesResponse(detail(room).messages());
   }
@@ -351,14 +359,13 @@ public class CardRoomService {
     }
     // finding 20: 결과는 card_room_results에만 기록한다. 방 status는 IN_PROGRESS를 유지하고
     // 카드 단위 진행 상태는 detail에서 (room_id, current_card_id)로 다시 노출한다.
-    var saved = repository.insertResult(newPublicId(CardRoomIdPrefix.RESULT), room.internalId(), card.internalId(), participant.internalId(), result, OffsetDateTime.now(ZoneOffset.UTC));
+    var saved = repository.insertResult(publicIdService.newPublicId(CardRoomIdPrefix.RESULT), room.internalId(), card.internalId(), participant.internalId(), result, OffsetDateTime.now(ZoneOffset.UTC));
     return new CardRoomResultResponse(toResult(saved), detail(roomId));
   }
 
-  // 입장/참가자 갱신 응답에 (roomId, participantId)로 묶인 소유 증명 토큰을 함께 발급한다.
-  // race-server는 이 토큰을 검증해 임의 participantId 가장(finding 166)을 차단한다.
+  // 입장/참가자 갱신 응답의 토큰 발급 조립은 factory에 위임한다.
   private CardRoomParticipantResponse participantResponse(CardRoomParticipantDto participant, String roomId) {
-    return new CardRoomParticipantResponse(participant, detail(roomId), participantTokenService.issue(roomId, participant.id()));
+    return participantResponseFactory.create(participant, detail(roomId));
   }
 
   private CardRoomDetailDto detail(String roomId) {
@@ -515,26 +522,6 @@ public class CardRoomService {
 
   private CardRoomResult normalizeResult(String value) {
     return CardRoomResult.find(value).orElseThrow(() -> new CardRoomServiceException(CardRoomError.INVALID_RESULT));
-  }
-
-  private String newPublicId(CardRoomIdPrefix prefix) {
-    return prefix.value() + "_" + UUID.randomUUID().toString().replace("-", "");
-  }
-
-  // public_id는 UUID 기반이라 충돌 확률은 무시할 수준이지만, 이론상 충돌(또는 재실행)로 인한
-  // unique 제약 위반을 500으로 노출하지 않도록 새 public_id로 몇 번 재시도한다.
-  // 재시도를 모두 소진하면 다른 카드방 에러와 동일하게 일관된 에러 코드로 변환한다.
-  private static final int MAX_PUBLIC_ID_ATTEMPTS = 5;
-
-  private <T> T insertWithUniqueId(CardRoomIdPrefix prefix, Function<String, T> insert) {
-    for (int attempt = 0; attempt < MAX_PUBLIC_ID_ATTEMPTS; attempt++) {
-      try {
-        return insert.apply(newPublicId(prefix));
-      } catch (DuplicateKeyException ignored) {
-        // public_id 충돌: 다음 시도에서 새 UUID 기반 id로 재생성한다.
-      }
-    }
-    throw new CardRoomServiceException(409, "PUBLIC_ID_CONFLICT", "카드방 식별자 생성에 실패했습니다. 잠시 후 다시 시도해 주세요.");
   }
 
   private CardRoomSummaryDto toSummary(RoomRow row) {
