@@ -22,8 +22,20 @@ const CARD_ROOM_NETWORK_ERROR_PATTERNS = [
   "econnrefused",
 ] as const;
 
+function getConnectionErrorCauseMessage(error: unknown) {
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  if (typeof error === "string" && error.trim().length > 0) {
+    return error.trim();
+  }
+
+  return `처리할 수 없는 오류 형식(${String(error)})`;
+}
+
 function normalizeConnectionError(error: unknown) {
-  const message = error instanceof Error ? error.message : String(error || "");
+  const message = getConnectionErrorCauseMessage(error);
   const lower = message.toLowerCase();
   if (CARD_ROOM_NETWORK_ERROR_PATTERNS.some((p) => lower.includes(p))) {
     return "카드방 연결에 실패했습니다. 잠시 후 다시 입장해 주세요.";
@@ -67,7 +79,12 @@ export function useCardRoomConnection(
       })
       .then((room) => {
         if (cancelled) {
-          room.leave().catch(() => {});
+          room.leave().catch((leaveError: unknown) => {
+            console.warn(
+              "[CardRoomConnection] 취소된 방 연결 정리 실패",
+              leaveError
+            );
+          });
           return;
         }
         roomRef.current = room;
@@ -105,7 +122,12 @@ export function useCardRoomConnection(
     return () => {
       cancelled = true;
       // idx-121: leave() Promise 거부를 무해 처리해 unhandled rejection 경고 방지.
-      roomRef.current?.leave().catch(() => {});
+      roomRef.current?.leave().catch((leaveError: unknown) => {
+        console.warn(
+          "[CardRoomConnection] 방 연결 cleanup leave 실패",
+          leaveError
+        );
+      });
       roomRef.current = null;
     };
   }, [roomId, participantId, participantToken]);
