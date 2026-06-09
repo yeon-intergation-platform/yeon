@@ -62,6 +62,18 @@ function readJsonBody(request: IncomingMessage) {
   });
 }
 
+function getStarLobbyEventErrorMessage(error: unknown) {
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  if (typeof error === "string" && error.trim().length > 0) {
+    return `스타 로비 이벤트 전송에 실패했습니다. 원인: ${error.trim()}`;
+  }
+
+  return `스타 로비 이벤트 전송에 실패했습니다. 원인: 처리할 수 없는 오류 형식(${String(error)})`;
+}
+
 function isInternalRequest(request: IncomingMessage) {
   const expected =
     process.env.STAR_LOBBY_INTERNAL_TOKEN?.trim() ||
@@ -129,10 +141,7 @@ const gameServer = new Server({
         } catch (error) {
           response.status(400).json({
             ok: false,
-            message:
-              error instanceof Error
-                ? error.message
-                : "스타 로비 이벤트 전송에 실패했습니다.",
+            message: getStarLobbyEventErrorMessage(error),
           });
         }
       }

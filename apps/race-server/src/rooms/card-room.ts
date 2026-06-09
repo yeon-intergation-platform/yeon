@@ -31,6 +31,43 @@ type VoiceSession = {
 const MAX_CHAT_MESSAGE_LENGTH = 500;
 const VOICE_SESSION_TIMEOUT_MS = 30_000;
 
+class CardRoomJoinValidationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "CardRoomJoinValidationError";
+  }
+}
+
+function getCardRoomRequestErrorMessage(
+  error: unknown,
+  fallbackMessage: string
+) {
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  if (typeof error === "string" && error.trim().length > 0) {
+    return `${fallbackMessage} 원인: ${error.trim()}`;
+  }
+
+  return `${fallbackMessage} 원인: 처리할 수 없는 오류 형식(${String(error)})`;
+}
+
+function getJoinAuthenticationFailureMessage(
+  authoritativeRoomId: string | null | undefined,
+  requestedRoomId: string | null | undefined
+) {
+  if (!authoritativeRoomId) {
+    return "참가자 인증에 실패했습니다. 서버 카드방 식별자가 초기화되지 않았습니다.";
+  }
+
+  if (requestedRoomId != null && requestedRoomId !== authoritativeRoomId) {
+    return `참가자 인증에 실패했습니다. 요청 카드방(${requestedRoomId})과 서버 카드방(${authoritativeRoomId})이 일치하지 않습니다.`;
+  }
+
+  return "참가자 인증에 실패했습니다. 참가자 토큰이 없거나 현재 카드방/참가자와 일치하지 않습니다.";
+}
+
 function isNonEmptyString(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0;
 }
@@ -269,7 +306,11 @@ export class CardRoom extends Room {
   }
 
   async onJoin(client: Client, options: Partial<CardRoomRealtimeJoinOptions>) {
-    if (!options.participantId) throw new Error("참가자 식별자가 필요합니다.");
+    if (!options.participantId) {
+      throw new CardRoomJoinValidationError(
+        "카드방 입장에 필요한 참가자 식별자가 없습니다. REST join 응답의 participant.id를 저장한 뒤 실시간 방에 연결해야 합니다."
+      );
+    }
     // finding 166: 클라이언트가 보낸 participantId를 그대로 신뢰하지 않는다.
     // 토큰은 반드시 이 방의 권위 있는 식별자(this.cardRoomId)에 묶어 검증한다.
     // 클라이언트가 보낸 options.cardRoomId를 신뢰하면 다른 방용 토큰을 재사용한 가장이 가능하다.
@@ -283,7 +324,9 @@ export class CardRoom extends Room {
         options.participantToken
       )
     ) {
-      throw new Error("참가자 인증에 실패했습니다.");
+      throw new CardRoomJoinValidationError(
+        getJoinAuthenticationFailureMessage(cardRoomId, options.cardRoomId)
+      );
     }
     this.participants.set(client.sessionId, options.participantId);
     await this.refreshState();
@@ -325,10 +368,10 @@ export class CardRoom extends Room {
       await this.refreshState();
     } catch (error) {
       client.send(CARD_ROOM_EVENTS.ERROR, {
-        message:
-          error instanceof Error
-            ? error.message
-            : "카드방에서 나가지 못했습니다.",
+        message: getCardRoomRequestErrorMessage(
+          error,
+          "카드방에서 나가지 못했습니다."
+        ),
       });
     }
   }
@@ -751,10 +794,10 @@ export class CardRoom extends Room {
       await this.refreshState();
     } catch (error) {
       client.send(CARD_ROOM_EVENTS.ERROR, {
-        message:
-          error instanceof Error
-            ? error.message
-            : "카드방 요청에 실패했습니다.",
+        message: getCardRoomRequestErrorMessage(
+          error,
+          "카드방 요청에 실패했습니다."
+        ),
       });
     }
   }

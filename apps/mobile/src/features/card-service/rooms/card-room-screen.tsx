@@ -35,6 +35,18 @@ function sanitizeChatText(text: string, maxLen: number): string {
   return text.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, "").slice(0, maxLen);
 }
 
+function getCardRoomJoinErrorMessage(error: unknown) {
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  if (typeof error === "string" && error.trim().length > 0) {
+    return `${T.joinErrorTitle}: ${error.trim()}`;
+  }
+
+  return `${T.joinErrorTitle}: 처리할 수 없는 오류 형식(${String(error)})`;
+}
+
 type CardRoomScreenProps = { roomId: string };
 
 export function CardRoomScreen({ roomId }: CardRoomScreenProps) {
@@ -79,9 +91,7 @@ export function CardRoomScreen({ roomId }: CardRoomScreenProps) {
         }
       } catch (error) {
         if (!cancelled) {
-          setJoinError(
-            error instanceof Error ? error.message : T.joinErrorTitle
-          );
+          setJoinError(getCardRoomJoinErrorMessage(error));
         }
       }
     })();
