@@ -15,6 +15,12 @@ export function isParticipantTokenVerificationRequired(): boolean {
   return resolveSecret().length > 0;
 }
 
+function isUsableParticipantToken(
+  token: string | undefined | null
+): token is string {
+  return typeof token === "string" && token.length > 0;
+}
+
 function signParticipantToken(
   secret: string,
   cardRoomId: string,
@@ -40,7 +46,7 @@ export function verifyParticipantToken(
   if (secret.length === 0) {
     return true;
   }
-  if (typeof token !== "string" || token.length === 0) {
+  if (!isUsableParticipantToken(token)) {
     return false;
   }
   const expected = signParticipantToken(secret, cardRoomId, participantId);
