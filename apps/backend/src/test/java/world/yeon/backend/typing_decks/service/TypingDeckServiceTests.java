@@ -29,7 +29,7 @@ class TypingDeckServiceTests {
 	private TypingDeckService service;
 
 	@BeforeEach void setUp() {
-		service = new TypingDeckService(repository);
+		service = TypingDeckService.createForTest(repository);
 	}
 
 	@Test void mine목록은로그인이필요하다() {

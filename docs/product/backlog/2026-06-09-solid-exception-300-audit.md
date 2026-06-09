@@ -71,6 +71,10 @@
 - 항목 49 완료: `typing-race-room.ts`에서 Spring backend base URL, internal token header, experience award fetch 책임을 `typing-race-room-backend-client.ts`로 분리했다. Room 파일은 seed/protocol/state/voice session 조정에 더 집중한다.
 - 항목 61 완료: `typing-race-room.ts`의 직접 `fetch` 의존을 제거하고 typing race backend client 함수(`awardTypingRaceFinished`) 뒤로 숨겼다.
 
+## 7차 적용 완료
+
+- 항목 59 완료: `TypingDeckService`의 Spring 운영 생성자를 단일 public 생성자로 정리하고 `@Autowired` 의존을 제거했다. 테스트 전용 기본 signer 구성은 이름 있는 정적 팩토리(`createForTest`)로 분리해 운영 DI 경계와 테스트 편의 책임을 구분했다.
+
 ## 300개 TODO
 
 > 아래 항목은 실제 코드 경로/라인을 기준으로 작성한다. `원칙`은 SOLID 또는 예외 처리 원칙 번호를 표시한다.
@@ -148,7 +152,7 @@
 
 ### DIP
 
-59. **[P2] 필드 주입 제거** `apps/backend/src/main/java/world/yeon/backend/typing_decks/service/TypingDeckService.java:48` — 원칙 `D`. 필드 주입 대신 생성자 주입과 인터페이스 의존으로 바꾼다. 근거: `@Autowired`
+59. **[완료][P2] 필드 주입 제거** `apps/backend/src/main/java/world/yeon/backend/typing_decks/service/TypingDeckService.java:48` — 원칙 `D`. 필드 주입 대신 생성자 주입과 인터페이스 의존으로 바꾼다. 근거: `@Autowired`
 60. **[완료][P2] fetch 직접 의존 포트화** `apps/race-server/src/rooms/card-room.ts:168` — 원칙 `D`. 구체 fetch 호출을 repository/client 포트 뒤로 숨긴다. 근거: `const response = await fetch(\`${backendBaseUrl()}${path}\`, {`
 61. **[완료][P2] fetch 직접 의존 포트화** `apps/race-server/src/rooms/typing-race-room.ts:479` — 원칙 `D`. 구체 fetch 호출을 repository/client 포트 뒤로 숨긴다. 근거: `const response = await fetch(`
 62. **[P2] 브라우저 저장소 직접 의존 분리** `apps/web/src/features/community/hooks/use-community-chat-panel.ts:59` — 원칙 `D`. 구체 저장소 접근을 KV/storage 포트로 격리한다. 근거: `/** 사용자가 직접 열고/닫을 때 호출. 선택은 localStorage에 보존되어 라우트 이동 후에도 유지된다. */`

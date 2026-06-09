@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.StandardEnvironment;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -45,7 +44,6 @@ public class TypingDeckService {
 	private final TypingDeckRepository repository;
 	private final TypingRaceSeedSigner raceSeedSigner;
 
-	@Autowired
 	public TypingDeckService(TypingDeckRepository repository, TypingRaceSeedSigner raceSeedSigner) {
 		this.repository = repository;
 		this.raceSeedSigner = raceSeedSigner;
@@ -54,8 +52,8 @@ public class TypingDeckService {
 	// 단위 테스트(TypingDeckServiceTests)가 협력자 없이 서비스를 직접 구성할 수 있도록 유지한다.
 	// 시드 시그너는 StandardEnvironment(OS env + 프로퍼티)로 시크릿을 해석한다. 테스트 태스크는
 	// build.gradle에서 AUTH_SECRET을 주입하므로 fail-closed 해석이 정상 통과한다.
-	public TypingDeckService(TypingDeckRepository repository) {
-		this(repository, new TypingRaceSeedSigner(new StandardEnvironment()));
+	static TypingDeckService createForTest(TypingDeckRepository repository) {
+		return new TypingDeckService(repository, new TypingRaceSeedSigner(new StandardEnvironment()));
 	}
 
 	public TypingDeckListResponse listTypingDecks(UUID currentUserId, String scope, String languageTag, boolean adminMode) {
