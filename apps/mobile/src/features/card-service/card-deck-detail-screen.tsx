@@ -29,6 +29,7 @@ import { useCardDeckDetailQuery } from "./use-card-deck-detail-query";
 import { useCardServiceResolvedSession } from "./use-card-service-resolved-session";
 import {
   SHEET_MODES,
+  type SheetState,
   useCardDeckDetailSheetState,
 } from "./use-card-deck-detail-sheet-state";
 import { MarkdownTextField } from "./markdown-text-field";
@@ -38,6 +39,16 @@ import {
 } from "./card-service-session";
 
 const CARD_SERVICE_DECK_PLAY_ROUTE = YEON_ROUTE_TEMPLATES.cardDeckPlay as Href;
+
+const SHEET_MODE_LOCKED_KINDS = new Set<SheetState["kind"]>(["edit"]);
+
+function deriveSheetModeSwitchPolicy(sheetState: SheetState): {
+  isDisabled: boolean;
+} {
+  return {
+    isDisabled: SHEET_MODE_LOCKED_KINDS.has(sheetState.kind),
+  };
+}
 
 interface CardDeckDetailScreenProps {
   deckId?: string;
@@ -140,6 +151,7 @@ export function CardDeckDetailScreen({ deckId }: CardDeckDetailScreenProps) {
   });
 
   const cardKeyExtractor = useCallback((item: CardDeckItemDto) => item.id, []);
+  const sheetModeSwitchPolicy = deriveSheetModeSwitchPolicy(sheetState);
 
   if (isBooting) {
     return (
@@ -252,12 +264,12 @@ export function CardDeckDetailScreen({ deckId }: CardDeckDetailScreenProps) {
             onValueChange={setSheetMode}
             options={[
               {
-                disabled: sheetState.kind === "edit",
+                disabled: sheetModeSwitchPolicy.isDisabled,
                 label: CARD_SERVICE_TEXT.detail.sheetManualLabel,
                 value: SHEET_MODES.manual,
               },
               {
-                disabled: sheetState.kind === "edit",
+                disabled: sheetModeSwitchPolicy.isDisabled,
                 label: CARD_SERVICE_TEXT.detail.sheetBulkLabel,
                 value: SHEET_MODES.bulk,
               },
