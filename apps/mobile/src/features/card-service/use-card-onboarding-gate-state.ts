@@ -8,9 +8,23 @@ import { writePrimaryAuthSessionToken } from "../../services/primary-auth/storag
 import { CARD_SERVICE_TEXT } from "./card-service-copy";
 import { getCardServiceErrorMessage } from "./error-message";
 import {
+  type MobileSocialLoginResult,
   type MobileSocialProvider,
   startMobileSocialLogin,
 } from "./social-login";
+
+type SocialLoginResultHandlers = {
+  [Status in MobileSocialLoginResult["status"]]: (
+    result: Extract<MobileSocialLoginResult, { status: Status }>
+  ) => Promise<void> | void;
+};
+
+async function applySocialLoginResult(
+  result: MobileSocialLoginResult,
+  handlers: SocialLoginResultHandlers
+) {
+  await handlers[result.status](result as never);
+}
 
 interface UseCardOnboardingGateStateParams {
   onAuthenticated: (sessionToken: string) => void | Promise<void>;
@@ -64,17 +78,18 @@ export function useCardOnboardingGateState({
     try {
       const result = await startMobileSocialLogin(provider);
 
-      if (result.status === "success") {
-        // 소셜 세션 토큰도 이메일 로그인과 동일한 Spring 세션 토큰 → 같은 저장 경로.
-        await writePrimaryAuthSessionToken(result.sessionToken);
-        await onAuthenticated(result.sessionToken);
-        return;
-      }
-
-      if (result.status === "error") {
-        showYeonAlert(CARD_SERVICE_TEXT.list.loginErrorTitle, result.message);
-      }
-      // cancelled: 사용자가 닫은 것이므로 조용히 무시.
+      await applySocialLoginResult(result, {
+        cancelled: () => undefined,
+        error: (errorResult) =>
+          showYeonAlert(
+            CARD_SERVICE_TEXT.list.loginErrorTitle,
+            errorResult.message
+          ),
+        success: async (successResult) => {
+          await writePrimaryAuthSessionToken(successResult.sessionToken);
+          await onAuthenticated(successResult.sessionToken);
+        },
+      });
     } catch (error) {
       showYeonAlert(
         CARD_SERVICE_TEXT.list.loginErrorTitle,
