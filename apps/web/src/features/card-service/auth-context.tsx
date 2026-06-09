@@ -1,24 +1,11 @@
 "use client";
-import {
-  createContext,
-  type ReactNode,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
-import {
-  useYeonDocumentEvent,
-  useYeonWindowEvent,
-} from "@yeon/ui/hooks/YeonBrowserHooks";
-import { fetchCurrentCardServiceAuthState } from "./auth-state";
 
-type CardServiceAuthContextValue = {
-  isAuthenticated: boolean;
-  markUnauthenticated: () => void;
-};
+import { createContext, type ReactNode, useContext } from "react";
+
+import {
+  useCardServiceAuthState,
+  type CardServiceAuthContextValue,
+} from "./use-card-service-auth-state";
 
 const CardServiceAuthContext =
   createContext<CardServiceAuthContextValue | null>(null);
@@ -41,48 +28,7 @@ export function CardServiceAuthProvider({
   isAuthenticated,
   children,
 }: CardServiceAuthProviderProps) {
-  const [currentIsAuthenticated, setCurrentIsAuthenticated] =
-    useState(isAuthenticated);
-  const markUnauthenticated = useCallback(() => {
-    setCurrentIsAuthenticated(false);
-  }, []);
-
-  useEffect(() => {
-    setCurrentIsAuthenticated(isAuthenticated);
-  }, [isAuthenticated]);
-
-  const mountedRef = useRef(false);
-
-  useEffect(() => {
-    mountedRef.current = true;
-    return () => {
-      mountedRef.current = false;
-    };
-  }, []);
-
-  const refreshAuthState = useCallback(async () => {
-    try {
-      const nextIsAuthenticated = await fetchCurrentCardServiceAuthState();
-      if (mountedRef.current && nextIsAuthenticated !== null) {
-        setCurrentIsAuthenticated(nextIsAuthenticated);
-      }
-    } catch (error) {
-      // 세션 확인 실패는 현재 서버 렌더 상태를 유지하되, 원인 추적을 위해 숨기지 않는다.
-      console.warn("[CardServiceAuth] 세션 확인 실패", error);
-    }
-  }, []);
-
-  useEffect(() => {
-    void refreshAuthState();
-  }, [refreshAuthState]);
-
-  useYeonWindowEvent("focus", refreshAuthState);
-  useYeonDocumentEvent("visibilitychange", refreshAuthState);
-
-  const value = useMemo(
-    () => ({ isAuthenticated: currentIsAuthenticated, markUnauthenticated }),
-    [currentIsAuthenticated, markUnauthenticated]
-  );
+  const value = useCardServiceAuthState(isAuthenticated);
 
   return (
     <CardServiceAuthContext.Provider value={value}>
