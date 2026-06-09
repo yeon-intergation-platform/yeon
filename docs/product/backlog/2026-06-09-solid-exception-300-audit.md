@@ -550,8 +550,8 @@
 251. **[완료][P3] 브라우저 전역 직접 의존 점검** `packages/ui/src/hooks/YeonBrowserHooks/index.ts:92` — 원칙 `D`. window event 등록을 `YEON_BROWSER_HOOKS_PORT.events.subscribeWindow`로 감싸 hook이 `window.addEventListener`에 직접 의존하지 않게 했다. 근거: `YEON_BROWSER_HOOKS_PORT.events.subscribeWindow(`
 252. **[완료][P3] 브라우저 전역 직접 의존 점검** `packages/ui/src/hooks/YeonBrowserHooks/index.ts:93` — 원칙 `D`. window event 해제를 포트의 unsubscribe 반환값으로 통일했다. 근거: `return () => browserWindow.removeEventListener(type, listener, options);`
 253. **[완료][P3] 브라우저 전역 직접 의존 점검** `packages/ui/src/primitives/YeonPortal/index.tsx:13` — 원칙 `D`. portal container 조회를 `YeonPortalContainerPort`로 감싸 `YeonPortal`이 `document.body` 구체 구현 대신 컨테이너 포트에 의존하게 했다. 근거: `YEON_PORTAL_CONTAINER_PORT.getPortalContainer()`
-254. **[P3] 브라우저 전역 직접 의존 점검** `packages/ui/src/rich-content/YeonRichDom/index.ts:5` — 원칙 `D`. 브라우저 전역 직접 접근을 런타임 포트로 감싸 SSR/테스트 안전성을 높인다. 근거: `return window.DOMParser;`
-255. **[P3] 브라우저 전역 직접 의존 점검** `packages/ui/src/runtime/YeonBrowserRuntime/index.ts:139` — 원칙 `D`. 브라우저 전역 직접 접근을 런타임 포트로 감싸 SSR/테스트 안전성을 높인다. 근거: `return kind === "local" ? window.localStorage : window.sessionStorage;`
+254. **[완료][P3] 브라우저 전역 직접 의존 점검** `packages/ui/src/rich-content/YeonRichDom/index.ts:5` — 원칙 `D`. DOMParser 생성자 조회를 `YeonDomParserPort`로 분리해 HTML 파서 유틸이 브라우저 전역 구현 대신 포트에 의존하게 했다. 근거: `YEON_DOM_PARSER_PORT.getParserConstructor()`
+255. **[완료][P3] 브라우저 전역 직접 의존 점검** `packages/ui/src/runtime/YeonBrowserRuntime/index.ts:139` — 원칙 `D`. local/session storage 조회를 `YeonBrowserStoragePort`와 `getOptionalBrowserStorage`로 분리해 storage 접근 실패를 한 경계에서 처리하게 했다. 근거: `YEON_BROWSER_STORAGE_PORT.getStorage(kind)`
 
 ### OCP
 
@@ -652,3 +652,8 @@
 ## 59차 적용 완료
 
 - 항목 214 완료: `CardRoomScreen`의 오류 메시지와 workspace 렌더링을 `CardRoomScreenError`, `CardRoomScreenWorkspace`, `CardRoomScreenSidePanel`, `CardRoomScreenMobileTabs`로 분리했다.
+
+## 75차 적용 완료
+
+- 항목 254 완료: `YeonRichDom`의 DOMParser 생성자 조회를 `YeonDomParserPort`로 감싸 HTML 파싱 유틸이 브라우저 전역 구현 대신 포트에 의존하게 했다.
+- 항목 255 완료: `YeonBrowserRuntime`의 local/session storage 조회를 `YeonBrowserStoragePort`로 감싸 storage 접근 실패 처리와 noop fallback 경계를 한 곳으로 모았다.
