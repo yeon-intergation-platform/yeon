@@ -506,7 +506,7 @@
 210. **[완료][P2] 긴 함수 책임 분리** `apps/web/src/features/card-service/card-room-header.tsx:43` — 원칙 `S`. 카드방 헤더의 상태/역할 라벨 파생을 `deriveCardRoomHeaderSummary`로 분리하고, 제목/상태 영역과 역할/준비/시작/종료/나가기 액션을 `card-room-header-parts.tsx`의 작은 컴포넌트로 분리해 `CardRoomHeader`는 header shell 조립만 담당하게 축소했다. 근거: `deriveCardRoomHeaderSummary(`
 211. **[완료][P2] 컴포넌트 hook 책임 분리** `apps/web/src/features/card-service/card-room-lobby-screen.tsx:35` — 원칙 `S`. 필터/검색/모달 상태, 프로필/타이핑 설정/방 목록 query, 검색 필터링과 list state 파생을 `use-card-room-lobby-state.ts`로 분리해 `CardRoomLobbyScreen`은 로비 레이아웃 렌더링만 담당하게 축소했다. 근거: `const lobby = useCardRoomLobbyState();`
 212. **[완료][P2] 긴 함수 책임 분리** `apps/web/src/features/card-service/card-room-lobby-screen.tsx:35` — 원칙 `S`. 카드방 로비의 hero, 필터/검색 바, 목록 상태 surface, 방 목록 item, 생성 dialog 렌더링을 `card-room-lobby-parts.tsx`로 분리해 `CardRoomLobbyScreen`은 page shell과 섹션 조립만 담당하게 축소했다. 근거: `CardRoomLobbyRoomSection lobby={lobby}`
-213. **[P2] 컴포넌트 hook 책임 분리** `apps/web/src/features/card-service/card-room-screen.tsx:30` — 원칙 `S`. 컴포넌트 인근 hook 호출 후보 8개다. 데이터/폼/이벤트 hook으로 분리한다. 근거: `export function CardRoomScreen({ roomId }: CardRoomScreenProps) {`
+213. **[완료][P2] 컴포넌트 hook 책임 분리** `apps/web/src/features/card-service/card-room-screen.tsx:30` — 원칙 `S`. 카드방 프로필/참가자 세션 저장소/자동 입장 join/연결/voice call/채팅 draft와 역할·카드·시작 가능 여부 파생을 `use-card-room-screen-state.ts`로 분리해 `CardRoomScreen`은 패널 배치와 props 연결만 담당하게 축소했다. 근거: `const screen = useCardRoomScreenState(roomId);`
 214. **[P2] 긴 함수 책임 분리** `apps/web/src/features/card-service/card-room-screen.tsx:30` — 원칙 `S`. 205라인 함수다. 검증/변환/부수효과를 작은 함수로 분리한다. 근거: `export function CardRoomScreen({ roomId }: CardRoomScreenProps) {`
 215. **[P2] 긴 함수 책임 분리** `apps/web/src/features/card-service/card-room-study-panel.tsx:23` — 원칙 `S`. 193라인 함수다. 검증/변환/부수효과를 작은 함수로 분리한다. 근거: `export function CardRoomStudyPanel({`
 216. **[P2] 긴 함수 책임 분리** `apps/web/src/features/card-service/card-service-decks-screen.tsx:40` — 원칙 `S`. 214라인 함수다. 검증/변환/부수효과를 작은 함수로 분리한다. 근거: `export function CardServiceDecksScreen() {`
@@ -644,3 +644,7 @@
 ## 57차 적용 완료
 
 - 항목 212 완료: `CardRoomLobbyScreen`의 hero/list/dialog 렌더링을 `CardRoomLobbyHero`, `CardRoomLobbyRoomSection`, `CardRoomLobbyCreateDialog`와 하위 상태 컴포넌트로 분리했다.
+
+## 58차 적용 완료
+
+- 항목 213 완료: `CardRoomScreen`의 입장 세션 복구/저장, participant 이탈 정리, voice participant 파생, 채팅 submit/leave 이벤트를 `useCardRoomScreenState`로 분리했다.
