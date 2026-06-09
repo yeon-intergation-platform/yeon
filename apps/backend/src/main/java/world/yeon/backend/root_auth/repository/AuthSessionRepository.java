@@ -2,17 +2,12 @@ package world.yeon.backend.root_auth.repository;
 
 import jakarta.persistence.EntityManager;
 import java.sql.Timestamp;
-import java.time.Instant;
-import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
-import java.time.ZonedDateTime;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
-import java.util.function.Function;
 import java.util.UUID;
 import org.springframework.stereotype.Repository;
+import world.yeon.backend.common.repository.NativeQueryRow;
 
 @Repository
 public class AuthSessionRepository {
@@ -44,74 +39,6 @@ public class AuthSessionRepository {
 		String avatarUrl
 	) {}
 
-
-	private record NativeQueryRow(Object[] values, String label) {
-		static NativeQueryRow require(Object raw, int min, String label) {
-			Object[] values = raw instanceof Object[] rowValues ? rowValues : new Object[]{raw};
-			if (values.length < min) {
-				throw new IllegalStateException(label + "를 해석하지 못했습니다. 필요한 컬럼: " + min + ", 실제 컬럼: " + values.length);
-			}
-			return new NativeQueryRow(values, label);
-		}
-
-		NativeQueryValue valueAt(int index) {
-			if (index >= values.length) {
-				throw new IllegalStateException(label + "의 " + index + "번째 컬럼을 읽을 수 없습니다.");
-			}
-			return new NativeQueryValue(values[index], label + "[" + index + "]");
-		}
-	}
-
-	private record NativeValueReader<T, R>(Class<T> type, Function<T, R> mapper) {
-		R readIfSupported(Object value) {
-			return type.isInstance(value) ? mapper.apply(type.cast(value)) : null;
-		}
-	}
-
-	private static final List<NativeValueReader<?, String>> NATIVE_UUID_VALUE_READERS = List.of(
-		new NativeValueReader<>(UUID.class, UUID::toString)
-	);
-
-	private static final List<NativeValueReader<?, OffsetDateTime>> NATIVE_TIME_VALUE_READERS = List.of(
-		new NativeValueReader<>(OffsetDateTime.class, Function.identity()),
-		new NativeValueReader<>(Timestamp.class, value -> value.toInstant().atOffset(ZoneOffset.UTC)),
-		new NativeValueReader<>(Instant.class, value -> value.atOffset(ZoneOffset.UTC)),
-		new NativeValueReader<>(Date.class, value -> value.toInstant().atOffset(ZoneOffset.UTC)),
-		new NativeValueReader<>(LocalDateTime.class, value -> value.atOffset(ZoneOffset.UTC)),
-		new NativeValueReader<>(ZonedDateTime.class, ZonedDateTime::toOffsetDateTime)
-	);
-
-	private record NativeQueryValue(Object value, String label) {
-		String asString() {
-			return value == null ? null : value.toString();
-		}
-
-		String asUuidString() {
-			if (value == null) {
-				return null;
-			}
-			for (NativeValueReader<?, String> reader : NATIVE_UUID_VALUE_READERS) {
-				String converted = reader.readIfSupported(value);
-				if (converted != null) {
-					return converted;
-				}
-			}
-			return value.toString();
-		}
-
-		OffsetDateTime asOffsetDateTime() {
-			if (value == null) {
-				return null;
-			}
-			for (NativeValueReader<?, OffsetDateTime> reader : NATIVE_TIME_VALUE_READERS) {
-				OffsetDateTime converted = reader.readIfSupported(value);
-				if (converted != null) {
-					return converted;
-				}
-			}
-			return OffsetDateTime.parse(value.toString());
-		}
-	}
 
 	private final EntityManager entityManager;
 
