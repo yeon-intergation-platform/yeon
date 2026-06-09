@@ -78,32 +78,42 @@ export type LifeOsHourClassification = {
   reason: string;
 };
 
-export type LifeOsDailyMetrics = {
-  localDate: string;
+export type LifeOsPeriodRange = {
+  periodStart: string;
+  periodEnd: string;
+};
+
+export type LifeOsMetricsHours = {
   plannedHours: number;
   actionHours: number;
   matchedHours: number;
   overplannedHours: number;
+};
+
+export type LifeOsDailyMismatchMetrics = {
   restInsteadOfPlanHours: number;
   unrelatedActionHours: number;
   spilloverHours: number;
-  overplanningScore: number;
   mismatchByBlock: Record<LifeOsBlockKey, number>;
-  classifications: LifeOsHourClassification[];
+};
+
+export type LifeOsMetricsScore = {
+  overplanningScore: number;
   caveat?: string;
 };
 
-export type LifeOsWeeklyMetrics = {
-  periodStart: string;
-  periodEnd: string;
-  days: LifeOsDailyMetrics[];
-  plannedHours: number;
-  actionHours: number;
-  matchedHours: number;
-  overplannedHours: number;
-  overplanningScore: number;
-  caveat?: string;
-};
+export type LifeOsDailyMetrics = {
+  localDate: string;
+  classifications: LifeOsHourClassification[];
+} & LifeOsMetricsHours &
+  LifeOsDailyMismatchMetrics &
+  LifeOsMetricsScore;
+
+export type LifeOsWeeklyMetrics = LifeOsPeriodRange &
+  LifeOsMetricsHours &
+  LifeOsMetricsScore & {
+    days: LifeOsDailyMetrics[];
+  };
 
 export type LifeOsPattern = {
   type: LifeOsPatternType;
@@ -123,16 +133,24 @@ export type LifeOsRecommendation = {
   affectedCategories: LifeOsCategory[];
 };
 
-export type LifeOsReport = {
+export type LifeOsReportPeriod = LifeOsPeriodRange & {
   periodType: LifeOsReportPeriodType;
-  periodStart: string;
-  periodEnd: string;
+};
+
+export type LifeOsReportAnalysis = {
   metrics: LifeOsDailyMetrics | LifeOsWeeklyMetrics;
   patterns: LifeOsPattern[];
   recommendations: LifeOsRecommendation[];
+};
+
+export type LifeOsReportGeneration = {
   generatedAt: string;
   aiSummary?: string | null;
 };
+
+export type LifeOsReport = LifeOsReportPeriod &
+  LifeOsReportAnalysis &
+  LifeOsReportGeneration;
 
 export const LIFE_OS_HOURS = Array.from({ length: 24 }, (_, hour) => hour);
 
@@ -204,7 +222,7 @@ export function normalizeLifeOsText(value: string | null | undefined) {
 
 export function inferLifeOsCategory(
   text: string | null | undefined,
-  explicitCategory?: LifeOsCategory | null,
+  explicitCategory?: LifeOsCategory | null
 ): LifeOsCategory {
   if (explicitCategory && explicitCategory !== "other") return explicitCategory;
 
@@ -212,7 +230,7 @@ export function inferLifeOsCategory(
   if (!normalized) return "other";
 
   for (const [category, keywords] of Object.entries(
-    LIFE_OS_CATEGORY_KEYWORDS,
+    LIFE_OS_CATEGORY_KEYWORDS
   ) as Array<[LifeOsCategory, string[]]>) {
     if (category === "other") continue;
     if (
@@ -233,7 +251,7 @@ export function getLifeOsBlockKeyForHour(hour: number): LifeOsBlockKey {
 
 export function isLifeOsOverplannedOutcome(
   outcome: LifeOsOutcome,
-  hasGoal = true,
+  hasGoal = true
 ) {
   if (outcome === "unknown_mismatch") return hasGoal;
   return OVERPLANNED_OUTCOMES.has(outcome);
@@ -241,7 +259,7 @@ export function isLifeOsOverplannedOutcome(
 
 export function classifyLifeOsHourOutcome(
   entry: LifeOsHourEntry,
-  previousEntry?: LifeOsHourEntry | null,
+  previousEntry?: LifeOsHourEntry | null
 ): LifeOsHourClassification {
   const goalText = normalizeLifeOsText(entry.goalText);
   const actionText = normalizeLifeOsText(entry.actionText);
@@ -256,14 +274,14 @@ export function classifyLifeOsHourOutcome(
       "other",
       false,
       "high",
-      "목표와 실행이 모두 비어 있습니다.",
+      "목표와 실행이 모두 비어 있습니다."
     );
   }
 
   const goalCategory = inferLifeOsCategory(entry.goalText, entry.goalCategory);
   const actionCategory = inferLifeOsCategory(
     entry.actionText,
-    entry.actionCategory,
+    entry.actionCategory
   );
 
   if (!hasGoal && hasAction) {
@@ -280,7 +298,7 @@ export function classifyLifeOsHourOutcome(
       actionCategory === "other" ? "low" : "medium",
       outcome === "unplanned_rest"
         ? "계획 없이 휴식/식사가 기록됐습니다."
-        : "계획 없이 생산 활동이 기록됐습니다.",
+        : "계획 없이 생산 활동이 기록됐습니다."
     );
   }
 
@@ -292,14 +310,14 @@ export function classifyLifeOsHourOutcome(
       actionCategory,
       true,
       "high",
-      "계획은 있지만 실행 기록이 없습니다.",
+      "계획은 있지만 실행 기록이 없습니다."
     );
   }
 
   const previousActionCategory = previousEntry
     ? inferLifeOsCategory(
         previousEntry.actionText,
-        previousEntry.actionCategory,
+        previousEntry.actionCategory
       )
     : "other";
 
@@ -318,7 +336,7 @@ export function classifyLifeOsHourOutcome(
       actionCategory,
       true,
       "medium",
-      "이전 시간의 실행 분류가 다른 목표 시간으로 이어졌습니다.",
+      "이전 시간의 실행 분류가 다른 목표 시간으로 이어졌습니다."
     );
   }
 
@@ -336,7 +354,7 @@ export function classifyLifeOsHourOutcome(
     actionCategory,
     isLifeOsOverplannedOutcome(classified.outcome, hasGoal),
     classified.confidence,
-    classified.reason,
+    classified.reason
   );
 }
 
@@ -417,7 +435,7 @@ function buildLifeOsClassification(
   actionCategory: LifeOsCategory,
   overplanned: boolean,
   confidence: LifeOsConfidence,
-  reason: string,
+  reason: string
 ): LifeOsHourClassification {
   return {
     hour,
@@ -436,7 +454,7 @@ export function computeLifeOsDailyMetrics(params: {
 }): LifeOsDailyMetrics {
   const entries = [...params.entries].sort((a, b) => a.hour - b.hour);
   const classifications = entries.map((entry, index) =>
-    classifyLifeOsHourOutcome(entry, entries[index - 1]),
+    classifyLifeOsHourOutcome(entry, entries[index - 1])
   );
   const mismatchByBlock = createEmptyMismatchByBlock();
 
@@ -447,28 +465,28 @@ export function computeLifeOsDailyMetrics(params: {
   }
 
   const plannedHours = entries.filter((entry) =>
-    normalizeLifeOsText(entry.goalText),
+    normalizeLifeOsText(entry.goalText)
   ).length;
   const actionHours = entries.filter((entry) =>
-    normalizeLifeOsText(entry.actionText),
+    normalizeLifeOsText(entry.actionText)
   ).length;
   const matchedHours = classifications.filter(
-    (item) => item.outcome === "matched",
+    (item) => item.outcome === "matched"
   ).length;
   const overplannedHours = classifications.filter(
-    (item) => item.overplanned,
+    (item) => item.overplanned
   ).length;
   const restInsteadOfPlanHours = classifications.filter(
-    (item) => item.outcome === "rest_instead_of_plan",
+    (item) => item.outcome === "rest_instead_of_plan"
   ).length;
   const unrelatedActionHours = classifications.filter(
     (item) =>
       item.outcome === "category_swap" ||
       item.outcome === "unknown_mismatch" ||
-      item.outcome === "logistics_displacement",
+      item.outcome === "logistics_displacement"
   ).length;
   const spilloverHours = classifications.filter(
-    (item) => item.outcome === "spillover_candidate",
+    (item) => item.outcome === "spillover_candidate"
   ).length;
 
   return {
@@ -481,7 +499,7 @@ export function computeLifeOsDailyMetrics(params: {
     unrelatedActionHours,
     spilloverHours,
     overplanningScore: Math.round(
-      (overplannedHours / Math.max(plannedHours, 1)) * 100,
+      (overplannedHours / Math.max(plannedHours, 1)) * 100
     ),
     mismatchByBlock,
     classifications,
@@ -501,14 +519,14 @@ export function computeLifeOsWeeklyMetrics(params: {
     computeLifeOsDailyMetrics({
       localDate: day.localDate,
       entries: day.entries,
-    }),
+    })
   );
   const plannedHours = days.reduce((sum, day) => sum + day.plannedHours, 0);
   const actionHours = days.reduce((sum, day) => sum + day.actionHours, 0);
   const matchedHours = days.reduce((sum, day) => sum + day.matchedHours, 0);
   const overplannedHours = days.reduce(
     (sum, day) => sum + day.overplannedHours,
-    0,
+    0
   );
 
   return {
@@ -520,7 +538,7 @@ export function computeLifeOsWeeklyMetrics(params: {
     matchedHours,
     overplannedHours,
     overplanningScore: Math.round(
-      (overplannedHours / Math.max(plannedHours, 1)) * 100,
+      (overplannedHours / Math.max(plannedHours, 1)) * 100
     ),
     caveat:
       plannedHours + actionHours < 12
@@ -530,7 +548,7 @@ export function computeLifeOsWeeklyMetrics(params: {
 }
 
 export function detectLifeOsOverplanningPatterns(
-  metrics: LifeOsDailyMetrics | LifeOsWeeklyMetrics,
+  metrics: LifeOsDailyMetrics | LifeOsWeeklyMetrics
 ): LifeOsPattern[] {
   const days = "days" in metrics ? metrics.days : [metrics];
   const patterns: LifeOsPattern[] = [];
@@ -572,7 +590,7 @@ export function detectLifeOsOverplanningPatterns(
         affectedCategories: uniqueCategories(
           day.classifications
             .filter((item) => denseMismatchHours.includes(item.hour))
-            .map((item) => item.goalCategory),
+            .map((item) => item.goalCategory)
         ),
         confidence: "medium",
       });
@@ -623,7 +641,7 @@ export function detectLifeOsOverplanningPatterns(
 }
 
 export function generateLifeOsRecommendations(
-  patterns: LifeOsPattern[],
+  patterns: LifeOsPattern[]
 ): LifeOsRecommendation[] {
   return patterns.map((pattern) => ({
     title: recommendationTitleForPattern(pattern),
@@ -670,7 +688,7 @@ function findDenseMismatchHours(classifications: LifeOsHourClassification[]) {
   for (let index = 0; index < classifications.length - 2; index += 1) {
     const window = classifications.slice(index, index + 3);
     const plannedCount = window.filter(
-      (item) => item.goalCategory !== "other",
+      (item) => item.goalCategory !== "other"
     ).length;
     const mismatchHours = window
       .filter((item) => item.overplanned)

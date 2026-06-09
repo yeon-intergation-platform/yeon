@@ -39,16 +39,26 @@ import {
 import { SHARED_FEATURE_CLASS } from "../shared-style-constants";
 import type { TypingDeckOption } from "./use-typing-settings";
 
-type TypingRoomSettingsPanelProps = {
+type TypingRoomSettingsPanelStateProps = {
   room: TypingRoomSnapshot;
   isHost: boolean;
   selectedDeckId: string;
+  settingsError: string | null;
+};
+
+type TypingRoomSettingsPanelDeckProps = {
   roomDeckTitle: string;
   deckOptions: readonly TypingDeckOption[];
-  settingsError: string | null;
+};
+
+type TypingRoomSettingsPanelActionProps = {
   onSendSetting: (payload: RoomSettingsUpdateMessage) => void;
   onDeckChange: (event: YeonChangeEvent<YeonSelectElement>) => void;
 };
+
+type TypingRoomSettingsPanelProps = TypingRoomSettingsPanelStateProps &
+  TypingRoomSettingsPanelDeckProps &
+  TypingRoomSettingsPanelActionProps;
 
 const SETTINGS_FIELD_CLASS = `${SHARED_FEATURE_CLASS.text12EmphasisNeutral} grid gap-1`;
 const SETTINGS_SELECT_CLASS = "h-9 py-1.5";

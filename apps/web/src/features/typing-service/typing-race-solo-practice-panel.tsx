@@ -12,13 +12,16 @@ import {
 import { TYPING_SPEED_STYLE } from "@yeon/race-shared";
 import type { TypingDeckPassageOption } from "./use-typing-settings";
 
-interface TypingRaceSoloPracticePanelProps {
+type TypingRaceSoloPracticeContentProps = {
   passage: TypingDeckPassageOption;
   promptChars: string[];
   input: string;
   inputChars: string[];
   mismatches: number[];
   textareaRef: RefObject<YeonTextAreaElement | null>;
+};
+
+type TypingRaceSoloPracticeMetricsProps = {
   speedStyle: (typeof TYPING_SPEED_STYLE)[keyof typeof TYPING_SPEED_STYLE];
   displaySpeed: number;
   displayUnit: string;
@@ -26,19 +29,32 @@ interface TypingRaceSoloPracticePanelProps {
   accuracy: number;
   progress: number;
   elapsedSeconds: number;
+};
+
+type TypingRaceSoloPracticeStateProps = {
   completed: boolean;
   countdownRemaining: number;
-  labels: {
-    result: string;
-    accuracy: string;
-    restart: string;
-    typingInput: string;
-    startingIn: string;
-    typeHere: string;
-  };
+};
+
+type TypingRaceSoloPracticeLabels = {
+  result: string;
+  accuracy: string;
+  restart: string;
+  typingInput: string;
+  startingIn: string;
+  typeHere: string;
+};
+
+type TypingRaceSoloPracticeActions = {
   onInputChange: (value: string) => void;
   onRestart: () => void;
-}
+};
+
+type TypingRaceSoloPracticePanelProps = TypingRaceSoloPracticeContentProps &
+  TypingRaceSoloPracticeMetricsProps &
+  TypingRaceSoloPracticeStateProps & {
+    labels: TypingRaceSoloPracticeLabels;
+  } & TypingRaceSoloPracticeActions;
 
 export function TypingRaceSoloPracticePanel({
   passage,

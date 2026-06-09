@@ -43,17 +43,31 @@ export type UseTerritoryBattleRoomOptions = {
   originRoomId: string;
 };
 
-export type UseTerritoryBattleRoomResult = {
+export type UseTerritoryBattleConnectionResult = {
   connectionState: TerritoryBattleConnectionState;
-  snapshot: TerritoryBattleSnapshot | null;
-  result: TerritoryBattleWinnerResult | null;
   roomId: string | null;
   roomError: TerritoryBattleRoomError | null;
+};
+
+export type UseTerritoryBattleSnapshotResult = {
+  snapshot: TerritoryBattleSnapshot | null;
+  result: TerritoryBattleWinnerResult | null;
+};
+
+export type UseTerritoryBattleMessageActions = {
   sendStart: () => void;
   sendSubmitWord: (payload: TerritoryBattleSubmitWordMessage) => void;
+};
+
+export type UseTerritoryBattleLifecycleActions = {
   leaveRoom: () => Promise<void>;
   rejoin: () => void;
 };
+
+export type UseTerritoryBattleRoomResult = UseTerritoryBattleConnectionResult &
+  UseTerritoryBattleSnapshotResult &
+  UseTerritoryBattleMessageActions &
+  UseTerritoryBattleLifecycleActions;
 
 function getReconnectionTokenStorageKey(originRoomId: string) {
   return `${TERRITORY_BATTLE_RECONNECTION_TOKEN_STORAGE_KEY}:${originRoomId}`;
