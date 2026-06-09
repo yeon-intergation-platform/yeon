@@ -10,9 +10,9 @@ import {
 import { getAuthUserBySessionToken } from "@/server/auth/session";
 
 export const metadata: Metadata = {
-  title: "YEON | 상담 기록 워크스페이스",
+  title: "YEON | 운영 워크스페이스",
   description:
-    "상담 녹음 기록, 원문 전체 텍스트, 구조화 요약, 원문 기반 AI 대화를 한 화면에서 다루는 교육 운영용 워크스페이스",
+    "원문 전체 텍스트, 구조화 요약, 원문 기반 AI 대화를 한 화면에서 다루는 교육 운영용 워크스페이스",
   robots: NON_INDEXABLE_ROBOTS,
 };
 

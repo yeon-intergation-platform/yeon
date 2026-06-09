@@ -267,7 +267,7 @@ function CounselingServiceWorkspaceInner() {
       await counselingWorkspaceFetchVoid(
         resolveApiHref(`/api/v1/counseling-records/${recordId}`),
         { method: "DELETE" },
-        "상담 기록을 삭제하지 못했습니다."
+        "운영 메모를 삭제하지 못했습니다."
       );
       records.removeRecord(recordId);
       selection.clearRecordIfSelected(recordId);
@@ -324,7 +324,7 @@ function CounselingServiceWorkspaceInner() {
   const handleExportRecord = useCallback(
     async (recordId: string) => {
       const target = records.records.find((r) => r.id === recordId);
-      if (!target) throw new Error("내보낼 상담 기록을 찾지 못했습니다.");
+      if (!target) throw new Error("내보낼 운영 메모를 찾지 못했습니다.");
       await exportRecordDocx(target);
     },
     [records.records]

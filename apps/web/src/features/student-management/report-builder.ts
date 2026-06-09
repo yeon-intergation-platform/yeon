@@ -62,17 +62,17 @@ function fmtDateTime(value: Date) {
 
 function pickRecords(
   records: CounselingRecordListItem[],
-  scope: StudentReportRecordScope,
+  scope: StudentReportRecordScope
 ) {
   const sorted = [...records].sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   );
   return scope === "all" ? sorted : sorted.slice(0, scope);
 }
 
 function collectAnalyses(
   selectedRecords: CounselingRecordListItem[],
-  detailsById?: Record<string, CounselingRecordDetail>,
+  detailsById?: Record<string, CounselingRecordDetail>
 ) {
   return selectedRecords.flatMap((record) => {
     const analysis = detailsById?.[record.id]?.analysisResult;
@@ -83,14 +83,14 @@ function collectAnalyses(
 function collectIssues(analyses: AnalysisResult[]) {
   return unique(
     analyses.flatMap((item) =>
-      item.issues.map((issue) => `${issue.title}: ${issue.detail}`),
-    ),
+      item.issues.map((issue) => `${issue.title}: ${issue.detail}`)
+    )
   ).slice(0, 8);
 }
 
 function collectRecordPreviews(
   selectedRecords: CounselingRecordListItem[],
-  detailsById?: Record<string, CounselingRecordDetail>,
+  detailsById?: Record<string, CounselingRecordDetail>
 ) {
   return selectedRecords.map((record) => {
     const summary = detailsById?.[record.id]?.analysisResult?.summary?.trim();
@@ -100,7 +100,7 @@ function collectRecordPreviews(
 
 function collectDenseSummaryBullets(
   selectedRecords: CounselingRecordListItem[],
-  detailsById?: Record<string, CounselingRecordDetail>,
+  detailsById?: Record<string, CounselingRecordDetail>
 ) {
   const analyses = collectAnalyses(selectedRecords, detailsById);
   const issues = collectIssues(analyses);
@@ -114,7 +114,7 @@ function collectDenseSummaryBullets(
       }
 
       return `${record.sessionTitle}: ${closing}`;
-    }),
+    })
   ).slice(0, 8);
 
   return unique([...issues, ...closings]).slice(0, 10);
@@ -123,14 +123,14 @@ function collectDenseSummaryBullets(
 function buildSummary(
   member: Member,
   selectedRecords: CounselingRecordListItem[],
-  detailsById?: Record<string, CounselingRecordDetail>,
+  detailsById?: Record<string, CounselingRecordDetail>
 ) {
   const latestRecord = selectedRecords[0];
   const latestSummary = latestRecord
     ? detailsById?.[latestRecord.id]?.analysisResult?.summary ||
       latestRecord.preview ||
       "최근 상담 요약 정보가 아직 없습니다."
-    : "연결된 상담 기록이 아직 없습니다.";
+    : "연결된 운영 메모가 아직 없습니다.";
 
   return `${member.name} 수강생의 상담 ${selectedRecords.length}건을 묶어, 상담에서 다룬 핵심 내용과 상담 마무리 흐름을 정리한 리포트입니다. ${latestSummary}`;
 }
@@ -146,7 +146,7 @@ export function buildStudentReportDocument({
   const sections: StudentReportSection[] = [];
   const denseSummaryBullets = collectDenseSummaryBullets(
     selectedRecords,
-    detailsById,
+    detailsById
   );
   const previews = collectRecordPreviews(selectedRecords, detailsById);
 
@@ -161,8 +161,8 @@ export function buildStudentReportDocument({
 
   sections.push({
     id: "records",
-    title: "상담 기록 요약",
-    bullets: previews.length > 0 ? previews : ["연결된 상담 기록이 없습니다."],
+    title: "운영 메모 요약",
+    bullets: previews.length > 0 ? previews : ["연결된 운영 메모가 없습니다."],
   });
 
   return {
@@ -183,7 +183,7 @@ export function buildStudentReportDocument({
 }
 
 export function createDefaultStudentReportSettings(
-  memberName: string,
+  memberName: string
 ): StudentReportSettings {
   return {
     title: `${memberName} 상담 리포트`,

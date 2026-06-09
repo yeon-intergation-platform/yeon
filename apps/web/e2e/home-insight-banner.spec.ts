@@ -12,7 +12,7 @@ function daysAgo(days: number) {
   return new Date(Date.now() - days * 86400000).toISOString();
 }
 
-// indicator=recent: 오늘 상담 기록
+// indicator=recent: 오늘 운영 메모
 const RECENT_RECORD = makeRecord({
   id: "rec-recent",
   memberId: MOCK_MEMBER_RECENT.id,
@@ -20,7 +20,7 @@ const RECENT_RECORD = makeRecord({
   status: "ready",
 });
 
-// indicator=warning: 20일 전 상담 기록
+// indicator=warning: 20일 전 운영 메모
 const WARNING_RECORD = makeRecord({
   id: "rec-warning",
   memberId: MOCK_MEMBER_WARNING.id,
@@ -43,12 +43,12 @@ test.describe("상담 인사이트 배너", () => {
         status: 200,
         contentType: "application/json",
         body: JSON.stringify({ records: [RECENT_RECORD] }),
-      }),
+      })
     );
 
     await page.waitForLoadState("networkidle");
     await expect(
-      page.getByText(/상담 간격 주의|상담 이력 없음/),
+      page.getByText(/상담 간격 주의|상담 이력 없음/)
     ).not.toBeVisible();
   });
 
@@ -63,7 +63,7 @@ test.describe("상담 인사이트 배너", () => {
         status: 200,
         contentType: "application/json",
         body: JSON.stringify({ records: [WARNING_RECORD] }),
-      }),
+      })
     );
 
     await page.goto("/home");
@@ -72,7 +72,7 @@ test.describe("상담 인사이트 배너", () => {
     await page.waitForLoadState("networkidle");
 
     // 사이드바 미분류 항목 클릭
-    const recordBtn = page.getByRole("button", { name: /상담 기록/ }).first();
+    const recordBtn = page.getByRole("button", { name: /운영 메모/ }).first();
     if (await recordBtn.isVisible()) {
       await recordBtn.click();
       await expect(page.getByText(/상담 간격 주의/)).toBeVisible({
@@ -92,13 +92,13 @@ test.describe("상담 인사이트 배너", () => {
         status: 200,
         contentType: "application/json",
         body: JSON.stringify({ records: [makeRecord({ memberId: null })] }),
-      }),
+      })
     );
 
     await page.goto("/home");
     await page.waitForLoadState("networkidle");
 
-    const recordBtn = page.getByRole("button", { name: /상담 기록/ }).first();
+    const recordBtn = page.getByRole("button", { name: /운영 메모/ }).first();
     if (await recordBtn.isVisible()) {
       await recordBtn.click();
       await expect(page.getByText(/상담 이력 없음/)).toBeVisible({
@@ -118,13 +118,13 @@ test.describe("상담 인사이트 배너", () => {
         status: 200,
         contentType: "application/json",
         body: JSON.stringify({ records: [WARNING_RECORD] }),
-      }),
+      })
     );
 
     await page.goto("/home");
     await page.waitForLoadState("networkidle");
 
-    const recordBtn = page.getByRole("button", { name: /상담 기록/ }).first();
+    const recordBtn = page.getByRole("button", { name: /운영 메모/ }).first();
     if (await recordBtn.isVisible()) {
       await recordBtn.click();
 
@@ -133,7 +133,7 @@ test.describe("상담 인사이트 배너", () => {
         await banner.click();
         // 배너 클릭 후 수강생 이름이 MemberPanel에 표시되어야 함
         await expect(
-          page.getByRole("heading", { name: MOCK_MEMBER_WARNING.name }),
+          page.getByRole("heading", { name: MOCK_MEMBER_WARNING.name })
         ).toBeVisible({ timeout: 3000 });
       }
     }

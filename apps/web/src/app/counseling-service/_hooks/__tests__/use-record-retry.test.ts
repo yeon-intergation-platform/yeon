@@ -10,7 +10,7 @@ function makeSelectedRecord(overrides: Partial<RecordItem> = {}): RecordItem {
     spaceId: "space-1",
     memberId: "member-1",
     createdAt: new Date().toISOString(),
-    title: "상담 기록",
+    title: "운영 메모",
     status: "error",
     errorMessage: "전사 실패",
     meta: "메타",

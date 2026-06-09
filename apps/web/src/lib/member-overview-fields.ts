@@ -3,7 +3,7 @@ import type { FieldType } from "@/features/space-settings/types";
 export const OVERVIEW_SECTION_TITLES = {
   contact: "연락처",
   status: "운영 상태",
-  counseling: "상담 기록",
+  counseling: "운영 메모",
   additional: "추가 정보",
 } as const;
 
@@ -91,9 +91,9 @@ export const DEFAULT_OVERVIEW_FIELDS: DefaultOverviewFieldDefinition[] = [
 ];
 
 export const OVERVIEW_FIELD_SOURCE_KEY_SET = new Set<OverviewFieldSourceKey>(
-  DEFAULT_OVERVIEW_FIELDS.map((field) => field.sourceKey),
+  DEFAULT_OVERVIEW_FIELDS.map((field) => field.sourceKey)
 );
 
 export const OVERVIEW_FIELD_META_BY_SOURCE_KEY = Object.fromEntries(
-  DEFAULT_OVERVIEW_FIELDS.map((field) => [field.sourceKey, field]),
+  DEFAULT_OVERVIEW_FIELDS.map((field) => [field.sourceKey, field])
 ) as Record<OverviewFieldSourceKey, DefaultOverviewFieldDefinition>;

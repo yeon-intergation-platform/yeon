@@ -50,12 +50,15 @@ describe("counseling-records/[recordId] route", () => {
   it("GET 비인증이면 guard 응답을 그대로 반환한다", async () => {
     mockRequireAuthenticatedUser.mockResolvedValue({
       currentUser: null,
-      response: Response.json({ message: "로그인이 필요합니다." }, { status: 401 }),
+      response: Response.json(
+        { message: "로그인이 필요합니다." },
+        { status: 401 }
+      ),
     });
 
     const response = await GET(
       new NextRequest("http://localhost/api/v1/counseling-records/cr-1"),
-      { params: Promise.resolve({ recordId: "cr-1" }) },
+      { params: Promise.resolve({ recordId: "cr-1" }) }
     );
 
     expect(response.status).toBe(401);
@@ -128,12 +131,12 @@ describe("counseling-records/[recordId] route", () => {
 
     const response = await GET(
       new NextRequest("http://localhost/api/v1/counseling-records/cr-1"),
-      { params: Promise.resolve({ recordId: "cr-1" }) },
+      { params: Promise.resolve({ recordId: "cr-1" }) }
     );
 
     expect(mockFetchCounselingRecordDetailFromSpring).toHaveBeenCalledWith(
       "user-1",
-      "cr-1",
+      "cr-1"
     );
     expect(response.status).toBe(200);
   });
@@ -146,18 +149,18 @@ describe("counseling-records/[recordId] route", () => {
     mockFetchCounselingRecordDetailFromSpring.mockRejectedValue(
       new CounselingRecordDetailsSpringBackendHttpError(
         404,
-        "상담 기록을 찾지 못했습니다.",
-      ),
+        "운영 메모를 찾지 못했습니다."
+      )
     );
 
     const response = await GET(
       new NextRequest("http://localhost/api/v1/counseling-records/cr-1"),
-      { params: Promise.resolve({ recordId: "cr-1" }) },
+      { params: Promise.resolve({ recordId: "cr-1" }) }
     );
 
     expect(response.status).toBe(404);
     await expect(response.json()).resolves.toEqual({
-      message: "상담 기록을 찾지 못했습니다.",
+      message: "운영 메모를 찾지 못했습니다.",
     });
   });
 
@@ -173,13 +176,13 @@ describe("counseling-records/[recordId] route", () => {
         method: "PATCH",
         body: JSON.stringify({ memberId: null }),
       }),
-      { params: Promise.resolve({ recordId: "cr-1" }) },
+      { params: Promise.resolve({ recordId: "cr-1" }) }
     );
 
     expect(mockLinkCounselingRecordMemberInSpring).toHaveBeenCalledWith(
       "user-1",
       "cr-1",
-      null,
+      null
     );
     expect(response.status).toBe(200);
   });
@@ -195,10 +198,13 @@ describe("counseling-records/[recordId] route", () => {
       new NextRequest("http://localhost/api/v1/counseling-records/cr-1", {
         method: "DELETE",
       }),
-      { params: Promise.resolve({ recordId: "cr-1" }) },
+      { params: Promise.resolve({ recordId: "cr-1" }) }
     );
 
-    expect(mockDeleteCounselingRecordInSpring).toHaveBeenCalledWith("user-1", "cr-1");
+    expect(mockDeleteCounselingRecordInSpring).toHaveBeenCalledWith(
+      "user-1",
+      "cr-1"
+    );
     expect(response.status).toBe(200);
   });
 
@@ -210,8 +216,8 @@ describe("counseling-records/[recordId] route", () => {
     mockLinkCounselingRecordMemberInSpring.mockRejectedValue(
       new CounselingRecordMutationSpringBackendHttpError(
         403,
-        "권한이 없습니다.",
-      ),
+        "권한이 없습니다."
+      )
     );
 
     const response = await PATCH(
@@ -219,7 +225,7 @@ describe("counseling-records/[recordId] route", () => {
         method: "PATCH",
         body: JSON.stringify({ memberId: null }),
       }),
-      { params: Promise.resolve({ recordId: "cr-1" }) },
+      { params: Promise.resolve({ recordId: "cr-1" }) }
     );
 
     expect(response.status).toBe(403);

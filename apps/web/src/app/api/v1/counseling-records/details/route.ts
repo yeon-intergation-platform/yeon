@@ -38,11 +38,11 @@ export async function POST(request: NextRequest) {
   try {
     const springResponse = await fetchCounselingRecordDetailsFromSpring(
       currentUser.id,
-      parsed.data,
+      parsed.data
     );
 
     return NextResponse.json(
-      bulkCounselingRecordDetailsResponseSchema.parse(springResponse),
+      bulkCounselingRecordDetailsResponseSchema.parse(springResponse)
     );
   } catch (error) {
     if (error instanceof CounselingRecordDetailsSpringBackendHttpError) {
@@ -50,6 +50,6 @@ export async function POST(request: NextRequest) {
     }
 
     console.error(error);
-    return jsonError("상담 기록 상세를 불러오지 못했습니다.", 500);
+    return jsonError("운영 메모 상세를 불러오지 못했습니다.", 500);
   }
 }

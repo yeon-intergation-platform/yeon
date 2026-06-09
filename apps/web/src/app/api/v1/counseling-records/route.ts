@@ -100,7 +100,7 @@ export async function GET(request: NextRequest) {
     }
 
     console.error(error);
-    return jsonError("상담 기록 목록을 불러오지 못했습니다.", 500);
+    return jsonError("운영 메모 목록을 불러오지 못했습니다.", 500);
   }
 }
 

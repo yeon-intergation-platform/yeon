@@ -408,12 +408,12 @@ export async function exportMemberReportDocx(
 
   paragraphs.push(new Paragraph({ text: "", spacing: { after: 200 } }));
 
-  // 상담 기록 목록
-  paragraphs.push(sectionHeading(`상담 기록 (${memberRecords.length}건)`));
+  // 운영 메모 목록
+  paragraphs.push(sectionHeading(`운영 메모 (${memberRecords.length}건)`));
 
   if (memberRecords.length === 0) {
     paragraphs.push(
-      bodyParagraph("상담 기록이 없습니다.", { color: "888888" })
+      bodyParagraph("운영 메모가 없습니다.", { color: "888888" })
     );
   } else {
     memberRecords.forEach((rec, i) => {

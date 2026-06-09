@@ -21,7 +21,7 @@ export function EmptyState({
           <MicIcon size={32} />
         </div>
         <h2 className="m-0 text-[22px] font-bold tracking-[-0.02em]">
-          첫 상담 기록을 만들어 보세요
+          첫 운영 메모를 만들어 보세요
         </h2>
         <p className="m-0 text-sm leading-relaxed text-text-secondary">
           음성 파일을 업로드하거나 브라우저에서 바로 녹음할 수 있습니다.

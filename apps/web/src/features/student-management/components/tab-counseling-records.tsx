@@ -29,7 +29,7 @@ export function TabCounselingRecords({
 }: TabCounselingRecordsProps) {
   const { data, isPending, error } = useMemberCounselingRecords(
     spaceId,
-    memberId,
+    memberId
   );
 
   const records = data ? data.records : ([] as CounselingRecordListItem[]);
@@ -38,7 +38,7 @@ export function TabCounselingRecords({
     error instanceof Error
       ? error.message
       : error
-        ? "상담 기록을 불러오지 못했습니다."
+        ? "운영 메모를 불러오지 못했습니다."
         : null;
 
   useEffect(() => {
@@ -49,7 +49,7 @@ export function TabCounselingRecords({
     return (
       <div className="flex items-center gap-2 py-10 justify-center text-text-dim text-[14px]">
         <Loader2 size={16} className="animate-spin" />
-        상담 기록 불러오는 중...
+        운영 메모 불러오는 중...
       </div>
     );
   }
@@ -67,7 +67,7 @@ export function TabCounselingRecords({
       <div className="py-12 flex flex-col items-center gap-3 text-center">
         <Link2Off size={28} className="text-text-dim" />
         <p className="text-[14px] text-text-dim">
-          연결된 상담 기록이 없습니다.
+          연결된 운영 메모가 없습니다.
         </p>
         <p className="text-[13px] text-text-dim max-w-[320px] leading-relaxed">
           상담관리로 이동해 녹음을 시작하면 이 수강생에 자동으로 연결됩니다.

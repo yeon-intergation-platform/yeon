@@ -53,17 +53,17 @@ test.describe("텍스트 메모 빠른 입력", () => {
     await page.waitForLoadState("networkidle");
   });
 
-  test("'새 상담 기록' 드롭다운에 텍스트 메모 옵션이 있다", async ({
+  test("'새 운영 메모' 드롭다운에 텍스트 메모 옵션이 있다", async ({
     page,
   }) => {
-    await page.getByRole("button", { name: /새 상담 기록/ }).click();
+    await page.getByRole("button", { name: /새 운영 메모/ }).click();
     await expect(
-      page.getByRole("button", { name: /텍스트 메모/ }),
+      page.getByRole("button", { name: /텍스트 메모/ })
     ).toBeVisible();
   });
 
   test("텍스트 메모 클릭 시 모달이 열린다", async ({ page }) => {
-    await page.getByRole("button", { name: /새 상담 기록/ }).click();
+    await page.getByRole("button", { name: /새 운영 메모/ }).click();
     await page.getByRole("button", { name: /텍스트 메모/ }).click();
 
     await expect(page.getByText("텍스트 메모")).toBeVisible({ timeout: 2000 });
@@ -71,7 +71,7 @@ test.describe("텍스트 메모 빠른 입력", () => {
   });
 
   test("내용 없이 저장 버튼이 비활성화된다", async ({ page }) => {
-    await page.getByRole("button", { name: /새 상담 기록/ }).click();
+    await page.getByRole("button", { name: /새 운영 메모/ }).click();
     await page.getByRole("button", { name: /텍스트 메모/ }).click();
 
     const saveBtn = page.getByRole("button", { name: "저장" });
@@ -79,7 +79,7 @@ test.describe("텍스트 메모 빠른 입력", () => {
   });
 
   test("내용 입력 후 저장하면 레코드 목록에 추가된다", async ({ page }) => {
-    await page.getByRole("button", { name: /새 상담 기록/ }).click();
+    await page.getByRole("button", { name: /새 운영 메모/ }).click();
     await page.getByRole("button", { name: /텍스트 메모/ }).click();
 
     await page.getByPlaceholder(/메모 제목/).fill("3월 피드백 메모");
@@ -93,7 +93,7 @@ test.describe("텍스트 메모 빠른 입력", () => {
   });
 
   test("Escape 키로 모달을 닫을 수 있다", async ({ page }) => {
-    await page.getByRole("button", { name: /새 상담 기록/ }).click();
+    await page.getByRole("button", { name: /새 운영 메모/ }).click();
     await page.getByRole("button", { name: /텍스트 메모/ }).click();
     await expect(page.getByPlaceholder(/메모 내용/)).toBeVisible();
 

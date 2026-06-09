@@ -65,7 +65,7 @@ export function NewRecordEntryModal({
         <div className="flex items-start justify-between gap-3 border-b border-border px-4 py-4">
           <div className="min-w-0">
             <h2 className="text-[16px] font-semibold tracking-[-0.03em] text-text">
-              새 상담 기록
+              새 운영 메모
             </h2>
             <p className="mt-1 text-[12px] text-text-dim">
               시작 방식을 선택해 주세요.
@@ -107,7 +107,7 @@ export function NewRecordEntryModal({
                 <Link2 size={15} />
               </div>
               <div className="min-w-0 leading-relaxed">
-                이번 상담 기록은{" "}
+                이번 운영 메모은{" "}
                 <span className="font-semibold">{linkedStudentName}</span>{" "}
                 수강생에게 자동 연결됩니다.
               </div>

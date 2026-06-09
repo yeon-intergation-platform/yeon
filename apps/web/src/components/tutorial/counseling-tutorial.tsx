@@ -7,7 +7,7 @@ import { useTutorialPolicy } from "@/features/counseling-service-shell/counselin
 
 const Joyride = dynamic(
   () => import("react-joyride").then((m) => ({ default: m.Joyride })),
-  { ssr: false },
+  { ssr: false }
 );
 
 const BASE_STEPS = [
@@ -29,7 +29,7 @@ const BASE_STEPS = [
   {
     target: '[data-tutorial="link-member-btn"]',
     title: "수강생과 연결하기",
-    content: "상담 기록을 수강생에 연결하면 수강생별 이력이 자동으로 쌓여요.",
+    content: "운영 메모를 수강생에 연결하면 수강생별 이력이 자동으로 쌓여요.",
     placement: "bottom" as const,
   },
   {

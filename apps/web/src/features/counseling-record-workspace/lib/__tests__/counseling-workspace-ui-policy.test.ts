@@ -36,7 +36,7 @@ describe("getCounselingWorkspaceUiPolicy", () => {
     });
   });
 
-  it("상담기록이 없고 선택된 수강생도 없으면 empty surface를 반환한다", () => {
+  it("운영 메모가 없고 선택된 수강생도 없으면 empty surface를 반환한다", () => {
     expect(
       getCounselingWorkspaceUiPolicy({
         spacesLoading: false,
