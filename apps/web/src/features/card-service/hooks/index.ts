@@ -6,6 +6,7 @@ export { useDeleteDeck, useUpdateDeck } from "./use-deck-mutations";
 export {
   useAddCard,
   useAddCards,
+  useReplaceCards,
   useDeleteCard,
   useUpdateCard,
   useReviewCard,

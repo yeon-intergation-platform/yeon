@@ -2,7 +2,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { CARD_BULK_IMPORT_MAX_ITEMS } from "@yeon/api-contract/card-decks";
 import { useYeonWindowEvent } from "@yeon/ui/hooks/YeonBrowserHooks";
-import { getYeonCustomEventDetail } from "@yeon/ui/runtime/YeonBrowserRuntime";
+import {
+  getYeonCustomEventDetail,
+  showYeonConfirm,
+} from "@yeon/ui/runtime/YeonBrowserRuntime";
 import {
   YeonButton,
   YeonField,
@@ -17,7 +20,7 @@ import {
   type YeonFormElement,
 } from "@yeon/ui";
 import { YEON_WEB_SHARED_CLASS as SHARED_FEATURE_CLASS } from "@yeon/ui/theme/web-style-tokens";
-import { useAddCards } from "../hooks";
+import { useAddCards, useReplaceCards } from "../hooks";
 import { parseBulkCardImportInput } from "../utils/bulk-card-import-parser";
 import {
   BULK_CARD_HELP_VISIBILITY_EVENT,
@@ -50,7 +53,11 @@ export function BulkAddCardsForm({
 }: BulkAddCardsFormProps) {
   const [rawText, setRawText] = useState("");
   const [isHelpVisible, setHelpVisible] = useState(true);
-  const { mutate, isPending, error } = useAddCards(deckId);
+  const addCardsMutation = useAddCards(deckId);
+  const replaceCardsMutation = useReplaceCards(deckId);
+  const isPending =
+    addCardsMutation.isPending || replaceCardsMutation.isPending;
+  const error = addCardsMutation.error ?? replaceCardsMutation.error;
   const parseResult = useMemo(
     () => parseBulkCardImportInput(rawText),
     [rawText]
@@ -59,6 +66,12 @@ export function BulkAddCardsForm({
     parseResult.cards.length > 0 &&
     parseResult.errors.length === 0 &&
     !isPending;
+  const replaceButtonLabel = replaceCardsMutation.isPending
+    ? "덮어쓰는 중..."
+    : "덮어쓰기";
+  const addButtonLabel = addCardsMutation.isPending
+    ? "추가 중..."
+    : `${parseResult.cards.length || 0}장 추가`;
   const previewCards = parseResult.cards.slice(0, 5);
   const hiddenPreviewCount = Math.max(
     parseResult.cards.length - previewCards.length,
@@ -89,7 +102,31 @@ export function BulkAddCardsForm({
       return;
     }
 
-    mutate(
+    addCardsMutation.mutate(
+      { items: parseResult.cards },
+      {
+        onSuccess: () => {
+          setRawText("");
+          onSuccess?.();
+        },
+      }
+    );
+  };
+
+  const handleReplace = () => {
+    if (!canSubmit) {
+      return;
+    }
+
+    if (
+      !showYeonConfirm(
+        `기존 카드를 모두 삭제하고 ${parseResult.cards.length}장으로 덮어쓸까요? 이 작업은 되돌릴 수 없습니다.`
+      )
+    ) {
+      return;
+    }
+
+    replaceCardsMutation.mutate(
       { items: parseResult.cards },
       {
         onSuccess: () => {
@@ -264,14 +301,23 @@ export function BulkAddCardsForm({
         </YeonSurface>
       ) : null}
 
-      <YeonView className="flex justify-end">
+      <YeonView className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+        <YeonButton
+          type="button"
+          disabled={!canSubmit}
+          onClick={handleReplace}
+          size="lg"
+          className={CARD_SERVICE_COMMON_CLASS.panelTextEmphasis}
+        >
+          {replaceButtonLabel}
+        </YeonButton>
         <YeonButton
           type="submit"
           disabled={!canSubmit}
           variant="primary"
           size="lg"
         >
-          {isPending ? "추가 중..." : `${parseResult.cards.length || 0}장 추가`}
+          {addButtonLabel}
         </YeonButton>
       </YeonView>
     </YeonForm>

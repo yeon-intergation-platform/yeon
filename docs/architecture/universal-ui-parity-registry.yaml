@@ -133,6 +133,7 @@ concepts:
     note: >
       bulk 카드 생성 의미가 플랫폼별로 다름: 웹은 /items/bulk 엔드포인트, 모바일은 createCardDeckItem 루프.
       이 비대칭은 어댑터 내부에서 흡수했다(모바일 addCards는 루프, 웹은 bulk). 화면은 동일 포트 동사만 호출.
+      덮어쓰기(replaceCards)는 기존 item 전체 삭제 후 새 bulk 입력으로 완전 대체한다. 웹/모바일 모두 같은 포트 동사를 호출하고 삭제/생성 구현 차이는 어댑터 내부에서 흡수한다.
       모바일은 typecheck/lint 검증. 시각/동작 런타임 검증(slice 20)은 시뮬레이터에서 별도 수행 권장.
 
   - id: card-deck-repository

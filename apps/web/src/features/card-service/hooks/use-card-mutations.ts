@@ -69,6 +69,12 @@ export function useAddCards(deckId: string) {
   );
 }
 
+export function useReplaceCards(deckId: string) {
+  return useDeckMutation(deckId, (repository, body: CreateCardDeckItemsBody) =>
+    repository.replaceCards(deckId, body)
+  );
+}
+
 export function useUpdateCard(deckId: string) {
   return useDeckMutation(
     deckId,

@@ -28,6 +28,7 @@ import {
   addGuestCards,
   deleteGuestCard,
   getGuestDeckDetail,
+  replaceGuestCards,
   reviewGuestCard,
   setGuestCardStudyMode,
   updateGuestCard,
@@ -79,6 +80,29 @@ export function createWebCardItemRepository(
           body: JSON.stringify(body),
         },
         "카드를 일괄 추가하지 못했습니다."
+      );
+      return data.items;
+    },
+    async replaceCards(deckId: string, body: CreateCardDeckItemsBody) {
+      if (!isAuthenticated) {
+        return replaceGuestCards(deckId, body);
+      }
+      const detail = await loadServerCardDeckDetail(deckId);
+      for (const item of detail.items) {
+        await cardServiceFetchVoid(
+          `/api/v1/card-decks/${deckId}/items/${item.id}`,
+          { method: "DELETE" },
+          "기존 카드를 삭제하지 못했습니다."
+        );
+      }
+      const data = await cardServiceFetchJson<{ items: CardDeckItemDto[] }>(
+        `/api/v1/card-decks/${deckId}/items/bulk`,
+        {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(body),
+        },
+        "카드를 덮어쓰지 못했습니다."
       );
       return data.items;
     },
