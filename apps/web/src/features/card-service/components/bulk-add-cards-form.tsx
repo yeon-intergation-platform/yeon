@@ -40,16 +40,43 @@ const BULK_CARD_TEMPLATE = `[[Q]]
 [[A]]
 정답`;
 
+export interface BulkAddCardsFormActionState {
+  canSubmit: boolean;
+  isPending: boolean;
+  addButtonLabel: string;
+  replaceButtonLabel: string;
+  errorMessage?: string;
+}
+
+export const BULK_ADD_CARDS_FORM_INITIAL_ACTION_STATE: BulkAddCardsFormActionState =
+  {
+    canSubmit: false,
+    isPending: false,
+    addButtonLabel: "0장 추가",
+    replaceButtonLabel: "0장 덮어쓰기",
+  };
+
 interface BulkAddCardsFormProps {
   deckId: string;
+  formId?: string;
   onSuccess?: () => void;
   onDirtyChange?: (dirty: boolean) => void;
+  onActionStateChange?: (state: BulkAddCardsFormActionState) => void;
 }
+
+const BULK_CARD_ACTION = {
+  add: "add",
+  replace: "replace",
+} as const;
+
+type BulkCardAction = (typeof BULK_CARD_ACTION)[keyof typeof BULK_CARD_ACTION];
 
 export function BulkAddCardsForm({
   deckId,
+  formId,
   onSuccess,
   onDirtyChange,
+  onActionStateChange,
 }: BulkAddCardsFormProps) {
   const [rawText, setRawText] = useState("");
   const [isHelpVisible, setHelpVisible] = useState(true);
@@ -72,6 +99,16 @@ export function BulkAddCardsForm({
   const addButtonLabel = addCardsMutation.isPending
     ? "추가 중..."
     : `${parseResult.cards.length || 0}장 추가`;
+  const actionState = useMemo<BulkAddCardsFormActionState>(
+    () => ({
+      canSubmit,
+      isPending,
+      addButtonLabel,
+      replaceButtonLabel,
+      errorMessage: error?.message,
+    }),
+    [addButtonLabel, canSubmit, error?.message, isPending, replaceButtonLabel]
+  );
   const previewCards = parseResult.cards.slice(0, 5);
   const hiddenPreviewCount = Math.max(
     parseResult.cards.length - previewCards.length,
@@ -81,6 +118,10 @@ export function BulkAddCardsForm({
   useEffect(() => {
     onDirtyChange?.(rawText.trim().length > 0);
   }, [onDirtyChange, rawText]);
+
+  useEffect(() => {
+    onActionStateChange?.(actionState);
+  }, [actionState, onActionStateChange]);
 
   useEffect(() => {
     setHelpVisible(shouldShowBulkCardHelp());
@@ -102,6 +143,31 @@ export function BulkAddCardsForm({
       return;
     }
 
+    const submitter = (event.nativeEvent as SubmitEvent)
+      .submitter as HTMLButtonElement | null;
+    const action = (submitter?.value ?? BULK_CARD_ACTION.add) as BulkCardAction;
+
+    if (action === BULK_CARD_ACTION.replace) {
+      if (
+        !showYeonConfirm(
+          `기존 카드를 모두 삭제하고 ${parseResult.cards.length}장으로 덮어쓸까요? 이 작업은 되돌릴 수 없습니다.`
+        )
+      ) {
+        return;
+      }
+
+      replaceCardsMutation.mutate(
+        { items: parseResult.cards },
+        {
+          onSuccess: () => {
+            setRawText("");
+            onSuccess?.();
+          },
+        }
+      );
+      return;
+    }
+
     addCardsMutation.mutate(
       { items: parseResult.cards },
       {
@@ -113,32 +179,12 @@ export function BulkAddCardsForm({
     );
   };
 
-  const handleReplace = () => {
-    if (!canSubmit) {
-      return;
-    }
-
-    if (
-      !showYeonConfirm(
-        `기존 카드를 모두 삭제하고 ${parseResult.cards.length}장으로 덮어쓸까요? 이 작업은 되돌릴 수 없습니다.`
-      )
-    ) {
-      return;
-    }
-
-    replaceCardsMutation.mutate(
-      { items: parseResult.cards },
-      {
-        onSuccess: () => {
-          setRawText("");
-          onSuccess?.();
-        },
-      }
-    );
-  };
-
   return (
-    <YeonForm onSubmit={handleSubmit} className="flex flex-col gap-5">
+    <YeonForm
+      id={formId}
+      onSubmit={handleSubmit}
+      className="flex flex-col gap-5"
+    >
       {isHelpVisible ? (
         <YeonSurface variant="panel" className="relative p-4 pr-12 md:p-5">
           <YeonButton
@@ -301,37 +347,10 @@ export function BulkAddCardsForm({
         </YeonSurface>
       ) : null}
 
-      <YeonView className="flex flex-col gap-3 border-t border-[#e5e5e5] pt-4 sm:flex-row sm:items-center sm:justify-between">
-        <YeonText
-          as="p"
-          variant="caption"
-          tone="secondary"
-          className="leading-5"
-        >
-          덮어쓰기는 기존 카드를 모두 삭제하고, 인식된 카드 목록으로 완전히
-          교체합니다.
-        </YeonText>
-        <YeonView className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-          <YeonButton
-            type="button"
-            disabled={!canSubmit}
-            onClick={handleReplace}
-            variant="danger"
-            size="lg"
-            className={CARD_SERVICE_COMMON_CLASS.panelTextEmphasis}
-          >
-            {replaceButtonLabel}
-          </YeonButton>
-          <YeonButton
-            type="submit"
-            disabled={!canSubmit}
-            variant="primary"
-            size="lg"
-          >
-            {addButtonLabel}
-          </YeonButton>
-        </YeonView>
-      </YeonView>
+      <YeonText as="p" variant="caption" tone="secondary" className="leading-5">
+        덮어쓰기는 기존 카드를 모두 삭제하고, 인식된 카드 목록으로 완전히
+        교체합니다.
+      </YeonText>
     </YeonForm>
   );
 }

@@ -11,7 +11,11 @@ import {
   AddCardForm,
   type AddCardFormActionState,
 } from "./add-card-form";
-import { BulkAddCardsForm } from "./bulk-add-cards-form";
+import {
+  BULK_ADD_CARDS_FORM_INITIAL_ACTION_STATE,
+  BulkAddCardsForm,
+  type BulkAddCardsFormActionState,
+} from "./bulk-add-cards-form";
 import { ResponsiveModal } from "./responsive-modal";
 
 const ADD_CARD_MODES = {
@@ -26,7 +30,7 @@ interface AddCardsPanelProps {
   onClose: () => void;
 }
 
-function isSameActionState(
+function isSameManualActionState(
   left: AddCardFormActionState,
   right: AddCardFormActionState
 ) {
@@ -36,6 +40,82 @@ function isSameActionState(
     left.actionLabel === right.actionLabel &&
     left.pendingActionLabel === right.pendingActionLabel &&
     left.errorMessage === right.errorMessage
+  );
+}
+
+function isSameBulkActionState(
+  left: BulkAddCardsFormActionState,
+  right: BulkAddCardsFormActionState
+) {
+  return (
+    left.canSubmit === right.canSubmit &&
+    left.isPending === right.isPending &&
+    left.addButtonLabel === right.addButtonLabel &&
+    left.replaceButtonLabel === right.replaceButtonLabel &&
+    left.errorMessage === right.errorMessage
+  );
+}
+
+function BulkAddCardsFooter({
+  formId,
+  state,
+  onCancel,
+}: {
+  formId: string;
+  state: BulkAddCardsFormActionState;
+  onCancel: () => void;
+}) {
+  const isActionPending = state.isPending;
+
+  return (
+    <YeonView className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+      <YeonView className="min-h-5 min-w-0">
+        {state.errorMessage ? (
+          <YeonText
+            variant="caption"
+            tone="danger"
+            className="font-medium leading-5"
+          >
+            {state.errorMessage}
+          </YeonText>
+        ) : (
+          <YeonText variant="caption" tone="secondary" className="leading-5">
+            덮어쓰기는 기존 카드를 모두 삭제하고 인식된 카드로 교체합니다.
+          </YeonText>
+        )}
+      </YeonView>
+      <YeonView className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-end">
+        <YeonButton
+          type="button"
+          onClick={onCancel}
+          disabled={isActionPending}
+          className={CARD_SERVICE_COMMON_CLASS.panelTextEmphasis}
+        >
+          취소
+        </YeonButton>
+        <YeonButton
+          type="submit"
+          form={formId}
+          name="bulkAction"
+          value="replace"
+          variant="danger"
+          disabled={!state.canSubmit}
+          className={CARD_SERVICE_COMMON_CLASS.panelTextEmphasis}
+        >
+          {state.replaceButtonLabel}
+        </YeonButton>
+        <YeonButton
+          type="submit"
+          form={formId}
+          name="bulkAction"
+          value="add"
+          variant="primary"
+          disabled={!state.canSubmit}
+        >
+          {state.addButtonLabel}
+        </YeonButton>
+      </YeonView>
+    </YeonView>
   );
 }
 
@@ -94,11 +174,15 @@ function ManualAddCardFooter({
 
 export function AddCardsPanel({ deckId, onClose }: AddCardsPanelProps) {
   const manualFormId = useId();
+  const bulkFormId = useId();
   const [mode, setMode] = useState<AddCardMode>(ADD_CARD_MODES.manual);
   const [manualDirty, setManualDirty] = useState(false);
   const [bulkDirty, setBulkDirty] = useState(false);
   const [manualActionState, setManualActionState] = useState(
     ADD_CARD_FORM_INITIAL_ACTION_STATE
+  );
+  const [bulkActionState, setBulkActionState] = useState(
+    BULK_ADD_CARDS_FORM_INITIAL_ACTION_STATE
   );
   const isDirty = manualDirty || bulkDirty;
 
@@ -117,14 +201,14 @@ export function AddCardsPanel({ deckId, onClose }: AddCardsPanelProps) {
   const handleManualActionStateChange = useCallback(
     (nextState: AddCardFormActionState) => {
       setManualActionState((prevState) =>
-        isSameActionState(prevState, nextState) ? prevState : nextState
+        isSameManualActionState(prevState, nextState) ? prevState : nextState
       );
     },
     []
   );
 
   const handleRequestClose = useCallback(() => {
-    if (manualActionState.isPending) {
+    if (manualActionState.isPending || bulkActionState.isPending) {
       showYeonAlert(
         "이미지 업로드 또는 저장이 진행 중입니다. 완료 후 닫아주세요."
       );
@@ -140,7 +224,21 @@ export function AddCardsPanel({ deckId, onClose }: AddCardsPanelProps) {
       return;
     }
     onClose();
-  }, [isDirty, manualActionState.isPending, onClose]);
+  }, [
+    bulkActionState.isPending,
+    isDirty,
+    manualActionState.isPending,
+    onClose,
+  ]);
+
+  const handleBulkActionStateChange = useCallback(
+    (nextState: BulkAddCardsFormActionState) => {
+      setBulkActionState((prevState) =>
+        isSameBulkActionState(prevState, nextState) ? prevState : nextState
+      );
+    },
+    []
+  );
 
   const footer =
     mode === ADD_CARD_MODES.manual ? (
@@ -149,7 +247,13 @@ export function AddCardsPanel({ deckId, onClose }: AddCardsPanelProps) {
         state={manualActionState}
         onCancel={handleRequestClose}
       />
-    ) : null;
+    ) : (
+      <BulkAddCardsFooter
+        formId={bulkFormId}
+        state={bulkActionState}
+        onCancel={handleRequestClose}
+      />
+    );
 
   return (
     <ResponsiveModal
@@ -209,8 +313,10 @@ export function AddCardsPanel({ deckId, onClose }: AddCardsPanelProps) {
           >
             <BulkAddCardsForm
               deckId={deckId}
+              formId={bulkFormId}
               onSuccess={onClose}
               onDirtyChange={setBulkDirty}
+              onActionStateChange={handleBulkActionStateChange}
             />
           </YeonView>
         </YeonView>
