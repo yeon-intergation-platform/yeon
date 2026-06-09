@@ -528,7 +528,8 @@ export async function resolveTypingRaceSeed(
     const seed = normalizeRaceSeed(payload, deck, languageTag);
     if (!seed) throw new Error("Invalid race seed response");
     return { ok: true, seed, deck };
-  } catch {
+  } catch (error) {
+    console.warn("[typing-service] 레이스 seed 요청 실패", error);
     return {
       ok: false,
       deck,

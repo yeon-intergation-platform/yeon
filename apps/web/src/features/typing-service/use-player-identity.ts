@@ -28,7 +28,8 @@ export function usePlayerIdentity() {
         writeYeonLocalStorageItem(STORAGE_KEY, id);
       }
       setPlayerId(id);
-    } catch {
+    } catch (error) {
+      console.warn("[typing-service] 플레이어 ID 저장소 접근 실패", error);
       setPlayerId(generateId());
     }
   }, []);
