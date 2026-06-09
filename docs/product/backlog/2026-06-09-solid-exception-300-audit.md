@@ -584,8 +584,8 @@
 282. **[완료][P3] 상태 분기 매핑/전략화** `apps/mobile/src/features/card-service/card-onboarding-gate.tsx:91` — 원칙 `O`. 소셜 로그인 성공 결과 처리를 `applySocialLoginResult` handler map으로 분리했다. 근거: `success: async (successResult) => {`
 283. **[완료][P3] 상태 분기 매핑/전략화** `apps/mobile/src/features/card-service/card-onboarding-gate.tsx:98` — 원칙 `O`. 소셜 로그인 오류 결과 처리를 `applySocialLoginResult` handler map으로 분리했다. 근거: `error: (errorResult) =>`
 284. **[완료][P3] 상태 분기 매핑/전략화** `apps/mobile/src/features/card-service/markdown-text-field.tsx:190` — 원칙 `O`. 마크다운 삽입 길이 제한 판정을 `createMarkdownInsertionLengthPolicy`로 분리했다. 근거: `lengthPolicy.isExceeded(result)`
-285. **[P3] 상태 분기 매핑/전략화** `apps/mobile/src/features/card-service/rooms/card-room-lobby-screen.tsx:42` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (status === "waiting") return CARD_SERVICE_TEXT.rooms.statusWaiting;`
-286. **[P3] 상태 분기 매핑/전략화** `apps/mobile/src/features/card-service/rooms/card-room-lobby-screen.tsx:43` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (status === "finished" || status === "closed")`
+285. **[완료][P3] 상태 분기 매핑/전략화** `apps/mobile/src/features/card-service/rooms/card-room-lobby-screen.tsx:42` — 원칙 `O`. 카드룸 대기 상태 라벨 판정을 `CARD_ROOM_STATUS_LABELS` 계약 상수 맵으로 분리했다. 근거: `CARD_ROOM_STATUS_LABELS[status]`
+286. **[완료][P3] 상태 분기 매핑/전략화** `apps/mobile/src/features/card-service/rooms/card-room-lobby-screen.tsx:43` — 원칙 `O`. 카드룸 종료/닫힘 상태 라벨 판정을 `CARD_ROOM_STATUS_LABELS` 계약 상수 맵으로 분리했다. 근거: `CARD_ROOM_STATUS_LABELS[status]`
 287. **[P3] 상태 분기 매핑/전략화** `apps/mobile/src/features/card-service/social-login.ts:61` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (result.type !== "success") {`
 288. **[P3] 상태 분기 매핑/전략화** `apps/race-server/src/rooms/card-room-participant-token.ts:43` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (typeof token !== "string" || token.length === 0) {`
 289. **[P3] 상태 분기 매핑/전략화** `apps/race-server/src/rooms/card-room.ts:58` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (typeof obj.sdp !== "string" || obj.sdp.trim().length === 0) return null;`
@@ -713,3 +713,7 @@
 ## 86차 적용 완료
 
 - 항목 284 완료: 마크다운 삽입 길이 제한 판정을 `createMarkdownInsertionLengthPolicy`로 분리했다.
+
+## 87차 적용 완료
+
+- 항목 285~286 완료: 카드룸 상태 라벨 판정을 `CARD_ROOM_STATUS_LABELS` 계약 상수 맵으로 분리했다.
