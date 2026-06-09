@@ -1,6 +1,7 @@
 package world.yeon.backend.typing_decks.service;
 
 import java.nio.charset.StandardCharsets;
+import java.security.GeneralSecurityException;
 import java.util.Base64;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -30,7 +31,7 @@ public class TypingRaceSeedSigner {
 			mac.init(new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
 			byte[] digest = mac.doFinal(raceSeedSigningPayload(seed).getBytes(StandardCharsets.UTF_8));
 			return "v1." + BASE64_URL.encodeToString(digest);
-		} catch (Exception error) {
+		} catch (GeneralSecurityException error) {
 			throw new IllegalStateException("race seed 서명에 실패했습니다.", error);
 		}
 	}

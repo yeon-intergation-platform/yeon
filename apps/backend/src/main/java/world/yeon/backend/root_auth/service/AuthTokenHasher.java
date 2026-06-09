@@ -2,6 +2,7 @@ package world.yeon.backend.root_auth.service;
 
 import jakarta.annotation.PostConstruct;
 import java.nio.charset.StandardCharsets;
+import java.security.GeneralSecurityException;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import org.springframework.core.env.Environment;
@@ -32,8 +33,8 @@ public class AuthTokenHasher {
 			mac.init(new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), HMAC_ALGORITHM));
 			byte[] digest = mac.doFinal(token.getBytes(StandardCharsets.UTF_8));
 			return toHex(digest);
-		} catch (Exception error) {
-			throw new AuthSessionServiceException(500, "AUTH_HASH_FAILED", "인증 세션 토큰을 검증하지 못했습니다.");
+		} catch (GeneralSecurityException error) {
+			throw new AuthSessionServiceException(500, "AUTH_HASH_FAILED", "인증 세션 토큰을 검증하지 못했습니다.", error);
 		}
 	}
 

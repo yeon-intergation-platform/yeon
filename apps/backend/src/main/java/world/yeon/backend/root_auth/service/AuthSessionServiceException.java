@@ -5,7 +5,11 @@ public class AuthSessionServiceException extends RuntimeException {
 	private final String code;
 
 	public AuthSessionServiceException(int status, String code, String message) {
-		super(message);
+		this(status, code, message, null);
+	}
+
+	public AuthSessionServiceException(int status, String code, String message, Throwable cause) {
+		super(message, cause);
 		this.status = status;
 		this.code = code;
 	}

@@ -1,9 +1,11 @@
 package world.yeon.backend.root_auth.social;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import java.io.IOException;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.net.http.HttpClient;
@@ -131,9 +133,16 @@ public class SocialIdentityProviderClient {
 			return body;
 		} catch (AuthSessionServiceException error) {
 			throw error;
-		} catch (Exception error) {
-			log.error("소셜 로그인 provider 요청 오류: label={}", label, error);
-			throw new AuthSessionServiceException(502, errorCode, label + " 요청이 실패했습니다.");
+		} catch (InterruptedException error) {
+			Thread.currentThread().interrupt();
+			log.error("소셜 로그인 provider 요청이 중단되었습니다: label={}", label, error);
+			throw new AuthSessionServiceException(502, errorCode, label + " 요청이 중단되었습니다.", error);
+		} catch (JsonProcessingException error) {
+			log.error("소셜 로그인 provider 응답 JSON 파싱 실패: label={}", label, error);
+			throw new AuthSessionServiceException(502, errorCode, label + " 응답 형식이 올바르지 않습니다.", error);
+		} catch (IOException error) {
+			log.error("소셜 로그인 provider 네트워크 오류: label={}", label, error);
+			throw new AuthSessionServiceException(502, errorCode, label + " 요청이 실패했습니다.", error);
 		}
 	}
 
