@@ -549,7 +549,7 @@
 250. **[완료][P3] 브라우저 전역 직접 의존 점검** `packages/ui/src/hooks/YeonBrowserHooks/index.ts:67` — 원칙 `D`. hook 기반 document event 해제도 포트 unsubscribe에 맡겼다. 근거: `return () => browserDocument.removeEventListener(type, listener);`
 251. **[완료][P3] 브라우저 전역 직접 의존 점검** `packages/ui/src/hooks/YeonBrowserHooks/index.ts:92` — 원칙 `D`. window event 등록을 `YEON_BROWSER_HOOKS_PORT.events.subscribeWindow`로 감싸 hook이 `window.addEventListener`에 직접 의존하지 않게 했다. 근거: `YEON_BROWSER_HOOKS_PORT.events.subscribeWindow(`
 252. **[완료][P3] 브라우저 전역 직접 의존 점검** `packages/ui/src/hooks/YeonBrowserHooks/index.ts:93` — 원칙 `D`. window event 해제를 포트의 unsubscribe 반환값으로 통일했다. 근거: `return () => browserWindow.removeEventListener(type, listener, options);`
-253. **[P3] 브라우저 전역 직접 의존 점검** `packages/ui/src/primitives/YeonPortal/index.tsx:13` — 원칙 `D`. 브라우저 전역 직접 접근을 런타임 포트로 감싸 SSR/테스트 안전성을 높인다. 근거: `return createPortal(children, document.body);`
+253. **[완료][P3] 브라우저 전역 직접 의존 점검** `packages/ui/src/primitives/YeonPortal/index.tsx:13` — 원칙 `D`. portal container 조회를 `YeonPortalContainerPort`로 감싸 `YeonPortal`이 `document.body` 구체 구현 대신 컨테이너 포트에 의존하게 했다. 근거: `YEON_PORTAL_CONTAINER_PORT.getPortalContainer()`
 254. **[P3] 브라우저 전역 직접 의존 점검** `packages/ui/src/rich-content/YeonRichDom/index.ts:5` — 원칙 `D`. 브라우저 전역 직접 접근을 런타임 포트로 감싸 SSR/테스트 안전성을 높인다. 근거: `return window.DOMParser;`
 255. **[P3] 브라우저 전역 직접 의존 점검** `packages/ui/src/runtime/YeonBrowserRuntime/index.ts:139` — 원칙 `D`. 브라우저 전역 직접 접근을 런타임 포트로 감싸 SSR/테스트 안전성을 높인다. 근거: `return kind === "local" ? window.localStorage : window.sessionStorage;`
 
