@@ -587,7 +587,7 @@
 285. **[완료][P3] 상태 분기 매핑/전략화** `apps/mobile/src/features/card-service/rooms/card-room-lobby-screen.tsx:42` — 원칙 `O`. 카드룸 대기 상태 라벨 판정을 `CARD_ROOM_STATUS_LABELS` 계약 상수 맵으로 분리했다. 근거: `CARD_ROOM_STATUS_LABELS[status]`
 286. **[완료][P3] 상태 분기 매핑/전략화** `apps/mobile/src/features/card-service/rooms/card-room-lobby-screen.tsx:43` — 원칙 `O`. 카드룸 종료/닫힘 상태 라벨 판정을 `CARD_ROOM_STATUS_LABELS` 계약 상수 맵으로 분리했다. 근거: `CARD_ROOM_STATUS_LABELS[status]`
 287. **[완료][P3] 상태 분기 매핑/전략화** `apps/mobile/src/features/card-service/social-login.ts:61` — 원칙 `O`. WebBrowser 인증 세션 성공 URL 추출을 `getSuccessfulAuthSessionUrl`로 분리했다. 근거: `const successUrl = getSuccessfulAuthSessionUrl(result)`
-288. **[P3] 상태 분기 매핑/전략화** `apps/race-server/src/rooms/card-room-participant-token.ts:43` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (typeof token !== "string" || token.length === 0) {`
+288. **[완료][P3] 상태 분기 매핑/전략화** `apps/race-server/src/rooms/card-room-participant-token.ts:43` — 원칙 `O`. 참가자 토큰 사용 가능 여부 판정을 `isUsableParticipantToken` type guard로 분리했다. 근거: `if (!isUsableParticipantToken(token)) {`
 289. **[P3] 상태 분기 매핑/전략화** `apps/race-server/src/rooms/card-room.ts:58` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (typeof obj.sdp !== "string" || obj.sdp.trim().length === 0) return null;`
 290. **[P3] 상태 분기 매핑/전략화** `apps/race-server/src/rooms/card-room.ts:84` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (!candidateObj || typeof candidateObj !== "object") return null;`
 291. **[P3] 상태 분기 매핑/전략화** `apps/race-server/src/rooms/card-room.ts:139` — 원칙 `O`. 상태/variant/provider 분기를 매핑 테이블 또는 전략 객체로 확장 가능하게 바꾼다. 근거: `if (typeof muted !== "boolean") return null;`
@@ -721,3 +721,7 @@
 ## 88차 적용 완료
 
 - 항목 287 완료: WebBrowser 인증 세션 성공 URL 추출을 `getSuccessfulAuthSessionUrl`로 분리했다.
+
+## 89차 적용 완료
+
+- 항목 288 완료: 참가자 토큰 사용 가능 여부 판정을 `isUsableParticipantToken` type guard로 분리했다.
