@@ -1,11 +1,5 @@
 "use client";
-import { useEffect, useMemo, useState } from "react";
 import { CARD_BULK_IMPORT_MAX_ITEMS } from "@yeon/api-contract/card-decks";
-import { useYeonWindowEvent } from "@yeon/ui/hooks/YeonBrowserHooks";
-import {
-  getYeonCustomEventDetail,
-  showYeonConfirm,
-} from "@yeon/ui/runtime/YeonBrowserRuntime";
 import {
   YeonButton,
   YeonField,
@@ -16,19 +10,15 @@ import {
   YeonList,
   YeonListItem,
   YeonView,
-  type YeonFormEvent,
-  type YeonFormElement,
 } from "@yeon/ui";
 import { YEON_WEB_SHARED_CLASS as SHARED_FEATURE_CLASS } from "@yeon/ui/theme/web-style-tokens";
-import { useAddCards, useReplaceCards } from "../hooks";
-import { parseBulkCardImportInput } from "../utils/bulk-card-import-parser";
-import {
-  BULK_CARD_HELP_VISIBILITY_EVENT,
-  setBulkCardHelpVisible,
-  shouldShowBulkCardHelp,
-} from "../utils/bulk-card-help-preference";
 import { MarkdownContent } from "./markdown-content";
 import { CARD_SERVICE_COMMON_CLASS } from "../card-service-common.const";
+import {
+  BULK_ADD_CARDS_FORM_INITIAL_ACTION_STATE,
+  useBulkAddCardsFormState,
+  type BulkAddCardsFormActionState,
+} from "./use-bulk-add-cards-form-state";
 
 const BULK_CARD_TEMPLATE = `[[Q]]
 문제
@@ -40,21 +30,8 @@ const BULK_CARD_TEMPLATE = `[[Q]]
 [[A]]
 정답`;
 
-export interface BulkAddCardsFormActionState {
-  canSubmit: boolean;
-  isPending: boolean;
-  addButtonLabel: string;
-  replaceButtonLabel: string;
-  errorMessage?: string;
-}
-
-export const BULK_ADD_CARDS_FORM_INITIAL_ACTION_STATE: BulkAddCardsFormActionState =
-  {
-    canSubmit: false,
-    isPending: false,
-    addButtonLabel: "0장 추가",
-    replaceButtonLabel: "0장 덮어쓰기",
-  };
+export { BULK_ADD_CARDS_FORM_INITIAL_ACTION_STATE };
+export type { BulkAddCardsFormActionState };
 
 interface BulkAddCardsFormProps {
   deckId: string;
@@ -64,13 +41,6 @@ interface BulkAddCardsFormProps {
   onActionStateChange?: (state: BulkAddCardsFormActionState) => void;
 }
 
-const BULK_CARD_ACTION = {
-  add: "add",
-  replace: "replace",
-} as const;
-
-type BulkCardAction = (typeof BULK_CARD_ACTION)[keyof typeof BULK_CARD_ACTION];
-
 export function BulkAddCardsForm({
   deckId,
   formId,
@@ -78,119 +48,25 @@ export function BulkAddCardsForm({
   onDirtyChange,
   onActionStateChange,
 }: BulkAddCardsFormProps) {
-  const [rawText, setRawText] = useState("");
-  const [isHelpVisible, setHelpVisible] = useState(true);
-  const addCardsMutation = useAddCards(deckId);
-  const replaceCardsMutation = useReplaceCards(deckId);
-  const isPending =
-    addCardsMutation.isPending || replaceCardsMutation.isPending;
-  const error = addCardsMutation.error ?? replaceCardsMutation.error;
-  const parseResult = useMemo(
-    () => parseBulkCardImportInput(rawText),
-    [rawText]
-  );
-  const canSubmit =
-    parseResult.cards.length > 0 &&
-    parseResult.errors.length === 0 &&
-    !isPending;
-  const replaceButtonLabel = replaceCardsMutation.isPending
-    ? "덮어쓰는 중..."
-    : `${parseResult.cards.length || 0}장 덮어쓰기`;
-  const addButtonLabel = addCardsMutation.isPending
-    ? "추가 중..."
-    : `${parseResult.cards.length || 0}장 추가`;
-  const actionState = useMemo<BulkAddCardsFormActionState>(
-    () => ({
-      canSubmit,
-      isPending,
-      addButtonLabel,
-      replaceButtonLabel,
-      errorMessage: error?.message,
-    }),
-    [addButtonLabel, canSubmit, error?.message, isPending, replaceButtonLabel]
-  );
-  const previewCards = parseResult.cards.slice(0, 5);
-  const hiddenPreviewCount = Math.max(
-    parseResult.cards.length - previewCards.length,
-    0
-  );
-
-  useEffect(() => {
-    onDirtyChange?.(rawText.trim().length > 0);
-  }, [onDirtyChange, rawText]);
-
-  useEffect(() => {
-    onActionStateChange?.(actionState);
-  }, [actionState, onActionStateChange]);
-
-  useEffect(() => {
-    setHelpVisible(shouldShowBulkCardHelp());
-  }, []);
-
-  useYeonWindowEvent(BULK_CARD_HELP_VISIBILITY_EVENT, (event) => {
-    const detail = getYeonCustomEventDetail<{ isVisible: boolean }>(event);
-    setHelpVisible(detail?.isVisible ?? shouldShowBulkCardHelp());
+  const form = useBulkAddCardsFormState({
+    deckId,
+    onSuccess,
+    onDirtyChange,
+    onActionStateChange,
   });
-
-  function handleDismissHelp() {
-    setHelpVisible(false);
-    setBulkCardHelpVisible(false);
-  }
-
-  const handleSubmit = (event: YeonFormEvent<YeonFormElement>) => {
-    event.preventDefault();
-    if (!canSubmit) {
-      return;
-    }
-
-    const submitter = (event.nativeEvent as SubmitEvent)
-      .submitter as HTMLButtonElement | null;
-    const action = (submitter?.value ?? BULK_CARD_ACTION.add) as BulkCardAction;
-
-    if (action === BULK_CARD_ACTION.replace) {
-      if (
-        !showYeonConfirm(
-          `기존 카드를 모두 삭제하고 ${parseResult.cards.length}장으로 덮어쓸까요? 이 작업은 되돌릴 수 없습니다.`
-        )
-      ) {
-        return;
-      }
-
-      replaceCardsMutation.mutate(
-        { items: parseResult.cards },
-        {
-          onSuccess: () => {
-            setRawText("");
-            onSuccess?.();
-          },
-        }
-      );
-      return;
-    }
-
-    addCardsMutation.mutate(
-      { items: parseResult.cards },
-      {
-        onSuccess: () => {
-          setRawText("");
-          onSuccess?.();
-        },
-      }
-    );
-  };
 
   return (
     <YeonForm
       id={formId}
-      onSubmit={handleSubmit}
+      onSubmit={form.handleSubmit}
       className="flex flex-col gap-5"
     >
-      {isHelpVisible ? (
+      {form.isHelpVisible ? (
         <YeonSurface variant="panel" className="relative p-4 pr-12 md:p-5">
           <YeonButton
             aria-label="AI 형식 도움말 숨기기"
             className="absolute right-3 top-3 h-7 w-7 rounded-full text-[15px]"
-            onClick={handleDismissHelp}
+            onClick={form.handleDismissHelp}
             type="button"
             variant="icon"
             size="icon"
@@ -241,8 +117,8 @@ export function BulkAddCardsForm({
         </YeonText>
         <YeonField
           as="textarea"
-          value={rawText}
-          onChange={(e) => setRawText(e.target.value)}
+          value={form.rawText}
+          onChange={(e) => form.setRawText(e.target.value)}
           rows={14}
           placeholder={BULK_CARD_TEMPLATE}
           className="resize-y rounded-2xl px-4 py-3 font-mono text-[14px] leading-6"
@@ -263,37 +139,37 @@ export function BulkAddCardsForm({
             tone="inherit"
             className="text-[#111]"
           >
-            {parseResult.cards.length}
+            {form.parseResult.cards.length}
           </YeonText>
           장 / 최대 {CARD_BULK_IMPORT_MAX_ITEMS}장
         </YeonText>
-        {parseResult.errors.length > 0 ? (
+        {form.parseResult.errors.length > 0 ? (
           <YeonList className="flex flex-col gap-1 rounded-xl border border-[#e5e5e5] bg-[#fafafa] p-3 text-[#111]">
-            {parseResult.errors.map((message) => (
+            {form.parseResult.errors.map((message) => (
               <YeonListItem key={message}>• {message}</YeonListItem>
             ))}
           </YeonList>
         ) : null}
-        {parseResult.warnings.length > 0 ? (
+        {form.parseResult.warnings.length > 0 ? (
           <YeonList className="flex flex-col gap-1 rounded-xl border border-[#e5e5e5] bg-[#fafafa] p-3 text-[#666]">
-            {parseResult.warnings.map((message) => (
+            {form.parseResult.warnings.map((message) => (
               <YeonListItem key={message}>• {message}</YeonListItem>
             ))}
           </YeonList>
         ) : null}
-        {error ? (
+        {form.error ? (
           <YeonText
             as="p"
             variant="caption"
             tone="primary"
             className="font-semibold"
           >
-            {error.message}
+            {form.error.message}
           </YeonText>
         ) : null}
       </YeonView>
 
-      {previewCards.length > 0 ? (
+      {form.previewCards.length > 0 ? (
         <YeonSurface variant="outlined" className="p-4 md:p-5">
           <YeonText
             as="h4"
@@ -304,7 +180,7 @@ export function BulkAddCardsForm({
             미리보기
           </YeonText>
           <YeonList className="mt-3 flex flex-col gap-3">
-            {previewCards.map((card, index) => (
+            {form.previewCards.map((card, index) => (
               <YeonListItem
                 key={`${card.frontText}-${index}`}
                 className="rounded-xl bg-[#fafafa] p-3 text-[14px]"
@@ -334,14 +210,14 @@ export function BulkAddCardsForm({
               </YeonListItem>
             ))}
           </YeonList>
-          {hiddenPreviewCount > 0 ? (
+          {form.hiddenPreviewCount > 0 ? (
             <YeonText
               as="p"
               variant="unstyled"
               tone="inherit"
               className={`mt-3 ${SHARED_FEATURE_CLASS.text13Soft}`}
             >
-              외 {hiddenPreviewCount}장은 추가 시 함께 저장됩니다.
+              외 {form.hiddenPreviewCount}장은 추가 시 함께 저장됩니다.
             </YeonText>
           ) : null}
         </YeonSurface>
