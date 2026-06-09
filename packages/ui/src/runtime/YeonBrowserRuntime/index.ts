@@ -131,6 +131,10 @@ const noopStorage: YeonBrowserStorage = {
   removeItem: () => undefined,
 };
 
+function warnYeonRuntimeFallback(context: string, error: unknown) {
+  console.warn(`[yeon-runtime] ${context}`, error);
+}
+
 function getBrowserStorage(kind: "local" | "session"): YeonBrowserStorage {
   if (typeof window === "undefined") {
     return noopStorage;
@@ -160,7 +164,8 @@ export function getYeonLocalStorage() {
 export function getYeonOptionalLocalStorage() {
   try {
     return typeof window === "undefined" ? null : window.localStorage;
-  } catch {
+  } catch (error) {
+    warnYeonRuntimeFallback("localStorage 접근 실패", error);
     return null;
   }
 }
@@ -172,7 +177,8 @@ export function getYeonSessionStorage() {
 export function readYeonLocalStorageItem(key: string) {
   try {
     return getYeonLocalStorage().getItem(key);
-  } catch {
+  } catch (error) {
+    warnYeonRuntimeFallback("localStorage 읽기 실패", error);
     return null;
   }
 }
@@ -180,23 +186,24 @@ export function readYeonLocalStorageItem(key: string) {
 export function writeYeonLocalStorageItem(key: string, value: string) {
   try {
     getYeonLocalStorage().setItem(key, value);
-  } catch {
-    // Storage 접근 불가 환경에서는 현재 메모리 상태만 유지한다.
+  } catch (error) {
+    warnYeonRuntimeFallback("localStorage 쓰기 실패", error);
   }
 }
 
 export function removeYeonLocalStorageItem(key: string) {
   try {
     getYeonLocalStorage().removeItem(key);
-  } catch {
-    // Storage 접근 불가 환경에서는 무시한다.
+  } catch (error) {
+    warnYeonRuntimeFallback("localStorage 삭제 실패", error);
   }
 }
 
 export function readYeonSessionStorageItem(key: string) {
   try {
     return getYeonSessionStorage().getItem(key);
-  } catch {
+  } catch (error) {
+    warnYeonRuntimeFallback("sessionStorage 읽기 실패", error);
     return null;
   }
 }
@@ -204,16 +211,16 @@ export function readYeonSessionStorageItem(key: string) {
 export function writeYeonSessionStorageItem(key: string, value: string) {
   try {
     getYeonSessionStorage().setItem(key, value);
-  } catch {
-    // Storage 접근 불가 환경에서는 현재 메모리 상태만 유지한다.
+  } catch (error) {
+    warnYeonRuntimeFallback("sessionStorage 쓰기 실패", error);
   }
 }
 
 export function removeYeonSessionStorageItem(key: string) {
   try {
     getYeonSessionStorage().removeItem(key);
-  } catch {
-    // Storage 접근 불가 환경에서는 무시한다.
+  } catch (error) {
+    warnYeonRuntimeFallback("sessionStorage 삭제 실패", error);
   }
 }
 
@@ -784,7 +791,8 @@ class BrowserYeonLoopingAudioController implements YeonLoopingAudioController {
       await audio.play();
       this.blocked = false;
       this.emit();
-    } catch {
+    } catch (error) {
+      warnYeonRuntimeFallback("루프 오디오 재생 실패", error);
       this.blocked = true;
       this.emit();
     }

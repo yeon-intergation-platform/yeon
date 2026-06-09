@@ -150,7 +150,8 @@ async function parseErrorResponse(response: Response) {
     if (parsed.success) {
       return parsed.data.message;
     }
-  } catch {
+  } catch (error) {
+    console.warn("[api-client] 오류 응답 파싱 실패", error);
     return null;
   }
 

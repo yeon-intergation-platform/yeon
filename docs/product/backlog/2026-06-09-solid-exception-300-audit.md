@@ -56,6 +56,11 @@
 - 항목 24~36 완료: 웹 타자 서비스의 빈 catch를 제거하고, 초대 링크 복사·오류 응답 파싱·캐릭터 프레임 fallback·레이스 사용자 토큰 fallback·로컬 저장소 fallback·룸 cleanup/퇴장 fallback·레이스 seed fallback에 원인 로그를 추가했다.
 - UX fallback은 유지하되 `E3`(예외 숨김 금지)와 `E7`(원래 예외 정보 보존)을 만족하도록 실패 원인을 `console.warn`에 남긴다.
 
+## 4차 적용 완료
+
+- 항목 37~47 완료: API client 오류 응답 파싱, Mermaid 렌더링 fallback, UI runtime localStorage/sessionStorage 및 루프 오디오 fallback에서 빈 catch를 제거했다.
+- 공용 패키지 경계를 유지하며 앱 의존을 추가하지 않고, fallback 원인을 `console.warn`으로 남겨 `E3`(예외 숨김 금지)와 `E7`(원래 예외 정보 보존)을 강화했다.
+
 ## 300개 TODO
 
 > 아래 항목은 실제 코드 경로/라인을 기준으로 작성한다. `원칙`은 SOLID 또는 예외 처리 원칙 번호를 표시한다.
@@ -105,17 +110,17 @@
 34. **[완료][P1] 빈 catch 금지** `apps/web/src/features/typing-service/use-typing-profile.ts:43` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
 35. **[완료][P1] 빈 catch 금지** `apps/web/src/features/typing-service/use-typing-profile.ts:54` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
 36. **[완료][P1] 빈 catch 금지** `apps/web/src/features/typing-service/use-typing-settings.ts:531` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
-37. **[P1] 빈 catch 금지** `packages/api-client/src/index.ts:153` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
-38. **[P1] 빈 catch 금지** `packages/ui/src/rich-content/YeonMermaid/index.ts:37` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
-39. **[P1] 빈 catch 금지** `packages/ui/src/runtime/YeonBrowserRuntime/index.native.ts:136` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
-40. **[P1] 빈 catch 금지** `packages/ui/src/runtime/YeonBrowserRuntime/index.ts:163` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
-41. **[P1] 빈 catch 금지** `packages/ui/src/runtime/YeonBrowserRuntime/index.ts:175` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
-42. **[P1] 빈 catch 금지** `packages/ui/src/runtime/YeonBrowserRuntime/index.ts:183` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
-43. **[P1] 빈 catch 금지** `packages/ui/src/runtime/YeonBrowserRuntime/index.ts:191` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
-44. **[P1] 빈 catch 금지** `packages/ui/src/runtime/YeonBrowserRuntime/index.ts:199` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
-45. **[P1] 빈 catch 금지** `packages/ui/src/runtime/YeonBrowserRuntime/index.ts:207` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
-46. **[P1] 빈 catch 금지** `packages/ui/src/runtime/YeonBrowserRuntime/index.ts:215` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
-47. **[P1] 빈 catch 금지** `packages/ui/src/runtime/YeonBrowserRuntime/index.ts:787` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
+37. **[완료][P1] 빈 catch 금지** `packages/api-client/src/index.ts:153` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
+38. **[완료][P1] 빈 catch 금지** `packages/ui/src/rich-content/YeonMermaid/index.ts:37` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
+39. **[완료][P1] 빈 catch 금지** `packages/ui/src/runtime/YeonBrowserRuntime/index.native.ts:136` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
+40. **[완료][P1] 빈 catch 금지** `packages/ui/src/runtime/YeonBrowserRuntime/index.ts:163` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
+41. **[완료][P1] 빈 catch 금지** `packages/ui/src/runtime/YeonBrowserRuntime/index.ts:175` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
+42. **[완료][P1] 빈 catch 금지** `packages/ui/src/runtime/YeonBrowserRuntime/index.ts:183` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
+43. **[완료][P1] 빈 catch 금지** `packages/ui/src/runtime/YeonBrowserRuntime/index.ts:191` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
+44. **[완료][P1] 빈 catch 금지** `packages/ui/src/runtime/YeonBrowserRuntime/index.ts:199` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
+45. **[완료][P1] 빈 catch 금지** `packages/ui/src/runtime/YeonBrowserRuntime/index.ts:207` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
+46. **[완료][P1] 빈 catch 금지** `packages/ui/src/runtime/YeonBrowserRuntime/index.ts:215` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
+47. **[완료][P1] 빈 catch 금지** `packages/ui/src/runtime/YeonBrowserRuntime/index.ts:787` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
 
 ### SRP
 
