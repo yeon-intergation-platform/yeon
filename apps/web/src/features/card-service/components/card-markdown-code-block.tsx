@@ -61,7 +61,8 @@ export function CardMarkdownCodeBlock({
       }
       setCopied(true);
       scheduleYeonTimeout(() => setCopied(false), 1200);
-    } catch {
+    } catch (error) {
+      console.warn("[CardMarkdownCodeBlock] 코드 복사 실패", error);
       setCopied(false);
     }
   };

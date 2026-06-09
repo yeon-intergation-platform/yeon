@@ -26,7 +26,11 @@ export async function readCardGuestOptIn(): Promise<boolean> {
   if (browserStorage) {
     try {
       return browserStorage.getItem(CARD_GUEST_OPT_IN_KEY) === OPT_IN_VALUE;
-    } catch {
+    } catch (error) {
+      console.warn(
+        "[CardOnboardingStorage] 브라우저 게스트 선택 상태를 읽지 못해 메모리 저장소로 대체합니다.",
+        error
+      );
       return inMemoryStorage.get(CARD_GUEST_OPT_IN_KEY) === OPT_IN_VALUE;
     }
   }
@@ -48,7 +52,11 @@ export async function writeCardGuestOptIn(): Promise<void> {
     try {
       browserStorage.setItem(CARD_GUEST_OPT_IN_KEY, OPT_IN_VALUE);
       return;
-    } catch {
+    } catch (error) {
+      console.warn(
+        "[CardOnboardingStorage] 브라우저 게스트 선택 상태를 저장하지 못해 메모리 저장소로 대체합니다.",
+        error
+      );
       inMemoryStorage.set(CARD_GUEST_OPT_IN_KEY, OPT_IN_VALUE);
       return;
     }

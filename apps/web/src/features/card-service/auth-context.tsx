@@ -57,8 +57,9 @@ export function CardServiceAuthProvider({
       if (mountedRef.current && nextIsAuthenticated !== null) {
         setCurrentIsAuthenticated(nextIsAuthenticated);
       }
-    } catch {
-      // 세션 확인 실패는 현재 서버 렌더 상태를 유지한다.
+    } catch (error) {
+      // 세션 확인 실패는 현재 서버 렌더 상태를 유지하되, 원인 추적을 위해 숨기지 않는다.
+      console.warn("[CardServiceAuth] 세션 확인 실패", error);
     }
   }, []);
 

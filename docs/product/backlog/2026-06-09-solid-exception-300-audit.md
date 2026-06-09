@@ -22,9 +22,9 @@
 
 ### 선택지
 
-1. 300개 전체를 즉시 대규모 수정한다.
-2. 300개를 공식 백로그로 만들고, 저위험/반복성 높은 항목부터 일부 수정한다.
-3. 300개를 서비스별 후속 이슈로 쪼갠다.
+- 선택지 1: 300개 전체를 즉시 대규모 수정한다.
+- 선택지 2: 300개를 공식 백로그로 만들고, 저위험/반복성 높은 항목부터 일부 수정한다.
+- 선택지 3: 300개를 서비스별 후속 이슈로 쪼갠다.
 
 ### 추천
 
@@ -40,6 +40,16 @@
 - `AuthTokenHasher`의 HMAC 실패 처리를 `Exception`에서 `GeneralSecurityException`으로 좁히고 cause를 보존했다.
 - `CardRoomParticipantTokenService`와 `TypingRaceSeedSigner`의 HMAC 실패 처리를 `GeneralSecurityException`으로 좁혔다.
 - `SocialIdentityProviderClient`의 OAuth provider 호출 실패를 `InterruptedException`/`JsonProcessingException`/`IOException`으로 나누고, 인터럽트 복원 및 cause 보존을 적용했다.
+
+## 2차 적용 완료
+
+- `TypingCharacterFrameRepository`의 JSON 역직렬화/직렬화 실패 처리를 `Exception`에서 `JsonProcessingException`으로 좁혔다.
+- 모바일 카드 온보딩/세션/게스트 선택 저장소의 빈 catch를 원인 로그와 사용자 안내 또는 fallback 기록으로 바꿨다.
+- race-server JSON body 파싱 실패에서 원래 오류를 `cause`로 보존했다.
+- 웹 카드 인증 상태 refresh와 카드 서비스 에러 메시지 JSON 파싱에서 예외를 숨기지 않도록 원인 로그 또는 `SyntaxError` 한정 처리로 바꿨다.
+- 웹 카드 편집 draft/profile/size/YouTube 파싱은 예상 가능한 `SyntaxError`/`TypeError`만 fallback하고 그 외 예외는 다시 던지도록 바꿨다.
+- 웹 카드 HEIC 변환 실패는 사용자 메시지와 함께 원래 오류를 `cause`로 보존하도록 바꿨다.
+- 웹 카드 클립보드 이미지 읽기와 커뮤니티 게스트/presence 실패는 원인 로그를 남기도록 바꿨다.
 
 ## 300개 TODO
 
@@ -57,26 +67,26 @@
 1. **[완료][P1] 광범위 예외 포착 축소** `apps/backend/src/main/java/world/yeon/backend/card_rooms/service/CardRoomParticipantTokenService.java:49` — 원칙 `E2`. Exception/Throwable 포착은 처리 가능한 구체 예외로 좁힌다. 근거: `} catch (Exception error) {`
 2. **[완료][P1] 광범위 예외 포착 축소** `apps/backend/src/main/java/world/yeon/backend/root_auth/service/AuthTokenHasher.java:35` — 원칙 `E2`. Exception/Throwable 포착은 처리 가능한 구체 예외로 좁힌다. 근거: `} catch (Exception error) {`
 3. **[완료][P1] 광범위 예외 포착 축소** `apps/backend/src/main/java/world/yeon/backend/root_auth/social/SocialIdentityProviderClient.java:134` — 원칙 `E2`. Exception/Throwable 포착은 처리 가능한 구체 예외로 좁힌다. 근거: `} catch (Exception error) {`
-4. **[P1] 광범위 예외 포착 축소** `apps/backend/src/main/java/world/yeon/backend/typing_character_frames/repository/TypingCharacterFrameRepository.java:87` — 원칙 `E2`. Exception/Throwable 포착은 처리 가능한 구체 예외로 좁힌다. 근거: `} catch (Exception error) {`
-5. **[P1] 광범위 예외 포착 축소** `apps/backend/src/main/java/world/yeon/backend/typing_character_frames/repository/TypingCharacterFrameRepository.java:95` — 원칙 `E2`. Exception/Throwable 포착은 처리 가능한 구체 예외로 좁힌다. 근거: `} catch (Exception error) {`
+4. **[완료][P1] 광범위 예외 포착 축소** `apps/backend/src/main/java/world/yeon/backend/typing_character_frames/repository/TypingCharacterFrameRepository.java:87` — 원칙 `E2`. Exception/Throwable 포착은 처리 가능한 구체 예외로 좁힌다. 근거: `} catch (Exception error) {`
+5. **[완료][P1] 광범위 예외 포착 축소** `apps/backend/src/main/java/world/yeon/backend/typing_character_frames/repository/TypingCharacterFrameRepository.java:95` — 원칙 `E2`. Exception/Throwable 포착은 처리 가능한 구체 예외로 좁힌다. 근거: `} catch (Exception error) {`
 6. **[완료][P1] 광범위 예외 포착 축소** `apps/backend/src/main/java/world/yeon/backend/typing_decks/service/TypingRaceSeedSigner.java:33` — 원칙 `E2`. Exception/Throwable 포착은 처리 가능한 구체 예외로 좁힌다. 근거: `} catch (Exception error) {`
-7. **[P1] 빈 catch 금지** `apps/mobile/src/features/card-service/card-onboarding-gate.tsx:119` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
-8. **[P1] 빈 catch 금지** `apps/mobile/src/features/card-service/card-session-context.tsx:130` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
-9. **[P1] 빈 catch 금지** `apps/mobile/src/features/card-service/onboarding-storage.ts:29` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
-10. **[P1] 빈 catch 금지** `apps/mobile/src/features/card-service/onboarding-storage.ts:51` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
-11. **[P1] 빈 catch 금지** `apps/race-server/src/index.ts:55` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
-12. **[P1] 빈 catch 금지** `apps/web/src/features/card-service/auth-context.tsx:60` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
-13. **[P1] 빈 catch 금지** `apps/web/src/features/card-service/card-service-fetch.ts:65` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
-14. **[P1] 빈 catch 금지** `apps/web/src/features/card-service/components/add-card-form.tsx:132` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
-15. **[P1] 빈 catch 금지** `apps/web/src/features/card-service/components/card-editor-image-utils.ts:303` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
-16. **[P1] 빈 catch 금지** `apps/web/src/features/card-service/components/card-editor-youtube-utils.ts:174` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
-17. **[P1] 빈 catch 금지** `apps/web/src/features/card-service/components/card-markdown-code-block.tsx:64` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
-18. **[P1] 빈 catch 금지** `apps/web/src/features/card-service/components/use-card-editor-image-upload.ts:65` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
-19. **[P1] 빈 catch 금지** `apps/web/src/features/card-service/components/use-card-editor-image-upload.ts:129` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
-20. **[P1] 빈 catch 금지** `apps/web/src/features/card-service/hooks/use-card-room-profile.ts:45` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
-21. **[P1] 빈 catch 금지** `apps/web/src/features/card-service/utils/card-play-card-size.ts:71` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
-22. **[P1] 빈 catch 금지** `apps/web/src/features/community/community-guest-identity.ts:55` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
-23. **[P1] 빈 catch 금지** `apps/web/src/features/community/components/community-presence-tracker.tsx:20` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
+7. **[완료][P1] 빈 catch 금지** `apps/mobile/src/features/card-service/card-onboarding-gate.tsx:119` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
+8. **[완료][P1] 빈 catch 금지** `apps/mobile/src/features/card-service/card-session-context.tsx:130` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
+9. **[완료][P1] 빈 catch 금지** `apps/mobile/src/features/card-service/onboarding-storage.ts:29` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
+10. **[완료][P1] 빈 catch 금지** `apps/mobile/src/features/card-service/onboarding-storage.ts:51` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
+11. **[완료][P1] 빈 catch 금지** `apps/race-server/src/index.ts:55` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
+12. **[완료][P1] 빈 catch 금지** `apps/web/src/features/card-service/auth-context.tsx:60` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
+13. **[완료][P1] 빈 catch 금지** `apps/web/src/features/card-service/card-service-fetch.ts:65` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
+14. **[완료][P1] 빈 catch 금지** `apps/web/src/features/card-service/components/add-card-form.tsx:132` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
+15. **[완료][P1] 빈 catch 금지** `apps/web/src/features/card-service/components/card-editor-image-utils.ts:303` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
+16. **[완료][P1] 빈 catch 금지** `apps/web/src/features/card-service/components/card-editor-youtube-utils.ts:174` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
+17. **[완료][P1] 빈 catch 금지** `apps/web/src/features/card-service/components/card-markdown-code-block.tsx:64` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
+18. **[완료][P1] 빈 catch 금지** `apps/web/src/features/card-service/components/use-card-editor-image-upload.ts:65` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
+19. **[완료][P1] 빈 catch 금지** `apps/web/src/features/card-service/components/use-card-editor-image-upload.ts:129` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
+20. **[완료][P1] 빈 catch 금지** `apps/web/src/features/card-service/hooks/use-card-room-profile.ts:45` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
+21. **[완료][P1] 빈 catch 금지** `apps/web/src/features/card-service/utils/card-play-card-size.ts:71` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
+22. **[완료][P1] 빈 catch 금지** `apps/web/src/features/community/community-guest-identity.ts:55` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
+23. **[완료][P1] 빈 catch 금지** `apps/web/src/features/community/components/community-presence-tracker.tsx:20` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
 24. **[P1] 빈 catch 금지** `apps/web/src/features/typing-service/typing-room-screen.tsx:738` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
 25. **[P1] 빈 catch 금지** `apps/web/src/features/typing-service/typing-service-fetch.ts:39` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
 26. **[P1] 빈 catch 금지** `apps/web/src/features/typing-service/typing-service-fetch.ts:126` — 원칙 `E3`. 예외를 숨기지 말고 로그/전역 처리/재던지기 중 하나를 명시한다. 근거: `} catch {`
@@ -162,25 +172,25 @@
 97. **[P2] TypeScript catch 처리 책임 명확화** `apps/race-server/src/index.ts:127` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
 98. **[P2] 일반 Error 메시지 구체화** `apps/race-server/src/rooms/card-room.ts:303` — 원칙 `E4/E6`. 오류 메시지에 실패한 입력/외부 의존/상태 원인을 드러낸다. 근거: `if (!options.participantId) throw new Error("참가자 식별자가 필요합니다.");`
 99. **[P2] 일반 Error 메시지 구체화** `apps/race-server/src/rooms/card-room.ts:317` — 원칙 `E4/E6`. 오류 메시지에 실패한 입력/외부 의존/상태 원인을 드러낸다. 근거: `throw new Error("참가자 인증에 실패했습니다.");`
-100. **[P2] TypeScript catch 처리 책임 명확화** `apps/race-server/src/rooms/card-room.ts:357` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
-101. **[P2] TypeScript catch 처리 책임 명확화** `apps/race-server/src/rooms/card-room.ts:783` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
-102. **[P2] TypeScript catch 처리 책임 명확화** `apps/race-server/src/rooms/typing-race-room.ts:496` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
-103. **[P2] TypeScript catch 처리 책임 명확화** `apps/web/src/app/community/posts/[postId]/page.tsx:23` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
-104. **[P2] 일반 Error 메시지 구체화** `apps/web/src/features/card-service/auth-context.tsx:87` — 원칙 `E4/E6`. 오류 메시지에 실패한 입력/외부 의존/상태 원인을 드러낸다. 근거: `throw new Error(`
-105. **[P2] TypeScript catch 처리 책임 명확화** `apps/web/src/features/card-service/card-room-create-screen.tsx:128` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
-106. **[P2] TypeScript catch 처리 책임 명확화** `apps/web/src/features/card-service/card-room-screen.tsx:65` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `.catch((error) => {`
-107. **[P2] TypeScript catch 처리 책임 명확화** `apps/web/src/features/card-service/card-service-decks-screen.tsx:53` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
-108. **[P2] 로컬 로그 후 실패 상태 연결** `apps/web/src/features/card-service/card-service-decks-screen.tsx:53` — 원칙 `E3/E9`. console.error 후 반환만 하면 전역 오류 정책과 사용자 실패 상태가 분리될 수 있다. 근거: `} catch (error) {`
-109. **[P2] 일반 Error 메시지 구체화** `apps/web/src/features/card-service/components/card-editor-image-utils.ts:292` — 원칙 `E4/E6`. 오류 메시지에 실패한 입력/외부 의존/상태 원인을 드러낸다. 근거: `throw new Error();`
-110. **[P2] 일반 Error 메시지 구체화** `apps/web/src/features/card-service/components/card-editor-image-utils.ts:304` — 원칙 `E4/E6`. 오류 메시지에 실패한 입력/외부 의존/상태 원인을 드러낸다. 근거: `throw new Error(`
-111. **[P2] 일반 Error 메시지 구체화** `apps/web/src/features/card-service/components/card-markdown-code-block.tsx:60` — 원칙 `E4/E6`. 오류 메시지에 실패한 입력/외부 의존/상태 원인을 드러낸다. 근거: `throw new Error("클립보드 복사를 지원하지 않습니다.");`
-112. **[P2] 일반 Error 메시지 구체화** `apps/web/src/features/card-service/components/export-deck-panel.tsx:34` — 원칙 `E4/E6`. 오류 메시지에 실패한 입력/외부 의존/상태 원인을 드러낸다. 근거: `throw new Error("클립보드 복사를 지원하지 않습니다.");`
-113. **[P2] 일반 Error 메시지 구체화** `apps/web/src/features/card-service/components/markdown-content.tsx:573` — 원칙 `E4/E6`. 오류 메시지에 실패한 입력/외부 의존/상태 원인을 드러낸다. 근거: `throw new Error("클립보드 복사를 지원하지 않습니다.");`
-114. **[P2] TypeScript catch 처리 책임 명확화** `apps/web/src/features/card-service/components/merge-guest-dialog.tsx:46` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
-115. **[P2] TypeScript catch 처리 책임 명확화** `apps/web/src/features/card-service/components/use-card-editor-image-upload.ts:186` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
-116. **[P2] TypeScript catch 처리 책임 명확화** `apps/web/src/features/card-service/components/use-card-editor-image-upload.ts:217` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
-117. **[P2] TypeScript catch 처리 책임 명확화** `apps/web/src/features/card-service/components/use-card-editor-image-upload.ts:273` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
-118. **[P2] TypeScript catch 처리 책임 명확화** `apps/web/src/features/card-service/components/use-card-editor-image-upload.ts:316` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
+100.  **[P2] TypeScript catch 처리 책임 명확화** `apps/race-server/src/rooms/card-room.ts:357` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
+101.  **[P2] TypeScript catch 처리 책임 명확화** `apps/race-server/src/rooms/card-room.ts:783` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
+102.  **[P2] TypeScript catch 처리 책임 명확화** `apps/race-server/src/rooms/typing-race-room.ts:496` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
+103.  **[P2] TypeScript catch 처리 책임 명확화** `apps/web/src/app/community/posts/[postId]/page.tsx:23` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
+104.  **[P2] 일반 Error 메시지 구체화** `apps/web/src/features/card-service/auth-context.tsx:87` — 원칙 `E4/E6`. 오류 메시지에 실패한 입력/외부 의존/상태 원인을 드러낸다. 근거: `throw new Error(`
+105.  **[P2] TypeScript catch 처리 책임 명확화** `apps/web/src/features/card-service/card-room-create-screen.tsx:128` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
+106.  **[P2] TypeScript catch 처리 책임 명확화** `apps/web/src/features/card-service/card-room-screen.tsx:65` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `.catch((error) => {`
+107.  **[P2] TypeScript catch 처리 책임 명확화** `apps/web/src/features/card-service/card-service-decks-screen.tsx:53` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
+108.  **[P2] 로컬 로그 후 실패 상태 연결** `apps/web/src/features/card-service/card-service-decks-screen.tsx:53` — 원칙 `E3/E9`. console.error 후 반환만 하면 전역 오류 정책과 사용자 실패 상태가 분리될 수 있다. 근거: `} catch (error) {`
+109.  **[P2] 일반 Error 메시지 구체화** `apps/web/src/features/card-service/components/card-editor-image-utils.ts:292` — 원칙 `E4/E6`. 오류 메시지에 실패한 입력/외부 의존/상태 원인을 드러낸다. 근거: `throw new Error();`
+110.  **[P2] 일반 Error 메시지 구체화** `apps/web/src/features/card-service/components/card-editor-image-utils.ts:304` — 원칙 `E4/E6`. 오류 메시지에 실패한 입력/외부 의존/상태 원인을 드러낸다. 근거: `throw new Error(`
+111.  **[P2] 일반 Error 메시지 구체화** `apps/web/src/features/card-service/components/card-markdown-code-block.tsx:60` — 원칙 `E4/E6`. 오류 메시지에 실패한 입력/외부 의존/상태 원인을 드러낸다. 근거: `throw new Error("클립보드 복사를 지원하지 않습니다.");`
+112.  **[P2] 일반 Error 메시지 구체화** `apps/web/src/features/card-service/components/export-deck-panel.tsx:34` — 원칙 `E4/E6`. 오류 메시지에 실패한 입력/외부 의존/상태 원인을 드러낸다. 근거: `throw new Error("클립보드 복사를 지원하지 않습니다.");`
+113.  **[P2] 일반 Error 메시지 구체화** `apps/web/src/features/card-service/components/markdown-content.tsx:573` — 원칙 `E4/E6`. 오류 메시지에 실패한 입력/외부 의존/상태 원인을 드러낸다. 근거: `throw new Error("클립보드 복사를 지원하지 않습니다.");`
+114.  **[P2] TypeScript catch 처리 책임 명확화** `apps/web/src/features/card-service/components/merge-guest-dialog.tsx:46` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
+115.  **[P2] TypeScript catch 처리 책임 명확화** `apps/web/src/features/card-service/components/use-card-editor-image-upload.ts:186` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
+116.  **[P2] TypeScript catch 처리 책임 명확화** `apps/web/src/features/card-service/components/use-card-editor-image-upload.ts:217` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
+117.  **[P2] TypeScript catch 처리 책임 명확화** `apps/web/src/features/card-service/components/use-card-editor-image-upload.ts:273` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
+118.  **[P2] TypeScript catch 처리 책임 명확화** `apps/web/src/features/card-service/components/use-card-editor-image-upload.ts:316` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
 
 ### ISP
 

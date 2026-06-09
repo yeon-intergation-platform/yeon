@@ -52,8 +52,10 @@ function readJsonBody(request: IncomingMessage) {
       }
       try {
         resolve(JSON.parse(body));
-      } catch {
-        reject(new Error("JSON 요청 본문을 해석하지 못했습니다."));
+      } catch (error) {
+        reject(
+          new Error("JSON 요청 본문을 해석하지 못했습니다.", { cause: error })
+        );
       }
     });
     request.on("error", reject);

@@ -289,7 +289,7 @@ async function convertHeicImageFileToJpeg(file: YeonFile) {
     });
 
     if (!convertedBlob) {
-      throw new Error();
+      throw new Error("HEIC 변환 결과가 비어 있습니다.");
     }
 
     return createYeonFile(
@@ -300,9 +300,10 @@ async function convertHeicImageFileToJpeg(file: YeonFile) {
         lastModified: file.lastModified,
       }
     );
-  } catch {
+  } catch (error) {
     throw new Error(
-      "HEIC/HEIF 이미지를 처리하지 못했습니다. 다른 이미지로 다시 시도해 주세요."
+      "HEIC/HEIF 이미지를 처리하지 못했습니다. 다른 이미지로 다시 시도해 주세요.",
+      { cause: error }
     );
   }
 }

@@ -127,12 +127,13 @@ export function CardSessionProvider({ children }: { children: ReactNode }) {
     if (sessionToken) {
       try {
         await cardServiceApi.logout(sessionToken);
-      } catch {
+      } catch (error) {
         // idx-147: 서버 세션 무효화 실패는 로컬 로그아웃을 막지 않는다.
         // 하지만 조용히 삼키지 않고 콘솔에 기록해 좀비 세션 추적이 가능하게 한다.
         // 운영 환경에서는 telemetry 연동을 권장한다.
         console.warn(
-          "[CardSession] 서버 세션 무효화 실패 — 로컬 토큰은 삭제되나 서버 세션이 남아있을 수 있습니다."
+          "[CardSession] 서버 세션 무효화 실패 — 로컬 토큰은 삭제되나 서버 세션이 남아있을 수 있습니다.",
+          error
         );
       }
     }

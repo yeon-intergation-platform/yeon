@@ -62,8 +62,11 @@ async function readErrorMessage(
       parsed.message ?? "",
       fallbackErrorMessage
     );
-  } catch {
-    return fallbackErrorMessage;
+  } catch (error) {
+    if (error instanceof SyntaxError) {
+      return fallbackErrorMessage;
+    }
+    throw error;
   }
 }
 
