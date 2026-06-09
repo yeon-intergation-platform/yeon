@@ -23,6 +23,18 @@ import { getGuestDeckDetail } from "@/lib/guest-card-service-store";
 import { useIsAuthenticated } from "./auth-context";
 import { createCardRoom, useCardRoomProfile, useDeckList } from "./hooks";
 
+function getCardRoomCreateErrorMessage(error: unknown) {
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  if (typeof error === "string" && error.trim().length > 0) {
+    return `카드방을 만들지 못했습니다. 원인: ${error.trim()}`;
+  }
+
+  return `카드방을 만들지 못했습니다. 원인: 처리할 수 없는 오류 형식(${String(error)})`;
+}
+
 type CardRoomCreateFormProps = {
   onCancel?: () => void;
   onCreated?: (roomId: string) => void;
@@ -126,9 +138,7 @@ export function CardRoomCreateForm({
         );
       }
     } catch (error) {
-      setErrorMessage(
-        error instanceof Error ? error.message : "카드방을 만들지 못했습니다."
-      );
+      setErrorMessage(getCardRoomCreateErrorMessage(error));
     } finally {
       setIsSubmitting(false);
     }

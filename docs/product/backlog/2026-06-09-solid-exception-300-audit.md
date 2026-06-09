@@ -111,6 +111,10 @@
 
 - 항목 95~99 완료: 모바일 카드방 입장/실시간 연결 catch 메시지 변환을 helper로 분리하고 cleanup leave 실패를 콘솔에 남기도록 바꿨다. race-server 스타 로비 이벤트와 카드방 join/leave/request 오류는 원인을 보존한 메시지 helper와 `CardRoomJoinValidationError`로 변환했다.
 
+## 17차 적용 완료
+
+- 항목 100~108 완료: race-server 카드방 leave/request catch는 16차 helper 반영 상태를 확인해 완료 처리했고, typing-race-room의 기존 catch 후보는 현재 코드에서 제거된 상태를 확인했다. 웹 커뮤니티 404 catch는 처리 가능한 Spring 404만 null로 변환하고 나머지는 재전파하는 경계로 유지했다. 웹 카드 인증 Provider 누락, 카드방 생성/입장, 게스트 덱 개수 확인 실패는 원인을 포함한 helper/전용 Error/사용자 실패 메시지로 구체화했다.
+
 ## 300개 TODO
 
 > 아래 항목은 실제 코드 경로/라인을 기준으로 작성한다. `원칙`은 SOLID 또는 예외 처리 원칙 번호를 표시한다.
@@ -232,15 +236,15 @@
 97. **[완료][P2] TypeScript catch 처리 책임 명확화** `apps/race-server/src/index.ts:127` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
 98. **[완료][P2] 일반 Error 메시지 구체화** `apps/race-server/src/rooms/card-room.ts:303` — 원칙 `E4/E6`. 오류 메시지에 실패한 입력/외부 의존/상태 원인을 드러낸다. 근거: `if (!options.participantId) throw new Error("참가자 식별자가 필요합니다.");`
 99. **[완료][P2] 일반 Error 메시지 구체화** `apps/race-server/src/rooms/card-room.ts:317` — 원칙 `E4/E6`. 오류 메시지에 실패한 입력/외부 의존/상태 원인을 드러낸다. 근거: `throw new Error("참가자 인증에 실패했습니다.");`
-100.  **[P2] TypeScript catch 처리 책임 명확화** `apps/race-server/src/rooms/card-room.ts:357` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
-101.  **[P2] TypeScript catch 처리 책임 명확화** `apps/race-server/src/rooms/card-room.ts:783` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
-102.  **[P2] TypeScript catch 처리 책임 명확화** `apps/race-server/src/rooms/typing-race-room.ts:496` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
-103.  **[P2] TypeScript catch 처리 책임 명확화** `apps/web/src/app/community/posts/[postId]/page.tsx:23` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
-104.  **[P2] 일반 Error 메시지 구체화** `apps/web/src/features/card-service/auth-context.tsx:87` — 원칙 `E4/E6`. 오류 메시지에 실패한 입력/외부 의존/상태 원인을 드러낸다. 근거: `throw new Error(`
-105.  **[P2] TypeScript catch 처리 책임 명확화** `apps/web/src/features/card-service/card-room-create-screen.tsx:128` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
-106.  **[P2] TypeScript catch 처리 책임 명확화** `apps/web/src/features/card-service/card-room-screen.tsx:65` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `.catch((error) => {`
-107.  **[P2] TypeScript catch 처리 책임 명확화** `apps/web/src/features/card-service/card-service-decks-screen.tsx:53` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
-108.  **[P2] 로컬 로그 후 실패 상태 연결** `apps/web/src/features/card-service/card-service-decks-screen.tsx:53` — 원칙 `E3/E9`. console.error 후 반환만 하면 전역 오류 정책과 사용자 실패 상태가 분리될 수 있다. 근거: `} catch (error) {`
+100.  **[완료][P2] TypeScript catch 처리 책임 명확화** `apps/race-server/src/rooms/card-room.ts:357` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
+101.  **[완료][P2] TypeScript catch 처리 책임 명확화** `apps/race-server/src/rooms/card-room.ts:783` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
+102.  **[완료][P2] TypeScript catch 처리 책임 명확화** `apps/race-server/src/rooms/typing-race-room.ts:496` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
+103.  **[완료][P2] TypeScript catch 처리 책임 명확화** `apps/web/src/app/community/posts/[postId]/page.tsx:23` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
+104.  **[완료][P2] 일반 Error 메시지 구체화** `apps/web/src/features/card-service/auth-context.tsx:87` — 원칙 `E4/E6`. 오류 메시지에 실패한 입력/외부 의존/상태 원인을 드러낸다. 근거: `throw new Error(`
+105.  **[완료][P2] TypeScript catch 처리 책임 명확화** `apps/web/src/features/card-service/card-room-create-screen.tsx:128` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
+106.  **[완료][P2] TypeScript catch 처리 책임 명확화** `apps/web/src/features/card-service/card-room-screen.tsx:65` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `.catch((error) => {`
+107.  **[완료][P2] TypeScript catch 처리 책임 명확화** `apps/web/src/features/card-service/card-service-decks-screen.tsx:53` — 원칙 `E1/E2`. catch 값은 unknown으로 좁히고 처리 못 할 예외는 숨기지 않는다. 근거: `} catch (error) {`
+108.  **[완료][P2] 로컬 로그 후 실패 상태 연결** `apps/web/src/features/card-service/card-service-decks-screen.tsx:53` — 원칙 `E3/E9`. console.error 후 반환만 하면 전역 오류 정책과 사용자 실패 상태가 분리될 수 있다. 근거: `} catch (error) {`
 109.  **[P2] 일반 Error 메시지 구체화** `apps/web/src/features/card-service/components/card-editor-image-utils.ts:292` — 원칙 `E4/E6`. 오류 메시지에 실패한 입력/외부 의존/상태 원인을 드러낸다. 근거: `throw new Error();`
 110.  **[P2] 일반 Error 메시지 구체화** `apps/web/src/features/card-service/components/card-editor-image-utils.ts:304` — 원칙 `E4/E6`. 오류 메시지에 실패한 입력/외부 의존/상태 원인을 드러낸다. 근거: `throw new Error(`
 111.  **[P2] 일반 Error 메시지 구체화** `apps/web/src/features/card-service/components/card-markdown-code-block.tsx:60` — 원칙 `E4/E6`. 오류 메시지에 실패한 입력/외부 의존/상태 원인을 드러낸다. 근거: `throw new Error("클립보드 복사를 지원하지 않습니다.");`

@@ -26,6 +26,18 @@ import {
 import { useDeckList } from "./hooks";
 import type { CardServiceHomeViewState } from "./types";
 
+function getGuestDeckCountErrorMessage(error: unknown) {
+  if (error instanceof Error) {
+    return `게스트 덱 개수를 확인하지 못했습니다. 원인: ${error.message}`;
+  }
+
+  if (typeof error === "string" && error.trim().length > 0) {
+    return `게스트 덱 개수를 확인하지 못했습니다. 원인: ${error.trim()}`;
+  }
+
+  return `게스트 덱 개수를 확인하지 못했습니다. 원인: 처리할 수 없는 오류 형식(${String(error)})`;
+}
+
 function toViewState(
   query: UseQueryResult<CardDeckDto[]>
 ): CardServiceHomeViewState {
@@ -41,6 +53,9 @@ export function CardServiceDecksScreen() {
   const [isCreateOpen, setCreateOpen] = useState(false);
   const [isSettingsOpen, setSettingsOpen] = useState(false);
   const [guestDeckCount, setGuestDeckCount] = useState<number | null>(null);
+  const [guestDeckCountError, setGuestDeckCountError] = useState<string | null>(
+    null
+  );
   const [isMergeDialogOpen, setMergeDialogOpen] = useState(false);
   const isAuthenticated = useIsAuthenticated();
   const decksQuery = useDeckList();
@@ -51,7 +66,9 @@ export function CardServiceDecksScreen() {
       const count = await countGuestCardDecks();
       return count;
     } catch (error) {
-      console.error("guest 덱 개수를 확인하지 못했습니다.", error);
+      const message = getGuestDeckCountErrorMessage(error);
+      console.error(message, error);
+      setGuestDeckCountError(message);
       return null;
     }
   }, []);
@@ -59,6 +76,7 @@ export function CardServiceDecksScreen() {
   useEffect(() => {
     if (!isAuthenticated) {
       setGuestDeckCount(null);
+      setGuestDeckCountError(null);
       setMergeDialogOpen(false);
       return;
     }
@@ -69,6 +87,9 @@ export function CardServiceDecksScreen() {
         return;
       }
       setGuestDeckCount(count);
+      if (count !== null) {
+        setGuestDeckCountError(null);
+      }
       if (count !== null && count > 0) {
         setMergeDialogOpen(true);
       }
@@ -222,6 +243,16 @@ export function CardServiceDecksScreen() {
                 className="text-[14px] font-semibold"
               >
                 {state.message}
+              </YeonText>
+            ) : null}
+            {guestDeckCountError ? (
+              <YeonText
+                as="p"
+                variant="caption"
+                tone="primary"
+                className="mb-3 text-[13px] font-semibold"
+              >
+                {guestDeckCountError}
               </YeonText>
             ) : null}
             {state.kind === "empty" ? (
