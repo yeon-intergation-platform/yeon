@@ -115,6 +115,12 @@
 
 - 항목 100~108 완료: race-server 카드방 leave/request catch는 16차 helper 반영 상태를 확인해 완료 처리했고, typing-race-room의 기존 catch 후보는 현재 코드에서 제거된 상태를 확인했다. 웹 커뮤니티 404 catch는 처리 가능한 Spring 404만 null로 변환하고 나머지는 재전파하는 경계로 유지했다. 웹 카드 인증 Provider 누락, 카드방 생성/입장, 게스트 덱 개수 확인 실패는 원인을 포함한 helper/전용 Error/사용자 실패 메시지로 구체화했다.
 
+## 37차 적용 완료
+
+- 항목 191 완료: 모바일 `CardDeckListScreen`의 헤더, 이어서 학습 카드, 게스트 동기화 배너, 덱 목록 상태 분기, 생성 바텀시트를 `card-deck-list-sections.tsx` 섹션 컴포넌트로 분리했다.
+- 화면 함수는 `useCardDeckListState` 결과와 섹션 컴포넌트를 조립하는 52라인 컴포넌트로 축소되어 긴 렌더링/조건 분기 책임을 제거했다.
+- 모바일 카드 서비스 변경에 따라 모바일 lint/typecheck와 parity 검증을 수행한다.
+
 ## 36차 적용 완료
 
 - 항목 190 완료: 모바일 `CardDeckListScreen`의 query, create mutation, create sheet 상태, session/repository 조립, navigation handler를 `useCardDeckListState` hook으로 분리했다.
@@ -441,7 +447,7 @@
 188. **[완료][P2] 큰 파일 책임 분리** `apps/mobile/src/features/card-service/card-deck-list-screen.tsx:1` — 원칙 `S`. 523라인 파일이다. 단일 책임 원칙 기준으로 화면/상태/IO/변환 책임 분리 후보다. 근거: `import type { CardDeckDto } from "@yeon/api-contract/card-decks";`
 189. **[완료][P2] 컴포넌트 hook 책임 분리** `apps/mobile/src/features/card-service/card-deck-list-screen.tsx:74` — 원칙 `S`. 컴포넌트 인근 hook 호출 후보 8개다. 데이터/폼/이벤트 hook으로 분리한다. 근거: `function DeckCard({ deck, index, onOpen }: DeckCardProps) {`
 190. **[완료][P2] 컴포넌트 hook 책임 분리** `apps/mobile/src/features/card-service/card-deck-list-screen.tsx:104` — 원칙 `S`. 컴포넌트 인근 hook 호출 후보 8개다. 데이터/폼/이벤트 hook으로 분리한다. 근거: `export function CardDeckListScreen() {`
-191. **[P2] 긴 함수 책임 분리** `apps/mobile/src/features/card-service/card-deck-list-screen.tsx:104` — 원칙 `S`. 239라인 함수다. 검증/변환/부수효과를 작은 함수로 분리한다. 근거: `export function CardDeckListScreen() {`
+191. **[완료][P2] 긴 함수 책임 분리** `apps/mobile/src/features/card-service/card-deck-list-screen.tsx:104` — 원칙 `S`. 239라인 함수다. 검증/변환/부수효과를 작은 함수로 분리한다. 근거: `export function CardDeckListScreen() {`
 192. **[P2] 큰 파일 책임 분리** `apps/mobile/src/features/card-service/card-deck-play-screen.tsx:1` — 원칙 `S`. 398라인 파일이다. 단일 책임 원칙 기준으로 화면/상태/IO/변환 책임 분리 후보다. 근거: `import {`
 193. **[P2] 컴포넌트 hook 책임 분리** `apps/mobile/src/features/card-service/card-deck-play-screen.tsx:56` — 원칙 `S`. 컴포넌트 인근 hook 호출 후보 12개다. 데이터/폼/이벤트 hook으로 분리한다. 근거: `export function CardDeckPlayScreen({ deckId }: CardDeckPlayScreenProps) {`
 194. **[P2] 긴 함수 책임 분리** `apps/mobile/src/features/card-service/card-deck-play-screen.tsx:56` — 원칙 `S`. 343라인 함수다. 검증/변환/부수효과를 작은 함수로 분리한다. 근거: `export function CardDeckPlayScreen({ deckId }: CardDeckPlayScreenProps) {`

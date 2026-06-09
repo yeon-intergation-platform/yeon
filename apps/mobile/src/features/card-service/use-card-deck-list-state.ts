@@ -125,3 +125,5 @@ export function useCardDeckListState() {
     title,
   };
 }
+
+export type CardDeckListState = ReturnType<typeof useCardDeckListState>;
