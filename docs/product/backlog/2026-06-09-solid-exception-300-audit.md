@@ -501,7 +501,7 @@
 205. **[완료][P2] 큰 파일 책임 분리** `apps/race-server/src/rooms/territory-battle-room.ts:1` — 원칙 `S`. 점령전 payload 파싱, player 생성/스냅샷, team/snapshot 집계 책임을 `territory-battle-message.ts`, `territory-battle-players.ts`, `territory-battle-snapshot.ts`로 분리해 Room 클래스는 Colyseus lifecycle과 라운드/단어 제출 흐름만 담당하게 축소했다. 근거: `createTerritoryBattleSnapshot({`
 206. **[완료][P2] 컴포넌트 hook 책임 분리** `apps/web/src/features/card-service/auth-context.tsx:31` — 원칙 `S`. 인증 상태 동기화, mounted guard, focus/visibility refresh hook 책임을 `use-card-service-auth-state.ts`로 분리해 context 파일은 Provider wiring과 context read만 담당하게 축소했다. 근거: `const value = useCardServiceAuthState(isAuthenticated);`
 207. **[완료][P2] 긴 함수 책임 분리** `apps/web/src/features/card-service/card-room-chat-panel.tsx:24` — 원칙 `S`. 채팅 패널 class 계산, 헤더, 메시지 리스트/버블, 입력 composer를 `card-room-chat-panel-parts.tsx`로 분리해 panel 함수는 섹션 조립만 담당하게 축소했다. 근거: `CardRoomChatMessageList`, `CardRoomChatComposer`
-208. **[P2] 컴포넌트 hook 책임 분리** `apps/web/src/features/card-service/card-room-create-screen.tsx:32` — 원칙 `S`. 컴포넌트 인근 hook 호출 후보 12개다. 데이터/폼/이벤트 hook으로 분리한다. 근거: `export function CardRoomCreateForm({`
+208. **[완료][P2] 컴포넌트 hook 책임 분리** `apps/web/src/features/card-service/card-room-create-screen.tsx:32` — 원칙 `S`. 프로필/덱/입력 상태, 게스트/인증 payload 생성, 생성 후 참가자 세션 저장과 라우팅 책임을 `use-card-room-create-form-state.ts`로 분리해 `CardRoomCreateForm`은 폼 렌더링과 이벤트 연결만 담당하게 축소했다. 근거: `const form = useCardRoomCreateFormState({ onCreated });`
 209. **[P2] 긴 함수 책임 분리** `apps/web/src/features/card-service/card-room-create-screen.tsx:32` — 원칙 `S`. 279라인 함수다. 검증/변환/부수효과를 작은 함수로 분리한다. 근거: `export function CardRoomCreateForm({`
 210. **[P2] 긴 함수 책임 분리** `apps/web/src/features/card-service/card-room-header.tsx:43` — 원칙 `S`. 123라인 함수다. 검증/변환/부수효과를 작은 함수로 분리한다. 근거: `export function CardRoomHeader({`
 211. **[P2] 컴포넌트 hook 책임 분리** `apps/web/src/features/card-service/card-room-lobby-screen.tsx:35` — 원칙 `S`. 컴포넌트 인근 hook 호출 후보 8개다. 데이터/폼/이벤트 hook으로 분리한다. 근거: `export function CardRoomLobbyScreen() {`
@@ -624,3 +624,7 @@
 ## 52차 적용 완료
 
 - 항목 207 완료: 웹 카드방 채팅 패널에서 panel class 계산, 헤더, 메시지 리스트/버블, 채팅 입력 composer를 `card-room-chat-panel-parts.tsx`로 분리했다. `CardRoomChatPanel`은 props를 받아 섹션을 조립하는 책임만 담당한다.
+
+## 53차 적용 완료
+
+- 항목 208 완료: `CardRoomCreateForm` 주변 hook/폼/이벤트 책임을 `useCardRoomCreateFormState`로 분리하고, 게스트 payload 생성 및 참가자 세션 저장을 별도 함수로 좁혔다.
