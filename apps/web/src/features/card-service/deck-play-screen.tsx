@@ -152,16 +152,52 @@ const STUDY_MODE_OPTIONS = [
   { mode: CARD_STUDY_MODES.review, label: "복습 모드" },
 ] as const;
 
-function isReviewShortcutBlockedTarget(target: EventTarget | null): boolean {
-  if (!(target instanceof HTMLElement)) {
-    return false;
-  }
+type CardReviewShortcutUnsubscribe = () => void;
 
-  return (
-    target.isContentEditable ||
-    ["A", "BUTTON", "INPUT", "SELECT", "TEXTAREA"].includes(target.tagName)
-  );
+interface CardReviewShortcutBrowserPort {
+  isBlockedTarget(target: EventTarget | null): boolean;
+  subscribeKeydown(
+    handler: (event: KeyboardEvent) => void
+  ): CardReviewShortcutUnsubscribe;
 }
+
+const CARD_REVIEW_SHORTCUT_BLOCKED_TAGS = [
+  "A",
+  "BUTTON",
+  "INPUT",
+  "SELECT",
+  "TEXTAREA",
+] as const;
+
+const CARD_REVIEW_SHORTCUT_BROWSER_PORT: CardReviewShortcutBrowserPort = {
+  isBlockedTarget(target) {
+    const HtmlElementConstructor = globalThis.HTMLElement;
+
+    if (
+      !HtmlElementConstructor ||
+      !(target instanceof HtmlElementConstructor)
+    ) {
+      return false;
+    }
+
+    return (
+      target.isContentEditable ||
+      CARD_REVIEW_SHORTCUT_BLOCKED_TAGS.includes(
+        target.tagName as (typeof CARD_REVIEW_SHORTCUT_BLOCKED_TAGS)[number]
+      )
+    );
+  },
+  subscribeKeydown(handler) {
+    const browserWindow = globalThis.window;
+
+    if (!browserWindow) {
+      return () => {};
+    }
+
+    browserWindow.addEventListener("keydown", handler);
+    return () => browserWindow.removeEventListener("keydown", handler);
+  },
+};
 
 function ReadyPlayBody({
   deckId,
@@ -238,7 +274,7 @@ function ReadyPlayBody({
         event.altKey ||
         event.ctrlKey ||
         event.metaKey ||
-        isReviewShortcutBlockedTarget(event.target)
+        CARD_REVIEW_SHORTCUT_BROWSER_PORT.isBlockedTarget(event.target)
       ) {
         return;
       }
@@ -258,8 +294,9 @@ function ReadyPlayBody({
       }
     }
 
-    window.addEventListener("keydown", handleReviewShortcut);
-    return () => window.removeEventListener("keydown", handleReviewShortcut);
+    return CARD_REVIEW_SHORTCUT_BROWSER_PORT.subscribeKeydown(
+      handleReviewShortcut
+    );
   }, [
     currentItemId,
     handleRevealReviewAnswer,
