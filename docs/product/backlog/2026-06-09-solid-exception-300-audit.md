@@ -514,7 +514,7 @@
 218. **[완료][P2] 컴포넌트 hook 책임 분리** `apps/web/src/features/card-service/components/add-card-form.tsx:77` — 원칙 `S`. draft localStorage load/save, beforeunload guard, upload pending, submit mutation, action state 파생을 `use-add-card-form-state.ts`로 분리해 `AddCardForm`은 에디터/미리보기 렌더링만 담당하게 축소했다. 근거: `const form = useAddCardFormState({`
 219. **[완료][P2] 긴 함수 책임 분리** `apps/web/src/features/card-service/components/add-card-form.tsx:77` — 원칙 `S`. 질문/답변 에디터와 앞/뒷면 미리보기 렌더링을 `add-card-form-parts.tsx`로 분리해 `AddCardForm`은 form shell과 state hook 연결만 담당하게 축소했다. 근거: `AddCardFormEditorGrid form={form}`
 220. **[완료][P2] 긴 함수 책임 분리** `apps/web/src/features/card-service/components/add-cards-panel.tsx:95` — 원칙 `S`. 모드/form id/dirty/action state/닫기 guard를 `use-add-cards-panel-state.tsx`로 분리하고, footer/mode tab/manual·bulk body 렌더링을 `add-cards-panel-parts.tsx`로 분리해 `AddCardsPanel`은 modal shell 조립만 담당하게 축소했다. 근거: `const panel = useAddCardsPanelState({ onClose });`
-221. **[P2] 컴포넌트 hook 책임 분리** `apps/web/src/features/card-service/components/bulk-add-cards-form.tsx:49` — 원칙 `S`. 컴포넌트 인근 hook 호출 후보 8개다. 데이터/폼/이벤트 hook으로 분리한다. 근거: `export function BulkAddCardsForm({`
+221. **[완료][P2] 컴포넌트 hook 책임 분리** `apps/web/src/features/card-service/components/bulk-add-cards-form.tsx:49` — 원칙 `S`. raw 입력, help visibility event, parser 결과, preview count, add/replace mutation submit, action state 파생을 `use-bulk-add-cards-form-state.ts`로 분리해 `BulkAddCardsForm`은 입력/help/status/preview 렌더링만 담당하게 축소했다. 근거: `const form = useBulkAddCardsFormState({`
 222. **[P2] 긴 함수 책임 분리** `apps/web/src/features/card-service/components/bulk-add-cards-form.tsx:49` — 원칙 `S`. 277라인 함수다. 검증/변환/부수효과를 작은 함수로 분리한다. 근거: `export function BulkAddCardsForm({`
 
 ### DIP
