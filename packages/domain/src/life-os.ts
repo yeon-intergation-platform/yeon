@@ -686,11 +686,11 @@ function hoursForBlock(block: LifeOsBlockKey) {
 function findDenseMismatchHours(classifications: LifeOsHourClassification[]) {
   const result: number[] = [];
   for (let index = 0; index < classifications.length - 2; index += 1) {
-    const window = classifications.slice(index, index + 3);
-    const plannedCount = window.filter(
+    const classificationWindow = classifications.slice(index, index + 3);
+    const plannedCount = classificationWindow.filter(
       (item) => item.goalCategory !== "other"
     ).length;
-    const mismatchHours = window
+    const mismatchHours = classificationWindow
       .filter((item) => item.overplanned)
       .map((item) => item.hour);
     if (plannedCount === 3 && mismatchHours.length >= 2) {
