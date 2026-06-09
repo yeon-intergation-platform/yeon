@@ -115,6 +115,12 @@
 
 - 항목 100~108 완료: race-server 카드방 leave/request catch는 16차 helper 반영 상태를 확인해 완료 처리했고, typing-race-room의 기존 catch 후보는 현재 코드에서 제거된 상태를 확인했다. 웹 커뮤니티 404 catch는 처리 가능한 Spring 404만 null로 변환하고 나머지는 재전파하는 경계로 유지했다. 웹 카드 인증 Provider 누락, 카드방 생성/입장, 게스트 덱 개수 확인 실패는 원인을 포함한 helper/전용 Error/사용자 실패 메시지로 구체화했다.
 
+## 30차 적용 완료
+
+- 항목 184 완료: 모바일 `CardDeckDetailScreen`에서 카드 row 렌더링/메뉴 이벤트 책임을 `DeckCardRow` 전용 컴포넌트 파일로 분리했다.
+- 상세 화면은 세션/쿼리/mutation/시트 상태 흐름에 집중하고, 카드 row 표시와 `CardMarkdown` 렌더링은 `card-deck-detail-card-row.tsx`가 담당한다.
+- 모바일 카드 서비스 변경에 따라 모바일 lint/typecheck와 parity 검증을 수행한다.
+
 ## 29차 적용 완료
 
 - 항목 183 완료: `TypingDeckService`의 응답 DTO 조립 책임을 `TypingDeckResponseMapper` Spring 컴포넌트로 분리했다.
@@ -392,7 +398,7 @@
 181. **[완료][P2] 큰 파일 책임 분리** `apps/backend/src/main/java/world/yeon/backend/root_auth/service/AuthSessionService.java:1` — 원칙 `S`. 399라인 파일이다. 단일 책임 원칙 기준으로 화면/상태/IO/변환 책임 분리 후보다. 근거: `package world.yeon.backend.root_auth.service;`
 182. **[완료][P2] 큰 파일 책임 분리** `apps/backend/src/main/java/world/yeon/backend/typing_decks/repository/TypingDeckRepository.java:1` — 원칙 `S`. 350라인 파일이다. 단일 책임 원칙 기준으로 화면/상태/IO/변환 책임 분리 후보다. 근거: `package world.yeon.backend.typing_decks.repository;`
 183. **[완료][P2] 큰 파일 책임 분리** `apps/backend/src/main/java/world/yeon/backend/typing_decks/service/TypingDeckService.java:1` — 원칙 `S`. 384라인 파일이다. 단일 책임 원칙 기준으로 화면/상태/IO/변환 책임 분리 후보다. 근거: `package world.yeon.backend.typing_decks.service;`
-184. **[P2] 큰 파일 책임 분리** `apps/mobile/src/features/card-service/card-deck-detail-screen.tsx:1` — 원칙 `S`. 694라인 파일이다. 단일 책임 원칙 기준으로 화면/상태/IO/변환 책임 분리 후보다. 근거: `import type { CardDeckItemDto } from "@yeon/api-contract/card-decks";`
+184. **[완료][P2] 큰 파일 책임 분리** `apps/mobile/src/features/card-service/card-deck-detail-screen.tsx:1` — 원칙 `S`. 694라인 파일이다. 단일 책임 원칙 기준으로 화면/상태/IO/변환 책임 분리 후보다. 근거: `import type { CardDeckItemDto } from "@yeon/api-contract/card-decks";`
 185. **[P2] 컴포넌트 hook 책임 분리** `apps/mobile/src/features/card-service/card-deck-detail-screen.tsx:108` — 원칙 `S`. 컴포넌트 인근 hook 호출 후보 20개다. 데이터/폼/이벤트 hook으로 분리한다. 근거: `const DeckCardRow = memo(function DeckCardRow({`
 186. **[P2] 컴포넌트 hook 책임 분리** `apps/mobile/src/features/card-service/card-deck-detail-screen.tsx:149` — 원칙 `S`. 컴포넌트 인근 hook 호출 후보 17개다. 데이터/폼/이벤트 hook으로 분리한다. 근거: `export function CardDeckDetailScreen({ deckId }: CardDeckDetailScreenProps) {`
 187. **[P2] 긴 함수 책임 분리** `apps/mobile/src/features/card-service/card-deck-detail-screen.tsx:149` — 원칙 `S`. 546라인 함수다. 검증/변환/부수효과를 작은 함수로 분리한다. 근거: `export function CardDeckDetailScreen({ deckId }: CardDeckDetailScreenProps) {`
