@@ -196,19 +196,32 @@ export function LandingHome({
                 );
 
                 if (canOpen) {
+                  const handleEntryClick = () =>
+                    trackEvent(analyticsEvents.serviceEntryClick, {
+                      source: "landing_card",
+                      service: service.slug,
+                      access_policy: service.accessPolicy,
+                      authenticated: isAuthenticated,
+                    });
+                  // 정적 호스팅(public/*.html) 진입은 클라이언트 라우팅 대상이 아니므로 일반 anchor로 연다.
+                  if (service.publicHref.endsWith(".html")) {
+                    return (
+                      <a
+                        key={service.slug}
+                        href={service.publicHref}
+                        className={`${cardBase} ${interactiveCard} no-underline`}
+                        onClick={handleEntryClick}
+                      >
+                        {cardInner}
+                      </a>
+                    );
+                  }
                   return (
                     <YeonLink
                       key={service.slug}
                       href={service.publicHref}
                       className={`${cardBase} ${interactiveCard} no-underline`}
-                      onClick={() =>
-                        trackEvent(analyticsEvents.serviceEntryClick, {
-                          source: "landing_card",
-                          service: service.slug,
-                          access_policy: service.accessPolicy,
-                          authenticated: isAuthenticated,
-                        })
-                      }
+                      onClick={handleEntryClick}
                     >
                       {cardInner}
                     </YeonLink>
