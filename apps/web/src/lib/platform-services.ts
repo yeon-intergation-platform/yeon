@@ -87,6 +87,18 @@ export const PLATFORM_SERVICES = [
     status: platformServiceStatuses.live,
     listedInPlatformHome: true,
   },
+  {
+    slug: "mooddesk",
+    href: "/mooddesk/index.html",
+    publicHref: "/mooddesk/index.html",
+    title: "마음 저널",
+    summary:
+      "오늘의 마음을 적고 음악·문장·색으로 하루를 잔잔하게 돌보는 감성 저널 서비스입니다.",
+    audience: "마음 기록",
+    accessPolicy: platformServiceAccessPolicies.anonymous,
+    status: platformServiceStatuses.live,
+    listedInPlatformHome: true,
+  },
 ] as const satisfies readonly PlatformServiceDescriptor[];
 
 const CANONICAL_ROOT_HOSTS = new Set(["yeon.world", "www.yeon.world"]);

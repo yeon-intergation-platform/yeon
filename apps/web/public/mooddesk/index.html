@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MoodDesk — 오늘은 어떤 마음으로 왔나요?</title>
+    <meta
+      name="description"
+      content="여기, 당신의 마음이 잠시 머물다 갈 수 있는 자리가 있어요. MoodDesk."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Nanum+Myeongjo:wght@400;700;800&family=Noto+Sans+KR:wght@300;400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="src/styles.css" />
+  </head>
+  <body>
+    <!-- ===== 배경 영상 레이어 (방/창문/식물/빛) ===== -->
+    <div class="bg-layer" aria-hidden="true">
+      <video class="bg-video" autoplay muted loop playsinline preload="auto">
+        <source src="src/assets/mood-room-loop.mp4" type="video/mp4" />
+      </video>
+      <div class="bg-tint"></div>
+      <div class="bg-vignette"></div>
+    </div>
+
+    <!-- ===== 상단 바 ===== -->
+    <header class="topbar">
+      <div class="topbar__inner">
+        <a class="logo" href="#">MoodDesk</a>
+        <nav class="nav" aria-label="주요 메뉴">
+          <a class="nav__link is-active" href="#">홈</a>
+          <a class="nav__link" href="#">저널</a>
+          <a class="nav__link" href="#">오늘의 문장</a>
+          <a class="nav__link" href="#">음악</a>
+          <a class="nav__link" href="#">마음 컬러</a>
+          <a class="nav__link" href="#">내 공간</a>
+        </nav>
+        <button class="profile" type="button" aria-label="내 프로필">
+          <svg
+            viewBox="0 0 24 24"
+            width="20"
+            height="20"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.6"
+          >
+            <circle cx="12" cy="8" r="3.4" />
+            <path d="M5 20c0-3.6 3.1-6 7-6s7 2.4 7 6" />
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- ===== UI 레이어 ===== -->
+    <main class="stage-wrap">
+      <div class="stage">
+        <!-- 중앙 질문 -->
+        <div class="hero reveal" style="--d: 0.15s">
+          <h1 class="hero__q">오늘은 어떤 마음으로 왔나요?</h1>
+          <p class="hero__sub">
+            여기, 당신의 마음이 잠시 머물다 갈 수 있는 자리가 있어요.
+          </p>
+        </div>
+
+        <!-- 오늘의 마음 적기 (노트) -->
+        <div class="card card--note reveal" style="--d: 0.3s">
+          <img
+            src="src/assets/cards/note.png"
+            alt="오늘의 나를 위한 조용한 시간을 시작해보세요"
+            draggable="false"
+          />
+          <button
+            class="hot hot--note-btn"
+            type="button"
+            data-action="open-note"
+            aria-label="오늘의 마음 적기"
+          ></button>
+        </div>
+
+        <!-- 오늘의 소리 (플레이어) -->
+        <div class="card card--sound reveal" style="--d: 0.45s">
+          <img
+            src="src/assets/cards/sound.png"
+            alt="오늘의 소리 · Soft Morning · lofi piano"
+            draggable="false"
+          />
+          <div class="player-overlay">
+            <button
+              class="hot hot--play"
+              type="button"
+              data-action="toggle-play"
+              aria-label="재생 / 일시정지"
+              aria-pressed="false"
+            ></button>
+          </div>
+        </div>
+
+        <!-- 오늘의 문장 -->
+        <div class="card card--quote reveal" style="--d: 0.55s">
+          <img
+            src="src/assets/cards/quote.png"
+            alt="지금 이 순간도, 충분히 괜찮은 하루입니다. — 나태주"
+            draggable="false"
+          />
+        </div>
+
+        <!-- 마음의 색 -->
+        <div class="card card--color reveal" style="--d: 0.65s">
+          <img
+            src="src/assets/cards/color.png"
+            alt="마음의 색 — 오늘의 색을 선택해보세요"
+            draggable="false"
+          />
+          <div class="color-hotspots">
+            <button
+              class="hot swatch"
+              type="button"
+              data-color="sage"
+              aria-label="세이지"
+            ></button>
+            <button
+              class="hot swatch"
+              type="button"
+              data-color="lavender"
+              aria-label="라벤더"
+            ></button>
+            <button
+              class="hot swatch"
+              type="button"
+              data-color="apricot"
+              aria-label="살구"
+            ></button>
+            <button
+              class="hot swatch"
+              type="button"
+              data-color="sand"
+              aria-label="모래"
+            ></button>
+            <button
+              class="hot swatch"
+              type="button"
+              data-color="linen"
+              aria-label="리넨"
+            ></button>
+          </div>
+        </div>
+
+        <!-- 지금 내 마음은 어떤가요? (감정 스티커) -->
+        <section
+          class="card card--mood reveal"
+          style="--d: 0.75s"
+          aria-label="지금 내 마음"
+        >
+          <p class="mood-q">지금 내 마음은 어떤가요?</p>
+          <div class="mood-row">
+            <button class="sticker" type="button" data-mood="불안">
+              <img
+                src="src/assets/cards/mood-anxiety.png"
+                alt="불안"
+                draggable="false"
+              />
+            </button>
+            <button class="sticker" type="button" data-mood="지침">
+              <img
+                src="src/assets/cards/mood-tired.png"
+                alt="지침"
+                draggable="false"
+              />
+            </button>
+            <button class="sticker" type="button" data-mood="평온">
+              <img
+                src="src/assets/cards/mood-calm.png"
+                alt="평온"
+                draggable="false"
+              />
+            </button>
+            <button class="sticker" type="button" data-mood="외로움">
+              <img
+                src="src/assets/cards/mood-lonely.png"
+                alt="외로움"
+                draggable="false"
+              />
+            </button>
+            <button class="sticker" type="button" data-mood="기쁨">
+              <img
+                src="src/assets/cards/mood-joy.png"
+                alt="기쁨"
+                draggable="false"
+              />
+            </button>
+            <button class="sticker" type="button" data-mood="복잡함">
+              <img
+                src="src/assets/cards/mood-complex.png"
+                alt="복잡함"
+                draggable="false"
+              />
+            </button>
+          </div>
+        </section>
+
+        <!-- 이번 주 마음 기록 -->
+        <div class="card card--week reveal" style="--d: 0.85s">
+          <img
+            src="src/assets/cards/week.png"
+            alt="이번 주 마음 기록"
+            draggable="false"
+          />
+        </div>
+      </div>
+    </main>
+
+    <!-- 토스트 -->
+    <div class="toast" role="status" aria-live="polite"></div>
+
+    <!-- 마음 적기 모달 -->
+    <div class="modal" data-modal hidden>
+      <div class="modal__backdrop" data-close></div>
+      <div
+        class="modal__panel"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modalTitle"
+      >
+        <button class="modal__x" type="button" data-close aria-label="닫기">
+          ×
+        </button>
+        <p class="modal__date"></p>
+        <h2 class="modal__title" id="modalTitle">오늘의 마음 적기</h2>
+        <p class="modal__hint">
+          오늘의 나를 위한 조용한 시간. 어떤 말이든 괜찮아요.
+        </p>
+        <textarea
+          class="modal__text"
+          placeholder="지금 떠오르는 마음을 그대로 적어보세요…"
+          rows="6"
+        ></textarea>
+        <div class="modal__actions">
+          <span class="modal__count">0자</span>
+          <button class="btn-save" type="button">살며시 담아두기</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="src/main.js"></script>
+  </body>
+</html>
