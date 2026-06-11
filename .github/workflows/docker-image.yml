@@ -508,6 +508,47 @@ jobs:
             echo "race_image=${YEON_RACE_SERVER_IMAGE}"
           } > "${DEPLOY_DIR}/.deploy-state"
 
+      - name: Prune old local Yeon deploy images
+        if: steps.fresh_main.outputs.deploy == 'true'
+        run: |
+          set -eu
+          owner_lower="$(printf '%s' "${GITHUB_REPOSITORY_OWNER}" | tr '[:upper:]' '[:lower:]')"
+
+          prune_repository() {
+            repository="$1"
+            keep_count="${2:-10}"
+            kept=0
+
+            docker images "${repository}" --format '{{.Repository}}:{{.Tag}}' | while IFS= read -r image_ref; do
+              [ -n "${image_ref}" ] || continue
+
+              case "${image_ref}" in
+                *:sha-*) ;;
+                *) continue ;;
+              esac
+
+              if docker ps --format '{{.Image}}' | grep -Fxq "${image_ref}"; then
+                echo "실행 중 이미지 보존: ${image_ref}"
+                continue
+              fi
+
+              kept=$((kept + 1))
+              if [ "${kept}" -le "${keep_count}" ]; then
+                echo "최근 배포 이미지 보존(${kept}/${keep_count}): ${image_ref}"
+                continue
+              fi
+
+              echo "오래된 미사용 배포 이미지 삭제: ${image_ref}"
+              docker image rm "${image_ref}" || true
+            done
+          }
+
+          prune_repository "${REGISTRY}/${owner_lower}/${IMAGE_REPOSITORY}" 10
+          prune_repository "${REGISTRY}/${owner_lower}/${BACKEND_IMAGE_REPOSITORY}" 10
+          prune_repository "${REGISTRY}/${owner_lower}/${RACE_IMAGE_REPOSITORY}" 10
+
+          docker system df
+
   verify_latest_completion:
     if: always() && github.ref == 'refs/heads/main'
     needs:

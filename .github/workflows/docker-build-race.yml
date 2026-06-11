@@ -119,13 +119,18 @@ jobs:
         run: |
           docker image prune -f --filter "until=48h"
           # builder prune은 pnpm-store 등 BuildKit 인라인 캐시도 지우므로 pre-build에서는 제거.
-          # 캐시 크기 관리는 post-build의 Buildx cache prune 스텝(until=168h)이 담당한다.
+          # 외부 local cache exporter는 post-build rotate 단계에서 오래된 blob 누적을 제거한다.
 
       - name: Resolve BUILDX_LOCAL_CACHE
-        run: echo "BUILDX_LOCAL_CACHE=$HOME/.cache/buildx-yeon-race-arm64" >> "$GITHUB_ENV"
+        run: |
+          echo "BUILDX_LOCAL_CACHE=$HOME/.cache/buildx-yeon-race-arm64" >> "$GITHUB_ENV"
+          echo "BUILDX_LOCAL_CACHE_NEW=$HOME/.cache/buildx-yeon-race-arm64-new" >> "$GITHUB_ENV"
 
       - name: Prepare local buildx cache dir
-        run: mkdir -p "${BUILDX_LOCAL_CACHE}"
+        run: |
+          mkdir -p "${BUILDX_LOCAL_CACHE}"
+          rm -rf "${BUILDX_LOCAL_CACHE_NEW}"
+          mkdir -p "${BUILDX_LOCAL_CACHE_NEW}"
 
       - name: Build race-server arm64 image by digest
         uses: docker/build-push-action@v7.1.0
@@ -144,7 +149,7 @@ jobs:
             type=registry,ref=${{ steps.image.outputs.ref }}:buildcache-arm64
           # local 은 Pi 디스크라 빠르므로 mode=max 로 모든 layer 보관, registry 는 cross-runner fallback 용이라 min 으로 충분.
           cache-to: |
-            type=local,dest=${{ env.BUILDX_LOCAL_CACHE }},mode=max
+            type=local,dest=${{ env.BUILDX_LOCAL_CACHE_NEW }},mode=max
             type=registry,ref=${{ steps.image.outputs.ref }}:buildcache-arm64,mode=min
 
       - name: Export arm64 digest
@@ -162,7 +167,21 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
-      - name: Buildx cache prune (race ARM64 local, 10GB 이하 유지)
+      - name: Rotate arm64 local buildx cache
+        run: |
+          if [ ! -f "${BUILDX_LOCAL_CACHE_NEW}/index.json" ]; then
+            echo "새 buildx local cache에 index.json이 없어 기존 캐시를 유지합니다." >&2
+            exit 1
+          fi
+          rm -rf "${BUILDX_LOCAL_CACHE}"
+          mv "${BUILDX_LOCAL_CACHE_NEW}" "${BUILDX_LOCAL_CACHE}"
+          du -sh "${BUILDX_LOCAL_CACHE}" || true
+
+      - name: Cleanup temporary arm64 local buildx cache
+        if: always()
+        run: rm -rf "${BUILDX_LOCAL_CACHE_NEW}"
+
+      - name: BuildKit internal cache prune (race ARM64, 10GB 이하 유지)
         if: always()
         run: docker buildx prune -f --keep-storage 10GB --filter "until=168h" || true
 

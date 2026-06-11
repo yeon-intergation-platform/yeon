@@ -117,10 +117,15 @@ jobs:
           docker image prune -f --filter "until=48h"
 
       - name: Resolve BUILDX_LOCAL_CACHE
-        run: echo "BUILDX_LOCAL_CACHE=$HOME/.cache/buildx-yeon-backend-arm64" >> "$GITHUB_ENV"
+        run: |
+          echo "BUILDX_LOCAL_CACHE=$HOME/.cache/buildx-yeon-backend-arm64" >> "$GITHUB_ENV"
+          echo "BUILDX_LOCAL_CACHE_NEW=$HOME/.cache/buildx-yeon-backend-arm64-new" >> "$GITHUB_ENV"
 
       - name: Prepare local buildx cache dir
-        run: mkdir -p "${BUILDX_LOCAL_CACHE}"
+        run: |
+          mkdir -p "${BUILDX_LOCAL_CACHE}"
+          rm -rf "${BUILDX_LOCAL_CACHE_NEW}"
+          mkdir -p "${BUILDX_LOCAL_CACHE_NEW}"
 
       - name: Build backend arm64 image by digest
         uses: docker/build-push-action@v7.1.0
@@ -137,7 +142,7 @@ jobs:
             type=local,src=${{ env.BUILDX_LOCAL_CACHE }}
             type=registry,ref=${{ steps.image.outputs.ref }}:buildcache-arm64
           cache-to: |
-            type=local,dest=${{ env.BUILDX_LOCAL_CACHE }},mode=max
+            type=local,dest=${{ env.BUILDX_LOCAL_CACHE_NEW }},mode=max
             type=registry,ref=${{ steps.image.outputs.ref }}:buildcache-arm64,mode=min
 
       - name: Export arm64 digest
@@ -155,7 +160,21 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
-      - name: Buildx cache prune (backend ARM64 local, 10GB 이하 유지)
+      - name: Rotate arm64 local buildx cache
+        run: |
+          if [ ! -f "${BUILDX_LOCAL_CACHE_NEW}/index.json" ]; then
+            echo "새 buildx local cache에 index.json이 없어 기존 캐시를 유지합니다." >&2
+            exit 1
+          fi
+          rm -rf "${BUILDX_LOCAL_CACHE}"
+          mv "${BUILDX_LOCAL_CACHE_NEW}" "${BUILDX_LOCAL_CACHE}"
+          du -sh "${BUILDX_LOCAL_CACHE}" || true
+
+      - name: Cleanup temporary arm64 local buildx cache
+        if: always()
+        run: rm -rf "${BUILDX_LOCAL_CACHE_NEW}"
+
+      - name: BuildKit internal cache prune (backend ARM64, 10GB 이하 유지)
         if: always()
         run: docker buildx prune -f --keep-storage 10GB --filter "until=168h" || true
 
