@@ -15,6 +15,13 @@ jobs:
     steps:
       - uses: actions/checkout@v6.0.2
 
+      # self-hosted ARM64 러너에는 시스템 node가 PATH에 없어 verify-parity.mjs가 깨진다.
+      # 러너 내장 node/npm에 의존하지 않고 setup-node로 self-contained node를 PATH에 깐다.
+      - name: Setup Node
+        uses: actions/setup-node@v6.4.0
+        with:
+          node-version: "22"
+
       - name: 프로젝트 SSOT 건전성 검사
         run: bash bin/verify-ssot.sh --project-only
 

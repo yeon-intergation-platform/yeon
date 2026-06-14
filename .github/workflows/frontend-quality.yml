@@ -41,17 +41,20 @@ jobs:
     env:
       # 대형 web 앱 tsc/vitest가 러너 기본 Node 힙(~2GB)을 초과해 OOM(exit 134) 나는 것을 방지.
       NODE_OPTIONS: --max-old-space-size=4096
+      # corepack이 pnpm 다운로드 시 비대화형 CI에서 멈추지 않도록 프롬프트 비활성화.
+      COREPACK_ENABLE_DOWNLOAD_PROMPT: "0"
     steps:
       - uses: actions/checkout@v6.0.2
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v6.0.7
-
+      # self-hosted ARM64 러너의 내장 npm이 깨져 pnpm/action-setup self-installer가 실패한다.
+      # setup-node로 완비된 node(+npm)를 PATH에 깔고 corepack으로 packageManager 핀을 활성화한다.
       - name: Setup Node
         uses: actions/setup-node@v6.4.0
         with:
           node-version: "22"
-          cache: pnpm
+
+      - name: Enable pnpm (corepack)
+        run: corepack enable && corepack prepare pnpm@11.5.2 --activate
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
