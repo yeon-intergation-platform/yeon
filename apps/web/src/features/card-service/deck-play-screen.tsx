@@ -172,7 +172,7 @@ const CARD_REVIEW_SHORTCUT_BLOCKED_TAGS = [
   "TEXTAREA",
 ] as const;
 
-// 정답이 보일 때 숫자 키로 난이도를 채점한다. 버튼 순서(어려움·좋음·쉬움)와 동일하게 매핑한다.
+// 정답이 보일 때 숫자 키로 난이도를 채점한다. 버튼 순서(어려움·보통·쉬움)와 동일하게 매핑한다.
 const CARD_REVIEW_DIFFICULTY_SHORTCUT: Record<string, CardReviewDifficulty> = {
   "1": CARD_REVIEW_DIFFICULTIES.hard,
   "2": CARD_REVIEW_DIFFICULTIES.good,

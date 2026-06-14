@@ -127,7 +127,7 @@ export const CARD_SERVICE_TEXT = {
     flipHint: "탭해서 ",
     flipHintPostfix: " 보기",
     reviewHardLabel: "어려움",
-    reviewGoodLabel: "좋음",
+    reviewGoodLabel: "보통",
     reviewEasyLabel: "쉬움",
     reviewRevealAnswerLabel: "정답보기",
     reviewSkipLabel: "스킵",
