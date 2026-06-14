@@ -5,7 +5,10 @@ import { useCallback, useEffect, useState } from "react";
 import type { YeonUseQueryResult as UseQueryResult } from "@yeon/ui/runtime/YeonQuery";
 import { resolveYeonWebPath } from "@yeon/ui/runtime/ports";
 import { deriveCardDeckPlayViewState } from "@yeon/ui/runtime/ports/card-deck";
-import { CARD_STUDY_MODES } from "@yeon/api-contract/card-decks";
+import {
+  CARD_STUDY_MODES,
+  CARD_REVIEW_DIFFICULTIES,
+} from "@yeon/api-contract/card-decks";
 import type {
   CardReviewDifficulty,
   CardStudyMode,
@@ -169,6 +172,13 @@ const CARD_REVIEW_SHORTCUT_BLOCKED_TAGS = [
   "TEXTAREA",
 ] as const;
 
+// 정답이 보일 때 숫자 키로 난이도를 채점한다. 버튼 순서(어려움·좋음·쉬움)와 동일하게 매핑한다.
+const CARD_REVIEW_DIFFICULTY_SHORTCUT: Record<string, CardReviewDifficulty> = {
+  "1": CARD_REVIEW_DIFFICULTIES.hard,
+  "2": CARD_REVIEW_DIFFICULTIES.good,
+  "3": CARD_REVIEW_DIFFICULTIES.easy,
+};
+
 const CARD_REVIEW_SHORTCUT_BROWSER_PORT: CardReviewShortcutBrowserPort = {
   isBlockedTarget(target) {
     const HtmlElementConstructor = globalThis.HTMLElement;
@@ -263,6 +273,19 @@ function ReadyPlayBody({
     moveToNextReviewCard();
   }, [moveToNextReviewCard, reviewMutation.isPending]);
 
+  const handleReview = useCallback(
+    (difficulty: CardReviewDifficulty) => {
+      if (!play.currentItem || reviewMutation.isPending) {
+        return;
+      }
+      reviewMutation.mutate(
+        { difficulty, itemId: play.currentItem.id },
+        { onSuccess: moveToNextReviewCard }
+      );
+    },
+    [moveToNextReviewCard, play, reviewMutation]
+  );
+
   useEffect(() => {
     if (studyMode !== CARD_STUDY_MODES.review || !currentItemId) {
       return;
@@ -285,10 +308,17 @@ function ReadyPlayBody({
         return;
       }
 
-      if (
-        !isReviewAnswerVisible &&
-        (event.code === "Space" || event.key === " ")
-      ) {
+      // 정답이 보일 때만 숫자 키로 채점한다(정답을 보기 전 채점 방지).
+      if (isReviewAnswerVisible) {
+        const difficulty = CARD_REVIEW_DIFFICULTY_SHORTCUT[event.key];
+        if (difficulty) {
+          event.preventDefault();
+          handleReview(difficulty);
+        }
+        return;
+      }
+
+      if (event.code === "Space" || event.key === " ") {
         event.preventDefault();
         handleRevealReviewAnswer();
       }
@@ -299,6 +329,7 @@ function ReadyPlayBody({
     );
   }, [
     currentItemId,
+    handleReview,
     handleRevealReviewAnswer,
     handleSkipReview,
     isReviewAnswerVisible,
@@ -309,14 +340,6 @@ function ReadyPlayBody({
     setStudyMode(nextMode);
     setReviewAnswerVisible(false);
     studyModeMutation.mutate(nextMode);
-  }
-
-  function handleReview(difficulty: CardReviewDifficulty) {
-    if (!play.currentItem) return;
-    reviewMutation.mutate(
-      { difficulty, itemId: play.currentItem.id },
-      { onSuccess: moveToNextReviewCard }
-    );
   }
 
   if (!play.currentItem) {
@@ -342,7 +365,7 @@ function ReadyPlayBody({
             className={`mt-1 ${SHARED_FEATURE_CLASS.text12Soft}`}
           >
             {studyMode === CARD_STUDY_MODES.review
-              ? "먼저 문제를 보고 정답보기 후 난이도로 다음 복습일을 저장합니다."
+              ? "정답보기 : 스페이스바 · 1,2,3 : 어려움,보통,쉬움 · s : 스킵"
               : "카드를 클릭하거나 Space·Enter를 눌러 뒤집을 수 있어요."}
           </YeonText>
         </YeonView>
