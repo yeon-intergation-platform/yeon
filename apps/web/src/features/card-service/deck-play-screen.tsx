@@ -227,8 +227,12 @@ function ReadyPlayBody({
   const [cardSize, setCardSize] = useState<CardPlayCardSize>(
     DEFAULT_CARD_PLAY_CARD_SIZE
   );
-  const [isReviewAnswerVisible, setReviewAnswerVisible] = useState(false);
+  const [revealedItemId, setRevealedItemId] = useState<string | null>(null);
   const currentItemId = play.currentItem?.id ?? null;
+  // 정답 표시 여부를 현재 카드 id에서 파생한다. 카드가 바뀌면 같은 렌더에서 즉시 false가 되어
+  // web이 인덱스를 URL(비동기)에서 읽어도 정답 숨김과 카드 전환 사이 프레임 갭(flicker)이 없다.
+  const isReviewAnswerVisible =
+    revealedItemId !== null && revealedItemId === currentItemId;
 
   useEffect(() => {
     setStudyMode(initialStudyMode);
@@ -237,10 +241,6 @@ function ReadyPlayBody({
   useEffect(() => {
     setCardSize(readStoredCardPlayCardSize(deckId));
   }, [deckId]);
-
-  useEffect(() => {
-    setReviewAnswerVisible(false);
-  }, [currentItemId, studyMode]);
 
   const handleCardSizeChange = useCallback(
     (nextSize: CardPlayCardSize) => {
@@ -251,8 +251,7 @@ function ReadyPlayBody({
   );
 
   const moveToNextReviewCard = useCallback(() => {
-    setReviewAnswerVisible(false);
-
+    // 정답 숨김은 카드 id 파생(isReviewAnswerVisible)이 처리하므로 인덱스만 이동한다.
     if (play.currentIndex >= play.items.length - 1) {
       play.handleFirst();
       return;
@@ -262,8 +261,11 @@ function ReadyPlayBody({
   }, [play]);
 
   const handleRevealReviewAnswer = useCallback(() => {
-    setReviewAnswerVisible(true);
-  }, []);
+    if (!currentItemId) {
+      return;
+    }
+    setRevealedItemId(currentItemId);
+  }, [currentItemId]);
 
   const handleSkipReview = useCallback(() => {
     if (reviewMutation.isPending) {
@@ -338,7 +340,7 @@ function ReadyPlayBody({
 
   function handleStudyModeChange(nextMode: CardStudyMode) {
     setStudyMode(nextMode);
-    setReviewAnswerVisible(false);
+    setRevealedItemId(null);
     studyModeMutation.mutate(nextMode);
   }
 
