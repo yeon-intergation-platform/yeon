@@ -7,7 +7,6 @@ import {
 import {
   useYeonMutation as useMutation,
   useYeonQuery as useQuery,
-  useYeonQueryClient as useQueryClient,
 } from "@yeon/ui/native";
 import {
   deriveCardDeckPlayViewState,
@@ -74,7 +73,6 @@ interface UseCardDeckPlayStateParams {
 }
 
 export function useCardDeckPlayState({ deckId }: UseCardDeckPlayStateParams) {
-  const queryClient = useQueryClient();
   const [mode, setMode] = useState<CardServiceMode>(CARD_SERVICE_MODE.guest);
   const [isBooting, setBooting] = useState(true);
   const [sessionToken, setSessionToken] = useState<string | null>(null);
@@ -139,15 +137,9 @@ export function useCardDeckPlayState({ deckId }: UseCardDeckPlayStateParams) {
         params.difficulty
       );
     },
-    onSuccess: async () => {
-      if (deckId) {
-        await queryClient.invalidateQueries({
-          queryKey: cardServiceQueryKeys.deckDetail(
-            mode === CARD_SERVICE_MODE.server,
-            deckId
-          ),
-        });
-      }
+    // 복습 채점은 스케줄 메타데이터만 바꾸고 표시되지 않는다. play 중 deckDetail refetch는
+    // 무거운 카드 본문 재렌더로 flicker를 유발하므로 생략한다(덱 재진입 시 자연 갱신).
+    onSuccess: () => {
       moveToNextReviewCard();
     },
   });
