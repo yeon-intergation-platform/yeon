@@ -20,7 +20,9 @@ jobs:
       github.event.workflow_run.conclusion == 'success' &&
       (github.event.workflow_run.event == 'push' || github.event.workflow_run.event == 'workflow_dispatch') &&
       github.event.workflow_run.head_branch == 'main'
-    runs-on: ubuntu-latest
+    # GitHub-hosted ubuntu-latest는 무료 private repo의 Actions 결제 차단에 막힌다.
+    # 운영 self-hosted ARM64 러너에서 git/gh 기반 릴리즈 태깅을 수행한다.
+    runs-on: [self-hosted, Linux, ARM64]
     steps:
       - name: Checkout deployed commit
         uses: actions/checkout@v6.0.2

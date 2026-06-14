@@ -44,7 +44,10 @@ env:
 jobs:
   detect_changes:
     if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-latest
+    # GitHub-hosted ubuntu-latest는 무료 private repo의 Actions 결제 차단에 막혀
+    # 이 게이트 잡이 시작되지 않으면 전체 빌드/배포 파이프라인이 함께 죽는다.
+    # 운영 self-hosted ARM64 러너로 고정한다.
+    runs-on: [self-hosted, Linux, ARM64]
     outputs:
       web: ${{ steps.scope.outputs.web }}
       backend: ${{ steps.scope.outputs.backend }}
@@ -276,7 +279,9 @@ jobs:
   verify_mobile:
     if: github.ref == 'refs/heads/main' && needs.detect_changes.outputs.mobile == 'true'
     needs: detect_changes
-    runs-on: ubuntu-latest
+    # GitHub-hosted ubuntu-latest는 무료 private repo의 Actions 결제 차단에 막힌다.
+    # 운영 self-hosted ARM64 러너에서 mobile typecheck를 수행한다.
+    runs-on: [self-hosted, Linux, ARM64]
     steps:
       - name: Checkout
         uses: actions/checkout@v6.0.2
@@ -517,7 +522,9 @@ jobs:
       - build_race
       - verify_mobile
       - deploy_production
-    runs-on: ubuntu-latest
+    # GitHub-hosted ubuntu-latest는 무료 private repo의 Actions 결제 차단에 막힌다.
+    # 운영 self-hosted ARM64 러너에서 최신성 invariant를 검증한다.
+    runs-on: [self-hosted, Linux, ARM64]
     steps:
       - name: Checkout
         uses: actions/checkout@v6.0.2

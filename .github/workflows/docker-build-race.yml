@@ -11,69 +11,10 @@ env:
   REGISTRY: ghcr.io
   RACE_IMAGE_REPOSITORY: yeon-race-server
 
+# amd64 빌드는 GitHub-hosted ubuntu-latest 전용이라 무료 private repo의 Actions 결제 차단에 막혔다.
+# 현재 운영 배포 타깃은 라즈베리파이(ARM64) self-hosted 러너뿐이고 amd64 소비처가 없어 arm64 단일로 빌드한다.
+# N100(amd64) 이전 시 docs/deployment/n100-proxmox-cutover.md에 따라 amd64 빌드를 복원한다.
 jobs:
-  build_race_amd64:
-    runs-on: ubuntu-latest
-    env:
-      DIGEST_DIR: ${{ github.workspace }}/.ci-digests/digests-race-amd64-${{ github.run_id }}-${{ github.run_attempt }}
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v6.0.2
-
-      - name: Resolve lowercase image name
-        id: image
-        run: |
-          owner_lower="$(printf '%s' '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')"
-          echo "ref=${{ env.REGISTRY }}/${owner_lower}/${{ env.RACE_IMAGE_REPOSITORY }}" >> "$GITHUB_OUTPUT"
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4.0.0
-
-      - name: GHCR 로그인
-        uses: docker/login-action@v4.1.0
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Docker metadata
-        id: meta
-        uses: docker/metadata-action@v6.0.0
-        with:
-          images: ${{ steps.image.outputs.ref }}
-          tags: |
-            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
-            type=raw,value=develop,enable=${{ github.ref == 'refs/heads/develop' }}
-            type=sha,format=short,prefix=sha-
-
-      - name: Build race-server amd64 image by digest
-        uses: docker/build-push-action@v7.1.0
-        id: build
-        with:
-          context: .
-          file: ./apps/race-server/Dockerfile
-          platforms: linux/amd64
-          outputs: type=image,name=${{ steps.image.outputs.ref }},push-by-digest=true,name-canonical=true,push=true
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha,scope=yeon-race-amd64
-          cache-to: type=gha,mode=max,scope=yeon-race-amd64
-
-      - name: Export amd64 digest
-        run: |
-          rm -rf "${DIGEST_DIR}"
-          mkdir -p "${DIGEST_DIR}"
-          digest="${{ steps.build.outputs.digest }}"
-          touch "${DIGEST_DIR}/${digest#sha256:}"
-
-      - name: Upload amd64 digest
-        uses: actions/upload-artifact@v7.0.1
-        with:
-          name: digest-race-amd64
-          path: ${{ env.DIGEST_DIR }}/*
-          if-no-files-found: error
-          retention-days: 1
-
   build_race_arm64:
     runs-on: [self-hosted, Linux, ARM64]
     env:
@@ -168,9 +109,9 @@ jobs:
 
   publish_race_manifest:
     needs:
-      - build_race_amd64
       - build_race_arm64
-    runs-on: ubuntu-latest
+    # arm64 단일 아키 manifest 태깅도 self-hosted ARM64 러너에서 수행한다(billing 무관).
+    runs-on: [self-hosted, Linux, ARM64]
     env:
       DIGEST_DIR: ${{ github.workspace }}/.ci-digests/digests-race-manifest-${{ github.run_id }}-${{ github.run_attempt }}
 
@@ -226,7 +167,7 @@ jobs:
             fi
           done
 
-          if [ "${#digest_files[@]}" -ne 2 ]; then
+          if [ "${#digest_files[@]}" -ne 1 ]; then
             echo "race-server digest 파일 개수가 예상과 다릅니다: ${#digest_files[@]}개"
             exit 1
           fi
