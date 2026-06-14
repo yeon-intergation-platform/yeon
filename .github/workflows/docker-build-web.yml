@@ -161,7 +161,8 @@ jobs:
       - name: Create and push multi-arch manifest
         working-directory: ${{ env.DIGEST_DIR }}
         env:
-          DOCKER_METADATA_OUTPUT_JSON: ${{ steps.meta.outputs.json }}
+          # self-hosted ARM64 러너에는 jq가 없으므로 metadata-action의 개행 구분 tags 출력을 직접 쓴다.
+          METADATA_TAGS: ${{ steps.meta.outputs.tags }}
           IMAGE: ${{ steps.image.outputs.ref }}
         run: |
           set -euo pipefail
@@ -215,7 +216,7 @@ jobs:
             done
           done
 
-          mapfile -t tags < <(jq -r '.tags[]' <<< "$DOCKER_METADATA_OUTPUT_JSON")
+          mapfile -t tags < <(printf '%s\n' "$METADATA_TAGS" | sed '/^[[:space:]]*$/d')
           if [ "${#tags[@]}" -eq 0 ]; then
             echo "manifest 태그가 비어 있습니다."
             exit 1
@@ -239,9 +240,9 @@ jobs:
 
       - name: Inspect published image
         env:
-          DOCKER_METADATA_OUTPUT_JSON: ${{ steps.meta.outputs.json }}
+          METADATA_TAGS: ${{ steps.meta.outputs.tags }}
         run: |
-          first_tag="$(jq -r '.tags[0]' <<< "$DOCKER_METADATA_OUTPUT_JSON")"
+          first_tag="$(printf '%s\n' "$METADATA_TAGS" | sed '/^[[:space:]]*$/d' | head -n1)"
           # GHCR manifest 전파 지연 대응: 최대 3회 재시도
           for i in 1 2 3; do
             docker buildx imagetools inspect "$first_tag" && break
