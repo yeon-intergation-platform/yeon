@@ -34,6 +34,20 @@ describe("sortCardDeckItemsForPlay", () => {
     ]);
   });
 
+  it("초 미만 정밀도 표기가 달라도 시각 순서대로 정렬한다", () => {
+    // 서버 toIso(Instant.toString())는 .000 같은 0 소수를 생략해 "...:00Z"로 출력한다.
+    // 문자열 비교라면 ".500Z" < "Z"라 순서가 뒤집히지만, 시각상 .000이 먼저여야 한다.
+    const items = [
+      makeItem({ id: "later", createdAt: "2026-01-01T00:00:00.500Z" }),
+      makeItem({ id: "exact", createdAt: "2026-01-01T00:00:00Z" }),
+    ];
+
+    expect(sortCardDeckItemsForPlay(items).map((i) => i.id)).toEqual([
+      "exact",
+      "later",
+    ]);
+  });
+
   it("생성 시각이 같으면 id로 결정적으로 정렬한다", () => {
     const sameCreatedAt = "2026-01-01T00:00:00.000Z";
     const items = [

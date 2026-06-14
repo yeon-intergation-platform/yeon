@@ -96,7 +96,11 @@ export function sortCardDeckItemsForPlay(
   items: CardDeckItemDto[]
 ): CardDeckItemDto[] {
   return [...items].sort((a, b) => {
-    const byCreatedAt = a.createdAt.localeCompare(b.createdAt);
+    // createdAt은 ISO-8601(UTC)이지만 서버 toIso(Instant.toString())가 소수 자릿수를
+    // 가변 출력한다(예: .000은 생략돼 "...:00Z"). 문자열 비교는 같은 초 안에서
+    // ".500Z" < "Z"(0x2E < 0x5A)로 시각 순서와 어긋나므로 epoch ms로 비교한다.
+    const byCreatedAt =
+      new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
     if (byCreatedAt !== 0) {
       return byCreatedAt;
     }
