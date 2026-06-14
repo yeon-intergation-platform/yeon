@@ -9,7 +9,10 @@ import {
   useYeonQuery as useQuery,
   useYeonQueryClient as useQueryClient,
 } from "@yeon/ui/native";
-import { deriveCardDeckPlayViewState } from "@yeon/ui/runtime/ports/card-deck";
+import {
+  deriveCardDeckPlayViewState,
+  sortCardDeckItemsForPlay,
+} from "@yeon/ui/runtime/ports/card-deck";
 import { useEffect, useMemo, useState } from "react";
 
 import { cardServiceApi } from "../../services/card-service/client";
@@ -102,6 +105,14 @@ export function useCardDeckPlayState({ deckId }: UseCardDeckPlayStateParams) {
       : ["card-service", "deck", "missing", mode],
   });
 
+  // 복습 채점·refetch와 무관하게 항상 같은 순서를 보여주도록 web/mobile 공용 SSOT로 안정 정렬한다.
+  // (서버 기본 정렬은 next_review_at 기준이라 채점하면 순서가 흔들려 다음 카드가 꼬인다.)
+  const playItems = useMemo(
+    () =>
+      detailQuery.data ? sortCardDeckItemsForPlay(detailQuery.data.items) : [],
+    [detailQuery.data]
+  );
+
   // 게스트/서버 분기는 repository 어댑터가 흡수한다(웹과 동일 포트 인터페이스).
   const itemRepository = useMemo(
     () => createMobileCardItemRepository({ mode, sessionToken }),
@@ -150,11 +161,11 @@ export function useCardDeckPlayState({ deckId }: UseCardDeckPlayStateParams) {
       return;
     }
     setStudyMode(detailQuery.data.studyMode);
-    if (currentIndex >= detailQuery.data.items.length) {
+    if (currentIndex >= playItems.length) {
       resetCurrentCardVisibility();
       setCurrentIndex(0);
     }
-  }, [currentIndex, detailQuery.data]);
+  }, [currentIndex, detailQuery.data, playItems.length]);
 
   async function bootstrapSession() {
     setBooting(true);
@@ -170,10 +181,10 @@ export function useCardDeckPlayState({ deckId }: UseCardDeckPlayStateParams) {
   }
 
   function moveNext() {
-    if (!detailQuery.data || detailQuery.data.items.length === 0) {
+    if (playItems.length === 0) {
       return;
     }
-    if (currentIndex + 1 >= detailQuery.data.items.length) {
+    if (currentIndex + 1 >= playItems.length) {
       return;
     }
     setCurrentIndex((prev) => prev + 1);
@@ -181,7 +192,7 @@ export function useCardDeckPlayState({ deckId }: UseCardDeckPlayStateParams) {
   }
 
   function movePrev() {
-    if (!detailQuery.data || detailQuery.data.items.length === 0) {
+    if (playItems.length === 0) {
       return;
     }
     if (currentIndex <= 0) {
@@ -191,7 +202,7 @@ export function useCardDeckPlayState({ deckId }: UseCardDeckPlayStateParams) {
     resetCurrentCardVisibility();
   }
 
-  const currentCard = detailQuery.data?.items[currentIndex] ?? null;
+  const currentCard = playItems[currentIndex] ?? null;
   const detail = detailQuery.data;
   // 로딩/에러 분기는 web/mobile 공용 SSOT에서 파생한다(empty는 currentCard 가드 유지).
   const playState = deriveCardDeckPlayViewState(
@@ -208,7 +219,7 @@ export function useCardDeckPlayState({ deckId }: UseCardDeckPlayStateParams) {
     }
   );
   const canMovePrev = currentIndex > 0;
-  const canMoveNext = detail ? currentIndex < detail.items.length - 1 : false;
+  const canMoveNext = currentIndex < playItems.length - 1;
 
   function handleStudyModeChange(nextMode: CardStudyMode) {
     setStudyMode(nextMode);
@@ -217,14 +228,12 @@ export function useCardDeckPlayState({ deckId }: UseCardDeckPlayStateParams) {
   }
 
   function moveToNextReviewCard() {
-    if (!detailQuery.data || detailQuery.data.items.length === 0) {
+    if (playItems.length === 0) {
       setReviewAnswerVisible(false);
       return;
     }
 
-    setCurrentIndex((prev) =>
-      prev + 1 >= detailQuery.data.items.length ? 0 : prev + 1
-    );
+    setCurrentIndex((prev) => (prev + 1 >= playItems.length ? 0 : prev + 1));
     resetCurrentCardVisibility();
   }
 

@@ -86,6 +86,24 @@ export function deriveCardDeckDetailViewState(
   };
 }
 
+/* ───────── 덱 플레이 카드 순서 (web/mobile 공용) ───────── */
+
+// 복습 채점은 서버에서 next_review_at을 바꿔 기본 정렬(복습 우선순위)을 흔든다.
+// play/복습 화면은 채점·refetch와 무관하게 항상 같은 순서를 보여야 하므로
+// 생성 시각(동률이면 id) 기준으로 안정 정렬한다. 정렬 키는 채점으로 바뀌지 않으므로
+// 재요청이 와도 현재 인덱스가 가리키는 카드가 흔들리지 않는다(더블 어드밴스·순서 꼬임 방지).
+export function sortCardDeckItemsForPlay(
+  items: CardDeckItemDto[]
+): CardDeckItemDto[] {
+  return [...items].sort((a, b) => {
+    const byCreatedAt = a.createdAt.localeCompare(b.createdAt);
+    if (byCreatedAt !== 0) {
+      return byCreatedAt;
+    }
+    return a.id.localeCompare(b.id);
+  });
+}
+
 /* ───────── 덱 플레이 view-state (web/mobile 공용) ───────── */
 
 export type YeonCardDeckPlayViewState =
@@ -116,5 +134,10 @@ export function deriveCardDeckPlayViewState(
   if (items.length === 0) {
     return { kind: "empty", deck };
   }
-  return { kind: "ready", deck, items, studyMode };
+  return {
+    kind: "ready",
+    deck,
+    items: sortCardDeckItemsForPlay(items),
+    studyMode,
+  };
 }
