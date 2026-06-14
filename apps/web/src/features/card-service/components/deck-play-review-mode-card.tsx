@@ -26,7 +26,7 @@ const REVIEW_ACTIONS: Array<{
   },
   {
     difficulty: CARD_REVIEW_DIFFICULTIES.good,
-    label: "좋음",
+    label: "보통",
     variant: "secondary",
   },
   {
