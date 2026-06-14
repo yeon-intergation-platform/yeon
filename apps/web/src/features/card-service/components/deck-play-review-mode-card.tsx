@@ -17,25 +17,21 @@ import {
 const REVIEW_ACTIONS: Array<{
   difficulty: CardReviewDifficulty;
   label: string;
-  nextLabel: string;
   variant: "primary" | "secondary";
 }> = [
   {
     difficulty: CARD_REVIEW_DIFFICULTIES.hard,
     label: "어려움",
-    nextLabel: "1일 후",
     variant: "primary",
   },
   {
     difficulty: CARD_REVIEW_DIFFICULTIES.good,
     label: "좋음",
-    nextLabel: "3일 후",
     variant: "secondary",
   },
   {
     difficulty: CARD_REVIEW_DIFFICULTIES.easy,
     label: "쉬움",
-    nextLabel: "4일 후",
     variant: "secondary",
   },
 ];
@@ -148,9 +144,7 @@ export function DeckPlayReviewModeCard({
               disabled={isSaving}
               className="px-4 py-4 text-[14px]"
             >
-              {isSaving
-                ? "저장 중..."
-                : `${action.label} · ${action.nextLabel}`}
+              {isSaving ? "저장 중..." : action.label}
             </YeonButton>
           ))}
         </YeonView>
