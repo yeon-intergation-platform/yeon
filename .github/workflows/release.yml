@@ -16,7 +16,9 @@ permissions:
 
 jobs:
   create_release:
-    runs-on: ubuntu-latest
+    # GitHub-hosted ubuntu-latest는 무료 private repo의 Actions 결제 차단에 막힌다.
+    # 태그 push 기반 릴리즈 공개도 운영 self-hosted ARM64 러너에서 수행한다.
+    runs-on: [self-hosted, Linux, ARM64]
     steps:
       - name: Checkout
         uses: actions/checkout@v6.0.2

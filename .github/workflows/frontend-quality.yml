@@ -34,7 +34,9 @@ permissions:
 
 jobs:
   quality:
-    runs-on: ubuntu-latest
+    # GitHub-hosted ubuntu-latest는 무료 private repo의 Actions 결제 차단에 막혀 잡이 시작되지 않는다.
+    # 운영 self-hosted ARM64 러너로 고정한다. (단일 러너라 다른 워크플로와 순차 실행됨)
+    runs-on: [self-hosted, Linux, ARM64]
     name: 타입체크 · 린트 · 프론트 단위 테스트
     env:
       # 대형 web 앱 tsc/vitest가 러너 기본 Node 힙(~2GB)을 초과해 OOM(exit 134) 나는 것을 방지.

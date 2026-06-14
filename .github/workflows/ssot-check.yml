@@ -8,7 +8,9 @@ on:
 
 jobs:
   ssot-check:
-    runs-on: ubuntu-latest
+    # GitHub-hosted ubuntu-latest는 무료 private repo의 Actions 결제 차단에 막혀 잡 자체가 시작되지 않는다.
+    # 운영 self-hosted ARM64 러너로 고정해 billing과 무관하게 검증이 돌게 한다.
+    runs-on: [self-hosted, Linux, ARM64]
     name: SSOT + 스킬 wrapper drift 검증
     steps:
       - uses: actions/checkout@v6.0.2
