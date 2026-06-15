@@ -90,7 +90,10 @@ export function DeckPlayReviewModeCard({
         </YeonButton>
       </YeonView>
 
-      <YeonView className="mt-6 grid gap-5">
+      {/* [&>*]:min-w-0 — grid 아이템 기본 min-width:auto 때문에 넓은 코드블록·mermaid가
+          아이템을 카드보다 넓게 밀어내 카드 밖으로 넘쳤다. min-w-0으로 아이템을 카드 폭에
+          맞춰 수축시켜 내부 가로 스크롤(overflow-x-auto)이 작동하게 한다. */}
+      <YeonView className="mt-6 grid gap-5 [&>*]:min-w-0">
         <YeonView as="section">
           <YeonText
             as="p"
