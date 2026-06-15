@@ -112,9 +112,19 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
-      - name: Buildx cache prune (ARM64 local, 10GB 이하 유지)
+      - name: Buildx 캐시 정리 (빌더 prune + local 캐시 디렉터리 상한)
         if: always()
-        run: docker buildx prune -f --keep-storage 10GB --filter "until=168h" || true
+        run: |
+          docker buildx prune -f --keep-storage 10GB --filter "until=168h" || true
+          # type=local 캐시는 buildx prune 대상이 아니라 오래된 blob이 누적될 수 있다.
+          # 8GB 초과 시 비워 무한 증가를 막는다(다음 빌드는 cold, 이후 다시 캐시됨).
+          if [ -n "${BUILDX_LOCAL_CACHE:-}" ] && [ -d "${BUILDX_LOCAL_CACHE}" ]; then
+            used_kb="$(du -sk "${BUILDX_LOCAL_CACHE}" | awk '{print $1}')"
+            if [ "${used_kb}" -gt $((8 * 1024 * 1024)) ]; then
+              echo "local buildx 캐시 ${used_kb}KB > 8GB → 비웁니다."
+              rm -rf "${BUILDX_LOCAL_CACHE:?}/"* || true
+            fi
+          fi
 
   publish_manifest:
     needs:
