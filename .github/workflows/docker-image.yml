@@ -517,6 +517,29 @@ jobs:
             echo "race_image=${YEON_RACE_SERVER_IMAGE}"
           } > "${DEPLOY_DIR}/.deploy-state"
 
+      - name: 오래된 로컬 sha 이미지 정리 (repo별 최신 N개 유지)
+        if: steps.fresh_main.outputs.deploy == 'true'
+        env:
+          KEEP_RECENT: "3"
+        run: |
+          set -eu
+          # 배포는 매번 sha-* 태그 이미지를 파이 로컬에 남기는데, registry-cleanup은 원격 GHCR만
+          # 정리한다(로컬 미관리). repo별로 latest + 최신 KEEP_RECENT개 sha만 남기고 오래된 로컬
+          # 이미지를 정리한다. 실행 중 컨테이너가 쓰는 이미지는 docker rmi(비강제)가 거부하므로 안전.
+          owner_lower="$(printf '%s' "${GITHUB_REPOSITORY_OWNER}" | tr '[:upper:]' '[:lower:]')"
+          for repo in yeon-web-app yeon-backend yeon-race-server; do
+            ref="ghcr.io/${owner_lower}/${repo}"
+            # docker images 기본 정렬은 생성 최신순 → 최신 KEEP_RECENT개 이후의 sha 태그만 삭제.
+            old_tags="$(docker images "${ref}" --format '{{.Tag}}' | grep '^sha-' | tail -n +"$((KEEP_RECENT + 1))" || true)"
+            for tag in ${old_tags}; do
+              docker rmi "${ref}:${tag}" >/dev/null 2>&1 || true
+            done
+          done
+          # 위 태그 제거로 참조 없어진 레이어(dangling)만 정리. 사용 중 레이어는 보존된다.
+          docker image prune -f >/dev/null 2>&1 || true
+          echo "로컬 이미지 정리 후 사용량:"
+          docker system df || true
+
   verify_latest_completion:
     if: always() && github.ref == 'refs/heads/main'
     needs:
