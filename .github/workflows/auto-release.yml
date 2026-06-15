@@ -9,6 +9,8 @@ on:
 
 permissions:
   contents: write
+  # SemVer bump 판정 시 PR title/body/label 신호를 REST API로 읽기 위해 필요.
+  pull-requests: read
 
 concurrency:
   group: auto-semver-release-main
@@ -86,10 +88,15 @@ jobs:
           if [ -n "${pr_numbers}" ]; then
             while IFS= read -r pr_number; do
               [ -z "${pr_number}" ] && continue
-              pr_payload="$(gh pr view "${pr_number}" --json title,body,labels 2>/dev/null || true)"
+              # self-hosted 러너엔 gh/jq가 없으므로 REST API 원본 JSON을 그대로 컨텍스트에 덧붙인다.
+              # 아래 grep이 JSON 안의 semver/release 신호(title·body·label)를 직접 스캔한다.
+              pr_payload="$(curl -fsSL \
+                -H "Authorization: Bearer ${GH_TOKEN}" \
+                -H "Accept: application/vnd.github+json" \
+                -H "X-GitHub-Api-Version: 2022-11-28" \
+                "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/pulls/${pr_number}" 2>/dev/null || true)"
               [ -z "${pr_payload}" ] && continue
-              pr_context="$(jq -r '.title, (.body // ""), (.labels[]?.name // "")' <<< "${pr_payload}")"
-              printf -v release_context '%s\n%s' "${release_context}" "${pr_context}"
+              printf -v release_context '%s\n%s' "${release_context}" "${pr_payload}"
             done <<< "${pr_numbers}"
           fi
 
@@ -141,7 +148,14 @@ jobs:
         run: |
           set -eu
 
-          if gh release view "${TAG_NAME}" >/dev/null 2>&1; then
+          release_api="${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/releases"
+
+          # self-hosted 러너엔 gh CLI가 없으므로 REST API로 릴리즈 존재 확인/생성을 처리한다.
+          if curl -fsSL \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "${release_api}/tags/${TAG_NAME}" >/dev/null 2>&1; then
             echo "GitHub Release already exists: ${TAG_NAME}"
             exit 0
           fi
@@ -154,7 +168,21 @@ jobs:
             git push origin "refs/tags/${TAG_NAME}"
           fi
 
-          gh release create "${TAG_NAME}" \
-            --verify-tag \
-            --title "YEON ${TAG_NAME}" \
-            --generate-notes
+          # generate_release_notes로 릴리즈 노트를 자동 생성한다.
+          payload="$(printf '{"tag_name":"%s","name":"YEON %s","generate_release_notes":true}' "${TAG_NAME}" "${TAG_NAME}")"
+          http_code="$(curl -sS -o /tmp/release-create.json -w '%{http_code}' -X POST \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "${release_api}" -d "${payload}")"
+
+          # 422는 동시 트리거된 release.yml이 먼저 만든 경우(이미 존재)이므로 성공 처리.
+          case "${http_code}" in
+            201) echo "GitHub Release 생성: ${TAG_NAME}" ;;
+            422) echo "GitHub Release already exists: ${TAG_NAME}" ;;
+            *)
+              echo "::error::GitHub Release 생성 실패: HTTP ${http_code}"
+              cat /tmp/release-create.json || true
+              exit 1
+              ;;
+          esac
