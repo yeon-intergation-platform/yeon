@@ -8,7 +8,10 @@ import {
   getPublicContentAdminDashboardStats,
   getValidPublicContentAdminChannel,
 } from "./public-content-admin-model";
-import { getPublicContentCollections } from "./public-content-data";
+import {
+  getPublicContentArticles,
+  getPublicContentCollections,
+} from "./public-content-data";
 
 describe("public content admin model", () => {
   it("공개 콘텐츠 채널별 운영 현황을 계산한다", () => {
@@ -53,7 +56,7 @@ describe("public content admin model", () => {
     const stats = getPublicContentAdminDashboardStats();
 
     expect(stats.channelCount).toBe(3);
-    expect(stats.articleCount).toBe(36);
+    expect(stats.articleCount).toBe(getPublicContentArticles().length);
     expect(stats.gaMeasurementId).toBe("G-YGRNS3PQBQ");
     expect(stats.ga4ReportsUrl).toBe(
       "https://analytics.google.com/analytics/web/"
@@ -92,6 +95,7 @@ describe("public content admin model", () => {
       "seo-warning-queue",
       "title-quality",
       "source-path-traceability",
+      "markdown-import-dry-run",
     ]);
     expect(checklistById.get("domain-search-console")?.status).toBe("manual");
     expect(checklistById.get("url-prefix-properties")?.status).toBe("manual");
@@ -100,6 +104,10 @@ describe("public content admin model", () => {
     expect(checklistById.get("ga4-events")?.value).toBe("G-YGRNS3PQBQ");
     expect(checklistById.get("seo-warning-queue")?.status).toBe("ready");
     expect(checklistById.get("title-quality")?.status).toBe("ready");
+    expect(checklistById.get("markdown-import-dry-run")?.status).toBe("manual");
+    expect(checklistById.get("markdown-import-dry-run")?.value).toBe(
+      "대기 원고 없음"
+    );
   });
 
   it("허용된 공개 콘텐츠 채널만 admin route로 인정한다", () => {

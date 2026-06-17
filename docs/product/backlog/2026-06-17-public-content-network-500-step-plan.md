@@ -571,31 +571,31 @@
 
 작업내용:
 
-376. 초기 콘텐츠 원고 저장 위치를 정한다.
-377. 원고 파일명 규칙을 `channel-service-category-slug.md`로 정한다.
-378. 원고 frontmatter 필드를 정의한다.
-379. frontmatter에 title을 둔다.
-380. frontmatter에 description을 둔다.
-381. frontmatter에 channel을 둔다.
-382. frontmatter에 service를 둔다.
-383. frontmatter에 category를 둔다.
-384. frontmatter에 slug를 둔다.
-385. frontmatter에 status를 둔다.
-386. frontmatter에 source_repo를 둔다.
-387. frontmatter에 source_path를 둔다.
-388. Markdown import parser를 만든다.
-389. import 결과를 contract schema로 검증한다.
-390. 중복 slug를 import 단계에서 차단한다.
-391. draft import와 publish import를 분리한다.
-392. 운영 DB 반영 전 dry-run을 제공한다.
-393. dry-run 결과에 생성, 수정, 건너뜀 수를 표시한다.
-394. import 실패 메시지는 한국어로 작성한다.
-395. source path가 없는 글은 경고 처리한다.
-396. 본문에 빈 heading이 있으면 실패 처리한다.
-397. 본문에 외부 링크만 있고 자체 설명이 없으면 경고 처리한다.
-398. 발행 전 checklist를 admin에 표시한다.
-399. 발행 후 sitemap 갱신 여부를 확인한다.
-400. import workflow를 docs에 남긴다.
+376. **[완료]** 초기 콘텐츠 원고 저장 위치를 정한다.
+377. **[완료]** 원고 파일명 규칙을 `channel-service-category-slug.md`로 정한다.
+378. **[완료]** 원고 frontmatter 필드를 정의한다.
+379. **[완료]** frontmatter에 title을 둔다.
+380. **[완료]** frontmatter에 description을 둔다.
+381. **[완료]** frontmatter에 channel을 둔다.
+382. **[완료]** frontmatter에 service를 둔다.
+383. **[완료]** frontmatter에 category를 둔다.
+384. **[완료]** frontmatter에 slug를 둔다.
+385. **[완료]** frontmatter에 status를 둔다.
+386. **[완료]** frontmatter에 source_repo를 둔다.
+387. **[완료]** frontmatter에 source_path를 둔다.
+388. **[완료]** Markdown import parser를 만든다.
+389. **[완료]** import 결과를 contract schema로 검증한다.
+390. **[완료]** 중복 slug를 import 단계에서 차단한다.
+391. **[완료]** draft import와 publish import를 분리한다.
+392. **[완료]** 운영 DB 반영 전 dry-run을 제공한다.
+393. **[완료]** dry-run 결과에 생성, 수정, 건너뜀 수를 표시한다.
+394. **[완료]** import 실패 메시지는 한국어로 작성한다.
+395. **[완료]** source path가 없는 글은 경고 처리한다.
+396. **[완료]** 본문에 빈 heading이 있으면 실패 처리한다.
+397. **[완료]** 본문에 외부 링크만 있고 자체 설명이 없으면 경고 처리한다.
+398. **[완료]** 발행 전 checklist를 admin에 표시한다.
+399. **[완료]** 발행 후 sitemap 갱신 여부를 확인한다.
+400. **[완료]** import workflow를 docs에 남긴다.
 
 ## 17차: QA, 보안, 접근성, 성능
 

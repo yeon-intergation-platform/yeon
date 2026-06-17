@@ -50,7 +50,7 @@ source_path:
 허용 값:
 
 - `channel`: `support`, `news`, `blog`
-- `service`: `nexa`, `typing`, `card`, `community`, `account`
+- `service`: `nexa`, `typing`, `card`, `community`, `account`, `yeon`
 - `status`: `draft`, `review`, `published`, `archived`
 - `slug`: `/`로 구분된 영문 소문자 kebab-case 경로
 
@@ -68,7 +68,11 @@ pnpm --filter @yeon/web public-content:import:dry-run
 pnpm --filter @yeon/web public-content:import:dry-run -- docs/public-content/articles
 ```
 
-dry-run은 운영 DB에 쓰지 않는다. 현재 단계의 결과는 “생성 후보”와 경고/실패 개수만 출력한다.
+dry-run은 운영 DB에 쓰지 않는다. 현재 단계의 결과는 정적 registry와 비교한 “생성 후보”, “수정 후보”, “건너뜀”, 경고/실패 개수를 출력한다.
+
+- 생성 후보: 같은 `channel + slug`가 정적 registry에 아직 없는 원고
+- 수정 후보: 같은 `channel + slug`가 정적 registry에 이미 있는 원고
+- 건너뜀: `archived` 상태처럼 반영 후보가 아닌 원고
 
 기본 모드는 `draft`다. `draft` 모드는 `draft`, `review` 상태 원고만 통과시킨다.
 
@@ -92,6 +96,7 @@ pnpm --filter @yeon/web public-content:import:dry-run -- --mode=all
 
 - frontmatter 시작/종료 구분자 `---`가 없다.
 - 필수 frontmatter 필드가 없다.
+- frontmatter가 `@yeon/api-contract/public-content`의 원고 contract schema를 통과하지 못한다.
 - `channel`, `service`, `status` 값이 허용 목록 밖이다.
 - `category` 값이 공개 콘텐츠 분류 목록 밖이다.
 - 현재 `--mode`에서 허용되지 않는 `status` 원고다.
@@ -116,3 +121,8 @@ pnpm --filter @yeon/web public-content:import:dry-run -- --mode=all
 4. 실패는 모두 수정한다.
 5. 경고는 발행자가 의도 여부를 확인한다.
 6. 이후 admin/API 발행 차수에서 운영 DB 반영 절차를 붙인다.
+7. 발행 후 host별 sitemap에 URL이 들어갔는지 확인한다.
+
+## admin 확인
+
+`/admin/content` 운영 체크리스트의 `Markdown import dry-run` 항목은 수동 확인 항목이다. admin이 직접 원고를 수정하거나 삭제하지 않고, 원고는 `docs/public-content/articles/`에서 먼저 검증한 뒤 다음 발행 차수에서 Spring/admin API 반영 절차로 연결한다.

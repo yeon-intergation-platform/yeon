@@ -3,26 +3,20 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import {
-  PUBLIC_CONTENT_CHANNELS,
+  PUBLIC_CONTENT_STATUSES,
+  publicContentImportManuscriptFrontmatterSchema,
+  type PublicContentImportManuscriptFrontmatter,
+  type PublicContentStatus,
+} from "@yeon/api-contract/public-content";
+
+import {
+  getPublicContentArticleBySlug,
   PUBLIC_CONTENT_CATEGORY_LABELS,
-  PUBLIC_CONTENT_SERVICES,
-  type PublicContentChannel,
-  type PublicContentService,
 } from "../src/features/public-content/public-content-data";
 
 type FrontmatterValue = string | readonly string[];
 
-type ManuscriptFrontmatter = {
-  title: string;
-  description: string;
-  channel: PublicContentChannel;
-  service: PublicContentService;
-  category: string;
-  slug: string;
-  status: PublicContentImportStatus;
-  source_repo: string;
-  source_path: readonly string[];
-};
+type ManuscriptFrontmatter = PublicContentImportManuscriptFrontmatter;
 
 type ParsedManuscript = {
   filePath: string;
@@ -35,10 +29,21 @@ type ValidationMessage = {
   message: string;
 };
 
+type ContractIssue = {
+  code: string;
+  keys?: readonly string[];
+  message: string;
+  path: readonly (number | string)[];
+};
+
 type CliOptions = {
   inputDir: string;
   mode: PublicContentImportMode;
 };
+
+type ImportOperation = "create" | "update" | "skip";
+
+type ImportOperationSummary = Record<ImportOperation, number>;
 
 const DEFAULT_INPUT_DIR = "docs/public-content/articles";
 
@@ -54,15 +59,9 @@ const REQUIRED_FIELDS = [
   "source_path",
 ] as const;
 
-const PUBLIC_CONTENT_IMPORT_STATUSES = {
-  draft: "draft",
-  review: "review",
-  published: "published",
-  archived: "archived",
-} as const;
+const PUBLIC_CONTENT_IMPORT_STATUSES = PUBLIC_CONTENT_STATUSES;
 
-type PublicContentImportStatus =
-  (typeof PUBLIC_CONTENT_IMPORT_STATUSES)[keyof typeof PUBLIC_CONTENT_IMPORT_STATUSES];
+type PublicContentImportStatus = PublicContentStatus;
 
 const PUBLIC_CONTENT_IMPORT_MODES = {
   draft: "draft",
@@ -82,13 +81,8 @@ const MODE_STATUS_RULES = {
   all: new Set<string>(Object.values(PUBLIC_CONTENT_IMPORT_STATUSES)),
 } as const satisfies Record<PublicContentImportMode, ReadonlySet<string>>;
 
-const CHANNEL_SET = new Set<string>(Object.values(PUBLIC_CONTENT_CHANNELS));
-const SERVICE_SET = new Set<string>(Object.values(PUBLIC_CONTENT_SERVICES));
 const CATEGORY_SET = new Set<string>(
   Object.keys(PUBLIC_CONTENT_CATEGORY_LABELS)
-);
-const STATUS_SET = new Set<string>(
-  Object.values(PUBLIC_CONTENT_IMPORT_STATUSES)
 );
 const SLUG_SEGMENT_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const FRONTMATTER_BOUNDARY_PATTERN = /^---\s*$/;
@@ -229,52 +223,46 @@ function parseFrontmatterBlock(
   return values;
 }
 
-function getStringField(
-  values: Record<string, FrontmatterValue>,
-  fieldName: (typeof REQUIRED_FIELDS)[number]
-) {
-  const value = values[fieldName];
-  if (typeof value !== "string" || value.trim().length === 0) {
-    throw new Error(`${fieldName} frontmatter 값이 비어 있습니다.`);
+function formatContractIssue(issue: ContractIssue) {
+  const fieldName = issue.path.join(".") || "frontmatter";
+
+  if (issue.code === "unrecognized_keys") {
+    return `허용되지 않는 frontmatter 필드: ${(issue.keys ?? []).join(", ")}`;
   }
-  return value.trim();
+  if (issue.code === "invalid_type") {
+    return `${fieldName} 형식이 contract와 맞지 않습니다.`;
+  }
+  if (issue.code === "invalid_value") {
+    return `${fieldName} 값이 허용되지 않습니다.`;
+  }
+  if (issue.code === "too_small") {
+    return `${fieldName} 값이 비어 있거나 너무 짧습니다.`;
+  }
+  if (issue.code === "too_big") {
+    return `${fieldName} 값이 너무 깁니다.`;
+  }
+  if (issue.code === "invalid_format") {
+    return `${fieldName} 형식이 contract와 맞지 않습니다.`;
+  }
+
+  return `${fieldName}: ${issue.message}`;
 }
 
-function getStringListField(
-  values: Record<string, FrontmatterValue>,
-  fieldName: (typeof REQUIRED_FIELDS)[number]
-) {
-  const value = values[fieldName];
-  if (!Array.isArray(value)) {
-    if (typeof value === "string" && value.trim().length > 0) {
-      return [value.trim()];
-    }
-    return [];
+function parseFrontmatterContract(
+  frontmatterValues: Record<string, FrontmatterValue>
+): ManuscriptFrontmatter {
+  const parsed =
+    publicContentImportManuscriptFrontmatterSchema.safeParse(frontmatterValues);
+
+  if (!parsed.success) {
+    throw new Error(
+      `frontmatter contract 검증 실패: ${parsed.error.issues
+        .map(formatContractIssue)
+        .join("; ")}`
+    );
   }
 
-  const items = value.map((item) => item.trim()).filter(Boolean);
-  return items;
-}
-
-function asChannel(value: string): PublicContentChannel {
-  if (!CHANNEL_SET.has(value)) {
-    throw new Error(`channel 값이 허용되지 않습니다: ${value}`);
-  }
-  return value as PublicContentChannel;
-}
-
-function asService(value: string): PublicContentService {
-  if (!SERVICE_SET.has(value)) {
-    throw new Error(`service 값이 허용되지 않습니다: ${value}`);
-  }
-  return value as PublicContentService;
-}
-
-function asStatus(value: string): PublicContentImportStatus {
-  if (!STATUS_SET.has(value)) {
-    throw new Error(`status 값이 허용되지 않습니다: ${value}`);
-  }
-  return value as PublicContentImportStatus;
+  return parsed.data;
 }
 
 function parseManuscript(
@@ -303,17 +291,7 @@ function parseManuscript(
     }
   });
 
-  const frontmatter: ManuscriptFrontmatter = {
-    title: getStringField(frontmatterValues, "title"),
-    description: getStringField(frontmatterValues, "description"),
-    channel: asChannel(getStringField(frontmatterValues, "channel")),
-    service: asService(getStringField(frontmatterValues, "service")),
-    category: getStringField(frontmatterValues, "category"),
-    slug: getStringField(frontmatterValues, "slug"),
-    status: asStatus(getStringField(frontmatterValues, "status")),
-    source_repo: getStringField(frontmatterValues, "source_repo"),
-    source_path: getStringListField(frontmatterValues, "source_path"),
-  };
+  const frontmatter = parseFrontmatterContract(frontmatterValues);
 
   return {
     filePath,
@@ -479,6 +457,33 @@ function validateDuplicateSlug(
   seenSlugs.set(slugKey, manuscript.filePath);
 }
 
+function getImportOperation(manuscript: ParsedManuscript): ImportOperation {
+  if (
+    manuscript.frontmatter.status === PUBLIC_CONTENT_IMPORT_STATUSES.archived
+  ) {
+    return "skip";
+  }
+
+  const existingArticle = getPublicContentArticleBySlug(
+    manuscript.frontmatter.channel,
+    getSlugSegments(manuscript.frontmatter.slug)
+  );
+
+  return existingArticle ? "update" : "create";
+}
+
+function summarizeImportOperations(
+  manuscripts: readonly ParsedManuscript[]
+): ImportOperationSummary {
+  return manuscripts.reduce(
+    (summary, manuscript) => {
+      summary[getImportOperation(manuscript)] += 1;
+      return summary;
+    },
+    { create: 0, skip: 0, update: 0 } satisfies ImportOperationSummary
+  );
+}
+
 function validateManuscripts(
   manuscripts: readonly ParsedManuscript[],
   mode: PublicContentImportMode
@@ -537,9 +542,10 @@ async function main() {
   const validationResult = validateManuscripts(manuscripts, mode);
   const errors = [...parseErrors, ...validationResult.errors];
   const warnings = validationResult.warnings;
+  const operations = summarizeImportOperations(manuscripts);
 
   console.log(
-    `[public-content:import:dry-run] mode=${mode}, 원고 ${markdownFiles.length}개 검사, 생성 후보 ${manuscripts.length}개, 경고 ${warnings.length}개, 실패 ${errors.length}개`
+    `[public-content:import:dry-run] mode=${mode}, 원고 ${markdownFiles.length}개 검사, 생성 후보 ${operations.create}개, 수정 후보 ${operations.update}개, 건너뜀 ${operations.skip}개, 경고 ${warnings.length}개, 실패 ${errors.length}개`
   );
   printMessages("경고", warnings);
   printMessages("실패", errors);

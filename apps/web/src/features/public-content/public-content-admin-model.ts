@@ -496,6 +496,7 @@ function buildPublicContentAdminOpsChecklist(params: {
   ).length;
   const firstSitemapUrl = params.summaries[0]?.sitemapUrl;
   const firstRobotsUrl = params.summaries[0]?.robotsUrl;
+  const pendingImportCount = params.stats.draftCount + params.stats.reviewCount;
 
   return [
     {
@@ -557,6 +558,17 @@ function buildPublicContentAdminOpsChecklist(params: {
       note: "공개 글의 repo 근거 경로가 남아 있는지 확인합니다.",
       status: params.stats.sourcePathCount > 0 ? "ready" : "warning",
       value: `${params.stats.sourcePathCount}개`,
+    },
+    {
+      href: "/admin/content?status=draft",
+      id: "markdown-import-dry-run",
+      label: "Markdown import dry-run",
+      note: "docs/public-content/articles 원고는 발행 전 public-content:import:dry-run을 통과해야 합니다.",
+      status: "manual",
+      value:
+        pendingImportCount > 0
+          ? `${pendingImportCount}개 검수 필요`
+          : "대기 원고 없음",
     },
   ];
 }
