@@ -12,6 +12,7 @@ type PublicContentLinkKind =
   | "channel_nav"
   | "collection_child"
   | "not_found_home"
+  | "ops_toolbar"
   | "related_article"
   | "service_nav"
   | "source"

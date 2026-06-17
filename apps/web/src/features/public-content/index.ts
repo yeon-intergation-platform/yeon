@@ -10,6 +10,7 @@ export {
   PUBLIC_CONTENT_RSS_HEADERS,
   buildPublicContentRssFeed,
 } from "./public-content-feed";
+export { isPublicContentOpsModeSearchParams } from "./public-content-ops-toolbar";
 export {
   PUBLIC_CONTENT_CHANNEL_CONFIG,
   PUBLIC_CONTENT_CHANNELS,

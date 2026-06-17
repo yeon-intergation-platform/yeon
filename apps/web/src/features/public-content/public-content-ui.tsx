@@ -1,7 +1,7 @@
 import { YeonStructuredData } from "@yeon/ui";
 import { showYeonNotFound } from "@yeon/ui/runtime/YeonRouteControl";
 import type { YeonPageMetadata } from "@yeon/ui/runtime/YeonPageMetadata";
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
 import {
   buildPublicContentArticleBreadcrumb,
   buildPublicContentCollectionBreadcrumb,
@@ -50,6 +50,7 @@ import {
   PublicContentNewsHomePriority,
 } from "./public-content-news-home-view";
 import { PublicContentNewsDetailSections } from "./public-content-news-detail-view";
+import { PublicContentOpsToolbarClient } from "./public-content-ops-toolbar-client";
 import { buildPublicContentArticleStructuredData } from "./public-content-structured-data";
 import {
   getPublicContentSupportHomeProblemEntries,
@@ -724,6 +725,16 @@ export async function PublicContentArticlePage({
           article={article}
           model={blogDetailModel}
         />
+        <Suspense fallback={null}>
+          <PublicContentOpsToolbarClient
+            article={{
+              category: article.category,
+              channel: article.channel,
+              service: article.service,
+              slugSegments: article.slugSegments,
+            }}
+          />
+        </Suspense>
         <PublicContentNewsArticleContextPanel article={article} />
         <PublicContentNewsDetailSections article={article} />
         <PublicContentSupportActionSummary items={supportPrimaryActionItems} />

@@ -396,31 +396,31 @@
 
 작업내용:
 
-251. admin session이 있는 사용자만 운영 확인 도구를 볼 수 있게 한다.
-252. 공개 article detail에서 운영 확인 toolbar를 조건부 렌더링한다.
-253. toolbar에는 draft 보기 링크를 둔다.
-254. toolbar에는 수정 링크를 두지 않는다.
-255. toolbar에는 archive 링크를 두지 않는다.
-256. toolbar에는 SEO 검사 링크를 둔다.
-257. toolbar에는 sitemap 포함 여부를 표시한다.
-258. 공개 사용자 HTML에는 toolbar markup이 렌더링되지 않게 한다.
-259. 수정 화면은 초기 버전에서 만들지 않는다.
-260. 본문 수정 UI는 초기 버전에서 만들지 않는다.
-261. 제목 수정 UI는 초기 버전에서 만들지 않는다.
-262. 설명 수정 UI는 초기 버전에서 만들지 않는다.
-263. category 수정 UI는 초기 버전에서 만들지 않는다.
-264. service 수정 UI는 초기 버전에서 만들지 않는다.
-265. slug 변경 정책은 후속 CMS/redirect 차수에서 다룬다.
-266. publish 후 slug redirect 정책은 후속 CMS/redirect 차수에서 다룬다.
-267. 저장 action은 초기 버전에서 만들지 않는다.
-268. 발행 action은 초기 버전에서 만들지 않는다.
-269. archive action은 초기 버전에서 만들지 않는다.
-270. hard delete는 API와 UI 모두에서 숨긴다.
-271. autosave는 초기 버전에서 만들지 않는다.
-272. preview는 서버 렌더링 결과를 보여준다.
-273. validation error는 한국어로 보여준다.
-274. 저장 실패 시 기존 본문을 잃지 않게 한다.
-275. 관리자 모드는 SEO index에서 제외한다.
+251. **[완료]** admin session이 있는 사용자만 운영 확인 도구를 볼 수 있게 한다.
+252. **[완료]** 공개 article detail에서 운영 확인 toolbar를 조건부 렌더링한다.
+253. **[완료]** toolbar에는 draft 보기 링크를 둔다.
+254. **[완료]** toolbar에는 수정 링크를 두지 않는다.
+255. **[완료]** toolbar에는 archive 링크를 두지 않는다.
+256. **[완료]** toolbar에는 SEO 검사 링크를 둔다.
+257. **[완료]** toolbar에는 sitemap 포함 여부를 표시한다.
+258. **[완료]** 공개 사용자 HTML에는 toolbar markup이 렌더링되지 않게 한다.
+259. **[완료]** 수정 화면은 초기 버전에서 만들지 않는다.
+260. **[완료]** 본문 수정 UI는 초기 버전에서 만들지 않는다.
+261. **[완료]** 제목 수정 UI는 초기 버전에서 만들지 않는다.
+262. **[완료]** 설명 수정 UI는 초기 버전에서 만들지 않는다.
+263. **[완료]** category 수정 UI는 초기 버전에서 만들지 않는다.
+264. **[완료]** service 수정 UI는 초기 버전에서 만들지 않는다.
+265. **[완료]** slug 변경 정책은 후속 CMS/redirect 차수에서 다룬다.
+266. **[완료]** publish 후 slug redirect 정책은 후속 CMS/redirect 차수에서 다룬다.
+267. **[완료]** 저장 action은 초기 버전에서 만들지 않는다.
+268. **[완료]** 발행 action은 초기 버전에서 만들지 않는다.
+269. **[완료]** archive action은 초기 버전에서 만들지 않는다.
+270. **[완료]** hard delete는 API와 UI 모두에서 숨긴다.
+271. **[완료]** autosave는 초기 버전에서 만들지 않는다.
+272. **[완료]** preview는 서버 렌더링 결과를 보여준다.
+273. **[완료]** validation error는 한국어로 보여준다.
+274. **[완료]** 저장 실패 시 기존 본문을 잃지 않게 한다.
+275. **[완료]** 관리자 모드는 SEO index에서 제외한다.
 
 ## 12차: SEO, sitemap, structured data
 
