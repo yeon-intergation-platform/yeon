@@ -1,4 +1,5 @@
 import { createYeonUrl } from "@yeon/ui/runtime/YeonBrowserRuntime";
+import { normalizeRequestHostname } from "./request-host";
 
 export const SERVICE_SUBDOMAIN_ROUTES = {
   "typing.yeon.world": {
@@ -29,17 +30,6 @@ const REWRITE_EXCLUDED_PATH_PREFIXES = [
   "/robots.txt",
   "/sitemap.xml",
 ] as const;
-
-function normalizeHost(rawHost: string | null | undefined) {
-  const firstHost = rawHost?.split(",")[0]?.trim().toLowerCase();
-  if (!firstHost) return "";
-
-  if (firstHost.startsWith("[")) {
-    return firstHost.slice(0, firstHost.indexOf("]") + 1);
-  }
-
-  return firstHost.split(":")[0] ?? "";
-}
 
 function isExcludedRewritePath(pathname: string) {
   if (pathname.includes(".")) return true;
@@ -90,7 +80,7 @@ export function resolveServiceSubdomainRewritePath({
   pathname: string;
   search?: string;
 }) {
-  const normalizedHost = normalizeHost(host);
+  const normalizedHost = normalizeRequestHostname(host);
   const serviceRoute =
     SERVICE_SUBDOMAIN_ROUTES[normalizedHost as ServiceSubdomainHost];
 
@@ -112,7 +102,7 @@ export function resolveLegacyServicePathRedirectUrl({
   pathname: string;
   search?: string;
 }) {
-  const normalizedHost = normalizeHost(host);
+  const normalizedHost = normalizeRequestHostname(host);
   const serviceRoute = findServiceRouteByPathname(pathname);
 
   if (!serviceRoute) return null;

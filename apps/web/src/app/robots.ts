@@ -1,44 +1,13 @@
 import type { YeonMetadataRoute } from "@yeon/ui/runtime/YeonMetadataRoute";
-import {
-  buildCanonicalUrl,
-  getCanonicalSite,
-  isCanonicalDeployment,
-} from "@/lib/seo";
+import { getYeonRequestHeaders } from "@yeon/ui/runtime/YeonServerRequest";
+import { getRobotsForHostname } from "@/lib/seo";
+import { normalizeRequestHostname } from "@/lib/request-host";
 
-export default function robots(): YeonMetadataRoute["Robots"] {
-  if (!isCanonicalDeployment()) {
-    return {
-      rules: {
-        userAgent: "*",
-        disallow: "/",
-      },
-    };
-  }
+export default async function robots(): Promise<YeonMetadataRoute["Robots"]> {
+  const headerStore = await getYeonRequestHeaders();
+  const hostname = normalizeRequestHostname(
+    headerStore.get("x-forwarded-host") ?? headerStore.get("host")
+  );
 
-  return {
-    rules: {
-      userAgent: "*",
-      allow: [
-        "/",
-        "/typing-service",
-        "/card-service",
-        "/community",
-        "/privacy",
-        "/terms",
-      ],
-      disallow: [
-        "/api/",
-        "/api/auth/",
-        "/auth/",
-        "/check/",
-        "/landing",
-        "/contest",
-        "/mockdata/",
-        "/legacy-counseling-records",
-        "/counseling-service",
-      ],
-    },
-    sitemap: buildCanonicalUrl("/sitemap.xml"),
-    host: getCanonicalSite().origin,
-  };
+  return getRobotsForHostname(hostname);
 }
