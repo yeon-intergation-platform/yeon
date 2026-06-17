@@ -101,6 +101,29 @@ import {
   type UpsertLifeOsDayBody,
 } from "@yeon/api-contract/life-os";
 import {
+  archivePublicContentArticleBodySchema,
+  createPublicContentArticleBodySchema,
+  PUBLIC_CONTENT_API_PATHS,
+  publicContentAdminArticleListResponseSchema,
+  publicContentAdminArticleResponseSchema,
+  publicContentAdminListQuerySchema,
+  publicContentArticleListResponseSchema,
+  publicContentArticleResponseSchema,
+  publicContentChannelSchema,
+  publicContentListQuerySchema,
+  publicContentSlugSchema,
+  publicContentSitemapResponseSchema,
+  publishPublicContentArticleBodySchema,
+  updatePublicContentArticleBodySchema,
+  type ArchivePublicContentArticleBody,
+  type CreatePublicContentArticleBody,
+  type PublicContentAdminListQuery,
+  type PublicContentChannel,
+  type PublicContentListQuery,
+  type PublishPublicContentArticleBody,
+  type UpdatePublicContentArticleBody,
+} from "@yeon/api-contract/public-content";
+import {
   createUserResponseSchema,
   listUsersResponseSchema,
   type CreateUserBody,
@@ -195,6 +218,14 @@ function toQueryString(params: Record<string, string | boolean | undefined>) {
   }
   const queryString = searchParams.toString();
   return queryString ? `?${queryString}` : "";
+}
+
+function encodePathSegments(path: string) {
+  return path
+    .split("/")
+    .filter(Boolean)
+    .map((segment) => encodeURIComponent(segment))
+    .join("/");
 }
 
 function createAuthSessionHeaders(sessionToken?: string): HeadersInit {
@@ -647,6 +678,121 @@ export function createApiClient(options: ApiClientOptions = {}) {
         init: {
           method: "POST",
           body: JSON.stringify(body),
+        },
+      });
+    },
+    listPublicContentArticles(query: PublicContentListQuery = {}) {
+      const parsedQuery = publicContentListQuerySchema.parse(query);
+
+      return request({
+        path: `${PUBLIC_CONTENT_API_PATHS.publicList}${toQueryString(parsedQuery)}`,
+        schema: publicContentArticleListResponseSchema,
+      });
+    },
+    getPublicContentArticle(channel: PublicContentChannel, slug: string) {
+      const parsedChannel = publicContentChannelSchema.parse(channel);
+      const parsedSlug = publicContentSlugSchema.parse(slug);
+
+      return request({
+        path: PUBLIC_CONTENT_API_PATHS.publicArticle(
+          parsedChannel,
+          encodePathSegments(parsedSlug)
+        ),
+        schema: publicContentArticleResponseSchema,
+      });
+    },
+    getPublicContentSitemap(channel: PublicContentChannel) {
+      const parsedChannel = publicContentChannelSchema.parse(channel);
+
+      return request({
+        path: PUBLIC_CONTENT_API_PATHS.publicSitemap(parsedChannel),
+        schema: publicContentSitemapResponseSchema,
+      });
+    },
+    listAdminPublicContentArticles(
+      query: PublicContentAdminListQuery = {},
+      sessionToken?: string
+    ) {
+      const parsedQuery = publicContentAdminListQuerySchema.parse(query);
+
+      return request({
+        path: `${PUBLIC_CONTENT_API_PATHS.adminList}${toQueryString(parsedQuery)}`,
+        schema: publicContentAdminArticleListResponseSchema,
+        init: {
+          headers: createAuthSessionHeaders(sessionToken),
+        },
+      });
+    },
+    createPublicContentArticle(
+      body: CreatePublicContentArticleBody,
+      sessionToken?: string
+    ) {
+      const parsedBody = createPublicContentArticleBodySchema.parse(body);
+
+      return request({
+        path: PUBLIC_CONTENT_API_PATHS.adminList,
+        schema: publicContentAdminArticleResponseSchema,
+        init: {
+          method: "POST",
+          headers: createAuthSessionHeaders(sessionToken),
+          body: JSON.stringify(parsedBody),
+        },
+      });
+    },
+    updatePublicContentArticle(
+      articleId: string,
+      body: UpdatePublicContentArticleBody,
+      sessionToken?: string
+    ) {
+      const parsedBody = updatePublicContentArticleBodySchema.parse(body);
+
+      return request({
+        path: PUBLIC_CONTENT_API_PATHS.adminArticle(
+          encodeURIComponent(articleId)
+        ),
+        schema: publicContentAdminArticleResponseSchema,
+        init: {
+          method: "PATCH",
+          headers: createAuthSessionHeaders(sessionToken),
+          body: JSON.stringify(parsedBody),
+        },
+      });
+    },
+    publishPublicContentArticle(
+      articleId: string,
+      body: PublishPublicContentArticleBody = {},
+      sessionToken?: string
+    ) {
+      const parsedBody = publishPublicContentArticleBodySchema.parse(body);
+
+      return request({
+        path: PUBLIC_CONTENT_API_PATHS.adminPublish(
+          encodeURIComponent(articleId)
+        ),
+        schema: publicContentAdminArticleResponseSchema,
+        init: {
+          method: "POST",
+          headers: createAuthSessionHeaders(sessionToken),
+          body: JSON.stringify(parsedBody),
+        },
+      });
+    },
+    archivePublicContentArticle(
+      articleId: string,
+      body: ArchivePublicContentArticleBody = {},
+      sessionToken?: string
+    ) {
+      const parsedBody = archivePublicContentArticleBodySchema.parse(body);
+
+      return request({
+        path: PUBLIC_CONTENT_API_PATHS.adminArchive(
+          encodeURIComponent(articleId)
+        ),
+        schema: publicContentAdminArticleResponseSchema,
+        init: {
+          method: "POST",
+          headers: createAuthSessionHeaders(sessionToken),
+          body: JSON.stringify(parsedBody),
         },
       });
     },
