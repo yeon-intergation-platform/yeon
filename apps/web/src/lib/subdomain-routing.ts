@@ -37,6 +37,7 @@ const SUBDOMAIN_ROUTES = {
 } as const;
 
 export type ServiceSubdomainHost = keyof typeof SUBDOMAIN_ROUTES;
+export type ContentSubdomainHost = keyof typeof CONTENT_SUBDOMAIN_ROUTES;
 export type ServiceRouteSlug =
   (typeof SUBDOMAIN_ROUTES)[ServiceSubdomainHost]["servicePath"];
 
@@ -50,6 +51,7 @@ const REWRITE_EXCLUDED_PATH_PREFIXES = [
   "/robots.txt",
   "/sitemap.xml",
 ] as const;
+const CONTENT_FEED_PATHNAME = "/feed.xml";
 
 function isExcludedRewritePath(pathname: string) {
   if (pathname.includes(".")) return true;
@@ -102,8 +104,13 @@ export function resolveServiceSubdomainRewritePath({
 }) {
   const normalizedHost = normalizeRequestHostname(host);
   const serviceRoute = SUBDOMAIN_ROUTES[normalizedHost as ServiceSubdomainHost];
+  const contentRoute =
+    CONTENT_SUBDOMAIN_ROUTES[normalizedHost as ContentSubdomainHost];
 
   if (!serviceRoute) return null;
+  if (contentRoute && pathname === CONTENT_FEED_PATHNAME) {
+    return `${contentRoute.servicePath}${CONTENT_FEED_PATHNAME}${search}`;
+  }
   if (isExcludedRewritePath(pathname)) return null;
   if (isAlreadyServicePath(pathname, serviceRoute.servicePath)) return null;
 
