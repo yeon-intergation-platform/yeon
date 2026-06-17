@@ -97,6 +97,7 @@ describe("public content admin model", () => {
       "weekly-search-console-snapshot",
       "monthly-indexing-review",
       "article-query-tracking",
+      "post-launch-quality-review",
       "seo-warning-queue",
       "title-quality",
       "source-path-traceability",
@@ -116,6 +117,9 @@ describe("public content admin model", () => {
     );
     expect(checklistById.get("monthly-indexing-review")?.value).toBe("월 1회");
     expect(checklistById.get("article-query-tracking")?.status).toBe("manual");
+    expect(checklistById.get("post-launch-quality-review")?.value).toBe(
+      "주간/월간"
+    );
     expect(checklistById.get("seo-warning-queue")?.status).toBe("ready");
     expect(checklistById.get("title-quality")?.status).toBe("ready");
     expect(checklistById.get("markdown-import-dry-run")?.status).toBe("manual");
