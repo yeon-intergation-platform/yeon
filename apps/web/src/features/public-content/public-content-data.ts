@@ -439,6 +439,313 @@ export const PUBLIC_CONTENT_ARTICLES: readonly PublicContentArticle[] = [
     ],
   },
   {
+    channel: PUBLIC_CONTENT_CHANNELS.support,
+    service: PUBLIC_CONTENT_SERVICES.nexa,
+    category: "faq",
+    slugSegments: ["nexa", "faq", "free-plan-limit"],
+    title: "NEXA 무료 플랜에서는 무엇까지 사용할 수 있나요?",
+    description:
+      "NEXA의 무료 사용 범위와 관리자 프리미엄 기능의 차이를 현재 공개 안내 기준으로 정리했습니다.",
+    summary:
+      "채널 AI, 기본 질문, Provider 참여는 무료 범위이고 서버별 고급 관리 기능은 프리미엄 범위입니다.",
+    publishedAt: PUBLISHED_DATE,
+    updatedAt: PUBLISHED_DATE,
+    readingMinutes: 4,
+    ctaLabel: "NEXA 설치 페이지 열기",
+    ctaHref: "https://discord-ai.yeon.world/install",
+    sourcePaths: [
+      "/Users/osuma/coding_stuffs/discord-assitant/i18n/messages.json",
+      "/Users/osuma/coding_stuffs/discord-assitant/docs/BETA.md",
+    ],
+    body: [
+      {
+        type: "paragraph",
+        text: "현재 NEXA 공개 안내 기준으로 채널 AI, 기본 질문, Provider 참여는 무료 범위로 안내됩니다. 서버 운영자가 더 세밀한 서버별 설정을 쓰려는 경우에만 관리자 프리미엄 기능이 분리됩니다.",
+      },
+      {
+        type: "heading",
+        title: "무료로 시작할 수 있는 것",
+      },
+      {
+        type: "checklist",
+        items: [
+          "디스코드 서버에서 기본 질문을 보내고 답변을 받습니다.",
+          "허용된 채널에서 채널 AI를 사용할 수 있습니다.",
+          "Provider로 참여해 내 PC의 로컬 AI 자원을 기여할 수 있습니다.",
+          "라이선스 상태와 사용량 같은 기본 정보를 확인할 수 있습니다.",
+        ],
+      },
+      {
+        type: "heading",
+        title: "관리자 프리미엄으로 분리되는 것",
+      },
+      {
+        type: "checklist",
+        items: [
+          "서버별 페르소나와 전역 프롬프트셋을 세밀하게 관리합니다.",
+          "RAG 문서나 지식 소스를 서버 운영 목적에 맞게 관리합니다.",
+          "프리셋 쓰기처럼 서버 운영자가 관리하는 고급 설정을 사용합니다.",
+        ],
+      },
+      {
+        type: "callout",
+        title: "최종 결제 조건은 설치 페이지에서 확인하세요",
+        text: "가격, 체험 기간, 이벤트 무료 상태는 운영 정책에 따라 바뀔 수 있으므로 실제 결제나 라이선스 신청 전에는 NEXA 설치 페이지의 최신 안내를 확인해야 합니다.",
+      },
+    ],
+  },
+  {
+    channel: PUBLIC_CONTENT_CHANNELS.support,
+    service: PUBLIC_CONTENT_SERVICES.nexa,
+    category: "guides",
+    slugSegments: ["nexa", "guides", "server-ai-tone"],
+    title: "서버별 AI 말투를 설정하는 방법",
+    description:
+      "NEXA에서 서버 전체 말투와 채널별 AI 성격을 나누어 설정할 때 확인할 관리자 기준입니다.",
+    summary:
+      "전역 프롬프트셋은 서버 전체 기본 성격이고, 채널 AI는 채널마다 다른 말투와 목적을 지정합니다.",
+    publishedAt: PUBLISHED_DATE,
+    updatedAt: PUBLISHED_DATE,
+    readingMinutes: 5,
+    ctaLabel: "채널 제외 가이드 보기",
+    ctaHref: "/nexa/guides/exclude-channel",
+    sourcePaths: [
+      "/Users/osuma/coding_stuffs/discord-assitant/i18n/messages.json",
+      "/Users/osuma/coding_stuffs/discord-assitant/docs/NEXA_USER_FLOWS.md",
+      "/Users/osuma/coding_stuffs/discord-assitant/docs/NEXA_SAFETY_POLICY.md",
+    ],
+    body: [
+      {
+        type: "paragraph",
+        text: "NEXA의 서버별 말투 설정은 서버 관리자 중심 기능입니다. 서버 전체에 적용할 기본 성격은 전역 프롬프트셋으로 관리하고, 채널마다 다른 말투나 목적이 필요하면 채널 AI 설정을 사용합니다.",
+      },
+      {
+        type: "heading",
+        title: "설정할 때 나누어 볼 것",
+      },
+      {
+        type: "checklist",
+        items: [
+          "서버 전체 기본 성격: 전역 프롬프트셋에서 관리합니다.",
+          "채널별 말투와 목적: 채널 AI 설정에서 지정합니다.",
+          "관리 권한: 서버 관리자만 서버 설정을 바꿀 수 있습니다.",
+          "안전 기준: 모든 응답에는 NEXA 안전 지침이 우선 적용됩니다.",
+        ],
+      },
+      {
+        type: "heading",
+        title: "권장 순서",
+      },
+      {
+        type: "steps",
+        items: [
+          "서버에서 NEXA가 어떤 역할을 해야 하는지 먼저 정합니다.",
+          "서버 전체 기본 성격을 한 문장으로 정리합니다.",
+          "질문 채널, 공지 채널, 개발 채널처럼 목적이 다른 채널을 분리합니다.",
+          "채널별 AI 설정에서 말투와 목적을 필요한 곳에만 지정합니다.",
+          "테스트 질문을 보내 실제 답변이 서버 분위기와 맞는지 확인합니다.",
+        ],
+      },
+      {
+        type: "callout",
+        title: "전역 설정을 너무 길게 쓰지 마세요",
+        text: "말투 지시가 길수록 운영자가 의도한 핵심이 흐려질 수 있습니다. 서버 전체 기본값은 짧게 두고, 세부 목적은 채널별 설정으로 나누는 편이 관리하기 쉽습니다.",
+      },
+    ],
+  },
+  {
+    channel: PUBLIC_CONTENT_CHANNELS.support,
+    service: PUBLIC_CONTENT_SERVICES.nexa,
+    category: "guides",
+    slugSegments: ["nexa", "guides", "exclude-channel"],
+    title: "AI가 답변하면 안 되는 채널을 제외하는 법",
+    description:
+      "NEXA가 허용된 채널에서만 답변하도록 채널 AI 허용 상태와 디스코드 권한을 함께 점검하는 방법입니다.",
+    summary:
+      "채널 AI 허용 목록과 채널 권한을 함께 관리해 NEXA가 답하면 안 되는 채널을 막습니다.",
+    publishedAt: PUBLISHED_DATE,
+    updatedAt: PUBLISHED_DATE,
+    readingMinutes: 4,
+    ctaLabel: "응답 없음 문제 해결 보기",
+    ctaHref: "/nexa/troubleshooting/bot-not-responding",
+    sourcePaths: [
+      "/Users/osuma/coding_stuffs/discord-assitant/i18n/messages.json",
+      "/Users/osuma/coding_stuffs/discord-assitant/provider-agent/src/provider_agent/guild_policy.py",
+    ],
+    body: [
+      {
+        type: "paragraph",
+        text: "NEXA는 서버 관리자가 허용한 채널에서만 AI가 답변하도록 운영할 수 있습니다. 답변을 막고 싶은 채널은 채널 AI 허용 상태와 디스코드 채널 권한을 함께 확인해야 합니다.",
+      },
+      {
+        type: "steps",
+        items: [
+          "서버 설정 또는 NEXA 관리 화면에서 채널별 AI 허용 항목을 엽니다.",
+          "AI가 답변하면 안 되는 채널을 허용 목록에서 끕니다.",
+          "해당 채널의 디스코드 권한에서 NEXA 역할이 메시지를 보낼 수 있는지 확인합니다.",
+          "완전히 차단해야 하는 채널은 Send Messages 권한도 거부합니다.",
+          "테스트 메시지를 보내 NEXA가 응답하지 않는지 확인합니다.",
+        ],
+      },
+      {
+        type: "checklist",
+        items: [
+          "허용된 채널에서만 AI가 답해야 합니다.",
+          "채널 권한 덮어쓰기가 서버 역할 권한보다 우선할 수 있습니다.",
+          "응답 금지 채널과 단순 비활성 채널을 운영 문서에 구분해 두면 나중에 혼동이 줄어듭니다.",
+        ],
+      },
+      {
+        type: "callout",
+        title: "권한 차단은 강한 조치입니다",
+        text: "채널 AI 허용 상태만 끄면 운영 의도가 분명하고, 디스코드 권한까지 막으면 봇의 다른 기능도 제한될 수 있습니다.",
+      },
+    ],
+  },
+  {
+    channel: PUBLIC_CONTENT_CHANNELS.support,
+    service: PUBLIC_CONTENT_SERVICES.nexa,
+    category: "guides",
+    slugSegments: ["nexa", "guides", "remove-nexa-discord-bot"],
+    title: "NEXA 봇을 서버에서 제거하는 방법",
+    description:
+      "디스코드 서버에서 NEXA 봇을 제거하기 전 확인할 설정, Provider 연결, 권한 정리 순서입니다.",
+    summary:
+      "서버 관리자 권한으로 봇을 제거하고, Provider 연결과 남은 역할/채널 설정을 함께 정리합니다.",
+    publishedAt: PUBLISHED_DATE,
+    updatedAt: PUBLISHED_DATE,
+    readingMinutes: 4,
+    ctaLabel: "다시 설치하려면 설치 페이지 열기",
+    ctaHref: "https://discord-ai.yeon.world/install",
+    sourcePaths: [
+      "/Users/osuma/coding_stuffs/discord-assitant/README.md",
+      "/Users/osuma/coding_stuffs/discord-assitant/docs/NEXA_USER_FLOWS.md",
+      "/Users/osuma/coding_stuffs/discord-assitant/i18n/messages.json",
+    ],
+    body: [
+      {
+        type: "paragraph",
+        text: "NEXA를 더 이상 사용하지 않는다면 먼저 서버에서 실제로 어떤 기능을 쓰고 있었는지 확인하세요. Provider Pool, 채널 AI, RAG 문서, 프리셋을 사용했다면 봇 제거 전 운영자에게 공지하는 것이 좋습니다.",
+      },
+      {
+        type: "steps",
+        items: [
+          "디스코드 서버에서 서버 관리자 권한이 있는 계정으로 접속합니다.",
+          "서버 설정의 앱/통합 또는 멤버 목록에서 NEXA 봇을 찾습니다.",
+          "NEXA 봇을 서버에서 제거합니다.",
+          "NEXA 전용 역할이나 자동 생성 채널이 남아 있다면 더 이상 필요 없는지 확인한 뒤 정리합니다.",
+          "Provider로 참여하던 사용자가 있다면 데스크톱 앱에서 해당 서버 연결을 정리하도록 안내합니다.",
+          "다시 사용할 가능성이 있으면 기존 운영 문서와 설정 의도를 남겨 둡니다.",
+        ],
+      },
+      {
+        type: "callout",
+        title: "제거 후에도 디스코드 메시지는 서버에 남을 수 있습니다",
+        text: "봇을 제거해도 기존 채널에 남아 있는 메시지는 디스코드 서버 데이터입니다. 필요한 경우 서버 관리자가 별도로 메시지를 정리해야 합니다.",
+      },
+    ],
+  },
+  {
+    channel: PUBLIC_CONTENT_CHANNELS.support,
+    service: PUBLIC_CONTENT_SERVICES.account,
+    category: "policy",
+    slugSegments: ["account", "policy", "privacy-conversation-data"],
+    title: "개인정보와 대화 데이터는 어떻게 처리되나요?",
+    description:
+      "NEXA 커뮤니티 AI 네트워크에서 질문이 어디로 전달될 수 있는지, 어떤 정보를 입력하지 말아야 하는지 정리했습니다.",
+    summary:
+      "질문은 Provider PC로 전송될 수 있으므로 민감정보를 입력하지 말고, 대화 원문은 무저장/무로깅 원칙으로 다룹니다.",
+    publishedAt: PUBLISHED_DATE,
+    updatedAt: PUBLISHED_DATE,
+    readingMinutes: 5,
+    sourcePaths: [
+      "/Users/osuma/coding_stuffs/discord-assitant/i18n/messages.json",
+      "/Users/osuma/coding_stuffs/discord-assitant/docs/NEXA_SAFETY_POLICY.md",
+      "/Users/osuma/coding_stuffs/discord-assitant/README.md",
+    ],
+    body: [
+      {
+        type: "paragraph",
+        text: "NEXA는 커뮤니티 AI 네트워크 구조를 사용합니다. 질문 내용은 요청을 처리하는 커뮤니티 Provider의 PC로 전송될 수 있으므로 비밀번호, API 키, 토큰, 개인정보, 비공개 문서 같은 민감정보는 입력하면 안 됩니다.",
+      },
+      {
+        type: "heading",
+        title: "대화 데이터 원칙",
+      },
+      {
+        type: "checklist",
+        items: [
+          "사용자 질문과 답변 원문은 데이터베이스에 저장하지 않는 것을 원칙으로 둡니다.",
+          "라우팅 핫패스에서 프롬프트와 응답 원문을 로그로 남기지 않는 것을 원칙으로 둡니다.",
+          "Provider Agent는 프롬프트 원문을 로그나 파일에 저장하지 않는 안내를 갖습니다.",
+          "서버 설정, 프롬프트셋, RAG 문서는 기능 제공을 위해 별도 보유 대상이 될 수 있습니다.",
+        ],
+      },
+      {
+        type: "heading",
+        title: "사용자가 지켜야 할 것",
+      },
+      {
+        type: "steps",
+        items: [
+          "비밀번호, API 키, 인증 토큰을 질문에 넣지 않습니다.",
+          "개인 주민번호, 주소, 전화번호 같은 개인정보를 넣지 않습니다.",
+          "회사 내부 문서나 비공개 자료를 그대로 붙여넣지 않습니다.",
+          "민감한 내용이 필요하면 공개 가능한 범위로 요약해 질문합니다.",
+        ],
+      },
+      {
+        type: "callout",
+        title: "디스코드 메시지는 별도입니다",
+        text: "NEXA가 대화 원문을 보관하지 않는 원칙과 별개로, 사용자가 디스코드 채널에 남긴 메시지는 해당 디스코드 서버에 남아 있을 수 있습니다.",
+      },
+    ],
+  },
+  {
+    channel: PUBLIC_CONTENT_CHANNELS.support,
+    service: PUBLIC_CONTENT_SERVICES.nexa,
+    category: "faq",
+    slugSegments: ["nexa", "faq", "updates-notices"],
+    title: "NEXA 업데이트와 공지는 어디서 확인하나요?",
+    description:
+      "NEXA의 공식 공지, 제품 업데이트, 사용법, 개발 글을 어떤 공개 채널에서 확인해야 하는지 정리했습니다.",
+    summary:
+      "공식 소식은 news, 사용법은 support, 제작 과정과 기술 글은 blog에서 확인합니다.",
+    publishedAt: PUBLISHED_DATE,
+    updatedAt: PUBLISHED_DATE,
+    readingMinutes: 3,
+    ctaLabel: "NEXA 업데이트 보기",
+    ctaHref: "https://news.yeon.world/updates/nexa/discord-permission-guides",
+    sourcePaths: [
+      "/Users/osuma/coding_stuffs/yeon/docs/seo/public-content-channel-policy.md",
+      "/Users/osuma/coding_stuffs/yeon/apps/web/src/features/public-content/public-content-data.ts",
+      "/Users/osuma/coding_stuffs/discord-assitant/docs/BETA.md",
+    ],
+    body: [
+      {
+        type: "paragraph",
+        text: "YEON은 공개 콘텐츠를 목적별로 나눕니다. NEXA를 실제로 쓰는 방법은 support에서 보고, 제품 변경과 공지는 news에서 확인하며, 기술적 배경이나 제작 과정은 blog에서 읽는 구조입니다.",
+      },
+      {
+        type: "checklist",
+        items: [
+          "support.yeon.world: NEXA 사용법, 문제 해결, FAQ, 정책 안내",
+          "news.yeon.world: 공식 공지, 제품 업데이트, 업계 뉴스 해설",
+          "blog.yeon.world: 개발기, 기술 선택, 제품 제작 과정",
+          "discord-ai.yeon.world: 설치와 제품 진입점",
+        ],
+      },
+      {
+        type: "steps",
+        items: [
+          "설치나 사용 중 문제가 생기면 support에서 관련 가이드를 먼저 찾습니다.",
+          "새 기능이나 변경사항이 궁금하면 news의 NEXA 업데이트를 확인합니다.",
+          "왜 그렇게 만들었는지 알고 싶으면 blog의 engineering 또는 product 글을 확인합니다.",
+        ],
+      },
+    ],
+  },
+  {
     channel: PUBLIC_CONTENT_CHANNELS.news,
     service: PUBLIC_CONTENT_SERVICES.account,
     category: "notice",
