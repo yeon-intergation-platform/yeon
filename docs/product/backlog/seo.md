@@ -120,3 +120,13 @@
   - 옵션 B. 설명 블록은 유지하되 표현만 더 제품형 문구로 다듬는다.
 - 추천: 옵션 A. 사용자는 현재 랜딩/SEO형 노출을 원치 않고, 서비스 홈은 바로 사용할 수 있는 구조가 우선이다.
 - 사용자 방향: 추천 기준으로 진행.
+
+### 차수 12 — Search Console 등록 전 SEO 표면 정합성 점검
+
+- 작업내용: `yeon.world`, `typing.yeon.world`, `card.yeon.world`, `community.yeon.world` 공개 SEO 표면의 redirect, canonical, robots, sitemap 정책을 실제 운영 응답과 맞춘다.
+- 논의 필요: Search Console은 Domain property 하나로 통합 진단을 볼지, URL-prefix property를 서비스별로 나눠 사이트맵 처리 상태를 더 세밀하게 볼지 운영 기준을 정해야 한다.
+- 선택지:
+  - 옵션 A. Domain property와 서비스별 URL-prefix property를 함께 등록하고, 각 host의 sitemap은 자기 host canonical URL만 담게 한다.
+  - 옵션 B. `yeon.world/sitemap.xml` 하나에 모든 subdomain URL을 cross-submit한다.
+- 추천: 옵션 A. Google은 verified site 간 cross-site sitemap을 지원하지만, 서비스별 URL-prefix와 host별 sitemap을 맞추면 제출/오류 추적이 더 명확하다.
+- 사용자 방향: 추천 기준으로 진행.

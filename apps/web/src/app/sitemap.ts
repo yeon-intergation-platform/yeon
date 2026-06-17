@@ -1,10 +1,13 @@
 import type { YeonMetadataRoute } from "@yeon/ui/runtime/YeonMetadataRoute";
-import { getIndexableSitemapEntries, isCanonicalDeployment } from "@/lib/seo";
+import { getYeonRequestHeaders } from "@yeon/ui/runtime/YeonServerRequest";
+import { getIndexableSitemapEntriesForHostname } from "@/lib/seo";
+import { normalizeRequestHostname } from "@/lib/request-host";
 
-export default function sitemap(): YeonMetadataRoute["Sitemap"] {
-  if (!isCanonicalDeployment()) {
-    return [];
-  }
+export default async function sitemap(): Promise<YeonMetadataRoute["Sitemap"]> {
+  const headerStore = await getYeonRequestHeaders();
+  const hostname = normalizeRequestHostname(
+    headerStore.get("x-forwarded-host") ?? headerStore.get("host")
+  );
 
-  return getIndexableSitemapEntries();
+  return getIndexableSitemapEntriesForHostname(hostname);
 }

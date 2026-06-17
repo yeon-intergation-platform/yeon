@@ -3,6 +3,7 @@ import {
   resolveLegacyServicePathRedirectUrl,
   resolveServiceSubdomainRewritePath,
 } from "../subdomain-routing";
+import { normalizeRequestHostname } from "../request-host";
 
 describe("subdomain-routing", () => {
   it("서비스 subdomain 루트를 기존 서비스 path로 rewrite한다", () => {
@@ -45,6 +46,12 @@ describe("subdomain-routing", () => {
         pathname: "/decks",
       })
     ).toBe("/card-service/decks");
+  });
+
+  it("forwarded host 목록은 첫 host 기준으로 정규화한다", () => {
+    expect(normalizeRequestHostname("www.yeon.world, yeon-prod-web:3000")).toBe(
+      "www.yeon.world"
+    );
   });
 
   it("이미 기존 서비스 path이면 중복 rewrite하지 않는다", () => {

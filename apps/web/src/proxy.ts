@@ -10,6 +10,7 @@ import {
   isDevHostname,
   isWwwHostname,
 } from "@/lib/seo";
+import { normalizeRequestHostname } from "@/lib/request-host";
 import {
   resolveLegacyServicePathRedirectUrl,
   resolveServiceSubdomainRewritePath,
@@ -27,8 +28,12 @@ function withSeoHeaders(response: NextResponse, hostname: string) {
 }
 
 export function proxy(request: NextRequest) {
-  const hostname = request.nextUrl.hostname;
   const { pathname } = request.nextUrl;
+  const requestHost =
+    request.headers.get("x-forwarded-host") ??
+    request.headers.get("host") ??
+    request.nextUrl.hostname;
+  const hostname = normalizeRequestHostname(requestHost);
 
   if (isWwwHostname(hostname)) {
     const redirectUrl = new URL(request.url);
@@ -41,8 +46,6 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(redirectUrl, 308);
   }
 
-  const requestHost =
-    request.headers.get("x-forwarded-host") ?? request.headers.get("host");
   const legacyServiceRedirectUrl = resolveLegacyServicePathRedirectUrl({
     host: requestHost,
     pathname,
@@ -104,7 +107,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml).*)",
-  ],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
 };

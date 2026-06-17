@@ -10,9 +10,29 @@ export const SERVICE_CANONICAL_URLS = {
   community: "https://community.yeon.world",
 } as const;
 
+const ROOT_CANONICAL_HOSTNAME = "yeon.world";
 const DEFAULT_APP_URL = CANONICAL_SITE_URL;
 const WWW_SITE_HOSTNAME = "www.yeon.world";
 const DEV_SITE_HOSTNAME = "dev.yeon.world";
+
+const PUBLIC_SEO_HOSTNAMES = [
+  ROOT_CANONICAL_HOSTNAME,
+  ...Object.values(SERVICE_CANONICAL_URLS).map(
+    (url) => createYeonUrl(url).hostname
+  ),
+] as const;
+
+const COMMON_ROBOTS_DISALLOW = [
+  "/api/",
+  "/api/auth/",
+  "/auth/",
+  "/check/",
+  "/landing",
+  "/contest",
+  "/mockdata/",
+  "/legacy-counseling-records",
+  "/counseling-service",
+] as const;
 
 export const NOINDEX_X_ROBOTS_TAG_VALUE = "noindex, nofollow";
 
@@ -112,6 +132,43 @@ export function isDevHostname(hostname: string | null | undefined) {
   return normalizeHostname(hostname) === DEV_SITE_HOSTNAME;
 }
 
+function resolvePublicSeoHostname(hostname: string | null | undefined) {
+  const normalizedHostname = normalizeHostname(hostname);
+
+  if (isWwwHostname(normalizedHostname)) {
+    return ROOT_CANONICAL_HOSTNAME;
+  }
+
+  if (
+    PUBLIC_SEO_HOSTNAMES.includes(
+      normalizedHostname as (typeof PUBLIC_SEO_HOSTNAMES)[number]
+    )
+  ) {
+    return normalizedHostname;
+  }
+
+  if (!normalizedHostname && isCanonicalDeployment()) {
+    return ROOT_CANONICAL_HOSTNAME;
+  }
+
+  return null;
+}
+
+function getPublicSeoOriginForHostname(hostname: string | null | undefined) {
+  const publicSeoHostname = resolvePublicSeoHostname(hostname);
+  if (!publicSeoHostname) return null;
+
+  if (publicSeoHostname === ROOT_CANONICAL_HOSTNAME) {
+    return CANONICAL_SITE_URL;
+  }
+
+  const serviceCanonicalUrl = Object.values(SERVICE_CANONICAL_URLS).find(
+    (url) => createYeonUrl(url).hostname === publicSeoHostname
+  );
+
+  return serviceCanonicalUrl ?? null;
+}
+
 export function buildCanonicalUrl(pathname: string) {
   return createYeonUrl(pathname, getCanonicalSite()).toString();
 }
@@ -138,4 +195,59 @@ export function getIndexableSitemapEntries(): YeonMetadataRoute["Sitemap"] {
     changeFrequency: entry.changeFrequency,
     priority: entry.priority,
   }));
+}
+
+export function getIndexableSitemapEntriesForHostname(
+  hostname: string | null | undefined
+): YeonMetadataRoute["Sitemap"] {
+  const publicSeoOrigin = getPublicSeoOriginForHostname(hostname);
+  if (!publicSeoOrigin) return [];
+
+  const publicSeoHostname = createYeonUrl(publicSeoOrigin).hostname;
+
+  return getIndexableSitemapEntries().filter((entry) => {
+    return createYeonUrl(entry.url).hostname === publicSeoHostname;
+  });
+}
+
+export function buildSitemapUrlForHostname(
+  hostname: string | null | undefined
+) {
+  const publicSeoOrigin = getPublicSeoOriginForHostname(hostname);
+  return publicSeoOrigin
+    ? createYeonUrl("/sitemap.xml", publicSeoOrigin).toString()
+    : null;
+}
+
+export function getRobotsForHostname(
+  hostname: string | null | undefined
+): YeonMetadataRoute["Robots"] {
+  if (isDevHostname(hostname)) {
+    return {
+      rules: {
+        userAgent: "*",
+        disallow: "/",
+      },
+    };
+  }
+
+  const publicSeoOrigin = getPublicSeoOriginForHostname(hostname);
+  if (!publicSeoOrigin) {
+    return {
+      rules: {
+        userAgent: "*",
+        disallow: "/",
+      },
+    };
+  }
+
+  return {
+    rules: {
+      userAgent: "*",
+      allow: "/",
+      disallow: [...COMMON_ROBOTS_DISALLOW],
+    },
+    sitemap: createYeonUrl("/sitemap.xml", publicSeoOrigin).toString(),
+    host: publicSeoOrigin,
+  };
 }

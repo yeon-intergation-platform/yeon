@@ -3,6 +3,7 @@ import { showYeonNotFound } from "@yeon/ui/runtime/YeonRouteControl";
 import { cache } from "react";
 import { CommunityPostDetailPage } from "@/features/community/community-post-detail-page";
 import { parseCommunityPost } from "@/features/community/community-post-format";
+import { buildServiceCanonicalUrl } from "@/lib/seo";
 import { SITE_BRAND_NAME } from "@/lib/site-brand";
 import {
   ChatServiceFeedSpringBackendHttpError,
@@ -57,7 +58,7 @@ export async function generateMetadata({
   const parsedPost = parseCommunityPost(post);
   const title = `${parsedPost.title} | YEON 커뮤니티`;
   const description = buildDescription(parsedPost.content);
-  const canonical = `/community/posts/${post.id}`;
+  const canonical = buildServiceCanonicalUrl("community", `/posts/${post.id}`);
 
   return {
     title,
