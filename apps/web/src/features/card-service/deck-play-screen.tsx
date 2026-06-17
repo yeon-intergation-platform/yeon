@@ -5,10 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import type { YeonUseQueryResult as UseQueryResult } from "@yeon/ui/runtime/YeonQuery";
 import { resolveYeonWebPath } from "@yeon/ui/runtime/ports";
 import { deriveCardDeckPlayViewState } from "@yeon/ui/runtime/ports/card-deck";
-import {
-  CARD_STUDY_MODES,
-  CARD_REVIEW_DIFFICULTIES,
-} from "@yeon/api-contract/card-decks";
+import { CARD_STUDY_MODES } from "@yeon/api-contract/card-decks";
 import type {
   CardReviewDifficulty,
   CardStudyMode,
@@ -32,6 +29,11 @@ import {
   type CardPlayCardSize,
   writeStoredCardPlayCardSize,
 } from "./utils/card-play-card-size";
+import {
+  isCardReviewRevealShortcut,
+  isCardReviewSkipShortcut,
+  resolveCardReviewDifficultyShortcut,
+} from "./utils/card-review-shortcuts";
 
 // 분기 로직은 SSOT에서 파생한다(web/mobile 공용). 복제 금지.
 function toViewState(query: UseQueryResult<CardDeckDetailResponse>) {
@@ -172,13 +174,6 @@ const CARD_REVIEW_SHORTCUT_BLOCKED_TAGS = [
   "TEXTAREA",
 ] as const;
 
-// 정답이 보일 때 숫자 키로 난이도를 채점한다. 버튼 순서(어려움·보통·쉬움)와 동일하게 매핑한다.
-const CARD_REVIEW_DIFFICULTY_SHORTCUT: Record<string, CardReviewDifficulty> = {
-  "1": CARD_REVIEW_DIFFICULTIES.hard,
-  "2": CARD_REVIEW_DIFFICULTIES.good,
-  "3": CARD_REVIEW_DIFFICULTIES.easy,
-};
-
 const CARD_REVIEW_SHORTCUT_BROWSER_PORT: CardReviewShortcutBrowserPort = {
   isBlockedTarget(target) {
     const HtmlElementConstructor = globalThis.HTMLElement;
@@ -304,7 +299,7 @@ function ReadyPlayBody({
         return;
       }
 
-      if (event.key.toLowerCase() === "s") {
+      if (isCardReviewSkipShortcut(event)) {
         event.preventDefault();
         handleSkipReview();
         return;
@@ -312,7 +307,7 @@ function ReadyPlayBody({
 
       // 정답이 보일 때만 숫자 키로 채점한다(정답을 보기 전 채점 방지).
       if (isReviewAnswerVisible) {
-        const difficulty = CARD_REVIEW_DIFFICULTY_SHORTCUT[event.key];
+        const difficulty = resolveCardReviewDifficultyShortcut(event);
         if (difficulty) {
           event.preventDefault();
           handleReview(difficulty);
@@ -320,7 +315,7 @@ function ReadyPlayBody({
         return;
       }
 
-      if (event.code === "Space" || event.key === " ") {
+      if (isCardReviewRevealShortcut(event)) {
         event.preventDefault();
         handleRevealReviewAnswer();
       }
