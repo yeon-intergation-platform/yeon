@@ -10,6 +10,7 @@ import {
   type PublicContentArticle,
   type PublicContentChannel,
 } from "./public-content-data";
+import { GA4_REPORTS_URL, GA_MEASUREMENT_ID } from "@/lib/analytics-constants";
 
 export type PublicContentAdminArticleRow = {
   article: PublicContentArticle;
@@ -30,14 +31,20 @@ export type PublicContentAdminChannelSummary = {
   label: string;
   lastUpdatedAt: string | null;
   publicHomeUrl: string;
+  robotsUrl: string;
+  searchConsoleUrl: string;
   serviceLabels: readonly string[];
   sitemapArticleCount: number;
   sitemapHomeIncluded: boolean;
+  sitemapUrl: string;
 };
 
 export type PublicContentAdminDashboardStats = {
   channelCount: number;
   articleCount: number;
+  domainSearchConsoleUrl: string;
+  ga4ReportsUrl: string;
+  gaMeasurementId: string;
   serviceCount: number;
   sitemapUrlCount: number;
   sourcePathCount: number;
@@ -52,6 +59,14 @@ export const PUBLIC_CONTENT_ADMIN_CHANNEL_ORDER: readonly PublicContentChannel[]
   ];
 
 const normalizeUrl = (url: string) => url.replace(/\/$/, "");
+const SEARCH_CONSOLE_URL = "https://search.google.com/search-console";
+const DOMAIN_SEARCH_CONSOLE_PROPERTY = "sc-domain:yeon.world";
+
+function buildSearchConsoleUrl(resourceId: string) {
+  return `${SEARCH_CONSOLE_URL}?${new URLSearchParams({
+    resource_id: resourceId,
+  }).toString()}`;
+}
 
 function getCategoryLabel(category: string) {
   return (
@@ -131,9 +146,12 @@ export function getPublicContentAdminChannelSummaries(): PublicContentAdminChann
       label: config.label,
       lastUpdatedAt: getLastUpdatedAt(articles),
       publicHomeUrl: config.host,
+      robotsUrl: `${config.host}/robots.txt`,
+      searchConsoleUrl: buildSearchConsoleUrl(`${config.host}/`),
       serviceLabels: [...serviceLabels],
       sitemapArticleCount: rows.filter((row) => row.sitemapIncluded).length,
       sitemapHomeIncluded: sitemapUrls.has(normalizeUrl(config.host)),
+      sitemapUrl: `${config.host}/sitemap.xml`,
     };
   });
 }
@@ -158,6 +176,11 @@ export function getPublicContentAdminDashboardStats(): PublicContentAdminDashboa
   return {
     channelCount: PUBLIC_CONTENT_ADMIN_CHANNEL_ORDER.length,
     articleCount: articles.length,
+    domainSearchConsoleUrl: buildSearchConsoleUrl(
+      DOMAIN_SEARCH_CONSOLE_PROPERTY
+    ),
+    ga4ReportsUrl: GA4_REPORTS_URL,
+    gaMeasurementId: GA_MEASUREMENT_ID,
     serviceCount: services.size,
     sitemapUrlCount: getPublicContentSitemapEntries().length,
     sourcePathCount: sourcePaths.size,

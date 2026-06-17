@@ -15,6 +15,7 @@ import {
   SITE_KEYWORDS,
   SITE_TITLE,
 } from "@/lib/site-brand";
+import { GA_MEASUREMENT_ID } from "@/lib/analytics-constants";
 import "@uiw/react-md-editor/markdown-editor.css";
 import "@uiw/react-markdown-preview/markdown.css";
 import "./globals.css";
@@ -50,11 +51,9 @@ type RootLayoutProps = {
   children: ReactNode;
 };
 
-const GOOGLE_ANALYTICS_ID = "G-YGRNS3PQBQ";
-
 export default function RootLayout({ children }: RootLayoutProps) {
   const shouldLoadGoogleAnalytics =
-    isCanonicalDeployment() && GOOGLE_ANALYTICS_ID.length > 0;
+    isCanonicalDeployment() && GA_MEASUREMENT_ID.length > 0;
 
   return (
     <html lang="ko">
@@ -62,11 +61,11 @@ export default function RootLayout({ children }: RootLayoutProps) {
         {shouldLoadGoogleAnalytics ? (
           <>
             <YeonScript
-              src={`https://www.googletagmanager.com/gtag/js?id=${GOOGLE_ANALYTICS_ID}`}
+              src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
               strategy="afterInteractive"
             />
             <YeonScript id="google-analytics" strategy="afterInteractive">
-              {createYeonGoogleAnalyticsBootstrapScript(GOOGLE_ANALYTICS_ID)}
+              {createYeonGoogleAnalyticsBootstrapScript(GA_MEASUREMENT_ID)}
             </YeonScript>
             <GoogleAnalyticsPageTracker />
           </>
