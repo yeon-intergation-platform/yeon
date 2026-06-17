@@ -29,6 +29,42 @@ export const PUBLIC_CONTENT_SERVICES = {
 export type PublicContentService =
   (typeof PUBLIC_CONTENT_SERVICES)[keyof typeof PUBLIC_CONTENT_SERVICES];
 
+type PublicContentSupportCtaTarget = {
+  ctaLabel: string;
+  ctaHref: string;
+};
+
+export const PUBLIC_CONTENT_SUPPORT_CTA_TARGETS = {
+  nexa: {
+    ctaLabel: "NEXA 설치 페이지 열기",
+    ctaHref: "https://discord-ai.yeon.world/install",
+  },
+  typing: {
+    ctaLabel: "타자연습 열기",
+    ctaHref: "https://typing.yeon.world",
+  },
+  card: {
+    ctaLabel: "플래시카드 열기",
+    ctaHref: "https://card.yeon.world",
+  },
+  community: {
+    ctaLabel: "커뮤니티 열기",
+    ctaHref: "https://community.yeon.world",
+  },
+} as const satisfies Partial<
+  Record<PublicContentService, PublicContentSupportCtaTarget>
+>;
+
+export function getPublicContentSupportCtaTarget(
+  service: PublicContentService
+) {
+  return (
+    PUBLIC_CONTENT_SUPPORT_CTA_TARGETS[
+      service as keyof typeof PUBLIC_CONTENT_SUPPORT_CTA_TARGETS
+    ] ?? null
+  );
+}
+
 export type PublicContentBlock =
   | {
       type: "paragraph";
@@ -211,8 +247,7 @@ export const PUBLIC_CONTENT_ARTICLES: readonly PublicContentArticle[] = [
     publishedAt: PUBLISHED_DATE,
     updatedAt: PUBLISHED_DATE,
     readingMinutes: 4,
-    ctaLabel: "NEXA 설치 페이지 열기",
-    ctaHref: "https://discord-ai.yeon.world/install",
+    ...PUBLIC_CONTENT_SUPPORT_CTA_TARGETS.nexa,
     sourcePaths: [
       "/Users/osuma/coding_stuffs/discord-assitant/README.md",
       "/Users/osuma/coding_stuffs/discord-assitant/docs/FAQ.md",
@@ -335,8 +370,7 @@ export const PUBLIC_CONTENT_ARTICLES: readonly PublicContentArticle[] = [
     publishedAt: PUBLISHED_DATE,
     updatedAt: PUBLISHED_DATE,
     readingMinutes: 4,
-    ctaLabel: "권한 가이드 보기",
-    ctaHref: "/nexa/guides/discord-bot-permissions",
+    ...PUBLIC_CONTENT_SUPPORT_CTA_TARGETS.nexa,
     sourcePaths: [
       "/Users/osuma/coding_stuffs/discord-assitant/docs/FAQ.md",
       "/Users/osuma/coding_stuffs/discord-assitant/docs/BOT_PERMISSIONS.md",
@@ -377,8 +411,7 @@ export const PUBLIC_CONTENT_ARTICLES: readonly PublicContentArticle[] = [
     publishedAt: PUBLISHED_DATE,
     updatedAt: PUBLISHED_DATE,
     readingMinutes: 3,
-    ctaLabel: "타자연습 열기",
-    ctaHref: "https://typing.yeon.world",
+    ...PUBLIC_CONTENT_SUPPORT_CTA_TARGETS.typing,
     sourcePaths: [
       "/Users/osuma/coding_stuffs/yeon/apps/web/src/lib/platform-services.ts",
       "/Users/osuma/coding_stuffs/yeon/apps/web/src/app/typing-service",
@@ -421,8 +454,7 @@ export const PUBLIC_CONTENT_ARTICLES: readonly PublicContentArticle[] = [
     publishedAt: PUBLISHED_DATE,
     updatedAt: PUBLISHED_DATE,
     readingMinutes: 3,
-    ctaLabel: "플래시카드 열기",
-    ctaHref: "https://card.yeon.world",
+    ...PUBLIC_CONTENT_SUPPORT_CTA_TARGETS.card,
     sourcePaths: [
       "/Users/osuma/coding_stuffs/yeon/apps/web/src/lib/platform-services.ts",
       "/Users/osuma/coding_stuffs/yeon/apps/web/src/app/card-service",
@@ -464,8 +496,7 @@ export const PUBLIC_CONTENT_ARTICLES: readonly PublicContentArticle[] = [
     publishedAt: PUBLISHED_DATE,
     updatedAt: PUBLISHED_DATE,
     readingMinutes: 3,
-    ctaLabel: "커뮤니티 열기",
-    ctaHref: "https://community.yeon.world",
+    ...PUBLIC_CONTENT_SUPPORT_CTA_TARGETS.community,
     sourcePaths: [
       "/Users/osuma/coding_stuffs/yeon/apps/web/src/lib/platform-services.ts",
       "/Users/osuma/coding_stuffs/yeon/apps/web/src/app/community",
@@ -509,8 +540,7 @@ export const PUBLIC_CONTENT_ARTICLES: readonly PublicContentArticle[] = [
     publishedAt: PUBLISHED_DATE,
     updatedAt: PUBLISHED_DATE,
     readingMinutes: 4,
-    ctaLabel: "NEXA 설치 페이지 열기",
-    ctaHref: "https://discord-ai.yeon.world/install",
+    ...PUBLIC_CONTENT_SUPPORT_CTA_TARGETS.nexa,
     sourcePaths: [
       "/Users/osuma/coding_stuffs/discord-assitant/i18n/messages.json",
       "/Users/osuma/coding_stuffs/discord-assitant/docs/BETA.md",
@@ -566,8 +596,7 @@ export const PUBLIC_CONTENT_ARTICLES: readonly PublicContentArticle[] = [
     publishedAt: PUBLISHED_DATE,
     updatedAt: PUBLISHED_DATE,
     readingMinutes: 5,
-    ctaLabel: "채널 제외 가이드 보기",
-    ctaHref: "/nexa/guides/exclude-channel",
+    ...PUBLIC_CONTENT_SUPPORT_CTA_TARGETS.nexa,
     sourcePaths: [
       "/Users/osuma/coding_stuffs/discord-assitant/i18n/messages.json",
       "/Users/osuma/coding_stuffs/discord-assitant/docs/NEXA_USER_FLOWS.md",
@@ -626,8 +655,7 @@ export const PUBLIC_CONTENT_ARTICLES: readonly PublicContentArticle[] = [
     publishedAt: PUBLISHED_DATE,
     updatedAt: PUBLISHED_DATE,
     readingMinutes: 4,
-    ctaLabel: "응답 없음 문제 해결 보기",
-    ctaHref: "/nexa/troubleshooting/bot-not-responding",
+    ...PUBLIC_CONTENT_SUPPORT_CTA_TARGETS.nexa,
     sourcePaths: [
       "/Users/osuma/coding_stuffs/discord-assitant/i18n/messages.json",
       "/Users/osuma/coding_stuffs/discord-assitant/provider-agent/src/provider_agent/guild_policy.py",
@@ -676,8 +704,7 @@ export const PUBLIC_CONTENT_ARTICLES: readonly PublicContentArticle[] = [
     publishedAt: PUBLISHED_DATE,
     updatedAt: PUBLISHED_DATE,
     readingMinutes: 4,
-    ctaLabel: "다시 설치하려면 설치 페이지 열기",
-    ctaHref: "https://discord-ai.yeon.world/install",
+    ...PUBLIC_CONTENT_SUPPORT_CTA_TARGETS.nexa,
     sourcePaths: [
       "/Users/osuma/coding_stuffs/discord-assitant/README.md",
       "/Users/osuma/coding_stuffs/discord-assitant/docs/NEXA_USER_FLOWS.md",
@@ -776,8 +803,7 @@ export const PUBLIC_CONTENT_ARTICLES: readonly PublicContentArticle[] = [
     publishedAt: PUBLISHED_DATE,
     updatedAt: PUBLISHED_DATE,
     readingMinutes: 3,
-    ctaLabel: "NEXA 업데이트 보기",
-    ctaHref: "https://news.yeon.world/updates/nexa/discord-permission-guides",
+    ...PUBLIC_CONTENT_SUPPORT_CTA_TARGETS.nexa,
     sourcePaths: [
       "/Users/osuma/coding_stuffs/yeon/docs/seo/public-content-channel-policy.md",
       "/Users/osuma/coding_stuffs/yeon/apps/web/src/features/public-content/public-content-data.ts",
@@ -820,8 +846,7 @@ export const PUBLIC_CONTENT_ARTICLES: readonly PublicContentArticle[] = [
     publishedAt: PUBLISHED_DATE,
     updatedAt: PUBLISHED_DATE,
     readingMinutes: 4,
-    ctaLabel: "타자연습 열기",
-    ctaHref: "https://typing.yeon.world",
+    ...PUBLIC_CONTENT_SUPPORT_CTA_TARGETS.typing,
     sourcePaths: [
       "/Users/osuma/coding_stuffs/yeon/apps/web/src/features/typing-service/use-typing-settings.ts",
       "/Users/osuma/coding_stuffs/yeon/apps/web/src/features/typing-service/typing-race-solo-screen.tsx",
@@ -876,8 +901,7 @@ export const PUBLIC_CONTENT_ARTICLES: readonly PublicContentArticle[] = [
     publishedAt: PUBLISHED_DATE,
     updatedAt: PUBLISHED_DATE,
     readingMinutes: 4,
-    ctaLabel: "타자연습 열기",
-    ctaHref: "https://typing.yeon.world",
+    ...PUBLIC_CONTENT_SUPPORT_CTA_TARGETS.typing,
     sourcePaths: [
       "/Users/osuma/coding_stuffs/yeon/apps/web/src/features/typing-service/typing-service-fetch.ts",
       "/Users/osuma/coding_stuffs/yeon/apps/web/src/features/typing-service/use-race-room.ts",
@@ -929,8 +953,7 @@ export const PUBLIC_CONTENT_ARTICLES: readonly PublicContentArticle[] = [
     publishedAt: PUBLISHED_DATE,
     updatedAt: PUBLISHED_DATE,
     readingMinutes: 4,
-    ctaLabel: "플래시카드 열기",
-    ctaHref: "https://card.yeon.world",
+    ...PUBLIC_CONTENT_SUPPORT_CTA_TARGETS.card,
     sourcePaths: [
       "/Users/osuma/coding_stuffs/yeon/apps/web/src/features/card-service/use-card-service-decks-screen-state.ts",
       "/Users/osuma/coding_stuffs/yeon/apps/web/src/features/card-service/components/merge-guest-dialog.tsx",
@@ -982,8 +1005,7 @@ export const PUBLIC_CONTENT_ARTICLES: readonly PublicContentArticle[] = [
     publishedAt: PUBLISHED_DATE,
     updatedAt: PUBLISHED_DATE,
     readingMinutes: 3,
-    ctaLabel: "플래시카드 열기",
-    ctaHref: "https://card.yeon.world",
+    ...PUBLIC_CONTENT_SUPPORT_CTA_TARGETS.card,
     sourcePaths: [
       "/Users/osuma/coding_stuffs/yeon/apps/web/src/features/card-service/deck-play-screen.tsx",
       "/Users/osuma/coding_stuffs/yeon/apps/web/src/features/card-service/utils/card-review-shortcuts.ts",
@@ -1038,8 +1060,7 @@ export const PUBLIC_CONTENT_ARTICLES: readonly PublicContentArticle[] = [
     publishedAt: PUBLISHED_DATE,
     updatedAt: PUBLISHED_DATE,
     readingMinutes: 3,
-    ctaLabel: "커뮤니티 열기",
-    ctaHref: "https://community.yeon.world",
+    ...PUBLIC_CONTENT_SUPPORT_CTA_TARGETS.community,
     sourcePaths: [
       "/Users/osuma/coding_stuffs/yeon/apps/web/src/features/community/community-guest-identity.ts",
       "/Users/osuma/coding_stuffs/yeon/apps/web/src/features/community/components/community-feed-forms.tsx",
@@ -1091,8 +1112,7 @@ export const PUBLIC_CONTENT_ARTICLES: readonly PublicContentArticle[] = [
     publishedAt: PUBLISHED_DATE,
     updatedAt: PUBLISHED_DATE,
     readingMinutes: 4,
-    ctaLabel: "커뮤니티 열기",
-    ctaHref: "https://community.yeon.world",
+    ...PUBLIC_CONTENT_SUPPORT_CTA_TARGETS.community,
     sourcePaths: [
       "/Users/osuma/coding_stuffs/yeon/apps/web/src/features/community/components/community-feed-forms.tsx",
       "/Users/osuma/coding_stuffs/yeon/apps/web/src/features/community/chat-service-api.ts",
