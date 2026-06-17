@@ -10,6 +10,7 @@ export * from "./health";
 export * from "./home-insights";
 export * from "./instructor-dashboard";
 export * from "./instructor-workspace";
+export * from "./public-content";
 export * from "./spaces";
 export * from "./star-lobby";
 export * from "./student-board";
