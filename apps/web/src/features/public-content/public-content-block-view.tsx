@@ -1,6 +1,7 @@
 import type { PublicContentBlock } from "./public-content-data";
 import {
   getPublicContentCodeBlockLabel,
+  getPublicContentCalloutStyle,
   getPublicContentImageAspectRatioStyle,
 } from "./public-content-block-style";
 
@@ -102,10 +103,18 @@ export function PublicContentBlockView({
     );
   }
 
+  const calloutStyle = getPublicContentCalloutStyle(block.tone);
+
   return (
-    <aside className="rounded-lg border border-[#e5e5e5] bg-[#fafafa] p-5">
-      <p className="text-[14px] font-semibold text-[#111]">{block.title}</p>
-      <p className="mt-2 text-[14px] leading-6 text-[#666]">{block.text}</p>
+    <aside
+      className={`rounded-lg border p-5 ${calloutStyle.containerClassName}`}
+    >
+      <p className={`text-[14px] font-semibold ${calloutStyle.titleClassName}`}>
+        {block.title}
+      </p>
+      <p className={`mt-2 text-[14px] leading-6 ${calloutStyle.textClassName}`}>
+        {block.text}
+      </p>
     </aside>
   );
 }

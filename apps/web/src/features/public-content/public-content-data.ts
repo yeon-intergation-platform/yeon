@@ -9,6 +9,15 @@ export const PUBLIC_CONTENT_CHANNELS = {
 export type PublicContentChannel =
   (typeof PUBLIC_CONTENT_CHANNELS)[keyof typeof PUBLIC_CONTENT_CHANNELS];
 
+export const PUBLIC_CONTENT_CALLOUT_TONES = {
+  note: "note",
+  warning: "warning",
+  success: "success",
+} as const;
+
+export type PublicContentCalloutTone =
+  (typeof PUBLIC_CONTENT_CALLOUT_TONES)[keyof typeof PUBLIC_CONTENT_CALLOUT_TONES];
+
 export const PUBLIC_CONTENT_SERVICES = {
   nexa: "nexa",
   typing: "typing",
@@ -55,6 +64,7 @@ export type PublicContentBlock =
       type: "callout";
       title: string;
       text: string;
+      tone?: PublicContentCalloutTone;
     };
 
 export type PublicContentArticle = {
@@ -229,6 +239,7 @@ export const PUBLIC_CONTENT_ARTICLES: readonly PublicContentArticle[] = [
       },
       {
         type: "callout",
+        tone: PUBLIC_CONTENT_CALLOUT_TONES.warning,
         title: "권한이 부족하면",
         text: "초대 화면에서 서버가 보이지 않거나 승인할 수 없다면, 디스코드 서버 소유자에게 봇 초대 권한을 요청해야 합니다.",
       },
@@ -244,6 +255,12 @@ export const PUBLIC_CONTENT_ARTICLES: readonly PublicContentArticle[] = [
           "사용할 채널에서 봇 역할이 숨겨져 있지 않습니다.",
           "응답이 없다면 권한 문서와 문제 해결 문서를 이어서 확인합니다.",
         ],
+      },
+      {
+        type: "callout",
+        tone: PUBLIC_CONTENT_CALLOUT_TONES.success,
+        title: "응답이 확인되면 완료입니다",
+        text: "테스트 채널에서 NEXA가 답변하면 기본 설치와 권한 확인은 끝난 상태입니다.",
       },
     ],
   },
@@ -300,6 +317,7 @@ export const PUBLIC_CONTENT_ARTICLES: readonly PublicContentArticle[] = [
       },
       {
         type: "callout",
+        tone: PUBLIC_CONTENT_CALLOUT_TONES.warning,
         title: "채널 권한이 더 우선입니다",
         text: "서버 역할 권한이 맞아도 특정 채널에서 권한이 거부되어 있으면 NEXA가 응답하지 못할 수 있습니다.",
       },
@@ -340,6 +358,7 @@ export const PUBLIC_CONTENT_ARTICLES: readonly PublicContentArticle[] = [
       },
       {
         type: "callout",
+        tone: PUBLIC_CONTENT_CALLOUT_TONES.warning,
         title: "가장 먼저 볼 지점",
         text: "한 채널에서만 응답하지 않는다면 서버 문제가 아니라 채널 권한 문제일 가능성이 큽니다.",
       },
@@ -426,6 +445,7 @@ export const PUBLIC_CONTENT_ARTICLES: readonly PublicContentArticle[] = [
       },
       {
         type: "callout",
+        tone: PUBLIC_CONTENT_CALLOUT_TONES.warning,
         title: "중요한 덱은 로그인 상태를 확인하세요",
         text: "게스트 상태에서 만든 데이터는 기기와 브라우저 상태에 영향을 받을 수 있습니다.",
       },
@@ -527,6 +547,7 @@ export const PUBLIC_CONTENT_ARTICLES: readonly PublicContentArticle[] = [
       },
       {
         type: "callout",
+        tone: PUBLIC_CONTENT_CALLOUT_TONES.warning,
         title: "최종 결제 조건은 설치 페이지에서 확인하세요",
         text: "가격, 체험 기간, 이벤트 무료 상태는 운영 정책에 따라 바뀔 수 있으므로 실제 결제나 라이선스 신청 전에는 NEXA 설치 페이지의 최신 안내를 확인해야 합니다.",
       },
@@ -586,6 +607,7 @@ export const PUBLIC_CONTENT_ARTICLES: readonly PublicContentArticle[] = [
       },
       {
         type: "callout",
+        tone: PUBLIC_CONTENT_CALLOUT_TONES.warning,
         title: "전역 설정을 너무 길게 쓰지 마세요",
         text: "말투 지시가 길수록 운영자가 의도한 핵심이 흐려질 수 있습니다. 서버 전체 기본값은 짧게 두고, 세부 목적은 채널별 설정으로 나누는 편이 관리하기 쉽습니다.",
       },
@@ -635,6 +657,7 @@ export const PUBLIC_CONTENT_ARTICLES: readonly PublicContentArticle[] = [
       },
       {
         type: "callout",
+        tone: PUBLIC_CONTENT_CALLOUT_TONES.warning,
         title: "권한 차단은 강한 조치입니다",
         text: "채널 AI 허용 상태만 끄면 운영 의도가 분명하고, 디스코드 권한까지 막으면 봇의 다른 기능도 제한될 수 있습니다.",
       },
@@ -678,6 +701,7 @@ export const PUBLIC_CONTENT_ARTICLES: readonly PublicContentArticle[] = [
       },
       {
         type: "callout",
+        tone: PUBLIC_CONTENT_CALLOUT_TONES.warning,
         title: "제거 후에도 디스코드 메시지는 서버에 남을 수 있습니다",
         text: "봇을 제거해도 기존 채널에 남아 있는 메시지는 디스코드 서버 데이터입니다. 필요한 경우 서버 관리자가 별도로 메시지를 정리해야 합니다.",
       },
@@ -877,6 +901,7 @@ export const PUBLIC_CONTENT_ARTICLES: readonly PublicContentArticle[] = [
       },
       {
         type: "callout",
+        tone: PUBLIC_CONTENT_CALLOUT_TONES.warning,
         title: "로그인 토큰 실패가 항상 입장 실패는 아닙니다",
         text: "레이스 사용자 토큰 발급은 best-effort로 처리됩니다. 토큰이 없으면 경험치 적립이 빠질 수 있지만, 레이스 진행 자체를 막지는 않도록 설계되어 있습니다.",
       },
@@ -929,6 +954,7 @@ export const PUBLIC_CONTENT_ARTICLES: readonly PublicContentArticle[] = [
       },
       {
         type: "callout",
+        tone: PUBLIC_CONTENT_CALLOUT_TONES.warning,
         title: "같은 브라우저에서 진행하세요",
         text: "게스트 덱은 로컬 저장소에 있기 때문에 다른 기기나 다른 브라우저로 바로 옮겨 보이지 않을 수 있습니다. 만든 브라우저에서 로그인 후 이관하는 것이 안전합니다.",
       },
@@ -993,6 +1019,7 @@ export const PUBLIC_CONTENT_ARTICLES: readonly PublicContentArticle[] = [
       },
       {
         type: "callout",
+        tone: PUBLIC_CONTENT_CALLOUT_TONES.warning,
         title: "입력칸에서는 단축키가 막힙니다",
         text: "링크, 버튼, 입력칸, 선택창, textarea, contenteditable 영역에서는 단축키가 실행되지 않게 막아 두었습니다. 한국어 입력 상태에서도 물리 S 키 스킵은 동작합니다.",
       },
@@ -1045,6 +1072,7 @@ export const PUBLIC_CONTENT_ARTICLES: readonly PublicContentArticle[] = [
       },
       {
         type: "callout",
+        tone: PUBLIC_CONTENT_CALLOUT_TONES.warning,
         title: "비밀번호를 잊으면 수정이 어려울 수 있습니다",
         text: "게스트 글은 계정 로그인 기반이 아니므로, 작성할 때 사용한 닉네임과 비밀번호를 기억해야 나중에 수정하거나 삭제할 수 있습니다.",
       },
