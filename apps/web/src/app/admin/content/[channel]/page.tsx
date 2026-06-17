@@ -59,6 +59,7 @@ export default async function AdminContentChannelPage({
     <AdminPublicContentChannelScreen
       adminEmail={adminUser.email}
       rows={data.rows}
+      seoWarningRows={data.seoWarningRows}
       summary={data.summary}
     />
   );

@@ -162,6 +162,16 @@ describe("public content admin model", () => {
     expect(dashboard.stats.noindexCount).toBe(1);
     expect(dashboard.stats.metaDescriptionMissingCount).toBe(1);
     expect(dashboard.stats.seoWarningCount).toBe(2);
+    expect(dashboard.recentPublishedRows.map((row) => row.article.id)).toEqual([
+      "article-published",
+    ]);
+    expect(dashboard.recentUpdatedRows.map((row) => row.article.id)).toEqual([
+      "article-draft",
+      "article-published",
+    ]);
+    expect(dashboard.seoWarningRows.map((row) => row.article.id)).toEqual([
+      "article-draft",
+    ]);
     expect(dashboard.rows[0].sitemapIncluded).toBe(true);
     expect(dashboard.rows[1].seoWarnings).toEqual([
       "noindex",
@@ -210,6 +220,10 @@ describe("public content admin model", () => {
 
     expect(data.summary?.channel).toBe("blog");
     expect(data.summary?.statusCounts.review).toBe(1);
+    expect(data.recentUpdatedRows.map((row) => row.article.id)).toEqual([
+      "blog-article",
+    ]);
+    expect(data.seoWarningRows).toHaveLength(0);
     expect(data.rows).toHaveLength(1);
     expect(data.rows[0].serviceLabel).toBe("yeon");
   });
