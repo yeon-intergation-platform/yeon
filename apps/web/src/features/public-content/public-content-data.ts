@@ -2222,6 +2222,8 @@ export const PUBLIC_CONTENT_ARTICLES: readonly PublicContentArticle[] = [
     publishedAt: PUBLISHED_DATE,
     updatedAt: PUBLISHED_DATE,
     readingMinutes: 2,
+    ctaLabel: "Support 오픈 공지 보기",
+    ctaHref: "https://news.yeon.world/notice/support-open",
     sourcePaths: [
       "/Users/osuma/coding_stuffs/yeon/docs/seo/public-content-channel-policy.md",
       "/Users/osuma/coding_stuffs/yeon/docs/product/backlog/2026-06-17-public-content-network-500-step-plan.md",
@@ -2556,6 +2558,97 @@ export const PUBLIC_CONTENT_ARTICLES: readonly PublicContentArticle[] = [
     ],
   },
   {
+    channel: PUBLIC_CONTENT_CHANNELS.news,
+    service: PUBLIC_CONTENT_SERVICES.nexa,
+    category: "notice",
+    slugSegments: ["notice", "nexa", "support-docs-start"],
+    title: "NEXA 공개 지원 문서 시작 안내",
+    description:
+      "NEXA 설치, 권한, Provider, 안전 정책을 support.yeon.world에서 공개 지원 문서로 운영하기 시작했습니다.",
+    summary:
+      "NEXA 사용자는 설치, 권한, Provider 연결, 안전 정책을 support 문서에서 확인할 수 있습니다.",
+    publishedAt: PUBLISHED_DATE,
+    updatedAt: PUBLISHED_DATE,
+    readingMinutes: 2,
+    ctaLabel: "NEXA support 보기",
+    ctaHref: "https://support.yeon.world/nexa",
+    sourcePaths: [
+      "/Users/osuma/coding_stuffs/yeon/apps/web/src/features/public-content/public-content-data.ts",
+      "/Users/osuma/coding_stuffs/discord-assitant/docs/BOT_PERMISSIONS.md",
+      "/Users/osuma/coding_stuffs/discord-assitant/docs/NEXA_SAFETY_POLICY.md",
+    ],
+    body: [
+      {
+        type: "paragraph",
+        text: "NEXA 공개 지원 문서는 디스코드 서버 관리자가 실제로 확인해야 할 설치, 권한, Provider, 개인정보, 안전 정책을 support.yeon.world에서 한곳에 묶기 위해 시작했습니다.",
+      },
+      {
+        type: "checklist",
+        items: [
+          "디스코드 서버에 NEXA AI 봇을 추가하는 방법",
+          "NEXA 봇에게 필요한 디스코드 권한",
+          "Ollama Provider 연결과 provider-agent 설치 기준",
+          "NEXA 관리자 정책과 안전장치",
+        ],
+      },
+      {
+        type: "links",
+        title: "관련 문서",
+        links: [
+          {
+            href: "https://support.yeon.world/nexa/guides/add-nexa-discord-bot",
+            label: "디스코드 서버에 NEXA AI 봇 추가하는 방법",
+          },
+          {
+            href: "https://support.yeon.world/nexa/policy/admin-safety-controls",
+            label: "NEXA 관리자 정책과 안전장치 확인 방법",
+          },
+        ],
+      },
+    ],
+  },
+  {
+    channel: PUBLIC_CONTENT_CHANNELS.news,
+    service: PUBLIC_CONTENT_SERVICES.nexa,
+    category: "notice",
+    slugSegments: ["notice", "nexa", "discord-ai-sitemap-registration"],
+    title: "NEXA discord-ai.yeon.world sitemap 등록 안내",
+    description:
+      "discord-ai.yeon.world를 Search Console과 sitemap 운영 대상에 포함하는 내부 공지입니다.",
+    summary:
+      "NEXA 제품 랜딩과 support/news/blog 채널을 검색 운영 대상에 함께 둡니다.",
+    publishedAt: PUBLISHED_DATE,
+    updatedAt: PUBLISHED_DATE,
+    readingMinutes: 2,
+    ctaLabel: "Search Console 운영 문서 보기",
+    ctaHref: "https://news.yeon.world/notice/news-operation-principles",
+    sourcePaths: [
+      "/Users/osuma/coding_stuffs/yeon/docs/seo/google-search-console.md",
+      "/Users/osuma/coding_stuffs/yeon/apps/web/scripts/submit-search-console-sitemaps.mjs",
+      "/Users/osuma/coding_stuffs/yeon/apps/web/src/lib/seo.ts",
+    ],
+    body: [
+      {
+        type: "paragraph",
+        text: "discord-ai.yeon.world는 NEXA 제품 진입점입니다. support, news, blog 채널만 검색 운영에 넣으면 제품 랜딩과 도움말 사이의 연결이 약해지므로 sitemap과 Search Console 운영 대상에 함께 둡니다.",
+      },
+      {
+        type: "steps",
+        items: [
+          "discord-ai.yeon.world의 canonical URL을 확인합니다.",
+          "Search Console URL-prefix property에 등록 상태를 확인합니다.",
+          "제품 랜딩 sitemap 제출 여부를 점검합니다.",
+          "support 문서에서 discord-ai.yeon.world 설치 페이지로 연결되는 CTA를 확인합니다.",
+        ],
+      },
+      {
+        type: "callout",
+        title: "내부 운영 공지입니다",
+        text: "이 글은 사용자 기능 변경보다 검색 운영 대상과 sitemap 제출 범위를 분명히 하는 내부 공지 성격입니다.",
+      },
+    ],
+  },
+  {
     channel: PUBLIC_CONTENT_CHANNELS.blog,
     service: PUBLIC_CONTENT_SERVICES.account,
     category: "product",
@@ -2568,6 +2661,8 @@ export const PUBLIC_CONTENT_ARTICLES: readonly PublicContentArticle[] = [
     publishedAt: PUBLISHED_DATE,
     updatedAt: PUBLISHED_DATE,
     readingMinutes: 4,
+    ctaLabel: "공개 콘텐츠 분리 공지 보기",
+    ctaHref: "https://news.yeon.world/notice/public-content-network-start",
     sourcePaths: [
       "/Users/osuma/coding_stuffs/yeon/docs/seo/public-content-channel-policy.md",
     ],
@@ -2733,6 +2828,8 @@ export const PUBLIC_CONTENT_ARTICLES: readonly PublicContentArticle[] = [
     publishedAt: PUBLISHED_DATE,
     updatedAt: PUBLISHED_DATE,
     readingMinutes: 3,
+    ctaLabel: "공개 URL 도움말 보기",
+    ctaHref: "https://support.yeon.world/account/guides/public-service-urls",
     sourcePaths: [
       "/Users/osuma/coding_stuffs/yeon/apps/web/src/lib/seo.ts",
       "/Users/osuma/coding_stuffs/yeon/docs/seo/google-search-console.md",
@@ -2934,6 +3031,135 @@ export const PUBLIC_CONTENT_ARTICLES: readonly PublicContentArticle[] = [
       {
         type: "paragraph",
         text: "커뮤니티의 다음 기능은 이 기본 경계가 안정된 뒤에 붙는 편이 낫습니다. 작은 기능도 공개성과 책임 경계가 맞아야 사용자가 신뢰하고 글을 남길 수 있습니다.",
+      },
+    ],
+  },
+  {
+    channel: PUBLIC_CONTENT_CHANNELS.blog,
+    service: PUBLIC_CONTENT_SERVICES.account,
+    category: "product",
+    slugSegments: ["product", "public-content-channel-decision"],
+    title: "YEON 공개 콘텐츠 채널 분리 결정 기록",
+    description:
+      "support, news, blog를 각각 독립 채널로 나눈 제품 결정과 사용자가 기대하는 정보 구조를 정리했습니다.",
+    summary:
+      "도움말, 공식 소식, 제작 기록을 분리해 검색 유입과 운영 신뢰를 동시에 만들기로 했습니다.",
+    publishedAt: PUBLISHED_DATE,
+    updatedAt: PUBLISHED_DATE,
+    readingMinutes: 4,
+    ctaLabel: "채널 분리 공지 보기",
+    ctaHref: "https://news.yeon.world/notice/public-content-network-start",
+    sourcePaths: [
+      "/Users/osuma/coding_stuffs/yeon/docs/seo/public-content-channel-policy.md",
+      "/Users/osuma/coding_stuffs/yeon/docs/product/backlog/2026-06-17-public-content-network-500-step-plan.md",
+    ],
+    body: [
+      {
+        type: "paragraph",
+        text: "YEON 공개 콘텐츠는 처음부터 글 수를 늘리기 위한 구조가 아니라, 사용자가 기대하는 답을 맞는 채널에서 찾게 하기 위한 구조입니다. 사용법은 support, 공식 변경은 news, 제작 과정은 blog로 나누는 결정을 제품 정책으로 남겼습니다.",
+      },
+      {
+        type: "heading",
+        title: "결정 기준",
+      },
+      {
+        type: "checklist",
+        items: [
+          "문제를 해결하려는 사용자는 support로 바로 들어옵니다.",
+          "제품 변경과 적용일을 확인하려는 사용자는 news를 봅니다.",
+          "왜 그렇게 만들었는지 알고 싶은 사용자는 blog를 봅니다.",
+          "같은 본문을 여러 채널에 중복 발행하지 않습니다.",
+        ],
+      },
+      {
+        type: "paragraph",
+        text: "이 결정은 SEO를 위한 형식 분리가 아니라, 사용자 의도와 운영 책임을 맞추기 위한 분리입니다.",
+      },
+    ],
+  },
+  {
+    channel: PUBLIC_CONTENT_CHANNELS.blog,
+    service: PUBLIC_CONTENT_SERVICES.account,
+    category: "engineering",
+    slugSegments: ["engineering", "public-url-canonical-record"],
+    title: "Yeon 공개 URL과 canonical 구조를 정리한 이유",
+    description:
+      "서비스 서브도메인과 공개 콘텐츠 채널이 늘어날 때 canonical, robots, sitemap 구조를 정리한 이유입니다.",
+    summary:
+      "공개 URL이 늘수록 검색엔진과 사용자가 볼 대표 주소를 한곳에서 관리해야 합니다.",
+    publishedAt: PUBLISHED_DATE,
+    updatedAt: PUBLISHED_DATE,
+    readingMinutes: 4,
+    ctaLabel: "서비스별 공개 URL 보기",
+    ctaHref: "https://support.yeon.world/account/guides/public-service-urls",
+    sourcePaths: [
+      "/Users/osuma/coding_stuffs/yeon/apps/web/src/lib/seo.ts",
+      "/Users/osuma/coding_stuffs/yeon/apps/web/src/lib/subdomain-routing.ts",
+      "/Users/osuma/coding_stuffs/yeon/docs/seo/google-search-console.md",
+    ],
+    body: [
+      {
+        type: "paragraph",
+        text: "YEON은 yeon.world 하나만 운영하지 않습니다. typing, card, community, support, news, blog, discord-ai처럼 목적이 다른 공개 URL이 늘어납니다. 이때 canonical 구조가 흔들리면 사용자가 공유한 주소와 검색엔진이 색인하는 주소가 어긋납니다.",
+      },
+      {
+        type: "code",
+        language: "txt",
+        filename: "canonical-hosts.txt",
+        code: "https://yeon.world\nhttps://typing.yeon.world\nhttps://card.yeon.world\nhttps://community.yeon.world\nhttps://support.yeon.world\nhttps://news.yeon.world\nhttps://blog.yeon.world\nhttps://discord-ai.yeon.world",
+      },
+      {
+        type: "steps",
+        items: [
+          "서비스별 대표 host를 먼저 정합니다.",
+          "지원 문서, 뉴스, 블로그는 각자의 canonical host를 갖습니다.",
+          "robots.txt와 sitemap.xml은 host별로 분리합니다.",
+          "admin, auth, API, draft 경로는 색인 대상에서 제외합니다.",
+        ],
+      },
+    ],
+  },
+  {
+    channel: PUBLIC_CONTENT_CHANNELS.blog,
+    service: PUBLIC_CONTENT_SERVICES.nexa,
+    category: "essay",
+    slugSegments: ["essay", "why-ai-bot-safety-policy-first"],
+    title: "AI 봇 안전 정책을 문서로 먼저 공개하는 이유",
+    description:
+      "NEXA처럼 Discord 서버에서 동작하는 AI 봇이 기능보다 안전 정책과 관리자 책임을 먼저 문서화해야 하는 이유입니다.",
+    summary:
+      "AI 봇은 답변 품질만이 아니라 권한, 개인정보, 불법 콘텐츠, 관리자 책임 경계를 함께 다뤄야 합니다.",
+    publishedAt: PUBLISHED_DATE,
+    updatedAt: PUBLISHED_DATE,
+    readingMinutes: 4,
+    ctaLabel: "NEXA 안전 정책 보기",
+    ctaHref: "https://support.yeon.world/nexa/policy/admin-safety-controls",
+    sourcePaths: [
+      "/Users/osuma/coding_stuffs/discord-assitant/docs/NEXA_SAFETY_POLICY.md",
+      "/Users/osuma/coding_stuffs/discord-assitant/docs/PROVIDER_SAFETY_POLICY.md",
+      "/Users/osuma/coding_stuffs/discord-assitant/SECURITY.md",
+    ],
+    body: [
+      {
+        type: "paragraph",
+        text: "AI 봇을 만들 때 기능 목록만 먼저 공개하면 사용자는 어디까지 안전하게 써야 하는지 알기 어렵습니다. Discord 서버에서 동작하는 NEXA는 채널 권한, Provider 전달, 개인정보, 불법 콘텐츠 대응처럼 기능 바깥의 운영 경계가 함께 필요합니다.",
+      },
+      {
+        type: "heading",
+        title: "먼저 문서화해야 하는 이유",
+      },
+      {
+        type: "checklist",
+        items: [
+          "서버 관리자가 허용 채널과 역할을 정해야 합니다.",
+          "Provider Pool 구조에서는 질문이 외부 Provider PC로 전송될 수 있습니다.",
+          "비밀번호, API 키, 개인정보를 질문에 넣지 말아야 합니다.",
+          "불법 콘텐츠와 Discord ToS 경계는 관리자 설정보다 우선합니다.",
+        ],
+      },
+      {
+        type: "paragraph",
+        text: "안전 정책은 출시 후 문제가 생겼을 때 붙이는 문서가 아니라, 제품을 어디까지 책임질지 먼저 정하는 문서입니다.",
       },
     ],
   },
