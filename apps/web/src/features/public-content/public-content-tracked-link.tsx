@@ -2,6 +2,7 @@
 
 import type { AnchorHTMLAttributes, MouseEventHandler, ReactNode } from "react";
 import { analyticsEvents, trackEvent } from "@/lib/analytics";
+import { getPublicContentLinkRel } from "./public-content-link-policy";
 
 type PublicContentLinkKind =
   | "article_card"
@@ -38,6 +39,8 @@ export function PublicContentTrackedLink({
   children,
   eventType = "link",
   href,
+  rel,
+  target,
   trackingParams,
   ...anchorProps
 }: PublicContentTrackedLinkProps) {
@@ -54,7 +57,13 @@ export function PublicContentTrackedLink({
   };
 
   return (
-    <a {...anchorProps} href={href} onClick={handleClick}>
+    <a
+      {...anchorProps}
+      href={href}
+      onClick={handleClick}
+      rel={getPublicContentLinkRel({ href, rel, target })}
+      target={target}
+    >
       {children}
     </a>
   );
