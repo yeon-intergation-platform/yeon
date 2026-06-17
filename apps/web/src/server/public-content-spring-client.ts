@@ -1,11 +1,17 @@
 import {
   PUBLIC_CONTENT_API_PATHS,
+  publicContentAdminArticleListResponseSchema,
+  publicContentAdminArticleResponseSchema,
+  publicContentAdminListQuerySchema,
   publicContentArticleListResponseSchema,
   publicContentArticleResponseSchema,
   publicContentChannelSchema,
   publicContentListQuerySchema,
   publicContentSlugSchema,
   publicContentSitemapResponseSchema,
+  type PublicContentAdminArticleListResponse,
+  type PublicContentAdminArticleResponse,
+  type PublicContentAdminListQuery,
   type PublicContentArticleListResponse,
   type PublicContentArticleResponse,
   type PublicContentChannel,
@@ -18,8 +24,10 @@ import {
   type YeonRequestInit,
   type YeonResponse,
 } from "@yeon/ui/runtime/YeonBrowserRuntime";
+import { buildSpringBffHeaders } from "@/server/spring-bff-client";
 
 const DEFAULT_BACKEND_BASE_URL = "http://127.0.0.1:8081";
+const ADMIN_ARTICLE_ID_MAX_LENGTH = 80;
 
 type ParseableSchema<TSchema> = {
   parse(input: unknown): TSchema;
@@ -35,7 +43,7 @@ function resolveSpringBackendBaseUrl() {
     : DEFAULT_BACKEND_BASE_URL;
 }
 
-function toQueryString(params: PublicContentListQuery) {
+function toQueryString(params: Record<string, string | undefined>) {
   const searchParams = new URLSearchParams();
 
   for (const [key, value] of Object.entries(params)) {
@@ -46,6 +54,32 @@ function toQueryString(params: PublicContentListQuery) {
 
   const queryString = searchParams.toString();
   return queryString ? `?${queryString}` : "";
+}
+
+function parseAdminUserId(userId: string) {
+  const parsedUserId = userId.trim();
+
+  if (!parsedUserId) {
+    throw new PublicContentSpringBackendHttpError(401, "로그인이 필요합니다.");
+  }
+
+  return parsedUserId;
+}
+
+function parseAdminArticleId(articleId: string) {
+  const parsedArticleId = articleId.trim();
+
+  if (
+    !parsedArticleId ||
+    parsedArticleId.length > ADMIN_ARTICLE_ID_MAX_LENGTH
+  ) {
+    throw new PublicContentSpringBackendHttpError(
+      400,
+      "관리 대상 공개 콘텐츠 articleId가 올바르지 않습니다."
+    );
+  }
+
+  return parsedArticleId;
 }
 
 function encodePathSegments(path: string) {
@@ -167,5 +201,43 @@ export function fetchPublicContentSitemapFromSpring(
     PUBLIC_CONTENT_API_PATHS.publicSitemap(parsedChannel),
     publicContentSitemapResponseSchema,
     "공개 콘텐츠 sitemap을 불러오지 못했습니다."
+  );
+}
+
+export function fetchAdminPublicContentArticlesFromSpring(params: {
+  userId: string;
+  query?: PublicContentAdminListQuery;
+}): Promise<PublicContentAdminArticleListResponse> {
+  const userId = parseAdminUserId(params.userId);
+  const parsedQuery = publicContentAdminListQuerySchema.parse(
+    params.query ?? {}
+  );
+
+  return fetchPublicContentSpring(
+    `${PUBLIC_CONTENT_API_PATHS.adminList}${toQueryString(parsedQuery)}`,
+    publicContentAdminArticleListResponseSchema,
+    "관리자 공개 콘텐츠 목록을 불러오지 못했습니다.",
+    {
+      method: "GET",
+      headers: buildSpringBffHeaders(undefined, { userId }),
+    }
+  );
+}
+
+export function fetchAdminPublicContentArticleFromSpring(params: {
+  userId: string;
+  articleId: string;
+}): Promise<PublicContentAdminArticleResponse> {
+  const userId = parseAdminUserId(params.userId);
+  const articleId = parseAdminArticleId(params.articleId);
+
+  return fetchPublicContentSpring(
+    PUBLIC_CONTENT_API_PATHS.adminArticle(encodeURIComponent(articleId)),
+    publicContentAdminArticleResponseSchema,
+    "관리자 공개 콘텐츠 글을 불러오지 못했습니다.",
+    {
+      method: "GET",
+      headers: buildSpringBffHeaders(undefined, { userId }),
+    }
   );
 }
