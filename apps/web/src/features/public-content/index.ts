@@ -6,6 +6,10 @@ export {
   getPublicContentStaticParams,
 } from "./public-content-ui";
 export {
+  PUBLIC_CONTENT_RSS_HEADERS,
+  buildPublicContentRssFeed,
+} from "./public-content-feed";
+export {
   PUBLIC_CONTENT_CHANNEL_CONFIG,
   PUBLIC_CONTENT_CHANNELS,
   buildPublicContentCanonicalUrl,

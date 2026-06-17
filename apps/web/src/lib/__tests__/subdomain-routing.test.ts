@@ -53,6 +53,30 @@ describe("subdomain-routing", () => {
     ).toBe("/blog/engineering/search-console-sitemap-operations");
   });
 
+  it("공개 콘텐츠 subdomain의 feed.xml을 channel 내부 route로 rewrite한다", () => {
+    expect(
+      resolveServiceSubdomainRewritePath({
+        host: "support.yeon.world",
+        pathname: "/feed.xml",
+      })
+    ).toBe("/support/feed.xml");
+
+    expect(
+      resolveServiceSubdomainRewritePath({
+        host: "news.yeon.world",
+        pathname: "/feed.xml",
+        search: "?utm=feed",
+      })
+    ).toBe("/news/feed.xml?utm=feed");
+
+    expect(
+      resolveServiceSubdomainRewritePath({
+        host: "typing.yeon.world",
+        pathname: "/feed.xml",
+      })
+    ).toBeNull();
+  });
+
   it("포트가 포함된 host도 서비스 subdomain으로 인식한다", () => {
     expect(
       resolveServiceSubdomainRewritePath({

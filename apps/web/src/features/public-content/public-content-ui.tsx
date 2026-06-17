@@ -345,6 +345,9 @@ export function getPublicContentHomeMetadata(
     description: config.description,
     alternates: {
       canonical: config.host,
+      types: {
+        "application/rss+xml": `${config.host}/feed.xml`,
+      },
     },
     openGraph: {
       title: `${config.title} | YEON`,
