@@ -31,6 +31,12 @@ function getBlockText(block: PublicContentBlock) {
   if (block.type === "callout") {
     return `${block.title}: ${block.text}`;
   }
+  if (block.type === "image") {
+    return [block.alt, block.caption].filter(Boolean).join(" ");
+  }
+  if (block.type === "code") {
+    return block.code;
+  }
   return block.items.join(" ");
 }
 
