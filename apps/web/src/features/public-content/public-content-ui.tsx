@@ -19,6 +19,7 @@ import {
   type PublicContentCollection,
 } from "./public-content-data";
 import { getPublicContentReviewDate } from "./public-content-freshness";
+import { buildPublicContentArticleStructuredData } from "./public-content-structured-data";
 import { PublicContentTrackedLink } from "./public-content-tracked-link";
 
 type PublicContentHomeProps = {
@@ -89,38 +90,6 @@ function getJsonLdForHome(channel: PublicContentChannel) {
           article.slugSegments
         ),
       })),
-    },
-  };
-}
-
-function getJsonLdForArticle(article: PublicContentArticle) {
-  const articleType =
-    article.channel === "news"
-      ? "NewsArticle"
-      : article.channel === "blog"
-        ? "BlogPosting"
-        : "Article";
-
-  return {
-    "@context": "https://schema.org",
-    "@type": articleType,
-    headline: article.title,
-    description: article.description,
-    datePublished: article.publishedAt,
-    dateModified: article.updatedAt,
-    inLanguage: "ko-KR",
-    mainEntityOfPage: buildPublicContentCanonicalUrl(
-      article.channel,
-      article.slugSegments
-    ),
-    author: {
-      "@type": "Organization",
-      name: "YEON",
-    },
-    publisher: {
-      "@type": "Organization",
-      name: "YEON",
-      url: "https://yeon.world",
     },
   };
 }
@@ -629,7 +598,7 @@ export async function PublicContentArticlePage({
     <PublicContentShell channel={article.channel}>
       <YeonStructuredData
         id={`${article.channel}-${article.slugSegments.join("-")}-jsonld`}
-        data={getJsonLdForArticle(article)}
+        data={buildPublicContentArticleStructuredData(article)}
       />
       <article className="mx-auto max-w-4xl px-6 py-12 md:px-8 md:py-16">
         <PublicContentTrackedLink
