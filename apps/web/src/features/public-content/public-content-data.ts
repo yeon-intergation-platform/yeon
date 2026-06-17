@@ -3159,7 +3159,7 @@ export const PUBLIC_CONTENT_ARTICLES: readonly PublicContentArticle[] = [
       },
       {
         type: "paragraph",
-        text: "안전 정책은 출시 후 문제가 생겼을 때 붙이는 문서가 아니라, 제품을 어디까지 책임질지 먼저 정하는 문서입니다.",
+        text: "안전 정책은 출시 후 문제가 생겼을 때 붙이는 문서가 아니라, 제품을 어디까지 책임질지 먼저 정하는 문서입니다. 그래서 NEXA의 실제 설정과 관리자 책임은 support 정책 문서에서 먼저 확인할 수 있게 연결합니다.",
       },
     ],
   },
