@@ -91,7 +91,10 @@ export type PublicContentAdminDashboardStats = {
 };
 
 export type PublicContentAdminDashboardData = {
+  recentPublishedRows: readonly PublicContentAdminArticleRow[];
+  recentUpdatedRows: readonly PublicContentAdminArticleRow[];
   rows: readonly PublicContentAdminArticleRow[];
+  seoWarningRows: readonly PublicContentAdminArticleRow[];
   stats: PublicContentAdminDashboardStats;
   summaries: readonly PublicContentAdminChannelSummary[];
 };
@@ -123,6 +126,7 @@ const VISIBILITY_LABELS = {
   unlisted: "링크 공개",
   internal: "내부",
 } as const satisfies Record<PublicContentVisibility, string>;
+const ADMIN_QUEUE_LIMIT = 5;
 
 function buildSearchConsoleUrl(resourceId: string) {
   return `${SEARCH_CONSOLE_URL}?${new URLSearchParams({
@@ -164,6 +168,57 @@ function getLastUpdatedAt(articles: readonly PublicContentAdminArticleView[]) {
       .map((article) => article.updatedAt)
       .sort((a, b) => b.localeCompare(a))[0] ?? null
   );
+}
+
+function getSortableTime(value: string | null) {
+  if (!value) {
+    return 0;
+  }
+
+  const timestamp = Date.parse(value);
+  return Number.isNaN(timestamp) ? 0 : timestamp;
+}
+
+function getRowsByDateDesc(
+  rows: readonly PublicContentAdminArticleRow[],
+  getDate: (row: PublicContentAdminArticleRow) => string | null
+) {
+  return [...rows].sort(
+    (a, b) => getSortableTime(getDate(b)) - getSortableTime(getDate(a))
+  );
+}
+
+function getRecentPublishedRows(rows: readonly PublicContentAdminArticleRow[]) {
+  return getRowsByDateDesc(
+    rows.filter(
+      (row) => row.article.status === "published" && row.article.publishedAt
+    ),
+    (row) => row.article.publishedAt
+  ).slice(0, ADMIN_QUEUE_LIMIT);
+}
+
+function getRecentUpdatedRows(rows: readonly PublicContentAdminArticleRow[]) {
+  return getRowsByDateDesc(rows, (row) => row.article.updatedAt).slice(
+    0,
+    ADMIN_QUEUE_LIMIT
+  );
+}
+
+function getSeoWarningRows(rows: readonly PublicContentAdminArticleRow[]) {
+  return [...rows]
+    .filter((row) => row.seoWarnings.length > 0)
+    .sort((a, b) => {
+      const warningDiff = b.seoWarnings.length - a.seoWarnings.length;
+      if (warningDiff !== 0) {
+        return warningDiff;
+      }
+
+      return (
+        getSortableTime(b.article.updatedAt) -
+        getSortableTime(a.article.updatedAt)
+      );
+    })
+    .slice(0, ADMIN_QUEUE_LIMIT);
 }
 
 export function getValidPublicContentAdminChannel(value: string) {
@@ -398,7 +453,10 @@ function buildPublicContentAdminDashboardDataFromViews(
   const rows = buildPublicContentAdminRowsFromViews(articles, sitemapEntries);
 
   return {
+    recentPublishedRows: getRecentPublishedRows(rows),
+    recentUpdatedRows: getRecentUpdatedRows(rows),
     rows,
+    seoWarningRows: getSeoWarningRows(rows),
     stats: buildPublicContentAdminDashboardStatsFromViews(
       articles,
       rows,
@@ -432,7 +490,13 @@ export function buildPublicContentAdminChannelData(params: {
   });
 
   return {
+    recentUpdatedRows: dashboard.recentUpdatedRows.filter(
+      (row) => row.article.channel === params.channel
+    ),
     rows: dashboard.rows.filter(
+      (row) => row.article.channel === params.channel
+    ),
+    seoWarningRows: dashboard.seoWarningRows.filter(
       (row) => row.article.channel === params.channel
     ),
     summary:

@@ -17,6 +17,7 @@ type AdminPublicContentDashboardProps = AdminPublicContentProps & {
 
 type AdminPublicContentChannelProps = AdminPublicContentProps & {
   rows: readonly PublicContentAdminArticleRow[];
+  seoWarningRows: readonly PublicContentAdminArticleRow[];
   summary: PublicContentAdminChannelSummary;
 };
 
@@ -25,6 +26,30 @@ type OperationLink = {
   label: string;
   note: string;
 };
+
+type AdminArticleQueueItemViewState = {
+  dateValue: string | null;
+  publicHref: string | null;
+  row: PublicContentAdminArticleRow;
+  seoWarnings:
+    | {
+        kind: "hidden";
+      }
+    | {
+        kind: "visible";
+        warnings: readonly string[];
+      };
+};
+
+type AdminArticleQueueViewState =
+  | {
+      emptyText: string;
+      kind: "empty";
+    }
+  | {
+      items: readonly AdminArticleQueueItemViewState[];
+      kind: "ready";
+    };
 
 const CONTENT_NAV_ITEMS = [
   { href: "/admin/content", label: "콘텐츠" },
@@ -48,6 +73,46 @@ function formatSourcePath(path: string) {
 
 function joinLabels(labels: readonly string[]) {
   return labels.length > 0 ? labels.join(", ") : "-";
+}
+
+function canOpenPublicArticle(row: PublicContentAdminArticleRow) {
+  return (
+    row.article.status === "published" && row.article.visibility === "public"
+  );
+}
+
+function toAdminArticleQueueViewState(params: {
+  dateKind: "published" | "updated";
+  emptyText: string;
+  rows: readonly PublicContentAdminArticleRow[];
+}): AdminArticleQueueViewState {
+  if (params.rows.length === 0) {
+    return {
+      emptyText: params.emptyText,
+      kind: "empty",
+    };
+  }
+
+  return {
+    items: params.rows.map((row) => ({
+      dateValue:
+        params.dateKind === "published"
+          ? row.article.publishedAt
+          : row.article.updatedAt,
+      publicHref: canOpenPublicArticle(row) ? row.internalHref : null,
+      row,
+      seoWarnings:
+        row.seoWarnings.length > 0
+          ? {
+              kind: "visible",
+              warnings: row.seoWarnings,
+            }
+          : {
+              kind: "hidden",
+            },
+    })),
+    kind: "ready",
+  };
 }
 
 function AdminPublicContentShell({
@@ -161,6 +226,100 @@ function OperationLinkList({ links }: { links: readonly OperationLink[] }) {
           </YeonText>
         </YeonLink>
       ))}
+    </YeonView>
+  );
+}
+
+function AdminArticleQueue({
+  dateKind,
+  emptyText,
+  rows,
+  title,
+}: {
+  dateKind: "published" | "updated";
+  emptyText: string;
+  rows: readonly PublicContentAdminArticleRow[];
+  title: string;
+}) {
+  const queue = toAdminArticleQueueViewState({ dateKind, emptyText, rows });
+
+  return (
+    <YeonView className="rounded-lg border border-[#e5e5e5] bg-white">
+      <YeonView className="border-b border-[#e5e5e5] px-5 py-4">
+        <YeonText
+          as="h2"
+          variant="unstyled"
+          tone="inherit"
+          className="text-[18px] font-semibold text-[#111]"
+        >
+          {title}
+        </YeonText>
+      </YeonView>
+      {queue.kind === "empty" ? (
+        <YeonText
+          variant="unstyled"
+          tone="inherit"
+          className="block px-5 py-5 text-[14px] leading-6 text-[#666]"
+        >
+          {queue.emptyText}
+        </YeonText>
+      ) : (
+        <YeonView className="divide-y divide-[#e5e5e5]">
+          {queue.items.map((item) => {
+            return (
+              <YeonView key={item.row.article.id} className="px-5 py-4">
+                <YeonText
+                  variant="unstyled"
+                  tone="inherit"
+                  className="text-[12px] font-semibold text-[#666]"
+                >
+                  {item.row.channelLabel} · {item.row.serviceLabel} ·{" "}
+                  {item.row.statusLabel}
+                </YeonText>
+                {item.publicHref ? (
+                  <YeonLink
+                    href={item.publicHref}
+                    className="mt-1 block text-[15px] font-semibold leading-6 text-[#111] no-underline hover:underline"
+                  >
+                    {item.row.article.title}
+                  </YeonLink>
+                ) : (
+                  <YeonText
+                    variant="unstyled"
+                    tone="inherit"
+                    className="mt-1 block text-[15px] font-semibold leading-6 text-[#111]"
+                  >
+                    {item.row.article.title}
+                  </YeonText>
+                )}
+                <YeonText
+                  variant="unstyled"
+                  tone="inherit"
+                  className="mt-1 text-[13px] text-[#666]"
+                >
+                  {dateKind === "published" ? "발행" : "수정"}{" "}
+                  {formatDate(item.dateValue)}
+                </YeonText>
+                {item.seoWarnings.kind === "visible" ? (
+                  <YeonView className="mt-3 flex flex-wrap gap-2">
+                    {item.seoWarnings.warnings.map((warning) => (
+                      <YeonText
+                        key={warning}
+                        as="span"
+                        variant="unstyled"
+                        tone="inherit"
+                        className="rounded-md border border-[#e5484d] bg-[#fff5f5] px-2.5 py-1 text-[12px] font-semibold text-[#b42318]"
+                      >
+                        {warning}
+                      </YeonText>
+                    ))}
+                  </YeonView>
+                ) : null}
+              </YeonView>
+            );
+          })}
+        </YeonView>
+      )}
     </YeonView>
   );
 }
@@ -388,7 +547,13 @@ export function AdminPublicContentDashboard({
   adminEmail,
   dashboard,
 }: AdminPublicContentDashboardProps) {
-  const { stats, summaries } = dashboard;
+  const {
+    recentPublishedRows,
+    recentUpdatedRows,
+    seoWarningRows,
+    stats,
+    summaries,
+  } = dashboard;
   const operationLinks: readonly OperationLink[] = [
     {
       href: stats.domainSearchConsoleUrl,
@@ -573,6 +738,27 @@ export function AdminPublicContentDashboard({
             </YeonView>
           ))}
         </YeonView>
+
+        <YeonView className="mt-8 grid gap-4 lg:grid-cols-3">
+          <AdminArticleQueue
+            title="최근 발행"
+            rows={recentPublishedRows}
+            dateKind="published"
+            emptyText="최근 발행된 공개 글이 없습니다."
+          />
+          <AdminArticleQueue
+            title="최근 수정"
+            rows={recentUpdatedRows}
+            dateKind="updated"
+            emptyText="최근 수정된 글이 없습니다."
+          />
+          <AdminArticleQueue
+            title="SEO 경고 큐"
+            rows={seoWarningRows}
+            dateKind="updated"
+            emptyText="현재 표시할 SEO 경고가 없습니다."
+          />
+        </YeonView>
       </YeonView>
     </AdminPublicContentShell>
   );
@@ -581,6 +767,7 @@ export function AdminPublicContentDashboard({
 export function AdminPublicContentChannelScreen({
   adminEmail,
   rows,
+  seoWarningRows,
   summary,
 }: AdminPublicContentChannelProps) {
   return (
@@ -664,6 +851,15 @@ export function AdminPublicContentChannelScreen({
             label="warnings"
             value={summary.seoWarningCount.toLocaleString("ko-KR")}
             note={`초안 ${summary.statusCounts.draft} · 검토 ${summary.statusCounts.review}`}
+          />
+        </YeonView>
+
+        <YeonView className="mt-8">
+          <AdminArticleQueue
+            title="채널 SEO 경고 큐"
+            rows={seoWarningRows}
+            dateKind="updated"
+            emptyText="이 채널에 표시할 SEO 경고가 없습니다."
           />
         </YeonView>
 
