@@ -1,4 +1,5 @@
 import {
+  PUBLIC_CONTENT_CALLOUT_TONES,
   PUBLIC_CONTENT_ARTICLES,
   type PublicContentArticle,
   type PublicContentBlock,
@@ -12,6 +13,9 @@ type AuditIssue = {
 
 const SLUG_SEGMENT_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const FROZEN_SOURCE_PATTERN = /counseling|student-management|상담/i;
+const PUBLIC_CONTENT_CALLOUT_TONE_VALUES = new Set<string>(
+  Object.values(PUBLIC_CONTENT_CALLOUT_TONES)
+);
 
 function getArticleRef(article: PublicContentArticle) {
   return `${article.channel}:${article.slugSegments.join("/")}`;
@@ -75,6 +79,13 @@ function auditBodyBlock(
     }
     if (isBlank(block.text)) {
       pushIssue(issues, article, `${blockRef} callout text가 비어 있습니다.`);
+    }
+    if (block.tone && !PUBLIC_CONTENT_CALLOUT_TONE_VALUES.has(block.tone)) {
+      pushIssue(
+        issues,
+        article,
+        `${blockRef} callout tone 값이 올바르지 않습니다.`
+      );
     }
     return;
   }
