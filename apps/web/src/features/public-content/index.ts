@@ -5,6 +5,7 @@ export {
   getPublicContentHomeMetadata,
   getPublicContentStaticParams,
 } from "./public-content-ui";
+export { PublicContentNotFound } from "./public-content-not-found-view";
 export {
   PUBLIC_CONTENT_RSS_HEADERS,
   buildPublicContentRssFeed,
