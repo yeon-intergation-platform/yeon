@@ -40,7 +40,7 @@ describe("public content admin model", () => {
     const stats = getPublicContentAdminDashboardStats();
 
     expect(stats.channelCount).toBe(3);
-    expect(stats.articleCount).toBe(18);
+    expect(stats.articleCount).toBe(24);
     expect(stats.serviceCount).toBeGreaterThanOrEqual(4);
     expect(stats.sitemapUrlCount).toBe(stats.articleCount + stats.channelCount);
     expect(stats.sourcePathCount).toBeGreaterThan(0);
