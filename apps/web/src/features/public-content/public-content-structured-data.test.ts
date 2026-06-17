@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildPublicContentArticleJsonLd,
   buildPublicContentArticleStructuredData,
   buildPublicContentBreadcrumbJsonLd,
   buildPublicContentFaqPageJsonLd,
@@ -40,6 +41,22 @@ describe("public content structured data", () => {
 
     expect(structuredData["@context"]).toBe("https://schema.org");
     expect(getGraphTypes(article)).toEqual(["BlogPosting", "BreadcrumbList"]);
+  });
+
+  it("Article 계열 structured data는 채널 기본 OG image를 참조한다", () => {
+    const article = getArticle("news", [
+      "news",
+      "ai",
+      "discord-ai-news-interpretation",
+    ]);
+    const articleJsonLd = buildPublicContentArticleJsonLd(article);
+
+    expect(articleJsonLd).toMatchObject({
+      "@type": "NewsArticle",
+      image: ["https://news.yeon.world/opengraph-image"],
+      mainEntityOfPage:
+        "https://news.yeon.world/news/ai/discord-ai-news-interpretation",
+    });
   });
 
   it("breadcrumb는 channel, collection prefix, article을 순서대로 담는다", () => {

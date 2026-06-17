@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import {
+  PUBLIC_CONTENT_CANONICAL_URLS,
   buildCanonicalUrl,
   buildSitemapUrlForHostname,
   buildServiceCanonicalUrl,
@@ -39,6 +40,14 @@ describe("seo", () => {
     expect(buildServiceCanonicalUrl("community")).toBe(
       "https://community.yeon.world/"
     );
+  });
+
+  it("공개 콘텐츠 canonical url은 channel별 subdomain을 기준으로 둔다", () => {
+    expect(PUBLIC_CONTENT_CANONICAL_URLS).toEqual({
+      support: "https://support.yeon.world",
+      news: "https://news.yeon.world",
+      blog: "https://blog.yeon.world",
+    });
   });
 
   it("운영 호스트일 때만 canonical deployment로 본다", () => {
@@ -230,6 +239,14 @@ describe("seo", () => {
         userAgent: "*",
         allow: "/",
       },
+    });
+    expect(getRobotsForHostname("support.yeon.world").rules).toMatchObject({
+      disallow: expect.arrayContaining([
+        "/admin/",
+        "/api/",
+        "/auth/",
+        "/preview/",
+      ]),
     });
   });
 
