@@ -1,8 +1,11 @@
 import {
   buildPublicContentCanonicalUrl,
   getPublicContentCategoryLabel,
+  getPublicContentNewsTopic,
+  getPublicContentNewsTopicLabel,
   getPublicContentCollections,
   getPublicContentServiceLabel,
+  getPublicContentArticles,
   PUBLIC_CONTENT_CATEGORY_LABELS,
   PUBLIC_CONTENT_CHANNELS,
   PUBLIC_CONTENT_SERVICES,
@@ -30,6 +33,10 @@ type PublicContentCategoryNavParams = {
   activeCategory?: string;
   channel: PublicContentChannel;
   service?: PublicContentService;
+};
+
+type PublicContentNewsTopicNavParams = {
+  activeTopic?: string;
 };
 
 const PUBLIC_CONTENT_SERVICE_ORDER = Object.values(PUBLIC_CONTENT_SERVICES);
@@ -88,6 +95,10 @@ export function getPublicContentServiceNavItems({
   channel,
   parentCategory,
 }: PublicContentServiceNavParams): PublicContentNavigationItem[] {
+  if (channel === PUBLIC_CONTENT_CHANNELS.news && parentCategory === "news") {
+    return [];
+  }
+
   return getPublicContentCollections(channel)
     .flatMap((collection) => {
       const [firstSegment, secondSegment] = collection.slugSegments;
@@ -134,6 +145,35 @@ export function getPublicContentServiceNavItems({
         label: getPublicContentServiceLabel(service),
       })
     );
+}
+
+export function getPublicContentNewsTopicNavItems({
+  activeTopic,
+}: PublicContentNewsTopicNavParams = {}): PublicContentNavigationItem[] {
+  const topicCounts = new Map<string, number>();
+
+  for (const article of getPublicContentArticles(
+    PUBLIC_CONTENT_CHANNELS.news
+  )) {
+    const topic = getPublicContentNewsTopic(article);
+    if (!topic) continue;
+
+    topicCounts.set(topic, (topicCounts.get(topic) ?? 0) + 1);
+  }
+
+  return [...topicCounts.entries()]
+    .sort(([leftTopic], [rightTopic]) => leftTopic.localeCompare(rightTopic))
+    .map(([topic, count]) => ({
+      active: activeTopic === topic,
+      count,
+      href: buildPublicContentCanonicalUrl(PUBLIC_CONTENT_CHANNELS.news, [
+        "news",
+        topic,
+      ]),
+      key: `news/${topic}`,
+      label: getPublicContentNewsTopicLabel(topic),
+      slugSegments: ["news", topic],
+    }));
 }
 
 export function getPublicContentCategoryNavItems({

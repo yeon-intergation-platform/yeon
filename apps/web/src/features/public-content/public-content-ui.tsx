@@ -30,6 +30,7 @@ import {
 import { getPublicContentReviewDate } from "./public-content-freshness";
 import {
   getPublicContentCategoryNavItems,
+  getPublicContentNewsTopicNavItems,
   getPublicContentServiceNavItems,
   isPublicContentService,
   type PublicContentNavigationItem,
@@ -37,12 +38,14 @@ import {
 import {
   PublicContentCategoryNav,
   PublicContentServiceNav,
+  PublicContentTopicNav,
 } from "./public-content-navigation-view";
 import { getPublicContentNewsHomeModel } from "./public-content-news-home";
 import {
   PublicContentNewsArticleContextPanel,
   PublicContentNewsHomePriority,
 } from "./public-content-news-home-view";
+import { PublicContentNewsDetailSections } from "./public-content-news-detail-view";
 import { buildPublicContentArticleStructuredData } from "./public-content-structured-data";
 import {
   getPublicContentSupportHomeProblemEntries,
@@ -110,16 +113,25 @@ function PublicContentNavigationGroup({
   categoryItems,
   channel,
   serviceItems,
+  topicItems = [],
 }: {
   categoryItems: readonly PublicContentNavigationItem[];
   channel: PublicContentChannel;
   serviceItems: readonly PublicContentNavigationItem[];
+  topicItems?: readonly PublicContentNavigationItem[];
 }) {
-  if (categoryItems.length === 0 && serviceItems.length === 0) return null;
+  if (
+    categoryItems.length === 0 &&
+    serviceItems.length === 0 &&
+    topicItems.length === 0
+  ) {
+    return null;
+  }
 
   return (
     <div className="grid gap-3 md:grid-cols-2">
       <PublicContentServiceNav channel={channel} items={serviceItems} />
+      <PublicContentTopicNav channel={channel} items={topicItems} />
       <PublicContentCategoryNav channel={channel} items={categoryItems} />
     </div>
   );
@@ -522,6 +534,17 @@ function getCollectionActiveCategory(collection: PublicContentCollection) {
     : collection.slugSegments[0];
 }
 
+function getCollectionActiveNewsTopic(collection: PublicContentCollection) {
+  if (
+    collection.channel !== PUBLIC_CONTENT_CHANNELS.news ||
+    collection.slugSegments[0] !== "news"
+  ) {
+    return undefined;
+  }
+
+  return collection.slugSegments[1];
+}
+
 function PublicContentCollectionPage({
   collection,
 }: {
@@ -530,6 +553,7 @@ function PublicContentCollectionPage({
   const breadcrumbItems = buildPublicContentCollectionBreadcrumb(collection);
   const activeService = getCollectionActiveService(collection);
   const activeCategory = getCollectionActiveCategory(collection);
+  const activeNewsTopic = getCollectionActiveNewsTopic(collection);
   const categoryNavItems = getPublicContentCategoryNavItems({
     activeCategory,
     channel: collection.channel,
@@ -546,6 +570,11 @@ function PublicContentCollectionPage({
         ? undefined
         : activeCategory,
   });
+  const topicNavItems =
+    collection.channel === PUBLIC_CONTENT_CHANNELS.news &&
+    activeCategory === "news"
+      ? getPublicContentNewsTopicNavItems({ activeTopic: activeNewsTopic })
+      : [];
 
   return (
     <PublicContentShell channel={collection.channel}>
@@ -578,6 +607,7 @@ function PublicContentCollectionPage({
           categoryItems={categoryNavItems}
           channel={collection.channel}
           serviceItems={serviceNavItems}
+          topicItems={topicNavItems}
         />
       </section>
       <section className="mx-auto grid max-w-6xl gap-4 px-6 pb-16 md:grid-cols-2 md:px-8">
@@ -652,6 +682,7 @@ export async function PublicContentArticlePage({
           {article.description}
         </p>
         <PublicContentNewsArticleContextPanel article={article} />
+        <PublicContentNewsDetailSections article={article} />
         <PublicContentSupportActionSummary items={supportPrimaryActionItems} />
         <div className="mt-8 border-t border-[#e5e5e5] pt-8">
           {hasTableOfContents ? (

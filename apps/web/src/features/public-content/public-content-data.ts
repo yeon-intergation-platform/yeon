@@ -224,6 +224,13 @@ const NEWS_CATEGORY_TITLES = {
   news: "업계 뉴스 해설",
 } as const;
 
+const NEWS_TOPIC_LABELS = {
+  ai: "AI",
+  discord: "Discord",
+  developer: "개발자",
+  product: "제품",
+} as const;
+
 const BLOG_CATEGORY_TITLES = {
   engineering: "기술 글",
   product: "제품 글",
@@ -1938,6 +1945,21 @@ function getNewsCategoryTitle(category: string) {
   );
 }
 
+export function getPublicContentNewsTopic(article: PublicContentArticle) {
+  if (
+    article.channel !== PUBLIC_CONTENT_CHANNELS.news ||
+    article.category !== "news"
+  ) {
+    return null;
+  }
+
+  return article.slugSegments[1] ?? null;
+}
+
+export function getPublicContentNewsTopicLabel(topic: string) {
+  return NEWS_TOPIC_LABELS[topic as keyof typeof NEWS_TOPIC_LABELS] ?? topic;
+}
+
 function getBlogCategoryTitle(category: string) {
   return (
     BLOG_CATEGORY_TITLES[category as keyof typeof BLOG_CATEGORY_TITLES] ??
@@ -1984,6 +2006,14 @@ function getCollectionArticles(
         );
       }
 
+      if (
+        channel === PUBLIC_CONTENT_CHANNELS.news &&
+        firstSegment === "news" &&
+        slugSegments.length === 2
+      ) {
+        return getPublicContentNewsTopic(article) === secondSegment;
+      }
+
       if (slugSegments.length === 1) {
         return article.category === firstSegment;
       }
@@ -2022,6 +2052,10 @@ function buildCollectionTitle({
       return categoryTitle;
     }
 
+    if (firstSegment === "news") {
+      return `${getPublicContentNewsTopicLabel(secondSegment)} ${categoryTitle}`;
+    }
+
     return `${getPublicContentServiceLabel(firstArticle.service)} ${categoryTitle}`;
   }
 
@@ -2058,6 +2092,10 @@ function buildCollectionDescription({
     const categoryTitle = getNewsCategoryTitle(firstSegment);
     if (slugSegments.length === 1) {
       return `YEON ${categoryTitle} 글을 최신 발행 순서로 모았습니다.`;
+    }
+
+    if (firstSegment === "news") {
+      return `${getPublicContentNewsTopicLabel(secondSegment)} 주제의 YEON ${categoryTitle} 글을 모았습니다.`;
     }
 
     return `${serviceLabel} ${categoryTitle} 글을 최신 발행 순서로 모았습니다.`;
@@ -2100,9 +2138,16 @@ export function getPublicContentCollections(channel: PublicContentChannel) {
     const candidates =
       channel === PUBLIC_CONTENT_CHANNELS.support
         ? [[article.service], [article.service, article.category]]
-        : [[article.category], [article.category, article.service]];
+        : [
+            [article.category],
+            article.channel === PUBLIC_CONTENT_CHANNELS.news &&
+            article.category === "news"
+              ? [article.category, getPublicContentNewsTopic(article) ?? ""]
+              : [article.category, article.service],
+          ];
 
     for (const slugSegments of candidates) {
+      if (slugSegments.some((segment) => segment.length === 0)) continue;
       collectionSlugs.set(slugSegments.join("/"), slugSegments);
     }
   }

@@ -42,6 +42,17 @@ describe("public content data", () => {
     });
 
     expect(
+      getPublicContentCollectionBySlug("news", ["news", "ai"])
+    ).toMatchObject({
+      title: "AI 업계 뉴스 해설",
+      canonicalUrl: "https://news.yeon.world/news/ai",
+    });
+
+    expect(
+      getPublicContentCollectionBySlug("news", ["news", "nexa"])
+    ).toBeNull();
+
+    expect(
       getPublicContentCollectionBySlug("blog", ["engineering"])
     ).toMatchObject({
       title: "기술 글",
