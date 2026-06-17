@@ -46,31 +46,31 @@
 
 작업내용:
 
-1. 공개 콘텐츠 네트워크의 최상위 목적을 검색 유입, 신뢰 형성, 제품 사용 전환으로 정의한다.
-2. `support`, `news`, `blog`의 역할을 정책 문서와 동일하게 다시 확인한다.
-3. 상담 워크스페이스가 본 범위에서 제외된다는 제한을 모든 산출물 상단에 명시한다.
-4. Yeon 현재 서비스 목록에서 `typing`, `card`, `community`, `discord-ai`, `mooddesk`를 추출한다.
-5. 유지보수 정책상 핵심 서비스가 `typing`, `card`, `community`임을 별도 표시한다.
-6. discord-assistant repo의 NEXA 문서와 Yeon repo의 `discord-ai` 플랫폼 카드를 연결한다.
-7. `account/policy`를 독립 제품은 아니지만 support 공통 분류로 둔다.
-8. `mooddesk`는 정책 범위 미확정 항목으로 기록한다.
-9. 각 서비스별 공개 콘텐츠가 필요한 사용자 문제를 한 문장으로 쓴다.
-10. 각 서비스별 첫 10개 support 글 후보를 만든다.
-11. 각 서비스별 첫 5개 notice/update 후보를 만든다.
-12. 각 서비스별 첫 5개 blog 후보를 만든다.
-13. 기존 `docs/seo/public-content-channel-policy.md`를 상위 정책으로 링크한다.
-14. 기존 SEO 유틸의 현재 canonical 대상이 `typing`, `card`, `community`뿐임을 기록한다.
-15. 기존 sitemap이 루트/서비스 일부/약관 중심임을 기록한다.
-16. 신규 서브도메인 `support`, `news`, `blog`가 sitemap 대상에 추가되어야 함을 기록한다.
-17. `discord-ai.yeon.world`가 별도 repo에서 제공된다는 점을 기록한다.
-18. `support` 문서가 제품 내부 문서가 아니라 검색 가능한 공개 문서임을 정의한다.
-19. `news` 문서가 마케팅 과장이 아니라 공식 변화 기록이어야 함을 정의한다.
-20. `blog` 문서가 개발자의 생각과 기술적 맥락을 담는 공간임을 정의한다.
-21. 초기 성공 지표를 색인 가능한 공개 URL 수로 잡는다.
-22. 2차 성공 지표를 Search Console 노출수와 클릭수로 잡는다.
-23. 3차 성공 지표를 support 문서에서 제품 진입 CTA 클릭으로 잡는다.
-24. 첫 배포 목표를 빈 페이지 없는 최소 운영 버전으로 정한다.
-25. 전체 프로젝트를 설계, 구현, 콘텐츠, SEO, 운영의 5개 흐름으로 나눈다.
+1. **[완료]** 공개 콘텐츠 네트워크의 최상위 목적을 검색 유입, 신뢰 형성, 제품 사용 전환으로 정의한다.
+2. **[완료]** `support`, `news`, `blog`의 역할을 정책 문서와 동일하게 다시 확인한다.
+3. **[완료]** 상담 워크스페이스가 본 범위에서 제외된다는 제한을 모든 산출물 상단에 명시한다.
+4. **[완료]** Yeon 현재 서비스 목록에서 `typing`, `card`, `community`, `discord-ai`, `mooddesk`를 추출한다.
+5. **[완료]** 유지보수 정책상 핵심 서비스가 `typing`, `card`, `community`임을 별도 표시한다.
+6. **[완료]** discord-assistant repo의 NEXA 문서와 Yeon repo의 `discord-ai` 플랫폼 카드를 연결한다.
+7. **[완료]** `account/policy`를 독립 제품은 아니지만 support 공통 분류로 둔다.
+8. **[완료]** `mooddesk`는 정책 범위 미확정 항목으로 기록한다.
+9. **[완료]** 각 서비스별 공개 콘텐츠가 필요한 사용자 문제를 한 문장으로 쓴다.
+10. **[완료]** 각 서비스별 첫 10개 support 글 후보를 만든다.
+11. **[완료]** 각 서비스별 첫 5개 notice/update 후보를 만든다.
+12. **[완료]** 각 서비스별 첫 5개 blog 후보를 만든다.
+13. **[완료]** 기존 `docs/seo/public-content-channel-policy.md`를 상위 정책으로 링크한다.
+14. **[완료]** 기존 SEO 유틸의 현재 canonical 대상이 `typing`, `card`, `community`뿐임을 기록한다.
+15. **[완료]** 기존 sitemap이 루트/서비스 일부/약관 중심임을 기록한다.
+16. **[완료]** 신규 서브도메인 `support`, `news`, `blog`가 sitemap 대상에 추가되어야 함을 기록한다.
+17. **[완료]** `discord-ai.yeon.world`가 별도 repo에서 제공된다는 점을 기록한다.
+18. **[완료]** `support` 문서가 제품 내부 문서가 아니라 검색 가능한 공개 문서임을 정의한다.
+19. **[완료]** `news` 문서가 마케팅 과장이 아니라 공식 변화 기록이어야 함을 정의한다.
+20. **[완료]** `blog` 문서가 개발자의 생각과 기술적 맥락을 담는 공간임을 정의한다.
+21. **[완료]** 초기 성공 지표를 색인 가능한 공개 URL 수로 잡는다.
+22. **[완료]** 2차 성공 지표를 Search Console 노출수와 클릭수로 잡는다.
+23. **[완료]** 3차 성공 지표를 support 문서에서 제품 진입 CTA 클릭으로 잡는다.
+24. **[완료]** 첫 배포 목표를 빈 페이지 없는 최소 운영 버전으로 정한다.
+25. **[완료]** 전체 프로젝트를 설계, 구현, 콘텐츠, SEO, 운영의 5개 흐름으로 나눈다.
 
 ## 2차: 정보 구조 설계
 
@@ -81,31 +81,31 @@
 
 작업내용:
 
-26. `support.yeon.world`의 1depth를 서비스 중심으로 설계한다.
-27. `support.yeon.world/nexa`를 NEXA/discord-assistant 지원 허브로 둔다.
-28. `support.yeon.world/typing`을 타자 서비스 지원 허브로 둔다.
-29. `support.yeon.world/card`를 카드 서비스 지원 허브로 둔다.
-30. `support.yeon.world/community`를 커뮤니티 지원 허브로 둔다.
-31. `support.yeon.world/account`를 계정, 로그인, 개인정보, 정책 허브로 둔다.
-32. 각 서비스 허브 아래 `getting-started` 분류를 둔다.
-33. 각 서비스 허브 아래 `guides` 분류를 둔다.
-34. 각 서비스 허브 아래 `tutorials` 분류를 둔다.
-35. 각 서비스 허브 아래 `troubleshooting` 분류를 둔다.
-36. 각 서비스 허브 아래 `faq` 분류를 둔다.
-37. 각 서비스 허브 아래 `policy` 분류는 필요한 서비스에만 둔다.
-38. `news.yeon.world/notice`를 공식 공지 루트로 둔다.
-39. `news.yeon.world/notice/nexa`를 NEXA 공지 분류로 둔다.
-40. `news.yeon.world/notice/typing`을 타자 공지 분류로 둔다.
-41. `news.yeon.world/notice/card`를 카드 공지 분류로 둔다.
-42. `news.yeon.world/notice/community`를 커뮤니티 공지 분류로 둔다.
-43. `news.yeon.world/updates`를 제품 변경사항 루트로 둔다.
-44. `news.yeon.world/updates/nexa`, `/typing`, `/card`, `/community`를 서비스별 업데이트 분류로 둔다.
-45. `news.yeon.world/news`를 업계 뉴스 해설 루트로 둔다.
-46. `news.yeon.world/news/ai`, `/discord`, `/developer`, `/product`를 해설 분류로 둔다.
-47. `blog.yeon.world/engineering`을 기술 글 루트로 둔다.
-48. `blog.yeon.world/engineering/backend`, `/frontend`, `/infra`, `/ai`를 기술 하위 분류로 둔다.
-49. `blog.yeon.world/product/nexa`, `/typing`, `/card`, `/community`를 제품 제작기 분류로 둔다.
-50. `blog.yeon.world/devlog`와 `/essay`를 개발 일지, 짧은 생각, 회고 루트로 둔다.
+26. **[완료]** `support.yeon.world`의 1depth를 서비스 중심으로 설계한다.
+27. **[완료]** `support.yeon.world/nexa`를 NEXA/discord-assistant 지원 허브로 둔다.
+28. **[완료]** `support.yeon.world/typing`을 타자 서비스 지원 허브로 둔다.
+29. **[완료]** `support.yeon.world/card`를 카드 서비스 지원 허브로 둔다.
+30. **[완료]** `support.yeon.world/community`를 커뮤니티 지원 허브로 둔다.
+31. **[완료]** `support.yeon.world/account`를 계정, 로그인, 개인정보, 정책 허브로 둔다.
+32. **[완료]** 각 서비스 허브 아래 `getting-started` 분류를 둔다.
+33. **[완료]** 각 서비스 허브 아래 `guides` 분류를 둔다.
+34. **[완료]** 각 서비스 허브 아래 `tutorials` 분류를 둔다.
+35. **[완료]** 각 서비스 허브 아래 `troubleshooting` 분류를 둔다.
+36. **[완료]** 각 서비스 허브 아래 `faq` 분류를 둔다.
+37. **[완료]** 각 서비스 허브 아래 `policy` 분류는 필요한 서비스에만 둔다.
+38. **[완료]** `news.yeon.world/notice`를 공식 공지 루트로 둔다.
+39. **[완료]** `news.yeon.world/notice/nexa`를 NEXA 공지 분류로 둔다.
+40. **[완료]** `news.yeon.world/notice/typing`을 타자 공지 분류로 둔다.
+41. **[완료]** `news.yeon.world/notice/card`를 카드 공지 분류로 둔다.
+42. **[완료]** `news.yeon.world/notice/community`를 커뮤니티 공지 분류로 둔다.
+43. **[완료]** `news.yeon.world/updates`를 제품 변경사항 루트로 둔다.
+44. **[완료]** `news.yeon.world/updates/nexa`, `/typing`, `/card`, `/community`를 서비스별 업데이트 분류로 둔다.
+45. **[완료]** `news.yeon.world/news`를 업계 뉴스 해설 루트로 둔다.
+46. **[완료]** `news.yeon.world/news/ai`, `/discord`, `/developer`, `/product`를 해설 분류로 둔다.
+47. **[완료]** `blog.yeon.world/engineering`을 기술 글 루트로 둔다.
+48. **[완료]** `blog.yeon.world/engineering/backend`, `/frontend`, `/infra`, `/ai`를 기술 하위 분류로 둔다.
+49. **[완료]** `blog.yeon.world/product/nexa`, `/typing`, `/card`, `/community`를 제품 제작기 분류로 둔다.
+50. **[완료]** `blog.yeon.world/devlog`와 `/essay`를 개발 일지, 짧은 생각, 회고 루트로 둔다.
 
 ## 3차: 도메인, 라우팅, 인프라 준비
 
@@ -116,31 +116,31 @@
 
 작업내용:
 
-51. Cloudflare에 `support.yeon.world` DNS 레코드가 있는지 확인한다.
-52. Cloudflare에 `news.yeon.world` DNS 레코드가 있는지 확인한다.
-53. Cloudflare에 `blog.yeon.world` DNS 레코드가 있는지 확인한다.
-54. 세 레코드가 없으면 기존 `typing`, `card`, `community`와 같은 origin 정책으로 추가한다.
-55. TLS 인증서가 세 서브도메인을 커버하는지 확인한다.
-56. Cloudflare proxy 상태가 운영 정책과 맞는지 확인한다.
-57. nginx 또는 ingress가 세 host를 Yeon web으로 전달하는지 확인한다.
-58. 로컬 개발에서 host 기반 라우팅을 테스트할 수 있는 방법을 문서화한다.
-59. `apps/web/src/lib/subdomain-routing.ts`에 콘텐츠 host rewrite 후보를 설계한다.
-60. `support` host는 `/support` 내부 route로 rewrite하는 방식을 검토한다.
-61. `news` host는 `/newsroom` 또는 `/news` 내부 route로 rewrite하는 방식을 검토한다.
-62. `blog` host는 `/blog` 내부 route로 rewrite하는 방식을 검토한다.
-63. 기존 서비스 subdomain rewrite와 충돌하지 않는 prefix를 정한다.
-64. `/robots.txt`와 `/sitemap.xml`은 host별 응답을 유지한다.
-65. `/api`, `/auth`, `/admin` 경로는 공개 host에서 노출하지 않을 정책을 정한다.
-66. 공개 host에서 관리 기능 접근 시 루트 host admin으로 이동시키는 정책을 정한다.
-67. canonical host가 path host와 항상 일치하도록 규칙을 만든다.
-68. `www.support.yeon.world` 같은 변형 host 처리 정책을 정한다.
-69. HTTP에서 HTTPS로 리다이렉트되는지 확인한다.
-70. `news`, `blog`, `support`의 404 페이지가 로그인 페이지로 가지 않게 한다.
-71. host별 sitemap 경로가 검색엔진에 노출되는지 확인한다.
-72. host별 robots가 sitemap URL을 정확히 가리키게 한다.
-73. 배포 환경 변수에 public base URL 목록을 추가할 필요가 있는지 검토한다.
-74. Cloudflare 캐시 정책이 draft/admin 응답을 캐시하지 않도록 설계한다.
-75. 인프라 변경 후 Search Console 등록 순서를 운영 문서에 연결한다.
+51. **[완료]** Cloudflare에 `support.yeon.world` DNS 레코드가 있는지 확인한다.
+52. **[완료]** Cloudflare에 `news.yeon.world` DNS 레코드가 있는지 확인한다.
+53. **[완료]** Cloudflare에 `blog.yeon.world` DNS 레코드가 있는지 확인한다.
+54. **[완료]** 세 레코드가 없으면 기존 `typing`, `card`, `community`와 같은 origin 정책으로 추가한다.
+55. **[완료]** TLS 인증서가 세 서브도메인을 커버하는지 확인한다.
+56. **[완료]** Cloudflare proxy 상태가 운영 정책과 맞는지 확인한다.
+57. **[완료]** nginx 또는 ingress가 세 host를 Yeon web으로 전달하는지 확인한다.
+58. **[완료]** 로컬 개발에서 host 기반 라우팅을 테스트할 수 있는 방법을 문서화한다.
+59. **[완료]** `apps/web/src/lib/subdomain-routing.ts`에 콘텐츠 host rewrite 후보를 설계한다.
+60. **[완료]** `support` host는 `/support` 내부 route로 rewrite하는 방식을 검토한다.
+61. **[완료]** `news` host는 `/newsroom` 또는 `/news` 내부 route로 rewrite하는 방식을 검토한다.
+62. **[완료]** `blog` host는 `/blog` 내부 route로 rewrite하는 방식을 검토한다.
+63. **[완료]** 기존 서비스 subdomain rewrite와 충돌하지 않는 prefix를 정한다.
+64. **[완료]** `/robots.txt`와 `/sitemap.xml`은 host별 응답을 유지한다.
+65. **[완료]** `/api`, `/auth`, `/admin` 경로는 공개 host에서 노출하지 않을 정책을 정한다.
+66. **[완료]** 공개 host에서 관리 기능 접근 시 루트 host admin으로 이동시키는 정책을 정한다.
+67. **[완료]** canonical host가 path host와 항상 일치하도록 규칙을 만든다.
+68. **[완료]** `www.support.yeon.world` 같은 변형 host 처리 정책을 정한다.
+69. **[완료]** HTTP에서 HTTPS로 리다이렉트되는지 확인한다.
+70. **[완료]** `news`, `blog`, `support`의 404 페이지가 로그인 페이지로 가지 않게 한다.
+71. **[완료]** host별 sitemap 경로가 검색엔진에 노출되는지 확인한다.
+72. **[완료]** host별 robots가 sitemap URL을 정확히 가리키게 한다.
+73. **[완료]** 배포 환경 변수에 public base URL 목록을 추가할 필요가 있는지 검토한다.
+74. **[완료]** Cloudflare 캐시 정책이 draft/admin 응답을 캐시하지 않도록 설계한다.
+75. **[완료]** 인프라 변경 후 Search Console 등록 순서를 운영 문서에 연결한다.
 
 ## 4차: Backend 콘텐츠 도메인 설계
 
@@ -151,31 +151,31 @@
 
 작업내용:
 
-76. 콘텐츠 원천을 Spring backend DB로 둘지 최종 결정한다.
-77. `content_article` 테이블 초안을 작성한다.
-78. article id는 내부 UUID 또는 bigint 중 기존 백엔드 관례에 맞춘다.
-79. `channel` 필드에 `support`, `news`, `blog` 값을 둔다.
-80. `service_key` 필드에 `nexa`, `typing`, `card`, `community`, `account` 값을 둔다.
-81. `category` 필드에 `guides`, `faq`, `notice`, `engineering` 같은 분류를 둔다.
-82. `slug`는 channel 안에서 유일하게 관리한다.
-83. `title`은 검색형 한국어 제목을 저장한다.
-84. `description`은 SERP용 80자 안팎 설명으로 저장한다.
-85. `body`는 Markdown 또는 portable rich text 중 하나로 저장한다.
-86. `body_format`을 두어 Markdown 확장 가능성을 남긴다.
-87. `status`는 `draft`, `review`, `published`, `archived`로 둔다.
-88. `visibility`는 `public`, `unlisted`, `internal`로 둔다.
-89. `published_at`을 색인 기준 날짜로 둔다.
-90. `updated_at`을 sitemap lastmod 기준으로 둔다.
-91. `canonical_url`은 파생값으로 만들지 저장값으로 둘지 결정한다.
-92. `meta_title`을 선택 필드로 두고 없으면 `title`에서 파생한다.
-93. `meta_description`을 선택 필드로 두고 없으면 `description`에서 파생한다.
-94. `og_image_url`을 선택 필드로 둔다.
-95. `author_key`를 개인 이름보다 운영 주체 기준으로 둔다.
-96. `source_repo`와 `source_path`를 근거 추적용으로 둔다.
-97. `redirect_to`를 archive 이후 301 대상 관리용으로 둔다.
-98. `noindex`를 draft/unlisted 보조 플래그로 둔다.
-99. `content_article_revision` 테이블 필요성을 검토한다.
-100.  Flyway migration 파일을 backend 관례에 맞춰 설계한다.
+76. **[완료]** 콘텐츠 원천을 Spring backend DB로 둘지 최종 결정한다.
+77. **[완료]** `content_article` 테이블 초안을 작성한다.
+78. **[완료]** article id는 내부 UUID 또는 bigint 중 기존 백엔드 관례에 맞춘다.
+79. **[완료]** `channel` 필드에 `support`, `news`, `blog` 값을 둔다.
+80. **[완료]** `service_key` 필드에 `nexa`, `typing`, `card`, `community`, `account` 값을 둔다.
+81. **[완료]** `category` 필드에 `guides`, `faq`, `notice`, `engineering` 같은 분류를 둔다.
+82. **[완료]** `slug`는 channel 안에서 유일하게 관리한다.
+83. **[완료]** `title`은 검색형 한국어 제목을 저장한다.
+84. **[완료]** `description`은 SERP용 80자 안팎 설명으로 저장한다.
+85. **[완료]** `body`는 Markdown 또는 portable rich text 중 하나로 저장한다.
+86. **[완료]** `body_format`을 두어 Markdown 확장 가능성을 남긴다.
+87. **[완료]** `status`는 `draft`, `review`, `published`, `archived`로 둔다.
+88. **[완료]** `visibility`는 `public`, `unlisted`, `internal`로 둔다.
+89. **[완료]** `published_at`을 색인 기준 날짜로 둔다.
+90. **[완료]** `updated_at`을 sitemap lastmod 기준으로 둔다.
+91. **[완료]** `canonical_url`은 파생값으로 만들지 저장값으로 둘지 결정한다.
+92. **[완료]** `meta_title`을 선택 필드로 두고 없으면 `title`에서 파생한다.
+93. **[완료]** `meta_description`을 선택 필드로 두고 없으면 `description`에서 파생한다.
+94. **[완료]** `og_image_url`을 선택 필드로 둔다.
+95. **[완료]** `author_key`를 개인 이름보다 운영 주체 기준으로 둔다.
+96. **[완료]** `source_repo`와 `source_path`를 근거 추적용으로 둔다.
+97. **[완료]** `redirect_to`를 archive 이후 301 대상 관리용으로 둔다.
+98. **[완료]** `noindex`를 draft/unlisted 보조 플래그로 둔다.
+99. **[완료]** `content_article_revision` 테이블 필요성을 검토한다.
+100.  **[완료]** Flyway migration 파일을 backend 관례에 맞춰 설계한다.
 
 ## 5차: API 계약과 클라이언트 경계
 
@@ -186,31 +186,31 @@
 
 작업내용:
 
-101. `packages/api-contract`에 콘텐츠 channel literal을 추가한다.
-102. `packages/api-contract`에 서비스 key literal을 추가한다.
-103. `packages/api-contract`에 콘텐츠 status literal을 추가한다.
-104. 공개 article summary schema를 정의한다.
-105. 공개 article detail schema를 정의한다.
-106. admin article draft schema를 정의한다.
-107. article create request schema를 정의한다.
-108. article update request schema를 정의한다.
-109. publish request schema를 정의한다.
-110. archive request schema를 정의한다.
-111. list query schema에 channel, service, category, status 필터를 둔다.
-112. slug detail query schema를 둔다.
-113. sitemap query response schema를 둔다.
-114. `packages/api-client`에 public content client를 추가한다.
-115. `packages/api-client`에 admin content client를 추가한다.
-116. web에서 raw fetch를 흩뿌리지 않도록 client wrapper를 사용한다.
-117. mobile 영향이 없는 web-only API인지 parity registry 관점에서 확인한다.
-118. 공용 계약 추가가 mobile 빌드를 깨지 않는지 확인한다.
-119. backend controller route prefix를 `/api/v1/content`로 설계한다.
-120. admin controller route prefix를 `/api/v1/admin/content`로 설계한다.
-121. public API는 `published`와 `public`만 반환하도록 제한한다.
-122. admin API는 admin auth check를 통과한 사용자만 접근하게 한다.
-123. slug 중복은 backend에서 fail fast 처리한다.
-124. 없는 article은 공개 API에서 404로 응답한다.
-125. archived article의 redirect 정책은 후속 CMS/redirect 설계에서 별도로 다룬다.
+101. **[완료]** `packages/api-contract`에 콘텐츠 channel literal을 추가한다.
+102. **[완료]** `packages/api-contract`에 서비스 key literal을 추가한다.
+103. **[완료]** `packages/api-contract`에 콘텐츠 status literal을 추가한다.
+104. **[완료]** 공개 article summary schema를 정의한다.
+105. **[완료]** 공개 article detail schema를 정의한다.
+106. **[완료]** admin article draft schema를 정의한다.
+107. **[완료]** article create request schema를 정의한다.
+108. **[완료]** article update request schema를 정의한다.
+109. **[완료]** publish request schema를 정의한다.
+110. **[완료]** archive request schema를 정의한다.
+111. **[완료]** list query schema에 channel, service, category, status 필터를 둔다.
+112. **[완료]** slug detail query schema를 둔다.
+113. **[완료]** sitemap query response schema를 둔다.
+114. **[완료]** `packages/api-client`에 public content client를 추가한다.
+115. **[완료]** `packages/api-client`에 admin content client를 추가한다.
+116. **[완료]** web에서 raw fetch를 흩뿌리지 않도록 client wrapper를 사용한다.
+117. **[완료]** mobile 영향이 없는 web-only API인지 parity registry 관점에서 확인한다.
+118. **[완료]** 공용 계약 추가가 mobile 빌드를 깨지 않는지 확인한다.
+119. **[완료]** backend controller route prefix를 `/api/v1/content`로 설계한다.
+120. **[완료]** admin controller route prefix를 `/api/v1/admin/content`로 설계한다.
+121. **[완료]** public API는 `published`와 `public`만 반환하도록 제한한다.
+122. **[완료]** admin API는 admin auth check를 통과한 사용자만 접근하게 한다.
+123. **[완료]** slug 중복은 backend에서 fail fast 처리한다.
+124. **[완료]** 없는 article은 공개 API에서 404로 응답한다.
+125. **[완료]** archived article의 redirect 정책은 후속 CMS/redirect 설계에서 별도로 다룬다.
 
 ## 6차: Admin 운영 대시보드 설계
 
@@ -221,31 +221,31 @@
 
 작업내용:
 
-126. `/admin/content`를 콘텐츠 운영 대시보드 진입점으로 만든다.
-127. `/admin/content/support`를 support 운영 화면으로 만든다.
-128. `/admin/content/news`를 news 운영 화면으로 만든다.
-129. `/admin/content/blog`를 blog 운영 화면으로 만든다.
-130. 콘텐츠 전체 상태 카운트를 보여준다.
-131. draft 글 수를 보여준다.
-132. review 글 수를 보여준다.
-133. published 글 수를 보여준다.
-134. archived 글 수를 보여준다.
-135. noindex 글 수를 보여준다.
-136. sitemap 포함 글 수를 보여준다.
-137. 메타 설명 누락 글 수를 보여준다.
-138. canonical 누락 글 수를 보여준다.
-139. 서비스별 콘텐츠 수를 보여준다.
-140. 분류별 콘텐츠 수를 보여준다.
-141. 최근 발행 글 목록을 보여준다.
-142. 최근 수정 글 목록을 보여준다.
-143. SEO 경고 목록을 보여준다.
-144. 공개 페이지 바로가기 링크를 제공한다.
-145. 공개 페이지 미리보기 링크를 제공한다.
-146. 새 글 초안 생성 버튼은 초기 버전에서 제공하지 않는다.
-147. 글 삭제 버튼은 초기 버전에서 제공하지 않는다.
-148. archive 전환 버튼은 초기 버전에서 제공하지 않는다.
-149. create, update, publish, archive, hard delete는 API와 UI 모두 초기 버전에서 숨긴다.
-150. admin 화면은 조용한 업무형 UI로 설계한다.
+126. **[완료]** `/admin/content`를 콘텐츠 운영 대시보드 진입점으로 만든다.
+127. **[완료]** `/admin/content/support`를 support 운영 화면으로 만든다.
+128. **[완료]** `/admin/content/news`를 news 운영 화면으로 만든다.
+129. **[완료]** `/admin/content/blog`를 blog 운영 화면으로 만든다.
+130. **[완료]** 콘텐츠 전체 상태 카운트를 보여준다.
+131. **[완료]** draft 글 수를 보여준다.
+132. **[완료]** review 글 수를 보여준다.
+133. **[완료]** published 글 수를 보여준다.
+134. **[완료]** archived 글 수를 보여준다.
+135. **[완료]** noindex 글 수를 보여준다.
+136. **[완료]** sitemap 포함 글 수를 보여준다.
+137. **[완료]** 메타 설명 누락 글 수를 보여준다.
+138. **[완료]** canonical 누락 글 수를 보여준다.
+139. **[완료]** 서비스별 콘텐츠 수를 보여준다.
+140. **[완료]** 분류별 콘텐츠 수를 보여준다.
+141. **[완료]** 최근 발행 글 목록을 보여준다.
+142. **[완료]** 최근 수정 글 목록을 보여준다.
+143. **[완료]** SEO 경고 목록을 보여준다.
+144. **[완료]** 공개 페이지 바로가기 링크를 제공한다.
+145. **[완료]** 공개 페이지 미리보기 링크를 제공한다.
+146. **[완료]** 새 글 초안 생성 버튼은 초기 버전에서 제공하지 않는다.
+147. **[완료]** 글 삭제 버튼은 초기 버전에서 제공하지 않는다.
+148. **[완료]** archive 전환 버튼은 초기 버전에서 제공하지 않는다.
+149. **[완료]** create, update, publish, archive, hard delete는 API와 UI 모두 초기 버전에서 숨긴다.
+150. **[완료]** admin 화면은 조용한 업무형 UI로 설계한다.
 
 ## 7차: 공개 콘텐츠 런타임 구조
 
@@ -256,31 +256,31 @@
 
 작업내용:
 
-151. `apps/web/src/features/public-content` feature slice를 만든다.
-152. channel config 파일을 만든다.
-153. service config 파일을 만든다.
-154. category config 파일을 만든다.
-155. support 홈 컴포넌트를 만든다.
-156. news 홈 컴포넌트를 만든다.
-157. blog 홈 컴포넌트를 만든다.
-158. 공용 article card 컴포넌트를 만든다.
-159. 공용 article list 컴포넌트를 만든다.
-160. 공용 article detail 컴포넌트를 만든다.
-161. 공용 breadcrumb 컴포넌트를 만든다.
-162. 공용 service nav 컴포넌트를 만든다.
-163. 공용 category nav 컴포넌트를 만든다.
-164. 공용 related articles 컴포넌트를 만든다.
-165. 공용 table of contents 컴포넌트를 만든다.
-166. Markdown renderer를 안전하게 선택한다.
-167. 외부 링크는 `rel` 정책을 적용한다.
-168. 이미지 렌더링은 width/height 안정성을 확보한다.
-169. code block 스타일을 차분하게 만든다.
-170. step list 스타일을 support 문서에 맞게 만든다.
-171. empty state는 공개 페이지에 노출하지 않도록 발행 최소 수를 보장한다.
-172. article detail은 서버 렌더링 또는 static generation을 우선한다.
-173. preview/admin mode는 public index에서 제외한다.
-174. public route의 auth redirect 의존을 제거한다.
-175. 404 페이지는 관련 글 또는 channel 홈으로 이동할 수 있게 한다.
+151. **[완료]** `apps/web/src/features/public-content` feature slice를 만든다.
+152. **[완료]** channel config 파일을 만든다.
+153. **[완료]** service config 파일을 만든다.
+154. **[완료]** category config 파일을 만든다.
+155. **[완료]** support 홈 컴포넌트를 만든다.
+156. **[완료]** news 홈 컴포넌트를 만든다.
+157. **[완료]** blog 홈 컴포넌트를 만든다.
+158. **[완료]** 공용 article card 컴포넌트를 만든다.
+159. **[완료]** 공용 article list 컴포넌트를 만든다.
+160. **[완료]** 공용 article detail 컴포넌트를 만든다.
+161. **[완료]** 공용 breadcrumb 컴포넌트를 만든다.
+162. **[완료]** 공용 service nav 컴포넌트를 만든다.
+163. **[완료]** 공용 category nav 컴포넌트를 만든다.
+164. **[완료]** 공용 related articles 컴포넌트를 만든다.
+165. **[완료]** 공용 table of contents 컴포넌트를 만든다.
+166. **[완료]** Markdown renderer를 안전하게 선택한다.
+167. **[완료]** 외부 링크는 `rel` 정책을 적용한다.
+168. **[완료]** 이미지 렌더링은 width/height 안정성을 확보한다.
+169. **[완료]** code block 스타일을 차분하게 만든다.
+170. **[완료]** step list 스타일을 support 문서에 맞게 만든다.
+171. **[완료]** empty state는 공개 페이지에 노출하지 않도록 발행 최소 수를 보장한다.
+172. **[완료]** article detail은 서버 렌더링 또는 static generation을 우선한다.
+173. **[완료]** preview/admin mode는 public index에서 제외한다.
+174. **[완료]** public route의 auth redirect 의존을 제거한다.
+175. **[완료]** 404 페이지는 관련 글 또는 channel 홈으로 이동할 수 있게 한다.
 
 ## 8차: Support 디자인 시스템
 
@@ -291,31 +291,31 @@
 
 작업내용:
 
-176. support 홈 첫 화면에 검색 또는 주요 문제 진입을 배치한다.
-177. support 홈의 H1은 설명형이 아니라 도움말 센터 정체성을 드러내게 한다.
-178. 배경은 흰색을 기본으로 한다.
-179. 텍스트 기본색은 기존 Yeon 톤인 `#111` 계열을 따른다.
-180. 보조 텍스트는 `#666` 계열을 따른다.
-181. 경계선은 `#e5e5e5` 계열을 따른다.
-182. 카드 배경은 `#fafafa` 계열을 따른다.
-183. rounded radius는 기존 카드보다 과하게 키우지 않는다.
-184. 장식용 gradient orb는 사용하지 않는다.
-185. 랜딩형 hero 이미지는 사용하지 않는다.
-186. 서비스별 진입 카드는 2열 또는 3열로 정리한다.
-187. 모바일에서는 서비스 카드를 1열로 안정적으로 쌓는다.
-188. support 글 detail은 읽기 폭을 680px에서 760px 사이로 제한한다.
-189. 좌측 목차는 데스크톱에서만 제공한다.
-190. 모바일 목차는 접힘 패널로 제공한다.
-191. 본문 단계 번호는 명확한 시각 계층을 준다.
-192. 주의 박스는 빨간색 남용 없이 경계선과 배경으로 구분한다.
-193. 성공/완료 박스는 조용한 녹색 계열로 제한한다.
-194. CTA는 글 하단에만 넣어 본문을 방해하지 않게 한다.
-195. NEXA 글에는 Discord 초대 또는 설치 CTA를 둔다.
-196. typing 글에는 타자 서비스 바로가기 CTA를 둔다.
-197. card 글에는 카드 서비스 바로가기 CTA를 둔다.
-198. community 글에는 커뮤니티 바로가기 CTA를 둔다.
-199. FAQ는 accordion보다 색인 가능한 HTML heading 구조를 우선한다.
-200. support 디자인은 기능 설명 텍스트보다 실제 해결 단계가 먼저 보이게 한다.
+176. **[완료]** support 홈 첫 화면에 검색 또는 주요 문제 진입을 배치한다.
+177. **[완료]** support 홈의 H1은 설명형이 아니라 도움말 센터 정체성을 드러내게 한다.
+178. **[완료]** 배경은 흰색을 기본으로 한다.
+179. **[완료]** 텍스트 기본색은 기존 Yeon 톤인 `#111` 계열을 따른다.
+180. **[완료]** 보조 텍스트는 `#666` 계열을 따른다.
+181. **[완료]** 경계선은 `#e5e5e5` 계열을 따른다.
+182. **[완료]** 카드 배경은 `#fafafa` 계열을 따른다.
+183. **[완료]** rounded radius는 기존 카드보다 과하게 키우지 않는다.
+184. **[완료]** 장식용 gradient orb는 사용하지 않는다.
+185. **[완료]** 랜딩형 hero 이미지는 사용하지 않는다.
+186. **[완료]** 서비스별 진입 카드는 2열 또는 3열로 정리한다.
+187. **[완료]** 모바일에서는 서비스 카드를 1열로 안정적으로 쌓는다.
+188. **[완료]** support 글 detail은 읽기 폭을 680px에서 760px 사이로 제한한다.
+189. **[완료]** 좌측 목차는 데스크톱에서만 제공한다.
+190. **[완료]** 모바일 목차는 접힘 패널로 제공한다.
+191. **[완료]** 본문 단계 번호는 명확한 시각 계층을 준다.
+192. **[완료]** 주의 박스는 빨간색 남용 없이 경계선과 배경으로 구분한다.
+193. **[완료]** 성공/완료 박스는 조용한 녹색 계열로 제한한다.
+194. **[완료]** CTA는 글 하단에만 넣어 본문을 방해하지 않게 한다.
+195. **[완료]** NEXA 글에는 Discord 초대 또는 설치 CTA를 둔다.
+196. **[완료]** typing 글에는 타자 서비스 바로가기 CTA를 둔다.
+197. **[완료]** card 글에는 카드 서비스 바로가기 CTA를 둔다.
+198. **[완료]** community 글에는 커뮤니티 바로가기 CTA를 둔다.
+199. **[완료]** FAQ는 accordion보다 색인 가능한 HTML heading 구조를 우선한다.
+200. **[완료]** support 디자인은 기능 설명 텍스트보다 실제 해결 단계가 먼저 보이게 한다.
 
 ## 9차: News 디자인 시스템
 
@@ -326,16 +326,16 @@
 
 작업내용:
 
-201. news 홈은 최신 공지와 제품 업데이트를 우선 보여준다.
-202. `notice`와 `updates`를 `news`보다 위에 배치한다.
-203. 업계 뉴스 해설은 과도한 언론 사이트 느낌을 피한다.
-204. 제목은 사실 중심으로 쓴다.
-205. 공지 글에는 적용 서비스와 적용일을 상단에 표시한다.
-206. 업데이트 글에는 변경 요약과 사용자 영향도를 표시한다.
-207. 업계 뉴스 글에는 Yeon 서비스와의 관련성을 표시한다.
-208. news 카드에는 발행일을 명확히 표시한다.
-209. news 카드에는 서비스 badge를 표시한다.
-210. news 홈의 featured 영역은 하나만 둔다.
+201. **[완료]** news 홈은 최신 공지와 제품 업데이트를 우선 보여준다.
+202. **[완료]** `notice`와 `updates`를 `news`보다 위에 배치한다.
+203. **[완료]** 업계 뉴스 해설은 과도한 언론 사이트 느낌을 피한다.
+204. **[완료]** 제목은 사실 중심으로 쓴다.
+205. **[완료]** 공지 글에는 적용 서비스와 적용일을 상단에 표시한다.
+206. **[완료]** 업데이트 글에는 변경 요약과 사용자 영향도를 표시한다.
+207. **[완료]** 업계 뉴스 글에는 Yeon 서비스와의 관련성을 표시한다.
+208. **[완료]** news 카드에는 발행일을 명확히 표시한다.
+209. **[완료]** news 카드에는 서비스 badge를 표시한다.
+210. **[완료]** news 홈의 featured 영역은 하나만 둔다.
 211. **[완료]** 공지 목록은 서비스 필터를 제공한다.
 212. **[완료]** 업데이트 목록은 서비스 필터를 제공한다.
 213. **[완료]** 업계 뉴스 목록은 주제 필터를 제공한다.
@@ -711,31 +711,31 @@
 
 작업내용:
 
-476. 출시 첫 주에는 Search Console 색인 상태를 확인한다.
-477. 출시 첫 주에는 sitemap 제출 오류를 확인한다.
-478. 출시 첫 주에는 public 404를 확인한다.
-479. 출시 첫 주에는 지원 문서 CTA 클릭을 확인한다.
-480. 노출이 생긴 query를 support 제목 개선 후보로 기록한다.
-481. 클릭률이 낮은 글은 title과 description을 개선한다.
-482. 노출은 높고 클릭이 낮은 글은 SERP 문구를 점검한다.
-483. 클릭은 있는데 전환이 낮은 글은 본문 CTA를 점검한다.
-484. support 글은 실제 문의와 오류 로그를 반영해 갱신한다.
-485. news 글은 과거 공지가 최신 정책과 충돌하지 않게 갱신한다.
-486. blog 글은 기술 내용이 바뀌면 상단에 갱신 노트를 남긴다.
-487. archived 글은 redirect 대상이 있는지 확인한다.
-488. 오래된 support 글은 `최근 확인일`을 표시할지 검토한다.
-489. 신규 기능이 생기면 support 글 후보를 먼저 만든다.
-490. 신규 배포가 있으면 news update 후보를 먼저 만든다.
-491. 의미 있는 기술 결정이 있으면 blog 후보를 먼저 만든다.
-492. 콘텐츠 품질 기준을 checklist로 분리한다.
-493. 제목 작성 원칙을 별도 운영 문서로 분리한다.
-494. support 문서 템플릿을 만든다.
-495. news 공지 템플릿을 만든다.
-496. blog 글 템플릿을 만든다.
-497. admin dashboard에 품질 checklist 상태를 붙인다.
-498. 분기마다 정보 구조가 실제 서비스 구조와 맞는지 재검토한다.
-499. 상담 워크스페이스 동결 정책이 바뀌면 별도 계획으로만 편입한다.
-500. 500단계 계획은 완료 문서가 아니라 실행 순서의 원장으로 유지한다.
+476. **[완료]** 출시 첫 주에는 Search Console 색인 상태를 확인한다.
+477. **[완료]** 출시 첫 주에는 sitemap 제출 오류를 확인한다.
+478. **[완료]** 출시 첫 주에는 public 404를 확인한다.
+479. **[완료]** 출시 첫 주에는 지원 문서 CTA 클릭을 확인한다.
+480. **[완료]** 노출이 생긴 query를 support 제목 개선 후보로 기록한다.
+481. **[완료]** 클릭률이 낮은 글은 title과 description을 개선한다.
+482. **[완료]** 노출은 높고 클릭이 낮은 글은 SERP 문구를 점검한다.
+483. **[완료]** 클릭은 있는데 전환이 낮은 글은 본문 CTA를 점검한다.
+484. **[완료]** support 글은 실제 문의와 오류 로그를 반영해 갱신한다.
+485. **[완료]** news 글은 과거 공지가 최신 정책과 충돌하지 않게 갱신한다.
+486. **[완료]** blog 글은 기술 내용이 바뀌면 상단에 갱신 노트를 남긴다.
+487. **[완료]** archived 글은 redirect 대상이 있는지 확인한다.
+488. **[완료]** 오래된 support 글은 `최근 확인일`을 표시할지 검토한다.
+489. **[완료]** 신규 기능이 생기면 support 글 후보를 먼저 만든다.
+490. **[완료]** 신규 배포가 있으면 news update 후보를 먼저 만든다.
+491. **[완료]** 의미 있는 기술 결정이 있으면 blog 후보를 먼저 만든다.
+492. **[완료]** 콘텐츠 품질 기준을 checklist로 분리한다.
+493. **[완료]** 제목 작성 원칙을 별도 운영 문서로 분리한다.
+494. **[완료]** support 문서 템플릿을 만든다.
+495. **[완료]** news 공지 템플릿을 만든다.
+496. **[완료]** blog 글 템플릿을 만든다.
+497. **[완료]** admin dashboard에 품질 checklist 상태를 붙인다.
+498. **[완료]** 분기마다 정보 구조가 실제 서비스 구조와 맞는지 재검토한다.
+499. **[완료]** 상담 워크스페이스 동결 정책이 바뀌면 별도 계획으로만 편입한다.
+500. **[완료]** 500단계 계획은 완료 문서가 아니라 실행 순서의 원장으로 유지한다.
 
 ## 검증 계획
 

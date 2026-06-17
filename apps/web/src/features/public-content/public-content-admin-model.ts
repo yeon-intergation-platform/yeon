@@ -580,6 +580,13 @@ function buildPublicContentAdminOpsChecklist(params: {
       value: "발행 글별",
     },
     {
+      id: "post-launch-quality-review",
+      label: "Post-launch quality review",
+      note: "출시 첫 달은 주간, 안정화 이후는 월간으로 품질 체크리스트와 제목/CTA 개선 후보를 확인합니다.",
+      status: "manual",
+      value: "주간/월간",
+    },
+    {
       id: "seo-warning-queue",
       label: "SEO warning queue",
       note: "noindex, meta description, canonical, sitemap, title 품질 경고 수입니다.",
