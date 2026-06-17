@@ -60,6 +60,16 @@ export type PublicContentArticle = {
   body: readonly PublicContentBlock[];
 };
 
+export type PublicContentCollection = {
+  channel: PublicContentChannel;
+  slugSegments: readonly string[];
+  title: string;
+  description: string;
+  articles: readonly PublicContentArticle[];
+  canonicalUrl: string;
+  lastModified: string;
+};
+
 type PublicContentSitemapEntry = {
   url: string;
   changeFrequency: NonNullable<
@@ -141,6 +151,19 @@ export const PUBLIC_CONTENT_CATEGORY_LABELS = {
   notice: "공지",
   updates: "업데이트",
   news: "뉴스 해설",
+  engineering: "기술 글",
+  product: "제품 글",
+  devlog: "개발 일지",
+  essay: "에세이",
+} as const;
+
+const NEWS_CATEGORY_TITLES = {
+  notice: "공식 공지",
+  updates: "제품 업데이트",
+  news: "업계 뉴스 해설",
+} as const;
+
+const BLOG_CATEGORY_TITLES = {
   engineering: "기술 글",
   product: "제품 글",
   devlog: "개발 일지",
@@ -1657,6 +1680,13 @@ export function getPublicContentArticles(channel?: PublicContentChannel) {
     : [...PUBLIC_CONTENT_ARTICLES];
 }
 
+function compareArticlesByDate(
+  left: PublicContentArticle,
+  right: PublicContentArticle
+) {
+  return right.publishedAt.localeCompare(left.publishedAt);
+}
+
 export function getPublicContentArticleBySlug(
   channel: PublicContentChannel,
   slugSegments: readonly string[]
@@ -1671,6 +1701,18 @@ export function getPublicContentArticleBySlug(
   );
 }
 
+export function getPublicContentCategoryLabel(category: string) {
+  return (
+    PUBLIC_CONTENT_CATEGORY_LABELS[
+      category as keyof typeof PUBLIC_CONTENT_CATEGORY_LABELS
+    ] ?? category
+  );
+}
+
+export function getPublicContentServiceLabel(service: PublicContentService) {
+  return PUBLIC_CONTENT_SERVICE_LABELS[service];
+}
+
 export function getPublicContentServicesForChannel(
   channel: PublicContentChannel
 ) {
@@ -1679,6 +1721,194 @@ export function getPublicContentServicesForChannel(
   );
 
   return [...services];
+}
+
+function getNewsCategoryTitle(category: string) {
+  return (
+    NEWS_CATEGORY_TITLES[category as keyof typeof NEWS_CATEGORY_TITLES] ??
+    getPublicContentCategoryLabel(category)
+  );
+}
+
+function getBlogCategoryTitle(category: string) {
+  return (
+    BLOG_CATEGORY_TITLES[category as keyof typeof BLOG_CATEGORY_TITLES] ??
+    getPublicContentCategoryLabel(category)
+  );
+}
+
+function getLastModified(articles: readonly PublicContentArticle[]) {
+  return (
+    articles
+      .map((article) => article.updatedAt)
+      .sort((left, right) => right.localeCompare(left))[0] ?? ""
+  );
+}
+
+function getFirstCollectionArticle(articles: readonly PublicContentArticle[]) {
+  const firstArticle = articles[0];
+  if (!firstArticle) {
+    throw new Error("공개 콘텐츠 collection에 포함된 글이 없습니다.");
+  }
+
+  return firstArticle;
+}
+
+function getCollectionArticles(
+  channel: PublicContentChannel,
+  slugSegments: readonly string[]
+) {
+  const [firstSegment, secondSegment] = slugSegments;
+
+  if (slugSegments.length === 0 || slugSegments.length > 2) {
+    return [];
+  }
+
+  return getPublicContentArticles(channel)
+    .filter((article) => {
+      if (channel === PUBLIC_CONTENT_CHANNELS.support) {
+        if (slugSegments.length === 1) {
+          return article.service === firstSegment;
+        }
+
+        return (
+          article.service === firstSegment && article.category === secondSegment
+        );
+      }
+
+      if (slugSegments.length === 1) {
+        return article.category === firstSegment;
+      }
+
+      return (
+        article.category === firstSegment && article.service === secondSegment
+      );
+    })
+    .sort(compareArticlesByDate);
+}
+
+function buildCollectionTitle({
+  channel,
+  slugSegments,
+  articles,
+}: {
+  channel: PublicContentChannel;
+  slugSegments: readonly string[];
+  articles: readonly PublicContentArticle[];
+}) {
+  const [firstSegment, secondSegment] = slugSegments;
+  const firstArticle = getFirstCollectionArticle(articles);
+
+  if (channel === PUBLIC_CONTENT_CHANNELS.support) {
+    const serviceLabel = getPublicContentServiceLabel(firstArticle.service);
+    if (slugSegments.length === 1) {
+      return `${serviceLabel} 도움말`;
+    }
+
+    return `${serviceLabel} ${getPublicContentCategoryLabel(secondSegment)}`;
+  }
+
+  if (channel === PUBLIC_CONTENT_CHANNELS.news) {
+    const categoryTitle = getNewsCategoryTitle(firstSegment);
+    if (slugSegments.length === 1) {
+      return categoryTitle;
+    }
+
+    return `${getPublicContentServiceLabel(firstArticle.service)} ${categoryTitle}`;
+  }
+
+  const categoryTitle = getBlogCategoryTitle(firstSegment);
+  if (slugSegments.length === 1) {
+    return categoryTitle;
+  }
+
+  return `${getPublicContentServiceLabel(firstArticle.service)} ${categoryTitle}`;
+}
+
+function buildCollectionDescription({
+  channel,
+  slugSegments,
+  articles,
+}: {
+  channel: PublicContentChannel;
+  slugSegments: readonly string[];
+  articles: readonly PublicContentArticle[];
+}) {
+  const [firstSegment, secondSegment] = slugSegments;
+  const firstArticle = getFirstCollectionArticle(articles);
+  const serviceLabel = getPublicContentServiceLabel(firstArticle.service);
+
+  if (channel === PUBLIC_CONTENT_CHANNELS.support) {
+    if (slugSegments.length === 1) {
+      return `${serviceLabel} 사용법, 문제 해결, FAQ 문서를 한곳에 모았습니다.`;
+    }
+
+    return `${serviceLabel} ${getPublicContentCategoryLabel(secondSegment)} 문서를 모았습니다.`;
+  }
+
+  if (channel === PUBLIC_CONTENT_CHANNELS.news) {
+    const categoryTitle = getNewsCategoryTitle(firstSegment);
+    if (slugSegments.length === 1) {
+      return `YEON ${categoryTitle} 글을 최신 발행 순서로 모았습니다.`;
+    }
+
+    return `${serviceLabel} ${categoryTitle} 글을 최신 발행 순서로 모았습니다.`;
+  }
+
+  const categoryTitle = getBlogCategoryTitle(firstSegment);
+  if (slugSegments.length === 1) {
+    return `YEON ${categoryTitle}을 최신 발행 순서로 모았습니다.`;
+  }
+
+  return `${serviceLabel} ${categoryTitle}을 최신 발행 순서로 모았습니다.`;
+}
+
+export function getPublicContentCollectionBySlug(
+  channel: PublicContentChannel,
+  slugSegments: readonly string[]
+): PublicContentCollection | null {
+  const articles = getCollectionArticles(channel, slugSegments);
+  if (articles.length === 0) return null;
+
+  return {
+    channel,
+    slugSegments: [...slugSegments],
+    title: buildCollectionTitle({ channel, slugSegments, articles }),
+    description: buildCollectionDescription({
+      channel,
+      slugSegments,
+      articles,
+    }),
+    articles,
+    canonicalUrl: buildPublicContentCanonicalUrl(channel, slugSegments),
+    lastModified: getLastModified(articles),
+  };
+}
+
+export function getPublicContentCollections(channel: PublicContentChannel) {
+  const collectionSlugs = new Map<string, readonly string[]>();
+
+  for (const article of getPublicContentArticles(channel)) {
+    const candidates =
+      channel === PUBLIC_CONTENT_CHANNELS.support
+        ? [[article.service], [article.service, article.category]]
+        : [[article.category], [article.category, article.service]];
+
+    for (const slugSegments of candidates) {
+      collectionSlugs.set(slugSegments.join("/"), slugSegments);
+    }
+  }
+
+  return [...collectionSlugs.values()]
+    .map((slugSegments) =>
+      getPublicContentCollectionBySlug(channel, slugSegments)
+    )
+    .filter((collection): collection is PublicContentCollection =>
+      Boolean(collection)
+    )
+    .sort((left, right) =>
+      left.slugSegments.join("/").localeCompare(right.slugSegments.join("/"))
+    );
 }
 
 export function buildPublicContentCanonicalUrl(
@@ -1706,6 +1936,14 @@ export function getPublicContentSitemapEntries(): PublicContentSitemapEntry[] {
       changeFrequency: "weekly" as const,
       priority: 0.7,
     })),
+    ...Object.values(PUBLIC_CONTENT_CHANNELS).flatMap((channel) =>
+      getPublicContentCollections(channel).map((collection) => ({
+        url: collection.canonicalUrl,
+        lastModified: collection.lastModified,
+        changeFrequency: "weekly" as const,
+        priority: 0.6,
+      }))
+    ),
     ...PUBLIC_CONTENT_ARTICLES.map((article) => {
       const changeFrequency: PublicContentSitemapEntry["changeFrequency"] =
         article.channel === "support" ? "monthly" : "weekly";

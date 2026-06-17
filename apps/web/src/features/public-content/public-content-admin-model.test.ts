@@ -5,6 +5,7 @@ import {
   getPublicContentAdminDashboardStats,
   getValidPublicContentAdminChannel,
 } from "./public-content-admin-model";
+import { getPublicContentCollections } from "./public-content-data";
 
 describe("public content admin model", () => {
   it("공개 콘텐츠 채널별 운영 현황을 계산한다", () => {
@@ -42,7 +43,13 @@ describe("public content admin model", () => {
     expect(stats.channelCount).toBe(3);
     expect(stats.articleCount).toBe(33);
     expect(stats.serviceCount).toBeGreaterThanOrEqual(4);
-    expect(stats.sitemapUrlCount).toBe(stats.articleCount + stats.channelCount);
+    expect(stats.sitemapUrlCount).toBe(
+      stats.articleCount +
+        stats.channelCount +
+        getPublicContentCollections("support").length +
+        getPublicContentCollections("news").length +
+        getPublicContentCollections("blog").length
+    );
     expect(stats.sourcePathCount).toBeGreaterThan(0);
   });
 

@@ -3,17 +3,20 @@ import { showYeonNotFound } from "@yeon/ui/runtime/YeonRouteControl";
 import type { YeonPageMetadata } from "@yeon/ui/runtime/YeonPageMetadata";
 import type { ReactNode } from "react";
 import {
-  PUBLIC_CONTENT_CATEGORY_LABELS,
   PUBLIC_CONTENT_CHANNEL_CONFIG,
-  PUBLIC_CONTENT_SERVICE_LABELS,
   buildPublicContentCanonicalUrl,
   getPublicContentArticleBySlug,
   getPublicContentArticles,
+  getPublicContentCategoryLabel,
   getPublicContentChannelConfig,
+  getPublicContentCollectionBySlug,
+  getPublicContentCollections,
+  getPublicContentServiceLabel,
   getPublicContentServicesForChannel,
   type PublicContentArticle,
   type PublicContentBlock,
   type PublicContentChannel,
+  type PublicContentCollection,
 } from "./public-content-data";
 
 type PublicContentHomeProps = {
@@ -37,14 +40,6 @@ const CHANNEL_NAV_ITEMS = Object.values(PUBLIC_CONTENT_CHANNEL_CONFIG).map(
     href: config.host,
   })
 );
-
-function getCategoryLabel(category: string) {
-  return (
-    PUBLIC_CONTENT_CATEGORY_LABELS[
-      category as keyof typeof PUBLIC_CONTENT_CATEGORY_LABELS
-    ] ?? category
-  );
-}
 
 function buildCtaHref(article: PublicContentArticle) {
   if (!article.ctaHref) return null;
@@ -124,6 +119,29 @@ function getJsonLdForArticle(article: PublicContentArticle) {
   };
 }
 
+function getJsonLdForCollection(collection: PublicContentCollection) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    name: collection.title,
+    url: collection.canonicalUrl,
+    inLanguage: "ko-KR",
+    description: collection.description,
+    mainEntity: {
+      "@type": "ItemList",
+      itemListElement: collection.articles.map((article, index) => ({
+        "@type": "ListItem",
+        position: index + 1,
+        name: article.title,
+        url: buildPublicContentCanonicalUrl(
+          article.channel,
+          article.slugSegments
+        ),
+      })),
+    },
+  };
+}
+
 function PublicContentShell({
   channel,
   children,
@@ -181,9 +199,9 @@ function ArticleCard({ article }: { article: PublicContentArticle }) {
       className="group block rounded-lg border border-[#e5e5e5] bg-[#fafafa] p-5 text-[#111] no-underline transition-colors hover:border-[#111] hover:bg-white"
     >
       <div className="flex flex-wrap gap-2 text-[12px] font-semibold text-[#aaa]">
-        <span>{PUBLIC_CONTENT_SERVICE_LABELS[article.service]}</span>
+        <span>{getPublicContentServiceLabel(article.service)}</span>
         <span aria-hidden="true">/</span>
-        <span>{getCategoryLabel(article.category)}</span>
+        <span>{getPublicContentCategoryLabel(article.category)}</span>
       </div>
       <h2 className="mt-4 text-[20px] font-semibold leading-7 text-[#111]">
         {article.title}
@@ -215,10 +233,10 @@ function ServiceSection({
       <div className="mb-5 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
         <div>
           <p className="text-[13px] font-semibold text-[#aaa]">
-            {PUBLIC_CONTENT_SERVICE_LABELS[service]}
+            {getPublicContentServiceLabel(service)}
           </p>
           <h2 className="mt-1 text-[24px] font-semibold text-[#111]">
-            {PUBLIC_CONTENT_SERVICE_LABELS[service]} 문서
+            {getPublicContentServiceLabel(service)} 문서
           </h2>
         </div>
         <p className="text-[13px] text-[#666]">{articles.length}개 글</p>
@@ -332,46 +350,75 @@ export async function getPublicContentArticleMetadata({
   const article = getPublicContentArticleBySlug(channel, slug);
   const config = getPublicContentChannelConfig(channel);
 
-  if (!article) {
+  if (article) {
+    const canonical = buildPublicContentCanonicalUrl(
+      article.channel,
+      article.slugSegments
+    );
+
     return {
-      title: `문서를 찾지 못했습니다 | ${config.title}`,
-      robots: { index: false, follow: false },
+      title: `${article.title} | ${config.title}`,
+      description: article.description,
+      alternates: {
+        canonical,
+      },
+      openGraph: {
+        title: article.title,
+        description: article.description,
+        siteName: config.title,
+        type: "article",
+        url: canonical,
+        locale: "ko_KR",
+        publishedTime: article.publishedAt,
+        modifiedTime: article.updatedAt,
+      },
+      twitter: {
+        card: "summary",
+        title: article.title,
+        description: article.description,
+      },
     };
   }
 
-  const canonical = buildPublicContentCanonicalUrl(
-    article.channel,
-    article.slugSegments
-  );
+  const collection = getPublicContentCollectionBySlug(channel, slug);
+  if (collection) {
+    return {
+      title: `${collection.title} | ${config.title}`,
+      description: collection.description,
+      alternates: {
+        canonical: collection.canonicalUrl,
+      },
+      openGraph: {
+        title: collection.title,
+        description: collection.description,
+        siteName: config.title,
+        type: "website",
+        url: collection.canonicalUrl,
+        locale: "ko_KR",
+      },
+      twitter: {
+        card: "summary",
+        title: collection.title,
+        description: collection.description,
+      },
+    };
+  }
 
   return {
-    title: `${article.title} | ${config.title}`,
-    description: article.description,
-    alternates: {
-      canonical,
-    },
-    openGraph: {
-      title: article.title,
-      description: article.description,
-      siteName: config.title,
-      type: "article",
-      url: canonical,
-      locale: "ko_KR",
-      publishedTime: article.publishedAt,
-      modifiedTime: article.updatedAt,
-    },
-    twitter: {
-      card: "summary",
-      title: article.title,
-      description: article.description,
-    },
+    title: `문서를 찾지 못했습니다 | ${config.title}`,
+    robots: { index: false, follow: false },
   };
 }
 
 export function getPublicContentStaticParams(channel: PublicContentChannel) {
-  return getPublicContentArticles(channel).map((article) => ({
-    slug: [...article.slugSegments],
-  }));
+  return [
+    ...getPublicContentCollections(channel).map((collection) => ({
+      slug: [...collection.slugSegments],
+    })),
+    ...getPublicContentArticles(channel).map((article) => ({
+      slug: [...article.slugSegments],
+    })),
+  ];
 }
 
 export function PublicContentHome({ channel }: PublicContentHomeProps) {
@@ -413,6 +460,99 @@ export function PublicContentHome({ channel }: PublicContentHomeProps) {
   );
 }
 
+function getChildCollections(collection: PublicContentCollection) {
+  if (collection.slugSegments.length !== 1) return [];
+
+  return getPublicContentCollections(collection.channel).filter(
+    (candidate) =>
+      candidate.slugSegments.length === 2 &&
+      candidate.slugSegments[0] === collection.slugSegments[0]
+  );
+}
+
+function CollectionLinks({
+  collection,
+}: {
+  collection: PublicContentCollection;
+}) {
+  const childCollections = getChildCollections(collection);
+  if (childCollections.length === 0) return null;
+
+  return (
+    <nav className="mt-8 flex flex-wrap gap-2" aria-label="하위 분류">
+      {childCollections.map((childCollection) => (
+        <a
+          key={childCollection.slugSegments.join("/")}
+          href={childCollection.canonicalUrl}
+          className="rounded-lg border border-[#e5e5e5] px-3 py-2 text-[13px] font-semibold text-[#666] no-underline hover:border-[#111] hover:text-[#111]"
+        >
+          {childCollection.title}
+        </a>
+      ))}
+    </nav>
+  );
+}
+
+function PublicContentCollectionPage({
+  collection,
+}: {
+  collection: PublicContentCollection;
+}) {
+  const config = getPublicContentChannelConfig(collection.channel);
+  const parentCollection =
+    collection.slugSegments.length === 2
+      ? getPublicContentCollectionBySlug(collection.channel, [
+          collection.slugSegments[0],
+        ])
+      : null;
+
+  return (
+    <PublicContentShell channel={collection.channel}>
+      <YeonStructuredData
+        id={`${collection.channel}-${collection.slugSegments.join("-")}-collection-jsonld`}
+        data={getJsonLdForCollection(collection)}
+      />
+      <section className="mx-auto max-w-6xl px-6 py-12 md:px-8 md:py-16">
+        <div className="flex flex-wrap gap-2 text-[13px] font-semibold text-[#666]">
+          <a href={config.host} className="text-[#666] no-underline">
+            {config.label}
+          </a>
+          {parentCollection ? (
+            <>
+              <span aria-hidden="true">/</span>
+              <a
+                href={parentCollection.canonicalUrl}
+                className="text-[#666] no-underline"
+              >
+                {parentCollection.title}
+              </a>
+            </>
+          ) : null}
+        </div>
+        <div className="mt-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <div>
+            <h1 className="max-w-3xl text-[36px] font-semibold leading-tight text-[#111] md:text-[48px]">
+              {collection.title}
+            </h1>
+            <p className="mt-5 max-w-2xl text-[16px] leading-7 text-[#666]">
+              {collection.description}
+            </p>
+          </div>
+          <p className="text-[13px] font-semibold text-[#aaa]">
+            {collection.articles.length}개 글
+          </p>
+        </div>
+        <CollectionLinks collection={collection} />
+      </section>
+      <section className="mx-auto grid max-w-6xl gap-4 px-6 pb-16 md:grid-cols-2 md:px-8">
+        {collection.articles.map((article) => (
+          <ArticleCard key={article.slugSegments.join("/")} article={article} />
+        ))}
+      </section>
+    </PublicContentShell>
+  );
+}
+
 export async function PublicContentArticlePage({
   channel,
   slugSegments,
@@ -420,6 +560,11 @@ export async function PublicContentArticlePage({
   const article = getPublicContentArticleBySlug(channel, slugSegments);
 
   if (!article) {
+    const collection = getPublicContentCollectionBySlug(channel, slugSegments);
+    if (collection) {
+      return <PublicContentCollectionPage collection={collection} />;
+    }
+
     showYeonNotFound();
   }
 
@@ -447,9 +592,9 @@ export async function PublicContentArticlePage({
           {config.label}
         </a>
         <div className="mt-6 flex flex-wrap gap-2 text-[13px] font-semibold text-[#aaa]">
-          <span>{PUBLIC_CONTENT_SERVICE_LABELS[article.service]}</span>
+          <span>{getPublicContentServiceLabel(article.service)}</span>
           <span aria-hidden="true">/</span>
-          <span>{getCategoryLabel(article.category)}</span>
+          <span>{getPublicContentCategoryLabel(article.category)}</span>
           <span aria-hidden="true">/</span>
           <span>{article.publishedAt}</span>
         </div>

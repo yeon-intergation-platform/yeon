@@ -10,5 +10,7 @@ export {
   PUBLIC_CONTENT_CHANNELS,
   buildPublicContentCanonicalUrl,
   buildPublicContentInternalHref,
+  getPublicContentCollectionBySlug,
+  getPublicContentCollections,
   getPublicContentSitemapEntries,
 } from "./public-content-data";
