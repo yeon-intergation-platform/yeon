@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   getPublicContentCategoryNavItems,
+  getPublicContentNewsTopicNavItems,
   getPublicContentServiceNavItems,
 } from "./public-content-navigation";
 
@@ -129,6 +130,29 @@ describe("public content navigation", () => {
       "https://blog.yeon.world/product/card",
       "https://blog.yeon.world/product/community",
       "https://blog.yeon.world/product/account",
+    ]);
+  });
+
+  it("업계 뉴스 목록은 서비스가 아니라 주제 필터를 만든다", () => {
+    expect(
+      getPublicContentServiceNavItems({
+        channel: "news",
+        parentCategory: "news",
+      })
+    ).toEqual([]);
+
+    expect(
+      getPublicContentNewsTopicNavItems({ activeTopic: "ai" }).map((item) => ({
+        active: item.active,
+        href: item.href,
+        label: item.label,
+      }))
+    ).toEqual([
+      {
+        active: true,
+        href: "https://news.yeon.world/news/ai",
+        label: "AI",
+      },
     ]);
   });
 });

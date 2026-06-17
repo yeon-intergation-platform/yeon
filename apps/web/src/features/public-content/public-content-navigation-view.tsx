@@ -86,3 +86,21 @@ export function PublicContentCategoryNav({
     />
   );
 }
+
+export function PublicContentTopicNav({
+  channel,
+  items,
+}: {
+  channel: PublicContentChannel;
+  items: readonly PublicContentNavigationItem[];
+}) {
+  return (
+    <PublicContentNavigation
+      ariaLabel="주제별 공개 콘텐츠"
+      channel={channel}
+      items={items}
+      linkKind="category_nav"
+      title="주제"
+    />
+  );
+}
