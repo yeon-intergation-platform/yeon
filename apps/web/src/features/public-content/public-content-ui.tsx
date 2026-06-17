@@ -7,6 +7,9 @@ import {
   buildPublicContentCollectionBreadcrumb,
 } from "./public-content-breadcrumb";
 import { PublicContentBreadcrumb } from "./public-content-breadcrumb-view";
+import { PublicContentArticleCard } from "./public-content-article-card";
+import { getPublicContentRelatedArticles } from "./public-content-related-articles";
+import { PublicContentRelatedArticles } from "./public-content-related-articles-view";
 import {
   PUBLIC_CONTENT_CHANNEL_CONFIG,
   buildPublicContentCanonicalUrl,
@@ -181,44 +184,6 @@ function PublicContentShell({
   );
 }
 
-function ArticleCard({ article }: { article: PublicContentArticle }) {
-  const href = buildPublicContentCanonicalUrl(
-    article.channel,
-    article.slugSegments
-  );
-
-  return (
-    <PublicContentTrackedLink
-      href={href}
-      className="group block rounded-lg border border-[#e5e5e5] bg-[#fafafa] p-5 text-[#111] no-underline transition-colors hover:border-[#111] hover:bg-white"
-      trackingParams={{
-        category: article.category,
-        channel: article.channel,
-        link_kind: "article_card",
-        service: article.service,
-        slug: getArticleSlug(article),
-        target_title: article.title,
-      }}
-    >
-      <div className="flex flex-wrap gap-2 text-[12px] font-semibold text-[#aaa]">
-        <span>{getPublicContentServiceLabel(article.service)}</span>
-        <span aria-hidden="true">/</span>
-        <span>{getPublicContentCategoryLabel(article.category)}</span>
-      </div>
-      <h2 className="mt-4 text-[20px] font-semibold leading-7 text-[#111]">
-        {article.title}
-      </h2>
-      <p className="mt-3 text-[14px] leading-6 text-[#666]">
-        {article.summary}
-      </p>
-      <div className="mt-5 flex items-center justify-between gap-4 text-[13px] text-[#aaa]">
-        <span>{article.publishedAt}</span>
-        <span>{article.readingMinutes}분</span>
-      </div>
-    </PublicContentTrackedLink>
-  );
-}
-
 function ServiceSection({
   channel,
   service,
@@ -245,7 +210,10 @@ function ServiceSection({
       </div>
       <div className="grid gap-4 md:grid-cols-2">
         {articles.map((article) => (
-          <ArticleCard key={article.slugSegments.join("/")} article={article} />
+          <PublicContentArticleCard
+            key={article.slugSegments.join("/")}
+            article={article}
+          />
         ))}
       </div>
     </section>
@@ -511,7 +479,9 @@ export function PublicContentHome({ channel }: PublicContentHomeProps) {
               {config.homeDescription}
             </p>
           </div>
-          {featuredArticle ? <ArticleCard article={featuredArticle} /> : null}
+          {featuredArticle ? (
+            <PublicContentArticleCard article={featuredArticle} />
+          ) : null}
         </div>
       </section>
       <section className="mx-auto max-w-6xl px-6 pb-16 md:px-8">
@@ -598,7 +568,10 @@ function PublicContentCollectionPage({
       </section>
       <section className="mx-auto grid max-w-6xl gap-4 px-6 pb-16 md:grid-cols-2 md:px-8">
         {collection.articles.map((article) => (
-          <ArticleCard key={article.slugSegments.join("/")} article={article} />
+          <PublicContentArticleCard
+            key={article.slugSegments.join("/")}
+            article={article}
+          />
         ))}
       </section>
     </PublicContentShell>
@@ -620,13 +593,7 @@ export async function PublicContentArticlePage({
     showYeonNotFound();
   }
 
-  const relatedArticles = getPublicContentArticles(article.channel)
-    .filter(
-      (candidate) =>
-        candidate.slugSegments.join("/") !== article.slugSegments.join("/") &&
-        candidate.service === article.service
-    )
-    .slice(0, 2);
+  const relatedArticles = getPublicContentRelatedArticles(article);
   const ctaHref = buildCtaHref(article);
   const tableOfContents = buildPublicContentTableOfContents(article);
   const hasTableOfContents = tableOfContents.length > 0;
@@ -718,19 +685,7 @@ export async function PublicContentArticlePage({
             </PublicContentTrackedLink>
           </div>
         ) : null}
-        {relatedArticles.length > 0 ? (
-          <section className="mt-12 border-t border-[#e5e5e5] pt-8">
-            <h2 className="text-[20px] font-semibold text-[#111]">관련 글</h2>
-            <div className="mt-4 grid gap-4 md:grid-cols-2">
-              {relatedArticles.map((relatedArticle) => (
-                <ArticleCard
-                  key={relatedArticle.slugSegments.join("/")}
-                  article={relatedArticle}
-                />
-              ))}
-            </div>
-          </section>
-        ) : null}
+        <PublicContentRelatedArticles articles={relatedArticles} />
       </article>
     </PublicContentShell>
   );
