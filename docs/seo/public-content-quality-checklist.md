@@ -94,3 +94,11 @@
 - 노출은 높고 클릭이 낮은 글은 title과 description을 먼저 개선한다.
 - 클릭은 있는데 전환이 낮은 support 글은 CTA 문구와 위치를 점검한다.
 - `/admin/content`의 `Title quality`와 `SEO warning queue`가 0인지 확인한다.
+
+운영 리포트:
+
+```bash
+pnpm --filter @yeon/web public-content:governance-report
+```
+
+이 리포트는 repo에서 확인 가능한 sitemap/title/source/SEO 상태를 자동 evidence로 출력하고, Search Console/GA4처럼 credential이 필요한 항목은 `수동 확인`으로 남긴다.
