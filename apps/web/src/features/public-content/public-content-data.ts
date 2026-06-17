@@ -527,6 +527,7 @@ export const PUBLIC_CONTENT_ARTICLES: readonly PublicContentArticle[] = [
         items: [
           "방 화면이 열리지 않으면 새로고침 후 다시 들어갑니다.",
           "실시간 연결이 계속 실패하면 잠시 뒤 다시 시도합니다.",
+          "타자방과 레이스 화면은 race-server 연결 상태를 함께 확인합니다.",
           "문단이 보이지 않으면 다른 덱을 선택합니다.",
         ],
       },
@@ -613,6 +614,7 @@ export const PUBLIC_CONTENT_ARTICLES: readonly PublicContentArticle[] = [
           "개인정보를 올리지 않습니다.",
           "서비스 오류 신고는 재현 순서를 함께 적습니다.",
           "다른 사용자가 이해할 수 있게 제목을 구체적으로 씁니다.",
+          "작성한 글과 댓글은 공개 피드에서 다른 사용자에게 보일 수 있습니다.",
         ],
       },
     ],
@@ -829,15 +831,17 @@ export const PUBLIC_CONTENT_ARTICLES: readonly PublicContentArticle[] = [
     service: PUBLIC_CONTENT_SERVICES.account,
     category: "policy",
     slugSegments: ["account", "policy", "privacy-conversation-data"],
-    title: "개인정보와 대화 데이터는 어떻게 처리되나요?",
+    title: "YEON 개인정보와 대화 데이터 처리 방법",
     description:
-      "NEXA 커뮤니티 AI 네트워크에서 질문이 어디로 전달될 수 있는지, 어떤 정보를 입력하지 말아야 하는지 정리했습니다.",
+      "YEON 계정, 공개 커뮤니티, 플래시카드, NEXA 대화 데이터에서 사용자가 확인해야 할 개인정보 기준입니다.",
     summary:
-      "질문은 Provider PC로 전송될 수 있으므로 민감정보를 입력하지 말고, 대화 원문은 무저장/무로깅 원칙으로 다룹니다.",
+      "로그인 정보는 식별과 세션 유지에 쓰고, 공개 글과 NEXA 질문에는 민감정보를 넣지 않는 것이 기본입니다.",
     publishedAt: PUBLISHED_DATE,
     updatedAt: PUBLISHED_DATE,
     readingMinutes: 5,
     sourcePaths: [
+      "/Users/osuma/coding_stuffs/yeon/apps/web/src/lib/site-brand.ts",
+      "/Users/osuma/coding_stuffs/yeon/apps/web/src/lib/platform-services.ts",
       "/Users/osuma/coding_stuffs/discord-assitant/i18n/messages.json",
       "/Users/osuma/coding_stuffs/discord-assitant/docs/NEXA_SAFETY_POLICY.md",
       "/Users/osuma/coding_stuffs/discord-assitant/README.md",
@@ -845,19 +849,20 @@ export const PUBLIC_CONTENT_ARTICLES: readonly PublicContentArticle[] = [
     body: [
       {
         type: "paragraph",
-        text: "NEXA는 커뮤니티 AI 네트워크 구조를 사용합니다. 질문 내용은 요청을 처리하는 커뮤니티 Provider의 PC로 전송될 수 있으므로 비밀번호, API 키, 토큰, 개인정보, 비공개 문서 같은 민감정보는 입력하면 안 됩니다.",
+        text: "YEON은 서비스별로 필요한 데이터가 다릅니다. 계정 로그인, 공개 커뮤니티 글, 플래시카드 학습 데이터, NEXA 대화 데이터는 같은 개인정보 기준 안에서 구분해 봐야 합니다.",
       },
       {
         type: "heading",
-        title: "대화 데이터 원칙",
+        title: "서비스별 데이터 원칙",
       },
       {
         type: "checklist",
         items: [
-          "사용자 질문과 답변 원문은 데이터베이스에 저장하지 않는 것을 원칙으로 둡니다.",
-          "라우팅 핫패스에서 프롬프트와 응답 원문을 로그로 남기지 않는 것을 원칙으로 둡니다.",
-          "Provider Agent는 프롬프트 원문을 로그나 파일에 저장하지 않는 안내를 갖습니다.",
-          "서버 설정, 프롬프트셋, RAG 문서는 기능 제공을 위해 별도 보유 대상이 될 수 있습니다.",
+          "Google 로그인 이름, 이메일, 프로필 이미지는 회원 식별과 로그인 유지에 사용합니다.",
+          "플래시카드 게스트 데이터는 현재 브라우저 로컬 저장소에 의존할 수 있습니다.",
+          "커뮤니티 글과 댓글은 공개 피드에서 다른 사용자에게 보일 수 있습니다.",
+          "NEXA 질문은 Provider PC로 전송될 수 있으므로 민감정보를 입력하지 않는 것이 원칙입니다.",
+          "NEXA 대화 원문은 무저장/무로깅 원칙으로 다룹니다.",
         ],
       },
       {
@@ -867,7 +872,7 @@ export const PUBLIC_CONTENT_ARTICLES: readonly PublicContentArticle[] = [
       {
         type: "steps",
         items: [
-          "비밀번호, API 키, 인증 토큰을 질문에 넣지 않습니다.",
+          "비밀번호, API 키, 인증 토큰을 글이나 질문에 넣지 않습니다.",
           "개인 주민번호, 주소, 전화번호 같은 개인정보를 넣지 않습니다.",
           "회사 내부 문서나 비공개 자료를 그대로 붙여넣지 않습니다.",
           "민감한 내용이 필요하면 공개 가능한 범위로 요약해 질문합니다.",
@@ -875,8 +880,8 @@ export const PUBLIC_CONTENT_ARTICLES: readonly PublicContentArticle[] = [
       },
       {
         type: "callout",
-        title: "디스코드 메시지는 별도입니다",
-        text: "NEXA가 대화 원문을 보관하지 않는 원칙과 별개로, 사용자가 디스코드 채널에 남긴 메시지는 해당 디스코드 서버에 남아 있을 수 있습니다.",
+        title: "공개 글과 디스코드 메시지는 별도입니다",
+        text: "YEON이나 NEXA가 대화 원문을 보관하지 않는 원칙과 별개로, 사용자가 공개 커뮤니티나 디스코드 채널에 남긴 메시지는 해당 서비스 화면에 남아 있을 수 있습니다.",
       },
     ],
   },
@@ -1211,6 +1216,7 @@ export const PUBLIC_CONTENT_ARTICLES: readonly PublicContentArticle[] = [
           "한국어와 영어의 선택 덱은 따로 저장됩니다.",
           "기본 로컬 덱은 네트워크 없이도 사용할 수 있습니다.",
           "원격 덱이 실패하면 화면은 기본 문장으로 대체합니다.",
+          "타자방에서 같은 덱으로 레이스를 진행하려면 race-server 연결도 필요합니다.",
           "연습 결과에는 속도와 정확도가 함께 표시됩니다.",
         ],
       },
@@ -1269,6 +1275,7 @@ export const PUBLIC_CONTENT_ARTICLES: readonly PublicContentArticle[] = [
           "방 lifecycle이 ACTIVE입니다.",
           "방 visibility가 PUBLIC입니다.",
           "현재 참가자 수가 1명 이상입니다.",
+          "브라우저가 NEXT_PUBLIC_RACE_SERVER_URL 또는 기본 2567 race-server에 연결할 수 있습니다.",
         ],
       },
     ],
@@ -1378,6 +1385,11 @@ export const PUBLIC_CONTENT_ARTICLES: readonly PublicContentArticle[] = [
         title: "입력칸에서는 단축키가 막힙니다",
         text: "링크, 버튼, 입력칸, 선택창, textarea, contenteditable 영역에서는 단축키가 실행되지 않게 막아 두었습니다. 한국어 입력 상태에서도 물리 S 키 스킵은 동작합니다.",
       },
+      {
+        type: "callout",
+        title: "게스트와 로그인 사용자의 저장 범위가 다릅니다",
+        text: "게스트 덱은 현재 브라우저 로컬 저장소에 의존하고, 로그인 덱은 계정에 연결됩니다. 복습 기록을 오래 유지하려면 로그인 상태를 확인하세요.",
+      },
     ],
   },
   {
@@ -1422,6 +1434,7 @@ export const PUBLIC_CONTENT_ARTICLES: readonly PublicContentArticle[] = [
           "비밀번호는 최대 128자까지 입력할 수 있습니다.",
           "비밀번호는 글과 댓글의 수정·삭제 확인에 사용됩니다.",
           "브라우저 저장소를 사용할 수 없으면 임시 닉네임이 생성됩니다.",
+          "닉네임은 공개 글과 댓글에 함께 표시될 수 있습니다.",
         ],
       },
       {
@@ -1481,6 +1494,718 @@ export const PUBLIC_CONTENT_ARTICLES: readonly PublicContentArticle[] = [
         type: "callout",
         title: "글과 댓글은 같은 feed API를 사용합니다",
         text: "글 등록은 /feed, 댓글 등록은 /feed/{postId}/replies 경로를 사용합니다. 둘 다 실패한다면 네트워크나 세션 상태도 함께 확인하세요.",
+      },
+      {
+        type: "callout",
+        tone: PUBLIC_CONTENT_CALLOUT_TONES.warning,
+        title: "공개 피드 기준을 먼저 확인하세요",
+        text: "커뮤니티 글과 댓글은 다른 사용자가 읽을 수 있는 공개 영역입니다. 개인정보, 비밀번호, 토큰, 타인을 공격하는 문장은 올리지 않습니다.",
+      },
+    ],
+  },
+  {
+    channel: PUBLIC_CONTENT_CHANNELS.support,
+    service: PUBLIC_CONTENT_SERVICES.typing,
+    category: "guides",
+    slugSegments: ["typing", "guides", "join-typing-room"],
+    title: "타자방에 입장하는 방법",
+    description:
+      "typing.yeon.world에서 공개 타자방을 찾고 race-server 연결 상태를 확인한 뒤 입장하는 순서입니다.",
+    summary:
+      "공개방, 입장 가능 상태, 참가자 수, race-server 연결을 확인하고 방에 들어갑니다.",
+    publishedAt: PUBLISHED_DATE,
+    updatedAt: PUBLISHED_DATE,
+    readingMinutes: 4,
+    ...PUBLIC_CONTENT_SUPPORT_CTA_TARGETS.typing,
+    sourcePaths: [
+      "/Users/osuma/coding_stuffs/yeon/apps/web/src/features/typing-service/typing-room-lobby-screen.tsx",
+      "/Users/osuma/coding_stuffs/yeon/apps/web/src/features/typing-service/use-race-room.ts",
+      "/Users/osuma/coding_stuffs/yeon/apps/web/src/features/typing-service/typing-room-screen.tsx",
+    ],
+    body: [
+      {
+        type: "paragraph",
+        text: "타자방은 혼자 연습과 달리 실시간 race-server 연결을 사용합니다. 방 목록에서 공개방을 고를 때는 입장 가능 상태와 남은 자리, 사용할 덱을 함께 확인하세요.",
+      },
+      {
+        type: "steps",
+        items: [
+          "typing.yeon.world에서 방 목록으로 이동합니다.",
+          "공개방 또는 입장 가능 필터를 선택합니다.",
+          "방 제목, 남은 자리, 언어와 덱 정보를 확인합니다.",
+          "입장할 방을 선택하고 레이스 화면으로 이동합니다.",
+          "연결 상태가 connected로 바뀌고 대기 화면이 보이는지 확인합니다.",
+          "준비 버튼이나 화면 안내에 따라 레이스 시작을 기다립니다.",
+        ],
+      },
+      {
+        type: "checklist",
+        items: [
+          "방이 만석이면 다른 방을 선택합니다.",
+          "이미 시작된 방이면 새 방을 만들거나 다른 대기방을 찾습니다.",
+          "race-server 연결 오류가 보이면 새로고침 후 다시 입장합니다.",
+        ],
+      },
+    ],
+  },
+  {
+    channel: PUBLIC_CONTENT_CHANNELS.support,
+    service: PUBLIC_CONTENT_SERVICES.typing,
+    category: "troubleshooting",
+    slugSegments: ["typing", "troubleshooting", "race-not-starting"],
+    title: "타자 레이스가 시작되지 않을 때 해결 방법",
+    description:
+      "타자방에 들어갔지만 레이스가 시작되지 않을 때 준비 상태, 방장 시작, seed, race-server 연결을 확인하는 방법입니다.",
+    summary:
+      "참가자 준비, 방장 시작, 문장 seed, race-server 이벤트 수신 상태를 순서대로 좁혀갑니다.",
+    publishedAt: PUBLISHED_DATE,
+    updatedAt: PUBLISHED_DATE,
+    readingMinutes: 4,
+    ...PUBLIC_CONTENT_SUPPORT_CTA_TARGETS.typing,
+    sourcePaths: [
+      "/Users/osuma/coding_stuffs/yeon/apps/web/src/features/typing-service/typing-room-screen.tsx",
+      "/Users/osuma/coding_stuffs/yeon/apps/web/src/features/typing-service/typing-race-multiplayer-screen.tsx",
+      "/Users/osuma/coding_stuffs/yeon/apps/web/src/features/typing-service/use-race-room.ts",
+    ],
+    body: [
+      {
+        type: "paragraph",
+        text: "타자 레이스가 시작되지 않는 문제는 준비 상태가 맞지 않거나, 방장이 시작하지 않았거나, race-server 이벤트가 끊겼을 때 생길 수 있습니다.",
+      },
+      {
+        type: "steps",
+        items: [
+          "내 준비 상태가 켜져 있는지 확인합니다.",
+          "다른 참가자도 준비 상태인지 확인합니다.",
+          "방장 화면에서 시작 버튼이 눌렸는지 확인합니다.",
+          "문장 seed 오류 안내가 있으면 다른 덱으로 바꿉니다.",
+          "연결 상태가 disconnected 또는 error라면 재연결을 시도합니다.",
+          "계속 시작되지 않으면 방을 나갔다가 새 공개방을 만듭니다.",
+        ],
+      },
+      {
+        type: "callout",
+        tone: PUBLIC_CONTENT_CALLOUT_TONES.warning,
+        title: "race-server 연결이 핵심입니다",
+        text: "시작 이벤트는 race-server에서 내려옵니다. 화면만 열려 있고 연결이 끊긴 상태라면 레이스가 진행되지 않습니다.",
+      },
+    ],
+  },
+  {
+    channel: PUBLIC_CONTENT_CHANNELS.support,
+    service: PUBLIC_CONTENT_SERVICES.typing,
+    category: "troubleshooting",
+    slugSegments: ["typing", "troubleshooting", "result-not-saved"],
+    title: "타자 결과가 저장되지 않을 때 확인할 것",
+    description:
+      "타자 레이스 결과가 보이지 않거나 경험치가 반영되지 않을 때 로그인 토큰과 race-server 결과 이벤트를 확인하는 방법입니다.",
+    summary:
+      "레이스 결과 화면, 로그인 사용자 토큰, best-effort 경험치 적립, race-server finish 이벤트를 확인합니다.",
+    publishedAt: PUBLISHED_DATE,
+    updatedAt: PUBLISHED_DATE,
+    readingMinutes: 4,
+    ...PUBLIC_CONTENT_SUPPORT_CTA_TARGETS.typing,
+    sourcePaths: [
+      "/Users/osuma/coding_stuffs/yeon/apps/web/src/features/typing-service/use-race-room.ts",
+      "/Users/osuma/coding_stuffs/yeon/apps/web/src/features/typing-service/typing-race-multiplayer-screen.tsx",
+      "/Users/osuma/coding_stuffs/yeon/apps/race-server/src/rooms/typing-race-room-backend-client.ts",
+    ],
+    body: [
+      {
+        type: "paragraph",
+        text: "타자 결과는 race-server가 finish 이벤트를 받고 결과 snapshot을 내려줄 때 화면에 표시됩니다. 로그인 사용자 경험치 적립은 별도 토큰 기반 best-effort 흐름입니다.",
+      },
+      {
+        type: "steps",
+        items: [
+          "레이스를 끝까지 완료했는지 확인합니다.",
+          "결과 화면에 순위, 속도, 정확도, 실수 수가 표시되는지 확인합니다.",
+          "로그인 상태에서 진행했다면 새로고침 후 프로필 경험치가 반영되는지 확인합니다.",
+          "로그인 토큰 발급이 실패했다면 레이스 진행은 되지만 경험치 적립은 빠질 수 있습니다.",
+          "결과 화면 자체가 비어 있으면 race-server 연결이 끊겼는지 확인합니다.",
+          "같은 문제가 반복되면 레이스 시간, 방 코드, 오류 화면을 기록해 신고합니다.",
+        ],
+      },
+      {
+        type: "callout",
+        title: "비로그인도 레이스는 진행됩니다",
+        text: "사용자 토큰은 경험치 적립에 필요하지만, 토큰이 없다고 해서 레이스 진행 자체를 막지는 않는 구조입니다.",
+      },
+    ],
+  },
+  {
+    channel: PUBLIC_CONTENT_CHANNELS.support,
+    service: PUBLIC_CONTENT_SERVICES.typing,
+    category: "troubleshooting",
+    slugSegments: ["typing", "troubleshooting", "site-not-opening"],
+    title: "typing.yeon.world가 열리지 않을 때 해결 방법",
+    description:
+      "typing.yeon.world 접속이 되지 않을 때 브라우저, 네트워크, canonical URL, race-server 연결을 나누어 확인합니다.",
+    summary: "사이트 접속 문제와 타자방 실시간 연결 문제를 분리해 확인합니다.",
+    publishedAt: PUBLISHED_DATE,
+    updatedAt: PUBLISHED_DATE,
+    readingMinutes: 3,
+    ...PUBLIC_CONTENT_SUPPORT_CTA_TARGETS.typing,
+    sourcePaths: [
+      "/Users/osuma/coding_stuffs/yeon/apps/web/src/lib/subdomain-routing.ts",
+      "/Users/osuma/coding_stuffs/yeon/apps/web/src/lib/platform-services.ts",
+      "/Users/osuma/coding_stuffs/yeon/apps/web/src/features/typing-service/use-race-room.ts",
+    ],
+    body: [
+      {
+        type: "paragraph",
+        text: "typing.yeon.world가 열리지 않는 문제와 타자방 race-server 연결 실패는 다른 문제입니다. 먼저 웹 페이지가 열리는지 확인하고, 그 다음 실시간 방 연결을 확인하세요.",
+      },
+      {
+        type: "steps",
+        items: [
+          "주소가 https://typing.yeon.world 인지 확인합니다.",
+          "브라우저 새로고침 또는 시크릿 창에서 다시 엽니다.",
+          "yeon.world에서 타자연습 링크를 눌러 같은 페이지로 이동되는지 확인합니다.",
+          "페이지는 열리지만 방이 안 열리면 race-server 연결 상태를 확인합니다.",
+          "다른 네트워크에서도 같은지 확인합니다.",
+          "계속 실패하면 오류 화면과 시간을 기록해 신고합니다.",
+        ],
+      },
+      {
+        type: "checklist",
+        items: [
+          "웹 페이지가 아예 열리지 않는지 확인합니다.",
+          "방 목록만 비어 있는지 확인합니다.",
+          "방 입장 후 연결 오류인지 확인합니다.",
+        ],
+      },
+    ],
+  },
+  {
+    channel: PUBLIC_CONTENT_CHANNELS.support,
+    service: PUBLIC_CONTENT_SERVICES.card,
+    category: "guides",
+    slugSegments: ["card", "guides", "add-and-edit-cards"],
+    title: "플래시카드 카드를 추가하고 수정하는 방법",
+    description:
+      "card.yeon.world에서 덱 안에 카드를 추가하고 기존 카드를 수정할 때 게스트 저장과 로그인 저장 차이를 확인합니다.",
+    summary:
+      "덱 상세에서 앞면과 뒷면을 입력하고, 게스트 데이터는 로컬 저장소에 의존한다는 점을 확인합니다.",
+    publishedAt: PUBLISHED_DATE,
+    updatedAt: PUBLISHED_DATE,
+    readingMinutes: 4,
+    ...PUBLIC_CONTENT_SUPPORT_CTA_TARGETS.card,
+    sourcePaths: [
+      "/Users/osuma/coding_stuffs/yeon/apps/web/src/features/card-service/deck-detail-screen.tsx",
+      "/Users/osuma/coding_stuffs/yeon/apps/web/src/features/card-service/hooks/use-card-mutations.ts",
+      "/Users/osuma/coding_stuffs/yeon/apps/web/src/lib/guest-card-service-store.ts",
+    ],
+    body: [
+      {
+        type: "paragraph",
+        text: "플래시카드 카드는 덱 안에 앞면과 뒷면을 넣어 만듭니다. 게스트 상태라면 현재 브라우저 로컬 저장소에 저장되고, 로그인 상태라면 계정 덱으로 관리됩니다.",
+      },
+      {
+        type: "steps",
+        items: [
+          "card.yeon.world에서 덱 목록을 엽니다.",
+          "카드를 추가할 덱을 선택합니다.",
+          "카드 추가 영역에서 앞면 질문과 뒷면 답변을 입력합니다.",
+          "저장 후 카드 목록에 새 카드가 보이는지 확인합니다.",
+          "수정할 카드를 열고 내용을 바꾼 뒤 저장합니다.",
+          "게스트 상태라면 같은 브라우저에서 다시 열어 변경이 남아 있는지 확인합니다.",
+        ],
+      },
+      {
+        type: "callout",
+        title: "게스트 데이터는 기기에 묶입니다",
+        text: "게스트로 만든 카드는 다른 기기에서 자동으로 보이지 않습니다. 여러 기기에서 이어 쓰려면 로그인 후 계정 덱으로 관리하세요.",
+      },
+    ],
+  },
+  {
+    channel: PUBLIC_CONTENT_CHANNELS.support,
+    service: PUBLIC_CONTENT_SERVICES.card,
+    category: "guides",
+    slugSegments: ["card", "guides", "start-card-study"],
+    title: "플래시카드 학습을 시작하는 방법",
+    description:
+      "card.yeon.world에서 덱을 고르고 플래시카드 또는 복습 모드로 학습을 시작하는 기본 흐름입니다.",
+    summary:
+      "덱 상세에서 학습을 시작하고, 게스트와 로그인 사용자의 저장 범위를 구분합니다.",
+    publishedAt: PUBLISHED_DATE,
+    updatedAt: PUBLISHED_DATE,
+    readingMinutes: 3,
+    ...PUBLIC_CONTENT_SUPPORT_CTA_TARGETS.card,
+    sourcePaths: [
+      "/Users/osuma/coding_stuffs/yeon/apps/web/src/features/card-service/deck-play-screen.tsx",
+      "/Users/osuma/coding_stuffs/yeon/apps/web/src/features/card-service/card-service-decks-screen.tsx",
+      "/Users/osuma/coding_stuffs/yeon/apps/web/src/lib/guest-card-service-store.ts",
+    ],
+    body: [
+      {
+        type: "paragraph",
+        text: "플래시카드 학습은 덱을 선택한 뒤 카드 앞면을 보고 정답을 확인하는 흐름입니다. 복습 모드를 쓰면 쉬움, 보통, 어려움 같은 기록을 남길 수 있습니다.",
+      },
+      {
+        type: "steps",
+        items: [
+          "card.yeon.world에서 덱 목록을 엽니다.",
+          "학습할 덱을 선택합니다.",
+          "덱에 카드가 1장 이상 있는지 확인합니다.",
+          "학습 시작 또는 복습 모드를 선택합니다.",
+          "카드 앞면을 보고 답을 떠올린 뒤 정답을 확인합니다.",
+          "복습 모드에서는 난이도를 선택해 다음 학습 기준을 남깁니다.",
+        ],
+      },
+      {
+        type: "checklist",
+        items: [
+          "게스트 덱은 현재 브라우저에 저장됩니다.",
+          "로그인 덱은 계정에 연결됩니다.",
+          "덱에 카드가 없으면 먼저 카드를 추가해야 합니다.",
+        ],
+      },
+    ],
+  },
+  {
+    channel: PUBLIC_CONTENT_CHANNELS.support,
+    service: PUBLIC_CONTENT_SERVICES.card,
+    category: "troubleshooting",
+    slugSegments: ["card", "troubleshooting", "deck-data-not-visible"],
+    title: "카드 데이터가 보이지 않을 때 확인할 것",
+    description:
+      "플래시카드 덱이나 카드가 보이지 않을 때 게스트 브라우저 저장소, 로그인 상태, 병합 흐름을 확인하는 방법입니다.",
+    summary:
+      "게스트 데이터와 로그인 계정 데이터를 구분하고, 같은 브라우저에서 병합 흐름을 확인합니다.",
+    publishedAt: PUBLISHED_DATE,
+    updatedAt: PUBLISHED_DATE,
+    readingMinutes: 4,
+    ...PUBLIC_CONTENT_SUPPORT_CTA_TARGETS.card,
+    sourcePaths: [
+      "/Users/osuma/coding_stuffs/yeon/apps/web/src/features/card-service/use-card-service-decks-screen-state.ts",
+      "/Users/osuma/coding_stuffs/yeon/apps/web/src/features/card-service/components/merge-guest-dialog.tsx",
+      "/Users/osuma/coding_stuffs/yeon/apps/web/src/lib/guest-card-service-store.ts",
+    ],
+    body: [
+      {
+        type: "paragraph",
+        text: "카드 데이터가 보이지 않을 때는 먼저 게스트 데이터인지 로그인 계정 데이터인지 구분해야 합니다. 게스트 덱은 브라우저 로컬 저장소에 있고, 로그인 덱은 계정 기준으로 조회됩니다.",
+      },
+      {
+        type: "steps",
+        items: [
+          "현재 로그인 상태인지 확인합니다.",
+          "게스트로 만들었던 브라우저와 같은 브라우저인지 확인합니다.",
+          "로그인 후 게스트 덱 병합 안내가 보이는지 확인합니다.",
+          "계정 덱이 비어 있으면 수동 병합 버튼이나 안내를 확인합니다.",
+          "브라우저 저장소를 지웠다면 게스트 덱이 사라졌을 수 있습니다.",
+          "계속 보이지 않으면 덱 제목, 사용 기기, 로그인 계정을 기록해 신고합니다.",
+        ],
+      },
+      {
+        type: "callout",
+        tone: PUBLIC_CONTENT_CALLOUT_TONES.warning,
+        title: "게스트 덱은 백업이 아닙니다",
+        text: "게스트 덱은 빠른 시작용입니다. 중요한 학습 데이터는 로그인 후 계정 덱으로 옮기는 편이 안전합니다.",
+      },
+    ],
+  },
+  {
+    channel: PUBLIC_CONTENT_CHANNELS.support,
+    service: PUBLIC_CONTENT_SERVICES.card,
+    category: "troubleshooting",
+    slugSegments: ["card", "troubleshooting", "site-not-opening"],
+    title: "card.yeon.world가 열리지 않을 때 해결 방법",
+    description:
+      "card.yeon.world 접속 문제를 브라우저, canonical URL, 로그인 상태, 게스트 저장소 문제로 나누어 확인합니다.",
+    summary:
+      "사이트 접속과 덱 데이터 표시 문제를 분리하고, 게스트와 로그인 사용자 차이를 함께 확인합니다.",
+    publishedAt: PUBLISHED_DATE,
+    updatedAt: PUBLISHED_DATE,
+    readingMinutes: 3,
+    ...PUBLIC_CONTENT_SUPPORT_CTA_TARGETS.card,
+    sourcePaths: [
+      "/Users/osuma/coding_stuffs/yeon/apps/web/src/lib/subdomain-routing.ts",
+      "/Users/osuma/coding_stuffs/yeon/apps/web/src/lib/platform-services.ts",
+      "/Users/osuma/coding_stuffs/yeon/apps/web/src/features/card-service/auth-state.ts",
+    ],
+    body: [
+      {
+        type: "paragraph",
+        text: "card.yeon.world 접속 실패와 카드 데이터가 비어 보이는 문제는 다릅니다. 먼저 사이트가 열리는지 확인하고, 그 다음 로그인 상태와 게스트 저장소를 확인하세요.",
+      },
+      {
+        type: "steps",
+        items: [
+          "주소가 https://card.yeon.world 인지 확인합니다.",
+          "브라우저 새로고침 또는 시크릿 창에서 다시 엽니다.",
+          "yeon.world에서 플래시카드 링크를 눌러 이동되는지 확인합니다.",
+          "사이트는 열리지만 덱이 없다면 로그인 상태를 확인합니다.",
+          "게스트 덱은 만든 브라우저에서만 보일 수 있습니다.",
+          "계속 실패하면 오류 화면과 시간을 기록해 신고합니다.",
+        ],
+      },
+      {
+        type: "checklist",
+        items: [
+          "페이지 접속 실패인지 확인합니다.",
+          "로그인 세션 만료인지 확인합니다.",
+          "게스트 저장소 문제인지 확인합니다.",
+        ],
+      },
+    ],
+  },
+  {
+    channel: PUBLIC_CONTENT_CHANNELS.support,
+    service: PUBLIC_CONTENT_SERVICES.community,
+    category: "guides",
+    slugSegments: ["community", "guides", "write-comment"],
+    title: "커뮤니티에서 댓글을 남기는 방법",
+    description:
+      "community.yeon.world에서 게시글 댓글을 열고 게스트 닉네임과 비밀번호로 댓글을 남기는 방법입니다.",
+    summary:
+      "댓글 입력 전 공개성, 닉네임, 비밀번호, 수정·삭제 기준을 확인합니다.",
+    publishedAt: PUBLISHED_DATE,
+    updatedAt: PUBLISHED_DATE,
+    readingMinutes: 3,
+    ...PUBLIC_CONTENT_SUPPORT_CTA_TARGETS.community,
+    sourcePaths: [
+      "/Users/osuma/coding_stuffs/yeon/apps/web/src/features/community/components/community-feed-post-item.tsx",
+      "/Users/osuma/coding_stuffs/yeon/apps/web/src/features/community/community-post-detail-page.tsx",
+      "/Users/osuma/coding_stuffs/yeon/apps/web/src/features/community/hooks/use-community-feed.ts",
+    ],
+    body: [
+      {
+        type: "paragraph",
+        text: "커뮤니티 댓글은 공개 게시글 아래에 표시됩니다. 댓글을 남기기 전에는 다른 사용자가 읽을 수 있다는 점과 게스트 닉네임이 함께 표시된다는 점을 확인하세요.",
+      },
+      {
+        type: "steps",
+        items: [
+          "community.yeon.world에서 댓글을 남길 글을 엽니다.",
+          "댓글 영역을 펼칩니다.",
+          "댓글 내용을 입력합니다.",
+          "게스트 닉네임과 비밀번호가 필요한 경우 입력합니다.",
+          "개인정보나 공격적인 표현이 없는지 확인합니다.",
+          "댓글 버튼을 눌러 등록합니다.",
+        ],
+      },
+      {
+        type: "checklist",
+        items: [
+          "댓글은 공개 피드에 표시될 수 있습니다.",
+          "비밀번호는 수정·삭제 확인에 쓰입니다.",
+          "댓글은 400자 안에 작성합니다.",
+        ],
+      },
+    ],
+  },
+  {
+    channel: PUBLIC_CONTENT_CHANNELS.support,
+    service: PUBLIC_CONTENT_SERVICES.community,
+    category: "troubleshooting",
+    slugSegments: ["community", "troubleshooting", "post-not-visible"],
+    title: "커뮤니티 글이 보이지 않을 때 확인할 것",
+    description:
+      "커뮤니티 글이 목록이나 상세에서 보이지 않을 때 공개 피드, 카테고리, 네트워크, 삭제 상태를 확인하는 방법입니다.",
+    summary:
+      "목록 새로고침, 카테고리, 상세 URL, 댓글 수, 공개 행동 기준을 함께 확인합니다.",
+    publishedAt: PUBLISHED_DATE,
+    updatedAt: PUBLISHED_DATE,
+    readingMinutes: 4,
+    ...PUBLIC_CONTENT_SUPPORT_CTA_TARGETS.community,
+    sourcePaths: [
+      "/Users/osuma/coding_stuffs/yeon/apps/web/src/features/community/community-page.tsx",
+      "/Users/osuma/coding_stuffs/yeon/apps/web/src/features/community/community-post-detail-page.tsx",
+      "/Users/osuma/coding_stuffs/yeon/apps/web/src/features/community/hooks/use-community-feed.ts",
+    ],
+    body: [
+      {
+        type: "paragraph",
+        text: "커뮤니티 글이 보이지 않을 때는 작성 실패인지, 목록 갱신 문제인지, 삭제된 글인지 나누어 봐야 합니다. 공개 피드는 네트워크 상태와 캐시 갱신의 영향을 받을 수 있습니다.",
+      },
+      {
+        type: "steps",
+        items: [
+          "커뮤니티 목록을 새로고침합니다.",
+          "글을 올린 카테고리가 맞는지 확인합니다.",
+          "상세 URL을 알고 있다면 직접 열어 봅니다.",
+          "작성 직후 오류 메시지가 없었는지 확인합니다.",
+          "수정·삭제 과정에서 삭제된 글인지 확인합니다.",
+          "계속 보이지 않으면 제목, 작성 시간, 닉네임을 기록해 신고합니다.",
+        ],
+      },
+      {
+        type: "callout",
+        tone: PUBLIC_CONTENT_CALLOUT_TONES.warning,
+        title: "공개 기준을 위반한 글은 조치될 수 있습니다",
+        text: "개인정보 노출, 타인 공격, 서비스 방해 목적의 글은 운영 기준에 따라 숨김이나 삭제 대상이 될 수 있습니다.",
+      },
+    ],
+  },
+  {
+    channel: PUBLIC_CONTENT_CHANNELS.support,
+    service: PUBLIC_CONTENT_SERVICES.community,
+    category: "troubleshooting",
+    slugSegments: ["community", "troubleshooting", "site-not-opening"],
+    title: "community.yeon.world가 열리지 않을 때 해결 방법",
+    description:
+      "community.yeon.world 접속 문제를 브라우저, canonical URL, 공개 피드 API, 게스트 저장소 상태로 나누어 확인합니다.",
+    summary: "사이트 접속 실패와 글/댓글 로딩 실패를 분리해 확인합니다.",
+    publishedAt: PUBLISHED_DATE,
+    updatedAt: PUBLISHED_DATE,
+    readingMinutes: 3,
+    ...PUBLIC_CONTENT_SUPPORT_CTA_TARGETS.community,
+    sourcePaths: [
+      "/Users/osuma/coding_stuffs/yeon/apps/web/src/lib/subdomain-routing.ts",
+      "/Users/osuma/coding_stuffs/yeon/apps/web/src/lib/platform-services.ts",
+      "/Users/osuma/coding_stuffs/yeon/apps/web/src/features/community/hooks/use-community-feed.ts",
+    ],
+    body: [
+      {
+        type: "paragraph",
+        text: "community.yeon.world가 열리지 않는 문제와 글/댓글이 불러와지지 않는 문제는 다릅니다. 공개 피드가 보이지 않을 때도 먼저 페이지 접속 자체를 확인하세요.",
+      },
+      {
+        type: "steps",
+        items: [
+          "주소가 https://community.yeon.world 인지 확인합니다.",
+          "브라우저 새로고침 또는 시크릿 창에서 다시 엽니다.",
+          "yeon.world에서 커뮤니티 링크를 눌러 이동되는지 확인합니다.",
+          "페이지는 열리지만 글이 없으면 피드 오류 메시지를 확인합니다.",
+          "댓글만 실패하면 해당 글 상세에서 다시 시도합니다.",
+          "계속 실패하면 오류 화면과 시간을 기록해 신고합니다.",
+        ],
+      },
+      {
+        type: "checklist",
+        items: [
+          "공개 피드가 비어 있는지 확인합니다.",
+          "글 작성 또는 댓글 작성만 실패하는지 확인합니다.",
+          "게스트 닉네임 저장소 오류 안내가 있는지 확인합니다.",
+        ],
+      },
+    ],
+  },
+  {
+    channel: PUBLIC_CONTENT_CHANNELS.support,
+    service: PUBLIC_CONTENT_SERVICES.community,
+    category: "policy",
+    slugSegments: ["community", "policy", "usage-rules"],
+    title: "커뮤니티 이용 정책과 행동 기준 확인 방법",
+    description:
+      "YEON 커뮤니티에서 공개 글과 댓글을 남길 때 지켜야 할 개인정보, 공격 표현, 신고 기준입니다.",
+    summary:
+      "공개 피드에서는 개인정보를 올리지 않고, 타인을 공격하지 않으며, 오류 신고는 재현 순서와 함께 남깁니다.",
+    publishedAt: PUBLISHED_DATE,
+    updatedAt: PUBLISHED_DATE,
+    readingMinutes: 4,
+    ...PUBLIC_CONTENT_SUPPORT_CTA_TARGETS.community,
+    sourcePaths: [
+      "/Users/osuma/coding_stuffs/yeon/apps/web/src/features/community/community-content.ts",
+      "/Users/osuma/coding_stuffs/yeon/apps/web/src/features/community/community-post-format.ts",
+      "/Users/osuma/coding_stuffs/yeon/docs/seo/public-content-channel-policy.md",
+    ],
+    body: [
+      {
+        type: "paragraph",
+        text: "YEON 커뮤니티는 타자연습과 플래시카드 사용자가 공개 글과 댓글로 소통하는 공간입니다. 게시 전에는 공개성과 다른 사용자의 안전을 먼저 확인해야 합니다.",
+      },
+      {
+        type: "heading",
+        title: "기본 행동 기준",
+      },
+      {
+        type: "checklist",
+        items: [
+          "개인정보, 비밀번호, 토큰, 비공개 자료를 올리지 않습니다.",
+          "타인을 공격하거나 괴롭히는 문장을 올리지 않습니다.",
+          "서비스 오류 신고는 재현 순서와 화면 상태를 함께 적습니다.",
+          "카테고리는 글 목적에 맞게 선택합니다.",
+          "게스트 비밀번호는 수정·삭제 확인용으로 본인이 기억합니다.",
+        ],
+      },
+      {
+        type: "callout",
+        tone: PUBLIC_CONTENT_CALLOUT_TONES.warning,
+        title: "공개 피드입니다",
+        text: "커뮤니티에 남긴 글과 댓글은 다른 사용자가 볼 수 있습니다. 운영자가 확인해야 하는 민감한 내용은 공개 글로 올리지 마세요.",
+      },
+    ],
+  },
+  {
+    channel: PUBLIC_CONTENT_CHANNELS.support,
+    service: PUBLIC_CONTENT_SERVICES.account,
+    category: "guides",
+    slugSegments: ["account", "guides", "login-with-yeon-account"],
+    title: "YEON 계정으로 로그인하는 방법",
+    description:
+      "YEON 계정이 필요한 서비스에서 로그인 흐름을 열고 Google 로그인 또는 자격증명 로그인을 사용하는 기본 방법입니다.",
+    summary:
+      "계정형 기능을 사용할 때 로그인 버튼을 열고, 로그인 후 원래 서비스로 돌아오는지 확인합니다.",
+    publishedAt: PUBLISHED_DATE,
+    updatedAt: PUBLISHED_DATE,
+    readingMinutes: 3,
+    sourcePaths: [
+      "/Users/osuma/coding_stuffs/yeon/apps/web/src/app/page.tsx",
+      "/Users/osuma/coding_stuffs/yeon/apps/web/src/lib/credential-client.ts",
+      "/Users/osuma/coding_stuffs/yeon/apps/web/src/features/landing-home/landing-constants.ts",
+    ],
+    body: [
+      {
+        type: "paragraph",
+        text: "YEON의 공개 서비스는 로그인 없이 시작할 수 있는 영역과 계정이 필요한 영역이 섞여 있습니다. 계정이 필요한 기능을 쓰려면 공통 로그인 흐름을 통해 세션을 만든 뒤 원래 서비스로 돌아오면 됩니다.",
+      },
+      {
+        type: "steps",
+        items: [
+          "yeon.world 또는 사용하는 서비스에서 로그인 버튼을 누릅니다.",
+          "Google 로그인 또는 제공되는 자격증명 로그인 방식을 선택합니다.",
+          "요청된 정보와 이동할 서비스가 맞는지 확인합니다.",
+          "로그인이 끝나면 원래 보던 서비스로 돌아왔는지 확인합니다.",
+          "카드처럼 계정 저장이 필요한 서비스는 덱 목록을 다시 확인합니다.",
+          "로그인이 되지 않으면 오류 메시지를 기록합니다.",
+        ],
+      },
+      {
+        type: "checklist",
+        items: [
+          "typing은 기본적으로 로그인 없이도 사용할 수 있습니다.",
+          "card는 게스트와 로그인 저장 범위가 다릅니다.",
+          "community는 게스트 글쓰기를 지원합니다.",
+        ],
+      },
+    ],
+  },
+  {
+    channel: PUBLIC_CONTENT_CHANNELS.support,
+    service: PUBLIC_CONTENT_SERVICES.account,
+    category: "troubleshooting",
+    slugSegments: ["account", "troubleshooting", "session-signed-out"],
+    title: "YEON 로그인이 풀릴 때 확인할 것",
+    description:
+      "YEON 서비스에서 로그인이 풀리거나 인증 만료 메시지가 보일 때 세션, 쿠키, 브라우저, 서비스별 저장 차이를 확인합니다.",
+    summary:
+      "세션 만료와 게스트 저장소 문제를 구분하고, 필요한 경우 다시 로그인합니다.",
+    publishedAt: PUBLISHED_DATE,
+    updatedAt: PUBLISHED_DATE,
+    readingMinutes: 4,
+    sourcePaths: [
+      "/Users/osuma/coding_stuffs/yeon/apps/web/src/lib/api-client.ts",
+      "/Users/osuma/coding_stuffs/yeon/apps/web/src/features/card-service/card-service-fetch.test.ts",
+      "/Users/osuma/coding_stuffs/yeon/apps/web/src/features/card-service/use-card-service-auth-state.ts",
+    ],
+    body: [
+      {
+        type: "paragraph",
+        text: "로그인이 풀린 것처럼 보일 때는 실제 세션 만료인지, 서비스가 게스트 모드로 보이는 것인지 나누어 확인해야 합니다. 특히 카드 서비스는 게스트 데이터와 계정 데이터가 다를 수 있습니다.",
+      },
+      {
+        type: "steps",
+        items: [
+          "새로고침 후에도 로그인 상태가 유지되는지 확인합니다.",
+          "로그인이 필요하다는 메시지가 보이면 다시 로그인합니다.",
+          "브라우저가 쿠키를 막고 있지 않은지 확인합니다.",
+          "card.yeon.world에서 덱이 사라진 것처럼 보이면 게스트/로그인 저장 차이를 확인합니다.",
+          "다른 브라우저나 기기에서 같은 계정으로 확인합니다.",
+          "반복되면 시간, 브라우저, 서비스 URL을 기록해 신고합니다.",
+        ],
+      },
+      {
+        type: "callout",
+        title: "게스트 데이터와 세션 만료는 다릅니다",
+        text: "로그인이 풀려도 게스트 로컬 데이터가 남아 있을 수 있고, 반대로 로그인해도 다른 브라우저의 게스트 데이터는 자동으로 보이지 않을 수 있습니다.",
+      },
+    ],
+  },
+  {
+    channel: PUBLIC_CONTENT_CHANNELS.support,
+    service: PUBLIC_CONTENT_SERVICES.account,
+    category: "guides",
+    slugSegments: ["account", "guides", "public-service-urls"],
+    title: "YEON 서비스별 공개 URL과 접속 주소 확인 방법",
+    description:
+      "yeon.world, typing.yeon.world, card.yeon.world, community.yeon.world, discord-ai.yeon.world의 역할과 접속 주소입니다.",
+    summary:
+      "서비스별 canonical 공개 URL을 확인하고 support, news, blog 채널과 구분합니다.",
+    publishedAt: PUBLISHED_DATE,
+    updatedAt: PUBLISHED_DATE,
+    readingMinutes: 4,
+    sourcePaths: [
+      "/Users/osuma/coding_stuffs/yeon/apps/web/src/lib/platform-services.ts",
+      "/Users/osuma/coding_stuffs/yeon/apps/web/src/lib/subdomain-routing.ts",
+      "/Users/osuma/coding_stuffs/yeon/docs/seo/public-content-channel-policy.md",
+    ],
+    body: [
+      {
+        type: "paragraph",
+        text: "YEON은 서비스별 공개 URL을 분리해 운영합니다. 검색이나 공유 링크를 만들 때는 내부 앱 경로보다 canonical 공개 URL을 우선 확인하세요.",
+      },
+      {
+        type: "checklist",
+        items: [
+          "yeon.world: 전체 브랜드 허브",
+          "typing.yeon.world: 타자연습 서비스",
+          "card.yeon.world: 플래시카드 서비스",
+          "community.yeon.world: 커뮤니티",
+          "discord-ai.yeon.world: NEXA 디스코드 AI 어시스턴트",
+          "support.yeon.world: 사용법과 문제 해결",
+          "news.yeon.world: 공식 공지와 제품 업데이트",
+          "blog.yeon.world: 개발기와 기술 글",
+        ],
+      },
+      {
+        type: "steps",
+        items: [
+          "사용할 서비스를 먼저 고릅니다.",
+          "공유할 때는 해당 서비스의 공개 URL을 사용합니다.",
+          "도움말은 support.yeon.world에서 찾습니다.",
+          "제품 변경 공지는 news.yeon.world에서 확인합니다.",
+          "기술 배경은 blog.yeon.world에서 확인합니다.",
+        ],
+      },
+    ],
+  },
+  {
+    channel: PUBLIC_CONTENT_CHANNELS.support,
+    service: PUBLIC_CONTENT_SERVICES.account,
+    category: "troubleshooting",
+    slugSegments: ["account", "troubleshooting", "report-service-error"],
+    title: "YEON 오류를 신고하는 방법",
+    description:
+      "YEON 서비스 오류를 신고할 때 필요한 서비스 URL, 재현 순서, 시간, 화면 상태, 계정 여부를 정리하는 방법입니다.",
+    summary:
+      "오류 신고에는 서비스 주소, 발생 시간, 재현 순서, 화면 메시지, 로그인 여부를 함께 적습니다.",
+    publishedAt: PUBLISHED_DATE,
+    updatedAt: PUBLISHED_DATE,
+    readingMinutes: 3,
+    sourcePaths: [
+      "/Users/osuma/coding_stuffs/yeon/apps/web/src/lib/site-brand.ts",
+      "/Users/osuma/coding_stuffs/yeon/docs/seo/public-content-quality-checklist.md",
+      "/Users/osuma/coding_stuffs/yeon/apps/web/src/lib/platform-services.ts",
+    ],
+    body: [
+      {
+        type: "paragraph",
+        text: "오류 신고는 짧아도 재현 가능한 정보가 있어야 처리하기 쉽습니다. 비밀번호, 토큰, 개인정보는 제외하고 서비스 주소와 화면 상태를 중심으로 적어 주세요.",
+      },
+      {
+        type: "steps",
+        items: [
+          "문제가 생긴 서비스 URL을 기록합니다.",
+          "발생 시간을 적습니다.",
+          "문제를 다시 만드는 순서를 1단계씩 적습니다.",
+          "화면에 나온 오류 메시지를 그대로 적습니다.",
+          "로그인 상태인지 게스트 상태인지 적습니다.",
+          "비밀번호, API 키, 개인정보는 신고 내용에서 제거합니다.",
+        ],
+      },
+      {
+        type: "checklist",
+        items: [
+          "서비스 URL",
+          "발생 시간",
+          "재현 순서",
+          "오류 메시지",
+          "로그인 또는 게스트 상태",
+        ],
       },
     ],
   },

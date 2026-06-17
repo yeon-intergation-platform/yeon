@@ -11,6 +11,24 @@ import {
   getPublicContentSupportCtaTarget,
 } from "./public-content-data";
 
+type PublicContentArticleForTest = (typeof PUBLIC_CONTENT_ARTICLES)[number];
+
+function getPublicContentArticleText(article: PublicContentArticleForTest) {
+  return article.body
+    .map((block) => {
+      if ("items" in block) return block.items.join(" ");
+      if ("text" in block) return block.text;
+      if ("links" in block) {
+        return block.links
+          .map((link) => `${link.label} ${link.href}`)
+          .join(" ");
+      }
+      if ("title" in block) return block.title;
+      return "";
+    })
+    .join(" ");
+}
+
 describe("public content data", () => {
   it("글이 있는 support 서비스와 분류만 collection으로 만든다", () => {
     const nexaCollection = getPublicContentCollectionBySlug("support", [
@@ -137,22 +155,96 @@ describe("public content data", () => {
       "guides",
       "discord-bot-permissions",
     ]);
-    const bodyText = article?.body
-      .map((block) =>
-        "items" in block
-          ? block.items.join(" ")
-          : "text" in block
-            ? block.text
-            : "title" in block
-              ? block.title
-              : ""
-      )
-      .join(" ");
+    expect(article).toBeTruthy();
+    const bodyText = getPublicContentArticleText(article!);
 
     expect(bodyText).toContain("2147568640");
     expect(bodyText).toContain("2684734528");
     expect(bodyText).toContain("Message Content Intent");
     expect(bodyText).toContain("Manage Webhooks");
     expect(bodyText).toContain("기본 봇 이름으로 보내는 폴백");
+  });
+
+  it("Yeon 서비스 support 초기 글을 서비스별 공개 URL로 제공하고 mooddesk는 제외한다", () => {
+    const requiredSlugs = [
+      ["typing", "getting-started", "start-typing-practice"],
+      ["typing", "guides", "join-typing-room"],
+      ["typing", "troubleshooting", "race-not-starting"],
+      ["typing", "troubleshooting", "result-not-saved"],
+      ["typing", "troubleshooting", "site-not-opening"],
+      ["card", "guides", "create-flashcard-deck"],
+      ["card", "guides", "add-and-edit-cards"],
+      ["card", "guides", "start-card-study"],
+      ["card", "troubleshooting", "deck-data-not-visible"],
+      ["card", "troubleshooting", "site-not-opening"],
+      ["community", "guides", "write-community-post"],
+      ["community", "guides", "write-comment"],
+      ["community", "troubleshooting", "post-not-visible"],
+      ["community", "troubleshooting", "site-not-opening"],
+      ["community", "policy", "usage-rules"],
+      ["account", "guides", "login-with-yeon-account"],
+      ["account", "troubleshooting", "session-signed-out"],
+      ["account", "policy", "privacy-conversation-data"],
+      ["account", "guides", "public-service-urls"],
+      ["account", "troubleshooting", "report-service-error"],
+    ] as const;
+
+    requiredSlugs.forEach((slug) => {
+      expect(getPublicContentArticleBySlug("support", slug)).toMatchObject({
+        channel: "support",
+        service: slug[0],
+      });
+    });
+
+    const supportArticles = PUBLIC_CONTENT_ARTICLES.filter(
+      (article) => article.channel === PUBLIC_CONTENT_CHANNELS.support
+    );
+    ["typing", "card", "community", "account"].forEach((service) => {
+      expect(
+        supportArticles.filter((article) => article.service === service).length
+      ).toBeGreaterThanOrEqual(5);
+    });
+    expect(
+      supportArticles.some((article) => article.slugSegments[0] === "mooddesk")
+    ).toBe(false);
+  });
+
+  it("Yeon 서비스 support 글은 서비스별 운영 기준을 본문에 포함한다", () => {
+    const supportArticles = PUBLIC_CONTENT_ARTICLES.filter(
+      (article) => article.channel === PUBLIC_CONTENT_CHANNELS.support
+    );
+
+    supportArticles
+      .filter((article) => article.service === "typing")
+      .forEach((article) => {
+        expect(getPublicContentArticleText(article)).toContain("race-server");
+      });
+
+    supportArticles
+      .filter((article) => article.service === "card")
+      .forEach((article) => {
+        const bodyText = getPublicContentArticleText(article);
+
+        expect(bodyText).toContain("게스트");
+        expect(bodyText).toContain("로그인");
+      });
+
+    supportArticles
+      .filter((article) => article.service === "community")
+      .forEach((article) => {
+        expect(getPublicContentArticleText(article)).toContain("공개");
+      });
+
+    const privacyArticle = getPublicContentArticleBySlug("support", [
+      "account",
+      "policy",
+      "privacy-conversation-data",
+    ]);
+    expect(privacyArticle).toBeTruthy();
+    const privacyText = getPublicContentArticleText(privacyArticle!);
+
+    expect(privacyText).toContain("Google 로그인");
+    expect(privacyText).toContain("커뮤니티 글과 댓글");
+    expect(privacyText).toContain("NEXA 질문");
   });
 });
