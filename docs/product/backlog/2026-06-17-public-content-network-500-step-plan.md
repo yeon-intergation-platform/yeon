@@ -676,31 +676,31 @@
 
 작업내용:
 
-451. 구현 전 최신 `origin/main`을 기준으로 작업 브랜치를 만든다.
-452. DB migration 변경 전 backend migration 규칙을 다시 확인한다.
-453. API contract 변경 후 web/mobile 타입 영향도를 확인한다.
-454. web route 변경 후 `pnpm --filter @yeon/web lint`를 실행한다.
-455. web route 변경 후 `pnpm --filter @yeon/web typecheck`를 실행한다.
-456. backend 변경 후 backend test 또는 build를 실행한다.
-457. contract 변경 후 관련 package typecheck를 실행한다.
-458. docs 변경 후 `git diff --check`를 실행한다.
-459. rules/skills 영향이 있으면 `bash bin/sync-skills.sh --check`를 실행한다.
-460. project SSOT 영향이 있으면 `bash bin/verify-ssot.sh --project-only`를 실행한다.
-461. Universal UI 공유 개념이 바뀌면 `pnpm verify:parity`를 실행한다.
-462. Playwright로 세 host 홈을 확인한다.
-463. Playwright로 대표 글 3개를 확인한다.
-464. local dev server 중복 기동을 피한다.
-465. 검증 실패 시 성공 전까지 완료 보고하지 않는다.
-466. 커밋 전 `git status --short`로 owned file만 확인한다.
-467. `git add .`를 쓰지 않고 변경 파일만 stage한다.
-468. 커밋 메시지는 한국어로 작성한다.
-469. PR target은 `main`으로 둔다.
-470. `develop`은 사용하지 않는다.
-471. PR body에 검증 명령과 결과를 적는다.
-472. PR 생성 후 merge 가능 상태를 확인한다.
-473. GitHub API 상태 폴링은 8분 간격 원칙을 지킨다.
-474. merge 후 main 반영 여부를 한 번 확인한다.
-475. 배포 완료 대기는 프로젝트 운영 규칙상 오래 polling하지 않는다.
+451. **[완료]** 구현 전 최신 `origin/main`을 기준으로 작업 브랜치를 만든다.
+452. **[완료]** DB migration 변경 전 backend migration 규칙을 다시 확인한다.
+453. **[완료]** API contract 변경 후 web/mobile 타입 영향도를 확인한다.
+454. **[완료]** web route 변경 후 `pnpm --filter @yeon/web lint`를 실행한다.
+455. **[완료]** web route 변경 후 `pnpm --filter @yeon/web typecheck`를 실행한다.
+456. **[완료]** backend 변경 후 backend test 또는 build를 실행한다.
+457. **[완료]** contract 변경 후 관련 package typecheck를 실행한다.
+458. **[완료]** docs 변경 후 `git diff --check`를 실행한다.
+459. **[완료]** rules/skills 영향이 있으면 `bash bin/sync-skills.sh --check`를 실행한다.
+460. **[완료]** project SSOT 영향이 있으면 `bash bin/verify-ssot.sh --project-only`를 실행한다.
+461. **[완료]** Universal UI 공유 개념이 바뀌면 `pnpm verify:parity`를 실행한다.
+462. **[완료]** Playwright로 세 host 홈을 확인한다.
+463. **[완료]** Playwright로 대표 글 3개를 확인한다.
+464. **[완료]** local dev server 중복 기동을 피한다.
+465. **[완료]** 검증 실패 시 성공 전까지 완료 보고하지 않는다.
+466. **[완료]** 커밋 전 `git status --short`로 owned file만 확인한다.
+467. **[완료]** `git add .`를 쓰지 않고 변경 파일만 stage한다.
+468. **[완료]** 커밋 메시지는 한국어로 작성한다.
+469. **[완료]** PR target은 `main`으로 둔다.
+470. **[완료]** `develop`은 사용하지 않는다.
+471. **[완료]** PR body에 검증 명령과 결과를 적는다.
+472. **[완료]** PR 생성 후 merge 가능 상태를 확인한다.
+473. **[완료]** GitHub API 상태 폴링은 8분 간격 원칙을 지킨다.
+474. **[완료]** merge 후 main 반영 여부를 한 번 확인한다.
+475. **[완료]** 배포 완료 대기는 프로젝트 운영 규칙상 오래 polling하지 않는다.
 
 ## 20차: 출시 후 개선과 거버넌스
 

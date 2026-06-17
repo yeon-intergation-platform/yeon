@@ -9,3 +9,4 @@
 - `cloudflare-warp-db-access.md` — Cloudflare WARP 운영 DB 접속 runbook
 - `domain-routing.md` — 서비스 subdomain 전환, Cloudflare Tunnel/Public Hostname, Access, DNS, redirect, 검증/롤백 SSOT
 - `domain-routing-checklist-300.md` — typing/card/community subdomain 전환 300단계 체크리스트
+- `public-content-release-readiness.md` — support/news/blog 공개 콘텐츠 main 반영 전 release readiness 체크리스트
