@@ -5,6 +5,7 @@ import {
   PUBLIC_CONTENT_CHANNELS,
   publicContentArticleResponseSchema,
   publicContentAdminArticleResponseSchema,
+  publicContentImportManuscriptFrontmatterSchema,
   publicContentListQuerySchema,
   publicContentSlugSchema,
 } from "../public-content";
@@ -151,6 +152,29 @@ describe("public content API contract", () => {
 
     expect(response.article.publishedAt).toBeNull();
     expect(response.article.status).toBe("draft");
+  });
+
+  it("validates markdown import frontmatter with the shared contract", () => {
+    const frontmatter = publicContentImportManuscriptFrontmatterSchema.parse({
+      title: "디스코드 서버에 NEXA AI 봇 추가하는 방법",
+      description: "NEXA 설치 전 권한과 테스트 순서를 정리합니다.",
+      channel: "support",
+      service: "nexa",
+      category: "guides",
+      slug: "nexa/guides/add-nexa-discord-bot",
+      status: "draft",
+      source_repo: "discord-assitant",
+      source_path: ["/Users/osuma/coding_stuffs/discord-assitant/README.md"],
+    });
+
+    expect(frontmatter.service).toBe("nexa");
+    expect(frontmatter.source_path).toHaveLength(1);
+    expect(() =>
+      publicContentImportManuscriptFrontmatterSchema.parse({
+        ...frontmatter,
+        extra_field: "허용하지 않음",
+      })
+    ).toThrow();
   });
 
   it("builds stable public and read-only admin API paths", () => {

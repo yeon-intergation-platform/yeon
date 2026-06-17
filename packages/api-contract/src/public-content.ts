@@ -211,6 +211,23 @@ export type PublicContentAdminArticleDto = z.infer<
   typeof publicContentAdminArticleDtoSchema
 >;
 
+export const publicContentImportManuscriptFrontmatterSchema = z
+  .object({
+    title: z.string().trim().min(1).max(160),
+    description: z.string().trim().min(1).max(240),
+    channel: publicContentChannelSchema,
+    service: publicContentServiceKeySchema,
+    category: publicContentCategorySchema,
+    slug: publicContentSlugSchema,
+    status: publicContentStatusSchema,
+    source_repo: z.string().trim().min(1).max(160),
+    source_path: z.array(z.string().trim().min(1).max(2048)).default([]),
+  })
+  .strict();
+export type PublicContentImportManuscriptFrontmatter = z.infer<
+  typeof publicContentImportManuscriptFrontmatterSchema
+>;
+
 export const publicContentSitemapEntryDtoSchema = z.object({
   url: z.string().url().max(2048),
   lastModified: z.string().datetime(),

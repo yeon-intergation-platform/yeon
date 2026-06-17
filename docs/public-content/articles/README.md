@@ -50,3 +50,5 @@ pnpm --filter @yeon/web public-content:import:dry-run -- --mode=publish
 ```
 
 검증은 파일명, 필수 frontmatter, channel/service/status 값, slug 형식, 중복 slug, 빈 heading, source path를 확인한다.
+
+dry-run 출력은 생성 후보, 수정 후보, 건너뜀, 경고, 실패 수를 표시한다. 상세 운영 순서는 [`../import-workflow.md`](../import-workflow.md)를 본다.

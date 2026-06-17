@@ -59,3 +59,43 @@
 3. 기존 `docs/seo/README.md`에서 import 워크플로우 문서를 링크한다.
 4. `docs/public-content/articles/README.md`에 작성자용 빠른 규칙을 둔다.
 5. 샘플 원고 1개를 추가해 dry-run 검증이 실제 파일을 읽도록 한다.
+
+## 4차: contract와 운영 체크리스트 보강
+
+논의 필요: 실제 DB 반영까지 이번 차수에서 구현할지.
+선택지: dry-run 강화, DB 반영 스크립트 추가, admin 실행 버튼 추가.
+추천: 기존 dry-run을 강화하고 실제 반영은 다음 차수에서 별도 설계한다.
+사용자 방향: 비어 있으면 추천 기준으로 진행한다.
+
+작업내용:
+
+1. 원고 frontmatter를 `@yeon/api-contract/public-content` Zod schema로 검증한다.
+2. dry-run 결과에 생성, 수정, 건너뜀 후보 수를 표시한다.
+3. admin 운영 체크리스트에 import dry-run 확인 항목을 추가한다.
+4. import workflow 운영 문서를 `docs/public-content/` 아래에 남긴다.
+5. 16차 376~400 완료 여부를 500단계 계획에 반영한다.
+
+### 결과
+
+- `packages/api-contract/src/public-content.ts`에 Markdown 원고 frontmatter contract schema를 추가했다.
+- `public-content:import:dry-run`이 frontmatter contract를 통과해야 원고를 처리하도록 바꿨다.
+- dry-run 출력에 생성 후보, 수정 후보, 건너뜀 수를 표시했다.
+- `/admin/content` 운영 체크리스트에 `Markdown import dry-run` 수동 확인 항목을 추가했다.
+- 상세 import workflow 문서와 작성자용 포인터 문서를 연결했다.
+
+### 검증
+
+- `pnpm --filter @yeon/web public-content:import:dry-run` 통과: 원고 1개, 수정 후보 1개, 실패 0개.
+- `pnpm --filter @yeon/api-contract test -- public-content.test.ts` 통과: 4 files, 60 tests.
+- `pnpm --filter @yeon/web exec vitest run src/features/public-content/public-content-admin-model.test.ts` 통과: 1 file, 7 tests.
+- `pnpm --filter @yeon/api-contract typecheck` 통과.
+- `pnpm --filter @yeon/web typecheck` 통과.
+- `pnpm --filter @yeon/mobile typecheck` 통과.
+- `pnpm --filter @yeon/api-client typecheck` 통과.
+- `pnpm --filter @yeon/web lint` 통과.
+- `pnpm --filter @yeon/api-contract lint` 통과.
+- `pnpm --filter @yeon/web build` 통과: 정적 페이지 249개 생성.
+- `pnpm --filter @yeon/web public-content:audit` 통과: 61개 글 검사 통과.
+- `git diff --check` 통과.
+- `/opt/homebrew/bin/bash bin/sync-skills.sh --check` 통과.
+- `/opt/homebrew/bin/bash bin/verify-ssot.sh --project-only` 통과.
