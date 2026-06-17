@@ -38,6 +38,11 @@ import {
   PublicContentCategoryNav,
   PublicContentServiceNav,
 } from "./public-content-navigation-view";
+import { getPublicContentNewsHomeModel } from "./public-content-news-home";
+import {
+  PublicContentNewsArticleContextPanel,
+  PublicContentNewsHomePriority,
+} from "./public-content-news-home-view";
 import { buildPublicContentArticleStructuredData } from "./public-content-structured-data";
 import {
   getPublicContentSupportHomeProblemEntries,
@@ -428,7 +433,12 @@ export function PublicContentHome({ channel }: PublicContentHomeProps) {
     compareArticlesByDate
   );
   const services = getPublicContentServicesForChannel(channel);
-  const featuredArticle = articles[0] ?? null;
+  const newsHomeModel =
+    channel === PUBLIC_CONTENT_CHANNELS.news
+      ? getPublicContentNewsHomeModel()
+      : null;
+  const featuredArticle =
+    channel === PUBLIC_CONTENT_CHANNELS.news ? null : (articles[0] ?? null);
   const serviceNavItems = getPublicContentServiceNavItems({ channel });
   const categoryNavItems = getPublicContentCategoryNavItems({ channel });
   const supportProblemEntries =
@@ -482,11 +492,16 @@ export function PublicContentHome({ channel }: PublicContentHomeProps) {
           />
         </section>
       )}
-      <section className="mx-auto max-w-6xl px-6 pb-16 md:px-8">
-        {services.map((service) => (
-          <ServiceSection key={service} channel={channel} service={service} />
-        ))}
-      </section>
+      {newsHomeModel ? (
+        <PublicContentNewsHomePriority model={newsHomeModel} />
+      ) : null}
+      {channel !== PUBLIC_CONTENT_CHANNELS.news ? (
+        <section className="mx-auto max-w-6xl px-6 pb-16 md:px-8">
+          {services.map((service) => (
+            <ServiceSection key={service} channel={channel} service={service} />
+          ))}
+        </section>
+      ) : null}
     </PublicContentShell>
   );
 }
@@ -636,6 +651,7 @@ export async function PublicContentArticlePage({
         <p className="mt-5 max-w-[760px] text-[17px] leading-8 text-[#666]">
           {article.description}
         </p>
+        <PublicContentNewsArticleContextPanel article={article} />
         <PublicContentSupportActionSummary items={supportPrimaryActionItems} />
         <div className="mt-8 border-t border-[#e5e5e5] pt-8">
           {hasTableOfContents ? (

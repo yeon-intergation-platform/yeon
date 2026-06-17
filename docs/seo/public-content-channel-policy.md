@@ -8,6 +8,8 @@ Yeon 생태계의 공개 콘텐츠는 검색 유입, 사용자 지원, 브랜드
 
 2026-06-17 최종 결정: `news.yeon.world/blog`를 만들지 않고 `blog.yeon.world`를 독립 채널로 둔다. `news.yeon.world`는 공식 소식과 업계 해설, `blog.yeon.world`는 개발기와 기술 글, `support.yeon.world`는 사용법과 문제 해결을 담당한다.
 
+2026-06-17 추가 확정: `news.yeon.world`의 최상위 분류는 `notice`, `updates`, `news`로 제한하고, 홈 위계도 이 순서로 둔다. `blog.yeon.world`는 `engineering`, `product`, `devlog`, `essay`를 최상위 분류로 둔다. 블로그를 뉴스 하위 경로로 넣지 않는다.
+
 실제 원고 발행 전 품질 기준은 [공개 콘텐츠 품질 체크리스트](./public-content-quality-checklist.md)를 따른다. 채널별 원고는 [support 템플릿](./templates/support-article-template.md), [news 템플릿](./templates/news-article-template.md), [blog 템플릿](./templates/blog-article-template.md)을 기준으로 작성한다.
 
 ## 최종 운영 기준
@@ -128,7 +130,12 @@ news.yeon.world
 작성 원칙:
 
 - 공지와 업데이트는 서비스별로 분류한다.
+- 홈과 목록의 기본 위계는 `notice` → `updates` → `news` 순서로 둔다.
+- 공지에는 적용 서비스와 적용일을 표시한다.
+- 업데이트에는 변경 요약과 사용자 영향도를 표시한다.
+- 업계 뉴스 해설에는 YEON 서비스와의 관련성을 표시한다.
 - 업계 뉴스는 단순 복붙이 아니라 Yeon/NEXA 사용자에게 왜 중요한지 해설한다.
+- 과도한 언론 사이트나 보도자료처럼 보이게 만들지 않는다. 실제 공지가 아닌 글에는 사실 중심 제목과 해설 중심 본문을 사용한다.
 - 단순 대량 생성형 글이나 얇은 글은 발행하지 않는다.
 - support 문서와 같은 내용을 반복 발행하지 않는다. 필요하면 news 글에서 support 글로 링크한다.
 
