@@ -6,6 +6,10 @@ import {
   type PublicContentBlock,
   getPublicContentSupportCtaTarget,
 } from "../src/features/public-content/public-content-data";
+import {
+  getPublicContentSupportPrimaryActionItems,
+  hasPublicContentSupportFaqHeadingStructure,
+} from "../src/features/public-content/public-content-support-action-summary";
 import { getPublicContentTitleQualityWarnings } from "../src/features/public-content/public-content-title-quality";
 
 type AuditIssue = {
@@ -76,6 +80,32 @@ function auditSupportCta(issues: AuditIssue[], article: PublicContentArticle) {
       issues,
       article,
       `support ${article.service} CTA href가 정책과 다릅니다.`
+    );
+  }
+}
+
+function auditSupportActionStructure(
+  issues: AuditIssue[],
+  article: PublicContentArticle
+) {
+  if (article.channel !== PUBLIC_CONTENT_CHANNELS.support) return;
+
+  if (!hasPublicContentSupportFaqHeadingStructure(article)) {
+    pushIssue(
+      issues,
+      article,
+      "support FAQ는 accordion 대신 색인 가능한 heading block을 포함해야 합니다."
+    );
+  }
+
+  if (
+    article.category !== "policy" &&
+    getPublicContentSupportPrimaryActionItems(article).length === 0
+  ) {
+    pushIssue(
+      issues,
+      article,
+      "support 글은 실제 해결 단계나 확인 목록을 먼저 드러낼 action block이 필요합니다."
     );
   }
 }
@@ -187,6 +217,7 @@ function auditArticle(
   });
 
   auditSupportCta(issues, article);
+  auditSupportActionStructure(issues, article);
 
   if (article.slugSegments.length === 0) {
     pushIssue(issues, article, "slugSegments가 비어 있습니다.");

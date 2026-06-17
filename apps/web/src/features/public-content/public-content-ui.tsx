@@ -43,6 +43,8 @@ import {
   getPublicContentSupportHomeProblemEntries,
   getPublicContentSupportHomeServiceEntries,
 } from "./public-content-support-home";
+import { getPublicContentSupportPrimaryActionItems } from "./public-content-support-action-summary";
+import { PublicContentSupportActionSummary } from "./public-content-support-action-summary-view";
 import {
   PublicContentSupportHomeProblemEntries,
   PublicContentSupportHomeServiceEntries,
@@ -598,6 +600,8 @@ export async function PublicContentArticlePage({
     tableOfContents.map((item) => [item.blockIndex, item.id])
   );
   const breadcrumbItems = buildPublicContentArticleBreadcrumb(article);
+  const supportPrimaryActionItems =
+    getPublicContentSupportPrimaryActionItems(article);
 
   return (
     <PublicContentShell channel={article.channel}>
@@ -632,6 +636,7 @@ export async function PublicContentArticlePage({
         <p className="mt-5 max-w-[760px] text-[17px] leading-8 text-[#666]">
           {article.description}
         </p>
+        <PublicContentSupportActionSummary items={supportPrimaryActionItems} />
         <div className="mt-8 border-t border-[#e5e5e5] pt-8">
           {hasTableOfContents ? (
             <PublicContentTableOfContents
