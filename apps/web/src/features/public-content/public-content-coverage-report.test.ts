@@ -14,7 +14,7 @@ describe("public content coverage report", () => {
       generatedAt: "2026-06-17T00:00:00.000Z",
     });
 
-    expect(report.summary.articleCount).toBe(36);
+    expect(report.summary.articleCount).toBe(PUBLIC_CONTENT_ARTICLES.length);
     expect(report.summary.targetBucketCount).toBe(12);
     expect(report.summary.coveredBucketCount).toBe(12);
     expect(report.summary.missingBucketCount).toBe(0);
@@ -39,9 +39,12 @@ describe("public content coverage report", () => {
       generatedAt: "2026-06-17T00:00:00.000Z",
     });
     const markdown = formatPublicContentCoverageReportAsMarkdown(report);
+    const supportArticleCount = PUBLIC_CONTENT_ARTICLES.filter(
+      (article) => article.channel === PUBLIC_CONTENT_CHANNELS.support
+    ).length;
 
     expect(markdown).toContain("# 공개 콘텐츠 Coverage 리포트");
-    expect(markdown).toContain("Support: 18개");
+    expect(markdown).toContain(`Support: ${supportArticleCount}개`);
     expect(markdown).toContain("[채움] news 업계 뉴스 해설 (1/1)");
     expect(markdown).toContain("[채움] blog 개발 일지 (1/1)");
   });
