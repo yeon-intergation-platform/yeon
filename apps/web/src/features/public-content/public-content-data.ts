@@ -1166,6 +1166,197 @@ export const PUBLIC_CONTENT_ARTICLES: readonly PublicContentArticle[] = [
     ],
   },
   {
+    channel: PUBLIC_CONTENT_CHANNELS.news,
+    service: PUBLIC_CONTENT_SERVICES.account,
+    category: "notice",
+    slugSegments: ["notice", "support-open"],
+    title: "YEON support.yeon.world 오픈 안내",
+    description:
+      "YEON의 서비스별 도움말과 문제 해결 문서를 support.yeon.world에서 분리 운영하기 시작했습니다.",
+    summary:
+      "NEXA, 타자연습, 플래시카드, 커뮤니티 도움말을 support 채널에서 서비스별로 확인할 수 있습니다.",
+    publishedAt: PUBLISHED_DATE,
+    updatedAt: PUBLISHED_DATE,
+    readingMinutes: 2,
+    ctaLabel: "Support 열기",
+    ctaHref: "https://support.yeon.world",
+    sourcePaths: [
+      "/Users/osuma/coding_stuffs/yeon/docs/seo/public-content-channel-policy.md",
+      "/Users/osuma/coding_stuffs/yeon/apps/web/src/features/public-content/public-content-data.ts",
+    ],
+    body: [
+      {
+        type: "paragraph",
+        text: "YEON은 사용자가 문제를 해결할 때 바로 검색해서 들어올 수 있도록 support.yeon.world를 분리했습니다. 이 채널은 공식 소식이나 개발기보다 사용법, 튜토리얼, 오류 해결, FAQ에 집중합니다.",
+      },
+      {
+        type: "heading",
+        title: "처음 공개한 범위",
+      },
+      {
+        type: "checklist",
+        items: [
+          "NEXA 설치, 권한, 응답 없음, 개인정보, FAQ",
+          "타자연습 시작, 덱 변경, 타자방 접속 문제",
+          "플래시카드 덱 생성, 게스트 덱 이관, 복습 단축키",
+          "커뮤니티 글 작성, 게스트 닉네임, 글·댓글 등록 문제",
+        ],
+      },
+      {
+        type: "paragraph",
+        text: "초기 support는 많은 메뉴보다 실제로 따라 할 수 있는 글을 우선합니다. 빈 문서나 제목만 있는 페이지는 만들지 않는다는 운영 원칙을 유지합니다.",
+      },
+    ],
+  },
+  {
+    channel: PUBLIC_CONTENT_CHANNELS.news,
+    service: PUBLIC_CONTENT_SERVICES.account,
+    category: "notice",
+    slugSegments: ["notice", "news-operation-principles"],
+    title: "news.yeon.world 운영 원칙 안내",
+    description:
+      "YEON 공식 소식, 제품 업데이트, 업계 해설을 news.yeon.world에서 어떻게 나누어 운영하는지 안내합니다.",
+    summary:
+      "news는 공지와 업데이트를 우선하고, 업계 뉴스는 사용자에게 주는 의미를 해설할 때만 발행합니다.",
+    publishedAt: PUBLISHED_DATE,
+    updatedAt: PUBLISHED_DATE,
+    readingMinutes: 2,
+    ctaLabel: "News 홈 보기",
+    ctaHref: "https://news.yeon.world",
+    sourcePaths: [
+      "/Users/osuma/coding_stuffs/yeon/docs/seo/public-content-channel-policy.md",
+    ],
+    body: [
+      {
+        type: "paragraph",
+        text: "news.yeon.world는 YEON의 공식 소식을 모으는 채널입니다. 서비스 공지와 제품 업데이트는 사실 중심으로 쓰고, 업계 뉴스 해설은 단순 요약이 아니라 YEON 사용자에게 어떤 의미가 있는지 설명할 때만 발행합니다.",
+      },
+      {
+        type: "checklist",
+        items: [
+          "notice: 운영 공지와 중요한 정책 안내",
+          "updates: 제품 변경사항과 사용자 영향",
+          "news: AI, Discord, 개발자 도구, 제품 운영 관련 해설",
+        ],
+      },
+      {
+        type: "callout",
+        title: "support 글을 반복하지 않습니다",
+        text: "사용법과 오류 해결은 support에 두고, news는 변경 사실과 필요한 조치만 요약한 뒤 관련 support 문서로 연결합니다.",
+      },
+    ],
+  },
+  {
+    channel: PUBLIC_CONTENT_CHANNELS.news,
+    service: PUBLIC_CONTENT_SERVICES.account,
+    category: "notice",
+    slugSegments: ["notice", "blog-operation-principles"],
+    title: "blog.yeon.world 운영 원칙 안내",
+    description:
+      "YEON 개발기, 기술 글, 제품 제작기, 회고를 blog.yeon.world에서 별도 운영하는 기준입니다.",
+    summary:
+      "blog는 공식 공지나 도움말을 대체하지 않고, 제품을 만들며 남긴 결정과 기술 맥락을 기록합니다.",
+    publishedAt: PUBLISHED_DATE,
+    updatedAt: PUBLISHED_DATE,
+    readingMinutes: 2,
+    ctaLabel: "Blog 열기",
+    ctaHref: "https://blog.yeon.world",
+    sourcePaths: [
+      "/Users/osuma/coding_stuffs/yeon/docs/seo/public-content-channel-policy.md",
+      "/Users/osuma/coding_stuffs/yeon/docs/product/backlog/2026-06-17-public-content-network-500-step-plan.md",
+    ],
+    body: [
+      {
+        type: "paragraph",
+        text: "blog.yeon.world는 news 안의 하위 메뉴가 아니라 별도 채널로 운영합니다. 이곳에는 공식 공지보다 긴 제품 판단, 기술 선택, 시행착오, 회고를 남깁니다.",
+      },
+      {
+        type: "checklist",
+        items: [
+          "engineering: 구현 구조와 기술 선택 이유",
+          "product: 어떤 사용자 문제를 풀려는지",
+          "devlog: 진행 상황과 배운 점",
+          "essay: 짧은 생각과 운영 관점",
+        ],
+      },
+      {
+        type: "paragraph",
+        text: "blog 글은 홍보 문구만 반복하지 않고 실제 기능, 코드 경로, 운영 정책과 연결되도록 관리합니다.",
+      },
+    ],
+  },
+  {
+    channel: PUBLIC_CONTENT_CHANNELS.news,
+    service: PUBLIC_CONTENT_SERVICES.card,
+    category: "updates",
+    slugSegments: ["updates", "card", "support-guides"],
+    title: "플래시카드 지원 문서를 추가했습니다",
+    description:
+      "card.yeon.world 사용자를 위해 덱 생성, 게스트 덱 이관, 복습 단축키 도움말을 공개했습니다.",
+    summary:
+      "게스트와 로그인 사용자의 저장 흐름, 덱 학습 시작, 복습 모드 단축키를 support 문서로 정리했습니다.",
+    publishedAt: PUBLISHED_DATE,
+    updatedAt: PUBLISHED_DATE,
+    readingMinutes: 2,
+    ctaLabel: "플래시카드 도움말 보기",
+    ctaHref:
+      "https://support.yeon.world/card/guides/merge-guest-decks-after-login",
+    sourcePaths: [
+      "/Users/osuma/coding_stuffs/yeon/apps/web/src/features/card-service/use-card-service-decks-screen-state.ts",
+      "/Users/osuma/coding_stuffs/yeon/apps/web/src/features/card-service/deck-play-screen.tsx",
+    ],
+    body: [
+      {
+        type: "paragraph",
+        text: "플래시카드 서비스는 로그인 전에도 덱을 만들 수 있고, 로그인 후 계정으로 가져오는 흐름이 있습니다. 이 차이를 이해하기 쉽게 support 문서로 분리했습니다.",
+      },
+      {
+        type: "checklist",
+        items: [
+          "card.yeon.world에서 덱을 만드는 기본 흐름",
+          "로그인 전에 만든 게스트 덱을 계정에 추가하는 방법",
+          "복습 모드에서 Space, 1, 2, 3, s 단축키를 사용하는 방법",
+        ],
+      },
+    ],
+  },
+  {
+    channel: PUBLIC_CONTENT_CHANNELS.news,
+    service: PUBLIC_CONTENT_SERVICES.community,
+    category: "updates",
+    slugSegments: ["updates", "community", "support-guides"],
+    title: "커뮤니티 지원 문서를 추가했습니다",
+    description:
+      "community.yeon.world 사용자를 위해 글 작성, 게스트 닉네임, 글·댓글 등록 문제 해결 문서를 공개했습니다.",
+    summary:
+      "게스트 닉네임과 비밀번호, 글자 수 제한, 글·댓글 등록 실패 확인 항목을 support 문서로 정리했습니다.",
+    publishedAt: PUBLISHED_DATE,
+    updatedAt: PUBLISHED_DATE,
+    readingMinutes: 2,
+    ctaLabel: "커뮤니티 도움말 보기",
+    ctaHref: "https://support.yeon.world/community/guides/set-guest-nickname",
+    sourcePaths: [
+      "/Users/osuma/coding_stuffs/yeon/apps/web/src/features/community/community-guest-identity.ts",
+      "/Users/osuma/coding_stuffs/yeon/apps/web/src/features/community/components/community-feed-forms.tsx",
+      "/Users/osuma/coding_stuffs/yeon/apps/web/src/features/community/hooks/use-community-feed.ts",
+    ],
+    body: [
+      {
+        type: "paragraph",
+        text: "커뮤니티는 작은 글·댓글 피드와 게스트 작성 흐름부터 시작합니다. 사용자가 막히기 쉬운 닉네임, 비밀번호, 글자 수 제한, 등록 실패 메시지를 support 문서로 정리했습니다.",
+      },
+      {
+        type: "checklist",
+        items: [
+          "게스트 닉네임은 자동 생성되며 직접 바꿀 수 있습니다.",
+          "비밀번호는 글과 댓글 수정·삭제 확인에 사용됩니다.",
+          "글 제목, 본문, 댓글은 빈 값으로 등록할 수 없습니다.",
+          "화면 오류 메시지는 API 실패 원인을 확인하는 첫 단서입니다.",
+        ],
+      },
+    ],
+  },
+  {
     channel: PUBLIC_CONTENT_CHANNELS.blog,
     service: PUBLIC_CONTENT_SERVICES.account,
     category: "product",
@@ -1274,6 +1465,183 @@ export const PUBLIC_CONTENT_ARTICLES: readonly PublicContentArticle[] = [
           "draft, admin, auth, API 경로는 색인 대상에서 제외합니다.",
           "Search Console에는 각 URL-prefix property와 sitemap을 제출합니다.",
         ],
+      },
+    ],
+  },
+  {
+    channel: PUBLIC_CONTENT_CHANNELS.blog,
+    service: PUBLIC_CONTENT_SERVICES.nexa,
+    category: "product",
+    slugSegments: ["product", "nexa-discord-server-operator-design"],
+    title: "NEXA를 Discord 서버 운영자 관점에서 설계하는 이유",
+    description:
+      "NEXA가 단순 AI 채팅봇이 아니라 Discord 서버 운영자가 이해할 수 있는 권한, 정책, 안전 흐름을 먼저 다루는 이유입니다.",
+    summary:
+      "서버 관리자는 채널, 권한, 책임, 안전 기준을 관리해야 하므로 NEXA도 운영자 관점의 제품 구조가 필요합니다.",
+    publishedAt: PUBLISHED_DATE,
+    updatedAt: PUBLISHED_DATE,
+    readingMinutes: 5,
+    ctaLabel: "NEXA 설치 페이지 보기",
+    ctaHref: "https://discord-ai.yeon.world/install",
+    sourcePaths: [
+      "/Users/osuma/coding_stuffs/discord-assitant/docs/FAQ.md",
+      "/Users/osuma/coding_stuffs/discord-assitant/docs/BOT_PERMISSIONS.md",
+      "/Users/osuma/coding_stuffs/discord-assitant/docs/NEXA_SAFETY_POLICY.md",
+    ],
+    body: [
+      {
+        type: "paragraph",
+        text: "Discord 서버에서 AI 봇을 운영하는 일은 질문에 답하는 기능만의 문제가 아닙니다. 어떤 채널에서 답해야 하는지, 누가 설정을 바꿀 수 있는지, 민감한 질문을 어떻게 안내할지, 서버 관리자의 책임을 어디까지 둘지까지 함께 결정해야 합니다.",
+      },
+      {
+        type: "heading",
+        title: "운영자가 먼저 확인하는 것",
+      },
+      {
+        type: "checklist",
+        items: [
+          "봇이 볼 수 있는 채널과 답변할 수 있는 채널",
+          "Message Content Intent와 Discord 권한",
+          "서버별 프롬프트와 채널 AI 설정",
+          "Provider Pool로 질문이 전달될 수 있다는 개인정보 안내",
+          "불법 콘텐츠와 Discord ToS를 다루는 안전 정책",
+        ],
+      },
+      {
+        type: "paragraph",
+        text: "그래서 NEXA support 문서는 설치 버튼보다 권한, 응답 없음, 채널 제외, 개인정보 안내를 먼저 다룹니다. 서버 운영자가 통제할 수 있는 경계가 명확해야 실제 서버에서 오래 쓸 수 있습니다.",
+      },
+    ],
+  },
+  {
+    channel: PUBLIC_CONTENT_CHANNELS.blog,
+    service: PUBLIC_CONTENT_SERVICES.typing,
+    category: "engineering",
+    slugSegments: ["engineering", "typing-realtime-server-needed"],
+    title: "타자 서비스에서 실시간 서버가 필요한 이유",
+    description:
+      "YEON 타자연습이 혼자 연습과 별도로 race-server 기반 실시간 방 구조를 두는 이유를 정리했습니다.",
+    summary:
+      "혼자 연습은 로컬 문장과 덱으로 충분하지만, 방 참여와 참가자 상태는 실시간 서버가 필요합니다.",
+    publishedAt: PUBLISHED_DATE,
+    updatedAt: PUBLISHED_DATE,
+    readingMinutes: 4,
+    ctaLabel: "타자연습 열기",
+    ctaHref: "https://typing.yeon.world",
+    sourcePaths: [
+      "/Users/osuma/coding_stuffs/yeon/apps/web/src/features/typing-service/typing-service-fetch.ts",
+      "/Users/osuma/coding_stuffs/yeon/apps/web/src/features/typing-service/use-race-room.ts",
+      "/Users/osuma/coding_stuffs/yeon/apps/race-server",
+    ],
+    body: [
+      {
+        type: "paragraph",
+        text: "타자연습에는 두 가지 흐름이 있습니다. 혼자 연습하는 화면은 기본 문장이나 선택한 덱만 있으면 바로 시작할 수 있습니다. 반대로 타자방은 참가자, 방 상태, 공개 여부, 레이스 시작 시점이 계속 바뀌기 때문에 실시간 서버가 필요합니다.",
+      },
+      {
+        type: "heading",
+        title: "실시간 서버가 맡는 경계",
+      },
+      {
+        type: "checklist",
+        items: [
+          "대기 중인 공개방 목록을 정리합니다.",
+          "활성 상태이고 참가자가 있는 방만 공개 목록에 보여줍니다.",
+          "방 참여, 준비 상태, 레이스 진행 상태를 맞춥니다.",
+          "로그인 토큰이 없어도 레이스 진행 자체는 깨지지 않게 합니다.",
+        ],
+      },
+      {
+        type: "paragraph",
+        text: "이 경계를 분리하면 네트워크가 불안정할 때도 혼자 연습은 기본 문장으로 유지하고, 멀티플레이 문제는 재연결과 방 상태 확인으로 좁혀서 안내할 수 있습니다.",
+      },
+    ],
+  },
+  {
+    channel: PUBLIC_CONTENT_CHANNELS.blog,
+    service: PUBLIC_CONTENT_SERVICES.card,
+    category: "product",
+    slugSegments: ["product", "why-card-guest-mode-matters"],
+    title: "플래시카드 서비스에서 게스트 사용성을 고려한 이유",
+    description:
+      "card.yeon.world가 로그인 전 덱 생성과 로그인 후 계정 이관 흐름을 함께 둔 제품 판단을 정리했습니다.",
+    summary:
+      "학습 도구는 시작 장벽이 낮아야 하지만, 오래 쓸 덱은 계정에 안전하게 연결되어야 합니다.",
+    publishedAt: PUBLISHED_DATE,
+    updatedAt: PUBLISHED_DATE,
+    readingMinutes: 4,
+    ctaLabel: "플래시카드 열기",
+    ctaHref: "https://card.yeon.world",
+    sourcePaths: [
+      "/Users/osuma/coding_stuffs/yeon/apps/web/src/features/card-service/use-card-service-decks-screen-state.ts",
+      "/Users/osuma/coding_stuffs/yeon/apps/web/src/features/card-service/components/merge-guest-dialog.tsx",
+      "/Users/osuma/coding_stuffs/yeon/apps/web/src/lib/guest-card-service-store.ts",
+    ],
+    body: [
+      {
+        type: "paragraph",
+        text: "플래시카드는 생각난 내용을 바로 카드로 만들 수 있어야 합니다. 처음부터 가입을 요구하면 작은 학습 아이디어가 사라질 수 있으므로, card.yeon.world는 게스트 상태에서도 덱을 만들 수 있게 둡니다.",
+      },
+      {
+        type: "heading",
+        title: "게스트와 계정의 역할",
+      },
+      {
+        type: "checklist",
+        items: [
+          "게스트 모드: 빠르게 덱과 카드를 만들어 시작합니다.",
+          "계정 모드: 다른 기기에서도 같은 덱을 이어서 봅니다.",
+          "이관 흐름: 로그인 후 게스트 덱이 있으면 계정에 추가할지 묻습니다.",
+          "완료 안내: 이관된 덱 수와 카드 수를 사용자에게 보여줍니다.",
+        ],
+      },
+      {
+        type: "paragraph",
+        text: "이 구조는 시작 장벽과 장기 저장 사이의 균형입니다. 빠르게 시작하되, 가치가 생긴 덱은 계정으로 옮길 수 있어야 합니다.",
+      },
+    ],
+  },
+  {
+    channel: PUBLIC_CONTENT_CHANNELS.blog,
+    service: PUBLIC_CONTENT_SERVICES.community,
+    category: "product",
+    slugSegments: ["product", "why-community-starts-small"],
+    title: "커뮤니티 기능을 작게 시작하는 이유",
+    description:
+      "community.yeon.world가 큰 SNS보다 글, 댓글, 게스트 정체성 같은 작은 기능부터 시작하는 이유입니다.",
+    summary:
+      "커뮤니티는 기능 수보다 작성 신뢰, 공개성, 수정·삭제 경계가 먼저 안정되어야 합니다.",
+    publishedAt: PUBLISHED_DATE,
+    updatedAt: PUBLISHED_DATE,
+    readingMinutes: 4,
+    ctaLabel: "커뮤니티 열기",
+    ctaHref: "https://community.yeon.world",
+    sourcePaths: [
+      "/Users/osuma/coding_stuffs/yeon/apps/web/src/features/community/community-guest-identity.ts",
+      "/Users/osuma/coding_stuffs/yeon/apps/web/src/features/community/components/community-feed-forms.tsx",
+      "/Users/osuma/coding_stuffs/yeon/apps/web/src/features/community/chat-service-api.ts",
+    ],
+    body: [
+      {
+        type: "paragraph",
+        text: "커뮤니티는 기능을 많이 넣는 것보다 사용자가 글을 쓰고, 댓글을 남기고, 필요하면 수정하거나 삭제할 수 있는 기본 경계가 먼저 중요합니다. 그래서 초기 community.yeon.world는 큰 SNS 기능보다 작은 피드와 게스트 작성 흐름에 집중합니다.",
+      },
+      {
+        type: "heading",
+        title: "작게 시작할 때 먼저 보는 것",
+      },
+      {
+        type: "checklist",
+        items: [
+          "게스트 닉네임은 자동 생성되지만 직접 바꿀 수 있습니다.",
+          "비밀번호는 글과 댓글 수정·삭제 확인에 사용됩니다.",
+          "제목과 본문 길이 제한을 화면에서 명확히 보여줍니다.",
+          "오류가 나면 사용자가 볼 수 있는 메시지로 남깁니다.",
+        ],
+      },
+      {
+        type: "paragraph",
+        text: "커뮤니티의 다음 기능은 이 기본 경계가 안정된 뒤에 붙는 편이 낫습니다. 작은 기능도 공개성과 책임 경계가 맞아야 사용자가 신뢰하고 글을 남길 수 있습니다.",
       },
     ],
   },
