@@ -68,5 +68,8 @@ jobs:
       - name: Web 단위 테스트 (vitest)
         run: pnpm --filter @yeon/web test
 
+      - name: 공개 콘텐츠 품질 audit
+        run: pnpm --filter @yeon/web public-content:audit
+
       - name: Mobile 단위 테스트 (vitest)
         run: pnpm --filter @yeon/mobile exec vitest run
