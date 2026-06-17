@@ -1,0 +1,19 @@
+package world.yeon.backend.public_content.repository;
+
+public record PublicContentArticleRecord(
+	String channel,
+	String serviceKey,
+	String category,
+	String slug,
+	String title,
+	String description,
+	String summary,
+	String canonicalUrl,
+	String publishedAt,
+	String updatedAt,
+	int readingMinutes,
+	String bodyFormat,
+	String bodyMarkdown,
+	String ctaLabel,
+	String ctaHref
+) {}

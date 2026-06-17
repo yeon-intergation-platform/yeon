@@ -5,13 +5,20 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public class PublicContentSeedRepository {
-	private final List<PublicContentSeedArticle> articles;
+@ConditionalOnProperty(
+	prefix = "public-content",
+	name = "store",
+	havingValue = "seed",
+	matchIfMissing = true
+)
+public class PublicContentSeedRepository implements PublicContentArticleStore {
+	private final List<PublicContentArticleRecord> articles;
 
 	public PublicContentSeedRepository(
 		ObjectMapper objectMapper,
@@ -20,11 +27,12 @@ public class PublicContentSeedRepository {
 		this.articles = loadArticles(objectMapper, articlesResource);
 	}
 
-	public List<PublicContentSeedArticle> findAll() {
+	@Override
+	public List<PublicContentArticleRecord> findAll() {
 		return articles;
 	}
 
-	private List<PublicContentSeedArticle> loadArticles(
+	private List<PublicContentArticleRecord> loadArticles(
 		ObjectMapper objectMapper,
 		Resource articlesResource
 	) {
@@ -40,7 +48,7 @@ public class PublicContentSeedRepository {
 		}
 	}
 
-	private void ensureUniqueSlugs(List<PublicContentSeedArticle> articles) {
+	private void ensureUniqueSlugs(List<PublicContentArticleRecord> articles) {
 		Set<String> articleKeys = new HashSet<>();
 		for (var article : articles) {
 			String key = article.channel() + "/" + article.slug();
@@ -50,23 +58,5 @@ public class PublicContentSeedRepository {
 		}
 	}
 
-	private record PublicContentSeedFile(List<PublicContentSeedArticle> articles) {}
-
-	public record PublicContentSeedArticle(
-		String channel,
-		String serviceKey,
-		String category,
-		String slug,
-		String title,
-		String description,
-		String summary,
-		String canonicalUrl,
-		String publishedAt,
-		String updatedAt,
-		int readingMinutes,
-		String bodyFormat,
-		String bodyMarkdown,
-		String ctaLabel,
-		String ctaHref
-	) {}
+	private record PublicContentSeedFile(List<PublicContentArticleRecord> articles) {}
 }

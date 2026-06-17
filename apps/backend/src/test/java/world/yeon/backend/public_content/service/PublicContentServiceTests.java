@@ -10,12 +10,12 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.junit.jupiter.api.extension.ExtendWith;
-import world.yeon.backend.public_content.repository.PublicContentSeedRepository;
-import world.yeon.backend.public_content.repository.PublicContentSeedRepository.PublicContentSeedArticle;
+import world.yeon.backend.public_content.repository.PublicContentArticleRecord;
+import world.yeon.backend.public_content.repository.PublicContentArticleStore;
 
 @ExtendWith(MockitoExtension.class)
 class PublicContentServiceTests {
-	@Mock private PublicContentSeedRepository repository;
+	@Mock private PublicContentArticleStore repository;
 	private PublicContentService service;
 
 	@BeforeEach
@@ -83,13 +83,13 @@ class PublicContentServiceTests {
 			.hasMessage("지원하지 않는 공개 콘텐츠 서비스입니다.");
 	}
 
-	private PublicContentSeedArticle article(
+	private PublicContentArticleRecord article(
 		String channel,
 		String serviceKey,
 		String category,
 		String slug
 	) {
-		return new PublicContentSeedArticle(
+		return new PublicContentArticleRecord(
 			channel,
 			serviceKey,
 			category,

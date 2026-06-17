@@ -18,10 +18,10 @@ class PublicContentSeedRepositoryTests {
 
 		assertThat(articles).hasSize(33);
 		assertThat(articles)
-			.extracting(PublicContentSeedRepository.PublicContentSeedArticle::slug)
+			.extracting(PublicContentArticleRecord::slug)
 			.contains("nexa/guides/add-nexa-discord-bot");
 		assertThat(articles)
-			.extracting(PublicContentSeedRepository.PublicContentSeedArticle::bodyMarkdown)
+			.extracting(PublicContentArticleRecord::bodyMarkdown)
 			.noneMatch(body -> body.contains("/Users/osuma"));
 	}
 }
