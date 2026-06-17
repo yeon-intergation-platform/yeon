@@ -10,6 +10,23 @@ Yeon 생태계의 공개 콘텐츠는 검색 유입, 사용자 지원, 브랜드
 
 실제 원고 발행 전 품질 기준은 [공개 콘텐츠 품질 체크리스트](./public-content-quality-checklist.md)를 따른다. 채널별 원고는 [support 템플릿](./templates/support-article-template.md), [news 템플릿](./templates/news-article-template.md), [blog 템플릿](./templates/blog-article-template.md)을 기준으로 작성한다.
 
+## 최종 운영 기준
+
+`support`, `news`, `blog`는 서로를 대체하지 않는다. 새 공개 콘텐츠를 만들 때는 먼저 아래 기준으로 채널을 결정하고, 애매한 글은 하나의 주 채널에만 canonical로 발행한 뒤 다른 채널에서는 내부 링크로 연결한다.
+
+| 발행 의도                                     | canonical 채널       | 대표 경로                                                                           |
+| --------------------------------------------- | -------------------- | ----------------------------------------------------------------------------------- |
+| 사용법, 튜토리얼, FAQ, 문제 해결, 정책 안내   | `support.yeon.world` | `/nexa/guides/*`, `/typing/troubleshooting/*`, `/card/faq/*`, `/community/policy/*` |
+| 공식 공지, 제품 업데이트, 업계 뉴스 해설      | `news.yeon.world`    | `/notice/{service}/*`, `/updates/{service}/*`, `/news/{topic}/*`                    |
+| 개발기, 기술 글, 제품 제작기, 회고, 제품 철학 | `blog.yeon.world`    | `/engineering/{topic}/*`, `/product/{service}/*`, `/devlog/*`, `/essay/*`           |
+
+운영 금지 사항:
+
+- `news.yeon.world/blog` 또는 `blog.yeon.world/news`처럼 채널 의미를 섞는 경로를 만들지 않는다.
+- 같은 본문을 support, news, blog에 중복 발행하지 않는다.
+- 빈 카테고리만 먼저 만들지 않는다. 실제로 발행할 글이 있을 때만 노출한다.
+- 새 채널이나 새 최상위 분류가 필요하면 이 문서, sitemap 정책, Search Console 제출 대상 문서를 먼저 갱신한다.
+
 ## 적용 범위
 
 공개 콘텐츠 정책은 아래 서비스에 적용한다.
