@@ -1,9 +1,8 @@
 import {
   buildPublicContentCanonicalUrl,
-  getPublicContentCategoryLabel,
-  getPublicContentServiceLabel,
   type PublicContentArticle,
 } from "./public-content-data";
+import { getPublicContentArticleCardMetaItems } from "./public-content-article-card-meta";
 import { PublicContentTrackedLink } from "./public-content-tracked-link";
 
 function getArticleSlug(article: PublicContentArticle) {
@@ -34,9 +33,12 @@ export function PublicContentArticleCard({
       }}
     >
       <div className="flex flex-wrap gap-2 text-[12px] font-semibold text-[#aaa]">
-        <span>{getPublicContentServiceLabel(article.service)}</span>
-        <span aria-hidden="true">/</span>
-        <span>{getPublicContentCategoryLabel(article.category)}</span>
+        {getPublicContentArticleCardMetaItems(article).map((item, index) => (
+          <span key={`${item}-${index}`} className="contents">
+            {index > 0 ? <span aria-hidden="true">/</span> : null}
+            <span>{item}</span>
+          </span>
+        ))}
       </div>
       <h2 className="mt-4 text-[20px] font-semibold leading-7 text-[#111]">
         {article.title}
@@ -44,10 +46,6 @@ export function PublicContentArticleCard({
       <p className="mt-3 text-[14px] leading-6 text-[#666]">
         {article.summary}
       </p>
-      <div className="mt-5 flex items-center justify-between gap-4 text-[13px] text-[#aaa]">
-        <span>{article.publishedAt}</span>
-        <span>{article.readingMinutes}분</span>
-      </div>
     </PublicContentTrackedLink>
   );
 }
