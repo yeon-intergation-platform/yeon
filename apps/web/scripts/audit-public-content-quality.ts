@@ -10,6 +10,7 @@ import {
   getPublicContentSupportPrimaryActionItems,
   hasPublicContentSupportFaqHeadingStructure,
 } from "../src/features/public-content/public-content-support-action-summary";
+import { getPublicContentNewsArticleContext } from "../src/features/public-content/public-content-news-home";
 import { getPublicContentTitleQualityWarnings } from "../src/features/public-content/public-content-title-quality";
 
 type AuditIssue = {
@@ -106,6 +107,22 @@ function auditSupportActionStructure(
       issues,
       article,
       "support 글은 실제 해결 단계나 확인 목록을 먼저 드러낼 action block이 필요합니다."
+    );
+  }
+}
+
+function auditNewsArticleContext(
+  issues: AuditIssue[],
+  article: PublicContentArticle
+) {
+  if (article.channel !== PUBLIC_CONTENT_CHANNELS.news) return;
+
+  const context = getPublicContentNewsArticleContext(article);
+  if (!context) {
+    pushIssue(
+      issues,
+      article,
+      "news 글은 category별 상단 맥락 정보를 제공해야 합니다."
     );
   }
 }
@@ -218,6 +235,7 @@ function auditArticle(
 
   auditSupportCta(issues, article);
   auditSupportActionStructure(issues, article);
+  auditNewsArticleContext(issues, article);
 
   if (article.slugSegments.length === 0) {
     pushIssue(issues, article, "slugSegments가 비어 있습니다.");
