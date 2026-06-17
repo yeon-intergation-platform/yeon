@@ -1,11 +1,14 @@
 import {
   PUBLIC_CONTENT_CHANNELS,
+  PUBLIC_CONTENT_SERVICES,
   buildPublicContentCanonicalUrl,
   getPublicContentArticleBySlug,
   getPublicContentCategoryLabel,
   getPublicContentServiceLabel,
   type PublicContentArticle,
+  type PublicContentService,
 } from "./public-content-data";
+import { getPublicContentServiceNavItems } from "./public-content-navigation";
 
 export type PublicContentSupportHomeProblemEntry = {
   article: PublicContentArticle;
@@ -15,10 +18,31 @@ export type PublicContentSupportHomeProblemEntry = {
   serviceLabel: string;
 };
 
+export type PublicContentSupportHomeServiceEntry = {
+  articleCount: number;
+  description: string;
+  href: string;
+  label: string;
+  service: PublicContentService;
+};
+
 type SupportHomeProblemSeed = {
   prompt: string;
   slugSegments: readonly string[];
 };
+
+const SUPPORT_HOME_SERVICE_DESCRIPTIONS = {
+  [PUBLIC_CONTENT_SERVICES.nexa]:
+    "설치, 디스코드 권한, 응답 없음, 채널 설정을 순서대로 확인합니다.",
+  [PUBLIC_CONTENT_SERVICES.typing]:
+    "타자연습 시작, 방 입장, 레이스 연결 문제를 빠르게 확인합니다.",
+  [PUBLIC_CONTENT_SERVICES.card]:
+    "덱 생성, 카드 추가, 게스트 데이터와 학습 시작 흐름을 정리합니다.",
+  [PUBLIC_CONTENT_SERVICES.community]:
+    "글 작성, 댓글, 게스트 닉네임, 커뮤니티 이용 기준을 안내합니다.",
+  [PUBLIC_CONTENT_SERVICES.account]:
+    "로그인, 개인정보, 서비스별 공개 URL과 공통 정책을 확인합니다.",
+} as const satisfies Record<PublicContentService, string>;
 
 const SUPPORT_HOME_PROBLEM_SEEDS = [
   {
@@ -78,4 +102,32 @@ export function getPublicContentSupportHomeProblemEntries({
       Boolean(entry)
     )
     .slice(0, limit);
+}
+
+export function getPublicContentSupportHomeServiceEntries(): PublicContentSupportHomeServiceEntry[] {
+  return getPublicContentServiceNavItems({
+    channel: PUBLIC_CONTENT_CHANNELS.support,
+  }).flatMap((item): PublicContentSupportHomeServiceEntry[] => {
+    const [service] = item.slugSegments;
+
+    if (!isSupportHomeService(service)) return [];
+
+    return [
+      {
+        articleCount: item.count,
+        description: SUPPORT_HOME_SERVICE_DESCRIPTIONS[service],
+        href: item.href,
+        label: item.label,
+        service,
+      },
+    ];
+  });
+}
+
+function isSupportHomeService(
+  service: string | undefined
+): service is PublicContentService {
+  return Object.values(PUBLIC_CONTENT_SERVICES).some(
+    (value) => value === service
+  );
 }
