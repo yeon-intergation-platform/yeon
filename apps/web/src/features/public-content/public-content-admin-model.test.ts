@@ -4,6 +4,7 @@ import {
   buildPublicContentAdminDashboardData,
   getPublicContentAdminArticleRows,
   getPublicContentAdminChannelSummaries,
+  getPublicContentAdminDashboardData,
   getPublicContentAdminDashboardStats,
   getValidPublicContentAdminChannel,
 } from "./public-content-admin-model";
@@ -72,6 +73,30 @@ describe("public content admin model", () => {
         getPublicContentCollections("blog").length
     );
     expect(stats.sourcePathCount).toBeGreaterThan(0);
+  });
+
+  it("정적 registry 기준 admin 운영 체크리스트 상태를 계산한다", () => {
+    const dashboard = getPublicContentAdminDashboardData();
+
+    const checklistById = new Map(
+      dashboard.opsChecklist.map((item) => [item.id, item])
+    );
+
+    expect(dashboard.opsChecklist.map((item) => item.id)).toEqual([
+      "domain-search-console",
+      "url-prefix-properties",
+      "sitemap-coverage",
+      "robots-links",
+      "ga4-events",
+      "seo-warning-queue",
+      "source-path-traceability",
+    ]);
+    expect(checklistById.get("domain-search-console")?.status).toBe("manual");
+    expect(checklistById.get("url-prefix-properties")?.status).toBe("manual");
+    expect(checklistById.get("sitemap-coverage")?.status).toBe("ready");
+    expect(checklistById.get("robots-links")?.status).toBe("ready");
+    expect(checklistById.get("ga4-events")?.value).toBe("G-YGRNS3PQBQ");
+    expect(checklistById.get("seo-warning-queue")?.status).toBe("ready");
   });
 
   it("허용된 공개 콘텐츠 채널만 admin route로 인정한다", () => {
@@ -162,6 +187,14 @@ describe("public content admin model", () => {
     expect(dashboard.stats.noindexCount).toBe(1);
     expect(dashboard.stats.metaDescriptionMissingCount).toBe(1);
     expect(dashboard.stats.seoWarningCount).toBe(2);
+    expect(
+      dashboard.opsChecklist.find((item) => item.id === "sitemap-coverage")
+        ?.status
+    ).toBe("warning");
+    expect(
+      dashboard.opsChecklist.find((item) => item.id === "seo-warning-queue")
+        ?.status
+    ).toBe("warning");
     expect(dashboard.recentPublishedRows.map((row) => row.article.id)).toEqual([
       "article-published",
     ]);

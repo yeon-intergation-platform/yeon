@@ -5,6 +5,8 @@ import type {
   PublicContentAdminArticleRow,
   PublicContentAdminChannelSummary,
   PublicContentAdminDashboardData,
+  PublicContentAdminOpsChecklistItem,
+  PublicContentAdminOpsChecklistStatus,
 } from "@/features/public-content/public-content-admin-model";
 
 type AdminPublicContentProps = {
@@ -56,6 +58,16 @@ const CONTENT_NAV_ITEMS = [
   { href: "/admin/members", label: "회원 관리" },
   { href: "/admin/users", label: "사용자 · 경험치" },
 ] as const;
+const OPS_CHECKLIST_STATUS_LABELS = {
+  manual: "수동 확인",
+  ready: "정상",
+  warning: "확인 필요",
+} as const satisfies Record<PublicContentAdminOpsChecklistStatus, string>;
+const OPS_CHECKLIST_STATUS_CLASSES = {
+  manual: "border-[#d7d7d7] bg-white text-[#666]",
+  ready: "border-[#3f8f5f] bg-[#f3fbf6] text-[#277047]",
+  warning: "border-[#e5484d] bg-[#fff5f5] text-[#b42318]",
+} as const satisfies Record<PublicContentAdminOpsChecklistStatus, string>;
 
 function formatDate(value: string | null) {
   if (!value) {
@@ -225,6 +237,81 @@ function OperationLinkList({ links }: { links: readonly OperationLink[] }) {
             {link.note}
           </YeonText>
         </YeonLink>
+      ))}
+    </YeonView>
+  );
+}
+
+function OpsChecklistItem({
+  item,
+}: {
+  item: PublicContentAdminOpsChecklistItem;
+}) {
+  const content = (
+    <>
+      <YeonView className="flex flex-wrap items-start justify-between gap-3">
+        <YeonView>
+          <YeonText
+            variant="unstyled"
+            tone="inherit"
+            className="text-[14px] font-semibold text-[#111]"
+          >
+            {item.label}
+          </YeonText>
+          <YeonText
+            variant="unstyled"
+            tone="inherit"
+            className="mt-2 block text-[13px] leading-5 text-[#666]"
+          >
+            {item.note}
+          </YeonText>
+        </YeonView>
+        <YeonText
+          as="span"
+          variant="unstyled"
+          tone="inherit"
+          className={`rounded-md border px-2.5 py-1 text-[12px] font-semibold ${OPS_CHECKLIST_STATUS_CLASSES[item.status]}`}
+        >
+          {OPS_CHECKLIST_STATUS_LABELS[item.status]}
+        </YeonText>
+      </YeonView>
+      <YeonText
+        variant="unstyled"
+        tone="inherit"
+        className="mt-3 block text-[13px] font-semibold text-[#111]"
+      >
+        {item.value}
+      </YeonText>
+    </>
+  );
+
+  if (item.href) {
+    return (
+      <YeonLink
+        href={item.href}
+        className="block rounded-lg border border-[#e5e5e5] bg-white p-4 text-[#111] no-underline transition-colors hover:border-[#111]"
+      >
+        {content}
+      </YeonLink>
+    );
+  }
+
+  return (
+    <YeonView className="rounded-lg border border-[#e5e5e5] bg-white p-4">
+      {content}
+    </YeonView>
+  );
+}
+
+function OpsChecklist({
+  items,
+}: {
+  items: readonly PublicContentAdminOpsChecklistItem[];
+}) {
+  return (
+    <YeonView className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+      {items.map((item) => (
+        <OpsChecklistItem key={item.id} item={item} />
       ))}
     </YeonView>
   );
@@ -548,6 +635,7 @@ export function AdminPublicContentDashboard({
   dashboard,
 }: AdminPublicContentDashboardProps) {
   const {
+    opsChecklist,
     recentPublishedRows,
     recentUpdatedRows,
     seoWarningRows,
@@ -634,6 +722,28 @@ export function AdminPublicContentDashboard({
             value={stats.sitemapUrlCount.toLocaleString("ko-KR")}
             note={`sources ${stats.sourcePathCount} · archived ${stats.archivedCount}`}
           />
+        </YeonView>
+
+        <YeonView className="mt-8 border-t border-[#e5e5e5] pt-8">
+          <YeonView className="mb-4">
+            <YeonText
+              as="h2"
+              variant="unstyled"
+              tone="inherit"
+              className="text-[20px] font-semibold text-[#111]"
+            >
+              운영 체크리스트
+            </YeonText>
+            <YeonText
+              variant="unstyled"
+              tone="inherit"
+              className="mt-2 text-[13px] leading-5 text-[#666]"
+            >
+              자동 등록 여부는 Google credential 준비 전까지 수동 확인으로 두고,
+              sitemap·robots·GA4·SEO 경고는 현재 데이터로 점검합니다.
+            </YeonText>
+          </YeonView>
+          <OpsChecklist items={opsChecklist} />
         </YeonView>
 
         <YeonView className="mt-8 border-t border-[#e5e5e5] pt-8">
