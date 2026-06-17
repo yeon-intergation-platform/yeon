@@ -45,7 +45,10 @@ describe("public content data", () => {
       canonicalUrl: "https://blog.yeon.world/engineering",
     });
 
-    expect(getPublicContentCollectionBySlug("blog", ["devlog"])).toBeNull();
+    expect(getPublicContentCollectionBySlug("blog", ["devlog"])).toMatchObject({
+      title: "개발 일지",
+      canonicalUrl: "https://blog.yeon.world/devlog",
+    });
   });
 
   it("collection URL을 sitemap에 포함하고 빈 collection은 제외한다", () => {
@@ -62,7 +65,7 @@ describe("public content data", () => {
     expect(sitemapUrls).toContain(
       buildPublicContentCanonicalUrl("blog", ["engineering"])
     );
-    expect(sitemapUrls).not.toContain(
+    expect(sitemapUrls).toContain(
       buildPublicContentCanonicalUrl("blog", ["devlog"])
     );
 
