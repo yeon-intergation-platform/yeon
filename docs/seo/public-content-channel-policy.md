@@ -6,6 +6,8 @@ Yeon 생태계의 공개 콘텐츠는 검색 유입, 사용자 지원, 브랜드
 
 이 문서는 `support.yeon.world`, `news.yeon.world`, `blog.yeon.world`, `yeon.world/admin`의 역할과 콘텐츠 분류 기준의 source of truth다.
 
+실제 원고 발행 전 품질 기준은 [공개 콘텐츠 품질 체크리스트](./public-content-quality-checklist.md)를 따른다. 채널별 원고는 [support 템플릿](./templates/support-article-template.md), [news 템플릿](./templates/news-article-template.md), [blog 템플릿](./templates/blog-article-template.md)을 기준으로 작성한다.
+
 ## 적용 범위
 
 공개 콘텐츠 정책은 아래 서비스에 적용한다.
