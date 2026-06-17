@@ -152,7 +152,7 @@ blog.yeon.world
 - 일반 운영자용 완전 삭제 UI
 - 복잡한 CMS workflow
 
-본문 수정은 공개 페이지의 관리자 모드에서 수행한다. 예를 들어 관리자가 `support.yeon.world/nexa/guides/add-nexa-discord-bot`에 접속하면 해당 페이지 상단에 편집 버튼을 표시하고, 그 자리에서 본문과 메타 정보를 수정한다.
+1차 admin은 읽기 전용이다. 본문 수정, 삭제, 예약 발행은 아직 만들지 않는다. 관리자는 `support.yeon.world`, `news.yeon.world`, `blog.yeon.world` 공개 페이지와 `/admin/content` 현황판에서 노출 상태를 확인하고, 실제 본문 변경은 정적 registry 또는 이후 별도 CMS 설계로 처리한다.
 
 삭제는 기본 동작으로 두지 않는다. SEO와 링크 안정성을 위해 아래 상태 전이를 우선한다.
 

@@ -13,6 +13,10 @@
 - 타자 서비스 검색 기준 URL: `https://typing.yeon.world`
 - 카드 서비스 검색 기준 URL: `https://card.yeon.world`
 - 커뮤니티 검색 기준 URL: `https://community.yeon.world`
+- 공개 도움말 검색 기준 URL: `https://support.yeon.world`
+- 공식 소식 검색 기준 URL: `https://news.yeon.world`
+- 블로그 검색 기준 URL: `https://blog.yeon.world`
+- NEXA Discord AI 검색 기준 URL: `https://discord-ai.yeon.world`
 - `www.yeon.world`: `yeon.world`로 301 redirect
 - `dev.yeon.world`: noindex, 운영 sitemap 제외
 
@@ -24,6 +28,17 @@
 - `https://typing.yeon.world/decks`
 - `https://card.yeon.world/`
 - `https://community.yeon.world/`
+- `https://support.yeon.world/`
+- `https://support.yeon.world/nexa/guides/add-nexa-discord-bot`
+- `https://support.yeon.world/nexa/guides/discord-bot-permissions`
+- `https://support.yeon.world/typing/getting-started/start-typing-practice`
+- `https://support.yeon.world/card/guides/create-flashcard-deck`
+- `https://support.yeon.world/community/guides/write-community-post`
+- `https://news.yeon.world/`
+- `https://news.yeon.world/notice/public-content-network-start`
+- `https://blog.yeon.world/`
+- `https://blog.yeon.world/product/why-split-support-news-blog`
+- `https://discord-ai.yeon.world/`
 - `/privacy`
 - `/terms`
 - 향후 `/services/<slug>`
@@ -54,13 +69,21 @@
    - `https://typing.yeon.world/`
    - `https://card.yeon.world/`
    - `https://community.yeon.world/`
+   - `https://support.yeon.world/`
+   - `https://news.yeon.world/`
+   - `https://blog.yeon.world/`
+   - `https://discord-ai.yeon.world/`
 3. HTML meta verification 방식을 쓰면 Search Console에서 발급한 값을 `GOOGLE_SITE_VERIFICATION` 환경변수에 넣는다.
 4. 운영 배포 후 아래 sitemap을 각 URL-prefix property에 제출한다.
    - `https://yeon.world/sitemap.xml`
    - `https://typing.yeon.world/sitemap.xml`
    - `https://card.yeon.world/sitemap.xml`
    - `https://community.yeon.world/sitemap.xml`
-5. `URL 검사`에서 `/`, `https://typing.yeon.world/`, `https://typing.yeon.world/rooms`, `https://card.yeon.world/`, `https://community.yeon.world/`, `/privacy`, `/terms`가 자기 canonical host로 잡히는지 확인한다.
+   - `https://support.yeon.world/sitemap.xml`
+   - `https://news.yeon.world/sitemap.xml`
+   - `https://blog.yeon.world/sitemap.xml`
+   - `https://discord-ai.yeon.world/sitemap.xml`
+5. `URL 검사`에서 `/`, `https://typing.yeon.world/`, `https://typing.yeon.world/rooms`, `https://card.yeon.world/`, `https://community.yeon.world/`, `https://support.yeon.world/nexa/guides/add-nexa-discord-bot`, `https://news.yeon.world/notice/public-content-network-start`, `https://blog.yeon.world/product/why-split-support-news-blog`, `https://discord-ai.yeon.world/`, `/privacy`, `/terms`가 자기 canonical host로 잡히는지 확인한다.
 6. `/counseling-service`, `/check/<token>`, `/auth/error`, `/mockdata/...`, `dev.yeon.world/*`가 noindex 또는 비제출 대상으로 보이는지 확인한다.
 
 ## Google API 자동화 기준
@@ -81,11 +104,39 @@
   4. 현재 앱은 GA4 `gtag.js`를 직접 삽입하고 있으며 GTM container snippet은 없다. GTM API로 새 container를 만들 수는 있지만, Search Console 검증 수단으로 쓰려면 앱에 GTM snippet 배포와 container publish가 추가로 필요하다.
   5. 검증 후 `sites.add`로 property를 추가하고 host별 sitemap을 제출한다.
 
+## sitemap 제출 스크립트
+
+Yeon web workspace에는 Search Console URL-prefix property 추가와 sitemap 제출을 한 번에 처리하는 dry-run 우선 스크립트가 있다.
+
+```bash
+pnpm --filter @yeon/web search-console:sitemaps
+```
+
+기본 실행은 API를 호출하지 않고 제출 대상만 출력한다. 실제 제출은 Search Console 권한이 있는 Google credential을 준비한 뒤 실행한다.
+
+```bash
+GOOGLE_APPLICATION_CREDENTIALS=/safe/path/google-search-console.json \
+  pnpm --filter @yeon/web search-console:sitemaps -- --execute
+```
+
+필요하면 속성 추가 또는 sitemap 제출을 따로 생략할 수 있다.
+
+```bash
+pnpm --filter @yeon/web search-console:sitemaps -- --execute --skip-sites
+pnpm --filter @yeon/web search-console:sitemaps -- --execute --skip-sitemaps
+```
+
+주의:
+
+- `client_secret_*.json` OAuth 앱 설정 파일만으로는 바로 제출할 수 없다. 사용자가 동의한 `authorized_user` refresh token 파일 또는 Search Console 권한이 부여된 service account credential이 필요하다.
+- `discord-ai.yeon.world`는 제출 대상에 포함하지만 sitemap 생성과 canonical 응답은 `discord-assitant` 서비스가 소유한다. 실행 전 `https://discord-ai.yeon.world/sitemap.xml`이 200으로 응답하는지 먼저 확인한다.
+
 ## 환경변수
 
 - 운영: `NEXT_PUBLIC_APP_URL=https://yeon.world`
 - 개발: `NEXT_PUBLIC_APP_URL=https://dev.yeon.world`
 - 검증 메타: `GOOGLE_SITE_VERIFICATION=<Search Console value>`
+- Search Console 제출 credential: `GOOGLE_APPLICATION_CREDENTIALS=/safe/path/google-search-console.json`
 
 ## 코드 기준 source of truth
 
@@ -94,6 +145,7 @@
 - sitemap: `apps/web/src/app/sitemap.ts`
 - robots: `apps/web/src/app/robots.ts`
 - 호스트 redirect / dev noindex 헤더: `apps/web/src/proxy.ts`
+- sitemap 제출 스크립트: `apps/web/scripts/submit-search-console-sitemaps.mjs`
 
 ## 운영 체크리스트
 
@@ -101,4 +153,6 @@
 - [ ] `dev.yeon.world/robots.txt`는 전체 disallow 또는 noindex 정책을 반영한다.
 - [ ] 운영 `robots.txt`는 `/counseling-service`, `/check/`, `/auth/`, `/mockdata/`, `/api/`를 제외한다.
 - [ ] host별 `sitemap.xml`에는 해당 host canonical URL만 포함한다.
+- [ ] Search Console URL-prefix property는 `yeon`, `typing`, `card`, `community`, `support`, `news`, `blog`, `discord-ai` 8개를 등록한다.
+- [ ] Search Console sitemap은 위 8개 host의 `/sitemap.xml`을 각각 제출한다.
 - [ ] 운영 canonical은 최종 출력 기준으로 루트는 `https://yeon.world/...`, 서비스는 각 canonical subdomain으로 정렬된다.
