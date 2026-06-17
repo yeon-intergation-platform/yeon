@@ -8,6 +8,8 @@ import {
 } from "./public-content-breadcrumb";
 import { PublicContentBreadcrumb } from "./public-content-breadcrumb-view";
 import { PublicContentArticleCard } from "./public-content-article-card";
+import { getPublicContentBlogHomeModel } from "./public-content-blog-home";
+import { PublicContentBlogHomePriority } from "./public-content-blog-home-view";
 import { PublicContentBlockView } from "./public-content-block-view";
 import { getPublicContentRelatedArticles } from "./public-content-related-articles";
 import { PublicContentRelatedArticles } from "./public-content-related-articles-view";
@@ -449,8 +451,15 @@ export function PublicContentHome({ channel }: PublicContentHomeProps) {
     channel === PUBLIC_CONTENT_CHANNELS.news
       ? getPublicContentNewsHomeModel()
       : null;
+  const blogHomeModel =
+    channel === PUBLIC_CONTENT_CHANNELS.blog
+      ? getPublicContentBlogHomeModel()
+      : null;
   const featuredArticle =
-    channel === PUBLIC_CONTENT_CHANNELS.news ? null : (articles[0] ?? null);
+    channel === PUBLIC_CONTENT_CHANNELS.news ||
+    channel === PUBLIC_CONTENT_CHANNELS.blog
+      ? null
+      : (articles[0] ?? null);
   const serviceNavItems = getPublicContentServiceNavItems({ channel });
   const categoryNavItems = getPublicContentCategoryNavItems({ channel });
   const supportProblemEntries =
@@ -507,7 +516,11 @@ export function PublicContentHome({ channel }: PublicContentHomeProps) {
       {newsHomeModel ? (
         <PublicContentNewsHomePriority model={newsHomeModel} />
       ) : null}
-      {channel !== PUBLIC_CONTENT_CHANNELS.news ? (
+      {blogHomeModel ? (
+        <PublicContentBlogHomePriority model={blogHomeModel} />
+      ) : null}
+      {channel !== PUBLIC_CONTENT_CHANNELS.news &&
+      channel !== PUBLIC_CONTENT_CHANNELS.blog ? (
         <section className="mx-auto max-w-6xl px-6 pb-16 md:px-8">
           {services.map((service) => (
             <ServiceSection key={service} channel={channel} service={service} />
