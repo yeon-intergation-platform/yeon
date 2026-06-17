@@ -97,6 +97,14 @@ export type PublicContentBlock =
       filename?: string;
     }
   | {
+      type: "links";
+      title: string;
+      links: readonly {
+        href: string;
+        label: string;
+      }[];
+    }
+  | {
       type: "callout";
       title: string;
       text: string;
@@ -1405,6 +1413,7 @@ export const PUBLIC_CONTENT_ARTICLES: readonly PublicContentArticle[] = [
       "/Users/osuma/coding_stuffs/yeon/docs/seo/public-content-channel-policy.md",
       "/Users/osuma/coding_stuffs/discord-assitant/docs/BOT_PERMISSIONS.md",
       "/Users/osuma/coding_stuffs/discord-assitant/docs/NEXA_SAFETY_POLICY.md",
+      "https://docs.discord.com/developers/events/gateway",
     ],
     body: [
       {
@@ -1427,6 +1436,16 @@ export const PUBLIC_CONTENT_ARTICLES: readonly PublicContentArticle[] = [
       {
         type: "paragraph",
         text: "이 기준을 지키면 news는 단순 홍보 채널이 아니라 사용자가 무엇을 확인해야 하는지 알려주는 공식 해설 채널이 됩니다.",
+      },
+      {
+        type: "links",
+        title: "참고 출처",
+        links: [
+          {
+            href: "https://docs.discord.com/developers/events/gateway",
+            label: "Discord Developer Docs - Gateway",
+          },
+        ],
       },
     ],
   },

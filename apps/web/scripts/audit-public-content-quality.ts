@@ -15,6 +15,7 @@ import {
   getPublicContentNewsDetailSections,
   hasPublicContentNewsDetailSections,
 } from "../src/features/public-content/public-content-news-detail";
+import { getPublicContentNewsEditorialWarnings } from "../src/features/public-content/public-content-news-editorial-quality";
 import { getPublicContentTitleQualityWarnings } from "../src/features/public-content/public-content-title-quality";
 
 type AuditIssue = {
@@ -270,6 +271,33 @@ function auditBodyBlock(
     return;
   }
 
+  if (block.type === "links") {
+    if (isBlank(block.title)) {
+      pushIssue(issues, article, `${blockRef} links title이 비어 있습니다.`);
+    }
+    if (block.links.length === 0) {
+      pushIssue(issues, article, `${blockRef} links가 없습니다.`);
+      return;
+    }
+    block.links.forEach((link, linkIndex) => {
+      if (isBlank(link.href)) {
+        pushIssue(
+          issues,
+          article,
+          `${blockRef} links[${linkIndex}].href가 비어 있습니다.`
+        );
+      }
+      if (isBlank(link.label)) {
+        pushIssue(
+          issues,
+          article,
+          `${blockRef} links[${linkIndex}].label이 비어 있습니다.`
+        );
+      }
+    });
+    return;
+  }
+
   if (block.type !== "steps" && block.type !== "checklist") {
     return;
   }
@@ -304,6 +332,9 @@ function auditArticle(
     serviceKey: article.service,
     title: article.title,
   }).forEach((warning) => {
+    pushIssue(issues, article, warning);
+  });
+  getPublicContentNewsEditorialWarnings(article).forEach((warning) => {
     pushIssue(issues, article, warning);
   });
 
