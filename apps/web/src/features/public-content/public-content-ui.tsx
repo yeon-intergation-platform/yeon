@@ -18,6 +18,7 @@ import {
   type PublicContentChannel,
   type PublicContentCollection,
 } from "./public-content-data";
+import { PublicContentTrackedLink } from "./public-content-tracked-link";
 
 type PublicContentHomeProps = {
   channel: PublicContentChannel;
@@ -52,6 +53,10 @@ function buildCtaHref(article: PublicContentArticle) {
   }
 
   return article.ctaHref;
+}
+
+function getArticleSlug(article: PublicContentArticle) {
+  return article.slugSegments.join("/");
 }
 
 function compareArticlesByDate(
@@ -155,18 +160,23 @@ function PublicContentShell({
     <main className="min-h-screen bg-white text-[#111]">
       <header className="border-b border-[#e5e5e5] bg-white">
         <div className="mx-auto flex max-w-6xl flex-col gap-5 px-6 py-6 md:flex-row md:items-center md:justify-between md:px-8">
-          <a
+          <PublicContentTrackedLink
             href="https://yeon.world"
             className="w-fit text-[16px] font-semibold text-[#111] no-underline"
+            trackingParams={{
+              channel,
+              link_kind: "channel_nav",
+              target_title: "YEON",
+            }}
           >
             YEON
-          </a>
+          </PublicContentTrackedLink>
           <nav className="flex flex-wrap gap-2" aria-label="공개 콘텐츠 채널">
             {CHANNEL_NAV_ITEMS.map((item) => {
               const isActive = item.label === activeConfig.label;
 
               return (
-                <a
+                <PublicContentTrackedLink
                   key={item.href}
                   href={item.href}
                   className={`rounded-lg border px-3 py-2 text-[13px] font-semibold no-underline transition-colors ${
@@ -174,9 +184,14 @@ function PublicContentShell({
                       ? "border-[#111] bg-[#111] text-white"
                       : "border-[#e5e5e5] text-[#666] hover:border-[#111] hover:text-[#111]"
                   }`}
+                  trackingParams={{
+                    channel,
+                    link_kind: "channel_nav",
+                    target_title: item.label,
+                  }}
                 >
                   {item.label}
-                </a>
+                </PublicContentTrackedLink>
               );
             })}
           </nav>
@@ -194,9 +209,17 @@ function ArticleCard({ article }: { article: PublicContentArticle }) {
   );
 
   return (
-    <a
+    <PublicContentTrackedLink
       href={href}
       className="group block rounded-lg border border-[#e5e5e5] bg-[#fafafa] p-5 text-[#111] no-underline transition-colors hover:border-[#111] hover:bg-white"
+      trackingParams={{
+        category: article.category,
+        channel: article.channel,
+        link_kind: "article_card",
+        service: article.service,
+        slug: getArticleSlug(article),
+        target_title: article.title,
+      }}
     >
       <div className="flex flex-wrap gap-2 text-[12px] font-semibold text-[#aaa]">
         <span>{getPublicContentServiceLabel(article.service)}</span>
@@ -213,7 +236,7 @@ function ArticleCard({ article }: { article: PublicContentArticle }) {
         <span>{article.publishedAt}</span>
         <span>{article.readingMinutes}분</span>
       </div>
-    </a>
+    </PublicContentTrackedLink>
   );
 }
 
@@ -481,13 +504,19 @@ function CollectionLinks({
   return (
     <nav className="mt-8 flex flex-wrap gap-2" aria-label="하위 분류">
       {childCollections.map((childCollection) => (
-        <a
+        <PublicContentTrackedLink
           key={childCollection.slugSegments.join("/")}
           href={childCollection.canonicalUrl}
           className="rounded-lg border border-[#e5e5e5] px-3 py-2 text-[13px] font-semibold text-[#666] no-underline hover:border-[#111] hover:text-[#111]"
+          trackingParams={{
+            channel: childCollection.channel,
+            link_kind: "collection_child",
+            slug: childCollection.slugSegments.join("/"),
+            target_title: childCollection.title,
+          }}
         >
           {childCollection.title}
-        </a>
+        </PublicContentTrackedLink>
       ))}
     </nav>
   );
@@ -514,18 +543,32 @@ function PublicContentCollectionPage({
       />
       <section className="mx-auto max-w-6xl px-6 py-12 md:px-8 md:py-16">
         <div className="flex flex-wrap gap-2 text-[13px] font-semibold text-[#666]">
-          <a href={config.host} className="text-[#666] no-underline">
+          <PublicContentTrackedLink
+            href={config.host}
+            className="text-[#666] no-underline"
+            trackingParams={{
+              channel: collection.channel,
+              link_kind: "breadcrumb",
+              target_title: config.label,
+            }}
+          >
             {config.label}
-          </a>
+          </PublicContentTrackedLink>
           {parentCollection ? (
             <>
               <span aria-hidden="true">/</span>
-              <a
+              <PublicContentTrackedLink
                 href={parentCollection.canonicalUrl}
                 className="text-[#666] no-underline"
+                trackingParams={{
+                  channel: parentCollection.channel,
+                  link_kind: "breadcrumb",
+                  slug: parentCollection.slugSegments.join("/"),
+                  target_title: parentCollection.title,
+                }}
               >
                 {parentCollection.title}
-              </a>
+              </PublicContentTrackedLink>
             </>
           ) : null}
         </div>
@@ -585,12 +628,21 @@ export async function PublicContentArticlePage({
         data={getJsonLdForArticle(article)}
       />
       <article className="mx-auto max-w-4xl px-6 py-12 md:px-8 md:py-16">
-        <a
+        <PublicContentTrackedLink
           href={config.host}
           className="text-[13px] font-semibold text-[#666] no-underline hover:text-[#111]"
+          trackingParams={{
+            category: article.category,
+            channel: article.channel,
+            link_kind: "breadcrumb",
+            service: article.service,
+            slug: getArticleSlug(article),
+            source_title: article.title,
+            target_title: config.label,
+          }}
         >
           {config.label}
-        </a>
+        </PublicContentTrackedLink>
         <div className="mt-6 flex flex-wrap gap-2 text-[13px] font-semibold text-[#aaa]">
           <span>{getPublicContentServiceLabel(article.service)}</span>
           <span aria-hidden="true">/</span>
@@ -614,12 +666,22 @@ export async function PublicContentArticlePage({
             <p className="text-[14px] font-semibold text-[#111]">
               다음 단계로 이동
             </p>
-            <a
+            <PublicContentTrackedLink
               href={ctaHref}
               className="mt-4 inline-flex rounded-lg bg-[#111] px-4 py-2 text-[14px] font-semibold text-white no-underline"
+              eventType="cta"
+              trackingParams={{
+                category: article.category,
+                channel: article.channel,
+                link_kind: "article_cta",
+                service: article.service,
+                slug: getArticleSlug(article),
+                source_title: article.title,
+                target_title: article.ctaLabel,
+              }}
             >
               {article.ctaLabel}
-            </a>
+            </PublicContentTrackedLink>
           </div>
         ) : null}
         {relatedArticles.length > 0 ? (

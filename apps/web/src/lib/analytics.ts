@@ -34,6 +34,8 @@ export const analyticsEvents = {
   cardStudyStart: "card_study_start",
   cardAddOpen: "card_add_open",
   cardCreated: "card_created",
+  publicContentLinkClick: "public_content_link_click",
+  publicContentCtaClick: "public_content_cta_click",
 } as const;
 
 type AnalyticsScalar = string | number | boolean | null | undefined;
