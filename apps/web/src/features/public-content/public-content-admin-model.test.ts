@@ -53,7 +53,7 @@ describe("public content admin model", () => {
     const stats = getPublicContentAdminDashboardStats();
 
     expect(stats.channelCount).toBe(3);
-    expect(stats.articleCount).toBe(33);
+    expect(stats.articleCount).toBe(36);
     expect(stats.gaMeasurementId).toBe("G-YGRNS3PQBQ");
     expect(stats.ga4ReportsUrl).toBe(
       "https://analytics.google.com/analytics/web/"

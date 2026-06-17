@@ -14,10 +14,10 @@ describe("public content coverage report", () => {
       generatedAt: "2026-06-17T00:00:00.000Z",
     });
 
-    expect(report.summary.articleCount).toBe(33);
+    expect(report.summary.articleCount).toBe(36);
     expect(report.summary.targetBucketCount).toBe(12);
-    expect(report.summary.coveredBucketCount).toBe(9);
-    expect(report.summary.missingBucketCount).toBe(3);
+    expect(report.summary.coveredBucketCount).toBe(12);
+    expect(report.summary.missingBucketCount).toBe(0);
     expect(report.channels.map((channel) => channel.channel)).toEqual([
       PUBLIC_CONTENT_CHANNELS.support,
       PUBLIC_CONTENT_CHANNELS.news,
@@ -25,17 +25,13 @@ describe("public content coverage report", () => {
     ]);
   });
 
-  it("정책상 아직 비어 있는 news/blog bucket을 드러낸다", () => {
+  it("정책상 필요한 news/blog bucket이 모두 채워져 있다", () => {
     const report = buildPublicContentCoverageReport();
     const missingBucketIds = report.buckets
       .filter((bucket) => bucket.status === "missing")
       .map((bucket) => bucket.id);
 
-    expect(missingBucketIds).toEqual([
-      "news:news",
-      "blog:devlog",
-      "blog:essay",
-    ]);
+    expect(missingBucketIds).toEqual([]);
   });
 
   it("Markdown 출력에 채널 요약과 missing bucket을 담는다", () => {
@@ -46,8 +42,8 @@ describe("public content coverage report", () => {
 
     expect(markdown).toContain("# 공개 콘텐츠 Coverage 리포트");
     expect(markdown).toContain("Support: 18개");
-    expect(markdown).toContain("[비어 있음] news 업계 뉴스 해설 (0/1)");
-    expect(markdown).toContain("[비어 있음] blog 개발 일지 (0/1)");
+    expect(markdown).toContain("[채움] news 업계 뉴스 해설 (1/1)");
+    expect(markdown).toContain("[채움] blog 개발 일지 (1/1)");
   });
 
   it("새 devlog 글이 들어오면 blog devlog bucket이 채워진다", () => {
