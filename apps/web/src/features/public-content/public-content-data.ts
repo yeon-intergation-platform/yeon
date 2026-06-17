@@ -53,6 +53,7 @@ export type PublicContentArticle = {
   summary: string;
   publishedAt: string;
   updatedAt: string;
+  reviewedAt?: string;
   readingMinutes: number;
   ctaLabel?: string;
   ctaHref?: string;

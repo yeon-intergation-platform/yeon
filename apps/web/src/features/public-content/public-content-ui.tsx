@@ -18,6 +18,7 @@ import {
   type PublicContentChannel,
   type PublicContentCollection,
 } from "./public-content-data";
+import { getPublicContentReviewDate } from "./public-content-freshness";
 import { PublicContentTrackedLink } from "./public-content-tracked-link";
 
 type PublicContentHomeProps = {
@@ -652,6 +653,12 @@ export async function PublicContentArticlePage({
           <span>{getPublicContentCategoryLabel(article.category)}</span>
           <span aria-hidden="true">/</span>
           <span>{article.publishedAt}</span>
+          {article.channel === "support" ? (
+            <>
+              <span aria-hidden="true">/</span>
+              <span>최근 확인 {getPublicContentReviewDate(article)}</span>
+            </>
+          ) : null}
         </div>
         <h1 className="mt-4 text-[36px] font-semibold leading-tight text-[#111] md:text-[48px]">
           {article.title}

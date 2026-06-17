@@ -28,6 +28,7 @@ type PublicContentAdminArticleView = {
   noindex: boolean;
   publishedAt: string | null;
   readingMinutes: number;
+  reviewedAt: string | null;
   serviceKey: string;
   slugSegments: readonly string[];
   sourcePaths: readonly string[];
@@ -314,6 +315,7 @@ function toStaticAdminArticleView(
     noindex: false,
     publishedAt: article.publishedAt,
     readingMinutes: article.readingMinutes,
+    reviewedAt: article.reviewedAt ?? null,
     serviceKey: article.service,
     slugSegments: article.slugSegments,
     sourcePaths: article.sourcePaths,
@@ -337,6 +339,7 @@ function toSpringAdminArticleView(
     noindex: article.noindex,
     publishedAt: article.publishedAt,
     readingMinutes: article.readingMinutes,
+    reviewedAt: null,
     serviceKey: article.serviceKey,
     slugSegments: article.slug.split("/"),
     sourcePaths: article.sourcePaths,
