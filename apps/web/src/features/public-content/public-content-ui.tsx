@@ -20,6 +20,10 @@ import {
 } from "./public-content-data";
 import { getPublicContentReviewDate } from "./public-content-freshness";
 import { buildPublicContentArticleStructuredData } from "./public-content-structured-data";
+import {
+  buildPublicContentTableOfContents,
+  type PublicContentTableOfContentsItem,
+} from "./public-content-table-of-contents";
 import { PublicContentTrackedLink } from "./public-content-tracked-link";
 
 type PublicContentHomeProps = {
@@ -243,7 +247,11 @@ function ServiceSection({
   );
 }
 
-function renderBlock(block: PublicContentBlock, index: number) {
+function renderBlock(
+  block: PublicContentBlock,
+  index: number,
+  headingIdByBlockIndex: ReadonlyMap<number, string>
+) {
   if (block.type === "paragraph") {
     return (
       <p key={index} className="text-[16px] leading-8 text-[#111]">
@@ -254,7 +262,11 @@ function renderBlock(block: PublicContentBlock, index: number) {
 
   if (block.type === "heading") {
     return (
-      <h2 key={index} className="pt-4 text-[24px] font-semibold text-[#111]">
+      <h2
+        key={index}
+        id={headingIdByBlockIndex.get(index)}
+        className="scroll-mt-24 pt-4 text-[24px] font-semibold text-[#111]"
+      >
         {block.title}
       </h2>
     );
@@ -301,6 +313,56 @@ function renderBlock(block: PublicContentBlock, index: number) {
     >
       <p className="text-[14px] font-semibold text-[#111]">{block.title}</p>
       <p className="mt-2 text-[14px] leading-6 text-[#666]">{block.text}</p>
+    </aside>
+  );
+}
+
+function PublicContentTableOfContents({
+  items,
+  variant,
+}: {
+  items: readonly PublicContentTableOfContentsItem[];
+  variant: "desktop" | "mobile";
+}) {
+  if (items.length === 0) return null;
+
+  const links = (
+    <ol className="space-y-2">
+      {items.map((item) => (
+        <li key={item.id}>
+          <a
+            href={`#${item.id}`}
+            className="block rounded-md px-2 py-1 text-[13px] leading-5 text-[#666] no-underline transition-colors hover:bg-[#fafafa] hover:text-[#111]"
+          >
+            {item.title}
+          </a>
+        </li>
+      ))}
+    </ol>
+  );
+
+  if (variant === "mobile") {
+    return (
+      <details className="rounded-lg border border-[#e5e5e5] bg-white p-4 lg:hidden">
+        <summary className="cursor-pointer text-[13px] font-semibold text-[#111]">
+          본문 목차
+        </summary>
+        <nav className="mt-3" aria-label="본문 목차">
+          {links}
+        </nav>
+      </details>
+    );
+  }
+
+  return (
+    <aside className="hidden lg:block">
+      <nav
+        className="sticky top-8 border-l border-[#e5e5e5] pl-4"
+        aria-label="본문 목차"
+      >
+        <p className="mb-3 text-[12px] font-semibold text-[#aaa]">본문 목차</p>
+        {links}
+      </nav>
     </aside>
   );
 }
@@ -593,6 +655,11 @@ export async function PublicContentArticlePage({
     )
     .slice(0, 2);
   const ctaHref = buildCtaHref(article);
+  const tableOfContents = buildPublicContentTableOfContents(article);
+  const hasTableOfContents = tableOfContents.length > 0;
+  const headingIdByBlockIndex = new Map(
+    tableOfContents.map((item) => [item.blockIndex, item.id])
+  );
 
   return (
     <PublicContentShell channel={article.channel}>
@@ -636,8 +703,30 @@ export async function PublicContentArticlePage({
           {article.description}
         </p>
         <div className="mt-8 border-t border-[#e5e5e5] pt-8">
-          <div className="space-y-7">
-            {article.body.map((block, index) => renderBlock(block, index))}
+          {hasTableOfContents ? (
+            <PublicContentTableOfContents
+              items={tableOfContents}
+              variant="mobile"
+            />
+          ) : null}
+          <div
+            className={
+              hasTableOfContents
+                ? "mt-8 grid gap-8 lg:grid-cols-[180px_minmax(0,1fr)]"
+                : undefined
+            }
+          >
+            {hasTableOfContents ? (
+              <PublicContentTableOfContents
+                items={tableOfContents}
+                variant="desktop"
+              />
+            ) : null}
+            <div className="min-w-0 space-y-7">
+              {article.body.map((block, index) =>
+                renderBlock(block, index, headingIdByBlockIndex)
+              )}
+            </div>
           </div>
         </div>
         {ctaHref ? (
