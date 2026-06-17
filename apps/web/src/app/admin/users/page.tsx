@@ -130,12 +130,20 @@ export default async function AdminUsersPage() {
                 {adminUser.email} · 사용자 · 경험치
               </YeonText>
             </YeonView>
-            <YeonLink
-              href="/admin/members"
-              className={SHARED_FEATURE_CLASS.ghostButtonMd13}
-            >
-              회원 관리
-            </YeonLink>
+            <YeonView className={SHARED_FEATURE_CLASS.wrapGap2}>
+              <YeonLink
+                href="/admin/content"
+                className={SHARED_FEATURE_CLASS.ghostButtonMd13}
+              >
+                공개 콘텐츠
+              </YeonLink>
+              <YeonLink
+                href="/admin/members"
+                className={SHARED_FEATURE_CLASS.ghostButtonMd13}
+              >
+                회원 관리
+              </YeonLink>
+            </YeonView>
           </YeonView>
         </YeonView>
         <AdminUserExperienceList users={result.users} />
