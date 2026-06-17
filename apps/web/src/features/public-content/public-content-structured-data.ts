@@ -1,13 +1,9 @@
 import {
   buildPublicContentCanonicalUrl,
-  getPublicContentCategoryLabel,
-  getPublicContentChannelConfig,
-  getPublicContentServiceLabel,
-  PUBLIC_CONTENT_SERVICES,
   type PublicContentArticle,
   type PublicContentBlock,
-  type PublicContentService,
 } from "./public-content-data";
+import { buildPublicContentArticleBreadcrumb } from "./public-content-breadcrumb";
 
 type JsonLdObject = Record<string, unknown>;
 
@@ -42,19 +38,6 @@ function getArticleBodyText(article: PublicContentArticle) {
   return article.body.map(getBlockText).join(" ").trim();
 }
 
-function isPublicContentService(value: string): value is PublicContentService {
-  return Object.values(PUBLIC_CONTENT_SERVICES).some(
-    (service) => service === value
-  );
-}
-
-function getBreadcrumbName(segment: string) {
-  if (isPublicContentService(segment)) {
-    return getPublicContentServiceLabel(segment);
-  }
-  return getPublicContentCategoryLabel(segment);
-}
-
 export function buildPublicContentArticleJsonLd(
   article: PublicContentArticle
 ): JsonLdObject {
@@ -81,37 +64,16 @@ export function buildPublicContentArticleJsonLd(
 export function buildPublicContentBreadcrumbJsonLd(
   article: PublicContentArticle
 ): JsonLdObject {
-  const config = getPublicContentChannelConfig(article.channel);
-  const prefixSegments = article.slugSegments.slice(0, -1);
-  const collectionItems = prefixSegments.map((_, index) => {
-    const slugSegments = prefixSegments.slice(0, index + 1);
-    const segment = slugSegments[slugSegments.length - 1] ?? "";
-
-    return {
-      "@type": "ListItem",
-      item: buildPublicContentCanonicalUrl(article.channel, slugSegments),
-      name: getBreadcrumbName(segment),
-      position: index + 2,
-    };
-  });
+  const breadcrumbItems = buildPublicContentArticleBreadcrumb(article);
 
   return {
     "@type": "BreadcrumbList",
-    itemListElement: [
-      {
-        "@type": "ListItem",
-        item: config.host,
-        name: config.label,
-        position: 1,
-      },
-      ...collectionItems,
-      {
-        "@type": "ListItem",
-        item: getArticleUrl(article),
-        name: article.title,
-        position: collectionItems.length + 2,
-      },
-    ],
+    itemListElement: breadcrumbItems.map((item, index) => ({
+      "@type": "ListItem",
+      item: item.href,
+      name: item.label,
+      position: index + 1,
+    })),
   };
 }
 

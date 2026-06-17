@@ -3,6 +3,11 @@ import { showYeonNotFound } from "@yeon/ui/runtime/YeonRouteControl";
 import type { YeonPageMetadata } from "@yeon/ui/runtime/YeonPageMetadata";
 import type { ReactNode } from "react";
 import {
+  buildPublicContentArticleBreadcrumb,
+  buildPublicContentCollectionBreadcrumb,
+} from "./public-content-breadcrumb";
+import { PublicContentBreadcrumb } from "./public-content-breadcrumb-view";
+import {
   PUBLIC_CONTENT_CHANNEL_CONFIG,
   buildPublicContentCanonicalUrl,
   getPublicContentArticleBySlug,
@@ -562,13 +567,7 @@ function PublicContentCollectionPage({
 }: {
   collection: PublicContentCollection;
 }) {
-  const config = getPublicContentChannelConfig(collection.channel);
-  const parentCollection =
-    collection.slugSegments.length === 2
-      ? getPublicContentCollectionBySlug(collection.channel, [
-          collection.slugSegments[0],
-        ])
-      : null;
+  const breadcrumbItems = buildPublicContentCollectionBreadcrumb(collection);
 
   return (
     <PublicContentShell channel={collection.channel}>
@@ -577,36 +576,11 @@ function PublicContentCollectionPage({
         data={getJsonLdForCollection(collection)}
       />
       <section className="mx-auto max-w-6xl px-6 py-12 md:px-8 md:py-16">
-        <div className="flex flex-wrap gap-2 text-[13px] font-semibold text-[#666]">
-          <PublicContentTrackedLink
-            href={config.host}
-            className="text-[#666] no-underline"
-            trackingParams={{
-              channel: collection.channel,
-              link_kind: "breadcrumb",
-              target_title: config.label,
-            }}
-          >
-            {config.label}
-          </PublicContentTrackedLink>
-          {parentCollection ? (
-            <>
-              <span aria-hidden="true">/</span>
-              <PublicContentTrackedLink
-                href={parentCollection.canonicalUrl}
-                className="text-[#666] no-underline"
-                trackingParams={{
-                  channel: parentCollection.channel,
-                  link_kind: "breadcrumb",
-                  slug: parentCollection.slugSegments.join("/"),
-                  target_title: parentCollection.title,
-                }}
-              >
-                {parentCollection.title}
-              </PublicContentTrackedLink>
-            </>
-          ) : null}
-        </div>
+        <PublicContentBreadcrumb
+          channel={collection.channel}
+          items={breadcrumbItems}
+          sourceTitle={collection.title}
+        />
         <div className="mt-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
             <h1 className="max-w-3xl text-[36px] font-semibold leading-tight text-[#111] md:text-[48px]">
@@ -646,7 +620,6 @@ export async function PublicContentArticlePage({
     showYeonNotFound();
   }
 
-  const config = getPublicContentChannelConfig(article.channel);
   const relatedArticles = getPublicContentArticles(article.channel)
     .filter(
       (candidate) =>
@@ -660,6 +633,7 @@ export async function PublicContentArticlePage({
   const headingIdByBlockIndex = new Map(
     tableOfContents.map((item) => [item.blockIndex, item.id])
   );
+  const breadcrumbItems = buildPublicContentArticleBreadcrumb(article);
 
   return (
     <PublicContentShell channel={article.channel}>
@@ -668,21 +642,13 @@ export async function PublicContentArticlePage({
         data={buildPublicContentArticleStructuredData(article)}
       />
       <article className="mx-auto max-w-4xl px-6 py-12 md:px-8 md:py-16">
-        <PublicContentTrackedLink
-          href={config.host}
-          className="text-[13px] font-semibold text-[#666] no-underline hover:text-[#111]"
-          trackingParams={{
-            category: article.category,
-            channel: article.channel,
-            link_kind: "breadcrumb",
-            service: article.service,
-            slug: getArticleSlug(article),
-            source_title: article.title,
-            target_title: config.label,
-          }}
-        >
-          {config.label}
-        </PublicContentTrackedLink>
+        <PublicContentBreadcrumb
+          category={article.category}
+          channel={article.channel}
+          items={breadcrumbItems}
+          service={article.service}
+          sourceTitle={article.title}
+        />
         <div className="mt-6 flex flex-wrap gap-2 text-[13px] font-semibold text-[#aaa]">
           <span>{getPublicContentServiceLabel(article.service)}</span>
           <span aria-hidden="true">/</span>
