@@ -1,0 +1,134 @@
+import { describe, expect, it } from "vitest";
+import {
+  getPublicContentCategoryNavItems,
+  getPublicContentServiceNavItems,
+} from "./public-content-navigation";
+
+describe("public content navigation", () => {
+  it("support 홈 service nav는 실제 서비스 collection만 만든다", () => {
+    const items = getPublicContentServiceNavItems({
+      activeService: "nexa",
+      channel: "support",
+    });
+
+    expect(items.map((item) => item.label)).toEqual([
+      "NEXA",
+      "타자연습",
+      "플래시카드",
+      "커뮤니티",
+      "계정/정책",
+    ]);
+    expect(items[0]).toMatchObject({
+      active: true,
+      href: "https://support.yeon.world/nexa",
+      key: "nexa",
+    });
+    expect(items.every((item) => item.count > 0)).toBe(true);
+  });
+
+  it("support service collection의 category nav는 서비스 안의 분류만 만든다", () => {
+    const items = getPublicContentCategoryNavItems({
+      activeCategory: "faq",
+      channel: "support",
+      service: "nexa",
+    });
+
+    expect(items.map((item) => item.label)).toEqual([
+      "가이드",
+      "문제 해결",
+      "FAQ",
+    ]);
+    expect(items.at(-1)).toMatchObject({
+      active: true,
+      href: "https://support.yeon.world/nexa/faq",
+      key: "nexa/faq",
+    });
+  });
+
+  it("news와 blog 홈 category nav는 channel 1depth collection을 만든다", () => {
+    expect(
+      getPublicContentCategoryNavItems({
+        activeCategory: "updates",
+        channel: "news",
+      }).map((item) => ({
+        active: item.active,
+        href: item.href,
+        label: item.label,
+      }))
+    ).toEqual([
+      {
+        active: false,
+        href: "https://news.yeon.world/notice",
+        label: "공지",
+      },
+      {
+        active: true,
+        href: "https://news.yeon.world/updates",
+        label: "업데이트",
+      },
+      {
+        active: false,
+        href: "https://news.yeon.world/news",
+        label: "뉴스 해설",
+      },
+    ]);
+
+    expect(
+      getPublicContentCategoryNavItems({
+        activeCategory: "engineering",
+        channel: "blog",
+      })[0]
+    ).toMatchObject({
+      active: true,
+      href: "https://blog.yeon.world/engineering",
+      label: "기술 글",
+    });
+  });
+
+  it("news와 blog service nav는 parent category 안에서 링크 가능한 서비스만 만든다", () => {
+    expect(
+      getPublicContentServiceNavItems({
+        activeService: "nexa",
+        channel: "news",
+        parentCategory: "updates",
+      }).map((item) => ({
+        active: item.active,
+        href: item.href,
+        label: item.label,
+      }))
+    ).toEqual([
+      {
+        active: true,
+        href: "https://news.yeon.world/updates/nexa",
+        label: "NEXA",
+      },
+      {
+        active: false,
+        href: "https://news.yeon.world/updates/typing",
+        label: "타자연습",
+      },
+      {
+        active: false,
+        href: "https://news.yeon.world/updates/card",
+        label: "플래시카드",
+      },
+      {
+        active: false,
+        href: "https://news.yeon.world/updates/community",
+        label: "커뮤니티",
+      },
+    ]);
+
+    expect(
+      getPublicContentServiceNavItems({
+        channel: "blog",
+        parentCategory: "product",
+      }).map((item) => item.href)
+    ).toEqual([
+      "https://blog.yeon.world/product/nexa",
+      "https://blog.yeon.world/product/card",
+      "https://blog.yeon.world/product/community",
+      "https://blog.yeon.world/product/account",
+    ]);
+  });
+});

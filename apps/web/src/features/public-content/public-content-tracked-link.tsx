@@ -7,8 +7,10 @@ type PublicContentLinkKind =
   | "article_card"
   | "article_cta"
   | "breadcrumb"
+  | "category_nav"
   | "channel_nav"
-  | "collection_child";
+  | "collection_child"
+  | "service_nav";
 
 type PublicContentTrackedLinkEvent = "cta" | "link";
 
