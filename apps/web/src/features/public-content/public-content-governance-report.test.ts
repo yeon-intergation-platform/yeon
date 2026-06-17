@@ -25,7 +25,7 @@ describe("public content governance report", () => {
       "monthly",
       "on-change",
     ]);
-    expect(report.summary.articleCount).toBe(33);
+    expect(report.summary.articleCount).toBe(36);
     expect(report.summary.channelCount).toBe(3);
     expect(report.summary.warningCount).toBe(0);
     expect(findItem(report, "search-console-index-state")?.status).toBe(

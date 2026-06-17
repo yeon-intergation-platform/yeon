@@ -1311,6 +1311,50 @@ export const PUBLIC_CONTENT_ARTICLES: readonly PublicContentArticle[] = [
   },
   {
     channel: PUBLIC_CONTENT_CHANNELS.news,
+    service: PUBLIC_CONTENT_SERVICES.nexa,
+    category: "news",
+    slugSegments: ["news", "ai", "discord-ai-news-interpretation"],
+    title: "NEXA와 Discord AI 뉴스 해설을 운영하는 기준 안내",
+    description:
+      "YEON이 AI와 Discord 관련 업계 뉴스를 단순 요약하지 않고 NEXA 사용자 관점으로 해설하는 기준입니다.",
+    summary:
+      "업계 뉴스 해설은 최신 소식보다 사용자가 실제로 확인해야 할 권한, 안전, 운영 영향에 집중합니다.",
+    publishedAt: PUBLISHED_DATE,
+    updatedAt: PUBLISHED_DATE,
+    readingMinutes: 3,
+    ctaLabel: "NEXA 도움말 보기",
+    ctaHref: "https://support.yeon.world/nexa/guides/discord-bot-permissions",
+    sourcePaths: [
+      "/Users/osuma/coding_stuffs/yeon/docs/seo/public-content-channel-policy.md",
+      "/Users/osuma/coding_stuffs/discord-assitant/docs/BOT_PERMISSIONS.md",
+      "/Users/osuma/coding_stuffs/discord-assitant/docs/NEXA_SAFETY_POLICY.md",
+    ],
+    body: [
+      {
+        type: "paragraph",
+        text: "news.yeon.world의 업계 뉴스 해설은 빠른 속보 경쟁을 하지 않습니다. AI와 Discord 생태계의 변화가 NEXA 사용자에게 어떤 설정, 권한, 안전 기준, 운영 판단으로 이어지는지 설명하는 데 집중합니다.",
+      },
+      {
+        type: "heading",
+        title: "해설할 때 보는 기준",
+      },
+      {
+        type: "checklist",
+        items: [
+          "Discord 서버 관리자가 바꿔야 할 권한이나 intent가 있는지 확인합니다.",
+          "AI 봇이 답변하면 안 되는 채널과 안전 정책에 영향이 있는지 봅니다.",
+          "NEXA support 문서에서 바로 따라 할 조치가 필요한지 연결합니다.",
+          "불확실한 외부 소식은 공식 문서나 실제 서비스 변경으로 확인되기 전까지 과장하지 않습니다.",
+        ],
+      },
+      {
+        type: "paragraph",
+        text: "이 기준을 지키면 news는 단순 홍보 채널이 아니라 사용자가 무엇을 확인해야 하는지 알려주는 공식 해설 채널이 됩니다.",
+      },
+    ],
+  },
+  {
+    channel: PUBLIC_CONTENT_CHANNELS.news,
     service: PUBLIC_CONTENT_SERVICES.card,
     category: "updates",
     slugSegments: ["updates", "card", "support-guides"],
@@ -1416,6 +1460,93 @@ export const PUBLIC_CONTENT_ARTICLES: readonly PublicContentArticle[] = [
       {
         type: "paragraph",
         text: "이 구조는 글을 더 많이 만들기 위한 구조가 아니라, 같은 글이라도 사용자가 기대하는 맥락에서 읽게 하기 위한 구조입니다.",
+      },
+    ],
+  },
+  {
+    channel: PUBLIC_CONTENT_CHANNELS.blog,
+    service: PUBLIC_CONTENT_SERVICES.account,
+    category: "devlog",
+    slugSegments: ["devlog", "public-content-network-start"],
+    title: "YEON 공개 콘텐츠 네트워크를 시작하며 배운 운영 구조",
+    description:
+      "support, news, blog를 분리한 공개 콘텐츠 네트워크를 만들며 정리한 초기 운영 구조와 배운 점입니다.",
+    summary:
+      "빈 페이지를 만들지 않고 실제 도움말, 공식 소식, 제작 기록을 나누어 채우는 방식으로 시작했습니다.",
+    publishedAt: PUBLISHED_DATE,
+    updatedAt: PUBLISHED_DATE,
+    readingMinutes: 4,
+    ctaLabel: "공개 콘텐츠 정책 보기",
+    ctaHref: "https://news.yeon.world/notice/news-operation-principles",
+    sourcePaths: [
+      "/Users/osuma/coding_stuffs/yeon/docs/seo/public-content-channel-policy.md",
+      "/Users/osuma/coding_stuffs/yeon/docs/product/backlog/2026-06-17-public-content-network-500-step-plan.md",
+      "/Users/osuma/coding_stuffs/yeon/apps/web/src/features/public-content/public-content-coverage-report.ts",
+    ],
+    body: [
+      {
+        type: "paragraph",
+        text: "처음에는 news 안에 blog를 넣는 구조도 생각할 수 있었습니다. 하지만 사용법, 공식 공지, 개발 기록이 섞이면 검색해서 들어온 사용자가 자신에게 맞는 글인지 판단하기 어렵습니다. 그래서 YEON은 support, news, blog를 별도 채널로 나누는 구조로 시작했습니다.",
+      },
+      {
+        type: "heading",
+        title: "이번에 배운 점",
+      },
+      {
+        type: "checklist",
+        items: [
+          "도메인을 나누는 것보다 각 도메인의 역할을 계속 지키는 일이 더 중요합니다.",
+          "빈 메뉴를 많이 만드는 것보다 실제로 읽을 수 있는 글을 적게 만드는 편이 낫습니다.",
+          "운영자가 놓치는 분류는 coverage report처럼 자동으로 드러내야 합니다.",
+          "support 글은 검색형 제목과 단계형 본문이 있어야 실제 사용자가 따라 할 수 있습니다.",
+        ],
+      },
+      {
+        type: "paragraph",
+        text: "앞으로 devlog는 완성된 홍보문보다 어떤 제약을 보고 어떤 결정을 했는지 기록하는 공간으로 유지합니다.",
+      },
+    ],
+  },
+  {
+    channel: PUBLIC_CONTENT_CHANNELS.blog,
+    service: PUBLIC_CONTENT_SERVICES.account,
+    category: "essay",
+    slugSegments: ["essay", "why-support-docs-first"],
+    title: "개인 제품에서 support 문서를 먼저 만드는 이유",
+    description:
+      "작은 제품일수록 화려한 뉴스보다 사용자가 문제를 해결하는 support 문서를 먼저 만드는 이유를 정리했습니다.",
+    summary:
+      "support 문서는 검색 유입뿐 아니라 제품이 어떤 문제를 책임질지 정하는 운영 기준이 됩니다.",
+    publishedAt: PUBLISHED_DATE,
+    updatedAt: PUBLISHED_DATE,
+    readingMinutes: 4,
+    ctaLabel: "Support 홈 보기",
+    ctaHref: "https://support.yeon.world",
+    sourcePaths: [
+      "/Users/osuma/coding_stuffs/yeon/docs/seo/public-content-channel-policy.md",
+      "/Users/osuma/coding_stuffs/yeon/docs/seo/public-content-quality-checklist.md",
+    ],
+    body: [
+      {
+        type: "paragraph",
+        text: "개인 제품은 기능을 계속 만드는 속도보다 사용자가 막혔을 때 다시 돌아올 수 있는 설명을 갖추는 일이 더 중요할 때가 있습니다. support 문서는 단순한 고객센터가 아니라 제품이 어떤 문제를 책임지는지 정리하는 운영 기준입니다.",
+      },
+      {
+        type: "heading",
+        title: "먼저 써야 보이는 것",
+      },
+      {
+        type: "checklist",
+        items: [
+          "사용자가 실제로 검색할 질문이 무엇인지 보입니다.",
+          "제품에서 아직 설명하지 못하는 빈 부분이 드러납니다.",
+          "공지와 개발기가 support 문서를 반복하지 않게 됩니다.",
+          "나중에 admin이나 CMS를 만들 때 필요한 필드가 분명해집니다.",
+        ],
+      },
+      {
+        type: "paragraph",
+        text: "그래서 YEON은 news와 blog를 함께 열더라도, 검색 유입과 신뢰를 먼저 만드는 support 문서를 계속 중심에 둡니다.",
       },
     ],
   },
