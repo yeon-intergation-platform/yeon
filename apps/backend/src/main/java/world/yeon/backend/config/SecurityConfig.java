@@ -29,6 +29,7 @@ public class SecurityConfig {
 				// IDX 97 결정: community-chat 메시지 엔드포인트는 V7 마이그레이션상 공개 의도로 판단되어 permitAll 을 유지한다.
 				// 인증 차단 대신 CommunityChatService 의 앱 레벨 rate limit + 입력 검증(본문/닉네임/세션 길이)으로 하드닝한다.
 				.requestMatchers("/api/v1/community-chat/messages", "/api/v1/community-chat/messages/**").permitAll()
+				.requestMatchers("/api/v1/content", "/api/v1/content/**").permitAll()
 				// 내부 적립 등 내부 전용 엔드포인트는 ROLE_INTERNAL(유효한 X-Yeon-Internal-Token)만 허용한다.
 				// 메서드 시큐리티는 비활성이라 URL 기반으로 신뢰 경계를 명시해, 임의 유저 적립을 차단한다.
 				.requestMatchers("/api/v1/internal/**").hasRole("INTERNAL")

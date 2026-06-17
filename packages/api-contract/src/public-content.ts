@@ -133,6 +133,16 @@ export const publicContentSlugSchema = z
   .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*(?:\/[a-z0-9]+(?:-[a-z0-9]+)*)*$/);
 
 const publicContentOptionalUrlSchema = z.string().url().max(2048).nullable();
+const publicContentCtaHrefSchema = z
+  .union([
+    z.string().url().max(2048),
+    z
+      .string()
+      .trim()
+      .regex(/^\/[^\s]*$/)
+      .max(2048),
+  ])
+  .nullable();
 
 export const publicContentListQuerySchema = z.object({
   channel: publicContentChannelSchema.optional(),
@@ -176,8 +186,7 @@ export const publicContentArticleDetailDtoSchema =
     ),
     bodyMarkdown: z.string().min(1).max(120000),
     ctaLabel: z.string().min(1).max(80).nullable(),
-    ctaHref: publicContentOptionalUrlSchema,
-    sourcePaths: z.array(z.string().min(1).max(2048)).default([]),
+    ctaHref: publicContentCtaHrefSchema,
   });
 export type PublicContentArticleDetailDto = z.infer<
   typeof publicContentArticleDetailDtoSchema
@@ -194,6 +203,7 @@ export const publicContentAdminArticleDtoSchema =
     ogImageUrl: publicContentOptionalUrlSchema,
     authorKey: z.string().min(1).max(80),
     sourceRepo: z.string().min(1).max(160).nullable(),
+    sourcePaths: z.array(z.string().min(1).max(2048)).default([]),
     redirectTo: publicContentOptionalUrlSchema,
   });
 export type PublicContentAdminArticleDto = z.infer<
@@ -265,7 +275,7 @@ const publicContentArticleMutationBaseSchema = z.object({
   metaDescription: z.string().trim().min(1).max(260).nullable().optional(),
   ogImageUrl: publicContentOptionalUrlSchema.optional(),
   ctaLabel: z.string().trim().min(1).max(80).nullable().optional(),
-  ctaHref: publicContentOptionalUrlSchema.optional(),
+  ctaHref: publicContentCtaHrefSchema.optional(),
   authorKey: z.string().trim().min(1).max(80).default("yeon"),
   sourceRepo: z.string().trim().min(1).max(160).nullable().optional(),
   sourcePaths: z.array(z.string().trim().min(1).max(2048)).default([]),
@@ -295,7 +305,7 @@ const publicContentArticleUpdateFieldsSchema = z.object({
   metaDescription: z.string().trim().min(1).max(260).nullable().optional(),
   ogImageUrl: publicContentOptionalUrlSchema.optional(),
   ctaLabel: z.string().trim().min(1).max(80).nullable().optional(),
-  ctaHref: publicContentOptionalUrlSchema.optional(),
+  ctaHref: publicContentCtaHrefSchema.optional(),
   authorKey: z.string().trim().min(1).max(80).optional(),
   sourceRepo: z.string().trim().min(1).max(160).nullable().optional(),
   sourcePaths: z.array(z.string().trim().min(1).max(2048)).optional(),

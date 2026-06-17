@@ -60,6 +60,14 @@ class SecurityConfigTests {
 	}
 
 	@Test
+	void publicContent는인증없이조회할수있다() throws IOException, InterruptedException {
+		HttpResponse<String> response = sendGet("/api/v1/content?channel=support");
+
+		assertThat(response.statusCode()).isEqualTo(200);
+		assertThat(response.body()).contains("\"articles\"");
+	}
+
+	@Test
 	void communityChatMessages는인증없이전송할수있다()
 		throws IOException, InterruptedException {
 		HttpRequest request = HttpRequest.newBuilder()
