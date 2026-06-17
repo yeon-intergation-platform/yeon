@@ -431,31 +431,31 @@
 
 작업내용:
 
-276. `SERVICE_CANONICAL_URLS` 또는 새 canonical config에 support/news/blog를 추가한다.
-277. host별 canonical base URL을 정의한다.
-278. host별 sitemap generator를 확장한다.
-279. support sitemap에는 published public support 글만 넣는다.
-280. news sitemap에는 published public news 글만 넣는다.
-281. blog sitemap에는 published public blog 글만 넣는다.
-282. draft, review, archived, noindex 글은 sitemap에서 제외한다.
-283. robots.txt는 각 host별 sitemap URL을 가리킨다.
-284. robots.txt는 admin, api, auth, preview path를 disallow한다.
-285. article detail metadata generator를 만든다.
-286. title은 `글 제목 | YEON Support` 같은 channel별 suffix를 사용한다.
-287. description은 article meta description에서 가져온다.
-288. canonical은 host와 slug 기준으로 생성한다.
-289. OG title과 description을 설정한다.
-290. OG image가 없으면 channel 기본 이미지를 사용한다.
-291. Twitter card metadata를 설정한다.
-292. Article structured data를 생성한다.
-293. BreadcrumbList structured data를 생성한다.
-294. support FAQ 글에는 검증 가능한 경우 FAQPage structured data를 생성한다.
-295. 단계형 support 글에는 검증 가능한 경우 HowTo structured data를 생성한다.
-296. structured data가 본문과 다른 내용을 말하지 않게 한다.
-297. sitemap lastmod는 `updated_at` 또는 `published_at` 기준으로 계산한다.
-298. 관련 글 링크는 크롤링 가능한 anchor로 렌더링한다.
-299. 빈 category 페이지는 noindex 또는 비공개 처리한다.
-300. Search Console 제출 대상 URL-prefix 목록에 support/news/blog를 추가한다.
+276. **[완료]** `SERVICE_CANONICAL_URLS` 또는 새 canonical config에 support/news/blog를 추가한다.
+277. **[완료]** host별 canonical base URL을 정의한다.
+278. **[완료]** host별 sitemap generator를 확장한다.
+279. **[완료]** support sitemap에는 published public support 글만 넣는다.
+280. **[완료]** news sitemap에는 published public news 글만 넣는다.
+281. **[완료]** blog sitemap에는 published public blog 글만 넣는다.
+282. **[완료]** draft, review, archived, noindex 글은 sitemap에서 제외한다.
+283. **[완료]** robots.txt는 각 host별 sitemap URL을 가리킨다.
+284. **[완료]** robots.txt는 admin, api, auth, preview path를 disallow한다.
+285. **[완료]** article detail metadata generator를 만든다.
+286. **[완료]** title은 `글 제목 | YEON Support` 같은 channel별 suffix를 사용한다.
+287. **[완료]** description은 article meta description에서 가져온다.
+288. **[완료]** canonical은 host와 slug 기준으로 생성한다.
+289. **[완료]** OG title과 description을 설정한다.
+290. **[완료]** OG image가 없으면 channel 기본 이미지를 사용한다.
+291. **[완료]** Twitter card metadata를 설정한다.
+292. **[완료]** Article structured data를 생성한다.
+293. **[완료]** BreadcrumbList structured data를 생성한다.
+294. **[완료]** support FAQ 글에는 검증 가능한 경우 FAQPage structured data를 생성한다.
+295. **[완료]** 단계형 support 글에는 검증 가능한 경우 HowTo structured data를 생성한다.
+296. **[완료]** structured data가 본문과 다른 내용을 말하지 않게 한다.
+297. **[완료]** sitemap lastmod는 `updated_at` 또는 `published_at` 기준으로 계산한다.
+298. **[완료]** 관련 글 링크는 크롤링 가능한 anchor로 렌더링한다.
+299. **[완료]** 빈 category 페이지는 noindex 또는 비공개 처리한다.
+300. **[완료]** Search Console 제출 대상 URL-prefix 목록에 support/news/blog를 추가한다.
 
 ## 13차: NEXA support 초기 콘텐츠
 

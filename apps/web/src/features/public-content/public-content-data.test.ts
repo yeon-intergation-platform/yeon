@@ -3,6 +3,7 @@ import {
   PUBLIC_CONTENT_ARTICLES,
   PUBLIC_CONTENT_CHANNELS,
   buildPublicContentCanonicalUrl,
+  buildPublicContentOpenGraphImageUrl,
   getPublicContentCollectionBySlug,
   getPublicContentCollections,
   getPublicContentSitemapEntries,
@@ -99,5 +100,17 @@ describe("public content data", () => {
 
       expect(article).toMatchObject(expectedCta);
     });
+  });
+
+  it("채널별 기본 OG image URL은 canonical host를 기준으로 만든다", () => {
+    expect(buildPublicContentOpenGraphImageUrl("support")).toBe(
+      "https://support.yeon.world/opengraph-image"
+    );
+    expect(buildPublicContentOpenGraphImageUrl("news")).toBe(
+      "https://news.yeon.world/opengraph-image"
+    );
+    expect(buildPublicContentOpenGraphImageUrl("blog")).toBe(
+      "https://blog.yeon.world/opengraph-image"
+    );
   });
 });

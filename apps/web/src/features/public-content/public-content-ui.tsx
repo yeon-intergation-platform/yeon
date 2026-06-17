@@ -19,6 +19,7 @@ import {
   PUBLIC_CONTENT_CHANNEL_CONFIG,
   PUBLIC_CONTENT_CHANNELS,
   buildPublicContentCanonicalUrl,
+  buildPublicContentOpenGraphImageUrl,
   getPublicContentArticleBySlug,
   getPublicContentArticles,
   getPublicContentCategoryLabel,
@@ -357,6 +358,7 @@ export function getPublicContentHomeMetadata(
   channel: PublicContentChannel
 ): YeonPageMetadata {
   const config = getPublicContentChannelConfig(channel);
+  const imageUrl = buildPublicContentOpenGraphImageUrl(channel);
 
   return {
     title: `${config.title} | YEON`,
@@ -374,11 +376,20 @@ export function getPublicContentHomeMetadata(
       type: "website",
       url: config.host,
       locale: "ko_KR",
+      images: [
+        {
+          url: imageUrl,
+          width: 1200,
+          height: 630,
+          alt: config.title,
+        },
+      ],
     },
     twitter: {
-      card: "summary",
+      card: "summary_large_image",
       title: `${config.title} | YEON`,
       description: config.description,
+      images: [imageUrl],
     },
   };
 }
@@ -399,6 +410,7 @@ export async function getPublicContentArticleMetadata({
       article.channel,
       article.slugSegments
     );
+    const imageUrl = buildPublicContentOpenGraphImageUrl(article.channel);
 
     return {
       title: `${article.title} | ${config.title}`,
@@ -415,17 +427,28 @@ export async function getPublicContentArticleMetadata({
         locale: "ko_KR",
         publishedTime: article.publishedAt,
         modifiedTime: article.updatedAt,
+        images: [
+          {
+            url: imageUrl,
+            width: 1200,
+            height: 630,
+            alt: article.title,
+          },
+        ],
       },
       twitter: {
-        card: "summary",
+        card: "summary_large_image",
         title: article.title,
         description: article.description,
+        images: [imageUrl],
       },
     };
   }
 
   const collection = getPublicContentCollectionBySlug(channel, slug);
   if (collection) {
+    const imageUrl = buildPublicContentOpenGraphImageUrl(channel);
+
     return {
       title: `${collection.title} | ${config.title}`,
       description: collection.description,
@@ -439,11 +462,20 @@ export async function getPublicContentArticleMetadata({
         type: "website",
         url: collection.canonicalUrl,
         locale: "ko_KR",
+        images: [
+          {
+            url: imageUrl,
+            width: 1200,
+            height: 630,
+            alt: collection.title,
+          },
+        ],
       },
       twitter: {
-        card: "summary",
+        card: "summary_large_image",
         title: collection.title,
         description: collection.description,
+        images: [imageUrl],
       },
     };
   }

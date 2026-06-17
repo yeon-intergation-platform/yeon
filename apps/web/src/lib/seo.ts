@@ -3,6 +3,7 @@ import type { YeonPageMetadata } from "@yeon/ui/runtime/YeonPageMetadata";
 import type { YeonMetadataRoute } from "@yeon/ui/runtime/YeonMetadataRoute";
 import {
   PUBLIC_CONTENT_CHANNEL_CONFIG,
+  type PublicContentChannel,
   getPublicContentSitemapEntries,
 } from "@/features/public-content/public-content-data";
 
@@ -14,6 +15,12 @@ export const SERVICE_CANONICAL_URLS = {
   community: "https://community.yeon.world",
 } as const;
 
+export const PUBLIC_CONTENT_CANONICAL_URLS = {
+  support: PUBLIC_CONTENT_CHANNEL_CONFIG.support.host,
+  news: PUBLIC_CONTENT_CHANNEL_CONFIG.news.host,
+  blog: PUBLIC_CONTENT_CHANNEL_CONFIG.blog.host,
+} as const satisfies Record<PublicContentChannel, string>;
+
 const ROOT_CANONICAL_HOSTNAME = "yeon.world";
 const DEFAULT_APP_URL = CANONICAL_SITE_URL;
 const WWW_SITE_HOSTNAME = "www.yeon.world";
@@ -24,17 +31,18 @@ const PUBLIC_SEO_HOSTNAMES = [
   ...Object.values(SERVICE_CANONICAL_URLS).map(
     (url) => createYeonUrl(url).hostname
   ),
-  ...Object.values(PUBLIC_CONTENT_CHANNEL_CONFIG).map(
-    (config) => createYeonUrl(config.host).hostname
+  ...Object.values(PUBLIC_CONTENT_CANONICAL_URLS).map(
+    (url) => createYeonUrl(url).hostname
   ),
 ] as const;
 
 const COMMON_ROBOTS_DISALLOW = [
+  "/admin/",
   "/api/",
-  "/api/auth/",
   "/auth/",
   "/check/",
   "/landing",
+  "/preview/",
   "/contest",
   "/mockdata/",
   "/legacy-counseling-records",
@@ -175,10 +183,10 @@ function getPublicSeoOriginForHostname(hostname: string | null | undefined) {
   }
 
   const publicContentCanonicalUrl = Object.values(
-    PUBLIC_CONTENT_CHANNEL_CONFIG
-  ).find((config) => createYeonUrl(config.host).hostname === publicSeoHostname);
+    PUBLIC_CONTENT_CANONICAL_URLS
+  ).find((url) => createYeonUrl(url).hostname === publicSeoHostname);
 
-  return publicContentCanonicalUrl?.host ?? null;
+  return publicContentCanonicalUrl ?? null;
 }
 
 export function buildCanonicalUrl(pathname: string) {

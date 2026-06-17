@@ -1,5 +1,6 @@
 import {
   buildPublicContentCanonicalUrl,
+  buildPublicContentOpenGraphImageUrl,
   type PublicContentArticle,
   type PublicContentBlock,
 } from "./public-content-data";
@@ -60,6 +61,7 @@ export function buildPublicContentArticleJsonLd(
     datePublished: article.publishedAt,
     description: article.description,
     headline: article.title,
+    image: [buildPublicContentOpenGraphImageUrl(article.channel)],
     inLanguage: "ko-KR",
     mainEntityOfPage: getArticleUrl(article),
     publisher: {

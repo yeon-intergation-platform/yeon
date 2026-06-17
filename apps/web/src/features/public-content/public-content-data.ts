@@ -2192,6 +2192,13 @@ export function buildPublicContentCanonicalUrl(
   return new URL(pathname, host).toString();
 }
 
+export function buildPublicContentOpenGraphImageUrl(
+  channel: PublicContentChannel
+) {
+  const { host } = getPublicContentChannelConfig(channel);
+  return new URL("/opengraph-image", host).toString();
+}
+
 export function buildPublicContentInternalHref(
   channel: PublicContentChannel,
   slugSegments: readonly string[] = []
