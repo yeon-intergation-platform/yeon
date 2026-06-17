@@ -466,31 +466,31 @@
 
 작업내용:
 
-301. `디스코드 서버에 NEXA AI 봇 추가하는 방법` 글을 작성한다.
-302. `NEXA 봇에게 필요한 디스코드 권한` 글을 작성한다.
-303. `NEXA 봇이 응답하지 않을 때 해결 방법` 글을 작성한다.
-304. `NEXA 봇이 특정 채널에서만 답변하게 설정하는 법` 글을 작성한다.
-305. `NEXA 무료 플랜과 유료 플랜 차이` 글 후보를 작성한다.
-306. `NEXA 서버별 AI 말투를 설정하는 방법` 글 후보를 작성한다.
-307. `AI가 답변하면 안 되는 채널을 제외하는 법` 글 후보를 작성한다.
-308. `NEXA 봇을 서버에서 제거하는 방법` 글을 작성한다.
-309. `NEXA 개인정보와 대화 데이터 처리 방식` 글을 작성한다.
-310. `NEXA 업데이트와 공지를 확인하는 곳` 글을 작성한다.
-311. provider 대상 `내 컴퓨터의 Ollama를 NEXA에 연결하는 방법` 글 후보를 작성한다.
-312. provider 대상 `provider-agent 안전하게 설치하는 방법` 글 후보를 작성한다.
-313. provider 대상 `NEXA Provider Pool이 작동하는 방식` 글 후보를 작성한다.
-314. admin 대상 `NEXA 관리자 정책과 안전장치` 글 후보를 작성한다.
-315. `BOT_PERMISSIONS.md`의 권한 bitfield를 일반 사용자가 이해할 말로 풀어쓴다.
-316. `Message Content Intent` 설명을 developer portal 단계로 풀어쓴다.
-317. `Manage Webhooks` fallback 내용을 문제 해결 글에 반영한다.
-318. `FAQ.md`의 general FAQ를 support FAQ로 변환한다.
-319. `NEXA_SAFETY_POLICY.md`의 핵심 안전 원칙을 policy 글로 변환한다.
-320. 각 NEXA support 글에 Discord 설정 화면 기준 체크리스트를 넣는다.
-321. 각 NEXA support 글에 실패했을 때 확인할 항목을 넣는다.
-322. 각 NEXA support 글에 관련 FAQ 링크를 넣는다.
-323. 각 NEXA support 글에 관련 news/update 링크를 넣을 자리를 둔다.
-324. NEXA 글의 CTA는 `discord-ai.yeon.world` 설치 흐름으로 연결한다.
-325. NEXA 글 전체를 초보자가 그대로 따라 할 수 있는 단계형으로 검수한다.
+301. **[완료]** `디스코드 서버에 NEXA AI 봇 추가하는 방법` 글을 작성한다.
+302. **[완료]** `NEXA 봇에게 필요한 디스코드 권한` 글을 작성한다.
+303. **[완료]** `NEXA 봇이 응답하지 않을 때 해결 방법` 글을 작성한다.
+304. **[완료]** `NEXA 봇이 특정 채널에서만 답변하게 설정하는 법` 글을 작성한다.
+305. **[완료]** `NEXA 무료 플랜과 유료 플랜 차이` 글 후보를 작성한다.
+306. **[완료]** `NEXA 서버별 AI 말투를 설정하는 방법` 글 후보를 작성한다.
+307. **[완료]** `AI가 답변하면 안 되는 채널을 제외하는 법` 글 후보를 작성한다.
+308. **[완료]** `NEXA 봇을 서버에서 제거하는 방법` 글을 작성한다.
+309. **[완료]** `NEXA 개인정보와 대화 데이터 처리 방식` 글을 작성한다.
+310. **[완료]** `NEXA 업데이트와 공지를 확인하는 곳` 글을 작성한다.
+311. **[완료]** provider 대상 `내 컴퓨터의 Ollama를 NEXA에 연결하는 방법` 글 후보를 작성한다.
+312. **[완료]** provider 대상 `provider-agent 안전하게 설치하는 방법` 글 후보를 작성한다.
+313. **[완료]** provider 대상 `NEXA Provider Pool이 작동하는 방식` 글 후보를 작성한다.
+314. **[완료]** admin 대상 `NEXA 관리자 정책과 안전장치` 글 후보를 작성한다.
+315. **[완료]** `BOT_PERMISSIONS.md`의 권한 bitfield를 일반 사용자가 이해할 말로 풀어쓴다.
+316. **[완료]** `Message Content Intent` 설명을 developer portal 단계로 풀어쓴다.
+317. **[완료]** `Manage Webhooks` fallback 내용을 문제 해결 글에 반영한다.
+318. **[완료]** `FAQ.md`의 general FAQ를 support FAQ로 변환한다.
+319. **[완료]** `NEXA_SAFETY_POLICY.md`의 핵심 안전 원칙을 policy 글로 변환한다.
+320. **[완료]** 각 NEXA support 글에 Discord 설정 화면 기준 체크리스트를 넣는다.
+321. **[완료]** 각 NEXA support 글에 실패했을 때 확인할 항목을 넣는다.
+322. **[완료]** 각 NEXA support 글에 관련 FAQ 링크를 넣는다.
+323. **[완료]** 각 NEXA support 글에 관련 news/update 링크를 넣을 자리를 둔다.
+324. **[완료]** NEXA 글의 CTA는 `discord-ai.yeon.world` 설치 흐름으로 연결한다.
+325. **[완료]** NEXA 글 전체를 초보자가 그대로 따라 할 수 있는 단계형으로 검수한다.
 
 ## 14차: Yeon 서비스 support 초기 콘텐츠
 
