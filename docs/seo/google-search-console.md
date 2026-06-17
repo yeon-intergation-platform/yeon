@@ -147,6 +147,44 @@ pnpm --filter @yeon/web search-console:sitemaps -- --execute --skip-sitemaps
 - 호스트 redirect / dev noindex 헤더: `apps/web/src/proxy.ts`
 - sitemap 제출 스크립트: `apps/web/scripts/submit-search-console-sitemaps.mjs`
 
+## 공개 콘텐츠 운영 지표 절차
+
+초기 운영은 자동 수집보다 수동 확인을 기준으로 한다. Google credential이 준비되기 전까지 `/admin/content`의 운영 확인 링크에서 Search Console, sitemap, robots, GA4를 확인한다.
+
+주간 Search Console snapshot:
+
+1. Search Console에서 `sc-domain:yeon.world`를 열고 최근 7일 성과를 확인한다.
+2. URL-prefix property `https://support.yeon.world/`, `https://news.yeon.world/`, `https://blog.yeon.world/`를 각각 연다.
+3. `실적`에서 총 노출수, 클릭수, CTR, 평균 게재순위를 기록한다.
+4. `페이지` 탭에서 노출이 생긴 URL 상위 10개를 기록한다.
+5. `검색어` 탭에서 support 글 제목 개선에 쓸 수 있는 query를 기록한다.
+6. 노출은 있는데 클릭이 낮은 글은 title과 description 개선 후보로 표시한다.
+7. 클릭은 있는데 제품 진입이 낮은 support 글은 CTA 문구와 위치를 점검한다.
+
+월간 Search Console 점검:
+
+1. `페이지 색인 생성`에서 색인 제외 페이지가 급증했는지 확인한다.
+2. `찾을 수 없음(404)`이 늘었으면 해당 URL의 내부 링크와 redirect 필요성을 확인한다.
+3. `대체 페이지(적절한 canonical 태그 있음)` 또는 canonical mismatch가 늘었는지 확인한다.
+4. `Sitemaps`에서 `support`, `news`, `blog`, `discord-ai` sitemap 제출 실패가 있는지 확인한다.
+5. `robots.txt` 테스트와 실제 `https://<host>/robots.txt` 응답이 같은 정책을 말하는지 확인한다.
+6. 오래된 support 글은 실제 서비스 동작과 다른 내용이 없는지 확인한다.
+
+GA4 공개 콘텐츠 확인:
+
+1. GA4 속성에서 측정 ID `G-YGRNS3PQBQ`가 운영 `gtag.js`와 일치하는지 확인한다.
+2. `Reports` 또는 `Explore`에서 `page_view`를 host 또는 page path 기준으로 나눈다.
+3. `public_content_cta_click` 이벤트를 `channel`, `service`, `category`, `slug` 기준으로 본다.
+4. `public_content_link_click` 이벤트를 `link_kind` 기준으로 본다.
+5. support 글별 제품 진입은 `public_content_cta_click`을 기준으로 본다.
+6. news/blog에서 관련 support 문서로 이동하는 흐름은 `public_content_link_click`과 target URL 기준으로 본다.
+
+기록 위치:
+
+- 간단한 주간 snapshot은 `ai-log/hyeonjun/YYYY-MM-DD/`에 운영 메모로 남긴다.
+- 반복되는 개선 후보는 `docs/product/backlog/seo.md` 또는 공개 콘텐츠 백로그에 승격한다.
+- 자동 Google API 연동은 credential과 verification token이 준비된 뒤 별도 백로그로 진행한다.
+
 ## 운영 체크리스트
 
 - [ ] `www.yeon.world/*` 접속 시 `https://yeon.world/*`로 308/301 redirect 된다.
@@ -156,3 +194,6 @@ pnpm --filter @yeon/web search-console:sitemaps -- --execute --skip-sitemaps
 - [ ] Search Console URL-prefix property는 `yeon`, `typing`, `card`, `community`, `support`, `news`, `blog`, `discord-ai` 8개를 등록한다.
 - [ ] Search Console sitemap은 위 8개 host의 `/sitemap.xml`을 각각 제출한다.
 - [ ] 운영 canonical은 최종 출력 기준으로 루트는 `https://yeon.world/...`, 서비스는 각 canonical subdomain으로 정렬된다.
+- [ ] `/admin/content`에서 support/news/blog의 Search Console, sitemap, robots 링크가 동작한다.
+- [ ] GA4에서 `page_view`, `public_content_cta_click`, `public_content_link_click` 이벤트를 확인한다.
+- [ ] GitHub PR/check 상태 확인은 8분 이상 간격 원칙을 유지한다.

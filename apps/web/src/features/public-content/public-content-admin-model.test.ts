@@ -18,6 +18,15 @@ describe("public content admin model", () => {
       "blog",
     ]);
     expect(summaries.every((summary) => summary.articleCount > 0)).toBe(true);
+    expect(
+      new URL(summaries[0].searchConsoleUrl).searchParams.get("resource_id")
+    ).toBe("https://support.yeon.world/");
+    expect(summaries[0].sitemapUrl).toBe(
+      "https://support.yeon.world/sitemap.xml"
+    );
+    expect(summaries[0].robotsUrl).toBe(
+      "https://support.yeon.world/robots.txt"
+    );
     expect(summaries.every((summary) => summary.sitemapHomeIncluded)).toBe(
       true
     );
@@ -42,6 +51,13 @@ describe("public content admin model", () => {
 
     expect(stats.channelCount).toBe(3);
     expect(stats.articleCount).toBe(33);
+    expect(stats.gaMeasurementId).toBe("G-YGRNS3PQBQ");
+    expect(stats.ga4ReportsUrl).toBe(
+      "https://analytics.google.com/analytics/web/"
+    );
+    expect(
+      new URL(stats.domainSearchConsoleUrl).searchParams.get("resource_id")
+    ).toBe("sc-domain:yeon.world");
     expect(stats.serviceCount).toBeGreaterThanOrEqual(4);
     expect(stats.sitemapUrlCount).toBe(
       stats.articleCount +

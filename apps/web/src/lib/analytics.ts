@@ -4,8 +4,7 @@ import {
   getYeonGtag,
   getYeonLocationOrigin,
 } from "@yeon/ui/runtime/YeonBrowserRuntime";
-
-export const GA_MEASUREMENT_ID = "G-YGRNS3PQBQ";
+export { GA_MEASUREMENT_ID } from "./analytics-constants";
 
 export const analyticsEvents = {
   serviceEntryClick: "service_entry_click",

@@ -18,6 +18,12 @@ type AdminPublicContentChannelProps = AdminPublicContentProps & {
   channel: PublicContentChannel;
 };
 
+type OperationLink = {
+  href: string;
+  label: string;
+  note: string;
+};
+
 const CONTENT_NAV_ITEMS = [
   { href: "/admin/content", label: "콘텐츠" },
   { href: "/admin/members", label: "회원 관리" },
@@ -120,6 +126,35 @@ function MetricCard({
       >
         {note}
       </YeonText>
+    </YeonView>
+  );
+}
+
+function OperationLinkList({ links }: { links: readonly OperationLink[] }) {
+  return (
+    <YeonView className="grid gap-3 md:grid-cols-3">
+      {links.map((link) => (
+        <YeonLink
+          key={link.href}
+          href={link.href}
+          className="rounded-lg border border-[#e5e5e5] bg-white p-4 text-[#111] no-underline transition-colors hover:border-[#111]"
+        >
+          <YeonText
+            variant="unstyled"
+            tone="inherit"
+            className="text-[14px] font-semibold text-[#111]"
+          >
+            {link.label}
+          </YeonText>
+          <YeonText
+            variant="unstyled"
+            tone="inherit"
+            className="mt-2 block text-[13px] leading-5 text-[#666]"
+          >
+            {link.note}
+          </YeonText>
+        </YeonLink>
+      ))}
     </YeonView>
   );
 }
@@ -281,6 +316,23 @@ export function AdminPublicContentDashboard({
 }: AdminPublicContentProps) {
   const stats = getPublicContentAdminDashboardStats();
   const summaries = getPublicContentAdminChannelSummaries();
+  const operationLinks: readonly OperationLink[] = [
+    {
+      href: stats.domainSearchConsoleUrl,
+      label: "Domain Search Console",
+      note: "sc-domain:yeon.world 전체 노출, 색인, sitemap 상태",
+    },
+    {
+      href: stats.ga4ReportsUrl,
+      label: "GA4 공개 콘텐츠",
+      note: `${stats.gaMeasurementId} page_view, public_content_* 이벤트`,
+    },
+    {
+      href: "/admin/content/support",
+      label: "Support CTA 점검",
+      note: "support 글별 제품 진입 CTA와 sitemap 포함 여부",
+    },
+  ];
 
   return (
     <AdminPublicContentShell
@@ -346,6 +398,28 @@ export function AdminPublicContentDashboard({
           />
         </YeonView>
 
+        <YeonView className="mt-8 border-t border-[#e5e5e5] pt-8">
+          <YeonView className="mb-4">
+            <YeonText
+              as="h2"
+              variant="unstyled"
+              tone="inherit"
+              className="text-[20px] font-semibold text-[#111]"
+            >
+              운영 확인 링크
+            </YeonText>
+            <YeonText
+              variant="unstyled"
+              tone="inherit"
+              className="mt-2 text-[13px] leading-5 text-[#666]"
+            >
+              Search Console과 GA4는 credential/API 자동화 전까지 수동 확인
+              링크로 관리합니다.
+            </YeonText>
+          </YeonView>
+          <OperationLinkList links={operationLinks} />
+        </YeonView>
+
         <YeonView className="mt-8 grid gap-4 lg:grid-cols-3">
           {summaries.map((summary) => (
             <YeonView
@@ -403,6 +477,18 @@ export function AdminPublicContentDashboard({
                   className={SHARED_FEATURE_CLASS.ghostButtonMd13}
                 >
                   공개 홈
+                </YeonLink>
+                <YeonLink
+                  href={summary.searchConsoleUrl}
+                  className={SHARED_FEATURE_CLASS.ghostButtonMd13}
+                >
+                  Search Console
+                </YeonLink>
+                <YeonLink
+                  href={summary.sitemapUrl}
+                  className={SHARED_FEATURE_CLASS.ghostButtonMd13}
+                >
+                  sitemap
                 </YeonLink>
               </YeonView>
             </YeonView>
@@ -465,10 +551,22 @@ export function AdminPublicContentChannelScreen({
               공개 홈
             </YeonLink>
             <YeonLink
-              href={`${summary.publicHomeUrl}/sitemap.xml`}
+              href={summary.sitemapUrl}
               className={SHARED_FEATURE_CLASS.ghostButtonMd13}
             >
               sitemap
+            </YeonLink>
+            <YeonLink
+              href={summary.robotsUrl}
+              className={SHARED_FEATURE_CLASS.ghostButtonMd13}
+            >
+              robots
+            </YeonLink>
+            <YeonLink
+              href={summary.searchConsoleUrl}
+              className={SHARED_FEATURE_CLASS.ghostButtonMd13}
+            >
+              Search Console
             </YeonLink>
           </YeonView>
         </YeonView>
