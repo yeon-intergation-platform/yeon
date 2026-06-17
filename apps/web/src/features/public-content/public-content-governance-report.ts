@@ -110,12 +110,35 @@ function buildLaunchWeekItems(
     },
     {
       evidence: dashboard.summaries
+        .map((summary) => `${summary.label}: ${summary.searchConsoleUrl}`)
+        .join(" / "),
+      id: "url-prefix-property-registration",
+      owner: "운영자",
+      status: "manual",
+      title: "support/news/blog URL-prefix property 등록 확인",
+    },
+    {
+      evidence: dashboard.summaries
         .map((summary) => `${summary.label}: ${summary.sitemapUrl}`)
         .join(" / "),
       id: "sitemap-submission-errors",
       owner: "운영자",
       status: "manual",
       title: "host별 sitemap 제출 오류 확인",
+    },
+    {
+      evidence: `GA4 ${dashboard.stats.gaMeasurementId}에서 page_location host 기준 page_view 분리`,
+      id: "host-page-view-split",
+      owner: "운영자",
+      status: "manual",
+      title: "support/news/blog host별 page_view 확인",
+    },
+    {
+      evidence: `GA4 ${dashboard.stats.gaMeasurementId} ${dashboard.stats.ga4ReportsUrl}`,
+      id: "support-cta-clicks",
+      owner: "운영자",
+      status: "manual",
+      title: "support CTA 클릭 확인",
     },
     {
       evidence: "Search Console 페이지 색인 리포트에서 404 증가 여부 확인",
@@ -125,11 +148,20 @@ function buildLaunchWeekItems(
       title: "public 404 증가 여부 확인",
     },
     {
-      evidence: `GA4 ${dashboard.stats.gaMeasurementId} ${dashboard.stats.ga4ReportsUrl}`,
-      id: "support-cta-clicks",
+      evidence:
+        "public_content_link_click에서 news channel, article_card link_kind, 제품/support target_url 확인",
+      id: "news-product-link-clicks",
       owner: "운영자",
       status: "manual",
-      title: "support CTA 클릭 확인",
+      title: "news 관련 제품/support 링크 클릭 확인",
+    },
+    {
+      evidence:
+        "public_content_link_click에서 blog channel, related_article/source link_kind, support target_url 확인",
+      id: "blog-related-link-clicks",
+      owner: "운영자",
+      status: "manual",
+      title: "blog 관련 support/source 링크 클릭 확인",
     },
   ];
 }
@@ -168,6 +200,22 @@ function buildMonthlyItems(
       owner: "운영자",
       title: "sitemap coverage 확인",
     }),
+    {
+      evidence:
+        "Search Console 페이지 색인 생성 리포트에서 색인 제외 급증, 404 증가, canonical mismatch를 확인",
+      id: "index-exclusion-404-canonical-review",
+      owner: "운영자",
+      status: "manual",
+      title: "색인 제외/404/canonical mismatch 월간 확인",
+    },
+    {
+      evidence:
+        "Search Console Sitemaps 리포트에서 support/news/blog/discord-ai 제출 실패를 확인하고 알림 후보로 기록",
+      id: "sitemap-failure-alert-candidate",
+      owner: "운영자",
+      status: "manual",
+      title: "sitemap 제출 실패 알림 후보 기록",
+    },
     buildReadyWarningItem({
       evidence: `${missingSourcePathCount}개 글 source path 누락`,
       id: "source-traceability",
@@ -184,11 +232,11 @@ function buildMonthlyItems(
     }),
     {
       evidence:
-        "Search Console query에서 노출은 높고 클릭이 낮은 글을 제목/description 후보로 기록",
+        "Search Console query에서 발행 글별 유입과 노출은 높고 클릭이 낮은 글을 제목/description 후보로 기록",
       id: "query-opportunity-review",
       owner: "콘텐츠 운영",
       status: "manual",
-      title: "검색 query 기반 개선 후보 기록",
+      title: "발행 글별 query 유입과 개선 후보 기록",
     },
   ];
 }
@@ -231,6 +279,22 @@ function buildOnChangeItems(
       owner: "제품/운영",
       title: "정보 구조와 실제 서비스 구조 재검토",
     }),
+    {
+      evidence:
+        "자동 Search Console 연동은 GOOGLE_APPLICATION_CREDENTIALS와 verification token 준비 후 별도 execute 작업으로 진행",
+      id: "google-api-credential-gate",
+      owner: "운영자",
+      status: "manual",
+      title: "Google API credential 준비 후 자동 제출",
+    },
+    {
+      evidence:
+        "GitHub PR/check/run 상태 확인은 API 할당 보호를 위해 8분 이상 간격으로 제한",
+      id: "github-api-polling-interval",
+      owner: "개발/운영",
+      status: "manual",
+      title: "GitHub API 폴링 간격 유지",
+    },
   ];
 }
 

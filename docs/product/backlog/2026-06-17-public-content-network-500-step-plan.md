@@ -641,31 +641,31 @@
 
 작업내용:
 
-426. Search Console에 `support.yeon.world` URL-prefix property를 등록한다.
-427. Search Console에 `news.yeon.world` URL-prefix property를 등록한다.
-428. Search Console에 `blog.yeon.world` URL-prefix property를 등록한다.
-429. domain property `sc-domain:yeon.world`가 유지되는지 확인한다.
-430. 각 host sitemap을 Search Console에 제출한다.
-431. 제출 결과를 운영 문서에 기록한다.
-432. Google Site Verification token 위치를 문서화한다.
-433. verification token을 secret으로 노출하지 않게 관리한다.
-434. GA4 측정 ID가 공개 콘텐츠 host에 적용되는지 확인한다.
-435. host별 page_view가 분리 확인되는지 확인한다.
-436. support 글 하단 CTA click event를 정의한다.
-437. news 글 관련 support 링크 click event를 정의한다.
-438. blog 글 관련 support 링크 click event를 정의한다.
-439. Search Console 노출수 weekly snapshot 절차를 만든다.
-440. 색인 제외 페이지 리포트를 월 1회 확인한다.
-441. 404 증가 여부를 월 1회 확인한다.
-442. canonical mismatch를 월 1회 확인한다.
-443. sitemap 제출 실패를 알림 대상으로 둔다.
-444. 발행 글별 query 유입을 추적한다.
-445. support 글별 전환 CTA 클릭을 추적한다.
-446. news 글별 제품 링크 클릭을 추적한다.
-447. blog 글별 관련 문서 클릭을 추적한다.
-448. admin dashboard에 Search Console 수동 확인 링크를 둔다.
-449. 자동 Google API 연동은 credential 준비 후 별도 작업으로 둔다.
-450. GitHub API 폴링은 8분 이상 간격 원칙을 운영 문서에 유지한다.
+426. **[완료]** Search Console에 `support.yeon.world` URL-prefix property를 등록한다.
+427. **[완료]** Search Console에 `news.yeon.world` URL-prefix property를 등록한다.
+428. **[완료]** Search Console에 `blog.yeon.world` URL-prefix property를 등록한다.
+429. **[완료]** domain property `sc-domain:yeon.world`가 유지되는지 확인한다.
+430. **[완료]** 각 host sitemap을 Search Console에 제출한다.
+431. **[완료]** 제출 결과를 운영 문서에 기록한다.
+432. **[완료]** Google Site Verification token 위치를 문서화한다.
+433. **[완료]** verification token을 secret으로 노출하지 않게 관리한다.
+434. **[완료]** GA4 측정 ID가 공개 콘텐츠 host에 적용되는지 확인한다.
+435. **[완료]** host별 page_view가 분리 확인되는지 확인한다.
+436. **[완료]** support 글 하단 CTA click event를 정의한다.
+437. **[완료]** news 글 관련 support 링크 click event를 정의한다.
+438. **[완료]** blog 글 관련 support 링크 click event를 정의한다.
+439. **[완료]** Search Console 노출수 weekly snapshot 절차를 만든다.
+440. **[완료]** 색인 제외 페이지 리포트를 월 1회 확인한다.
+441. **[완료]** 404 증가 여부를 월 1회 확인한다.
+442. **[완료]** canonical mismatch를 월 1회 확인한다.
+443. **[완료]** sitemap 제출 실패를 알림 대상으로 둔다.
+444. **[완료]** 발행 글별 query 유입을 추적한다.
+445. **[완료]** support 글별 전환 CTA 클릭을 추적한다.
+446. **[완료]** news 글별 제품 링크 클릭을 추적한다.
+447. **[완료]** blog 글별 관련 문서 클릭을 추적한다.
+448. **[완료]** admin dashboard에 Search Console 수동 확인 링크를 둔다.
+449. **[완료]** 자동 Google API 연동은 credential 준비 후 별도 작업으로 둔다.
+450. **[완료]** GitHub API 폴링은 8분 이상 간격 원칙을 운영 문서에 유지한다.
 
 ## 19차: 배포, 릴리즈, 운영 반영
 

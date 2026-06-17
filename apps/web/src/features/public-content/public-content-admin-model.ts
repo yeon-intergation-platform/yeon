@@ -127,6 +127,7 @@ export const PUBLIC_CONTENT_ADMIN_CHANNEL_ORDER: readonly PublicContentChannel[]
 const normalizeUrl = (url: string) => url.replace(/\/$/, "");
 const SEARCH_CONSOLE_URL = "https://search.google.com/search-console";
 const DOMAIN_SEARCH_CONSOLE_PROPERTY = "sc-domain:yeon.world";
+const GITHUB_API_MIN_POLLING_INTERVAL_MINUTES = 8;
 const ADMIN_STATUSES: readonly PublicContentStatus[] = [
   "draft",
   "review",
@@ -534,9 +535,49 @@ function buildPublicContentAdminOpsChecklist(params: {
       href: params.stats.ga4ReportsUrl,
       id: "ga4-events",
       label: "GA4 events",
-      note: "page_view, public_content_cta_click, public_content_link_click을 GA4에서 확인합니다.",
+      note: "측정 ID와 page_view, public_content_cta_click, public_content_link_click 수집 여부를 GA4에서 확인합니다.",
       status: params.stats.gaMeasurementId ? "ready" : "warning",
       value: params.stats.gaMeasurementId || "측정 ID 누락",
+    },
+    {
+      href: params.stats.ga4ReportsUrl,
+      id: "host-page-view-split",
+      label: "Host page_view split",
+      note: "support, news, blog host별 page_view를 page_location 또는 host 기준으로 분리 확인합니다.",
+      status: "manual",
+      value: "GA4 수동 확인",
+    },
+    {
+      href: params.stats.ga4ReportsUrl,
+      id: "channel-click-events",
+      label: "Channel click events",
+      note: "support article CTA, news 관련 제품/support 링크, blog 관련 support/source 링크를 GA4 event로 봅니다.",
+      status: params.stats.gaMeasurementId ? "ready" : "warning",
+      value: "3개 흐름",
+    },
+    {
+      href: params.stats.domainSearchConsoleUrl,
+      id: "weekly-search-console-snapshot",
+      label: "Weekly Search Console",
+      note: "최근 7일 노출수, 클릭수, CTR, 평균 게재순위와 상위 query/page를 주 1회 기록합니다.",
+      status: "manual",
+      value: "주 1회",
+    },
+    {
+      href: params.stats.domainSearchConsoleUrl,
+      id: "monthly-indexing-review",
+      label: "Monthly indexing review",
+      note: "색인 제외, 404 증가, canonical mismatch, sitemap 제출 실패를 월 1회 확인합니다.",
+      status: "manual",
+      value: "월 1회",
+    },
+    {
+      href: params.stats.domainSearchConsoleUrl,
+      id: "article-query-tracking",
+      label: "Article query tracking",
+      note: "발행 글별 query 유입과 낮은 CTR 후보를 Search Console에서 추적합니다.",
+      status: "manual",
+      value: "발행 글별",
     },
     {
       id: "seo-warning-queue",
@@ -569,6 +610,20 @@ function buildPublicContentAdminOpsChecklist(params: {
         pendingImportCount > 0
           ? `${pendingImportCount}개 검수 필요`
           : "대기 원고 없음",
+    },
+    {
+      id: "google-api-credential-gate",
+      label: "Google API credential gate",
+      note: "GOOGLE_APPLICATION_CREDENTIALS와 Google Site Verification token이 준비된 뒤 별도 execute 작업으로 진행합니다.",
+      status: "manual",
+      value: "credential 준비 후",
+    },
+    {
+      id: "github-api-polling-policy",
+      label: "GitHub API polling",
+      note: `PR/check/run 상태 폴링은 GitHub API 할당 보호를 위해 ${GITHUB_API_MIN_POLLING_INTERVAL_MINUTES}분 이상 간격을 유지합니다.`,
+      status: "ready",
+      value: `${GITHUB_API_MIN_POLLING_INTERVAL_MINUTES}분 이상`,
     },
   ];
 }
