@@ -312,6 +312,24 @@ export const PUBLIC_CONTENT_ARTICLES: readonly PublicContentArticle[] = [
         title: "응답이 확인되면 완료입니다",
         text: "테스트 채널에서 NEXA가 답변하면 기본 설치와 권한 확인은 끝난 상태입니다.",
       },
+      {
+        type: "links",
+        title: "설치 후 함께 볼 문서",
+        links: [
+          {
+            href: "https://support.yeon.world/nexa/guides/discord-bot-permissions",
+            label: "NEXA 봇에게 필요한 디스코드 권한",
+          },
+          {
+            href: "https://support.yeon.world/nexa/troubleshooting/bot-not-responding",
+            label: "NEXA 봇이 응답하지 않을 때 확인할 5가지",
+          },
+          {
+            href: "https://news.yeon.world/updates/nexa/discord-permission-guides",
+            label: "NEXA 권한 안내 업데이트",
+          },
+        ],
+      },
     ],
   },
   {
@@ -348,6 +366,7 @@ export const PUBLIC_CONTENT_ARTICLES: readonly PublicContentArticle[] = [
           "Send Messages: 봇이 답변을 보낼 수 있어야 합니다.",
           "Read Message History: 이전 대화 맥락을 읽어야 할 때 필요합니다.",
           "Use Slash Commands: slash command를 사용할 경우 필요합니다.",
+          "기본 권장 Permissions Integer는 2147568640이고, 채널 AI 프로필 표시까지 포함한 권장 값은 2684734528입니다.",
         ],
       },
       {
@@ -366,10 +385,47 @@ export const PUBLIC_CONTENT_ARTICLES: readonly PublicContentArticle[] = [
         ],
       },
       {
+        type: "heading",
+        title: "Message Content Intent를 켜야 하는 경우",
+      },
+      {
+        type: "steps",
+        items: [
+          "Discord Developer Portal에서 NEXA 애플리케이션을 엽니다.",
+          "Bot 메뉴의 Privileged Gateway Intents 영역으로 이동합니다.",
+          "@멘션 질문처럼 일반 메시지 본문을 읽는 기능을 쓸 때만 Message Content Intent를 켭니다.",
+          "슬래시 명령, 버튼, 모달 중심으로만 쓴다면 Message Content Intent 없이도 동작해야 합니다.",
+          "설정을 바꾼 뒤 봇을 재시작하고 테스트 채널에서 멘션 질문과 슬래시 명령을 각각 확인합니다.",
+        ],
+      },
+      {
+        type: "callout",
+        title: "Manage Webhooks는 채널 AI 프로필 표시용입니다",
+        text: "채널별 AI 이름이나 아이콘으로 답변하려면 Manage Webhooks 권한이 필요합니다. 이 권한이 없어도 질문 처리는 계속하고, 답변은 기본 봇 이름으로 보내는 폴백이 원칙입니다.",
+      },
+      {
         type: "callout",
         tone: PUBLIC_CONTENT_CALLOUT_TONES.warning,
         title: "채널 권한이 더 우선입니다",
         text: "서버 역할 권한이 맞아도 특정 채널에서 권한이 거부되어 있으면 NEXA가 응답하지 못할 수 있습니다.",
+      },
+      {
+        type: "links",
+        title: "권한 문제를 더 확인하기",
+        links: [
+          {
+            href: "https://support.yeon.world/nexa/troubleshooting/bot-not-responding",
+            label: "NEXA 봇이 응답하지 않을 때 확인할 5가지",
+          },
+          {
+            href: "https://support.yeon.world/nexa/guides/exclude-channel",
+            label: "AI가 답변하면 안 되는 채널을 제외하는 법",
+          },
+          {
+            href: "https://news.yeon.world/updates/nexa/discord-permission-guides",
+            label: "NEXA 디스코드 권한 안내 문서 공개",
+          },
+        ],
       },
     ],
   },
@@ -410,6 +466,25 @@ export const PUBLIC_CONTENT_ARTICLES: readonly PublicContentArticle[] = [
         tone: PUBLIC_CONTENT_CALLOUT_TONES.warning,
         title: "가장 먼저 볼 지점",
         text: "한 채널에서만 응답하지 않는다면 서버 문제가 아니라 채널 권한 문제일 가능성이 큽니다.",
+      },
+      {
+        type: "callout",
+        title: "답변은 오는데 이름이나 아이콘만 다르면",
+        text: "채널 AI 이름/아이콘 표시에는 Manage Webhooks 권한이 필요합니다. 이 권한이 없으면 Provider 처리 결과를 버리지 않고 기본 봇 메시지로 보내는 것이 정상 폴백입니다.",
+      },
+      {
+        type: "links",
+        title: "함께 볼 NEXA 문서",
+        links: [
+          {
+            href: "https://support.yeon.world/nexa/guides/discord-bot-permissions",
+            label: "NEXA 봇에게 필요한 디스코드 권한",
+          },
+          {
+            href: "https://news.yeon.world/updates/nexa/discord-permission-guides",
+            label: "NEXA 디스코드 권한 안내 업데이트",
+          },
+        ],
       },
     ],
   },
@@ -853,6 +928,241 @@ export const PUBLIC_CONTENT_ARTICLES: readonly PublicContentArticle[] = [
           "새 기능이나 변경사항이 궁금하면 news의 NEXA 업데이트를 확인합니다.",
           "왜 그렇게 만들었는지 알고 싶으면 blog의 engineering 또는 product 글을 확인합니다.",
         ],
+      },
+    ],
+  },
+  {
+    channel: PUBLIC_CONTENT_CHANNELS.support,
+    service: PUBLIC_CONTENT_SERVICES.nexa,
+    category: "guides",
+    slugSegments: ["nexa", "guides", "connect-ollama-provider"],
+    title: "내 컴퓨터의 Ollama를 NEXA Provider로 연결하는 방법",
+    description:
+      "NEXA Provider로 참여하기 전에 Ollama, 모델, provider-agent, Discord 승인 토큰을 순서대로 확인하는 가이드입니다.",
+    summary:
+      "Ollama는 localhost 전용으로 두고, Discord에서 provider 참여 승인을 받은 뒤 provider-agent로 연결합니다.",
+    publishedAt: PUBLISHED_DATE,
+    updatedAt: PUBLISHED_DATE,
+    readingMinutes: 5,
+    ...PUBLIC_CONTENT_SUPPORT_CTA_TARGETS.nexa,
+    sourcePaths: [
+      "/Users/osuma/coding_stuffs/discord-assitant/README.md",
+      "/Users/osuma/coding_stuffs/discord-assitant/docs/FAQ.md",
+      "/Users/osuma/coding_stuffs/discord-assitant/provider-agent/README.md",
+    ],
+    body: [
+      {
+        type: "paragraph",
+        text: "NEXA Provider는 내 컴퓨터의 로컬 AI 실행 환경을 Discord 서버의 질문 처리에 기여하는 역할입니다. 기본 경로는 Discord 봇, 중앙 서버, 인증된 provider-agent, localhost Ollama 순서로 이어집니다.",
+      },
+      {
+        type: "heading",
+        title: "연결 전 확인할 것",
+      },
+      {
+        type: "checklist",
+        items: [
+          "Ollama가 설치되어 있고 사용할 모델을 받을 수 있습니다.",
+          "Ollama는 기본 localhost 전용으로 둡니다.",
+          "Discord 서버에서 provider 참여가 허용되어 있습니다.",
+          "provider-agent를 실행할 컴퓨터가 절전 상태로 들어가지 않게 준비합니다.",
+          "토큰은 노출되면 안 되므로 채팅이나 공개 문서에 붙여넣지 않습니다.",
+        ],
+      },
+      {
+        type: "heading",
+        title: "연결 순서",
+      },
+      {
+        type: "steps",
+        items: [
+          "Ollama를 설치하고 사용할 모델을 내려받습니다.",
+          "Discord 서버에서 provider 참여 명령을 실행합니다.",
+          "관리자 승인이 필요한 서버라면 승인 완료 안내를 기다립니다.",
+          "발급된 토큰과 relay 주소를 provider-agent에 입력합니다.",
+          "provider-agent에서 Ollama 연결 자가 점검을 실행합니다.",
+          "Discord에서 간단한 질문을 보내 Provider Pool을 통해 응답이 오는지 확인합니다.",
+        ],
+      },
+      {
+        type: "callout",
+        tone: PUBLIC_CONTENT_CALLOUT_TONES.warning,
+        title: "Ollama를 외부에 직접 열지 마세요",
+        text: "NEXA 구조에서는 외부 사용자가 내 Ollama에 직접 접근하지 않습니다. provider-agent가 인증된 연결로 중앙 서버에 붙고, Ollama는 기본 localhost 전용으로 두는 것이 안전한 기본값입니다.",
+      },
+      {
+        type: "links",
+        title: "함께 볼 NEXA 문서",
+        links: [
+          {
+            href: "https://support.yeon.world/nexa/faq/provider-pool-how-it-works",
+            label: "NEXA Provider Pool은 어떻게 작동하나요?",
+          },
+          {
+            href: "https://support.yeon.world/account/policy/privacy-conversation-data",
+            label: "개인정보와 대화 데이터는 어떻게 처리되나요?",
+          },
+        ],
+      },
+    ],
+  },
+  {
+    channel: PUBLIC_CONTENT_CHANNELS.support,
+    service: PUBLIC_CONTENT_SERVICES.nexa,
+    category: "guides",
+    slugSegments: ["nexa", "guides", "install-provider-agent-safely"],
+    title: "NEXA provider-agent를 안전하게 설치하는 방법",
+    description:
+      "provider-agent 설치 전 확인할 공식 배포 경로, 토큰 보관, 기본 한도, localhost Ollama 원칙을 정리했습니다.",
+    summary:
+      "공식 설치 경로를 사용하고 토큰을 보호하며, 기본 한도와 Ollama localhost 원칙을 유지합니다.",
+    publishedAt: PUBLISHED_DATE,
+    updatedAt: PUBLISHED_DATE,
+    readingMinutes: 5,
+    ...PUBLIC_CONTENT_SUPPORT_CTA_TARGETS.nexa,
+    sourcePaths: [
+      "/Users/osuma/coding_stuffs/discord-assitant/SECURITY.md",
+      "/Users/osuma/coding_stuffs/discord-assitant/provider-agent/packaging/README.md",
+      "/Users/osuma/coding_stuffs/discord-assitant/provider-agent/README.md",
+    ],
+    body: [
+      {
+        type: "paragraph",
+        text: "provider-agent는 내 컴퓨터에서 실행되어 NEXA 중앙 서버와 로컬 Ollama 사이를 연결합니다. 설치할 때는 실행 파일 출처, 토큰 보관, 네트워크 기본값을 함께 확인해야 합니다.",
+      },
+      {
+        type: "steps",
+        items: [
+          "NEXA 설치 페이지나 공식 저장소에서 안내하는 배포 경로만 사용합니다.",
+          "설치 파일이나 패키지 관리자가 제공하는 검증 절차를 확인합니다.",
+          "Discord에서 받은 provider 토큰은 본인 컴퓨터의 agent 설정에만 입력합니다.",
+          "기본 하루 처리 한도와 동시 처리 한도를 확인합니다.",
+          "Ollama가 localhost로만 열려 있는지 확인합니다.",
+          "설치 후 자가 점검으로 Ollama 연결과 중앙 서버 연결 상태를 확인합니다.",
+        ],
+      },
+      {
+        type: "checklist",
+        items: [
+          "공유 컴퓨터에서는 provider-agent를 켜 두지 않습니다.",
+          "토큰을 스크린샷, 채팅, 이슈에 올리지 않습니다.",
+          "무제한 처리 옵션은 운영 의도를 이해한 뒤에만 사용합니다.",
+          "원격 Ollama 연결은 위험을 알고 명시적으로 허용할 때만 사용합니다.",
+        ],
+      },
+      {
+        type: "callout",
+        tone: PUBLIC_CONTENT_CALLOUT_TONES.warning,
+        title: "토큰은 비밀번호처럼 다룹니다",
+        text: "Provider 토큰은 내 agent가 서버에 연결하는 인증 정보입니다. 유출되면 즉시 서버 관리자에게 알리고 기존 연결을 폐기해야 합니다.",
+      },
+    ],
+  },
+  {
+    channel: PUBLIC_CONTENT_CHANNELS.support,
+    service: PUBLIC_CONTENT_SERVICES.nexa,
+    category: "faq",
+    slugSegments: ["nexa", "faq", "provider-pool-how-it-works"],
+    title: "NEXA Provider Pool 질문 처리 방식 확인 방법",
+    description:
+      "Discord 질문이 중앙 서버를 거쳐 provider-agent와 로컬 Ollama로 전달되는 기본 흐름을 초보자용으로 설명합니다.",
+    summary:
+      "사용자는 Discord에서 질문하고, 중앙 서버가 Provider Pool에서 가능한 provider를 골라 로컬 Ollama 실행 결과를 돌려받습니다.",
+    publishedAt: PUBLISHED_DATE,
+    updatedAt: PUBLISHED_DATE,
+    readingMinutes: 4,
+    ...PUBLIC_CONTENT_SUPPORT_CTA_TARGETS.nexa,
+    sourcePaths: [
+      "/Users/osuma/coding_stuffs/discord-assitant/README.md",
+      "/Users/osuma/coding_stuffs/discord-assitant/docs/adr/0003-community-provider-pool.md",
+      "/Users/osuma/coding_stuffs/discord-assitant/specs/product-v2/README.md",
+    ],
+    body: [
+      {
+        type: "paragraph",
+        text: "Provider Pool은 Discord 사용자의 질문을 중앙 서버가 받아, 참여 중인 provider의 로컬 AI 실행 환경으로 안전하게 중계하는 구조입니다. 사용자는 provider PC에 직접 접속하지 않고, provider도 Discord 사용자 정보를 직접 관리하지 않습니다.",
+      },
+      {
+        type: "heading",
+        title: "기본 흐름",
+      },
+      {
+        type: "steps",
+        items: [
+          "사용자가 Discord에서 질문을 보냅니다.",
+          "NEXA 중앙 서버가 서버 정책과 사용량 제한을 확인합니다.",
+          "온라인 provider 중 처리 가능한 연결을 고릅니다.",
+          "인증된 WebSocket 연결을 통해 provider-agent로 요청을 전달합니다.",
+          "provider-agent가 localhost Ollama에 요청을 보내고 응답을 받습니다.",
+          "중앙 서버가 결과를 Discord 채널에 다시 보냅니다.",
+        ],
+      },
+      {
+        type: "checklist",
+        items: [
+          "금전 거래나 판매 구조가 아니라 기여 기반 구조입니다.",
+          "provider는 일시정지하거나 떠날 수 있습니다.",
+          "서버 관리자는 허용 채널, 역할, 한도 같은 정책을 관리합니다.",
+          "질문에는 비밀번호, 토큰, 개인정보를 넣지 않는 것이 기본 원칙입니다.",
+        ],
+      },
+    ],
+  },
+  {
+    channel: PUBLIC_CONTENT_CHANNELS.support,
+    service: PUBLIC_CONTENT_SERVICES.nexa,
+    category: "policy",
+    slugSegments: ["nexa", "policy", "admin-safety-controls"],
+    title: "NEXA 관리자 정책과 안전장치 확인 방법",
+    description:
+      "NEXA 서버 관리자가 채널, 역할, Provider Pool, 콘텐츠 안전 기준을 운영할 때 확인할 책임과 안전장치입니다.",
+    summary:
+      "서버 관리자는 사용 채널과 역할 정책을 정하고, NEXA는 불법 red-line, 신고 대응, 무저장 원칙 같은 기본 안전 기준을 둡니다.",
+    publishedAt: PUBLISHED_DATE,
+    updatedAt: PUBLISHED_DATE,
+    readingMinutes: 5,
+    ...PUBLIC_CONTENT_SUPPORT_CTA_TARGETS.nexa,
+    sourcePaths: [
+      "/Users/osuma/coding_stuffs/discord-assitant/docs/NEXA_SAFETY_POLICY.md",
+      "/Users/osuma/coding_stuffs/discord-assitant/docs/PROVIDER_SAFETY_POLICY.md",
+      "/Users/osuma/coding_stuffs/discord-assitant/SECURITY.md",
+    ],
+    body: [
+      {
+        type: "paragraph",
+        text: "NEXA는 Discord 서버 안에서 쓰이는 중개형 AI 서비스입니다. 서버 관리자는 어떤 채널에서 어떤 역할이 AI를 쓰는지 정해야 하고, NEXA는 불법 콘텐츠, 신고 대응, 개인정보 최소화 같은 기본 안전 기준을 유지해야 합니다.",
+      },
+      {
+        type: "heading",
+        title: "관리자가 정해야 하는 것",
+      },
+      {
+        type: "checklist",
+        items: [
+          "AI가 답변해도 되는 채널과 답변하면 안 되는 채널을 구분합니다.",
+          "provider 참여를 허용할 역할과 승인 절차를 정합니다.",
+          "서버별 말투, 프롬프트, RAG 문서의 책임자를 정합니다.",
+          "신고가 들어왔을 때 확인할 관리자와 처리 기준을 정합니다.",
+        ],
+      },
+      {
+        type: "heading",
+        title: "NEXA가 기본으로 지키는 원칙",
+      },
+      {
+        type: "checklist",
+        items: [
+          "불법 콘텐츠와 미성년 성적물 같은 red-line은 관리자 설정과 무관하게 금지합니다.",
+          "질문과 답변 원문은 저장하지 않는 무저장/무로깅 원칙을 둡니다.",
+          "provider-agent는 원문 프롬프트를 파일이나 로그에 보존하지 않는 방향으로 운영합니다.",
+          "Discord ToS와 서버 운영 정책을 함께 지키는 것을 전제로 합니다.",
+        ],
+      },
+      {
+        type: "callout",
+        tone: PUBLIC_CONTENT_CALLOUT_TONES.warning,
+        title: "법률 검토가 필요한 영역",
+        text: "CSAM 같은 명백한 불법 콘텐츠 대응은 출시 전 법률 검토가 필요한 영역입니다. 이 문서는 운영 설계 기준이며 법률 자문이 아닙니다.",
       },
     ],
   },

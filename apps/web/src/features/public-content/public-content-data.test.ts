@@ -4,6 +4,7 @@ import {
   PUBLIC_CONTENT_CHANNELS,
   buildPublicContentCanonicalUrl,
   buildPublicContentOpenGraphImageUrl,
+  getPublicContentArticleBySlug,
   getPublicContentCollectionBySlug,
   getPublicContentCollections,
   getPublicContentSitemapEntries,
@@ -112,5 +113,46 @@ describe("public content data", () => {
     expect(buildPublicContentOpenGraphImageUrl("blog")).toBe(
       "https://blog.yeon.world/opengraph-image"
     );
+  });
+
+  it("NEXA provider와 admin support 글을 공개 URL로 제공한다", () => {
+    const slugs = [
+      ["nexa", "guides", "connect-ollama-provider"],
+      ["nexa", "guides", "install-provider-agent-safely"],
+      ["nexa", "faq", "provider-pool-how-it-works"],
+      ["nexa", "policy", "admin-safety-controls"],
+    ];
+
+    slugs.forEach((slug) => {
+      expect(getPublicContentArticleBySlug("support", slug)).toMatchObject({
+        channel: "support",
+        service: "nexa",
+      });
+    });
+  });
+
+  it("NEXA 권한 글은 permissions integer와 webhook fallback을 일반 설명에 포함한다", () => {
+    const article = getPublicContentArticleBySlug("support", [
+      "nexa",
+      "guides",
+      "discord-bot-permissions",
+    ]);
+    const bodyText = article?.body
+      .map((block) =>
+        "items" in block
+          ? block.items.join(" ")
+          : "text" in block
+            ? block.text
+            : "title" in block
+              ? block.title
+              : ""
+      )
+      .join(" ");
+
+    expect(bodyText).toContain("2147568640");
+    expect(bodyText).toContain("2684734528");
+    expect(bodyText).toContain("Message Content Intent");
+    expect(bodyText).toContain("Manage Webhooks");
+    expect(bodyText).toContain("기본 봇 이름으로 보내는 폴백");
   });
 });
