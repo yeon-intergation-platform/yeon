@@ -3,13 +3,10 @@ import { describe, expect, it } from "vitest";
 import {
   PUBLIC_CONTENT_API_PATHS,
   PUBLIC_CONTENT_CHANNELS,
-  PUBLIC_CONTENT_STATUSES,
-  createPublicContentArticleBodySchema,
   publicContentArticleResponseSchema,
   publicContentAdminArticleResponseSchema,
   publicContentListQuerySchema,
   publicContentSlugSchema,
-  updatePublicContentArticleBodySchema,
 } from "../public-content";
 
 describe("public content API contract", () => {
@@ -25,33 +22,6 @@ describe("public content API contract", () => {
       serviceKey: "nexa",
       category: "guides",
     });
-  });
-
-  it("keeps create requests draft and public by default", () => {
-    const parsed = createPublicContentArticleBodySchema.parse({
-      channel: "support",
-      serviceKey: "nexa",
-      category: "guides",
-      slug: "nexa/guides/add-nexa-discord-bot",
-      title: "디스코드 서버에 NEXA AI 봇 추가하는 방법",
-      description: "NEXA 설치 전 권한과 테스트 순서를 정리합니다.",
-      summary: "서버 권한 확인부터 첫 질문 테스트까지 순서대로 진행합니다.",
-      bodyMarkdown: "본문입니다.",
-    });
-
-    expect(parsed.status).toBe(PUBLIC_CONTENT_STATUSES.draft);
-    expect(parsed.visibility).toBe("public");
-    expect(parsed.bodyFormat).toBe("markdown");
-    expect(parsed.authorKey).toBe("yeon");
-  });
-
-  it("rejects empty update requests", () => {
-    expect(() => updatePublicContentArticleBodySchema.parse({})).toThrow(
-      "수정할 공개 콘텐츠 필드가 필요합니다."
-    );
-    expect(() =>
-      updatePublicContentArticleBodySchema.parse({ title: undefined })
-    ).toThrow("수정할 공개 콘텐츠 필드가 필요합니다.");
   });
 
   it("validates stable nested article slugs", () => {
@@ -147,15 +117,51 @@ describe("public content API contract", () => {
     expect(response.article.sourcePaths).toEqual(["/docs/example.md"]);
   });
 
-  it("builds stable public and admin API paths", () => {
+  it("allows draft admin article responses without publishedAt", () => {
+    const response = publicContentAdminArticleResponseSchema.parse({
+      article: {
+        id: "draft-1",
+        channel: "blog",
+        serviceKey: "yeon",
+        category: "engineering",
+        slug: "engineering/draft-search-console-note",
+        title: "Search Console 초안",
+        description: "공개 전 운영 초안입니다.",
+        summary: "초안 상태에서는 publishedAt이 없을 수 있습니다.",
+        canonicalUrl:
+          "https://blog.yeon.world/engineering/draft-search-console-note",
+        publishedAt: null,
+        updatedAt: "2026-06-17T00:00:00.000Z",
+        readingMinutes: 3,
+        bodyMarkdown: "본문입니다.",
+        ctaLabel: null,
+        ctaHref: null,
+        status: "draft",
+        visibility: "internal",
+        noindex: true,
+        metaTitle: null,
+        metaDescription: null,
+        ogImageUrl: null,
+        authorKey: "yeon",
+        sourceRepo: null,
+        sourcePaths: [],
+        redirectTo: null,
+      },
+    });
+
+    expect(response.article.publishedAt).toBeNull();
+    expect(response.article.status).toBe("draft");
+  });
+
+  it("builds stable public and read-only admin API paths", () => {
     expect(
       PUBLIC_CONTENT_API_PATHS.publicArticle(
         PUBLIC_CONTENT_CHANNELS.support,
         "nexa/guides/add-nexa-discord-bot"
       )
     ).toBe("/api/v1/content/support/nexa/guides/add-nexa-discord-bot");
-    expect(PUBLIC_CONTENT_API_PATHS.adminPublish("article-1")).toBe(
-      "/api/v1/admin/content/article-1/publish"
+    expect(PUBLIC_CONTENT_API_PATHS.adminArticle("article-1")).toBe(
+      "/api/v1/admin/content/article-1"
     );
   });
 });

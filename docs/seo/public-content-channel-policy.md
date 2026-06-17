@@ -134,12 +134,11 @@ blog.yeon.world
 
 공개 페이지는 `support.yeon.world`, `news.yeon.world`, `blog.yeon.world`에서 제공하고, 관리자 페이지는 로그인된 운영자만 접근할 수 있어야 한다.
 
-`yeon.world/admin`이 담당하는 것:
+1차 `yeon.world/admin`이 담당하는 것:
 
 - 전체 콘텐츠 목록과 서비스별 필터
-- 새 글 만들기 진입
-- 서비스, 채널, 타입, slug, 제목, description, canonical 상태 관리
-- `draft`, `published`, `archived` 상태 확인과 변경
+- 서비스, 채널, 타입, slug, 제목, description, canonical 상태 확인
+- `draft`, `published`, `archived` 상태 확인
 - SEO 누락 경고
 - sitemap 포함 여부 확인
 - Search Console 제출과 상태 확인
@@ -147,12 +146,15 @@ blog.yeon.world
 
 초기 단계에서 `yeon.world/admin`이 직접 담당하지 않는 것:
 
+- 새 글 만들기
 - 본문 전체 편집기
 - 글 상세 수정 UI
+- `draft`, `published`, `archived` 상태 변경 UI
+- 예약 발행 UI
 - 일반 운영자용 완전 삭제 UI
 - 복잡한 CMS workflow
 
-1차 admin은 읽기 전용이다. 본문 수정, 삭제, 예약 발행은 아직 만들지 않는다. 관리자는 `support.yeon.world`, `news.yeon.world`, `blog.yeon.world` 공개 페이지와 `/admin/content` 현황판에서 노출 상태를 확인하고, 실제 본문 변경은 정적 registry 또는 이후 별도 CMS 설계로 처리한다.
+1차 admin은 읽기 전용이다. 새 글 만들기, 본문 수정, 삭제, 상태 변경, 예약 발행은 아직 만들지 않는다. 관리자는 `support.yeon.world`, `news.yeon.world`, `blog.yeon.world` 공개 페이지와 `/admin/content` 현황판에서 노출 상태를 확인하고, 실제 본문 변경은 정적 registry 또는 이후 공개 페이지 관리자 모드/별도 CMS 설계로 처리한다.
 
 삭제는 기본 동작으로 두지 않는다. SEO와 링크 안정성을 위해 아래 상태 전이를 우선한다.
 

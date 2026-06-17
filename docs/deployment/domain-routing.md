@@ -4,7 +4,7 @@
 
 ## 목적
 
-서비스별 path URL을 subdomain URL로 전환할 때 확인할 운영 기준을 기록한다.
+서비스별 path URL과 공개 콘텐츠 path URL을 subdomain URL로 전환할 때 확인할 운영 기준을 기록한다.
 
 ## URL 매핑
 
@@ -13,6 +13,9 @@
 | typing-service | `https://yeon.world/typing-service` | `https://typing.yeon.world`    | 신규 subdomain으로 308 redirect |
 | card-service   | `https://yeon.world/card-service`   | `https://card.yeon.world`      | 신규 subdomain으로 308 redirect |
 | community      | `https://yeon.world/community`      | `https://community.yeon.world` | 신규 subdomain으로 308 redirect |
+| support        | `https://yeon.world/support`        | `https://support.yeon.world`   | 신규 subdomain으로 308 redirect |
+| news           | `https://yeon.world/news`           | `https://news.yeon.world`      | 신규 subdomain으로 308 redirect |
+| blog           | `https://yeon.world/blog`           | `https://blog.yeon.world`      | 신규 subdomain으로 308 redirect |
 
 ## 현재 확인된 운영 라우트 근거
 
@@ -47,6 +50,9 @@ Catch-all         -> http_status:404
 | `typing.yeon.world`    | `http://yeon-prod-web:3000` | Next.js web app에서 host/path 라우팅 처리 |
 | `card.yeon.world`      | `http://yeon-prod-web:3000` | Next.js web app에서 host/path 라우팅 처리 |
 | `community.yeon.world` | `http://yeon-prod-web:3000` | Next.js web app에서 host/path 라우팅 처리 |
+| `support.yeon.world`   | `http://yeon-prod-web:3000` | 공개 도움말 host rewrite 처리             |
+| `news.yeon.world`      | `http://yeon-prod-web:3000` | 공식 소식 host rewrite 처리               |
+| `blog.yeon.world`      | `http://yeon-prod-web:3000` | 개발 블로그 host rewrite 처리             |
 
 ## Cloudflare에서 확인할 항목
 
@@ -54,6 +60,9 @@ Catch-all         -> http_status:404
   - `typing.yeon.world`
   - `card.yeon.world`
   - `community.yeon.world`
+  - `support.yeon.world`
+  - `news.yeon.world`
+  - `blog.yeon.world`
 - 각 레코드는 Tunnel public hostname 생성으로 자동 CNAME 생성 가능 여부 확인
 - Proxy 상태는 Cloudflare proxied 사용
 - SSL/TLS 인증서가 `*.yeon.world` 또는 각 hostname을 커버하는지 확인
@@ -77,6 +86,9 @@ Catch-all         -> http_status:404
 apps/web/src/app/typing-service
 apps/web/src/app/card-service
 apps/web/src/app/community
+apps/web/src/app/support
+apps/web/src/app/news
+apps/web/src/app/blog
 ```
 
 Subdomain 전환 구현 시 확인할 파일:
@@ -88,9 +100,13 @@ apps/web/src/lib/seo.ts
 apps/web/src/app/typing-service/**
 apps/web/src/app/card-service/**
 apps/web/src/app/community/**
+apps/web/src/app/support/**
+apps/web/src/app/news/**
+apps/web/src/app/blog/**
 apps/web/src/features/typing-service/**
 apps/web/src/features/card-service/**
 apps/web/src/features/community/**
+apps/web/src/features/public-content/**
 apps/race-server/**
 apps/backend/**
 packages/api-client/**
@@ -101,15 +117,21 @@ packages/api-contract/**
 
 ## 권장 라우팅 방식
 
-1. Cloudflare에서 세 hostname을 모두 `http://yeon-prod-web:3000`으로 보낸다. 완료.
+1. Cloudflare에서 서비스 hostname과 공개 콘텐츠 hostname을 모두 `http://yeon-prod-web:3000`으로 보낸다.
 2. Next.js에서 Host header를 기준으로 내부 path로 rewrite한다.
    - `typing.yeon.world/*` -> `/typing-service/*`
    - `card.yeon.world/*` -> `/card-service/*`
    - `community.yeon.world/*` -> `/community/*`
+   - `support.yeon.world/*` -> `/support/*`
+   - `news.yeon.world/*` -> `/news/*`
+   - `blog.yeon.world/*` -> `/blog/*`
 3. 기존 path URL은 public 진입점으로 유지하지 않고 308 redirect한다.
    - `https://yeon.world/typing-service/*` -> `https://typing.yeon.world/*`
    - `https://yeon.world/card-service/*` -> `https://card.yeon.world/*`
    - `https://yeon.world/community/*` -> `https://community.yeon.world/*`
+   - `https://yeon.world/support/*` -> `https://support.yeon.world/*`
+   - `https://yeon.world/news/*` -> `https://news.yeon.world/*`
+   - `https://yeon.world/blog/*` -> `https://blog.yeon.world/*`
 4. Next.js 내부 rewrite target으로 기존 route 디렉터리는 유지한다.
 
 ## 인증/쿠키 확인 항목
@@ -130,6 +152,9 @@ packages/api-contract/**
 https://typing.yeon.world
 https://card.yeon.world
 https://community.yeon.world
+https://support.yeon.world
+https://news.yeon.world
+https://blog.yeon.world
 ```
 
 ## 서비스별 검증 항목
