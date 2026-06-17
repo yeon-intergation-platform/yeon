@@ -18,6 +18,7 @@ import {
 import { AUTH_SESSION_COOKIE_NAME } from "@/server/auth/constants";
 
 const COUNSELING_SERVICE_BASE_PATH = "/counseling-service";
+const SUBDOMAIN_REWRITE_HEADER = "x-yeon-subdomain-rewrite";
 
 function isPublicContentOpsRequest(request: NextRequest) {
   const opsValue = request.nextUrl.searchParams.get("ops");
@@ -44,6 +45,8 @@ export function proxy(request: NextRequest) {
     request.headers.get("host") ??
     request.nextUrl.hostname;
   const hostname = normalizeRequestHostname(requestHost);
+  const isSubdomainRewritePass =
+    request.headers.get(SUBDOMAIN_REWRITE_HEADER) === "1";
 
   if (isWwwHostname(hostname)) {
     const redirectUrl = new URL(request.url);
@@ -56,11 +59,13 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(redirectUrl, 308);
   }
 
-  const legacyServiceRedirectUrl = resolveLegacyServicePathRedirectUrl({
-    host: requestHost,
-    pathname,
-    search: request.nextUrl.search,
-  });
+  const legacyServiceRedirectUrl = isSubdomainRewritePass
+    ? null
+    : resolveLegacyServicePathRedirectUrl({
+        host: requestHost,
+        pathname,
+        search: request.nextUrl.search,
+      });
 
   if (legacyServiceRedirectUrl) {
     return withSeoHeaders(
@@ -70,18 +75,29 @@ export function proxy(request: NextRequest) {
     );
   }
 
-  const subdomainRewritePath = resolveServiceSubdomainRewritePath({
-    host: requestHost,
-    pathname,
-    search: request.nextUrl.search,
-  });
+  const subdomainRewritePath = isSubdomainRewritePass
+    ? null
+    : resolveServiceSubdomainRewritePath({
+        host: requestHost,
+        pathname,
+        search: request.nextUrl.search,
+      });
 
   if (subdomainRewritePath) {
     const rewriteUrl = request.nextUrl.clone();
     const targetUrl = new URL(subdomainRewritePath, request.url);
+    const requestHeaders = new Headers(request.headers);
+    requestHeaders.set(SUBDOMAIN_REWRITE_HEADER, "1");
+
     rewriteUrl.pathname = targetUrl.pathname;
     rewriteUrl.search = targetUrl.search;
-    return withSeoHeaders(NextResponse.rewrite(rewriteUrl), hostname, request);
+    return withSeoHeaders(
+      NextResponse.rewrite(rewriteUrl, {
+        request: { headers: requestHeaders },
+      }),
+      hostname,
+      request
+    );
   }
 
   if (pathname.startsWith(`${COUNSELING_SERVICE_BASE_PATH}/api/`)) {
