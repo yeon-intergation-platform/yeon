@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildPublicContentAdminChannelData,
+  buildPublicContentAdminDashboardData,
   getPublicContentAdminArticleRows,
   getPublicContentAdminChannelSummaries,
   getPublicContentAdminDashboardStats,
@@ -59,6 +61,9 @@ describe("public content admin model", () => {
       new URL(stats.domainSearchConsoleUrl).searchParams.get("resource_id")
     ).toBe("sc-domain:yeon.world");
     expect(stats.serviceCount).toBeGreaterThanOrEqual(4);
+    expect(stats.publishedCount).toBe(stats.articleCount);
+    expect(stats.draftCount).toBe(0);
+    expect(stats.seoWarningCount).toBe(0);
     expect(stats.sitemapUrlCount).toBe(
       stats.articleCount +
         stats.channelCount +
@@ -72,5 +77,140 @@ describe("public content admin model", () => {
   it("허용된 공개 콘텐츠 채널만 admin route로 인정한다", () => {
     expect(getValidPublicContentAdminChannel("support")).toBe("support");
     expect(getValidPublicContentAdminChannel("counseling")).toBeUndefined();
+  });
+
+  it("Spring admin DTO에서 상태와 SEO 경고를 계산한다", () => {
+    const dashboard = buildPublicContentAdminDashboardData({
+      articles: [
+        {
+          id: "article-published",
+          channel: "support",
+          serviceKey: "nexa",
+          category: "guides",
+          slug: "nexa/guides/add-nexa-discord-bot",
+          title: "디스코드 서버에 NEXA AI 봇 추가하는 방법",
+          description: "설명입니다.",
+          summary: "요약입니다.",
+          canonicalUrl:
+            "https://support.yeon.world/nexa/guides/add-nexa-discord-bot",
+          publishedAt: "2026-06-17T00:00:00.000Z",
+          updatedAt: "2026-06-17T00:00:00.000Z",
+          readingMinutes: 4,
+          bodyFormat: "markdown",
+          bodyMarkdown: "본문입니다.",
+          ctaLabel: null,
+          ctaHref: null,
+          status: "published",
+          visibility: "public",
+          noindex: false,
+          metaTitle: null,
+          metaDescription: "검색 설명입니다.",
+          ogImageUrl: null,
+          authorKey: "yeon",
+          sourceRepo: "yeon",
+          sourcePaths: ["docs/source.md"],
+          redirectTo: null,
+        },
+        {
+          id: "article-draft",
+          channel: "support",
+          serviceKey: "nexa",
+          category: "faq",
+          slug: "nexa/faq/free-plan-limit",
+          title: "NEXA 무료 플랜에서는 무엇까지 사용할 수 있나요?",
+          description: "설명입니다.",
+          summary: "요약입니다.",
+          canonicalUrl: "https://support.yeon.world/nexa/faq/free-plan-limit",
+          publishedAt: null,
+          updatedAt: "2026-06-17T01:00:00.000Z",
+          readingMinutes: 3,
+          bodyFormat: "markdown",
+          bodyMarkdown: "본문입니다.",
+          ctaLabel: null,
+          ctaHref: null,
+          status: "draft",
+          visibility: "internal",
+          noindex: true,
+          metaTitle: null,
+          metaDescription: null,
+          ogImageUrl: null,
+          authorKey: "yeon",
+          sourceRepo: "yeon",
+          sourcePaths: [],
+          redirectTo: null,
+        },
+      ],
+      sitemapEntries: [
+        {
+          url: "https://support.yeon.world",
+          lastModified: "2026-06-17T00:00:00.000Z",
+          changeFrequency: "weekly",
+          priority: 0.9,
+        },
+        {
+          url: "https://support.yeon.world/nexa/guides/add-nexa-discord-bot",
+          lastModified: "2026-06-17T00:00:00.000Z",
+          changeFrequency: "weekly",
+          priority: 0.7,
+        },
+      ],
+    });
+
+    expect(dashboard.stats.articleCount).toBe(2);
+    expect(dashboard.stats.publishedCount).toBe(1);
+    expect(dashboard.stats.draftCount).toBe(1);
+    expect(dashboard.stats.noindexCount).toBe(1);
+    expect(dashboard.stats.metaDescriptionMissingCount).toBe(1);
+    expect(dashboard.stats.seoWarningCount).toBe(2);
+    expect(dashboard.rows[0].sitemapIncluded).toBe(true);
+    expect(dashboard.rows[1].seoWarnings).toEqual([
+      "noindex",
+      "meta description 누락",
+    ]);
+    expect(dashboard.summaries[0].statusCounts.draft).toBe(1);
+    expect(dashboard.summaries[0].seoWarningCount).toBe(2);
+  });
+
+  it("Spring admin DTO에서 채널 화면 데이터를 분리한다", () => {
+    const data = buildPublicContentAdminChannelData({
+      channel: "blog",
+      articles: [
+        {
+          id: "blog-article",
+          channel: "blog",
+          serviceKey: "yeon",
+          category: "engineering",
+          slug: "engineering/backend/public-content-spring-api",
+          title: "공개 콘텐츠 Spring API 설계 기록",
+          description: "설명입니다.",
+          summary: "요약입니다.",
+          canonicalUrl:
+            "https://blog.yeon.world/engineering/backend/public-content-spring-api",
+          publishedAt: "2026-06-17T00:00:00.000Z",
+          updatedAt: "2026-06-17T00:00:00.000Z",
+          readingMinutes: 6,
+          bodyFormat: "markdown",
+          bodyMarkdown: "본문입니다.",
+          ctaLabel: null,
+          ctaHref: null,
+          status: "review",
+          visibility: "unlisted",
+          noindex: false,
+          metaTitle: null,
+          metaDescription: "검색 설명입니다.",
+          ogImageUrl: null,
+          authorKey: "yeon",
+          sourceRepo: "yeon",
+          sourcePaths: ["apps/backend"],
+          redirectTo: null,
+        },
+      ],
+      sitemapEntries: [],
+    });
+
+    expect(data.summary?.channel).toBe("blog");
+    expect(data.summary?.statusCounts.review).toBe(1);
+    expect(data.rows).toHaveLength(1);
+    expect(data.rows[0].serviceLabel).toBe("yeon");
   });
 });
