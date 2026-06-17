@@ -815,6 +815,10 @@ export const PUBLIC_CONTENT_ARTICLES: readonly PublicContentArticle[] = [
         text: "YEON은 공개 콘텐츠를 목적별로 나눕니다. NEXA를 실제로 쓰는 방법은 support에서 보고, 제품 변경과 공지는 news에서 확인하며, 기술적 배경이나 제작 과정은 blog에서 읽는 구조입니다.",
       },
       {
+        type: "heading",
+        title: "채널별 확인 위치",
+      },
+      {
         type: "checklist",
         items: [
           "support.yeon.world: NEXA 사용법, 문제 해결, FAQ, 정책 안내",
@@ -822,6 +826,10 @@ export const PUBLIC_CONTENT_ARTICLES: readonly PublicContentArticle[] = [
           "blog.yeon.world: 개발기, 기술 선택, 제품 제작 과정",
           "discord-ai.yeon.world: 설치와 제품 진입점",
         ],
+      },
+      {
+        type: "heading",
+        title: "확인 순서",
       },
       {
         type: "steps",
