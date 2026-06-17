@@ -1,8 +1,10 @@
 import {
   PUBLIC_CONTENT_CALLOUT_TONES,
   PUBLIC_CONTENT_ARTICLES,
+  PUBLIC_CONTENT_CHANNELS,
   type PublicContentArticle,
   type PublicContentBlock,
+  getPublicContentSupportCtaTarget,
 } from "../src/features/public-content/public-content-data";
 import { getPublicContentTitleQualityWarnings } from "../src/features/public-content/public-content-title-quality";
 
@@ -52,6 +54,29 @@ function auditTextField(
 ) {
   if (isBlank(value)) {
     pushIssue(issues, article, `${fieldName} 값이 비어 있습니다.`);
+  }
+}
+
+function auditSupportCta(issues: AuditIssue[], article: PublicContentArticle) {
+  if (article.channel !== PUBLIC_CONTENT_CHANNELS.support) return;
+
+  const expectedCta = getPublicContentSupportCtaTarget(article.service);
+  if (!expectedCta) return;
+
+  if (article.ctaLabel !== expectedCta.ctaLabel) {
+    pushIssue(
+      issues,
+      article,
+      `support ${article.service} CTA label이 정책과 다릅니다.`
+    );
+  }
+
+  if (article.ctaHref !== expectedCta.ctaHref) {
+    pushIssue(
+      issues,
+      article,
+      `support ${article.service} CTA href가 정책과 다릅니다.`
+    );
   }
 }
 
@@ -160,6 +185,8 @@ function auditArticle(
   }).forEach((warning) => {
     pushIssue(issues, article, warning);
   });
+
+  auditSupportCta(issues, article);
 
   if (article.slugSegments.length === 0) {
     pushIssue(issues, article, "slugSegments가 비어 있습니다.");

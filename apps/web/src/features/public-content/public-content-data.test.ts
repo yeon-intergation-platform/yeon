@@ -1,9 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
+  PUBLIC_CONTENT_ARTICLES,
+  PUBLIC_CONTENT_CHANNELS,
   buildPublicContentCanonicalUrl,
   getPublicContentCollectionBySlug,
   getPublicContentCollections,
   getPublicContentSitemapEntries,
+  getPublicContentSupportCtaTarget,
 } from "./public-content-data";
 
 describe("public content data", () => {
@@ -72,5 +75,18 @@ describe("public content data", () => {
     expect(getPublicContentCollections("support").length).toBeGreaterThan(
       getPublicContentCollections("blog").length
     );
+  });
+
+  it("support 서비스 글은 서비스별 하단 CTA 정책을 따른다", () => {
+    const supportArticles = PUBLIC_CONTENT_ARTICLES.filter(
+      (article) => article.channel === PUBLIC_CONTENT_CHANNELS.support
+    );
+
+    supportArticles.forEach((article) => {
+      const expectedCta = getPublicContentSupportCtaTarget(article.service);
+      if (!expectedCta) return;
+
+      expect(article).toMatchObject(expectedCta);
+    });
   });
 });
