@@ -536,31 +536,31 @@
 
 작업내용:
 
-351. `NEXA 공개 지원 문서가 시작됩니다` 공지 초안을 작성한다.
-352. `YEON support.yeon.world 오픈 안내` 공지 초안을 작성한다.
-353. `news.yeon.world 운영 원칙 안내` 공지 초안을 작성한다.
-354. `blog.yeon.world 운영 원칙 안내` 공지 초안을 작성한다.
-355. `typing.yeon.world 지원 문서 추가 안내` 업데이트 초안을 작성한다.
-356. `card.yeon.world 지원 문서 추가 안내` 업데이트 초안을 작성한다.
-357. `community.yeon.world 지원 문서 추가 안내` 업데이트 초안을 작성한다.
-358. `discord-ai.yeon.world sitemap 등록 안내` 내부 공지 초안을 작성한다.
-359. `NEXA 권한 안내 문서 업데이트` 업데이트 초안을 작성한다.
-360. `YEON 공개 콘텐츠 채널 분리 결정` blog product 글을 작성한다.
-361. `왜 support와 blog와 news를 나누었는가` blog product 글을 작성한다.
-362. `NEXA를 Discord 서버 운영자 관점에서 설계하는 이유` blog product 글을 작성한다.
-363. `타자 서비스에서 실시간 서버가 필요한 이유` blog engineering 글 후보를 작성한다.
-364. `플래시카드 서비스에서 게스트 사용성을 고려한 이유` blog product 글 후보를 작성한다.
-365. `커뮤니티 기능을 작게 시작하는 이유` blog product 글 후보를 작성한다.
-366. `Yeon 공개 URL과 canonical 정리 기록` blog engineering 글 후보를 작성한다.
-367. `Search Console과 sitemap을 운영에 넣는 이유` blog engineering 글 후보를 작성한다.
-368. `NEXA Provider Pool의 기본 구조` blog engineering 글 후보를 작성한다.
-369. `AI 봇 안전 정책을 문서로 먼저 공개하는 이유` blog essay 글 후보를 작성한다.
-370. `개인 개발 제품에서 support 문서가 중요한 이유` blog essay 글 후보를 작성한다.
-371. news 공지는 짧고 실행 정보 중심으로 작성한다.
-372. blog 글은 실제 repo 근거 링크를 포함한다.
-373. 업계 뉴스 해설은 외부 기사 요약보다 Yeon 사용자에게 주는 의미를 중심으로 작성한다.
-374. 초기 news/blog 글은 최소 10개만 발행하고 나머지는 draft로 둔다.
-375. 모든 초기 글은 서로 내부 링크를 연결한다.
+351. **[완료]** `NEXA 공개 지원 문서가 시작됩니다` 공지 초안을 작성한다.
+352. **[완료]** `YEON support.yeon.world 오픈 안내` 공지 초안을 작성한다.
+353. **[완료]** `news.yeon.world 운영 원칙 안내` 공지 초안을 작성한다.
+354. **[완료]** `blog.yeon.world 운영 원칙 안내` 공지 초안을 작성한다.
+355. **[완료]** `typing.yeon.world 지원 문서 추가 안내` 업데이트 초안을 작성한다.
+356. **[완료]** `card.yeon.world 지원 문서 추가 안내` 업데이트 초안을 작성한다.
+357. **[완료]** `community.yeon.world 지원 문서 추가 안내` 업데이트 초안을 작성한다.
+358. **[완료]** `discord-ai.yeon.world sitemap 등록 안내` 내부 공지 초안을 작성한다.
+359. **[완료]** `NEXA 권한 안내 문서 업데이트` 업데이트 초안을 작성한다.
+360. **[완료]** `YEON 공개 콘텐츠 채널 분리 결정` blog product 글을 작성한다.
+361. **[완료]** `왜 support와 blog와 news를 나누었는가` blog product 글을 작성한다.
+362. **[완료]** `NEXA를 Discord 서버 운영자 관점에서 설계하는 이유` blog product 글을 작성한다.
+363. **[완료]** `타자 서비스에서 실시간 서버가 필요한 이유` blog engineering 글 후보를 작성한다.
+364. **[완료]** `플래시카드 서비스에서 게스트 사용성을 고려한 이유` blog product 글 후보를 작성한다.
+365. **[완료]** `커뮤니티 기능을 작게 시작하는 이유` blog product 글 후보를 작성한다.
+366. **[완료]** `Yeon 공개 URL과 canonical 정리 기록` blog engineering 글 후보를 작성한다.
+367. **[완료]** `Search Console과 sitemap을 운영에 넣는 이유` blog engineering 글 후보를 작성한다.
+368. **[완료]** `NEXA Provider Pool의 기본 구조` blog engineering 글 후보를 작성한다.
+369. **[완료]** `AI 봇 안전 정책을 문서로 먼저 공개하는 이유` blog essay 글 후보를 작성한다.
+370. **[완료]** `개인 개발 제품에서 support 문서가 중요한 이유` blog essay 글 후보를 작성한다.
+371. **[완료]** news 공지는 짧고 실행 정보 중심으로 작성한다.
+372. **[완료]** blog 글은 실제 repo 근거 링크를 포함한다.
+373. **[완료]** 업계 뉴스 해설은 외부 기사 요약보다 Yeon 사용자에게 주는 의미를 중심으로 작성한다.
+374. **[완료]** 초기 news/blog 글은 최소 10개만 발행하고 나머지는 draft로 둔다.
+375. **[완료]** 모든 초기 글은 서로 내부 링크를 연결한다.
 
 ## 16차: 작성, import, 발행 워크플로우
 

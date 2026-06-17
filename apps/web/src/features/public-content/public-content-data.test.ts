@@ -29,6 +29,31 @@ function getPublicContentArticleText(article: PublicContentArticleForTest) {
     .join(" ");
 }
 
+function getPublicContentArticleLinks(article: PublicContentArticleForTest) {
+  const blockLinks = article.body.flatMap((block) =>
+    "links" in block ? block.links.map((link) => link.href) : []
+  );
+  return [article.ctaHref, ...blockLinks].filter(
+    (href): href is string => typeof href === "string"
+  );
+}
+
+function hasPublicYeonLink(article: PublicContentArticleForTest) {
+  const publicHosts = [
+    "https://support.yeon.world",
+    "https://news.yeon.world",
+    "https://blog.yeon.world",
+    "https://discord-ai.yeon.world",
+    "https://typing.yeon.world",
+    "https://card.yeon.world",
+    "https://community.yeon.world",
+  ];
+
+  return getPublicContentArticleLinks(article).some((href) =>
+    publicHosts.some((host) => href.startsWith(host))
+  );
+}
+
 describe("public content data", () => {
   it("글이 있는 support 서비스와 분류만 collection으로 만든다", () => {
     const nexaCollection = getPublicContentCollectionBySlug("support", [
@@ -246,5 +271,41 @@ describe("public content data", () => {
     expect(privacyText).toContain("Google 로그인");
     expect(privacyText).toContain("커뮤니티 글과 댓글");
     expect(privacyText).toContain("NEXA 질문");
+  });
+
+  it("news와 blog 초기 콘텐츠는 누락 slug를 보강하고 공개 내부 링크를 가진다", () => {
+    const requiredSlugs = [
+      ["news", ["notice", "nexa", "support-docs-start"], "nexa"],
+      ["news", ["notice", "nexa", "discord-ai-sitemap-registration"], "nexa"],
+      ["blog", ["product", "public-content-channel-decision"], "account"],
+      ["blog", ["engineering", "public-url-canonical-record"], "account"],
+      ["blog", ["essay", "why-ai-bot-safety-policy-first"], "nexa"],
+    ] as const;
+
+    requiredSlugs.forEach(([channel, slug, service]) => {
+      expect(getPublicContentArticleBySlug(channel, slug)).toMatchObject({
+        channel,
+        service,
+      });
+    });
+
+    expect(
+      PUBLIC_CONTENT_ARTICLES.filter(
+        (article) => article.channel === PUBLIC_CONTENT_CHANNELS.news
+      ).length
+    ).toBeGreaterThanOrEqual(10);
+    expect(
+      PUBLIC_CONTENT_ARTICLES.filter(
+        (article) => article.channel === PUBLIC_CONTENT_CHANNELS.blog
+      ).length
+    ).toBeGreaterThanOrEqual(10);
+
+    PUBLIC_CONTENT_ARTICLES.filter(
+      (article) =>
+        article.channel === PUBLIC_CONTENT_CHANNELS.news ||
+        article.channel === PUBLIC_CONTENT_CHANNELS.blog
+    ).forEach((article) => {
+      expect(hasPublicYeonLink(article)).toBe(true);
+    });
   });
 });
