@@ -19,8 +19,18 @@ import { AUTH_SESSION_COOKIE_NAME } from "@/server/auth/constants";
 
 const COUNSELING_SERVICE_BASE_PATH = "/counseling-service";
 
-function withSeoHeaders(response: NextResponse, hostname: string) {
-  if (isDevHostname(hostname)) {
+function isPublicContentOpsRequest(request: NextRequest) {
+  const opsValue = request.nextUrl.searchParams.get("ops");
+
+  return opsValue === "1" || opsValue === "true";
+}
+
+function withSeoHeaders(
+  response: NextResponse,
+  hostname: string,
+  request: NextRequest
+) {
+  if (isDevHostname(hostname) || isPublicContentOpsRequest(request)) {
     response.headers.set("X-Robots-Tag", NOINDEX_X_ROBOTS_TAG_VALUE);
   }
 
@@ -55,7 +65,8 @@ export function proxy(request: NextRequest) {
   if (legacyServiceRedirectUrl) {
     return withSeoHeaders(
       NextResponse.redirect(legacyServiceRedirectUrl, 308),
-      hostname
+      hostname,
+      request
     );
   }
 
@@ -70,13 +81,13 @@ export function proxy(request: NextRequest) {
     const targetUrl = new URL(subdomainRewritePath, request.url);
     rewriteUrl.pathname = targetUrl.pathname;
     rewriteUrl.search = targetUrl.search;
-    return withSeoHeaders(NextResponse.rewrite(rewriteUrl), hostname);
+    return withSeoHeaders(NextResponse.rewrite(rewriteUrl), hostname, request);
   }
 
   if (pathname.startsWith(`${COUNSELING_SERVICE_BASE_PATH}/api/`)) {
     const rewriteUrl = request.nextUrl.clone();
     rewriteUrl.pathname = pathname.slice(COUNSELING_SERVICE_BASE_PATH.length);
-    return withSeoHeaders(NextResponse.rewrite(rewriteUrl), hostname);
+    return withSeoHeaders(NextResponse.rewrite(rewriteUrl), hostname, request);
   }
 
   const matchedService = getPlatformServiceByPathname(pathname);
@@ -100,10 +111,14 @@ export function proxy(request: NextRequest) {
       "next",
       `${pathname}${request.nextUrl.search}`
     );
-    return withSeoHeaders(NextResponse.redirect(redirectUrl), hostname);
+    return withSeoHeaders(
+      NextResponse.redirect(redirectUrl),
+      hostname,
+      request
+    );
   }
 
-  return withSeoHeaders(NextResponse.next(), hostname);
+  return withSeoHeaders(NextResponse.next(), hostname, request);
 }
 
 export const config = {
