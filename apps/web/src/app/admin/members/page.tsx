@@ -161,6 +161,12 @@ export default async function AdminMembersPage() {
             </YeonView>
             <YeonView className={SHARED_FEATURE_CLASS.wrapGap2}>
               <YeonLink
+                href="/admin/content"
+                className={SHARED_FEATURE_CLASS.ghostButtonMd13}
+              >
+                공개 콘텐츠
+              </YeonLink>
+              <YeonLink
                 href="/admin/users"
                 className={SHARED_FEATURE_CLASS.ghostButtonMd13}
               >
