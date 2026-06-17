@@ -104,9 +104,27 @@ describe("seo", () => {
           lastModified: "2026-06-17",
         }),
         expect.objectContaining({
+          url: "https://support.yeon.world/nexa/guides",
+          changeFrequency: "weekly",
+          priority: 0.6,
+          lastModified: "2026-06-17",
+        }),
+        expect.objectContaining({
+          url: "https://news.yeon.world/updates/nexa",
+          changeFrequency: "weekly",
+          priority: 0.6,
+          lastModified: "2026-06-17",
+        }),
+        expect.objectContaining({
           url: "https://blog.yeon.world/product/why-split-support-news-blog",
           changeFrequency: "weekly",
           priority: 0.55,
+          lastModified: "2026-06-17",
+        }),
+        expect.objectContaining({
+          url: "https://blog.yeon.world/engineering",
+          changeFrequency: "weekly",
+          priority: 0.6,
           lastModified: "2026-06-17",
         }),
       ])
@@ -169,6 +187,9 @@ describe("seo", () => {
         },
         expect.objectContaining({
           url: "https://support.yeon.world/nexa/guides/add-nexa-discord-bot",
+        }),
+        expect.objectContaining({
+          url: "https://support.yeon.world/nexa/guides",
         }),
       ])
     );

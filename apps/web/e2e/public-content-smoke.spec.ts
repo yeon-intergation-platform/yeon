@@ -21,6 +21,7 @@ type PublicContentPageCase = {
 type PublicContentHostCase = {
   host: string;
   homeHeading: string;
+  collectionPath: string;
   articlePath: string;
   articleHeading: string;
   sitemapUrl: string;
@@ -68,6 +69,16 @@ const PUBLIC_CONTENT_PAGE_CASES: readonly PublicContentPageCase[] = [
     },
   },
   {
+    path: "/support/nexa/guides",
+    heading: "NEXA 가이드",
+    canonical: "https://support.yeon.world/nexa/guides",
+    descriptionIncludes: "NEXA 가이드",
+    structuredData: {
+      expectedType: "CollectionPage",
+      expectedName: "NEXA 가이드",
+    },
+  },
+  {
     path: "/news/notice/support-open",
     heading: "YEON support.yeon.world 오픈 안내",
     canonical: "https://news.yeon.world/notice/support-open",
@@ -75,6 +86,26 @@ const PUBLIC_CONTENT_PAGE_CASES: readonly PublicContentPageCase[] = [
     structuredData: {
       expectedType: "NewsArticle",
       expectedName: "YEON support.yeon.world 오픈 안내",
+    },
+  },
+  {
+    path: "/news/updates/nexa",
+    heading: "NEXA 제품 업데이트",
+    canonical: "https://news.yeon.world/updates/nexa",
+    descriptionIncludes: "NEXA 제품 업데이트",
+    structuredData: {
+      expectedType: "CollectionPage",
+      expectedName: "NEXA 제품 업데이트",
+    },
+  },
+  {
+    path: "/blog/engineering",
+    heading: "기술 글",
+    canonical: "https://blog.yeon.world/engineering",
+    descriptionIncludes: "기술 글",
+    structuredData: {
+      expectedType: "CollectionPage",
+      expectedName: "기술 글",
     },
   },
   {
@@ -94,6 +125,7 @@ const PUBLIC_CONTENT_HOST_CASES: readonly PublicContentHostCase[] = [
   {
     host: "support.yeon.world",
     homeHeading: "필요한 해결 방법을 서비스별로 찾으세요",
+    collectionPath: "/nexa/guides",
     articlePath: "/nexa/guides/add-nexa-discord-bot",
     articleHeading: "디스코드 서버에 NEXA AI 봇 추가하는 방법",
     sitemapUrl: "https://support.yeon.world/sitemap.xml",
@@ -101,6 +133,7 @@ const PUBLIC_CONTENT_HOST_CASES: readonly PublicContentHostCase[] = [
   {
     host: "news.yeon.world",
     homeHeading: "YEON의 공식 소식과 제품 변경사항",
+    collectionPath: "/updates/nexa",
     articlePath: "/notice/support-open",
     articleHeading: "YEON support.yeon.world 오픈 안내",
     sitemapUrl: "https://news.yeon.world/sitemap.xml",
@@ -108,6 +141,7 @@ const PUBLIC_CONTENT_HOST_CASES: readonly PublicContentHostCase[] = [
   {
     host: "blog.yeon.world",
     homeHeading: "제품을 만들며 남기는 기술과 결정의 기록",
+    collectionPath: "/engineering",
     articlePath: "/product/nexa-discord-server-operator-design",
     articleHeading: "NEXA를 Discord 서버 운영자 관점에서 설계하는 이유",
     sitemapUrl: "https://blog.yeon.world/sitemap.xml",
@@ -241,6 +275,9 @@ test.describe("public content SEO smoke", () => {
       expect(sitemapXml).toContain(`https://${hostCase.host}`);
       expect(sitemapXml).toContain(
         `https://${hostCase.host}${hostCase.articlePath}`
+      );
+      expect(sitemapXml).toContain(
+        `https://${hostCase.host}${hostCase.collectionPath}`
       );
       expect(sitemapXml).not.toContain("https://yeon.world/privacy");
     });
