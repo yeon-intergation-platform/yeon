@@ -4,6 +4,7 @@ import {
   getPublicContentCalloutStyle,
   getPublicContentImageAspectRatioStyle,
 } from "./public-content-block-style";
+import { getPublicContentLinkRel } from "./public-content-link-policy";
 
 type PublicContentBlockViewProps = {
   block: PublicContentBlock;
@@ -100,6 +101,31 @@ export function PublicContentBlockView({
           <code>{block.code}</code>
         </pre>
       </figure>
+    );
+  }
+
+  if (block.type === "links") {
+    return (
+      <section className="border-t border-[#e5e5e5] pt-5">
+        <p className="text-[14px] font-semibold text-[#111]">{block.title}</p>
+        <ul className="mt-3 space-y-2">
+          {block.links.map((link) => (
+            <li key={link.href}>
+              <a
+                className="text-[14px] font-semibold text-[#555] underline underline-offset-4 transition-colors hover:text-[#111]"
+                href={link.href}
+                rel={getPublicContentLinkRel({
+                  href: link.href,
+                  target: "_blank",
+                })}
+                target="_blank"
+              >
+                {link.label}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </section>
     );
   }
 

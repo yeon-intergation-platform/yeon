@@ -37,6 +37,9 @@ function getBlockText(block: PublicContentBlock) {
   if (block.type === "code") {
     return block.code;
   }
+  if (block.type === "links") {
+    return [block.title, ...block.links.map((link) => link.label)].join(" ");
+  }
   return block.items.join(" ");
 }
 
