@@ -93,6 +93,7 @@
 - 이후에는 월 1회 색인 제외, 404, canonical mismatch, sitemap 실패를 확인한다.
 - 노출은 높고 클릭이 낮은 글은 title과 description을 먼저 개선한다.
 - 클릭은 있는데 전환이 낮은 support 글은 CTA 문구와 위치를 점검한다.
+- support 글 detail의 `최근 확인` 날짜가 실제 서비스 동작 확인일과 맞는지 점검한다.
 - `/admin/content`의 `Title quality`와 `SEO warning queue`가 0인지 확인한다.
 
 운영 리포트:

@@ -3,6 +3,7 @@ import {
   buildPublicContentGovernanceReport,
   formatPublicContentGovernanceReportAsMarkdown,
 } from "./public-content-governance-report";
+import { getPublicContentAdminDashboardData } from "./public-content-admin-model";
 
 function findItem(
   report: ReturnType<typeof buildPublicContentGovernanceReport>,
@@ -32,6 +33,7 @@ describe("public content governance report", () => {
     );
     expect(findItem(report, "seo-warning-queue")?.status).toBe("ready");
     expect(findItem(report, "source-traceability")?.status).toBe("ready");
+    expect(findItem(report, "content-freshness-review")?.status).toBe("ready");
     expect(findItem(report, "information-architecture-fit")?.status).toBe(
       "ready"
     );
@@ -47,5 +49,66 @@ describe("public content governance report", () => {
     expect(markdown).toContain("## 출시 첫 주 확인");
     expect(markdown).toContain("[수동 확인] Search Console 색인 상태 확인");
     expect(markdown).toContain("[정상] SEO warning queue 처리");
+    expect(markdown).toContain("[정상] 오래된 글 최신성 점검");
+  });
+
+  it("support 글 freshness는 reviewedAt을 updatedAt보다 우선한다", () => {
+    const dashboard = getPublicContentAdminDashboardData();
+    const supportRowIndex = dashboard.rows.findIndex(
+      (row) => row.article.channel === "support"
+    );
+    const rows = dashboard.rows.map((row, index) =>
+      index === supportRowIndex
+        ? {
+            ...row,
+            article: {
+              ...row.article,
+              reviewedAt: "2026-06-17",
+              updatedAt: "2025-01-01",
+            },
+          }
+        : row
+    );
+
+    expect(supportRowIndex).toBeGreaterThanOrEqual(0);
+    expect(
+      findItem(
+        buildPublicContentGovernanceReport({
+          dashboard: { ...dashboard, rows },
+          generatedAt: "2026-06-17T00:00:00.000Z",
+        }),
+        "content-freshness-review"
+      )?.status
+    ).toBe("ready");
+  });
+
+  it("support 글이 180일 넘게 확인되지 않으면 warning으로 표시한다", () => {
+    const dashboard = getPublicContentAdminDashboardData();
+    const supportRowIndex = dashboard.rows.findIndex(
+      (row) => row.article.channel === "support"
+    );
+    const rows = dashboard.rows.map((row, index) =>
+      index === supportRowIndex
+        ? {
+            ...row,
+            article: {
+              ...row.article,
+              reviewedAt: null,
+              updatedAt: "2025-01-01",
+            },
+          }
+        : row
+    );
+
+    expect(supportRowIndex).toBeGreaterThanOrEqual(0);
+    expect(
+      findItem(
+        buildPublicContentGovernanceReport({
+          dashboard: { ...dashboard, rows },
+          generatedAt: "2026-06-17T00:00:00.000Z",
+        }),
+        "content-freshness-review"
+      )?.status
+    ).toBe("warning");
   });
 });

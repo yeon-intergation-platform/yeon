@@ -2,6 +2,10 @@ import {
   getPublicContentAdminDashboardData,
   type PublicContentAdminDashboardData,
 } from "./public-content-admin-model";
+import {
+  getPublicContentFreshnessState,
+  PUBLIC_CONTENT_SUPPORT_REVIEW_FRESH_DAYS,
+} from "./public-content-freshness";
 
 export type PublicContentGovernanceStatus = "manual" | "ready" | "warning";
 
@@ -47,6 +51,24 @@ function countRowsMissingSourcePath(
 ) {
   return dashboard.rows.filter((row) => row.article.sourcePaths.length === 0)
     .length;
+}
+
+function countStaleSupportRows(
+  dashboard: PublicContentAdminDashboardData,
+  referenceDate: string
+) {
+  return dashboard.rows.filter((row) => {
+    const state = getPublicContentFreshnessState(
+      {
+        channel: row.article.channel,
+        reviewedAt: row.article.reviewedAt,
+        updatedAt: row.article.updatedAt,
+      },
+      { referenceDate }
+    );
+
+    return state.status === "warning";
+  }).length;
 }
 
 function hasCompleteSitemapCoverage(
@@ -113,9 +135,11 @@ function buildLaunchWeekItems(
 }
 
 function buildMonthlyItems(
-  dashboard: PublicContentAdminDashboardData
+  dashboard: PublicContentAdminDashboardData,
+  referenceDate: string
 ): PublicContentGovernanceItem[] {
   const missingSourcePathCount = countRowsMissingSourcePath(dashboard);
+  const staleSupportRowCount = countStaleSupportRows(dashboard, referenceDate);
   const titleAndDescriptionWarningCount =
     dashboard.stats.titleWarningCount +
     dashboard.stats.metaDescriptionMissingCount;
@@ -151,14 +175,13 @@ function buildMonthlyItems(
       owner: "콘텐츠 운영",
       title: "support/news/blog 근거 경로 점검",
     }),
-    {
-      evidence:
-        "오래된 support 글, 과거 news 공지, blog 기술 변경 사항은 사람이 최신 정책과 대조",
+    buildReadyWarningItem({
+      evidence: `${staleSupportRowCount}개 support 글 stale, 기준 ${PUBLIC_CONTENT_SUPPORT_REVIEW_FRESH_DAYS}일`,
       id: "content-freshness-review",
       owner: "콘텐츠 운영",
-      status: "manual",
+      isReady: staleSupportRowCount === 0,
       title: "오래된 글 최신성 점검",
-    },
+    }),
     {
       evidence:
         "Search Console query에서 노출은 높고 클릭이 낮은 글을 제목/description 후보로 기록",
@@ -230,6 +253,7 @@ export function buildPublicContentGovernanceReport(
   options: PublicContentGovernanceReportOptions = {}
 ): PublicContentGovernanceReport {
   const dashboard = options.dashboard ?? getPublicContentAdminDashboardData();
+  const generatedAt = options.generatedAt ?? new Date().toISOString();
   const sections: PublicContentGovernanceSection[] = [
     {
       id: "launch-week",
@@ -238,7 +262,7 @@ export function buildPublicContentGovernanceReport(
     },
     {
       id: "monthly",
-      items: buildMonthlyItems(dashboard),
+      items: buildMonthlyItems(dashboard, generatedAt),
       title: "월간 품질 점검",
     },
     {
@@ -249,7 +273,7 @@ export function buildPublicContentGovernanceReport(
   ];
 
   return {
-    generatedAt: options.generatedAt ?? new Date().toISOString(),
+    generatedAt,
     sections,
     summary: summarizeSections(sections, dashboard),
   };
