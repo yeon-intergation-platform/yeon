@@ -12,6 +12,7 @@ import { getPublicContentRelatedArticles } from "./public-content-related-articl
 import { PublicContentRelatedArticles } from "./public-content-related-articles-view";
 import {
   PUBLIC_CONTENT_CHANNEL_CONFIG,
+  PUBLIC_CONTENT_CHANNELS,
   buildPublicContentCanonicalUrl,
   getPublicContentArticleBySlug,
   getPublicContentArticles,
@@ -27,6 +28,16 @@ import {
   type PublicContentCollection,
 } from "./public-content-data";
 import { getPublicContentReviewDate } from "./public-content-freshness";
+import {
+  getPublicContentCategoryNavItems,
+  getPublicContentServiceNavItems,
+  isPublicContentService,
+  type PublicContentNavigationItem,
+} from "./public-content-navigation";
+import {
+  PublicContentCategoryNav,
+  PublicContentServiceNav,
+} from "./public-content-navigation-view";
 import { buildPublicContentArticleStructuredData } from "./public-content-structured-data";
 import {
   buildPublicContentTableOfContents,
@@ -78,6 +89,25 @@ function compareArticlesByDate(
   right: PublicContentArticle
 ) {
   return right.publishedAt.localeCompare(left.publishedAt);
+}
+
+function PublicContentNavigationGroup({
+  categoryItems,
+  channel,
+  serviceItems,
+}: {
+  categoryItems: readonly PublicContentNavigationItem[];
+  channel: PublicContentChannel;
+  serviceItems: readonly PublicContentNavigationItem[];
+}) {
+  if (categoryItems.length === 0 && serviceItems.length === 0) return null;
+
+  return (
+    <div className="grid gap-3 md:grid-cols-2">
+      <PublicContentServiceNav channel={channel} items={serviceItems} />
+      <PublicContentCategoryNav channel={channel} items={categoryItems} />
+    </div>
+  );
 }
 
 function getJsonLdForHome(channel: PublicContentChannel) {
@@ -459,6 +489,8 @@ export function PublicContentHome({ channel }: PublicContentHomeProps) {
   );
   const services = getPublicContentServicesForChannel(channel);
   const featuredArticle = articles[0] ?? null;
+  const serviceNavItems = getPublicContentServiceNavItems({ channel });
+  const categoryNavItems = getPublicContentCategoryNavItems({ channel });
 
   return (
     <PublicContentShell channel={channel}>
@@ -484,6 +516,13 @@ export function PublicContentHome({ channel }: PublicContentHomeProps) {
           ) : null}
         </div>
       </section>
+      <section className="mx-auto max-w-6xl px-6 pb-8 md:px-8">
+        <PublicContentNavigationGroup
+          categoryItems={categoryNavItems}
+          channel={channel}
+          serviceItems={serviceNavItems}
+        />
+      </section>
       <section className="mx-auto max-w-6xl px-6 pb-16 md:px-8">
         {services.map((service) => (
           <ServiceSection key={service} channel={channel} service={service} />
@@ -493,43 +532,20 @@ export function PublicContentHome({ channel }: PublicContentHomeProps) {
   );
 }
 
-function getChildCollections(collection: PublicContentCollection) {
-  if (collection.slugSegments.length !== 1) return [];
+function getCollectionActiveService(collection: PublicContentCollection) {
+  const [firstSegment, secondSegment] = collection.slugSegments;
+  const serviceSegment =
+    collection.channel === PUBLIC_CONTENT_CHANNELS.support
+      ? firstSegment
+      : secondSegment;
 
-  return getPublicContentCollections(collection.channel).filter(
-    (candidate) =>
-      candidate.slugSegments.length === 2 &&
-      candidate.slugSegments[0] === collection.slugSegments[0]
-  );
+  return isPublicContentService(serviceSegment) ? serviceSegment : undefined;
 }
 
-function CollectionLinks({
-  collection,
-}: {
-  collection: PublicContentCollection;
-}) {
-  const childCollections = getChildCollections(collection);
-  if (childCollections.length === 0) return null;
-
-  return (
-    <nav className="mt-8 flex flex-wrap gap-2" aria-label="하위 분류">
-      {childCollections.map((childCollection) => (
-        <PublicContentTrackedLink
-          key={childCollection.slugSegments.join("/")}
-          href={childCollection.canonicalUrl}
-          className="rounded-lg border border-[#e5e5e5] px-3 py-2 text-[13px] font-semibold text-[#666] no-underline hover:border-[#111] hover:text-[#111]"
-          trackingParams={{
-            channel: childCollection.channel,
-            link_kind: "collection_child",
-            slug: childCollection.slugSegments.join("/"),
-            target_title: childCollection.title,
-          }}
-        >
-          {childCollection.title}
-        </PublicContentTrackedLink>
-      ))}
-    </nav>
-  );
+function getCollectionActiveCategory(collection: PublicContentCollection) {
+  return collection.channel === PUBLIC_CONTENT_CHANNELS.support
+    ? collection.slugSegments[1]
+    : collection.slugSegments[0];
 }
 
 function PublicContentCollectionPage({
@@ -538,6 +554,24 @@ function PublicContentCollectionPage({
   collection: PublicContentCollection;
 }) {
   const breadcrumbItems = buildPublicContentCollectionBreadcrumb(collection);
+  const activeService = getCollectionActiveService(collection);
+  const activeCategory = getCollectionActiveCategory(collection);
+  const categoryNavItems = getPublicContentCategoryNavItems({
+    activeCategory,
+    channel: collection.channel,
+    service:
+      collection.channel === PUBLIC_CONTENT_CHANNELS.support
+        ? activeService
+        : undefined,
+  });
+  const serviceNavItems = getPublicContentServiceNavItems({
+    activeService,
+    channel: collection.channel,
+    parentCategory:
+      collection.channel === PUBLIC_CONTENT_CHANNELS.support
+        ? undefined
+        : activeCategory,
+  });
 
   return (
     <PublicContentShell channel={collection.channel}>
@@ -564,7 +598,13 @@ function PublicContentCollectionPage({
             {collection.articles.length}개 글
           </p>
         </div>
-        <CollectionLinks collection={collection} />
+      </section>
+      <section className="mx-auto max-w-6xl px-6 pb-8 md:px-8">
+        <PublicContentNavigationGroup
+          categoryItems={categoryNavItems}
+          channel={collection.channel}
+          serviceItems={serviceNavItems}
+        />
       </section>
       <section className="mx-auto grid max-w-6xl gap-4 px-6 pb-16 md:grid-cols-2 md:px-8">
         {collection.articles.map((article) => (
