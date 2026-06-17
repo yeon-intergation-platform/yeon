@@ -1,4 +1,7 @@
-import type { PublicContentArticle } from "./public-content-data";
+import {
+  PUBLIC_CONTENT_CHANNELS,
+  type PublicContentArticle,
+} from "./public-content-data";
 
 export type PublicContentTableOfContentsItem = {
   blockIndex: number;
@@ -29,4 +32,18 @@ export function buildPublicContentTableOfContents(
   });
 
   return items;
+}
+
+export function shouldShowPublicContentTableOfContents(
+  article: Pick<
+    PublicContentArticle,
+    "body" | "category" | "channel" | "readingMinutes"
+  >
+) {
+  const tableOfContents = buildPublicContentTableOfContents(article);
+  if (tableOfContents.length === 0) return false;
+
+  if (article.channel !== PUBLIC_CONTENT_CHANNELS.blog) return true;
+
+  return article.category === "engineering" && article.readingMinutes >= 4;
 }

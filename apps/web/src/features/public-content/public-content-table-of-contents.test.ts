@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { buildPublicContentTableOfContents } from "./public-content-table-of-contents";
+import {
+  buildPublicContentTableOfContents,
+  shouldShowPublicContentTableOfContents,
+} from "./public-content-table-of-contents";
 import type { PublicContentArticle } from "./public-content-data";
 
 function buildArticle(
@@ -53,5 +56,63 @@ describe("public content table of contents", () => {
         buildArticle([{ text: "본문만 있는 글", type: "paragraph" }])
       )
     ).toEqual([]);
+  });
+
+  it("blog 목차는 긴 engineering 글에만 기본 노출한다", () => {
+    const body = [{ title: "결정 근거", type: "heading" }] as const;
+
+    expect(
+      shouldShowPublicContentTableOfContents({
+        body,
+        category: "engineering",
+        channel: "blog",
+        readingMinutes: 4,
+      })
+    ).toBe(true);
+    expect(
+      shouldShowPublicContentTableOfContents({
+        body,
+        category: "essay",
+        channel: "blog",
+        readingMinutes: 4,
+      })
+    ).toBe(false);
+    expect(
+      shouldShowPublicContentTableOfContents({
+        body,
+        category: "product",
+        channel: "blog",
+        readingMinutes: 5,
+      })
+    ).toBe(false);
+    expect(
+      shouldShowPublicContentTableOfContents({
+        body,
+        category: "engineering",
+        channel: "blog",
+        readingMinutes: 3,
+      })
+    ).toBe(false);
+  });
+
+  it("support와 news는 기존처럼 heading이 있으면 목차를 노출한다", () => {
+    const body = [{ title: "확인", type: "heading" }] as const;
+
+    expect(
+      shouldShowPublicContentTableOfContents({
+        body,
+        category: "guides",
+        channel: "support",
+        readingMinutes: 2,
+      })
+    ).toBe(true);
+    expect(
+      shouldShowPublicContentTableOfContents({
+        body,
+        category: "notice",
+        channel: "news",
+        readingMinutes: 2,
+      })
+    ).toBe(true);
   });
 });

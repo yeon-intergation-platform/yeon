@@ -8,6 +8,8 @@ import {
 } from "./public-content-breadcrumb";
 import { PublicContentBreadcrumb } from "./public-content-breadcrumb-view";
 import { PublicContentArticleCard } from "./public-content-article-card";
+import { getPublicContentBlogDetailModel } from "./public-content-blog-detail";
+import { PublicContentBlogArticleContextPanel } from "./public-content-blog-detail-view";
 import { getPublicContentBlogHomeModel } from "./public-content-blog-home";
 import { PublicContentBlogHomePriority } from "./public-content-blog-home-view";
 import { PublicContentBlockView } from "./public-content-block-view";
@@ -61,6 +63,7 @@ import {
 } from "./public-content-support-home-view";
 import {
   buildPublicContentTableOfContents,
+  shouldShowPublicContentTableOfContents,
   type PublicContentTableOfContentsItem,
 } from "./public-content-table-of-contents";
 import { PublicContentTrackedLink } from "./public-content-tracked-link";
@@ -102,6 +105,26 @@ function buildCtaHref(article: PublicContentArticle) {
 
 function getArticleSlug(article: PublicContentArticle) {
   return article.slugSegments.join("/");
+}
+
+function getArticleContainerClassName(article: PublicContentArticle) {
+  if (article.channel === PUBLIC_CONTENT_CHANNELS.blog) {
+    return "mx-auto max-w-5xl px-6 py-12 md:px-8 md:py-16";
+  }
+
+  return "mx-auto max-w-4xl px-6 py-12 md:px-8 md:py-16";
+}
+
+function getArticleBodyClassName(article: PublicContentArticle) {
+  if (article.channel === PUBLIC_CONTENT_CHANNELS.support) {
+    return "min-w-0 max-w-[760px] space-y-7";
+  }
+
+  if (article.channel === PUBLIC_CONTENT_CHANNELS.blog) {
+    return "min-w-0 max-w-[820px] space-y-8";
+  }
+
+  return "min-w-0 space-y-7";
 }
 
 function compareArticlesByDate(
@@ -652,7 +675,10 @@ export async function PublicContentArticlePage({
 
   const relatedArticles = getPublicContentRelatedArticles(article);
   const ctaHref = buildCtaHref(article);
-  const tableOfContents = buildPublicContentTableOfContents(article);
+  const blogDetailModel = getPublicContentBlogDetailModel(article);
+  const tableOfContents = shouldShowPublicContentTableOfContents(article)
+    ? buildPublicContentTableOfContents(article)
+    : [];
   const hasTableOfContents = tableOfContents.length > 0;
   const headingIdByBlockIndex = new Map(
     tableOfContents.map((item) => [item.blockIndex, item.id])
@@ -667,7 +693,7 @@ export async function PublicContentArticlePage({
         id={`${article.channel}-${article.slugSegments.join("-")}-jsonld`}
         data={buildPublicContentArticleStructuredData(article)}
       />
-      <article className="mx-auto max-w-4xl px-6 py-12 md:px-8 md:py-16">
+      <article className={getArticleContainerClassName(article)}>
         <PublicContentBreadcrumb
           category={article.category}
           channel={article.channel}
@@ -694,6 +720,10 @@ export async function PublicContentArticlePage({
         <p className="mt-5 max-w-[760px] text-[17px] leading-8 text-[#666]">
           {article.description}
         </p>
+        <PublicContentBlogArticleContextPanel
+          article={article}
+          model={blogDetailModel}
+        />
         <PublicContentNewsArticleContextPanel article={article} />
         <PublicContentNewsDetailSections article={article} />
         <PublicContentSupportActionSummary items={supportPrimaryActionItems} />
@@ -717,13 +747,7 @@ export async function PublicContentArticlePage({
                 variant="desktop"
               />
             ) : null}
-            <div
-              className={
-                article.channel === PUBLIC_CONTENT_CHANNELS.support
-                  ? "min-w-0 max-w-[760px] space-y-7"
-                  : "min-w-0 space-y-7"
-              }
-            >
+            <div className={getArticleBodyClassName(article)}>
               {article.body.map((block, index) => (
                 <PublicContentBlockView
                   key={index}
