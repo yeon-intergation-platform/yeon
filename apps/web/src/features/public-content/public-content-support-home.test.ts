@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { getPublicContentSupportHomeProblemEntries } from "./public-content-support-home";
+import {
+  getPublicContentSupportHomeProblemEntries,
+  getPublicContentSupportHomeServiceEntries,
+} from "./public-content-support-home";
 
 describe("public content support home", () => {
   it("support 홈 주요 문제 진입은 실제 공개 support 글만 우선순위대로 만든다", () => {
@@ -36,5 +39,23 @@ describe("public content support home", () => {
     expect(
       getPublicContentSupportHomeProblemEntries({ limit: 0 })
     ).toHaveLength(0);
+  });
+
+  it("support 홈 서비스 진입 카드는 실제 서비스 collection을 2/3열 UI에 넘길 데이터로 만든다", () => {
+    const entries = getPublicContentSupportHomeServiceEntries();
+
+    expect(entries.map((entry) => entry.service)).toEqual([
+      "nexa",
+      "typing",
+      "card",
+      "community",
+      "account",
+    ]);
+    expect(entries[0]).toMatchObject({
+      href: "https://support.yeon.world/nexa",
+      label: "NEXA",
+    });
+    expect(entries.every((entry) => entry.articleCount > 0)).toBe(true);
+    expect(entries.every((entry) => entry.description.length > 0)).toBe(true);
   });
 });

@@ -39,8 +39,14 @@ import {
   PublicContentServiceNav,
 } from "./public-content-navigation-view";
 import { buildPublicContentArticleStructuredData } from "./public-content-structured-data";
-import { getPublicContentSupportHomeProblemEntries } from "./public-content-support-home";
-import { PublicContentSupportHomeProblemEntries } from "./public-content-support-home-view";
+import {
+  getPublicContentSupportHomeProblemEntries,
+  getPublicContentSupportHomeServiceEntries,
+} from "./public-content-support-home";
+import {
+  PublicContentSupportHomeProblemEntries,
+  PublicContentSupportHomeServiceEntries,
+} from "./public-content-support-home-view";
 import {
   buildPublicContentTableOfContents,
   type PublicContentTableOfContentsItem,
@@ -427,6 +433,10 @@ export function PublicContentHome({ channel }: PublicContentHomeProps) {
     channel === PUBLIC_CONTENT_CHANNELS.support
       ? getPublicContentSupportHomeProblemEntries()
       : [];
+  const supportServiceEntries =
+    channel === PUBLIC_CONTENT_CHANNELS.support
+      ? getPublicContentSupportHomeServiceEntries()
+      : [];
 
   return (
     <PublicContentShell channel={channel}>
@@ -457,13 +467,19 @@ export function PublicContentHome({ channel }: PublicContentHomeProps) {
           entries={supportProblemEntries}
         />
       ) : null}
-      <section className="mx-auto max-w-6xl px-6 pb-8 md:px-8">
-        <PublicContentNavigationGroup
-          categoryItems={categoryNavItems}
-          channel={channel}
-          serviceItems={serviceNavItems}
+      {channel === PUBLIC_CONTENT_CHANNELS.support ? (
+        <PublicContentSupportHomeServiceEntries
+          entries={supportServiceEntries}
         />
-      </section>
+      ) : (
+        <section className="mx-auto max-w-6xl px-6 pb-8 md:px-8">
+          <PublicContentNavigationGroup
+            categoryItems={categoryNavItems}
+            channel={channel}
+            serviceItems={serviceNavItems}
+          />
+        </section>
+      )}
       <section className="mx-auto max-w-6xl px-6 pb-16 md:px-8">
         {services.map((service) => (
           <ServiceSection key={service} channel={channel} service={service} />
@@ -613,7 +629,7 @@ export async function PublicContentArticlePage({
         <h1 className="mt-4 text-[36px] font-semibold leading-tight text-[#111] md:text-[48px]">
           {article.title}
         </h1>
-        <p className="mt-5 max-w-3xl text-[17px] leading-8 text-[#666]">
+        <p className="mt-5 max-w-[760px] text-[17px] leading-8 text-[#666]">
           {article.description}
         </p>
         <div className="mt-8 border-t border-[#e5e5e5] pt-8">
@@ -636,7 +652,13 @@ export async function PublicContentArticlePage({
                 variant="desktop"
               />
             ) : null}
-            <div className="min-w-0 space-y-7">
+            <div
+              className={
+                article.channel === PUBLIC_CONTENT_CHANNELS.support
+                  ? "min-w-0 max-w-[760px] space-y-7"
+                  : "min-w-0 space-y-7"
+              }
+            >
               {article.body.map((block, index) => (
                 <PublicContentBlockView
                   key={index}
