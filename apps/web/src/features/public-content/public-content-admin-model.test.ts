@@ -65,6 +65,7 @@ describe("public content admin model", () => {
     expect(stats.publishedCount).toBe(stats.articleCount);
     expect(stats.draftCount).toBe(0);
     expect(stats.seoWarningCount).toBe(0);
+    expect(stats.titleWarningCount).toBe(0);
     expect(stats.sitemapUrlCount).toBe(
       stats.articleCount +
         stats.channelCount +
@@ -89,6 +90,7 @@ describe("public content admin model", () => {
       "robots-links",
       "ga4-events",
       "seo-warning-queue",
+      "title-quality",
       "source-path-traceability",
     ]);
     expect(checklistById.get("domain-search-console")?.status).toBe("manual");
@@ -97,6 +99,7 @@ describe("public content admin model", () => {
     expect(checklistById.get("robots-links")?.status).toBe("ready");
     expect(checklistById.get("ga4-events")?.value).toBe("G-YGRNS3PQBQ");
     expect(checklistById.get("seo-warning-queue")?.status).toBe("ready");
+    expect(checklistById.get("title-quality")?.status).toBe("ready");
   });
 
   it("허용된 공개 콘텐츠 채널만 admin route로 인정한다", () => {
@@ -142,7 +145,7 @@ describe("public content admin model", () => {
           serviceKey: "nexa",
           category: "faq",
           slug: "nexa/faq/free-plan-limit",
-          title: "NEXA 무료 플랜에서는 무엇까지 사용할 수 있나요?",
+          title: "가이드",
           description: "설명입니다.",
           summary: "요약입니다.",
           canonicalUrl: "https://support.yeon.world/nexa/faq/free-plan-limit",
@@ -186,7 +189,8 @@ describe("public content admin model", () => {
     expect(dashboard.stats.draftCount).toBe(1);
     expect(dashboard.stats.noindexCount).toBe(1);
     expect(dashboard.stats.metaDescriptionMissingCount).toBe(1);
-    expect(dashboard.stats.seoWarningCount).toBe(2);
+    expect(dashboard.stats.seoWarningCount).toBe(6);
+    expect(dashboard.stats.titleWarningCount).toBe(4);
     expect(
       dashboard.opsChecklist.find((item) => item.id === "sitemap-coverage")
         ?.status
@@ -209,9 +213,13 @@ describe("public content admin model", () => {
     expect(dashboard.rows[1].seoWarnings).toEqual([
       "noindex",
       "meta description 누락",
+      "title generic",
+      "title 너무 짧음",
+      "title 서비스 단서 누락",
+      "title 검색 행동/문제 표현 누락",
     ]);
     expect(dashboard.summaries[0].statusCounts.draft).toBe(1);
-    expect(dashboard.summaries[0].seoWarningCount).toBe(2);
+    expect(dashboard.summaries[0].seoWarningCount).toBe(6);
   });
 
   it("Spring admin DTO에서 채널 화면 데이터를 분리한다", () => {

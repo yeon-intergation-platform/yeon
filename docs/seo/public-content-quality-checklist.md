@@ -10,6 +10,7 @@
 
 - 글 하나는 하나의 검색 의도나 운영 사실만 다룬다.
 - 제목, description, canonical, Open Graph, structured data가 비어 있지 않다.
+- 제목은 `public-content:audit`의 제목 품질 규칙을 통과한다.
 - slug는 영문 소문자 kebab-case로 쓴다.
 - 본문 첫 화면에서 이 글이 어떤 문제를 해결하는지 바로 알 수 있다.
 - 본문은 실제 서비스 동작, repo 문서, 코드 경로, 운영 정책 중 하나 이상을 근거로 한다.
@@ -23,7 +24,7 @@
 
 ## 제목 작성 원칙
 
-좋은 제목은 사용자가 Google에 입력할 문장과 가깝고, 서비스명과 문제를 함께 드러낸다.
+상세 기준은 [공개 콘텐츠 제목 작성 원칙](./public-content-title-guidelines.md)을 따른다. 좋은 제목은 사용자가 Google에 입력할 문장과 가깝고, 서비스명과 문제를 함께 드러낸다.
 
 좋은 제목:
 
@@ -92,3 +93,4 @@
 - 이후에는 월 1회 색인 제외, 404, canonical mismatch, sitemap 실패를 확인한다.
 - 노출은 높고 클릭이 낮은 글은 title과 description을 먼저 개선한다.
 - 클릭은 있는데 전환이 낮은 support 글은 CTA 문구와 위치를 점검한다.
+- `/admin/content`의 `Title quality`와 `SEO warning queue`가 0인지 확인한다.

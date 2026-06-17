@@ -16,6 +16,7 @@ import {
   type PublicContentArticle,
   type PublicContentChannel,
 } from "./public-content-data";
+import { getPublicContentTitleQualityWarnings } from "./public-content-title-quality";
 import { GA4_REPORTS_URL, GA_MEASUREMENT_ID } from "@/lib/analytics-constants";
 
 type PublicContentAdminArticleView = {
@@ -87,6 +88,7 @@ export type PublicContentAdminDashboardStats = {
   sitemapUrlCount: number;
   sourcePathCount: number;
   statusCounts: Record<PublicContentStatus, number>;
+  titleWarningCount: number;
   lastUpdatedAt: string | null;
 };
 
@@ -276,6 +278,13 @@ function getSeoWarnings(params: {
   if (!params.article.canonicalUrl.trim()) {
     warnings.push("canonical 누락");
   }
+  warnings.push(
+    ...getPublicContentTitleQualityWarnings({
+      channel: params.article.channel,
+      serviceKey: params.article.serviceKey,
+      title: params.article.title,
+    })
+  );
   if (
     params.article.status === "published" &&
     params.article.visibility === "public" &&
@@ -457,6 +466,12 @@ function buildPublicContentAdminDashboardStatsFromViews(
     sitemapUrlCount: getSitemapUrlSet(sitemapEntries).size,
     sourcePathCount: sourcePaths.size,
     statusCounts,
+    titleWarningCount: rows.reduce(
+      (count, row) =>
+        count +
+        row.seoWarnings.filter((warning) => warning.startsWith("title")).length,
+      0
+    ),
     lastUpdatedAt: getLastUpdatedAt(articles),
   };
 }
@@ -522,9 +537,16 @@ function buildPublicContentAdminOpsChecklist(params: {
     {
       id: "seo-warning-queue",
       label: "SEO warning queue",
-      note: "noindex, meta description, canonical, sitemap 누락 경고 수입니다.",
+      note: "noindex, meta description, canonical, sitemap, title 품질 경고 수입니다.",
       status: params.stats.seoWarningCount === 0 ? "ready" : "warning",
       value: `${params.stats.seoWarningCount}개`,
+    },
+    {
+      id: "title-quality",
+      label: "Title quality",
+      note: "검색 의도와 서비스 단서가 부족한 제목을 공개 전 점검합니다.",
+      status: params.stats.titleWarningCount === 0 ? "ready" : "warning",
+      value: `${params.stats.titleWarningCount}개`,
     },
     {
       id: "source-path-traceability",
