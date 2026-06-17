@@ -38,8 +38,9 @@ describe("public content navigation", () => {
       "가이드",
       "문제 해결",
       "FAQ",
+      "정책",
     ]);
-    expect(items.at(-1)).toMatchObject({
+    expect(items.find((item) => item.key === "nexa/faq")).toMatchObject({
       active: true,
       href: "https://support.yeon.world/nexa/faq",
       key: "nexa/faq",

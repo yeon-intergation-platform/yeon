@@ -32,7 +32,7 @@ export function PublicContentArticleCard({
         target_title: article.title,
       }}
     >
-      <div className="flex flex-wrap gap-2 text-[12px] font-semibold text-[#aaa]">
+      <div className="flex flex-wrap gap-2 text-[12px] font-semibold text-[#555]">
         {getPublicContentArticleCardMetaItems(article).map((item, index) => (
           <span key={`${item}-${index}`} className="contents">
             {index > 0 ? <span aria-hidden="true">/</span> : null}

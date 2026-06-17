@@ -21,7 +21,7 @@ export function PublicContentNotFound({
   return (
     <main className="min-h-screen bg-white text-[#111]">
       <section className="mx-auto max-w-5xl px-6 py-16 md:px-8 md:py-24">
-        <p className="text-[13px] font-semibold text-[#aaa]">{config.label}</p>
+        <p className="text-[13px] font-semibold text-[#555]">{config.label}</p>
         <h1 className="mt-4 text-[36px] font-semibold leading-tight text-[#111] md:text-[48px]">
           문서를 찾지 못했습니다
         </h1>

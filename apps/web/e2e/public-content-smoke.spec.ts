@@ -4,6 +4,7 @@ import {
   type APIRequestContext,
   type Page,
 } from "@playwright/test";
+import AxeBuilder from "@axe-core/playwright";
 
 type StructuredDataExpectation = {
   expectedType: string;
@@ -205,6 +206,9 @@ const PUBLIC_CONTENT_VIEWPORT_CASES = [
   },
 ] as const;
 
+const DRAFT_LIKE_PUBLIC_PATH =
+  "/support/draft/support-nexa-guides-add-nexa-discord-bot";
+
 function normalizeUrl(rawUrl: string | null) {
   expect(rawUrl).toBeTruthy();
   return new URL(rawUrl ?? "").toString();
@@ -227,32 +231,22 @@ async function expectMetaDescription(page: Page, descriptionIncludes: string) {
 }
 
 async function getStructuredDataItems(page: Page) {
-  return page
+  const parsedItems = await page
     .locator('script[type="application/ld+json"]')
     .evaluateAll((nodes) =>
       nodes.map((node) => JSON.parse(node.textContent ?? "{}"))
     );
+
+  return flattenStructuredDataItems(parsedItems);
 }
 
 async function expectStructuredData(
   page: Page,
-  { expectedType, expectedName }: StructuredDataExpectation
+  expectation: StructuredDataExpectation
 ) {
   const structuredDataItems = await getStructuredDataItems(page);
 
-  expect(structuredDataItems).toEqual(
-    expect.arrayContaining([
-      expect.objectContaining({
-        "@type": expectedType,
-      }),
-    ])
-  );
-
-  const targetItem = structuredDataItems.find(
-    (item) => item["@type"] === expectedType
-  );
-
-  expect(targetItem?.name ?? targetItem?.headline).toBe(expectedName);
+  expectStructuredDataItems(structuredDataItems, expectation);
 }
 
 function getHtmlAttribute(tag: string, attributeName: string) {
@@ -288,17 +282,33 @@ function getTitleFromHtml(html: string) {
 }
 
 function getStructuredDataItemsFromHtml(html: string) {
-  return [
+  const parsedItems = [
     ...html.matchAll(
       /<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/g
     ),
   ].map((match) => JSON.parse(match[1] ?? "{}"));
+
+  return flattenStructuredDataItems(parsedItems);
 }
 
 function getSitemapLocations(sitemapXml: string) {
   return [...sitemapXml.matchAll(/<loc>([^<]+)<\/loc>/g)].map(
     (match) => match[1]
   );
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function flattenStructuredDataItems(items: unknown[]) {
+  return items.flatMap((item) => {
+    if (!isRecord(item) || !Array.isArray(item["@graph"])) {
+      return [item];
+    }
+
+    return [item, ...item["@graph"]];
+  });
 }
 
 function expectPublicHtmlMetadata({
@@ -384,11 +394,17 @@ async function getWithHost(
   host: string,
   path: string
 ) {
-  return request.get(path, {
+  const parsedPath = new URL(path, "http://localhost:3000");
+  const localUrl = new URL("http://localhost:3000");
+  localUrl.pathname = parsedPath.pathname;
+  localUrl.search = parsedPath.search;
+
+  return request.get(localUrl.toString(), {
     headers: {
       Host: host,
       "x-forwarded-host": host,
     },
+    maxRedirects: 0,
   });
 }
 
@@ -410,6 +426,25 @@ async function readAnalyticsEvents(page: Page) {
     const analyticsWindow = window as AnalyticsWindow;
 
     return analyticsWindow.__yeonAnalyticsEvents ?? [];
+  });
+}
+
+async function getActiveElementSnapshot(page: Page) {
+  return page.evaluate(() => {
+    const element = document.activeElement;
+
+    if (!(element instanceof HTMLElement)) {
+      return null;
+    }
+
+    const rect = element.getBoundingClientRect();
+    return {
+      tagName: element.tagName,
+      text: element.innerText.trim(),
+      href: element instanceof HTMLAnchorElement ? element.href : null,
+      width: rect.width,
+      height: rect.height,
+    };
   });
 }
 
@@ -537,6 +572,84 @@ test.describe("public content SEO smoke", () => {
       await expectNoHorizontalOverflow(page);
     });
   }
+
+  test("draft-like public URL returns 404 without auth redirect", async ({
+    page,
+  }) => {
+    const response = await page.goto(DRAFT_LIKE_PUBLIC_PATH);
+
+    expect(response?.status()).toBe(404);
+    await expect(page).not.toHaveURL(/login=1|auth\/login/);
+  });
+
+  test("public content home supports keyboard focus movement", async ({
+    page,
+  }) => {
+    await page.goto("/support");
+
+    const focusSnapshots = [];
+    for (let index = 0; index < 6; index += 1) {
+      await page.keyboard.press("Tab");
+      focusSnapshots.push(await getActiveElementSnapshot(page));
+    }
+
+    const visibleFocusTargets = focusSnapshots.filter(
+      (snapshot) =>
+        Boolean(snapshot?.href) &&
+        (snapshot?.width ?? 0) > 0 &&
+        (snapshot?.height ?? 0) > 0
+    );
+
+    expect(
+      new Set(
+        visibleFocusTargets.map(
+          (snapshot) =>
+            snapshot?.href ?? `${snapshot?.tagName}:${snapshot?.text}`
+        )
+      ).size
+    ).toBeGreaterThanOrEqual(2);
+  });
+
+  test("public content home has no color contrast violations", async ({
+    page,
+  }) => {
+    await page.goto("/support");
+
+    const results = await new AxeBuilder({ page })
+      .withRules(["color-contrast"])
+      .analyze();
+
+    expect(results.violations).toEqual([]);
+  });
+
+  test("public content article avoids oversized eager images", async ({
+    page,
+  }) => {
+    await page.goto("/support/nexa/guides/add-nexa-discord-bot");
+
+    const images = await page.locator("img").evaluateAll((nodes) =>
+      nodes.map((node) => {
+        const image = node as HTMLImageElement;
+        const rect = image.getBoundingClientRect();
+
+        return {
+          loading: image.loading,
+          naturalHeight: image.naturalHeight,
+          naturalWidth: image.naturalWidth,
+          renderedArea: rect.width * rect.height,
+        };
+      })
+    );
+
+    expect(
+      images.every(
+        (image) =>
+          image.naturalWidth <= 2400 &&
+          image.naturalHeight <= 2400 &&
+          (image.loading === "lazy" || image.renderedArea <= 640000)
+      )
+    ).toBe(true);
+  });
 
   test("article body width stays readable on desktop", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 960 });
