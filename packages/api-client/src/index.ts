@@ -101,8 +101,6 @@ import {
   type UpsertLifeOsDayBody,
 } from "@yeon/api-contract/life-os";
 import {
-  archivePublicContentArticleBodySchema,
-  createPublicContentArticleBodySchema,
   PUBLIC_CONTENT_API_PATHS,
   publicContentAdminArticleListResponseSchema,
   publicContentAdminArticleResponseSchema,
@@ -113,15 +111,9 @@ import {
   publicContentListQuerySchema,
   publicContentSlugSchema,
   publicContentSitemapResponseSchema,
-  publishPublicContentArticleBodySchema,
-  updatePublicContentArticleBodySchema,
-  type ArchivePublicContentArticleBody,
-  type CreatePublicContentArticleBody,
   type PublicContentAdminListQuery,
   type PublicContentChannel,
   type PublicContentListQuery,
-  type PublishPublicContentArticleBody,
-  type UpdatePublicContentArticleBody,
 } from "@yeon/api-contract/public-content";
 import {
   createUserResponseSchema,
@@ -723,76 +715,14 @@ export function createApiClient(options: ApiClientOptions = {}) {
         },
       });
     },
-    createPublicContentArticle(
-      body: CreatePublicContentArticleBody,
-      sessionToken?: string
-    ) {
-      const parsedBody = createPublicContentArticleBodySchema.parse(body);
-
-      return request({
-        path: PUBLIC_CONTENT_API_PATHS.adminList,
-        schema: publicContentAdminArticleResponseSchema,
-        init: {
-          method: "POST",
-          headers: createAuthSessionHeaders(sessionToken),
-          body: JSON.stringify(parsedBody),
-        },
-      });
-    },
-    updatePublicContentArticle(
-      articleId: string,
-      body: UpdatePublicContentArticleBody,
-      sessionToken?: string
-    ) {
-      const parsedBody = updatePublicContentArticleBodySchema.parse(body);
-
+    getAdminPublicContentArticle(articleId: string, sessionToken?: string) {
       return request({
         path: PUBLIC_CONTENT_API_PATHS.adminArticle(
           encodeURIComponent(articleId)
         ),
         schema: publicContentAdminArticleResponseSchema,
         init: {
-          method: "PATCH",
           headers: createAuthSessionHeaders(sessionToken),
-          body: JSON.stringify(parsedBody),
-        },
-      });
-    },
-    publishPublicContentArticle(
-      articleId: string,
-      body: PublishPublicContentArticleBody = {},
-      sessionToken?: string
-    ) {
-      const parsedBody = publishPublicContentArticleBodySchema.parse(body);
-
-      return request({
-        path: PUBLIC_CONTENT_API_PATHS.adminPublish(
-          encodeURIComponent(articleId)
-        ),
-        schema: publicContentAdminArticleResponseSchema,
-        init: {
-          method: "POST",
-          headers: createAuthSessionHeaders(sessionToken),
-          body: JSON.stringify(parsedBody),
-        },
-      });
-    },
-    archivePublicContentArticle(
-      articleId: string,
-      body: ArchivePublicContentArticleBody = {},
-      sessionToken?: string
-    ) {
-      const parsedBody = archivePublicContentArticleBodySchema.parse(body);
-
-      return request({
-        path: PUBLIC_CONTENT_API_PATHS.adminArchive(
-          encodeURIComponent(articleId)
-        ),
-        schema: publicContentAdminArticleResponseSchema,
-        init: {
-          method: "POST",
-          headers: createAuthSessionHeaders(sessionToken),
-          body: JSON.stringify(parsedBody),
         },
       });
     },

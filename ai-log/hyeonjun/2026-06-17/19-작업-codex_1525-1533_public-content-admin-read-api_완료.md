@@ -1,0 +1,24 @@
+# 공개 콘텐츠 admin 읽기 API
+
+- 시작: 2026-06-17 15:25 KST
+- 워크트리: `/Users/osuma/coding_stuffs/yeon-4`
+- 브랜치: `feat/public-content-channel-canon-20260617`
+- 목표: `support/news/blog` 최종 채널 정책을 문서에 고정하고, Spring에 읽기 전용 공개 콘텐츠 admin API를 추가한다.
+- 제한:
+  - 상담 워크스페이스는 제외한다.
+  - admin 1차 범위는 수정/삭제/발행이 아니라 읽기 전용 관제다.
+  - 공개 public API의 색인 조건은 유지한다.
+- 검증 계획:
+  - `cd apps/backend && ./gradlew test --rerun-tasks --tests '*PublicContent*'` 통과
+  - `pnpm --filter @yeon/api-contract test -- public-content` 통과
+  - `pnpm --filter @yeon/api-contract lint` 통과
+  - `pnpm --filter @yeon/api-contract typecheck` 통과
+  - `pnpm --filter @yeon/api-client lint` 통과
+  - `pnpm --filter @yeon/api-client typecheck` 통과
+  - `git diff --check` 통과
+  - `/opt/homebrew/bin/bash bin/sync-skills.sh --check` 통과
+  - `/opt/homebrew/bin/bash bin/verify-ssot.sh --project-only` 통과 (`yeon` 기본 워크트리에서 실행)
+- 결과:
+  - Spring `/api/v1/admin/content`와 `/api/v1/admin/content/{articleId}` 읽기 API를 추가했다.
+  - admin API와 typed client에서 create/update/publish/archive surface를 제외했다.
+  - 정책 문서와 500단계 계획을 `news/blog/support` 최종 구조와 admin 읽기 전용 기준에 맞췄다.

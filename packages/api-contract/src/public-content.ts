@@ -195,6 +195,7 @@ export type PublicContentArticleDetailDto = z.infer<
 export const publicContentAdminArticleDtoSchema =
   publicContentArticleDetailDtoSchema.extend({
     id: z.string().min(1).max(80),
+    publishedAt: z.string().datetime().nullable(),
     status: publicContentStatusSchema,
     visibility: publicContentVisibilitySchema,
     noindex: z.boolean().default(false),
@@ -255,88 +256,6 @@ export type PublicContentAdminArticleResponse = z.infer<
   typeof publicContentAdminArticleResponseSchema
 >;
 
-const publicContentArticleMutationBaseSchema = z.object({
-  channel: publicContentChannelSchema,
-  serviceKey: publicContentServiceKeySchema,
-  category: publicContentCategorySchema,
-  slug: publicContentSlugSchema,
-  title: z.string().trim().min(1).max(160),
-  description: z.string().trim().min(1).max(240),
-  summary: z.string().trim().min(1).max(320),
-  bodyFormat: publicContentBodyFormatSchema.default(
-    PUBLIC_CONTENT_BODY_FORMATS.markdown
-  ),
-  bodyMarkdown: z.string().trim().min(1).max(120000),
-  visibility: publicContentVisibilitySchema.default(
-    PUBLIC_CONTENT_VISIBILITY.public
-  ),
-  noindex: z.boolean().default(false),
-  metaTitle: z.string().trim().min(1).max(180).nullable().optional(),
-  metaDescription: z.string().trim().min(1).max(260).nullable().optional(),
-  ogImageUrl: publicContentOptionalUrlSchema.optional(),
-  ctaLabel: z.string().trim().min(1).max(80).nullable().optional(),
-  ctaHref: publicContentCtaHrefSchema.optional(),
-  authorKey: z.string().trim().min(1).max(80).default("yeon"),
-  sourceRepo: z.string().trim().min(1).max(160).nullable().optional(),
-  sourcePaths: z.array(z.string().trim().min(1).max(2048)).default([]),
-});
-
-export const createPublicContentArticleBodySchema =
-  publicContentArticleMutationBaseSchema.extend({
-    status: publicContentStatusSchema.default(PUBLIC_CONTENT_STATUSES.draft),
-  });
-export type CreatePublicContentArticleBody = z.infer<
-  typeof createPublicContentArticleBodySchema
->;
-
-const publicContentArticleUpdateFieldsSchema = z.object({
-  channel: publicContentChannelSchema.optional(),
-  serviceKey: publicContentServiceKeySchema.optional(),
-  category: publicContentCategorySchema.optional(),
-  slug: publicContentSlugSchema.optional(),
-  title: z.string().trim().min(1).max(160).optional(),
-  description: z.string().trim().min(1).max(240).optional(),
-  summary: z.string().trim().min(1).max(320).optional(),
-  bodyFormat: publicContentBodyFormatSchema.optional(),
-  bodyMarkdown: z.string().trim().min(1).max(120000).optional(),
-  visibility: publicContentVisibilitySchema.optional(),
-  noindex: z.boolean().optional(),
-  metaTitle: z.string().trim().min(1).max(180).nullable().optional(),
-  metaDescription: z.string().trim().min(1).max(260).nullable().optional(),
-  ogImageUrl: publicContentOptionalUrlSchema.optional(),
-  ctaLabel: z.string().trim().min(1).max(80).nullable().optional(),
-  ctaHref: publicContentCtaHrefSchema.optional(),
-  authorKey: z.string().trim().min(1).max(80).optional(),
-  sourceRepo: z.string().trim().min(1).max(160).nullable().optional(),
-  sourcePaths: z.array(z.string().trim().min(1).max(2048)).optional(),
-});
-
-export const updatePublicContentArticleBodySchema =
-  publicContentArticleUpdateFieldsSchema.refine(
-    (value) =>
-      Object.values(value).some((fieldValue) => fieldValue !== undefined),
-    {
-      message: "수정할 공개 콘텐츠 필드가 필요합니다.",
-    }
-  );
-export type UpdatePublicContentArticleBody = z.infer<
-  typeof updatePublicContentArticleBodySchema
->;
-
-export const publishPublicContentArticleBodySchema = z.object({
-  publishedAt: z.string().datetime().optional(),
-});
-export type PublishPublicContentArticleBody = z.infer<
-  typeof publishPublicContentArticleBodySchema
->;
-
-export const archivePublicContentArticleBodySchema = z.object({
-  redirectTo: publicContentOptionalUrlSchema.optional(),
-});
-export type ArchivePublicContentArticleBody = z.infer<
-  typeof archivePublicContentArticleBodySchema
->;
-
 export const PUBLIC_CONTENT_API_PATHS = {
   publicList: "/api/v1/content",
   publicArticle(channel: PublicContentChannel, slug: string) {
@@ -348,11 +267,5 @@ export const PUBLIC_CONTENT_API_PATHS = {
   adminList: "/api/v1/admin/content",
   adminArticle(articleId: string) {
     return `/api/v1/admin/content/${articleId}`;
-  },
-  adminPublish(articleId: string) {
-    return `/api/v1/admin/content/${articleId}/publish`;
-  },
-  adminArchive(articleId: string) {
-    return `/api/v1/admin/content/${articleId}/archive`;
   },
 } as const;

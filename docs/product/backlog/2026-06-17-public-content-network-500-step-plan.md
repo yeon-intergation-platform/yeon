@@ -12,8 +12,8 @@
 - 디자인은 `https://yeon.world/`의 차분한 흰 배경, 절제된 타이포그래피, 정적인 카드/리스트 톤을 따른다.
 - 글은 Yeon repo와 discord-assistant repo의 실제 기능, 문서, 정책을 근거로 작성한다.
 - support 글은 사용자가 그대로 따라 할 수 있는 단계형 문서로 작성한다.
-- `yeon.world/admin`은 전체 운영 현황, 발행 상태, SEO 상태, 서비스별 콘텐츠 큐를 관리한다.
-- 본문 수정/삭제는 초기에는 공개 페이지의 관리자 모드에서 처리하고, admin은 운영 관제와 생성/발행 보조에 집중한다.
+- `yeon.world/admin`은 전체 운영 현황, 발행 상태, SEO 상태, 서비스별 콘텐츠 큐를 읽기 전용으로 관제한다.
+- 본문 수정/삭제/발행은 초기 admin 범위에서 제외하고, 공개 페이지 관리자 모드나 별도 CMS는 이후 차수에서 별도로 결정한다.
 
 ## 현재 근거
 
@@ -99,13 +99,13 @@
 41. `news.yeon.world/notice/card`를 카드 공지 분류로 둔다.
 42. `news.yeon.world/notice/community`를 커뮤니티 공지 분류로 둔다.
 43. `news.yeon.world/updates`를 제품 변경사항 루트로 둔다.
-44. `news.yeon.world/updates/nexa`를 NEXA 업데이트 분류로 둔다.
-45. `news.yeon.world/updates/typing`을 타자 업데이트 분류로 둔다.
-46. `news.yeon.world/news`를 업계 뉴스 해설 루트로 둔다.
+44. `news.yeon.world/updates/nexa`, `/typing`, `/card`, `/community`를 서비스별 업데이트 분류로 둔다.
+45. `news.yeon.world/news`를 업계 뉴스 해설 루트로 둔다.
+46. `news.yeon.world/news/ai`, `/discord`, `/developer`, `/product`를 해설 분류로 둔다.
 47. `blog.yeon.world/engineering`을 기술 글 루트로 둔다.
-48. `blog.yeon.world/product`를 제품 제작기 루트로 둔다.
-49. `blog.yeon.world/devlog`를 개발 일지 루트로 둔다.
-50. `blog.yeon.world/essay`를 짧은 생각과 회고 루트로 둔다.
+48. `blog.yeon.world/engineering/backend`, `/frontend`, `/infra`, `/ai`를 기술 하위 분류로 둔다.
+49. `blog.yeon.world/product/nexa`, `/typing`, `/card`, `/community`를 제품 제작기 분류로 둔다.
+50. `blog.yeon.world/devlog`와 `/essay`를 개발 일지, 짧은 생각, 회고 루트로 둔다.
 
 ## 3차: 도메인, 라우팅, 인프라 준비
 
@@ -210,13 +210,13 @@
 122. admin API는 admin auth check를 통과한 사용자만 접근하게 한다.
 123. slug 중복은 backend에서 fail fast 처리한다.
 124. 없는 article은 공개 API에서 404로 응답한다.
-125. archived article은 redirect 대상이 있으면 301 정보를 반환하도록 설계한다.
+125. archived article의 redirect 정책은 후속 CMS/redirect 설계에서 별도로 다룬다.
 
 ## 6차: Admin 운영 대시보드 설계
 
 논의 필요: admin에서 본문 편집을 언제까지 제외할지.  
 선택지: 초기 제외, 최소 Markdown 편집 포함, 전체 CMS 포함.  
-추천: 초기에는 운영 대시보드와 생성/발행 보조만 만들고, 본문 편집은 공개 페이지 관리자 모드로 둔다.  
+추천: 초기에는 읽기 전용 운영 대시보드만 만들고, 생성/발행/본문 편집은 공개 페이지 관리자 모드 또는 별도 CMS 차수에서 다시 결정한다.
 사용자 방향: 비어 있으면 추천 기준으로 진행한다.
 
 작업내용:
@@ -240,11 +240,11 @@
 142. 최근 수정 글 목록을 보여준다.
 143. SEO 경고 목록을 보여준다.
 144. 공개 페이지 바로가기 링크를 제공한다.
-145. 공개 페이지 관리자 모드 진입 링크를 제공한다.
-146. 새 글 초안 생성 버튼을 제공한다.
+145. 공개 페이지 미리보기 링크를 제공한다.
+146. 새 글 초안 생성 버튼은 초기 버전에서 제공하지 않는다.
 147. 글 삭제 버튼은 초기 버전에서 제공하지 않는다.
-148. archive 전환은 confirm을 거쳐 제공한다.
-149. hard delete는 API와 UI 모두 초기 버전에서 숨긴다.
+148. archive 전환 버튼은 초기 버전에서 제공하지 않는다.
+149. create, update, publish, archive, hard delete는 API와 UI 모두 초기 버전에서 숨긴다.
 150. admin 화면은 조용한 업무형 UI로 설계한다.
 
 ## 7차: 공개 콘텐츠 런타임 구조
@@ -387,35 +387,35 @@
 249. author page는 초기 버전에서는 만들지 않는다.
 250. blog 디자인은 조용하지만 빈약해 보이지 않도록 spacing을 정교하게 잡는다.
 
-## 11차: 공개 페이지 관리자 모드
+## 11차: 공개 페이지 운영 확인 모드
 
-논의 필요: 공개 페이지에서 관리자 편집 모드를 어떻게 켤지.  
-선택지: URL query, admin session 감지, 별도 edit path.  
-추천: admin session 감지와 `?edit=1`을 조합하고, 공개 사용자에게는 절대 노출하지 않는다.  
+논의 필요: 공개 페이지에서 관리자 전용 확인 모드를 어디까지 제공할지.
+선택지: 확인 모드만 제공, 편집 모드 포함, 별도 CMS로 분리.
+추천: 초기에는 확인 모드만 제공하고, 편집 모드와 CMS는 별도 차수에서 결정한다.
 사용자 방향: 비어 있으면 추천 기준으로 진행한다.
 
 작업내용:
 
-251. admin session이 있는 사용자만 편집 도구를 볼 수 있게 한다.
-252. 공개 article detail에서 관리자 toolbar를 조건부 렌더링한다.
+251. admin session이 있는 사용자만 운영 확인 도구를 볼 수 있게 한다.
+252. 공개 article detail에서 운영 확인 toolbar를 조건부 렌더링한다.
 253. toolbar에는 draft 보기 링크를 둔다.
-254. toolbar에는 수정 링크를 둔다.
-255. toolbar에는 archive 링크를 둔다.
+254. toolbar에는 수정 링크를 두지 않는다.
+255. toolbar에는 archive 링크를 두지 않는다.
 256. toolbar에는 SEO 검사 링크를 둔다.
 257. toolbar에는 sitemap 포함 여부를 표시한다.
 258. 공개 사용자 HTML에는 toolbar markup이 렌더링되지 않게 한다.
-259. 수정 화면은 article detail의 admin variant로 만든다.
-260. 본문 수정 UI는 Markdown textarea로 시작한다.
-261. 제목 수정 UI를 제공한다.
-262. 설명 수정 UI를 제공한다.
-263. category 수정 UI를 제공한다.
-264. service 수정 UI를 제공한다.
-265. slug 수정은 publish 전까지만 허용한다.
-266. publish 후 slug 변경은 redirect 생성과 함께만 허용한다.
-267. 저장은 draft update로 처리한다.
-268. 발행은 별도 publish action으로 처리한다.
-269. archive는 상태 전환만 수행한다.
-270. hard delete는 UI에서 숨긴다.
+259. 수정 화면은 초기 버전에서 만들지 않는다.
+260. 본문 수정 UI는 초기 버전에서 만들지 않는다.
+261. 제목 수정 UI는 초기 버전에서 만들지 않는다.
+262. 설명 수정 UI는 초기 버전에서 만들지 않는다.
+263. category 수정 UI는 초기 버전에서 만들지 않는다.
+264. service 수정 UI는 초기 버전에서 만들지 않는다.
+265. slug 변경 정책은 후속 CMS/redirect 차수에서 다룬다.
+266. publish 후 slug redirect 정책은 후속 CMS/redirect 차수에서 다룬다.
+267. 저장 action은 초기 버전에서 만들지 않는다.
+268. 발행 action은 초기 버전에서 만들지 않는다.
+269. archive action은 초기 버전에서 만들지 않는다.
+270. hard delete는 API와 UI 모두에서 숨긴다.
 271. autosave는 초기 버전에서 만들지 않는다.
 272. preview는 서버 렌더링 결과를 보여준다.
 273. validation error는 한국어로 보여준다.
