@@ -8,6 +8,7 @@ import {
 } from "./public-content-breadcrumb";
 import { PublicContentBreadcrumb } from "./public-content-breadcrumb-view";
 import { PublicContentArticleCard } from "./public-content-article-card";
+import { PublicContentBlockView } from "./public-content-block-view";
 import { getPublicContentRelatedArticles } from "./public-content-related-articles";
 import { PublicContentRelatedArticles } from "./public-content-related-articles-view";
 import {
@@ -23,7 +24,6 @@ import {
   getPublicContentServiceLabel,
   getPublicContentServicesForChannel,
   type PublicContentArticle,
-  type PublicContentBlock,
   type PublicContentChannel,
   type PublicContentCollection,
 } from "./public-content-data";
@@ -247,76 +247,6 @@ function ServiceSection({
         ))}
       </div>
     </section>
-  );
-}
-
-function renderBlock(
-  block: PublicContentBlock,
-  index: number,
-  headingIdByBlockIndex: ReadonlyMap<number, string>
-) {
-  if (block.type === "paragraph") {
-    return (
-      <p key={index} className="text-[16px] leading-8 text-[#111]">
-        {block.text}
-      </p>
-    );
-  }
-
-  if (block.type === "heading") {
-    return (
-      <h2
-        key={index}
-        id={headingIdByBlockIndex.get(index)}
-        className="scroll-mt-24 pt-4 text-[24px] font-semibold text-[#111]"
-      >
-        {block.title}
-      </h2>
-    );
-  }
-
-  if (block.type === "steps") {
-    return (
-      <ol key={index} className="space-y-3">
-        {block.items.map((item, itemIndex) => (
-          <li
-            key={item}
-            className="flex gap-3 text-[15px] leading-7 text-[#111]"
-          >
-            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-[#e5e5e5] bg-[#fafafa] text-[13px] font-semibold text-[#111]">
-              {itemIndex + 1}
-            </span>
-            <span>{item}</span>
-          </li>
-        ))}
-      </ol>
-    );
-  }
-
-  if (block.type === "checklist") {
-    return (
-      <ul key={index} className="space-y-3">
-        {block.items.map((item) => (
-          <li
-            key={item}
-            className="flex gap-3 text-[15px] leading-7 text-[#111]"
-          >
-            <span className="mt-2 h-2 w-2 shrink-0 rounded-lg bg-[#111]" />
-            <span>{item}</span>
-          </li>
-        ))}
-      </ul>
-    );
-  }
-
-  return (
-    <aside
-      key={index}
-      className="rounded-lg border border-[#e5e5e5] bg-[#fafafa] p-5"
-    >
-      <p className="text-[14px] font-semibold text-[#111]">{block.title}</p>
-      <p className="mt-2 text-[14px] leading-6 text-[#666]">{block.text}</p>
-    </aside>
   );
 }
 
@@ -696,9 +626,13 @@ export async function PublicContentArticlePage({
               />
             ) : null}
             <div className="min-w-0 space-y-7">
-              {article.body.map((block, index) =>
-                renderBlock(block, index, headingIdByBlockIndex)
-              )}
+              {article.body.map((block, index) => (
+                <PublicContentBlockView
+                  key={index}
+                  block={block}
+                  headingId={headingIdByBlockIndex.get(index)}
+                />
+              ))}
             </div>
           </div>
         </div>

@@ -38,6 +38,20 @@ export type PublicContentBlock =
       items: readonly string[];
     }
   | {
+      type: "image";
+      src: string;
+      alt: string;
+      width: number;
+      height: number;
+      caption?: string;
+    }
+  | {
+      type: "code";
+      language: string;
+      code: string;
+      filename?: string;
+    }
+  | {
       type: "callout";
       title: string;
       text: string;
@@ -1610,6 +1624,12 @@ export const PUBLIC_CONTENT_ARTICLES: readonly PublicContentArticle[] = [
       {
         type: "paragraph",
         text: "YEON은 서비스별 서브도메인과 공개 콘텐츠 서브도메인을 함께 운영합니다. 이때 canonical과 sitemap이 어긋나면 검색엔진은 어떤 URL이 대표인지 판단하기 어려워집니다.",
+      },
+      {
+        type: "code",
+        language: "txt",
+        filename: "sitemap-targets.txt",
+        code: "https://support.yeon.world/sitemap.xml\nhttps://news.yeon.world/sitemap.xml\nhttps://blog.yeon.world/sitemap.xml",
       },
       {
         type: "steps",

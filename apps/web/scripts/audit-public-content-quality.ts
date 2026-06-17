@@ -25,6 +25,10 @@ function isValidDate(value: string) {
   return !Number.isNaN(Date.parse(value));
 }
 
+function isPositiveDimension(value: number) {
+  return Number.isInteger(value) && value > 0;
+}
+
 function pushIssue(
   issues: AuditIssue[],
   article: PublicContentArticle,
@@ -71,6 +75,40 @@ function auditBodyBlock(
     }
     if (isBlank(block.text)) {
       pushIssue(issues, article, `${blockRef} callout text가 비어 있습니다.`);
+    }
+    return;
+  }
+
+  if (block.type === "image") {
+    if (isBlank(block.src)) {
+      pushIssue(issues, article, `${blockRef} image src가 비어 있습니다.`);
+    }
+    if (isBlank(block.alt)) {
+      pushIssue(issues, article, `${blockRef} image alt가 비어 있습니다.`);
+    }
+    if (!isPositiveDimension(block.width)) {
+      pushIssue(
+        issues,
+        article,
+        `${blockRef} image width가 올바르지 않습니다.`
+      );
+    }
+    if (!isPositiveDimension(block.height)) {
+      pushIssue(
+        issues,
+        article,
+        `${blockRef} image height가 올바르지 않습니다.`
+      );
+    }
+    return;
+  }
+
+  if (block.type === "code") {
+    if (isBlank(block.language)) {
+      pushIssue(issues, article, `${blockRef} code language가 비어 있습니다.`);
+    }
+    if (isBlank(block.code)) {
+      pushIssue(issues, article, `${blockRef} code 내용이 비어 있습니다.`);
     }
     return;
   }
