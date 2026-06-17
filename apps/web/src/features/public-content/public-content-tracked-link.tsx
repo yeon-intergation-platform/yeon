@@ -12,7 +12,8 @@ type PublicContentLinkKind =
   | "channel_nav"
   | "collection_child"
   | "not_found_home"
-  | "service_nav";
+  | "service_nav"
+  | "support_problem_entry";
 
 type PublicContentTrackedLinkEvent = "cta" | "link";
 
