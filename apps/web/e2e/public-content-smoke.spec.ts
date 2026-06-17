@@ -20,11 +20,16 @@ type PublicContentPageCase = {
 
 type PublicContentHostCase = {
   host: string;
+  homeCanonical: string;
   homeHeading: string;
   collectionPath: string;
+  collectionCanonical: string;
   articlePath: string;
+  articleCanonical: string;
   articleHeading: string;
   sitemapUrl: string;
+  homeStructuredData: StructuredDataExpectation;
+  articleStructuredData: StructuredDataExpectation;
 };
 
 type AnalyticsWindow = Window & {
@@ -130,29 +135,75 @@ const PUBLIC_CONTENT_PAGE_CASES: readonly PublicContentPageCase[] = [
 const PUBLIC_CONTENT_HOST_CASES: readonly PublicContentHostCase[] = [
   {
     host: "support.yeon.world",
+    homeCanonical: "https://support.yeon.world/",
     homeHeading: "필요한 해결 방법을 서비스별로 찾으세요",
     collectionPath: "/nexa/guides",
+    collectionCanonical: "https://support.yeon.world/nexa/guides",
     articlePath: "/nexa/guides/add-nexa-discord-bot",
+    articleCanonical:
+      "https://support.yeon.world/nexa/guides/add-nexa-discord-bot",
     articleHeading: "디스코드 서버에 NEXA AI 봇 추가하는 방법",
     sitemapUrl: "https://support.yeon.world/sitemap.xml",
+    homeStructuredData: {
+      expectedType: "CollectionPage",
+      expectedName: "YEON Support",
+    },
+    articleStructuredData: {
+      expectedType: "Article",
+      expectedName: "디스코드 서버에 NEXA AI 봇 추가하는 방법",
+    },
   },
   {
     host: "news.yeon.world",
+    homeCanonical: "https://news.yeon.world/",
     homeHeading: "YEON의 공식 소식과 제품 변경사항",
     collectionPath: "/updates/nexa",
+    collectionCanonical: "https://news.yeon.world/updates/nexa",
     articlePath: "/notice/support-open",
+    articleCanonical: "https://news.yeon.world/notice/support-open",
     articleHeading: "YEON support.yeon.world 오픈 안내",
     sitemapUrl: "https://news.yeon.world/sitemap.xml",
+    homeStructuredData: {
+      expectedType: "CollectionPage",
+      expectedName: "YEON News",
+    },
+    articleStructuredData: {
+      expectedType: "NewsArticle",
+      expectedName: "YEON support.yeon.world 오픈 안내",
+    },
   },
   {
     host: "blog.yeon.world",
+    homeCanonical: "https://blog.yeon.world/",
     homeHeading: "제품을 만들며 남기는 기술과 결정의 기록",
     collectionPath: "/engineering",
+    collectionCanonical: "https://blog.yeon.world/engineering",
     articlePath: "/product/nexa-discord-server-operator-design",
+    articleCanonical:
+      "https://blog.yeon.world/product/nexa-discord-server-operator-design",
     articleHeading: "NEXA를 Discord 서버 운영자 관점에서 설계하는 이유",
     sitemapUrl: "https://blog.yeon.world/sitemap.xml",
+    homeStructuredData: {
+      expectedType: "CollectionPage",
+      expectedName: "YEON Blog",
+    },
+    articleStructuredData: {
+      expectedType: "BlogPosting",
+      expectedName: "NEXA를 Discord 서버 운영자 관점에서 설계하는 이유",
+    },
   },
 ];
+
+const PUBLIC_CONTENT_VIEWPORT_CASES = [
+  {
+    path: "/support",
+    heading: "필요한 해결 방법을 서비스별로 찾으세요",
+  },
+  {
+    path: "/support/nexa/guides/add-nexa-discord-bot",
+    heading: "디스코드 서버에 NEXA AI 봇 추가하는 방법",
+  },
+] as const;
 
 function normalizeUrl(rawUrl: string | null) {
   expect(rawUrl).toBeTruthy();
@@ -202,6 +253,130 @@ async function expectStructuredData(
   );
 
   expect(targetItem?.name ?? targetItem?.headline).toBe(expectedName);
+}
+
+function getHtmlAttribute(tag: string, attributeName: string) {
+  const attributeMatch = tag.match(
+    new RegExp(`\\b${attributeName}=["']([^"']+)["']`)
+  );
+
+  return attributeMatch?.[1] ?? null;
+}
+
+function getCanonicalHrefFromHtml(html: string) {
+  const linkTags = html.match(/<link\b[^>]*>/g) ?? [];
+  const canonicalTag = linkTags.find(
+    (tag) => getHtmlAttribute(tag, "rel") === "canonical"
+  );
+
+  return canonicalTag ? getHtmlAttribute(canonicalTag, "href") : null;
+}
+
+function getMetaDescriptionFromHtml(html: string) {
+  const metaTags = html.match(/<meta\b[^>]*>/g) ?? [];
+  const descriptionTag = metaTags.find(
+    (tag) => getHtmlAttribute(tag, "name") === "description"
+  );
+
+  return descriptionTag ? getHtmlAttribute(descriptionTag, "content") : null;
+}
+
+function getTitleFromHtml(html: string) {
+  const titleMatch = html.match(/<title>([^<]+)<\/title>/);
+
+  return titleMatch?.[1]?.trim() ?? "";
+}
+
+function getStructuredDataItemsFromHtml(html: string) {
+  return [
+    ...html.matchAll(
+      /<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/g
+    ),
+  ].map((match) => JSON.parse(match[1] ?? "{}"));
+}
+
+function getSitemapLocations(sitemapXml: string) {
+  return [...sitemapXml.matchAll(/<loc>([^<]+)<\/loc>/g)].map(
+    (match) => match[1]
+  );
+}
+
+function expectPublicHtmlMetadata({
+  html,
+  canonical,
+  heading,
+  structuredData,
+}: {
+  html: string;
+  canonical: string;
+  heading: string;
+  structuredData: StructuredDataExpectation;
+}) {
+  expect(html).toContain(heading);
+  expect(normalizeUrl(getCanonicalHrefFromHtml(html))).toBe(
+    new URL(canonical).toString()
+  );
+  expect(getTitleFromHtml(html).length).toBeGreaterThan(0);
+  expect(getMetaDescriptionFromHtml(html)?.length ?? 0).toBeGreaterThan(0);
+  expectStructuredDataItems(
+    getStructuredDataItemsFromHtml(html),
+    structuredData
+  );
+  expectPublicHtmlDoesNotExposeAdminControls(html);
+}
+
+function expectStructuredDataItems(
+  structuredDataItems: unknown[],
+  { expectedType, expectedName }: StructuredDataExpectation
+) {
+  expect(structuredDataItems).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({
+        "@type": expectedType,
+      }),
+    ])
+  );
+
+  const targetItem = structuredDataItems.find(
+    (item) =>
+      typeof item === "object" &&
+      item !== null &&
+      "@type" in item &&
+      item["@type"] === expectedType
+  );
+
+  expect(
+    targetItem && typeof targetItem === "object" && "name" in targetItem
+      ? targetItem.name
+      : targetItem && typeof targetItem === "object" && "headline" in targetItem
+        ? targetItem.headline
+        : undefined
+  ).toBe(expectedName);
+}
+
+function expectPublicHtmlDoesNotExposeAdminControls(html: string) {
+  expect(html).not.toMatch(/href=["'][^"']*\/admin\//);
+  expect(html).not.toContain("data-public-content-admin-toolbar");
+  expect(html).not.toContain("public-content-admin-toolbar");
+}
+
+async function expectNoHorizontalOverflow(page: Page) {
+  const overflow = await page.evaluate(() => ({
+    body: document.body.scrollWidth - document.documentElement.clientWidth,
+    document:
+      document.documentElement.scrollWidth -
+      document.documentElement.clientWidth,
+  }));
+
+  expect(overflow.body).toBeLessThanOrEqual(1);
+  expect(overflow.document).toBeLessThanOrEqual(1);
+}
+
+async function expectSingleH1(page: Page, heading: string) {
+  await expect(
+    page.getByRole("heading", { name: heading, level: 1 })
+  ).toBeVisible();
+  await expect(page.locator("h1")).toHaveCount(1);
 }
 
 async function getWithHost(
@@ -261,7 +436,12 @@ test.describe("public content SEO smoke", () => {
 
       expect(homeResponse.status()).toBe(200);
       expect(homeResponse.url()).not.toContain("login=1");
-      expect(homeHtml).toContain(hostCase.homeHeading);
+      expectPublicHtmlMetadata({
+        html: homeHtml,
+        canonical: hostCase.homeCanonical,
+        heading: hostCase.homeHeading,
+        structuredData: hostCase.homeStructuredData,
+      });
 
       const articleResponse = await getWithHost(
         request,
@@ -272,7 +452,12 @@ test.describe("public content SEO smoke", () => {
 
       expect(articleResponse.status()).toBe(200);
       expect(articleResponse.url()).not.toContain("login=1");
-      expect(articleHtml).toContain(hostCase.articleHeading);
+      expectPublicHtmlMetadata({
+        html: articleHtml,
+        canonical: hostCase.articleCanonical,
+        heading: hostCase.articleHeading,
+        structuredData: hostCase.articleStructuredData,
+      });
     });
 
     test(`${hostCase.host} serves host-specific robots and sitemap`, async ({
@@ -306,9 +491,67 @@ test.describe("public content SEO smoke", () => {
       expect(sitemapXml).toContain(
         `https://${hostCase.host}${hostCase.collectionPath}`
       );
+      expect(sitemapXml).not.toContain("/admin/");
+      expect(sitemapXml).not.toContain("/api/");
+      expect(sitemapXml).not.toContain("/auth/");
+      expect(sitemapXml).not.toContain("draft");
       expect(sitemapXml).not.toContain("https://yeon.world/privacy");
+
+      const sitemapLocations = getSitemapLocations(sitemapXml);
+      const normalizedSitemapLocations = sitemapLocations.map((location) =>
+        new URL(location).toString()
+      );
+      expect(sitemapLocations.length).toBeGreaterThan(0);
+      expect(normalizedSitemapLocations).toEqual(
+        expect.arrayContaining([
+          new URL(hostCase.homeCanonical).toString(),
+          new URL(hostCase.collectionCanonical).toString(),
+          new URL(hostCase.articleCanonical).toString(),
+        ])
+      );
+
+      for (const sitemapLocation of sitemapLocations) {
+        const url = new URL(sitemapLocation);
+        expect(url.host).toBe(hostCase.host);
+
+        const sitemapLocationResponse = await getWithHost(
+          request,
+          hostCase.host,
+          url.pathname
+        );
+        expect(sitemapLocationResponse.status()).toBe(200);
+        expect(sitemapLocationResponse.url()).not.toContain("login=1");
+      }
     });
   }
+
+  for (const pageCase of PUBLIC_CONTENT_VIEWPORT_CASES) {
+    test(`${pageCase.path} keeps heading structure and mobile width stable`, async ({
+      page,
+    }) => {
+      await page.setViewportSize({ width: 390, height: 844 });
+      const response = await page.goto(pageCase.path);
+
+      expect(response?.status()).toBe(200);
+      await expectSingleH1(page, pageCase.heading);
+      await expectNoHorizontalOverflow(page);
+    });
+  }
+
+  test("article body width stays readable on desktop", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 960 });
+    const response = await page.goto(
+      "/support/nexa/guides/add-nexa-discord-bot"
+    );
+
+    expect(response?.status()).toBe(200);
+
+    const articleWidth = await page
+      .locator("article")
+      .evaluate((element) => element.getBoundingClientRect().width);
+
+    expect(articleWidth).toBeLessThanOrEqual(960);
+  });
 
   test("public content CTA click sends GA4 event params", async ({ page }) => {
     await installAnalyticsRecorder(page);
