@@ -39,6 +39,8 @@ import {
   PublicContentServiceNav,
 } from "./public-content-navigation-view";
 import { buildPublicContentArticleStructuredData } from "./public-content-structured-data";
+import { getPublicContentSupportHomeProblemEntries } from "./public-content-support-home";
+import { PublicContentSupportHomeProblemEntries } from "./public-content-support-home-view";
 import {
   buildPublicContentTableOfContents,
   type PublicContentTableOfContentsItem,
@@ -421,6 +423,10 @@ export function PublicContentHome({ channel }: PublicContentHomeProps) {
   const featuredArticle = articles[0] ?? null;
   const serviceNavItems = getPublicContentServiceNavItems({ channel });
   const categoryNavItems = getPublicContentCategoryNavItems({ channel });
+  const supportProblemEntries =
+    channel === PUBLIC_CONTENT_CHANNELS.support
+      ? getPublicContentSupportHomeProblemEntries()
+      : [];
 
   return (
     <PublicContentShell channel={channel}>
@@ -446,6 +452,11 @@ export function PublicContentHome({ channel }: PublicContentHomeProps) {
           ) : null}
         </div>
       </section>
+      {channel === PUBLIC_CONTENT_CHANNELS.support ? (
+        <PublicContentSupportHomeProblemEntries
+          entries={supportProblemEntries}
+        />
+      ) : null}
       <section className="mx-auto max-w-6xl px-6 pb-8 md:px-8">
         <PublicContentNavigationGroup
           categoryItems={categoryNavItems}
