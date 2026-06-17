@@ -16,9 +16,29 @@ export const SERVICE_SUBDOMAIN_ROUTES = {
   },
 } as const;
 
-export type ServiceSubdomainHost = keyof typeof SERVICE_SUBDOMAIN_ROUTES;
+export const CONTENT_SUBDOMAIN_ROUTES = {
+  "support.yeon.world": {
+    servicePath: "/support",
+    publicUrl: "https://support.yeon.world",
+  },
+  "news.yeon.world": {
+    servicePath: "/news",
+    publicUrl: "https://news.yeon.world",
+  },
+  "blog.yeon.world": {
+    servicePath: "/blog",
+    publicUrl: "https://blog.yeon.world",
+  },
+} as const;
+
+const SUBDOMAIN_ROUTES = {
+  ...SERVICE_SUBDOMAIN_ROUTES,
+  ...CONTENT_SUBDOMAIN_ROUTES,
+} as const;
+
+export type ServiceSubdomainHost = keyof typeof SUBDOMAIN_ROUTES;
 export type ServiceRouteSlug =
-  (typeof SERVICE_SUBDOMAIN_ROUTES)[ServiceSubdomainHost]["servicePath"];
+  (typeof SUBDOMAIN_ROUTES)[ServiceSubdomainHost]["servicePath"];
 
 const ROOT_CANONICAL_HOST = "yeon.world";
 
@@ -66,7 +86,7 @@ function buildServicePublicUrl({
 }
 
 function findServiceRouteByPathname(pathname: string) {
-  return Object.values(SERVICE_SUBDOMAIN_ROUTES).find(({ servicePath }) =>
+  return Object.values(SUBDOMAIN_ROUTES).find(({ servicePath }) =>
     isAlreadyServicePath(pathname, servicePath)
   );
 }
@@ -81,8 +101,7 @@ export function resolveServiceSubdomainRewritePath({
   search?: string;
 }) {
   const normalizedHost = normalizeRequestHostname(host);
-  const serviceRoute =
-    SERVICE_SUBDOMAIN_ROUTES[normalizedHost as ServiceSubdomainHost];
+  const serviceRoute = SUBDOMAIN_ROUTES[normalizedHost as ServiceSubdomainHost];
 
   if (!serviceRoute) return null;
   if (isExcludedRewritePath(pathname)) return null;
@@ -117,7 +136,7 @@ export function resolveLegacyServicePathRedirectUrl({
   }
 
   const subdomainRoute =
-    SERVICE_SUBDOMAIN_ROUTES[normalizedHost as ServiceSubdomainHost];
+    SUBDOMAIN_ROUTES[normalizedHost as ServiceSubdomainHost];
 
   if (subdomainRoute?.servicePath !== serviceRoute.servicePath) {
     return null;

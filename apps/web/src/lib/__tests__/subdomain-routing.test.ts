@@ -27,6 +27,13 @@ describe("subdomain-routing", () => {
         pathname: "/",
       })
     ).toBe("/community");
+
+    expect(
+      resolveServiceSubdomainRewritePath({
+        host: "support.yeon.world",
+        pathname: "/",
+      })
+    ).toBe("/support");
   });
 
   it("서비스 subdomain의 하위 경로와 query string을 보존한다", () => {
@@ -37,6 +44,13 @@ describe("subdomain-routing", () => {
         search: "?room=abc",
       })
     ).toBe("/typing-service/rooms?room=abc");
+
+    expect(
+      resolveServiceSubdomainRewritePath({
+        host: "blog.yeon.world",
+        pathname: "/engineering/search-console-sitemap-operations",
+      })
+    ).toBe("/blog/engineering/search-console-sitemap-operations");
   });
 
   it("포트가 포함된 host도 서비스 subdomain으로 인식한다", () => {
@@ -113,6 +127,13 @@ describe("subdomain-routing", () => {
         pathname: "/community/posts/1",
       })?.toString()
     ).toBe("https://community.yeon.world/posts/1");
+
+    expect(
+      resolveLegacyServicePathRedirectUrl({
+        host: "yeon.world",
+        pathname: "/support/nexa/guides/add-nexa-discord-bot",
+      })?.toString()
+    ).toBe("https://support.yeon.world/nexa/guides/add-nexa-discord-bot");
   });
 
   it("서비스 subdomain에 legacy prefix가 남으면 prefix를 제거한 URL로 redirect한다", () => {
@@ -123,6 +144,13 @@ describe("subdomain-routing", () => {
         search: "?room=abc",
       })?.toString()
     ).toBe("https://typing.yeon.world/rooms?room=abc");
+
+    expect(
+      resolveLegacyServicePathRedirectUrl({
+        host: "news.yeon.world",
+        pathname: "/news/updates/nexa/discord-permission-guides",
+      })?.toString()
+    ).toBe("https://news.yeon.world/updates/nexa/discord-permission-guides");
   });
 
   it("다른 서비스 subdomain의 legacy path는 redirect하지 않는다", () => {

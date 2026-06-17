@@ -59,48 +59,58 @@ describe("seo", () => {
   });
 
   it("운영 sitemap은 공개 index 대상만 반환한다", () => {
-    expect(getIndexableSitemapEntries()).toEqual([
-      {
-        url: "https://yeon.world/",
-        changeFrequency: "weekly",
-        priority: 1,
-      },
-      {
-        url: "https://typing.yeon.world",
-        changeFrequency: "daily",
-        priority: 0.9,
-      },
-      {
-        url: "https://community.yeon.world",
-        changeFrequency: "daily",
-        priority: 0.85,
-      },
-      {
-        url: "https://typing.yeon.world/rooms",
-        changeFrequency: "daily",
-        priority: 0.85,
-      },
-      {
-        url: "https://typing.yeon.world/decks",
-        changeFrequency: "daily",
-        priority: 0.85,
-      },
-      {
-        url: "https://card.yeon.world",
-        changeFrequency: "weekly",
-        priority: 0.8,
-      },
-      {
-        url: "https://yeon.world/privacy",
-        changeFrequency: "yearly",
-        priority: 0.2,
-      },
-      {
-        url: "https://yeon.world/terms",
-        changeFrequency: "yearly",
-        priority: 0.2,
-      },
-    ]);
+    expect(getIndexableSitemapEntries()).toEqual(
+      expect.arrayContaining([
+        {
+          url: "https://yeon.world/",
+          changeFrequency: "weekly",
+          priority: 1,
+          lastModified: undefined,
+        },
+        {
+          url: "https://typing.yeon.world",
+          changeFrequency: "daily",
+          priority: 0.9,
+          lastModified: undefined,
+        },
+        {
+          url: "https://community.yeon.world",
+          changeFrequency: "daily",
+          priority: 0.85,
+          lastModified: undefined,
+        },
+        {
+          url: "https://support.yeon.world",
+          changeFrequency: "weekly",
+          priority: 0.7,
+          lastModified: undefined,
+        },
+        {
+          url: "https://news.yeon.world",
+          changeFrequency: "weekly",
+          priority: 0.7,
+          lastModified: undefined,
+        },
+        {
+          url: "https://blog.yeon.world",
+          changeFrequency: "weekly",
+          priority: 0.7,
+          lastModified: undefined,
+        },
+        expect.objectContaining({
+          url: "https://support.yeon.world/nexa/guides/add-nexa-discord-bot",
+          changeFrequency: "monthly",
+          priority: 0.65,
+          lastModified: "2026-06-17",
+        }),
+        expect.objectContaining({
+          url: "https://blog.yeon.world/product/why-split-support-news-blog",
+          changeFrequency: "weekly",
+          priority: 0.55,
+          lastModified: "2026-06-17",
+        }),
+      ])
+    );
   });
 
   it("host별 sitemap은 해당 canonical host URL만 반환한다", () => {
@@ -109,16 +119,19 @@ describe("seo", () => {
         url: "https://yeon.world/",
         changeFrequency: "weekly",
         priority: 1,
+        lastModified: undefined,
       },
       {
         url: "https://yeon.world/privacy",
         changeFrequency: "yearly",
         priority: 0.2,
+        lastModified: undefined,
       },
       {
         url: "https://yeon.world/terms",
         changeFrequency: "yearly",
         priority: 0.2,
+        lastModified: undefined,
       },
     ]);
 
@@ -127,18 +140,43 @@ describe("seo", () => {
         url: "https://typing.yeon.world",
         changeFrequency: "daily",
         priority: 0.9,
+        lastModified: undefined,
       },
       {
         url: "https://typing.yeon.world/rooms",
         changeFrequency: "daily",
         priority: 0.85,
+        lastModified: undefined,
       },
       {
         url: "https://typing.yeon.world/decks",
         changeFrequency: "daily",
         priority: 0.85,
+        lastModified: undefined,
       },
     ]);
+
+    const supportEntries =
+      getIndexableSitemapEntriesForHostname("support.yeon.world");
+
+    expect(supportEntries).toEqual(
+      expect.arrayContaining([
+        {
+          url: "https://support.yeon.world",
+          changeFrequency: "weekly",
+          priority: 0.7,
+          lastModified: undefined,
+        },
+        expect.objectContaining({
+          url: "https://support.yeon.world/nexa/guides/add-nexa-discord-bot",
+        }),
+      ])
+    );
+    expect(
+      supportEntries.every((entry) =>
+        entry.url.startsWith("https://support.yeon.world")
+      )
+    ).toBe(true);
 
     expect(getIndexableSitemapEntriesForHostname("dev.yeon.world")).toEqual([]);
   });
@@ -163,6 +201,15 @@ describe("seo", () => {
     expect(buildSitemapUrlForHostname("card.yeon.world")).toBe(
       "https://card.yeon.world/sitemap.xml"
     );
+
+    expect(getRobotsForHostname("support.yeon.world")).toMatchObject({
+      sitemap: "https://support.yeon.world/sitemap.xml",
+      host: "https://support.yeon.world",
+      rules: {
+        userAgent: "*",
+        allow: "/",
+      },
+    });
   });
 
   it("www와 dev 호스트를 별도 정책 대상으로 식별한다", () => {

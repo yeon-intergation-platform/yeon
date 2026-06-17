@@ -1,6 +1,10 @@
 import { createYeonUrl } from "@yeon/ui/runtime/YeonBrowserRuntime";
 import type { YeonPageMetadata } from "@yeon/ui/runtime/YeonPageMetadata";
 import type { YeonMetadataRoute } from "@yeon/ui/runtime/YeonMetadataRoute";
+import {
+  PUBLIC_CONTENT_CHANNEL_CONFIG,
+  getPublicContentSitemapEntries,
+} from "@/features/public-content/public-content-data";
 
 export const CANONICAL_SITE_URL = "https://yeon.world";
 
@@ -19,6 +23,9 @@ const PUBLIC_SEO_HOSTNAMES = [
   ROOT_CANONICAL_HOSTNAME,
   ...Object.values(SERVICE_CANONICAL_URLS).map(
     (url) => createYeonUrl(url).hostname
+  ),
+  ...Object.values(PUBLIC_CONTENT_CHANNEL_CONFIG).map(
+    (config) => createYeonUrl(config.host).hostname
   ),
 ] as const;
 
@@ -46,6 +53,8 @@ export const NON_INDEXABLE_ROBOTS: YeonPageMetadata["robots"] = {
     noimageindex: true,
   },
 };
+
+type IndexableSitemapEntry = YeonMetadataRoute["Sitemap"][number];
 
 export const INDEXABLE_SITEMAP_ENTRIES = [
   {
@@ -78,6 +87,7 @@ export const INDEXABLE_SITEMAP_ENTRIES = [
     changeFrequency: "weekly",
     priority: 0.8,
   },
+  ...getPublicContentSitemapEntries(),
   {
     url: `${CANONICAL_SITE_URL}/privacy`,
     changeFrequency: "yearly",
@@ -88,13 +98,7 @@ export const INDEXABLE_SITEMAP_ENTRIES = [
     changeFrequency: "yearly",
     priority: 0.2,
   },
-] as const satisfies readonly {
-  url: string;
-  changeFrequency: NonNullable<
-    YeonMetadataRoute["Sitemap"][number]["changeFrequency"]
-  >;
-  priority: number;
-}[];
+] satisfies readonly IndexableSitemapEntry[];
 
 function parseUrl(rawUrl: string | undefined) {
   try {
@@ -166,7 +170,15 @@ function getPublicSeoOriginForHostname(hostname: string | null | undefined) {
     (url) => createYeonUrl(url).hostname === publicSeoHostname
   );
 
-  return serviceCanonicalUrl ?? null;
+  if (serviceCanonicalUrl) {
+    return serviceCanonicalUrl;
+  }
+
+  const publicContentCanonicalUrl = Object.values(
+    PUBLIC_CONTENT_CHANNEL_CONFIG
+  ).find((config) => createYeonUrl(config.host).hostname === publicSeoHostname);
+
+  return publicContentCanonicalUrl?.host ?? null;
 }
 
 export function buildCanonicalUrl(pathname: string) {
@@ -194,6 +206,7 @@ export function getIndexableSitemapEntries(): YeonMetadataRoute["Sitemap"] {
     url: entry.url,
     changeFrequency: entry.changeFrequency,
     priority: entry.priority,
+    lastModified: entry.lastModified,
   }));
 }
 
