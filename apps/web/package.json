@@ -12,6 +12,7 @@
     "start:standalone": "node scripts/start-standalone.mjs",
     "prod:local": "pnpm build && pnpm start:standalone",
     "openai:test": "tsx scripts/test-openai-chat.ts",
+    "public-content:audit": "tsx scripts/audit-public-content-quality.ts",
     "r2:test": "tsx scripts/test-r2-storage.ts",
     "search-console:sitemaps": "node scripts/submit-search-console-sitemaps.mjs",
     "typecheck": "tsc -p tsconfig.json",
