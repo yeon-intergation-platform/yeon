@@ -6,6 +6,8 @@ Yeon 생태계의 공개 콘텐츠는 검색 유입, 사용자 지원, 브랜드
 
 이 문서는 `support.yeon.world`, `news.yeon.world`, `blog.yeon.world`, `yeon.world/admin`의 역할과 콘텐츠 분류 기준의 source of truth다.
 
+2026-06-17 최종 결정: `news.yeon.world/blog`를 만들지 않고 `blog.yeon.world`를 독립 채널로 둔다. `news.yeon.world`는 공식 소식과 업계 해설, `blog.yeon.world`는 개발기와 기술 글, `support.yeon.world`는 사용법과 문제 해결을 담당한다.
+
 실제 원고 발행 전 품질 기준은 [공개 콘텐츠 품질 체크리스트](./public-content-quality-checklist.md)를 따른다. 채널별 원고는 [support 템플릿](./templates/support-article-template.md), [news 템플릿](./templates/news-article-template.md), [blog 템플릿](./templates/blog-article-template.md)을 기준으로 작성한다.
 
 ## 적용 범위
@@ -33,20 +35,31 @@ support.yeon.world
 ├─ /nexa
 │  ├─ /getting-started
 │  ├─ /guides
+│  ├─ /tutorials
 │  ├─ /troubleshooting
-│  └─ /faq
+│  ├─ /faq
+│  └─ /policy (필요한 경우)
 ├─ /typing
+│  ├─ /getting-started
 │  ├─ /guides
+│  ├─ /tutorials
 │  ├─ /troubleshooting
-│  └─ /faq
+│  ├─ /faq
+│  └─ /policy (필요한 경우)
 ├─ /card
+│  ├─ /getting-started
 │  ├─ /guides
+│  ├─ /tutorials
 │  ├─ /troubleshooting
-│  └─ /faq
+│  ├─ /faq
+│  └─ /policy (필요한 경우)
 ├─ /community
+│  ├─ /getting-started
 │  ├─ /guides
+│  ├─ /tutorials
 │  ├─ /troubleshooting
-│  └─ /faq
+│  ├─ /faq
+│  └─ /policy (필요한 경우)
 └─ /account
    ├─ /login
    ├─ /privacy
@@ -58,6 +71,7 @@ support.yeon.world
 - 글은 서비스별 문제 단위로 분리한다.
 - 제목은 사용자가 검색할 문장과 가깝게 쓴다.
 - 빈 카테고리와 빈 문서는 만들지 않는다.
+- `policy` 하위 분류는 실제 정책 문서가 있는 서비스에만 노출한다.
 - 공개 도움말 페이지는 로그인으로 리다이렉트하지 않는다.
 - 각 글은 하나의 질문이나 문제를 끝까지 해결해야 한다.
 
