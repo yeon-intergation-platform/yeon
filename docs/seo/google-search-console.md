@@ -165,12 +165,13 @@ pnpm --filter @yeon/web search-console:sitemaps -- --execute --skip-sitemaps
 주간 Search Console snapshot:
 
 1. Search Console에서 `sc-domain:yeon.world`를 열고 최근 7일 성과를 확인한다.
-2. URL-prefix property `https://support.yeon.world/`, `https://news.yeon.world/`, `https://blog.yeon.world/`를 각각 연다.
-3. `실적`에서 총 노출수, 클릭수, CTR, 평균 게재순위를 기록한다.
-4. `페이지` 탭에서 노출이 생긴 URL 상위 10개를 기록한다.
-5. `검색어` 탭에서 support 글 제목 개선에 쓸 수 있는 query를 기록한다.
-6. 노출은 있는데 클릭이 낮은 글은 title과 description 개선 후보로 표시한다.
-7. 클릭은 있는데 제품 진입이 낮은 support 글은 CTA 문구와 위치를 점검한다.
+2. `pnpm --filter @yeon/web public-content:governance-report`를 실행해 repo 기준 SEO/title/source/sitemap 상태를 확인한다.
+3. URL-prefix property `https://support.yeon.world/`, `https://news.yeon.world/`, `https://blog.yeon.world/`를 각각 연다.
+4. `실적`에서 총 노출수, 클릭수, CTR, 평균 게재순위를 기록한다.
+5. `페이지` 탭에서 노출이 생긴 URL 상위 10개를 기록한다.
+6. `검색어` 탭에서 support 글 제목 개선에 쓸 수 있는 query를 기록한다.
+7. 노출은 있는데 클릭이 낮은 글은 title과 description 개선 후보로 표시한다.
+8. 클릭은 있는데 제품 진입이 낮은 support 글은 CTA 문구와 위치를 점검한다.
 
 월간 Search Console 점검:
 
