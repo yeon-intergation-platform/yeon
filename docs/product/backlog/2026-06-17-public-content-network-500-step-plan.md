@@ -606,31 +606,31 @@
 
 작업내용:
 
-401. support 홈 Playwright smoke를 작성한다.
-402. news 홈 Playwright smoke를 작성한다.
-403. blog 홈 Playwright smoke를 작성한다.
-404. support 대표 글 detail smoke를 작성한다.
-405. news 대표 글 detail smoke를 작성한다.
-406. blog 대표 글 detail smoke를 작성한다.
-407. 공개 URL이 로그인으로 redirect되지 않는지 테스트한다.
-408. draft URL이 공개 사용자에게 노출되지 않는지 테스트한다.
-409. admin toolbar가 공개 사용자 HTML에 없는지 테스트한다.
-410. robots.txt가 200으로 응답하는지 테스트한다.
-411. sitemap.xml이 200으로 응답하는지 테스트한다.
-412. sitemap URL들이 200으로 응답하는지 테스트한다.
-413. canonical이 host와 일치하는지 테스트한다.
-414. metadata title이 비어 있지 않은지 테스트한다.
-415. metadata description이 비어 있지 않은지 테스트한다.
-416. structured data JSON이 parse되는지 테스트한다.
-417. 모바일 viewport에서 텍스트가 넘치지 않는지 확인한다.
-418. 데스크톱 viewport에서 본문 폭이 과도하지 않은지 확인한다.
-419. 키보드 포커스 이동이 가능한지 확인한다.
-420. heading hierarchy가 H1 하나와 순차 heading을 유지하는지 확인한다.
-421. 색 대비를 기본 기준 이상으로 맞춘다.
-422. LCP를 악화시키는 큰 이미지를 초기 버전에서 피한다.
-423. markdown HTML injection을 차단한다.
-424. admin API는 CSRF/session 정책을 기존 admin auth와 맞춘다.
-425. public API rate limit 또는 cache 정책을 검토한다.
+401. **[완료]** support 홈 Playwright smoke를 작성한다.
+402. **[완료]** news 홈 Playwright smoke를 작성한다.
+403. **[완료]** blog 홈 Playwright smoke를 작성한다.
+404. **[완료]** support 대표 글 detail smoke를 작성한다.
+405. **[완료]** news 대표 글 detail smoke를 작성한다.
+406. **[완료]** blog 대표 글 detail smoke를 작성한다.
+407. **[완료]** 공개 URL이 로그인으로 redirect되지 않는지 테스트한다.
+408. **[완료]** draft URL이 공개 사용자에게 노출되지 않는지 테스트한다.
+409. **[완료]** admin toolbar가 공개 사용자 HTML에 없는지 테스트한다.
+410. **[완료]** robots.txt가 200으로 응답하는지 테스트한다.
+411. **[완료]** sitemap.xml이 200으로 응답하는지 테스트한다.
+412. **[완료]** sitemap URL들이 200으로 응답하는지 테스트한다.
+413. **[완료]** canonical이 host와 일치하는지 테스트한다.
+414. **[완료]** metadata title이 비어 있지 않은지 테스트한다.
+415. **[완료]** metadata description이 비어 있지 않은지 테스트한다.
+416. **[완료]** structured data JSON이 parse되는지 테스트한다.
+417. **[완료]** 모바일 viewport에서 텍스트가 넘치지 않는지 확인한다.
+418. **[완료]** 데스크톱 viewport에서 본문 폭이 과도하지 않은지 확인한다.
+419. **[완료]** 키보드 포커스 이동이 가능한지 확인한다.
+420. **[완료]** heading hierarchy가 H1 하나와 순차 heading을 유지하는지 확인한다.
+421. **[완료]** 색 대비를 기본 기준 이상으로 맞춘다.
+422. **[완료]** LCP를 악화시키는 큰 이미지를 초기 버전에서 피한다.
+423. **[완료]** markdown HTML injection을 차단한다.
+424. **[완료]** admin API는 CSRF/session 정책을 기존 admin auth와 맞춘다.
+425. **[완료]** public API rate limit 또는 cache 정책을 검토한다.
 
 ## 18차: 분석, Search Console, 운영 지표
 

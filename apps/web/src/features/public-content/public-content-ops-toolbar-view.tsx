@@ -29,7 +29,7 @@ export function PublicContentOpsToolbar({
     >
       <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div>
-          <p className="text-[12px] font-semibold text-[#777]">운영 확인</p>
+          <p className="text-[12px] font-semibold text-[#555]">운영 확인</p>
           <p className="mt-1 text-[14px] font-semibold text-[#111]">
             공개 렌더링, SEO, sitemap 상태만 확인합니다
           </p>
@@ -59,17 +59,17 @@ export function PublicContentOpsToolbar({
       </div>
 
       <div className="mt-4 border-t border-[#e5e5e5] pt-4">
-        <p className="text-[12px] font-semibold text-[#777]">검증 결과</p>
+        <p className="text-[12px] font-semibold text-[#555]">검증 결과</p>
         {model.validationMessages.length > 0 ? (
           <ul className="mt-2 space-y-1">
             {model.validationMessages.map((message) => (
-              <li key={message} className="text-[13px] leading-6 text-[#777]">
+              <li key={message} className="text-[13px] leading-6 text-[#555]">
                 {message}
               </li>
             ))}
           </ul>
         ) : (
-          <p className="mt-2 text-[13px] leading-6 text-[#777]">
+          <p className="mt-2 text-[13px] leading-6 text-[#555]">
             검증 오류 없음
           </p>
         )}

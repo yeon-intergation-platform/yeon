@@ -24,7 +24,7 @@ function PublicContentNavigation({
       aria-label={ariaLabel}
       className="rounded-lg border border-[#e5e5e5] bg-white p-4"
     >
-      <p className="text-[12px] font-semibold text-[#aaa]">{title}</p>
+      <p className="text-[12px] font-semibold text-[#555]">{title}</p>
       <div className="mt-3 flex flex-wrap gap-2">
         {items.map((item) => (
           <PublicContentTrackedLink

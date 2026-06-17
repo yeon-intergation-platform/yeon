@@ -20,7 +20,7 @@ export function PublicContentBlogHomePriority({
       <div className="border-t border-[#e5e5e5] pt-10">
         <div className="mb-5 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
           <div>
-            <p className="text-[13px] font-semibold text-[#aaa]">Latest</p>
+            <p className="text-[13px] font-semibold text-[#555]">Latest</p>
             <h2 className="mt-1 text-[28px] font-semibold text-[#111]">
               최신 글
             </h2>
@@ -42,7 +42,7 @@ export function PublicContentBlogHomePriority({
       <div className="mt-12 border-t border-[#e5e5e5] pt-10">
         <div className="mb-5 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
           <div>
-            <p className="text-[13px] font-semibold text-[#aaa]">Categories</p>
+            <p className="text-[13px] font-semibold text-[#555]">Categories</p>
             <h2 className="mt-1 text-[28px] font-semibold text-[#111]">
               분류별 대표 글
             </h2>
@@ -59,7 +59,7 @@ export function PublicContentBlogHomePriority({
             >
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <p className="text-[12px] font-semibold text-[#aaa]">
+                  <p className="text-[12px] font-semibold text-[#555]">
                     {entry.purpose}
                   </p>
                   <h3 className="mt-1 text-[20px] font-semibold text-[#111]">
@@ -94,7 +94,7 @@ export function PublicContentBlogHomePriority({
                   target_title: entry.article.title,
                 }}
               >
-                <p className="text-[13px] font-semibold text-[#aaa]">대표 글</p>
+                <p className="text-[13px] font-semibold text-[#555]">대표 글</p>
                 <h4 className="mt-2 text-[18px] font-semibold leading-7 text-[#111]">
                   {entry.article.title}
                 </h4>

@@ -52,6 +52,12 @@ const REWRITE_EXCLUDED_PATH_PREFIXES = [
   "/sitemap.xml",
 ] as const;
 const CONTENT_FEED_PATHNAME = "/feed.xml";
+const NEWS_CONTENT_CATEGORY_PATH_PREFIXES = [
+  "/news/ai",
+  "/news/developer",
+  "/news/discord",
+  "/news/product",
+] as const;
 
 function isExcludedRewritePath(pathname: string) {
   if (pathname.includes(".")) return true;
@@ -64,6 +70,15 @@ function isExcludedRewritePath(pathname: string) {
 function isAlreadyServicePath(pathname: string, serviceBasePath: string) {
   return (
     pathname === serviceBasePath || pathname.startsWith(`${serviceBasePath}/`)
+  );
+}
+
+function isNewsContentCategoryPath(hostname: string, pathname: string) {
+  if (hostname !== "news.yeon.world") return false;
+  if (pathname === "/news") return true;
+
+  return NEWS_CONTENT_CATEGORY_PATH_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
   );
 }
 
@@ -112,6 +127,9 @@ export function resolveServiceSubdomainRewritePath({
     return `${contentRoute.servicePath}${CONTENT_FEED_PATHNAME}${search}`;
   }
   if (isExcludedRewritePath(pathname)) return null;
+  if (isNewsContentCategoryPath(normalizedHost, pathname)) {
+    return `${serviceRoute.servicePath}${pathname}${search}`;
+  }
   if (isAlreadyServicePath(pathname, serviceRoute.servicePath)) return null;
 
   const suffixPathname = pathname === "/" ? "" : pathname;
@@ -146,6 +164,10 @@ export function resolveLegacyServicePathRedirectUrl({
     SUBDOMAIN_ROUTES[normalizedHost as ServiceSubdomainHost];
 
   if (subdomainRoute?.servicePath !== serviceRoute.servicePath) {
+    return null;
+  }
+
+  if (isNewsContentCategoryPath(normalizedHost, pathname)) {
     return null;
   }
 

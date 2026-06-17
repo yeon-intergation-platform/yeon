@@ -24,7 +24,7 @@ export function PublicContentNewsArticleContextPanel({
       <dl className="mt-4 grid gap-3 md:grid-cols-2">
         {context.items.map((item) => (
           <div key={item.label} className="min-w-0">
-            <dt className="text-[12px] font-semibold text-[#777]">
+            <dt className="text-[12px] font-semibold text-[#555]">
               {item.label}
             </dt>
             <dd className="mt-1 break-words text-[13px] leading-5 text-[#555]">
@@ -51,7 +51,7 @@ export function PublicContentNewsHomePriority({
         <div className="border-t border-[#e5e5e5] pt-10">
           <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
             <div>
-              <p className="text-[13px] font-semibold text-[#777]">
+              <p className="text-[13px] font-semibold text-[#555]">
                 먼저 확인할 소식
               </p>
               <h2
@@ -77,7 +77,7 @@ export function PublicContentNewsHomePriority({
           <section key={section.category} aria-labelledby={section.category}>
             <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
               <div>
-                <p className="text-[13px] font-semibold text-[#777]">
+                <p className="text-[13px] font-semibold text-[#555]">
                   {section.articles.length}개 글
                 </p>
                 <h2

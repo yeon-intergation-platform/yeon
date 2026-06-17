@@ -91,6 +91,7 @@ describe("public-content-spring-client", () => {
     expect(url).toBe(
       "http://spring.test/api/v1/content/support/nexa/guides/add-nexa-discord-bot"
     );
+    expect(init?.cache).toBe("no-store");
     expect(headers.get("accept")).toBe("application/json");
     expect(headers.get("X-Yeon-Internal-Token")).toBeNull();
   });
@@ -124,6 +125,7 @@ describe("public-content-spring-client", () => {
     expect(url.searchParams.get("channel")).toBe("support");
     expect(url.searchParams.get("status")).toBe("draft");
     expect(url.searchParams.get("visibility")).toBe("internal");
+    expect(init?.cache).toBe("no-store");
     expect(headers.get("accept")).toBe("application/json");
     expect(headers.get("X-Yeon-User-Id")).toBe(userId);
     expect(headers.get("X-Yeon-Internal-Token")).toBe("internal-token");

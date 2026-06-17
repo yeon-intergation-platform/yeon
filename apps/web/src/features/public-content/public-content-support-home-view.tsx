@@ -23,7 +23,7 @@ export function PublicContentSupportHomeProblemEntries({
       <div className="rounded-lg border border-[#e5e5e5] bg-[#fafafa] p-4 md:p-5">
         <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
           <div>
-            <p className="text-[13px] font-semibold text-[#777]">빠른 해결</p>
+            <p className="text-[13px] font-semibold text-[#555]">빠른 해결</p>
             <h2
               id="support-problem-entry-title"
               className="mt-1 text-[22px] font-semibold text-[#111]"
@@ -48,7 +48,7 @@ export function PublicContentSupportHomeProblemEntries({
                 target_title: entry.article.title,
               }}
             >
-              <span className="block text-[12px] font-semibold text-[#777]">
+              <span className="block text-[12px] font-semibold text-[#555]">
                 {entry.serviceLabel} / {entry.categoryLabel}
               </span>
               <span className="mt-3 block text-[17px] font-semibold leading-6 text-[#111]">
@@ -79,7 +79,7 @@ export function PublicContentSupportHomeServiceEntries({
     >
       <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
         <div>
-          <p className="text-[13px] font-semibold text-[#777]">서비스</p>
+          <p className="text-[13px] font-semibold text-[#555]">서비스</p>
           <h2
             id="support-service-entry-title"
             className="mt-1 text-[22px] font-semibold text-[#111]"
@@ -108,7 +108,7 @@ export function PublicContentSupportHomeServiceEntries({
             <span className="mt-3 block text-[13px] leading-5 text-[#666]">
               {entry.description}
             </span>
-            <span className="mt-4 block text-[12px] font-semibold text-[#777]">
+            <span className="mt-4 block text-[12px] font-semibold text-[#555]">
               {entry.articleCount}개 글
             </span>
           </PublicContentTrackedLink>

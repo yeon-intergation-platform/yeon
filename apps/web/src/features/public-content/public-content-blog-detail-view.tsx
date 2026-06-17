@@ -8,7 +8,7 @@ function RelatedLinkList({
   links: PublicContentBlogDetailModel["supportLinks"];
 }) {
   if (links.length === 0) {
-    return <p className="text-[13px] leading-6 text-[#777]">연결 글 준비 중</p>;
+    return <p className="text-[13px] leading-6 text-[#555]">연결 글 준비 중</p>;
   }
 
   return (
@@ -44,7 +44,7 @@ export function PublicContentBlogArticleContextPanel({
   return (
     <aside className="mt-8 grid gap-4 border-y border-[#e5e5e5] py-5 md:grid-cols-3">
       <section>
-        <p className="text-[12px] font-semibold text-[#aaa]">운영 주체</p>
+        <p className="text-[12px] font-semibold text-[#555]">운영 주체</p>
         <p className="mt-2 text-[14px] font-semibold text-[#111]">
           {model.authorName}
         </p>
@@ -53,16 +53,16 @@ export function PublicContentBlogArticleContextPanel({
         </p>
       </section>
       <section>
-        <p className="text-[12px] font-semibold text-[#aaa]">관련 support</p>
+        <p className="text-[12px] font-semibold text-[#555]">관련 support</p>
         <RelatedLinkList links={model.supportLinks} />
       </section>
       <section>
-        <p className="text-[12px] font-semibold text-[#aaa]">관련 공식 소식</p>
+        <p className="text-[12px] font-semibold text-[#555]">관련 공식 소식</p>
         <RelatedLinkList links={model.newsLinks} />
       </section>
       {model.repoSourceLinks.length > 0 ? (
         <section className="md:col-span-3">
-          <p className="text-[12px] font-semibold text-[#aaa]">repo 근거</p>
+          <p className="text-[12px] font-semibold text-[#555]">repo 근거</p>
           <ul className="mt-3 grid gap-2 md:grid-cols-2">
             {model.repoSourceLinks.map((link) => (
               <li key={link.href} className="min-w-0">

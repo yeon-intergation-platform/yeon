@@ -51,6 +51,20 @@ describe("subdomain-routing", () => {
         pathname: "/engineering/search-console-sitemap-operations",
       })
     ).toBe("/blog/engineering/search-console-sitemap-operations");
+
+    expect(
+      resolveServiceSubdomainRewritePath({
+        host: "news.yeon.world",
+        pathname: "/news/ai/discord-ai-news-interpretation",
+      })
+    ).toBe("/news/news/ai/discord-ai-news-interpretation");
+
+    expect(
+      resolveServiceSubdomainRewritePath({
+        host: "news.yeon.world",
+        pathname: "/news",
+      })
+    ).toBe("/news/news");
   });
 
   it("공개 콘텐츠 subdomain의 feed.xml을 channel 내부 route로 rewrite한다", () => {
@@ -175,6 +189,20 @@ describe("subdomain-routing", () => {
         pathname: "/news/updates/nexa/discord-permission-guides",
       })?.toString()
     ).toBe("https://news.yeon.world/updates/nexa/discord-permission-guides");
+
+    expect(
+      resolveLegacyServicePathRedirectUrl({
+        host: "news.yeon.world",
+        pathname: "/news/ai/discord-ai-news-interpretation",
+      })
+    ).toBeNull();
+
+    expect(
+      resolveLegacyServicePathRedirectUrl({
+        host: "news.yeon.world",
+        pathname: "/news",
+      })
+    ).toBeNull();
   });
 
   it("다른 서비스 subdomain의 legacy path는 redirect하지 않는다", () => {

@@ -283,7 +283,7 @@ function ServiceSection({
     <section className="border-t border-[#e5e5e5] py-10">
       <div className="mb-5 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
         <div>
-          <p className="text-[13px] font-semibold text-[#aaa]">
+          <p className="text-[13px] font-semibold text-[#555]">
             {getPublicContentServiceLabel(service)}
           </p>
           <h2 className="mt-1 text-[24px] font-semibold text-[#111]">
@@ -347,7 +347,7 @@ function PublicContentTableOfContents({
         className="sticky top-8 border-l border-[#e5e5e5] pl-4"
         aria-label="본문 목차"
       >
-        <p className="mb-3 text-[12px] font-semibold text-[#aaa]">본문 목차</p>
+        <p className="mb-3 text-[12px] font-semibold text-[#555]">본문 목차</p>
         {links}
       </nav>
     </aside>
@@ -534,7 +534,7 @@ export function PublicContentHome({ channel }: PublicContentHomeProps) {
         data={getJsonLdForHome(channel)}
       />
       <section className="mx-auto max-w-6xl px-6 py-14 md:px-8 md:py-16">
-        <p className="text-[13px] font-semibold text-[#aaa]">
+        <p className="text-[13px] font-semibold text-[#555]">
           {config.homeEyebrow}
         </p>
         <div className="mt-4 grid gap-8 md:grid-cols-3 md:items-end">
@@ -666,7 +666,7 @@ function PublicContentCollectionPage({
               {collection.description}
             </p>
           </div>
-          <p className="text-[13px] font-semibold text-[#aaa]">
+          <p className="text-[13px] font-semibold text-[#555]">
             {collection.articles.length}개 글
           </p>
         </div>
@@ -734,7 +734,7 @@ export async function PublicContentArticlePage({
           service={article.service}
           sourceTitle={article.title}
         />
-        <div className="mt-6 flex flex-wrap gap-2 text-[13px] font-semibold text-[#aaa]">
+        <div className="mt-6 flex flex-wrap gap-2 text-[13px] font-semibold text-[#555]">
           <span>{getPublicContentServiceLabel(article.service)}</span>
           <span aria-hidden="true">/</span>
           <span>{getPublicContentCategoryLabel(article.category)}</span>

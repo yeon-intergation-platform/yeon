@@ -27,7 +27,7 @@ export function PublicContentBreadcrumb({
         <span key={`${item.href}-${item.label}`} className="contents">
           {index > 0 ? <span aria-hidden="true">/</span> : null}
           {item.current ? (
-            <span aria-current="page" className="text-[#aaa]">
+            <span aria-current="page" className="text-[#555]">
               {item.label}
             </span>
           ) : (
