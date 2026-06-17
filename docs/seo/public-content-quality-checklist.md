@@ -100,6 +100,8 @@
 
 ```bash
 pnpm --filter @yeon/web public-content:governance-report
+pnpm --filter @yeon/web public-content:coverage-report
 ```
 
 이 리포트는 repo에서 확인 가능한 sitemap/title/source/SEO 상태를 자동 evidence로 출력하고, Search Console/GA4처럼 credential이 필요한 항목은 `수동 확인`으로 남긴다.
+Coverage 리포트는 `support`, `news`, `blog` 정책 bucket 중 아직 비어 있는 분류를 다음 콘텐츠 확장 후보로 보여준다.
