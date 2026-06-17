@@ -151,6 +151,23 @@ pnpm --filter @yeon/web search-console:sitemaps -- --execute --skip-sitemaps
 
 초기 운영은 자동 수집보다 수동 확인을 기준으로 한다. Google credential이 준비되기 전까지 `/admin/content`의 운영 확인 링크에서 Search Console, sitemap, robots, GA4를 확인한다.
 
+18차 Search Console 등록/제출 기록 기준:
+
+| 대상                          | 확인 위치                                         | 제출/확인 기준                                                 |
+| ----------------------------- | ------------------------------------------------- | -------------------------------------------------------------- |
+| `sc-domain:yeon.world`        | Search Console Domain property                    | 전체 subdomain 노출, 색인, sitemap 상태를 유지 확인한다.       |
+| `https://support.yeon.world/` | `/admin/content` support 카드 Search Console 링크 | `https://support.yeon.world/sitemap.xml` 제출 상태를 확인한다. |
+| `https://news.yeon.world/`    | `/admin/content` news 카드 Search Console 링크    | `https://news.yeon.world/sitemap.xml` 제출 상태를 확인한다.    |
+| `https://blog.yeon.world/`    | `/admin/content` blog 카드 Search Console 링크    | `https://blog.yeon.world/sitemap.xml` 제출 상태를 확인한다.    |
+
+verification/credential 관리:
+
+| 값                            | 위치                                                              | 원칙                                                                                                                |
+| ----------------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| Site Verification meta token  | 운영 환경변수 `GOOGLE_SITE_VERIFICATION`                          | Search Console에서 받은 `google-site-verification=...` 값은 repo에 commit하지 않는다.                               |
+| Search Console API credential | 안전한 로컬/서버 경로를 가리키는 `GOOGLE_APPLICATION_CREDENTIALS` | credential JSON 내용은 문서, 로그, PR 본문에 노출하지 않는다.                                                       |
+| OAuth `client_secret_*.json`  | credential 생성용 원본                                            | 이 파일만으로는 Search Console 제출이 안 되며 authorized user 또는 권한 있는 service account credential이 필요하다. |
+
 `/admin/content` 운영 체크리스트:
 
 1. `Domain property`는 `수동 확인` 상태로 두고 `sc-domain:yeon.world`의 전체 노출, 색인, sitemap 상태를 Search Console에서 확인한다.
@@ -158,9 +175,14 @@ pnpm --filter @yeon/web search-console:sitemaps -- --execute --skip-sitemaps
 3. `Sitemap coverage`가 `정상`인지 확인한다. `확인 필요`이면 host별 sitemap에 홈 또는 발행 public 글이 빠진 것이다.
 4. `Robots links`가 `정상`인지 확인하고, 필요하면 각 host의 `robots.txt` 링크를 열어 sitemap URL과 disallow 정책을 본다.
 5. `GA4 events`에서 측정 ID가 `G-YGRNS3PQBQ`로 표시되는지 확인하고 GA4 report 링크에서 `page_view`, `public_content_cta_click`, `public_content_link_click` 이벤트를 본다.
-6. `SEO warning queue`가 0인지 확인한다. 0이 아니면 noindex, meta description, canonical, sitemap, title 품질 경고를 먼저 처리한다.
-7. `Title quality`가 0인지 확인한다. 0이 아니면 [공개 콘텐츠 제목 작성 원칙](./public-content-title-guidelines.md)에 맞게 제목을 다시 쓴다.
-8. `Source traceability`가 0보다 큰지 확인한다. 신규 글이 들어왔는데 source path가 없다면 발행 전 근거 경로를 보강한다.
+6. `Host page_view split`에서 support/news/blog host별 `page_view` 분리 확인이 필요한지 본다.
+7. `Channel click events`에서 support CTA, news 제품/support 링크, blog 관련 support/source 링크가 추적 대상인지 확인한다.
+8. `Weekly Search Console`, `Monthly indexing review`, `Article query tracking` 항목으로 주간/월간 수동 확인 주기를 놓치지 않는다.
+9. `SEO warning queue`가 0인지 확인한다. 0이 아니면 noindex, meta description, canonical, sitemap, title 품질 경고를 먼저 처리한다.
+10. `Title quality`가 0인지 확인한다. 0이 아니면 [공개 콘텐츠 제목 작성 원칙](./public-content-title-guidelines.md)에 맞게 제목을 다시 쓴다.
+11. `Source traceability`가 0보다 큰지 확인한다. 신규 글이 들어왔는데 source path가 없다면 발행 전 근거 경로를 보강한다.
+12. `Google API credential gate`는 `GOOGLE_APPLICATION_CREDENTIALS`와 verification token이 준비된 뒤에만 execute 작업으로 넘긴다.
+13. `GitHub API polling`은 PR/check/run 상태 확인을 8분 이상 간격으로 유지하는지 확인한다.
 
 주간 Search Console snapshot:
 
@@ -191,11 +213,20 @@ GA4 공개 콘텐츠 확인:
 5. support 글별 제품 진입은 `public_content_cta_click`을 기준으로 본다.
 6. news/blog에서 관련 support 문서로 이동하는 흐름은 `public_content_link_click`과 target URL 기준으로 본다.
 
+GA4 이벤트 의미:
+
+| 이벤트                      | 주요 파라미터                                                       | 운영 판단                                                         |
+| --------------------------- | ------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| `page_view`                 | `page_location`, `page_path`, `page_title`                          | host별 공개 콘텐츠 유입과 탐색량을 분리한다.                      |
+| `public_content_cta_click`  | `channel`, `service`, `category`, `slug`, `link_kind`, `target_url` | support 글별 제품 진입 CTA 성과를 본다.                           |
+| `public_content_link_click` | `channel`, `service`, `category`, `slug`, `link_kind`, `target_url` | news의 제품/support 연결, blog의 관련 support/source 연결을 본다. |
+
 기록 위치:
 
 - 간단한 주간 snapshot은 `ai-log/hyeonjun/YYYY-MM-DD/`에 운영 메모로 남긴다.
 - 반복되는 개선 후보는 `docs/product/backlog/seo.md` 또는 공개 콘텐츠 백로그에 승격한다.
 - 자동 Google API 연동은 credential과 verification token이 준비된 뒤 별도 백로그로 진행한다.
+- sitemap 제출 실패, 색인 제외 급증, 404 증가, canonical mismatch는 월간 운영 이슈 또는 알림 후보로 남긴다.
 
 ## 운영 체크리스트
 

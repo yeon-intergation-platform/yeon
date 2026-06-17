@@ -16,6 +16,7 @@ function findItem(
 
 describe("public content governance report", () => {
   it("현재 registry 기준 출시 후 운영 점검 리포트를 만든다", () => {
+    const dashboard = getPublicContentAdminDashboardData();
     const report = buildPublicContentGovernanceReport({
       generatedAt: "2026-06-17T00:00:00.000Z",
     });
@@ -25,17 +26,35 @@ describe("public content governance report", () => {
       "monthly",
       "on-change",
     ]);
-    expect(report.summary.articleCount).toBe(36);
-    expect(report.summary.channelCount).toBe(3);
+    expect(report.summary.articleCount).toBe(dashboard.stats.articleCount);
+    expect(report.summary.channelCount).toBe(dashboard.stats.channelCount);
     expect(report.summary.warningCount).toBe(0);
     expect(findItem(report, "search-console-index-state")?.status).toBe(
       "manual"
     );
+    expect(findItem(report, "url-prefix-property-registration")?.status).toBe(
+      "manual"
+    );
+    expect(findItem(report, "host-page-view-split")?.status).toBe("manual");
+    expect(findItem(report, "news-product-link-clicks")?.status).toBe("manual");
+    expect(findItem(report, "blog-related-link-clicks")?.status).toBe("manual");
     expect(findItem(report, "seo-warning-queue")?.status).toBe("ready");
+    expect(
+      findItem(report, "index-exclusion-404-canonical-review")?.status
+    ).toBe("manual");
+    expect(findItem(report, "sitemap-failure-alert-candidate")?.status).toBe(
+      "manual"
+    );
     expect(findItem(report, "source-traceability")?.status).toBe("ready");
     expect(findItem(report, "content-freshness-review")?.status).toBe("ready");
     expect(findItem(report, "information-architecture-fit")?.status).toBe(
       "ready"
+    );
+    expect(findItem(report, "google-api-credential-gate")?.status).toBe(
+      "manual"
+    );
+    expect(findItem(report, "github-api-polling-interval")?.status).toBe(
+      "manual"
     );
   });
 
@@ -48,6 +67,9 @@ describe("public content governance report", () => {
     expect(markdown).toContain("# 공개 콘텐츠 운영 거버넌스 리포트");
     expect(markdown).toContain("## 출시 첫 주 확인");
     expect(markdown).toContain("[수동 확인] Search Console 색인 상태 확인");
+    expect(markdown).toContain(
+      "[수동 확인] support/news/blog URL-prefix property 등록 확인"
+    );
     expect(markdown).toContain("[정상] SEO warning queue 처리");
     expect(markdown).toContain("[정상] 오래된 글 최신성 점검");
   });

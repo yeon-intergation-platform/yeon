@@ -92,21 +92,41 @@ describe("public content admin model", () => {
       "sitemap-coverage",
       "robots-links",
       "ga4-events",
+      "host-page-view-split",
+      "channel-click-events",
+      "weekly-search-console-snapshot",
+      "monthly-indexing-review",
+      "article-query-tracking",
       "seo-warning-queue",
       "title-quality",
       "source-path-traceability",
       "markdown-import-dry-run",
+      "google-api-credential-gate",
+      "github-api-polling-policy",
     ]);
     expect(checklistById.get("domain-search-console")?.status).toBe("manual");
     expect(checklistById.get("url-prefix-properties")?.status).toBe("manual");
     expect(checklistById.get("sitemap-coverage")?.status).toBe("ready");
     expect(checklistById.get("robots-links")?.status).toBe("ready");
     expect(checklistById.get("ga4-events")?.value).toBe("G-YGRNS3PQBQ");
+    expect(checklistById.get("host-page-view-split")?.status).toBe("manual");
+    expect(checklistById.get("channel-click-events")?.value).toBe("3개 흐름");
+    expect(checklistById.get("weekly-search-console-snapshot")?.value).toBe(
+      "주 1회"
+    );
+    expect(checklistById.get("monthly-indexing-review")?.value).toBe("월 1회");
+    expect(checklistById.get("article-query-tracking")?.status).toBe("manual");
     expect(checklistById.get("seo-warning-queue")?.status).toBe("ready");
     expect(checklistById.get("title-quality")?.status).toBe("ready");
     expect(checklistById.get("markdown-import-dry-run")?.status).toBe("manual");
     expect(checklistById.get("markdown-import-dry-run")?.value).toBe(
       "대기 원고 없음"
+    );
+    expect(checklistById.get("google-api-credential-gate")?.value).toBe(
+      "credential 준비 후"
+    );
+    expect(checklistById.get("github-api-polling-policy")?.value).toBe(
+      "8분 이상"
     );
   });
 
