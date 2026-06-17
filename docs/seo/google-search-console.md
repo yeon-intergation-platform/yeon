@@ -151,6 +151,16 @@ pnpm --filter @yeon/web search-console:sitemaps -- --execute --skip-sitemaps
 
 초기 운영은 자동 수집보다 수동 확인을 기준으로 한다. Google credential이 준비되기 전까지 `/admin/content`의 운영 확인 링크에서 Search Console, sitemap, robots, GA4를 확인한다.
 
+`/admin/content` 운영 체크리스트:
+
+1. `Domain property`는 `수동 확인` 상태로 두고 `sc-domain:yeon.world`의 전체 노출, 색인, sitemap 상태를 Search Console에서 확인한다.
+2. `URL-prefix properties`는 support/news/blog 채널 카드의 Search Console 링크로 각각 등록 상태를 확인한다.
+3. `Sitemap coverage`가 `정상`인지 확인한다. `확인 필요`이면 host별 sitemap에 홈 또는 발행 public 글이 빠진 것이다.
+4. `Robots links`가 `정상`인지 확인하고, 필요하면 각 host의 `robots.txt` 링크를 열어 sitemap URL과 disallow 정책을 본다.
+5. `GA4 events`에서 측정 ID가 `G-YGRNS3PQBQ`로 표시되는지 확인하고 GA4 report 링크에서 `page_view`, `public_content_cta_click`, `public_content_link_click` 이벤트를 본다.
+6. `SEO warning queue`가 0인지 확인한다. 0이 아니면 noindex, meta description, canonical, sitemap 경고를 먼저 처리한다.
+7. `Source traceability`가 0보다 큰지 확인한다. 신규 글이 들어왔는데 source path가 없다면 발행 전 근거 경로를 보강한다.
+
 주간 Search Console snapshot:
 
 1. Search Console에서 `sc-domain:yeon.world`를 열고 최근 7일 성과를 확인한다.

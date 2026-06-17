@@ -90,7 +90,22 @@ export type PublicContentAdminDashboardStats = {
   lastUpdatedAt: string | null;
 };
 
+export type PublicContentAdminOpsChecklistStatus =
+  | "manual"
+  | "ready"
+  | "warning";
+
+export type PublicContentAdminOpsChecklistItem = {
+  href?: string;
+  id: string;
+  label: string;
+  note: string;
+  status: PublicContentAdminOpsChecklistStatus;
+  value: string;
+};
+
 export type PublicContentAdminDashboardData = {
+  opsChecklist: readonly PublicContentAdminOpsChecklistItem[];
   recentPublishedRows: readonly PublicContentAdminArticleRow[];
   recentUpdatedRows: readonly PublicContentAdminArticleRow[];
   rows: readonly PublicContentAdminArticleRow[];
@@ -446,26 +461,104 @@ function buildPublicContentAdminDashboardStatsFromViews(
   };
 }
 
+function buildPublicContentAdminOpsChecklist(params: {
+  stats: PublicContentAdminDashboardStats;
+  summaries: readonly PublicContentAdminChannelSummary[];
+}): PublicContentAdminOpsChecklistItem[] {
+  const sitemapReady = params.summaries.every(
+    (summary) =>
+      summary.sitemapHomeIncluded &&
+      summary.sitemapArticleCount === summary.articleCount
+  );
+  const robotsLinkCount = params.summaries.filter((summary) =>
+    summary.robotsUrl.trim()
+  ).length;
+  const searchConsoleLinkCount = params.summaries.filter((summary) =>
+    summary.searchConsoleUrl.trim()
+  ).length;
+  const firstSitemapUrl = params.summaries[0]?.sitemapUrl;
+  const firstRobotsUrl = params.summaries[0]?.robotsUrl;
+
+  return [
+    {
+      href: params.stats.domainSearchConsoleUrl,
+      id: "domain-search-console",
+      label: "Domain property",
+      note: "sc-domain:yeon.world에서 전체 subdomain 노출과 색인을 수동 확인합니다.",
+      status: "manual",
+      value: "수동 확인",
+    },
+    {
+      id: "url-prefix-properties",
+      label: "URL-prefix properties",
+      note: "support, news, blog URL-prefix property 등록 상태를 각 채널 카드의 Search Console 링크로 확인합니다.",
+      status: "manual",
+      value: `${searchConsoleLinkCount}/${params.summaries.length}`,
+    },
+    {
+      id: "sitemap-coverage",
+      label: "Sitemap coverage",
+      note: "채널 홈과 발행 public 글이 host별 sitemap에 포함되는지 계산합니다.",
+      status: sitemapReady ? "ready" : "warning",
+      value: sitemapReady ? "정상" : "확인 필요",
+      ...(firstSitemapUrl ? { href: firstSitemapUrl } : {}),
+    },
+    {
+      id: "robots-links",
+      label: "Robots links",
+      note: "각 공개 콘텐츠 host의 robots.txt 확인 링크가 준비되어 있습니다.",
+      status: robotsLinkCount === params.summaries.length ? "ready" : "warning",
+      value: `${robotsLinkCount}/${params.summaries.length}`,
+      ...(firstRobotsUrl ? { href: firstRobotsUrl } : {}),
+    },
+    {
+      href: params.stats.ga4ReportsUrl,
+      id: "ga4-events",
+      label: "GA4 events",
+      note: "page_view, public_content_cta_click, public_content_link_click을 GA4에서 확인합니다.",
+      status: params.stats.gaMeasurementId ? "ready" : "warning",
+      value: params.stats.gaMeasurementId || "측정 ID 누락",
+    },
+    {
+      id: "seo-warning-queue",
+      label: "SEO warning queue",
+      note: "noindex, meta description, canonical, sitemap 누락 경고 수입니다.",
+      status: params.stats.seoWarningCount === 0 ? "ready" : "warning",
+      value: `${params.stats.seoWarningCount}개`,
+    },
+    {
+      id: "source-path-traceability",
+      label: "Source traceability",
+      note: "공개 글의 repo 근거 경로가 남아 있는지 확인합니다.",
+      status: params.stats.sourcePathCount > 0 ? "ready" : "warning",
+      value: `${params.stats.sourcePathCount}개`,
+    },
+  ];
+}
+
 function buildPublicContentAdminDashboardDataFromViews(
   articles: readonly PublicContentAdminArticleView[],
   sitemapEntries?: readonly Pick<PublicContentSitemapEntryDto, "url">[]
 ): PublicContentAdminDashboardData {
   const rows = buildPublicContentAdminRowsFromViews(articles, sitemapEntries);
+  const summaries = buildPublicContentAdminChannelSummariesFromViews(
+    articles,
+    sitemapEntries
+  );
+  const stats = buildPublicContentAdminDashboardStatsFromViews(
+    articles,
+    rows,
+    sitemapEntries
+  );
 
   return {
+    opsChecklist: buildPublicContentAdminOpsChecklist({ stats, summaries }),
     recentPublishedRows: getRecentPublishedRows(rows),
     recentUpdatedRows: getRecentUpdatedRows(rows),
     rows,
     seoWarningRows: getSeoWarningRows(rows),
-    stats: buildPublicContentAdminDashboardStatsFromViews(
-      articles,
-      rows,
-      sitemapEntries
-    ),
-    summaries: buildPublicContentAdminChannelSummariesFromViews(
-      articles,
-      sitemapEntries
-    ),
+    stats,
+    summaries,
   };
 }
 
@@ -511,6 +604,12 @@ export function getPublicContentAdminArticleRows(
 ): PublicContentAdminArticleRow[] {
   return buildPublicContentAdminRowsFromViews(
     getStaticAdminArticleViews(channel)
+  );
+}
+
+export function getPublicContentAdminDashboardData(): PublicContentAdminDashboardData {
+  return buildPublicContentAdminDashboardDataFromViews(
+    getStaticAdminArticleViews()
   );
 }
 
