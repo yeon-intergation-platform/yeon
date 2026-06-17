@@ -3,6 +3,7 @@ import {
   type PublicContentArticle,
   type PublicContentBlock,
 } from "../src/features/public-content/public-content-data";
+import { getPublicContentTitleQualityWarnings } from "../src/features/public-content/public-content-title-quality";
 
 type AuditIssue = {
   articleRef: string;
@@ -102,6 +103,14 @@ function auditArticle(
   auditTextField(issues, article, "title", article.title);
   auditTextField(issues, article, "description", article.description);
   auditTextField(issues, article, "summary", article.summary);
+
+  getPublicContentTitleQualityWarnings({
+    channel: article.channel,
+    serviceKey: article.service,
+    title: article.title,
+  }).forEach((warning) => {
+    pushIssue(issues, article, warning);
+  });
 
   if (article.slugSegments.length === 0) {
     pushIssue(issues, article, "slugSegments가 비어 있습니다.");

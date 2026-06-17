@@ -158,8 +158,9 @@ pnpm --filter @yeon/web search-console:sitemaps -- --execute --skip-sitemaps
 3. `Sitemap coverage`가 `정상`인지 확인한다. `확인 필요`이면 host별 sitemap에 홈 또는 발행 public 글이 빠진 것이다.
 4. `Robots links`가 `정상`인지 확인하고, 필요하면 각 host의 `robots.txt` 링크를 열어 sitemap URL과 disallow 정책을 본다.
 5. `GA4 events`에서 측정 ID가 `G-YGRNS3PQBQ`로 표시되는지 확인하고 GA4 report 링크에서 `page_view`, `public_content_cta_click`, `public_content_link_click` 이벤트를 본다.
-6. `SEO warning queue`가 0인지 확인한다. 0이 아니면 noindex, meta description, canonical, sitemap 경고를 먼저 처리한다.
-7. `Source traceability`가 0보다 큰지 확인한다. 신규 글이 들어왔는데 source path가 없다면 발행 전 근거 경로를 보강한다.
+6. `SEO warning queue`가 0인지 확인한다. 0이 아니면 noindex, meta description, canonical, sitemap, title 품질 경고를 먼저 처리한다.
+7. `Title quality`가 0인지 확인한다. 0이 아니면 [공개 콘텐츠 제목 작성 원칙](./public-content-title-guidelines.md)에 맞게 제목을 다시 쓴다.
+8. `Source traceability`가 0보다 큰지 확인한다. 신규 글이 들어왔는데 source path가 없다면 발행 전 근거 경로를 보강한다.
 
 주간 Search Console snapshot:
 

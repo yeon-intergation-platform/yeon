@@ -715,7 +715,7 @@ export function AdminPublicContentDashboard({
           <MetricCard
             label="seo warnings"
             value={stats.seoWarningCount.toLocaleString("ko-KR")}
-            note={`noindex ${stats.noindexCount} · meta ${stats.metaDescriptionMissingCount}`}
+            note={`noindex ${stats.noindexCount} · meta ${stats.metaDescriptionMissingCount} · title ${stats.titleWarningCount}`}
           />
           <MetricCard
             label="sitemap urls"
