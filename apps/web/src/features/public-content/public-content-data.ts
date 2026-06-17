@@ -746,6 +746,326 @@ export const PUBLIC_CONTENT_ARTICLES: readonly PublicContentArticle[] = [
     ],
   },
   {
+    channel: PUBLIC_CONTENT_CHANNELS.support,
+    service: PUBLIC_CONTENT_SERVICES.typing,
+    category: "guides",
+    slugSegments: ["typing", "guides", "change-practice-deck"],
+    title: "타자연습에서 연습 덱을 바꾸는 방법",
+    description:
+      "YEON 타자연습에서 한국어와 영어 연습 덱을 바꾸고, 덱 API가 실패할 때 기본 문장으로 대체되는 흐름을 설명합니다.",
+    summary:
+      "언어별 선택 덱, 기본 로컬 문장, 원격 덱 목록, 연습 결과 확인 흐름을 한 번에 확인합니다.",
+    publishedAt: PUBLISHED_DATE,
+    updatedAt: PUBLISHED_DATE,
+    readingMinutes: 4,
+    ctaLabel: "타자연습 열기",
+    ctaHref: "https://typing.yeon.world",
+    sourcePaths: [
+      "/Users/osuma/coding_stuffs/yeon/apps/web/src/features/typing-service/use-typing-settings.ts",
+      "/Users/osuma/coding_stuffs/yeon/apps/web/src/features/typing-service/typing-race-solo-screen.tsx",
+      "/Users/osuma/coding_stuffs/yeon/apps/web/src/app/typing-service/practice/page.tsx",
+    ],
+    body: [
+      {
+        type: "paragraph",
+        text: "타자연습은 언어별로 선택한 덱을 기억합니다. 한국어는 기본 타자 문장, 영어는 Default local passages를 기본값으로 두고, 공개 덱이나 사용자 덱을 불러올 수 있으면 목록에 함께 표시합니다.",
+      },
+      {
+        type: "heading",
+        title: "연습 덱을 바꾸는 순서",
+      },
+      {
+        type: "steps",
+        items: [
+          "typing.yeon.world에서 연습 화면으로 이동합니다.",
+          "현재 언어가 한국어인지 영어인지 확인합니다.",
+          "덱 선택 영역에서 사용할 덱을 고릅니다.",
+          "선택한 덱에 문장이 있으면 해당 문장으로 연습을 시작합니다.",
+          "덱 API를 사용할 수 없거나 문장이 비어 있으면 기본 문장으로 대체되는지 확인합니다.",
+          "연습 후 속도와 정확도 결과를 확인합니다.",
+        ],
+      },
+      {
+        type: "checklist",
+        items: [
+          "한국어와 영어의 선택 덱은 따로 저장됩니다.",
+          "기본 로컬 덱은 네트워크 없이도 사용할 수 있습니다.",
+          "원격 덱이 실패하면 화면은 기본 문장으로 대체합니다.",
+          "연습 결과에는 속도와 정확도가 함께 표시됩니다.",
+        ],
+      },
+      {
+        type: "callout",
+        title: "URL로 덱을 지정할 수 있습니다",
+        text: "연습 경로는 deckId를 기준으로 덱 문장을 준비할 수 있습니다. 링크로 특정 덱 연습을 공유할 때는 해당 덱이 접근 가능한 상태인지 먼저 확인하세요.",
+      },
+    ],
+  },
+  {
+    channel: PUBLIC_CONTENT_CHANNELS.support,
+    service: PUBLIC_CONTENT_SERVICES.typing,
+    category: "troubleshooting",
+    slugSegments: ["typing", "troubleshooting", "race-room-connection-failed"],
+    title: "타자방에 접속되지 않을 때 확인할 것",
+    description:
+      "YEON 타자방 목록에 방이 보이지 않거나 실시간 방 접속이 실패할 때 확인할 공개방 상태, 참가자 수, 레이스 서버 연결 기준입니다.",
+    summary:
+      "대기 중인 공개방인지, 참가자가 있는지, 레이스 서버 연결과 재시도 흐름이 정상인지 순서대로 봅니다.",
+    publishedAt: PUBLISHED_DATE,
+    updatedAt: PUBLISHED_DATE,
+    readingMinutes: 4,
+    ctaLabel: "타자연습 열기",
+    ctaHref: "https://typing.yeon.world",
+    sourcePaths: [
+      "/Users/osuma/coding_stuffs/yeon/apps/web/src/features/typing-service/typing-service-fetch.ts",
+      "/Users/osuma/coding_stuffs/yeon/apps/web/src/features/typing-service/use-race-room.ts",
+      "/Users/osuma/coding_stuffs/yeon/apps/web/src/features/typing-service/typing-room-screen.tsx",
+    ],
+    body: [
+      {
+        type: "paragraph",
+        text: "타자방 목록은 모든 방을 그대로 보여주지 않습니다. 현재 대기 중이고, 활성 상태이며, 공개방이고, 참가자가 1명 이상 있는 방만 공개 목록에 표시합니다.",
+      },
+      {
+        type: "steps",
+        items: [
+          "방 목록을 새로고침하고 공개방이 표시되는지 확인합니다.",
+          "방이 이미 시작되었거나 종료된 상태가 아닌지 확인합니다.",
+          "참가자가 없는 빈 방은 공개 대기 목록에서 보이지 않을 수 있습니다.",
+          "브라우저가 레이스 서버에 연결하는 동안 잠시 기다립니다.",
+          "오프라인 또는 연결 실패 안내가 나오면 재연결 버튼으로 다시 시도합니다.",
+          "계속 실패하면 새 방을 만들거나 잠시 뒤 다시 들어갑니다.",
+        ],
+      },
+      {
+        type: "callout",
+        title: "로그인 토큰 실패가 항상 입장 실패는 아닙니다",
+        text: "레이스 사용자 토큰 발급은 best-effort로 처리됩니다. 토큰이 없으면 경험치 적립이 빠질 수 있지만, 레이스 진행 자체를 막지는 않도록 설계되어 있습니다.",
+      },
+      {
+        type: "checklist",
+        items: [
+          "방 상태가 WAITING입니다.",
+          "방 lifecycle이 ACTIVE입니다.",
+          "방 visibility가 PUBLIC입니다.",
+          "현재 참가자 수가 1명 이상입니다.",
+        ],
+      },
+    ],
+  },
+  {
+    channel: PUBLIC_CONTENT_CHANNELS.support,
+    service: PUBLIC_CONTENT_SERVICES.card,
+    category: "guides",
+    slugSegments: ["card", "guides", "merge-guest-decks-after-login"],
+    title: "로그인 전에 만든 플래시카드 덱을 계정에 추가하는 방법",
+    description:
+      "게스트 상태에서 만든 YEON 플래시카드 덱을 로그인 후 계정 덱으로 가져오는 이관 흐름과 확인 항목입니다.",
+    summary:
+      "로그인 후 게스트 덱이 있으면 계정에 추가하는 안내가 열리고, 이관 뒤 다른 기기에서도 같은 덱을 볼 수 있습니다.",
+    publishedAt: PUBLISHED_DATE,
+    updatedAt: PUBLISHED_DATE,
+    readingMinutes: 4,
+    ctaLabel: "플래시카드 열기",
+    ctaHref: "https://card.yeon.world",
+    sourcePaths: [
+      "/Users/osuma/coding_stuffs/yeon/apps/web/src/features/card-service/use-card-service-decks-screen-state.ts",
+      "/Users/osuma/coding_stuffs/yeon/apps/web/src/features/card-service/components/merge-guest-dialog.tsx",
+      "/Users/osuma/coding_stuffs/yeon/apps/web/src/lib/guest-card-service-store.ts",
+    ],
+    body: [
+      {
+        type: "paragraph",
+        text: "로그인 전에 만든 플래시카드 덱은 브라우저의 게스트 저장소에 남아 있을 수 있습니다. 로그인한 상태에서 게스트 덱이 발견되면 계정에 추가할지 묻는 창이 열립니다.",
+      },
+      {
+        type: "steps",
+        items: [
+          "게스트 상태에서 덱과 카드를 만듭니다.",
+          "같은 브라우저에서 로그인합니다.",
+          "덱 목록 화면에 방금 만든 덱을 계정에 추가할지 묻는 창이 뜨는지 확인합니다.",
+          "계정에 추가를 누릅니다.",
+          "이관 완료 메시지에서 덱 개수와 카드 장수를 확인합니다.",
+          "다른 기기에서도 같은 계정으로 로그인해 덱이 보이는지 확인합니다.",
+        ],
+      },
+      {
+        type: "callout",
+        title: "같은 브라우저에서 진행하세요",
+        text: "게스트 덱은 로컬 저장소에 있기 때문에 다른 기기나 다른 브라우저로 바로 옮겨 보이지 않을 수 있습니다. 만든 브라우저에서 로그인 후 이관하는 것이 안전합니다.",
+      },
+      {
+        type: "checklist",
+        items: [
+          "로그인 상태입니다.",
+          "게스트 덱 개수가 1개 이상입니다.",
+          "이관 창이 닫힌 뒤 덱 목록을 다시 확인합니다.",
+          "이관 실패 메시지가 있으면 저장 공간 또는 브라우저 권한을 확인합니다.",
+        ],
+      },
+    ],
+  },
+  {
+    channel: PUBLIC_CONTENT_CHANNELS.support,
+    service: PUBLIC_CONTENT_SERVICES.card,
+    category: "guides",
+    slugSegments: ["card", "guides", "review-mode-shortcuts"],
+    title: "플래시카드 복습 모드 단축키 사용하는 방법",
+    description:
+      "YEON 플래시카드 복습 모드에서 정답 보기, 어려움/보통/쉬움 채점, 스킵 단축키를 사용하는 방법입니다.",
+    summary:
+      "복습 모드는 Space로 정답을 보고, 1/2/3으로 채점하고, s로 스킵할 수 있습니다.",
+    publishedAt: PUBLISHED_DATE,
+    updatedAt: PUBLISHED_DATE,
+    readingMinutes: 3,
+    ctaLabel: "플래시카드 열기",
+    ctaHref: "https://card.yeon.world",
+    sourcePaths: [
+      "/Users/osuma/coding_stuffs/yeon/apps/web/src/features/card-service/deck-play-screen.tsx",
+      "/Users/osuma/coding_stuffs/yeon/apps/web/src/features/card-service/utils/card-review-shortcuts.ts",
+      "/Users/osuma/coding_stuffs/yeon/apps/web/src/features/card-service/utils/__tests__/card-review-shortcuts.test.ts",
+    ],
+    body: [
+      {
+        type: "paragraph",
+        text: "플래시카드에는 일반 플래시카드 모드와 복습 모드가 있습니다. 일반 모드는 카드를 클릭하거나 Space 또는 Enter로 뒤집고, 복습 모드는 정답을 본 뒤 난이도를 기록하는 흐름입니다.",
+      },
+      {
+        type: "heading",
+        title: "복습 모드 단축키",
+      },
+      {
+        type: "checklist",
+        items: [
+          "Space: 정답을 봅니다.",
+          "1: 어려움으로 기록합니다.",
+          "2: 보통으로 기록합니다.",
+          "3: 쉬움으로 기록합니다.",
+          "s: 현재 카드를 스킵합니다.",
+        ],
+      },
+      {
+        type: "steps",
+        items: [
+          "덱 학습 화면에서 복습 모드를 선택합니다.",
+          "카드를 읽고 Space를 눌러 정답을 확인합니다.",
+          "정답을 본 뒤 1, 2, 3 중 하나로 난이도를 기록합니다.",
+          "지금 기록하지 않을 카드는 s로 건너뜁니다.",
+        ],
+      },
+      {
+        type: "callout",
+        title: "입력칸에서는 단축키가 막힙니다",
+        text: "링크, 버튼, 입력칸, 선택창, textarea, contenteditable 영역에서는 단축키가 실행되지 않게 막아 두었습니다. 한국어 입력 상태에서도 물리 S 키 스킵은 동작합니다.",
+      },
+    ],
+  },
+  {
+    channel: PUBLIC_CONTENT_CHANNELS.support,
+    service: PUBLIC_CONTENT_SERVICES.community,
+    category: "guides",
+    slugSegments: ["community", "guides", "set-guest-nickname"],
+    title: "커뮤니티 게스트 닉네임과 비밀번호를 설정하는 방법",
+    description:
+      "YEON 커뮤니티에서 게스트 닉네임을 바꾸고 글 수정·삭제용 비밀번호를 설정하는 방법입니다.",
+    summary:
+      "게스트 닉네임은 자동 생성되며 직접 바꿀 수 있고, 비밀번호는 글과 댓글 수정·삭제 확인에 사용됩니다.",
+    publishedAt: PUBLISHED_DATE,
+    updatedAt: PUBLISHED_DATE,
+    readingMinutes: 3,
+    ctaLabel: "커뮤니티 열기",
+    ctaHref: "https://community.yeon.world",
+    sourcePaths: [
+      "/Users/osuma/coding_stuffs/yeon/apps/web/src/features/community/community-guest-identity.ts",
+      "/Users/osuma/coding_stuffs/yeon/apps/web/src/features/community/components/community-feed-forms.tsx",
+      "/Users/osuma/coding_stuffs/yeon/apps/web/src/features/community/components/community-guest-identity-confirm-modal.tsx",
+    ],
+    body: [
+      {
+        type: "paragraph",
+        text: "커뮤니티는 게스트도 글과 댓글을 남길 수 있게 닉네임을 자동 생성합니다. 기본 닉네임은 익명 뒤에 네 자리 숫자가 붙는 형식이며, 작성 영역에서 직접 바꿀 수 있습니다.",
+      },
+      {
+        type: "steps",
+        items: [
+          "community.yeon.world를 엽니다.",
+          "상단 또는 작성 영역의 게스트 닉네임 입력칸을 확인합니다.",
+          "원하는 닉네임을 입력합니다.",
+          "글 수정이나 삭제에 사용할 비밀번호를 입력합니다.",
+          "글쓰기 버튼을 눌러 작성 패널을 엽니다.",
+          "제목과 내용을 입력한 뒤 게시합니다.",
+        ],
+      },
+      {
+        type: "checklist",
+        items: [
+          "닉네임은 최대 40자까지 입력할 수 있습니다.",
+          "비밀번호는 최대 128자까지 입력할 수 있습니다.",
+          "비밀번호는 글과 댓글의 수정·삭제 확인에 사용됩니다.",
+          "브라우저 저장소를 사용할 수 없으면 임시 닉네임이 생성됩니다.",
+        ],
+      },
+      {
+        type: "callout",
+        title: "비밀번호를 잊으면 수정이 어려울 수 있습니다",
+        text: "게스트 글은 계정 로그인 기반이 아니므로, 작성할 때 사용한 닉네임과 비밀번호를 기억해야 나중에 수정하거나 삭제할 수 있습니다.",
+      },
+    ],
+  },
+  {
+    channel: PUBLIC_CONTENT_CHANNELS.support,
+    service: PUBLIC_CONTENT_SERVICES.community,
+    category: "troubleshooting",
+    slugSegments: ["community", "troubleshooting", "post-or-reply-failed"],
+    title: "커뮤니티 글이나 댓글 등록이 안 될 때 확인할 것",
+    description:
+      "YEON 커뮤니티에서 글 작성, 댓글 등록, 수정, 삭제가 실패할 때 입력 제한과 오류 메시지를 기준으로 확인하는 방법입니다.",
+    summary:
+      "제목과 본문 필수 입력, 글자 수 제한, 게스트 닉네임과 비밀번호, API 오류 메시지를 순서대로 확인합니다.",
+    publishedAt: PUBLISHED_DATE,
+    updatedAt: PUBLISHED_DATE,
+    readingMinutes: 4,
+    ctaLabel: "커뮤니티 열기",
+    ctaHref: "https://community.yeon.world",
+    sourcePaths: [
+      "/Users/osuma/coding_stuffs/yeon/apps/web/src/features/community/components/community-feed-forms.tsx",
+      "/Users/osuma/coding_stuffs/yeon/apps/web/src/features/community/chat-service-api.ts",
+      "/Users/osuma/coding_stuffs/yeon/apps/web/src/features/community/hooks/use-community-feed.ts",
+    ],
+    body: [
+      {
+        type: "paragraph",
+        text: "커뮤니티 글과 댓글은 빈 내용으로 등록할 수 없습니다. 화면에 보이는 오류 문구가 있다면 먼저 그 문구를 기준으로 제목, 본문, 댓글 입력값을 확인하세요.",
+      },
+      {
+        type: "steps",
+        items: [
+          "글 작성 시 제목과 내용을 모두 입력했는지 확인합니다.",
+          "제목은 80자, 본문은 280자를 넘지 않았는지 확인합니다.",
+          "댓글은 400자 안에 들어가는지 확인합니다.",
+          "수정할 내용이 빈 값이 아닌지 확인합니다.",
+          "게스트 글 수정·삭제라면 작성 때 사용한 닉네임과 비밀번호를 입력합니다.",
+          "화면에 나온 오류 메시지를 확인한 뒤 다시 시도합니다.",
+        ],
+      },
+      {
+        type: "checklist",
+        items: [
+          "글 제목은 필수입니다.",
+          "글 본문은 필수입니다.",
+          "댓글 내용은 필수입니다.",
+          "수정·삭제에는 게스트 확인 정보가 필요할 수 있습니다.",
+          "요청 실패 시 API에서 내려온 메시지가 화면 오류로 표시됩니다.",
+        ],
+      },
+      {
+        type: "callout",
+        title: "글과 댓글은 같은 feed API를 사용합니다",
+        text: "글 등록은 /feed, 댓글 등록은 /feed/{postId}/replies 경로를 사용합니다. 둘 다 실패한다면 네트워크나 세션 상태도 함께 확인하세요.",
+      },
+    ],
+  },
+  {
     channel: PUBLIC_CONTENT_CHANNELS.news,
     service: PUBLIC_CONTENT_SERVICES.account,
     category: "notice",
