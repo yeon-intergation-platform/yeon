@@ -1,21 +1,23 @@
 import type { ReactNode } from "react";
 import { YeonLink, YeonText, YeonView } from "@yeon/ui";
 import { YEON_WEB_SHARED_CLASS as SHARED_FEATURE_CLASS } from "@yeon/ui/theme/web-style-tokens";
-import {
-  getPublicContentAdminArticleRows,
-  getPublicContentAdminChannelSummaries,
-  getPublicContentAdminChannelSummary,
-  getPublicContentAdminDashboardStats,
-  type PublicContentAdminArticleRow,
+import type {
+  PublicContentAdminArticleRow,
+  PublicContentAdminChannelSummary,
+  PublicContentAdminDashboardData,
 } from "@/features/public-content/public-content-admin-model";
-import type { PublicContentChannel } from "@/features/public-content/public-content-data";
 
 type AdminPublicContentProps = {
   adminEmail: string;
 };
 
+type AdminPublicContentDashboardProps = AdminPublicContentProps & {
+  dashboard: PublicContentAdminDashboardData;
+};
+
 type AdminPublicContentChannelProps = AdminPublicContentProps & {
-  channel: PublicContentChannel;
+  rows: readonly PublicContentAdminArticleRow[];
+  summary: PublicContentAdminChannelSummary;
 };
 
 type OperationLink = {
@@ -42,6 +44,10 @@ function formatDate(value: string | null) {
 
 function formatSourcePath(path: string) {
   return path.replace(/^\/Users\/osuma\/coding_stuffs\//, "");
+}
+
+function joinLabels(labels: readonly string[]) {
+  return labels.length > 0 ? labels.join(", ") : "-";
 }
 
 function AdminPublicContentShell({
@@ -188,7 +194,8 @@ function ArticleList({
                 tone="inherit"
                 className="text-[13px] font-semibold text-[#666]"
               >
-                {row.channelLabel} · {row.serviceLabel} · {row.categoryLabel}
+                {row.channelLabel} · {row.serviceLabel} · {row.categoryLabel} ·{" "}
+                {row.statusLabel} · {row.visibilityLabel}
               </YeonText>
               <YeonText
                 as="h3"
@@ -206,6 +213,17 @@ function ArticleList({
                 {row.article.summary}
               </YeonText>
               <YeonView className="mt-4 flex flex-wrap gap-2">
+                {row.seoWarnings.map((warning) => (
+                  <YeonText
+                    key={warning}
+                    as="span"
+                    variant="unstyled"
+                    tone="inherit"
+                    className="rounded-md border border-[#e5484d] bg-[#fff5f5] px-2.5 py-1 text-[12px] font-semibold text-[#b42318]"
+                  >
+                    {warning}
+                  </YeonText>
+                ))}
                 {row.article.sourcePaths.map((sourcePath) => (
                   <YeonText
                     key={sourcePath}
@@ -311,11 +329,66 @@ export function AdminPublicContentDenied({
   );
 }
 
+export function AdminPublicContentLoadError({
+  adminEmail,
+  message,
+}: AdminPublicContentProps & {
+  message: string;
+}) {
+  return (
+    <AdminPublicContentShell
+      adminEmail={adminEmail}
+      currentHref="/admin/content"
+    >
+      <YeonView as="main" className="mx-auto max-w-[900px] px-6 py-10 md:px-12">
+        <YeonView className="rounded-lg border border-[#e5e5e5] bg-[#fafafa] p-6">
+          <YeonText
+            variant="unstyled"
+            tone="inherit"
+            className={SHARED_FEATURE_CLASS.text13EmphasisSubtle}
+          >
+            content operations
+          </YeonText>
+          <YeonText
+            as="h1"
+            variant="unstyled"
+            tone="inherit"
+            className="mt-2 text-[26px] font-semibold text-[#111]"
+          >
+            공개 콘텐츠 현황을 불러오지 못했습니다
+          </YeonText>
+          <YeonText
+            variant="unstyled"
+            tone="inherit"
+            className="mt-3 text-[14px] leading-6 text-[#666]"
+          >
+            {message}
+          </YeonText>
+          <YeonView className={SHARED_FEATURE_CLASS.wrapGap2 + " mt-6"}>
+            <YeonLink
+              href="/admin/content"
+              className={SHARED_FEATURE_CLASS.primaryActionButtonMd14}
+            >
+              다시 확인
+            </YeonLink>
+            <YeonLink
+              href="/admin"
+              className={SHARED_FEATURE_CLASS.ghostButtonMd14}
+            >
+              Admin 홈
+            </YeonLink>
+          </YeonView>
+        </YeonView>
+      </YeonView>
+    </AdminPublicContentShell>
+  );
+}
+
 export function AdminPublicContentDashboard({
   adminEmail,
-}: AdminPublicContentProps) {
-  const stats = getPublicContentAdminDashboardStats();
-  const summaries = getPublicContentAdminChannelSummaries();
+  dashboard,
+}: AdminPublicContentDashboardProps) {
+  const { stats, summaries } = dashboard;
   const operationLinks: readonly OperationLink[] = [
     {
       href: stats.domainSearchConsoleUrl,
@@ -379,22 +452,22 @@ export function AdminPublicContentDashboard({
           <MetricCard
             label="articles"
             value={stats.articleCount.toLocaleString("ko-KR")}
-            note="초기 공개 글"
+            note="Spring admin read API"
           />
           <MetricCard
-            label="services"
-            value={stats.serviceCount.toLocaleString("ko-KR")}
-            note="서비스 분포"
+            label="published"
+            value={stats.publishedCount.toLocaleString("ko-KR")}
+            note={`draft ${stats.draftCount} · review ${stats.reviewCount}`}
+          />
+          <MetricCard
+            label="seo warnings"
+            value={stats.seoWarningCount.toLocaleString("ko-KR")}
+            note={`noindex ${stats.noindexCount} · meta ${stats.metaDescriptionMissingCount}`}
           />
           <MetricCard
             label="sitemap urls"
             value={stats.sitemapUrlCount.toLocaleString("ko-KR")}
-            note="home 포함"
-          />
-          <MetricCard
-            label="sources"
-            value={stats.sourcePathCount.toLocaleString("ko-KR")}
-            note="근거 파일"
+            note={`sources ${stats.sourcePathCount} · archived ${stats.archivedCount}`}
           />
         </YeonView>
 
@@ -455,14 +528,20 @@ export function AdminPublicContentDashboard({
               </YeonView>
               <YeonView className="mt-5 space-y-3 text-[13px] text-[#666]">
                 <YeonText variant="unstyled" tone="inherit">
-                  서비스: {summary.serviceLabels.join(", ")}
+                  서비스: {joinLabels(summary.serviceLabels)}
                 </YeonText>
                 <YeonText variant="unstyled" tone="inherit">
-                  분류: {summary.categoryLabels.join(", ")}
+                  분류: {joinLabels(summary.categoryLabels)}
+                </YeonText>
+                <YeonText variant="unstyled" tone="inherit">
+                  상태: 발행 {summary.statusCounts.published} · 초안{" "}
+                  {summary.statusCounts.draft} · 검토{" "}
+                  {summary.statusCounts.review}
                 </YeonText>
                 <YeonText variant="unstyled" tone="inherit">
                   sitemap: home {summary.sitemapHomeIncluded ? "포함" : "누락"}{" "}
-                  · 글 {summary.sitemapArticleCount}/{summary.articleCount}
+                  · 글 {summary.sitemapArticleCount}/{summary.articleCount} ·
+                  경고 {summary.seoWarningCount}
                 </YeonText>
               </YeonView>
               <YeonView className={SHARED_FEATURE_CLASS.wrapGap2 + " mt-5"}>
@@ -501,15 +580,9 @@ export function AdminPublicContentDashboard({
 
 export function AdminPublicContentChannelScreen({
   adminEmail,
-  channel,
+  rows,
+  summary,
 }: AdminPublicContentChannelProps) {
-  const summary = getPublicContentAdminChannelSummary(channel);
-  const rows = getPublicContentAdminArticleRows(channel);
-
-  if (!summary) {
-    return null;
-  }
-
   return (
     <AdminPublicContentShell
       adminEmail={adminEmail}
@@ -580,7 +653,7 @@ export function AdminPublicContentChannelScreen({
           <MetricCard
             label="services"
             value={summary.serviceLabels.length.toLocaleString("ko-KR")}
-            note={summary.serviceLabels.join(", ")}
+            note={joinLabels(summary.serviceLabels)}
           />
           <MetricCard
             label="sitemap"
@@ -588,9 +661,9 @@ export function AdminPublicContentChannelScreen({
             note={summary.sitemapHomeIncluded ? "home 포함" : "home 누락"}
           />
           <MetricCard
-            label="updated"
-            value={formatDate(summary.lastUpdatedAt)}
-            note="최근 갱신"
+            label="warnings"
+            value={summary.seoWarningCount.toLocaleString("ko-KR")}
+            note={`초안 ${summary.statusCounts.draft} · 검토 ${summary.statusCounts.review}`}
           />
         </YeonView>
 
