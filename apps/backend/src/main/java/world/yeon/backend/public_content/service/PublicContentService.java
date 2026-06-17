@@ -12,8 +12,8 @@ import world.yeon.backend.public_content.dto.PublicContentDtos.PublicContentArti
 import world.yeon.backend.public_content.dto.PublicContentDtos.PublicContentArticleSummaryDto;
 import world.yeon.backend.public_content.dto.PublicContentDtos.PublicContentSitemapEntryDto;
 import world.yeon.backend.public_content.dto.PublicContentDtos.PublicContentSitemapResponse;
-import world.yeon.backend.public_content.repository.PublicContentSeedRepository;
-import world.yeon.backend.public_content.repository.PublicContentSeedRepository.PublicContentSeedArticle;
+import world.yeon.backend.public_content.repository.PublicContentArticleRecord;
+import world.yeon.backend.public_content.repository.PublicContentArticleStore;
 
 @Service
 public class PublicContentService {
@@ -52,14 +52,14 @@ public class PublicContentService {
 	private static final Pattern SLUG_PATTERN = Pattern.compile(
 		"^[a-z0-9]+(?:-[a-z0-9]+)*(?:/[a-z0-9]+(?:-[a-z0-9]+)*)*$"
 	);
-	private static final Comparator<PublicContentSeedArticle> ARTICLE_ORDER =
-		Comparator.comparing(PublicContentSeedArticle::publishedAt)
+	private static final Comparator<PublicContentArticleRecord> ARTICLE_ORDER =
+		Comparator.comparing(PublicContentArticleRecord::publishedAt)
 			.reversed()
-			.thenComparing(PublicContentSeedArticle::slug);
+			.thenComparing(PublicContentArticleRecord::slug);
 
-	private final PublicContentSeedRepository repository;
+	private final PublicContentArticleStore repository;
 
-	public PublicContentService(PublicContentSeedRepository repository) {
+	public PublicContentService(PublicContentArticleStore repository) {
 		this.repository = repository;
 	}
 
@@ -113,7 +113,7 @@ public class PublicContentService {
 		return new PublicContentSitemapResponse(List.copyOf(entries));
 	}
 
-	private PublicContentArticleSummaryDto toSummary(PublicContentSeedArticle article) {
+	private PublicContentArticleSummaryDto toSummary(PublicContentArticleRecord article) {
 		return new PublicContentArticleSummaryDto(
 			article.channel(),
 			article.serviceKey(),
@@ -129,7 +129,7 @@ public class PublicContentService {
 		);
 	}
 
-	private PublicContentArticleDetailDto toDetail(PublicContentSeedArticle article) {
+	private PublicContentArticleDetailDto toDetail(PublicContentArticleRecord article) {
 		return new PublicContentArticleDetailDto(
 			article.channel(),
 			article.serviceKey(),
@@ -151,10 +151,10 @@ public class PublicContentService {
 
 	private PublicContentSitemapEntryDto channelHomeSitemapEntry(
 		String channel,
-		List<PublicContentSeedArticle> articles
+		List<PublicContentArticleRecord> articles
 	) {
 		var lastModified = articles.stream()
-			.map(PublicContentSeedArticle::updatedAt)
+			.map(PublicContentArticleRecord::updatedAt)
 			.max(String::compareTo)
 			.orElse("2026-06-17T00:00:00.000Z");
 
@@ -167,7 +167,7 @@ public class PublicContentService {
 	}
 
 	private PublicContentSitemapEntryDto articleSitemapEntry(
-		PublicContentSeedArticle article
+		PublicContentArticleRecord article
 	) {
 		boolean support = "support".equals(article.channel());
 		return new PublicContentSitemapEntryDto(
