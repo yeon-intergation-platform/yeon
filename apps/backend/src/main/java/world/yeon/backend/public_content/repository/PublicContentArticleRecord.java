@@ -1,5 +1,7 @@
 package world.yeon.backend.public_content.repository;
 
+import java.util.List;
+
 public record PublicContentArticleRecord(
 	String channel,
 	String serviceKey,
@@ -15,5 +17,11 @@ public record PublicContentArticleRecord(
 	String bodyFormat,
 	String bodyMarkdown,
 	String ctaLabel,
-	String ctaHref
-) {}
+	String ctaHref,
+	String metaDescription,
+	List<String> sourcePaths
+) {
+	public PublicContentArticleRecord {
+		sourcePaths = sourcePaths == null ? List.of() : List.copyOf(sourcePaths);
+	}
+}

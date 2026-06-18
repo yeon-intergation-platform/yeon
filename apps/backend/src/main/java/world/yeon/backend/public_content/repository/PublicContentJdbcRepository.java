@@ -42,7 +42,9 @@ public class PublicContentJdbcRepository implements PublicContentArticleStore {
 			  body_format,
 			  body_markdown,
 			  cta_label,
-			  cta_href
+			  cta_href,
+			  meta_description,
+			  source_paths::text as source_paths
 			from public.public_content_articles
 			where status = 'published'
 			  and visibility = 'public'
@@ -104,7 +106,9 @@ public class PublicContentJdbcRepository implements PublicContentArticleStore {
 			rs.getString("body_format"),
 			rs.getString("body_markdown"),
 			rs.getString("cta_label"),
-			rs.getString("cta_href")
+			rs.getString("cta_href"),
+			rs.getString("meta_description"),
+			parseSourcePaths(rs.getString("source_paths"))
 		);
 	}
 

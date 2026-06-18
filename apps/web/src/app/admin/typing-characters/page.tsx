@@ -1,5 +1,8 @@
 import { type YeonPageMetadata } from "@yeon/ui/runtime/YeonPageMetadata";
-import { YeonText, YeonView } from "@yeon/ui";
+import {
+  AdminAccessDenied,
+  AdminPageShell,
+} from "@/features/admin/admin-shell";
 import { CharacterFrameAdmin } from "@/features/typing-service/character-frame-admin";
 import { getCurrentAdminUser } from "@/server/auth/admin";
 
@@ -12,20 +15,16 @@ export default async function Page() {
   const admin = await getCurrentAdminUser();
   if (!admin) {
     return (
-      <YeonView
-        as="main"
-        className="flex min-h-screen items-center justify-center bg-white"
-      >
-        <YeonText
-          as="p"
-          variant="unstyled"
-          tone="inherit"
-          className="text-[14px] text-[#111]"
-        >
-          관리자 권한이 필요합니다.
-        </YeonText>
-      </YeonView>
+      <AdminAccessDenied description="타자 캐릭터 설정은 admin role 계정만 접근할 수 있습니다." />
     );
   }
-  return <CharacterFrameAdmin />;
+  return (
+    <AdminPageShell
+      adminEmail={admin.email}
+      currentHref="/admin/typing-characters"
+      sectionLabel="타자 캐릭터"
+    >
+      <CharacterFrameAdmin />
+    </AdminPageShell>
+  );
 }
