@@ -10,6 +10,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -35,6 +37,19 @@ class CommunityChatServiceTests {
 	@BeforeEach
 	void setUp() {
 		service = new CommunityChatService(repository, experienceService);
+	}
+
+	@Test
+	void 목록조회는_3일_이전_메시지를_정리하고_보존기간_이후만_조회한다() {
+		when(repository.listLatestSince(eq(100), any())).thenReturn(List.of(messageRow(null)));
+
+		var response = service.listMessages();
+
+		ArgumentCaptor<OffsetDateTime> cutoff = ArgumentCaptor.forClass(OffsetDateTime.class);
+		verify(repository).deleteCreatedBefore(cutoff.capture());
+		verify(repository).listLatestSince(eq(100), eq(cutoff.getValue()));
+		assertThat(cutoff.getValue()).isAfter(OffsetDateTime.now(ZoneOffset.UTC).minusDays(3).minusSeconds(5));
+		assertThat(response.messages()).hasSize(1);
 	}
 
 	private MessageRow messageRow(UUID senderUserId) {

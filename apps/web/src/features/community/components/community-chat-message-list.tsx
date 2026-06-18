@@ -2,7 +2,7 @@
 import type { RefObject } from "react";
 import type { CommunityChatMessage } from "../community-chat-api";
 import {
-  formatCommunityChatMessageTime,
+  formatCommunityChatMessageTimestamp,
   trimCommunityChatDisplayText,
 } from "./community-chat-format";
 import { YEON_WEB_SHARED_CLASS as SHARED_FEATURE_CLASS } from "@yeon/ui/theme/web-style-tokens";
@@ -92,12 +92,12 @@ export function CommunityChatMessageList({
                     {message.senderNickname}
                   </YeonText>
                 )}
-                <YeonView className="flex items-baseline gap-2">
+                <YeonView className="space-y-0.5">
                   <YeonText
                     as="span"
                     variant="unstyled"
                     tone="inherit"
-                    className="min-w-0 flex-1 break-words [overflow-wrap:anywhere] text-[#111]"
+                    className="block min-w-0 break-words [overflow-wrap:anywhere] text-[#111]"
                   >
                     {trimCommunityChatDisplayText(message.body)}
                   </YeonText>
@@ -106,9 +106,9 @@ export function CommunityChatMessageList({
                     variant="unstyled"
                     tone="inherit"
                     dateTime={message.createdAt}
-                    className="shrink-0 font-mono text-[10px] text-[#aaa]"
+                    className="block font-mono text-[10px] leading-none text-[#999]"
                   >
-                    {formatCommunityChatMessageTime(message.createdAt)}
+                    {formatCommunityChatMessageTimestamp(message.createdAt)}
                   </YeonText>
                 </YeonView>
               </YeonView>

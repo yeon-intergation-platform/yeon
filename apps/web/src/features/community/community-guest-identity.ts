@@ -1,10 +1,12 @@
 import {
   getYeonRandomUint32,
   readYeonLocalStorageItem,
+  removeYeonLocalStorageItem,
   writeYeonLocalStorageItem,
 } from "@yeon/ui/runtime/YeonBrowserRuntime";
 
 const COMMUNITY_GUEST_NICKNAME_STORAGE_KEY = "yeon-community-guest-nickname";
+const COMMUNITY_GUEST_PASSWORD_STORAGE_KEY = "yeon-community-guest-password";
 const COMMUNITY_GUEST_NICKNAME_PREFIX = "익명";
 const RANDOM_SUFFIX_MODULO = 10_000;
 
@@ -30,6 +32,19 @@ export function writeCommunityGuestNickname(nickname: string) {
   );
 }
 
+export function writeCommunityGuestPassword(password: string) {
+  const normalizedPassword = password.trim();
+  if (!normalizedPassword) {
+    removeYeonLocalStorageItem(COMMUNITY_GUEST_PASSWORD_STORAGE_KEY);
+    return;
+  }
+
+  writeYeonLocalStorageItem(
+    COMMUNITY_GUEST_PASSWORD_STORAGE_KEY,
+    normalizedPassword
+  );
+}
+
 export function resolveCommunityGuestNickname(nickname?: string | null) {
   const normalizedNickname = nickname?.trim();
   if (normalizedNickname) {
@@ -37,6 +52,21 @@ export function resolveCommunityGuestNickname(nickname?: string | null) {
   }
 
   return readCommunityGuestNickname();
+}
+
+export function readCommunityGuestPassword() {
+  try {
+    return (
+      readYeonLocalStorageItem(COMMUNITY_GUEST_PASSWORD_STORAGE_KEY)?.trim() ??
+      ""
+    );
+  } catch (error) {
+    console.warn(
+      "[CommunityGuestIdentity] 게스트 비밀번호 저장소 접근 실패 — 저장된 비밀번호를 사용하지 않습니다.",
+      error
+    );
+    return "";
+  }
 }
 
 export function readCommunityGuestNickname() {
