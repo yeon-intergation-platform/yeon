@@ -1,7 +1,7 @@
 import { type YeonPageMetadata } from "@yeon/ui/runtime/YeonPageMetadata";
 import { YeonScript } from "@yeon/ui";
 import { createYeonGoogleAnalyticsBootstrapScript } from "@yeon/ui/runtime/YeonBrowserRuntime";
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
 import { GoogleAnalyticsPageTracker } from "@/components/analytics/google-analytics-page-tracker";
 import { CommunityPresenceTracker } from "@/features/community/components/community-presence-tracker";
 import {
@@ -67,7 +67,9 @@ export default function RootLayout({ children }: RootLayoutProps) {
             <YeonScript id="google-analytics" strategy="afterInteractive">
               {createYeonGoogleAnalyticsBootstrapScript(GA_MEASUREMENT_ID)}
             </YeonScript>
-            <GoogleAnalyticsPageTracker />
+            <Suspense fallback={null}>
+              <GoogleAnalyticsPageTracker />
+            </Suspense>
           </>
         ) : null}
         <CommunityPresenceTracker />
