@@ -10,6 +10,7 @@ import {
 import {
   canSkipCommunityGuestIdentityConfirm,
   hasCompleteCommunityGuestIdentity,
+  runCommunityGuestIdentityAction,
 } from "../community-guest-identity-confirm";
 
 function stubWindowLocalStorage(initialNickname?: string) {
@@ -127,5 +128,25 @@ describe("community guest identity", () => {
         guestPassword: "pw",
       })
     ).toBe(true);
+  });
+
+  it("저장된 게스트 인증 액션 실패를 false로 반환한다", async () => {
+    await expect(
+      runCommunityGuestIdentityAction(
+        { guestNickname: "테스터", guestPassword: "pw" },
+        async () => {
+          throw new Error("삭제 권한이 없습니다.");
+        }
+      )
+    ).resolves.toBe(false);
+  });
+
+  it("저장된 게스트 인증 액션 성공을 true로 반환한다", async () => {
+    await expect(
+      runCommunityGuestIdentityAction(
+        { guestNickname: "테스터", guestPassword: "pw" },
+        async () => {}
+      )
+    ).resolves.toBe(true);
   });
 });

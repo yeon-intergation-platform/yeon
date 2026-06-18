@@ -10,16 +10,22 @@ export const COMMUNITY_CATEGORIES = [
 
 export type CommunityCategory = (typeof COMMUNITY_CATEGORIES)[number];
 export type WritableCommunityCategory = Exclude<CommunityCategory, "전체">;
+export type CommunityPostDraft = {
+  category: WritableCommunityCategory;
+  title: string;
+  content: string;
+};
+
+export const COMMUNITY_POST_TITLE_MAX_LENGTH = 80;
+export const COMMUNITY_POST_CONTENT_MAX_LENGTH = 280;
+export const COMMUNITY_POST_DRAFT_MAX_LENGTH =
+  COMMUNITY_POST_TITLE_MAX_LENGTH + COMMUNITY_POST_CONTENT_MAX_LENGTH;
 
 export const WRITABLE_CATEGORIES = COMMUNITY_CATEGORIES.filter(
   (category): category is WritableCommunityCategory => category !== "전체"
 );
 
-export function serializeCommunityPost(input: {
-  category: WritableCommunityCategory;
-  title: string;
-  content: string;
-}) {
+export function serializeCommunityPost(input: CommunityPostDraft) {
   return `[${input.category}] ${input.title.trim()}\n${input.content.trim()}`;
 }
 

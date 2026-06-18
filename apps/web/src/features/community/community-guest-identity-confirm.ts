@@ -16,3 +16,15 @@ export function canSkipCommunityGuestIdentityConfirm(
 ) {
   return hasCompleteCommunityGuestIdentity(identity);
 }
+
+export async function runCommunityGuestIdentityAction(
+  identity: CommunityGuestIdentity,
+  run: (identity: CommunityGuestIdentity) => Promise<void>
+) {
+  try {
+    await run(identity);
+    return true;
+  } catch {
+    return false;
+  }
+}

@@ -9,6 +9,7 @@ import { YeonButton, YeonSurface, YeonText, YeonView } from "@yeon/ui";
 import { CommunityGuestIdentityConfirmModal } from "./components/community-guest-identity-confirm-modal";
 import {
   canSkipCommunityGuestIdentityConfirm,
+  runCommunityGuestIdentityAction,
   type CommunityGuestIdentity,
 } from "./community-guest-identity-confirm";
 import { CommunityChatWidget } from "./components/community-chat-widget";
@@ -112,7 +113,7 @@ export function CommunityPage() {
     const currentIdentity = { guestNickname, guestPassword };
 
     if (canSkipCommunityGuestIdentityConfirm(currentIdentity)) {
-      return run(currentIdentity).then(() => true);
+      return runCommunityGuestIdentityAction(currentIdentity, run);
     }
 
     return new Promise<boolean>((resolve) => {
