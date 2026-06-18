@@ -1,5 +1,6 @@
 "use client";
 import { YEON_WEB_SHARED_CLASS as SHARED_FEATURE_CLASS } from "@yeon/ui/theme/web-style-tokens";
+import { useYeonRouter } from "@yeon/ui/runtime/YeonNavigation";
 import { useEffect, useMemo, useState } from "react";
 import { CommonProductHeader } from "@/components/product-shell/product-header";
 import {
@@ -12,12 +13,12 @@ import {
   YeonView,
   YeonLink,
 } from "@yeon/ui";
+import { CommunityGuestIdentityConfirmModal } from "./components/community-guest-identity-confirm-modal";
 import {
-  CommunityGuestIdentityConfirmModal,
-  isCommunityGuestIdentityConfirmDismissed,
+  canSkipCommunityGuestIdentityConfirm,
   persistCommunityGuestIdentityConfirmDismissed,
   type CommunityGuestIdentity,
-} from "./components/community-guest-identity-confirm-modal";
+} from "./community-guest-identity-confirm";
 import { parseCommunityPost } from "./community-post-format";
 import { useCommunityFeed } from "./hooks/use-community-feed";
 import { type ChatServiceFeedPost } from "./chat-service-api";
@@ -42,6 +43,7 @@ export function CommunityPostDetailPage({
   postId: string;
   initialPost: ChatServiceFeedPost;
 }) {
+  const router = useYeonRouter();
   const {
     posts,
     isPostsLoading,
@@ -93,7 +95,7 @@ export function CommunityPostDetailPage({
   ) => {
     const currentIdentity = { guestNickname, guestPassword };
 
-    if (isCommunityGuestIdentityConfirmDismissed()) {
+    if (canSkipCommunityGuestIdentityConfirm(currentIdentity)) {
       return run(currentIdentity).then(() => true);
     }
 
@@ -241,7 +243,11 @@ export function CommunityPostDetailPage({
                 onClick={() => {
                   void runWithGuestIdentityConfirm("글을 삭제", (identity) =>
                     deletePost(post.id, identity)
-                  );
+                  ).then((completed) => {
+                    if (completed) {
+                      router.replace("/community");
+                    }
+                  });
                 }}
                 className="h-auto px-0 py-0 underline-offset-4 hover:underline"
               >
