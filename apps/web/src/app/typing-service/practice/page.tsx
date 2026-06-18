@@ -1,18 +1,15 @@
-import type { YeonPageMetadata } from "@yeon/ui/runtime/YeonPageMetadata";
 import { TypingRaceSoloScreen } from "@/features/typing-service/typing-race-solo-screen";
-import { buildServiceCanonicalUrl } from "@/lib/seo";
+import { createTypingServiceMetadata } from "../typing-service-metadata";
 
-export const metadata: YeonPageMetadata = {
-  title: "YEON 타자 덱 연습",
-  description: "선택한 타자 덱으로 바로 시작하는 솔로 타자 연습 화면입니다.",
-  alternates: {
-    canonical: buildServiceCanonicalUrl("typing", "/practice"),
-  },
+export const metadata = createTypingServiceMetadata({
+  title: "YEON Solo Typing Practice",
+  description: "Start solo typing practice with the selected deck.",
   robots: {
     index: false,
     follow: true,
   },
-};
+  path: "/practice",
+});
 
 type TypingServicePracticePageProps = {
   searchParams: Promise<{

@@ -61,6 +61,10 @@ const MESSAGES = {
   network: "상대 연결이 끊겨 통화가 종료되었습니다.",
 } as const;
 
+export type RoomVoiceCallMessages = {
+  [Key in keyof typeof MESSAGES]: string;
+};
+
 type SessionRef = {
   sessionId: string;
   targetParticipantId: string;
@@ -115,6 +119,8 @@ export type RoomVoiceCallOptions = {
   localParticipantId: string | null;
   participants: readonly VoiceCallParticipant[];
   enabled?: boolean;
+  messageOverrides?: Partial<RoomVoiceCallMessages>;
+  normalizeServerError?: (message: string) => string;
 };
 
 export type RoomVoiceCallResult = {
@@ -171,10 +177,10 @@ function toCandidateInit(
   };
 }
 
-function normalizeMediaError(error: unknown) {
+function normalizeMediaError(error: unknown, messages: RoomVoiceCallMessages) {
   return isYeonUserMediaPermissionDenied(error)
-    ? MESSAGES.permissionDenied
-    : MESSAGES.mediaFailed;
+    ? messages.permissionDenied
+    : messages.mediaFailed;
 }
 
 function isNonEmptyText(value: unknown): value is string {
@@ -258,11 +264,14 @@ function parseEnd(payload: unknown): IncomingEnd | null {
   };
 }
 
-function endReasonMessage(reason: VoiceEndMessage["reason"] | undefined) {
-  if (reason === "rejected") return MESSAGES.rejected;
-  if (reason === "timeout") return MESSAGES.timeout;
-  if (reason === "network") return MESSAGES.network;
-  return MESSAGES.ended;
+function endReasonMessage(
+  reason: VoiceEndMessage["reason"] | undefined,
+  messages: RoomVoiceCallMessages
+) {
+  if (reason === "rejected") return messages.rejected;
+  if (reason === "timeout") return messages.timeout;
+  if (reason === "network") return messages.network;
+  return messages.ended;
 }
 
 async function fetchRoomVoiceCallConfig() {
@@ -281,7 +290,16 @@ export function useRoomVoiceCall({
   localParticipantId,
   participants,
   enabled = true,
+  messageOverrides,
+  normalizeServerError,
 }: RoomVoiceCallOptions): RoomVoiceCallResult {
+  const messages = useMemo<RoomVoiceCallMessages>(
+    () => ({
+      ...MESSAGES,
+      ...messageOverrides,
+    }),
+    [messageOverrides]
+  );
   const runtimeFeatureFlagQuery = useQuery({
     queryKey: roomVoiceCallConfigQueryKey(),
     queryFn: fetchRoomVoiceCallConfig,
@@ -469,7 +487,7 @@ export function useRoomVoiceCall({
             connection.iceConnectionState === "failed" ||
             connection.iceConnectionState === "disconnected")
         ) {
-          failCall(MESSAGES.signalFailed);
+          failCall(messages.signalFailed);
         }
       };
       connection.onconnectionstatechange = handleConnectionDrop;
@@ -477,7 +495,7 @@ export function useRoomVoiceCall({
 
       return connection;
     },
-    [failCall, sendPayload]
+    [failCall, messages.signalFailed, sendPayload]
   );
 
   const attachLocalStream = useCallback((connection: YeonRtcPeerConnection) => {
@@ -490,23 +508,23 @@ export function useRoomVoiceCall({
   const start = useCallback(
     async (targetId?: string) => {
       if (isFeatureFlagLoading) {
-        setError(MESSAGES.loading);
+        setError(messages.loading);
         return;
       }
       if (!isFeatureEnabled) {
-        setError(MESSAGES.disabled);
+        setError(messages.disabled);
         return;
       }
       if (!isSupported) {
-        setError(MESSAGES.unsupported);
+        setError(messages.unsupported);
         return;
       }
       if (!roomRef.current) {
-        setError(MESSAGES.missingRoom);
+        setError(messages.missingRoom);
         return;
       }
       if (!localParticipantIdRef.current) {
-        setError(MESSAGES.missingParticipant);
+        setError(messages.missingParticipant);
         return;
       }
 
@@ -515,11 +533,11 @@ export function useRoomVoiceCall({
         !targetParticipantId ||
         !availableTargets.some((item) => item.id === targetParticipantId)
       ) {
-        setError(MESSAGES.missingTarget);
+        setError(messages.missingTarget);
         return;
       }
       if (isActiveStatus(statusRef.current)) {
-        setError(MESSAGES.alreadyActive);
+        setError(messages.alreadyActive);
         return;
       }
 
@@ -546,7 +564,7 @@ export function useRoomVoiceCall({
           sdp: offer.sdp ?? "",
         });
       } catch (mediaError) {
-        failCall(normalizeMediaError(mediaError));
+        failCall(normalizeMediaError(mediaError, messages));
       }
     },
     [
@@ -558,6 +576,7 @@ export function useRoomVoiceCall({
       isFeatureEnabled,
       isFeatureFlagLoading,
       isSupported,
+      messages,
       selectedTargetId,
       sendPayload,
     ]
@@ -600,7 +619,7 @@ export function useRoomVoiceCall({
       setIncomingFrom(null);
       setError(null);
     } catch (mediaError) {
-      failCall(normalizeMediaError(mediaError));
+      failCall(normalizeMediaError(mediaError, messages));
     }
   }, [
     attachLocalStream,
@@ -610,6 +629,7 @@ export function useRoomVoiceCall({
     flushCandidateQueue,
     isFeatureEnabled,
     isSupported,
+    messages,
     sendPayload,
     setCallStatus,
   ]);
@@ -624,13 +644,13 @@ export function useRoomVoiceCall({
         reason: "rejected" as VoiceEndMessage["reason"],
       });
     }
-    clearConnection({ status: "ended", error: "통화 요청을 거절했습니다." });
-  }, [clearConnection, sendPayload]);
+    clearConnection({ status: "ended", error: messages.rejected });
+  }, [clearConnection, messages.rejected, sendPayload]);
 
   const end = useCallback(() => {
     sendEndForCurrentSession("hangup");
-    clearConnection({ status: "ended", error: MESSAGES.ended });
-  }, [clearConnection, sendEndForCurrentSession]);
+    clearConnection({ status: "ended", error: messages.ended });
+  }, [clearConnection, messages.ended, sendEndForCurrentSession]);
 
   const retry = useCallback(() => {
     clearConnection({ status: "idle" });
@@ -664,7 +684,7 @@ export function useRoomVoiceCall({
     }
 
     if (!isSupported) {
-      setError(MESSAGES.unsupported);
+      setError(messages.unsupported);
       return;
     }
 
@@ -703,7 +723,7 @@ export function useRoomVoiceCall({
           setCallStatus("connected");
           setError(null);
         })
-        .catch(() => failCall(MESSAGES.signalFailed));
+        .catch(() => failCall(messages.signalFailed));
     });
 
     const unsubscribeCandidate = room.onMessage(
@@ -712,7 +732,7 @@ export function useRoomVoiceCall({
         const candidate = parseCandidate(payload);
         if (!candidate) return;
         void queueOrApplyCandidate(candidate).catch(() =>
-          failCall(MESSAGES.signalFailed)
+          failCall(messages.signalFailed)
         );
       }
     );
@@ -724,7 +744,7 @@ export function useRoomVoiceCall({
       if (!message || message.sessionId !== currentSessionId) return;
       clearConnection({
         status: "ended",
-        error: endReasonMessage(message.reason),
+        error: endReasonMessage(message.reason, messages),
       });
     });
 
@@ -750,7 +770,7 @@ export function useRoomVoiceCall({
       if (!payload || typeof payload !== "object") return;
       const message = (payload as { message?: unknown }).message;
       if (typeof message === "string") {
-        setError(message);
+        setError(normalizeServerError?.(message) ?? message);
         setCallStatus("failed");
       }
     });
@@ -772,6 +792,8 @@ export function useRoomVoiceCall({
     isFeatureEnabled,
     isSupported,
     localParticipantId,
+    messages,
+    normalizeServerError,
     queueOrApplyCandidate,
     room,
     sendEndForCurrentSession,

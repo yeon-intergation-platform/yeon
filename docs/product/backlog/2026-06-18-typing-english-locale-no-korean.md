@@ -29,7 +29,58 @@ A. 현재 요구의 핵심은 영어 설정 사용자가 실제 서비스에서 
 
 추천 기준으로 진행한다.
 
+## 3차
+
+### 작업내용
+
+- body visible text뿐 아니라 `document.title`, description/OpenGraph/Twitter meta, JSON-LD까지 한글 검출 대상으로 확대한다.
+- 타자 서비스 하위 페이지가 root metadata의 한국어 OpenGraph/Twitter 기본값을 상속하지 않도록 영어 기본 metadata helper를 둔다.
+- 점령전 직접 진입 fallback과 점령전 플레이 화면의 raw 한국어 문구를 locale label로 분리한다.
+- Playwright로 영어 설정에서 홈, 자유 연습, 방 목록, 덱, 점령전 fallback, 레이스 화면과 실제 표준방 생성/입장/시작/입력 흐름을 검사한다.
+
+### 논의 필요
+
+- root site metadata를 전역 영어로 바꿀지, 타자 서비스 하위 페이지에서만 영어 metadata를 덮어쓸지 선택이 필요하다.
+
+### 선택지
+
+- A. 타자 서비스 하위 페이지에서 OpenGraph/Twitter까지 영어 metadata를 명시해 root 한국어 metadata 상속을 차단한다.
+- B. root site metadata 자체를 영어로 바꾼다.
+
+### 추천
+
+A. 현재 범위는 타자 서비스 영어 설정 검증이므로 root metadata를 바꾸면 카드/커뮤니티/브랜드 허브 SEO까지 영향을 줄 수 있다. 타자 서비스 route에서만 영어 기본 metadata를 명시하는 편이 범위가 맞다.
+
+### 사용자 방향
+
+추천 기준으로 진행한다.
+
 ## 완료 기준
 
 - 영어 설정 후 주요 타자 서비스 화면에서 visible text 기준 한글 정규식(`[가-힣]`)이 검출되지 않는다.
 - 관련 타입 검사와 lint가 통과한다.
+
+## 2차
+
+### 작업내용
+
+- 영어 설정에서 최종 화면뿐 아니라 SSR/초기 hydration 중 한글이 잠깐 노출되는지 Playwright MutationObserver로 검사한다.
+- 로드 중 한국어 기본 UI가 먼저 렌더링되는 구조를 막는다.
+- 레이스 시작 후 남는 음성통화 패널 한국어 문구와 기본 연습 덱/문장 한국어 잔여값을 제거한다.
+
+### 논의 필요
+
+- 서버가 localStorage locale을 알 수 없는 상태에서 SSR을 유지할지, 영어 설정 복원 전 타자 서비스 본문을 짧게 가릴지 선택이 필요하다.
+
+### 선택지
+
+- A. 설정 hydration 전에는 locale 의존 본문을 렌더링하지 않아 한국어 flash를 원천 차단한다.
+- B. 서버 기본값을 영어로 바꿔 한국어 사용자가 반대로 영어 flash를 볼 위험을 감수한다.
+
+### 추천
+
+A. 현재 요구는 영어 설정 사용자가 한글을 보지 않는 것이다. 서버가 사용자의 localStorage 설정을 모르는 한, hydration 전 locale 의존 UI를 보류하는 방식이 가장 직접적이고 부작용이 작다.
+
+### 사용자 방향
+
+추천 기준으로 진행한다.

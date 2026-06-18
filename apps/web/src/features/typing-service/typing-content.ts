@@ -39,6 +39,21 @@ export const TYPING_SEO_KEYWORDS = [
   "무료 한글 타자 테스트",
 ] as const;
 
+export const TYPING_PAGE_TITLE_EN = "YEON Typing | Free online typing practice";
+
+export const TYPING_PAGE_DESCRIPTION_EN =
+  "Practice typing in your browser, track speed and accuracy, then move into typing rooms and live races.";
+
+export const TYPING_SEO_KEYWORDS_EN = [
+  "typing practice",
+  "free typing practice",
+  "online typing test",
+  "keyboard typing practice",
+  "typing speed test",
+  "typing accuracy test",
+  "typing race",
+] as const;
+
 export const TYPING_SEO_HEADING = "YEON 타자연습 소개";
 
 export const TYPING_SEO_INTRO = [

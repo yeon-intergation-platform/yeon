@@ -62,6 +62,10 @@ export function TypingServiceLayoutClient({
     return () => window.clearTimeout(handle);
   }, [pathname, settings.locale]);
 
+  if (!loaded) {
+    return <YeonView aria-busy="true" className="min-h-screen bg-white" />;
+  }
+
   return (
     <>
       {children}

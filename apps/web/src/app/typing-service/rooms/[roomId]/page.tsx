@@ -1,16 +1,18 @@
-import { type YeonPageMetadata } from "@yeon/ui/runtime/YeonPageMetadata";
 import { Suspense } from "react";
 import { YeonView } from "@yeon/ui";
 import { TypingRoomScreen } from "@/features/typing-service";
+import { createTypingServiceMetadata } from "../../typing-service-metadata";
 
-export const metadata: YeonPageMetadata = {
-  title: "YEON 타자방",
-  description: "실시간 타자 대결방 대기 및 플레이 화면입니다.",
+export const metadata = createTypingServiceMetadata({
+  title: "YEON Typing Room",
+  description: "Wait and play in a real-time typing room.",
   robots: {
     index: false,
     follow: false,
   },
-};
+  includeCanonical: false,
+  path: "/rooms",
+});
 
 type TypingRoomPageProps = {
   params: Promise<{ roomId: string }>;
