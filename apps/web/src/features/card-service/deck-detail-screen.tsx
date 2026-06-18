@@ -9,7 +9,6 @@ import {
   YeonList,
   YeonListItem,
   YeonText,
-  YeonLink,
 } from "@yeon/ui";
 import { showYeonConfirm } from "@yeon/ui/runtime/YeonBrowserRuntime";
 import {
@@ -25,7 +24,7 @@ import type { DeckDetailViewState } from "./types";
 import { deriveCardDeckDetailViewState } from "@yeon/ui/runtime/ports/card-deck";
 import { useState } from "react";
 import { analyticsEvents, trackEvent } from "@/lib/analytics";
-import { PLATFORM_HOME_HREF } from "@/lib/platform-services";
+import { CommonProductHeader } from "@/components/product-shell/product-header";
 
 // 분기 로직은 SSOT에서 파생한다(web/mobile 공용). 복제 금지.
 function toViewState(
@@ -93,18 +92,10 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
 
   return (
     <YeonView className={SHARED_FEATURE_CLASS.pageSurface}>
-      <YeonView
-        as="header"
-        className="hidden border-b border-[#e5e5e5] px-5 py-3 md:block md:px-12"
-      >
-        <YeonView className="mx-auto flex max-w-5xl items-center justify-between">
-          <YeonLink
-            href={PLATFORM_HOME_HREF}
-            className={`${CARD_SERVICE_COMMON_CLASS.panelTextEmphasis} no-underline transition-colors hover:opacity-70`}
-          >
-            YEON 카드
-          </YeonLink>
-          {state.kind === "ready" ? (
+      <CommonProductHeader
+        activeService="card"
+        rightExtras={
+          state.kind === "ready" ? (
             <YeonText
               as="span"
               variant="unstyled"
@@ -113,9 +104,9 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
             >
               카드 {state.items.length}장
             </YeonText>
-          ) : null}
-        </YeonView>
-      </YeonView>
+          ) : null
+        }
+      />
 
       <YeonView
         as="main"

@@ -291,11 +291,12 @@ function renderIcon(name: YeonIconName, { strokeWidth }: IconRenderProps) {
     ),
     settings: (
       <>
-        <circle cx="12" cy="12" r="3" {...strokeProps} />
-        <path
-          d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2 3.4-.2-.1a1.7 1.7 0 0 0-2 .1 1.7 1.7 0 0 0-.8 1.7v.2H10v-.2a1.7 1.7 0 0 0-.8-1.7 1.7 1.7 0 0 0-2-.1l-.2.1-2-3.4.1-.1A1.7 1.7 0 0 0 5.4 15 1.7 1.7 0 0 0 4 13.8h-.2V10h.2a1.7 1.7 0 0 0 1.4-1.2 1.7 1.7 0 0 0-.3-1.9L5 6.8l2-3.4.2.1a1.7 1.7 0 0 0 2-.1A1.7 1.7 0 0 0 10 1.7v-.2h4.8v.2a1.7 1.7 0 0 0 .8 1.7 1.7 1.7 0 0 0 2 .1l.2-.1 2 3.4-.1.1a1.7 1.7 0 0 0-.3 1.9A1.7 1.7 0 0 0 20.8 10h.2v3.8h-.2A1.7 1.7 0 0 0 19.4 15Z"
-          {...strokeProps}
-        />
+        <path d="M4 7h9" {...strokeProps} />
+        <path d="M17 7h3" {...strokeProps} />
+        <circle cx="15" cy="7" r="2" {...strokeProps} />
+        <path d="M4 17h3" {...strokeProps} />
+        <path d="M11 17h9" {...strokeProps} />
+        <circle cx="9" cy="17" r="2" {...strokeProps} />
       </>
     ),
     swords: (

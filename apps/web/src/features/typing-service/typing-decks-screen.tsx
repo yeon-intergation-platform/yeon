@@ -2,13 +2,7 @@
 import { YEON_WEB_SHARED_CLASS as SHARED_FEATURE_CLASS } from "@yeon/ui/theme/web-style-tokens";
 import { TYPING_SERVICE_COMMON_CLASS } from "./typing-service-common.const";
 import { useState } from "react";
-import {
-  YeonButton,
-  YeonSurface,
-  YeonView,
-  YeonText,
-  YeonLink,
-} from "@yeon/ui";
+import { YeonButton, YeonSurface, YeonView, YeonText } from "@yeon/ui";
 import {
   type TypingDeckDto,
   type TypingDeckScope,
@@ -20,6 +14,7 @@ import {
   TypingDeckForm,
   TypingDeckList,
 } from "./typing-deck-components";
+import { TypingServiceHeader } from "./typing-service-header";
 
 export {
   TYPING_DECK_SCOPE_TABS,
@@ -79,18 +74,11 @@ export function TypingDecksScreen({
       }
     >
       {!adminMode ? (
-        <YeonView
-          as="header"
-          className="border-b border-[#e5e5e5] px-6 py-3 md:px-12"
-        >
-          <YeonView className="mx-auto flex max-w-[1400px] items-center justify-between gap-3">
-            <YeonLink
-              href="/typing-service"
-              className={`${TYPING_SERVICE_COMMON_CLASS.panelTextEmphasis} no-underline`}
-            >
-              YEON 타자연습
-            </YeonLink>
-            <YeonView className="flex flex-wrap items-center justify-end gap-2">
+        <TypingServiceHeader
+          active="decks"
+          title="YEON 타자 덱"
+          controls={
+            <YeonView className="flex items-center justify-end gap-2">
               {showAdminEntry ? (
                 <YeonButton as="a" href="/admin/typing-decks" variant="primary">
                   관리자
@@ -100,8 +88,8 @@ export function TypingDecksScreen({
                 타자방으로
               </YeonButton>
             </YeonView>
-          </YeonView>
-        </YeonView>
+          }
+        />
       ) : null}
 
       <YeonView

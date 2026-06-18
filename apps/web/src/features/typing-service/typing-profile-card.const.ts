@@ -21,7 +21,8 @@ export const TYPING_PROFILE_CARD_CLASS = {
   characterToggle:
     "mt-1 min-h-[44px] px-2 text-[12px] text-[#666] underline underline-offset-2 hover:text-[#111]",
   ctaButtonBase:
-    "min-h-[44px] rounded-lg border px-4 py-2.5 text-[13px] font-medium transition-colors",
-  ctaButtonSelected: "border-[#111] bg-[#111] text-white",
-  ctaButtonDefault: "border-[#e5e5e5] text-[#666] hover:border-[#aaa]",
+    "min-h-[44px] min-w-[88px] rounded-lg border px-4 py-2.5 text-[13px] font-medium transition-colors",
+  ctaButtonSelected: "!border-[#111] !bg-[#111] !text-white",
+  ctaButtonDefault:
+    "!border-[#e5e5e5] !bg-white !text-[#666] hover:!border-[#aaa] hover:!text-[#111]",
 } as const;
