@@ -9,13 +9,12 @@ import {
   findTerritoryCellByWord,
   resolveTerritoryWinner,
   type TerritoryBattleSnapshot,
+  type TerritoryBattlePhase,
   type TerritoryBattleTeam,
   type TerritoryCellSnapshot,
 } from "@yeon/race-shared";
-import {
-  getTerritoryPhaseLabel,
-  useTerritoryBattleRoom,
-} from "./use-territory-battle-room";
+import { useTerritoryBattleRoom } from "./use-territory-battle-room";
+import { useTypingSettings, type TypingLocale } from "./use-typing-settings";
 import {
   YeonBadge,
   YeonButton,
@@ -44,31 +43,284 @@ type TeamPanelProps = {
   score: number;
   capturedCellCount: number;
   players: TerritoryBattleSnapshot["players"];
+  labels: TerritoryBattleText;
 };
 
 const LOCAL_PLAYER_ID = "local-red-player";
 const PROTOTYPE_SEED = "territory-battle-v0-1";
 const RESULT_RETURN_SECONDS = 24;
 
-const TEAM_VIEW = {
-  red: {
-    label: "빨강팀",
-    shortLabel: "빨강",
-    marker: "RED",
-  },
-  blue: {
-    label: "파랑팀",
-    shortLabel: "파랑",
-    marker: "BLUE",
-  },
-} as const;
-
 type TypingTerritoryBattleScreenProps = {
   originRoomId: string | null;
 };
 
-function getTeamDisplayLabel(team: TerritoryBattleTeam) {
-  return team === TERRITORY_BATTLE_TEAM.RED ? "빨강팀" : "파랑팀";
+type TerritoryBattleText = {
+  gate: {
+    eyebrow: string;
+    title: string;
+    description: string;
+    lobby: string;
+  };
+  result: {
+    draw: string;
+    victory: string;
+    waitingPlayer: string;
+    boardScore: string;
+    bonusGame: string;
+    teamScore: string;
+    myRank: string;
+    rank: (rank: number) => string;
+    earnedPoints: string;
+    leaveRoom: string;
+    countdown: (seconds: number) => string;
+    waitingRoom: string;
+  };
+  team: Record<
+    TerritoryBattleTeam,
+    {
+      label: string;
+      shortLabel: string;
+      scoreLabel: string;
+      cardLabel: string;
+    }
+  > & {
+    neutralLabel: string;
+    neutralCardLabel: string;
+    waitingPlayer: string;
+    players: string;
+    tiles: (count: number) => string;
+  };
+  board: {
+    instruction: string;
+    targetHover: string;
+    currentTarget: string;
+  };
+  game: {
+    initialMessage: string;
+    serverNotPlaying: string;
+    submitted: string;
+    wordNotFound: string;
+    ownCell: string;
+    flipSuccess: (word: string, scoreDelta: number, suffix: string) => string;
+    steal: string;
+    lineComplete: string;
+    cardFlipBattle: string;
+    phase: Record<TerritoryBattlePhase | "none", string>;
+    connection: (state: string) => string;
+    title: string;
+    subtitle: string;
+    draw: string;
+    leading: (winner: TerritoryBattleTeam) => string;
+    teamTarget: (myTeam: string, opponentTeam: string) => string;
+    targetBoard: string;
+    capturedMine: string;
+    capturedSummary: (count: number) => string;
+    wordToFlip: string;
+    waiting: string;
+    placeholder: string;
+    submit: string;
+    controls: string;
+    startRequested: string;
+    start: string;
+    reconnect: string;
+    connectionError: string;
+  };
+};
+
+const TERRITORY_BATTLE_TEXT: Record<TypingLocale, TerritoryBattleText> = {
+  ko: {
+    gate: {
+      eyebrow: "타자방 선입장 필요",
+      title: "점령전은 점령전 방 참가 후 입장합니다.",
+      description:
+        "먼저 로비에서 점령전 방을 만들거나 참가한 다음, 대기방의 ‘점령전 입장’ 버튼으로 들어가 주세요.",
+      lobby: "타자방 로비로 이동",
+    },
+    result: {
+      draw: "무승부",
+      victory: "승리",
+      waitingPlayer: "대기 중",
+      boardScore: "판 점수",
+      bonusGame: "보너스 게임",
+      teamScore: "팀 점수",
+      myRank: "내 순위",
+      rank: (rank) => `${rank}위`,
+      earnedPoints: "획득 포인트",
+      leaveRoom: "방 나가기",
+      countdown: (seconds) => `${seconds}초 뒤 대기방으로 이동합니다.`,
+      waitingRoom: "대기방",
+    },
+    team: {
+      red: {
+        label: "빨강팀",
+        shortLabel: "빨강",
+        scoreLabel: "빨강팀 점수",
+        cardLabel: "빨강 카드",
+      },
+      blue: {
+        label: "파랑팀",
+        shortLabel: "파랑",
+        scoreLabel: "파랑팀 점수",
+        cardLabel: "파랑 카드",
+      },
+      neutralLabel: "중립",
+      neutralCardLabel: "중립 카드",
+      waitingPlayer: "대기 중",
+      players: "Players",
+      tiles: (count) => `${count} tiles`,
+    },
+    board: {
+      instruction: "상대팀 카드를 입력하면 내 팀 카드로 뒤집힙니다.",
+      targetHover: "뒤집기 타깃",
+      currentTarget: "뒤집을 판",
+    },
+    game: {
+      initialMessage:
+        "서버 연결 전에는 로컬 규칙으로 점령전을 체험할 수 있습니다.",
+      serverNotPlaying: "서버 판 시작 후 단어를 제출할 수 있습니다.",
+      submitted: "서버에 제출했습니다. 판정 결과를 기다립니다.",
+      wordNotFound: "보드에 있는 단어를 정확히 입력해 주세요.",
+      ownCell:
+        "이미 우리 팀 카드입니다. 상대팀 카드나 중립 카드를 입력해 주세요.",
+      flipSuccess: (word, scoreDelta, suffix) =>
+        `${word} 카드 뒤집기 성공 · +${scoreDelta}P${suffix}`,
+      steal: "탈환",
+      lineComplete: "라인 완성",
+      cardFlipBattle: "Card Flip Battle",
+      phase: {
+        waiting: "대기",
+        countdown: "카운트다운",
+        playing: "진행 중",
+        finished: "종료",
+        none: "연결 전",
+      },
+      connection: (state) => `연결 ${state}`,
+      title: "중앙 카드를 뒤집는 팀 점령전",
+      subtitle: "상대팀 카드를 입력해 뒤집으세요",
+      draw: "동점",
+      leading: (winner) => `${winner.toUpperCase()} 우세`,
+      teamTarget: (myTeam, opponentTeam) =>
+        `내 팀 ${myTeam} · 타깃 ${opponentTeam}`,
+      targetBoard: "뒤집을 판",
+      capturedMine: "내가 뒤집은 판",
+      capturedSummary: (count) => `뒤집은 판 ${count}개`,
+      wordToFlip: "뒤집을 단어",
+      waiting: "대기",
+      placeholder: "뒤집을 판의 단어를 입력해주세요",
+      submit: "입력하기 ↵",
+      controls: "Controls",
+      startRequested: "판 뒤집기 점령전 시작을 요청했습니다.",
+      start: "시작",
+      reconnect: "재연결",
+      connectionError: "점령전 서버에 연결할 수 없습니다.",
+    },
+  },
+  en: {
+    gate: {
+      eyebrow: "Join a room first",
+      title: "Territory Battle starts from a territory room.",
+      description:
+        "Create or join a territory room in the lobby, then enter from the Territory Battle button in the waiting room.",
+      lobby: "Go to typing room lobby",
+    },
+    result: {
+      draw: "Draw",
+      victory: "Victory",
+      waitingPlayer: "Waiting",
+      boardScore: "Board Score",
+      bonusGame: "Bonus",
+      teamScore: "Team Score",
+      myRank: "My Rank",
+      rank: (rank) => `#${rank}`,
+      earnedPoints: "Points Earned",
+      leaveRoom: "Leave Room",
+      countdown: (seconds) => `Returning to the waiting room in ${seconds}s.`,
+      waitingRoom: "Waiting Room",
+    },
+    team: {
+      red: {
+        label: "Red Team",
+        shortLabel: "Red",
+        scoreLabel: "Red Team Score",
+        cardLabel: "Red Card",
+      },
+      blue: {
+        label: "Blue Team",
+        shortLabel: "Blue",
+        scoreLabel: "Blue Team Score",
+        cardLabel: "Blue Card",
+      },
+      neutralLabel: "Neutral",
+      neutralCardLabel: "Neutral Card",
+      waitingPlayer: "Waiting",
+      players: "Players",
+      tiles: (count) => `${count} tiles`,
+    },
+    board: {
+      instruction: "Type an opposing card to flip it to your team.",
+      targetHover: "Flip target",
+      currentTarget: "Flip Target",
+    },
+    game: {
+      initialMessage:
+        "You can try Territory Battle locally before the server connects.",
+      serverNotPlaying: "Submit words after the server round starts.",
+      submitted: "Submitted to the server. Waiting for the result.",
+      wordNotFound: "Type a word that appears on the board.",
+      ownCell:
+        "This card already belongs to your team. Type an opposing or neutral card.",
+      flipSuccess: (word, scoreDelta, suffix) =>
+        `${word} card flipped · +${scoreDelta}P${suffix}`,
+      steal: "Steal",
+      lineComplete: "Line Complete",
+      cardFlipBattle: "Card Flip Battle",
+      phase: {
+        waiting: "Waiting",
+        countdown: "Countdown",
+        playing: "Playing",
+        finished: "Finished",
+        none: "Not connected",
+      },
+      connection: (state) => `Connection ${state}`,
+      title: "Team territory battle over the center board",
+      subtitle: "Type opposing cards to flip them",
+      draw: "Draw",
+      leading: (winner) => `${winner.toUpperCase()} leading`,
+      teamTarget: (myTeam, opponentTeam) =>
+        `My team ${myTeam} · Target ${opponentTeam}`,
+      targetBoard: "Flip Target",
+      capturedMine: "My Flipped Cards",
+      capturedSummary: (count) => `${count} flipped cards`,
+      wordToFlip: "Word to Flip",
+      waiting: "Waiting",
+      placeholder: "Type the word on the card to flip",
+      submit: "Submit ↵",
+      controls: "Controls",
+      startRequested: "Requested Territory Battle start.",
+      start: "Start",
+      reconnect: "Reconnect",
+      connectionError: "Could not connect to the territory server.",
+    },
+  },
+};
+
+function useTerritoryBattleText() {
+  const { settings } = useTypingSettings();
+  return TERRITORY_BATTLE_TEXT[settings.locale];
+}
+
+function getTeamDisplayLabel(
+  team: TerritoryBattleTeam,
+  labels: TerritoryBattleText
+) {
+  return labels.team[team].label;
+}
+
+function getTerritoryPhaseDisplayLabel(
+  phase: TerritoryBattlePhase | null,
+  labels: TerritoryBattleText
+) {
+  return phase ? labels.game.phase[phase] : labels.game.phase.none;
 }
 
 function getTeamResultClass(team: TerritoryBattleTeam) {
@@ -77,7 +329,7 @@ function getTeamResultClass(team: TerritoryBattleTeam) {
     : "border-[#e5e5e5] bg-white";
 }
 
-function TerritoryGateScreen() {
+function TerritoryGateScreen({ labels }: { labels: TerritoryBattleText }) {
   return (
     <YeonView className="min-h-screen bg-white px-4 py-8 text-[#111]">
       <YeonView
@@ -86,7 +338,7 @@ function TerritoryGateScreen() {
       >
         <YeonSurface variant="panel" className="p-8">
           <YeonText variant="label" className="uppercase tracking-[0.24em]">
-            타자방 선입장 필요
+            {labels.gate.eyebrow}
           </YeonText>
           <YeonText
             as="h1"
@@ -94,11 +346,10 @@ function TerritoryGateScreen() {
             tone="inherit"
             className="mt-4 text-[34px] font-black tracking-[-0.06em] text-[#111]"
           >
-            점령전은 점령전 방 참가 후 입장합니다.
+            {labels.gate.title}
           </YeonText>
           <YeonText className="mt-3 font-medium">
-            먼저 로비에서 점령전 방을 만들거나 참가한 다음, 대기방의 ‘점령전
-            입장’ 버튼으로 들어가 주세요.
+            {labels.gate.description}
           </YeonText>
           <YeonButton
             as="a"
@@ -107,7 +358,7 @@ function TerritoryGateScreen() {
             size="lg"
             className="mt-6"
           >
-            타자방 로비로 이동
+            {labels.gate.lobby}
           </YeonButton>
         </YeonSurface>
       </YeonView>
@@ -122,6 +373,7 @@ function TerritoryResultBoard({
   blueScore,
   returnPath,
   remainingSeconds,
+  labels,
 }: {
   snapshot: TerritoryBattleSnapshot;
   winner: TerritoryBattleTeam | "draw";
@@ -129,6 +381,7 @@ function TerritoryResultBoard({
   blueScore: number;
   returnPath: string;
   remainingSeconds: number;
+  labels: TerritoryBattleText;
 }) {
   const rankedPlayers = [...snapshot.players].sort((a, b) => b.score - a.score);
   const redPlayers = rankedPlayers.filter(
@@ -180,7 +433,7 @@ function TerritoryResultBoard({
               tone="inherit"
               className="text-[44px] font-black leading-none tracking-[-0.08em] text-white"
             >
-              {winner === "draw" ? "무승부" : "승리"}
+              {winner === "draw" ? labels.result.draw : labels.result.victory}
             </YeonText>
           </YeonView>
         </YeonView>
@@ -210,7 +463,7 @@ function TerritoryResultBoard({
                   tone="inherit"
                   className="text-[24px] font-black tracking-[-0.05em]"
                 >
-                  {getTeamDisplayLabel(team)}
+                  {getTeamDisplayLabel(team, labels)}
                 </YeonText>
               </YeonView>
 
@@ -238,7 +491,7 @@ function TerritoryResultBoard({
                         tone="inherit"
                         className="truncate text-[14px] font-black"
                       >
-                        {player?.nickname ?? "대기 중"}
+                        {player?.nickname ?? labels.result.waitingPlayer}
                       </YeonText>
                       <YeonText
                         as="span"
@@ -273,23 +526,33 @@ function TerritoryResultBoard({
                       tone="inherit"
                       className="rounded-2xl border border-[#e5e5e5] bg-[#fafafa] px-4 py-3 text-center text-[30px] font-black tracking-[-0.08em] text-[#111]"
                     >
-                      {getTeamDisplayLabel(team)}
+                      {getTeamDisplayLabel(team, labels)}
                     </YeonText>
                     <YeonView className="mt-4 grid gap-4">
-                      <ResultScoreRow label="판 점수" value={`${score}P`} />
                       <ResultScoreRow
-                        label="보너스 게임"
+                        label={labels.result.boardScore}
+                        value={`${score}P`}
+                      />
+                      <ResultScoreRow
+                        label={labels.result.bonusGame}
                         value={`${capturedCellCount * 100}P`}
                       />
-                      <ResultScoreRow label="팀 점수" value={`${score}P`} />
+                      <ResultScoreRow
+                        label={labels.result.teamScore}
+                        value={`${score}P`}
+                      />
                       {team === currentPlayer?.team && (
                         <>
                           <ResultScoreRow
-                            label="내 순위"
-                            value={currentRank ? `${currentRank}위` : "-"}
+                            label={labels.result.myRank}
+                            value={
+                              currentRank
+                                ? labels.result.rank(currentRank)
+                                : "-"
+                            }
                           />
                           <ResultScoreRow
-                            label="획득 포인트"
+                            label={labels.result.earnedPoints}
                             value={`${currentPlayer.capturedCellCount}`}
                           />
                         </>
@@ -313,7 +576,7 @@ function TerritoryResultBoard({
             size="xl"
             className="rounded-[24px] text-[22px] font-black"
           >
-            방 나가기
+            {labels.result.leaveRoom}
           </YeonButton>
           <YeonText
             as="p"
@@ -321,7 +584,7 @@ function TerritoryResultBoard({
             tone="inherit"
             className="text-center text-[28px] font-black tracking-[-0.06em] text-[#111]"
           >
-            {remainingSeconds}초 뒤 대기방으로 이동합니다.
+            {labels.result.countdown(remainingSeconds)}
           </YeonText>
           <YeonButton
             as="a"
@@ -330,7 +593,7 @@ function TerritoryResultBoard({
             size="xl"
             className="rounded-[24px] text-[22px] font-black"
           >
-            대기방
+            {labels.result.waitingRoom}
           </YeonButton>
         </YeonView>
       </YeonView>
@@ -398,10 +661,17 @@ function getCellClass(owner: TerritoryCellSnapshot["owner"]) {
   return "border-[#e5e5e5] bg-[#fafafa] text-[#666]";
 }
 
-function getCellOwnerLabel(owner: TerritoryCellSnapshot["owner"]) {
-  if (owner === TERRITORY_BATTLE_TEAM.RED) return "빨강";
-  if (owner === TERRITORY_BATTLE_TEAM.BLUE) return "파랑";
-  return "중립";
+function getCellOwnerLabel(
+  owner: TerritoryCellSnapshot["owner"],
+  labels: TerritoryBattleText
+) {
+  if (owner === TERRITORY_BATTLE_TEAM.RED) {
+    return labels.team.red.shortLabel;
+  }
+  if (owner === TERRITORY_BATTLE_TEAM.BLUE) {
+    return labels.team.blue.shortLabel;
+  }
+  return labels.team.neutralLabel;
 }
 
 function TerritoryCardBoard({
@@ -411,6 +681,7 @@ function TerritoryCardBoard({
   redScore,
   blueScore,
   onPickWord,
+  labels,
 }: {
   board: readonly TerritoryCellSnapshot[];
   myTeam: TerritoryBattleTeam;
@@ -418,6 +689,7 @@ function TerritoryCardBoard({
   redScore: number;
   blueScore: number;
   onPickWord: (word: string) => void;
+  labels: TerritoryBattleText;
 }) {
   const opponentTeam = getOpponentTeam(myTeam);
 
@@ -450,7 +722,7 @@ function TerritoryCardBoard({
             tone="inherit"
             className="mt-1 text-[11px] font-bold text-[#666]"
           >
-            상대팀 카드를 입력하면 내 팀 카드로 뒤집힙니다.
+            {labels.board.instruction}
           </YeonText>
         </YeonView>
         <YeonText
@@ -489,7 +761,7 @@ function TerritoryCardBoard({
                   tone="inherit"
                   className="absolute left-2 top-2 rounded-full border border-[#e5e5e5] bg-white px-2 py-0.5 text-[10px] font-black text-[#666]"
                 >
-                  {getCellOwnerLabel(cell.owner)}
+                  {getCellOwnerLabel(cell.owner, labels)}
                 </YeonText>
                 <YeonText
                   as="span"
@@ -506,7 +778,7 @@ function TerritoryCardBoard({
                     tone="inherit"
                     className="absolute inset-x-2 bottom-2 rounded-full border border-[#e5e5e5] bg-white py-0.5 text-[10px] font-black text-[#111] opacity-0 transition group-hover:opacity-100"
                   >
-                    뒤집기 타깃
+                    {labels.board.targetHover}
                   </YeonText>
                 )}
               </YeonButton>
@@ -517,13 +789,13 @@ function TerritoryCardBoard({
 
       <YeonView className="grid grid-cols-3 gap-2 border-t border-[#e5e5e5] pt-3 text-center text-[12px] font-black">
         <YeonView className="rounded-xl border border-[#111] bg-[#fafafa] px-3 py-2 text-[#111]">
-          빨강 카드
+          {labels.team.red.cardLabel}
         </YeonView>
         <YeonView className="rounded-xl border border-[#e5e5e5] bg-[#fafafa] px-3 py-2 text-[#666]">
-          중립 카드
+          {labels.team.neutralCardLabel}
         </YeonView>
         <YeonView className="rounded-xl border border-[#e5e5e5] bg-white px-3 py-2 text-[#111]">
-          파랑 카드
+          {labels.team.blue.cardLabel}
         </YeonView>
       </YeonView>
     </YeonSurface>
@@ -546,8 +818,9 @@ function TeamPanel({
   score,
   capturedCellCount,
   players,
+  labels,
 }: TeamPanelProps) {
-  const view = TEAM_VIEW[team];
+  const view = labels.team[team];
   const teamPlayers = players.filter((player) => player.team === team);
 
   return (
@@ -580,7 +853,7 @@ function TeamPanel({
             tone="inherit"
             className="rounded-full border border-[#e5e5e5] bg-white px-3 py-1 text-[12px] font-black text-[#666]"
           >
-            {capturedCellCount} tiles
+            {labels.team.tiles(capturedCellCount)}
           </YeonText>
         </YeonView>
       </YeonView>
@@ -593,7 +866,7 @@ function TeamPanel({
             tone="inherit"
             className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#666]"
           >
-            Players
+            {labels.team.players}
           </YeonText>
           <YeonView className="mt-3 grid gap-2">
             {(teamPlayers.length ? teamPlayers : [null]).map(
@@ -608,7 +881,7 @@ function TeamPanel({
                     tone="inherit"
                     className="truncate text-[13px] font-bold text-[#111]"
                   >
-                    {player?.nickname ?? "대기 중"}
+                    {player?.nickname ?? labels.team.waitingPlayer}
                   </YeonText>
                   <YeonText
                     as="span"
@@ -677,8 +950,10 @@ function TeamPanel({
 export function TypingTerritoryBattleScreen({
   originRoomId,
 }: TypingTerritoryBattleScreenProps) {
+  const labels = useTerritoryBattleText();
+
   if (!originRoomId) {
-    return <TerritoryGateScreen />;
+    return <TerritoryGateScreen labels={labels} />;
   }
 
   return <TypingTerritoryBattleGameScreen originRoomId={originRoomId} />;
@@ -689,6 +964,7 @@ function TypingTerritoryBattleGameScreen({
 }: {
   originRoomId: string;
 }) {
+  const labels = useTerritoryBattleText();
   const router = useYeonRouter();
   const [resultReturnSeconds, setResultReturnSeconds] = useState(
     RESULT_RETURN_SECONDS
@@ -706,9 +982,7 @@ function TypingTerritoryBattleGameScreen({
   const [teamScore, setTeamScore] = useState<TeamScore>({ red: 0, blue: 0 });
   const [combo, setCombo] = useState(0);
   const [inputValue, setInputValue] = useState("");
-  const [message, setMessage] = useState(
-    "서버 연결 전에는 로컬 규칙으로 점령전을 체험할 수 있습니다."
-  );
+  const [message, setMessage] = useState(labels.game.initialMessage);
   const [now, setNow] = useState(() => getYeonNow());
   const displayBoard = territoryRoom.snapshot?.board ?? board;
   const isServerConnected =
@@ -785,6 +1059,9 @@ function TypingTerritoryBattleGameScreen({
   const shouldShowResult =
     engineSnapshot.phase === TERRITORY_BATTLE_PHASE.FINISHED ||
     Boolean(territoryRoom.result);
+  const territoryStatusMessage = territoryRoom.roomError
+    ? labels.game.connectionError
+    : message;
 
   useEffect(() => {
     const intervalId = scheduleYeonInterval(() => setNow(getYeonNow()), 250);
@@ -814,13 +1091,13 @@ function TypingTerritoryBattleGameScreen({
 
     if (isServerConnected && territoryRoom.snapshot) {
       if (territoryRoom.snapshot.phase !== "playing") {
-        setMessage("서버 판 시작 후 단어를 제출할 수 있습니다.");
+        setMessage(labels.game.serverNotPlaying);
         return;
       }
 
       territoryRoom.sendSubmitWord({ word: inputValue || targetWord });
       setInputValue("");
-      setMessage("서버에 제출했습니다. 판정 결과를 기다립니다.");
+      setMessage(labels.game.submitted);
       return;
     }
 
@@ -831,15 +1108,13 @@ function TypingTerritoryBattleGameScreen({
 
     if (!targetCell) {
       setCombo(0);
-      setMessage("보드에 있는 단어를 정확히 입력해 주세요.");
+      setMessage(labels.game.wordNotFound);
       return;
     }
 
     if (targetCell.owner === myTeam) {
       setCombo(0);
-      setMessage(
-        "이미 우리 팀 카드입니다. 상대팀 카드나 중립 카드를 입력해 주세요."
-      );
+      setMessage(labels.game.ownCell);
       return;
     }
 
@@ -861,10 +1136,15 @@ function TypingTerritoryBattleGameScreen({
     );
     setCombo(nextCombo);
     setInputValue("");
+    const suffix = [
+      result.isSteal ? labels.game.steal : "",
+      result.completesLine ? labels.game.lineComplete : "",
+    ]
+      .filter(Boolean)
+      .map((item) => ` · ${item}`)
+      .join("");
     setMessage(
-      `${targetCell.word} 카드 뒤집기 성공 · +${result.scoreDelta}P${
-        result.isSteal ? " · 탈환" : ""
-      }${result.completesLine ? " · 라인 완성" : ""}`
+      labels.game.flipSuccess(targetCell.word, result.scoreDelta, suffix)
     );
   }
 
@@ -885,7 +1165,7 @@ function TypingTerritoryBattleGameScreen({
               tone="inherit"
               className="text-[11px] font-black uppercase tracking-[0.28em] text-[#666]"
             >
-              빨강팀 점수
+              {labels.team.red.scoreLabel}
             </YeonText>
             <YeonText
               as="p"
@@ -907,7 +1187,7 @@ function TypingTerritoryBattleGameScreen({
               tone="inherit"
               className="text-[11px] font-black uppercase tracking-[0.32em] text-[#666]"
             >
-              Card Flip Battle
+              {labels.game.cardFlipBattle}
             </YeonText>
             <YeonText
               as="p"
@@ -923,8 +1203,11 @@ function TypingTerritoryBattleGameScreen({
               tone="inherit"
               className="mt-2 text-[12px] font-bold text-[#666]"
             >
-              {getTerritoryPhaseLabel(territoryRoom.snapshot?.phase ?? null)} ·
-              연결 {territoryRoom.connectionState}
+              {getTerritoryPhaseDisplayLabel(
+                territoryRoom.snapshot?.phase ?? null,
+                labels
+              )}{" "}
+              · {labels.game.connection(territoryRoom.connectionState)}
             </YeonText>
           </YeonSurface>
 
@@ -938,7 +1221,7 @@ function TypingTerritoryBattleGameScreen({
               tone="inherit"
               className="text-[11px] font-black uppercase tracking-[0.28em] text-[#666]"
             >
-              파랑팀 점수
+              {labels.team.blue.scoreLabel}
             </YeonText>
             <YeonText
               as="p"
@@ -960,6 +1243,7 @@ function TypingTerritoryBattleGameScreen({
             score={redScore}
             capturedCellCount={redCapturedCells}
             players={hudPlayers}
+            labels={labels}
           />
 
           <YeonSurface
@@ -975,7 +1259,7 @@ function TypingTerritoryBattleGameScreen({
                     tone="inherit"
                     className="text-[11px] font-black uppercase tracking-[0.3em] text-[#666]"
                   >
-                    중앙 카드를 뒤집는 팀 점령전
+                    {labels.game.title}
                   </YeonText>
                   <YeonText
                     as="h1"
@@ -983,18 +1267,20 @@ function TypingTerritoryBattleGameScreen({
                     tone="inherit"
                     className="mt-1 text-[24px] font-black tracking-[-0.05em] text-[#111]"
                   >
-                    상대팀 카드를 입력해 뒤집으세요
+                    {labels.game.subtitle}
                   </YeonText>
                 </YeonView>
                 <YeonView className="flex items-center gap-2 text-[12px] font-bold text-[#666]">
                   <YeonBadge variant="neutral">
                     {winner === "draw"
-                      ? "동점"
-                      : `${winner.toUpperCase()} 우세`}
+                      ? labels.game.draw
+                      : labels.game.leading(winner)}
                   </YeonBadge>
                   <YeonBadge variant="accent">
-                    내 팀 {getTeamDisplayLabel(myTeam)} · 타깃{" "}
-                    {getTeamDisplayLabel(opponentTeam)}
+                    {labels.game.teamTarget(
+                      getTeamDisplayLabel(myTeam, labels),
+                      getTeamDisplayLabel(opponentTeam, labels)
+                    )}
                   </YeonBadge>
                   <YeonBadge variant="success">
                     {isServerConnected ? "LIVE" : "LOCAL"}
@@ -1010,6 +1296,7 @@ function TypingTerritoryBattleGameScreen({
                   redScore={redScore}
                   blueScore={blueScore}
                   onPickWord={setInputValue}
+                  labels={labels}
                 />
               </YeonView>
 
@@ -1020,7 +1307,7 @@ function TypingTerritoryBattleGameScreen({
                   tone="inherit"
                   className="text-[11px] font-black uppercase tracking-[0.24em] text-[#666]"
                 >
-                  뒤집을 판
+                  {labels.game.targetBoard}
                 </YeonText>
                 <YeonView className="flex min-w-0 flex-1 justify-end gap-2 overflow-hidden">
                   {displayBoard
@@ -1060,6 +1347,7 @@ function TypingTerritoryBattleGameScreen({
             score={blueScore}
             capturedCellCount={blueCapturedCells}
             players={hudPlayers}
+            labels={labels}
           />
         </YeonView>
 
@@ -1074,7 +1362,7 @@ function TypingTerritoryBattleGameScreen({
               tone="inherit"
               className="text-[11px] font-black uppercase tracking-[0.25em] text-[#666]"
             >
-              내가 뒤집은 판
+              {labels.game.capturedMine}
             </YeonText>
             <YeonText
               as="p"
@@ -1090,7 +1378,7 @@ function TypingTerritoryBattleGameScreen({
               tone="inherit"
               className="mt-2 text-[12px] font-bold text-[#666]"
             >
-              뒤집은 판 {myCapturedCells}개
+              {labels.game.capturedSummary(myCapturedCells)}
             </YeonText>
           </YeonSurface>
 
@@ -1105,7 +1393,7 @@ function TypingTerritoryBattleGameScreen({
                 tone="inherit"
                 className="text-[10px] font-black uppercase tracking-[0.24em] text-[#666]"
               >
-                뒤집을 단어
+                {labels.game.wordToFlip}
               </YeonText>
               <YeonText
                 as="p"
@@ -1113,14 +1401,14 @@ function TypingTerritoryBattleGameScreen({
                 tone="inherit"
                 className="mt-1 truncate text-[22px] font-black tracking-[-0.04em] text-[#111]"
               >
-                {targetWord || "대기"}
+                {targetWord || labels.game.waiting}
               </YeonText>
             </YeonView>
             <YeonField
               value={inputValue}
               onChange={(event) => setInputValue(event.target.value)}
               className="h-16 rounded-2xl px-5 text-[22px] font-black tracking-[-0.04em]"
-              placeholder="뒤집을 판의 단어를 입력해주세요"
+              placeholder={labels.game.placeholder}
               autoComplete="off"
             />
             <YeonButton
@@ -1128,7 +1416,7 @@ function TypingTerritoryBattleGameScreen({
               variant="primary"
               className="h-16 rounded-2xl px-4 text-[16px] font-black tracking-[-0.03em]"
             >
-              입력하기 ↵
+              {labels.game.submit}
             </YeonButton>
           </YeonForm>
 
@@ -1139,7 +1427,7 @@ function TypingTerritoryBattleGameScreen({
               tone="inherit"
               className="text-[11px] font-black uppercase tracking-[0.25em] text-[#666]"
             >
-              Controls
+              {labels.game.controls}
             </YeonText>
             <YeonView className="mt-3 grid grid-cols-2 gap-2">
               <YeonButton
@@ -1148,12 +1436,12 @@ function TypingTerritoryBattleGameScreen({
                 size="sm"
                 onClick={() => {
                   territoryRoom.sendStart();
-                  setMessage("판 뒤집기 점령전 시작을 요청했습니다.");
+                  setMessage(labels.game.startRequested);
                 }}
                 disabled={!isServerConnected}
                 className="rounded-xl px-3 py-2 text-[12px] font-black"
               >
-                시작
+                {labels.game.start}
               </YeonButton>
               <YeonButton
                 type="button"
@@ -1162,7 +1450,7 @@ function TypingTerritoryBattleGameScreen({
                 onClick={() => territoryRoom.rejoin()}
                 className="rounded-xl px-3 py-2 text-[12px] font-black"
               >
-                재연결
+                {labels.game.reconnect}
               </YeonButton>
             </YeonView>
             <YeonText
@@ -1171,7 +1459,7 @@ function TypingTerritoryBattleGameScreen({
               tone="inherit"
               className="mt-3 line-clamp-2 text-[12px] font-medium leading-5 text-[#666]"
             >
-              {territoryRoom.roomError?.message ?? message}
+              {territoryStatusMessage}
             </YeonText>
           </YeonSurface>
         </YeonView>
@@ -1184,6 +1472,7 @@ function TypingTerritoryBattleGameScreen({
           blueScore={blueScore}
           returnPath={returnPath}
           remainingSeconds={resultReturnSeconds}
+          labels={labels}
         />
       )}
     </YeonView>

@@ -1,16 +1,18 @@
-import type { YeonPageMetadata } from "@yeon/ui/runtime/YeonPageMetadata";
 import { TypingDeckDetailPageClient } from "@/features/typing-service/typing-deck-detail-page-client";
 import { getCurrentAuthUser } from "@/server/auth/session";
 import { isAdminUser } from "@/server/auth/admin";
+import { createTypingServiceMetadata } from "../../typing-service-metadata";
 
-export const metadata: YeonPageMetadata = {
-  title: "YEON 타자 덱 상세 관리",
-  description: "선택한 타자 덱의 정보와 연습 문단을 관리합니다.",
+export const metadata = createTypingServiceMetadata({
+  title: "YEON Typing Deck Details",
+  description: "Manage the selected typing deck and its practice passages.",
   robots: {
     index: false,
     follow: true,
   },
-};
+  includeCanonical: false,
+  path: "/decks",
+});
 
 type TypingDeckDetailPageProps = {
   params: Promise<{ deckId: string }>;

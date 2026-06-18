@@ -1,19 +1,16 @@
-import type { YeonPageMetadata } from "@yeon/ui/runtime/YeonPageMetadata";
 import { TypingRoomLobbyScreen } from "@/features/typing-service";
-import { buildServiceCanonicalUrl } from "@/lib/seo";
+import { createTypingServiceMetadata } from "../typing-service-metadata";
 
-export const metadata: YeonPageMetadata = {
-  title: "YEON 타자방 로비",
+export const metadata = createTypingServiceMetadata({
+  title: "YEON Typing Room Lobby",
   description:
-    "방을 만들고 입장해서 같은 문장을 함께 치는 실시간 타자방 로비입니다.",
-  alternates: {
-    canonical: buildServiceCanonicalUrl("typing", "/rooms"),
-  },
+    "Create or join real-time typing rooms and type the same prompts together.",
   robots: {
     index: true,
     follow: true,
   },
-};
+  path: "/rooms",
+});
 
 export default function TypingRoomLobbyPage() {
   return <TypingRoomLobbyScreen />;

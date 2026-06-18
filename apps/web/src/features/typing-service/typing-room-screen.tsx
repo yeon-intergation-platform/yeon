@@ -936,10 +936,16 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
       })),
     [room?.participants]
   );
+  const normalizeVoiceCallServerError = useCallback(
+    (message: string) => roomText.voiceCall.serverErrors[message] ?? message,
+    [roomText.voiceCall.serverErrors]
+  );
   const voiceCall = useRoomVoiceCall({
     room: race.room,
     localParticipantId: race.mySeat,
     participants: voiceParticipants,
+    messageOverrides: roomText.voiceCall.messages,
+    normalizeServerError: normalizeVoiceCallServerError,
   });
   const isHost = me?.role === "host";
   const isReady = Boolean(me?.isReady);
@@ -1252,7 +1258,13 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
   }
 
   if (room.status !== TYPING_ROOM_STATUS.WAITING) {
-    return <TypingRaceMultiplayerScreen race={race} voiceCall={voiceCall} />;
+    return (
+      <TypingRaceMultiplayerScreen
+        race={race}
+        voiceCall={voiceCall}
+        voiceCallLabels={roomText.voiceCall.panel}
+      />
+    );
   }
 
   return (
@@ -1342,7 +1354,10 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
                 frameOverrides={frameOverrides}
                 labels={roomText}
               />
-              <RoomVoiceCallPanel voiceCall={voiceCall} />
+              <RoomVoiceCallPanel
+                voiceCall={voiceCall}
+                labels={roomText.voiceCall.panel}
+              />
             </YeonView>
           </YeonView>
         )}

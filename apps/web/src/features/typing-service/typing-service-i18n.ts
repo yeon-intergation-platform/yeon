@@ -2,6 +2,8 @@ import type {
   YeonProductProfileMenuLabels,
   YeonServiceHelpDialogLabels,
 } from "@yeon/ui";
+import type { RoomVoiceCallMessages } from "@/features/room-voice-call/use-room-voice-call";
+import type { RoomVoiceCallPanelLabels } from "@/features/room-voice-call/room-voice-call-panel";
 import {
   TYPING_ROOM_DIFFICULTY,
   TYPING_ROOM_GAME_TYPE,
@@ -312,6 +314,11 @@ export type TypingUiText = {
     copyUnsupported: string;
     copyError: string;
     chatTooLong: (limit: number) => string;
+    voiceCall: {
+      panel: RoomVoiceCallPanelLabels;
+      messages: Partial<RoomVoiceCallMessages>;
+      serverErrors: Record<string, string>;
+    };
   };
 };
 
@@ -657,6 +664,57 @@ const TYPING_UI_TEXT: Record<TypingLocale, TypingUiText> = {
       copyUnsupported: "클립보드 복사를 지원하지 않습니다.",
       copyError: "링크를 복사할 수 없습니다.",
       chatTooLong: (limit) => `채팅은 최대 ${limit}자까지 보낼 수 있어요.`,
+      voiceCall: {
+        panel: {
+          title: "음성통화",
+          description:
+            "1:1 브라우저 음성통화 · 텍스트 채팅은 그대로 유지됩니다.",
+          status: {
+            idle: "대기",
+            calling: "발신 중",
+            ringing: "수신 중",
+            connecting: "연결 중",
+            connected: "통화 중",
+            failed: "실패",
+            ended: "종료",
+          },
+          loading: "음성통화 설정을 확인하는 중입니다.",
+          unavailable: "현재 방에서는 음성통화를 사용할 수 없습니다.",
+          unsupported: "현재 브라우저는 음성통화를 지원하지 않습니다.",
+          participantFallback: "상대",
+          incomingRequest: (label) => `${label}님이 통화를 요청했습니다.`,
+          accept: "수락",
+          reject: "거절",
+          noTargets: "통화 가능한 상대 없음",
+          start: "통화 시작",
+          end: "종료",
+          muted: "내 마이크 꺼짐",
+          unmuted: "내 마이크 켜짐",
+          remoteMuted: "상대 마이크 꺼짐",
+          activeTarget: (label) => `상대: ${label}`,
+          retry: "재시도",
+        },
+        messages: {
+          unsupported: "현재 브라우저는 음성통화를 지원하지 않습니다.",
+          loading: "음성통화 설정을 확인하는 중입니다.",
+          disabled: "음성통화 베타가 비활성화되어 있습니다.",
+          missingRoom: "룸 연결 후 음성통화를 시작할 수 있습니다.",
+          missingParticipant: "참가자 정보를 확인할 수 없습니다.",
+          missingTarget: "통화할 상대를 선택해 주세요.",
+          alreadyActive: "이미 통화 진행 중입니다.",
+          permissionDenied:
+            "마이크 권한이 거부되어 통화를 시작할 수 없습니다. 브라우저 설정에서 마이크 권한을 허용해 주세요.",
+          mediaFailed:
+            "마이크를 준비하지 못했습니다. 잠시 후 다시 시도해 주세요.",
+          signalFailed:
+            "통화 연결을 처리하지 못했습니다. 텍스트 채팅은 계속 사용할 수 있습니다.",
+          rejected: "상대가 통화 요청을 거절했습니다.",
+          ended: "통화가 종료되었습니다.",
+          timeout: "상대 응답이 없어 통화가 종료되었습니다.",
+          network: "상대 연결이 끊겨 통화가 종료되었습니다.",
+        },
+        serverErrors: {},
+      },
     },
   },
   en: {
@@ -1002,6 +1060,73 @@ const TYPING_UI_TEXT: Record<TypingLocale, TypingUiText> = {
       copyUnsupported: "Clipboard copy is not supported.",
       copyError: "Could not copy the link.",
       chatTooLong: (limit) => `Chat can be up to ${limit} characters.`,
+      voiceCall: {
+        panel: {
+          title: "Voice Call",
+          description: "1:1 browser voice call. Text chat stays available.",
+          status: {
+            idle: "Idle",
+            calling: "Calling",
+            ringing: "Ringing",
+            connecting: "Connecting",
+            connected: "Connected",
+            failed: "Failed",
+            ended: "Ended",
+          },
+          loading: "Checking voice call settings.",
+          unavailable: "Voice calls are unavailable in this room.",
+          unsupported: "This browser does not support voice calls.",
+          participantFallback: "Participant",
+          incomingRequest: (label) => `${label} is calling you.`,
+          accept: "Accept",
+          reject: "Decline",
+          noTargets: "No participants available",
+          start: "Start Call",
+          end: "End",
+          muted: "My mic is off",
+          unmuted: "My mic is on",
+          remoteMuted: "Remote mic is off",
+          activeTarget: (label) => `Participant: ${label}`,
+          retry: "Retry",
+        },
+        messages: {
+          unsupported: "This browser does not support voice calls.",
+          loading: "Checking voice call settings.",
+          disabled: "Voice call beta is disabled.",
+          missingRoom: "Join a room before starting a voice call.",
+          missingParticipant: "Could not identify your participant.",
+          missingTarget: "Select someone to call.",
+          alreadyActive: "A call is already in progress.",
+          permissionDenied:
+            "Microphone permission was denied. Allow microphone access in your browser settings.",
+          mediaFailed:
+            "Could not prepare the microphone. Please try again soon.",
+          signalFailed:
+            "Could not handle the call connection. Text chat remains available.",
+          rejected: "The other participant declined the call.",
+          ended: "The call ended.",
+          timeout:
+            "The call ended because the other participant did not respond.",
+          network: "The call ended because the other participant disconnected.",
+        },
+        serverErrors: {
+          "통화 요청 형식이 올바르지 않습니다.":
+            "The call request format is invalid.",
+          "통화 대상은 본인이 될 수 없습니다.": "You cannot call yourself.",
+          "이미 통화 진행 중입니다.": "A call is already in progress.",
+          "상대가 통화 중입니다.":
+            "The other participant is already in a call.",
+          "통화 세션 정보가 유효하지 않습니다.": "The call session is invalid.",
+          "동일한 통화 요청이 이미 진행 중입니다.":
+            "The same call request is already in progress.",
+          "통화 응답 형식이 올바르지 않습니다.":
+            "The call response format is invalid.",
+          "통화 세션이 유효하지 않습니다.": "The call session is invalid.",
+          "통화 대상이 일치하지 않습니다.": "The call target does not match.",
+          "음성통화 설정을 불러오지 못했습니다.":
+            "Could not load voice call settings.",
+        },
+      },
     },
   },
 };
