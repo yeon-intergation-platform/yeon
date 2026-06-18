@@ -13,6 +13,9 @@ export async function GET() {
     );
   } catch (error) {
     if (error instanceof TypingCharacterFramesSpringBackendHttpError) {
+      if (error.status === 401 || error.status === 403) {
+        return NextResponse.json({ overrides: [] });
+      }
       return NextResponse.json(
         { error: error.message },
         { status: error.status }

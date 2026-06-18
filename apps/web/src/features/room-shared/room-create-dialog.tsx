@@ -55,6 +55,14 @@ export function RoomCreateDialog({
 
   if (!open) return null;
 
+  const descriptionId = description ? `${titleId}-description` : undefined;
+  const dialogProps = {
+    role: "dialog",
+    "aria-modal": true,
+    "aria-labelledby": titleId,
+    ...(descriptionId ? { "aria-describedby": descriptionId } : {}),
+  } as const;
+
   const content = (
     <>
       <YeonView className="flex items-start justify-between gap-4 border-b border-[#e5e5e5] px-6 py-5">
@@ -73,6 +81,7 @@ export function RoomCreateDialog({
               as="p"
               variant="unstyled"
               tone="inherit"
+              id={descriptionId}
               className="mt-2 text-[13px] font-medium leading-5 text-[#666]"
             >
               {description}
@@ -100,6 +109,7 @@ export function RoomCreateDialog({
       visible={open}
       onRequestClose={closeDisabled ? undefined : onClose}
       aria-labelledby={titleId}
+      aria-describedby={descriptionId}
       className="fixed inset-0 z-[80] m-0 flex h-auto max-h-none w-auto max-w-none items-center justify-center border-0 bg-transparent px-4 py-6"
     >
       <YeonButton
@@ -112,13 +122,17 @@ export function RoomCreateDialog({
       />
       {as === "form" ? (
         <YeonForm
+          {...dialogProps}
           onSubmit={onSubmit}
           className={panelClassName ?? DEFAULT_PANEL_CLASS}
         >
           {content}
         </YeonForm>
       ) : (
-        <YeonView className={panelClassName ?? DEFAULT_PANEL_CLASS}>
+        <YeonView
+          {...dialogProps}
+          className={panelClassName ?? DEFAULT_PANEL_CLASS}
+        >
           {content}
         </YeonView>
       )}

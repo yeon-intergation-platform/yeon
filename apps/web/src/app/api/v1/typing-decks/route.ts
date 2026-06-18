@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import {
   createTypingDeckBodySchema,
   typingDeckListQuerySchema,
+  type TypingDeckListQuery,
 } from "@yeon/api-contract/typing-decks";
 import {
   TypingDecksSpringBackendHttpError,
@@ -21,6 +22,24 @@ import {
 } from "./_shared";
 
 export const runtime = "nodejs";
+
+function canFallbackToDefaultDecks(
+  request: NextRequest,
+  status: number,
+  query: TypingDeckListQuery
+) {
+  return (
+    request.nextUrl.searchParams.get("admin") !== "1" &&
+    (status === 401 || status === 403) &&
+    shouldPrependDefaultTypingDecks(query)
+  );
+}
+
+function defaultDeckListResponse(query: TypingDeckListQuery) {
+  return NextResponse.json({
+    decks: listDefaultTypingDecks(query.languageTag),
+  });
+}
 
 export async function GET(request: NextRequest) {
   const parsedQuery = typingDeckListQuerySchema.safeParse(
@@ -51,9 +70,15 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ decks: [...defaults, ...spring.decks] });
   } catch (error) {
     if (error instanceof ServiceError) {
+      if (canFallbackToDefaultDecks(request, error.status, parsedQuery.data)) {
+        return defaultDeckListResponse(parsedQuery.data);
+      }
       return jsonError(error.message, error.status);
     }
     if (error instanceof TypingDecksSpringBackendHttpError) {
+      if (canFallbackToDefaultDecks(request, error.status, parsedQuery.data)) {
+        return defaultDeckListResponse(parsedQuery.data);
+      }
       return jsonError(error.message, error.status);
     }
     console.error(error);

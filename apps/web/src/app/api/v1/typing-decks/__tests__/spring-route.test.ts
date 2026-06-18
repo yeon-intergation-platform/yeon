@@ -92,6 +92,30 @@ describe("api/v1/typing-decks route spring", () => {
     });
   });
 
+  it("GET all은 비관리 읽기 권한 오류에서 기본 덱으로 fallback한다", async () => {
+    mockGetTypingDeckRequestContext.mockResolvedValue({
+      currentUser: null,
+      isAdmin: false,
+    });
+    mockFetchTypingDecksFromSpring.mockRejectedValue(
+      new TypingDecksSpringBackendHttpError(
+        403,
+        "Spring backend 요청에 실패했습니다."
+      )
+    );
+
+    const response = await GET(
+      new NextRequest(
+        "http://localhost/api/v1/typing-decks?scope=all&languageTag=ko"
+      )
+    );
+
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as { decks: Array<{ id: string }> };
+    expect(body.decks[0]?.id).toBe("default-ko-azaleas");
+    expect(body.decks).toHaveLength(1);
+  });
+
   it("POST는 spring 생성 결과를 201로 반환한다", async () => {
     mockGetTypingDeckRequestContext.mockResolvedValue({
       currentUser: { id: "user-1" },
