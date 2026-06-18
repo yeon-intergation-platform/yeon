@@ -32,6 +32,9 @@ public record PublicContentAdminArticleRecord(
 	List<String> sourcePaths,
 	String redirectTo
 ) {
+	private static final String SEED_SOURCE_PATH =
+		"apps/backend/src/main/resources/public-content/articles.json";
+
 	public PublicContentAdminArticleRecord {
 		sourcePaths = sourcePaths == null ? List.of() : List.copyOf(sourcePaths);
 	}
@@ -39,6 +42,13 @@ public record PublicContentAdminArticleRecord(
 	public static PublicContentAdminArticleRecord fromPublishedArticle(
 		PublicContentArticleRecord article
 	) {
+		String metaDescription = blankToNull(article.metaDescription()) == null
+			? article.description()
+			: article.metaDescription();
+		List<String> sourcePaths = article.sourcePaths().isEmpty()
+			? List.of(SEED_SOURCE_PATH)
+			: article.sourcePaths();
+
 		return new PublicContentAdminArticleRecord(
 			seedArticleId(article.channel(), article.slug()),
 			article.channel(),
@@ -60,13 +70,17 @@ public record PublicContentAdminArticleRecord(
 			"public",
 			false,
 			null,
-			null,
+			metaDescription,
 			null,
 			"yeon",
 			"yeon",
-			List.of(),
+			sourcePaths,
 			null
 		);
+	}
+
+	private static String blankToNull(String value) {
+		return value == null || value.isBlank() ? null : value;
 	}
 
 	private static String seedArticleId(String channel, String slug) {

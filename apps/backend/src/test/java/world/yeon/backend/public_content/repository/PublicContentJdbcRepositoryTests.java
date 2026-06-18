@@ -38,7 +38,9 @@ class PublicContentJdbcRepositoryTests {
 			"markdown",
 			"본문입니다.",
 			null,
-			null
+			null,
+			"설명입니다.",
+			List.of("apps/backend/src/main/resources/public-content/articles.json")
 		);
 		when(jdbc.query(anyString(), any(RowMapper.class))).thenReturn(List.of(article));
 
@@ -49,6 +51,7 @@ class PublicContentJdbcRepositoryTests {
 		var sqlCaptor = ArgumentCaptor.forClass(String.class);
 		verify(jdbc).query(sqlCaptor.capture(), any(RowMapper.class));
 		assertThat(sqlCaptor.getValue())
+			.contains("source_paths::text as source_paths")
 			.contains("status = 'published'")
 			.contains("visibility = 'public'")
 			.contains("noindex = false")

@@ -104,7 +104,9 @@ class PublicContentServiceTests {
 			"markdown",
 			"본문입니다.",
 			"권한 가이드 보기",
-			"/nexa/guides/discord-bot-permissions"
+			"/nexa/guides/discord-bot-permissions",
+			"설명입니다.",
+			List.of("apps/backend/src/main/resources/public-content/articles.json")
 		);
 	}
 }

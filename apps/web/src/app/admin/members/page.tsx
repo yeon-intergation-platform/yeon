@@ -2,6 +2,7 @@ import { YeonLink } from "@yeon/ui";
 import type { YeonPageMetadata } from "@yeon/ui/runtime/YeonPageMetadata";
 import { YeonText, YeonView } from "@yeon/ui";
 import { YEON_WEB_SHARED_CLASS as SHARED_FEATURE_CLASS } from "@yeon/ui/theme/web-style-tokens";
+import { AdminPageShell } from "@/features/admin/admin-shell";
 import { AdminMemberList } from "@/features/admin/admin-member-list";
 import { NON_INDEXABLE_ROBOTS } from "@/lib/seo";
 import { getCurrentAdminUser, getAdminSeedEmails } from "@/server/auth/admin";
@@ -140,49 +141,13 @@ export default async function AdminMembersPage() {
     const result = await fetchUsersFromSpring(adminUser.id);
 
     return (
-      <YeonView className="min-h-screen bg-white">
-        <YeonView className="border-b border-[#e5e5e5] bg-white px-6 py-3 text-[#111] md:px-12">
-          <YeonView className="mx-auto flex max-w-[1200px] flex-wrap items-center justify-between gap-3">
-            <YeonView>
-              <YeonText
-                variant="unstyled"
-                tone="inherit"
-                className={SHARED_FEATURE_CLASS.text13EmphasisSubtle}
-              >
-                관리자
-              </YeonText>
-              <YeonText
-                variant="unstyled"
-                tone="inherit"
-                className="text-[14px] font-semibold"
-              >
-                {adminUser.email} · 회원 관리
-              </YeonText>
-            </YeonView>
-            <YeonView className={SHARED_FEATURE_CLASS.wrapGap2}>
-              <YeonLink
-                href="/admin/content"
-                className={SHARED_FEATURE_CLASS.ghostButtonMd13}
-              >
-                공개 콘텐츠
-              </YeonLink>
-              <YeonLink
-                href="/admin/users"
-                className={SHARED_FEATURE_CLASS.ghostButtonMd13}
-              >
-                사용자 · 경험치
-              </YeonLink>
-              <YeonLink
-                href="/admin/typing-decks"
-                className={SHARED_FEATURE_CLASS.ghostButtonMd13}
-              >
-                타자 덱 관리자
-              </YeonLink>
-            </YeonView>
-          </YeonView>
-        </YeonView>
+      <AdminPageShell
+        adminEmail={adminUser.email}
+        currentHref="/admin/members"
+        sectionLabel="회원 관리"
+      >
         <AdminMemberList users={result.users} />
-      </YeonView>
+      </AdminPageShell>
     );
   } catch (error) {
     if (error instanceof UsersSpringBackendHttpError) {

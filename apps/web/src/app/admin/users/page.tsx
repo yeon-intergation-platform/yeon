@@ -2,6 +2,7 @@ import { YeonLink } from "@yeon/ui";
 import type { YeonPageMetadata } from "@yeon/ui/runtime/YeonPageMetadata";
 import { YeonText, YeonView } from "@yeon/ui";
 import { YEON_WEB_SHARED_CLASS as SHARED_FEATURE_CLASS } from "@yeon/ui/theme/web-style-tokens";
+import { AdminPageShell } from "@/features/admin/admin-shell";
 import { AdminUserExperienceList } from "@/features/admin/admin-user-experience-list";
 import { NON_INDEXABLE_ROBOTS } from "@/lib/seo";
 import { getCurrentAdminUser } from "@/server/auth/admin";
@@ -111,43 +112,13 @@ export default async function AdminUsersPage() {
     const result = await adminListUsers(adminUser.id);
 
     return (
-      <YeonView className="min-h-screen bg-white">
-        <YeonView className="border-b border-[#e5e5e5] bg-white px-6 py-3 text-[#111] md:px-12">
-          <YeonView className="mx-auto flex max-w-[1200px] flex-wrap items-center justify-between gap-3">
-            <YeonView>
-              <YeonText
-                variant="unstyled"
-                tone="inherit"
-                className={SHARED_FEATURE_CLASS.text13EmphasisSubtle}
-              >
-                관리자
-              </YeonText>
-              <YeonText
-                variant="unstyled"
-                tone="inherit"
-                className="text-[14px] font-semibold"
-              >
-                {adminUser.email} · 사용자 · 경험치
-              </YeonText>
-            </YeonView>
-            <YeonView className={SHARED_FEATURE_CLASS.wrapGap2}>
-              <YeonLink
-                href="/admin/content"
-                className={SHARED_FEATURE_CLASS.ghostButtonMd13}
-              >
-                공개 콘텐츠
-              </YeonLink>
-              <YeonLink
-                href="/admin/members"
-                className={SHARED_FEATURE_CLASS.ghostButtonMd13}
-              >
-                회원 관리
-              </YeonLink>
-            </YeonView>
-          </YeonView>
-        </YeonView>
+      <AdminPageShell
+        adminEmail={adminUser.email}
+        currentHref="/admin/users"
+        sectionLabel="사용자 · 경험치"
+      >
         <AdminUserExperienceList users={result.users} />
-      </YeonView>
+      </AdminPageShell>
     );
   } catch (error) {
     if (error instanceof UserExperienceSpringBackendHttpError) {

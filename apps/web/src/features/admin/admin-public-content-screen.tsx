@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { YeonLink, YeonText, YeonView } from "@yeon/ui";
 import { YEON_WEB_SHARED_CLASS as SHARED_FEATURE_CLASS } from "@yeon/ui/theme/web-style-tokens";
+import { AdminAccessDenied, AdminPageShell } from "./admin-shell";
 import type {
   PublicContentAdminArticleRow,
   PublicContentAdminChannelSummary,
@@ -53,11 +54,6 @@ type AdminArticleQueueViewState =
       kind: "ready";
     };
 
-const CONTENT_NAV_ITEMS = [
-  { href: "/admin/content", label: "콘텐츠" },
-  { href: "/admin/members", label: "회원 관리" },
-  { href: "/admin/users", label: "사용자 · 경험치" },
-] as const;
 const OPS_CHECKLIST_STATUS_LABELS = {
   manual: "수동 확인",
   ready: "정상",
@@ -136,44 +132,13 @@ function AdminPublicContentShell({
   currentHref: string;
 }) {
   return (
-    <YeonView className="min-h-screen bg-white text-[#111]">
-      <YeonView className="border-b border-[#e5e5e5] bg-white px-6 py-3 md:px-12">
-        <YeonView className="mx-auto flex max-w-[1200px] flex-wrap items-center justify-between gap-3">
-          <YeonView>
-            <YeonText
-              variant="unstyled"
-              tone="inherit"
-              className={SHARED_FEATURE_CLASS.text13EmphasisSubtle}
-            >
-              관리자
-            </YeonText>
-            <YeonText
-              variant="unstyled"
-              tone="inherit"
-              className="text-[14px] font-semibold"
-            >
-              {adminEmail} · 공개 콘텐츠
-            </YeonText>
-          </YeonView>
-          <YeonView className={SHARED_FEATURE_CLASS.wrapGap2}>
-            {CONTENT_NAV_ITEMS.map((item) => (
-              <YeonLink
-                key={item.href}
-                href={item.href}
-                className={
-                  item.href === currentHref
-                    ? SHARED_FEATURE_CLASS.primaryActionButtonMd13
-                    : SHARED_FEATURE_CLASS.ghostButtonMd13
-                }
-              >
-                {item.label}
-              </YeonLink>
-            ))}
-          </YeonView>
-        </YeonView>
-      </YeonView>
+    <AdminPageShell
+      adminEmail={adminEmail}
+      currentHref={currentHref}
+      sectionLabel="공개 콘텐츠"
+    >
       {children}
-    </YeonView>
+    </AdminPageShell>
   );
 }
 
@@ -528,50 +493,10 @@ export function AdminPublicContentDenied({
   seedEmailCount: number;
 }) {
   return (
-    <YeonView
-      as="main"
-      className="flex min-h-screen items-center justify-center bg-white px-6 text-[#111]"
-    >
-      <YeonView
-        as="section"
-        className="max-w-xl rounded-lg border border-[#e5e5e5] bg-white p-8"
-      >
-        <YeonText
-          variant="unstyled"
-          tone="inherit"
-          className={SHARED_FEATURE_CLASS.text13EmphasisSubtle}
-        >
-          관리자 전용
-        </YeonText>
-        <YeonText
-          as="h1"
-          variant="unstyled"
-          tone="inherit"
-          className="mt-2 text-[26px] font-semibold text-[#111]"
-        >
-          관리자 권한이 필요합니다
-        </YeonText>
-        <YeonText
-          variant="unstyled"
-          tone="inherit"
-          className="mt-3 text-[14px] leading-6 text-[#666]"
-        >
-          공개 콘텐츠 현황은 admin role 계정만 볼 수 있습니다. 시드 이메일은{" "}
-          {seedEmailCount.toLocaleString("ko-KR")}개 설정되어 있습니다.
-        </YeonText>
-        <YeonView className={SHARED_FEATURE_CLASS.wrapGap2 + " mt-6"}>
-          <YeonLink
-            href="/auth/login"
-            className={SHARED_FEATURE_CLASS.primaryActionButtonMd14}
-          >
-            로그인하기
-          </YeonLink>
-          <YeonLink href="/" className={SHARED_FEATURE_CLASS.ghostButtonMd14}>
-            홈으로
-          </YeonLink>
-        </YeonView>
-      </YeonView>
-    </YeonView>
+    <AdminAccessDenied
+      description="공개 콘텐츠 현황은 admin role 계정만 볼 수 있습니다."
+      seedEmailCount={seedEmailCount}
+    />
   );
 }
 
