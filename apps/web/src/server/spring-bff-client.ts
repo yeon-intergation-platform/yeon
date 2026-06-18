@@ -5,6 +5,7 @@ import {
 
 const INTERNAL_TOKEN_HEADER = "X-Yeon-Internal-Token";
 const USER_ID_HEADER = "X-Yeon-User-Id";
+const LOCAL_DEV_SPRING_INTERNAL_TOKEN = "local-dev-internal-token";
 
 type SpringBffHeaderParams = {
   userId?: string | null;
@@ -24,10 +25,23 @@ export function buildSpringBffHeaders(
     headers.set(USER_ID_HEADER, params.userId);
   }
 
-  const internalToken = process.env.SPRING_INTERNAL_TOKEN?.trim();
+  const internalToken = resolveSpringInternalToken();
   if (internalToken) {
     headers.set(INTERNAL_TOKEN_HEADER, internalToken);
   }
 
   return headers;
+}
+
+function resolveSpringInternalToken() {
+  const configuredToken = process.env.SPRING_INTERNAL_TOKEN?.trim();
+  if (configuredToken) {
+    return configuredToken;
+  }
+
+  if (process.env.NODE_ENV !== "production") {
+    return LOCAL_DEV_SPRING_INTERNAL_TOKEN;
+  }
+
+  return null;
 }

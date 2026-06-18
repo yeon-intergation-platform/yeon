@@ -47,9 +47,18 @@ fi
 
 # 4) card-decks 쓰기 흐름용 테스트 사용자 시드(로컬 docker postgres 사용 시)
 if [ "${KARATE_SEED_USER:-1}" = "1" ] && docker ps --format '{{.Names}}' 2>/dev/null | grep -q '^yeon-local-pg$'; then
-  docker exec yeon-local-pg psql -U yeon_local -d yeon_local -c \
+  users_table_exists="$(
+    docker exec yeon-local-pg psql -U yeon_local -d yeon_local -Atq \
+      -c "select exists (select 1 from information_schema.tables where table_schema = 'public' and table_name = 'users');"
+  )"
+  if [ "$users_table_exists" != "t" ]; then
+    echo "[run-flows] public.users 테이블이 없어 사용자 시드를 중단합니다. Spring/Flyway migration 상태를 먼저 확인하세요." >&2
+    exit 1
+  fi
+
+  docker exec yeon-local-pg psql -v ON_ERROR_STOP=1 -U yeon_local -d yeon_local -c \
     "INSERT INTO public.users (id,email,display_name) VALUES ('${USER_ID}','karate@test.local','Karate Test') ON CONFLICT (id) DO NOTHING;" \
-    >/dev/null 2>&1 || echo "[run-flows] 사용자 시드 생략(수동 시드 필요할 수 있음)"
+    >/dev/null
 fi
 
 # 5) Karate 실행(메인 흐름 feature 전부)

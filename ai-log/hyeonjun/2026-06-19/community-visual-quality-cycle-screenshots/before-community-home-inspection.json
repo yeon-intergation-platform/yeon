@@ -1,0 +1,137 @@
+{
+  "url": "http://localhost:3005/community",
+  "buttons": [
+    {
+      "text": "BGM배경음",
+      "disabled": false,
+      "expanded": null,
+      "pressed": "false"
+    },
+    {
+      "text": "",
+      "disabled": false,
+      "expanded": null,
+      "pressed": null
+    },
+    {
+      "text": "",
+      "disabled": false,
+      "expanded": "false",
+      "pressed": null
+    },
+    {
+      "text": "전송",
+      "disabled": true,
+      "expanded": null,
+      "pressed": null
+    },
+    {
+      "text": "전체",
+      "disabled": false,
+      "expanded": null,
+      "pressed": "true"
+    },
+    {
+      "text": "잡담",
+      "disabled": false,
+      "expanded": null,
+      "pressed": "false"
+    },
+    {
+      "text": "타자친구 모집",
+      "disabled": false,
+      "expanded": null,
+      "pressed": "false"
+    },
+    {
+      "text": "카드친구 모집",
+      "disabled": false,
+      "expanded": null,
+      "pressed": "false"
+    },
+    {
+      "text": "관리자에게 아무말/조언",
+      "disabled": false,
+      "expanded": null,
+      "pressed": "false"
+    },
+    {
+      "text": "글쓰기",
+      "disabled": false,
+      "expanded": "false",
+      "pressed": null
+    },
+    {
+      "text": "등록",
+      "disabled": true,
+      "expanded": null,
+      "pressed": null
+    },
+    {
+      "text": "",
+      "disabled": false,
+      "expanded": null,
+      "pressed": null
+    },
+    {
+      "text": "",
+      "disabled": false,
+      "expanded": "false",
+      "pressed": null
+    }
+  ],
+  "inputs": [
+    {
+      "tag": "INPUT",
+      "type": null,
+      "placeholder": "실시간 채팅 입력",
+      "aria": null,
+      "value": "",
+      "text": ""
+    },
+    {
+      "tag": "INPUT",
+      "type": null,
+      "placeholder": "닉네임 입력",
+      "aria": null,
+      "value": "익명4362",
+      "text": ""
+    },
+    {
+      "tag": "INPUT",
+      "type": "password",
+      "placeholder": "수정/삭제용 비밀번호",
+      "aria": null,
+      "value": "",
+      "text": ""
+    }
+  ],
+  "textPreview": "YEON 커뮤니티\n실시간 채팅\n\n채팅은 3일 뒤 사라져요.\n\n접속 1명\n익명3467\npw-smoke-1781776268088\n6. 18. 18:51\n익명7250\ninspect-1781776319960\n6. 18. 18:52\n익명4448\npw-smoke-1781776348088\n6. 18. 18:52\n익명0315\npw-smoke-1781776416551\n6. 18. 18:53\n익명4983\npw-smoke-1781776548564\n6. 18. 18:55\n익명8035\n채팅 검증 1781778873217\n6. 18. 19:34\n익명2682\n채팅 검증 1781778965565\n6. 18. 19:36\n전송\n게시판\n전체\n잡담\n타자친구 모집\n카드친구 모집\n관리자에게 아무말/조언\n새 글\n글쓰기\n\n글 목록을 불러오는 중...\n\n게스트 인증\n미등록\n닉네임\n비밀번호\n\n등록하면 글과 댓글 작성·수정·삭제에 자동으로 사용돼요.\n\n등록",
+  "events": [
+    {
+      "type": "console",
+      "level": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+    },
+    {
+      "type": "console",
+      "level": "log",
+      "text": "[HMR] connected"
+    },
+    {
+      "type": "console",
+      "level": "log",
+      "text": "[Fast Refresh] rebuilding"
+    },
+    {
+      "type": "console",
+      "level": "log",
+      "text": "[Fast Refresh] done in 166ms"
+    },
+    {
+      "type": "console",
+      "level": "error",
+      "text": "Failed to load resource: the server responded with a status of 403 (Forbidden)"
+    }
+  ]
+}
