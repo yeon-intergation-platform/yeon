@@ -296,7 +296,7 @@ export function CommunityPage() {
               />
             ))}
 
-            {!isPostsLoading && !hasFilteredPosts ? (
+            {!isPostsLoading && !postsError && !hasFilteredPosts ? (
               <YeonSurface variant="empty" className="px-4 py-8">
                 <YeonText
                   variant="body"

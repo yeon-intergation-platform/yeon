@@ -133,7 +133,7 @@ export function LandingHome({
                         as="span"
                         className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium ${
                           isLive
-                            ? "border border-green-200 bg-green-50 text-green-700"
+                            ? "border border-emerald-300 bg-emerald-100 text-emerald-800"
                             : "border border-[#e5e5e5] bg-[#fafafa] text-[#aaa]"
                         }`}
                       >
@@ -141,7 +141,7 @@ export function LandingHome({
                           <YeonView
                             as="span"
                             aria-hidden="true"
-                            className="h-1.5 w-1.5 rounded-full bg-green-600"
+                            className="h-1.5 w-1.5 rounded-full bg-emerald-600"
                           />
                         ) : null}
                         {isLive ? "운영 중" : "준비 중"}

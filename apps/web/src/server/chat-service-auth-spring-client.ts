@@ -3,8 +3,9 @@ import {
   fetchYeon,
   type YeonRequestInit,
 } from "@yeon/ui/runtime/YeonBrowserRuntime";
+import { buildSpringBffHeaders } from "@/server/spring-bff-client";
+
 const DEFAULT_BACKEND_BASE_URL = "http://127.0.0.1:8081";
-const INTERNAL_TOKEN_HEADER = "X-Yeon-Internal-Token";
 const CHAT_SESSION_TOKEN_HEADER = "X-Yeon-Chat-Session-Token";
 
 function resolveSpringBackendBaseUrl() {
@@ -61,15 +62,7 @@ async function fetchSpring(
     {
       cache: "no-store",
       ...init,
-      headers: {
-        accept: "application/json",
-        ...(init.headers ?? {}),
-        ...(process.env.SPRING_INTERNAL_TOKEN?.trim()
-          ? {
-              [INTERNAL_TOKEN_HEADER]: process.env.SPRING_INTERNAL_TOKEN.trim(),
-            }
-          : {}),
-      },
+      headers: buildSpringBffHeaders(init.headers),
     }
   );
   const raw = await response.text();
