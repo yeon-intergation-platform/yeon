@@ -12,19 +12,8 @@ import {
   YEON_WEB_OVERLAY_CLASS,
   YEON_WEB_SHADOW_CLASS,
 } from "@yeon/ui";
-import {
-  readYeonLocalStorageItem,
-  writeYeonLocalStorageItem,
-} from "@yeon/ui/runtime/YeonBrowserRuntime";
 import { useEffect, useState } from "react";
-
-export const COMMUNITY_GUEST_IDENTITY_CONFIRM_DISMISSED_KEY =
-  "yeon-community-guest-identity-confirm-dismissed";
-
-export type CommunityGuestIdentity = {
-  guestNickname: string;
-  guestPassword: string;
-};
+import { type CommunityGuestIdentity } from "../community-guest-identity-confirm";
 
 type CommunityGuestIdentityConfirmModalProps = CommunityGuestIdentity & {
   isOpen: boolean;
@@ -35,20 +24,6 @@ type CommunityGuestIdentityConfirmModalProps = CommunityGuestIdentity & {
     options: { dismiss: boolean }
   ) => void;
 };
-
-export function isCommunityGuestIdentityConfirmDismissed() {
-  return (
-    readYeonLocalStorageItem(COMMUNITY_GUEST_IDENTITY_CONFIRM_DISMISSED_KEY) ===
-    "true"
-  );
-}
-
-export function persistCommunityGuestIdentityConfirmDismissed() {
-  writeYeonLocalStorageItem(
-    COMMUNITY_GUEST_IDENTITY_CONFIRM_DISMISSED_KEY,
-    "true"
-  );
-}
 
 export function CommunityGuestIdentityConfirmModal(
   props: CommunityGuestIdentityConfirmModalProps

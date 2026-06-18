@@ -6,12 +6,12 @@ import {
 } from "@/components/product-shell/product-header";
 import { YeonServiceHelpDialog } from "@yeon/ui";
 import { YeonButton, YeonSurface, YeonText, YeonView } from "@yeon/ui";
+import { CommunityGuestIdentityConfirmModal } from "./components/community-guest-identity-confirm-modal";
 import {
-  CommunityGuestIdentityConfirmModal,
-  isCommunityGuestIdentityConfirmDismissed,
+  canSkipCommunityGuestIdentityConfirm,
   persistCommunityGuestIdentityConfirmDismissed,
   type CommunityGuestIdentity,
-} from "./components/community-guest-identity-confirm-modal";
+} from "./community-guest-identity-confirm";
 import { CommunityChatWidget } from "./components/community-chat-widget";
 import {
   FeedGuestIdentityRow,
@@ -111,7 +111,7 @@ export function CommunityPage() {
   ) => {
     const currentIdentity = { guestNickname, guestPassword };
 
-    if (isCommunityGuestIdentityConfirmDismissed()) {
+    if (canSkipCommunityGuestIdentityConfirm(currentIdentity)) {
       return run(currentIdentity).then(() => true);
     }
 

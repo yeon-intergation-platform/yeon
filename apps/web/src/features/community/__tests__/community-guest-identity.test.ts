@@ -5,6 +5,11 @@ import {
   resolveCommunityGuestNickname,
   writeCommunityGuestNickname,
 } from "../community-guest-identity";
+import {
+  canSkipCommunityGuestIdentityConfirm,
+  COMMUNITY_GUEST_IDENTITY_CONFIRM_DISMISSED_KEY,
+  hasCompleteCommunityGuestIdentity,
+} from "../community-guest-identity-confirm";
 
 function stubWindowLocalStorage(initialNickname?: string) {
   const storage = new Map<string, string>();
@@ -69,5 +74,41 @@ describe("community guest identity", () => {
     stubWindowLocalStorage("익명1234");
 
     expect(resolveCommunityGuestNickname("  새닉네임  ")).toBe("새닉네임");
+  });
+
+  it("닉네임과 비밀번호가 모두 있을 때만 게스트 작성자 정보가 완성된다", () => {
+    expect(
+      hasCompleteCommunityGuestIdentity({
+        guestNickname: " 익명1234 ",
+        guestPassword: " pw ",
+      })
+    ).toBe(true);
+    expect(
+      hasCompleteCommunityGuestIdentity({
+        guestNickname: "익명1234",
+        guestPassword: " ",
+      })
+    ).toBe(false);
+  });
+
+  it("다시 보지 않음 상태여도 비밀번호가 비어 있으면 작성자 확인을 건너뛰지 않는다", () => {
+    const localStorage = stubWindowLocalStorage("테스터");
+    localStorage.setItem(
+      COMMUNITY_GUEST_IDENTITY_CONFIRM_DISMISSED_KEY,
+      "true"
+    );
+
+    expect(
+      canSkipCommunityGuestIdentityConfirm({
+        guestNickname: "테스터",
+        guestPassword: "",
+      })
+    ).toBe(false);
+    expect(
+      canSkipCommunityGuestIdentityConfirm({
+        guestNickname: "테스터",
+        guestPassword: "pw",
+      })
+    ).toBe(true);
   });
 });
