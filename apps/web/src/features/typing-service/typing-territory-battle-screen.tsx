@@ -94,11 +94,11 @@ function TerritoryGateScreen() {
             tone="inherit"
             className="mt-4 text-[34px] font-black tracking-[-0.06em] text-[#111]"
           >
-            점령전은 타자방 참가 후 입장합니다.
+            점령전은 점령전 방 참가 후 입장합니다.
           </YeonText>
           <YeonText className="mt-3 font-medium">
-            먼저 로비에서 타자방을 만들거나 참가한 다음, 대기방의 ‘점령전 입장’
-            버튼으로 들어가 주세요.
+            먼저 로비에서 점령전 방을 만들거나 참가한 다음, 대기방의 ‘점령전
+            입장’ 버튼으로 들어가 주세요.
           </YeonText>
           <YeonButton
             as="a"

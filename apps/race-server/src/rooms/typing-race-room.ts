@@ -9,6 +9,7 @@ import {
   TYPING_RACE_STAGE,
   TYPING_SPEED_STYLE,
   TYPING_ROOM_DIFFICULTY,
+  TYPING_ROOM_GAME_TYPE,
   TYPING_ROOM_LANGUAGE,
   TYPING_ROOM_LIFECYCLE,
   TYPING_ROOM_MODE,
@@ -50,6 +51,7 @@ import {
   type TypingRoomMode,
   type TypingRoomTextType,
   type TypingRoomDifficulty,
+  type TypingRoomGameType,
   type TypingRoomVisibility,
   type TypingRoomParticipantSnapshot,
   type TypingRoomChatMessage,
@@ -219,6 +221,7 @@ const DEFAULT_ROOM_SETTINGS: TypingRoomSettings = {
   difficulty: TYPING_ROOM_DIFFICULTY.NORMAL,
   roundCount: 1,
   mode: TYPING_ROOM_MODE.FINISH,
+  gameType: TYPING_ROOM_GAME_TYPE.STANDARD,
 };
 
 // 엔진 레인 수가 4개라 maxClients도 4로 제한 (LANE_Y_RATIOS 길이와 일치시켜 5번째 참여자 누락 방지)
@@ -501,6 +504,12 @@ function normalizeSettings(
     ? (options?.mode as TypingRoomMode)
     : DEFAULT_ROOM_SETTINGS.mode;
 
+  const gameType = Object.values(TYPING_ROOM_GAME_TYPE).includes(
+    options?.gameType as TypingRoomGameType
+  )
+    ? (options?.gameType as TypingRoomGameType)
+    : DEFAULT_ROOM_SETTINGS.gameType;
+
   const maxParticipants = Math.min(
     MAX_PLAYERS_PER_ROOM,
     clampOption(
@@ -546,6 +555,7 @@ function normalizeSettings(
     difficulty,
     roundCount,
     mode,
+    gameType,
     selectedDeckId,
     selectedDeckVisibility,
     selectedDeckLanguageTag,
@@ -1609,6 +1619,12 @@ export class TypingRaceRoom extends Room {
       });
       return;
     }
+    if (this.settings.gameType === TYPING_ROOM_GAME_TYPE.TERRITORY) {
+      client.send(RACE_EVENTS.ROOM_ERROR, {
+        message: "점령전 방에서는 점령전 입장으로 게임을 시작해주세요.",
+      });
+      return;
+    }
     if (!this.canStart()) {
       client.send(RACE_EVENTS.ROOM_ERROR, {
         message: "아직 준비하지 않은 참여자가 있어요.",
@@ -1975,6 +1991,7 @@ export class TypingRaceRoom extends Room {
 
   private canStart() {
     return (
+      this.settings.gameType === TYPING_ROOM_GAME_TYPE.STANDARD &&
       this.participants.size > 0 &&
       Array.from(this.participants.values()).every(
         (participant) => participant.isReady

@@ -1,5 +1,6 @@
 import {
   TYPING_ROOM_DIFFICULTY,
+  TYPING_ROOM_GAME_TYPE,
   TYPING_ROOM_LIFECYCLE,
   TYPING_ROOM_LANGUAGE,
   TYPING_ROOM_MODE,
@@ -7,6 +8,7 @@ import {
   TYPING_ROOM_TEXT_TYPE,
   TYPING_ROOM_VISIBILITY,
   type TypingRoomDifficulty,
+  type TypingRoomGameType,
   type TypingRoomLifecycle,
   type TypingRoomLanguage,
   type TypingRoomMode,
@@ -41,6 +43,12 @@ export const TYPING_ROOM_MODE_LABELS: Record<TypingRoomMode, string> = {
   [TYPING_ROOM_MODE.FINISH]: "완주 모드",
   [TYPING_ROOM_MODE.TIME_LIMIT]: "시간 제한",
 };
+
+export const TYPING_ROOM_GAME_TYPE_LABELS: Record<TypingRoomGameType, string> =
+  {
+    [TYPING_ROOM_GAME_TYPE.STANDARD]: "일반 타자방",
+    [TYPING_ROOM_GAME_TYPE.TERRITORY]: "점령전 방",
+  };
 
 export const TYPING_ROOM_VISIBILITY_LABELS: Record<
   TypingRoomVisibility,

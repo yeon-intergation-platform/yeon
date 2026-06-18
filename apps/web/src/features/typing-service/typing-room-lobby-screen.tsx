@@ -24,10 +24,12 @@ import { TypingServiceHeader } from "./typing-service-header";
 import { trackEvent } from "@/lib/analytics";
 import {
   TYPING_ROOM_DIFFICULTY,
+  TYPING_ROOM_GAME_TYPE,
   TYPING_ROOM_MODE,
   TYPING_ROOM_TEXT_TYPE,
   TYPING_ROOM_VISIBILITY,
   type TypingRoomCreateMessage,
+  type TypingRoomGameType,
   type TypingRoomSummary,
   type TypingRoomVisibility,
 } from "@yeon/race-shared";
@@ -47,6 +49,7 @@ import { usePlayerIdentity } from "./use-player-identity";
 import { useRaceRoom } from "./use-race-room";
 import {
   TYPING_ROOM_DIFFICULTY_LABELS,
+  TYPING_ROOM_GAME_TYPE_LABELS,
   TYPING_ROOM_LANGUAGE_LABELS,
   TYPING_ROOM_MODE_LABELS,
   TYPING_ROOM_STATUS_LABELS,
@@ -83,6 +86,23 @@ const FILTERS: { label: string; value: LobbyFilter }[] = [
   { label: "입장 가능", value: "available" },
 ];
 
+const GAME_TYPE_OPTIONS: {
+  value: TypingRoomGameType;
+  description: string;
+  icon: "play" | "swords";
+}[] = [
+  {
+    value: TYPING_ROOM_GAME_TYPE.STANDARD,
+    description: "같은 문장을 치고 순위로 겨룹니다.",
+    icon: "play",
+  },
+  {
+    value: TYPING_ROOM_GAME_TYPE.TERRITORY,
+    description: "팀을 나눠 점령전 화면으로 들어갑니다.",
+    icon: "swords",
+  },
+];
+
 function getRoomOccupancy(room: TypingRoomSummary) {
   const hostCount = room.currentParticipants > 0 ? 1 : 0;
   const guestCount = Math.max(room.currentParticipants - hostCount, 0);
@@ -111,6 +131,9 @@ export function TypingRoomLobbyScreen() {
   const [title, setTitle] = useState("");
   const [visibility, setVisibility] = useState<TypingRoomVisibility>(
     TYPING_ROOM_VISIBILITY.PUBLIC
+  );
+  const [gameType, setGameType] = useState<TypingRoomGameType>(
+    TYPING_ROOM_GAME_TYPE.STANDARD
   );
   const [selectedFilter, setSelectedFilter] = useState<LobbyFilter>("all");
   const [searchKeyword, setSearchKeyword] = useState("");
@@ -144,7 +167,10 @@ export function TypingRoomLobbyScreen() {
     createRoom: createRoomRequest,
   });
 
-  const generatedTitle = `${TYPING_ROOM_LANGUAGE_LABELS[fixedLanguage]} ${TYPING_ROOM_TEXT_TYPE_LABELS[FIXED_TEXT_TYPE]} 같이 치기`;
+  const generatedTitle =
+    gameType === TYPING_ROOM_GAME_TYPE.TERRITORY
+      ? `${TYPING_ROOM_LANGUAGE_LABELS[fixedLanguage]} ${TYPING_ROOM_TEXT_TYPE_LABELS[FIXED_TEXT_TYPE]} 점령전`
+      : `${TYPING_ROOM_LANGUAGE_LABELS[fixedLanguage]} ${TYPING_ROOM_TEXT_TYPE_LABELS[FIXED_TEXT_TYPE]} 같이 치기`;
 
   const rooms = state.kind === "ready" ? state.rooms : [];
   const filteredRooms = useMemo(() => {
@@ -179,6 +205,7 @@ export function TypingRoomLobbyScreen() {
       room_id: createRace.roomId,
       visibility: createRoomRequest.visibility,
       language: createRoomRequest.language,
+      game_type: createRoomRequest.gameType,
       deck_id: createRoomRequest.selectedDeckId,
       deck_title: createRoomRequest.participantDeckTitle,
     });
@@ -227,6 +254,7 @@ export function TypingRoomLobbyScreen() {
       source: "typing_room_lobby",
       visibility,
       language: fixedLanguage,
+      game_type: gameType,
       deck_id: selectedDeck.id,
       deck_title: selectedDeck.title,
     });
@@ -248,6 +276,7 @@ export function TypingRoomLobbyScreen() {
       difficulty: FIXED_DIFFICULTY,
       roundCount: FIXED_ROUND_COUNT,
       mode: FIXED_MODE,
+      gameType,
       selectedDeckId: selectedDeck.id,
       selectedDeckVisibility: selectedDeck.visibility,
       lobbyDeckTitle:
@@ -264,6 +293,7 @@ export function TypingRoomLobbyScreen() {
     trackEvent("room_create_modal_open", {
       source: "typing_room_lobby",
       language: fixedLanguage,
+      game_type: gameType,
     });
   };
 
@@ -441,6 +471,7 @@ export function TypingRoomLobbyScreen() {
                           room_id: room.roomId,
                           visibility: room.visibility,
                           language: room.language,
+                          game_type: room.gameType,
                           current_participants: room.currentParticipants,
                         })
                       }
@@ -454,6 +485,9 @@ export function TypingRoomLobbyScreen() {
                           </YeonBadge>
                           <YeonBadge className="text-[11px] text-[#111]">
                             {occupancy.seatLabel}
+                          </YeonBadge>
+                          <YeonBadge className="text-[11px] text-[#111]">
+                            {TYPING_ROOM_GAME_TYPE_LABELS[room.gameType]}
                           </YeonBadge>
                           <YeonText
                             as="span"
@@ -484,7 +518,8 @@ export function TypingRoomLobbyScreen() {
                           {TYPING_ROOM_TEXT_TYPE_LABELS[room.textType]} ·{" "}
                           {TYPING_ROOM_DIFFICULTY_LABELS[room.difficulty]} ·{" "}
                           {room.roundCount}판 ·{" "}
-                          {TYPING_ROOM_MODE_LABELS[room.mode]}
+                          {TYPING_ROOM_MODE_LABELS[room.mode]} ·{" "}
+                          {TYPING_ROOM_GAME_TYPE_LABELS[room.gameType]}
                         </YeonText>
                         <YeonView className="mt-4 flex flex-wrap gap-2 text-[12px] font-semibold">
                           <YeonText
@@ -572,6 +607,56 @@ export function TypingRoomLobbyScreen() {
         bodyClassName="p-7 pt-6"
       >
         <YeonView className="grid gap-6">
+          <YeonView
+            as="fieldset"
+            className="grid gap-3 text-[15px] font-bold text-[#111]"
+          >
+            <YeonText as="legend" variant="unstyled" tone="inherit">
+              방 종류
+            </YeonText>
+            <YeonView className="grid gap-2 sm:grid-cols-2">
+              {GAME_TYPE_OPTIONS.map((option) => (
+                <YeonLabel
+                  key={option.value}
+                  className={`grid min-h-[108px] cursor-pointer content-start gap-2 rounded-lg border bg-white p-4 transition-colors ${
+                    gameType === option.value
+                      ? "border-[#111] shadow-[inset_0_0_0_1px_#111]"
+                      : "border-[#e5e5e5] hover:border-[#111]"
+                  }`}
+                >
+                  <YeonField
+                    type="radio"
+                    name="gameType"
+                    value={option.value}
+                    checked={gameType === option.value}
+                    onChange={() => setGameType(option.value)}
+                    disabled={isCreating}
+                    className="sr-only"
+                  />
+                  <YeonView className="flex items-center gap-2">
+                    <YeonIcon name={option.icon} size={17} />
+                    <YeonText
+                      as="span"
+                      variant="unstyled"
+                      tone="inherit"
+                      className="text-[16px] font-black"
+                    >
+                      {TYPING_ROOM_GAME_TYPE_LABELS[option.value]}
+                    </YeonText>
+                  </YeonView>
+                  <YeonText
+                    as="span"
+                    variant="unstyled"
+                    tone="inherit"
+                    className="text-[13px] font-semibold leading-5 text-[#666]"
+                  >
+                    {option.description}
+                  </YeonText>
+                </YeonLabel>
+              ))}
+            </YeonView>
+          </YeonView>
+
           <YeonLabel className="grid gap-3 text-[15px] font-bold text-[#111]">
             방 제목
             <YeonField
@@ -625,7 +710,8 @@ export function TypingRoomLobbyScreen() {
             tone="inherit"
             className="text-[14px] font-medium leading-6 text-[#666]"
           >
-            세부 설정은 방에 들어간 뒤 시작 전에 바꿀 수 있어요.
+            세부 설정은 방에 들어간 뒤 시작 전에 바꿀 수 있어요. 방 종류는 생성
+            후 바꿀 수 없어요.
           </YeonText>
 
           {createError && (
