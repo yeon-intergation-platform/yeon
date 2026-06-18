@@ -1,4 +1,5 @@
 import type { YeonMetadataRoute } from "@yeon/ui/runtime/YeonMetadataRoute";
+import { SITE_SUPPORT_EMAIL } from "@/lib/site-brand";
 
 export const PUBLIC_CONTENT_CHANNELS = {
   support: "support",
@@ -34,10 +35,20 @@ type PublicContentSupportCtaTarget = {
   ctaHref: string;
 };
 
+export const PUBLIC_CONTENT_NEXA_INSTALL_URL =
+  "https://discord-ai.yeon.world/install";
+
+export const PUBLIC_CONTENT_NEXA_DISCORD_BOT_INVITE_URL =
+  "https://discord.com/oauth2/authorize?client_id=1509346092850876416&permissions=3968122435926081&integration_type=0&scope=applications.commands+bot";
+
+export const PUBLIC_CONTENT_ERROR_REPORT_MAILTO = `mailto:${SITE_SUPPORT_EMAIL}?subject=${encodeURIComponent(
+  "[YEON 오류 신고]"
+)}`;
+
 export const PUBLIC_CONTENT_SUPPORT_CTA_TARGETS = {
   nexa: {
     ctaLabel: "NEXA 설치 페이지 열기",
-    ctaHref: "https://discord-ai.yeon.world/install",
+    ctaHref: PUBLIC_CONTENT_NEXA_INSTALL_URL,
   },
   typing: {
     ctaLabel: "타자연습 열기",
@@ -256,42 +267,57 @@ export const PUBLIC_CONTENT_ARTICLES: readonly PublicContentArticle[] = [
     slugSegments: ["nexa", "guides", "add-nexa-discord-bot"],
     title: "디스코드 서버에 NEXA AI 봇 추가하는 방법",
     description:
-      "디스코드 서버 관리자가 NEXA AI 봇을 추가하기 전에 확인할 권한, 설치 페이지, 테스트 순서를 정리했습니다.",
+      "디스코드 서버 관리자가 실제 NEXA 설치 페이지에서 봇을 추가하고, 데스크톱 앱 설치와 구분해 확인하는 순서입니다.",
     summary:
-      "서버 권한 확인부터 설치 페이지 진입, 첫 질문 테스트까지 순서대로 진행합니다.",
+      "설치 페이지와 직접 초대 링크를 열고, 서버 선택과 권한 승인 후 테스트 채널에서 확인합니다.",
     publishedAt: PUBLISHED_DATE,
     updatedAt: PUBLISHED_DATE,
     readingMinutes: 4,
     ...PUBLIC_CONTENT_SUPPORT_CTA_TARGETS.nexa,
     sourcePaths: [
       "/Users/osuma/coding_stuffs/discord-assitant/README.md",
-      "/Users/osuma/coding_stuffs/discord-assitant/docs/FAQ.md",
+      "/Users/osuma/coding_stuffs/discord-assitant/central-server/src/main/resources/static/install.html",
+      "/Users/osuma/coding_stuffs/discord-assitant/docs/BOT_PERMISSIONS.md",
     ],
     body: [
       {
         type: "paragraph",
-        text: "NEXA는 디스코드 서버 안에서 AI 응답과 자동화 흐름을 사용할 수 있게 돕는 봇 서비스입니다. 서버에 추가하기 전에는 본인이 서버 관리자이거나 봇 초대 권한을 가진 역할인지 먼저 확인해야 합니다.",
+        text: "이 글은 디스코드 서버에 NEXA 봇을 추가하는 절차입니다. NEXA 데스크톱 앱 설치는 내 PC를 로컬 AI Provider로 연결할 때 쓰는 선택 절차이고, 서버에 봇만 추가할 때는 데스크톱 앱을 설치하지 않아도 됩니다.",
+      },
+      {
+        type: "links",
+        title: "먼저 열 링크",
+        links: [
+          {
+            href: PUBLIC_CONTENT_NEXA_INSTALL_URL,
+            label: "NEXA 설치 페이지",
+          },
+          {
+            href: PUBLIC_CONTENT_NEXA_DISCORD_BOT_INVITE_URL,
+            label: "Discord에 NEXA 봇 바로 추가",
+          },
+        ],
       },
       {
         type: "heading",
-        title: "추가 순서",
+        title: "봇 추가 순서",
       },
       {
         type: "steps",
         items: [
-          "디스코드에서 봇을 추가할 서버를 열고 본인 역할에 서버 관리 또는 봇 초대 권한이 있는지 확인합니다.",
-          "NEXA 설치 페이지를 열어 현재 제공되는 설치 안내와 초대 흐름을 확인합니다.",
-          "디스코드 권한 승인 화면이 나오면 서버 이름이 맞는지 확인합니다.",
-          "요청된 권한이 봇 안내 문서의 권장 권한과 맞는지 확인한 뒤 승인합니다.",
-          "서버의 테스트 채널에서 NEXA가 보이는지 확인합니다.",
-          "간단한 질문을 보내 응답이 오는지 확인합니다.",
+          "디스코드에서 봇을 추가할 서버를 정하고, 본인 역할에 서버 관리 또는 봇 초대 권한이 있는지 확인합니다.",
+          "NEXA 설치 페이지를 열고 “디스코드에 봇 추가”를 누릅니다. 바로 추가하려면 위의 Discord 초대 링크를 열어도 됩니다.",
+          "Discord 승인 화면에서 서버 이름이 맞는지 확인합니다. 다른 서버가 선택되어 있으면 진행하지 않습니다.",
+          "요청 권한을 확인합니다. 권한 설명이 필요하면 NEXA 권한 문서를 먼저 열어 비교합니다.",
+          "승인 후 서버 멤버 목록이나 테스트 채널에서 NEXA 봇이 보이는지 확인합니다.",
+          "슬래시 명령 목록에 NEXA 명령이 보이면 짧은 테스트 질문을 보내 응답을 확인합니다.",
         ],
       },
       {
         type: "callout",
         tone: PUBLIC_CONTENT_CALLOUT_TONES.warning,
-        title: "권한이 부족하면",
-        text: "초대 화면에서 서버가 보이지 않거나 승인할 수 없다면, 디스코드 서버 소유자에게 봇 초대 권한을 요청해야 합니다.",
+        title: "데스크톱 앱 설치와 헷갈리지 마세요",
+        text: "설치 페이지에 데스크톱 앱 안내가 함께 보여도, 디스코드 서버에 봇을 추가하는 데스크톱 앱 설치는 필수가 아닙니다. 서버 봇 추가는 Discord 승인 화면에서 끝납니다.",
       },
       {
         type: "heading",
@@ -310,7 +336,7 @@ export const PUBLIC_CONTENT_ARTICLES: readonly PublicContentArticle[] = [
         type: "callout",
         tone: PUBLIC_CONTENT_CALLOUT_TONES.success,
         title: "응답이 확인되면 완료입니다",
-        text: "테스트 채널에서 NEXA가 답변하면 기본 설치와 권한 확인은 끝난 상태입니다.",
+        text: "테스트 채널에서 NEXA가 답변하면 봇 추가와 기본 권한 확인은 끝난 상태입니다.",
       },
       {
         type: "links",
@@ -346,7 +372,7 @@ export const PUBLIC_CONTENT_ARTICLES: readonly PublicContentArticle[] = [
     updatedAt: PUBLISHED_DATE,
     readingMinutes: 5,
     ctaLabel: "NEXA 설치 페이지 열기",
-    ctaHref: "https://discord-ai.yeon.world/install",
+    ctaHref: PUBLIC_CONTENT_NEXA_INSTALL_URL,
     sourcePaths: [
       "/Users/osuma/coding_stuffs/discord-assitant/docs/BOT_PERMISSIONS.md",
     ],
@@ -2033,57 +2059,13 @@ export const PUBLIC_CONTENT_ARTICLES: readonly PublicContentArticle[] = [
   {
     channel: PUBLIC_CONTENT_CHANNELS.support,
     service: PUBLIC_CONTENT_SERVICES.account,
-    category: "guides",
-    slugSegments: ["account", "guides", "login-with-yeon-account"],
-    title: "YEON 계정으로 로그인하는 방법",
-    description:
-      "YEON 계정이 필요한 서비스에서 로그인 흐름을 열고 Google 로그인 또는 자격증명 로그인을 사용하는 기본 방법입니다.",
-    summary:
-      "계정형 기능을 사용할 때 로그인 버튼을 열고, 로그인 후 원래 서비스로 돌아오는지 확인합니다.",
-    publishedAt: PUBLISHED_DATE,
-    updatedAt: PUBLISHED_DATE,
-    readingMinutes: 3,
-    sourcePaths: [
-      "/Users/osuma/coding_stuffs/yeon/apps/web/src/app/page.tsx",
-      "/Users/osuma/coding_stuffs/yeon/apps/web/src/lib/credential-client.ts",
-      "/Users/osuma/coding_stuffs/yeon/apps/web/src/features/landing-home/landing-constants.ts",
-    ],
-    body: [
-      {
-        type: "paragraph",
-        text: "YEON의 공개 서비스는 로그인 없이 시작할 수 있는 영역과 계정이 필요한 영역이 섞여 있습니다. 계정이 필요한 기능을 쓰려면 공통 로그인 흐름을 통해 세션을 만든 뒤 원래 서비스로 돌아오면 됩니다.",
-      },
-      {
-        type: "steps",
-        items: [
-          "yeon.world 또는 사용하는 서비스에서 로그인 버튼을 누릅니다.",
-          "Google 로그인 또는 제공되는 자격증명 로그인 방식을 선택합니다.",
-          "요청된 정보와 이동할 서비스가 맞는지 확인합니다.",
-          "로그인이 끝나면 원래 보던 서비스로 돌아왔는지 확인합니다.",
-          "카드처럼 계정 저장이 필요한 서비스는 덱 목록을 다시 확인합니다.",
-          "로그인이 되지 않으면 오류 메시지를 기록합니다.",
-        ],
-      },
-      {
-        type: "checklist",
-        items: [
-          "typing은 기본적으로 로그인 없이도 사용할 수 있습니다.",
-          "card는 게스트와 로그인 저장 범위가 다릅니다.",
-          "community는 게스트 글쓰기를 지원합니다.",
-        ],
-      },
-    ],
-  },
-  {
-    channel: PUBLIC_CONTENT_CHANNELS.support,
-    service: PUBLIC_CONTENT_SERVICES.account,
     category: "troubleshooting",
     slugSegments: ["account", "troubleshooting", "session-signed-out"],
-    title: "YEON 로그인이 풀릴 때 확인할 것",
+    title: "YEON 로그인이 자꾸 풀릴 때 확인할 것",
     description:
-      "YEON 서비스에서 로그인이 풀리거나 인증 만료 메시지가 보일 때 세션, 쿠키, 브라우저, 서비스별 저장 차이를 확인합니다.",
+      "YEON 서비스에서 다시 로그인하라는 화면이 반복될 때 주소, 브라우저 설정, 게스트 저장 차이를 확인하는 방법입니다.",
     summary:
-      "세션 만료와 게스트 저장소 문제를 구분하고, 필요한 경우 다시 로그인합니다.",
+      "다시 로그인하라는 화면이 반복될 때 공식 주소, 브라우저 설정, 게스트/계정 저장 차이를 확인합니다.",
     publishedAt: PUBLISHED_DATE,
     updatedAt: PUBLISHED_DATE,
     readingMinutes: 4,
@@ -2095,23 +2077,23 @@ export const PUBLIC_CONTENT_ARTICLES: readonly PublicContentArticle[] = [
     body: [
       {
         type: "paragraph",
-        text: "로그인이 풀린 것처럼 보일 때는 실제 세션 만료인지, 서비스가 게스트 모드로 보이는 것인지 나누어 확인해야 합니다. 특히 카드 서비스는 게스트 데이터와 계정 데이터가 다를 수 있습니다.",
+        text: "로그인이 자꾸 풀리는 것처럼 보일 때는 먼저 접속 주소와 브라우저 설정을 확인합니다. 카드 서비스처럼 게스트 데이터와 계정 데이터가 따로 보이는 경우도 있어서, 단순히 저장된 내용이 사라진 것으로 보일 수 있습니다.",
       },
       {
         type: "steps",
         items: [
-          "새로고침 후에도 로그인 상태가 유지되는지 확인합니다.",
-          "로그인이 필요하다는 메시지가 보이면 다시 로그인합니다.",
-          "브라우저가 쿠키를 막고 있지 않은지 확인합니다.",
-          "card.yeon.world에서 덱이 사라진 것처럼 보이면 게스트/로그인 저장 차이를 확인합니다.",
+          "지금 주소가 yeon.world, typing.yeon.world, card.yeon.world, community.yeon.world 중 하나인지 확인합니다.",
+          "새로고침 후에도 다시 로그인하라는 화면이 반복되는지 확인합니다.",
+          "시크릿 모드이거나 브라우저가 사이트 데이터 저장을 막고 있지 않은지 확인합니다.",
+          "card.yeon.world에서 덱이 사라진 것처럼 보이면 게스트 저장과 계정 저장 차이를 확인합니다.",
           "다른 브라우저나 기기에서 같은 계정으로 확인합니다.",
-          "반복되면 시간, 브라우저, 서비스 URL을 기록해 신고합니다.",
+          "계속 반복되면 support 홈의 오류 신고 버튼으로 서비스 주소와 화면 상태를 보내 주세요.",
         ],
       },
       {
         type: "callout",
-        title: "게스트 데이터와 세션 만료는 다릅니다",
-        text: "로그인이 풀려도 게스트 로컬 데이터가 남아 있을 수 있고, 반대로 로그인해도 다른 브라우저의 게스트 데이터는 자동으로 보이지 않을 수 있습니다.",
+        title: "게스트 데이터와 계정 데이터는 다르게 보일 수 있습니다",
+        text: "로그인해도 다른 브라우저에 있던 게스트 덱이 자동으로 계정 덱처럼 보이지 않을 수 있습니다. 저장 위치가 달라 보이는 문제와 로그인 유지 문제를 나누어 확인하세요.",
       },
     ],
   },
@@ -2168,14 +2150,16 @@ export const PUBLIC_CONTENT_ARTICLES: readonly PublicContentArticle[] = [
     service: PUBLIC_CONTENT_SERVICES.account,
     category: "troubleshooting",
     slugSegments: ["account", "troubleshooting", "report-service-error"],
-    title: "YEON 오류를 신고하는 방법",
+    title: "YEON 오류를 바로 신고하는 곳",
     description:
-      "YEON 서비스 오류를 신고할 때 필요한 서비스 URL, 재현 순서, 시간, 화면 상태, 계정 여부를 정리하는 방법입니다.",
+      "YEON 서비스에서 문제가 생겼을 때 support 홈의 오류 신고 버튼이나 공개 문의 이메일로 바로 보내는 방법입니다.",
     summary:
-      "오류 신고에는 서비스 주소, 발생 시간, 재현 순서, 화면 메시지, 로그인 여부를 함께 적습니다.",
+      "Support 홈의 오류 신고 버튼으로 바로 보내고, 서비스 주소와 화면 상태만 짧게 적어도 됩니다.",
     publishedAt: PUBLISHED_DATE,
     updatedAt: PUBLISHED_DATE,
     readingMinutes: 3,
+    ctaLabel: "오류 신고하기",
+    ctaHref: PUBLIC_CONTENT_ERROR_REPORT_MAILTO,
     sourcePaths: [
       "/Users/osuma/coding_stuffs/yeon/apps/web/src/lib/site-brand.ts",
       "/Users/osuma/coding_stuffs/yeon/docs/seo/public-content-quality-checklist.md",
@@ -2184,28 +2168,39 @@ export const PUBLIC_CONTENT_ARTICLES: readonly PublicContentArticle[] = [
     body: [
       {
         type: "paragraph",
-        text: "오류 신고는 짧아도 재현 가능한 정보가 있어야 처리하기 쉽습니다. 비밀번호, 토큰, 개인정보는 제외하고 서비스 주소와 화면 상태를 중심으로 적어 주세요.",
+        text: "오류가 나면 support 홈의 오류 신고 버튼을 누르거나 공개 문의 이메일로 바로 보내 주세요. 긴 양식은 필요 없습니다. 어떤 서비스에서 무엇을 하다가 막혔는지만 알 수 있으면 확인을 시작할 수 있습니다.",
       },
       {
-        type: "steps",
-        items: [
-          "문제가 생긴 서비스 URL을 기록합니다.",
-          "발생 시간을 적습니다.",
-          "문제를 다시 만드는 순서를 1단계씩 적습니다.",
-          "화면에 나온 오류 메시지를 그대로 적습니다.",
-          "로그인 상태인지 게스트 상태인지 적습니다.",
-          "비밀번호, API 키, 개인정보는 신고 내용에서 제거합니다.",
+        type: "links",
+        title: "신고 위치",
+        links: [
+          {
+            href: PUBLIC_CONTENT_ERROR_REPORT_MAILTO,
+            label: "오류 신고 이메일 열기",
+          },
+          {
+            href: "https://support.yeon.world",
+            label: "Support 홈에서 오류 신고 버튼 찾기",
+          },
         ],
+      },
+      {
+        type: "heading",
+        title: "짧게 보내도 되는 내용",
       },
       {
         type: "checklist",
         items: [
-          "서비스 URL",
-          "발생 시간",
-          "재현 순서",
-          "오류 메시지",
-          "로그인 또는 게스트 상태",
+          "문제가 난 서비스 주소",
+          "무엇을 누른 뒤 어떤 화면이나 메시지가 나왔는지",
+          "다시 연락받을 이메일",
         ],
+      },
+      {
+        type: "callout",
+        tone: PUBLIC_CONTENT_CALLOUT_TONES.warning,
+        title: "민감한 정보는 보내지 마세요",
+        text: "비밀번호, 인증 코드, API 키, 결제 정보처럼 다른 사람이 알면 안 되는 내용은 신고 메일에 넣지 마세요. 화면 캡처는 도움이 되지만 필수는 아닙니다.",
       },
     ],
   },

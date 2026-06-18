@@ -55,12 +55,14 @@ import { PublicContentOpsToolbarClient } from "./public-content-ops-toolbar-clie
 import { buildPublicContentArticleStructuredData } from "./public-content-structured-data";
 import {
   getPublicContentSupportHomeProblemEntries,
+  getPublicContentSupportHomeReportEntry,
   getPublicContentSupportHomeServiceEntries,
 } from "./public-content-support-home";
 import { getPublicContentSupportPrimaryActionItems } from "./public-content-support-action-summary";
 import { PublicContentSupportActionSummary } from "./public-content-support-action-summary-view";
 import {
   PublicContentSupportHomeProblemEntries,
+  PublicContentSupportHomeReportCta,
   PublicContentSupportHomeServiceEntries,
 } from "./public-content-support-home-view";
 import {
@@ -526,6 +528,10 @@ export function PublicContentHome({ channel }: PublicContentHomeProps) {
     channel === PUBLIC_CONTENT_CHANNELS.support
       ? getPublicContentSupportHomeServiceEntries()
       : [];
+  const supportReportEntry =
+    channel === PUBLIC_CONTENT_CHANNELS.support
+      ? getPublicContentSupportHomeReportEntry()
+      : null;
 
   return (
     <PublicContentShell channel={channel}>
@@ -551,6 +557,9 @@ export function PublicContentHome({ channel }: PublicContentHomeProps) {
           ) : null}
         </div>
       </section>
+      {channel === PUBLIC_CONTENT_CHANNELS.support ? (
+        <PublicContentSupportHomeReportCta entry={supportReportEntry} />
+      ) : null}
       {channel === PUBLIC_CONTENT_CHANNELS.support ? (
         <PublicContentSupportHomeProblemEntries
           entries={supportProblemEntries}

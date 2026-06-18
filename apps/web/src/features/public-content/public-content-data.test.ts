@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import {
   PUBLIC_CONTENT_ARTICLES,
   PUBLIC_CONTENT_CHANNELS,
+  PUBLIC_CONTENT_ERROR_REPORT_MAILTO,
+  PUBLIC_CONTENT_NEXA_DISCORD_BOT_INVITE_URL,
+  PUBLIC_CONTENT_NEXA_INSTALL_URL,
   buildPublicContentCanonicalUrl,
   buildPublicContentOpenGraphImageUrl,
   getPublicContentArticleBySlug,
@@ -190,6 +193,42 @@ describe("public content data", () => {
     expect(bodyText).toContain("기본 봇 이름으로 보내는 폴백");
   });
 
+  it("NEXA 봇 추가 글은 실제 설치 링크와 봇 추가/데스크톱 앱 구분을 포함한다", () => {
+    const article = getPublicContentArticleBySlug("support", [
+      "nexa",
+      "guides",
+      "add-nexa-discord-bot",
+    ]);
+    expect(article).toBeTruthy();
+
+    const bodyText = getPublicContentArticleText(article!);
+    const links = getPublicContentArticleLinks(article!);
+
+    expect(links).toContain(PUBLIC_CONTENT_NEXA_INSTALL_URL);
+    expect(links).toContain(PUBLIC_CONTENT_NEXA_DISCORD_BOT_INVITE_URL);
+    expect(bodyText).toContain("데스크톱 앱을 설치하지 않아도 됩니다");
+    expect(bodyText).toContain("Discord 승인 화면에서 끝납니다");
+  });
+
+  it("오류 신고 글은 support 홈 버튼과 공개 문의 이메일 중심으로 안내한다", () => {
+    const article = getPublicContentArticleBySlug("support", [
+      "account",
+      "troubleshooting",
+      "report-service-error",
+    ]);
+    expect(article).toMatchObject({
+      ctaHref: PUBLIC_CONTENT_ERROR_REPORT_MAILTO,
+      ctaLabel: "오류 신고하기",
+      title: "YEON 오류를 바로 신고하는 곳",
+    });
+
+    const bodyText = getPublicContentArticleText(article!);
+
+    expect(bodyText).toContain("support 홈의 오류 신고 버튼");
+    expect(bodyText).toContain("오류 신고 이메일 열기");
+    expect(bodyText).not.toContain("재현 순서");
+  });
+
   it("Yeon 서비스 support 초기 글을 서비스별 공개 URL로 제공하고 mooddesk는 제외한다", () => {
     const requiredSlugs = [
       ["typing", "getting-started", "start-typing-practice"],
@@ -207,7 +246,6 @@ describe("public content data", () => {
       ["community", "troubleshooting", "post-not-visible"],
       ["community", "troubleshooting", "site-not-opening"],
       ["community", "policy", "usage-rules"],
-      ["account", "guides", "login-with-yeon-account"],
       ["account", "troubleshooting", "session-signed-out"],
       ["account", "policy", "privacy-conversation-data"],
       ["account", "guides", "public-service-urls"],
@@ -227,8 +265,15 @@ describe("public content data", () => {
     ["typing", "card", "community", "account"].forEach((service) => {
       expect(
         supportArticles.filter((article) => article.service === service).length
-      ).toBeGreaterThanOrEqual(5);
+      ).toBeGreaterThanOrEqual(service === "account" ? 4 : 5);
     });
+    expect(
+      getPublicContentArticleBySlug("support", [
+        "account",
+        "guides",
+        "login-with-yeon-account",
+      ])
+    ).toBeNull();
     expect(
       supportArticles.some((article) => article.slugSegments[0] === "mooddesk")
     ).toBe(false);

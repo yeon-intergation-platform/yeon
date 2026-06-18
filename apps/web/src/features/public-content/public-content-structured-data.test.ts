@@ -129,9 +129,9 @@ describe("public content structured data", () => {
     });
     expect((howTo?.step as { position: number; text: string }[])[0]).toEqual({
       "@type": "HowToStep",
-      name: "디스코드에서 봇을 추가할 서버를 열고 본인 역할에 서버 관리 또는 봇 초대 권한이 있는지 확인합니다.",
+      name: "디스코드에서 봇을 추가할 서버를 정하고, 본인 역할에 서버 관리 또는 봇 초대 권한이 있는지 확인합니다.",
       position: 1,
-      text: "디스코드에서 봇을 추가할 서버를 열고 본인 역할에 서버 관리 또는 봇 초대 권한이 있는지 확인합니다.",
+      text: "디스코드에서 봇을 추가할 서버를 정하고, 본인 역할에 서버 관리 또는 봇 초대 권한이 있는지 확인합니다.",
     });
   });
 

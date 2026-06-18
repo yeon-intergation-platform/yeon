@@ -16,6 +16,8 @@ type PublicContentLinkKind =
   | "related_article"
   | "service_nav"
   | "source"
+  | "support_error_report"
+  | "support_error_report_guide"
   | "support_problem_entry";
 
 type PublicContentTrackedLinkEvent = "cta" | "link";
