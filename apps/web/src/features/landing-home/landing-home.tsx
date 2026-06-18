@@ -1,5 +1,5 @@
 "use client";
-import { YeonBadge, YeonButton, YeonLink, YeonText, YeonView } from "@yeon/ui";
+import { YeonButton, YeonLink, YeonText, YeonView } from "@yeon/ui";
 import { YEON_WEB_SHARED_CLASS as SHARED_FEATURE_CLASS } from "@yeon/ui/theme/web-style-tokens";
 import { useCallback, useEffect, useState } from "react";
 import type { DevLoginOption } from "@/lib/auth/dev-login-options";
@@ -129,10 +129,11 @@ export function LandingHome({
                 const cardInner = (
                   <>
                     <YeonView className="flex items-start justify-end gap-3">
-                      <YeonBadge
+                      <YeonView
+                        as="span"
                         className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium ${
                           isLive
-                            ? "border border-[#e5e5e5] bg-white text-[#aaa]"
+                            ? "border border-green-200 bg-green-50 text-green-700"
                             : "border border-[#e5e5e5] bg-[#fafafa] text-[#aaa]"
                         }`}
                       >
@@ -140,11 +141,11 @@ export function LandingHome({
                           <YeonView
                             as="span"
                             aria-hidden="true"
-                            className="h-1.5 w-1.5 rounded-full bg-[#111]"
+                            className="h-1.5 w-1.5 rounded-full bg-green-600"
                           />
                         ) : null}
                         {isLive ? "운영 중" : "준비 중"}
-                      </YeonBadge>
+                      </YeonView>
                     </YeonView>
                     <YeonView className="mt-4">
                       <YeonText
