@@ -10,11 +10,21 @@ import {
   YeonView,
   fetchYeon,
 } from "@yeon/ui";
+import { useYeonPathname } from "@yeon/ui/runtime/YeonNavigation";
 import { TypingBgmButton } from "@/features/typing-service/typing-bgm-button";
 import { HeaderExperienceBadge } from "@/features/user-experience/header-experience-badge";
+import { resolveSectionBrandHref } from "@/lib/header-brand-nav";
 import { useLogout } from "@/lib/use-logout";
 
 type CommonServiceKey = "home" | "typing" | "card" | "community";
+
+// 서비스 키 → 내부 베이스 경로. SERVICE_SUBDOMAIN_ROUTES(subdomain-routing.ts)의
+// servicePath와 같은 값이며, 좌상단 "한 단계 위" 네비게이션 계산에만 쓴다.
+const SERVICE_BASE_PATH: Record<Exclude<CommonServiceKey, "home">, string> = {
+  typing: "/typing-service",
+  card: "/card-service",
+  community: "/community",
+} as const;
 
 type CommonProductHeaderProps = {
   activeService: CommonServiceKey;
@@ -33,9 +43,9 @@ type AuthSessionPayload = {
 
 const COMMON_HEADER_BRAND_LABELS: Record<CommonServiceKey, string> = {
   home: "YEON",
-  typing: "YEON",
-  card: "YEON",
-  community: "YEON",
+  typing: "YEON 타자방",
+  card: "YEON 플래시카드",
+  community: "YEON 커뮤니티",
 } as const;
 
 async function fetchIsAuthenticated() {
@@ -65,6 +75,14 @@ export function CommonProductHeader({
   levelAriaLabel,
   rightExtras,
 }: CommonProductHeaderProps) {
+  const pathname = useYeonPathname();
+  // 좌상단 "한 단계 위": 하위 화면 → 서비스 홈, 서비스 홈 → 플랫폼(yeon.world).
+  // 플랫폼 홈(home) 자체에서는 그대로 루트를 가리킨다.
+  const brandHref =
+    activeService === "home"
+      ? "/"
+      : resolveSectionBrandHref(SERVICE_BASE_PATH[activeService], pathname);
+
   return (
     <YeonProductHeader
       as="nav"
@@ -72,7 +90,7 @@ export function CommonProductHeader({
       innerClassName="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 md:gap-6"
     >
       <YeonLink
-        href="/"
+        href={brandHref}
         aria-current={activeService === "home" ? "page" : undefined}
         className="min-w-0 text-[19px] font-black tracking-[-0.04em] text-[#111] no-underline transition-opacity hover:opacity-70 md:text-[23px]"
       >
