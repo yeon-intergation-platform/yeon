@@ -103,6 +103,12 @@ const GAME_TYPE_OPTIONS: {
   },
 ];
 
+type RoomCreateActionGroupProps = {
+  className?: string;
+  compact?: boolean;
+  onCreate: (gameType: TypingRoomGameType) => void;
+};
+
 function getRoomOccupancy(room: TypingRoomSummary) {
   const hostCount = room.currentParticipants > 0 ? 1 : 0;
   const guestCount = Math.max(room.currentParticipants - hostCount, 0);
@@ -119,6 +125,39 @@ function getRoomOccupancy(room: TypingRoomSummary) {
     openSeats,
     seatLabel: isFull ? "만석" : `${openSeats}자리 남음`,
   };
+}
+
+function RoomCreateActionGroup({
+  className,
+  compact = false,
+  onCreate,
+}: RoomCreateActionGroupProps) {
+  const buttonClassName = compact
+    ? "h-11 rounded-full px-4 text-[13px] font-black"
+    : "h-[50px] rounded-lg px-6 text-[15px] font-black";
+
+  return (
+    <YeonView className={joinClassNames("flex flex-wrap gap-2", className)}>
+      <YeonButton
+        type="button"
+        onClick={() => onCreate(TYPING_ROOM_GAME_TYPE.STANDARD)}
+        variant="primary"
+        className={buttonClassName}
+      >
+        <YeonIcon name="play" size={compact ? 14 : 16} />
+        {compact ? "일반 방" : "일반 타자방 만들기"}
+      </YeonButton>
+      <YeonButton
+        type="button"
+        onClick={() => onCreate(TYPING_ROOM_GAME_TYPE.TERRITORY)}
+        variant="secondary"
+        className={buttonClassName}
+      >
+        <YeonIcon name="swords" size={compact ? 14 : 16} />
+        {compact ? "점령전" : "점령전 방 만들기"}
+      </YeonButton>
+    </YeonView>
+  );
 }
 
 export function TypingRoomLobbyScreen() {
@@ -157,6 +196,9 @@ export function TypingRoomLobbyScreen() {
       deckState.selectedDeck,
     [deckState.selectedDeck, deckState.selectedDeckId, roomDeckOptions]
   );
+  const selectedGameTypeOption =
+    GAME_TYPE_OPTIONS.find((option) => option.value === gameType) ??
+    GAME_TYPE_OPTIONS[0];
 
   const createRace = useRaceRoom({
     enabled: Boolean(createRoomRequest && createRoomIdentity?.playerId),
@@ -288,12 +330,13 @@ export function TypingRoomLobbyScreen() {
     });
   };
 
-  const openCreateModal = () => {
+  const openCreateModal = (nextGameType: TypingRoomGameType) => {
+    setGameType(nextGameType);
     setIsCreateModalOpen(true);
     trackEvent("room_create_modal_open", {
       source: "typing_room_lobby",
       language: fixedLanguage,
-      game_type: gameType,
+      game_type: nextGameType,
     });
   };
 
@@ -374,14 +417,10 @@ export function TypingRoomLobbyScreen() {
                     className="h-[50px] rounded-lg pl-12 pr-4 text-[16px] font-medium placeholder:text-[#aaa]"
                   />
                 </YeonLabel>
-                <YeonButton
-                  type="button"
-                  onClick={openCreateModal}
-                  variant="primary"
-                  className="hidden h-[50px] rounded-lg px-8 text-[16px] font-bold md:inline-flex"
-                >
-                  방 만들기
-                </YeonButton>
+                <RoomCreateActionGroup
+                  className="hidden shrink-0 md:flex"
+                  onCreate={openCreateModal}
+                />
               </YeonView>
             </YeonView>
           )}
@@ -432,19 +471,22 @@ export function TypingRoomLobbyScreen() {
                     ? "다른 키워드로 검색해 보세요. 원하는 방이 없다면 직접 만들 수 있어요."
                     : "공개방은 누구나 입장할 수 있고, 비공개방은 방 코드를 받은 사람만 들어와요."}
                 </YeonText>
-                <YeonButton
-                  type="button"
-                  onClick={
-                    state.kind === "ready"
-                      ? () => setSearchKeyword("")
-                      : openCreateModal
-                  }
-                  variant="primary"
-                  size="xl"
-                  className={`mt-8 rounded-lg ${YEON_WEB_SHADOW_CLASS.actionSoft}`}
-                >
-                  {state.kind === "ready" ? "검색 초기화" : "첫 방 만들기"}
-                </YeonButton>
+                {state.kind === "ready" ? (
+                  <YeonButton
+                    type="button"
+                    onClick={() => setSearchKeyword("")}
+                    variant="primary"
+                    size="xl"
+                    className={`mt-8 rounded-lg ${YEON_WEB_SHADOW_CLASS.actionSoft}`}
+                  >
+                    검색 초기화
+                  </YeonButton>
+                ) : (
+                  <RoomCreateActionGroup
+                    className="mt-8 justify-center"
+                    onCreate={openCreateModal}
+                  />
+                )}
               </YeonView>
             )}
 
@@ -581,21 +623,17 @@ export function TypingRoomLobbyScreen() {
       </YeonView>
 
       {!isInitialEmpty && (
-        <YeonButton
-          type="button"
-          onClick={openCreateModal}
-          variant="primary"
-          aria-label="방 만들기"
-          className="fixed bottom-5 right-5 z-30 rounded-full px-6 py-4 text-[15px] shadow-lg md:hidden"
-        >
-          방 만들기
-        </YeonButton>
+        <RoomCreateActionGroup
+          compact
+          className="fixed right-5 bottom-5 z-30 justify-end md:hidden"
+          onCreate={openCreateModal}
+        />
       )}
 
       <RoomCreateDialog
         open={isCreateModalOpen}
         titleId="create-typing-room-title"
-        title="방 만들기"
+        title={`${TYPING_ROOM_GAME_TYPE_LABELS[gameType]} 만들기`}
         closeLabel="방 만들기 닫기"
         onClose={closeCreateModal}
         as="form"
@@ -619,54 +657,27 @@ export function TypingRoomLobbyScreen() {
             />
           </YeonLabel>
 
-          <YeonView
-            as="fieldset"
-            className="grid gap-3 text-[15px] font-bold text-[#111]"
-          >
-            <YeonText as="legend" variant="unstyled" tone="inherit">
-              방 종류
-            </YeonText>
-            <YeonView className="grid gap-2 sm:grid-cols-2">
-              {GAME_TYPE_OPTIONS.map((option) => (
-                <YeonLabel
-                  key={option.value}
-                  className={`grid min-h-[108px] cursor-pointer content-start gap-2 rounded-lg border bg-white p-4 transition-colors ${
-                    gameType === option.value
-                      ? "border-[#111] shadow-[inset_0_0_0_1px_#111]"
-                      : "border-[#e5e5e5] hover:border-[#111]"
-                  }`}
-                >
-                  <YeonField
-                    type="radio"
-                    name="gameType"
-                    value={option.value}
-                    checked={gameType === option.value}
-                    onChange={() => setGameType(option.value)}
-                    disabled={isCreating}
-                    className="sr-only"
-                  />
-                  <YeonView className="flex items-center gap-2">
-                    <YeonIcon name={option.icon} size={17} />
-                    <YeonText
-                      as="span"
-                      variant="unstyled"
-                      tone="inherit"
-                      className="text-[16px] font-black"
-                    >
-                      {TYPING_ROOM_GAME_TYPE_LABELS[option.value]}
-                    </YeonText>
-                  </YeonView>
-                  <YeonText
-                    as="span"
-                    variant="unstyled"
-                    tone="inherit"
-                    className="text-[13px] font-semibold leading-5 text-[#666]"
-                  >
-                    {option.description}
-                  </YeonText>
-                </YeonLabel>
-              ))}
+          <YeonView className="grid gap-2 rounded-lg border border-[#111] bg-[#fafafa] p-4 shadow-[inset_0_0_0_1px_#111]">
+            <YeonView className="flex items-center gap-2 text-[#111]">
+              <YeonIcon name={selectedGameTypeOption.icon} size={17} />
+              <YeonText
+                as="span"
+                variant="unstyled"
+                tone="inherit"
+                className="text-[16px] font-black"
+              >
+                {TYPING_ROOM_GAME_TYPE_LABELS[gameType]}
+              </YeonText>
             </YeonView>
+            <YeonText
+              as="p"
+              variant="unstyled"
+              tone="inherit"
+              className="text-[13px] font-semibold leading-5 text-[#666]"
+            >
+              {selectedGameTypeOption.description} 생성 후 방 종류는 바뀌지
+              않아요.
+            </YeonText>
           </YeonView>
 
           <YeonView
@@ -710,8 +721,7 @@ export function TypingRoomLobbyScreen() {
             tone="inherit"
             className="text-[14px] font-medium leading-6 text-[#666]"
           >
-            세부 설정은 방에 들어간 뒤 시작 전에 바꿀 수 있어요. 방 종류는 생성
-            후 바꿀 수 없어요.
+            세부 설정은 방에 들어간 뒤 시작 전에 바꿀 수 있어요.
           </YeonText>
 
           {createError && (
@@ -731,7 +741,9 @@ export function TypingRoomLobbyScreen() {
             disabled={isCreating}
             className={`h-[60px] rounded-lg px-4 text-[18px] disabled:cursor-not-allowed disabled:opacity-60 ${YEON_WEB_SHADOW_CLASS.actionSoft}`}
           >
-            {isCreating ? "타자방 만드는 중..." : "만들고 입장하기"}
+            {isCreating
+              ? "타자방 만드는 중..."
+              : `${TYPING_ROOM_GAME_TYPE_LABELS[gameType]} 만들고 입장하기`}
           </YeonButton>
         </YeonView>
       </RoomCreateDialog>
