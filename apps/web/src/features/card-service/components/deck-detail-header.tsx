@@ -21,7 +21,9 @@ import { useUpdateDeck } from "../hooks";
 
 interface DeckDetailHeaderProps {
   deck: CardDeckDto;
+  cardCount: number;
   onOpenDelete: () => void;
+  onRequestAddCard: () => void;
   onRequestExport?: () => void;
 }
 
@@ -39,7 +41,9 @@ function formatDate(value: string): string {
 
 export function DeckDetailHeader({
   deck,
+  cardCount,
   onOpenDelete,
+  onRequestAddCard,
   onRequestExport,
 }: DeckDetailHeaderProps) {
   const [isEditing, setEditing] = useState(false);
@@ -49,6 +53,7 @@ export function DeckDetailHeader({
   const updateMutation = useUpdateDeck(deck.id);
   const isSaving = updateMutation.isPending;
   const createdDate = formatDate(deck.createdAt);
+  const hasCards = cardCount > 0;
 
   const canSave = title.trim().length > 0 && !isSaving;
 
@@ -127,7 +132,7 @@ export function DeckDetailHeader({
             </YeonButton>
           </YeonText>
           <YeonText as="p" variant="body" tone="secondary" className="mt-2">
-            카드 {deck.itemCount}장 · 생성일 {createdDate}
+            카드 {cardCount}장 · 생성일 {createdDate}
           </YeonText>
         </YeonView>
 
@@ -296,29 +301,41 @@ export function DeckDetailHeader({
               tone="inherit"
               className={`mt-4 ${SHARED_FEATURE_CLASS.text14Soft}`}
             >
-              카드 {deck.itemCount}장 · 학습 진행률 0% · 생성일 {createdDate}
+              카드 {cardCount}장 · 학습 진행률 0% · 생성일 {createdDate}
             </YeonText>
           </YeonView>
         </YeonView>
       )}
 
-      <YeonLink
-        href={resolveYeonWebPath("cardDeckPlay", { deckId: deck.id })}
-        className={getYeonButtonClassName({
-          variant: "primary",
-          size: "xl",
-          className:
-            "mt-8 flex w-full rounded-[22px] px-4 py-4 text-[20px] md:mt-6 md:py-3.5 md:text-[16px]",
-        })}
-        onClick={() =>
-          trackEvent(analyticsEvents.cardStudyStart, {
-            deck_id: deck.id,
-            item_count: deck.itemCount,
-          })
-        }
-      >
-        ▶ 학습 시작
-      </YeonLink>
+      {hasCards ? (
+        <YeonLink
+          href={resolveYeonWebPath("cardDeckPlay", { deckId: deck.id })}
+          className={getYeonButtonClassName({
+            variant: "primary",
+            size: "xl",
+            className:
+              "mt-8 flex w-full rounded-[22px] px-4 py-4 text-[20px] md:mt-6 md:py-3.5 md:text-[16px]",
+          })}
+          onClick={() =>
+            trackEvent(analyticsEvents.cardStudyStart, {
+              deck_id: deck.id,
+              item_count: cardCount,
+            })
+          }
+        >
+          ▶ 학습 시작
+        </YeonLink>
+      ) : (
+        <YeonButton
+          type="button"
+          onClick={onRequestAddCard}
+          variant="primary"
+          size="xl"
+          className="mt-8 flex w-full rounded-[22px] px-4 py-4 text-[20px] md:mt-6 md:py-3.5 md:text-[16px]"
+        >
+          + 첫 카드 추가
+        </YeonButton>
+      )}
     </YeonView>
   );
 }

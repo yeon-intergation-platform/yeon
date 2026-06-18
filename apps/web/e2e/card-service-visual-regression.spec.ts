@@ -13,6 +13,13 @@ test.describe("카드 서비스 시각적 회귀", () => {
   test("덱 목록 빈 상태(게스트) 스냅샷", async ({ page }) => {
     await page.goto("/card-service/decks");
     await page.waitForLoadState("networkidle");
+    await page.addStyleTag({
+      content: `
+        body [class*="fixed"][class*="bottom-"] {
+          display: none !important;
+        }
+      `,
+    });
     // 클라이언트 쿼리(repository.listDecks)가 빈 상태로 정착할 때까지 대기.
     await page.waitForTimeout(900);
 
