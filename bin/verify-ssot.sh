@@ -56,7 +56,7 @@ fi  # end PROJECT_ONLY guard
 echo ""
 echo "=== 프로젝트 SSOT ==="
 REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || echo "")
-if [ -z "$REPO_ROOT" ] || [ ! -d "$REPO_ROOT/.git" ]; then
+if [ -z "$REPO_ROOT" ] || [ ! -e "$REPO_ROOT/.git" ]; then
   warn "git 저장소가 아니어서 프로젝트 SSOT 점검 건너뜀 (전역만 확인)"
   echo ""
   if [ $FAIL -eq 0 ]; then
@@ -94,6 +94,24 @@ if [ -x "$REPO_ROOT/bin/sync-skills.sh" ]; then
   pass "bin/sync-skills.sh 실행 가능"
 else
   fail "bin/sync-skills.sh 실행 불가"
+fi
+
+if [ -f "$REPO_ROOT/bin/verify-backend-ci-contract.mjs" ]; then
+  pass "bin/verify-backend-ci-contract.mjs 존재"
+else
+  fail "bin/verify-backend-ci-contract.mjs 없음"
+fi
+
+echo ""
+echo "=== Backend CI 계약 ==="
+if [ -f "$REPO_ROOT/bin/verify-backend-ci-contract.mjs" ]; then
+  if node "$REPO_ROOT/bin/verify-backend-ci-contract.mjs" >/tmp/backend-ci-contract-check.out 2>&1; then
+    pass "backend-tests.yml Karate schema preflight 계약 유지"
+  else
+    fail "backend-tests.yml Karate schema preflight 계약 위반"
+    echo "    --- check 결과 ---"
+    sed 's/^/    /' /tmp/backend-ci-contract-check.out
+  fi
 fi
 
 echo ""

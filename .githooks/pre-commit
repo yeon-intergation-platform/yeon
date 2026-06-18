@@ -30,7 +30,7 @@ fi
 # critical-1 대응: wrapper 파일이 untracked/unstaged 상태로 원본만 커밋되는 drift 차단.
 staged_source_names=$(git diff --cached --name-only --diff-filter=ACMR \
   | grep -E '^\.claude/(commands|skills)/[^/]+\.md$' \
-  | sed -E 's|^\.claude/(commands|skills)/([^/]+)\.md$|\2|' \
+  | sed -E 's#^\.claude/(commands|skills)/([^/]+)\.md$#\2#' \
   | LC_ALL=C sort -u || true)
 
 if [ -n "$staged_source_names" ]; then
