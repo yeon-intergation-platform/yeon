@@ -1,5 +1,6 @@
 import {
   RACE_EVENTS,
+  TERRITORY_BATTLE_TEAM,
   VOICE_EVENTS,
   TYPING_DECK_LANGUAGE_TAG,
   TYPING_DECK_VISIBILITY,
@@ -29,6 +30,7 @@ import {
   type RoomChatMessage,
   type RoomSettingsUpdateMessage,
   type RoomStartMessage,
+  type RoomTeamChangeMessage,
   type RaceFinishMessage,
   type RaceProgressMessage,
   type RaceSeedMessage,
@@ -59,6 +61,7 @@ import {
   type TypingRoomSnapshot,
   type TypingRoomStatus,
   type TypingRoomSummary,
+  type TerritoryBattleTeam,
 } from "@yeon/race-shared";
 import { type Client, Room } from "@colyseus/core";
 import { createHmac, randomInt, timingSafeEqual } from "node:crypto";
@@ -78,7 +81,8 @@ type RoomParticipantIdentity = {
   label: string;
   characterId?: string;
   accent: string;
-  kind: "player" | "benchmark";
+  kind: "player" | "benchmark" | "admin_seed";
+  team?: TerritoryBattleTeam;
 };
 
 type RoomParticipantProgressMetrics = {
@@ -190,6 +194,18 @@ const LOBBY_RETURN_DELAY_MS = 4_500;
 const TYPING_RACE_SEED_FALLBACK_SECRET = "yeon-local-typing-race-seed-secret";
 const LOBBY_MAX_PARTICIPANTS_OPTIONS = [2, 3, 4] as const;
 const LOBBY_ROUND_COUNT_OPTIONS = [1, 3, 5] as const;
+const ADMIN_SEED_PARTICIPANT_LABELS = [
+  "테스트 팀원 A",
+  "테스트 팀원 B",
+  "테스트 팀원 C",
+  "테스트 팀원 D",
+] as const;
+const ADMIN_SEED_CHARACTER_IDS = [
+  "amane",
+  "bluebell",
+  "cleria",
+  "guga",
+] as const;
 
 const BENCHMARKS = [
   {
@@ -229,6 +245,24 @@ const MAX_PLAYERS_PER_ROOM = TYPING_RACE_DEFAULTS.lobbyMaxPlayers;
 
 function isNonEmptyString(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0;
+}
+
+function normalizeTerritoryTeam(value: unknown): TerritoryBattleTeam | null {
+  return Object.values(TERRITORY_BATTLE_TEAM).includes(
+    value as TerritoryBattleTeam
+  )
+    ? (value as TerritoryBattleTeam)
+    : null;
+}
+
+function normalizeAdminSeedCount(value: unknown) {
+  const parsed = typeof value === "number" ? value : Number(value);
+  if (!Number.isInteger(parsed)) return 1;
+  return Math.max(1, Math.min(ADMIN_SEED_PARTICIPANT_LABELS.length, parsed));
+}
+
+function getTerritoryTeamLabel(team: TerritoryBattleTeam) {
+  return team === TERRITORY_BATTLE_TEAM.BLUE ? "파랑팀" : "1팀";
 }
 
 function parseVoiceBase(
@@ -640,7 +674,39 @@ function normalizeRaceSeed(
     : fallback;
 }
 
+export type TypingRoomTeamSeedRequest = {
+  count?: unknown;
+  team?: unknown;
+};
+
+export type TypingRoomTeamSeedResult = {
+  ok: boolean;
+  message: string;
+  insertedCount: number;
+  statusCode?: number;
+  snapshot?: TypingRoomSnapshot;
+};
+
 export class TypingRaceRoom extends Room {
+  private static readonly activeRooms = new Map<string, TypingRaceRoom>();
+
+  static seedTerritoryTeamParticipants(
+    roomId: string,
+    payload: TypingRoomTeamSeedRequest | null
+  ): TypingRoomTeamSeedResult {
+    const room = TypingRaceRoom.activeRooms.get(roomId);
+    if (!room) {
+      return {
+        ok: false,
+        message: "대상 타자방을 찾을 수 없습니다.",
+        insertedCount: 0,
+        statusCode: 404,
+      };
+    }
+
+    return room.seedTerritoryTeamParticipants(payload ?? {});
+  }
+
   maxClients: number = MAX_PLAYERS_PER_ROOM;
 
   private readonly participants = new Map<string, RoomParticipant>();
@@ -657,6 +723,8 @@ export class TypingRaceRoom extends Room {
   >();
 
   private readonly benchmarks = new Map<string, RoomParticipant>();
+
+  private adminSeedSerial = 0;
 
   private settings: TypingRoomSettings = DEFAULT_ROOM_SETTINGS;
 
@@ -711,6 +779,7 @@ export class TypingRaceRoom extends Room {
       ? TYPING_RACE_DEFAULTS.roomCountdownSeconds
       : TYPING_RACE_DEFAULTS.countdownSeconds;
     this.createdAt = Date.now();
+    TypingRaceRoom.activeRooms.set(this.roomId, this);
     this.setMetadata(this.createSummary());
 
     if (!this.lobbyMode) {
@@ -726,6 +795,10 @@ export class TypingRaceRoom extends Room {
 
     this.onMessage(RACE_EVENTS.ROOM_SETTINGS, (client, message) => {
       this.updateSettings(client, message as RoomSettingsUpdateMessage);
+    });
+
+    this.onMessage(RACE_EVENTS.ROOM_TEAM, (client, message) => {
+      this.updateTeam(client, message as RoomTeamChangeMessage | undefined);
     });
 
     this.onMessage(RACE_EVENTS.ROOM_CHAT, (client, message) => {
@@ -772,6 +845,10 @@ export class TypingRaceRoom extends Room {
     );
   }
 
+  onDispose() {
+    TypingRaceRoom.activeRooms.delete(this.roomId);
+  }
+
   onJoin(client: Client, options: MatchJoinMessage) {
     const participantId = this.normalizeParticipantId(client, options);
     const isKnownParticipant = this.participants.has(participantId);
@@ -801,6 +878,15 @@ export class TypingRaceRoom extends Room {
       !isKnownParticipant
     ) {
       client.send(RACE_EVENTS.ROOM_ERROR, { message: "이미 시작된 방입니다." });
+      client.leave();
+      return;
+    }
+
+    if (
+      !isKnownParticipant &&
+      this.participants.size >= this.settings.maxParticipants
+    ) {
+      client.send(RACE_EVENTS.ROOM_ERROR, { message: "방이 가득 찼습니다." });
       client.leave();
       return;
     }
@@ -877,6 +963,13 @@ export class TypingRaceRoom extends Room {
       if (verifiedUserId) {
         existing.verifiedUserId = verifiedUserId;
       }
+      if (
+        this.settings.gameType === TYPING_ROOM_GAME_TYPE.TERRITORY &&
+        !existing.team
+      ) {
+        existing.team =
+          this.resolveAvailableTeam() ?? TERRITORY_BATTLE_TEAM.RED;
+      }
       if (!this.hostId) {
         this.hostId = existing.id;
         existing.isReady = true;
@@ -898,6 +991,10 @@ export class TypingRaceRoom extends Room {
           this.participants.size % TYPING_RACE_LANE_ACCENTS.length
         ],
       kind: "player",
+      team:
+        this.settings.gameType === TYPING_ROOM_GAME_TYPE.TERRITORY
+          ? (this.resolveAvailableTeam() ?? TERRITORY_BATTLE_TEAM.RED)
+          : undefined,
       progress: 0,
       cpm: 0,
       wpm: 0,
@@ -916,6 +1013,178 @@ export class TypingRaceRoom extends Room {
     this.syncState();
   }
 
+  private getTerritoryTeamLimit() {
+    return Math.max(1, Math.ceil(this.settings.maxParticipants / 2));
+  }
+
+  private countTerritoryTeam(team: TerritoryBattleTeam) {
+    return Array.from(this.participants.values()).filter(
+      (participant) => participant.team === team
+    ).length;
+  }
+
+  private hasTerritoryTeamCapacity(team: TerritoryBattleTeam) {
+    return this.countTerritoryTeam(team) < this.getTerritoryTeamLimit();
+  }
+
+  private resolveAvailableTeam(preferredTeam?: TerritoryBattleTeam | null) {
+    if (preferredTeam) {
+      return this.hasTerritoryTeamCapacity(preferredTeam)
+        ? preferredTeam
+        : null;
+    }
+
+    const redCount = this.countTerritoryTeam(TERRITORY_BATTLE_TEAM.RED);
+    const blueCount = this.countTerritoryTeam(TERRITORY_BATTLE_TEAM.BLUE);
+    const balancedTeam =
+      redCount <= blueCount
+        ? TERRITORY_BATTLE_TEAM.RED
+        : TERRITORY_BATTLE_TEAM.BLUE;
+    const fallbackTeam =
+      balancedTeam === TERRITORY_BATTLE_TEAM.RED
+        ? TERRITORY_BATTLE_TEAM.BLUE
+        : TERRITORY_BATTLE_TEAM.RED;
+
+    if (this.hasTerritoryTeamCapacity(balancedTeam)) {
+      return balancedTeam;
+    }
+    if (this.hasTerritoryTeamCapacity(fallbackTeam)) {
+      return fallbackTeam;
+    }
+    return null;
+  }
+
+  private getOppositeTerritoryTeam(team: TerritoryBattleTeam) {
+    return team === TERRITORY_BATTLE_TEAM.BLUE
+      ? TERRITORY_BATTLE_TEAM.RED
+      : TERRITORY_BATTLE_TEAM.BLUE;
+  }
+
+  private createAdminSeedParticipant(team: TerritoryBattleTeam) {
+    this.adminSeedSerial += 1;
+    const serial = this.adminSeedSerial;
+    const labelIndex = (serial - 1) % ADMIN_SEED_PARTICIPANT_LABELS.length;
+    const label = ADMIN_SEED_PARTICIPANT_LABELS[labelIndex] ?? "테스트 팀원";
+    return {
+      id: `admin-seed-${this.roomId}-${serial}-${Date.now()}`,
+      label: `${label} ${serial}`,
+      characterId: ADMIN_SEED_CHARACTER_IDS[labelIndex] ?? "amane",
+      accent:
+        TYPING_RACE_LANE_ACCENTS[
+          this.participants.size % TYPING_RACE_LANE_ACCENTS.length
+        ],
+      kind: "admin_seed",
+      team,
+      progress: 0,
+      cpm: 0,
+      wpm: 0,
+      accuracy: 100,
+      mistakeCount: 0,
+      elapsedTimeMs: 0,
+      finishedAt: null,
+      score: 0,
+      rank: null,
+      isReady: false,
+      joinedAt: Date.now(),
+      verifiedUserId: null,
+    } satisfies RoomParticipant;
+  }
+
+  private seedTerritoryTeamParticipants(
+    payload: TypingRoomTeamSeedRequest
+  ): TypingRoomTeamSeedResult {
+    if (!this.lobbyMode || this.status !== TYPING_ROOM_STATUS.WAITING) {
+      return {
+        ok: false,
+        message: "대기 중인 타자방에만 연습 참가자를 추가할 수 있습니다.",
+        insertedCount: 0,
+        statusCode: 409,
+      };
+    }
+
+    if (this.settings.gameType !== TYPING_ROOM_GAME_TYPE.TERRITORY) {
+      return {
+        ok: false,
+        message: "점령전 방에만 팀 연습 참가자를 추가할 수 있습니다.",
+        insertedCount: 0,
+        statusCode: 400,
+      };
+    }
+
+    const requestedCount = normalizeAdminSeedCount(payload.count);
+    const preferredTeam = normalizeTerritoryTeam(payload.team);
+    let insertedCount = 0;
+
+    while (
+      insertedCount < requestedCount &&
+      this.participants.size < this.settings.maxParticipants
+    ) {
+      const nextTeam = this.resolveAvailableTeam(preferredTeam);
+      if (!nextTeam) break;
+      const participant = this.createAdminSeedParticipant(nextTeam);
+      this.participants.set(participant.id, participant);
+      insertedCount += 1;
+    }
+
+    if (insertedCount === 0) {
+      return {
+        ok: false,
+        message: "빈 자리가 없어서 연습 참가자를 추가하지 못했습니다.",
+        insertedCount: 0,
+        statusCode: 409,
+        snapshot: this.createRoomSnapshot(),
+      };
+    }
+
+    this.appendSystemMessage(
+      `관리자가 연습 참가자 ${insertedCount}명을 추가했습니다.`
+    );
+    this.syncState();
+    return {
+      ok: true,
+      message: "연습 참가자를 추가했습니다.",
+      insertedCount,
+      snapshot: this.createRoomSnapshot(),
+    };
+  }
+
+  private updateTeam(client: Client, message?: RoomTeamChangeMessage) {
+    if (this.status !== TYPING_ROOM_STATUS.WAITING) return;
+    if (this.settings.gameType !== TYPING_ROOM_GAME_TYPE.TERRITORY) {
+      client.send(RACE_EVENTS.ROOM_ERROR, {
+        message: "팀 이동은 점령전 방에서만 사용할 수 있어요.",
+      });
+      return;
+    }
+
+    const participantId = this.getParticipantId(client);
+    const participant = this.participants.get(participantId);
+    if (!participant) return;
+
+    const currentTeam =
+      participant.team ??
+      this.resolveAvailableTeam() ??
+      TERRITORY_BATTLE_TEAM.RED;
+    const requestedTeam = normalizeTerritoryTeam(message?.team);
+    const nextTeam =
+      requestedTeam ?? this.getOppositeTerritoryTeam(currentTeam);
+
+    if (currentTeam === nextTeam) return;
+
+    if (!this.hasTerritoryTeamCapacity(nextTeam)) {
+      client.send(RACE_EVENTS.ROOM_ERROR, {
+        message: `${getTerritoryTeamLabel(nextTeam)}에 빈 자리가 없습니다.`,
+      });
+      return;
+    }
+
+    participant.team = nextTeam;
+    this.appendSystemMessage(
+      `${participant.label}님이 ${getTerritoryTeamLabel(nextTeam)}으로 이동했습니다.`
+    );
+    this.syncState();
+  }
+
   private normalizeParticipantId(client: Client, message?: MatchJoinMessage) {
     return (
       optionalText(message?.playerId, MAX_SEED_ID_LENGTH) ?? client.sessionId
@@ -924,6 +1193,24 @@ export class TypingRaceRoom extends Room {
 
   private getParticipantId(client: Client) {
     return this.clientParticipantIds.get(client.sessionId) ?? client.sessionId;
+  }
+
+  private findNextConnectedParticipantId() {
+    for (const participantId of this.clientParticipantIds.values()) {
+      if (this.participants.has(participantId)) {
+        return participantId;
+      }
+    }
+    return null;
+  }
+
+  private hasOnlyAdminSeedParticipants() {
+    return (
+      this.participants.size > 0 &&
+      Array.from(this.participants.values()).every(
+        (participant) => participant.kind === "admin_seed"
+      )
+    );
   }
 
   private clearParticipantCleanup(participantId: string) {
@@ -965,7 +1252,7 @@ export class TypingRaceRoom extends Room {
     this.clearParticipantCleanup(participantId);
     this.participants.delete(participantId);
     if (this.hostId === participantId) {
-      this.hostId = this.participants.keys().next().value ?? null;
+      this.hostId = this.findNextConnectedParticipantId();
       const nextHost = this.hostId ? this.participants.get(this.hostId) : null;
       if (nextHost) {
         nextHost.isReady = true;
@@ -974,7 +1261,9 @@ export class TypingRaceRoom extends Room {
 
     if (this.lobbyMode) {
       this.appendSystemMessage(`${participant.label}님이 퇴장했습니다.`);
-      if (this.participants.size === 0) {
+      if (this.participants.size === 0 || this.hasOnlyAdminSeedParticipants()) {
+        this.participants.clear();
+        this.hostId = null;
         this.status = TYPING_ROOM_STATUS.CLOSED;
         this.lifecycle = TYPING_ROOM_LIFECYCLE.CLOSED;
         void this.setPrivate(true);
@@ -1966,6 +2255,7 @@ export class TypingRaceRoom extends Room {
       label: participant.label,
       characterId: participant.characterId,
       role: participant.id === this.hostId ? "host" : "guest",
+      team: participant.team,
       isReady: participant.isReady,
       progress: participant.progress,
       cpm: participant.cpm,

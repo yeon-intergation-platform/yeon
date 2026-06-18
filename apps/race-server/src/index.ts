@@ -7,7 +7,10 @@ import {
   TYPING_RACE_ROOM_NAME,
   TERRITORY_BATTLE_ROOM_NAME,
 } from "@yeon/race-shared";
-import { TypingRaceRoom } from "./rooms/typing-race-room";
+import {
+  TypingRaceRoom,
+  type TypingRoomTeamSeedRequest,
+} from "./rooms/typing-race-room";
 import { TerritoryBattleRoom } from "./rooms/territory-battle-room";
 import { CardRoom } from "./rooms/card-room";
 import {
@@ -30,6 +33,10 @@ type TextResponse = {
 
 type RoomsRequest = {
   params: { roomName?: string };
+};
+
+type TypingRoomTeamParticipantsRequest = IncomingMessage & {
+  params: { roomId?: string };
 };
 
 const server = http.createServer();
@@ -142,6 +149,50 @@ const gameServer = new Server({
           response.status(400).json({
             ok: false,
             message: getStarLobbyEventErrorMessage(error),
+          });
+        }
+      }
+    );
+
+    app.post(
+      "/internal/typing-rooms/:roomId/team-participants",
+      async (
+        request: TypingRoomTeamParticipantsRequest,
+        response: JsonResponse
+      ) => {
+        if (!isInternalRequest(request)) {
+          response.status(401).json({
+            ok: false,
+            message: "타자방 내부 운영 권한이 없습니다.",
+            insertedCount: 0,
+          });
+          return;
+        }
+
+        const roomId = request.params.roomId?.trim();
+        if (!roomId) {
+          response.status(400).json({
+            ok: false,
+            message: "타자방 ID가 필요합니다.",
+            insertedCount: 0,
+          });
+          return;
+        }
+
+        try {
+          const result = TypingRaceRoom.seedTerritoryTeamParticipants(
+            roomId,
+            (await readJsonBody(request)) as TypingRoomTeamSeedRequest | null
+          );
+          response.status(result.statusCode ?? 200).json(result);
+        } catch (error) {
+          response.status(400).json({
+            ok: false,
+            message:
+              error instanceof Error
+                ? error.message
+                : "타자방 연습 참가자 추가 요청을 처리하지 못했습니다.",
+            insertedCount: 0,
           });
         }
       }

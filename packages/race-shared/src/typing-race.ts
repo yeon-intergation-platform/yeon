@@ -1,3 +1,5 @@
+import type { TerritoryBattleTeam } from "./territory-battle";
+
 export const TYPING_RACE_ROOM_NAME = "typing_race_public";
 
 export const TYPING_RACE_STAGE = {
@@ -152,6 +154,7 @@ export const RACE_EVENTS = {
   ROOM_READY: "room.ready",
   ROOM_START: "room.start",
   ROOM_SETTINGS: "room.settings",
+  ROOM_TEAM: "room.team",
   ROOM_CHAT: "room.chat",
   ROOM_LEAVE: "room.leave",
   ROOM_ERROR: "room.error",
@@ -314,6 +317,7 @@ export type TypingRoomParticipantSnapshot = {
   label: string;
   characterId?: string;
   role: "host" | "guest";
+  team?: TerritoryBattleTeam;
   isReady: boolean;
   progress: number;
   cpm: number;
@@ -355,6 +359,10 @@ export type RoomStartMessage = {
 
 export type RoomChatMessage = {
   content: string;
+};
+
+export type RoomTeamChangeMessage = {
+  team?: TerritoryBattleTeam;
 };
 
 export type TypingResultSnapshot = {

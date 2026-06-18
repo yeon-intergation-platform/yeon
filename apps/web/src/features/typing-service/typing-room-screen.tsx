@@ -6,6 +6,7 @@ import {
   useYeonSearchParams,
 } from "@yeon/ui/runtime/YeonNavigation";
 import {
+  TERRITORY_BATTLE_TEAM,
   TYPING_ROOM_DIFFICULTY,
   TYPING_ROOM_GAME_TYPE,
   TYPING_ROOM_LANGUAGE,
@@ -21,6 +22,7 @@ import {
   type TypingRoomTextType,
   type TypingRoomVisibility,
   type RoomSettingsUpdateMessage,
+  type TerritoryBattleTeam,
 } from "@yeon/race-shared";
 import { useCharacterFrameOverrides } from "./use-character-frame-overrides";
 import { usePlayerIdentity } from "./use-player-identity";
@@ -121,7 +123,9 @@ type TerritoryLobbyPanelActionProps = {
   isReady: boolean;
   isLeavingRoom: boolean;
   isRoomToolsVisible: boolean;
+  myTeam: TerritoryBattleTeam | null;
   onLeaveRoom: () => void;
+  onSwitchTeam: () => void;
   onToggleReady: () => void;
   onToggleRoomTools: () => void;
 };
@@ -147,20 +151,23 @@ function TerritoryLobbyPanel({
   isReady,
   isLeavingRoom,
   isRoomToolsVisible,
+  myTeam,
   chatDraft,
   chatError,
   canSendChat,
   onLeaveRoom,
+  onSwitchTeam,
   onToggleReady,
   onToggleRoomTools,
   onChatDraftChange,
   onChatSubmit,
 }: TerritoryLobbyPanelProps) {
   const isTerritoryRoom = room.gameType === TYPING_ROOM_GAME_TYPE.TERRITORY;
-  const firstTeam = participants.filter((_, index) => index % 2 === 0);
-  const secondTeam = participants.filter((_, index) => index % 2 === 1);
+  const { redTeam, blueTeam } = partitionTerritoryParticipants(participants);
   const recentMessages = messages.slice(-5);
   const teamSlotCount = Math.max(4, Math.ceil(room.maxParticipants / 2));
+  const nextTeamLabel =
+    myTeam === TERRITORY_BATTLE_TEAM.BLUE ? "1팀으로 이동" : "파랑팀으로 이동";
   const roomInfo = [
     ["방 종류", TYPING_ROOM_GAME_TYPE_LABELS[room.gameType]],
     [
@@ -278,7 +285,7 @@ function TerritoryLobbyPanel({
                 <YeonView className="grid items-center gap-5 lg:grid-cols-[minmax(0,1fr)_56px_minmax(0,1fr)]">
                   <TerritoryTeamColumn
                     title="1팀"
-                    members={firstTeam}
+                    members={redTeam}
                     maxSlots={teamSlotCount}
                     tone="red"
                   />
@@ -294,7 +301,7 @@ function TerritoryLobbyPanel({
                   </YeonView>
                   <TerritoryTeamColumn
                     title="파랑팀"
-                    members={secondTeam}
+                    members={blueTeam}
                     maxSlots={teamSlotCount}
                     tone="blue"
                   />
@@ -303,10 +310,10 @@ function TerritoryLobbyPanel({
                 <YeonView className="mt-5 flex flex-col justify-center gap-3 sm:flex-row">
                   <YeonButton
                     type="button"
+                    onClick={onSwitchTeam}
                     variant="secondary"
                     size="lg"
-                    disabled
-                    title="팀 이동 기능은 서버 API 연결 후 활성화됩니다."
+                    title={nextTeamLabel}
                     className="min-w-[180px] rounded-lg px-5 py-3 text-[15px] font-black"
                   >
                     <YeonIcon name="arrow-left" size={15} />팀 이동
@@ -426,6 +433,36 @@ type StandardRoomParticipantListProps = {
   participants: TerritoryLobbyParticipant[];
   maxSlots: number;
 };
+
+function isTerritoryLobbyMember(
+  participant: TerritoryLobbyParticipant
+): participant is NonNullable<TerritoryLobbyParticipant> {
+  return Boolean(participant);
+}
+
+function partitionTerritoryParticipants(
+  participants: TerritoryLobbyParticipant[]
+) {
+  const redTeam: NonNullable<TerritoryLobbyParticipant>[] = [];
+  const blueTeam: NonNullable<TerritoryLobbyParticipant>[] = [];
+
+  participants.filter(isTerritoryLobbyMember).forEach((participant, index) => {
+    const team =
+      participant.team ??
+      (index % 2 === 0
+        ? TERRITORY_BATTLE_TEAM.RED
+        : TERRITORY_BATTLE_TEAM.BLUE);
+
+    if (team === TERRITORY_BATTLE_TEAM.BLUE) {
+      blueTeam.push(participant);
+      return;
+    }
+
+    redTeam.push(participant);
+  });
+
+  return { redTeam, blueTeam };
+}
 
 function StandardRoomParticipantList({
   participants,
@@ -1182,10 +1219,12 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
           isReady={isReady}
           isLeavingRoom={isLeavingRoom}
           isRoomToolsVisible={showRoomTools}
+          myTeam={me?.team ?? null}
           chatDraft={chatDraft}
           chatError={chatError}
           canSendChat={canSendChat}
           onLeaveRoom={onLeaveRoom}
+          onSwitchTeam={() => race.sendTeamChange()}
           onToggleReady={() => race.sendReady(!isReady)}
           onToggleRoomTools={() => setShowRoomTools((value) => !value)}
           onChatDraftChange={onChatDraftChange}

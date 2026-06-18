@@ -12,6 +12,7 @@ import {
   type RoomSettingsUpdateMessage,
   type RoomStartMessage,
   type RoomChatMessage,
+  type RoomTeamChangeMessage,
   type RoomErrorMessage,
   type TypingRaceSnapshot,
   type TypingRaceStage,
@@ -81,6 +82,7 @@ export type UseRaceRoomMessageActions = {
   sendReady: (isReady: boolean) => void;
   sendStart: (payload?: RoomStartMessage) => void;
   sendChat: (content: string) => void;
+  sendTeamChange: (payload?: RoomTeamChangeMessage) => void;
   sendRoomSettings: (payload: RoomSettingsUpdateMessage) => void;
 };
 
@@ -389,6 +391,11 @@ export function useRaceRoom(options: UseRaceRoomOptions): UseRaceRoomResult {
     } as RoomChatMessage);
   }, []);
 
+  const sendTeamChange = useCallback((payload?: RoomTeamChangeMessage) => {
+    setRoomError(null);
+    roomRef.current?.send(RACE_EVENTS.ROOM_TEAM, payload ?? {});
+  }, []);
+
   const sendRoomSettings = useCallback((payload: RoomSettingsUpdateMessage) => {
     setRoomError(null);
     roomRef.current?.send(RACE_EVENTS.ROOM_SETTINGS, payload);
@@ -457,6 +464,7 @@ export function useRaceRoom(options: UseRaceRoomOptions): UseRaceRoomResult {
       sendReady,
       sendStart,
       sendChat,
+      sendTeamChange,
       sendRoomSettings,
       leaveRoom,
       rejoin,
@@ -476,6 +484,7 @@ export function useRaceRoom(options: UseRaceRoomOptions): UseRaceRoomResult {
       sendReady,
       sendStart,
       sendChat,
+      sendTeamChange,
       sendRoomSettings,
       leaveRoom,
       rejoin,

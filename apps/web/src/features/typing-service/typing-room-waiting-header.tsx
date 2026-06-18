@@ -87,21 +87,10 @@ export function TypingRoomWaitingHeader({
         <YeonView className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(280px,420px)]">
           <YeonView>
             <YeonText
-              as="p"
-              variant="unstyled"
-              tone="inherit"
-              className={SHARED_FEATURE_CLASS.text12EmphasisNeutral}
-            >
-              {waitingStateLabel} ·{" "}
-              {TYPING_ROOM_GAME_TYPE_LABELS[room.gameType]} ·{" "}
-              {TYPING_ROOM_VISIBILITY_LABELS[room.visibility]} ·{" "}
-              {room.currentParticipants}/{room.maxParticipants}
-            </YeonText>
-            <YeonText
               as="h1"
               variant="unstyled"
               tone="inherit"
-              className="mt-1 text-[22px] font-semibold tracking-[-0.03em] md:text-[26px]"
+              className="text-[22px] font-semibold tracking-[-0.03em] md:text-[26px]"
             >
               {room.title}
             </YeonText>
@@ -112,6 +101,17 @@ export function TypingRoomWaitingHeader({
               className="mt-1 text-[12px] text-[#666]"
             >
               {room.roomCode}
+            </YeonText>
+            <YeonText
+              as="p"
+              variant="unstyled"
+              tone="inherit"
+              className={`mt-2 ${SHARED_FEATURE_CLASS.text12EmphasisNeutral}`}
+            >
+              {waitingStateLabel} ·{" "}
+              {TYPING_ROOM_GAME_TYPE_LABELS[room.gameType]} ·{" "}
+              {TYPING_ROOM_VISIBILITY_LABELS[room.visibility]} ·{" "}
+              {room.currentParticipants}/{room.maxParticipants}
             </YeonText>
           </YeonView>
           <YeonView className="flex h-full flex-col items-start justify-end gap-3 lg:items-end lg:text-right">
