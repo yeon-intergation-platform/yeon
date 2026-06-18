@@ -74,6 +74,16 @@ export function RoomVoiceCallPanel({
     status !== "connected" &&
     availableTargets.length > 0;
   const canControl = status === "connected" || status === "connecting";
+  const hasVisibleCallState =
+    status === "calling" ||
+    status === "ringing" ||
+    status === "connecting" ||
+    status === "connected" ||
+    Boolean(incomingFrom || activeTarget || error);
+
+  if (!isFeatureFlagLoading && !isFeatureEnabled && !hasVisibleCallState) {
+    return null;
+  }
 
   return (
     <YeonView as="section" className={SHARED_FEATURE_CLASS.panelCard}>
@@ -123,8 +133,7 @@ export function RoomVoiceCallPanel({
           tone="inherit"
           className={`mt-3 rounded-xl border border-[#e5e5e5] bg-[#fafafa] px-3 py-2 ${SHARED_FEATURE_CLASS.text12EmphasisSubtle}`}
         >
-          음성통화 베타가 꺼져 있습니다. 운영 환경에서
-          NEXT_PUBLIC_ENABLE_ROOM_VOICE_CALL=true 설정 시 활성화됩니다.
+          현재 방에서는 음성통화를 사용할 수 없습니다.
         </YeonText>
       ) : null}
 

@@ -46,7 +46,7 @@ export function TypingBgmButton({
             tone="inherit"
             className="hidden text-[11px] font-medium text-[#666] md:inline"
           >
-            찹츄찹찹츄
+            배경음
           </YeonText>
         ) : null}
       </YeonButton>

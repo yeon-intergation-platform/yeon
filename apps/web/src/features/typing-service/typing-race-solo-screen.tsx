@@ -84,19 +84,22 @@ const BENCHMARK_LANES = [
   },
 ] as const;
 
+const FALLBACK_PASSAGE = {
+  id: "fallback-empty",
+  title: "기본 문장",
+  prompt: "오늘도 한 문장씩 정확하게 입력하면 손끝의 리듬이 조금씩 살아납니다.",
+} satisfies TypingDeckPassageOption;
+
+function pickInitialPassage(passages: readonly TypingDeckPassageOption[]) {
+  return passages[0] ?? FALLBACK_PASSAGE;
+}
+
 function pickNextPassage(
   passages: readonly TypingDeckPassageOption[],
   currentId?: string
 ) {
   const candidates = passages.length > 0 ? passages : [];
-  if (candidates.length === 0) {
-    return {
-      id: "fallback-empty",
-      title: "기본 문장",
-      prompt:
-        "오늘도 한 문장씩 정확하게 입력하면 손끝의 리듬이 조금씩 살아납니다.",
-    } satisfies TypingDeckPassageOption;
-  }
+  if (candidates.length === 0) return FALLBACK_PASSAGE;
   if (candidates.length === 1) return candidates[0]!;
   const available = currentId
     ? candidates.filter((passage) => passage.id !== currentId)
@@ -171,7 +174,7 @@ export function TypingRaceSoloScreen({
   const speedStyle = resolveTypingSpeedStyle(activeLanguageTag);
   const t = createTranslator(settings.locale);
   const [passage, setPassage] = useState<TypingDeckPassageOption>(() =>
-    pickNextPassage(passages)
+    pickInitialPassage(passages)
   );
   const [input, setInput] = useState("");
   const [countdownRemaining, setCountdownRemaining] = useState<number>(
@@ -195,7 +198,7 @@ export function TypingRaceSoloScreen({
     setPassage((current) =>
       passages.some((candidate) => candidate.id === current.id)
         ? current
-        : pickNextPassage(passages, current.id)
+        : pickInitialPassage(passages)
     );
   }, [input.length, passages]);
 
