@@ -2,13 +2,14 @@ import { defineConfig, devices } from "@playwright/test";
 import path from "node:path";
 
 const STORAGE_STATE = path.join(__dirname, "e2e/.auth/session.json");
+const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? "http://localhost:3000";
 
 export default defineConfig({
   testDir: "./e2e",
   fullyParallel: false,
   retries: 0,
   use: {
-    baseURL: "http://localhost:3000",
+    baseURL,
     trace: "on-first-retry",
   },
   projects: [

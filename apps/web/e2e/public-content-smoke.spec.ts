@@ -2,6 +2,7 @@ import {
   expect,
   test,
   type APIRequestContext,
+  type Locator,
   type Page,
 } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
@@ -429,6 +430,25 @@ async function readAnalyticsEvents(page: Page) {
   });
 }
 
+async function clickTrackedLinkWithoutNavigation(locator: Locator) {
+  await locator.evaluate((element) => {
+    element.addEventListener(
+      "click",
+      (event) => {
+        event.preventDefault();
+      },
+      { once: true }
+    );
+    element.dispatchEvent(
+      new MouseEvent("click", {
+        bubbles: true,
+        cancelable: true,
+        view: window,
+      })
+    );
+  });
+}
+
 async function getActiveElementSnapshot(page: Page) {
   return page.evaluate(() => {
     const element = document.activeElement;
@@ -674,22 +694,7 @@ test.describe("public content SEO smoke", () => {
       name: "NEXA 설치 페이지 열기",
     });
 
-    await ctaLink.evaluate((element) => {
-      element.addEventListener(
-        "click",
-        (event) => {
-          event.preventDefault();
-        },
-        { once: true }
-      );
-      element.dispatchEvent(
-        new MouseEvent("click", {
-          bubbles: true,
-          cancelable: true,
-          view: window,
-        })
-      );
-    });
+    await clickTrackedLinkWithoutNavigation(ctaLink);
 
     await expect
       .poll(async () => readAnalyticsEvents(page))
@@ -704,6 +709,34 @@ test.describe("public content SEO smoke", () => {
           slug: "nexa/guides/add-nexa-discord-bot",
           target_title: "NEXA 설치 페이지 열기",
           target_url: "https://discord-ai.yeon.world/install",
+        }),
+      ]);
+  });
+
+  test("public content link click sends GA4 event params", async ({ page }) => {
+    await installAnalyticsRecorder(page);
+    await page.goto("/support");
+
+    const supportProblemLink = page.getByRole("link", {
+      name: /NEXA를 서버에 추가해야 해요/,
+    });
+
+    await clickTrackedLinkWithoutNavigation(supportProblemLink);
+
+    await expect
+      .poll(async () => readAnalyticsEvents(page))
+      .toContainEqual([
+        "event",
+        "public_content_link_click",
+        expect.objectContaining({
+          category: "guides",
+          channel: "support",
+          link_kind: "support_problem_entry",
+          service: "nexa",
+          slug: "nexa/guides/add-nexa-discord-bot",
+          target_title: "디스코드 서버에 NEXA AI 봇 추가하는 방법",
+          target_url:
+            "https://support.yeon.world/nexa/guides/add-nexa-discord-bot",
         }),
       ]);
   });
