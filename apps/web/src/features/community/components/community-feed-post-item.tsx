@@ -4,13 +4,17 @@ import { YEON_WEB_SHARED_CLASS as SHARED_FEATURE_CLASS } from "@yeon/ui/theme/we
 import {
   YeonButton,
   YeonIcon,
+  YeonLink,
   YeonSurface,
   YeonText,
   YeonView,
-  YeonLink,
 } from "@yeon/ui";
 import { type ChatServiceFeedPost } from "../chat-service-api";
-import { parseCommunityPost } from "../community-post-format";
+import {
+  parseCommunityPost,
+  serializeCommunityPost,
+  type CommunityPostDraft,
+} from "../community-post-format";
 import { FeedPostEditForm, FeedPostReplyForm } from "./community-feed-forms";
 import {
   CommunityCategoryBadge,
@@ -60,11 +64,11 @@ export function FeedPostItem(props: {
   } = props;
   const parsedPost = parseCommunityPost(post);
   const [isEditing, setIsEditing] = useState(false);
-  const [editDraft, setEditDraft] = useState(post.body);
+  const [editDraft, setEditDraft] = useState<CommunityPostDraft>(parsedPost);
 
   useEffect(() => {
     if (!isEditing) {
-      setEditDraft(post.body);
+      setEditDraft(parseCommunityPost(post));
     }
   }, [isEditing, post.body]);
 
@@ -72,12 +76,25 @@ export function FeedPostItem(props: {
     <YeonSurface as="article" className="p-5">
       {isEditing ? (
         <FeedPostEditForm
-          draft={editDraft}
+          category={editDraft.category}
+          title={editDraft.title}
+          content={editDraft.content}
           isSubmitting={isUpdatingPost}
-          onChange={setEditDraft}
+          onChangeCategory={(category) =>
+            setEditDraft((current) => ({ ...current, category }))
+          }
+          onChangeTitle={(title) =>
+            setEditDraft((current) => ({ ...current, title }))
+          }
+          onChangeContent={(content) =>
+            setEditDraft((current) => ({ ...current, content }))
+          }
           onCancel={() => setIsEditing(false)}
           onSubmit={async () => {
-            const completed = await onUpdatePost(post.id, editDraft);
+            const completed = await onUpdatePost(
+              post.id,
+              serializeCommunityPost(editDraft)
+            );
             if (completed) {
               setIsEditing(false);
             }

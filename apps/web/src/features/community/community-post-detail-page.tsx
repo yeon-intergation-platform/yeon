@@ -16,10 +16,16 @@ import {
 import { CommunityGuestIdentityConfirmModal } from "./components/community-guest-identity-confirm-modal";
 import {
   canSkipCommunityGuestIdentityConfirm,
+  runCommunityGuestIdentityAction,
   type CommunityGuestIdentity,
 } from "./community-guest-identity-confirm";
 import { CommunityGuestIdentityCard } from "./components/community-guest-identity-card";
-import { parseCommunityPost } from "./community-post-format";
+import { FeedPostEditForm } from "./components/community-feed-forms";
+import {
+  parseCommunityPost,
+  serializeCommunityPost,
+  type CommunityPostDraft,
+} from "./community-post-format";
 import { useCommunityFeed } from "./hooks/use-community-feed";
 import { type ChatServiceFeedPost } from "./chat-service-api";
 
@@ -70,7 +76,9 @@ export function CommunityPostDetailPage({
     deleteReply,
   } = useCommunityFeed({ initialPosts: [initialPost] });
   const [isEditing, setIsEditing] = useState(false);
-  const [editDraft, setEditDraft] = useState("");
+  const [editDraft, setEditDraft] = useState<CommunityPostDraft>(() =>
+    parseCommunityPost(initialPost)
+  );
   const [pendingGuestIdentityAction, setPendingGuestIdentityAction] =
     useState<PendingGuestIdentityAction>(null);
 
@@ -82,10 +90,15 @@ export function CommunityPostDetailPage({
 
   useEffect(() => {
     if (post) {
-      setEditDraft(post.body);
       void loadReplies(post.id);
     }
-  }, [loadReplies, post]);
+  }, [loadReplies, post?.id]);
+
+  useEffect(() => {
+    if (post && !isEditing) {
+      setEditDraft(parseCommunityPost(post));
+    }
+  }, [isEditing, post]);
 
   const parsedPost = post ? parseCommunityPost(post) : null;
 
@@ -96,7 +109,7 @@ export function CommunityPostDetailPage({
     const currentIdentity = { guestNickname, guestPassword };
 
     if (canSkipCommunityGuestIdentityConfirm(currentIdentity)) {
-      return run(currentIdentity).then(() => true);
+      return runCommunityGuestIdentityAction(currentIdentity, run);
     }
 
     return new Promise<boolean>((resolve) => {
@@ -172,42 +185,38 @@ export function CommunityPostDetailPage({
               </YeonText>
 
               {isEditing ? (
-                <YeonView className="mt-4 space-y-3">
-                  <YeonField
-                    as="textarea"
-                    value={editDraft}
-                    onChange={(event) => setEditDraft(event.target.value)}
-                    rows={6}
-                    maxLength={400}
-                    className="min-h-[160px]"
+                <YeonView className="mt-4">
+                  <FeedPostEditForm
+                    category={editDraft.category}
+                    title={editDraft.title}
+                    content={editDraft.content}
+                    isSubmitting={!!isUpdatingPost[post.id]}
+                    onChangeCategory={(category) =>
+                      setEditDraft((current) => ({ ...current, category }))
+                    }
+                    onChangeTitle={(title) =>
+                      setEditDraft((current) => ({ ...current, title }))
+                    }
+                    onChangeContent={(content) =>
+                      setEditDraft((current) => ({ ...current, content }))
+                    }
+                    onCancel={() => setIsEditing(false)}
+                    onSubmit={async () => {
+                      const completed = await runWithGuestIdentityConfirm(
+                        "글을 수정",
+                        (identity) =>
+                          updatePost(
+                            post.id,
+                            serializeCommunityPost(editDraft),
+                            identity
+                          )
+                      );
+
+                      if (completed) {
+                        setIsEditing(false);
+                      }
+                    }}
                   />
-                  <YeonView className="flex justify-end gap-2">
-                    <YeonButton
-                      type="button"
-                      size="sm"
-                      onClick={() => setIsEditing(false)}
-                    >
-                      취소
-                    </YeonButton>
-                    <YeonButton
-                      type="button"
-                      size="sm"
-                      variant="primary"
-                      disabled={!!isUpdatingPost[post.id] || !editDraft.trim()}
-                      onClick={() => {
-                        void runWithGuestIdentityConfirm(
-                          "글을 수정",
-                          (identity) => updatePost(post.id, editDraft, identity)
-                        ).then((completed) => {
-                          if (completed) {
-                            setIsEditing(false);
-                          }
-                        });
-                      }}
-                    >
-                      {isUpdatingPost[post.id] ? "저장 중" : "저장"}
-                    </YeonButton>
-                  </YeonView>
                 </YeonView>
               ) : (
                 <YeonText

@@ -9,6 +9,9 @@ import {
   YeonOption,
 } from "@yeon/ui";
 import {
+  COMMUNITY_POST_CONTENT_MAX_LENGTH,
+  COMMUNITY_POST_DRAFT_MAX_LENGTH,
+  COMMUNITY_POST_TITLE_MAX_LENGTH,
   WRITABLE_CATEGORIES,
   type WritableCommunityCategory,
 } from "../community-post-format";
@@ -47,13 +50,28 @@ export function FeedWriteControl(props: {
 }
 
 export function FeedPostEditForm(props: {
-  draft: string;
+  category: WritableCommunityCategory;
+  title: string;
+  content: string;
   isSubmitting: boolean;
-  onChange: (value: string) => void;
+  onChangeCategory: (value: WritableCommunityCategory) => void;
+  onChangeTitle: (value: string) => void;
+  onChangeContent: (value: string) => void;
   onCancel: () => void;
   onSubmit: () => Promise<void>;
 }) {
-  const { draft, isSubmitting, onChange, onCancel, onSubmit } = props;
+  const {
+    category,
+    title,
+    content,
+    isSubmitting,
+    onChangeCategory,
+    onChangeTitle,
+    onChangeContent,
+    onCancel,
+    onSubmit,
+  } = props;
+  const draftLength = title.length + content.length;
 
   return (
     <YeonSurface
@@ -65,17 +83,42 @@ export function FeedPostEditForm(props: {
       }}
       className="p-3"
     >
+      <YeonView className="flex flex-wrap items-center justify-between gap-2">
+        <YeonField
+          as="select"
+          value={category}
+          onChange={(event) =>
+            onChangeCategory(event.target.value as WritableCommunityCategory)
+          }
+          className="h-10 w-auto text-[13px] font-bold"
+          aria-label="카테고리"
+        >
+          {WRITABLE_CATEGORIES.map((item) => (
+            <YeonOption key={item} value={item}>
+              {item}
+            </YeonOption>
+          ))}
+        </YeonField>
+      </YeonView>
+      <YeonField
+        value={title}
+        onChange={(event) => onChangeTitle(event.target.value)}
+        placeholder="제목을 입력하세요"
+        maxLength={COMMUNITY_POST_TITLE_MAX_LENGTH}
+        className="mt-3 h-11 text-[15px] font-semibold"
+      />
       <YeonField
         as="textarea"
-        value={draft}
-        onChange={(event) => onChange(event.target.value)}
-        rows={5}
-        maxLength={400}
-        className="resize-y text-[15px] leading-[1.55]"
+        value={content}
+        onChange={(event) => onChangeContent(event.target.value)}
+        placeholder="내용을 입력하세요"
+        rows={4}
+        maxLength={COMMUNITY_POST_CONTENT_MAX_LENGTH}
+        className="mt-2 resize-y text-[15px] leading-[1.55]"
       />
       <YeonView className="mt-3 flex items-center justify-between gap-2">
         <YeonText variant="caption" tone="secondary">
-          {draft.length}/400
+          {draftLength}/{COMMUNITY_POST_DRAFT_MAX_LENGTH}
         </YeonText>
         <YeonView className="flex gap-2">
           <YeonButton type="button" size="sm" onClick={onCancel}>
@@ -85,7 +128,7 @@ export function FeedPostEditForm(props: {
             type="submit"
             size="sm"
             variant="primary"
-            disabled={isSubmitting || !draft.trim()}
+            disabled={isSubmitting || !title.trim() || !content.trim()}
           >
             {isSubmitting ? "저장 중" : "저장"}
           </YeonButton>
@@ -208,7 +251,7 @@ export function WritePostPanel(props: {
         value={title}
         onChange={(event) => onChangeTitle(event.target.value)}
         placeholder="제목을 입력하세요"
-        maxLength={80}
+        maxLength={COMMUNITY_POST_TITLE_MAX_LENGTH}
         className="mt-4 h-11 text-[15px] font-semibold"
       />
       <YeonField
@@ -217,7 +260,7 @@ export function WritePostPanel(props: {
         onChange={(event) => onChangeContent(event.target.value)}
         placeholder="내용을 입력하세요"
         rows={4}
-        maxLength={280}
+        maxLength={COMMUNITY_POST_CONTENT_MAX_LENGTH}
         className="mt-2 resize-y text-[15px] leading-[1.55]"
       />
       <YeonText
@@ -225,7 +268,7 @@ export function WritePostPanel(props: {
         tone="secondary"
         className="mt-2 text-right font-semibold"
       >
-        {title.length + content.length}/360
+        {title.length + content.length}/{COMMUNITY_POST_DRAFT_MAX_LENGTH}
       </YeonText>
     </YeonSurface>
   );
