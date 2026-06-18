@@ -86,6 +86,8 @@ const PRODUCT_HEADER_INNER_DEFAULT_LAYOUT_CLASS =
   "flex items-center justify-between gap-3";
 const PRODUCT_HEADER_ACTION_BUTTON_CLASS =
   "flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-[#e5e5e5] bg-white p-2 text-[#666] transition-colors hover:border-[#aaa] hover:text-[#111]";
+const PRODUCT_PROFILE_MENU_ITEM_CLASS =
+  "flex min-h-11 w-full !justify-start gap-2 !rounded-none !border-0 !bg-white !px-4 !py-0 text-left text-[13px] font-semibold leading-none !text-[#111] no-underline transition-colors hover:!bg-[#fafafa] disabled:cursor-not-allowed disabled:opacity-60";
 
 export function YeonProductHeader({
   ariaLabel,
@@ -183,15 +185,15 @@ export function YeonProductProfileMenu({
         <YeonView
           role="menu"
           aria-label={resolvedLabels.button}
-          className="absolute right-0 top-full z-50 mt-2 w-40 overflow-hidden rounded-xl border border-[#e5e5e5] bg-white py-1 text-[13px] text-[#111] shadow-lg"
+          className="absolute right-0 top-full z-50 mt-2 w-44 overflow-hidden rounded-xl border border-[#e5e5e5] bg-white py-1 text-[13px] text-[#111] shadow-lg"
         >
           <YeonLink
             href={href}
             role="menuitem"
-            className="flex items-center gap-2 px-3 py-2 text-[#111] no-underline transition-colors hover:bg-[#fafafa]"
+            className={PRODUCT_PROFILE_MENU_ITEM_CLASS}
             onClick={() => setOpen(false)}
           >
-            <YeonIcon name="user" size={14} />
+            <YeonIcon name="user" size={14} className="shrink-0" />
             {resolvedLabels.profile}
           </YeonLink>
           <YeonButton
@@ -199,14 +201,14 @@ export function YeonProductProfileMenu({
             role="menuitem"
             variant="ghost"
             size="sm"
-            className="flex w-full items-center gap-2 rounded-none border-0 bg-transparent px-3 py-2 text-left text-[13px] text-[#666] transition-colors hover:bg-[#fafafa] disabled:cursor-not-allowed disabled:opacity-60"
+            className={PRODUCT_PROFILE_MENU_ITEM_CLASS}
             onClick={() => {
               setOpen(false);
               void onLogout();
             }}
             disabled={isLoggingOut}
           >
-            <YeonIcon name="log-out" size={14} />
+            <YeonIcon name="log-out" size={14} className="shrink-0" />
             {isLoggingOut ? resolvedLabels.loggingOut : resolvedLabels.logout}
           </YeonButton>
         </YeonView>

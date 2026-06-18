@@ -29,9 +29,9 @@ type AuthSessionPayload = {
 
 const COMMON_HEADER_BRAND_LABELS: Record<CommonServiceKey, string> = {
   home: "YEON",
-  typing: "YEON 타자연습",
-  card: "YEON 카드",
-  community: "YEON 커뮤니티",
+  typing: "YEON",
+  card: "YEON",
+  community: "YEON",
 } as const;
 
 async function fetchIsAuthenticated() {
@@ -76,7 +76,7 @@ export function CommonProductHeader({
 
       <YeonView className="flex min-w-0 items-center justify-end gap-2">
         {rightExtras ? (
-          <YeonView className="hidden items-center gap-2 xl:flex">
+          <YeonView className="hidden items-center gap-2 md:flex">
             {rightExtras}
           </YeonView>
         ) : null}

@@ -88,6 +88,18 @@ export const PLATFORM_SERVICES = [
     listedInPlatformHome: true,
   },
   {
+    slug: "news",
+    href: "https://news.yeon.world",
+    publicHref: "https://news.yeon.world",
+    title: "YEON 뉴스",
+    summary:
+      "서비스 공지, 업데이트, 업계 뉴스 해설을 한 곳에서 확인하는 공식 소식 채널입니다.",
+    audience: "공지 · 업데이트",
+    accessPolicy: platformServiceAccessPolicies.anonymous,
+    status: platformServiceStatuses.live,
+    listedInPlatformHome: true,
+  },
+  {
     slug: "mooddesk",
     href: "/mooddesk/index.html",
     publicHref: "/mooddesk/index.html",

@@ -128,7 +128,39 @@ is_full_skill_body() {
 }
 
 # === Claude 측 SSOT 스킬 수집 (frontmatter 기반 판정) ===
-declare -A skills
+skills=()
+
+set_skill() {
+  local name="$1"
+  local source_rel="$2"
+  skills+=("$name"$'\t'"$source_rel")
+}
+
+get_skill_source() {
+  local lookup="$1"
+  local entry
+  local name
+  for entry in "${skills[@]:-}"; do
+    name="${entry%%$'\t'*}"
+    if [ "$name" = "$lookup" ]; then
+      printf '%s\n' "${entry#*$'\t'}"
+      return 0
+    fi
+  done
+  return 1
+}
+
+has_skill() {
+  get_skill_source "$1" >/dev/null
+}
+
+print_skill_names() {
+  local entry
+  for entry in "${skills[@]:-}"; do
+    printf '%s\n' "${entry%%$'\t'*}"
+  done
+}
+
 all_names=$(
   {
     find "$CLAUDE_DIR/commands" -maxdepth 1 -type f -name "*.md" 2>/dev/null
@@ -142,19 +174,20 @@ while IFS= read -r name; do
   cmd_file="$CLAUDE_DIR/commands/$name.md"
   # 우선순위: 본문을 담은 파일(full body). skills 와 commands 둘 다 full body 면 commands 우선.
   if is_full_skill_body "$cmd_file"; then
-    skills[$name]=".claude/commands/$name.md"
+    set_skill "$name" ".claude/commands/$name.md"
   elif is_full_skill_body "$skl_file"; then
-    skills[$name]=".claude/skills/$name.md"
+    set_skill "$name" ".claude/skills/$name.md"
   elif [ -f "$cmd_file" ]; then
-    skills[$name]=".claude/commands/$name.md"
+    set_skill "$name" ".claude/commands/$name.md"
   elif [ -f "$skl_file" ]; then
-    skills[$name]=".claude/skills/$name.md"
+    set_skill "$name" ".claude/skills/$name.md"
   fi
 done <<< "$all_names"
 
 # === 저장소 내부 drift 감지: commands/skills 둘 다 full body 인데 내용 다를 때만 경고 ===
 duplicate_warnings=()
-for name in "${!skills[@]}"; do
+while IFS= read -r name; do
+  [ -z "$name" ] && continue
   cmd_file="$CLAUDE_DIR/commands/$name.md"
   skl_file="$CLAUDE_DIR/skills/$name.md"
   if is_full_skill_body "$cmd_file" && is_full_skill_body "$skl_file"; then
@@ -162,7 +195,7 @@ for name in "${!skills[@]}"; do
       duplicate_warnings+=("$name: commands/$name.md 와 skills/$name.md 둘 다 본문을 갖고 있고 내용 다름 → 저장소 drift (한쪽으로 통일 필요)")
     fi
   fi
-done
+done < <(print_skill_names)
 
 # === Codex 측 역방향 스캔 (orphan / OMX direct / SHARED 분류) ===
 # OMX direct 판정은 README 의 명시적 "OMX Direct Skills" 목록을 ground truth 로 사용.
@@ -207,7 +240,7 @@ if [ -d "$CODEX_DIR/skills" ]; then
       continue
     fi
 
-    if [ -n "${skills[$name]:-}" ]; then
+    if has_skill "$name"; then
       codex_only+=("$name (legacy 위치: 사용자 제작 스킬은 .codex/skills/SHARED/$name/SKILL.md 로 이동해야 함)")
     else
       if is_known_direct "$name"; then
@@ -226,10 +259,10 @@ created=0
 updated=0
 ok=0
 missing_or_drift=()
-sorted_local=$(printf '%s\n' "${!skills[@]}" | LC_ALL=C sort)
+sorted_local=$(print_skill_names | LC_ALL=C sort)
 while IFS= read -r name; do
   [ -z "$name" ] && continue
-  source_rel="${skills[$name]}"
+  source_rel="$(get_skill_source "$name")"
   wrapper_dir="$CODEX_SHARED_SKILLS_DIR/$name"
   wrapper_file="$wrapper_dir/SKILL.md"
 

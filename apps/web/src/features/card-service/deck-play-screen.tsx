@@ -22,7 +22,7 @@ import {
   useReviewCard,
   useUpdateCardStudyPreference,
 } from "./hooks";
-import { PLATFORM_HOME_HREF } from "@/lib/platform-services";
+import { CommonProductHeader } from "@/components/product-shell/product-header";
 import {
   DEFAULT_CARD_PLAY_CARD_SIZE,
   readStoredCardPlayCardSize,
@@ -54,25 +54,17 @@ export function DeckPlayScreen({ deckId }: DeckPlayScreenProps) {
 
   return (
     <YeonView className={SHARED_FEATURE_CLASS.pageSurface}>
-      <YeonView
-        as="header"
-        className="border-b border-[#e5e5e5] px-6 py-3 md:px-12"
-      >
-        <YeonView className="mx-auto flex max-w-[1200px] items-center justify-between">
+      <CommonProductHeader
+        activeService="card"
+        rightExtras={
           <YeonLink
             href={resolveYeonWebPath("cardDeckDetail", { deckId })}
             className={`${SHARED_FEATURE_CLASS.text14Neutral} no-underline hover:text-[#111]`}
           >
             ← 덱으로
           </YeonLink>
-          <YeonLink
-            href={PLATFORM_HOME_HREF}
-            className={`${CARD_SERVICE_COMMON_CLASS.panelTextEmphasis} no-underline hover:opacity-70`}
-          >
-            YEON 카드 · 실행
-          </YeonLink>
-        </YeonView>
-      </YeonView>
+        }
+      />
 
       <YeonView
         as="main"
