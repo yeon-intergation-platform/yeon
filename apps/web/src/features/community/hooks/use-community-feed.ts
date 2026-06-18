@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   type YeonQueryClient as QueryClient,
   useYeonMutation as useMutation,
@@ -9,7 +9,9 @@ import {
 } from "@yeon/ui/runtime/YeonQuery";
 import { chatServiceApi, type ChatServiceFeedPost } from "../chat-service-api";
 import {
+  readCommunityGuestPassword,
   readCommunityGuestNickname,
+  writeCommunityGuestPassword,
   writeCommunityGuestNickname,
 } from "../community-guest-identity";
 import { communityQueryKeys } from "./community-query-keys";
@@ -101,14 +103,22 @@ export function useCommunityFeed(options: UseCommunityFeedOptions = {}) {
   );
   const [replyLocalErrors, setReplyLocalErrors] = useState<ErrorByPost>({});
   const [replyDeleteErrors, setReplyDeleteErrors] = useState<ErrorByPost>({});
-  const [guestNickname, setGuestNicknameState] = useState(
-    readCommunityGuestNickname
-  );
-  const [guestPassword, setGuestPassword] = useState("");
+  const [guestNickname, setGuestNicknameState] = useState("");
+  const [guestPassword, setGuestPasswordState] = useState("");
+
+  useEffect(() => {
+    setGuestNicknameState(readCommunityGuestNickname());
+    setGuestPasswordState(readCommunityGuestPassword());
+  }, []);
 
   const setGuestNickname = useCallback((nickname: string) => {
     setGuestNicknameState(nickname);
     writeCommunityGuestNickname(nickname);
+  }, []);
+
+  const setGuestPassword = useCallback((password: string) => {
+    setGuestPasswordState(password);
+    writeCommunityGuestPassword(password);
   }, []);
 
   const actorPayload = useMemo(() => {

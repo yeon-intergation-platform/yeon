@@ -1,11 +1,3 @@
-import {
-  readYeonLocalStorageItem,
-  writeYeonLocalStorageItem,
-} from "@yeon/ui/runtime/YeonBrowserRuntime";
-
-export const COMMUNITY_GUEST_IDENTITY_CONFIRM_DISMISSED_KEY =
-  "yeon-community-guest-identity-confirm-dismissed";
-
 export type CommunityGuestIdentity = {
   guestNickname: string;
   guestPassword: string;
@@ -19,25 +11,8 @@ export function hasCompleteCommunityGuestIdentity(
   );
 }
 
-export function isCommunityGuestIdentityConfirmDismissed() {
-  return (
-    readYeonLocalStorageItem(COMMUNITY_GUEST_IDENTITY_CONFIRM_DISMISSED_KEY) ===
-    "true"
-  );
-}
-
-export function persistCommunityGuestIdentityConfirmDismissed() {
-  writeYeonLocalStorageItem(
-    COMMUNITY_GUEST_IDENTITY_CONFIRM_DISMISSED_KEY,
-    "true"
-  );
-}
-
 export function canSkipCommunityGuestIdentityConfirm(
   identity: CommunityGuestIdentity
 ) {
-  return (
-    isCommunityGuestIdentityConfirmDismissed() &&
-    hasCompleteCommunityGuestIdentity(identity)
-  );
+  return hasCompleteCommunityGuestIdentity(identity);
 }

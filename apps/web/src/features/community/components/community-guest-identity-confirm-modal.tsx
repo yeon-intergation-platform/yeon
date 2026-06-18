@@ -2,7 +2,6 @@
 import { YEON_WEB_SHARED_CLASS as SHARED_FEATURE_CLASS } from "@yeon/ui/theme/web-style-tokens";
 import {
   YeonButton,
-  YeonCheckbox,
   YeonField,
   YeonModal,
   YeonSurface,
@@ -19,10 +18,7 @@ type CommunityGuestIdentityConfirmModalProps = CommunityGuestIdentity & {
   isOpen: boolean;
   actionLabel: string;
   onClose: () => void;
-  onConfirm: (
-    identity: CommunityGuestIdentity,
-    options: { dismiss: boolean }
-  ) => void;
+  onConfirm: (identity: CommunityGuestIdentity) => void;
 };
 
 export function CommunityGuestIdentityConfirmModal(
@@ -38,13 +34,11 @@ export function CommunityGuestIdentityConfirmModal(
   } = props;
   const [nicknameDraft, setNicknameDraft] = useState(guestNickname);
   const [passwordDraft, setPasswordDraft] = useState(guestPassword);
-  const [dismiss, setDismiss] = useState(false);
 
   useEffect(() => {
     if (!isOpen) return;
     setNicknameDraft(guestNickname);
     setPasswordDraft(guestPassword);
-    setDismiss(false);
   }, [guestNickname, guestPassword, isOpen]);
 
   if (!isOpen) return null;
@@ -66,13 +60,10 @@ export function CommunityGuestIdentityConfirmModal(
         onSubmit={(event) => {
           event.preventDefault();
           if (!canConfirm) return;
-          onConfirm(
-            {
-              guestNickname: trimmedNickname,
-              guestPassword: trimmedPassword,
-            },
-            { dismiss }
-          );
+          onConfirm({
+            guestNickname: trimmedNickname,
+            guestPassword: trimmedPassword,
+          });
         }}
       >
         <YeonText
@@ -116,16 +107,6 @@ export function CommunityGuestIdentityConfirmModal(
             />
           </YeonLabel>
         </YeonView>
-
-        <YeonLabel
-          className={`mt-4 flex items-center gap-2 ${SHARED_FEATURE_CLASS.text12EmphasisMuted}`}
-        >
-          <YeonCheckbox
-            checked={dismiss}
-            onChange={(event) => setDismiss(event.target.checked)}
-          />
-          다시 보지 않음
-        </YeonLabel>
 
         <YeonView className="mt-5 flex justify-end gap-2">
           <YeonButton type="button" size="sm" onClick={onClose}>

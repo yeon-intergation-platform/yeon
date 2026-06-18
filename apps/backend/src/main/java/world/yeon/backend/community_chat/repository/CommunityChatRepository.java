@@ -46,20 +46,31 @@ public class CommunityChatRepository {
 	@PersistenceContext
 	private EntityManager entityManager;
 
-	public List<MessageRow> listLatest(int limit) {
+	public List<MessageRow> listLatestSince(int limit, OffsetDateTime cutoff) {
 		List<?> rows = entityManager.createNativeQuery("""
 			select id, sender_user_id, guest_session_id, sender_nickname, body, created_at
 			from (
 				select id, sender_user_id, guest_session_id, sender_nickname, body, created_at
 				from public.community_chat_messages
+				where created_at >= :cutoff
 				order by created_at desc
 				limit :limit
 			) latest
 			order by created_at asc
 		""")
 			.setParameter("limit", limit)
+			.setParameter("cutoff", cutoff)
 			.getResultList();
 		return rows.stream().map(this::toMessageRow).toList();
+	}
+
+	public int deleteCreatedBefore(OffsetDateTime cutoff) {
+		return entityManager.createNativeQuery("""
+			delete from public.community_chat_messages
+			where created_at < :cutoff
+		""")
+			.setParameter("cutoff", cutoff)
+			.executeUpdate();
 	}
 
 	public MessageRow insert(UUID id, UUID senderUserId, String guestSessionId, String senderNickname, String body) {

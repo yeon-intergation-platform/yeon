@@ -9,12 +9,12 @@ import { YeonButton, YeonSurface, YeonText, YeonView } from "@yeon/ui";
 import { CommunityGuestIdentityConfirmModal } from "./components/community-guest-identity-confirm-modal";
 import {
   canSkipCommunityGuestIdentityConfirm,
-  persistCommunityGuestIdentityConfirmDismissed,
   type CommunityGuestIdentity,
 } from "./community-guest-identity-confirm";
 import { CommunityChatWidget } from "./components/community-chat-widget";
+import { CommunityGuestIdentityCard } from "./components/community-guest-identity-card";
 import {
-  FeedGuestIdentityRow,
+  FeedWriteControl,
   FeedPostItem,
   WritePostPanel,
 } from "./components/community-feed-components";
@@ -145,9 +145,12 @@ export function CommunityPage() {
 
       <YeonView
         as="main"
-        className="mx-auto w-full max-w-[840px] px-4 py-6 sm:px-6 lg:px-8"
+        className="mx-auto grid w-full max-w-[1160px] gap-4 px-4 py-6 sm:px-6 lg:grid-cols-[minmax(0,840px)_280px] lg:items-start lg:px-8"
       >
-        <YeonSurface as="section" className="rounded-3xl">
+        <YeonSurface
+          as="section"
+          className="order-2 min-w-0 rounded-3xl lg:order-1"
+        >
           <YeonView
             as="header"
             className="border-b border-[#e5e5e5] px-5 py-4 sm:px-6"
@@ -205,12 +208,8 @@ export function CommunityPage() {
             </YeonView>
 
             <YeonView>
-              <FeedGuestIdentityRow
-                guestNickname={guestNickname}
-                guestPassword={guestPassword}
+              <FeedWriteControl
                 isWriteOpen={isWriteOpen}
-                onChangeNickname={setGuestNickname}
-                onChangePassword={setGuestPassword}
                 onToggleWrite={() => setIsWriteOpen((value) => !value)}
               />
 
@@ -309,6 +308,21 @@ export function CommunityPage() {
             ) : null}
           </YeonView>
         </YeonSurface>
+
+        <YeonView
+          as="aside"
+          className="order-1 min-w-0 lg:sticky lg:top-20 lg:order-2"
+          aria-label="게스트 인증"
+        >
+          <CommunityGuestIdentityCard
+            guestNickname={guestNickname}
+            guestPassword={guestPassword}
+            onSaveIdentity={(identity) => {
+              setGuestNickname(identity.guestNickname);
+              setGuestPassword(identity.guestPassword);
+            }}
+          />
+        </YeonView>
       </YeonView>
 
       <CommunityGuestIdentityConfirmModal
@@ -320,7 +334,7 @@ export function CommunityPage() {
           pendingGuestIdentityAction?.resolve(false);
           setPendingGuestIdentityAction(null);
         }}
-        onConfirm={(identity, options) => {
+        onConfirm={(identity) => {
           setGuestNickname(identity.guestNickname);
           setGuestPassword(identity.guestPassword);
 
@@ -329,9 +343,6 @@ export function CommunityPage() {
           void pending
             ?.run(identity)
             .then(() => {
-              if (options.dismiss) {
-                persistCommunityGuestIdentityConfirmDismissed();
-              }
               pending.resolve(true);
             })
             .catch(() => pending.resolve(false));

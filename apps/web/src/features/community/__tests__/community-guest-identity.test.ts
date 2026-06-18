@@ -1,13 +1,14 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   createRandomCommunityGuestNickname,
+  readCommunityGuestPassword,
   readCommunityGuestNickname,
   resolveCommunityGuestNickname,
+  writeCommunityGuestPassword,
   writeCommunityGuestNickname,
 } from "../community-guest-identity";
 import {
   canSkipCommunityGuestIdentityConfirm,
-  COMMUNITY_GUEST_IDENTITY_CONFIRM_DISMISSED_KEY,
   hasCompleteCommunityGuestIdentity,
 } from "../community-guest-identity-confirm";
 
@@ -21,6 +22,9 @@ function stubWindowLocalStorage(initialNickname?: string) {
     getItem: vi.fn((key: string) => storage.get(key) ?? null),
     setItem: vi.fn((key: string, value: string) => {
       storage.set(key, value);
+    }),
+    removeItem: vi.fn((key: string) => {
+      storage.delete(key);
     }),
   };
 
@@ -76,6 +80,25 @@ describe("community guest identity", () => {
     expect(resolveCommunityGuestNickname("  새닉네임  ")).toBe("새닉네임");
   });
 
+  it("게스트 비밀번호를 저장하고 빈 값이면 삭제한다", () => {
+    const localStorage = stubWindowLocalStorage();
+
+    writeCommunityGuestPassword("  pw-1234  ");
+
+    expect(localStorage.setItem).toHaveBeenCalledWith(
+      "yeon-community-guest-password",
+      "pw-1234"
+    );
+    expect(readCommunityGuestPassword()).toBe("pw-1234");
+
+    writeCommunityGuestPassword(" ");
+
+    expect(localStorage.removeItem).toHaveBeenCalledWith(
+      "yeon-community-guest-password"
+    );
+    expect(readCommunityGuestPassword()).toBe("");
+  });
+
   it("닉네임과 비밀번호가 모두 있을 때만 게스트 작성자 정보가 완성된다", () => {
     expect(
       hasCompleteCommunityGuestIdentity({
@@ -91,13 +114,7 @@ describe("community guest identity", () => {
     ).toBe(false);
   });
 
-  it("다시 보지 않음 상태여도 비밀번호가 비어 있으면 작성자 확인을 건너뛰지 않는다", () => {
-    const localStorage = stubWindowLocalStorage("테스터");
-    localStorage.setItem(
-      COMMUNITY_GUEST_IDENTITY_CONFIRM_DISMISSED_KEY,
-      "true"
-    );
-
+  it("닉네임과 비밀번호를 등록한 뒤에만 작성자 확인을 건너뛴다", () => {
     expect(
       canSkipCommunityGuestIdentityConfirm({
         guestNickname: "테스터",

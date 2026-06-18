@@ -1,6 +1,8 @@
 package world.yeon.backend.community_chat.service;
 
 import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -20,6 +22,7 @@ import world.yeon.backend.user_experience.service.ExperienceService;
 public class CommunityChatService {
 	private static final Logger log = LoggerFactory.getLogger(CommunityChatService.class);
 	private static final int MESSAGE_LIMIT = 100;
+	private static final int MESSAGE_RETENTION_DAYS = 3;
 	// IDX 97: community-chat 는 V7 마이그레이션상 공개(permitAll) 의도로 판단된다.
 	// 인증 차단 대신 공개를 유지하되, 무인증 send 남용을 막기 위해 앱 레벨 인메모리 rate limit 으로 하드닝한다.
 	// 입력 검증(normalize: 본문/닉네임/게스트세션 길이·필수)은 send() 에서 이미 수행한다.
@@ -34,13 +37,16 @@ public class CommunityChatService {
 		this.experienceService = experienceService;
 	}
 
-	@Transactional(readOnly = true)
+	@Transactional
 	public CommunityChatMessagesResponse listMessages() {
-		return new CommunityChatMessagesResponse(repository.listLatest(MESSAGE_LIMIT).stream().map(this::toResponse).toList());
+		OffsetDateTime cutoff = retentionCutoff();
+		repository.deleteCreatedBefore(cutoff);
+		return new CommunityChatMessagesResponse(repository.listLatestSince(MESSAGE_LIMIT, cutoff).stream().map(this::toResponse).toList());
 	}
 
 	@Transactional
 	public CommunityChatMessageMutationResponse send(UUID senderUserId, SendCommunityChatMessageRequest request) {
+		repository.deleteCreatedBefore(retentionCutoff());
 		String body = normalize(request == null ? null : request.body(), "메시지", 1000);
 		String guestSessionInput = request == null ? null : request.guestSessionId();
 		String guestSessionId = senderUserId == null ? normalize(guestSessionInput, "게스트 세션", 128) : trimToNull(guestSessionInput);
@@ -129,5 +135,9 @@ public class CommunityChatService {
 			return recent;
 		});
 		return limited.get();
+	}
+
+	private OffsetDateTime retentionCutoff() {
+		return OffsetDateTime.now(ZoneOffset.UTC).minusDays(MESSAGE_RETENTION_DAYS);
 	}
 }

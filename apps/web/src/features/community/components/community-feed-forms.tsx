@@ -13,61 +13,35 @@ import {
   type WritableCommunityCategory,
 } from "../community-post-format";
 
-export function FeedGuestIdentityRow(props: {
-  guestNickname: string;
-  guestPassword: string;
+export function FeedWriteControl(props: {
   isWriteOpen: boolean;
-  onChangeNickname: (value: string) => void;
-  onChangePassword: (value: string) => void;
   onToggleWrite: () => void;
 }) {
-  const {
-    guestNickname,
-    guestPassword,
-    isWriteOpen,
-    onChangeNickname,
-    onChangePassword,
-    onToggleWrite,
-  } = props;
+  const { isWriteOpen, onToggleWrite } = props;
 
   return (
     <YeonSurface className="p-3">
-      <YeonView className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_104px] sm:items-end">
-        <YeonLabel className="text-[12px] font-semibold text-[#666]">
-          게스트 닉네임
-          <YeonField
-            value={guestNickname}
-            onChange={(event) => onChangeNickname(event.target.value)}
-            placeholder="닉네임 입력"
-            maxLength={40}
-            className="mt-1 h-10"
-          />
-        </YeonLabel>
-        <YeonLabel className="text-[12px] font-semibold text-[#666]">
-          비밀번호
-          <YeonField
-            value={guestPassword}
-            onChange={(event) => onChangePassword(event.target.value)}
-            placeholder="수정/삭제용 비밀번호"
-            type="password"
-            maxLength={128}
-            className="mt-1 h-10"
-          />
-        </YeonLabel>
+      <YeonView className="flex flex-wrap items-center justify-between gap-3">
+        <YeonView>
+          <YeonText
+            as="h3"
+            variant="unstyled"
+            tone="inherit"
+            className="text-[14px] font-black tracking-[-0.02em] text-[#111]"
+          >
+            새 글
+          </YeonText>
+        </YeonView>
         <YeonButton
           type="button"
           variant="primary"
           onClick={onToggleWrite}
-          className="h-10 px-4 text-[14px]"
+          className="h-10 px-4 text-[14px] font-bold"
           aria-expanded={isWriteOpen}
         >
           글쓰기
         </YeonButton>
       </YeonView>
-      <YeonText variant="caption" tone="secondary" className="mt-2">
-        자동 생성된 게스트 닉네임이에요. 직접 바꿀 수 있고, 비밀번호는 글
-        수정·삭제에 사용해요.
-      </YeonText>
     </YeonSurface>
   );
 }
