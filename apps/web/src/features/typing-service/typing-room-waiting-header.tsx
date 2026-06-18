@@ -1,8 +1,14 @@
 "use client";
-import type { TypingRoomSnapshot } from "@yeon/race-shared";
+import {
+  TYPING_ROOM_GAME_TYPE,
+  type TypingRoomSnapshot,
+} from "@yeon/race-shared";
 import { YeonButton, YeonIcon, YeonText, YeonView } from "@yeon/ui";
 import { YEON_WEB_SHARED_CLASS as SHARED_FEATURE_CLASS } from "@yeon/ui/theme/web-style-tokens";
-import { TYPING_ROOM_VISIBILITY_LABELS } from "./typing-room-labels";
+import {
+  TYPING_ROOM_GAME_TYPE_LABELS,
+  TYPING_ROOM_VISIBILITY_LABELS,
+} from "./typing-room-labels";
 
 type TypingRoomWaitingHeaderRoomProps = {
   room: TypingRoomSnapshot;
@@ -47,6 +53,8 @@ export function TypingRoomWaitingHeader({
   onStart,
   onToggleReady,
 }: TypingRoomWaitingHeaderProps) {
+  const isTerritoryRoom = room.gameType === TYPING_ROOM_GAME_TYPE.TERRITORY;
+
   return (
     <>
       {copyError && (
@@ -85,6 +93,7 @@ export function TypingRoomWaitingHeader({
               className={SHARED_FEATURE_CLASS.text12EmphasisNeutral}
             >
               {waitingStateLabel} ·{" "}
+              {TYPING_ROOM_GAME_TYPE_LABELS[room.gameType]} ·{" "}
               {TYPING_ROOM_VISIBILITY_LABELS[room.visibility]} ·{" "}
               {room.currentParticipants}/{room.maxParticipants}
             </YeonText>
@@ -139,17 +148,18 @@ export function TypingRoomWaitingHeader({
               >
                 {copied ? "초대 링크 복사됨" : "초대"}
               </YeonButton>
-              <YeonButton
-                as="a"
-                href={territoryHref}
-                variant="primary"
-                size="md"
-                className="gap-2 rounded-xl px-4 py-2 text-[13px]"
-              >
-                <YeonIcon name="swords" size={14} />
-                점령전 입장
-              </YeonButton>
-              {isHost ? (
+              {isTerritoryRoom ? (
+                <YeonButton
+                  as="a"
+                  href={territoryHref}
+                  variant="primary"
+                  size="md"
+                  className="gap-2 rounded-xl px-4 py-2 text-[13px]"
+                >
+                  <YeonIcon name="swords" size={14} />
+                  점령전 입장
+                </YeonButton>
+              ) : isHost ? (
                 <YeonButton
                   type="button"
                   onClick={onStart}

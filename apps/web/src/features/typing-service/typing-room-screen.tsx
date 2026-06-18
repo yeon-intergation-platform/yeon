@@ -7,6 +7,7 @@ import {
 } from "@yeon/ui/runtime/YeonNavigation";
 import {
   TYPING_ROOM_DIFFICULTY,
+  TYPING_ROOM_GAME_TYPE,
   TYPING_ROOM_LANGUAGE,
   TYPING_ROOM_MODE,
   TYPING_ROOM_STATUS,
@@ -14,6 +15,7 @@ import {
   TYPING_ROOM_VISIBILITY,
   type TypingRoomCreateMessage,
   type TypingRoomDifficulty,
+  type TypingRoomGameType,
   type TypingRoomLanguage,
   type TypingRoomMode,
   type TypingRoomTextType,
@@ -31,6 +33,7 @@ import { TypingRoomSettingsPanel } from "./typing-room-settings-panel";
 import { TypingRoomWaitingHeader } from "./typing-room-waiting-header";
 import {
   TYPING_ROOM_DIFFICULTY_LABELS,
+  TYPING_ROOM_GAME_TYPE_LABELS,
   TYPING_ROOM_LANGUAGE_LABELS,
   TYPING_ROOM_TEXT_TYPE_LABELS,
 } from "./typing-room-labels";
@@ -112,7 +115,6 @@ type TerritoryLobbyPanelStateProps = {
 
 type TerritoryLobbyPanelDisplayProps = {
   roomSummary: string;
-  territoryHref: string;
 };
 
 type TerritoryLobbyPanelActionProps = {
@@ -148,19 +150,19 @@ function TerritoryLobbyPanel({
   chatDraft,
   chatError,
   canSendChat,
-  territoryHref,
   onLeaveRoom,
   onToggleReady,
   onToggleRoomTools,
   onChatDraftChange,
   onChatSubmit,
 }: TerritoryLobbyPanelProps) {
+  const isTerritoryRoom = room.gameType === TYPING_ROOM_GAME_TYPE.TERRITORY;
   const firstTeam = participants.filter((_, index) => index % 2 === 0);
   const secondTeam = participants.filter((_, index) => index % 2 === 1);
   const recentMessages = messages.slice(-5);
   const teamSlotCount = Math.max(4, Math.ceil(room.maxParticipants / 2));
   const roomInfo = [
-    ["게임 타입", "팀 점령전"],
+    ["방 종류", TYPING_ROOM_GAME_TYPE_LABELS[room.gameType]],
     [
       "게임 시간",
       room.mode === TYPING_ROOM_MODE.TIME_LIMIT
@@ -169,7 +171,7 @@ function TerritoryLobbyPanel({
     ],
     ["난이도", TYPING_ROOM_DIFFICULTY_LABELS[room.difficulty]],
     ["현재 인원", `${room.currentParticipants}/${room.maxParticipants}`],
-    ["보너스 게임", "ON"],
+    ["진행 방식", isTerritoryRoom ? "팀 대전" : "개인 레이스"],
   ];
 
   return (
@@ -258,7 +260,8 @@ function TerritoryLobbyPanel({
                 tone="inherit"
                 className="flex items-center gap-2 text-[20px] font-black tracking-[-0.03em] text-[#111]"
               >
-                <YeonIcon name="users" size={21} />팀 대기실
+                <YeonIcon name={isTerritoryRoom ? "users" : "play"} size={21} />
+                {isTerritoryRoom ? "팀 대기실" : "참가자 대기실"}
               </YeonText>
               <YeonText
                 as="p"
@@ -270,52 +273,61 @@ function TerritoryLobbyPanel({
               </YeonText>
             </YeonView>
 
-            <YeonView className="grid items-center gap-5 lg:grid-cols-[minmax(0,1fr)_56px_minmax(0,1fr)]">
-              <TerritoryTeamColumn
-                title="1팀"
-                members={firstTeam}
-                maxSlots={teamSlotCount}
-                tone="red"
-              />
-              <YeonView className="flex items-center justify-center py-1 lg:h-full">
-                <YeonText
-                  as="span"
-                  variant="unstyled"
-                  tone="inherit"
-                  className="flex h-12 w-12 items-center justify-center rounded-full border border-[#e5e5e5] bg-white text-[15px] font-black text-[#111] shadow-sm"
-                >
-                  VS
-                </YeonText>
-              </YeonView>
-              <TerritoryTeamColumn
-                title="파랑팀"
-                members={secondTeam}
-                maxSlots={teamSlotCount}
-                tone="blue"
-              />
-            </YeonView>
+            {isTerritoryRoom ? (
+              <>
+                <YeonView className="grid items-center gap-5 lg:grid-cols-[minmax(0,1fr)_56px_minmax(0,1fr)]">
+                  <TerritoryTeamColumn
+                    title="1팀"
+                    members={firstTeam}
+                    maxSlots={teamSlotCount}
+                    tone="red"
+                  />
+                  <YeonView className="flex items-center justify-center py-1 lg:h-full">
+                    <YeonText
+                      as="span"
+                      variant="unstyled"
+                      tone="inherit"
+                      className="flex h-12 w-12 items-center justify-center rounded-full border border-[#e5e5e5] bg-white text-[15px] font-black text-[#111] shadow-sm"
+                    >
+                      VS
+                    </YeonText>
+                  </YeonView>
+                  <TerritoryTeamColumn
+                    title="파랑팀"
+                    members={secondTeam}
+                    maxSlots={teamSlotCount}
+                    tone="blue"
+                  />
+                </YeonView>
 
-            <YeonView className="mt-5 flex flex-col justify-center gap-3 sm:flex-row">
-              <YeonButton
-                type="button"
-                variant="secondary"
-                size="lg"
-                disabled
-                title="팀 이동 기능은 서버 API 연결 후 활성화됩니다."
-                className="min-w-[180px] rounded-lg px-5 py-3 text-[15px] font-black"
-              >
-                <YeonIcon name="arrow-left" size={15} />팀 이동
-              </YeonButton>
-              <YeonButton
-                type="button"
-                onClick={onToggleReady}
-                variant={isReady ? "secondary" : "primary"}
-                size="lg"
-                className="min-w-[220px] rounded-lg px-5 py-3 text-[15px] font-black"
-              >
-                {isReady ? "준비 해제" : "준비하기"}
-              </YeonButton>
-            </YeonView>
+                <YeonView className="mt-5 flex flex-col justify-center gap-3 sm:flex-row">
+                  <YeonButton
+                    type="button"
+                    variant="secondary"
+                    size="lg"
+                    disabled
+                    title="팀 이동 기능은 서버 API 연결 후 활성화됩니다."
+                    className="min-w-[180px] rounded-lg px-5 py-3 text-[15px] font-black"
+                  >
+                    <YeonIcon name="arrow-left" size={15} />팀 이동
+                  </YeonButton>
+                  <YeonButton
+                    type="button"
+                    onClick={onToggleReady}
+                    variant={isReady ? "secondary" : "primary"}
+                    size="lg"
+                    className="min-w-[220px] rounded-lg px-5 py-3 text-[15px] font-black"
+                  >
+                    {isReady ? "준비 해제" : "준비하기"}
+                  </YeonButton>
+                </YeonView>
+              </>
+            ) : (
+              <StandardRoomParticipantList
+                participants={participants}
+                maxSlots={room.maxParticipants}
+              />
+            )}
           </YeonView>
 
           <YeonView className="rounded-lg border border-[#e5e5e5] bg-white p-4">
@@ -347,10 +359,16 @@ function TerritoryLobbyPanel({
               ) : (
                 <>
                   <YeonText as="p" variant="unstyled" tone="inherit">
-                    [시스템] 점령전 대기방에 입장했습니다.
+                    [시스템]{" "}
+                    {isTerritoryRoom
+                      ? "점령전 대기방에 입장했습니다."
+                      : "일반 타자방에 입장했습니다."}
                   </YeonText>
                   <YeonText as="p" variant="unstyled" tone="inherit">
-                    [시스템] 팀을 정하고 준비를 눌러 주세요.
+                    [시스템]{" "}
+                    {isTerritoryRoom
+                      ? "팀을 정하고 준비를 눌러 주세요."
+                      : "참가자가 준비되면 시작할 수 있어요."}
                   </YeonText>
                 </>
               )}
@@ -391,17 +409,6 @@ function TerritoryLobbyPanel({
               </YeonText>
             )}
           </YeonView>
-
-          <YeonButton
-            as="a"
-            href={territoryHref}
-            variant="primary"
-            size="lg"
-            className="w-full rounded-lg px-6 py-3 text-center text-[15px] font-black"
-          >
-            <YeonIcon name="swords" size={16} />
-            점령전 입장
-          </YeonButton>
         </YeonView>
       </YeonView>
     </YeonView>
@@ -414,6 +421,71 @@ type TerritoryTeamColumnProps = {
   maxSlots: number;
   tone: "red" | "blue";
 };
+
+type StandardRoomParticipantListProps = {
+  participants: TerritoryLobbyParticipant[];
+  maxSlots: number;
+};
+
+function StandardRoomParticipantList({
+  participants,
+  maxSlots,
+}: StandardRoomParticipantListProps) {
+  const slots = Array.from(
+    { length: maxSlots },
+    (_, index) => participants[index] ?? null
+  );
+
+  return (
+    <YeonView className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+      {slots.map((participant, index) => (
+        <YeonView
+          key={participant?.id ?? `standard-slot-${index}`}
+          className={`grid min-h-[92px] content-center gap-2 rounded-lg border bg-white p-4 ${
+            participant ? "border-[#111]" : "border-[#e5e5e5]"
+          }`}
+        >
+          <YeonView className="flex items-center gap-3">
+            <YeonText
+              as="span"
+              variant="unstyled"
+              tone="inherit"
+              className={`flex h-10 w-10 items-center justify-center rounded-full border text-[20px] ${
+                participant ? "border-[#111] bg-[#fffbe8]" : "border-dashed"
+              }`}
+            >
+              {participant ? "🙂" : "+"}
+            </YeonText>
+            <YeonView className="min-w-0">
+              <YeonText
+                as="p"
+                variant="unstyled"
+                tone="inherit"
+                className="truncate text-[14px] font-black text-[#111]"
+              >
+                {participant?.label ?? "빈 자리"}
+              </YeonText>
+              <YeonText
+                as="p"
+                variant="unstyled"
+                tone="inherit"
+                className="mt-1 text-[11px] font-black text-[#666]"
+              >
+                {participant
+                  ? participant.role === "host"
+                    ? "방장"
+                    : participant.isReady
+                      ? "준비 완료"
+                      : "대기 중"
+                  : "초대 가능"}
+              </YeonText>
+            </YeonView>
+          </YeonView>
+        </YeonView>
+      ))}
+    </YeonView>
+  );
+}
 
 function TerritoryTeamColumn({
   title,
@@ -599,6 +671,11 @@ function useCreateRoomOptions(): DeckAwareCreateMessage {
         [TYPING_ROOM_MODE.FINISH, TYPING_ROOM_MODE.TIME_LIMIT],
         TYPING_ROOM_MODE.FINISH
       ),
+      gameType: parseEnum<TypingRoomGameType>(
+        searchParams.get("gameType"),
+        [TYPING_ROOM_GAME_TYPE.STANDARD, TYPING_ROOM_GAME_TYPE.TERRITORY],
+        TYPING_ROOM_GAME_TYPE.STANDARD
+      ),
     };
   }, [searchParams]);
 }
@@ -723,6 +800,7 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
       room_id: race.roomId,
       visibility: createRoomOptions.visibility,
       language: createRoomOptions.language,
+      game_type: createRoomOptions.gameType,
       deck_id: selectedDeck.id,
       deck_title: selectedDeck.title,
     });
@@ -772,6 +850,7 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
       source: "typing_room",
       room_id: race.roomId,
       visibility: room.visibility,
+      game_type: room.gameType,
       current_participants: room.currentParticipants,
       max_participants: room.maxParticipants,
       selected_deck_id:
@@ -1106,9 +1185,6 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
           chatDraft={chatDraft}
           chatError={chatError}
           canSendChat={canSendChat}
-          territoryHref={`/typing-service/territory?roomId=${encodeURIComponent(
-            race.roomId ?? room.roomId
-          )}`}
           onLeaveRoom={onLeaveRoom}
           onToggleReady={() => race.sendReady(!isReady)}
           onToggleRoomTools={() => setShowRoomTools((value) => !value)}

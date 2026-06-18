@@ -100,6 +100,14 @@ export const TYPING_ROOM_MODE = {
 export type TypingRoomMode =
   (typeof TYPING_ROOM_MODE)[keyof typeof TYPING_ROOM_MODE];
 
+export const TYPING_ROOM_GAME_TYPE = {
+  STANDARD: "standard",
+  TERRITORY: "territory",
+} as const;
+
+export type TypingRoomGameType =
+  (typeof TYPING_ROOM_GAME_TYPE)[keyof typeof TYPING_ROOM_GAME_TYPE];
+
 export const TYPING_RACE_DEFAULTS = {
   countdownSeconds: 10,
   roomCountdownSeconds: 10,
@@ -288,6 +296,7 @@ export type TypingRoomSettings = TypingRoomDeckMetadata & {
   difficulty: TypingRoomDifficulty;
   roundCount: number;
   mode: TypingRoomMode;
+  gameType: TypingRoomGameType;
 };
 
 export type TypingRoomSummary = TypingRoomSettings & {

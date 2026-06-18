@@ -180,8 +180,8 @@ export function TypingServiceHome({
               />
               <StartCard
                 href="/typing-service/rooms"
-                label="점령전 입장"
-                description="타자방에 먼저 참가한 뒤 팀 점령전에 입장합니다."
+                label="점령전 방 찾기"
+                description="점령전 방에 참가하거나 새로 만듭니다."
                 tone="secondary"
                 onClick={() => handleCtaClick("territory")}
               />
