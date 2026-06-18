@@ -55,6 +55,15 @@ export type YeonServiceHelpContent = {
 
 export type YeonServiceHelpDialogProps = {
   content: YeonServiceHelpContent;
+  labels?: Partial<YeonServiceHelpDialogLabels>;
+};
+
+export type YeonServiceHelpDialogLabels = {
+  trigger: string;
+  eyebrow: string;
+  close: string;
+  features: string;
+  faqs: string;
 };
 
 export type YeonProductProfileMenuLabels = {
@@ -77,6 +86,14 @@ const PRODUCT_PROFILE_MENU_LABELS: YeonProductProfileMenuLabels = {
   profile: "내정보보기",
   loggingOut: "로그아웃 중...",
   logout: "로그아웃",
+};
+
+const SERVICE_HELP_DIALOG_LABELS: YeonServiceHelpDialogLabels = {
+  trigger: "도움말",
+  eyebrow: "도움말",
+  close: "도움말 닫기",
+  features: "주요 기능",
+  faqs: "자주 묻는 질문",
 };
 
 const PRODUCT_HEADER_FRAME_CLASS =
@@ -170,7 +187,7 @@ export function YeonProductProfileMenu({
       <YeonButton
         type="button"
         aria-label={resolvedLabels.button}
-        title="내정보"
+        title={resolvedLabels.profile}
         aria-haspopup="menu"
         aria-expanded={open}
         variant="icon"
@@ -217,9 +234,13 @@ export function YeonProductProfileMenu({
   );
 }
 
-export function YeonServiceHelpDialog({ content }: YeonServiceHelpDialogProps) {
+export function YeonServiceHelpDialog({
+  content,
+  labels,
+}: YeonServiceHelpDialogProps) {
   const [open, setOpen] = useState(false);
   const titleId = useId();
+  const resolvedLabels = { ...SERVICE_HELP_DIALOG_LABELS, ...labels };
 
   useYeonEscapeKey(() => setOpen(false), open);
   useYeonBodyScrollLock(open);
@@ -228,8 +249,8 @@ export function YeonServiceHelpDialog({ content }: YeonServiceHelpDialogProps) {
     <>
       <YeonProductHeaderActionButton
         type="button"
-        aria-label="도움말"
-        title="도움말"
+        aria-label={resolvedLabels.trigger}
+        title={resolvedLabels.trigger}
         onClick={() => setOpen(true)}
       >
         <YeonIcon name="circle-help" size={17} />
@@ -257,7 +278,7 @@ export function YeonServiceHelpDialog({ content }: YeonServiceHelpDialogProps) {
                     tone="inherit"
                     className="m-0 text-[12px] font-bold uppercase tracking-[0.18em] text-[#aaa]"
                   >
-                    도움말
+                    {resolvedLabels.eyebrow}
                   </YeonText>
                   <YeonText
                     as="h2"
@@ -271,7 +292,7 @@ export function YeonServiceHelpDialog({ content }: YeonServiceHelpDialogProps) {
                 </YeonView>
                 <YeonButton
                   type="button"
-                  aria-label="도움말 닫기"
+                  aria-label={resolvedLabels.close}
                   variant="icon"
                   size="icon"
                   className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[#e5e5e5] bg-[#fafafa] text-[#666] transition-colors hover:border-[#aaa] hover:bg-white hover:text-[#111]"
@@ -303,7 +324,7 @@ export function YeonServiceHelpDialog({ content }: YeonServiceHelpDialogProps) {
                     tone="inherit"
                     className="text-[18px] font-black tracking-[-0.01em] text-[#111]"
                   >
-                    주요 기능
+                    {resolvedLabels.features}
                   </YeonText>
                   <YeonView as="ul" className="mt-4 grid gap-3 sm:grid-cols-2">
                     {content.features.map((feature) => (
@@ -347,7 +368,7 @@ export function YeonServiceHelpDialog({ content }: YeonServiceHelpDialogProps) {
                     tone="inherit"
                     className="text-[18px] font-black tracking-[-0.01em] text-[#111]"
                   >
-                    자주 묻는 질문
+                    {resolvedLabels.faqs}
                   </YeonText>
                   <YeonView className="mt-4 space-y-3">
                     {content.faqs.map((faq) => (

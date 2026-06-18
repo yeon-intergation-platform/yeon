@@ -2,6 +2,20 @@
 import { YeonButton, YeonText, YeonView, YeonLink } from "@yeon/ui";
 import { YEON_WEB_SHARED_CLASS as SHARED_FEATURE_CLASS } from "@yeon/ui/theme/web-style-tokens";
 import { TYPING_SERVICE_COMMON_CLASS } from "./typing-service-common.const";
+import type { TypingUiText } from "./typing-service-i18n";
+
+type TypingRoomStateLabels = Pick<
+  TypingUiText["room"],
+  | "selectedDeckLoading"
+  | "createLoading"
+  | "joinLoading"
+  | "alreadyStarted"
+  | "seedErrorTitle"
+  | "retry"
+  | "useDefaultDeck"
+  | "backToLobby"
+  | "connectionErrorTitle"
+>;
 
 export function TypingRoomLoadingState({ message }: { message: string }) {
   return (
@@ -20,10 +34,12 @@ export function TypingRoomLoadingState({ message }: { message: string }) {
 
 export function TypingRoomSeedErrorState({
   message,
+  labels,
   onRetry,
   onUseDefaultDeck,
 }: {
   message: string;
+  labels: TypingRoomStateLabels;
   onRetry: () => void;
   onUseDefaultDeck: () => void;
 }) {
@@ -36,7 +52,7 @@ export function TypingRoomSeedErrorState({
           tone="inherit"
           className="text-[24px] font-semibold tracking-[-0.03em] text-[#111]"
         >
-          덱 문장을 준비하지 못했어요
+          {labels.seedErrorTitle}
         </YeonText>
         <YeonText
           as="p"
@@ -53,7 +69,7 @@ export function TypingRoomSeedErrorState({
             variant="primary"
             size="lg"
           >
-            다시 시도
+            {labels.retry}
           </YeonButton>
           <YeonButton
             type="button"
@@ -61,14 +77,14 @@ export function TypingRoomSeedErrorState({
             variant="secondary"
             size="lg"
           >
-            기본 덱으로 시작
+            {labels.useDefaultDeck}
           </YeonButton>
         </YeonView>
         <YeonLink
           href="/typing-service/rooms"
           className={`mt-4 inline-flex ${SHARED_FEATURE_CLASS.text13EmphasisMuted} no-underline transition-colors hover:text-[#111]`}
         >
-          로비로 돌아가기
+          {labels.backToLobby}
         </YeonLink>
       </YeonView>
     </YeonView>
@@ -77,8 +93,10 @@ export function TypingRoomSeedErrorState({
 
 export function TypingRoomConnectionErrorState({
   message,
+  labels,
 }: {
   message: string;
+  labels: TypingRoomStateLabels;
 }) {
   return (
     <YeonView className="flex min-h-screen items-center justify-center bg-white px-6 text-[#111]">
@@ -89,7 +107,7 @@ export function TypingRoomConnectionErrorState({
           tone="inherit"
           className="text-[24px] font-semibold tracking-[-0.03em] text-[#111]"
         >
-          타자방에 연결할 수 없어요
+          {labels.connectionErrorTitle}
         </YeonText>
         <YeonText
           as="p"
@@ -103,7 +121,7 @@ export function TypingRoomConnectionErrorState({
           href="/typing-service/rooms"
           className={`mt-6 inline-flex ${SHARED_FEATURE_CLASS.primaryActionButtonMd14} no-underline`}
         >
-          로비로 돌아가기
+          {labels.backToLobby}
         </YeonLink>
       </YeonView>
     </YeonView>

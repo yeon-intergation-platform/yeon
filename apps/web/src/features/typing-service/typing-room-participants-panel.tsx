@@ -4,12 +4,14 @@ import { YeonIcon, YeonView, YeonText } from "@yeon/ui";
 import { RoomParticipantCard } from "@/features/room-shared";
 import { TYPING_SERVICE_COMMON_CLASS } from "./typing-service-common.const";
 import { findCharacter } from "./characters";
+import type { TypingUiText } from "./typing-service-i18n";
 
 type TypingRoomParticipantsPanelProps = {
   participants: readonly (TypingRoomParticipantSnapshot | null)[];
   myParticipantId: string | null;
   locale: "ko" | "en";
   frameOverrides: Record<string, number[]>;
+  labels: TypingUiText["room"];
 };
 
 export function TypingRoomParticipantsPanel({
@@ -17,6 +19,7 @@ export function TypingRoomParticipantsPanel({
   myParticipantId,
   locale,
   frameOverrides,
+  labels,
 }: TypingRoomParticipantsPanelProps) {
   return (
     <YeonView
@@ -29,7 +32,7 @@ export function TypingRoomParticipantsPanel({
         tone="inherit"
         className={TYPING_SERVICE_COMMON_CLASS.panelSubheading}
       >
-        참여자
+        {labels.currentParticipants}
       </YeonText>
       <YeonView className="grid grid-cols-2 gap-3">
         {participants.map((participant, index) => {
@@ -43,7 +46,7 @@ export function TypingRoomParticipantsPanel({
               identityKey={participant?.id ?? `empty-${index}`}
               title={
                 participant
-                  ? `${participant.label}${participant.id === myParticipantId ? " (나)" : ""}`
+                  ? `${participant.label}${participant.id === myParticipantId ? labels.meSuffix : ""}`
                   : undefined
               }
               subtitle={character ? character.label[locale] : undefined}
@@ -64,7 +67,7 @@ export function TypingRoomParticipantsPanel({
                       tone="inherit"
                       className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${participant.isReady ? "border border-[#111] bg-[#fafafa] text-[#111]" : "border border-[#e5e5e5] bg-white text-[#aaa]"}`}
                     >
-                      {participant.isReady ? "준비완료" : "대기중"}
+                      {participant.isReady ? labels.readyDone : labels.waiting}
                     </YeonText>
                     {participant.role === "host" ? (
                       <YeonText
@@ -73,13 +76,13 @@ export function TypingRoomParticipantsPanel({
                         tone="inherit"
                         className="inline-flex items-center gap-1 text-[11px] font-bold text-[#666]"
                       >
-                        <YeonIcon name="crown" size={13} /> 방장
+                        <YeonIcon name="crown" size={13} /> {labels.host}
                       </YeonText>
                     ) : null}
                   </YeonView>
                 ) : null
               }
-              emptyLabel="빈자리"
+              emptyLabel={labels.emptySlot}
             />
           );
         })}

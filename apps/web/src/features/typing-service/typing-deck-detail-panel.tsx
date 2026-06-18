@@ -19,6 +19,8 @@ import { TypingDeckForm } from "./typing-deck-form";
 import { typingDeckBadge, typingDeckLanguageLabel } from "./typing-deck-meta";
 import { TypingDeckPassageEditor } from "./typing-deck-passage-editor";
 import { TypingDeckPassageList } from "./typing-deck-passage-list";
+import { getTypingUiText } from "./typing-service-i18n";
+import { useTypingSettings } from "./use-typing-settings";
 
 export type TypingDeckDetailPanelProps = {
   deckId: string;
@@ -29,6 +31,8 @@ export function TypingDeckDetailPanel({
   deckId,
   adminMode = false,
 }: TypingDeckDetailPanelProps) {
+  const { settings } = useTypingSettings();
+  const deckText = getTypingUiText(settings.locale).deck;
   const detailQuery = useTypingDeckDetail(deckId, adminMode);
   const deleteDeck = useDeleteTypingDeck(adminMode);
   const [editingPassage, setEditingPassage] =
@@ -42,7 +46,7 @@ export function TypingDeckDetailPanel({
         tone="inherit"
         className={TYPING_SERVICE_COMMON_CLASS.panelMetaText}
       >
-        덱을 불러오는 중...
+        {deckText.loadingDeck}
       </YeonText>
     );
   }
@@ -54,14 +58,16 @@ export function TypingDeckDetailPanel({
         tone="inherit"
         className={TYPING_SERVICE_COMMON_CLASS.textError}
       >
-        덱을 불러오지 못했습니다.
+        {deckText.deckLoadError}
       </YeonText>
     );
   }
 
   const { deck, passages } = detailQuery.data;
   const readonly = !deck.canEdit;
-  const deleteDeckLabel = deleteDeck.isPending ? "삭제 중..." : "덱 삭제";
+  const deleteDeckLabel = deleteDeck.isPending
+    ? deckText.deleting
+    : deckText.deleteDeck;
 
   return (
     <YeonView className="space-y-5">
@@ -77,7 +83,7 @@ export function TypingDeckDetailPanel({
               >
                 {deck.title}
               </YeonText>
-              <YeonBadge>{typingDeckBadge(deck)}</YeonBadge>
+              <YeonBadge>{typingDeckBadge(deck, deckText)}</YeonBadge>
             </YeonView>
             <YeonText
               as="p"
@@ -85,7 +91,7 @@ export function TypingDeckDetailPanel({
               tone="inherit"
               className={`mt-2 leading-6 ${SHARED_FEATURE_CLASS.text13Neutral}`}
             >
-              {deck.description || "설명이 없습니다."}
+              {deck.description || deckText.noDescription}
             </YeonText>
             <YeonText
               as="p"
@@ -93,8 +99,8 @@ export function TypingDeckDetailPanel({
               tone="inherit"
               className={`mt-2 ${SHARED_FEATURE_CLASS.text12Soft}`}
             >
-              {typingDeckLanguageLabel(deck.languageTag)} · 문단{" "}
-              {passages.length}개
+              {typingDeckLanguageLabel(deck.languageTag, deckText)} ·{" "}
+              {deckText.passageCount(passages.length)}
             </YeonText>
           </YeonView>
           {!readonly ? (
@@ -133,7 +139,7 @@ export function TypingDeckDetailPanel({
               tone="inherit"
               className={TYPING_SERVICE_COMMON_CLASS.panelBodyTitle}
             >
-              문단 목록
+              {deckText.passageList}
             </YeonText>
             <YeonBadge>{passages.length}</YeonBadge>
           </YeonView>

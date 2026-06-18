@@ -18,6 +18,7 @@ import {
   useTypingSettings,
   type TypingRaceSeed,
 } from "./use-typing-settings";
+import { getTypingUiText } from "./typing-service-i18n";
 import { YeonText, YeonView } from "@yeon/ui";
 import {
   clearYeonTimeout,
@@ -31,6 +32,7 @@ export function TypingRacePlayScreen() {
   const { settings } = useTypingSettings();
   const deckState = useSelectedTypingDeck(settings.locale);
   const t = createTranslator(settings.locale);
+  const text = getTypingUiText(settings.locale);
   const playerId = usePlayerIdentity();
   const [fallbackToSolo, setFallbackToSolo] = useState(false);
   const [seedRefreshToken, setSeedRefreshToken] = useState(0);
@@ -86,7 +88,7 @@ export function TypingRacePlayScreen() {
             selectedDeckVisibility: deckState.selectedDeck.visibility,
             lobbyDeckTitle:
               deckState.selectedDeck.visibility === "private"
-                ? "비공개 덱"
+                ? text.settings.privateDeck
                 : deckState.selectedDeck.title,
             participantDeckTitle: deckState.selectedDeck.title,
             language:
@@ -102,6 +104,7 @@ export function TypingRacePlayScreen() {
       deckState.selectedDeck.title,
       deckState.selectedDeck.visibility,
       seedState,
+      text.settings.privateDeck,
     ]
   );
 
@@ -118,7 +121,7 @@ export function TypingRacePlayScreen() {
     quickRoom,
   });
 
-  // 연결 실패 시 솔로 모드로 fallback
+  // Fall back to solo mode when multiplayer connection is unavailable.
   useEffect(() => {
     if (race.connectionState === "connected" || race.connectionState === "idle")
       return;
@@ -159,7 +162,7 @@ export function TypingRacePlayScreen() {
   if (race.connectionState !== "connected" || !race.prompt) {
     return (
       <YeonView className={SHARED_FEATURE_CLASS.pageSurface}>
-        <TypingServiceHeader active="race" title="YEON 레이스" />
+        <TypingServiceHeader active="race" title={text.header.raceTitle} />
         <YeonView className="flex min-h-[calc(100vh-76px)] items-center justify-center">
           <YeonView
             className={`flex flex-col items-center gap-3 font-mono ${SHARED_FEATURE_CLASS.text13Soft}`}

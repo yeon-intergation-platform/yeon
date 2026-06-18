@@ -13,6 +13,7 @@ import { useCharacterFrameOverrides } from "./use-character-frame-overrides";
 import type { TypingProfile } from "./use-typing-profile";
 import type { TypingLocale } from "./use-typing-settings";
 import { TYPING_PROFILE_CARD_CLASS } from "./typing-profile-card.const";
+import { getTypingUiText } from "./typing-service-i18n";
 
 const CARD_DISPLAY_MAX_HEIGHT = 312;
 
@@ -37,6 +38,7 @@ export function TypingProfileCard({
   const [draft, setDraft] = useState(profile.nickname);
   const [expanded, setExpanded] = useState(false);
   const inputRef = useRef<YeonInputElement>(null);
+  const text = getTypingUiText(locale).profile;
 
   useEffect(() => {
     setDraft(profile.nickname);
@@ -105,8 +107,8 @@ export function TypingProfileCard({
             size="sm"
             className={TYPING_PROFILE_CARD_CLASS.nicknameButton}
             onClick={() => setIsEditing(true)}
-            aria-label="닉네임 편집"
-            title="닉네임 편집"
+            aria-label={text.editNickname}
+            title={text.editNickname}
           >
             {profile.nickname}
             <YeonText
@@ -130,7 +132,7 @@ export function TypingProfileCard({
           tone="inherit"
           className={TYPING_PROFILE_CARD_CLASS.characterGroupLabel}
         >
-          캐릭터 선택
+          {text.characterSelect}
         </YeonText>
         <YeonView className={TYPING_PROFILE_CARD_CLASS.characterListStack}>
           {featured.map((char) => (
@@ -169,14 +171,20 @@ export function TypingProfileCard({
           size="sm"
           className={TYPING_PROFILE_CARD_CLASS.characterToggle}
         >
-          {expanded ? "접기 ↑" : `더 보기 (${rest.length}개) ↓`}
+          {expanded ? text.collapse : text.showMore(rest.length)}
         </YeonButton>
       </YeonView>
     </YeonView>
   );
 }
 
-export function TypingProfileCardSkeleton() {
+export function TypingProfileCardSkeleton({
+  locale = "ko",
+}: {
+  locale?: TypingLocale;
+} = {}) {
+  const text = getTypingUiText(locale).profile;
+
   return (
     <YeonView className={TYPING_PROFILE_CARD_CLASS.root} aria-busy="true">
       <YeonView className={TYPING_PROFILE_CARD_CLASS.skeletonSpriteWrapper}>
@@ -186,7 +194,7 @@ export function TypingProfileCardSkeleton() {
           tone="inherit"
           className={TYPING_PROFILE_CARD_CLASS.skeletonText}
         >
-          프로필을 불러오는 중
+          {text.loading}
         </YeonText>
       </YeonView>
       <YeonView className={TYPING_PROFILE_CARD_CLASS.skeletonNickname}>

@@ -8,10 +8,14 @@ import {
   subscribeTypingBgm,
   toggleTypingBgm,
 } from "./typing-bgm-audio";
+import { getTypingUiText } from "./typing-service-i18n";
+import { useTypingSettings } from "./use-typing-settings";
 
 export function TypingBgmButton({
   showCredit = true,
 }: { showCredit?: boolean } = {}) {
+  const { settings } = useTypingSettings();
+  const text = getTypingUiText(settings.locale).bgm;
   const { playing, blocked } = useSyncExternalStore(
     subscribeTypingBgm,
     getTypingBgmSnapshot,
@@ -19,7 +23,7 @@ export function TypingBgmButton({
   );
 
   const iconName = playing ? "volume-2" : "volume-x";
-  const label = playing ? "BGM 끄기" : "BGM 켜기";
+  const label = playing ? text.turnOff : text.turnOn;
 
   return (
     <YeonView className={SHARED_FEATURE_CLASS.inlineItemsCenterGap2}>
@@ -37,7 +41,7 @@ export function TypingBgmButton({
       >
         <YeonIcon name={iconName} size={14} />
         <YeonText as="span" variant="unstyled" tone="inherit">
-          {playing ? "BGM ON" : "BGM"}
+          {playing ? text.on : text.off}
         </YeonText>
         {showCredit ? (
           <YeonText
@@ -46,7 +50,7 @@ export function TypingBgmButton({
             tone="inherit"
             className="hidden text-[11px] font-medium text-[#666] md:inline"
           >
-            배경음
+            {text.credit}
           </YeonText>
         ) : null}
       </YeonButton>
@@ -57,7 +61,7 @@ export function TypingBgmButton({
           tone="inherit"
           className="hidden text-[11px] text-[#666] md:inline"
         >
-          다시 눌러 재생해 주세요
+          {text.blocked}
         </YeonText>
       )}
     </YeonView>

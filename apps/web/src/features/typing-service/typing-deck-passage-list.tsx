@@ -12,6 +12,8 @@ import {
   type TypingDeckPassageDto,
   useDeleteTypingDeckPassage,
 } from "./use-typing-decks";
+import { getTypingUiText } from "./typing-service-i18n";
+import { useTypingSettings } from "./use-typing-settings";
 
 export type TypingDeckPassageListProps = {
   deckId: string;
@@ -28,6 +30,8 @@ export function TypingDeckPassageList({
   readonly,
   adminMode = false,
 }: TypingDeckPassageListProps) {
+  const { settings } = useTypingSettings();
+  const deckText = getTypingUiText(settings.locale).deck;
   const deletePassage = useDeleteTypingDeckPassage(deckId, adminMode);
 
   if (passages.length === 0) {
@@ -39,7 +43,7 @@ export function TypingDeckPassageList({
           tone="inherit"
           className={TYPING_SERVICE_COMMON_CLASS.panelTextEmphasis}
         >
-          아직 문단이 없습니다.
+          {deckText.noPassages}
         </YeonText>
         {!readonly ? (
           <YeonText
@@ -48,7 +52,7 @@ export function TypingDeckPassageList({
             tone="inherit"
             className={`mt-2 ${SHARED_FEATURE_CLASS.text13Neutral}`}
           >
-            직접 추가하거나 AI 붙여넣기로 여러 문단을 넣어보세요.
+            {deckText.noPassagesHelp}
           </YeonText>
         ) : null}
       </YeonSurface>
@@ -67,7 +71,7 @@ export function TypingDeckPassageList({
                 tone="inherit"
                 className="text-[12px] font-semibold text-[#aaa]"
               >
-                문단 {index + 1}
+                {deckText.passageNumber(index + 1)}
               </YeonText>
               <YeonText
                 as="h4"
@@ -75,7 +79,7 @@ export function TypingDeckPassageList({
                 tone="inherit"
                 className={`mt-1 ${TYPING_SERVICE_COMMON_CLASS.panelTextEmphasis15}`}
               >
-                {passage.title || "제목 없음"}
+                {passage.title || deckText.noTitle}
               </YeonText>
             </YeonView>
             {!readonly ? (
@@ -85,7 +89,7 @@ export function TypingDeckPassageList({
                   onClick={() => onEdit(passage)}
                   size="sm"
                 >
-                  수정
+                  {deckText.edit}
                 </YeonButton>
                 <YeonButton
                   type="button"
@@ -93,7 +97,7 @@ export function TypingDeckPassageList({
                   variant="danger"
                   size="sm"
                 >
-                  삭제
+                  {deckText.delete}
                 </YeonButton>
               </YeonView>
             ) : null}

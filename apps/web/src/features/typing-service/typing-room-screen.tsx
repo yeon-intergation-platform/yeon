@@ -34,11 +34,16 @@ import { TypingRoomParticipantsPanel } from "./typing-room-participants-panel";
 import { TypingRoomSettingsPanel } from "./typing-room-settings-panel";
 import { TypingRoomWaitingHeader } from "./typing-room-waiting-header";
 import {
-  TYPING_ROOM_DIFFICULTY_LABELS,
-  TYPING_ROOM_GAME_TYPE_LABELS,
-  TYPING_ROOM_LANGUAGE_LABELS,
-  TYPING_ROOM_TEXT_TYPE_LABELS,
-} from "./typing-room-labels";
+  getTypingUiText,
+  TYPING_ROOM_DIFFICULTY_LABELS_BY_LOCALE,
+  TYPING_ROOM_GAME_TYPE_LABELS_BY_LOCALE,
+  TYPING_ROOM_LANGUAGE_LABELS_BY_LOCALE,
+  TYPING_ROOM_MODE_LABELS_BY_LOCALE,
+  TYPING_ROOM_STATUS_LABELS_BY_LOCALE,
+  TYPING_ROOM_TEXT_TYPE_LABELS_BY_LOCALE,
+  TYPING_ROOM_VISIBILITY_LABELS_BY_LOCALE,
+  type TypingUiText,
+} from "./typing-service-i18n";
 import {
   resolveTypingRaceSeed,
   useSelectedTypingDeck,
@@ -117,6 +122,9 @@ type TerritoryLobbyPanelStateProps = {
 
 type TerritoryLobbyPanelDisplayProps = {
   roomSummary: string;
+  labels: TypingUiText["room"];
+  difficultyLabels: Record<TypingRoomDifficulty, string>;
+  gameTypeLabels: Record<TypingRoomGameType, string>;
 };
 
 type TerritoryLobbyPanelActionProps = {
@@ -143,10 +151,42 @@ type TerritoryLobbyPanelProps = TerritoryLobbyPanelStateProps &
   TerritoryLobbyPanelActionProps &
   TerritoryLobbyPanelChatProps;
 
+function localizeRoomSystemMessage(
+  content: string,
+  labels: TypingUiText["room"]
+) {
+  const normalized = content.trim();
+  if (normalized === "방이 생성되었습니다.") {
+    return labels.roomCreated;
+  }
+
+  const joined = normalized.match(/^(.+)님이 입장했습니다\.$/);
+  if (joined?.[1]) {
+    return labels.participantJoined(joined[1]);
+  }
+
+  const disconnected = normalized.match(
+    /^(.+)님과의 연결이 잠시 끊겼습니다\.$/
+  );
+  if (disconnected?.[1]) {
+    return labels.participantDisconnected(disconnected[1]);
+  }
+
+  const left = normalized.match(/^(.+)님이 퇴장했습니다\.$/);
+  if (left?.[1]) {
+    return labels.participantLeft(left[1]);
+  }
+
+  return content;
+}
+
 function TerritoryLobbyPanel({
   room,
   participants,
   roomSummary,
+  labels,
+  difficultyLabels,
+  gameTypeLabels,
   messages,
   isReady,
   isLeavingRoom,
@@ -167,18 +207,23 @@ function TerritoryLobbyPanel({
   const recentMessages = messages.slice(-5);
   const teamSlotCount = Math.max(4, Math.ceil(room.maxParticipants / 2));
   const nextTeamLabel =
-    myTeam === TERRITORY_BATTLE_TEAM.BLUE ? "1팀으로 이동" : "파랑팀으로 이동";
+    myTeam === TERRITORY_BATTLE_TEAM.BLUE
+      ? labels.moveToRedTeam
+      : labels.moveToBlueTeam;
   const roomInfo = [
-    ["방 종류", TYPING_ROOM_GAME_TYPE_LABELS[room.gameType]],
+    [labels.infoTitle, gameTypeLabels[room.gameType]],
     [
-      "게임 시간",
+      labels.gameTime,
       room.mode === TYPING_ROOM_MODE.TIME_LIMIT
-        ? "1분"
-        : `${room.roundCount}판`,
+        ? labels.timeLimitOneMinute
+        : labels.roundCountValue(room.roundCount),
     ],
-    ["난이도", TYPING_ROOM_DIFFICULTY_LABELS[room.difficulty]],
-    ["현재 인원", `${room.currentParticipants}/${room.maxParticipants}`],
-    ["진행 방식", isTerritoryRoom ? "팀 대전" : "개인 레이스"],
+    [labels.difficulty, difficultyLabels[room.difficulty]],
+    [
+      labels.currentParticipants,
+      `${room.currentParticipants}/${room.maxParticipants}`,
+    ],
+    [labels.flow, isTerritoryRoom ? labels.teamMatch : labels.soloRace],
   ];
 
   return (
@@ -197,7 +242,7 @@ function TerritoryLobbyPanel({
             tone="inherit"
             className="flex items-center gap-2 text-[18px] font-black tracking-[-0.02em] text-[#111]"
           >
-            방 정보
+            {labels.infoTitle}
             <YeonText
               as="span"
               variant="unstyled"
@@ -244,7 +289,7 @@ function TerritoryLobbyPanel({
               className="w-full rounded-lg px-4 py-3 text-[13px] font-black"
             >
               <YeonIcon name="arrow-left" size={14} />
-              {isLeavingRoom ? "나가는 중" : "방 나가기"}
+              {isLeavingRoom ? labels.leaving : labels.leaveRoom}
             </YeonButton>
             <YeonButton
               type="button"
@@ -253,7 +298,7 @@ function TerritoryLobbyPanel({
               size="md"
               className="w-full rounded-lg px-4 py-3 text-[13px] font-black"
             >
-              {isRoomToolsVisible ? "방 설정 닫기" : "방 설정 변경"}
+              {isRoomToolsVisible ? labels.closeSettings : labels.openSettings}
             </YeonButton>
           </YeonView>
         </YeonView>
@@ -268,7 +313,9 @@ function TerritoryLobbyPanel({
                 className="flex items-center gap-2 text-[20px] font-black tracking-[-0.03em] text-[#111]"
               >
                 <YeonIcon name={isTerritoryRoom ? "users" : "play"} size={21} />
-                {isTerritoryRoom ? "팀 대기실" : "참가자 대기실"}
+                {isTerritoryRoom
+                  ? labels.teamWaitingRoom
+                  : labels.participantWaitingRoom}
               </YeonText>
               <YeonText
                 as="p"
@@ -284,10 +331,11 @@ function TerritoryLobbyPanel({
               <>
                 <YeonView className="grid items-center gap-5 lg:grid-cols-[minmax(0,1fr)_56px_minmax(0,1fr)]">
                   <TerritoryTeamColumn
-                    title="1팀"
+                    title={labels.redTeam}
                     members={redTeam}
                     maxSlots={teamSlotCount}
                     tone="red"
+                    labels={labels}
                   />
                   <YeonView className="flex items-center justify-center py-1 lg:h-full">
                     <YeonText
@@ -300,10 +348,11 @@ function TerritoryLobbyPanel({
                     </YeonText>
                   </YeonView>
                   <TerritoryTeamColumn
-                    title="파랑팀"
+                    title={labels.blueTeam}
                     members={blueTeam}
                     maxSlots={teamSlotCount}
                     tone="blue"
+                    labels={labels}
                   />
                 </YeonView>
 
@@ -316,7 +365,8 @@ function TerritoryLobbyPanel({
                     title={nextTeamLabel}
                     className="min-w-[180px] rounded-lg px-5 py-3 text-[15px] font-black"
                   >
-                    <YeonIcon name="arrow-left" size={15} />팀 이동
+                    <YeonIcon name="arrow-left" size={15} />
+                    {labels.switchTeam}
                   </YeonButton>
                   <YeonButton
                     type="button"
@@ -325,7 +375,7 @@ function TerritoryLobbyPanel({
                     size="lg"
                     className="min-w-[220px] rounded-lg px-5 py-3 text-[15px] font-black"
                   >
-                    {isReady ? "준비 해제" : "준비하기"}
+                    {isReady ? labels.cancelReady : labels.ready}
                   </YeonButton>
                 </YeonView>
               </>
@@ -333,6 +383,7 @@ function TerritoryLobbyPanel({
               <StandardRoomParticipantList
                 participants={participants}
                 maxSlots={room.maxParticipants}
+                labels={labels}
               />
             )}
           </YeonView>
@@ -345,7 +396,7 @@ function TerritoryLobbyPanel({
               className="flex items-center gap-2 text-[16px] font-black text-[#111]"
             >
               <YeonIcon name="message-circle" size={18} />
-              채팅
+              {labels.chat}
             </YeonText>
             <YeonView className="mt-3 h-[112px] overflow-y-auto rounded-lg border border-[#e5e5e5] bg-[#fafafa] p-3 text-[12px] leading-5 text-[#666]">
               {recentMessages.length ? (
@@ -358,24 +409,26 @@ function TerritoryLobbyPanel({
                     className="truncate"
                   >
                     {message.messageType === "system"
-                      ? "[시스템]"
-                      : `[${message.senderLabel ?? "참가자"}]`}{" "}
-                    {message.content}
+                      ? `[${labels.system}]`
+                      : `[${message.senderLabel ?? labels.participant}]`}{" "}
+                    {message.messageType === "system"
+                      ? localizeRoomSystemMessage(message.content, labels)
+                      : message.content}
                   </YeonText>
                 ))
               ) : (
                 <>
                   <YeonText as="p" variant="unstyled" tone="inherit">
-                    [시스템]{" "}
+                    [{labels.system}]{" "}
                     {isTerritoryRoom
-                      ? "점령전 대기방에 입장했습니다."
-                      : "일반 타자방에 입장했습니다."}
+                      ? labels.territoryEntered
+                      : labels.standardEntered}
                   </YeonText>
                   <YeonText as="p" variant="unstyled" tone="inherit">
-                    [시스템]{" "}
+                    [{labels.system}]{" "}
                     {isTerritoryRoom
-                      ? "팀을 정하고 준비를 눌러 주세요."
-                      : "참가자가 준비되면 시작할 수 있어요."}
+                      ? labels.chooseTeamReady
+                      : labels.readyToStart}
                   </YeonText>
                 </>
               )}
@@ -384,7 +437,7 @@ function TerritoryLobbyPanel({
               <YeonField
                 value={chatDraft}
                 onChange={(event) => onChatDraftChange(event.target.value)}
-                placeholder="메시지 입력..."
+                placeholder={labels.messagePlaceholder}
                 className="h-10 flex-1 rounded-lg px-3 text-[13px]"
                 onKeyDown={(event) => {
                   if (event.key === "Enter" && !event.shiftKey) {
@@ -400,7 +453,7 @@ function TerritoryLobbyPanel({
                 variant="primary"
                 size="md"
                 className="h-10 shrink-0 rounded-lg px-4"
-                aria-label="채팅 보내기"
+                aria-label={labels.sendChat}
               >
                 <YeonIcon name="send" size={16} />
               </YeonButton>
@@ -427,11 +480,13 @@ type TerritoryTeamColumnProps = {
   members: TerritoryLobbyParticipant[];
   maxSlots: number;
   tone: "red" | "blue";
+  labels: TypingUiText["room"];
 };
 
 type StandardRoomParticipantListProps = {
   participants: TerritoryLobbyParticipant[];
   maxSlots: number;
+  labels: TypingUiText["room"];
 };
 
 function isTerritoryLobbyMember(
@@ -467,6 +522,7 @@ function partitionTerritoryParticipants(
 function StandardRoomParticipantList({
   participants,
   maxSlots,
+  labels,
 }: StandardRoomParticipantListProps) {
   const slots = Array.from(
     { length: maxSlots },
@@ -500,7 +556,7 @@ function StandardRoomParticipantList({
                 tone="inherit"
                 className="truncate text-[14px] font-black text-[#111]"
               >
-                {participant?.label ?? "빈 자리"}
+                {participant?.label ?? labels.emptySlot}
               </YeonText>
               <YeonText
                 as="p"
@@ -510,11 +566,11 @@ function StandardRoomParticipantList({
               >
                 {participant
                   ? participant.role === "host"
-                    ? "방장"
+                    ? labels.host
                     : participant.isReady
-                      ? "준비 완료"
-                      : "대기 중"
-                  : "초대 가능"}
+                      ? labels.readyDone
+                      : labels.waiting
+                  : labels.inviteAvailable}
               </YeonText>
             </YeonView>
           </YeonView>
@@ -529,6 +585,7 @@ function TerritoryTeamColumn({
   members,
   maxSlots,
   tone,
+  labels,
 }: TerritoryTeamColumnProps) {
   const slots = Array.from(
     { length: maxSlots },
@@ -578,7 +635,7 @@ function TerritoryTeamColumn({
               tone="inherit"
               className="truncate text-[14px] font-black text-[#111]"
             >
-              {member?.label ?? "빈 자리"}
+              {member?.label ?? labels.emptySlot}
             </YeonText>
             {member ? (
               <YeonText
@@ -588,10 +645,10 @@ function TerritoryTeamColumn({
                 className="rounded-md border border-[#d7d7d7] px-2 py-1 text-[11px] font-black text-[#555]"
               >
                 {member.role === "host"
-                  ? "방장"
+                  ? labels.host
                   : member.isReady
-                    ? "준비"
-                    : "대기"}
+                    ? labels.readyShort
+                    : labels.waitingShort}
               </YeonText>
             ) : (
               <YeonIcon name="plus" size={16} className="text-[#999]" />
@@ -620,10 +677,6 @@ function parseNumber(
   return allowed.includes(parsed) ? parsed : fallback;
 }
 
-function parseModeLabel(mode: TypingRoomMode) {
-  return mode === TYPING_ROOM_MODE.TIME_LIMIT ? "시간 제한" : "완주 모드";
-}
-
 function buildRoomSummary({
   language,
   textType,
@@ -631,6 +684,11 @@ function buildRoomSummary({
   roundCount,
   mode,
   deckTitle,
+  labels,
+  languageLabels,
+  textTypeLabels,
+  difficultyLabels,
+  modeLabels,
 }: {
   language: TypingRoomLanguage;
   textType: TypingRoomTextType;
@@ -638,13 +696,18 @@ function buildRoomSummary({
   roundCount: number;
   mode: TypingRoomMode;
   deckTitle: string;
+  labels: TypingUiText["room"];
+  languageLabels: Record<TypingRoomLanguage, string>;
+  textTypeLabels: Record<TypingRoomTextType, string>;
+  difficultyLabels: Record<TypingRoomDifficulty, string>;
+  modeLabels: Record<TypingRoomMode, string>;
 }) {
   return [
-    TYPING_ROOM_LANGUAGE_LABELS[language],
-    TYPING_ROOM_TEXT_TYPE_LABELS[textType],
-    TYPING_ROOM_DIFFICULTY_LABELS[difficulty],
-    `${roundCount}판`,
-    parseModeLabel(mode),
+    languageLabels[language],
+    textTypeLabels[textType],
+    difficultyLabels[difficulty],
+    labels.roundCountValue(roundCount),
+    modeLabels[mode],
     deckTitle,
   ].join(" · ");
 }
@@ -665,10 +728,7 @@ function useCreateRoomOptions(): DeckAwareCreateMessage {
 
     return {
       selectedDeckId: searchParams.get("selectedDeckId") ?? undefined,
-      title: (searchParams.get("title") || "한글 짧은 문장 같이 치기").slice(
-        0,
-        40
-      ),
+      title: (searchParams.get("title") || "Typing Practice Room").slice(0, 40),
       visibility: parseEnum<TypingRoomVisibility>(
         searchParams.get("visibility"),
         [TYPING_ROOM_VISIBILITY.PUBLIC, TYPING_ROOM_VISIBILITY.PRIVATE],
@@ -721,6 +781,19 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
   const router = useYeonRouter();
   const { profile, loaded: profileLoaded } = useTypingProfile();
   const { settings } = useTypingSettings();
+  const text = getTypingUiText(settings.locale);
+  const roomText = text.room;
+  const languageLabels = TYPING_ROOM_LANGUAGE_LABELS_BY_LOCALE[settings.locale];
+  const textTypeLabels =
+    TYPING_ROOM_TEXT_TYPE_LABELS_BY_LOCALE[settings.locale];
+  const difficultyLabels =
+    TYPING_ROOM_DIFFICULTY_LABELS_BY_LOCALE[settings.locale];
+  const modeLabels = TYPING_ROOM_MODE_LABELS_BY_LOCALE[settings.locale];
+  const gameTypeLabels =
+    TYPING_ROOM_GAME_TYPE_LABELS_BY_LOCALE[settings.locale];
+  const visibilityLabels =
+    TYPING_ROOM_VISIBILITY_LABELS_BY_LOCALE[settings.locale];
+  const statusLabels = TYPING_ROOM_STATUS_LABELS_BY_LOCALE[settings.locale];
   const playerId = usePlayerIdentity();
   const createRoomOptions = useCreateRoomOptions();
   const deckState = useSelectedTypingDeck(createRoomOptions.language);
@@ -804,7 +877,7 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
         selectedDeckVisibility: selectedDeck.visibility,
         lobbyDeckTitle:
           selectedDeck.visibility === "private"
-            ? "비공개 덱"
+            ? roomText.privateDeck
             : selectedDeck.title,
         participantDeckTitle: selectedDeck.title,
         raceSeed: seedState.seed ?? undefined,
@@ -902,7 +975,7 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
     try {
       const copiedSuccessfully = await copyYeonClipboardText(inviteUrl);
       if (!copiedSuccessfully) {
-        throw new Error("클립보드 복사를 지원하지 않습니다.");
+        throw new Error(roomText.copyUnsupported);
       }
       trackEvent("room_invite_copy", {
         source: "typing_room",
@@ -913,9 +986,9 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
       setCopyError(null);
       scheduleYeonTimeout(() => setCopied(false), 1600);
     } catch (error) {
-      console.warn("[typing-room] 초대 링크 복사 실패", error);
+      console.warn("[typing-room] invite link copy failed", error);
       setCopied(false);
-      setCopyError("링크를 복사할 수 없습니다.");
+      setCopyError(roomText.copyError);
     }
   };
 
@@ -937,9 +1010,7 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
   const onChatDraftChange = useCallback((value: string) => {
     setChatDraft(value);
     if (value.length > MAX_LOBBY_CHAT_LENGTH) {
-      setChatError(
-        `채팅은 최대 ${MAX_LOBBY_CHAT_LENGTH}자까지 보낼 수 있어요.`
-      );
+      setChatError(roomText.chatTooLong(MAX_LOBBY_CHAT_LENGTH));
       return;
     }
     setChatError(null);
@@ -950,9 +1021,7 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
       return;
     }
     if (chatDraft.length > MAX_LOBBY_CHAT_LENGTH) {
-      setChatError(
-        `채팅은 최대 ${MAX_LOBBY_CHAT_LENGTH}자까지 보낼 수 있어요.`
-      );
+      setChatError(roomText.chatTooLong(MAX_LOBBY_CHAT_LENGTH));
       return;
     }
 
@@ -980,7 +1049,7 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
       sendSetting({
         selectedDeckId: deckId,
         selectedDeckVisibility: targetDeck.visibility,
-        lobbyDeckTitle: normalizeDeckTitle(targetDeck),
+        lobbyDeckTitle: normalizeDeckTitle(targetDeck, roomText.privateDeck),
         raceSeed: result.seed,
       });
     },
@@ -1095,7 +1164,8 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
     room?.selectedDeckId,
   ]);
 
-  const roomDeckTitle = room?.lobbyDeckTitle ?? "기본 타자 문장";
+  const roomDeckTitle =
+    room?.lobbyDeckTitle ?? text.settings.selectedPracticeDeck;
   const frameOverrides = useCharacterFrameOverrides();
   const summaryLanguage =
     room?.language ?? createRoomOptions.language ?? TYPING_ROOM_LANGUAGE.KO;
@@ -1116,6 +1186,11 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
     roundCount: summaryRoundCount,
     mode: summaryMode,
     deckTitle: roomDeckTitle,
+    labels: roomText,
+    languageLabels,
+    textTypeLabels,
+    difficultyLabels,
+    modeLabels,
   });
 
   const participants = useMemo(() => {
@@ -1133,18 +1208,21 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
 
   const messages = useMemo(() => room?.messages ?? [], [room?.messages]);
   const waitingStateLabel =
-    room?.status === TYPING_ROOM_STATUS.WAITING ? "대기중" : room?.status;
+    room?.status === TYPING_ROOM_STATUS.WAITING
+      ? roomText.waitingState
+      : room
+        ? statusLabels[room.status]
+        : undefined;
 
   if (mode === "create" && seedState.kind === "loading") {
-    return (
-      <TypingRoomLoadingState message="선택한 덱에서 레이스 문장을 준비하는 중..." />
-    );
+    return <TypingRoomLoadingState message={roomText.selectedDeckLoading} />;
   }
 
   if (mode === "create" && seedState.kind === "error") {
     return (
       <TypingRoomSeedErrorState
         message={seedState.message}
+        labels={roomText}
         onRetry={() => setSeedRetryToken((value) => value + 1)}
         onUseDefaultDeck={() => setUseDefaultFallback(true)}
       />
@@ -1155,9 +1233,7 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
     return (
       <TypingRoomLoadingState
         message={
-          mode === "create"
-            ? "타자방을 만드는 중..."
-            : "타자방에 입장하는 중..."
+          mode === "create" ? roomText.createLoading : roomText.joinLoading
         }
       />
     );
@@ -1169,10 +1245,8 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
   ) {
     return (
       <TypingRoomConnectionErrorState
-        message={
-          race.roomError ??
-          "방이 이미 시작되었거나 서버 연결이 끊겼을 수 있어요."
-        }
+        message={race.roomError ?? roomText.alreadyStarted}
+        labels={roomText}
       />
     );
   }
@@ -1186,7 +1260,7 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
       className={SHARED_FEATURE_CLASS.pageSurface}
       onClickCapture={onRoomNavigationClickCapture}
     >
-      <TypingServiceHeader active="rooms" title="타자방" />
+      <TypingServiceHeader active="rooms" title={text.header.roomsTitle} />
 
       <YeonView
         as="main"
@@ -1195,7 +1269,10 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
         <TypingRoomWaitingHeader
           room={room}
           roomSummary={roomSummary}
-          waitingStateLabel={waitingStateLabel ?? "대기중"}
+          waitingStateLabel={waitingStateLabel ?? roomText.waitingState}
+          labels={roomText}
+          gameTypeLabels={gameTypeLabels}
+          visibilityLabels={visibilityLabels}
           copyError={copyError}
           copied={copied}
           isHost={isHost}
@@ -1215,6 +1292,9 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
           room={room}
           participants={participants}
           roomSummary={roomSummary}
+          labels={roomText}
+          difficultyLabels={difficultyLabels}
+          gameTypeLabels={gameTypeLabels}
           messages={messages}
           isReady={isReady}
           isLeavingRoom={isLeavingRoom}
@@ -1244,6 +1324,12 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
               roomDeckTitle={roomDeckTitle}
               deckOptions={deckOptions}
               settingsError={settingsError}
+              labels={roomText}
+              visibilityLabels={visibilityLabels}
+              languageLabels={languageLabels}
+              textTypeLabels={textTypeLabels}
+              difficultyLabels={difficultyLabels}
+              modeLabels={modeLabels}
               onSendSetting={sendSetting}
               onDeckChange={onDeckChange}
             />
@@ -1254,6 +1340,7 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
                 myParticipantId={me?.id ?? null}
                 locale={settings.locale}
                 frameOverrides={frameOverrides}
+                labels={roomText}
               />
               <RoomVoiceCallPanel voiceCall={voiceCall} />
             </YeonView>

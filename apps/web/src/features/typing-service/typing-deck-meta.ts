@@ -6,6 +6,7 @@ import {
   type TypingDeckScope,
   type TypingDeckVisibility,
 } from "./use-typing-decks";
+import type { TypingUiText } from "./typing-service-i18n";
 
 export type TypingDeckScopeTab = {
   value: TypingDeckScope;
@@ -30,17 +31,32 @@ function getOptionLabel<T extends string>(
   return options.find((option) => option.value === value)?.label ?? value;
 }
 
-export function typingDeckLanguageLabel(languageTag: TypingDeckLanguageTag) {
+export function typingDeckLanguageLabel(
+  languageTag: TypingDeckLanguageTag,
+  labels?: TypingUiText["deck"]
+) {
+  if (labels) {
+    return labels.language[languageTag];
+  }
   return getOptionLabel(TYPING_DECK_LANGUAGE_OPTIONS, languageTag);
 }
 
-export function typingDeckVisibilityLabel(visibility: TypingDeckVisibility) {
+export function typingDeckVisibilityLabel(
+  visibility: TypingDeckVisibility,
+  labels?: TypingUiText["deck"]
+) {
+  if (labels) {
+    return labels.visibility[visibility];
+  }
   return getOptionLabel(TYPING_DECK_VISIBILITY_OPTIONS, visibility);
 }
 
-export function typingDeckBadge(deck: TypingDeckDto) {
+export function typingDeckBadge(
+  deck: TypingDeckDto,
+  labels?: TypingUiText["deck"]
+) {
   if (deck.source === "default") {
-    return "기본";
+    return labels?.defaultBadge ?? "기본";
   }
-  return typingDeckVisibilityLabel(deck.visibility);
+  return typingDeckVisibilityLabel(deck.visibility, labels);
 }

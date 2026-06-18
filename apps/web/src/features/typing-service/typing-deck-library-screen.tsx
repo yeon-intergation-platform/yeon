@@ -2,7 +2,7 @@
 import { YEON_WEB_SHARED_CLASS as SHARED_FEATURE_CLASS } from "@yeon/ui/theme/web-style-tokens";
 import { TYPING_SERVICE_COMMON_CLASS } from "./typing-service-common.const";
 import { useYeonRouter } from "@yeon/ui/runtime/YeonNavigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   YeonButton,
   YeonField,
@@ -17,21 +17,29 @@ import {
 } from "@yeon/ui";
 import { trackEvent } from "@/lib/analytics";
 import {
-  TYPING_DECK_LANGUAGE_OPTIONS,
   type TypingDeckDto,
   type TypingDeckLanguageTag,
   type TypingDeckScope,
   useTypingDecks,
 } from "./use-typing-decks";
-import {
-  TYPING_DECK_SCOPE_TABS,
-  TypingDeckForm,
-  typingDeckBadge,
-  typingDeckLanguageLabel,
-} from "./typing-decks-screen";
+import { TypingDeckForm } from "./typing-deck-components";
+import { typingDeckBadge, typingDeckLanguageLabel } from "./typing-deck-meta";
 import { TypingServiceHeader } from "./typing-service-header";
+import { getTypingUiText, type TypingUiText } from "./typing-service-i18n";
+import { useTypingSettings } from "./use-typing-settings";
 
 const ALL_LANGUAGE_FILTER = "all";
+const TYPING_DECK_LIBRARY_SCOPES: TypingDeckScope[] = [
+  "default",
+  "mine",
+  "public",
+];
+const TYPING_DECK_LANGUAGE_FILTERS: TypingDeckLanguageTag[] = [
+  "ko",
+  "en",
+  "mixed",
+  "code",
+];
 type LanguageFilter = TypingDeckLanguageTag | typeof ALL_LANGUAGE_FILTER;
 
 type TypingDeckLibraryScreenProps = {
@@ -42,15 +50,19 @@ function normalizeSearchText(value: string) {
   return value.trim().toLocaleLowerCase();
 }
 
-function deckMatchesSearch(deck: TypingDeckDto, searchText: string) {
+function deckMatchesSearch(
+  deck: TypingDeckDto,
+  searchText: string,
+  labels: TypingUiText["deck"]
+) {
   if (!searchText) {
     return true;
   }
   const haystack = [
     deck.title,
     deck.description ?? "",
-    typingDeckBadge(deck),
-    typingDeckLanguageLabel(deck.languageTag),
+    typingDeckBadge(deck, labels),
+    typingDeckLanguageLabel(deck.languageTag, labels),
   ]
     .join(" ")
     .toLocaleLowerCase();
@@ -61,11 +73,17 @@ function deckMatchesLanguage(deck: TypingDeckDto, language: LanguageFilter) {
   return language === ALL_LANGUAGE_FILTER || deck.languageTag === language;
 }
 
+function resolveInitialLanguageFilter(locale: "ko" | "en"): LanguageFilter {
+  return locale === "en" ? "en" : ALL_LANGUAGE_FILTER;
+}
+
 function DeckLibraryEmptyState({
   hasAnyDecks,
+  labels,
   onCreate,
 }: {
   hasAnyDecks: boolean;
+  labels: TypingUiText["deck"];
   onCreate: () => void;
 }) {
   return (
@@ -77,7 +95,7 @@ function DeckLibraryEmptyState({
           tone="inherit"
           className={`${TYPING_SERVICE_COMMON_CLASS.panelBodyTitle} break-keep tracking-[-0.02em]`}
         >
-          {hasAnyDecks ? "조건에 맞는 덱이 없습니다." : "아직 덱이 없습니다."}
+          {hasAnyDecks ? labels.emptyFilteredList : labels.emptyList}
         </YeonText>
         <YeonText
           as="p"
@@ -85,9 +103,7 @@ function DeckLibraryEmptyState({
           tone="inherit"
           className={`mt-2 break-keep ${TYPING_SERVICE_COMMON_CLASS.textBody14Neutral}`}
         >
-          {hasAnyDecks
-            ? "검색어나 필터를 줄이면 더 많은 연습 덱을 볼 수 있습니다."
-            : "내가 자주 연습할 문장 묶음을 만들고 바로 연습을 시작하세요."}
+          {hasAnyDecks ? labels.emptyFilteredListHelp : labels.emptyListHelp}
         </YeonText>
         <YeonButton
           type="button"
@@ -96,7 +112,7 @@ function DeckLibraryEmptyState({
           size="lg"
           className="mt-5"
         >
-          새 덱 만들기
+          {labels.createDeck}
         </YeonButton>
       </YeonView>
     </YeonView>
@@ -106,9 +122,11 @@ function DeckLibraryEmptyState({
 function DeckLibraryCard({
   deck,
   activeScope,
+  labels,
 }: {
   deck: TypingDeckDto;
   activeScope: TypingDeckScope;
+  labels: TypingUiText["deck"];
 }) {
   const detailHref = `/typing-service/decks/${deck.id}`;
   const practiceHref = `/typing-service/practice?deckId=${encodeURIComponent(deck.id)}`;
@@ -137,7 +155,7 @@ function DeckLibraryCard({
     >
       <YeonLink
         href={detailHref}
-        aria-label={`${deck.title} 자세히 보기`}
+        aria-label={labels.detailAriaLabel(deck.title)}
         className="absolute inset-0 rounded-3xl"
         onClick={handleDeckOpen}
       />
@@ -151,7 +169,7 @@ function DeckLibraryCard({
             tone="inherit"
             className="rounded-full border border-[#e5e5e5] px-2.5 py-1"
           >
-            {typingDeckBadge(deck)}
+            {typingDeckBadge(deck, labels)}
           </YeonText>
         )}
         <YeonText
@@ -160,7 +178,7 @@ function DeckLibraryCard({
           tone="inherit"
           className="rounded-full border border-[#e5e5e5] px-2.5 py-1"
         >
-          {typingDeckLanguageLabel(deck.languageTag)}
+          {typingDeckLanguageLabel(deck.languageTag, labels)}
         </YeonText>
         {deck.isOwner ? (
           <YeonText
@@ -169,7 +187,7 @@ function DeckLibraryCard({
             tone="inherit"
             className="rounded-full border border-[#e5e5e5] px-2.5 py-1"
           >
-            내 덱
+            {labels.ownedDeck}
           </YeonText>
         ) : null}
       </YeonView>
@@ -189,8 +207,7 @@ function DeckLibraryCard({
           tone="inherit"
           className={`mt-3 line-clamp-2 break-keep ${TYPING_SERVICE_COMMON_CLASS.textBody14Neutral}`}
         >
-          {deck.description ||
-            "설명이 없는 덱입니다. 문단 구성을 확인하고 바로 연습해보세요."}
+          {deck.description || labels.noDescriptionPractice}
         </YeonText>
       </YeonView>
 
@@ -201,7 +218,7 @@ function DeckLibraryCard({
           tone="inherit"
           className={SHARED_FEATURE_CLASS.text13EmphasisSubtle}
         >
-          문단 {deck.passageCount ?? 0}개
+          {labels.passageCount(deck.passageCount ?? 0)}
         </YeonText>
         <YeonLink
           href={practiceHref}
@@ -213,7 +230,7 @@ function DeckLibraryCard({
             })
           }
         >
-          연습하기
+          {labels.practiceNow}
         </YeonLink>
       </YeonView>
     </YeonView>
@@ -222,9 +239,11 @@ function DeckLibraryCard({
 
 function CreateDeckModal({
   open,
+  labels,
   onClose,
 }: {
   open: boolean;
+  labels: TypingUiText["deck"];
   onClose: () => void;
 }) {
   const router = useYeonRouter();
@@ -237,7 +256,7 @@ function CreateDeckModal({
     <YeonModal
       visible
       onRequestClose={onClose}
-      aria-label="새 덱 만들기"
+      aria-label={labels.createDeck}
       className={`fixed inset-0 z-50 m-0 flex h-auto max-h-none w-auto max-w-none items-center justify-center border-0 p-0 ${YEON_WEB_OVERLAY_CLASS.scrimSubtle}`}
     >
       <YeonView
@@ -254,7 +273,7 @@ function CreateDeckModal({
               tone="inherit"
               className={TYPING_SERVICE_COMMON_CLASS.mutedInfoEmphasis}
             >
-              내 덱
+              {labels.createModalEyebrow}
             </YeonText>
             <YeonText
               as="h2"
@@ -262,7 +281,7 @@ function CreateDeckModal({
               tone="inherit"
               className="mt-1 text-[22px] font-semibold tracking-[-0.03em] text-[#111]"
             >
-              새 덱 만들기
+              {labels.createDeck}
             </YeonText>
             <YeonText
               as="p"
@@ -270,8 +289,7 @@ function CreateDeckModal({
               tone="inherit"
               className={`${SHARED_FEATURE_CLASS.text13Neutral} mt-2 break-keep leading-5`}
             >
-              제목과 언어만 정하면 시작할 수 있어요. 문단은 만든 뒤 이어서
-              채웁니다.
+              {labels.createModalHelp}
             </YeonText>
           </YeonView>
           <YeonButton
@@ -281,7 +299,7 @@ function CreateDeckModal({
             size="sm"
             className={`rounded-xl px-3 py-2 ${SHARED_FEATURE_CLASS.text13EmphasisMuted}`}
           >
-            닫기
+            {labels.close}
           </YeonButton>
         </YeonView>
         <TypingDeckForm
@@ -299,9 +317,12 @@ function CreateDeckModal({
 export function TypingDeckLibraryScreen({
   showAdminEntry = false,
 }: TypingDeckLibraryScreenProps) {
+  const { settings } = useTypingSettings();
+  const labels = getTypingUiText(settings.locale).deck;
   const [scope, setScope] = useState<TypingDeckScope>("default");
-  const [languageFilter, setLanguageFilter] =
-    useState<LanguageFilter>(ALL_LANGUAGE_FILTER);
+  const [languageFilter, setLanguageFilter] = useState<LanguageFilter>(() =>
+    resolveInitialLanguageFilter(settings.locale)
+  );
   const [search, setSearch] = useState("");
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const decksQuery = useTypingDecks(scope);
@@ -311,13 +332,17 @@ export function TypingDeckLibraryScreen({
     () =>
       decks.filter(
         (deck) =>
-          deckMatchesSearch(deck, normalizedSearch) &&
+          deckMatchesSearch(deck, normalizedSearch, labels) &&
           deckMatchesLanguage(deck, languageFilter)
       ),
-    [decks, languageFilter, normalizedSearch]
+    [decks, labels, languageFilter, normalizedSearch]
   );
   const hasFilteredDecks = Boolean(filteredDecks[0]);
   const hasAnyDecks = Boolean(decks[0]);
+  useEffect(() => {
+    setLanguageFilter(resolveInitialLanguageFilter(settings.locale));
+  }, [settings.locale]);
+
   const openCreateModal = (source: string) => {
     setCreateModalOpen(true);
     trackEvent("typing_deck_create_open", {
@@ -331,7 +356,7 @@ export function TypingDeckLibraryScreen({
     <YeonView className={SHARED_FEATURE_CLASS.pageSurface}>
       <TypingServiceHeader
         active="decks"
-        title="YEON 연습덱"
+        title={labels.title}
         controls={
           <>
             {showAdminEntry ? (
@@ -339,7 +364,7 @@ export function TypingDeckLibraryScreen({
                 href="/admin/typing-decks"
                 className={`rounded-xl border border-[#e5e5e5] px-4 py-2 ${SHARED_FEATURE_CLASS.text13Emphasis} no-underline transition-colors hover:border-[#111]`}
               >
-                관리자
+                {labels.adminEntry}
               </YeonLink>
             ) : null}
             <YeonButton
@@ -348,7 +373,7 @@ export function TypingDeckLibraryScreen({
               variant="primary"
               size="md"
             >
-              새 덱 만들기
+              {labels.createDeck}
             </YeonButton>
           </>
         }
@@ -366,7 +391,7 @@ export function TypingDeckLibraryScreen({
               tone="inherit"
               className={TYPING_SERVICE_COMMON_CLASS.mutedInfoEmphasis}
             >
-              덱 라이브러리
+              {labels.libraryEyebrow}
             </YeonText>
             <YeonText
               as="h1"
@@ -374,7 +399,7 @@ export function TypingDeckLibraryScreen({
               tone="inherit"
               className={`${SHARED_FEATURE_CLASS.text34Emphasis} mt-1 tracking-[-0.04em] md:text-[42px]`}
             >
-              연습할 덱을 고르세요
+              {labels.libraryTitle}
             </YeonText>
             <YeonText
               as="p"
@@ -382,7 +407,7 @@ export function TypingDeckLibraryScreen({
               tone="inherit"
               className="mt-3 max-w-[680px] break-keep text-[15px] leading-7 text-[#666]"
             >
-              기본 덱, 내 덱, 공개 덱을 한 곳에서 찾아 바로 연습하세요.
+              {labels.libraryDescription}
             </YeonText>
           </YeonView>
           <YeonView className="grid grid-cols-1 gap-2 sm:grid-cols-3 md:flex md:flex-wrap">
@@ -393,13 +418,13 @@ export function TypingDeckLibraryScreen({
               size="lg"
               className="text-center"
             >
-              새 덱 만들기
+              {labels.createDeck}
             </YeonButton>
             <YeonLink
               href="/typing-service"
               className={`${TYPING_SERVICE_COMMON_CLASS.panelGhostButton} text-center`}
             >
-              타자연습 홈으로
+              {labels.homeLink}
             </YeonLink>
             <YeonLink
               href="/typing-service/practice"
@@ -411,7 +436,7 @@ export function TypingDeckLibraryScreen({
                 })
               }
             >
-              자유 연습으로 이동
+              {labels.practiceLink}
             </YeonLink>
           </YeonView>
         </YeonView>
@@ -428,12 +453,12 @@ export function TypingDeckLibraryScreen({
                 tone="inherit"
                 className="sr-only"
               >
-                덱 검색
+                {labels.searchLabel}
               </YeonText>
               <YeonField
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
-                placeholder="덱 제목, 설명, 언어로 검색"
+                placeholder={labels.searchPlaceholder}
                 className={`${SHARED_FEATURE_CLASS.text15Primary} border-0 bg-transparent p-0 placeholder:text-[#aaa] focus:border-transparent`}
               />
             </YeonLabel>
@@ -444,7 +469,7 @@ export function TypingDeckLibraryScreen({
                 tone="inherit"
                 className="sr-only"
               >
-                언어 필터
+                {labels.languageFilter}
               </YeonText>
               <YeonField
                 as="select"
@@ -454,10 +479,12 @@ export function TypingDeckLibraryScreen({
                 }
                 className="border-0 bg-transparent p-0 text-[14px] font-semibold focus:border-transparent"
               >
-                <YeonOption value={ALL_LANGUAGE_FILTER}>모든 언어</YeonOption>
-                {TYPING_DECK_LANGUAGE_OPTIONS.map((option) => (
-                  <YeonOption key={option.value} value={option.value}>
-                    {option.label}
+                <YeonOption value={ALL_LANGUAGE_FILTER}>
+                  {labels.allLanguages}
+                </YeonOption>
+                {TYPING_DECK_LANGUAGE_FILTERS.map((language) => (
+                  <YeonOption key={language} value={language}>
+                    {labels.language[language]}
                   </YeonOption>
                 ))}
               </YeonField>
@@ -467,21 +494,25 @@ export function TypingDeckLibraryScreen({
           <YeonView className="mt-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <YeonView
               role="tablist"
-              aria-label="덱 범위"
+              aria-label={labels.scopeAriaLabel}
               className="inline-flex flex-wrap gap-1 rounded-2xl border border-[#e5e5e5] bg-white p-1"
             >
-              {TYPING_DECK_SCOPE_TABS.map((tab) => (
+              {TYPING_DECK_LIBRARY_SCOPES.map((scopeValue) => (
                 <YeonButton
-                  key={tab.value}
+                  key={scopeValue}
                   type="button"
                   role="tab"
-                  aria-selected={scope === tab.value}
-                  onClick={() => setScope(tab.value)}
-                  variant={scope === tab.value ? "primary" : "ghost"}
+                  aria-selected={scope === scopeValue}
+                  onClick={() => setScope(scopeValue)}
+                  variant={scope === scopeValue ? "primary" : "ghost"}
                   size="md"
                   className="min-h-11 rounded-xl px-4 py-2 text-[13px]"
                 >
-                  {tab.label}
+                  {scopeValue === "default"
+                    ? labels.defaultScope
+                    : scopeValue === "mine"
+                      ? labels.mineScope
+                      : labels.publicScope}
                 </YeonButton>
               ))}
             </YeonView>
@@ -493,9 +524,9 @@ export function TypingDeckLibraryScreen({
             >
               {decksQuery.isSuccess
                 ? filteredDecks.length === decks.length
-                  ? `총 ${decks.length}개`
-                  : `전체 ${decks.length}개 중 ${filteredDecks.length}개 표시`
-                : "덱 목록을 불러오는 중"}
+                  ? labels.totalCount(decks.length)
+                  : labels.filteredCount(decks.length, filteredDecks.length)
+                : labels.loadingCount}
             </YeonText>
           </YeonView>
         </YeonView>
@@ -518,7 +549,7 @@ export function TypingDeckLibraryScreen({
               tone="primary"
               className="rounded-3xl border border-[#e5e5e5] bg-[#fafafa] p-8 text-[14px] font-semibold"
             >
-              덱 목록을 불러오지 못했습니다. 잠시 뒤 다시 시도해주세요.
+              {labels.listErrorLong}
             </YeonText>
           ) : null}
           {decksQuery.isSuccess && hasFilteredDecks ? (
@@ -528,6 +559,7 @@ export function TypingDeckLibraryScreen({
                   key={deck.id}
                   deck={deck}
                   activeScope={scope}
+                  labels={labels}
                 />
               ))}
             </YeonView>
@@ -535,6 +567,7 @@ export function TypingDeckLibraryScreen({
           {decksQuery.isSuccess && !hasFilteredDecks ? (
             <DeckLibraryEmptyState
               hasAnyDecks={hasAnyDecks}
+              labels={labels}
               onCreate={() => openCreateModal("empty_state")}
             />
           ) : null}
@@ -543,6 +576,7 @@ export function TypingDeckLibraryScreen({
 
       <CreateDeckModal
         open={createModalOpen}
+        labels={labels}
         onClose={() => setCreateModalOpen(false)}
       />
     </YeonView>

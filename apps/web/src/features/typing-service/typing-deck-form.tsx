@@ -17,8 +17,6 @@ import {
   type YeonFormElement,
 } from "@yeon/ui";
 import {
-  TYPING_DECK_LANGUAGE_OPTIONS,
-  TYPING_DECK_VISIBILITY_OPTIONS,
   type CreateTypingDeckBody,
   type TypingDeckDto,
   type TypingDeckLanguageTag,
@@ -26,6 +24,8 @@ import {
   useCreateTypingDeck,
   useUpdateTypingDeck,
 } from "./use-typing-decks";
+import { getTypingUiText } from "./typing-service-i18n";
+import { useTypingSettings } from "./use-typing-settings";
 
 export type TypingDeckFormProps = {
   mode: "create" | "edit";
@@ -40,6 +40,8 @@ export function TypingDeckForm({
   onSaved,
   adminMode = false,
 }: TypingDeckFormProps) {
+  const { settings } = useTypingSettings();
+  const deckText = getTypingUiText(settings.locale).deck;
   const createDeck = useCreateTypingDeck(adminMode);
   const updateDeck = useUpdateTypingDeck(deck?.id ?? "", adminMode);
   const [title, setTitle] = useState(deck?.title ?? "");
@@ -55,10 +57,10 @@ export function TypingDeckForm({
   const canSubmit =
     title.trim().length > 0 && !mutation.isPending && !isDefaultDeck;
   const submitLabel = mutation.isPending
-    ? "저장 중..."
+    ? deckText.saving
     : mode === "create"
-      ? "덱 만들기"
-      : "덱 저장";
+      ? deckText.saveCreate
+      : deckText.saveEdit;
 
   function handleSubmit(event: YeonFormEvent<YeonFormElement>) {
     event.preventDefault();
@@ -103,7 +105,9 @@ export function TypingDeckForm({
             tone="inherit"
             className={TYPING_SERVICE_COMMON_CLASS.panelBodyTitle}
           >
-            {mode === "create" ? "새 타자 덱" : "덱 정보"}
+            {mode === "create"
+              ? deckText.formCreateTitle
+              : deckText.formEditTitle}
           </YeonText>
           <YeonText
             as="p"
@@ -111,10 +115,10 @@ export function TypingDeckForm({
             tone="inherit"
             className={`${SHARED_FEATURE_CLASS.text13Neutral} mt-1 leading-5`}
           >
-            제목, 언어 태그, 공개 범위를 정한 뒤 문단을 추가하세요.
+            {deckText.formHelp}
           </YeonText>
         </YeonView>
-        {isDefaultDeck ? <YeonBadge>읽기 전용</YeonBadge> : null}
+        {isDefaultDeck ? <YeonBadge>{deckText.readOnly}</YeonBadge> : null}
       </YeonView>
 
       <YeonView className="mt-5 grid gap-4">
@@ -125,14 +129,14 @@ export function TypingDeckForm({
             tone="inherit"
             className={TYPING_SERVICE_COMMON_CLASS.fieldLabel}
           >
-            덱 제목
+            {deckText.titleLabel}
           </YeonText>
           <YeonField
             value={title}
             onChange={(event) => setTitle(event.target.value)}
             disabled={isDefaultDeck}
             maxLength={120}
-            placeholder="예: 아침 워밍업 문장"
+            placeholder={deckText.titlePlaceholder}
           />
         </YeonLabel>
         <YeonLabel className={TYPING_SERVICE_COMMON_CLASS.formFieldGroup}>
@@ -142,7 +146,7 @@ export function TypingDeckForm({
             tone="inherit"
             className={TYPING_SERVICE_COMMON_CLASS.fieldLabel}
           >
-            설명
+            {deckText.descriptionLabel}
           </YeonText>
           <YeonField
             as="textarea"
@@ -152,7 +156,7 @@ export function TypingDeckForm({
             rows={3}
             maxLength={2000}
             className="resize-y leading-6"
-            placeholder="어떤 연습에 쓰는 덱인지 적어주세요."
+            placeholder={deckText.descriptionPlaceholder}
           />
         </YeonLabel>
         <YeonView className={TYPING_SERVICE_COMMON_CLASS.twoColumnFormGrid}>
@@ -163,7 +167,7 @@ export function TypingDeckForm({
               tone="inherit"
               className={TYPING_SERVICE_COMMON_CLASS.fieldLabel}
             >
-              언어 태그
+              {deckText.languageTag}
             </YeonText>
             <YeonField
               as="select"
@@ -173,9 +177,9 @@ export function TypingDeckForm({
               }
               disabled={isDefaultDeck}
             >
-              {TYPING_DECK_LANGUAGE_OPTIONS.map((option) => (
-                <YeonOption key={option.value} value={option.value}>
-                  {option.label}
+              {(["ko", "en", "mixed"] as const).map((value) => (
+                <YeonOption key={value} value={value}>
+                  {deckText.language[value]}
                 </YeonOption>
               ))}
             </YeonField>
@@ -187,7 +191,7 @@ export function TypingDeckForm({
               tone="inherit"
               className={TYPING_SERVICE_COMMON_CLASS.fieldLabel}
             >
-              공개 범위
+              {deckText.visibilityLabel}
             </YeonText>
             <YeonField
               as="select"
@@ -197,9 +201,9 @@ export function TypingDeckForm({
               }
               disabled={isDefaultDeck}
             >
-              {TYPING_DECK_VISIBILITY_OPTIONS.map((option) => (
-                <YeonOption key={option.value} value={option.value}>
-                  {option.label}
+              {(["private", "public"] as const).map((value) => (
+                <YeonOption key={value} value={value}>
+                  {deckText.visibility[value]}
                 </YeonOption>
               ))}
             </YeonField>

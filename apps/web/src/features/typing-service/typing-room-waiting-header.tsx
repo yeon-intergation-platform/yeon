@@ -1,20 +1,22 @@
 "use client";
 import {
   TYPING_ROOM_GAME_TYPE,
+  type TypingRoomGameType,
   type TypingRoomSnapshot,
+  type TypingRoomVisibility,
 } from "@yeon/race-shared";
 import { YeonButton, YeonIcon, YeonText, YeonView } from "@yeon/ui";
 import { YEON_WEB_SHARED_CLASS as SHARED_FEATURE_CLASS } from "@yeon/ui/theme/web-style-tokens";
-import {
-  TYPING_ROOM_GAME_TYPE_LABELS,
-  TYPING_ROOM_VISIBILITY_LABELS,
-} from "./typing-room-labels";
+import type { TypingUiText } from "./typing-service-i18n";
 
 type TypingRoomWaitingHeaderRoomProps = {
   room: TypingRoomSnapshot;
   roomSummary: string;
   waitingStateLabel: string;
   territoryHref: string;
+  labels: TypingUiText["room"];
+  gameTypeLabels: Record<TypingRoomGameType, string>;
+  visibilityLabels: Record<TypingRoomVisibility, string>;
 };
 
 type TypingRoomWaitingHeaderStatusProps = {
@@ -41,6 +43,9 @@ export function TypingRoomWaitingHeader({
   room,
   roomSummary,
   waitingStateLabel,
+  labels,
+  gameTypeLabels,
+  visibilityLabels,
   copyError,
   copied,
   isHost,
@@ -77,7 +82,7 @@ export function TypingRoomWaitingHeader({
         className={`w-fit gap-2 ${SHARED_FEATURE_CLASS.text13EmphasisMuted} no-underline`}
       >
         <YeonIcon name="arrow-left" size={15} />
-        {isLeavingRoom ? "나가는 중..." : "타자방 나가기"}
+        {isLeavingRoom ? `${labels.leaving}...` : labels.leaveRoomLong}
       </YeonButton>
 
       <YeonView
@@ -108,10 +113,9 @@ export function TypingRoomWaitingHeader({
               tone="inherit"
               className={`mt-2 ${SHARED_FEATURE_CLASS.text12EmphasisNeutral}`}
             >
-              {waitingStateLabel} ·{" "}
-              {TYPING_ROOM_GAME_TYPE_LABELS[room.gameType]} ·{" "}
-              {TYPING_ROOM_VISIBILITY_LABELS[room.visibility]} ·{" "}
-              {room.currentParticipants}/{room.maxParticipants}
+              {waitingStateLabel} · {gameTypeLabels[room.gameType]} ·{" "}
+              {visibilityLabels[room.visibility]} · {room.currentParticipants}/
+              {room.maxParticipants}
             </YeonText>
           </YeonView>
           <YeonView className="flex h-full flex-col items-start justify-end gap-3 lg:items-end lg:text-right">
@@ -121,7 +125,8 @@ export function TypingRoomWaitingHeader({
               tone="inherit"
               className={SHARED_FEATURE_CLASS.text12EmphasisNeutral}
             >
-              참여자 {room.currentParticipants} / {room.maxParticipants}
+              {labels.currentParticipants} {room.currentParticipants} /{" "}
+              {room.maxParticipants}
             </YeonText>
             <YeonText
               as="p"
@@ -146,7 +151,7 @@ export function TypingRoomWaitingHeader({
                 size="sm"
                 className={`rounded-xl px-3 py-2 ${SHARED_FEATURE_CLASS.text12Emphasis}`}
               >
-                {copied ? "초대 링크 복사됨" : "초대"}
+                {copied ? labels.inviteCopied : labels.invite}
               </YeonButton>
               {isTerritoryRoom ? (
                 <YeonButton
@@ -157,7 +162,7 @@ export function TypingRoomWaitingHeader({
                   className="gap-2 rounded-xl px-4 py-2 text-[13px]"
                 >
                   <YeonIcon name="swords" size={14} />
-                  점령전 입장
+                  {labels.enterTerritory}
                 </YeonButton>
               ) : isHost ? (
                 <YeonButton
@@ -169,7 +174,7 @@ export function TypingRoomWaitingHeader({
                   className="gap-2"
                 >
                   <YeonIcon name="play" size={14} />
-                  시작하기
+                  {labels.start}
                 </YeonButton>
               ) : (
                 <YeonButton
@@ -179,7 +184,7 @@ export function TypingRoomWaitingHeader({
                   size="md"
                   className="rounded-xl px-4 py-2 text-[13px]"
                 >
-                  {isReady ? "준비 취소" : "준비하기"}
+                  {isReady ? labels.cancelReadyShort : labels.ready}
                 </YeonButton>
               )}
             </YeonView>

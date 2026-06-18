@@ -21,6 +21,8 @@ import {
   useUpdateTypingDeckPassage,
 } from "./use-typing-decks";
 import { TYPING_SERVICE_COMMON_CLASS } from "./typing-service-common.const";
+import { getTypingUiText } from "./typing-service-i18n";
+import { useTypingSettings } from "./use-typing-settings";
 
 export type TypingDeckPassageEditorProps = {
   deckId: string;
@@ -35,6 +37,8 @@ export function TypingDeckPassageEditor({
   onCancelEdit,
   adminMode = false,
 }: TypingDeckPassageEditorProps) {
+  const { settings } = useTypingSettings();
+  const deckText = getTypingUiText(settings.locale).deck;
   const addPassage = useCreateTypingDeckPassage(deckId, adminMode);
   const updatePassage = useUpdateTypingDeckPassage(deckId, adminMode);
   const [title, setTitle] = useState(editingPassage?.title ?? "");
@@ -48,10 +52,10 @@ export function TypingDeckPassageEditor({
   const mutation = editingPassage ? updatePassage : addPassage;
   const canSubmit = prompt.trim().length > 0 && !mutation.isPending;
   const submitLabel = mutation.isPending
-    ? "저장 중..."
+    ? deckText.saving
     : editingPassage
-      ? "수정 저장"
-      : "문단 추가";
+      ? deckText.saveEdit
+      : deckText.addPassage;
 
   function resetForm() {
     setTitle("");
@@ -93,7 +97,7 @@ export function TypingDeckPassageEditor({
           tone="inherit"
           className={SHARED_FEATURE_CLASS.text16Emphasis}
         >
-          {editingPassage ? "문단 수정" : "문단 직접 추가"}
+          {editingPassage ? deckText.editPassage : deckText.addPassage}
         </YeonText>
         {editingPassage ? (
           <YeonButton
@@ -102,7 +106,7 @@ export function TypingDeckPassageEditor({
             variant="ghost"
             className="px-0 py-0"
           >
-            취소
+            {deckText.cancel}
           </YeonButton>
         ) : null}
       </YeonView>
@@ -110,14 +114,14 @@ export function TypingDeckPassageEditor({
         <YeonField
           value={title}
           onChange={(event) => setTitle(event.target.value)}
-          placeholder="문단 제목 (선택)"
+          placeholder={deckText.passageTitlePlaceholder}
         />
         <YeonField
           as="textarea"
           value={prompt}
           onChange={(event) => setPrompt(event.target.value)}
           rows={6}
-          placeholder="타이핑할 문장을 입력하세요."
+          placeholder={deckText.promptPlaceholder}
           className="resize-y leading-6"
         />
         <YeonView className="grid gap-3 sm:grid-cols-2">
@@ -128,9 +132,9 @@ export function TypingDeckPassageEditor({
               setTextType(event.target.value as TypingPassageTextType)
             }
           >
-            <YeonOption value="short">짧은 글</YeonOption>
-            <YeonOption value="long">긴 글</YeonOption>
-            <YeonOption value="code">코드</YeonOption>
+            <YeonOption value="short">{deckText.shortText}</YeonOption>
+            <YeonOption value="long">{deckText.longText}</YeonOption>
+            <YeonOption value="code">{deckText.codeText}</YeonOption>
           </YeonField>
           <YeonField
             as="select"
@@ -139,9 +143,9 @@ export function TypingDeckPassageEditor({
               setDifficulty(event.target.value as TypingPassageDifficulty)
             }
           >
-            <YeonOption value="easy">쉬움</YeonOption>
-            <YeonOption value="normal">보통</YeonOption>
-            <YeonOption value="hard">어려움</YeonOption>
+            <YeonOption value="easy">{deckText.easy}</YeonOption>
+            <YeonOption value="normal">{deckText.normal}</YeonOption>
+            <YeonOption value="hard">{deckText.hard}</YeonOption>
           </YeonField>
         </YeonView>
       </YeonView>

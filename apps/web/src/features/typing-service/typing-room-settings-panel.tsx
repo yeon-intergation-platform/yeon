@@ -14,13 +14,7 @@ import {
   type TypingRoomVisibility,
 } from "@yeon/race-shared";
 import { normalizeDeckTitle } from "./typing-room-deck-format";
-import {
-  TYPING_ROOM_DIFFICULTY_LABELS,
-  TYPING_ROOM_LANGUAGE_LABELS,
-  TYPING_ROOM_MODE_LABELS,
-  TYPING_ROOM_TEXT_TYPE_LABELS,
-  TYPING_ROOM_VISIBILITY_LABELS,
-} from "./typing-room-labels";
+import type { TypingUiText } from "./typing-service-i18n";
 import {
   LOBBY_MAX_PARTICIPANT_OPTIONS,
   LOBBY_ROUND_COUNT_OPTIONS,
@@ -44,6 +38,12 @@ type TypingRoomSettingsPanelStateProps = {
   isHost: boolean;
   selectedDeckId: string;
   settingsError: string | null;
+  labels: TypingUiText["room"];
+  visibilityLabels: Record<TypingRoomVisibility, string>;
+  languageLabels: Record<TypingRoomLanguage, string>;
+  textTypeLabels: Record<TypingRoomTextType, string>;
+  difficultyLabels: Record<TypingRoomDifficulty, string>;
+  modeLabels: Record<TypingRoomMode, string>;
 };
 
 type TypingRoomSettingsPanelDeckProps = {
@@ -70,6 +70,12 @@ export function TypingRoomSettingsPanel({
   roomDeckTitle,
   deckOptions,
   settingsError,
+  labels,
+  visibilityLabels,
+  languageLabels,
+  textTypeLabels,
+  difficultyLabels,
+  modeLabels,
   onSendSetting,
   onDeckChange,
 }: TypingRoomSettingsPanelProps) {
@@ -81,11 +87,11 @@ export function TypingRoomSettingsPanel({
         tone="inherit"
         className={TYPING_SERVICE_COMMON_CLASS.panelSubheading}
       >
-        방 설정
+        {labels.openSettings}
       </YeonText>
       <YeonView className="grid grid-cols-2 gap-2">
         <YeonLabel className={SETTINGS_FIELD_CLASS}>
-          공개 여부
+          {labels.visibility}
           {isHost ? (
             <YeonField
               as="select"
@@ -99,7 +105,7 @@ export function TypingRoomSettingsPanel({
             >
               {Object.values(TYPING_ROOM_VISIBILITY).map((value) => (
                 <YeonOption key={value} value={value}>
-                  {TYPING_ROOM_VISIBILITY_LABELS[value]}
+                  {visibilityLabels[value]}
                 </YeonOption>
               ))}
             </YeonField>
@@ -110,13 +116,13 @@ export function TypingRoomSettingsPanel({
               tone="inherit"
               className={SHARED_FEATURE_CLASS.mutedInputPanel}
             >
-              {TYPING_ROOM_VISIBILITY_LABELS[room.visibility]}
+              {visibilityLabels[room.visibility]}
             </YeonText>
           )}
         </YeonLabel>
 
         <YeonLabel className={SETTINGS_FIELD_CLASS}>
-          최대 인원
+          {labels.maxParticipants}
           {isHost ? (
             <YeonField
               as="select"
@@ -134,7 +140,7 @@ export function TypingRoomSettingsPanel({
                   value={value}
                   disabled={value < room.currentParticipants}
                 >
-                  {value}명
+                  {value} {labels.participantUnit}
                 </YeonOption>
               ))}
             </YeonField>
@@ -145,13 +151,13 @@ export function TypingRoomSettingsPanel({
               tone="inherit"
               className={SHARED_FEATURE_CLASS.mutedInputPanel}
             >
-              최대 {room.maxParticipants}명
+              {labels.maxParticipantsValue(room.maxParticipants)}
             </YeonText>
           )}
         </YeonLabel>
 
         <YeonLabel className={SETTINGS_FIELD_CLASS}>
-          언어
+          {labels.language}
           {isHost ? (
             <YeonField
               as="select"
@@ -169,7 +175,7 @@ export function TypingRoomSettingsPanel({
                 TYPING_ROOM_LANGUAGE.CODE,
               ].map((value) => (
                 <YeonOption key={value} value={value}>
-                  {TYPING_ROOM_LANGUAGE_LABELS[value]}
+                  {languageLabels[value]}
                 </YeonOption>
               ))}
             </YeonField>
@@ -180,13 +186,13 @@ export function TypingRoomSettingsPanel({
               tone="inherit"
               className={SHARED_FEATURE_CLASS.mutedInputPanel}
             >
-              {TYPING_ROOM_LANGUAGE_LABELS[room.language]}
+              {languageLabels[room.language]}
             </YeonText>
           )}
         </YeonLabel>
 
         <YeonLabel className={SETTINGS_FIELD_CLASS}>
-          문장 길이
+          {labels.textLength}
           {isHost ? (
             <YeonField
               as="select"
@@ -200,7 +206,7 @@ export function TypingRoomSettingsPanel({
             >
               {Object.values(TYPING_ROOM_TEXT_TYPE).map((value) => (
                 <YeonOption key={value} value={value}>
-                  {TYPING_ROOM_TEXT_TYPE_LABELS[value]}
+                  {textTypeLabels[value]}
                 </YeonOption>
               ))}
             </YeonField>
@@ -211,13 +217,13 @@ export function TypingRoomSettingsPanel({
               tone="inherit"
               className={SHARED_FEATURE_CLASS.mutedInputPanel}
             >
-              {TYPING_ROOM_TEXT_TYPE_LABELS[room.textType]}
+              {textTypeLabels[room.textType]}
             </YeonText>
           )}
         </YeonLabel>
 
         <YeonLabel className={SETTINGS_FIELD_CLASS}>
-          난이도
+          {labels.difficulty}
           {isHost ? (
             <YeonField
               as="select"
@@ -231,7 +237,7 @@ export function TypingRoomSettingsPanel({
             >
               {Object.values(TYPING_ROOM_DIFFICULTY).map((value) => (
                 <YeonOption key={value} value={value}>
-                  {TYPING_ROOM_DIFFICULTY_LABELS[value]}
+                  {difficultyLabels[value]}
                 </YeonOption>
               ))}
             </YeonField>
@@ -242,13 +248,13 @@ export function TypingRoomSettingsPanel({
               tone="inherit"
               className={SHARED_FEATURE_CLASS.mutedInputPanel}
             >
-              {TYPING_ROOM_DIFFICULTY_LABELS[room.difficulty]}
+              {difficultyLabels[room.difficulty]}
             </YeonText>
           )}
         </YeonLabel>
 
         <YeonLabel className={SETTINGS_FIELD_CLASS}>
-          판 수
+          {labels.rounds}
           {isHost ? (
             <YeonField
               as="select"
@@ -260,7 +266,7 @@ export function TypingRoomSettingsPanel({
             >
               {LOBBY_ROUND_COUNT_OPTIONS.map((value) => (
                 <YeonOption key={value} value={value}>
-                  {value}판
+                  {labels.roundCountValue(value)}
                 </YeonOption>
               ))}
             </YeonField>
@@ -271,13 +277,13 @@ export function TypingRoomSettingsPanel({
               tone="inherit"
               className={SHARED_FEATURE_CLASS.mutedInputPanel}
             >
-              {room.roundCount}판
+              {labels.roundCountValue(room.roundCount)}
             </YeonText>
           )}
         </YeonLabel>
 
         <YeonLabel className={SETTINGS_FIELD_CLASS}>
-          진행 방식
+          {labels.flow}
           {isHost ? (
             <YeonField
               as="select"
@@ -292,7 +298,7 @@ export function TypingRoomSettingsPanel({
               {[TYPING_ROOM_MODE.FINISH, TYPING_ROOM_MODE.TIME_LIMIT].map(
                 (value) => (
                   <YeonOption key={value} value={value}>
-                    {TYPING_ROOM_MODE_LABELS[value]}
+                    {modeLabels[value]}
                   </YeonOption>
                 )
               )}
@@ -304,7 +310,7 @@ export function TypingRoomSettingsPanel({
               tone="inherit"
               className={SHARED_FEATURE_CLASS.mutedInputPanel}
             >
-              {TYPING_ROOM_MODE_LABELS[room.mode]}
+              {modeLabels[room.mode]}
             </YeonText>
           )}
         </YeonLabel>
@@ -321,7 +327,7 @@ export function TypingRoomSettingsPanel({
         )}
 
         <YeonLabel className={`col-span-2 ${SETTINGS_FIELD_CLASS}`}>
-          덱
+          {labels.deck}
           {isHost ? (
             <YeonField
               as="select"
@@ -331,7 +337,7 @@ export function TypingRoomSettingsPanel({
             >
               {deckOptions.map((deck) => (
                 <YeonOption key={deck.id} value={deck.id}>
-                  {normalizeDeckTitle(deck)}
+                  {normalizeDeckTitle(deck, labels.privateDeck)}
                 </YeonOption>
               ))}
             </YeonField>

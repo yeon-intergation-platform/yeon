@@ -5,6 +5,7 @@ import {
   YeonProductHeader,
   YeonProductHeaderActionButton,
   YeonProductProfileMenu,
+  type YeonProductProfileMenuLabels,
   YeonText,
   YeonView,
   fetchYeon,
@@ -17,9 +18,12 @@ type CommonServiceKey = "home" | "typing" | "card" | "community";
 
 type CommonProductHeaderProps = {
   activeService: CommonServiceKey;
+  ariaLabel?: string;
   brandLabel?: string;
   settingsControl?: ReactNode;
   profileControl?: ReactNode;
+  profileLabels?: Partial<YeonProductProfileMenuLabels>;
+  levelAriaLabel?: (level: number) => string;
   rightExtras?: ReactNode;
 };
 
@@ -53,15 +57,18 @@ export const ProductHeaderSettingsButton = YeonProductHeaderActionButton;
 
 export function CommonProductHeader({
   activeService,
+  ariaLabel = "YEON 공통 서비스 이동",
   brandLabel = COMMON_HEADER_BRAND_LABELS[activeService],
   settingsControl,
   profileControl,
+  profileLabels,
+  levelAriaLabel,
   rightExtras,
 }: CommonProductHeaderProps) {
   return (
     <YeonProductHeader
       as="nav"
-      ariaLabel="YEON 공통 서비스 이동"
+      ariaLabel={ariaLabel}
       innerClassName="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 md:gap-6"
     >
       <YeonLink
@@ -81,13 +88,15 @@ export function CommonProductHeader({
           </YeonView>
         ) : null}
         <YeonView className="hidden shrink-0 md:block">
-          <HeaderExperienceBadge />
+          <HeaderExperienceBadge levelAriaLabel={levelAriaLabel} />
         </YeonView>
         <YeonView className="hidden shrink-0 md:block">
           <TypingBgmButton />
         </YeonView>
         {settingsControl ?? <ProductHeaderDefaultSettingsButton />}
-        {profileControl ?? <ProductHeaderProfileButton />}
+        {profileControl ?? (
+          <ProductHeaderProfileButton labels={profileLabels} />
+        )}
       </YeonView>
     </YeonProductHeader>
   );
@@ -117,8 +126,10 @@ export function ProductHeaderDefaultSettingsButton() {
 
 export function ProductHeaderProfileButton({
   href = "/profile",
+  labels,
 }: {
   href?: string;
+  labels?: Partial<YeonProductProfileMenuLabels>;
 }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const { logout, isLoggingOut } = useLogout();
@@ -149,6 +160,7 @@ export function ProductHeaderProfileButton({
       href={href}
       isAuthenticated={isAuthenticated}
       isLoggingOut={isLoggingOut}
+      labels={labels}
       onLogout={logout}
     />
   );
