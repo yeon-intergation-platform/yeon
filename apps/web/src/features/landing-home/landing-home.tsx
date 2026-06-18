@@ -164,7 +164,7 @@ export function LandingHome({
                         {service.summary}
                       </YeonText>
                     </YeonView>
-                    <YeonView className="mt-5 flex items-center border-t border-[#e5e5e5] pt-4">
+                    <YeonView className="mt-auto flex items-center border-t border-[#e5e5e5] pt-4">
                       <YeonText
                         as="span"
                         variant="unstyled"
