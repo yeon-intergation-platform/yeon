@@ -7,6 +7,7 @@ import {
   buildPublicContentCollectionBreadcrumb,
 } from "./public-content-breadcrumb";
 import { PublicContentBreadcrumb } from "./public-content-breadcrumb-view";
+import { PublicContentBrandLink } from "./public-content-brand-link";
 import { PublicContentArticleCard } from "./public-content-article-card";
 import { getPublicContentBlogDetailModel } from "./public-content-blog-detail";
 import { PublicContentBlogArticleContextPanel } from "./public-content-blog-detail-view";
@@ -228,17 +229,12 @@ function PublicContentShell({
     <main className="min-h-screen bg-white text-[#111]">
       <header className="border-b border-[#e5e5e5] bg-white">
         <div className="mx-auto flex max-w-6xl flex-col gap-5 px-6 py-6 md:flex-row md:items-center md:justify-between md:px-8">
-          <PublicContentTrackedLink
-            href="https://yeon.world"
+          <PublicContentBrandLink
+            channel={channel}
+            basePath={activeConfig.internalBasePath}
+            brandLabel={activeConfig.brandLabel}
             className="w-fit text-[16px] font-semibold text-[#111] no-underline"
-            trackingParams={{
-              channel,
-              link_kind: "channel_nav",
-              target_title: "YEON",
-            }}
-          >
-            YEON
-          </PublicContentTrackedLink>
+          />
           <nav className="flex flex-wrap gap-2" aria-label="공개 콘텐츠 채널">
             {CHANNEL_NAV_ITEMS.map((item) => {
               const isActive = item.label === activeConfig.label;

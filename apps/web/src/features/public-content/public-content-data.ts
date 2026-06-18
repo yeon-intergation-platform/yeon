@@ -165,6 +165,7 @@ export const PUBLIC_CONTENT_CHANNEL_CONFIG = {
     host: "https://support.yeon.world",
     internalBasePath: "/support",
     label: "Support",
+    brandLabel: "YEON 고객지원",
     title: "YEON Support",
     description:
       "NEXA, 타자연습, 플래시카드, 커뮤니티를 바로 사용할 수 있게 돕는 공개 도움말입니다.",
@@ -178,6 +179,7 @@ export const PUBLIC_CONTENT_CHANNEL_CONFIG = {
     host: "https://news.yeon.world",
     internalBasePath: "/news",
     label: "News",
+    brandLabel: "YEON 뉴스",
     title: "YEON News",
     description:
       "YEON과 NEXA의 공식 공지, 제품 업데이트, 업계 뉴스 해설을 정리합니다.",
@@ -191,6 +193,7 @@ export const PUBLIC_CONTENT_CHANNEL_CONFIG = {
     host: "https://blog.yeon.world",
     internalBasePath: "/blog",
     label: "Blog",
+    brandLabel: "YEON 블로그",
     title: "YEON Blog",
     description:
       "YEON과 NEXA를 만들며 남기는 기술 글, 제품 제작기, 개발 일지입니다.",
@@ -206,6 +209,7 @@ export const PUBLIC_CONTENT_CHANNEL_CONFIG = {
     host: string;
     internalBasePath: string;
     label: string;
+    brandLabel: string;
     title: string;
     description: string;
     homeEyebrow: string;
