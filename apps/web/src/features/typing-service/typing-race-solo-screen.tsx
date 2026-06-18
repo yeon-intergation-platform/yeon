@@ -44,8 +44,10 @@ import {
   useTypingDeckPassages,
   useTypingSettings,
   type TypingDeckPassageOption,
+  type TypingLocale,
 } from "./use-typing-settings";
 import { TypingServiceHeader } from "./typing-service-header";
+import { getTypingUiText } from "./typing-service-i18n";
 import { analyticsEvents, trackEvent } from "@/lib/analytics";
 import {
   calculateAccuracy,
@@ -60,7 +62,6 @@ import {
 const BENCHMARK_LANES = [
   {
     id: "benchmark-1",
-    label: "상대",
     cpm: 270,
     multiplier: 1.0,
     startDelay: 0.4,
@@ -68,7 +69,6 @@ const BENCHMARK_LANES = [
   },
   {
     id: "benchmark-2",
-    label: "상대",
     cpm: 270,
     multiplier: 1.0,
     startDelay: 0.7,
@@ -76,7 +76,6 @@ const BENCHMARK_LANES = [
   },
   {
     id: "benchmark-3",
-    label: "상대",
     cpm: 270,
     multiplier: 1.0,
     startDelay: 1.1,
@@ -84,22 +83,29 @@ const BENCHMARK_LANES = [
   },
 ] as const;
 
-const FALLBACK_PASSAGE = {
-  id: "fallback-empty",
-  title: "기본 문장",
-  prompt: "오늘도 한 문장씩 정확하게 입력하면 손끝의 리듬이 조금씩 살아납니다.",
-} satisfies TypingDeckPassageOption;
+function getFallbackPassage(locale: TypingLocale): TypingDeckPassageOption {
+  const text = getTypingUiText(locale).race;
+  return {
+    id: "fallback-empty",
+    title: text.fallbackPassageTitle,
+    prompt: text.fallbackPassagePrompt,
+  };
+}
 
-function pickInitialPassage(passages: readonly TypingDeckPassageOption[]) {
-  return passages[0] ?? FALLBACK_PASSAGE;
+function pickInitialPassage(
+  passages: readonly TypingDeckPassageOption[],
+  locale: TypingLocale
+) {
+  return passages[0] ?? getFallbackPassage(locale);
 }
 
 function pickNextPassage(
   passages: readonly TypingDeckPassageOption[],
+  locale: TypingLocale,
   currentId?: string
 ) {
   const candidates = passages.length > 0 ? passages : [];
-  if (candidates.length === 0) return FALLBACK_PASSAGE;
+  if (candidates.length === 0) return getFallbackPassage(locale);
   if (candidates.length === 1) return candidates[0]!;
   const available = currentId
     ? candidates.filter((passage) => passage.id !== currentId)
@@ -154,13 +160,15 @@ export function TypingRaceSoloScreen({
 }: TypingRaceSoloScreenProps) {
   const { profile, loaded: profileLoaded } = useTypingProfile();
   const { settings } = useTypingSettings();
+  const text = getTypingUiText(settings.locale);
+  const raceText = text.race;
   const deckState = useSelectedTypingDeck(settings.locale);
   const activeDeckId = practiceDeckId ?? deckState.selectedDeck.id;
   const activeDeckTitle =
     practiceDeckId === null || practiceDeckId === undefined
       ? deckState.selectedDeck.title
       : (deckState.decks.find((deck) => deck.id === practiceDeckId)?.title ??
-        "선택한 연습 덱");
+        raceText.selectedPracticeDeck);
   const {
     passages,
     loading: passagesLoading,
@@ -174,7 +182,7 @@ export function TypingRaceSoloScreen({
   const speedStyle = resolveTypingSpeedStyle(activeLanguageTag);
   const t = createTranslator(settings.locale);
   const [passage, setPassage] = useState<TypingDeckPassageOption>(() =>
-    pickInitialPassage(passages)
+    pickInitialPassage(passages, settings.locale)
   );
   const [input, setInput] = useState("");
   const [countdownRemaining, setCountdownRemaining] = useState<number>(
@@ -198,9 +206,9 @@ export function TypingRaceSoloScreen({
     setPassage((current) =>
       passages.some((candidate) => candidate.id === current.id)
         ? current
-        : pickInitialPassage(passages)
+        : pickInitialPassage(passages, settings.locale)
     );
-  }, [input.length, passages]);
+  }, [input.length, passages, settings.locale]);
 
   const promptChars = useMemo(
     () => Array.from(passage.prompt),
@@ -332,7 +340,7 @@ export function TypingRaceSoloScreen({
   useEffect(() => {
     let active = true;
     if (!engineContainerRef.current) return;
-    // 프로필 hydrate 전에 마운트하면 default 캐릭터로 잘못 시작 → 깜빡임 방지.
+    // Avoid starting with the default character before profile hydration.
     if (!profileLoaded) return;
 
     const mountPromise = mountTypingRaceEngine({
@@ -428,7 +436,7 @@ export function TypingRaceSoloScreen({
 
       return {
         id: lane.id,
-        label: lane.label,
+        label: raceText.opponent,
         accent: lane.accent,
         role: TYPING_RACE_LANE_ROLE.BENCHMARK,
         progress: laneProgress,
@@ -470,6 +478,7 @@ export function TypingRaceSoloScreen({
     passage.prompt,
     profile.nickname,
     progress,
+    raceText.opponent,
     promptChars.length,
     raceStage,
     speedStyle,
@@ -484,7 +493,9 @@ export function TypingRaceSoloScreen({
     benchmarkNoiseRef.current = createBenchmarkNoiseStates();
     startedTrackedRef.current = false;
     completedTrackedRef.current = false;
-    setPassage((current) => pickNextPassage(passages, current.id));
+    setPassage((current) =>
+      pickNextPassage(passages, settings.locale, current.id)
+    );
     setInput("");
     setCountdownRemaining(TYPING_RACE_DEFAULTS.countdownSeconds);
     setStartedAt(null);
@@ -510,7 +521,7 @@ export function TypingRaceSoloScreen({
     <YeonView className={SHARED_FEATURE_CLASS.pageSurface}>
       <TypingServiceHeader
         active="race"
-        title="YEON 레이스"
+        title={text.header.raceTitle}
         controls={
           <YeonText
             as="span"
@@ -537,7 +548,7 @@ export function TypingRaceSoloScreen({
                 size="sm"
                 className="rounded px-2 py-0.5 text-[11px]"
               >
-                {retryLabel ?? "재연결"}
+                {retryLabel ?? t("reconnect")}
               </YeonButton>
             )}
           </YeonView>
@@ -553,7 +564,7 @@ export function TypingRaceSoloScreen({
         >
           <YeonView>
             {deckState.loading || passagesLoading
-              ? "선택한 연습 덱을 불러오는 중..."
+              ? raceText.loadingPracticeDeck
               : (deckState.error ?? passagesError)}
           </YeonView>
         </YeonView>
@@ -576,7 +587,9 @@ export function TypingRaceSoloScreen({
             tone="inherit"
             className="text-[13px] text-[#666]"
           >
-            {speedStyle === TYPING_SPEED_STYLE.KO_JASO ? "타수" : "WPM"}
+            {speedStyle === TYPING_SPEED_STYLE.KO_JASO
+              ? raceText.typingUnits
+              : "WPM"}
           </YeonText>
           <YeonText
             as="span"
@@ -636,7 +649,7 @@ export function TypingRaceSoloScreen({
             tone="inherit"
             className="text-[13px] text-[#666]"
           >
-            정확도
+            {raceText.accuracy}
           </YeonText>
           <YeonText
             as="span"
@@ -660,7 +673,7 @@ export function TypingRaceSoloScreen({
             tone="inherit"
             className="text-[13px] text-[#666]"
           >
-            진행도
+            {raceText.progress}
           </YeonText>
           <YeonText
             as="span"
@@ -684,7 +697,7 @@ export function TypingRaceSoloScreen({
             tone="inherit"
             className="text-[13px] text-[#666]"
           >
-            시간
+            {raceText.time}
           </YeonText>
           <YeonText
             as="span"

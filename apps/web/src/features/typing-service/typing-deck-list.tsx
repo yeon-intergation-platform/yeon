@@ -14,6 +14,8 @@ import { YEON_WEB_SHARED_CLASS as SHARED_FEATURE_CLASS } from "@yeon/ui/theme/we
 import { TYPING_SERVICE_COMMON_CLASS } from "./typing-service-common.const";
 import type { TypingDeckDto } from "./use-typing-decks";
 import { typingDeckBadge, typingDeckLanguageLabel } from "./typing-deck-meta";
+import { getTypingUiText } from "./typing-service-i18n";
+import { useTypingSettings } from "./use-typing-settings";
 
 export type TypingDeckListProps = {
   decks: TypingDeckDto[];
@@ -26,6 +28,9 @@ export function TypingDeckList({
   selectedDeckId,
   onSelectDeck,
 }: TypingDeckListProps) {
+  const { settings } = useTypingSettings();
+  const deckText = getTypingUiText(settings.locale).deck;
+
   if (decks.length === 0) {
     return (
       <YeonSurface variant="empty" className="p-8">
@@ -35,7 +40,7 @@ export function TypingDeckList({
           tone="inherit"
           className={TYPING_SERVICE_COMMON_CLASS.panelTextEmphasis}
         >
-          표시할 덱이 없습니다.
+          {deckText.emptyList}
         </YeonText>
         <YeonText
           as="p"
@@ -43,7 +48,7 @@ export function TypingDeckList({
           tone="inherit"
           className={`mt-2 ${SHARED_FEATURE_CLASS.text13Neutral}`}
         >
-          내 덱 탭에서 새 덱을 만들거나 공개 덱을 둘러보세요.
+          {deckText.emptyListHelp}
         </YeonText>
       </YeonSurface>
     );
@@ -83,11 +88,11 @@ export function TypingDeckList({
                   tone="inherit"
                   className={`${SHARED_FEATURE_CLASS.text13Neutral} mt-1 line-clamp-2 break-keep leading-5`}
                 >
-                  {deck.description || "설명이 없습니다."}
+                  {deck.description || deckText.noDescription}
                 </YeonText>
               </YeonView>
               <YeonBadge className="shrink-0">
-                {typingDeckBadge(deck)}
+                {typingDeckBadge(deck, deckText)}
               </YeonBadge>
             </YeonView>
             <YeonView
@@ -99,7 +104,7 @@ export function TypingDeckList({
                 tone="inherit"
                 className={SHARED_FEATURE_CLASS.tagPill}
               >
-                {typingDeckLanguageLabel(deck.languageTag)}
+                {typingDeckLanguageLabel(deck.languageTag, deckText)}
               </YeonText>
               <YeonText
                 as="span"
@@ -107,7 +112,7 @@ export function TypingDeckList({
                 tone="inherit"
                 className={SHARED_FEATURE_CLASS.tagPill}
               >
-                문단 {deck.passageCount ?? 0}개
+                {deckText.passageCount(deck.passageCount ?? 0)}
               </YeonText>
             </YeonView>
           </YeonButton>

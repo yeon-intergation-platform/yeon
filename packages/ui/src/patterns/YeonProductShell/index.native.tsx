@@ -54,6 +54,15 @@ export type YeonServiceHelpContent = {
 
 export type YeonServiceHelpDialogProps = {
   content: YeonServiceHelpContent;
+  labels?: Partial<YeonServiceHelpDialogLabels>;
+};
+
+export type YeonServiceHelpDialogLabels = {
+  trigger: string;
+  eyebrow: string;
+  close: string;
+  features: string;
+  faqs: string;
 };
 
 export type YeonProductProfileMenuLabels = {
@@ -76,6 +85,14 @@ const PRODUCT_PROFILE_MENU_LABELS: YeonProductProfileMenuLabels = {
   profile: "내정보보기",
   loggingOut: "로그아웃 중...",
   logout: "로그아웃",
+};
+
+const SERVICE_HELP_DIALOG_LABELS: YeonServiceHelpDialogLabels = {
+  trigger: "도움말",
+  eyebrow: "도움말",
+  close: "도움말 닫기",
+  features: "주요 기능",
+  faqs: "자주 묻는 질문",
 };
 
 export function YeonProductHeader({
@@ -155,14 +172,18 @@ export function YeonProductHeaderActionButton({
   );
 }
 
-export function YeonServiceHelpDialog({ content }: YeonServiceHelpDialogProps) {
+export function YeonServiceHelpDialog({
+  content,
+  labels,
+}: YeonServiceHelpDialogProps) {
   const [open, setOpen] = useState(false);
+  const resolvedLabels = { ...SERVICE_HELP_DIALOG_LABELS, ...labels };
 
   return (
     <>
       <YeonProductHeaderActionButton
-        aria-label="도움말"
-        title="도움말"
+        aria-label={resolvedLabels.trigger}
+        title={resolvedLabels.trigger}
         onClick={() => setOpen(true)}
       >
         <YeonIcon name="circle-help" size={17} />
@@ -182,14 +203,14 @@ export function YeonServiceHelpDialog({ content }: YeonServiceHelpDialogProps) {
                   tone="secondary"
                   style={styles.eyebrow}
                 >
-                  도움말
+                  {resolvedLabels.eyebrow}
                 </YeonText>
                 <YeonText variant="title" style={styles.title}>
                   {content.title}
                 </YeonText>
               </YeonView>
               <YeonButton
-                accessibilityLabel="도움말 닫기"
+                accessibilityLabel={resolvedLabels.close}
                 onPress={() => setOpen(false)}
                 size="sm"
                 style={styles.closeButton}

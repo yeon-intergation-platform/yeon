@@ -14,7 +14,11 @@ import {
   createYeonStore,
   persistYeonStore,
 } from "@yeon/ui/runtime/YeonStateStore";
-import { TYPING_PASSAGES, type TypingPassage } from "./typing-content";
+import {
+  TYPING_PASSAGES_BY_LOCALE,
+  type TypingPassage,
+} from "./typing-content";
+import { getTypingUiText } from "./typing-service-i18n";
 import { requestTypingRaceSeed } from "./typing-service-fetch";
 import { useTypingDeckDetail, useTypingDecks } from "./use-typing-decks";
 
@@ -66,7 +70,7 @@ const LOCAL_DEFAULT_DECKS: Record<TypingLocale, TypingDeckOption> = {
     languageTag: "ko",
     visibility: "default",
     source: "default",
-    passageCount: TYPING_PASSAGES.length,
+    passageCount: TYPING_PASSAGES_BY_LOCALE.ko.length,
   },
   en: {
     id: `${LOCAL_DEFAULT_DECK_ID_PREFIX}-en`,
@@ -75,7 +79,7 @@ const LOCAL_DEFAULT_DECKS: Record<TypingLocale, TypingDeckOption> = {
     languageTag: "en",
     visibility: "default",
     source: "default",
-    passageCount: TYPING_PASSAGES.length,
+    passageCount: TYPING_PASSAGES_BY_LOCALE.en.length,
   },
 };
 
@@ -208,7 +212,7 @@ function localPassagesFor(
   languageTag: TypingDeckLanguageTag | TypingLocale
 ): TypingDeckPassageOption[] {
   const locale = toLocale(languageTag);
-  return TYPING_PASSAGES.map((passage: TypingPassage) => ({
+  return TYPING_PASSAGES_BY_LOCALE[locale].map((passage: TypingPassage) => ({
     id: `${LOCAL_DEFAULT_DECK_ID_PREFIX}-${locale}-${passage.id}`,
     title: passage.title,
     prompt: passage.prompt,
@@ -241,7 +245,9 @@ function normalizeRaceSeed(
     deckVisibility: normalizeVisibility({ ...deck, ...source }),
     lobbyDeckTitle:
       asString(source.lobbyDeckTitle) ??
-      (deck.visibility === "private" ? "비공개 덱" : deck.title),
+      (deck.visibility === "private"
+        ? getTypingUiText(toLocale(fallbackLanguage)).settings.privateDeck
+        : deck.title),
     participantDeckTitle: asString(source.participantDeckTitle) ?? deck.title,
     languageTag: asLanguageTag(source.languageTag, fallbackLanguage),
   };
@@ -436,7 +442,7 @@ export function useTypingDeckOptions(
     decks,
     loading: deckQuery.isLoading,
     error: deckQuery.isError
-      ? "덱 API를 사용할 수 없어 기본 문장으로 대체합니다."
+      ? getTypingUiText(normalizedLanguage).settings.apiFallback
       : null,
     reload: deckQuery.refetch,
   };
@@ -502,7 +508,7 @@ export function useTypingDeckPassages(
     loading: shouldFetchDeck && detailQuery.isLoading,
     error:
       shouldFetchDeck && detailQuery.isError
-        ? "선택한 덱을 불러오지 못해 기본 문장으로 대체합니다."
+        ? getTypingUiText(normalizedLanguage).settings.deckLoadFallback
         : null,
   };
 }
@@ -533,7 +539,7 @@ export async function resolveTypingRaceSeed(
     return {
       ok: false,
       deck,
-      message: "선택한 덱의 레이스 문장을 준비하지 못했어요.",
+      message: getTypingUiText(toLocale(languageTag)).settings.seedError,
     };
   }
 }

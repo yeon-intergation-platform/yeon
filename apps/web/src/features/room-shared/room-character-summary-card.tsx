@@ -3,6 +3,7 @@ import { CharacterSprite } from "@/features/typing-service/character-sprite";
 import { findCharacter } from "@/features/typing-service/characters";
 import { useCharacterFrameOverrides } from "@/features/typing-service/use-character-frame-overrides";
 import type { TypingLocale } from "@/features/typing-service/use-typing-settings";
+import { getTypingUiText } from "@/features/typing-service/typing-service-i18n";
 import { YEON_WEB_SHARED_CLASS as SHARED_FEATURE_CLASS } from "@yeon/ui/theme/web-style-tokens";
 import { joinClassNames, YeonText, YeonView, YeonLink } from "@yeon/ui";
 
@@ -23,10 +24,12 @@ export function RoomCharacterSummaryCard({
   locale,
   changeHref,
   className,
-  loadingLabel = "프로필 불러오는 중",
+  loadingLabel,
 }: RoomCharacterSummaryCardProps) {
   const character = findCharacter(characterId);
   const frameOverrides = useCharacterFrameOverrides();
+  const text = getTypingUiText(locale);
+  const resolvedLoadingLabel = loadingLabel ?? text.profile.loading;
 
   return (
     <YeonView
@@ -51,7 +54,7 @@ export function RoomCharacterSummaryCard({
           tone="inherit"
           className={SHARED_FEATURE_CLASS.text13EmphasisMuted}
         >
-          입장 캐릭터
+          {text.profile.entryCharacter}
         </YeonText>
         <YeonText
           as="p"
@@ -59,14 +62,16 @@ export function RoomCharacterSummaryCard({
           tone="inherit"
           className="mt-1 text-[16px] font-bold text-[#111]"
         >
-          {loaded ? `${nickname} · ${character.label[locale]}` : loadingLabel}
+          {loaded
+            ? `${nickname} · ${character.label[locale]}`
+            : resolvedLoadingLabel}
         </YeonText>
         <YeonLink
           href={changeHref}
-          aria-label="캐릭터 바꾸기"
+          aria-label={text.profile.changeCharacter}
           className="mt-2 inline-flex min-h-[44px] items-center gap-1 rounded-xl border border-[#e5e5e5] bg-white px-3 text-[13px] font-semibold text-[#111]"
         >
-          캐릭터 바꾸기
+          {text.profile.changeCharacter}
           <YeonText
             as="span"
             variant="unstyled"

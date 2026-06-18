@@ -36,6 +36,7 @@ import { findCharacter, toEnginePlayerCharacter } from "./characters";
 import { useTypingProfile } from "./use-typing-profile";
 import { createTranslator, useTypingSettings } from "./use-typing-settings";
 import { TypingServiceHeader } from "./typing-service-header";
+import { getTypingUiText } from "./typing-service-i18n";
 import type { UseRaceRoomResult } from "./use-race-room";
 import {
   applyTypingInputClamp,
@@ -63,6 +64,8 @@ export function TypingRaceMultiplayerScreen({
   const { profile, loaded: profileLoaded } = useTypingProfile();
   const { settings } = useTypingSettings();
   const t = createTranslator(settings.locale);
+  const text = getTypingUiText(settings.locale);
+  const raceText = text.race;
 
   const [input, setInput] = useState("");
   const [startedAt, setStartedAt] = useState<number | null>(null);
@@ -186,7 +189,7 @@ export function TypingRaceMultiplayerScreen({
   useEffect(() => {
     let active = true;
     if (!engineContainerRef.current) return;
-    // 프로필 hydrate 전에 마운트하면 default 캐릭터로 잘못 시작 → 깜빡임 방지.
+    // Wait for profile hydration to avoid mounting with the fallback character.
     if (!profileLoaded) return;
 
     const mountPromise = mountTypingRaceEngine({
@@ -303,7 +306,7 @@ export function TypingRaceMultiplayerScreen({
     <YeonView className={SHARED_FEATURE_CLASS.pageSurface}>
       <TypingServiceHeader
         active="race"
-        title="YEON 레이스"
+        title={text.header.raceTitle}
         controls={
           <YeonText
             as="span"
@@ -333,7 +336,9 @@ export function TypingRaceMultiplayerScreen({
             tone="inherit"
             className={TYPING_SERVICE_COMMON_CLASS.raceStatLabel}
           >
-            {speedStyle === TYPING_SPEED_STYLE.KO_JASO ? "타수" : "WPM"}
+            {speedStyle === TYPING_SPEED_STYLE.KO_JASO
+              ? raceText.speedLabel
+              : "WPM"}
           </YeonText>
           <YeonText
             as="span"
@@ -393,7 +398,7 @@ export function TypingRaceMultiplayerScreen({
             tone="inherit"
             className={TYPING_SERVICE_COMMON_CLASS.raceStatLabel}
           >
-            acc
+            {raceText.accuracy}
           </YeonText>
           <YeonText
             as="span"
@@ -417,13 +422,13 @@ export function TypingRaceMultiplayerScreen({
             tone="inherit"
             className={TYPING_SERVICE_COMMON_CLASS.raceStatLabel}
           >
-            progress
+            {raceText.progress}
           </YeonText>
           <YeonText
             as="span"
             variant="unstyled"
             tone="inherit"
-            aria-label="내 진행률"
+            aria-label={raceText.progress}
             className={TYPING_SERVICE_COMMON_CLASS.titleStatValue}
           >
             {progress}%
@@ -442,7 +447,7 @@ export function TypingRaceMultiplayerScreen({
             tone="inherit"
             className={TYPING_SERVICE_COMMON_CLASS.raceStatLabel}
           >
-            mistakes
+            {raceText.mistakes}
           </YeonText>
           <YeonText
             as="span"
@@ -466,7 +471,7 @@ export function TypingRaceMultiplayerScreen({
             tone="inherit"
             className={TYPING_SERVICE_COMMON_CLASS.raceStatLabel}
           >
-            time
+            {raceText.time}
           </YeonText>
           <YeonText
             as="span"
@@ -489,7 +494,7 @@ export function TypingRaceMultiplayerScreen({
             className={`flex items-center justify-between ${SHARED_FEATURE_CLASS.text13PrimaryBold}`}
           >
             <YeonText as="span" variant="unstyled" tone="inherit">
-              실시간 진행률
+              {raceText.liveProgress}
             </YeonText>
             {myResult && (
               <YeonText
@@ -498,14 +503,14 @@ export function TypingRaceMultiplayerScreen({
                 tone="inherit"
                 className="text-[#111]"
               >
-                현재 {myResult.rank}위
+                {raceText.currentRank(myResult.rank)}
               </YeonText>
             )}
           </YeonView>
           {roomParticipants.map((participant) => (
             <YeonView
               key={participant.id}
-              aria-label={`${participant.label} 진행률`}
+              aria-label={raceText.participantProgressLabel(participant.label)}
               className="grid gap-1"
             >
               <YeonView
@@ -513,18 +518,18 @@ export function TypingRaceMultiplayerScreen({
               >
                 <YeonText as="span" variant="unstyled" tone="inherit">
                   {participant.label}
-                  {participant.id === race.mySeat ? " (나)" : ""}
+                  {participant.id === race.mySeat ? raceText.meSuffix : ""}
                 </YeonText>
                 <YeonText as="span" variant="unstyled" tone="inherit">
                   {participant.progress}% ·{" "}
                   {speedStyle === TYPING_SPEED_STYLE.KO_JASO
-                    ? `${participant.cpm} 타`
+                    ? `${participant.cpm} ${displayUnit}`
                     : `${participant.wpm} WPM`}{" "}
-                  · 정확도 {participant.accuracy}%
+                  · {raceText.accuracy} {participant.accuracy}%
                 </YeonText>
               </YeonView>
               <YeonProgressBar
-                label={`${participant.label} 진행률`}
+                label={raceText.participantProgressLabel(participant.label)}
                 value={participant.progress}
               />
             </YeonView>
@@ -549,7 +554,7 @@ export function TypingRaceMultiplayerScreen({
                   tone="inherit"
                   className="mt-1 text-[22px] font-black tracking-[-0.03em]"
                 >
-                  타자 대결 결과
+                  {raceText.resultTitle}
                 </YeonText>
               </YeonView>
               <YeonButton
@@ -576,7 +581,7 @@ export function TypingRaceMultiplayerScreen({
                     tone="inherit"
                     className="text-[13px] font-bold text-[#aaa]"
                   >
-                    {result.rank}위
+                    {raceText.rank(result.rank)}
                   </YeonText>
                   <YeonText
                     as="h3"
@@ -589,7 +594,7 @@ export function TypingRaceMultiplayerScreen({
                   <YeonView className="mt-3 grid grid-cols-2 gap-2 font-mono text-[12px]">
                     <YeonText as="span" variant="unstyled" tone="inherit">
                       {speedStyle === TYPING_SPEED_STYLE.KO_JASO
-                        ? "타수"
+                        ? raceText.speedLabel
                         : "WPM"}{" "}
                       <YeonText
                         as="strong"
@@ -618,7 +623,7 @@ export function TypingRaceMultiplayerScreen({
                       </YeonText>
                     </YeonText>
                     <YeonText as="span" variant="unstyled" tone="inherit">
-                      정확도{" "}
+                      {raceText.accuracy}{" "}
                       <YeonText
                         as="strong"
                         variant="unstyled"
@@ -631,7 +636,7 @@ export function TypingRaceMultiplayerScreen({
                       </YeonText>
                     </YeonText>
                     <YeonText as="span" variant="unstyled" tone="inherit">
-                      오타{" "}
+                      {raceText.mistakes}{" "}
                       <YeonText
                         as="strong"
                         variant="unstyled"
@@ -644,7 +649,7 @@ export function TypingRaceMultiplayerScreen({
                       </YeonText>
                     </YeonText>
                     <YeonText as="span" variant="unstyled" tone="inherit">
-                      시간{" "}
+                      {raceText.time}{" "}
                       <YeonText
                         as="strong"
                         variant="unstyled"
@@ -657,7 +662,7 @@ export function TypingRaceMultiplayerScreen({
                       </YeonText>
                     </YeonText>
                     <YeonText as="span" variant="unstyled" tone="inherit">
-                      점수{" "}
+                      {raceText.score}{" "}
                       <YeonText
                         as="strong"
                         variant="unstyled"
@@ -679,7 +684,7 @@ export function TypingRaceMultiplayerScreen({
                   tone="inherit"
                   className="rounded-2xl border border-dashed border-[#e5e5e5] bg-white p-5 text-[14px] text-[#666]"
                 >
-                  결과를 집계하는 중입니다.
+                  {raceText.collectingResults}
                 </YeonText>
               )}
             </YeonView>

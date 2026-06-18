@@ -22,7 +22,7 @@ export default async function TypingRoomPage({ params }: TypingRoomPageProps) {
     <Suspense
       fallback={
         <YeonView className="flex min-h-screen items-center justify-center">
-          타자방에 입장하는 중...
+          Entering typing room...
         </YeonView>
       }
     >

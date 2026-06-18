@@ -9,12 +9,13 @@ import {
   useTypingDecks,
 } from "./use-typing-decks";
 import {
-  TYPING_DECK_SCOPE_TABS,
   TypingDeckDetailPanel,
   TypingDeckForm,
   TypingDeckList,
 } from "./typing-deck-components";
 import { TypingServiceHeader } from "./typing-service-header";
+import { getTypingUiText } from "./typing-service-i18n";
+import { useTypingSettings } from "./use-typing-settings";
 
 export {
   TYPING_DECK_SCOPE_TABS,
@@ -43,16 +44,35 @@ export function TypingDecksScreen({
   adminMode?: boolean;
   showAdminEntry?: boolean;
 }) {
+  const { settings } = useTypingSettings();
+  const deckText = getTypingUiText(settings.locale).deck;
+  const baseScopeTabs = [
+    {
+      value: "default" as TypingDeckScope,
+      label: deckText.defaultScope,
+      help: deckText.defaultScopeHelp,
+    },
+    {
+      value: "mine" as TypingDeckScope,
+      label: deckText.mineScope,
+      help: deckText.mineScopeHelp,
+    },
+    {
+      value: "public" as TypingDeckScope,
+      label: deckText.publicScope,
+      help: deckText.publicScopeHelp,
+    },
+  ];
   const scopeTabs = adminMode
     ? [
-        ...TYPING_DECK_SCOPE_TABS,
+        ...baseScopeTabs,
         {
           value: "all" as TypingDeckScope,
-          label: "전체",
-          help: "관리자 전용: 비공개 포함 모든 DB 덱",
+          label: deckText.allScope,
+          help: deckText.allScopeHelp,
         },
       ]
-    : TYPING_DECK_SCOPE_TABS;
+    : baseScopeTabs;
   const [scope, setScope] = useState<TypingDeckScope>(
     adminMode ? "all" : "default"
   );
@@ -76,16 +96,16 @@ export function TypingDecksScreen({
       {!adminMode ? (
         <TypingServiceHeader
           active="decks"
-          title="YEON 타자 덱"
+          title={deckText.title}
           controls={
             <YeonView className="flex items-center justify-end gap-2">
               {showAdminEntry ? (
                 <YeonButton as="a" href="/admin/typing-decks" variant="primary">
-                  관리자
+                  {deckText.adminEntry}
                 </YeonButton>
               ) : null}
               <YeonButton as="a" href="/typing-service/rooms">
-                타자방으로
+                {deckText.roomsLink}
               </YeonButton>
             </YeonView>
           }
@@ -106,7 +126,7 @@ export function TypingDecksScreen({
               tone="inherit"
               className={TYPING_SERVICE_COMMON_CLASS.mutedInfoEmphasis}
             >
-              {adminMode ? "typing deck operations" : "Typing decks"}
+              {adminMode ? deckText.adminEyebrow : deckText.eyebrow}
             </YeonText>
             <YeonText
               as="h1"
@@ -114,7 +134,7 @@ export function TypingDecksScreen({
               tone="inherit"
               className="mt-1 break-keep text-[28px] font-semibold tracking-[-0.03em] text-[#111]"
             >
-              {adminMode ? "타자 덱 운영" : "타자 덱 관리"}
+              {adminMode ? deckText.adminTitle : deckText.title}
             </YeonText>
             <YeonText
               as="p"
@@ -122,9 +142,7 @@ export function TypingDecksScreen({
               tone="inherit"
               className={`mt-2 max-w-[720px] break-keep ${SHARED_FEATURE_CLASS.text14Neutral} leading-6`}
             >
-              {adminMode
-                ? "기본/공개/사용자 덱을 확인하고, 운영자가 필요한 연습 덱과 문장을 추가합니다."
-                : "기본 덱을 둘러보고, 내 덱을 만들고, AI가 생성한 문단을 붙여넣어 타자 연습 문장을 빠르게 저장하세요."}
+              {adminMode ? deckText.adminSubtitle : deckText.subtitle}
             </YeonText>
           </YeonView>
         </YeonView>
@@ -169,7 +187,7 @@ export function TypingDecksScreen({
                 tone="inherit"
                 className={SHARED_FEATURE_CLASS.text14Soft}
               >
-                목록을 불러오는 중...
+                {deckText.loadingList}
               </YeonText>
             ) : null}
             {decksQuery.isError ? (
@@ -179,7 +197,7 @@ export function TypingDecksScreen({
                 tone="inherit"
                 className={TYPING_SERVICE_COMMON_CLASS.errorTextMd}
               >
-                덱 목록을 불러오지 못했습니다.
+                {deckText.listError}
               </YeonText>
             ) : null}
             {decksQuery.isSuccess ? (
@@ -200,7 +218,7 @@ export function TypingDecksScreen({
                       tone="inherit"
                       className={TYPING_SERVICE_COMMON_CLASS.panelBodyTitle}
                     >
-                      새 덱
+                      {deckText.newDeck}
                     </YeonText>
                     <YeonText
                       as="p"
@@ -208,7 +226,7 @@ export function TypingDecksScreen({
                       tone="inherit"
                       className="mt-1 text-[13px] leading-5 text-[#666]"
                     >
-                      필요할 때만 폼을 열어 덱을 추가합니다.
+                      {deckText.openCreateHelp}
                     </YeonText>
                   </YeonView>
                   <YeonButton
@@ -216,7 +234,7 @@ export function TypingDecksScreen({
                     onClick={() => setIsCreateFormOpen((isOpen) => !isOpen)}
                     variant={isCreateFormOpen ? "secondary" : "primary"}
                   >
-                    {isCreateFormOpen ? "닫기" : "새 덱"}
+                    {isCreateFormOpen ? deckText.close : deckText.newDeck}
                   </YeonButton>
                 </YeonView>
                 {isCreateFormOpen ? (
@@ -258,7 +276,7 @@ export function TypingDecksScreen({
                     tone="inherit"
                     className={`break-keep ${TYPING_SERVICE_COMMON_CLASS.panelBodyTitle}`}
                   >
-                    덱을 선택하세요.
+                    {deckText.selectDeck}
                   </YeonText>
                   <YeonText
                     as="p"
@@ -267,8 +285,8 @@ export function TypingDecksScreen({
                     className={`mt-2 max-w-[420px] break-keep ${SHARED_FEATURE_CLASS.text14Neutral} leading-6`}
                   >
                     {adminMode
-                      ? "왼쪽 목록에서 덱을 선택하면 문장 목록과 운영 편집 패널을 확인할 수 있습니다."
-                      : "왼쪽 목록에서 기본/내/공개 덱을 선택하면 문단 목록, 직접 추가, AI 붙여넣기 패널을 사용할 수 있습니다."}
+                      ? deckText.adminSelectDeckHelp
+                      : deckText.selectDeckHelp}
                   </YeonText>
                   {adminMode ? (
                     <YeonView
@@ -279,10 +297,10 @@ export function TypingDecksScreen({
                         onClick={() => setIsCreateFormOpen(true)}
                         variant="primary"
                       >
-                        새 덱 만들기
+                        {deckText.createDeck}
                       </YeonButton>
                       <YeonButton as="a" href="/admin/typing-characters">
-                        캐릭터 관리
+                        {deckText.manageCharacters}
                       </YeonButton>
                     </YeonView>
                   ) : null}

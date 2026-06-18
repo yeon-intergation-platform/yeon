@@ -1,4 +1,5 @@
 export type TypingDifficulty = "starter" | "flow" | "burst";
+export type TypingContentLocale = "ko" | "en";
 
 export type TypingPassage = {
   id: string;
@@ -8,6 +9,16 @@ export type TypingPassage = {
   prompt: string;
   targetSeconds: number;
   tags: string[];
+};
+
+export type TypingServiceFeature = {
+  title: string;
+  description: string;
+};
+
+export type TypingServiceFaq = {
+  question: string;
+  answer: string;
 };
 
 export const TYPING_PAGE_TITLE =
@@ -35,7 +46,7 @@ export const TYPING_SEO_INTRO = [
   "혼자 손을 푸는 개인 연습은 물론, 친구들과 타자방에 모여 함께 연습하거나 레이스로 서로의 속도를 겨룰 수 있습니다. 연습할 문장은 직접 추가해 나만의 덱으로 관리할 수 있습니다.",
 ] as const;
 
-export const TYPING_FEATURES = [
+export const TYPING_FEATURES: readonly TypingServiceFeature[] = [
   {
     title: "개인 타자 연습",
     description:
@@ -58,7 +69,7 @@ export const TYPING_FEATURES = [
   },
 ] as const;
 
-export const TYPING_FAQS = [
+export const TYPING_FAQS: readonly TypingServiceFaq[] = [
   {
     question: "회원가입 없이 바로 연습할 수 있나요?",
     answer:
@@ -114,8 +125,144 @@ export const TYPING_PASSAGES: readonly TypingPassage[] = [
   },
 ] as const;
 
+export const TYPING_PASSAGES_EN: readonly TypingPassage[] = [
+  {
+    id: "starter-clear-keys",
+    difficulty: "starter",
+    title: "Clear Key Warmup",
+    description: "Short sentences for the first round",
+    prompt:
+      "Start with one clear sentence and keep a steady rhythm from the first key.",
+    targetSeconds: 24,
+    tags: ["Beginner", "Accuracy", "Short"],
+  },
+  {
+    id: "flow-focus-en",
+    difficulty: "flow",
+    title: "Focused Flow",
+    description: "A longer paragraph for rhythm practice",
+    prompt:
+      "Accuracy improves when your eyes move ahead of your hands. Read the next word early, keep your pace steady, and let the sentence finish cleanly.",
+    targetSeconds: 45,
+    tags: ["Intermediate", "Focus", "Paragraph"],
+  },
+  {
+    id: "burst-sprint-en",
+    difficulty: "burst",
+    title: "Speed Sprint",
+    description: "A short drill for raising pace",
+    prompt:
+      "Build speed without rushing. Hold the same rhythm, scan the next phrase, and let each key land with a clean beat.",
+    targetSeconds: 38,
+    tags: ["Speed", "Advanced", "Sprint"],
+  },
+] as const;
+
+export const TYPING_PASSAGES_BY_LOCALE: Record<
+  TypingContentLocale,
+  readonly TypingPassage[]
+> = {
+  ko: TYPING_PASSAGES,
+  en: TYPING_PASSAGES_EN,
+};
+
 export const TYPING_DIFFICULTY_LABELS: Record<TypingDifficulty, string> = {
   starter: "스타터",
   flow: "플로우",
   burst: "버스트",
 };
+
+export const TYPING_DIFFICULTY_LABELS_BY_LOCALE: Record<
+  TypingContentLocale,
+  Record<TypingDifficulty, string>
+> = {
+  ko: TYPING_DIFFICULTY_LABELS,
+  en: {
+    starter: "Starter",
+    flow: "Flow",
+    burst: "Burst",
+  },
+};
+
+const TYPING_SEO_HEADING_BY_LOCALE: Record<TypingContentLocale, string> = {
+  ko: TYPING_SEO_HEADING,
+  en: "About YEON Typing",
+};
+
+const TYPING_SEO_INTRO_BY_LOCALE: Record<
+  TypingContentLocale,
+  readonly string[]
+> = {
+  ko: TYPING_SEO_INTRO,
+  en: [
+    "YEON Typing is a free browser typing practice tool you can start without signing up. It measures speed, accuracy, progress, and elapsed time as you type.",
+    "Practice alone, join a room with friends, or race other players in real time. You can also organize your own practice decks and reuse them whenever you want.",
+  ],
+};
+
+const TYPING_FEATURES_BY_LOCALE: Record<
+  TypingContentLocale,
+  readonly TypingServiceFeature[]
+> = {
+  ko: TYPING_FEATURES,
+  en: [
+    {
+      title: "Solo Practice",
+      description:
+        "Train accuracy and speed with short prompts, longer passages, and sprint drills.",
+    },
+    {
+      title: "Live Typing Rooms",
+      description:
+        "Practice in the same room with friends and compare progress in real time.",
+    },
+    {
+      title: "Typing Race",
+      description:
+        "Type the same prompt against other players and watch the race unfold live.",
+    },
+    {
+      title: "Practice Decks",
+      description:
+        "Create and manage your own prompt sets for focused repeat practice.",
+    },
+  ],
+};
+
+const TYPING_FAQS_BY_LOCALE: Record<
+  TypingContentLocale,
+  readonly TypingServiceFaq[]
+> = {
+  ko: TYPING_FAQS,
+  en: [
+    {
+      question: "Can I practice without signing up?",
+      answer:
+        "Yes. YEON Typing supports anonymous entry, so first-time visitors can start practicing right away.",
+    },
+    {
+      question: "What prompts do I practice with?",
+      answer:
+        "The service rotates short sentences, longer explanatory passages, and speed-focused prompts so you can train both rhythm and accuracy.",
+    },
+    {
+      question: "How do I check speed and accuracy?",
+      answer:
+        "Speed, accuracy, progress, and elapsed time update as soon as you begin typing.",
+    },
+    {
+      question: "Can I move from practice into multiplayer?",
+      answer:
+        "Yes. The typing home screen connects solo practice, room entry, and race play from the same service surface.",
+    },
+  ],
+};
+
+export function getTypingServiceHelpContent(locale: TypingContentLocale) {
+  return {
+    title: TYPING_SEO_HEADING_BY_LOCALE[locale],
+    intro: TYPING_SEO_INTRO_BY_LOCALE[locale],
+    features: TYPING_FEATURES_BY_LOCALE[locale],
+    faqs: TYPING_FAQS_BY_LOCALE[locale],
+  };
+}

@@ -555,6 +555,7 @@ export type {
   YeonProductProfileMenuLabels,
   YeonProductProfileMenuProps,
   YeonServiceHelpContent,
+  YeonServiceHelpDialogLabels,
   YeonServiceHelpDialogProps,
   YeonServiceHelpFaq,
   YeonServiceHelpFeature,

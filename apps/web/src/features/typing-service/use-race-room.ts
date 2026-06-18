@@ -99,19 +99,35 @@ export type UseRaceRoomResult = UseRaceRoomConnectionResult &
 const DEFAULT_SERVER_URL = "ws://localhost:2567";
 const EXPLICIT_LEAVE_FLUSH_DELAY_MS = 80;
 
-const ROOM_ERROR_MESSAGES = {
-  started: "이미 시작된 방입니다.",
-  full: "방이 가득 찼습니다.",
-  notFound: "존재하지 않는 방입니다.",
-  network: "서버와의 연결이 끊어졌습니다.",
-  unknown: "타자방에 연결할 수 없습니다.",
-} as const;
+const ROOM_ERROR_MESSAGES: Record<
+  UseRaceRoomPlayerOptions["locale"],
+  Record<"started" | "full" | "notFound" | "network" | "unknown", string>
+> = {
+  ko: {
+    started: "이미 시작된 방입니다.",
+    full: "방이 가득 찼습니다.",
+    notFound: "존재하지 않는 방입니다.",
+    network: "서버와의 연결이 끊어졌습니다.",
+    unknown: "타자방에 연결할 수 없습니다.",
+  },
+  en: {
+    started: "This room has already started.",
+    full: "This room is full.",
+    notFound: "This room does not exist.",
+    network: "The server connection was lost.",
+    unknown: "Could not connect to the typing room.",
+  },
+};
 
 function warnRaceRoomCleanupFailure(context: string, error: unknown) {
   console.warn(`[typing-race] ${context}`, error);
 }
 
-function normalizeRoomErrorMessage(source: unknown): string {
+function normalizeRoomErrorMessage(
+  source: unknown,
+  locale: UseRaceRoomPlayerOptions["locale"]
+): string {
+  const messages = ROOM_ERROR_MESSAGES[locale];
   if (typeof source === "string" && source.trim().length > 0) {
     const lower = source.toLowerCase();
 
@@ -122,7 +138,7 @@ function normalizeRoomErrorMessage(source: unknown): string {
       lower.includes("인원") ||
       lower.includes("가득")
     ) {
-      return ROOM_ERROR_MESSAGES.full;
+      return messages.full;
     }
 
     if (
@@ -131,7 +147,7 @@ function normalizeRoomErrorMessage(source: unknown): string {
       lower.includes("not exist") ||
       lower.includes("존재하지")
     ) {
-      return ROOM_ERROR_MESSAGES.notFound;
+      return messages.notFound;
     }
 
     if (
@@ -140,14 +156,14 @@ function normalizeRoomErrorMessage(source: unknown): string {
       lower.includes("in progress") ||
       lower.includes("이미 시작")
     ) {
-      return ROOM_ERROR_MESSAGES.started;
+      return messages.started;
     }
 
     return source;
   }
 
   if (source instanceof Error && source.message) {
-    return normalizeRoomErrorMessage(source.message);
+    return normalizeRoomErrorMessage(source.message, locale);
   }
 
   if (typeof source === "object" && source !== null) {
@@ -157,28 +173,28 @@ function normalizeRoomErrorMessage(source: unknown): string {
       (source as { error?: unknown }).error;
 
     if (typeof candidate === "string") {
-      return normalizeRoomErrorMessage(candidate);
+      return normalizeRoomErrorMessage(candidate, locale);
     }
   }
 
-  return ROOM_ERROR_MESSAGES.unknown;
+  return messages.unknown;
 }
 
 function applyRoomErrorState(
   setConnectionState: (state: RaceConnectionState) => void,
   setRoomError: (message: string | null) => void,
-  source: unknown
+  source: unknown,
+  locale: UseRaceRoomPlayerOptions["locale"]
 ) {
-  const normalized = normalizeRoomErrorMessage(source);
+  const messages = ROOM_ERROR_MESSAGES[locale];
+  const normalized = normalizeRoomErrorMessage(source, locale);
   const sourceText = typeof source === "string" ? source : "";
 
   const shouldUseNetworkMessage =
-    normalized === ROOM_ERROR_MESSAGES.unknown &&
+    normalized === messages.unknown &&
     (sourceText.startsWith("[") || sourceText.includes("room"));
 
-  setRoomError(
-    shouldUseNetworkMessage ? ROOM_ERROR_MESSAGES.network : normalized
-  );
+  setRoomError(shouldUseNetworkMessage ? messages.network : normalized);
   setConnectionState("error");
 }
 
@@ -307,7 +323,7 @@ export function useRaceRoom(options: UseRaceRoomOptions): UseRaceRoomResult {
         );
 
         room.onMessage(RACE_EVENTS.ROOM_ERROR, (message: RoomErrorMessage) => {
-          setRoomError(normalizeRoomErrorMessage(message.message));
+          setRoomError(normalizeRoomErrorMessage(message.message, locale));
         });
 
         room.onMessage(
@@ -330,13 +346,18 @@ export function useRaceRoom(options: UseRaceRoomOptions): UseRaceRoomResult {
 
         room.onError((_code, message) => {
           if (cancelled) return;
-          applyRoomErrorState(setConnectionState, setRoomError, message);
+          applyRoomErrorState(
+            setConnectionState,
+            setRoomError,
+            message,
+            locale
+          );
         });
       })
       .catch((err) => {
         if (!cancelled) {
           console.error("[typing-race] 룸 접속 실패:", err);
-          applyRoomErrorState(setConnectionState, setRoomError, err);
+          applyRoomErrorState(setConnectionState, setRoomError, err, locale);
         }
       });
 

@@ -20,8 +20,11 @@ import {
 } from "./utils/bulk-typing-passage-import-parser";
 import { TYPING_SERVICE_COMMON_CLASS } from "./typing-service-common.const";
 import { YEON_WEB_SHARED_CLASS as SHARED_FEATURE_CLASS } from "@yeon/ui/theme/web-style-tokens";
+import { getTypingUiText } from "./typing-service-i18n";
+import { useTypingSettings, type TypingLocale } from "./use-typing-settings";
 
-const BULK_PASSAGE_TEMPLATE = `[[PASSAGE]]
+const BULK_PASSAGE_TEMPLATE_BY_LOCALE: Record<TypingLocale, string> = {
+  ko: `[[PASSAGE]]
 [[TITLE]]
 짧은 호흡 연습
 [[TEXT]]
@@ -30,7 +33,18 @@ const BULK_PASSAGE_TEMPLATE = `[[PASSAGE]]
 [[TITLE]]
 Flow warmup
 [[TEXT]]
-Keep your eyes one word ahead and let your fingers follow the rhythm.`;
+Keep your eyes one word ahead and let your fingers follow the rhythm.`,
+  en: `[[PASSAGE]]
+[[TITLE]]
+Clear warmup
+[[TEXT]]
+Focus on steady rhythm before speed and finish each sentence cleanly.
+[[PASSAGE]]
+[[TITLE]]
+Flow warmup
+[[TEXT]]
+Keep your eyes one word ahead and let your fingers follow the rhythm.`,
+};
 
 export type TypingDeckBulkPassageImportFormProps = {
   deckId: string;
@@ -41,6 +55,9 @@ export function TypingDeckBulkPassageImportForm({
   deckId,
   adminMode = false,
 }: TypingDeckBulkPassageImportFormProps) {
+  const { settings } = useTypingSettings();
+  const deckText = getTypingUiText(settings.locale).deck;
+  const bulkPassageTemplate = BULK_PASSAGE_TEMPLATE_BY_LOCALE[settings.locale];
   const [rawText, setRawText] = useState("");
   const bulkCreate = useBulkCreateTypingDeckPassages(deckId, adminMode);
   const parseResult = useMemo(
@@ -53,8 +70,8 @@ export function TypingDeckBulkPassageImportForm({
   const canSubmit =
     hasParsedPassages && !hasParseErrors && !bulkCreate.isPending;
   const submitLabel = bulkCreate.isPending
-    ? "추가 중..."
-    : `${parseResult.passages.length || 0}개 추가`;
+    ? deckText.adding
+    : deckText.addCount(parseResult.passages.length || 0);
   const previewPassages = parseResult.passages.slice(0, 5);
   const hasPreviewPassages = Boolean(previewPassages.length);
   const hiddenPreviewCount = Math.max(
@@ -92,7 +109,7 @@ export function TypingDeckBulkPassageImportForm({
           tone="inherit"
           className="font-semibold text-[#111]"
         >
-          AI에게 이렇게 만들어달라고 요청하세요.
+          {deckText.bulkPromptTitle}
         </YeonText>
         <YeonText
           as="pre"
@@ -100,22 +117,10 @@ export function TypingDeckBulkPassageImportForm({
           tone="inherit"
           className="mt-3 overflow-x-auto whitespace-pre-wrap rounded-lg bg-white p-3 text-[12px] leading-5 text-[#111]"
         >
-          {BULK_PASSAGE_TEMPLATE}
+          {bulkPassageTemplate}
         </YeonText>
         <YeonText as="p" variant="unstyled" tone="inherit" className="mt-3">
-          마커는 한 줄 전체가{" "}
-          <YeonText as="code" variant="unstyled" tone="inherit">
-            [[PASSAGE]]
-          </YeonText>
-          ,{" "}
-          <YeonText as="code" variant="unstyled" tone="inherit">
-            [[TITLE]]
-          </YeonText>
-          ,{" "}
-          <YeonText as="code" variant="unstyled" tone="inherit">
-            [[TEXT]]
-          </YeonText>
-          일 때 인식합니다. 마커가 없으면 빈 줄 기준으로 문단을 나눕니다.
+          {deckText.bulkMarkerHelp}
         </YeonText>
       </YeonView>
 
@@ -126,14 +131,14 @@ export function TypingDeckBulkPassageImportForm({
           tone="inherit"
           className="text-[13px] font-medium text-[#666]"
         >
-          AI 형식 붙여넣기
+          {deckText.bulkPasteLabel}
         </YeonText>
         <YeonField
           as="textarea"
           value={rawText}
           onChange={(event) => setRawText(event.target.value)}
           rows={12}
-          placeholder={BULK_PASSAGE_TEMPLATE}
+          placeholder={bulkPassageTemplate}
           className="resize-y font-mono text-[13px] leading-5"
         />
       </YeonLabel>
@@ -145,7 +150,7 @@ export function TypingDeckBulkPassageImportForm({
           tone="inherit"
           className="text-[#666]"
         >
-          인식된 문단:{" "}
+          {deckText.recognizedPassages}{" "}
           <YeonText
             as="strong"
             variant="unstyled"
@@ -154,7 +159,9 @@ export function TypingDeckBulkPassageImportForm({
           >
             {parseResult.passages.length}
           </YeonText>
-          개 / 최대 {TYPING_PASSAGE_BULK_IMPORT_MAX_ITEMS}개
+          {deckText.countUnit} / {deckText.maxCount}{" "}
+          {TYPING_PASSAGE_BULK_IMPORT_MAX_ITEMS}
+          {deckText.countUnit}
         </YeonText>
         {hasParseErrors ? (
           <YeonList className="flex flex-col gap-1 rounded-lg border border-[#e5e5e5] bg-[#fafafa] p-3 text-[#666]">
@@ -190,7 +197,7 @@ export function TypingDeckBulkPassageImportForm({
             tone="inherit"
             className={TYPING_SERVICE_COMMON_CLASS.panelTextEmphasis}
           >
-            미리보기
+            {deckText.preview}
           </YeonText>
           <YeonList className="mt-3 flex flex-col gap-3">
             {previewPassages.map((passage, index) => (
@@ -204,7 +211,7 @@ export function TypingDeckBulkPassageImportForm({
                   tone="inherit"
                   className="font-semibold text-[#111]"
                 >
-                  {index + 1}. {passage.title || "제목 없음"}
+                  {index + 1}. {passage.title || deckText.noTitle}
                 </YeonText>
                 <YeonText
                   as="p"
@@ -224,7 +231,7 @@ export function TypingDeckBulkPassageImportForm({
               tone="inherit"
               className={`mt-3 ${SHARED_FEATURE_CLASS.text13Soft}`}
             >
-              외 {hiddenPreviewCount}개 문단은 추가 시 함께 저장됩니다.
+              {deckText.hiddenPreview(hiddenPreviewCount)}
             </YeonText>
           ) : null}
         </YeonView>

@@ -9,6 +9,7 @@ import {
 import { TypingServiceHeader } from "./typing-service-header";
 import { createTranslator, useTypingSettings } from "./use-typing-settings";
 import { TYPING_SERVICE_HOME_CLASS } from "./typing-service-home.const";
+import { getTypingUiText } from "./typing-service-i18n";
 
 type TypingServiceHomeProps = {
   showCharacterAdminLink?: boolean;
@@ -76,6 +77,7 @@ export function TypingServiceHome({
   const { profile, updateProfile, loaded } = useTypingProfile();
   const { settings } = useTypingSettings();
   const t = createTranslator(settings.locale);
+  const text = getTypingUiText(settings.locale);
   const handleCtaClick = (target: string) => {
     trackEvent(analyticsEvents.typingHomeCtaClick, {
       target,
@@ -93,7 +95,7 @@ export function TypingServiceHome({
         controls={
           showCharacterAdminLink ? (
             <YeonButton as="a" href="/admin/typing-characters" size="sm">
-              캐릭터 프레임 설정
+              {text.home.adminCharacters}
             </YeonButton>
           ) : null
         }
@@ -111,7 +113,7 @@ export function TypingServiceHome({
               tone="inherit"
               className={TYPING_SERVICE_HOME_CLASS.introTitle}
             >
-              바로 시작하는 타자 연습
+              {text.home.heroTitle}
             </YeonText>
             <YeonText
               as="p"
@@ -119,7 +121,7 @@ export function TypingServiceHome({
               tone="inherit"
               className={TYPING_SERVICE_HOME_CLASS.introDescription}
             >
-              원하는 방식으로 연습하거나, 친구들과 함께 타자방에 입장하세요.
+              {text.home.heroDescription}
             </YeonText>
           </YeonView>
         </YeonView>
@@ -135,7 +137,7 @@ export function TypingServiceHome({
               tone="inherit"
               className={TYPING_SERVICE_HOME_CLASS.sectionTitle}
             >
-              내 프로필
+              {text.home.profileTitle}
             </YeonText>
             <YeonView className={TYPING_SERVICE_HOME_CLASS.sectionBody}>
               {loaded ? (
@@ -148,7 +150,7 @@ export function TypingServiceHome({
                   locale={settings.locale}
                 />
               ) : (
-                <TypingProfileCardSkeleton />
+                <TypingProfileCardSkeleton locale={settings.locale} />
               )}
             </YeonView>
           </YeonView>
@@ -160,35 +162,35 @@ export function TypingServiceHome({
               tone="inherit"
               className={TYPING_SERVICE_HOME_CLASS.sectionTitle}
             >
-              오늘의 시작
+              {text.home.startTitle}
             </YeonText>
 
             <YeonView className={TYPING_SERVICE_HOME_CLASS.ctaWrap}>
               <StartCard
                 href="/typing-service/rooms"
-                label="타자방 입장"
-                description="친구들과 실시간으로 함께 연습합니다."
+                label={text.home.cards.rooms.label}
+                description={text.home.cards.rooms.description}
                 tone="primary"
                 onClick={() => handleCtaClick("rooms")}
               />
               <StartCard
                 href="/typing-service/decks"
-                label="연습 덱 관리"
-                description="연습할 문장을 직접 추가하고 관리합니다."
+                label={text.home.cards.decks.label}
+                description={text.home.cards.decks.description}
                 tone="secondary"
                 onClick={() => handleCtaClick("decks")}
               />
               <StartCard
                 href="/typing-service/rooms"
-                label="점령전 방 찾기"
-                description="점령전 방에 참가하거나 새로 만듭니다."
+                label={text.home.cards.territory.label}
+                description={text.home.cards.territory.description}
                 tone="secondary"
                 onClick={() => handleCtaClick("territory")}
               />
               <StartCard
                 href="/typing-service/play"
-                label="레이스 입장"
-                description="다른 사용자와 타자 속도를 겨룹니다."
+                label={text.home.cards.race.label}
+                description={text.home.cards.race.description}
                 tone="secondary"
                 onClick={() => handleCtaClick("play")}
               />

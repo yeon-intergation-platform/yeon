@@ -19,11 +19,26 @@ import {
   useSelectedTypingDeck,
   useTypingSettings,
 } from "./use-typing-settings";
+import { getTypingUiText } from "./typing-service-i18n";
 
 const LOCALE_OPTIONS: { value: TypingLocale; label: string; unit: string }[] = [
   { value: "ko", label: "한국어", unit: "타/분" },
   { value: "en", label: "English", unit: "wpm" },
 ];
+
+const LOCALE_OPTION_LABELS_BY_ACTIVE_LOCALE: Record<
+  TypingLocale,
+  Record<TypingLocale, { label: string; unit: string }>
+> = {
+  ko: {
+    ko: { label: "한국어", unit: "타/분" },
+    en: { label: "English", unit: "WPM" },
+  },
+  en: {
+    ko: { label: "Korean", unit: "CPM" },
+    en: { label: "English", unit: "WPM" },
+  },
+};
 
 export function TypingSettingsButton() {
   const { settings, updateSettings, setDefaultDeckForLanguage, loaded } =
@@ -37,6 +52,7 @@ export function TypingSettingsButton() {
   const [open, setOpen] = useState(false);
   const ref = useRef<YeonElement>(null);
   const t = createTranslator(settings.locale);
+  const text = getTypingUiText(settings.locale);
 
   useYeonDocumentEvent(
     "mousedown",
@@ -65,40 +81,44 @@ export function TypingSettingsButton() {
             tone="inherit"
             className="px-3 py-1.5 text-[11px] font-medium text-[#aaa]"
           >
-            {t("speedUnit")}
+            {text.settings.localeLabel}
           </YeonText>
-          {LOCALE_OPTIONS.map((opt) => (
-            <YeonButton
-              key={opt.value}
-              type="button"
-              onClick={() => updateSettings({ locale: opt.value })}
-              variant="ghost"
-              size="sm"
-              className={`w-full justify-between rounded-none px-3 py-2 text-[13px] ${
-                settings.locale === opt.value
-                  ? "font-semibold text-[#111]"
-                  : "text-[#666]"
-              }`}
-            >
-              <YeonText as="span" variant="unstyled" tone="inherit">
-                {opt.label}
-              </YeonText>
-              <YeonText
-                as="span"
-                variant="unstyled"
-                tone="inherit"
-                className="font-mono text-[11px] text-[#aaa]"
+          {LOCALE_OPTIONS.map((opt) => {
+            const optionText =
+              LOCALE_OPTION_LABELS_BY_ACTIVE_LOCALE[settings.locale][opt.value];
+            return (
+              <YeonButton
+                key={opt.value}
+                type="button"
+                onClick={() => updateSettings({ locale: opt.value })}
+                variant="ghost"
+                size="sm"
+                className={`w-full justify-between rounded-none px-3 py-2 text-[13px] ${
+                  settings.locale === opt.value
+                    ? "font-semibold text-[#111]"
+                    : "text-[#666]"
+                }`}
               >
-                {opt.unit}
-              </YeonText>
-            </YeonButton>
-          ))}
+                <YeonText as="span" variant="unstyled" tone="inherit">
+                  {optionText.label}
+                </YeonText>
+                <YeonText
+                  as="span"
+                  variant="unstyled"
+                  tone="inherit"
+                  className="font-mono text-[11px] text-[#aaa]"
+                >
+                  {optionText.unit}
+                </YeonText>
+              </YeonButton>
+            );
+          })}
 
           <YeonView className="my-1 border-t border-[#e5e5e5]" />
           <YeonLabel
             className={`grid gap-1.5 px-3 py-2 ${SHARED_FEATURE_CLASS.text12EmphasisMuted}`}
           >
-            기본 연습 덱
+            {text.settings.defaultDeck}
             <YeonField
               as="select"
               value={selectedDeckId}
@@ -110,11 +130,7 @@ export function TypingSettingsButton() {
               {decks.map((deck) => (
                 <YeonOption key={deck.id} value={deck.id}>
                   {deck.title}
-                  {deck.visibility === "private"
-                    ? " · 비공개"
-                    : deck.visibility === "public"
-                      ? " · 공개"
-                      : " · 기본"}
+                  {` · ${text.settings.deckVisibility[deck.visibility]}`}
                 </YeonOption>
               ))}
             </YeonField>
@@ -126,8 +142,8 @@ export function TypingSettingsButton() {
             className="px-3 pb-2 text-[11px] leading-4 text-[#aaa]"
           >
             {decksLoading
-              ? "덱을 불러오는 중..."
-              : (decksError ?? "언어별로 솔로/방 생성 기본 덱을 저장합니다.")}
+              ? text.settings.loadingDecks
+              : (decksError ?? text.settings.deckHelp)}
           </YeonText>
         </YeonView>
       )}

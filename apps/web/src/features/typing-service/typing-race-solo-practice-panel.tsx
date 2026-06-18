@@ -38,7 +38,10 @@ type TypingRaceSoloPracticeStateProps = {
 
 type TypingRaceSoloPracticeLabels = {
   result: string;
+  speedLabel: string;
   accuracy: string;
+  progress: string;
+  time: string;
   restart: string;
   typingInput: string;
   startingIn: string;
@@ -90,7 +93,9 @@ export function TypingRaceSoloPracticePanel({
           tone="inherit"
           className="text-[13px] text-[#666]"
         >
-          {speedStyle === TYPING_SPEED_STYLE.KO_JASO ? "타수" : "WPM"}
+          {speedStyle === TYPING_SPEED_STYLE.KO_JASO
+            ? labels.speedLabel
+            : "WPM"}
         </YeonText>
         <YeonText
           as="span"
@@ -150,7 +155,7 @@ export function TypingRaceSoloPracticePanel({
           tone="inherit"
           className="text-[13px] text-[#666]"
         >
-          정확도
+          {labels.accuracy}
         </YeonText>
         <YeonText
           as="span"
@@ -174,7 +179,7 @@ export function TypingRaceSoloPracticePanel({
           tone="inherit"
           className="text-[13px] text-[#666]"
         >
-          진행도
+          {labels.progress}
         </YeonText>
         <YeonText
           as="span"
@@ -198,7 +203,7 @@ export function TypingRaceSoloPracticePanel({
           tone="inherit"
           className="text-[13px] text-[#666]"
         >
-          시간
+          {labels.time}
         </YeonText>
         <YeonText
           as="span"
