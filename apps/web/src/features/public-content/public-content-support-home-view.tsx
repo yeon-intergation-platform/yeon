@@ -1,5 +1,6 @@
 import type {
   PublicContentSupportHomeProblemEntry,
+  PublicContentSupportHomeReportEntry,
   PublicContentSupportHomeServiceEntry,
 } from "./public-content-support-home";
 import { PublicContentTrackedLink } from "./public-content-tracked-link";
@@ -59,6 +60,63 @@ export function PublicContentSupportHomeProblemEntries({
               </span>
             </PublicContentTrackedLink>
           ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+export function PublicContentSupportHomeReportCta({
+  entry,
+}: {
+  entry: PublicContentSupportHomeReportEntry | null;
+}) {
+  if (!entry) return null;
+
+  return (
+    <section
+      aria-labelledby="support-error-report-title"
+      className="mx-auto max-w-6xl px-6 pb-8 md:px-8"
+    >
+      <div className="flex flex-col gap-5 rounded-lg border border-[#111] bg-[#111] p-5 text-white md:flex-row md:items-center md:justify-between">
+        <div className="min-w-0">
+          <p className="text-[13px] font-semibold text-white/70">오류 신고</p>
+          <h2
+            id="support-error-report-title"
+            className="mt-1 text-[22px] font-semibold text-white"
+          >
+            문제가 생기면 바로 보내세요
+          </h2>
+          <p className="mt-3 max-w-3xl text-[14px] leading-6 text-white/75">
+            {entry.description}
+          </p>
+        </div>
+        <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
+          <PublicContentTrackedLink
+            eventType="cta"
+            href={entry.href}
+            className="rounded-lg border border-white bg-white px-4 py-3 text-center text-[14px] font-semibold text-[#111] no-underline transition-colors hover:bg-[#f3f3f3]"
+            trackingParams={{
+              channel: "support",
+              link_kind: "support_error_report",
+              service: "account",
+              target_title: entry.label,
+            }}
+          >
+            {entry.label}
+          </PublicContentTrackedLink>
+          <PublicContentTrackedLink
+            href={entry.articleHref}
+            className="rounded-lg border border-white/30 px-4 py-3 text-center text-[14px] font-semibold text-white no-underline transition-colors hover:border-white"
+            trackingParams={{
+              channel: "support",
+              link_kind: "support_error_report_guide",
+              service: "account",
+              target_title: entry.articleTitle,
+            }}
+          >
+            신고 전에 볼 내용
+          </PublicContentTrackedLink>
         </div>
       </div>
     </section>

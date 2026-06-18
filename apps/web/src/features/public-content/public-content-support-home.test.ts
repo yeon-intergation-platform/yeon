@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   getPublicContentSupportHomeProblemEntries,
+  getPublicContentSupportHomeReportEntry,
   getPublicContentSupportHomeServiceEntries,
 } from "./public-content-support-home";
 
@@ -57,5 +58,15 @@ describe("public content support home", () => {
     });
     expect(entries.every((entry) => entry.articleCount > 0)).toBe(true);
     expect(entries.every((entry) => entry.description.length > 0)).toBe(true);
+  });
+
+  it("support 홈 오류 신고 CTA는 공개 문의 이메일과 신고 안내 글을 함께 제공한다", () => {
+    expect(getPublicContentSupportHomeReportEntry()).toMatchObject({
+      articleHref:
+        "https://support.yeon.world/account/troubleshooting/report-service-error",
+      articleTitle: "YEON 오류를 바로 신고하는 곳",
+      href: "mailto:hiclaudepro@gmail.com?subject=%5BYEON%20%EC%98%A4%EB%A5%98%20%EC%8B%A0%EA%B3%A0%5D",
+      label: "오류 신고하기",
+    });
   });
 });

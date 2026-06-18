@@ -1,5 +1,6 @@
 import {
   PUBLIC_CONTENT_CHANNELS,
+  PUBLIC_CONTENT_ERROR_REPORT_MAILTO,
   PUBLIC_CONTENT_SERVICES,
   buildPublicContentCanonicalUrl,
   getPublicContentArticleBySlug,
@@ -26,6 +27,14 @@ export type PublicContentSupportHomeServiceEntry = {
   service: PublicContentService;
 };
 
+export type PublicContentSupportHomeReportEntry = {
+  articleHref: string;
+  articleTitle: string;
+  description: string;
+  href: string;
+  label: string;
+};
+
 type SupportHomeProblemSeed = {
   prompt: string;
   slugSegments: readonly string[];
@@ -41,7 +50,7 @@ const SUPPORT_HOME_SERVICE_DESCRIPTIONS = {
   [PUBLIC_CONTENT_SERVICES.community]:
     "글 작성, 댓글, 게스트 닉네임, 커뮤니티 이용 기준을 안내합니다.",
   [PUBLIC_CONTENT_SERVICES.account]:
-    "로그인, 개인정보, 서비스별 공개 URL과 공통 정책을 확인합니다.",
+    "로그인이 자꾸 풀릴 때, 개인정보, 공개 URL, 오류 신고 위치를 확인합니다.",
 } as const satisfies Record<PublicContentService, string>;
 
 const SUPPORT_HOME_PROBLEM_SEEDS = [
@@ -122,6 +131,27 @@ export function getPublicContentSupportHomeServiceEntries(): PublicContentSuppor
       },
     ];
   });
+}
+
+export function getPublicContentSupportHomeReportEntry(): PublicContentSupportHomeReportEntry | null {
+  const article = getPublicContentArticleBySlug(
+    PUBLIC_CONTENT_CHANNELS.support,
+    ["account", "troubleshooting", "report-service-error"]
+  );
+
+  if (!article) return null;
+
+  return {
+    articleHref: buildPublicContentCanonicalUrl(
+      article.channel,
+      article.slugSegments
+    ),
+    articleTitle: article.title,
+    description:
+      "타자연습, 카드, 커뮤니티, NEXA에서 문제가 생기면 서비스 주소와 화면 상태만 짧게 보내도 됩니다.",
+    href: PUBLIC_CONTENT_ERROR_REPORT_MAILTO,
+    label: "오류 신고하기",
+  };
 }
 
 function isSupportHomeService(
