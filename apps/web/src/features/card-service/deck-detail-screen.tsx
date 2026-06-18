@@ -139,7 +139,9 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
             <YeonView className="space-y-6">
               <DeckDetailHeader
                 deck={state.deck}
+                cardCount={state.items.length}
                 onOpenDelete={() => setDeleteOpen(true)}
+                onRequestAddCard={() => openCardEditor("deck_header_empty")}
                 onRequestExport={() => setExportOpen(true)}
               />
 
@@ -172,16 +174,18 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
                     >
                       전체 {state.items.length}
                     </YeonText>
-                    <YeonButton
-                      type="button"
-                      onClick={() => {
-                        openCardEditor();
-                      }}
-                      variant="primary"
-                      size="md"
-                    >
-                      + 카드 추가
-                    </YeonButton>
+                    {state.isEmpty ? null : (
+                      <YeonButton
+                        type="button"
+                        onClick={() => {
+                          openCardEditor();
+                        }}
+                        variant="primary"
+                        size="md"
+                      >
+                        + 카드 추가
+                      </YeonButton>
+                    )}
                   </YeonView>
                 </YeonView>
 
@@ -201,20 +205,8 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
                       tone="inherit"
                       className="mt-3 text-[14px] leading-6 text-[#666] md:text-[15px]"
                     >
-                      카드 추가 버튼을 눌러 첫 카드부터 질문과 답변을
-                      작성해보세요.
+                      첫 카드부터 질문과 답변을 작성해보세요.
                     </YeonText>
-                    <YeonButton
-                      type="button"
-                      onClick={() => {
-                        openCardEditor("empty_state");
-                      }}
-                      variant="primary"
-                      size="lg"
-                      className="mt-6"
-                    >
-                      카드 추가
-                    </YeonButton>
                   </YeonView>
                 ) : (
                   <YeonList className="flex flex-col gap-4">
