@@ -607,6 +607,18 @@ export function TypingRoomLobbyScreen() {
         bodyClassName="p-7 pt-6"
       >
         <YeonView className="grid gap-6">
+          <YeonLabel className="grid gap-3 text-[15px] font-bold text-[#111]">
+            방 제목
+            <YeonField
+              value={title}
+              onChange={(event) => setTitle(event.target.value)}
+              placeholder="예: 오늘의 타자 연습"
+              maxLength={40}
+              disabled={isCreating}
+              className="h-[50px] rounded-lg px-4 text-[16px] font-medium"
+            />
+          </YeonLabel>
+
           <YeonView
             as="fieldset"
             className="grid gap-3 text-[15px] font-bold text-[#111]"
@@ -656,18 +668,6 @@ export function TypingRoomLobbyScreen() {
               ))}
             </YeonView>
           </YeonView>
-
-          <YeonLabel className="grid gap-3 text-[15px] font-bold text-[#111]">
-            방 제목
-            <YeonField
-              value={title}
-              onChange={(event) => setTitle(event.target.value)}
-              placeholder="예: 오늘의 타자 연습"
-              maxLength={40}
-              disabled={isCreating}
-              className="h-[50px] rounded-lg px-4 text-[16px] font-medium"
-            />
-          </YeonLabel>
 
           <YeonView
             as="fieldset"
