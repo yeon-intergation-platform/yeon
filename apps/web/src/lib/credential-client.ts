@@ -16,6 +16,7 @@ import {
   fetchYeon,
   type YeonResponse,
 } from "@yeon/ui/runtime/YeonBrowserRuntime";
+import { getAuthErrorCopy, isAuthErrorCode } from "@/server/auth/auth-errors";
 
 const CREDENTIAL_FALLBACK_MESSAGE =
   "요청 처리에 실패했습니다. 잠시 후 다시 시도해 주세요.";
@@ -42,7 +43,16 @@ export function getCredentialErrorMessage(
   error: unknown,
   fallbackMessage: string
 ): string {
-  return error instanceof CredentialApiError ? error.message : fallbackMessage;
+  if (!(error instanceof CredentialApiError)) {
+    return fallbackMessage;
+  }
+
+  // code가 있으면 code별로 완비된 안내 카피를 우선 사용한다(문구 일관성).
+  if (isAuthErrorCode(error.code)) {
+    return getAuthErrorCopy(error.code).description;
+  }
+
+  return error.message;
 }
 
 async function extractError(response: YeonResponse): Promise<{
