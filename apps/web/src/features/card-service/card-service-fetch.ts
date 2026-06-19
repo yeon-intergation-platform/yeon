@@ -9,6 +9,10 @@ import {
   mergeGuestResponseSchema,
 } from "@yeon/api-contract/card-deck-merge-guest";
 import {
+  errorResponseSchema,
+  type ErrorResponseMeta,
+} from "@yeon/api-contract/error";
+import {
   createYeonFormData,
   fetchYeon,
   type YeonFetchInput,
@@ -36,38 +40,59 @@ function normalizeCardServiceErrorMessage(
 }
 
 export class CardServiceApiError extends Error {
+  /** 백엔드 분기용 고정 식별자. 없을 수 있다. */
+  public readonly code?: string;
+  /** code + 상황별 확장 메타데이터. */
+  public readonly detail?: ErrorResponseMeta;
+
   constructor(
     public readonly status: number,
-    message: string
+    message: string,
+    detail?: ErrorResponseMeta
   ) {
     super(message);
     this.name = "CardServiceApiError";
+    this.code = detail?.code;
+    this.detail = detail;
   }
 }
 
-async function readErrorMessage(
+type CardServiceErrorBody = {
+  message: string;
+  detail: ErrorResponseMeta;
+};
+
+async function readError(
   response: YeonResponse,
   fallbackErrorMessage: string
-): Promise<string> {
+): Promise<CardServiceErrorBody> {
   if (response.status === 401) {
-    return CARD_SERVICE_AUTH_ERROR_MESSAGE;
+    return { message: CARD_SERVICE_AUTH_ERROR_MESSAGE, detail: {} };
   }
 
   const text = await response.text().catch(() => "");
-  if (!text) return fallbackErrorMessage;
+  if (!text) return { message: fallbackErrorMessage, detail: {} };
 
+  let json: unknown;
   try {
-    const parsed = JSON.parse(text) as { message?: string };
-    return normalizeCardServiceErrorMessage(
-      parsed.message ?? "",
-      fallbackErrorMessage
-    );
+    json = JSON.parse(text);
   } catch (error) {
     if (error instanceof SyntaxError) {
-      return fallbackErrorMessage;
+      return { message: fallbackErrorMessage, detail: {} };
     }
     throw error;
   }
+
+  const parsed = errorResponseSchema.safeParse(json);
+  if (!parsed.success) {
+    return { message: fallbackErrorMessage, detail: {} };
+  }
+
+  const { message, ...detail } = parsed.data;
+  return {
+    message: normalizeCardServiceErrorMessage(message, fallbackErrorMessage),
+    detail,
+  };
 }
 
 async function throwIfNotOk(
@@ -75,10 +100,8 @@ async function throwIfNotOk(
   fallbackErrorMessage: string
 ) {
   if (!response.ok) {
-    throw new CardServiceApiError(
-      response.status,
-      await readErrorMessage(response, fallbackErrorMessage)
-    );
+    const { message, detail } = await readError(response, fallbackErrorMessage);
+    throw new CardServiceApiError(response.status, message, detail);
   }
 }
 

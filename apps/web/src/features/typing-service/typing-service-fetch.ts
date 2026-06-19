@@ -12,12 +12,34 @@ import {
   TYPING_ROOM_VISIBILITY,
 } from "@yeon/race-shared";
 import {
+  errorResponseSchema,
+  type ErrorResponseMeta,
+} from "@yeon/api-contract/error";
+import {
   fetchYeon,
   type YeonFetchInput,
   type YeonRequestInit,
   type YeonResponse,
 } from "@yeon/ui/runtime/YeonBrowserRuntime";
 import type { FrameSlot } from "./frame-slot";
+
+export class TypingServiceApiError extends Error {
+  /** 백엔드 분기용 고정 식별자. 없을 수 있다. */
+  public readonly code?: string;
+  /** code + 상황별 확장 메타데이터. */
+  public readonly detail?: ErrorResponseMeta;
+
+  constructor(
+    public readonly status: number,
+    message: string,
+    detail?: ErrorResponseMeta
+  ) {
+    super(message);
+    this.name = "TypingServiceApiError";
+    this.code = detail?.code;
+    this.detail = detail;
+  }
+}
 
 export type TypingCharacterFrameOverrideItem = {
   characterId: string;
@@ -26,23 +48,36 @@ export type TypingCharacterFrameOverrideItem = {
 
 export type TypingCharacterFrameOverrideMap = Record<string, FrameSlot[]>;
 
-async function readErrorMessage(
+type TypingServiceErrorBody = {
+  message: string;
+  detail: ErrorResponseMeta;
+};
+
+async function readError(
   response: YeonResponse,
   fallbackErrorMessage: string
-): Promise<string> {
+): Promise<TypingServiceErrorBody> {
   const text = await response.text().catch((error) => {
     console.warn("[typing-service] 오류 응답 본문을 읽지 못했습니다.", error);
     return "";
   });
-  if (!text) return fallbackErrorMessage;
+  if (!text) return { message: fallbackErrorMessage, detail: {} };
 
+  let json: unknown;
   try {
-    const parsed = JSON.parse(text) as { message?: string };
-    return parsed.message || fallbackErrorMessage;
+    json = JSON.parse(text);
   } catch (error) {
     console.warn("[typing-service] 오류 응답 JSON 파싱 실패", error);
-    return fallbackErrorMessage;
+    return { message: fallbackErrorMessage, detail: {} };
   }
+
+  const parsed = errorResponseSchema.safeParse(json);
+  if (!parsed.success) {
+    return { message: fallbackErrorMessage, detail: {} };
+  }
+
+  const { message, ...detail } = parsed.data;
+  return { message: message || fallbackErrorMessage, detail };
 }
 
 export async function typingServiceFetchJson<T>(
@@ -53,7 +88,8 @@ export async function typingServiceFetchJson<T>(
   const response = await fetchYeon(input, { credentials: "include", ...init });
 
   if (!response.ok) {
-    throw new Error(await readErrorMessage(response, fallbackErrorMessage));
+    const { message, detail } = await readError(response, fallbackErrorMessage);
+    throw new TypingServiceApiError(response.status, message, detail);
   }
 
   return (await response.json()) as T;
@@ -67,7 +103,8 @@ export async function typingServiceFetchVoid(
   const response = await fetchYeon(input, { credentials: "include", ...init });
 
   if (!response.ok) {
-    throw new Error(await readErrorMessage(response, fallbackErrorMessage));
+    const { message, detail } = await readError(response, fallbackErrorMessage);
+    throw new TypingServiceApiError(response.status, message, detail);
   }
 }
 
