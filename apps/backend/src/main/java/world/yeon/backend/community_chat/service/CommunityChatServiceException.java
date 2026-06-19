@@ -1,15 +1,9 @@
 package world.yeon.backend.community_chat.service;
 
-public class CommunityChatServiceException extends RuntimeException {
-	private final int status;
-	private final String code;
+import world.yeon.backend.common.error.ApiException;
 
+public class CommunityChatServiceException extends ApiException {
 	public CommunityChatServiceException(int status, String code, String message) {
-		super(message);
-		this.status = status;
-		this.code = code;
+		super(status, code, message);
 	}
-
-	public int status() { return status; }
-	public String code() { return code; }
 }

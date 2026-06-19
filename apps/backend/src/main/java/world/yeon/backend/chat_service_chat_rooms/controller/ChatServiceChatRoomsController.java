@@ -2,8 +2,6 @@ package world.yeon.backend.chat_service_chat_rooms.controller;
 
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -15,7 +13,6 @@ import world.yeon.backend.chat_service_chat_rooms.dto.ChatServiceChatMessageMuta
 import world.yeon.backend.chat_service_chat_rooms.dto.ChatServiceChatRoomDetailResponse;
 import world.yeon.backend.chat_service_chat_rooms.dto.ChatServiceChatRoomListResponse;
 import world.yeon.backend.chat_service_chat_rooms.service.ChatServiceChatRoomsService;
-import world.yeon.backend.chat_service_chat_rooms.service.ChatServiceChatRoomsServiceException;
 
 @RestController
 public class ChatServiceChatRoomsController {
@@ -48,11 +45,5 @@ public class ChatServiceChatRoomsController {
 		return service.send(currentProfileId, roomId, request.body());
 	}
 
-	@ExceptionHandler(ChatServiceChatRoomsServiceException.class)
-	public ResponseEntity<ErrorResponse> handleServiceError(ChatServiceChatRoomsServiceException error) {
-		return ResponseEntity.status(error.status()).body(new ErrorResponse(error.code(), error.getMessage()));
-	}
-
 	public record SendMessageRequest(String body) {}
-	public record ErrorResponse(String code, String message) {}
 }

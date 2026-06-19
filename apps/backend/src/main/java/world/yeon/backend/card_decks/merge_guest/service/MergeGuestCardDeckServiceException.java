@@ -1,15 +1,10 @@
 package world.yeon.backend.card_decks.merge_guest.service;
 
-public class MergeGuestCardDeckServiceException extends RuntimeException {
-	private final int status;
-	private final String code;
+import world.yeon.backend.common.error.ApiException;
+
+public class MergeGuestCardDeckServiceException extends ApiException {
 
 	public MergeGuestCardDeckServiceException(int status, String code, String message) {
-		super(message);
-		this.status = status;
-		this.code = code;
+		super(status, code, message);
 	}
-
-	public int status() { return status; }
-	public String code() { return code; }
 }

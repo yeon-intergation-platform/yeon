@@ -1,11 +1,9 @@
 package world.yeon.backend.chat_service_my_profile.controller;
 
 import java.util.UUID;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import world.yeon.backend.chat_service_my_profile.dto.*;
 import world.yeon.backend.chat_service_my_profile.service.ChatServiceMyProfileService;
-import world.yeon.backend.chat_service_my_profile.service.ChatServiceMyProfileServiceException;
 
 @RestController
 public class ChatServiceMyProfileController {
@@ -30,11 +28,5 @@ public class ChatServiceMyProfileController {
 		return service.delete(currentProfileId);
 	}
 
-	@ExceptionHandler(ChatServiceMyProfileServiceException.class)
-	public ResponseEntity<ErrorResponse> handleServiceError(ChatServiceMyProfileServiceException error) {
-		return ResponseEntity.status(error.status()).body(new ErrorResponse(error.code(), error.getMessage()));
-	}
-
 	public record UpdateRequest(String nickname, String ageLabel, String regionLabel, String bio, boolean notificationsEnabled) {}
-	public record ErrorResponse(String code, String message) {}
 }

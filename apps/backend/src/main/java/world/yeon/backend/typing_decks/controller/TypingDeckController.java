@@ -29,7 +29,6 @@ import world.yeon.backend.typing_decks.dto.TypingRaceSeedResponse;
 import world.yeon.backend.typing_decks.dto.UpdateTypingDeckPassageRequest;
 import world.yeon.backend.typing_decks.dto.UpdateTypingDeckRequest;
 import world.yeon.backend.typing_decks.service.TypingDeckService;
-import world.yeon.backend.typing_decks.service.TypingDeckServiceException;
 
 @Validated
 @RestController
@@ -143,11 +142,6 @@ public class TypingDeckController {
 	@ExceptionHandler(IllegalArgumentException.class)
 	public ResponseEntity<ErrorResponse> handleBadRequest(IllegalArgumentException error) {
 		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse("INVALID_REQUEST", error.getMessage()));
-	}
-
-	@ExceptionHandler(TypingDeckServiceException.class)
-	public ResponseEntity<ErrorResponse> handleServiceError(TypingDeckServiceException error) {
-		return ResponseEntity.status(error.status()).body(new ErrorResponse(error.code(), error.getMessage()));
 	}
 
 	public record ErrorResponse(String code, String message) {}
