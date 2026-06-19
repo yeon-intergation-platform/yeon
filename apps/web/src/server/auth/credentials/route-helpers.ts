@@ -61,7 +61,7 @@ export function getClientIp(request: NextRequest): string {
 export function respondWithAuthError(error: AuthFlowError) {
   const status = AUTH_ERROR_STATUS[error.code] ?? 500;
   return NextResponse.json(
-    errorResponseSchema.parse({ message: error.message }),
+    errorResponseSchema.parse({ code: error.code, message: error.message }),
     { status }
   );
 }
@@ -75,6 +75,7 @@ export function respondWithInvalidInput(message: string) {
 export function respondWithServerError() {
   return NextResponse.json(
     errorResponseSchema.parse({
+      code: authErrorCodes.serverError,
       message: "서버 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.",
     }),
     { status: 500 }
