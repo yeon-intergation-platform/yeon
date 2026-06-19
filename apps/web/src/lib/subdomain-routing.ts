@@ -14,6 +14,10 @@ export const SERVICE_SUBDOMAIN_ROUTES = {
     servicePath: "/community",
     publicUrl: "https://community.yeon.world",
   },
+  "game.yeon.world": {
+    servicePath: "/game-service",
+    publicUrl: "https://game.yeon.world",
+  },
 } as const;
 
 export const CONTENT_SUBDOMAIN_ROUTES = {

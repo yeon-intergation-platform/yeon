@@ -111,6 +111,18 @@ export const PLATFORM_SERVICES = [
     status: platformServiceStatuses.live,
     listedInPlatformHome: true,
   },
+  {
+    slug: "game-service",
+    href: "/game-service",
+    publicHref: "https://game.yeon.world",
+    title: "게임",
+    summary:
+      "설치 없이 브라우저에서 바로 즐기는 게임을 한곳에 모은 게임 허브입니다.",
+    audience: "미니게임",
+    accessPolicy: platformServiceAccessPolicies.anonymous,
+    status: platformServiceStatuses.live,
+    listedInPlatformHome: true,
+  },
 ] as const satisfies readonly PlatformServiceDescriptor[];
 
 const CANONICAL_ROOT_HOSTS = new Set(["yeon.world", "www.yeon.world"]);

@@ -6,6 +6,7 @@ import {
   type PublicContentChannel,
   getPublicContentSitemapEntries,
 } from "@/features/public-content/public-content-data";
+import { getGameSlugs } from "@/features/game-service/game-catalog";
 
 export const CANONICAL_SITE_URL = "https://yeon.world";
 
@@ -13,6 +14,7 @@ export const SERVICE_CANONICAL_URLS = {
   typing: "https://typing.yeon.world",
   card: "https://card.yeon.world",
   community: "https://community.yeon.world",
+  game: "https://game.yeon.world",
 } as const;
 
 export const PUBLIC_CONTENT_CANONICAL_URLS = {
@@ -95,6 +97,18 @@ export const INDEXABLE_SITEMAP_ENTRIES = [
     changeFrequency: "weekly",
     priority: 0.8,
   },
+  {
+    url: SERVICE_CANONICAL_URLS.game,
+    changeFrequency: "weekly",
+    priority: 0.8,
+  },
+  ...getGameSlugs().map(
+    (slug): IndexableSitemapEntry => ({
+      url: `${SERVICE_CANONICAL_URLS.game}/${slug}`,
+      changeFrequency: "monthly",
+      priority: 0.7,
+    })
+  ),
   ...getPublicContentSitemapEntries(),
   {
     url: `${CANONICAL_SITE_URL}/privacy`,

@@ -16,7 +16,7 @@ import { HeaderExperienceBadge } from "@/features/user-experience/header-experie
 import { resolveSectionBrandHref } from "@/lib/header-brand-nav";
 import { useLogout } from "@/lib/use-logout";
 
-type CommonServiceKey = "home" | "typing" | "card" | "community";
+type CommonServiceKey = "home" | "typing" | "card" | "community" | "game";
 
 // 서비스 키 → 내부 베이스 경로. SERVICE_SUBDOMAIN_ROUTES(subdomain-routing.ts)의
 // servicePath와 같은 값이며, 좌상단 "한 단계 위" 네비게이션 계산에만 쓴다.
@@ -24,6 +24,7 @@ const SERVICE_BASE_PATH: Record<Exclude<CommonServiceKey, "home">, string> = {
   typing: "/typing-service",
   card: "/card-service",
   community: "/community",
+  game: "/game-service",
 } as const;
 
 type CommonProductHeaderProps = {
@@ -46,6 +47,7 @@ const COMMON_HEADER_BRAND_LABELS: Record<CommonServiceKey, string> = {
   typing: "YEON 타자방",
   card: "YEON 플래시카드",
   community: "YEON 커뮤니티",
+  game: "YEON 게임",
 } as const;
 
 async function fetchIsAuthenticated() {
