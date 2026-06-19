@@ -43,7 +43,7 @@ export async function PATCH(
     return NextResponse.json(item);
   } catch (error) {
     if (error instanceof CardDecksSpringBackendHttpError) {
-      return jsonError(error.message, error.status);
+      return jsonError(error.message, error.status, { code: error.code });
     }
     console.error(error);
     return jsonError("카드를 수정하지 못했습니다.", 500);
@@ -63,7 +63,7 @@ export async function DELETE(
     return new NextResponse(null, { status: 204 });
   } catch (error) {
     if (error instanceof CardDecksSpringBackendHttpError) {
-      return jsonError(error.message, error.status);
+      return jsonError(error.message, error.status, { code: error.code });
     }
     console.error(error);
     return jsonError("카드를 삭제하지 못했습니다.", 500);

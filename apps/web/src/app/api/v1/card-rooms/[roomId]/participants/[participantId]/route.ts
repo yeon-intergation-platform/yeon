@@ -54,7 +54,7 @@ export async function PATCH(
     );
   } catch (error) {
     if (error instanceof CardRoomsSpringBackendHttpError)
-      return jsonError(error.message, error.status);
+      return jsonError(error.message, error.status, { code: error.code });
     console.error(error);
     return jsonError("참가자 상태를 저장하지 못했습니다.", 500);
   }
@@ -80,7 +80,7 @@ export async function DELETE(
     );
   } catch (error) {
     if (error instanceof CardRoomsSpringBackendHttpError)
-      return jsonError(error.message, error.status);
+      return jsonError(error.message, error.status, { code: error.code });
     console.error(error);
     return jsonError("카드방에서 나가지 못했습니다.", 500);
   }

@@ -4,6 +4,7 @@ import {
   type YeonFile,
   type YeonResponse,
 } from "@yeon/ui/runtime/YeonBrowserRuntime";
+import { extractSpringErrorCode } from "./spring-error";
 
 const DEFAULT_BACKEND_BASE_URL = "http://127.0.0.1:8081";
 const INTERNAL_TOKEN_HEADER = "X-Yeon-Internal-Token";
@@ -20,11 +21,13 @@ function resolveSpringBackendBaseUrl() {
 
 export class CardDeckAssetsSpringBackendHttpError extends Error {
   readonly status: number;
+  readonly code?: string;
 
-  constructor(status: number, message: string) {
+  constructor(status: number, message: string, code?: string) {
     super(message);
     this.name = "CardDeckAssetsSpringBackendHttpError";
     this.status = status;
+    this.code = code;
   }
 }
 
@@ -63,7 +66,8 @@ async function readError(response: YeonResponse, fallback: string) {
   const parsed = tryParseJson(raw);
   return new CardDeckAssetsSpringBackendHttpError(
     response.status,
-    extractErrorMessage(parsed) ?? fallback
+    extractErrorMessage(parsed) ?? fallback,
+    extractSpringErrorCode(parsed)
   );
 }
 

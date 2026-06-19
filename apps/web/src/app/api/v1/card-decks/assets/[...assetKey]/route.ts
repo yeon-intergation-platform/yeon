@@ -31,7 +31,7 @@ export async function GET(
     });
   } catch (error) {
     if (error instanceof CardDeckAssetsSpringBackendHttpError) {
-      return jsonError(error.message, error.status);
+      return jsonError(error.message, error.status, { code: error.code });
     }
     console.error(error);
     return jsonError("이미지를 불러오지 못했습니다.", 500);

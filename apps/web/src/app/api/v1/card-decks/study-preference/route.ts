@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(studyMode);
   } catch (error) {
     if (error instanceof CardDecksSpringBackendHttpError) {
-      return jsonError(error.message, error.status);
+      return jsonError(error.message, error.status, { code: error.code });
     }
     console.error(error);
     return jsonError("카드 학습 설정을 불러오지 못했습니다.", 500);
@@ -53,7 +53,7 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json(studyMode);
   } catch (error) {
     if (error instanceof CardDecksSpringBackendHttpError) {
-      return jsonError(error.message, error.status);
+      return jsonError(error.message, error.status, { code: error.code });
     }
     console.error(error);
     return jsonError("카드 학습 설정을 저장하지 못했습니다.", 500);

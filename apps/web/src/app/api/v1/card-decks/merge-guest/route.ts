@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
       return jsonError(error.message, error.status, error.detail);
     }
     if (error instanceof CardDeckMergeGuestSpringBackendHttpError) {
-      return jsonError(error.message, error.status);
+      return jsonError(error.message, error.status, { code: error.code });
     }
     console.error("guest 덱 이관 처리 중 오류", error);
     return jsonError(

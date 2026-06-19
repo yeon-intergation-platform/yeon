@@ -41,7 +41,7 @@ export async function POST(
     return NextResponse.json(item, { status: 201 });
   } catch (error) {
     if (error instanceof CardDecksSpringBackendHttpError) {
-      return jsonError(error.message, error.status);
+      return jsonError(error.message, error.status, { code: error.code });
     }
     console.error(error);
     return jsonError("카드를 추가하지 못했습니다.", 500);

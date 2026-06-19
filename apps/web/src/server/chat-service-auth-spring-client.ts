@@ -4,6 +4,7 @@ import {
   type YeonRequestInit,
 } from "@yeon/ui/runtime/YeonBrowserRuntime";
 import { buildSpringBffHeaders } from "@/server/spring-bff-client";
+import { extractSpringErrorCode } from "./spring-error";
 
 const DEFAULT_BACKEND_BASE_URL = "http://127.0.0.1:8081";
 const CHAT_SESSION_TOKEN_HEADER = "X-Yeon-Chat-Session-Token";
@@ -19,11 +20,13 @@ function resolveSpringBackendBaseUrl() {
 
 export class ChatServiceAuthSpringBackendHttpError extends Error {
   readonly status: number;
+  readonly code?: string;
 
-  constructor(status: number, message: string) {
+  constructor(status: number, message: string, code?: string) {
     super(message);
     this.name = "ChatServiceAuthSpringBackendHttpError";
     this.status = status;
+    this.code = code;
   }
 }
 
@@ -70,7 +73,8 @@ async function fetchSpring(
   if (!response.ok) {
     throw new ChatServiceAuthSpringBackendHttpError(
       response.status,
-      extractErrorMessage(parsed) ?? fallback
+      extractErrorMessage(parsed) ?? fallback,
+      extractSpringErrorCode(parsed)
     );
   }
   return parsed;

@@ -27,7 +27,7 @@ export async function GET(
     return NextResponse.json(detail);
   } catch (error) {
     if (error instanceof CardDecksSpringBackendHttpError) {
-      return jsonError(error.message, error.status);
+      return jsonError(error.message, error.status, { code: error.code });
     }
     console.error(error);
     return jsonError("덱을 불러오지 못했습니다.", 500);
@@ -63,7 +63,7 @@ export async function PATCH(
     return NextResponse.json(deck);
   } catch (error) {
     if (error instanceof CardDecksSpringBackendHttpError) {
-      return jsonError(error.message, error.status);
+      return jsonError(error.message, error.status, { code: error.code });
     }
     console.error(error);
     return jsonError("덱을 수정하지 못했습니다.", 500);
@@ -83,7 +83,7 @@ export async function DELETE(
     return new NextResponse(null, { status: 204 });
   } catch (error) {
     if (error instanceof CardDecksSpringBackendHttpError) {
-      return jsonError(error.message, error.status);
+      return jsonError(error.message, error.status, { code: error.code });
     }
     console.error(error);
     return jsonError("덱을 삭제하지 못했습니다.", 500);
