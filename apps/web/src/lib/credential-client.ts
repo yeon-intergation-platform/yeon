@@ -9,17 +9,32 @@ import type {
   CredentialSetPasswordBody,
 } from "@yeon/api-contract/credential";
 import {
+  errorResponseSchema,
+  type ErrorResponseMeta,
+} from "@yeon/api-contract/error";
+import {
   fetchYeon,
   type YeonResponse,
 } from "@yeon/ui/runtime/YeonBrowserRuntime";
 
+const CREDENTIAL_FALLBACK_MESSAGE =
+  "요청 처리에 실패했습니다. 잠시 후 다시 시도해 주세요.";
+
 export class CredentialApiError extends Error {
+  /** 백엔드 분기용 고정 식별자(예: ACCOUNT_LOCKED). 없을 수 있다. */
+  public readonly code?: string;
+  /** code + 상황별 확장 메타데이터. */
+  public readonly detail?: ErrorResponseMeta;
+
   constructor(
     public readonly status: number,
-    message: string
+    message: string,
+    detail?: ErrorResponseMeta
   ) {
     super(message);
     this.name = "CredentialApiError";
+    this.code = detail?.code;
+    this.detail = detail;
   }
 }
 
@@ -30,16 +45,24 @@ export function getCredentialErrorMessage(
   return error instanceof CredentialApiError ? error.message : fallbackMessage;
 }
 
-async function extractErrorMessage(response: YeonResponse): Promise<string> {
+async function extractError(response: YeonResponse): Promise<{
+  message: string;
+  detail: ErrorResponseMeta;
+}> {
   try {
-    const body = (await response.json()) as { message?: unknown };
-    if (typeof body.message === "string" && body.message.length > 0) {
-      return body.message;
+    const json = await response.json();
+    const parsed = errorResponseSchema.safeParse(json);
+    if (parsed.success) {
+      const { message, ...detail } = parsed.data;
+      return {
+        message: message.length > 0 ? message : CREDENTIAL_FALLBACK_MESSAGE,
+        detail,
+      };
     }
   } catch {
     // noop
   }
-  return "요청 처리에 실패했습니다. 잠시 후 다시 시도해 주세요.";
+  return { message: CREDENTIAL_FALLBACK_MESSAGE, detail: {} };
 }
 
 async function postJson<TReq, TRes>(path: string, body: TReq): Promise<TRes> {
@@ -51,10 +74,8 @@ async function postJson<TReq, TRes>(path: string, body: TReq): Promise<TRes> {
   });
 
   if (!response.ok) {
-    throw new CredentialApiError(
-      response.status,
-      await extractErrorMessage(response)
-    );
+    const { message, detail } = await extractError(response);
+    throw new CredentialApiError(response.status, message, detail);
   }
 
   return (await response.json()) as TRes;
@@ -69,10 +90,8 @@ async function postNoContent<TReq>(path: string, body: TReq): Promise<void> {
   });
 
   if (!response.ok) {
-    throw new CredentialApiError(
-      response.status,
-      await extractErrorMessage(response)
-    );
+    const { message, detail } = await extractError(response);
+    throw new CredentialApiError(response.status, message, detail);
   }
 }
 
