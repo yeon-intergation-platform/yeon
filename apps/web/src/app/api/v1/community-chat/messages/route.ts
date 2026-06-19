@@ -39,7 +39,9 @@ export async function GET() {
     );
   } catch (error) {
     if (error instanceof CommunityChatSpringBackendHttpError) {
-      return jsonError(COMMUNITY_CHAT_LIST_ERROR_MESSAGE, error.status);
+      return jsonError(COMMUNITY_CHAT_LIST_ERROR_MESSAGE, error.status, {
+        code: error.code,
+      });
     }
 
     console.error(error);
@@ -78,7 +80,9 @@ export async function POST(request: YeonRequest) {
     );
   } catch (error) {
     if (error instanceof CommunityChatSpringBackendHttpError) {
-      return jsonError(COMMUNITY_CHAT_SEND_ERROR_MESSAGE, error.status);
+      return jsonError(COMMUNITY_CHAT_SEND_ERROR_MESSAGE, error.status, {
+        code: error.code,
+      });
     }
 
     console.error(error);

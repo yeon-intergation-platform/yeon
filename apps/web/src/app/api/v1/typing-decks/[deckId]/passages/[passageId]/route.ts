@@ -48,7 +48,7 @@ export async function PATCH(
       return jsonError(error.message, error.status);
     }
     if (error instanceof TypingDecksSpringBackendHttpError) {
-      return jsonError(error.message, error.status);
+      return jsonError(error.message, error.status, { code: error.code });
     }
     console.error(error);
     return jsonError("연습 문장을 수정하지 못했습니다.", 500);
@@ -75,7 +75,7 @@ export async function DELETE(
       return jsonError(error.message, error.status);
     }
     if (error instanceof TypingDecksSpringBackendHttpError) {
-      return jsonError(error.message, error.status);
+      return jsonError(error.message, error.status, { code: error.code });
     }
     console.error(error);
     return jsonError("연습 문장을 삭제하지 못했습니다.", 500);

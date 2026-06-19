@@ -61,7 +61,7 @@ export async function POST(
     return NextResponse.json(raceSeed);
   } catch (error) {
     if (error instanceof TypingDecksSpringBackendHttpError) {
-      return jsonError(error.message, error.status);
+      return jsonError(error.message, error.status, { code: error.code });
     }
     console.error(error);
     return jsonError("레이스 문장을 준비하지 못했습니다.", 500);

@@ -1,4 +1,5 @@
 import { createYeonUrl, fetchYeon } from "@yeon/ui/runtime/YeonBrowserRuntime";
+import { extractSpringErrorCode } from "./spring-error";
 const DEFAULT_BACKEND_BASE_URL = "http://127.0.0.1:8081";
 const INTERNAL_TOKEN_HEADER = "X-Yeon-Internal-Token";
 const CHAT_PROFILE_HEADER = "X-Yeon-Chat-Profile-Id";
@@ -14,10 +15,12 @@ function resolveSpringBackendBaseUrl() {
 
 export class ChatServiceProfileSpringBackendHttpError extends Error {
   readonly status: number;
-  constructor(status: number, message: string) {
+  readonly code?: string;
+  constructor(status: number, message: string, code?: string) {
     super(message);
     this.name = "ChatServiceProfileSpringBackendHttpError";
     this.status = status;
+    this.code = code;
   }
 }
 
@@ -67,7 +70,8 @@ export async function fetchChatServiceProfileFromSpring(params: {
   if (!response.ok) {
     throw new ChatServiceProfileSpringBackendHttpError(
       response.status,
-      extractErrorMessage(parsed) ?? "Spring backend 요청에 실패했습니다."
+      extractErrorMessage(parsed) ?? "Spring backend 요청에 실패했습니다.",
+      extractSpringErrorCode(parsed)
     );
   }
   return parsed as { profile: unknown };

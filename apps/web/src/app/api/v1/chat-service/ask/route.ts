@@ -30,7 +30,9 @@ export async function GET(request: NextRequest) {
       return jsonChatServiceError(error.message, error.status, error.detail);
     }
     if (error instanceof ChatServiceAskSpringBackendHttpError) {
-      return jsonChatServiceError(error.message, error.status);
+      return jsonChatServiceError(error.message, error.status, {
+        code: error.code,
+      });
     }
 
     console.error(error);
@@ -66,7 +68,9 @@ export async function POST(request: NextRequest) {
       return jsonChatServiceError(error.message, error.status, error.detail);
     }
     if (error instanceof ChatServiceAskSpringBackendHttpError) {
-      return jsonChatServiceError(error.message, error.status);
+      return jsonChatServiceError(error.message, error.status, {
+        code: error.code,
+      });
     }
 
     console.error(error);

@@ -1,11 +1,21 @@
 import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
+import { errorResponseSchema } from "@yeon/api-contract/error";
+import type { ErrorResponseMeta } from "@yeon/api-contract/error";
 import { getAuthSessionTokenFromRequest } from "@/server/auth/request-session-token";
 import { getAuthUserBySessionToken } from "@/server/auth/session";
 import { isAdminUser } from "@/server/auth/admin";
 import { ServiceError } from "@/server/errors/service-error";
-import { jsonError } from "../counseling-records/_shared";
 
-export { jsonError };
+export function jsonError(
+  message: string,
+  status: number,
+  detail?: ErrorResponseMeta
+) {
+  return NextResponse.json(errorResponseSchema.parse({ message, ...detail }), {
+    status,
+  });
+}
 
 export async function getOptionalAuthenticatedUser(request: NextRequest) {
   const sessionToken = getAuthSessionTokenFromRequest(request);

@@ -79,7 +79,7 @@ export async function GET(request: NextRequest) {
       if (canFallbackToDefaultDecks(request, error.status, parsedQuery.data)) {
         return defaultDeckListResponse(parsedQuery.data);
       }
-      return jsonError(error.message, error.status);
+      return jsonError(error.message, error.status, { code: error.code });
     }
     console.error(error);
     return jsonError("타자 덱 목록을 불러오지 못했습니다.", 500);
@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
       return jsonError(error.message, error.status);
     }
     if (error instanceof TypingDecksSpringBackendHttpError) {
-      return jsonError(error.message, error.status);
+      return jsonError(error.message, error.status, { code: error.code });
     }
     console.error(error);
     return jsonError("타자 덱을 생성하지 못했습니다.", 500);

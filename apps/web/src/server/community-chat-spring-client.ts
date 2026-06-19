@@ -9,6 +9,7 @@ import {
   type YeonResponse,
 } from "@yeon/ui/runtime/YeonBrowserRuntime";
 import { buildSpringBffHeaders } from "@/server/spring-bff-client";
+import { extractSpringErrorCode } from "./spring-error";
 
 const DEFAULT_BACKEND_BASE_URL = "http://127.0.0.1:8081";
 
@@ -55,7 +56,8 @@ function extractMessage(parsed: unknown) {
 export class CommunityChatSpringBackendHttpError extends Error {
   constructor(
     public readonly status: number,
-    message: string
+    message: string,
+    public readonly code?: string
   ) {
     super(message);
     this.name = "CommunityChatSpringBackendHttpError";
@@ -92,7 +94,8 @@ async function fetchSpring<T>(
   if (!response.ok) {
     throw new CommunityChatSpringBackendHttpError(
       response.status,
-      extractMessage(parsed) ?? fallbackMessage
+      extractMessage(parsed) ?? fallbackMessage,
+      extractSpringErrorCode(parsed)
     );
   }
 

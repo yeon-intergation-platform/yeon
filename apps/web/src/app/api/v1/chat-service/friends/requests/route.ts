@@ -38,7 +38,9 @@ export async function POST(request: NextRequest) {
       return jsonChatServiceError(error.message, error.status, error.detail);
     }
     if (error instanceof ChatServiceFriendRequestSpringBackendHttpError) {
-      return jsonChatServiceError(error.message, error.status);
+      return jsonChatServiceError(error.message, error.status, {
+        code: error.code,
+      });
     }
 
     console.error(error);
