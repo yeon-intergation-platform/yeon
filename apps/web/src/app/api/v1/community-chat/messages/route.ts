@@ -3,6 +3,7 @@ import {
   communityChatSendMessageBodySchema,
   communityChatSendMessageResponseSchema,
 } from "@yeon/api-contract/community-chat";
+import type { ErrorResponseMeta } from "@yeon/api-contract/error";
 import type { YeonRequest } from "@yeon/ui/runtime/YeonBrowserRuntime";
 import { NextResponse } from "next/server";
 import {
@@ -18,8 +19,12 @@ const COMMUNITY_CHAT_SEND_ERROR_MESSAGE =
   "커뮤니티 채팅 메시지를 전송하지 못했습니다.";
 const DEFAULT_COMMUNITY_CHAT_NICKNAME = "익명이";
 
-function jsonError(message: string, status: number) {
-  return NextResponse.json({ message }, { status });
+function jsonError(
+  message: string,
+  status: number,
+  detail?: ErrorResponseMeta
+) {
+  return NextResponse.json({ message, ...detail }, { status });
 }
 
 async function readJson(request: YeonRequest) {

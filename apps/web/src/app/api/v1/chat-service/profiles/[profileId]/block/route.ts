@@ -32,7 +32,7 @@ export async function POST(request: NextRequest, { params }: Params) {
     );
   } catch (error) {
     if (error instanceof ServiceError) {
-      return jsonChatServiceError(error.message, error.status);
+      return jsonChatServiceError(error.message, error.status, error.detail);
     }
     if (error instanceof ChatServiceBlockSpringBackendHttpError) {
       return jsonChatServiceError(error.message, error.status);
@@ -57,7 +57,7 @@ export async function DELETE(request: NextRequest, { params }: Params) {
     );
   } catch (error) {
     if (error instanceof ServiceError) {
-      return jsonChatServiceError(error.message, error.status);
+      return jsonChatServiceError(error.message, error.status, error.detail);
     }
     if (error instanceof ChatServiceBlockSpringBackendHttpError) {
       return jsonChatServiceError(error.message, error.status);

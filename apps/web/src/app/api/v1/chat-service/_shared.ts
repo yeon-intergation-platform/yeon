@@ -1,5 +1,8 @@
 import { chatServiceSessionResponseSchema } from "@yeon/api-contract/chat-service";
-import { errorResponseSchema } from "@yeon/api-contract/error";
+import {
+  errorResponseSchema,
+  type ErrorResponseMeta,
+} from "@yeon/api-contract/error";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { fetchChatServiceSessionFromSpring } from "@/server/chat-service-auth-spring-client";
@@ -7,8 +10,14 @@ import { ServiceError } from "@/server/errors/service-error";
 
 export const CHAT_SERVICE_SESSION_COOKIE_NAME = "chat-service-session";
 
-export function jsonChatServiceError(message: string, status: number) {
-  return NextResponse.json(errorResponseSchema.parse({ message }), { status });
+export function jsonChatServiceError(
+  message: string,
+  status: number,
+  detail?: ErrorResponseMeta
+) {
+  return NextResponse.json(errorResponseSchema.parse({ message, ...detail }), {
+    status,
+  });
 }
 
 export function getChatServiceSessionToken(request: NextRequest) {
@@ -46,7 +55,9 @@ export async function requireChatServiceAuth(request: NextRequest) {
   const auth = await resolveChatServiceSession(request);
 
   if (!auth) {
-    throw new ServiceError(401, "chat-service 로그인이 필요합니다.");
+    throw new ServiceError(401, "chat-service 로그인이 필요합니다.", {
+      code: "CHAT_SERVICE_AUTH_REQUIRED",
+    });
   }
 
   return auth;
@@ -60,7 +71,9 @@ export async function parseJsonBody(request: NextRequest) {
   try {
     return await request.json();
   } catch {
-    throw new ServiceError(400, "요청 본문 JSON 형식이 올바르지 않습니다.");
+    throw new ServiceError(400, "요청 본문 JSON 형식이 올바르지 않습니다.", {
+      code: "INVALID_JSON_BODY",
+    });
   }
 }
 

@@ -43,7 +43,7 @@ export async function GET(request: NextRequest, { params }: FeedPostParams) {
     );
   } catch (error) {
     if (error instanceof ServiceError) {
-      return jsonChatServiceError(error.message, error.status);
+      return jsonChatServiceError(error.message, error.status, error.detail);
     }
     if (error instanceof ChatServiceFeedSpringBackendHttpError) {
       return jsonChatServiceError(error.message, error.status);
@@ -104,7 +104,7 @@ export async function PATCH(request: NextRequest, { params }: FeedPostParams) {
     return NextResponse.json(response);
   } catch (error) {
     if (error instanceof ServiceError) {
-      return jsonChatServiceError(error.message, error.status);
+      return jsonChatServiceError(error.message, error.status, error.detail);
     }
     if (error instanceof ChatServiceFeedSpringBackendHttpError) {
       return jsonChatServiceError(error.message, error.status);
@@ -137,7 +137,7 @@ export async function DELETE(request: NextRequest, { params }: FeedPostParams) {
     return NextResponse.json(response);
   } catch (error) {
     if (error instanceof ServiceError) {
-      return jsonChatServiceError(error.message, error.status);
+      return jsonChatServiceError(error.message, error.status, error.detail);
     }
     if (error instanceof ChatServiceFeedSpringBackendHttpError) {
       return jsonChatServiceError(error.message, error.status);

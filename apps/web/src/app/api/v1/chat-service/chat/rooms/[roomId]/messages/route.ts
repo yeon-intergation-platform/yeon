@@ -44,7 +44,7 @@ export async function POST(request: NextRequest, { params }: Params) {
     );
   } catch (error) {
     if (error instanceof ServiceError) {
-      return jsonChatServiceError(error.message, error.status);
+      return jsonChatServiceError(error.message, error.status, error.detail);
     }
     if (error instanceof ChatServiceChatRoomsSpringBackendHttpError) {
       return jsonChatServiceError(error.message, error.status);
