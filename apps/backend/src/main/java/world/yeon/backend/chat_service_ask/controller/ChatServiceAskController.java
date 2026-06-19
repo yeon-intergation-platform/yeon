@@ -3,8 +3,6 @@ package world.yeon.backend.chat_service_ask.controller;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -15,7 +13,6 @@ import org.springframework.web.bind.annotation.RestController;
 import world.yeon.backend.chat_service_ask.dto.ChatServiceAskListResponse;
 import world.yeon.backend.chat_service_ask.dto.ChatServiceAskMutationResponse;
 import world.yeon.backend.chat_service_ask.service.ChatServiceAskService;
-import world.yeon.backend.chat_service_ask.service.ChatServiceAskServiceException;
 
 @RestController
 public class ChatServiceAskController {
@@ -41,13 +38,7 @@ public class ChatServiceAskController {
 		return service.vote(currentProfileId, postId, request.optionIndex());
 	}
 
-	@ExceptionHandler(ChatServiceAskServiceException.class)
-	public ResponseEntity<ErrorResponse> handleServiceError(ChatServiceAskServiceException error) {
-		return ResponseEntity.status(error.status()).body(new ErrorResponse(error.code(), error.getMessage()));
-	}
-
 	public record CreateAskRequest(String question, String kind, List<Option> options) {}
 	public record Option(String label) {}
 	public record VoteRequest(int optionIndex) {}
-	public record ErrorResponse(String code, String message) {}
 }

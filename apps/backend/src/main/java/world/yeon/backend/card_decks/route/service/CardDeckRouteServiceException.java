@@ -1,15 +1,10 @@
 package world.yeon.backend.card_decks.route.service;
 
-public class CardDeckRouteServiceException extends RuntimeException {
-	private final int status;
-	private final String code;
+import world.yeon.backend.common.error.ApiException;
+
+public class CardDeckRouteServiceException extends ApiException {
 
 	public CardDeckRouteServiceException(int status, String code, String message) {
-		super(message);
-		this.status = status;
-		this.code = code;
+		super(status, code, message);
 	}
-
-	public int status() { return status; }
-	public String code() { return code; }
 }

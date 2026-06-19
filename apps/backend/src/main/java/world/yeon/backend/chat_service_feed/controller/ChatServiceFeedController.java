@@ -2,8 +2,6 @@ package world.yeon.backend.chat_service_feed.controller;
 
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -91,11 +89,5 @@ public class ChatServiceFeedController {
 		return service.delete(currentProfileId, postId);
 	}
 
-	@ExceptionHandler(ChatServiceFeedServiceException.class)
-	public ResponseEntity<ErrorResponse> handleServiceError(ChatServiceFeedServiceException error) {
-		return ResponseEntity.status(error.status()).body(new ErrorResponse(error.code(), error.getMessage()));
-	}
-
 	public record CreateFeedPostRequest(String body) {}
-	public record ErrorResponse(String code, String message) {}
 }

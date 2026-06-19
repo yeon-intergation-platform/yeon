@@ -7,7 +7,6 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import world.yeon.backend.typing_character_frames.dto.*;
 import world.yeon.backend.typing_character_frames.service.TypingCharacterFrameService;
-import world.yeon.backend.typing_character_frames.service.TypingCharacterFrameServiceException;
 
 @Validated
 @RestController
@@ -30,11 +29,6 @@ public class TypingCharacterFrameController {
 		@RequestBody(required = false) UpdateTypingCharacterFrameOverrideRequest request
 	) {
 		return service.updateOverride(userId, characterId, request);
-	}
-
-	@ExceptionHandler(TypingCharacterFrameServiceException.class)
-	public ResponseEntity<ErrorResponse> handleServiceError(TypingCharacterFrameServiceException error) {
-		return ResponseEntity.status(error.status()).body(new ErrorResponse(error.code(), error.getMessage()));
 	}
 
 	@ExceptionHandler(IllegalArgumentException.class)

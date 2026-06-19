@@ -1,15 +1,10 @@
 package world.yeon.backend.typing_decks.service;
 
-public class TypingDeckServiceException extends RuntimeException {
-	private final int status;
-	private final String code;
+import world.yeon.backend.common.error.ApiException;
+
+public class TypingDeckServiceException extends ApiException {
 
 	public TypingDeckServiceException(int status, String code, String message) {
-		super(message);
-		this.status = status;
-		this.code = code;
+		super(status, code, message);
 	}
-
-	public int status() { return status; }
-	public String code() { return code; }
 }

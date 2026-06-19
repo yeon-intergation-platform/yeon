@@ -86,10 +86,5 @@ public class CardDeckRouteController {
 		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse("INVALID_REQUEST", error.getMessage()));
 	}
 
-	@ExceptionHandler(CardDeckRouteServiceException.class)
-	public ResponseEntity<ErrorResponse> handleServiceError(CardDeckRouteServiceException error) {
-		return ResponseEntity.status(error.status()).body(new ErrorResponse(error.code(), error.getMessage()));
-	}
-
 	public record ErrorResponse(String code, String message) {}
 }

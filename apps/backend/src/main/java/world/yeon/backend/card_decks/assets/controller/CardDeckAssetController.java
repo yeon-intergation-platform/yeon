@@ -6,7 +6,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -14,7 +13,6 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import world.yeon.backend.card_decks.assets.dto.CardDeckAssetUploadResponse;
 import world.yeon.backend.card_decks.assets.service.CardDeckAssetService;
-import world.yeon.backend.card_decks.assets.service.CardDeckAssetServiceException;
 import world.yeon.backend.card_decks.assets.service.CardDeckAssetStorage;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -40,11 +38,6 @@ public class CardDeckAssetController {
 		headers.add("content-type", asset.contentType());
 		headers.add("cache-control", asset.cacheControl());
 		return new ResponseEntity<>(asset.bytes(), headers, HttpStatus.OK);
-	}
-
-	@ExceptionHandler(CardDeckAssetServiceException.class)
-	public ResponseEntity<ErrorResponse> handleServiceError(CardDeckAssetServiceException error) {
-		return ResponseEntity.status(error.status()).body(new ErrorResponse(error.code(), error.getMessage()));
 	}
 
 	private String resolveStorageKey(HttpServletRequest request) {

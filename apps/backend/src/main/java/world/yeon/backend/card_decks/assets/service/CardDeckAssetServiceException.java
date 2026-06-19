@@ -1,24 +1,15 @@
 package world.yeon.backend.card_decks.assets.service;
 
-public class CardDeckAssetServiceException extends RuntimeException {
-	private final int status;
-	private final String code;
+import world.yeon.backend.common.error.ApiException;
+
+public class CardDeckAssetServiceException extends ApiException {
 
 	public CardDeckAssetServiceException(int status, String code, String message) {
-		this(status, code, message, null);
+		super(status, code, message);
 	}
 
 	public CardDeckAssetServiceException(int status, String code, String message, Throwable cause) {
-		super(message, cause);
-		this.status = status;
-		this.code = code;
-	}
-
-	public int status() {
-		return status;
-	}
-
-	public String code() {
-		return code;
+		super(status, code, message);
+		initCause(cause);
 	}
 }

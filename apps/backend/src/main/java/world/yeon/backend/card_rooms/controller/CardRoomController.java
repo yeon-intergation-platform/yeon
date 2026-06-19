@@ -7,7 +7,6 @@ import org.springframework.web.bind.annotation.*;
 import world.yeon.backend.card_rooms.dto.*;
 import world.yeon.backend.card_rooms.dto.CardRoomDtos.*;
 import world.yeon.backend.card_rooms.service.CardRoomService;
-import world.yeon.backend.card_rooms.service.CardRoomServiceException;
 
 @RestController
 @RequestMapping("/api/v1/card-rooms")
@@ -55,8 +54,4 @@ public class CardRoomController {
   @PostMapping("/{roomId}/next")
   public CardRoomResponse next(@PathVariable String roomId, @RequestHeader("X-Yeon-Participant-Id") String participantId) { return service.next(roomId, participantId); }
 
-  @ExceptionHandler(CardRoomServiceException.class)
-  public ResponseEntity<ErrorResponse> serviceError(CardRoomServiceException error) { return ResponseEntity.status(error.status()).body(new ErrorResponse(error.code(), error.getMessage())); }
-
-  public record ErrorResponse(String code, String message) {}
 }
