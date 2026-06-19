@@ -1,5 +1,6 @@
 import {
   RACE_EVENTS,
+  TYPING_ROOM_ERROR_CODE,
   TERRITORY_BATTLE_TEAM,
   VOICE_EVENTS,
   TYPING_DECK_LANGUAGE_TAG,
@@ -854,7 +855,10 @@ export class TypingRaceRoom extends Room {
     const isKnownParticipant = this.participants.has(participantId);
 
     if (this.lifecycle === TYPING_ROOM_LIFECYCLE.CLOSED) {
-      client.send(RACE_EVENTS.ROOM_ERROR, { message: "이미 닫힌 방입니다." });
+      client.send(RACE_EVENTS.ROOM_ERROR, {
+        code: TYPING_ROOM_ERROR_CODE.CLOSED,
+        message: "이미 닫힌 방입니다.",
+      });
       client.leave();
       return;
     }
@@ -862,6 +866,7 @@ export class TypingRaceRoom extends Room {
     if (this.lifecycle === TYPING_ROOM_LIFECYCLE.EMPTY_GRACE) {
       if (!isKnownParticipant) {
         client.send(RACE_EVENTS.ROOM_ERROR, {
+          code: TYPING_ROOM_ERROR_CODE.REJOIN_ONLY,
           message: "재접속 대기 중인 방입니다.",
         });
         client.leave();
@@ -877,7 +882,10 @@ export class TypingRaceRoom extends Room {
       this.status !== TYPING_ROOM_STATUS.FINISHED &&
       !isKnownParticipant
     ) {
-      client.send(RACE_EVENTS.ROOM_ERROR, { message: "이미 시작된 방입니다." });
+      client.send(RACE_EVENTS.ROOM_ERROR, {
+        code: TYPING_ROOM_ERROR_CODE.STARTED,
+        message: "이미 시작된 방입니다.",
+      });
       client.leave();
       return;
     }
@@ -886,7 +894,10 @@ export class TypingRaceRoom extends Room {
       !isKnownParticipant &&
       this.participants.size >= this.settings.maxParticipants
     ) {
-      client.send(RACE_EVENTS.ROOM_ERROR, { message: "방이 가득 찼습니다." });
+      client.send(RACE_EVENTS.ROOM_ERROR, {
+        code: TYPING_ROOM_ERROR_CODE.FULL,
+        message: "방이 가득 찼습니다.",
+      });
       client.leave();
       return;
     }

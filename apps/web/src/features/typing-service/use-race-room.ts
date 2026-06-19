@@ -14,6 +14,8 @@ import {
   type RoomChatMessage,
   type RoomTeamChangeMessage,
   type RoomErrorMessage,
+  type TypingRoomErrorCode,
+  TYPING_ROOM_ERROR_CODE,
   type TypingRaceSnapshot,
   type TypingRaceStage,
   type TypingResultSnapshot,
@@ -99,9 +101,18 @@ export type UseRaceRoomResult = UseRaceRoomConnectionResult &
 const DEFAULT_SERVER_URL = "ws://localhost:2567";
 const EXPLICIT_LEAVE_FLUSH_DELAY_MS = 80;
 
+type RoomErrorMessageKey =
+  | "started"
+  | "full"
+  | "notFound"
+  | "network"
+  | "unknown"
+  | "closed"
+  | "rejoinOnly";
+
 const ROOM_ERROR_MESSAGES: Record<
   UseRaceRoomPlayerOptions["locale"],
-  Record<"started" | "full" | "notFound" | "network" | "unknown", string>
+  Record<RoomErrorMessageKey, string>
 > = {
   ko: {
     started: "이미 시작된 방입니다.",
@@ -109,6 +120,8 @@ const ROOM_ERROR_MESSAGES: Record<
     notFound: "존재하지 않는 방입니다.",
     network: "서버와의 연결이 끊어졌습니다.",
     unknown: "타자방에 연결할 수 없습니다.",
+    closed: "이미 닫힌 방입니다.",
+    rejoinOnly: "재접속 대기 중인 방입니다.",
   },
   en: {
     started: "This room has already started.",
@@ -116,6 +129,8 @@ const ROOM_ERROR_MESSAGES: Record<
     notFound: "This room does not exist.",
     network: "The server connection was lost.",
     unknown: "Could not connect to the typing room.",
+    closed: "This room is already closed.",
+    rejoinOnly: "This room is waiting for a reconnection.",
   },
 };
 
@@ -196,6 +211,26 @@ function applyRoomErrorState(
 
   setRoomError(shouldUseNetworkMessage ? messages.network : normalized);
   setConnectionState("error");
+}
+
+const ROOM_ERROR_CODE_TO_KEY: Record<TypingRoomErrorCode, RoomErrorMessageKey> =
+  {
+    [TYPING_ROOM_ERROR_CODE.STARTED]: "started",
+    [TYPING_ROOM_ERROR_CODE.FULL]: "full",
+    [TYPING_ROOM_ERROR_CODE.CLOSED]: "closed",
+    [TYPING_ROOM_ERROR_CODE.REJOIN_ONLY]: "rejoinOnly",
+  };
+
+// 서버가 code를 주면 locale 메시지로 직접 매핑한다. code가 없으면(구버전 서버,
+// Colyseus 자동 거부 등) 기존 message 문자열 해석으로 폴백한다.
+export function resolveRoomErrorMessage(
+  payload: RoomErrorMessage,
+  locale: UseRaceRoomPlayerOptions["locale"]
+): string {
+  if (payload.code) {
+    return ROOM_ERROR_MESSAGES[locale][ROOM_ERROR_CODE_TO_KEY[payload.code]];
+  }
+  return normalizeRoomErrorMessage(payload.message, locale);
 }
 
 export function resolveRaceServerUrl() {
@@ -322,8 +357,8 @@ export function useRaceRoom(options: UseRaceRoomOptions): UseRaceRoomResult {
           }
         );
 
-        room.onMessage(RACE_EVENTS.ROOM_ERROR, (message: RoomErrorMessage) => {
-          setRoomError(normalizeRoomErrorMessage(message.message, locale));
+        room.onMessage(RACE_EVENTS.ROOM_ERROR, (payload: RoomErrorMessage) => {
+          setRoomError(resolveRoomErrorMessage(payload, locale));
         });
 
         room.onMessage(
