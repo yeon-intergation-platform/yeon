@@ -35,7 +35,9 @@ export async function POST(request: NextRequest, { params }: Params) {
       return jsonChatServiceError(error.message, error.status, error.detail);
     }
     if (error instanceof ChatServiceBlockSpringBackendHttpError) {
-      return jsonChatServiceError(error.message, error.status);
+      return jsonChatServiceError(error.message, error.status, {
+        code: error.code,
+      });
     }
 
     console.error(error);
@@ -60,7 +62,9 @@ export async function DELETE(request: NextRequest, { params }: Params) {
       return jsonChatServiceError(error.message, error.status, error.detail);
     }
     if (error instanceof ChatServiceBlockSpringBackendHttpError) {
-      return jsonChatServiceError(error.message, error.status);
+      return jsonChatServiceError(error.message, error.status, {
+        code: error.code,
+      });
     }
 
     console.error(error);

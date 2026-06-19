@@ -46,7 +46,7 @@ export async function POST(
       return jsonError(error.message, error.status);
     }
     if (error instanceof TypingDecksSpringBackendHttpError) {
-      return jsonError(error.message, error.status);
+      return jsonError(error.message, error.status, { code: error.code });
     }
     console.error(error);
     return jsonError("연습 문장을 추가하지 못했습니다.", 500);

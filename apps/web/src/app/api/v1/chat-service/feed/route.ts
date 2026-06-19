@@ -58,7 +58,9 @@ export async function GET(request: NextRequest) {
       return jsonChatServiceError(error.message, error.status, error.detail);
     }
     if (error instanceof ChatServiceFeedSpringBackendHttpError) {
-      return jsonChatServiceError(error.message, error.status);
+      return jsonChatServiceError(error.message, error.status, {
+        code: error.code,
+      });
     }
     if (error instanceof ChatServiceAuthSpringBackendHttpError) {
       return jsonChatServiceError(error.message, error.status);
@@ -95,7 +97,9 @@ export async function POST(request: NextRequest) {
       return jsonChatServiceError(error.message, error.status, error.detail);
     }
     if (error instanceof ChatServiceFeedSpringBackendHttpError) {
-      return jsonChatServiceError(error.message, error.status);
+      return jsonChatServiceError(error.message, error.status, {
+        code: error.code,
+      });
     }
     if (error instanceof ChatServiceAuthSpringBackendHttpError) {
       return jsonChatServiceError(error.message, error.status);
