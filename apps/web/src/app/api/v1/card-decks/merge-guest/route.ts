@@ -1,17 +1,27 @@
 import { mergeGuestRequestSchema } from "@yeon/api-contract/card-deck-merge-guest";
-import { errorResponseSchema } from "@yeon/api-contract/error";
+import {
+  errorResponseSchema,
+  type ErrorResponseMeta,
+} from "@yeon/api-contract/error";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import {
   CardDeckMergeGuestSpringBackendHttpError,
   mergeGuestCardDecksInSpring,
 } from "@/server/card-decks-merge-guest-spring-client";
+import { ServiceError } from "@/server/errors/service-error";
 import { getCurrentAuthUser } from "@/server/auth/session";
 
 export const runtime = "nodejs";
 
-function jsonError(message: string, status: number) {
-  return NextResponse.json(errorResponseSchema.parse({ message }), { status });
+function jsonError(
+  message: string,
+  status: number,
+  detail?: ErrorResponseMeta
+) {
+  return NextResponse.json(errorResponseSchema.parse({ message, ...detail }), {
+    status,
+  });
 }
 
 export async function POST(request: NextRequest) {
@@ -45,6 +55,9 @@ export async function POST(request: NextRequest) {
     });
     return NextResponse.json(result, { status: 200 });
   } catch (error) {
+    if (error instanceof ServiceError) {
+      return jsonError(error.message, error.status, error.detail);
+    }
     if (error instanceof CardDeckMergeGuestSpringBackendHttpError) {
       return jsonError(error.message, error.status);
     }

@@ -90,7 +90,11 @@ import {
   type UpdateTypingDeckBody,
   type UpdateTypingDeckPassageBody,
 } from "@yeon/api-contract/typing-decks";
-import { errorResponseSchema } from "@yeon/api-contract/error";
+import {
+  errorResponseSchema,
+  type ErrorResponse,
+  type ErrorResponseMeta,
+} from "@yeon/api-contract/error";
 import { healthResponseSchema } from "@yeon/api-contract/health";
 import {
   LIFE_OS_API_PATHS,
@@ -122,12 +126,20 @@ import {
 } from "@yeon/api-contract/users";
 
 export class ApiClientError extends Error {
+  /** 프론트 분기용 고정 식별자(백엔드 code). 없을 수 있다. */
+  public readonly code?: string;
+  /** code + 상황별 확장 메타데이터(없으면 undefined). */
+  public readonly detail?: ErrorResponseMeta;
+
   constructor(
     public readonly status: number,
-    message: string
+    message: string,
+    detail?: ErrorResponseMeta
   ) {
     super(message);
     this.name = "ApiClientError";
+    this.code = detail?.code;
+    this.detail = detail;
   }
 }
 
@@ -157,13 +169,15 @@ function joinUrl(baseUrl: string, path: string) {
   return new URL(path, baseUrl).toString();
 }
 
-async function parseErrorResponse(response: Response) {
+async function parseErrorResponse(
+  response: Response
+): Promise<ErrorResponse | null> {
   try {
     const data = await response.json();
     const parsed = errorResponseSchema.safeParse(data);
 
     if (parsed.success) {
-      return parsed.data.message;
+      return parsed.data;
     }
   } catch (error) {
     console.warn("[api-client] 오류 응답 파싱 실패", error);
@@ -171,6 +185,24 @@ async function parseErrorResponse(response: Response) {
   }
 
   return null;
+}
+
+const DEFAULT_ERROR_MESSAGE = "API 요청 처리에 실패했습니다.";
+
+/** 오류 응답에서 message와 메타(code+확장)를 분리해 ApiClientError를 만든다. */
+async function toApiClientError(response: Response) {
+  const parsed = await parseErrorResponse(response);
+
+  if (!parsed) {
+    return new ApiClientError(response.status, DEFAULT_ERROR_MESSAGE);
+  }
+
+  const { message, ...detail } = parsed;
+  return new ApiClientError(
+    response.status,
+    message || DEFAULT_ERROR_MESSAGE,
+    detail
+  );
 }
 
 const CHAT_SERVICE_GUEST_SESSION_PREFIX = "guest:";
@@ -250,10 +282,7 @@ export function createApiClient(options: ApiClientOptions = {}) {
     });
 
     if (!response.ok) {
-      const message =
-        (await parseErrorResponse(response)) ?? "API 요청 처리에 실패했습니다.";
-
-      throw new ApiClientError(response.status, message);
+      throw await toApiClientError(response);
     }
 
     const data = await response.json();
@@ -272,10 +301,7 @@ export function createApiClient(options: ApiClientOptions = {}) {
     });
 
     if (!response.ok) {
-      const message =
-        (await parseErrorResponse(response)) ?? "API 요청 처리에 실패했습니다.";
-
-      throw new ApiClientError(response.status, message);
+      throw await toApiClientError(response);
     }
   }
 

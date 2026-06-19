@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
     );
   } catch (error) {
     if (error instanceof ServiceError) {
-      return jsonChatServiceError(error.message, error.status);
+      return jsonChatServiceError(error.message, error.status, error.detail);
     }
     if (error instanceof ChatServiceMyProfileSpringBackendHttpError) {
       return jsonChatServiceError(error.message, error.status);
@@ -68,7 +68,7 @@ export async function PATCH(request: NextRequest) {
     );
   } catch (error) {
     if (error instanceof ServiceError) {
-      return jsonChatServiceError(error.message, error.status);
+      return jsonChatServiceError(error.message, error.status, error.detail);
     }
     if (error instanceof ChatServiceMyProfileSpringBackendHttpError) {
       return jsonChatServiceError(error.message, error.status);
@@ -92,7 +92,7 @@ export async function DELETE(request: NextRequest) {
     return nextResponse;
   } catch (error) {
     if (error instanceof ServiceError) {
-      return jsonChatServiceError(error.message, error.status);
+      return jsonChatServiceError(error.message, error.status, error.detail);
     }
     if (error instanceof ChatServiceMyProfileSpringBackendHttpError) {
       return jsonChatServiceError(error.message, error.status);
