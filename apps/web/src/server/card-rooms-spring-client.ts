@@ -12,6 +12,7 @@ import {
   type YeonRequestInit,
 } from "@yeon/ui/runtime/YeonBrowserRuntime";
 import { buildSpringBffHeaders } from "./spring-bff-client";
+import { extractSpringErrorCode } from "./spring-error";
 
 const DEFAULT_BACKEND_BASE_URL = "http://127.0.0.1:8081";
 
@@ -40,12 +41,15 @@ function extractMessage(parsed: unknown) {
 }
 
 export class CardRoomsSpringBackendHttpError extends Error {
+  readonly code?: string;
   constructor(
     public readonly status: number,
-    message: string
+    message: string,
+    code?: string
   ) {
     super(message);
     this.name = "CardRoomsSpringBackendHttpError";
+    this.code = code;
   }
 }
 
@@ -74,7 +78,8 @@ async function fetchSpring<T>(
   if (!response.ok) {
     throw new CardRoomsSpringBackendHttpError(
       response.status,
-      extractMessage(parsed) ?? fallback
+      extractMessage(parsed) ?? fallback,
+      extractSpringErrorCode(parsed)
     );
   }
   return parsed as T;

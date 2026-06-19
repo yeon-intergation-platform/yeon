@@ -4,6 +4,7 @@ import {
 } from "@yeon/ui/runtime/YeonBrowserRuntime";
 import type { FrameSlot } from "@/features/typing-service/frame-slot";
 import { buildSpringBffHeaders } from "@/server/spring-bff-client";
+import { extractSpringErrorCode } from "./spring-error";
 
 const DEFAULT_BACKEND_BASE_URL = "http://127.0.0.1:8081";
 
@@ -19,11 +20,13 @@ function resolveSpringBackendBaseUrl() {
 
 export class TypingCharacterFramesSpringBackendHttpError extends Error {
   readonly status: number;
+  readonly code?: string;
 
-  constructor(status: number, message: string) {
+  constructor(status: number, message: string, code?: string) {
     super(message);
     this.name = "TypingCharacterFramesSpringBackendHttpError";
     this.status = status;
+    this.code = code;
   }
 }
 
@@ -68,7 +71,8 @@ async function fetchJson(
   if (!response.ok) {
     throw new TypingCharacterFramesSpringBackendHttpError(
       response.status,
-      extractErrorMessage(parsed) ?? "Spring backend 요청에 실패했습니다."
+      extractErrorMessage(parsed) ?? "Spring backend 요청에 실패했습니다.",
+      extractSpringErrorCode(parsed)
     );
   }
 

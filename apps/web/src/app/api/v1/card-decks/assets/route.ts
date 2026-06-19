@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(uploaded, { status: 201 });
   } catch (error) {
     if (error instanceof CardDeckAssetsSpringBackendHttpError) {
-      return jsonError(error.message, error.status);
+      return jsonError(error.message, error.status, { code: error.code });
     }
     console.error(error);
     return jsonError("이미지를 업로드하지 못했습니다.", 500);

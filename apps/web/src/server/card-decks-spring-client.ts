@@ -3,6 +3,7 @@ import {
   type YeonRequestInit,
 } from "@yeon/ui/runtime/YeonBrowserRuntime";
 import { buildSpringBffHeaders } from "@/server/spring-bff-client";
+import { extractSpringErrorCode } from "./spring-error";
 
 const DEFAULT_BACKEND_BASE_URL = "http://127.0.0.1:8081";
 const CARD_DECKS_BACKEND_ERROR_MESSAGE = "카드 서비스 요청에 실패했습니다.";
@@ -26,10 +27,12 @@ function resolveSpringBackendBaseUrl() {
 
 export class CardDecksSpringBackendHttpError extends Error {
   readonly status: number;
-  constructor(status: number, message: string) {
+  readonly code?: string;
+  constructor(status: number, message: string, code?: string) {
     super(normalizeBackendErrorMessage(message));
     this.name = "CardDecksSpringBackendHttpError";
     this.status = status;
+    this.code = code;
   }
 }
 
@@ -68,7 +71,8 @@ async function fetchJson(path: string, userId: string, init?: YeonRequestInit) {
   if (!response.ok) {
     throw new CardDecksSpringBackendHttpError(
       response.status,
-      extractErrorMessage(parsed) ?? CARD_DECKS_BACKEND_ERROR_MESSAGE
+      extractErrorMessage(parsed) ?? CARD_DECKS_BACKEND_ERROR_MESSAGE,
+      extractSpringErrorCode(parsed)
     );
   }
   return parsed;

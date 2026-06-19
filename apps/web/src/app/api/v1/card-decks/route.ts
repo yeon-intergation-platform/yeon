@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(decks);
   } catch (error) {
     if (error instanceof CardDecksSpringBackendHttpError) {
-      return jsonError(error.message, error.status);
+      return jsonError(error.message, error.status, { code: error.code });
     }
     console.error(error);
     return jsonError("덱 목록을 불러오지 못했습니다.", 500);
@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(deck, { status: 201 });
   } catch (error) {
     if (error instanceof CardDecksSpringBackendHttpError) {
-      return jsonError(error.message, error.status);
+      return jsonError(error.message, error.status, { code: error.code });
     }
     console.error(error);
     return jsonError("덱을 생성하지 못했습니다.", 500);

@@ -1,18 +1,16 @@
 import * as Sentry from "@sentry/nextjs";
-import { errorResponseSchema } from "@yeon/api-contract/error";
 import type { NextRequest } from "next/server";
-import { NextResponse } from "next/server";
 
 import { getAuthSessionTokensFromRequest } from "@/server/auth/request-session-token";
 import {
   clearAuthSessionCookie,
   getAuthUserBySessionToken,
 } from "@/server/auth/session";
+import { jsonError } from "@/server/bff-error";
 import { ServiceError } from "@/server/errors/service-error";
 
-export function jsonError(message: string, status: number) {
-  return NextResponse.json(errorResponseSchema.parse({ message }), { status });
-}
+// jsonError SSOT는 @/server/bff-error. 기존 import 경로 호환을 위해 재수출한다.
+export { jsonError };
 
 /**
  * Route handler 공통 try/catch 래퍼.
@@ -20,7 +18,7 @@ export function jsonError(message: string, status: number) {
  * - 나머지 → Sentry 보고 + 500 응답
  */
 export async function withHandler(
-  fn: () => Promise<Response>,
+  fn: () => Promise<Response>
 ): Promise<Response> {
   try {
     return await fn();

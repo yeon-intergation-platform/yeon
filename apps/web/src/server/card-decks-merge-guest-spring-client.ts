@@ -3,6 +3,7 @@ import type {
   MergeGuestRequest,
   MergeGuestResponse,
 } from "@yeon/api-contract/card-deck-merge-guest";
+import { extractSpringErrorCode } from "./spring-error";
 
 const DEFAULT_BACKEND_BASE_URL = "http://127.0.0.1:8081";
 const INTERNAL_TOKEN_HEADER = "X-Yeon-Internal-Token";
@@ -19,11 +20,13 @@ function resolveSpringBackendBaseUrl() {
 
 export class CardDeckMergeGuestSpringBackendHttpError extends Error {
   readonly status: number;
+  readonly code?: string;
 
-  constructor(status: number, message: string) {
+  constructor(status: number, message: string, code?: string) {
     super(message);
     this.name = "CardDeckMergeGuestSpringBackendHttpError";
     this.status = status;
+    this.code = code;
   }
 }
 
@@ -80,7 +83,8 @@ export async function mergeGuestCardDecksInSpring(params: {
   if (!response.ok) {
     throw new CardDeckMergeGuestSpringBackendHttpError(
       response.status,
-      extractErrorMessage(parsed) ?? "Spring backend 요청에 실패했습니다."
+      extractErrorMessage(parsed) ?? "Spring backend 요청에 실패했습니다.",
+      extractSpringErrorCode(parsed)
     );
   }
 
