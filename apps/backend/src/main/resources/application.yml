@@ -22,3 +22,11 @@ management:
     web:
       exposure:
         include: health
+
+# Bugsink 오류 수집. Bugsink는 Sentry SDK 호환이므로 Sentry Java SDK를 사용한다.
+# BUGSINK_DSN 또는 SENTRY_DSN 이 없으면 SDK는 전송하지 않는다.
+sentry:
+  dsn: ${BUGSINK_DSN:${SENTRY_DSN:}}
+  environment: ${SENTRY_ENV:${APP_ENV:dev}}
+  traces-sample-rate: ${SENTRY_TRACES_RATE:0.0}
+  send-default-pii: false
