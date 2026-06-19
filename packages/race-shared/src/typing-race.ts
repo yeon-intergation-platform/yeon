@@ -460,8 +460,21 @@ export type RoomReadyMessage = {
   isReady: boolean;
 };
 
+// 룸 입장 거부 사유 code. 클라가 locale별 메시지로 매핑한다(문자열 비교 의존 제거).
+export const TYPING_ROOM_ERROR_CODE = {
+  CLOSED: "room.closed",
+  REJOIN_ONLY: "room.rejoin-only",
+  STARTED: "room.started",
+  FULL: "room.full",
+} as const;
+
+export type TypingRoomErrorCode =
+  (typeof TYPING_ROOM_ERROR_CODE)[keyof typeof TYPING_ROOM_ERROR_CODE];
+
 export type RoomErrorMessage = {
   message: string;
+  /** 입장 거부 사유 code. 클라가 locale 메시지로 매핑한다. 없으면 message로 폴백. */
+  code?: TypingRoomErrorCode;
 };
 
 export type RankableTypingResult = Omit<TypingResultSnapshot, "rank"> & {
