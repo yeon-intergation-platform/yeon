@@ -96,7 +96,11 @@ export function GameDetail({ game }: { game: GameEntry }) {
               type="button"
               onClick={handleStart}
               className="group absolute inset-0 flex h-full w-full flex-col items-center justify-center gap-4 bg-cover bg-center"
-              style={{ backgroundImage: `url("${game.thumbUrl}")` }}
+              style={
+                game.thumbUrl
+                  ? { backgroundImage: `url("${game.thumbUrl}")` }
+                  : undefined
+              }
               aria-label={`${game.title} 게임 시작`}
             >
               <span className="absolute inset-0 bg-black/45 transition-colors duration-200 group-hover:bg-black/30" />

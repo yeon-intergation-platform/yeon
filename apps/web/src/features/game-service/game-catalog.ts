@@ -47,6 +47,7 @@ export const GAME_CATEGORY_ORDER: readonly GameCategory[] = [
 ];
 
 export const GAME_PROVIDER = "GameMonetize (공식 임베드)";
+export const CRAZYGAMES_PROVIDER = "CrazyGames (공식 임베드)";
 
 export type GameEntry = {
   /** URL 식별자(/game-service/{slug}) */
@@ -68,8 +69,78 @@ export type GameEntry = {
   orientation: "landscape" | "portrait";
 };
 
-// 간판 게임(정적). 실제 GameMonetize Feed 레코드를 한국어로 큐레이션했다.
+// 간판 게임(정적). CrazyGames 공식 임베드 + GameMonetize 실데이터를 한국어로 큐레이션했다.
+// CrazyGames는 game.yeon.world 임베드 화이트리스트 등록을 전제로 유지한다.
 export const CURATED_GAMES = [
+  {
+    slug: "snake-io",
+    title: "Snake.io",
+    summary: "다른 플레이어를 가두며 몸집을 키우는 실시간 IO 스네이크.",
+    description:
+      "먹이를 먹어 길이를 늘리고, 다른 뱀의 진로를 막아 처치합니다. 실시간으로 전 세계 플레이어와 경쟁하는 대표적인 IO 게임입니다.",
+    controls: ["마우스로 방향 조절", "클릭/스페이스로 부스트"],
+    category: GAME_CATEGORIES.io,
+    provider: CRAZYGAMES_PROVIDER,
+    embedUrl: "https://www.crazygames.com/embed/snake-io",
+    thumbUrl:
+      "https://imgs.crazygames.com/snake-io_16x9/20260302021932/snake-io_16x9-cover?metadata=none&quality=100&width=600&height=315&fit=crop",
+    orientation: "landscape",
+  },
+  {
+    slug: "smash-karts",
+    title: "Smash Karts",
+    summary: "아이템으로 상대를 폭파하는 3D 멀티 카트 배틀.",
+    description:
+      "카트를 몰며 맵의 아이템을 먹고 미사일·기관총으로 상대를 처치합니다. 정해진 시간 안에 가장 많이 처치한 플레이어가 승리하는 실시간 멀티 게임입니다.",
+    controls: ["방향키 또는 WASD로 이동", "스페이스로 아이템 사용"],
+    category: GAME_CATEGORIES.io,
+    provider: CRAZYGAMES_PROVIDER,
+    embedUrl: "https://www.crazygames.com/embed/smash-karts",
+    thumbUrl:
+      "https://imgs.crazygames.com/smash-karts_16x9/20260210123937/smash-karts_16x9-cover?metadata=none&quality=100&width=600&height=315&fit=crop",
+    orientation: "landscape",
+  },
+  {
+    slug: "bullet-force",
+    title: "Bullet Force",
+    summary: "팀 데스매치 중심의 3D 멀티플레이어 FPS.",
+    description:
+      "다양한 무기와 맵에서 실시간으로 다른 플레이어와 총격전을 벌입니다. 팀 데스매치, 컨퀘스트 등 여러 모드를 지원하는 본격 FPS입니다.",
+    controls: ["WASD 이동, 마우스 조준", "좌클릭 사격, R 재장전"],
+    category: GAME_CATEGORIES.shooting,
+    provider: CRAZYGAMES_PROVIDER,
+    embedUrl: "https://www.crazygames.com/embed/bullet-force-multiplayer",
+    thumbUrl:
+      "https://imgs.crazygames.com/bullet-force-multiplayer_16x9/20260213105606/bullet-force-multiplayer_16x9-cover?metadata=none&quality=100&width=600&height=315&fit=crop",
+    orientation: "landscape",
+  },
+  {
+    slug: "2048",
+    title: "2048",
+    summary: "같은 숫자 타일을 합쳐 2048을 만드는 중독성 퍼즐.",
+    description:
+      "방향키로 타일을 밀어 같은 숫자끼리 합칩니다. 보드가 가득 차기 전에 2048 타일을 만들면 승리입니다. 짧고 강한 집중이 필요한 클래식 퍼즐 게임입니다.",
+    controls: ["방향키(↑↓←→)로 타일 이동", "모바일은 스와이프"],
+    category: GAME_CATEGORIES.puzzle,
+    provider: CRAZYGAMES_PROVIDER,
+    embedUrl: "https://www.crazygames.com/embed/2048",
+    thumbUrl:
+      "https://imgs.crazygames.com/games/2048/cover_16x9-1707828856995.png?metadata=none&quality=100&width=600&height=315&fit=crop",
+    orientation: "landscape",
+  },
+  {
+    slug: "hextris",
+    title: "Hextris",
+    summary: "테트리스에서 영감을 받은 육각형 회전 퍼즐.",
+    description:
+      "중앙 육각형을 회전시켜 떨어지는 같은 색 블록을 맞춥니다. 같은 색이 연달아 쌓이면 사라집니다. 속도가 점점 빨라지는 반응형 아케이드 퍼즐입니다.",
+    controls: ["좌/우 방향키 또는 화면 좌우 터치로 회전"],
+    category: GAME_CATEGORIES.arcade,
+    provider: CRAZYGAMES_PROVIDER,
+    embedUrl: "https://www.crazygames.com/embed/hextris",
+    thumbUrl: "",
+    orientation: "landscape",
+  },
   {
     slug: "monster-stomper",
     title: "Monster Stomper",

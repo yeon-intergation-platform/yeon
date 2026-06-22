@@ -25,7 +25,11 @@ function GameCard({ game }: { game: GameEntry }) {
     >
       <YeonView
         className="relative aspect-video w-full bg-cover bg-center bg-[#f2f2f2]"
-        style={{ backgroundImage: `url("${game.thumbUrl}")` }}
+        style={
+          game.thumbUrl
+            ? { backgroundImage: `url("${game.thumbUrl}")` }
+            : undefined
+        }
       >
         <YeonText
           as="span"

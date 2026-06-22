@@ -166,10 +166,10 @@ export function mapFeedPayloadToGames(payload: unknown): GameEntry[] {
 }
 
 const DEFAULT_FEED_URL =
-  "https://gamemonetize.com/feed.php?format=0&page=1&type=html5&amount=200";
+  "https://gamemonetize.com/feed.php?format=0&page=1&type=html5&amount=600";
 
 // 허브에 노출할 동적 게임 상한. Feed는 한 페이지에 수천 건을 줄 수 있어 잘라낸다.
-export const GAME_FEED_LIMIT = 180;
+export const GAME_FEED_LIMIT = 600;
 
 // rate-limit·과대 응답 대비로 12시간 서버 캐시. 운영에서 더 줄일 필요 없으면 유지.
 export const GAME_FEED_REVALIDATE_SECONDS = 60 * 60 * 12;
