@@ -197,7 +197,10 @@ async function toApiClientError(response: Response) {
     return new ApiClientError(response.status, DEFAULT_ERROR_MESSAGE);
   }
 
-  const { message, ...detail } = parsed;
+  // 확장 메타가 없으면 detail은 undefined로 둔다(빈 객체 {}를 남기지 않음).
+  // ApiClientError.detail 계약("없으면 undefined")과 일치시킨다.
+  const { message, ...rest } = parsed;
+  const detail = Object.keys(rest).length > 0 ? rest : undefined;
   return new ApiClientError(
     response.status,
     message || DEFAULT_ERROR_MESSAGE,
