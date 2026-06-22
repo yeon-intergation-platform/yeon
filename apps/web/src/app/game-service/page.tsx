@@ -2,7 +2,13 @@ import { type YeonPageMetadata } from "@yeon/ui/runtime/YeonPageMetadata";
 import { YeonStructuredData } from "@yeon/ui";
 import { SITE_BRAND_NAME } from "@/lib/site-brand";
 import { buildServiceCanonicalUrl } from "@/lib/seo";
-import { GameServiceHome, getListedGames } from "@/features/game-service";
+import {
+  GAME_CATEGORIES,
+  GameServiceHome,
+  getHubGames,
+  type GameCategory,
+  type HubGamesResult,
+} from "@/features/game-service";
 
 const GAME_HUB_TITLE = "게임 - 브라우저에서 바로 즐기는 게임 모음";
 const GAME_HUB_DESCRIPTION =
@@ -33,9 +39,26 @@ export const metadata: YeonPageMetadata = {
   },
 };
 
-function getGameHubJsonLd() {
-  const games = getListedGames();
+type GameHubSearchParams = {
+  category?: string | string[];
+  page?: string | string[];
+};
 
+function firstParam(value: string | string[] | undefined): string | undefined {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+function parseCategory(value: string | undefined): GameCategory | null {
+  if (!value) return null;
+  return value in GAME_CATEGORIES ? (value as GameCategory) : null;
+}
+
+function parsePage(value: string | undefined): number {
+  const page = Number.parseInt(value ?? "1", 10);
+  return Number.isFinite(page) && page > 1 ? page : 1;
+}
+
+function getGameHubJsonLd(result: HubGamesResult) {
   return {
     "@context": "https://schema.org",
     "@graph": [
@@ -47,7 +70,7 @@ function getGameHubJsonLd() {
         inLanguage: "ko-KR",
         mainEntity: {
           "@type": "ItemList",
-          itemListElement: games.map((game, index) => ({
+          itemListElement: result.games.map((game, index) => ({
             "@type": "ListItem",
             position: index + 1,
             name: game.title,
@@ -60,11 +83,24 @@ function getGameHubJsonLd() {
   };
 }
 
-export default function GameServicePage() {
+export default async function GameServicePage({
+  searchParams,
+}: {
+  searchParams: Promise<GameHubSearchParams>;
+}) {
+  const { category, page } = await searchParams;
+  const result = await getHubGames({
+    category: parseCategory(firstParam(category)),
+    page: parsePage(firstParam(page)),
+  });
+
   return (
     <>
-      <YeonStructuredData id="game-service-jsonld" data={getGameHubJsonLd()} />
-      <GameServiceHome />
+      <YeonStructuredData
+        id="game-service-jsonld"
+        data={getGameHubJsonLd(result)}
+      />
+      <GameServiceHome result={result} />
     </>
   );
 }

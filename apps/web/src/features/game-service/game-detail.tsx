@@ -1,22 +1,34 @@
 "use client";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { YeonButton, YeonLink, YeonText, YeonView } from "@yeon/ui";
 import { CommonProductHeader } from "@/components/product-shell/product-header";
 import { SHARED_FEATURE_CLASS } from "@/features/shared-style-constants";
 import { GAME_CATEGORY_LABELS, type GameEntry } from "./game-catalog";
 
 // 외부 임베드 게임은 신뢰 경계가 다르므로 최소 권한만 부여한다.
+// GameMonetize html5 게임은 광고 팝업·저장소·포인터락이 필요할 수 있어 아래로 정합화한다.
 const GAME_IFRAME_SANDBOX =
-  "allow-scripts allow-same-origin allow-popups allow-pointer-lock allow-forms";
-const GAME_IFRAME_ALLOW = "fullscreen; gamepad; autoplay; clipboard-write";
+  "allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-pointer-lock allow-forms allow-orientation-lock";
+const GAME_IFRAME_ALLOW =
+  "fullscreen; gamepad; autoplay; clipboard-write; cross-origin-isolated";
 
 export function GameDetail({ game }: { game: GameEntry }) {
-  const frameWrapperRef = useRef<HTMLDivElement>(null);
+  // 처음엔 iframe을 로드하지 않고 썸네일 포스터만 띄운다. 사용자가 "게임 시작"을
+  // 눌러야(=user gesture) 로드 + 전체화면 진입 → FPS류의 pointer-lock 흔들림을 막는다.
+  const [started, setStarted] = useState(false);
+  const playAreaRef = useRef<HTMLDivElement>(null);
 
-  const handleFullscreen = () => {
-    frameWrapperRef.current?.requestFullscreen?.().catch(() => {
-      // 전체화면이 거부되어도 인라인 플레이는 유지된다.
+  // 전체화면은 iframe을 담은 컨테이너에 건다. 풀 뷰포트에서 pointer lock이 안정적으로
+  // 잡혀야 마우스가 경계를 벗어나며 카메라가 튀는 현상이 사라진다.
+  const requestFullscreen = () => {
+    playAreaRef.current?.requestFullscreen?.().catch(() => {
+      // 전체화면이 거부돼도 인라인 플레이는 유지된다.
     });
+  };
+
+  const handleStart = () => {
+    setStarted(true);
+    requestFullscreen();
   };
 
   const aspectClass =
@@ -67,28 +79,63 @@ export function GameDetail({ game }: { game: GameEntry }) {
         </YeonView>
 
         <YeonView
-          ref={frameWrapperRef}
+          ref={playAreaRef}
           className={`relative mt-5 w-full overflow-hidden rounded-2xl border border-[#e5e5e5] bg-black ${aspectClass}`}
         >
-          <iframe
-            src={game.embedUrl}
-            title={game.title}
-            sandbox={GAME_IFRAME_SANDBOX}
-            allow={GAME_IFRAME_ALLOW}
-            loading="lazy"
-            referrerPolicy="no-referrer"
-            className="absolute inset-0 h-full w-full border-0"
-          />
+          {started ? (
+            <iframe
+              src={game.embedUrl}
+              title={game.title}
+              sandbox={GAME_IFRAME_SANDBOX}
+              allow={GAME_IFRAME_ALLOW}
+              allowFullScreen
+              className="absolute inset-0 h-full w-full border-0"
+            />
+          ) : (
+            <button
+              type="button"
+              onClick={handleStart}
+              className="group absolute inset-0 flex h-full w-full flex-col items-center justify-center gap-4 bg-cover bg-center"
+              style={{ backgroundImage: `url("${game.thumbUrl}")` }}
+              aria-label={`${game.title} 게임 시작`}
+            >
+              <span className="absolute inset-0 bg-black/45 transition-colors duration-200 group-hover:bg-black/30" />
+              <span className="relative flex h-16 w-16 items-center justify-center rounded-full bg-white/90 text-[26px] text-[#111] shadow-lg transition-transform duration-200 group-hover:scale-105">
+                ▶
+              </span>
+              <span className="relative rounded-full bg-white/90 px-4 py-1.5 text-[13px] font-bold text-[#111]">
+                게임 시작
+              </span>
+            </button>
+          )}
         </YeonView>
 
-        <YeonView className="mt-4 flex justify-end">
-          <YeonButton
-            type="button"
-            variant="secondary"
-            onClick={handleFullscreen}
+        <YeonView className="mt-4 flex flex-wrap items-center justify-between gap-3">
+          <YeonText
+            as="p"
+            variant="unstyled"
+            tone="inherit"
+            className="text-[12px] leading-[1.6] text-[#999]"
           >
-            전체화면
-          </YeonButton>
+            게임이 보이지 않으면{" "}
+            <YeonLink
+              href={game.embedUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={SHARED_FEATURE_CLASS.text13Emphasis}
+            >
+              새 탭에서 열기
+            </YeonLink>
+          </YeonText>
+          {started ? (
+            <YeonButton
+              type="button"
+              variant="secondary"
+              onClick={requestFullscreen}
+            >
+              전체화면
+            </YeonButton>
+          ) : null}
         </YeonView>
 
         <YeonView

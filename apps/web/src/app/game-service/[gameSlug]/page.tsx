@@ -5,13 +5,16 @@ import { SITE_BRAND_NAME } from "@/lib/site-brand";
 import { buildServiceCanonicalUrl } from "@/lib/seo";
 import {
   GameDetail,
-  getGameBySlug,
+  getDetailGame,
   getGameSlugs,
 } from "@/features/game-service";
 
 type GameDetailRouteParams = {
   gameSlug: string;
 };
+
+// curated 간판 게임만 정적 생성하고, feed 게임은 on-demand로 렌더한다.
+export const dynamicParams = true;
 
 export function generateStaticParams() {
   return getGameSlugs().map((gameSlug) => ({ gameSlug }));
@@ -23,7 +26,7 @@ export async function generateMetadata({
   params: Promise<GameDetailRouteParams>;
 }): Promise<YeonPageMetadata> {
   const { gameSlug } = await params;
-  const game = getGameBySlug(gameSlug);
+  const game = await getDetailGame(gameSlug);
 
   if (!game) {
     return { title: "게임을 찾을 수 없습니다 | YEON" };
@@ -74,7 +77,7 @@ export default async function GameDetailPage({
   params: Promise<GameDetailRouteParams>;
 }) {
   const { gameSlug } = await params;
-  const game = getGameBySlug(gameSlug);
+  const game = await getDetailGame(gameSlug);
 
   if (!game) {
     showYeonNotFound();
