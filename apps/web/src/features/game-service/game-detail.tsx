@@ -9,8 +9,12 @@ import { GAME_CATEGORY_LABELS, type GameEntry } from "./game-catalog";
 // GameMonetize html5 게임은 광고 팝업·저장소·포인터락이 필요할 수 있어 아래로 정합화한다.
 const GAME_IFRAME_SANDBOX =
   "allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-pointer-lock allow-forms allow-orientation-lock";
-const GAME_IFRAME_ALLOW =
-  "fullscreen; gamepad; autoplay; clipboard-write; cross-origin-isolated";
+// allow에는 임베드 게임을 깨뜨리는 토큰을 넣지 않는다(실측 기반):
+// - cross-origin-isolated: iframe에 COEP(require-corp)를 강제해, 외부 도메인 에셋을
+//   CORP 헤더 없이 불러오는 게임(snake.io 등)을 흰 화면으로 만든다.
+// - gamepad: sandbox iframe과 함께 주면 snake.io처럼 중첩 외부 iframe으로 구성된
+//   CrazyGames 게임이 로드되지 않고 흰 화면이 된다.
+const GAME_IFRAME_ALLOW = "fullscreen; autoplay; clipboard-write";
 
 export function GameDetail({ game }: { game: GameEntry }) {
   // 처음엔 iframe을 로드하지 않고 썸네일 포스터만 띄운다. 사용자가 "게임 시작"을
