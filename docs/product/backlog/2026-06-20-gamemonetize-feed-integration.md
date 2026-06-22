@@ -90,7 +90,53 @@
 
 ---
 
+## 실행 확정 (2026-06-22) — 영상 근본원인 + Feed 형식 확정 + 임베드 셸 재설계 추가
+
+### 배경: 운영 영상에서 드러난 두 결함
+
+게임 상세 플레이 영상 2건 분석 결과, 현재 CrazyGames embed 구성에서 두 가지 근본 결함이 확인됐다.
+
+1. **흰 화면(snake.io 등 실시간 IO/멀티 게임)** — iframe 셸(하단 바·로고)은 뜨지만 게임 캔버스가 흰색. CrazyGames `/embed/`는 **파트너 등록 + 임베드 도메인 화이트리스트**를 전제로 하는데 `game.yeon.world`는 미등록이라 게임별로 차단된다. `referrerPolicy="no-referrer"`(현 `game-detail.tsx`)가 출처 도메인 검증을 막아 악화시킨다.
+2. **화면 흔들림(bullet force 등 FPS)** — 게임은 렌더되지만 시점이 미친 듯이 떨린다. FPS/IO는 **Pointer Lock + mouse delta**로 카메라를 도는데, 작은 인라인 박스(`max-w-[980px]` aspect-video) + 페이지 세로 스크롤 가능 상태 + sandbox iframe에서 pointer lock이 잠겼다 풀렸다 반복하며 jitter가 발생한다.
+
+→ ①은 **소스를 우리가 퍼블리셔로 등록한 GameMonetize feed로 전환**하면 해결(이 백로그 본문). ②는 **소스를 바꿔도 그대로 남는 임베드 셸 자체의 문제**라 별도 작업 스트림으로 추가한다(아래 9차).
+
+### 확정된 GameMonetize Feed 사실 (실측, 2026-06-22)
+
+- 정상 엔드포인트: `https://gamemonetize.com/feed.php?format=0&page={n}&type=html5&amount={k}` (`format=0`=JSON).
+- **함정**: `category=All` 또는 `company=All` 파라미터를 넣으면 `[]`(빈 배열) 반환. **두 파라미터는 생략**하고, 카테고리 필터는 수집 후 클라이언트/서버에서 적용한다.
+- 레코드 필드(전부 string): `id`, `title`, `description`, `instructions`, `url`, `category`, `tags`(쉼표 구분), `thumb`, `width`, `height`.
+- 임베드 URL = `url` = `https://html5.gamemonetize.co/{hash}/` (도메인이 `.co`, `.com` 아님).
+- `description`/`instructions`에 HTML 엔티티(`&mdash;`, `&rsquo;` 등) 포함 → 디코딩 필요.
+- **Cloudflare rate-limit 존재**: 짧은 간격 반복 호출 시 `error code: 1015`(HTTP 429류) 반환. → **서버 캐싱(revalidate)은 선택이 아니라 필수**, 클라이언트 직접 호출 금지.
+
+### 확정 결정 (사용자 방향: "전체 전환")
+
+- 1차 slug: **(a) title-slug + 중복 시 `-{id}` suffix**.
+- 2차 캐싱: **(a) `fetch(url, { next: { revalidate } })`** ISR 서버 캐시. Feed URL은 env `GAMEMONETIZE_FEED_URL`(미설정 시 위 표준 URL 기본값). 페이지 순회로 상위 N 수집.
+- 3차 카탈로그: **(b) Feed + 수동 override(featured/blocklist)** — 부적절 게임 차단·간판 노출용 최소 큐레이션 레이어.
+- 4차 허브: **(a) URL 쿼리 기반 카테고리/페이지(reload-safe)** — route-state-contract 준수.
+- 5차 상세: **(a) 인기 Top-N `generateStaticParams` + 나머지 on-demand(`dynamicParams`)**.
+- 6차: **(a) CrazyGames 전량 제거 → GameMonetize 전환**. `provider` 표기 갱신.
+- 7차 SEO: **(a) 카테고리 허브 + 인기 Top-N sitemap**. `seo.ts`의 게임 slug 동기 상수 결합을 캐시 기반 비동기 경로로 이전.
+
+### 9차 — 임베드 셸 근본 재설계 (흔들림/흰화면 셸 결함, 신규 · 소스 무관 공통)
+
+**작업내용**: `game-detail.tsx` 임베드 셸을 재설계해 모든 게임에 공통 적용한다.
+
+- **"게임 시작" 클릭 게이트**: iframe을 처음엔 썸네일 포스터로 덮고, 사용자가 클릭하면 그때 로드 + (가능 시) 전체화면 진입. user-gesture 보장으로 pointer lock 안정화.
+- **전체화면 대상을 iframe으로**: 현재 wrapper div에 `requestFullscreen`을 걸어 iframe 내부 fullscreen/pointer-lock 상태와 어긋난다. iframe(또는 게임 전용 컨테이너)을 풀스크린 타깃으로 바꿔 풀-뷰포트에서 pointer lock이 안정적으로 잡히게 한다.
+- **`referrerPolicy="no-referrer"` 제거**: 퍼블리셔 도메인 출처 전달 → 도메인 검증/수익 귀속 정상화.
+- **sandbox 토큰 정합화**: GameMonetize html5 게임이 요구하는 최소 권한으로 재구성.
+- **흰 화면 fallback UX**: 로딩 표시 + "게임이 안 보이면 새 탭에서 열기" 링크(임베드 차단/실패 시 사용자 탈출구).
+
+**논의 필요**: 모바일 터치에서 전체화면 강제 여부.
+**선택지**: (a) 데스크톱은 클릭 시 자동 전체화면 + pointer-lock, 모바일은 인라인 (b) 양쪽 인라인 + 전체화면 버튼만.
+**추천**: (a) — FPS류 흔들림의 직접 원인 제거.
+**사용자 방향**: (a) 추천대로.
+
 ## 후속/메모
 
 - 향후: 게임 인기/플레이 집계, 즐겨찾기, GameDistribution 병행(둘 다 non-exclusive)으로 카탈로그·수익 다변화.
 - 수익은 트래픽(플레이 세션)에 비례하므로 SEO·콘텐츠가 선행 과제.
+- 1015 rate-limit 때문에 로컬/CI에서 feed 실호출 테스트는 캐시 + 고정 fixture로 대체하고, 실호출은 배포 후 1회 스모크로 확인한다.
