@@ -33,6 +33,15 @@ export function GameDetail({ game }: { game: GameEntry }) {
   const handleStart = () => {
     setStarted(true);
     requestFullscreen();
+    // 게임 플레이 경험치 적립(인증 사용자, 게임당 하루 1회 멱등은 서버가 보장).
+    // 실패해도 플레이엔 영향이 없도록 fire-and-forget로 호출한다.
+    void fetch("/api/v1/game-service/play", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ gameSlug: game.slug }),
+    }).catch(() => {
+      // 적립 실패는 무시한다.
+    });
   };
 
   const aspectClass =

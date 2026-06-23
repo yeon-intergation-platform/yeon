@@ -63,4 +63,15 @@ class LevelCurveTests {
     assertThat(progress.xpForNextLevel()).isEqualTo(200);
     assertThat(progress.totalXp()).isEqualTo(150);
   }
+
+  @Test
+  void 보상포인트는_레벨업당_1000P_누적이다() {
+    assertThat(LevelCurve.pointsForLevel(1)).isEqualTo(0);
+    assertThat(LevelCurve.pointsForLevel(2)).isEqualTo(1000);
+    assertThat(LevelCurve.pointsForLevel(5)).isEqualTo(4000);
+    // 10,000P(현금 전환 안내 기준)는 Lv11에서 도달한다.
+    assertThat(LevelCurve.pointsForLevel(11)).isEqualTo(10000);
+    // 비정상 레벨(0 이하)은 Lv1로 보정해 0P.
+    assertThat(LevelCurve.pointsForLevel(0)).isEqualTo(0);
+  }
 }

@@ -65,7 +65,12 @@ public class ExperienceService {
     }
     long totalXp = repository.findTotalXp(userId);
     LevelCurve.Progress progress = LevelCurve.progress(totalXp);
-    return new UserExperienceView(progress.level(), progress.totalXp(), progress.xpIntoLevel(), progress.xpForNextLevel());
+    return new UserExperienceView(
+        progress.level(),
+        progress.totalXp(),
+        progress.xpIntoLevel(),
+        progress.xpForNextLevel(),
+        LevelCurve.pointsForLevel(progress.level()));
   }
 
   /** 현재 유저의 적립 이력. */

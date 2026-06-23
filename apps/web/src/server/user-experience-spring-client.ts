@@ -12,7 +12,7 @@ import { buildSpringBffHeaders } from "@/server/spring-bff-client";
 
 const DEFAULT_BACKEND_BASE_URL = "http://127.0.0.1:8081";
 
-function resolveSpringBackendBaseUrl() {
+export function resolveSpringBackendBaseUrl() {
   const raw =
     process.env.SPRING_BACKEND_BASE_URL?.trim() ??
     process.env.SPRING_BOOTSTRAP_BASE_URL?.trim();
