@@ -118,11 +118,14 @@ export function LandingHome({
             <YeonView className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {visibleServices.map((service) => {
                 const isLive = service.status === platformServiceStatuses.live;
+                const inDevelopment = service.inDevelopment === true;
                 const requiresAuth =
                   service.accessPolicy ===
                   platformServiceAccessPolicies.authRequired;
-                const canOpen = isLive && (!requiresAuth || isAuthenticated);
-                const needsLogin = isLive && requiresAuth && !isAuthenticated;
+                const canOpen =
+                  isLive && !inDevelopment && (!requiresAuth || isAuthenticated);
+                const needsLogin =
+                  isLive && !inDevelopment && requiresAuth && !isAuthenticated;
                 const cardBase =
                   "group flex min-w-0 flex-col rounded-2xl border border-[#e5e5e5] bg-[#fafafa] p-5 text-left shadow-sm transition-colors duration-200";
                 const interactiveCard = "hover:border-[#111] hover:bg-white";
@@ -132,19 +135,25 @@ export function LandingHome({
                       <YeonView
                         as="span"
                         className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium ${
-                          isLive
+                          isLive && !inDevelopment
                             ? "border border-emerald-300 bg-emerald-100 text-emerald-800"
-                            : "border border-[#e5e5e5] bg-[#fafafa] text-[#aaa]"
+                            : inDevelopment
+                              ? "border border-amber-300 bg-amber-100 text-amber-800"
+                              : "border border-[#e5e5e5] bg-[#fafafa] text-[#aaa]"
                         }`}
                       >
-                        {isLive ? (
+                        {isLive && !inDevelopment ? (
                           <YeonView
                             as="span"
                             aria-hidden="true"
                             className="h-1.5 w-1.5 rounded-full bg-emerald-600"
                           />
                         ) : null}
-                        {isLive ? "운영 중" : "준비 중"}
+                        {inDevelopment
+                          ? "개발 중"
+                          : isLive
+                            ? "운영 중"
+                            : "준비 중"}
                       </YeonView>
                     </YeonView>
                     <YeonView className="mt-4">
@@ -154,7 +163,9 @@ export function LandingHome({
                         tone="inherit"
                         className="text-[20px] font-semibold tracking-[-0.03em] text-[#111]"
                       >
-                        {service.title}
+                        {inDevelopment
+                          ? `${service.title} (개발중)`
+                          : service.title}
                       </YeonText>
                       <YeonText
                         variant="unstyled"
@@ -170,7 +181,7 @@ export function LandingHome({
                         variant="unstyled"
                         tone="inherit"
                         className={`inline-flex items-center gap-1.5 ${
-                          isLive
+                          isLive && !inDevelopment
                             ? SHARED_FEATURE_CLASS.text13Emphasis
                             : SHARED_FEATURE_CLASS.text13EmphasisSubtle
                         }`}
@@ -179,8 +190,10 @@ export function LandingHome({
                           ? "바로 이동"
                           : needsLogin
                             ? "로그인 후 이동"
-                            : "준비 중"}
-                        {isLive ? (
+                            : inDevelopment
+                              ? "개발 중"
+                              : "준비 중"}
+                        {isLive && !inDevelopment ? (
                           <YeonText
                             as="span"
                             variant="unstyled"
