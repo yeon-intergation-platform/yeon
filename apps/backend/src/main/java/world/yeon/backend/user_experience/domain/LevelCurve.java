@@ -49,6 +49,15 @@ public final class LevelCurve {
     return 100L * normalized;
   }
 
+  /** 레벨당 지급되는 누적 보상 포인트. 레벨업 1회당 1000P. Lv1=0, Lv2=1000, … Lv11=10000. */
+  public static final long POINTS_PER_LEVEL = 1000L;
+
+  /** 현재 레벨까지 누적된 보상 포인트(차감 없는 누적 표시값). */
+  public static long pointsForLevel(int level) {
+    int normalized = Math.max(level, 1);
+    return POINTS_PER_LEVEL * (normalized - 1);
+  }
+
   /** 누적 경험치를 표시용 진행도로 변환한다. */
   public static Progress progress(long totalXp) {
     long xp = Math.max(totalXp, 0);

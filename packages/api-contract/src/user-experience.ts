@@ -11,6 +11,7 @@ export const EXPERIENCE_ACTIVITY_LABELS = {
   typing_race_finished: "타자 레이스 완료",
   community_post: "커뮤니티 활동",
   daily_login: "출석",
+  game_play: "게임 플레이",
 } as const;
 export type ExperienceActivityType = keyof typeof EXPERIENCE_ACTIVITY_LABELS;
 export type ExperienceActivityLabels = typeof EXPERIENCE_ACTIVITY_LABELS;
@@ -21,6 +22,9 @@ export const userExperienceViewSchema = z.object({
   totalXp: z.number().int(),
   xpIntoLevel: z.number().int(),
   xpForNextLevel: z.number().int(),
+  // 레벨 파생 보상 포인트(레벨업당 1000P). 1만 포인트 도달 시 관리자 문의로 현금 전환 안내.
+  // 백엔드 배포 전 구 응답(필드 없음) 호환을 위해 기본값 0으로 둔다.
+  points: z.number().int().default(0),
 });
 export type UserExperienceView = z.infer<typeof userExperienceViewSchema>;
 

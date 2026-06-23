@@ -1,6 +1,7 @@
 import { YeonLink, YeonText, YeonView } from "@yeon/ui";
 import { CommonProductHeader } from "@/components/product-shell/product-header";
 import { SHARED_FEATURE_CLASS } from "@/features/shared-style-constants";
+import { GamePointsBanner } from "./game-points-banner";
 import {
   GAME_CATEGORY_LABELS,
   type GameCategory,
@@ -156,6 +157,8 @@ export function GameServiceHome({ result }: { result: HubGamesResult }) {
             설치 없이 브라우저에서 바로 플레이할 수 있는 게임을 모았습니다.
           </YeonText>
         </YeonView>
+
+        <GamePointsBanner />
 
         <CategoryTabs result={result} />
 
