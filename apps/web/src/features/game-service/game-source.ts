@@ -14,7 +14,7 @@ import {
 } from "./game-catalog";
 import { fetchGameFeed } from "./game-feed";
 
-export const GAME_HUB_PAGE_SIZE = 24;
+export const GAME_HUB_PAGE_SIZE = 48;
 
 export type HubGamesQuery = {
   category?: GameCategory | null;
