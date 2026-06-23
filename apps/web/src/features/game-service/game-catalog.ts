@@ -304,3 +304,74 @@ export function getGameEmbedKey(embedUrl: string): string {
   const match = embedUrl.match(/gamemonetize\.co\/([^/]+)/i);
   return (match?.[1] ?? embedUrl).toLowerCase();
 }
+
+// 국가 취향 추천. 무명 대량 게임을 무분별하게 노출하지 않고, 국가별로 검증된 게임을
+// 상단(featured)에 큐레이션한다. 한국/미국 토글로 전환하며, 초기값은 접속 국가로 정한다.
+export const GAME_REGIONS = {
+  kr: "kr",
+  us: "us",
+  global: "global",
+} as const;
+
+export type GameRegion = (typeof GAME_REGIONS)[keyof typeof GAME_REGIONS];
+
+export const GAME_REGION_LABELS: Record<GameRegion, string> = {
+  kr: "🇰🇷 한국 인기",
+  us: "🇺🇸 미국 인기",
+  global: "인기 게임",
+};
+
+// 국가별 추천 슬롯(노출 순서대로). 합법 임베드가 검증된 curated 게임만 올린다.
+// 한국 취향 게임 풀 확대(물불 등 임베드 검증)는 백로그 2차에서 이어서 채운다.
+const REGION_FEATURED_SLUGS: Record<GameRegion, readonly string[]> = {
+  kr: [
+    "snake-io",
+    "2048",
+    "smash-karts",
+    "impostor-sort-puzzle",
+    "duo-match-3d",
+    "dream-wedding-dress-up",
+    "farming-mini-puzzle",
+    "hextris",
+  ],
+  us: [
+    "bullet-force",
+    "extreme-car-racing",
+    "basketball-goat",
+    "astro-chickens",
+    "commando-gun-shooting",
+    "magic-knife",
+    "smash-karts",
+    "snake-io",
+  ],
+  global: [
+    "snake-io",
+    "2048",
+    "bullet-force",
+    "smash-karts",
+    "extreme-car-racing",
+    "monster-stomper",
+    "impostor-sort-puzzle",
+    "basketball-goat",
+  ],
+};
+
+export function isGameRegion(value: string | null | undefined): value is GameRegion {
+  return value === "kr" || value === "us" || value === "global";
+}
+
+// 접속 국가 코드(Cloudflare CF-IPCountry 등)를 추천 region으로 정규화한다. 한국만 kr, 그 외 us.
+export function resolveRegionFromCountry(
+  countryCode: string | null | undefined
+): GameRegion {
+  return countryCode?.trim().toUpperCase() === "KR"
+    ? GAME_REGIONS.kr
+    : GAME_REGIONS.us;
+}
+
+// region별 추천 게임(curated에서 슬롯 순서대로). 존재하지 않는 slug는 건너뛴다.
+export function getFeaturedGamesForRegion(region: GameRegion): GameEntry[] {
+  return REGION_FEATURED_SLUGS[region]
+    .map((slug) => getGameBySlug(slug))
+    .filter((game): game is GameEntry => game !== null);
+}
