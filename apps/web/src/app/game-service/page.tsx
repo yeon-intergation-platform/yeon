@@ -1,12 +1,17 @@
 import { type YeonPageMetadata } from "@yeon/ui/runtime/YeonPageMetadata";
 import { YeonStructuredData } from "@yeon/ui";
+import { getYeonRequestHeaders } from "@yeon/ui/runtime/YeonServerRequest";
 import { SITE_BRAND_NAME } from "@/lib/site-brand";
 import { buildServiceCanonicalUrl } from "@/lib/seo";
 import {
   GAME_CATEGORIES,
   GameServiceHome,
+  getFeaturedGamesForRegion,
   getHubGames,
+  isGameRegion,
+  resolveRegionFromCountry,
   type GameCategory,
+  type GameRegion,
   type HubGamesResult,
 } from "@/features/game-service";
 
@@ -42,10 +47,22 @@ export const metadata: YeonPageMetadata = {
 type GameHubSearchParams = {
   category?: string | string[];
   page?: string | string[];
+  region?: string | string[];
 };
 
 function firstParam(value: string | string[] | undefined): string | undefined {
   return Array.isArray(value) ? value[0] : value;
+}
+
+// 추천 국가는 URL 토글(?region=)이 우선, 없으면 접속 국가(Cloudflare CF-IPCountry)로 정한다.
+function resolveActiveRegion(
+  regionParam: string | undefined,
+  countryHeader: string | null
+): GameRegion {
+  if (isGameRegion(regionParam)) {
+    return regionParam;
+  }
+  return resolveRegionFromCountry(countryHeader);
 }
 
 function parseCategory(value: string | undefined): GameCategory | null {
@@ -88,11 +105,17 @@ export default async function GameServicePage({
 }: {
   searchParams: Promise<GameHubSearchParams>;
 }) {
-  const { category, page } = await searchParams;
+  const { category, page, region } = await searchParams;
+  const headerStore = await getYeonRequestHeaders();
+  const activeRegion = resolveActiveRegion(
+    firstParam(region),
+    headerStore.get("cf-ipcountry")
+  );
   const result = await getHubGames({
     category: parseCategory(firstParam(category)),
     page: parsePage(firstParam(page)),
   });
+  const featuredGames = getFeaturedGamesForRegion(activeRegion);
 
   return (
     <>
@@ -100,7 +123,11 @@ export default async function GameServicePage({
         id="game-service-jsonld"
         data={getGameHubJsonLd(result)}
       />
-      <GameServiceHome result={result} />
+      <GameServiceHome
+        result={result}
+        region={activeRegion}
+        featuredGames={featuredGames}
+      />
     </>
   );
 }
