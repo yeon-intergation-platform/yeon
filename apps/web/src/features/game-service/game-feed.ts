@@ -178,19 +178,29 @@ function resolveFeedUrl(): string {
   return process.env.GAMEMONETIZE_FEED_URL?.trim() || DEFAULT_FEED_URL;
 }
 
+// 직전에 성공한 Feed 결과(프로세스 메모리). Cloudflare rate-limit(1015)·네트워크 실패로
+// 빈 배열이 반환되면 허브 게임 풀이 curated 15개로 쪼그라들어 totalPages가 26↔1로 출렁이고
+// 페이지네이션이 "보였다 안 보였다" 한다. 마지막 성공 결과를 유지해 그 출렁임을 막는다.
+let lastGoodFeed: GameEntry[] = [];
+
 // GameMonetize Feed를 서버에서 캐싱 fetch 해 GameEntry[]로 반환한다.
-// 실패(네트워크/1015/파싱)는 빈 배열로 degrade 한다 — 호출부는 curated로 fallback.
+// 실패(네트워크/1015/파싱)나 빈 응답은 직전 성공 결과(last-good)로 degrade 한다.
 export async function fetchGameFeed(): Promise<GameEntry[]> {
   try {
     const response = await fetch(resolveFeedUrl(), {
       headers: { accept: "application/json" },
       next: { revalidate: GAME_FEED_REVALIDATE_SECONDS },
     });
-    if (!response.ok) return [];
+    if (!response.ok) return lastGoodFeed;
 
     const payload = (await response.json()) as unknown;
-    return mapFeedPayloadToGames(payload).slice(0, GAME_FEED_LIMIT);
+    const games = mapFeedPayloadToGames(payload).slice(0, GAME_FEED_LIMIT);
+    if (games.length > 0) {
+      lastGoodFeed = games;
+      return games;
+    }
+    return lastGoodFeed;
   } catch {
-    return [];
+    return lastGoodFeed;
   }
 }
