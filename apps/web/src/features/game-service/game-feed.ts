@@ -17,6 +17,7 @@ import {
   type GameCategory,
   type GameEntry,
 } from "./game-catalog";
+import { GAME_FEED_SNAPSHOT } from "./game-feed-snapshot";
 
 // zod v4 문자열 포맷 API 버전 차이를 피하려 http(s) URL은 정규식으로 직접 검증한다.
 const httpUrlSchema = z.string().regex(/^https?:\/\//i, "http(s) URL이 아닙니다");
@@ -193,9 +194,13 @@ function resolveFeedUrl(): string {
 }
 
 // 직전에 성공한 Feed 결과(프로세스 메모리). Cloudflare rate-limit(1015)·네트워크 실패로
-// 빈 배열이 반환되면 허브 게임 풀이 curated 15개로 쪼그라들어 totalPages가 26↔1로 출렁이고
-// 페이지네이션이 "보였다 안 보였다" 한다. 마지막 성공 결과를 유지해 그 출렁임을 막는다.
-let lastGoodFeed: GameEntry[] = [];
+// 빈 배열이 반환되면 허브 게임 풀이 curated 15개로 쪼그라들어 totalPages가 출렁이고
+// 페이지네이션이 "보였다 안 보였다" 한다. 초기값을 정적 스냅샷(600종)으로 두어, 콜드스타트나
+// 멀티 인스턴스에서 라이브 Feed를 한 번도 못 받은 인스턴스에서도 게임 풀과 페이지 수가
+// 무너지지 않게 한다. 라이브 Feed가 성공하면 최신 목록으로 교체된다.
+let lastGoodFeed: GameEntry[] = mapFeedPayloadToGames(
+  GAME_FEED_SNAPSHOT as unknown
+).slice(0, GAME_FEED_LIMIT);
 
 // GameMonetize Feed를 서버에서 캐싱 fetch 해 GameEntry[]로 반환한다.
 // 실패(네트워크/1015/파싱)나 빈 응답은 직전 성공 결과(last-good)로 degrade 한다.
