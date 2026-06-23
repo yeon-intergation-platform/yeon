@@ -25,6 +25,8 @@ export type PlatformServiceDescriptor = {
   accessPolicy: PlatformServiceAccessPolicy;
   status: PlatformServiceStatus;
   listedInPlatformHome: boolean;
+  /** 개발 중 서비스. 랜딩에서 "(개발중)"으로 표기하고 진입을 막는다. */
+  inDevelopment?: boolean;
 };
 
 export const PLATFORM_SERVICES = [
@@ -51,6 +53,7 @@ export const PLATFORM_SERVICES = [
     accessPolicy: platformServiceAccessPolicies.anonymous,
     status: platformServiceStatuses.live,
     listedInPlatformHome: true,
+    inDevelopment: true,
   },
   {
     slug: "card-service",
@@ -110,6 +113,7 @@ export const PLATFORM_SERVICES = [
     accessPolicy: platformServiceAccessPolicies.anonymous,
     status: platformServiceStatuses.live,
     listedInPlatformHome: true,
+    inDevelopment: true,
   },
   {
     slug: "game-service",
