@@ -104,24 +104,35 @@ function normalizeText(input: string): string {
   return decodeHtmlEntities(input).replace(/\s+/g, " ").trim();
 }
 
-function toSummary(description: string): string {
-  const text = normalizeText(description);
-  if (!text) return "브라우저에서 바로 즐기는 게임입니다.";
-  const firstSentence = text.split(/(?<=[.!?])\s/)[0] ?? text;
-  if (firstSentence.length <= 90) return firstSentence;
-  return `${firstSentence.slice(0, 88).trimEnd()}…`;
+// yeon.world는 한국어(html lang="ko") 사이트다. Feed 설명/조작법은 영어이므로 그대로
+// 노출하지 않고, 카테고리/화면방향 기반 한국어 템플릿으로 대체한다. 제목은 고유명사라
+// 원어를 유지한다(번역하지 않는다).
+const CATEGORY_KO_PITCH: Record<GameCategory, string> = {
+  [GAME_CATEGORIES.arcade]: "반응 속도가 중요한 아케이드 게임",
+  [GAME_CATEGORIES.puzzle]: "머리를 쓰는 퍼즐 게임",
+  [GAME_CATEGORIES.action]: "박진감 넘치는 액션 게임",
+  [GAME_CATEGORIES.shooting]: "조준과 사격이 핵심인 슈팅 게임",
+  [GAME_CATEGORIES.racing]: "속도감 넘치는 레이싱 게임",
+  [GAME_CATEGORIES.sports]: "간단하게 즐기는 스포츠 게임",
+  [GAME_CATEGORIES.adventure]: "모험을 떠나는 어드벤처 게임",
+  [GAME_CATEGORIES.casual]: "누구나 가볍게 즐기는 캐주얼 게임",
+  [GAME_CATEGORIES.io]: "실시간으로 경쟁하는 IO 게임",
+};
+
+function koSummary(category: GameCategory): string {
+  return `${CATEGORY_KO_PITCH[category]}. 설치 없이 브라우저에서 바로 플레이하세요.`;
 }
 
-// 조작법은 Feed instructions를 줄/구분자 기준으로 쪼갠다. 비면 기본 안내.
-function toControls(instructions: string): readonly string[] {
-  const text = normalizeText(instructions);
-  if (!text) return ["마우스/탭으로 조작"];
-  const parts = text
-    .split(/(?:^|\s)[-•]\s|\.\s+/)
-    .map((part) => part.trim())
-    .filter(Boolean);
-  const controls = parts.length > 0 ? parts : [text];
-  return controls.slice(0, 4);
+function koDescription(title: string, category: GameCategory): string {
+  return `${title} — ${CATEGORY_KO_PITCH[category]}입니다. 설치나 회원가입 없이 브라우저에서 클릭 한 번으로 바로 즐길 수 있습니다.`;
+}
+
+function koControls(
+  orientation: "landscape" | "portrait"
+): readonly string[] {
+  return orientation === "portrait"
+    ? ["화면을 터치하거나 스와이프해 플레이"]
+    : ["마우스 클릭 또는 키보드로 플레이", "모바일에서는 화면 터치"];
 }
 
 // title을 URL slug로 만들고 id를 붙여 충돌을 막는다(예: "Magic Knife" + 80434 → magic-knife-80434).
@@ -137,18 +148,21 @@ export function toGameSlug(title: string, id: string): string {
 export function mapFeedItemToGame(item: GameMonetizeFeedItem): GameEntry {
   const width = Number.parseInt(item.width, 10) || 800;
   const height = Number.parseInt(item.height, 10) || 600;
+  const title = normalizeText(item.title);
+  const category = mapFeedCategory(item.category);
+  const orientation = height > width ? "portrait" : "landscape";
 
   return {
     slug: toGameSlug(item.title, item.id),
-    title: normalizeText(item.title),
-    summary: toSummary(item.description),
-    description: normalizeText(item.description).slice(0, 600),
-    controls: toControls(item.instructions),
-    category: mapFeedCategory(item.category),
+    title,
+    summary: koSummary(category),
+    description: koDescription(title, category),
+    controls: koControls(orientation),
+    category,
     provider: GAME_PROVIDER,
     embedUrl: item.url,
     thumbUrl: item.thumb,
-    orientation: height > width ? "portrait" : "landscape",
+    orientation,
   };
 }
 
