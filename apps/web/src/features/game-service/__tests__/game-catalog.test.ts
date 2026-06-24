@@ -38,7 +38,7 @@ describe("game-catalog", () => {
   });
 
   it("iframe 게임은 https URL, swf 게임은 호스팅 경로를 가진다", () => {
-    for (const game of GAME_CATALOG) {
+    for (const game of getListedGames()) {
       if (game.kind === "swf") {
         expect(game.embedUrl.startsWith("/")).toBe(true);
       } else {
