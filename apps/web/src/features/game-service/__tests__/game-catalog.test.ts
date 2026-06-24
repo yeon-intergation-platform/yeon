@@ -37,9 +37,13 @@ describe("game-catalog", () => {
     }
   });
 
-  it("모든 embedUrl은 https 절대 URL이다", () => {
+  it("iframe 게임은 https URL, swf 게임은 호스팅 경로를 가진다", () => {
     for (const game of GAME_CATALOG) {
-      expect(game.embedUrl.startsWith("https://")).toBe(true);
+      if (game.kind === "swf") {
+        expect(game.embedUrl.startsWith("/")).toBe(true);
+      } else {
+        expect(game.embedUrl.startsWith("https://")).toBe(true);
+      }
     }
   });
 });

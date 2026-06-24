@@ -62,7 +62,12 @@ export type GameEntry = {
   category: GameCategory;
   /** 게임 출처(저작권/임베드 허용 주체) */
   provider: string;
-  /** 임베드 허용 iframe URL (https://html5.gamemonetize.co/{id}/) */
+  /**
+   * 실행 방식. "iframe"(기본)은 embedUrl을 외부 임베드 iframe src로,
+   * "swf"는 우리가 호스팅한 SWF 경로로 보고 Ruffle로 실행한다.
+   */
+  kind?: "iframe" | "swf";
+  /** kind="iframe"이면 iframe src, kind="swf"이면 호스팅 SWF 경로 */
   embedUrl: string;
   /** 카드 썸네일/플레이 전 포스터 이미지 */
   thumbUrl: string;
@@ -281,6 +286,20 @@ export const CURATED_GAMES = [
       "https://img.gamemonetize.com/mu0skxjyuys27ciet1gptxee8jgcm3z7/512x384.jpg",
     orientation: "landscape",
   },
+  {
+    slug: "manhwa-character-rpg-3",
+    title: "만화캐릭RPG 시즌3",
+    summary: "주전자닷컴의 추억의 만화 캐릭터 RPG(만캐알). 제작자 허락받아 보존합니다.",
+    description:
+      "바버플금님이 제작하고 주전자닷컴이 배급한 추억의 플래시 RPG '만화캐릭RPG(만캐알) 시즌3'입니다. 제작자 바버플금님의 사용 허락을 받아, Ruffle로 원작 그대로 보존·실행합니다. 키보드와 마우스로 캐릭터를 조작하며 진행하는 RPG입니다.",
+    controls: ["키보드 방향키·단축키로 이동·전투", "마우스로 메뉴 조작"],
+    category: GAME_CATEGORIES.adventure,
+    provider: "제작: 바버플금 · 배급: 주전자닷컴 (제작자 사용 허락)",
+    kind: "swf",
+    embedUrl: "/games/manhwa-character-rpg-3.swf",
+    thumbUrl: "",
+    orientation: "landscape",
+  },
 ] as const satisfies readonly GameEntry[];
 
 // 기존 임포트(GAME_CATALOG) 호환 유지.
@@ -325,13 +344,13 @@ export const GAME_REGION_LABELS: Record<GameRegion, string> = {
 // 한국 취향 게임 풀 확대(물불 등 임베드 검증)는 백로그 2차에서 이어서 채운다.
 const REGION_FEATURED_SLUGS: Record<GameRegion, readonly string[]> = {
   kr: [
+    "manhwa-character-rpg-3",
     "snake-io",
     "2048",
     "smash-karts",
     "impostor-sort-puzzle",
     "duo-match-3d",
     "dream-wedding-dress-up",
-    "farming-mini-puzzle",
     "hextris",
   ],
   us: [
