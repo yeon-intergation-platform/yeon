@@ -176,7 +176,7 @@ export function GameDetail({ game }: { game: GameEntry }) {
             as="p"
             variant="unstyled"
             tone="inherit"
-            className="mt-3 break-keep text-[14px] leading-[1.85] text-[#444]"
+            className="mt-3 whitespace-pre-line break-keep text-[14px] leading-[1.85] text-[#444]"
           >
             {game.description}
           </YeonText>
