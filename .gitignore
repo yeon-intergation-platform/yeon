@@ -91,3 +91,7 @@ scripts/sprites/raw/*
 .ai/harness/chatgpt/browser-lock.json
 .ai/harness/chatgpt/tmp/
 .ai/harness/chatgpt/sessions/
+
+# RPG Maker 게임 엔진 런타임/게임 로컬 테스트 미러(mkxp-web·EasyRPG 등 GPL 런타임 + 미허락 샘플).
+# 공개 배포 대상이 아니며, 허락받은 게임만 별도 경로(public/games/)로 커밋한다.
+apps/web/public/games-engine/
