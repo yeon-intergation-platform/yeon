@@ -4,6 +4,7 @@ import { YeonButton, YeonLink, YeonText, YeonView } from "@yeon/ui";
 import { CommonProductHeader } from "@/components/product-shell/product-header";
 import { SHARED_FEATURE_CLASS } from "@/features/shared-style-constants";
 import { GAME_CATEGORY_LABELS, type GameEntry } from "./game-catalog";
+import { RuffleGamePlayer } from "./ruffle-game-player";
 
 // 외부 임베드 게임은 신뢰 경계가 다르므로 최소 권한만 부여한다.
 // GameMonetize html5 게임은 광고 팝업·저장소·포인터락이 필요할 수 있어 아래로 정합화한다.
@@ -96,14 +97,18 @@ export function GameDetail({ game }: { game: GameEntry }) {
           className={`relative mt-5 w-full overflow-hidden rounded-2xl border border-[#e5e5e5] bg-black ${aspectClass}`}
         >
           {started ? (
-            <iframe
-              src={game.embedUrl}
-              title={game.title}
-              sandbox={GAME_IFRAME_SANDBOX}
-              allow={GAME_IFRAME_ALLOW}
-              allowFullScreen
-              className="absolute inset-0 h-full w-full border-0"
-            />
+            game.kind === "swf" ? (
+              <RuffleGamePlayer swfUrl={game.embedUrl} title={game.title} />
+            ) : (
+              <iframe
+                src={game.embedUrl}
+                title={game.title}
+                sandbox={GAME_IFRAME_SANDBOX}
+                allow={GAME_IFRAME_ALLOW}
+                allowFullScreen
+                className="absolute inset-0 h-full w-full border-0"
+              />
+            )
           ) : (
             <button
               type="button"
