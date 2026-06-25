@@ -89,9 +89,14 @@ async function loadSession(): Promise<SessionInfo> {
   };
 }
 
-async function loadComments(gameSlug: string): Promise<GameComment[]> {
+type CommentSort = "latest" | "popular";
+
+async function loadComments(
+  gameSlug: string,
+  sort: CommentSort
+): Promise<GameComment[]> {
   const response = await fetchYeon(
-    `/api/v1/game-service/comments?gameSlug=${encodeURIComponent(gameSlug)}`,
+    `/api/v1/game-service/comments?gameSlug=${encodeURIComponent(gameSlug)}&sort=${sort}`,
     { credentials: "include", cache: "no-store" }
   );
   if (!response.ok) {
@@ -101,13 +106,14 @@ async function loadComments(gameSlug: string): Promise<GameComment[]> {
 }
 
 function GameCommentsInner({ gameSlug }: { gameSlug: string }) {
+  const [sort, setSort] = useState<CommentSort>("latest");
   const sessionQuery = useQuery({
     queryKey: ["auth-session"],
     queryFn: loadSession,
   });
   const commentsQuery = useQuery({
-    queryKey: ["game-comments", gameSlug],
-    queryFn: () => loadComments(gameSlug),
+    queryKey: ["game-comments", gameSlug, sort],
+    queryFn: () => loadComments(gameSlug, sort),
   });
 
   const [revealed, setRevealed] = useState<Record<string, string>>({});
@@ -234,6 +240,23 @@ function GameCommentsInner({ gameSlug }: { gameSlug: string }) {
     }
   };
 
+  const handleCommentLike = async (comment: GameComment) => {
+    try {
+      const response = await fetchYeon(
+        `/api/v1/game-service/comments/${comment.id}/like`,
+        { method: "POST", credentials: "include" }
+      );
+      if (response.status === 401) {
+        window.alert("좋아요는 로그인 후 이용할 수 있어요.");
+        return;
+      }
+      if (!response.ok) throw new Error("실패");
+      await commentsQuery.refetch();
+    } catch {
+      window.alert("좋아요를 처리하지 못했어요.");
+    }
+  };
+
   return (
     <YeonView
       as="section"
@@ -315,7 +338,31 @@ function GameCommentsInner({ gameSlug }: { gameSlug: string }) {
         ) : null}
       </form>
 
-      <YeonView className="mt-5 flex flex-col">
+      {count > 0 ? (
+        <YeonView className="mt-5 flex gap-1.5">
+          {(
+            [
+              { key: "latest", label: "최신순" },
+              { key: "popular", label: "인기순" },
+            ] as const
+          ).map((option) => (
+            <button
+              key={option.key}
+              type="button"
+              onClick={() => setSort(option.key)}
+              className={`rounded-full px-3 py-1 text-[12px] font-semibold transition-colors ${
+                sort === option.key
+                  ? "bg-[#6b5bd2] text-white"
+                  : "text-[#888] hover:text-[#6b5bd2]"
+              }`}
+            >
+              {option.label}
+            </button>
+          ))}
+        </YeonView>
+      ) : null}
+
+      <YeonView className="mt-3 flex flex-col">
         {commentsQuery.isError ? (
           <YeonText
             as="p"
@@ -389,7 +436,30 @@ function GameCommentsInner({ gameSlug }: { gameSlug: string }) {
                       shownContent
                     )}
                   </YeonText>
-                  <YeonView className="mt-1 flex gap-3">
+                  <YeonView className="mt-1.5 flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => handleCommentLike(comment)}
+                      aria-pressed={comment.likedByMe}
+                      className={`inline-flex items-center gap-1 text-[11px] font-semibold transition-colors ${
+                        comment.likedByMe
+                          ? "text-[#e0376b]"
+                          : "text-[#bbb] hover:text-[#e0376b]"
+                      }`}
+                    >
+                      <svg
+                        width="12"
+                        height="12"
+                        viewBox="0 0 24 24"
+                        fill={comment.likedByMe ? "currentColor" : "none"}
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                        aria-hidden="true"
+                      >
+                        <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1L12 21l7.7-7.6 1.1-1a5.5 5.5 0 0 0 0-7.8z" />
+                      </svg>
+                      {comment.likeCount > 0 ? comment.likeCount : "좋아요"}
+                    </button>
                     {comment.canRevealWithPassword && masked ? (
                       <button
                         type="button"

@@ -27,16 +27,19 @@ async function resolveViewer(): Promise<CommentViewer | null> {
 }
 
 export async function GET(request: Request) {
-  const gameSlug = new URL(request.url).searchParams.get("gameSlug") ?? "";
+  const url = new URL(request.url);
+  const gameSlug = url.searchParams.get("gameSlug") ?? "";
   if (!GAME_SLUG_PATTERN.test(gameSlug)) {
     return NextResponse.json(
       { message: "gameSlug가 필요합니다." },
       { status: 400 }
     );
   }
+  const sort =
+    url.searchParams.get("sort") === "popular" ? "popular" : "latest";
   try {
     const viewer = await resolveViewer();
-    const result = await listGameComments(gameSlug, viewer);
+    const result = await listGameComments(gameSlug, viewer, sort);
     return NextResponse.json(result);
   } catch (error) {
     console.error("게임 댓글 조회 실패", error);

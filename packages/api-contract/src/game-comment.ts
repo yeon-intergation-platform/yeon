@@ -15,9 +15,21 @@ export const gameCommentSchema = z.object({
   isGuest: z.boolean(),
   canRevealWithPassword: z.boolean(),
   canDelete: z.boolean(),
+  likeCount: z.number().int(),
+  likedByMe: z.boolean(),
   createdAt: z.string(),
 });
 export type GameComment = z.infer<typeof gameCommentSchema>;
+
+export const commentLikeResponseSchema = z.object({
+  likeCount: z.number().int(),
+  likedByMe: z.boolean(),
+});
+export type CommentLikeResponse = z.infer<typeof commentLikeResponseSchema>;
+
+// 댓글 정렬: 최신순 / 인기순(좋아요).
+export const COMMENT_SORTS = { latest: "latest", popular: "popular" } as const;
+export type CommentSort = (typeof COMMENT_SORTS)[keyof typeof COMMENT_SORTS];
 
 export const gameCommentListResponseSchema = z.object({
   items: z.array(gameCommentSchema),

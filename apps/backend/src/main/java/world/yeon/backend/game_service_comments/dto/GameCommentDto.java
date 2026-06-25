@@ -14,5 +14,7 @@ public record GameCommentDto(
 	boolean isGuest,
 	boolean canRevealWithPassword,
 	boolean canDelete,
+	long likeCount,
+	boolean likedByMe,
 	OffsetDateTime createdAt
 ) {}
