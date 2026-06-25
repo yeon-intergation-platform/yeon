@@ -6,6 +6,7 @@ export * from "./community-chat";
 export * from "./counseling-records";
 export * from "./contest";
 export * from "./error";
+export * from "./game-comment";
 export * from "./health";
 export * from "./home-insights";
 export * from "./instructor-dashboard";
