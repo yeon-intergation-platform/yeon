@@ -287,6 +287,195 @@ export const CURATED_GAMES = [
     orientation: "landscape",
   },
   {
+    slug: "moto-x3m",
+    title: "Moto X3M",
+    summary: "장애물과 함정을 묘기로 넘는 중독성 오토바이 레이싱.",
+    description:
+      "폭발물과 장애물이 가득한 코스를 오토바이로 질주하며, 공중제비로 시간을 단축하는 묘기 레이싱입니다. 빠른 반응과 균형 감각이 핵심이며, 클리어 시간을 줄여 별 3개에 도전하세요.",
+    controls: [
+      "방향키 또는 WASD로 가속·균형",
+      "↑ 가속, ↓ 브레이크, ←→ 기울이기",
+    ],
+    category: GAME_CATEGORIES.racing,
+    provider: CRAZYGAMES_PROVIDER,
+    embedUrl: "https://www.crazygames.com/embed/moto-x3m",
+    thumbUrl:
+      "https://imgs.crazygames.com/games/moto-x3m/cover_16x9-1700625476572.png?metadata=none&quality=80&width=600&height=315&fit=crop",
+    orientation: "landscape",
+  },
+  {
+    slug: "drift-hunters",
+    title: "Drift Hunters",
+    summary: "차량을 튜닝하며 점수를 쌓는 본격 3D 드리프트 레이싱.",
+    description:
+      "다양한 차량으로 트랙을 드리프트하며 점수를 모으고, 번 돈으로 차를 튜닝·업그레이드하는 3D 레이싱입니다. 각도와 속도를 유지하는 드리프트 콤보로 고득점에 도전하세요.",
+    controls: [
+      "WASD로 주행, 스페이스로 핸드브레이크",
+      "마우스로 시점, 드리프트 유지",
+    ],
+    category: GAME_CATEGORIES.racing,
+    provider: CRAZYGAMES_PROVIDER,
+    embedUrl: "https://www.crazygames.com/embed/drift-hunters",
+    thumbUrl:
+      "https://imgs.crazygames.com/games/drift-hunters/cover-1656950639575.png?metadata=none&quality=80&width=600&height=315&fit=crop",
+    orientation: "landscape",
+  },
+  {
+    slug: "paper-io-2",
+    title: "Paper io 2",
+    summary: "영역을 칠해 넓혀가는 실시간 점령 IO 게임.",
+    description:
+      "내 색으로 땅을 칠해 영역을 넓히고, 다른 플레이어의 꼬리를 끊어 처치하는 실시간 점령 IO 게임입니다. 멀리 나갈수록 더 많은 땅을 먹지만, 그만큼 꼬리가 길어져 위험해집니다.",
+    controls: ["마우스 또는 방향키로 이동"],
+    category: GAME_CATEGORIES.io,
+    provider: CRAZYGAMES_PROVIDER,
+    embedUrl: "https://www.crazygames.com/embed/paper-io-2",
+    thumbUrl:
+      "https://imgs.crazygames.com/paper-io-2_16x9/20250214024143/paper-io-2_16x9-cover?metadata=none&quality=80&width=600&height=315&fit=crop",
+    orientation: "landscape",
+  },
+  {
+    slug: "count-masters-stickman-games",
+    title: "Count Masters",
+    summary: "관문을 골라 군중을 불려 보스를 무너뜨리는 러너.",
+    description:
+      "달리며 곱하기 관문을 골라 내 스틱맨 군중을 최대한 불리고, 끝에서 적 무리·보스와 충돌해 승리하는 러너 게임입니다. 어느 길을 고르느냐로 군중 수가 갈립니다.",
+    controls: ["마우스/손가락으로 좌우 이동"],
+    category: GAME_CATEGORIES.action,
+    provider: CRAZYGAMES_PROVIDER,
+    embedUrl: "https://www.crazygames.com/embed/count-masters-stickman-games",
+    thumbUrl:
+      "https://imgs.crazygames.com/count-masters-stickman-games_16x9/20260318145715/count-masters-stickman-games_16x9-cover?metadata=none&quality=80&width=600&height=315&fit=crop",
+    orientation: "landscape",
+  },
+  {
+    slug: "tiny-fishing",
+    title: "Tiny Fishing",
+    summary: "낚싯줄을 키우며 더 깊이, 더 많이 낚는 힐링 낚시.",
+    description:
+      "낚싯줄을 더 깊이 내려보내 물고기를 한 번에 많이 낚고, 번 돈으로 줄 길이와 잡이량을 업그레이드하는 잔잔한 캐주얼 낚시 게임입니다. 점점 깊은 바다의 큰 물고기에 도전하세요.",
+    controls: ["마우스/탭으로 낚싯줄 조절"],
+    category: GAME_CATEGORIES.casual,
+    provider: CRAZYGAMES_PROVIDER,
+    embedUrl: "https://www.crazygames.com/embed/tiny-fishing",
+    thumbUrl:
+      "https://imgs.crazygames.com/games/tiny-fishing/cover_16x9-1707829871473.png?metadata=none&quality=80&width=600&height=315&fit=crop",
+    orientation: "landscape",
+  },
+  {
+    slug: "short-life",
+    title: "Short Life",
+    summary: "함정 가득한 길을 무사히 통과하는 래그돌 액션.",
+    description:
+      "톱날·가시·폭탄이 깔린 길을 래그돌 캐릭터로 조심조심 통과하는 액션 게임입니다. 한 번의 실수도 치명적이라, 타이밍과 점프를 정교하게 맞춰 결승선까지 살아남으세요.",
+    controls: ["방향키로 이동·점프", "Shift 달리기, ↓ 숙이기"],
+    category: GAME_CATEGORIES.action,
+    provider: CRAZYGAMES_PROVIDER,
+    embedUrl: "https://www.crazygames.com/embed/short-life",
+    thumbUrl:
+      "https://imgs.crazygames.com/games/short-life/cover-1586425531708.png?metadata=none&quality=80&width=600&height=315&fit=crop",
+    orientation: "landscape",
+  },
+  {
+    slug: "getaway-shootout",
+    title: "Getaway Shootout",
+    summary: "엉뚱한 조작으로 결승점을 다투는 2인 대결 액션.",
+    description:
+      "한 방향씩만 깡총 뛰는 엉뚱한 조작으로 먼저 탈출 지점에 도착하면 이기는 2인 대결 게임입니다. 아이템과 무기로 상대를 방해하며, 친구와 한 키보드로 즐기기 좋은 파티 게임입니다.",
+    controls: ["1P: WASD / 2P: 방향키", "각 캐릭터는 좌·우 깡총 점프로만 이동"],
+    category: GAME_CATEGORIES.action,
+    provider: CRAZYGAMES_PROVIDER,
+    embedUrl: "https://www.crazygames.com/embed/getaway-shootout",
+    thumbUrl:
+      "https://imgs.crazygames.com/getaway-shootout_16x9/20241230044730/getaway-shootout_16x9-cover?metadata=none&quality=80&width=600&height=315&fit=crop",
+    orientation: "landscape",
+  },
+  {
+    slug: "rooftop-snipers",
+    title: "Rooftop Snipers",
+    summary: "옥상에서 한 발씩 쏘며 떨어뜨리는 2인 대결.",
+    description:
+      "옥상에서 마주 선 두 사람이 한 발씩 쏘며 상대를 밀어 떨어뜨리는 단순하지만 중독성 강한 2인 대결 게임입니다. 발사 타이밍과 점프로 균형을 잡아 먼저 5점을 따내세요.",
+    controls: ["1P: W 점프·E 발사 / 2P: I 점프·O 발사"],
+    category: GAME_CATEGORIES.action,
+    provider: CRAZYGAMES_PROVIDER,
+    embedUrl: "https://www.crazygames.com/embed/rooftop-snipers",
+    thumbUrl:
+      "https://imgs.crazygames.com/rooftop-snipers_16x9/20250108040440/rooftop-snipers_16x9-cover?metadata=none&quality=80&width=600&height=315&fit=crop",
+    orientation: "landscape",
+  },
+  {
+    slug: "fireboy-and-watergirl-the-forest-temple",
+    title: "Fireboy and Watergirl: Forest Temple",
+    summary: "불소년·물소녀가 협동해 신전을 탈출하는 2인 퍼즐.",
+    description:
+      "불소년과 물소녀를 동시에 조작해 함정을 피하고 보석을 모아 신전을 빠져나오는 협동 퍼즐 플랫포머입니다. 불은 물웅덩이에, 물은 용암에 약해서 둘의 길을 잘 나눠야 합니다. 혼자서도, 둘이서도 즐길 수 있습니다.",
+    controls: ["불소년: 방향키 / 물소녀: WASD"],
+    category: GAME_CATEGORIES.adventure,
+    provider: CRAZYGAMES_PROVIDER,
+    embedUrl:
+      "https://www.crazygames.com/embed/fireboy-and-watergirl-the-forest-temple",
+    thumbUrl:
+      "https://imgs.crazygames.com/games/fireboy-and-watergirl-the-forest-temple/cover-1586285142530.jpg?metadata=none&quality=80&width=600&height=315&fit=crop",
+    orientation: "landscape",
+  },
+  {
+    slug: "cubes-2048-io",
+    title: "Cubes 2048.io",
+    summary: "큐브를 합쳐 숫자를 키우는 2048 + IO 결합 게임.",
+    description:
+      "맵을 돌며 같은 숫자 큐브를 합쳐 더 큰 숫자로 키우고, 긴 꼬리로 다른 플레이어를 가두는 2048과 IO를 결합한 실시간 게임입니다. 클수록 강하지만 부딪히면 빼앗기니 주의하세요.",
+    controls: ["마우스로 이동, 스페이스로 부스트"],
+    category: GAME_CATEGORIES.io,
+    provider: CRAZYGAMES_PROVIDER,
+    embedUrl: "https://www.crazygames.com/embed/cubes-2048-io",
+    thumbUrl:
+      "https://imgs.crazygames.com/games/cubes-2048-io/cover_16x9-1693298929425.png?metadata=none&quality=80&width=600&height=315&fit=crop",
+    orientation: "landscape",
+  },
+  {
+    slug: "geometry-dash-online",
+    title: "Geometry Dash 풍 점프",
+    summary: "리듬에 맞춰 장애물을 뛰어넘는 반응형 아케이드.",
+    description:
+      "음악 리듬에 맞춰 사각형을 점프시켜 가시·장애물을 넘는 반응형 아케이드입니다. 한 번 부딪히면 처음부터 다시 시작해야 하므로, 패턴을 외우고 타이밍을 정확히 맞춰야 합니다.",
+    controls: ["스페이스/마우스/탭으로 점프"],
+    category: GAME_CATEGORIES.arcade,
+    provider: CRAZYGAMES_PROVIDER,
+    embedUrl: "https://www.crazygames.com/embed/geometry-dash-online",
+    thumbUrl:
+      "https://imgs.crazygames.com/games/geometry-dash-online/cover_16x9-1732744370399.png?metadata=none&quality=80&width=600&height=315&fit=crop",
+    orientation: "landscape",
+  },
+  {
+    slug: "helix-jump",
+    title: "Helix Jump",
+    summary: "나선 탑을 따라 공을 떨어뜨리는 한 손 아케이드.",
+    description:
+      "회전하는 나선 탑의 틈을 노려 공을 아래로 떨어뜨리는 한 손 아케이드입니다. 색이 다른 칸을 밟으면 끝나므로, 탑을 돌려 빈틈을 만들어 한 번에 여러 층을 내려가세요.",
+    controls: ["좌우 드래그/방향키로 탑 회전"],
+    category: GAME_CATEGORIES.arcade,
+    provider: CRAZYGAMES_PROVIDER,
+    embedUrl: "https://www.crazygames.com/embed/helix-jump",
+    thumbUrl:
+      "https://imgs.crazygames.com/games/helix-jump/cover_16x9-1733222901873.png?metadata=none&quality=80&width=600&height=315&fit=crop",
+    orientation: "landscape",
+  },
+  {
+    slug: "uno-online-four-colors",
+    title: "Four Colors (우노)",
+    summary: "우노 규칙으로 즐기는 가벼운 컬러 카드 게임.",
+    description:
+      "같은 색이나 숫자를 내며 손패를 가장 먼저 비우면 이기는 우노 규칙의 컬러 카드 게임입니다. 컴퓨터 상대와 빠르게 한 판씩 즐길 수 있고, 스킵·리버스·와일드 카드로 흐름을 뒤집으세요.",
+    controls: ["마우스/탭으로 카드 내기"],
+    category: GAME_CATEGORIES.casual,
+    provider: CRAZYGAMES_PROVIDER,
+    embedUrl: "https://www.crazygames.com/embed/uno-online",
+    thumbUrl:
+      "https://imgs.crazygames.com/games/uno-online/cover-1679068977831.png?metadata=none&quality=80&width=600&height=315&fit=crop",
+    orientation: "landscape",
+  },
+  {
     slug: "manhwa-character-rpg-3",
     title: "만화캐릭RPG 시즌3",
     summary: "주전자닷컴에서 인기를 끈 바버플금님의 추억의 만화 캐릭터 RPG.",
@@ -351,21 +540,23 @@ const REGION_FEATURED_SLUGS: Record<GameRegion, readonly string[]> = {
     "manhwa-character-rpg-3",
     "snake-io",
     "2048",
+    "moto-x3m",
+    "paper-io-2",
     "smash-karts",
+    "rooftop-snipers",
     "impostor-sort-puzzle",
     "duo-match-3d",
-    "dream-wedding-dress-up",
     "hextris",
   ],
   us: [
+    "moto-x3m",
+    "drift-hunters",
     "bullet-force",
+    "paper-io-2",
+    "getaway-shootout",
+    "count-masters-stickman-games",
     "extreme-car-racing",
-    "basketball-goat",
-    "astro-chickens",
-    "commando-gun-shooting",
-    "magic-knife",
     "smash-karts",
-    "snake-io",
   ],
   global: [
     "snake-io",
@@ -431,8 +622,14 @@ const COLLECTION_SLUGS: Record<
   popular: [
     "snake-io",
     "smash-karts",
+    "moto-x3m",
+    "drift-hunters",
+    "paper-io-2",
     "bullet-force",
     "2048",
+    "count-masters-stickman-games",
+    "helix-jump",
+    "tiny-fishing",
     "extreme-car-racing",
     "basketball-goat",
     "astro-chickens",
@@ -442,8 +639,15 @@ const COLLECTION_SLUGS: Record<
     "monster-stomper",
     "impostor-sort-puzzle",
   ],
-  // 온라인 대전/멀티로 둘 이상이 함께 즐기는 게임. (로컬 분할 2인용 게임은 추후 확보 시 추가)
-  twoPlayer: ["smash-karts", "bullet-force", "snake-io"],
+  // 한 키보드/온라인으로 둘이 함께 즐기는 게임. 클래식 로컬 2인용을 앞에 둔다.
+  twoPlayer: [
+    "rooftop-snipers",
+    "getaway-shootout",
+    "fireboy-and-watergirl-the-forest-temple",
+    "smash-karts",
+    "bullet-force",
+    "snake-io",
+  ],
   // 쯔꾸르(RPG Maker)는 아직 공개 허락받은 게임이 없다 → 빈 컬렉션(준비 중).
   rpgmaker: [],
 };
@@ -581,6 +785,19 @@ const CURATED_TAGS: Record<string, readonly string[]> = {
   "commando-gun-shooting": ["FPS", "미션"],
   "farming-mini-puzzle": ["농장", "힐링"],
   "dream-wedding-dress-up": ["꾸미기", "드레스업"],
+  "moto-x3m": ["오토바이", "묘기"],
+  "drift-hunters": ["드리프트", "튜닝"],
+  "paper-io-2": ["IO 게임", "점령"],
+  "count-masters-stickman-games": ["러너", "군중"],
+  "tiny-fishing": ["낚시", "힐링"],
+  "short-life": ["래그돌", "함정"],
+  "getaway-shootout": ["2인용", "파티"],
+  "rooftop-snipers": ["2인용", "대결"],
+  "fireboy-and-watergirl-the-forest-temple": ["2인용", "협동", "퍼즐"],
+  "cubes-2048-io": ["IO 게임", "숫자"],
+  "geometry-dash-online": ["리듬", "반응속도"],
+  "helix-jump": ["원터치", "낙하"],
+  "uno-online-four-colors": ["카드", "보드"],
   "manhwa-character-rpg-3": ["RPG", "플래시", "추억게임"],
 };
 
