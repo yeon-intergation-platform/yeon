@@ -139,15 +139,23 @@ export function GameDetail({ game }: { game: GameEntry }) {
             tone="inherit"
             className="text-[12px] leading-[1.6] text-[#999]"
           >
-            게임이 보이지 않으면{" "}
-            <YeonLink
-              href={game.embedUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={SHARED_FEATURE_CLASS.text13Emphasis}
-            >
-              새 탭에서 열기
-            </YeonLink>
+            {game.kind === "swf" ? (
+              // 호스팅 SWF는 Ruffle로만 재생한다. 원본 파일 링크를 노출하지 않아
+              // 무심코 다운로드되는 일을 막는다. 용량이 커 로딩이 걸릴 수 있음을 안내한다.
+              "용량이 큰 추억의 플래시 게임입니다. 처음 불러올 때 잠시 기다려 주세요."
+            ) : (
+              <>
+                게임이 보이지 않으면{" "}
+                <YeonLink
+                  href={game.embedUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={SHARED_FEATURE_CLASS.text13Emphasis}
+                >
+                  새 탭에서 열기
+                </YeonLink>
+              </>
+            )}
           </YeonText>
           {started ? (
             <YeonButton

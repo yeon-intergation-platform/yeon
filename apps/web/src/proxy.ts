@@ -38,7 +38,28 @@ function withSeoHeaders(
   return response;
 }
 
+// 호스팅 SWF(추억의 플래시 게임 원본)는 Ruffle이 fetch로만 불러온다. 주소창 직접 접근/
+// 새 탭(sec-fetch-dest: document)으로 받으려는 시도는 404로 막아 원본 파일이 그대로
+// 다운로드되는 것을 차단한다. Ruffle의 fetch는 dest가 empty/cors라 정상 재생된다.
+// CDN(공유 캐시)이 이 응답을 캐싱해 가드를 우회하지 못하도록 private 캐시로 응답한다.
+function guardHostedSwf(request: NextRequest): NextResponse | null {
+  if (!request.nextUrl.pathname.endsWith(".swf")) return null;
+
+  const fetchDest = request.headers.get("sec-fetch-dest");
+  if (fetchDest === "document") {
+    return new NextResponse("Not Found", { status: 404 });
+  }
+
+  const response = NextResponse.next();
+  response.headers.set("Cache-Control", "private, max-age=86400");
+  response.headers.set("X-Content-Type-Options", "nosniff");
+  return response;
+}
+
 export function proxy(request: NextRequest) {
+  const swfGuardResponse = guardHostedSwf(request);
+  if (swfGuardResponse) return swfGuardResponse;
+
   const { pathname } = request.nextUrl;
   const requestHost =
     request.headers.get("x-forwarded-host") ??
