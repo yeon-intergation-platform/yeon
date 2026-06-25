@@ -1,12 +1,14 @@
 package world.yeon.backend.game_service_comments.service;
 
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+import world.yeon.backend.game_service_comments.dto.CommentLikeResponse;
 import world.yeon.backend.game_service_comments.dto.GameCommentDto;
 import world.yeon.backend.game_service_comments.repository.GameServiceCommentsRepository;
 import world.yeon.backend.game_service_comments.repository.GameServiceCommentsRepository.CommentRow;
@@ -28,10 +30,18 @@ public class GameServiceCommentsService {
 	}
 
 	@Transactional(readOnly = true)
-	public List<GameCommentDto> list(String gameSlug, UUID viewerUserId, boolean viewerIsAdmin) {
+	public List<GameCommentDto> list(
+		String gameSlug,
+		UUID viewerUserId,
+		boolean viewerIsAdmin,
+		boolean sortPopular
+	) {
 		String slug = requireSlug(gameSlug);
-		return repository.listByGame(slug).stream()
-			.map(row -> toDto(row, viewerUserId, viewerIsAdmin))
+		Set<UUID> likedIds = viewerUserId == null
+			? Set.of()
+			: repository.likedCommentIds(slug, viewerUserId);
+		return repository.listByGame(slug, sortPopular).stream()
+			.map(row -> toDto(row, viewerUserId, viewerIsAdmin, likedIds))
 			.toList();
 	}
 
@@ -75,11 +85,11 @@ public class GameServiceCommentsService {
 			UUID.randomUUID(), slug, authorUserId, displayName, avatarUrl,
 			guestPasswordHash, normalizedContent, isSecret
 		);
-		// 작성 직후 응답은 본인 글이므로 마스킹하지 않는다.
+		// 작성 직후 응답은 본인 글이므로 마스킹하지 않는다. 좋아요는 0에서 시작.
 		return new GameCommentDto(
 			row.id(), row.displayName(), row.avatarUrl(), row.content(), row.isSecret(),
 			viewerUserId != null, authorUserId == null, false,
-			true, row.createdAt()
+			true, 0L, false, row.createdAt()
 		);
 	}
 
@@ -114,7 +124,30 @@ public class GameServiceCommentsService {
 		return repository.softDelete(commentId);
 	}
 
-	private GameCommentDto toDto(CommentRow row, UUID viewerUserId, boolean viewerIsAdmin) {
+	@Transactional
+	public CommentLikeResponse toggleLike(UUID commentId, UUID userId) {
+		if (userId == null) {
+			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "좋아요는 로그인 후 이용할 수 있습니다.");
+		}
+		if (!repository.commentExists(commentId)) {
+			throw new ResponseStatusException(HttpStatus.NOT_FOUND, "댓글을 찾을 수 없습니다.");
+		}
+		if (repository.commentLikeExists(commentId, userId)) {
+			repository.removeCommentLike(commentId, userId);
+		} else {
+			repository.addCommentLike(UUID.randomUUID(), commentId, userId);
+		}
+		long count = repository.countCommentLikes(commentId);
+		boolean liked = repository.commentLikeExists(commentId, userId);
+		return new CommentLikeResponse(count, liked);
+	}
+
+	private GameCommentDto toDto(
+		CommentRow row,
+		UUID viewerUserId,
+		boolean viewerIsAdmin,
+		Set<UUID> likedIds
+	) {
 		boolean isGuest = row.authorUserId() == null;
 		boolean isMine = viewerUserId != null && row.authorUserId() != null
 			&& row.authorUserId().equals(viewerUserId);
@@ -131,6 +164,8 @@ public class GameServiceCommentsService {
 			isGuest,
 			canRevealWithPassword,
 			canDelete,
+			row.likeCount(),
+			likedIds.contains(row.id()),
 			row.createdAt()
 		);
 	}

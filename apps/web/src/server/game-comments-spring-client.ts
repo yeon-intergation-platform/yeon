@@ -1,8 +1,11 @@
 import { fetchYeon } from "@yeon/ui/runtime/YeonBrowserRuntime";
 import {
+  commentLikeResponseSchema,
   gameCommentListResponseSchema,
   gameCommentSchema,
   revealGameCommentResponseSchema,
+  type CommentLikeResponse,
+  type CommentSort,
   type CreateGameCommentRequest,
   type GameComment,
   type GameCommentListResponse,
@@ -49,9 +52,10 @@ async function readError(response: Response): Promise<string> {
 
 export async function listGameComments(
   gameSlug: string,
-  viewer: CommentViewer | null
+  viewer: CommentViewer | null,
+  sort: CommentSort = "latest"
 ): Promise<GameCommentListResponse> {
-  const url = `${resolveSpringBackendBaseUrl()}${COMMENTS_PATH}?gameSlug=${encodeURIComponent(gameSlug)}`;
+  const url = `${resolveSpringBackendBaseUrl()}${COMMENTS_PATH}?gameSlug=${encodeURIComponent(gameSlug)}&sort=${sort}`;
   const response = await fetchYeon(url, {
     method: "GET",
     headers: buildHeaders(viewer, false),
@@ -59,6 +63,27 @@ export async function listGameComments(
   });
   if (!response.ok) throw new Error(await readError(response));
   return gameCommentListResponseSchema.parse(await response.json());
+}
+
+export async function toggleCommentLike(
+  commentId: string,
+  viewer: CommentViewer | null
+): Promise<CommentLikeResponse> {
+  const response = await fetchYeon(
+    `${resolveSpringBackendBaseUrl()}${COMMENTS_PATH}/${encodeURIComponent(commentId)}/like`,
+    {
+      method: "POST",
+      headers: buildHeaders(viewer, true),
+      body: "{}",
+    }
+  );
+  if (!response.ok) {
+    throw new GameCommentRequestError(
+      response.status,
+      await readError(response)
+    );
+  }
+  return commentLikeResponseSchema.parse(await response.json());
 }
 
 export async function createGameComment(

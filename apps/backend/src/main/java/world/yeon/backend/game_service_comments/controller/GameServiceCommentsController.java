@@ -2,6 +2,7 @@ package world.yeon.backend.game_service_comments.controller;
 
 import java.util.UUID;
 import org.springframework.web.bind.annotation.*;
+import world.yeon.backend.game_service_comments.dto.CommentLikeResponse;
 import world.yeon.backend.game_service_comments.dto.DeleteGameCommentResponse;
 import world.yeon.backend.game_service_comments.dto.GameCommentDto;
 import world.yeon.backend.game_service_comments.dto.GameCommentListResponse;
@@ -25,10 +26,14 @@ public class GameServiceCommentsController {
 	@GetMapping("/game-service/comments")
 	public GameCommentListResponse list(
 		@RequestParam("gameSlug") String gameSlug,
+		@RequestParam(value = "sort", required = false) String sort,
 		@RequestHeader(value = USER_ID_HEADER, required = false) UUID viewerUserId,
 		@RequestHeader(value = USER_ROLE_HEADER, required = false) String viewerRole
 	) {
-		return new GameCommentListResponse(service.list(gameSlug, viewerUserId, isAdmin(viewerRole)));
+		boolean sortPopular = "popular".equalsIgnoreCase(sort);
+		return new GameCommentListResponse(
+			service.list(gameSlug, viewerUserId, isAdmin(viewerRole), sortPopular)
+		);
 	}
 
 	@PostMapping("/game-service/comments")
@@ -53,6 +58,14 @@ public class GameServiceCommentsController {
 	@PostMapping("/game-service/comments/{id}/reveal")
 	public RevealGameCommentResponse reveal(@PathVariable UUID id, @RequestBody RevealRequest request) {
 		return new RevealGameCommentResponse(service.reveal(id, request.password()));
+	}
+
+	@PostMapping("/game-service/comments/{id}/like")
+	public CommentLikeResponse like(
+		@PathVariable UUID id,
+		@RequestHeader(value = USER_ID_HEADER, required = false) UUID viewerUserId
+	) {
+		return service.toggleLike(id, viewerUserId);
 	}
 
 	@DeleteMapping("/game-service/comments/{id}")
