@@ -8,6 +8,7 @@ export * from "./contest";
 export * from "./error";
 export * from "./game-comment";
 export * from "./game-like";
+export * from "./game-library";
 export * from "./health";
 export * from "./home-insights";
 export * from "./instructor-dashboard";

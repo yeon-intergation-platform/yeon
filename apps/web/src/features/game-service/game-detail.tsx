@@ -5,6 +5,7 @@ import { CommonProductHeader } from "@/components/product-shell/product-header";
 import { SHARED_FEATURE_CLASS } from "@/features/shared-style-constants";
 import { GAME_CATEGORY_LABELS, type GameEntry } from "./game-catalog";
 import { GameComments } from "./game-comments";
+import { GameFavoriteButton } from "./game-favorite-button";
 import { GameLikeButton } from "./game-like-button";
 import { RuffleGamePlayer } from "./ruffle-game-player";
 
@@ -92,8 +93,9 @@ export function GameDetail({ game }: { game: GameEntry }) {
           >
             {game.summary}
           </YeonText>
-          <YeonView className="mt-3">
+          <YeonView className="mt-3 flex flex-wrap items-center gap-2">
             <GameLikeButton gameSlug={game.slug} />
+            <GameFavoriteButton gameSlug={game.slug} />
           </YeonView>
         </YeonView>
 

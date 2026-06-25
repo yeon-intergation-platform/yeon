@@ -122,6 +122,19 @@ export async function getHubGames(
   };
 }
 
+// slug 목록 → GameEntry(입력 순서 보존). 찜/최근 플레이 같은 "내 게임" 해석에 쓴다.
+// merged 카탈로그를 한 번만 조회해 맵으로 매칭한다(없는 slug는 건너뛴다).
+export async function getGamesBySlugs(
+  slugs: readonly string[]
+): Promise<GameEntry[]> {
+  if (slugs.length === 0) return [];
+  const all = await getMergedGames();
+  const bySlug = new Map(all.map((game) => [game.slug, game]));
+  return slugs
+    .map((slug) => bySlug.get(slug))
+    .filter((game): game is GameEntry => game !== undefined);
+}
+
 // 상세: curated 우선(정적·SEO), 없으면 feed에서 on-demand 조회.
 export async function getDetailGame(slug: string): Promise<GameEntry | null> {
   const curated = getCuratedGameBySlug(slug);
