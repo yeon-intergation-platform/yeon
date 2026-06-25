@@ -5,6 +5,7 @@ import { CommonProductHeader } from "@/components/product-shell/product-header";
 import { SHARED_FEATURE_CLASS } from "@/features/shared-style-constants";
 import { GAME_CATEGORY_LABELS, type GameEntry } from "./game-catalog";
 import { GameComments } from "./game-comments";
+import { GameLikeButton } from "./game-like-button";
 import { RuffleGamePlayer } from "./ruffle-game-player";
 
 // 외부 임베드 게임은 신뢰 경계가 다르므로 최소 권한만 부여한다.
@@ -91,6 +92,9 @@ export function GameDetail({ game }: { game: GameEntry }) {
           >
             {game.summary}
           </YeonText>
+          <YeonView className="mt-3">
+            <GameLikeButton gameSlug={game.slug} />
+          </YeonView>
         </YeonView>
 
         <YeonView
