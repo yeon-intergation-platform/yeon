@@ -301,7 +301,7 @@ export const CURATED_GAMES = [
     provider: "제작: 바버플금 · 배급: 주전자닷컴 (제작자 사용 허락)",
     kind: "swf",
     embedUrl: "/games/manhwa-character-rpg-3.swf",
-    thumbUrl: "",
+    thumbUrl: "/games/manhwa-character-rpg-3.jpg",
     orientation: "landscape",
   },
 ] as const satisfies readonly GameEntry[];
@@ -481,95 +481,83 @@ export function getCollectionGames(
 }
 
 // 허브 상단 탭 바(SSOT). 전체 + 컬렉션 + 장르 카테고리를 한 줄로 노출한다.
-export type GameHubTab = { key: string; label: string; icon: string } & (
+export type GameHubTab = { key: string; label: string } & (
   | { type: "all" }
   | { type: "collection"; collection: GameCollection }
   | { type: "category"; category: GameCategory }
 );
 
 export const GAME_HUB_TABS: readonly GameHubTab[] = [
-  { key: "all", label: "전체", icon: "🏠", type: "all" },
+  { key: "all", label: "전체", type: "all" },
   {
     key: "featured",
     label: "추천",
-    icon: "⭐",
     type: "collection",
     collection: GAME_COLLECTIONS.featured,
   },
   {
     key: "retro",
     label: "추억게임",
-    icon: "🎮",
     type: "collection",
     collection: GAME_COLLECTIONS.retro,
   },
   {
     key: "popular",
     label: "인기게임",
-    icon: "🔥",
     type: "collection",
     collection: GAME_COLLECTIONS.popular,
   },
   {
     key: "rpgmaker",
     label: "쯔꾸르",
-    icon: "🧙",
     type: "collection",
     collection: GAME_COLLECTIONS.rpgmaker,
   },
   {
     key: "puzzle",
     label: "퍼즐",
-    icon: "🧩",
     type: "category",
     category: GAME_CATEGORIES.puzzle,
   },
   {
     key: "action",
     label: "액션",
-    icon: "⚔️",
     type: "category",
     category: GAME_CATEGORIES.action,
   },
   {
     key: "shooting",
     label: "슈팅",
-    icon: "🎯",
     type: "category",
     category: GAME_CATEGORIES.shooting,
   },
   {
     key: "racing",
     label: "레이싱",
-    icon: "🏁",
     type: "category",
     category: GAME_CATEGORIES.racing,
   },
   {
     key: "sports",
     label: "스포츠",
-    icon: "🏀",
     type: "category",
     category: GAME_CATEGORIES.sports,
   },
   {
     key: "arcade",
     label: "아케이드",
-    icon: "🕹️",
     type: "category",
     category: GAME_CATEGORIES.arcade,
   },
   {
     key: "casual",
     label: "캐주얼",
-    icon: "🙂",
     type: "category",
     category: GAME_CATEGORIES.casual,
   },
   {
     key: "twoPlayer",
     label: "2인용",
-    icon: "👥",
     type: "collection",
     collection: GAME_COLLECTIONS.twoPlayer,
   },

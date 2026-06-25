@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 // Ruffle(오픈소스 Flash 에뮬레이터)로 SWF를 브라우저에서 실행한다. 허락받은 추억의
 // 플래시 게임(kind: "swf")만 이 경로로 렌더한다. 외부 임베드(iframe)와 달리 우리가
@@ -47,6 +47,9 @@ export function RuffleGamePlayer({
   title: string;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
+  // SWF는 용량이 커(수 MB~수십 MB) 로딩 동안 검은 화면만 보이면 고장처럼 느껴진다.
+  // 로드가 끝날 때까지 "불러오는 중" 오버레이를 덮어 진행 상태를 알린다.
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
@@ -60,9 +63,15 @@ export function RuffleGamePlayer({
       player.style.width = "100%";
       player.style.height = "100%";
       containerRef.current.appendChild(player);
-      player.load({ url: swfUrl }).catch(() => {
-        // 로드 실패 시 fallback 안내(상세 페이지의 "새 탭에서 열기")로 유도한다.
-      });
+      player
+        .load({ url: swfUrl })
+        .then(() => {
+          if (!cancelled) setLoading(false);
+        })
+        .catch(() => {
+          // 로드 실패 시에도 오버레이는 걷어 게임 화면(또는 Ruffle 자체 안내)을 보여준다.
+          if (!cancelled) setLoading(false);
+        });
     }
 
     if (window.RufflePlayer) {
@@ -79,10 +88,23 @@ export function RuffleGamePlayer({
   }, [swfUrl]);
 
   return (
-    <div
-      ref={containerRef}
-      className="absolute inset-0 h-full w-full"
-      aria-label={title}
-    />
+    <div className="absolute inset-0 h-full w-full">
+      <div
+        ref={containerRef}
+        className="absolute inset-0 h-full w-full"
+        aria-label={title}
+      />
+      {loading ? (
+        <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/80 text-white">
+          <span className="h-8 w-8 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+          <span className="text-[13px] font-medium text-white/85">
+            게임을 불러오는 중...
+          </span>
+          <span className="text-[11px] text-white/55">
+            용량이 커서 잠시 걸릴 수 있어요
+          </span>
+        </div>
+      ) : null}
+    </div>
   );
 }

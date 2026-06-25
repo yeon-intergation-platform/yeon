@@ -4,7 +4,6 @@ import { CommonProductHeader } from "@/components/product-shell/product-header";
 import { SHARED_FEATURE_CLASS } from "@/features/shared-style-constants";
 import {
   GAME_HUB_TABS,
-  GAME_REGION_LABELS,
   GAME_REGIONS,
   getGameTags,
   type GameHubTab,
@@ -249,7 +248,7 @@ function RegionToggle({ region }: { region: GameRegion }) {
   );
 }
 
-// 아이콘 카테고리 탭 바. activeKey와 일치하는 탭만 강조한다.
+// 카테고리 탭 바. activeKey와 일치하는 탭만 강조한다.
 function HubTabBar({
   region,
   activeKey,
@@ -265,13 +264,12 @@ function HubTabBar({
           <YeonLink
             key={tab.key}
             href={hrefForTab(tab, region)}
-            className={`inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-[13px] font-semibold no-underline transition-colors duration-200 ${
+            className={`inline-flex items-center rounded-full px-3.5 py-1.5 text-[13px] font-semibold no-underline transition-colors duration-200 ${
               isActive
                 ? "bg-[#6b5bd2] text-white"
                 : "text-[#555] hover:bg-[#f2f0fb] hover:text-[#6b5bd2]"
             }`}
           >
-            <span aria-hidden="true">{tab.icon}</span>
             {tab.label}
           </YeonLink>
         );
@@ -309,20 +307,31 @@ function SearchBar({
       <button
         type="submit"
         aria-label="검색"
-        className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-full px-2 py-1 text-[14px] text-[#888] transition-colors hover:text-[#6b5bd2]"
+        className="absolute right-2 top-1/2 -translate-y-1/2 text-[#888] transition-colors hover:text-[#6b5bd2]"
       >
-        🔍
+        <svg
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
+          <circle cx="11" cy="11" r="7" />
+          <path d="m21 21-4.3-4.3" />
+        </svg>
       </button>
     </form>
   );
 }
 
 function SectionHeader({
-  icon,
   title,
   moreHref,
 }: {
-  icon: string;
   title: string;
   moreHref?: string;
 }) {
@@ -332,9 +341,12 @@ function SectionHeader({
         as="h2"
         variant="unstyled"
         tone="inherit"
-        className="flex items-center gap-1.5 text-[16px] font-black tracking-[-0.02em] text-[#111]"
+        className="flex items-center gap-2 text-[16px] font-black tracking-[-0.02em] text-[#111]"
       >
-        <span aria-hidden="true">{icon}</span>
+        <span
+          aria-hidden="true"
+          className="inline-block h-[16px] w-[3px] rounded-full bg-[#6b5bd2]"
+        />
         {title}
       </YeonText>
       {moreHref ? (
@@ -477,8 +489,7 @@ export function GameServiceHome(props: GameServiceHomeProps) {
       <YeonView as="section" className="mt-4">
         <YeonView className="flex items-center justify-between">
           <SectionHeader
-            icon="👍"
-            title={GAME_REGION_LABELS[region]}
+            title="운영자 추천"
             moreHref={buildHubHref({ collection: "featured", region })}
           />
           <RegionToggle region={region} />
@@ -498,7 +509,6 @@ export function GameServiceHome(props: GameServiceHomeProps) {
       {retro.length > 0 ? (
         <YeonView as="section" className="mt-7">
           <SectionHeader
-            icon="🎮"
             title="추억의 플래시 게임"
             moreHref={buildHubHref({ collection: "retro", region })}
           />
@@ -508,7 +518,6 @@ export function GameServiceHome(props: GameServiceHomeProps) {
 
       <YeonView as="section" className="mt-7">
         <SectionHeader
-          icon="🔥"
           title="인기 게임"
           moreHref={buildHubHref({ collection: "popular", region })}
         />
@@ -520,7 +529,7 @@ export function GameServiceHome(props: GameServiceHomeProps) {
           href={buildHubHref({ view: "all", region })}
           className="inline-flex items-center gap-2 rounded-full border border-[#6b5bd2] bg-white px-6 py-3 text-[14px] font-bold text-[#6b5bd2] no-underline transition-colors duration-200 hover:bg-[#6b5bd2] hover:text-white"
         >
-          🎮 전체 게임 보러가기 ›
+          전체 게임 보러가기 ›
         </YeonLink>
       </YeonView>
     </PageShell>
