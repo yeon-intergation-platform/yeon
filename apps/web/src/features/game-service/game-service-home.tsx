@@ -378,6 +378,8 @@ type GameServiceHomeProps =
       featured: readonly GameEntry[];
       retro: readonly GameEntry[];
       popular: readonly GameEntry[];
+      favorites: readonly GameEntry[];
+      recent: readonly GameEntry[];
     }
   | {
       mode: "grid";
@@ -478,13 +480,27 @@ export function GameServiceHome(props: GameServiceHomeProps) {
     );
   }
 
-  const { region, featured, retro, popular } = props;
+  const { region, featured, retro, popular, favorites, recent } = props;
   const hero = featured[0];
   const featuredSide = featured.slice(1, 5);
 
   return (
     <PageShell region={region}>
       <HubTabBar region={region} activeKey="all" />
+
+      {recent.length > 0 ? (
+        <YeonView as="section" className="mt-4">
+          <SectionHeader title="최근 플레이" />
+          <GameRow games={recent.slice(0, 6)} />
+        </YeonView>
+      ) : null}
+
+      {favorites.length > 0 ? (
+        <YeonView as="section" className="mt-7">
+          <SectionHeader title="찜한 게임" />
+          <GameRow games={favorites.slice(0, 6)} />
+        </YeonView>
+      ) : null}
 
       <YeonView as="section" className="mt-4">
         <YeonView className="flex items-center justify-between">

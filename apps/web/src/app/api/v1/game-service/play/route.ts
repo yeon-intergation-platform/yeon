@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCurrentAuthUser } from "@/server/auth/session";
 import { awardGamePlayExperience } from "@/server/game-experience-spring-client";
+import { recordPlay } from "@/server/game-library-spring-client";
 
 export const runtime = "nodejs";
 
@@ -23,7 +24,10 @@ export async function POST(request: Request) {
       gameSlug = body.gameSlug;
     }
   } catch {
-    return NextResponse.json({ message: "잘못된 요청입니다." }, { status: 400 });
+    return NextResponse.json(
+      { message: "잘못된 요청입니다." },
+      { status: 400 }
+    );
   }
 
   if (!GAME_SLUG_PATTERN.test(gameSlug)) {
@@ -33,12 +37,17 @@ export async function POST(request: Request) {
     );
   }
 
-  // 적립 실패는 플레이 경험을 막지 않는다(fire-and-forget 성격).
+  // 적립/기록 실패는 플레이 경험을 막지 않는다(fire-and-forget 성격).
   const dateKey = new Date().toISOString().slice(0, 10);
   try {
     await awardGamePlayExperience(user.id, gameSlug, dateKey);
   } catch (error) {
     console.error("게임 경험치 적립 실패", error);
+  }
+  try {
+    await recordPlay(user.id, gameSlug);
+  } catch (error) {
+    console.error("최근 플레이 기록 실패", error);
   }
 
   return new NextResponse(null, { status: 204 });

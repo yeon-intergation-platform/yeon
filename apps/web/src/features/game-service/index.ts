@@ -31,6 +31,7 @@ export {
 export {
   GAME_HUB_PAGE_SIZE,
   getDetailGame,
+  getGamesBySlugs,
   getHubGames,
   type HubGamesQuery,
   type HubGamesResult,

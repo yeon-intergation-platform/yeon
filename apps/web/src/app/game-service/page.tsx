@@ -9,6 +9,7 @@ import {
   GAME_COLLECTION_LABELS,
   GameServiceHome,
   getCollectionGames,
+  getGamesBySlugs,
   getHubGames,
   isGameCollection,
   isGameRegion,
@@ -18,8 +19,28 @@ import {
   type GameEntry,
   type GameRegion,
 } from "@/features/game-service";
+import { getCurrentAuthUser } from "@/server/auth/session";
 import { getLikeRanking } from "@/server/game-likes-spring-client";
+import { listFavorites, listRecent } from "@/server/game-library-spring-client";
 import type { GameLikeRankingItem } from "@yeon/api-contract/game-like";
+
+// 로그인 사용자의 찜·최근 플레이를 GameEntry로 해석한다(비로그인/실패 시 빈 배열).
+async function resolveMyGames(): Promise<{
+  favorites: GameEntry[];
+  recent: GameEntry[];
+}> {
+  const user = await getCurrentAuthUser();
+  if (!user) return { favorites: [], recent: [] };
+  const [favSlugs, recentSlugs] = await Promise.all([
+    listFavorites(user.id).catch(() => []),
+    listRecent(user.id).catch(() => []),
+  ]);
+  const [favorites, recent] = await Promise.all([
+    getGamesBySlugs(favSlugs),
+    getGamesBySlugs(recentSlugs),
+  ]);
+  return { favorites, recent };
+}
 
 // 인기 게임을 좋아요 수 내림차순으로 정렬한다. ranking에 없는(좋아요 0) 게임은
 // 원래 큐레이션 순서를 유지하며 뒤로 보낸다(안정 정렬).
@@ -178,7 +199,10 @@ export default async function GameServicePage({
     const retro = getCollectionGames("retro", activeRegion);
     // 인기 게임은 좋아요 수로 실제 정렬한다(같은 수/0이면 큐레이션 순서 유지).
     const popularBase = getCollectionGames("popular", activeRegion);
-    const ranking = await getLikeRanking(100);
+    const [ranking, myGames] = await Promise.all([
+      getLikeRanking(100),
+      resolveMyGames(),
+    ]);
     const popular = orderByLikeCount(popularBase, ranking.items);
     return (
       <>
@@ -192,6 +216,8 @@ export default async function GameServicePage({
           featured={featured}
           retro={retro}
           popular={popular}
+          favorites={myGames.favorites}
+          recent={myGames.recent}
         />
       </>
     );
