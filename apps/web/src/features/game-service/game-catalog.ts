@@ -379,7 +379,9 @@ const REGION_FEATURED_SLUGS: Record<GameRegion, readonly string[]> = {
   ],
 };
 
-export function isGameRegion(value: string | null | undefined): value is GameRegion {
+export function isGameRegion(
+  value: string | null | undefined
+): value is GameRegion {
   return value === "kr" || value === "us" || value === "global";
 }
 
@@ -397,4 +399,206 @@ export function getFeaturedGamesForRegion(region: GameRegion): GameEntry[] {
   return REGION_FEATURED_SLUGS[region]
     .map((slug) => getGameBySlug(slug))
     .filter((game): game is GameEntry => game !== null);
+}
+
+// 컬렉션: 장르(category)와 분리한 큐레이션 묶음. 허브 탭의 추천/추억게임/인기게임/쯔꾸르/2인용은
+// genre가 아니라 손으로 고른 컬렉션이다(feed 게임은 장르에만 자동 매핑되므로 컬렉션엔 안 들어간다).
+export const GAME_COLLECTIONS = {
+  featured: "featured",
+  retro: "retro",
+  popular: "popular",
+  rpgmaker: "rpgmaker",
+  twoPlayer: "twoPlayer",
+} as const;
+
+export type GameCollection =
+  (typeof GAME_COLLECTIONS)[keyof typeof GAME_COLLECTIONS];
+
+export const GAME_COLLECTION_LABELS: Record<GameCollection, string> = {
+  featured: "운영자 추천",
+  retro: "추억의 플래시 게임",
+  popular: "인기 게임",
+  rpgmaker: "쯔꾸르 게임",
+  twoPlayer: "2인용 게임",
+};
+
+// 컬렉션별 큐레이션 slug(노출 순서). featured는 region별로 따로(getFeaturedGamesForRegion),
+// retro는 kind==="swf"로 자동 도출하므로 여기 두지 않는다.
+const COLLECTION_SLUGS: Record<
+  "popular" | "rpgmaker" | "twoPlayer",
+  readonly string[]
+> = {
+  popular: [
+    "snake-io",
+    "smash-karts",
+    "bullet-force",
+    "2048",
+    "extreme-car-racing",
+    "basketball-goat",
+    "astro-chickens",
+    "commando-gun-shooting",
+    "magic-knife",
+    "duo-match-3d",
+    "monster-stomper",
+    "impostor-sort-puzzle",
+  ],
+  // 온라인 대전/멀티로 둘 이상이 함께 즐기는 게임. (로컬 분할 2인용 게임은 추후 확보 시 추가)
+  twoPlayer: ["smash-karts", "bullet-force", "snake-io"],
+  // 쯔꾸르(RPG Maker)는 아직 공개 허락받은 게임이 없다 → 빈 컬렉션(준비 중).
+  rpgmaker: [],
+};
+
+export function isGameCollection(
+  value: string | null | undefined
+): value is GameCollection {
+  return (
+    value === "featured" ||
+    value === "retro" ||
+    value === "popular" ||
+    value === "rpgmaker" ||
+    value === "twoPlayer"
+  );
+}
+
+function resolveSlugs(slugs: readonly string[]): GameEntry[] {
+  return slugs
+    .map((slug) => getGameBySlug(slug))
+    .filter((game): game is GameEntry => game !== null);
+}
+
+// 컬렉션 게임 목록(노출 순서 보존). featured는 region 의존, retro는 swf 자동 도출.
+export function getCollectionGames(
+  collection: GameCollection,
+  region: GameRegion
+): GameEntry[] {
+  if (collection === GAME_COLLECTIONS.featured) {
+    return getFeaturedGamesForRegion(region);
+  }
+  if (collection === GAME_COLLECTIONS.retro) {
+    return getListedGames().filter((game) => game.kind === "swf");
+  }
+  return resolveSlugs(COLLECTION_SLUGS[collection]);
+}
+
+// 허브 상단 탭 바(SSOT). 전체 + 컬렉션 + 장르 카테고리를 한 줄로 노출한다.
+export type GameHubTab = { key: string; label: string; icon: string } & (
+  | { type: "all" }
+  | { type: "collection"; collection: GameCollection }
+  | { type: "category"; category: GameCategory }
+);
+
+export const GAME_HUB_TABS: readonly GameHubTab[] = [
+  { key: "all", label: "전체", icon: "🏠", type: "all" },
+  {
+    key: "featured",
+    label: "추천",
+    icon: "⭐",
+    type: "collection",
+    collection: GAME_COLLECTIONS.featured,
+  },
+  {
+    key: "retro",
+    label: "추억게임",
+    icon: "🎮",
+    type: "collection",
+    collection: GAME_COLLECTIONS.retro,
+  },
+  {
+    key: "popular",
+    label: "인기게임",
+    icon: "🔥",
+    type: "collection",
+    collection: GAME_COLLECTIONS.popular,
+  },
+  {
+    key: "rpgmaker",
+    label: "쯔꾸르",
+    icon: "🧙",
+    type: "collection",
+    collection: GAME_COLLECTIONS.rpgmaker,
+  },
+  {
+    key: "puzzle",
+    label: "퍼즐",
+    icon: "🧩",
+    type: "category",
+    category: GAME_CATEGORIES.puzzle,
+  },
+  {
+    key: "action",
+    label: "액션",
+    icon: "⚔️",
+    type: "category",
+    category: GAME_CATEGORIES.action,
+  },
+  {
+    key: "shooting",
+    label: "슈팅",
+    icon: "🎯",
+    type: "category",
+    category: GAME_CATEGORIES.shooting,
+  },
+  {
+    key: "racing",
+    label: "레이싱",
+    icon: "🏁",
+    type: "category",
+    category: GAME_CATEGORIES.racing,
+  },
+  {
+    key: "sports",
+    label: "스포츠",
+    icon: "🏀",
+    type: "category",
+    category: GAME_CATEGORIES.sports,
+  },
+  {
+    key: "arcade",
+    label: "아케이드",
+    icon: "🕹️",
+    type: "category",
+    category: GAME_CATEGORIES.arcade,
+  },
+  {
+    key: "casual",
+    label: "캐주얼",
+    icon: "🙂",
+    type: "category",
+    category: GAME_CATEGORIES.casual,
+  },
+  {
+    key: "twoPlayer",
+    label: "2인용",
+    icon: "👥",
+    type: "collection",
+    collection: GAME_COLLECTIONS.twoPlayer,
+  },
+];
+
+// 카드 태그 칩. GameEntry 스키마를 늘리지 않고 slug별 보조 태그만 맵으로 둔다.
+// 노출 = 카테고리 라벨 + curated 태그(중복 제거).
+const CURATED_TAGS: Record<string, readonly string[]> = {
+  "snake-io": ["IO 게임", "멀티플레이"],
+  "smash-karts": ["레이싱", "멀티플레이"],
+  "bullet-force": ["FPS", "멀티플레이"],
+  "2048": ["숫자", "두뇌게임"],
+  hextris: ["블록", "반응속도"],
+  "monster-stomper": ["리듬", "플랫포머"],
+  "impostor-sort-puzzle": ["정렬", "두뇌게임"],
+  "duo-match-3d": ["매치", "스피드"],
+  "astro-chickens": ["우주", "슈팅"],
+  "magic-knife": ["캐주얼", "원터치"],
+  "extreme-car-racing": ["하이웨이", "스피드"],
+  "basketball-goat": ["농구", "캐주얼"],
+  "commando-gun-shooting": ["FPS", "미션"],
+  "farming-mini-puzzle": ["농장", "힐링"],
+  "dream-wedding-dress-up": ["꾸미기", "드레스업"],
+  "manhwa-character-rpg-3": ["RPG", "플래시", "추억게임"],
+};
+
+export function getGameTags(game: GameEntry): string[] {
+  const base = GAME_CATEGORY_LABELS[game.category];
+  const extra = CURATED_TAGS[game.slug];
+  if (!extra) return [base];
+  return [base, ...extra.filter((tag) => tag !== base)];
 }

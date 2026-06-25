@@ -4,11 +4,11 @@ import { QueryProvider } from "@/lib/query-provider";
 import { useExperienceAuthState } from "@/features/user-experience/use-experience-auth-state";
 import { useUserExperience } from "@/features/user-experience/use-user-experience";
 
-// 포인트·현금 전환 정책 안내(레벨업당 1,000P, 10,000P 모으면 관리자 문의로 현금 전환).
+// 포인트·현금 전환 정책 안내(레벨업당 1,000P, 환산율 10,000P = 100원, 관리자 문의로 전환).
 const AUTHED_NOTICE =
-  "게임을 플레이하면 경험치가 쌓여 레벨이 오릅니다. 레벨이 오를 때마다 1,000P가 적립되고, 10,000P를 모으면 관리자에게 문의해 현금으로 바꿀 수 있어요.";
+  "게임을 플레이하면 경험치가 쌓여 레벨이 오릅니다. 레벨이 오를 때마다 1,000P가 적립되고, 10,000P당 100원으로 환산해 관리자에게 문의하면 현금으로 바꿀 수 있어요.";
 const GUEST_NOTICE =
-  "로그인하고 게임을 플레이하면 경험치와 포인트가 쌓입니다. 레벨이 오를 때마다 1,000P가 적립되고, 10,000P를 모으면 관리자 문의로 현금으로 바꿀 수 있어요.";
+  "로그인하고 게임을 플레이하면 경험치와 포인트가 쌓입니다. 레벨이 오를 때마다 1,000P가 적립되고, 10,000P당 100원으로 환산해 관리자 문의로 현금으로 바꿀 수 있어요.";
 
 function GamePointsBannerInner({
   isAuthenticated,

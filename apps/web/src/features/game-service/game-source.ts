@@ -6,11 +6,14 @@
 
 import {
   CURATED_GAMES,
-  GAME_CATEGORY_ORDER,
+  GAME_REGIONS,
+  getCollectionGames,
   getGameBySlug as getCuratedGameBySlug,
   getGameEmbedKey,
   type GameCategory,
+  type GameCollection,
   type GameEntry,
+  type GameRegion,
 } from "./game-catalog";
 import { fetchGameFeed } from "./game-feed";
 
@@ -18,17 +21,22 @@ export const GAME_HUB_PAGE_SIZE = 48;
 
 export type HubGamesQuery = {
   category?: GameCategory | null;
+  collection?: GameCollection | null;
+  region?: GameRegion;
+  /** 제목 부분일치 검색어 */
+  query?: string | null;
   page?: number;
 };
 
 export type HubGamesResult = {
   games: GameEntry[];
   category: GameCategory | null;
+  collection: GameCollection | null;
+  query: string | null;
   page: number;
   pageSize: number;
   totalPages: number;
   totalCount: number;
-  availableCategories: GameCategory[];
 };
 
 // curated를 앞에 두고 feed를 덧붙이되, 같은 게임(임베드 해시 동일)은 한 번만 남긴다.
@@ -59,23 +67,43 @@ function clampPage(page: number | undefined, totalPages: number): number {
   return Math.min(Math.trunc(page), Math.max(totalPages, 1));
 }
 
+// 컬렉션 우선(curated 큐레이션) → 장르 카테고리 → 전체 순으로 기준 목록을 정한다.
+// 컬렉션은 손으로 고른 curated 묶음이라 feed를 섞지 않는다.
+async function resolveBaseGames(query: HubGamesQuery): Promise<GameEntry[]> {
+  if (query.collection) {
+    return getCollectionGames(
+      query.collection,
+      query.region ?? GAME_REGIONS.global
+    );
+  }
+  const allGames = await getMergedGames();
+  return query.category
+    ? allGames.filter((game) => game.category === query.category)
+    : allGames;
+}
+
+function filterByQuery(
+  games: GameEntry[],
+  rawQuery: string | null
+): GameEntry[] {
+  const needle = rawQuery?.trim().toLowerCase();
+  if (!needle) return games;
+  return games.filter((game) => game.title.toLowerCase().includes(needle));
+}
+
 export async function getHubGames(
   query: HubGamesQuery = {}
 ): Promise<HubGamesResult> {
-  const allGames = await getMergedGames();
+  const activeCollection = query.collection ?? null;
+  const activeCategory = activeCollection ? null : (query.category ?? null);
+  const activeQuery = query.query?.trim() ? query.query.trim() : null;
 
-  const availableCategories = GAME_CATEGORY_ORDER.filter((category) =>
-    allGames.some((game) => game.category === category)
-  );
-
-  const activeCategory =
-    query.category && availableCategories.includes(query.category)
-      ? query.category
-      : null;
-
-  const filtered = activeCategory
-    ? allGames.filter((game) => game.category === activeCategory)
-    : allGames;
+  const base = await resolveBaseGames({
+    ...query,
+    category: activeCategory,
+    collection: activeCollection,
+  });
+  const filtered = filterByQuery(base, activeQuery);
 
   const totalCount = filtered.length;
   const totalPages = Math.max(Math.ceil(totalCount / GAME_HUB_PAGE_SIZE), 1);
@@ -85,11 +113,12 @@ export async function getHubGames(
   return {
     games: filtered.slice(start, start + GAME_HUB_PAGE_SIZE),
     category: activeCategory,
+    collection: activeCollection,
+    query: activeQuery,
     page,
     pageSize: GAME_HUB_PAGE_SIZE,
     totalPages,
     totalCount,
-    availableCategories,
   };
 }
 

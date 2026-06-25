@@ -5,14 +5,18 @@ import { SITE_BRAND_NAME } from "@/lib/site-brand";
 import { buildServiceCanonicalUrl } from "@/lib/seo";
 import {
   GAME_CATEGORIES,
+  GAME_CATEGORY_LABELS,
+  GAME_COLLECTION_LABELS,
   GameServiceHome,
-  getFeaturedGamesForRegion,
+  getCollectionGames,
   getHubGames,
+  isGameCollection,
   isGameRegion,
   resolveRegionFromCountry,
   type GameCategory,
+  type GameCollection,
+  type GameEntry,
   type GameRegion,
-  type HubGamesResult,
 } from "@/features/game-service";
 
 const GAME_HUB_TITLE = "게임 - 브라우저에서 바로 즐기는 게임 모음";
@@ -46,6 +50,9 @@ export const metadata: YeonPageMetadata = {
 
 type GameHubSearchParams = {
   category?: string | string[];
+  collection?: string | string[];
+  view?: string | string[];
+  q?: string | string[];
   page?: string | string[];
   region?: string | string[];
 };
@@ -75,7 +82,7 @@ function parsePage(value: string | undefined): number {
   return Number.isFinite(page) && page > 1 ? page : 1;
 }
 
-function getGameHubJsonLd(result: HubGamesResult) {
+function getGameHubJsonLd(games: readonly GameEntry[]) {
   return {
     "@context": "https://schema.org",
     "@graph": [
@@ -87,7 +94,7 @@ function getGameHubJsonLd(result: HubGamesResult) {
         inLanguage: "ko-KR",
         mainEntity: {
           "@type": "ItemList",
-          itemListElement: result.games.map((game, index) => ({
+          itemListElement: games.map((game, index) => ({
             "@type": "ListItem",
             position: index + 1,
             name: game.title,
@@ -100,33 +107,104 @@ function getGameHubJsonLd(result: HubGamesResult) {
   };
 }
 
+// 그리드 헤딩 + 활성 탭 키 결정. 검색 > 컬렉션 > 장르 > 전체보기 순.
+function resolveGridHeading(params: {
+  query: string | null;
+  collection: GameCollection | null;
+  category: GameCategory | null;
+}): { heading: string; activeKey: string } {
+  if (params.query) {
+    return { heading: `'${params.query}' 검색 결과`, activeKey: "" };
+  }
+  if (params.collection) {
+    return {
+      heading: GAME_COLLECTION_LABELS[params.collection],
+      activeKey: params.collection,
+    };
+  }
+  if (params.category) {
+    return {
+      heading: `${GAME_CATEGORY_LABELS[params.category]} 게임`,
+      activeKey: params.category,
+    };
+  }
+  return { heading: "전체 게임", activeKey: "" };
+}
+
 export default async function GameServicePage({
   searchParams,
 }: {
   searchParams: Promise<GameHubSearchParams>;
 }) {
-  const { category, page, region } = await searchParams;
+  const { category, collection, view, q, page, region } = await searchParams;
   const headerStore = await getYeonRequestHeaders();
   const activeRegion = resolveActiveRegion(
     firstParam(region),
     headerStore.get("cf-ipcountry")
   );
+
+  const categoryParam = firstParam(category);
+  const collectionParam = firstParam(collection);
+  const viewParam = firstParam(view);
+  const queryParam = firstParam(q)?.trim() || undefined;
+
+  // 랜딩(섹션형)은 어떤 필터/검색/전체보기도 없을 때만. 그 외엔 그리드.
+  const isLanding =
+    !categoryParam && !collectionParam && !viewParam && !queryParam;
+
+  if (isLanding) {
+    const featured = getCollectionGames("featured", activeRegion);
+    const retro = getCollectionGames("retro", activeRegion);
+    const popular = getCollectionGames("popular", activeRegion);
+    return (
+      <>
+        <YeonStructuredData
+          id="game-service-jsonld"
+          data={getGameHubJsonLd([...featured, ...popular])}
+        />
+        <GameServiceHome
+          mode="landing"
+          region={activeRegion}
+          featured={featured}
+          retro={retro}
+          popular={popular}
+        />
+      </>
+    );
+  }
+
+  const activeCollection: GameCollection | null = isGameCollection(
+    collectionParam
+  )
+    ? collectionParam
+    : null;
+  const activeCategory = activeCollection ? null : parseCategory(categoryParam);
+
   const result = await getHubGames({
-    category: parseCategory(firstParam(category)),
+    category: activeCategory,
+    collection: activeCollection,
+    region: activeRegion,
+    query: queryParam ?? null,
     page: parsePage(firstParam(page)),
   });
-  const featuredGames = getFeaturedGamesForRegion(activeRegion);
+  const { heading, activeKey } = resolveGridHeading({
+    query: result.query,
+    collection: result.collection,
+    category: result.category,
+  });
 
   return (
     <>
       <YeonStructuredData
         id="game-service-jsonld"
-        data={getGameHubJsonLd(result)}
+        data={getGameHubJsonLd(result.games)}
       />
       <GameServiceHome
-        result={result}
+        mode="grid"
         region={activeRegion}
-        featuredGames={featuredGames}
+        activeKey={activeKey}
+        heading={heading}
+        result={result}
       />
     </>
   );
