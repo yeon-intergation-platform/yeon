@@ -18,6 +18,27 @@ import {
   type GameEntry,
   type GameRegion,
 } from "@/features/game-service";
+import { getLikeRanking } from "@/server/game-likes-spring-client";
+import type { GameLikeRankingItem } from "@yeon/api-contract/game-like";
+
+// 인기 게임을 좋아요 수 내림차순으로 정렬한다. ranking에 없는(좋아요 0) 게임은
+// 원래 큐레이션 순서를 유지하며 뒤로 보낸다(안정 정렬).
+function orderByLikeCount(
+  games: readonly GameEntry[],
+  ranking: readonly GameLikeRankingItem[]
+): GameEntry[] {
+  const countBySlug = new Map(
+    ranking.map((item) => [item.gameSlug, item.count])
+  );
+  return games
+    .map((game, index) => ({
+      game,
+      index,
+      count: countBySlug.get(game.slug) ?? 0,
+    }))
+    .sort((a, b) => b.count - a.count || a.index - b.index)
+    .map((entry) => entry.game);
+}
 
 const GAME_HUB_TITLE = "게임 - 브라우저에서 바로 즐기는 게임 모음";
 const GAME_HUB_DESCRIPTION =
@@ -155,7 +176,10 @@ export default async function GameServicePage({
   if (isLanding) {
     const featured = getCollectionGames("featured", activeRegion);
     const retro = getCollectionGames("retro", activeRegion);
-    const popular = getCollectionGames("popular", activeRegion);
+    // 인기 게임은 좋아요 수로 실제 정렬한다(같은 수/0이면 큐레이션 순서 유지).
+    const popularBase = getCollectionGames("popular", activeRegion);
+    const ranking = await getLikeRanking(100);
+    const popular = orderByLikeCount(popularBase, ranking.items);
     return (
       <>
         <YeonStructuredData

@@ -7,6 +7,7 @@ export * from "./counseling-records";
 export * from "./contest";
 export * from "./error";
 export * from "./game-comment";
+export * from "./game-like";
 export * from "./health";
 export * from "./home-insights";
 export * from "./instructor-dashboard";

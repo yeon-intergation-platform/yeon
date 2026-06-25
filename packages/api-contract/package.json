@@ -14,6 +14,7 @@
     "./users": "./src/users.ts",
     "./error": "./src/error.ts",
     "./game-comment": "./src/game-comment.ts",
+    "./game-like": "./src/game-like.ts",
     "./instructor-dashboard": "./src/instructor-dashboard.ts",
     "./instructor-workspace": "./src/instructor-workspace.ts",
     "./public-content": "./src/public-content.ts",
