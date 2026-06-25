@@ -3,6 +3,7 @@ import type { YeonPageMetadata } from "@yeon/ui/runtime/YeonPageMetadata";
 import { YeonText, YeonView } from "@yeon/ui";
 import { YEON_WEB_SHARED_CLASS as SHARED_FEATURE_CLASS } from "@yeon/ui/theme/web-style-tokens";
 import { CommonProductHeader } from "@/components/product-shell/product-header";
+import { ProfileEditSection } from "@/features/profile/profile-edit-section";
 import { ProfileExperienceSection } from "@/features/user-experience/profile-experience-section";
 import { NON_INDEXABLE_ROBOTS } from "@/lib/seo";
 import { SITE_BRAND_NAME } from "@/lib/site-brand";
@@ -100,6 +101,10 @@ export default async function ProfilePage() {
                   </YeonText>
                 </YeonView>
               </YeonView>
+              <ProfileEditSection
+                initialDisplayName={user.displayName}
+                initialAvatarUrl={user.avatarUrl}
+              />
               <ProfileExperienceSection />
             </YeonView>
           ) : (
