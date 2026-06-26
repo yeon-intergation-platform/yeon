@@ -2,10 +2,19 @@ import { describe, expect, it } from "vitest";
 import {
   GAME_CATALOG,
   GAME_CATEGORY_LABELS,
+  GAME_COLLECTIONS,
+  GAME_HUB_TABS,
+  GAME_REGIONS,
   getGameBySlug,
+  getCollectionGames,
+  getFeaturedGamesForRegion,
   getGameEmbedKey,
   getGameSlugs,
+  getGameTags,
   getListedGames,
+  isGameCollection,
+  isGameRegion,
+  resolveRegionFromCountry,
 } from "../game-catalog";
 
 describe("game-catalog", () => {
@@ -75,6 +84,77 @@ describe("game-catalog", () => {
       } else {
         expect(game.embedUrl.startsWith("https://")).toBe(true);
       }
+    }
+  });
+
+  it("region 판별과 국가 코드 정규화 경계를 유지한다", () => {
+    expect(isGameRegion("kr")).toBe(true);
+    expect(isGameRegion("us")).toBe(true);
+    expect(isGameRegion("global")).toBe(true);
+    expect(isGameRegion("KR")).toBe(false);
+    expect(isGameRegion(null)).toBe(false);
+
+    expect(resolveRegionFromCountry("KR")).toBe(GAME_REGIONS.kr);
+    expect(resolveRegionFromCountry(" kr ")).toBe(GAME_REGIONS.kr);
+    expect(resolveRegionFromCountry("US")).toBe(GAME_REGIONS.us);
+    expect(resolveRegionFromCountry(undefined)).toBe(GAME_REGIONS.us);
+  });
+
+  it("region별 추천 게임은 curated catalog 내부 slug만 사용한다", () => {
+    const catalogSlugs = new Set(getGameSlugs());
+    for (const region of Object.values(GAME_REGIONS)) {
+      const featuredGames = getFeaturedGamesForRegion(region);
+      expect(featuredGames.length).toBeGreaterThan(0);
+      for (const game of featuredGames) {
+        expect(catalogSlugs.has(game.slug)).toBe(true);
+      }
+    }
+  });
+
+  it("collection 판별과 컬렉션별 노출 경계를 유지한다", () => {
+    expect(isGameCollection("featured")).toBe(true);
+    expect(isGameCollection("retro")).toBe(true);
+    expect(isGameCollection("popular")).toBe(true);
+    expect(isGameCollection("rpgmaker")).toBe(true);
+    expect(isGameCollection("twoPlayer")).toBe(true);
+    expect(isGameCollection("puzzle")).toBe(false);
+    expect(isGameCollection(undefined)).toBe(false);
+
+    expect(
+      getCollectionGames(GAME_COLLECTIONS.retro, GAME_REGIONS.kr).every(
+        (game) => game.kind === "swf"
+      )
+    ).toBe(true);
+    expect(
+      getCollectionGames(GAME_COLLECTIONS.twoPlayer, GAME_REGIONS.kr).map(
+        (game) => game.slug
+      )
+    ).toEqual([
+      "rooftop-snipers",
+      "getaway-shootout",
+      "fireboy-and-watergirl-the-forest-temple",
+      "smash-karts",
+      "bullet-force",
+      "snake-io",
+    ]);
+  });
+
+  it("hub tab key와 label은 중복되거나 비어 있으면 안 된다", () => {
+    const keys = GAME_HUB_TABS.map((tab) => tab.key);
+    expect(new Set(keys).size).toBe(keys.length);
+
+    for (const tab of GAME_HUB_TABS) {
+      expect(tab.label.trim()).toBe(tab.label);
+      expect(tab.label).not.toBe("");
+    }
+  });
+
+  it("게임 태그는 카테고리 라벨을 앞에 두고 중복 없이 노출한다", () => {
+    for (const game of GAME_CATALOG) {
+      const tags = getGameTags(game);
+      expect(tags[0]).toBe(GAME_CATEGORY_LABELS[game.category]);
+      expect(new Set(tags).size).toBe(tags.length);
+      expect(tags.every((tag) => tag.trim() === tag && tag !== "")).toBe(true);
     }
   });
 });
