@@ -5,9 +5,13 @@ import {
   TERRITORY_BATTLE_EVENTS,
   TERRITORY_BATTLE_PHASE,
   TERRITORY_BATTLE_TEAM,
+  canFinishTerritoryBattleRound,
+  canPublishTerritoryBattleResult,
+  canStartTerritoryBattleRound,
   captureTerritoryCell,
   createTerritoryBoard,
   findTerritoryCellByWord,
+  resolveTerritoryBattleSubmitError,
   resolveTerritoryWinner,
   type TerritoryBattlePhase,
   type TerritoryBattleSubmitWordMessage,
@@ -147,7 +151,7 @@ export class TerritoryBattleRoom extends Room {
   }
 
   private startRoundIfNeeded() {
-    if (this.phase !== TERRITORY_BATTLE_PHASE.WAITING) return;
+    if (!canStartTerritoryBattleRound(this.phase)) return;
 
     const now = Date.now();
     this.phase = TERRITORY_BATTLE_PHASE.PLAYING;
@@ -168,7 +172,14 @@ export class TerritoryBattleRoom extends Room {
 
     if (!playerId || !player) return;
 
-    if (this.phase !== TERRITORY_BATTLE_PHASE.PLAYING) {
+    const now = Date.now();
+    const submitError = resolveTerritoryBattleSubmitError({
+      phase: this.phase,
+      now,
+      endsAt: this.endsAt,
+    });
+
+    if (submitError === TERRITORY_BATTLE_ERROR.INVALID_PHASE) {
       client.send(TERRITORY_BATTLE_EVENTS.ERROR, {
         code: TERRITORY_BATTLE_ERROR.INVALID_PHASE,
         message: "점령전이 진행 중일 때만 입력할 수 있습니다.",
@@ -176,8 +187,7 @@ export class TerritoryBattleRoom extends Room {
       return;
     }
 
-    const now = Date.now();
-    if (this.endsAt && now > this.endsAt) {
+    if (submitError === TERRITORY_BATTLE_ERROR.ROUND_ENDED) {
       client.send(TERRITORY_BATTLE_EVENTS.ERROR, {
         code: TERRITORY_BATTLE_ERROR.ROUND_ENDED,
         message: "이미 종료된 판입니다.",
@@ -258,8 +268,9 @@ export class TerritoryBattleRoom extends Room {
   }
 
   private finishRound() {
-    if (this.phase === TERRITORY_BATTLE_PHASE.FINISHED) return;
+    if (!canFinishTerritoryBattleRound(this.phase)) return;
 
+    const previousPhase = this.phase;
     this.phase = TERRITORY_BATTLE_PHASE.FINISHED;
     const scores = createTerritoryTeamSnapshots({
       board: this.board,
@@ -273,11 +284,18 @@ export class TerritoryBattleRoom extends Room {
         ?.score ?? 0;
     const result = resolveTerritoryWinner({ redScore, blueScore });
 
-    this.broadcast(TERRITORY_BATTLE_EVENTS.RESULT, {
-      ...result,
-      players: this.createSnapshot().players,
-      board: this.board,
-    });
+    if (
+      canPublishTerritoryBattleResult(
+        previousPhase,
+        TERRITORY_BATTLE_PHASE.FINISHED
+      )
+    ) {
+      this.broadcast(TERRITORY_BATTLE_EVENTS.RESULT, {
+        ...result,
+        players: this.createSnapshot().players,
+        board: this.board,
+      });
+    }
     this.broadcastState();
   }
 

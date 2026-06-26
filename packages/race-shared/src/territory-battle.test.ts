@@ -2,13 +2,19 @@ import { describe, expect, it } from "vitest";
 
 import {
   TERRITORY_BATTLE_DEFAULT_WORDS,
+  TERRITORY_BATTLE_ERROR,
+  TERRITORY_BATTLE_PHASE,
   TERRITORY_BATTLE_SCORE,
   TERRITORY_BATTLE_TEAM,
   assignTerritoryTeam,
   calculateTerritoryScore,
+  canFinishTerritoryBattleRound,
+  canPublishTerritoryBattleResult,
+  canStartTerritoryBattleRound,
   captureTerritoryCell,
   createTerritoryBoard,
   findTerritoryCellByWord,
+  resolveTerritoryBattleSubmitError,
   resolveTerritoryWinner,
 } from "./territory-battle";
 
@@ -121,5 +127,70 @@ describe("territory-battle", () => {
     expect(resolveTerritoryWinner({ redScore: 10, blueScore: 10 }).winner).toBe(
       "draw"
     );
+  });
+
+  it("phase 전이는 waiting 시작과 playing 종료만 허용한다", () => {
+    expect(canStartTerritoryBattleRound(TERRITORY_BATTLE_PHASE.WAITING)).toBe(
+      true
+    );
+    expect(canStartTerritoryBattleRound(TERRITORY_BATTLE_PHASE.PLAYING)).toBe(
+      false
+    );
+    expect(canStartTerritoryBattleRound(TERRITORY_BATTLE_PHASE.FINISHED)).toBe(
+      false
+    );
+    expect(canFinishTerritoryBattleRound(TERRITORY_BATTLE_PHASE.PLAYING)).toBe(
+      true
+    );
+    expect(canFinishTerritoryBattleRound(TERRITORY_BATTLE_PHASE.WAITING)).toBe(
+      false
+    );
+    expect(canFinishTerritoryBattleRound(TERRITORY_BATTLE_PHASE.FINISHED)).toBe(
+      false
+    );
+  });
+
+  it("단어 제출은 playing이고 종료 시간 전일 때만 phase 오류가 없다", () => {
+    expect(
+      resolveTerritoryBattleSubmitError({
+        phase: TERRITORY_BATTLE_PHASE.WAITING,
+        now: 100,
+      })
+    ).toBe(TERRITORY_BATTLE_ERROR.INVALID_PHASE);
+    expect(
+      resolveTerritoryBattleSubmitError({
+        phase: TERRITORY_BATTLE_PHASE.PLAYING,
+        now: 101,
+        endsAt: 100,
+      })
+    ).toBe(TERRITORY_BATTLE_ERROR.ROUND_ENDED);
+    expect(
+      resolveTerritoryBattleSubmitError({
+        phase: TERRITORY_BATTLE_PHASE.PLAYING,
+        now: 100,
+        endsAt: 100,
+      })
+    ).toBeNull();
+  });
+
+  it("결과 publish는 playing에서 finished로 확정되는 순간에만 허용한다", () => {
+    expect(
+      canPublishTerritoryBattleResult(
+        TERRITORY_BATTLE_PHASE.PLAYING,
+        TERRITORY_BATTLE_PHASE.FINISHED
+      )
+    ).toBe(true);
+    expect(
+      canPublishTerritoryBattleResult(
+        TERRITORY_BATTLE_PHASE.WAITING,
+        TERRITORY_BATTLE_PHASE.FINISHED
+      )
+    ).toBe(false);
+    expect(
+      canPublishTerritoryBattleResult(
+        TERRITORY_BATTLE_PHASE.FINISHED,
+        TERRITORY_BATTLE_PHASE.FINISHED
+      )
+    ).toBe(false);
   });
 });
