@@ -1090,7 +1090,7 @@ function TypingTerritoryBattleGameScreen({
     event.preventDefault();
 
     if (isServerConnected && territoryRoom.snapshot) {
-      if (territoryRoom.snapshot.phase !== "playing") {
+      if (territoryRoom.snapshot.phase !== TERRITORY_BATTLE_PHASE.PLAYING) {
         setMessage(labels.game.serverNotPlaying);
         return;
       }

@@ -53,12 +53,13 @@ export function TypingDeckForm({
     deck?.visibility ?? "private"
   );
   const isDefaultDeck = deck?.source === "default";
-  const mutation = mode === "create" ? createDeck : updateDeck;
+  const isCreateMode = mode === "create";
+  const mutation = isCreateMode ? createDeck : updateDeck;
   const canSubmit =
     title.trim().length > 0 && !mutation.isPending && !isDefaultDeck;
   const submitLabel = mutation.isPending
     ? deckText.saving
-    : mode === "create"
+    : isCreateMode
       ? deckText.saveCreate
       : deckText.saveEdit;
 
@@ -75,7 +76,7 @@ export function TypingDeckForm({
     };
     mutation.mutate(body, {
       onSuccess: (savedDeck) => {
-        if (mode === "create") {
+        if (isCreateMode) {
           trackEvent(analyticsEvents.typingDeckCreated, {
             deck_id: savedDeck.id,
             language_tag: savedDeck.languageTag,
@@ -105,9 +106,7 @@ export function TypingDeckForm({
             tone="inherit"
             className={TYPING_SERVICE_COMMON_CLASS.panelBodyTitle}
           >
-            {mode === "create"
-              ? deckText.formCreateTitle
-              : deckText.formEditTitle}
+            {isCreateMode ? deckText.formCreateTitle : deckText.formEditTitle}
           </YeonText>
           <YeonText
             as="p"

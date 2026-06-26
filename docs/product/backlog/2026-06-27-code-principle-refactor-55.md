@@ -28,8 +28,8 @@
 ## 진행 현황
 
 - 목표: 55개
-- 완료: 19개
-- 진행 중: 13~15, 19~20, 25~55번 후속 배치 리팩터링
+- 완료: 22개
+- 진행 중: 13~15, 19~20, 25~29, 33~55번 후속 배치 리팩터링
 
 ## 태스크 체크리스트
 
@@ -62,9 +62,9 @@
 - [ ] 27. 타자 room screen host/guest role raw 비교를 shared role helper로 통일 (정책 단일화)
 - [ ] 28. 타자 room screen participant grouping 로직을 순수 함수로 분리하고 테스트 추가 (작은 함수)
 - [ ] 29. 타자 room screen invite copy 실패 메시지 정책을 helper로 분리 (예외 처리)
-- [ ] 30. 타자 deck form create/update mode 분기를 mapping으로 단순화 (KISS)
-- [ ] 31. 타자 territory phase label if-chain을 mapping으로 교체 (OCP/KISS)
-- [ ] 32. 타자 territory screen의 raw `"playing"` phase 비교를 shared constant로 교체 (정책 단일화)
+- [x] 30. 타자 deck form create/update mode 분기를 mapping으로 단순화 (KISS)
+- [x] 31. 타자 territory phase label if-chain을 mapping으로 교체 (OCP/KISS)
+- [x] 32. 타자 territory screen의 raw `"playing"` phase 비교를 shared constant로 교체 (정책 단일화)
 - [ ] 33. 타자 territory screen result publish 조건과 UI 조건의 중복 여부 검증/정리 (상태 전이 명확화)
 - [ ] 34. race-server typing room Date.now 직접 호출을 clock/time provider 사용 가능 지점으로 축소 (시간 기준 분리)
 - [ ] 35. race-server typing room Math.random 기반 participant/message id 생성 정책 검토 및 helper화 (예측 가능성/테스트 가능성)
@@ -101,3 +101,5 @@
 - 16~17: `apps/web/src/features/card-service/hooks/card-service-mutation-policy.ts`에 인증 만료 판정, server/guest query invalidation, 원인 예외 보존 wrapper를 추가하고 card/deck mutation hook이 재사용.
 - 18: `apps/web/src/features/card-service/card-service-fetch.ts`의 `listServerCardDecksOrNull`가 401은 guest fallback용 `null`로 유지하고, 그 외 비정상 응답은 `CardServiceApiError`로 status/code/message를 보존.
 - 16~18 검증: `pnpm --filter @yeon/web exec vitest run src/features/card-service/card-service-fetch.test.ts src/features/card-service/hooks/card-service-mutation-policy.test.ts`, `pnpm --filter @yeon/web typecheck`, `pnpm --filter @yeon/web lint`, `bash bin/verify-ssot.sh --project-only`, `git diff --check` 통과.
+- 30~32: `typing-deck-form.tsx`의 create mode 판정을 `isCreateMode`로 단일화하고, `getTerritoryPhaseLabel`을 phase mapping으로 교체, territory submit guard의 raw `"playing"` 비교를 `TERRITORY_BATTLE_PHASE.PLAYING`으로 교체.
+- 30~32 검증: `pnpm --filter @yeon/web exec vitest run src/features/typing-service/use-territory-battle-room.test.ts`, `pnpm --filter @yeon/web typecheck`, `pnpm --filter @yeon/web lint` 통과.
