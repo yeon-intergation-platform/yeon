@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
+import { cardRoomProfileSchema } from "@yeon/api-contract/card-rooms";
 import { findCharacter } from "@/features/typing-service/characters";
 import {
   createYeonRandomUUID,
@@ -35,17 +36,31 @@ function normalizeProfile(
   };
 }
 
-function readJsonProfile(key: string): Partial<CardRoomLocalProfile> | null {
+function warnCardRoomProfileParseFailure(key: string, error: unknown) {
+  console.warn(
+    `[CardRoomProfile] 저장된 프로필을 읽지 못해 기본 프로필로 대체합니다. key=${key}`,
+    error
+  );
+}
+
+export function readJsonProfile(
+  key: string
+): Partial<CardRoomLocalProfile> | null {
   const raw = readYeonLocalStorageItem(key);
   if (!raw) return null;
 
   try {
-    const parsed = JSON.parse(raw) as Partial<CardRoomLocalProfile>;
-    if (parsed.nickname || parsed.characterId) return parsed;
+    const parsed = cardRoomProfileSchema.partial().safeParse(JSON.parse(raw));
+    if (parsed.success && (parsed.data.nickname || parsed.data.characterId)) {
+      return parsed.data;
+    }
+    warnCardRoomProfileParseFailure(key, parsed);
+    removeYeonLocalStorageItem(key);
   } catch (error) {
     if (!(error instanceof SyntaxError)) {
       throw error;
     }
+    warnCardRoomProfileParseFailure(key, error);
     removeYeonLocalStorageItem(key);
   }
 
