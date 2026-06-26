@@ -16,6 +16,7 @@ import {
   type CardRoomRoleMessage,
 } from "@yeon/race-shared";
 import {
+  CardRoomBackendHttpError,
   loadCardRoomDetail,
   requestCardRoomBackend,
 } from "./card-room-backend-client";
@@ -42,6 +43,10 @@ function getCardRoomRequestErrorMessage(
   error: unknown,
   fallbackMessage: string
 ) {
+  if (error instanceof CardRoomBackendHttpError) {
+    return error.code ? `${error.message} (${error.code})` : error.message;
+  }
+
   if (error instanceof Error) {
     return error.message;
   }

@@ -7,11 +7,17 @@ export type TerritoryPlayer = TerritoryBattlePlayerSnapshot & {
   joinedAt: number;
 };
 
+function getTerritoryPlayerJoinedAt() {
+  return Date.now();
+}
+
 export function createTerritoryPlayer({
+  joinedAt = getTerritoryPlayerJoinedAt(),
   nickname,
   playerId,
   playerIndex,
 }: {
+  joinedAt?: number;
   nickname?: string;
   playerId: string;
   playerIndex: number;
@@ -26,7 +32,7 @@ export function createTerritoryPlayer({
     accuracy: 100,
     cpm: 0,
     isConnected: true,
-    joinedAt: Date.now(),
+    joinedAt,
   };
 }
 

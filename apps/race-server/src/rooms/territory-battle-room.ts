@@ -34,6 +34,10 @@ type TerritoryBattleRoomOptions = {
   durationSeconds?: number;
 };
 
+function getTerritoryBattleNow() {
+  return Date.now();
+}
+
 export class TerritoryBattleRoom extends Room {
   maxClients = TERRITORY_BATTLE_DEFAULTS.maxPlayers;
 
@@ -48,13 +52,17 @@ export class TerritoryBattleRoom extends Room {
   private endsAt: number | undefined;
   private finishTimer: { clear: () => void } | null = null;
 
+  private now() {
+    return getTerritoryBattleNow();
+  }
+
   onCreate(options?: TerritoryBattleRoomOptions) {
     this.sourceRoomId = options?.sourceRoomId?.trim().slice(0, 80) || "";
     this.seed =
       options?.seed?.trim() ||
       (this.sourceRoomId
         ? `territory-${this.sourceRoomId}`
-        : `territory-${Date.now()}`);
+        : `territory-${this.now()}`);
     this.board = createTerritoryBoard({ seed: this.seed });
     this.phase = TERRITORY_BATTLE_PHASE.WAITING;
     this.autoDispose = true;
@@ -83,6 +91,7 @@ export class TerritoryBattleRoom extends Room {
     const playerIndex = this.players.size;
     const playerId = client.sessionId;
     const player = createTerritoryPlayer({
+      joinedAt: this.now(),
       nickname: options?.nickname,
       playerId,
       playerIndex,
@@ -103,7 +112,7 @@ export class TerritoryBattleRoom extends Room {
     this.clientPlayerIds.delete(client.sessionId);
     this.reconnectingPlayerIds.add(playerId);
     player.isConnected = false;
-    player.disconnectedAt = Date.now();
+    player.disconnectedAt = this.now();
     this.broadcastState();
 
     this.allowReconnection(
@@ -153,7 +162,7 @@ export class TerritoryBattleRoom extends Room {
   private startRoundIfNeeded() {
     if (!canStartTerritoryBattleRound(this.phase)) return;
 
-    const now = Date.now();
+    const now = this.now();
     this.phase = TERRITORY_BATTLE_PHASE.PLAYING;
     this.startsAt = now;
     this.endsAt = now + TERRITORY_BATTLE_DEFAULTS.durationSeconds * 1000;
@@ -172,7 +181,7 @@ export class TerritoryBattleRoom extends Room {
 
     if (!playerId || !player) return;
 
-    const now = Date.now();
+    const now = this.now();
     const submitError = resolveTerritoryBattleSubmitError({
       phase: this.phase,
       now,
