@@ -3,6 +3,7 @@ import {
   type YeonHref as Href,
   useYeonRouter as useRouter,
 } from "@yeon/ui/native";
+import { formatYeonCardDeckCreatedDate } from "@yeon/ui/runtime/ports/card-deck";
 import { YEON_ROUTE_TEMPLATES } from "@yeon/ui/runtime/ports";
 import { useCallback, useMemo } from "react";
 import { showYeonAlert } from "@yeon/ui/native";
@@ -59,24 +60,6 @@ function getCardServiceDeckPlayHref(deckId: string): Href {
     pathname: CARD_SERVICE_DECK_PLAY_ROUTE,
     params: { deckId },
   } as Href;
-}
-
-function formatDate(value?: string): string {
-  if (!value) {
-    return "-";
-  }
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return "-";
-  }
-  return new Intl.DateTimeFormat("ko-KR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  })
-    .format(date)
-    .replace(/\. /g, ". ")
-    .replace(/\.$/, ".");
 }
 
 function getModeBadge(mode: CardServiceMode): string {
@@ -180,7 +163,7 @@ export function CardDeckDetailScreen({ deckId }: CardDeckDetailScreenProps) {
             CARD_SERVICE_TEXT.detail.cardSettingsPreparingMessage
           )
         }
-        subtitle={`${getModeBadge(mode)} · ${CARD_SERVICE_TEXT.detail.metaCountLabel} ${cardCount}${CARD_SERVICE_TEXT.detail.metaSuffixCreatedAtLabel}${formatDate(detail?.deck.createdAt)}`}
+        subtitle={`${getModeBadge(mode)} · ${CARD_SERVICE_TEXT.detail.metaCountLabel} ${cardCount}${CARD_SERVICE_TEXT.detail.metaSuffixCreatedAtLabel}${formatYeonCardDeckCreatedDate(detail?.deck.createdAt)}`}
         title={detail?.deck.title ?? CARD_SERVICE_TEXT.detail.deckTitleFallback}
       />
 

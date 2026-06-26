@@ -28,8 +28,8 @@
 ## 진행 현황
 
 - 목표: 55개
-- 완료: 22개
-- 진행 중: 13~15, 19~20, 25~29, 33~55번 후속 배치 리팩터링
+- 완료: 25개
+- 진행 중: 13~15, 19~20, 25~29, 33~45, 47~48, 51~55번 후속 배치 리팩터링
 
 ## 태스크 체크리스트
 
@@ -78,11 +78,11 @@
 - [ ] 43. 카드 editor image upload catch 블록의 동일 메시지/side-effect 반복 제거 (DRY)
 - [ ] 44. 카드 editor image upload clipboard/paste/drop 실패 유형 분리 (실패 유형 명확화)
 - [ ] 45. 카드 editor HEIC 변환 오류가 원인 예외를 보존하는지 검증/보강 (원인 예외 보존)
-- [ ] 46. 카드 markdown code copy 오류 메시지 정책을 card/markdown 컴포넌트에서 공용화 (DRY)
+- [x] 46. 카드 markdown code copy 오류 메시지 정책을 card/markdown 컴포넌트에서 공용화 (DRY)
 - [ ] 47. 카드 add form image side 상태 업데이트 중복을 reducer/action helper로 정리 (SRP)
 - [ ] 48. 카드 bulk import preview 숨김 개수와 submit 가능 조건 테스트 보강 (경계 테스트)
-- [ ] 49. 카드 deck play date formatting invalid 입력 fallback 검증 (경계값 처리)
-- [ ] 50. 카드 deck detail mobile/web date formatter 중복 제거 가능성 검토 (DRY)
+- [x] 49. 카드 deck play date formatting invalid 입력 fallback 검증 (경계값 처리)
+- [x] 50. 카드 deck detail mobile/web date formatter 중복 제거 가능성 검토 (DRY)
 - [ ] 51. community guest identity localStorage read/write 실패 로깅과 fallback 정책 공용화 (예외 처리)
 - [ ] 52. community presence session id legacy cleanup 정책 테스트 확장 (경계 테스트)
 - [ ] 53. community feed mutation catch 블록의 반복되는 guest identity confirm 흐름 helper화 (DRY)
@@ -103,3 +103,6 @@
 - 16~18 검증: `pnpm --filter @yeon/web exec vitest run src/features/card-service/card-service-fetch.test.ts src/features/card-service/hooks/card-service-mutation-policy.test.ts`, `pnpm --filter @yeon/web typecheck`, `pnpm --filter @yeon/web lint`, `bash bin/verify-ssot.sh --project-only`, `git diff --check` 통과.
 - 30~32: `typing-deck-form.tsx`의 create mode 판정을 `isCreateMode`로 단일화하고, `getTerritoryPhaseLabel`을 phase mapping으로 교체, territory submit guard의 raw `"playing"` 비교를 `TERRITORY_BATTLE_PHASE.PLAYING`으로 교체.
 - 30~32 검증: `pnpm --filter @yeon/web exec vitest run src/features/typing-service/use-territory-battle-room.test.ts`, `pnpm --filter @yeon/web typecheck`, `pnpm --filter @yeon/web lint` 통과.
+- 46: `card-markdown-copy-utils.ts`에 카드 마크다운 코드 복사 실패 메시지 생성을 통합하고 `card-markdown-code-block.tsx`, `markdown-content.tsx`가 재사용.
+- 49~50: `@yeon/ui/runtime/ports/card-deck`의 카드 덱 날짜 포맷이 invalid/missing fallback을 보장하고 web/mobile 상세 화면이 동일한 created date formatter를 사용.
+- 46,49~50 검증: `pnpm --filter @yeon/web exec vitest run src/features/card-service/card-deck-format.test.ts src/features/card-service/components/card-markdown-copy-utils.test.ts`, `pnpm --filter @yeon/ui typecheck`, `pnpm --filter @yeon/ui lint`, `pnpm --filter @yeon/web typecheck`, `pnpm --filter @yeon/web lint`, `pnpm --filter @yeon/mobile typecheck`, `pnpm --filter @yeon/mobile lint`, `pnpm verify:parity`, `bash bin/verify-ssot.sh --project-only`, `git diff --check` 통과.

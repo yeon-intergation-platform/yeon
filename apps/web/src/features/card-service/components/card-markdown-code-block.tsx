@@ -13,6 +13,7 @@ import {
 } from "./card-editor-codeblock-utils";
 import { renderCardEditorHighlightedCode } from "./card-code-syntax-highlight";
 import { CardMarkdownMermaidBlock } from "./card-markdown-mermaid-block";
+import { buildCardMarkdownCopyErrorMessage } from "./card-markdown-copy-utils";
 
 interface CardMarkdownCodeBlockProps {
   children: ReactNode;
@@ -20,10 +21,6 @@ interface CardMarkdownCodeBlockProps {
   inverted?: boolean;
   codeBlockIndex?: number;
   onLanguageChange?: (index: number, language: string) => void;
-}
-
-function buildCodeBlockCopyErrorMessage(codeLength: number) {
-  return `코드 블록 클립보드 복사에 실패했습니다. 복사 대상 길이: ${codeLength}자. 브라우저 클립보드 권한 또는 보안 컨텍스트를 확인해 주세요.`;
 }
 
 function toCodeText(value: ReactNode): string {
@@ -61,7 +58,12 @@ export function CardMarkdownCodeBlock({
     try {
       const copiedSuccessfully = await copyYeonClipboardText(codeText);
       if (!copiedSuccessfully) {
-        throw new Error(buildCodeBlockCopyErrorMessage(codeText.length));
+        throw new Error(
+          buildCardMarkdownCopyErrorMessage({
+            targetLabel: "코드 블록",
+            codeLength: codeText.length,
+          })
+        );
       }
       setCopied(true);
       scheduleYeonTimeout(() => setCopied(false), 1200);
