@@ -102,6 +102,12 @@ else
   fail "bin/verify-backend-ci-contract.mjs 없음"
 fi
 
+if [ -f "$REPO_ROOT/bin/verify-search-console-targets.mjs" ]; then
+  pass "bin/verify-search-console-targets.mjs 존재"
+else
+  fail "bin/verify-search-console-targets.mjs 없음"
+fi
+
 echo ""
 echo "=== Backend CI 계약 ==="
 if [ -f "$REPO_ROOT/bin/verify-backend-ci-contract.mjs" ]; then
@@ -111,6 +117,18 @@ if [ -f "$REPO_ROOT/bin/verify-backend-ci-contract.mjs" ]; then
     fail "backend-tests.yml Karate schema preflight 계약 위반"
     echo "    --- check 결과 ---"
     sed 's/^/    /' /tmp/backend-ci-contract-check.out
+  fi
+fi
+
+echo ""
+echo "=== Search Console 운영 대상 ==="
+if [ -f "$REPO_ROOT/bin/verify-search-console-targets.mjs" ]; then
+  if node "$REPO_ROOT/bin/verify-search-console-targets.mjs" >/tmp/search-console-target-check.out 2>&1; then
+    pass "Search Console sitemap 제출 대상과 운영 문서 정합성 유지"
+  else
+    fail "Search Console sitemap 제출 대상과 운영 문서 불일치"
+    echo "    --- check 결과 ---"
+    sed 's/^/    /' /tmp/search-console-target-check.out
   fi
 fi
 
