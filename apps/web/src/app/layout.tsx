@@ -44,6 +44,13 @@ export const metadata: YeonPageMetadata = {
   robots: getDefaultSiteRobots(),
   verification: {
     google: process.env.GOOGLE_SITE_VERIFICATION ?? "",
+    // 네이버 서치어드바이저 사이트 소유확인(yeon.world). 공개 토큰이라 커밋해도 안전하며,
+    // env(NAVER_SITE_VERIFICATION)로 덮어쓸 수 있다. <head>에 naver-site-verification 메타로 출력된다.
+    other: {
+      "naver-site-verification":
+        process.env.NAVER_SITE_VERIFICATION ??
+        "f1621a2cd36bfabefa595b65d8a3c2460ffffe2a",
+    },
   },
 };
 
