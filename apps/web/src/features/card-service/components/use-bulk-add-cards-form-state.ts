@@ -7,7 +7,10 @@ import {
 } from "@yeon/ui/runtime/YeonBrowserRuntime";
 import type { YeonFormElement, YeonFormEvent } from "@yeon/ui";
 import { useAddCards, useReplaceCards } from "../hooks";
-import { parseBulkCardImportInput } from "../utils/bulk-card-import-parser";
+import {
+  deriveBulkCardImportFormPolicy,
+  parseBulkCardImportInput,
+} from "../utils/bulk-card-import-parser";
 import {
   BULK_CARD_HELP_VISIBILITY_EVENT,
   setBulkCardHelpVisible,
@@ -61,10 +64,11 @@ export function useBulkAddCardsFormState({
     () => parseBulkCardImportInput(rawText),
     [rawText]
   );
-  const canSubmit =
-    parseResult.cards.length > 0 &&
-    parseResult.errors.length === 0 &&
-    !isPending;
+  const formPolicy = useMemo(
+    () => deriveBulkCardImportFormPolicy(parseResult, isPending),
+    [isPending, parseResult]
+  );
+  const canSubmit = formPolicy.canSubmit;
   const replaceButtonLabel = replaceCardsMutation.isPending
     ? "덮어쓰는 중..."
     : `${parseResult.cards.length || 0}장 덮어쓰기`;
@@ -81,11 +85,7 @@ export function useBulkAddCardsFormState({
     }),
     [addButtonLabel, canSubmit, error?.message, isPending, replaceButtonLabel]
   );
-  const previewCards = parseResult.cards.slice(0, 5);
-  const hiddenPreviewCount = Math.max(
-    parseResult.cards.length - previewCards.length,
-    0
-  );
+  const { previewCards, hiddenPreviewCount } = formPolicy;
 
   useEffect(() => {
     onDirtyChange?.(rawText.trim().length > 0);

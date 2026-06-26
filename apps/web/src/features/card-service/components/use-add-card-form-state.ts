@@ -11,6 +11,12 @@ import { analyticsEvents, trackEvent } from "@/lib/analytics";
 import { useAddCard } from "../hooks";
 import { updateCardEditorCodeBlockLanguageInRichContent } from "./card-editor-codeblock-utils";
 import {
+  isCardEditorImageUploadInProgress,
+  updateCardEditorImageUploadSideState,
+  type CardEditorImageUploadSideState,
+  type CardEditorImageUploadSide,
+} from "./card-editor-image-utils";
+import {
   isEmptyRichContent,
   isRenderableRichContent,
   normalizeRichContent,
@@ -80,13 +86,14 @@ export function useAddCardFormState({
   const [frontText, setFrontText] = useState(initialSnapshot.frontText);
   const [backText, setBackText] = useState(initialSnapshot.backText);
   const [isDraftLoaded, setDraftLoaded] = useState(false);
-  const [uploadingSides, setUploadingSides] = useState({
-    front: false,
-    back: false,
-  });
+  const [uploadingSides, setUploadingSides] =
+    useState<CardEditorImageUploadSideState>({
+      front: false,
+      back: false,
+    });
 
   const addMutation = useAddCard(deckId);
-  const isUploading = uploadingSides.front || uploadingSides.back;
+  const isUploading = isCardEditorImageUploadInProgress(uploadingSides);
   const isPending = addMutation.isPending || isUploading;
   const deferredFrontText = useDeferredValue(frontText);
   const deferredBackText = useDeferredValue(backText);
@@ -171,26 +178,21 @@ export function useAddCardFormState({
     );
   };
 
-  const setFrontUploading = (isUploadingFront: boolean) => {
+  const setUploadingSide = (
+    side: CardEditorImageUploadSide,
+    isUploadingSide: boolean
+  ) => {
     setUploadingSides((prev) =>
-      prev.front === isUploadingFront
-        ? prev
-        : {
-            ...prev,
-            front: isUploadingFront,
-          }
+      updateCardEditorImageUploadSideState(prev, side, isUploadingSide)
     );
   };
 
+  const setFrontUploading = (isUploadingFront: boolean) => {
+    setUploadingSide("front", isUploadingFront);
+  };
+
   const setBackUploading = (isUploadingBack: boolean) => {
-    setUploadingSides((prev) =>
-      prev.back === isUploadingBack
-        ? prev
-        : {
-            ...prev,
-            back: isUploadingBack,
-          }
-    );
+    setUploadingSide("back", isUploadingBack);
   };
 
   const handleSubmit = (event: YeonFormEvent<YeonFormElement>) => {

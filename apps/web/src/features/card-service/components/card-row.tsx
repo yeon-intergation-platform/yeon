@@ -4,6 +4,11 @@ import type { CardDeckItemDto } from "@yeon/api-contract/card-decks";
 import { useDeleteCard, useUpdateCard } from "../hooks";
 import { isEmptyRichContent, normalizeRichContent } from "./card-content-utils";
 import {
+  isCardEditorImageUploadInProgress,
+  updateCardEditorImageUploadSideState,
+  type CardEditorImageUploadSideState,
+} from "./card-editor-image-utils";
+import {
   CardRowDeleteIconButton,
   CardRowEditView,
   CardRowReadView,
@@ -63,10 +68,11 @@ export function CardRow({
   const [isDeleteConfirming, setDeleteConfirming] = useState(false);
   const [frontText, setFrontText] = useState(item.frontText);
   const [backText, setBackText] = useState(item.backText);
-  const [uploadingSides, setUploadingSides] = useState({
-    front: false,
-    back: false,
-  });
+  const [uploadingSides, setUploadingSides] =
+    useState<CardEditorImageUploadSideState>({
+      front: false,
+      back: false,
+    });
   const touchStateRef = useRef<{
     startX: number | null;
     ignoreNextClick: boolean;
@@ -74,7 +80,7 @@ export function CardRow({
   const deleteMutation = useDeleteCard(deckId);
   const updateMutation = useUpdateCard(deckId);
   const isDeleting = deleteMutation.isPending;
-  const isUploading = uploadingSides.front || uploadingSides.back;
+  const isUploading = isCardEditorImageUploadInProgress(uploadingSides);
   const isSaving = updateMutation.isPending || isUploading;
 
   const savedSnapshot = useMemo(
@@ -234,22 +240,20 @@ export function CardRow({
               onBackTextChange={setBackText}
               onUploadingFrontChange={(isUploadingFront) =>
                 setUploadingSides((prev) =>
-                  prev.front === isUploadingFront
-                    ? prev
-                    : {
-                        ...prev,
-                        front: isUploadingFront,
-                      }
+                  updateCardEditorImageUploadSideState(
+                    prev,
+                    "front",
+                    isUploadingFront
+                  )
                 )
               }
               onUploadingBackChange={(isUploadingBack) =>
                 setUploadingSides((prev) =>
-                  prev.back === isUploadingBack
-                    ? prev
-                    : {
-                        ...prev,
-                        back: isUploadingBack,
-                      }
+                  updateCardEditorImageUploadSideState(
+                    prev,
+                    "back",
+                    isUploadingBack
+                  )
                 )
               }
               onCancelEdit={cancelEdit}

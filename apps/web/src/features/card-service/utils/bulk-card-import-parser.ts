@@ -14,6 +14,20 @@ export type BulkCardImportParseResult = {
   warnings: string[];
 };
 
+export function deriveBulkCardImportFormPolicy(
+  result: BulkCardImportParseResult,
+  isPending: boolean
+) {
+  const previewCards = result.cards.slice(0, 5);
+
+  return {
+    canSubmit:
+      result.cards.length > 0 && result.errors.length === 0 && !isPending,
+    hiddenPreviewCount: Math.max(result.cards.length - previewCards.length, 0),
+    previewCards,
+  };
+}
+
 const QUESTION_MARKER = "[[Q]]";
 const ANSWER_MARKER = "[[A]]";
 const CARD_MARKER = "[[CARD]]";
@@ -76,12 +90,12 @@ function appendContent(
   section: ActiveSection,
   line: string,
   lineNumber: number,
-  errors: string[],
+  errors: string[]
 ): DraftCard | null {
   if (!draft || !section) {
     if (line.trim().length > 0) {
       errors.push(
-        `${lineNumber}번째 줄: [[Q]] 또는 [[A]] 마커 밖의 내용은 카드로 만들 수 없습니다.`,
+        `${lineNumber}번째 줄: [[Q]] 또는 [[A]] 마커 밖의 내용은 카드로 만들 수 없습니다.`
       );
     }
     return draft;
@@ -114,28 +128,28 @@ function finalizeDraft(params: {
 
   if (!frontText || !backText) {
     errors.push(
-      `${draft.startLine}번째 줄에서 시작한 카드: 앞면([[Q]])과 뒷면([[A]])을 모두 입력해주세요.`,
+      `${draft.startLine}번째 줄에서 시작한 카드: 앞면([[Q]])과 뒷면([[A]])을 모두 입력해주세요.`
     );
     return;
   }
 
   if (frontText.length > CARD_TEXT_MAX_LENGTH) {
     errors.push(
-      `${draft.startLine}번째 줄에서 시작한 카드: 앞면은 ${CARD_TEXT_MAX_LENGTH}자 이하여야 합니다.`,
+      `${draft.startLine}번째 줄에서 시작한 카드: 앞면은 ${CARD_TEXT_MAX_LENGTH}자 이하여야 합니다.`
     );
     return;
   }
 
   if (backText.length > CARD_TEXT_MAX_LENGTH) {
     errors.push(
-      `${draft.startLine}번째 줄에서 시작한 카드: 뒷면은 ${CARD_TEXT_MAX_LENGTH}자 이하여야 합니다.`,
+      `${draft.startLine}번째 줄에서 시작한 카드: 뒷면은 ${CARD_TEXT_MAX_LENGTH}자 이하여야 합니다.`
     );
     return;
   }
 
   if (cards.length >= CARD_BULK_IMPORT_MAX_ITEMS) {
     errors.push(
-      `${lineNumber}번째 줄: 한 번에 최대 ${CARD_BULK_IMPORT_MAX_ITEMS}장까지만 추가할 수 있습니다.`,
+      `${lineNumber}번째 줄: 한 번에 최대 ${CARD_BULK_IMPORT_MAX_ITEMS}장까지만 추가할 수 있습니다.`
     );
     return;
   }
@@ -148,7 +162,7 @@ function finalizeDraft(params: {
 }
 
 export function parseBulkCardImportInput(
-  source: string,
+  source: string
 ): BulkCardImportParseResult {
   const cards: ParsedBulkCard[] = [];
   const errors: string[] = [];
@@ -176,7 +190,7 @@ export function parseBulkCardImportInput(
           isExplicitCardBoundary: false,
         });
         warnings.push(
-          `${lineNumber}번째 줄: 이전 카드 뒤에 [[CARD]]가 없어도 새 [[Q]] 기준으로 카드를 나눴습니다.`,
+          `${lineNumber}번째 줄: 이전 카드 뒤에 [[CARD]]가 없어도 새 [[Q]] 기준으로 카드를 나눴습니다.`
         );
       }
       draft = { frontLines: [], backLines: [], startLine: lineNumber };
@@ -187,7 +201,7 @@ export function parseBulkCardImportInput(
           section,
           markerMatch.content,
           lineNumber,
-          errors,
+          errors
         );
       }
       return;
@@ -205,7 +219,7 @@ export function parseBulkCardImportInput(
           section,
           markerMatch.content,
           lineNumber,
-          errors,
+          errors
         );
       }
       return;
@@ -213,7 +227,7 @@ export function parseBulkCardImportInput(
 
     if (markerMatch.content.trim().length > 0) {
       errors.push(
-        `${lineNumber}번째 줄: [[CARD]] 뒤에는 내용을 붙일 수 없습니다.`,
+        `${lineNumber}번째 줄: [[CARD]] 뒤에는 내용을 붙일 수 없습니다.`
       );
     }
 
@@ -240,7 +254,7 @@ export function parseBulkCardImportInput(
 
   if (source.trim().length > 0 && cards.length === 0 && errors.length === 0) {
     errors.push(
-      "추가할 수 있는 카드가 없습니다. [[Q]]와 [[A]] 형식을 확인해주세요.",
+      "추가할 수 있는 카드가 없습니다. [[Q]]와 [[A]] 형식을 확인해주세요."
     );
   }
 

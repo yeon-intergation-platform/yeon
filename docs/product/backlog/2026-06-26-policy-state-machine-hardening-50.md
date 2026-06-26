@@ -28,8 +28,8 @@
 ## 진행 현황
 
 - 목표: 50개
-- 완료: 34개
-- 진행 중: 타자방/커뮤니티/카드 상태 정책 후보 조사
+- 완료: 36개
+- 진행 중: 타자방/카드 저장소/API 경계 상태 정책 후보 조사
 
 ## 태스크 체크리스트
 
@@ -71,8 +71,8 @@
 - [ ] 36. 카드 덱 merge guest 성공/부분 실패/재시도 정책 구체화
 - [x] 37. 카드 학습 play 상태 전이의 index 경계 고정
 - [x] 38. 카드 학습 review result 중복 입력 방지 경계 고정
-- [ ] 39. 카드 import parser 실패 정책과 UI 상태 연결 조사
-- [ ] 40. 카드 asset upload 실패/취소/성공 상태 정책 구체화
+- [x] 39. 카드 import parser 실패 정책과 UI 상태 연결 조사
+- [x] 40. 카드 asset upload 실패/취소/성공 상태 정책 구체화
 - [ ] 41. queryKey 상태 원천이 web/mobile에서 동일한지 검증
 - [ ] 42. route-state search params 정책의 null/blank 경계 검증
 - [ ] 43. API route BFF 에러 변환 정책에서 status/code 누락 조사
@@ -101,3 +101,7 @@
 - 37~38: `packages/ui/src/runtime/ports/card-deck/play-policy.ts`의 카드 학습 index/review submit 정책과 `apps/web/src/features/card-service/deck-play-policy.test.ts`.
 - 37~38: `apps/web/src/features/card-service/hooks/use-deck-play-state.ts`, `apps/web/src/features/card-service/deck-play-screen.tsx`, `apps/mobile/src/features/card-service/use-card-deck-play-state.ts`가 공용 정책 함수를 사용.
 - 46: `pnpm verify:parity` 결과 Parity OK. 새 registry entry 없이 기존 card-service web/mobile 공유 정책 범위에서 통과.
+- 39: `apps/web/src/features/card-service/utils/bulk-card-import-parser.ts`의 `deriveBulkCardImportFormPolicy`가 parse 결과 기준 submit/preview 상태를 파생하고 `use-bulk-add-cards-form-state.ts`가 이를 사용.
+- 40: `apps/web/src/features/card-service/components/card-editor-image-utils.ts`의 업로드 side 상태/시작 가능 정책이 add form, row editor, upload hook에서 재사용됨.
+- 39~40: `pnpm --filter @yeon/web test -- src/features/card-service/utils/bulk-card-import-parser.test.ts src/features/card-service/components/card-editor-image-utils.test.ts` 결과 web Vitest 228개 파일/1019개 테스트 통과.
+- 39~40: `pnpm --filter @yeon/web typecheck`, `pnpm --filter @yeon/web lint`, `bash bin/verify-ssot.sh --project-only`, `git diff --check` 통과.

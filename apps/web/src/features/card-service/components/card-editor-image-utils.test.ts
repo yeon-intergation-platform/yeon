@@ -6,12 +6,15 @@ import {
   CARD_EDITOR_IMAGE_MIN_HEIGHT,
   CARD_EDITOR_IMAGE_MIN_WIDTH,
   buildCardEditorMaxImageCountError,
+  canStartCardEditorImageUpload,
   clampCardEditorImageHeight,
   clampCardEditorImageWidth,
   countCardEditorImages,
   getCardEditorFileExtension,
+  isCardEditorImageUploadInProgress,
   parseCardEditorImageWidth,
   parseOptionalCardEditorImageHeight,
+  updateCardEditorImageUploadSideState,
   validateCardEditorImageFile,
 } from "./card-editor-image-utils";
 
@@ -87,5 +90,33 @@ describe("card-editor-image-utils", () => {
 
   it("이미지 개수 제한 메시지를 단일 source of truth로 만든다", () => {
     expect(buildCardEditorMaxImageCountError()).toContain("최대 20개");
+  });
+
+  it("앞면/뒷면 이미지 업로드 중 상태를 단일 정책으로 파생한다", () => {
+    const idle = { front: false, back: false };
+    const frontUploading = updateCardEditorImageUploadSideState(
+      idle,
+      "front",
+      true
+    );
+
+    expect(frontUploading).toEqual({ front: true, back: false });
+    expect(isCardEditorImageUploadInProgress(frontUploading)).toBe(true);
+    expect(
+      updateCardEditorImageUploadSideState(frontUploading, "front", true)
+    ).toBe(frontUploading);
+    expect(isCardEditorImageUploadInProgress(idle)).toBe(false);
+  });
+
+  it("이미지 업로드 시작 가능 상태를 파일 수와 진행 중 여부로 판정한다", () => {
+    expect(
+      canStartCardEditorImageUpload({ itemCount: 1, isUploading: false })
+    ).toBe(true);
+    expect(
+      canStartCardEditorImageUpload({ itemCount: 0, isUploading: false })
+    ).toBe(false);
+    expect(
+      canStartCardEditorImageUpload({ itemCount: 1, isUploading: true })
+    ).toBe(false);
   });
 });
