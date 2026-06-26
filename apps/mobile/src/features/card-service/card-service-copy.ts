@@ -202,6 +202,7 @@ export const CARD_SERVICE_TEXT = {
     participantsLabel: "참가자",
     roleMemorizer: "외우기",
     roleChecker: "확인",
+    roleUnassigned: "미배정",
     readyLabel: "준비",
     unreadyLabel: "준비 해제",
     startLabel: "시작하기",
