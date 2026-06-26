@@ -387,6 +387,96 @@ export type TypingRoomSnapshot = TypingRoomSummary & {
   messages: readonly TypingRoomChatMessage[];
 };
 
+export type TypingRoomParticipantPolicyState = Pick<
+  TypingRoomParticipantSnapshot,
+  "id" | "role" | "isReady" | "team"
+>;
+
+export type TypingRoomLobbyPolicyState = Pick<
+  TypingRoomSnapshot,
+  "status" | "canStart" | "gameType"
+> & {
+  participants: readonly TypingRoomParticipantPolicyState[];
+};
+
+export function findTypingRoomParticipant<
+  T extends TypingRoomParticipantPolicyState,
+>(participants: readonly T[], participantId: string | null): T | null {
+  if (!participantId) {
+    return null;
+  }
+
+  return (
+    participants.find((participant) => participant.id === participantId) ?? null
+  );
+}
+
+export function isTypingRoomWaiting(
+  room: Pick<TypingRoomSummary, "status"> | null | undefined
+): boolean {
+  return room?.status === TYPING_ROOM_STATUS.WAITING;
+}
+
+export function isTypingRoomTerminal(
+  room: Pick<TypingRoomSummary, "status"> | null | undefined
+): boolean {
+  return (
+    room?.status === TYPING_ROOM_STATUS.FINISHED ||
+    room?.status === TYPING_ROOM_STATUS.CLOSED
+  );
+}
+
+export function canEditTypingRoomSettings(
+  room: TypingRoomLobbyPolicyState | null | undefined,
+  participant: TypingRoomParticipantPolicyState | null | undefined
+): boolean {
+  return Boolean(
+    room && participant?.role === "host" && isTypingRoomWaiting(room)
+  );
+}
+
+export function canToggleTypingRoomReady(
+  room: TypingRoomLobbyPolicyState | null | undefined,
+  participant: TypingRoomParticipantPolicyState | null | undefined
+): boolean {
+  return Boolean(room && participant && isTypingRoomWaiting(room));
+}
+
+export function canSwitchTypingRoomTeam(
+  room: TypingRoomLobbyPolicyState | null | undefined,
+  participant: TypingRoomParticipantPolicyState | null | undefined
+): boolean {
+  return Boolean(
+    room &&
+    participant &&
+    room.gameType === TYPING_ROOM_GAME_TYPE.TERRITORY &&
+    isTypingRoomWaiting(room)
+  );
+}
+
+export function canStartTypingRoom(
+  room: TypingRoomLobbyPolicyState | null | undefined,
+  participant: TypingRoomParticipantPolicyState | null | undefined
+): boolean {
+  return Boolean(
+    room &&
+    participant?.role === "host" &&
+    room.canStart &&
+    isTypingRoomWaiting(room)
+  );
+}
+
+export function canSendTypingRoomLobbyChat(
+  room: Pick<TypingRoomSummary, "status"> | null | undefined,
+  draft: string,
+  maxLength: number
+): boolean {
+  const trimmed = draft.trim();
+  return (
+    isTypingRoomWaiting(room) && trimmed.length > 0 && draft.length <= maxLength
+  );
+}
+
 export type MatchJoinMessage = {
   difficulty?: string;
   playerLabel: string;

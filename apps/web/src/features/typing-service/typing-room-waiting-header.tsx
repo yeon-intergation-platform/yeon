@@ -24,6 +24,8 @@ type TypingRoomWaitingHeaderStatusProps = {
   copied: boolean;
   isHost: boolean;
   isReady: boolean;
+  canStart: boolean;
+  canToggleReady: boolean;
   isLeavingRoom: boolean;
   roomError: string | null;
 };
@@ -50,6 +52,8 @@ export function TypingRoomWaitingHeader({
   copied,
   isHost,
   isReady,
+  canStart,
+  canToggleReady,
   isLeavingRoom,
   roomError,
   territoryHref,
@@ -168,7 +172,7 @@ export function TypingRoomWaitingHeader({
                 <YeonButton
                   type="button"
                   onClick={onStart}
-                  disabled={!room.canStart}
+                  disabled={!canStart}
                   variant="primary"
                   size="md"
                   className="gap-2"
@@ -180,6 +184,7 @@ export function TypingRoomWaitingHeader({
                 <YeonButton
                   type="button"
                   onClick={onToggleReady}
+                  disabled={!canToggleReady}
                   variant={isReady ? "secondary" : "primary"}
                   size="md"
                   className="rounded-xl px-4 py-2 text-[13px]"
