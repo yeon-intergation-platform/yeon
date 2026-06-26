@@ -165,7 +165,9 @@ export async function listServerCardDecksOrNull(): Promise<
     return null;
   }
   if (!response.ok) {
-    throw new Error("덱 목록을 불러오지 못했습니다.");
+    const fallbackErrorMessage = "덱 목록을 불러오지 못했습니다.";
+    const { message, detail } = await readError(response, fallbackErrorMessage);
+    throw new CardServiceApiError(response.status, message, detail);
   }
 
   const data = (await response.json()) as { decks: CardDeckDto[] };

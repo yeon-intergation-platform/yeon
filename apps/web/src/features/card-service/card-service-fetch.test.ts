@@ -3,6 +3,7 @@ import {
   CardServiceApiError,
   cardServiceFetchJson,
   cardServiceFetchVoid,
+  listServerCardDecksOrNull,
   uploadCardDeckImage,
 } from "./card-service-fetch";
 
@@ -103,6 +104,39 @@ describe("card-service-fetch", () => {
     ).rejects.toMatchObject({
       status: 503,
       message: "카드를 수정하지 못했습니다.",
+    } satisfies Partial<CardServiceApiError>);
+  });
+
+  it("덱 목록 조회의 비인증 401은 게스트 fallback을 위해 null을 반환한다", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn<typeof fetch>()
+        .mockResolvedValue(new Response(null, { status: 401 }))
+    );
+
+    await expect(listServerCardDecksOrNull()).resolves.toBeNull();
+  });
+
+  it("덱 목록 조회의 비정상 응답은 status/code/message를 보존한다", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn<typeof fetch>().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            code: "CARD_DECK_LIST_UNAVAILABLE",
+            message: "덱 목록을 잠시 불러올 수 없습니다.",
+          }),
+          { status: 503, headers: { "content-type": "application/json" } }
+        )
+      )
+    );
+
+    await expect(listServerCardDecksOrNull()).rejects.toMatchObject({
+      name: "CardServiceApiError",
+      status: 503,
+      code: "CARD_DECK_LIST_UNAVAILABLE",
+      message: "덱 목록을 잠시 불러올 수 없습니다.",
     } satisfies Partial<CardServiceApiError>);
   });
 });
