@@ -67,8 +67,11 @@ async function readError(
   try {
     json = JSON.parse(text);
   } catch (error) {
-    console.warn("[typing-service] 오류 응답 JSON 파싱 실패", error);
-    return { message: fallbackErrorMessage, detail: {} };
+    if (error instanceof SyntaxError) {
+      console.warn("[typing-service] 오류 응답 JSON 파싱 실패", error);
+      return { message: fallbackErrorMessage, detail: {} };
+    }
+    throw error;
   }
 
   const parsed = errorResponseSchema.safeParse(json);
@@ -192,17 +195,36 @@ type AvailableTypingRoom = {
   metadata?: TypingRoomSummary;
 };
 
+function normalizeNonNegativeParticipantCount(value: number): number {
+  return Number.isFinite(value) && value > 0 ? Math.floor(value) : 0;
+}
+
 function toSummary(room: AvailableTypingRoom): TypingRoomSummary | null {
   if (!room.metadata) return null;
   const lifecycle = room.metadata.lifecycle ?? TYPING_ROOM_LIFECYCLE.ACTIVE;
+  const currentParticipants = normalizeNonNegativeParticipantCount(
+    room.clients
+  );
+  const maxParticipants = normalizeNonNegativeParticipantCount(room.maxClients);
 
   return {
     ...room.metadata,
     roomId: room.roomId,
     lifecycle,
-    currentParticipants: room.clients,
-    maxParticipants: room.maxClients,
+    currentParticipants,
+    maxParticipants,
   };
+}
+
+export function isPublicWaitingTypingRoomSummary(
+  room: TypingRoomSummary
+): boolean {
+  return (
+    room.status === TYPING_ROOM_STATUS.WAITING &&
+    room.lifecycle === TYPING_ROOM_LIFECYCLE.ACTIVE &&
+    room.currentParticipants > 0 &&
+    room.visibility === TYPING_ROOM_VISIBILITY.PUBLIC
+  );
 }
 
 export async function loadPublicWaitingTypingRooms(
@@ -217,10 +239,7 @@ export async function loadPublicWaitingTypingRooms(
   return availableRooms
     .map(toSummary)
     .filter((room): room is TypingRoomSummary => Boolean(room))
-    .filter((room) => room.status === TYPING_ROOM_STATUS.WAITING)
-    .filter((room) => room.lifecycle === TYPING_ROOM_LIFECYCLE.ACTIVE)
-    .filter((room) => room.currentParticipants > 0)
-    .filter((room) => room.visibility === TYPING_ROOM_VISIBILITY.PUBLIC)
+    .filter(isPublicWaitingTypingRoomSummary)
     .sort((a, b) => b.createdAt - a.createdAt);
 }
 
