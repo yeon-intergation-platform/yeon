@@ -20,7 +20,10 @@ import {
   canStartCardEditorImageUpload,
   countCardEditorImages,
   getCardEditorExtensionFromMime,
+  getCardEditorImageInteractionFailureMessage,
   getCardEditorImageNormalizationErrorMessage,
+  getCardEditorImageUploadErrorMessage,
+  getCardEditorPasteImageSourceErrorMessage,
   normalizeCardEditorImageFileForUpload,
   toCardEditorFileFromBlob,
   validateCardEditorImageFile,
@@ -34,33 +37,6 @@ interface ImageInsertRange {
 interface ImageSourceFileReplacement {
   file: YeonFile;
   source: string;
-}
-
-function getCardEditorImageUploadErrorMessage(
-  fileName: string,
-  error: unknown
-) {
-  if (error instanceof Error && error.message.trim()) {
-    return `${fileName}: ${error.message.trim()}`;
-  }
-
-  if (typeof error === "string" && error.trim().length > 0) {
-    return `${fileName}: 이미지 업로드에 실패했습니다. 원인: ${error.trim()}`;
-  }
-
-  return `${fileName}: 이미지 업로드에 실패했습니다. 원인: 처리할 수 없는 오류 형식(${String(error)})`;
-}
-
-function getCardEditorPasteImageSourceErrorMessage(error: unknown) {
-  if (error instanceof Error && error.message.trim()) {
-    return error.message.trim();
-  }
-
-  if (typeof error === "string" && error.trim().length > 0) {
-    return `이미지 URL을 가져올 수 없습니다. 원인: ${error.trim()}`;
-  }
-
-  return `이미지 URL을 가져올 수 없습니다. 원인: 처리할 수 없는 오류 형식(${String(error)})`;
 }
 
 function getCurrentImageInsertRange(editor: Editor): ImageInsertRange {
@@ -159,7 +135,10 @@ async function readClipboardImageFiles() {
 
     return files;
   } catch (error) {
-    console.warn("[CardEditorImageUpload] 클립보드 이미지 읽기 실패", error);
+    console.warn(
+      getCardEditorImageInteractionFailureMessage("clipboard", error),
+      error
+    );
     return [];
   }
 }

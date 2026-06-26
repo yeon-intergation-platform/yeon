@@ -125,4 +125,38 @@ describe("parseBulkCardImportInput", () => {
         .canSubmit
     ).toBe(false);
   });
+
+  it("미리보기는 5장까지만 보여주고 숨김 개수와 submit 가능 조건을 분리한다", () => {
+    const result = parseBulkCardImportInput(
+      Array.from(
+        { length: 6 },
+        (_, index) => `[[Q]]
+문제 ${index + 1}
+[[A]]
+정답 ${index + 1}`
+      ).join("\n[[CARD]]\n")
+    );
+
+    const policy = deriveBulkCardImportFormPolicy(result, false);
+
+    expect(result.errors).toEqual([]);
+    expect(result.cards).toHaveLength(6);
+    expect(policy.previewCards).toHaveLength(5);
+    expect(policy.hiddenPreviewCount).toBe(1);
+    expect(policy.canSubmit).toBe(true);
+    expect(deriveBulkCardImportFormPolicy(result, true)).toMatchObject({
+      canSubmit: false,
+      hiddenPreviewCount: 1,
+    });
+    expect(
+      deriveBulkCardImportFormPolicy(
+        { cards: [], errors: [], warnings: [] },
+        false
+      )
+    ).toMatchObject({
+      canSubmit: false,
+      hiddenPreviewCount: 0,
+      previewCards: [],
+    });
+  });
 });

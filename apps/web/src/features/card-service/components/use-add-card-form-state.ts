@@ -12,7 +12,7 @@ import { useAddCard } from "../hooks";
 import { updateCardEditorCodeBlockLanguageInRichContent } from "./card-editor-codeblock-utils";
 import {
   isCardEditorImageUploadInProgress,
-  updateCardEditorImageUploadSideState,
+  createCardEditorImageUploadSideStateAction,
   type CardEditorImageUploadSideState,
   type CardEditorImageUploadSide,
 } from "./card-editor-image-utils";
@@ -183,7 +183,7 @@ export function useAddCardFormState({
     isUploadingSide: boolean
   ) => {
     setUploadingSides((prev) =>
-      updateCardEditorImageUploadSideState(prev, side, isUploadingSide)
+      createCardEditorImageUploadSideStateAction(side, isUploadingSide)(prev)
     );
   };
 

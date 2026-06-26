@@ -70,6 +70,13 @@ export type CardEditorImageUploadSideState = Record<
   CardEditorImageUploadSide,
   boolean
 >;
+export type CardEditorImageUploadOrigin = "clipboard" | "drop" | "paste";
+
+const CARD_EDITOR_IMAGE_UPLOAD_ORIGIN_LABELS = {
+  clipboard: "클립보드 이미지",
+  drop: "이미지 드롭",
+  paste: "이미지 붙여넣기",
+} as const;
 
 export function isCardEditorImageUploadInProgress(
   state: CardEditorImageUploadSideState
@@ -88,6 +95,14 @@ export function updateCardEditorImageUploadSideState(
         ...state,
         [side]: isUploading,
       };
+}
+
+export function createCardEditorImageUploadSideStateAction(
+  side: CardEditorImageUploadSide,
+  isUploading: boolean
+) {
+  return (state: CardEditorImageUploadSideState) =>
+    updateCardEditorImageUploadSideState(state, side, isUploading);
 }
 
 export function canStartCardEditorImageUpload(input: {
@@ -391,4 +406,49 @@ export function getCardEditorImageNormalizationErrorMessage(
   }
 
   return `${fileName}: 이미지를 처리하지 못했습니다. 원인: 처리할 수 없는 오류 형식(${String(error)})`;
+}
+
+function getCardEditorImageErrorCauseMessage(
+  error: unknown,
+  fallbackMessage: string
+) {
+  if (error instanceof Error && error.message.trim()) {
+    return error.message.trim();
+  }
+
+  if (typeof error === "string" && error.trim().length > 0) {
+    return `${fallbackMessage} 원인: ${error.trim()}`;
+  }
+
+  return `${fallbackMessage} 원인: 처리할 수 없는 오류 형식(${String(error)})`;
+}
+
+export function getCardEditorImageUploadErrorMessage(
+  fileName: string,
+  error: unknown
+) {
+  return `${fileName}: ${getCardEditorImageErrorCauseMessage(
+    error,
+    "이미지 업로드에 실패했습니다."
+  )}`;
+}
+
+export function getCardEditorPasteImageSourceErrorMessage(error: unknown) {
+  return getCardEditorImageErrorCauseMessage(
+    error,
+    "이미지 URL을 가져올 수 없습니다."
+  );
+}
+
+export function getCardEditorImageInteractionFailureMessage(
+  origin: CardEditorImageUploadOrigin,
+  error?: unknown
+) {
+  const fallbackMessage = `${CARD_EDITOR_IMAGE_UPLOAD_ORIGIN_LABELS[origin]}에 실패했습니다.`;
+
+  if (error === undefined) {
+    return fallbackMessage;
+  }
+
+  return getCardEditorImageErrorCauseMessage(error, fallbackMessage);
 }

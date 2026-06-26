@@ -48,6 +48,7 @@ import { getCardEditorLineLeadingIndentBeforeCursor } from "./card-editor-enter-
 import {
   CARD_EDITOR_IMAGE_ACCEPT,
   getCardEditorExtensionFromMime,
+  getCardEditorImageInteractionFailureMessage,
   toCardEditorFileFromBlob,
 } from "./card-editor-image-utils";
 import { normalizeCardEditorRichClipboardHtml } from "./card-editor-rich-clipboard-normalizer";
@@ -560,7 +561,9 @@ export function CardRichMarkdownEditor({
       if (newImageSources.length === 0) {
         if (imageFiles.length > 0) {
           handleImageFiles(editorInstance, imageFiles).catch(() => {
-            setErrorMessage("이미지 붙여넣기에 실패했습니다.");
+            setErrorMessage(
+              getCardEditorImageInteractionFailureMessage("paste")
+            );
           });
         }
 
@@ -602,7 +605,7 @@ export function CardRichMarkdownEditor({
           );
         })
         .catch(() => {
-          setErrorMessage("이미지 붙여넣기에 실패했습니다.");
+          setErrorMessage(getCardEditorImageInteractionFailureMessage("paste"));
         });
     }, 0);
   };
@@ -749,7 +752,9 @@ export function CardRichMarkdownEditor({
         if (clipboardImageOnly) {
           event.preventDefault();
           handleClipboardPaste(editor, clipboardData).catch(() => {
-            setErrorMessage("이미지 붙여넣기에 실패했습니다.");
+            setErrorMessage(
+              getCardEditorImageInteractionFailureMessage("clipboard")
+            );
           });
           return true;
         }
@@ -868,7 +873,7 @@ export function CardRichMarkdownEditor({
         event.preventDefault();
         positionEditorSelectionFromDropEvent(editor, event);
         handleImageFiles(editor, files).catch(() => {
-          setErrorMessage("이미지 드롭에 실패했습니다.");
+          setErrorMessage(getCardEditorImageInteractionFailureMessage("drop"));
         });
         return true;
       },
