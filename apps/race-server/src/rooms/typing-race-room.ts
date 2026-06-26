@@ -25,8 +25,10 @@ import {
   getTypingDisplayUnit,
   normalizeNonNegativeInteger,
   rankTypingResults,
+  resolveTypingRoomDisconnectAction,
   resolveTypingSpeedStyle,
   toWpmFromCpm,
+  TYPING_ROOM_DISCONNECT_ACTION,
   type MatchJoinMessage,
   type RoomChatMessage,
   type RoomSettingsUpdateMessage,
@@ -924,27 +926,37 @@ export class TypingRaceRoom extends Room {
       : null;
     this.clientParticipantIds.delete(client.sessionId);
     this.cleanupVoiceSessionByParticipant(participantId, "network");
+    const disconnectAction = resolveTypingRoomDisconnectAction({
+      isExplicitLeave: this.explicitLeavingClientIds.delete(client.sessionId),
+      lobbyMode: this.lobbyMode,
+      hasParticipant: Boolean(participant),
+      hasParticipantId: Boolean(participantId),
+    });
 
-    if (this.explicitLeavingClientIds.delete(client.sessionId)) {
-      this.refreshLifecycle();
-      return;
+    switch (disconnectAction) {
+      case TYPING_ROOM_DISCONNECT_ACTION.REFRESH_LIFECYCLE:
+        this.refreshLifecycle();
+        return;
+      case TYPING_ROOM_DISCONNECT_ACTION.SCHEDULE_RECONNECT_CLEANUP:
+        if (!participant) {
+          this.syncState();
+          return;
+        }
+        this.scheduleParticipantCleanup(participant.id);
+        this.appendSystemMessage(
+          `${participant.label}님과의 연결이 잠시 끊겼습니다.`
+        );
+        this.refreshLifecycle();
+        this.syncState();
+        return;
+      case TYPING_ROOM_DISCONNECT_ACTION.REMOVE_PARTICIPANT:
+        this.removeParticipant(participantId);
+        this.syncState();
+        return;
+      case TYPING_ROOM_DISCONNECT_ACTION.SYNC_ONLY:
+        this.syncState();
+        return;
     }
-
-    if (this.lobbyMode && participant) {
-      this.scheduleParticipantCleanup(participant.id);
-      this.appendSystemMessage(
-        `${participant.label}님과의 연결이 잠시 끊겼습니다.`
-      );
-      this.refreshLifecycle();
-      this.syncState();
-      return;
-    }
-
-    if (participantId) {
-      this.removeParticipant(participantId);
-    }
-
-    this.syncState();
   }
 
   private registerParticipant(client: Client, message?: MatchJoinMessage) {

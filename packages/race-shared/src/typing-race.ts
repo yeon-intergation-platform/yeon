@@ -399,6 +399,23 @@ export type TypingRoomLobbyPolicyState = Pick<
   participants: readonly TypingRoomParticipantPolicyState[];
 };
 
+export type TypingRoomConnectionState =
+  | "idle"
+  | "connecting"
+  | "connected"
+  | "error"
+  | "disconnected";
+
+export const TYPING_ROOM_DISCONNECT_ACTION = {
+  REFRESH_LIFECYCLE: "refresh_lifecycle",
+  SCHEDULE_RECONNECT_CLEANUP: "schedule_reconnect_cleanup",
+  REMOVE_PARTICIPANT: "remove_participant",
+  SYNC_ONLY: "sync_only",
+} as const;
+
+export type TypingRoomDisconnectAction =
+  (typeof TYPING_ROOM_DISCONNECT_ACTION)[keyof typeof TYPING_ROOM_DISCONNECT_ACTION];
+
 export function findTypingRoomParticipant<
   T extends TypingRoomParticipantPolicyState,
 >(participants: readonly T[], participantId: string | null): T | null {
@@ -475,6 +492,60 @@ export function canSendTypingRoomLobbyChat(
   return (
     isTypingRoomWaiting(room) && trimmed.length > 0 && draft.length <= maxLength
   );
+}
+
+export function isRetryableTypingRoomConnectionState(
+  state: TypingRoomConnectionState
+): boolean {
+  return state === "error" || state === "disconnected";
+}
+
+export function shouldRetrySameTypingRaceSeed(input: {
+  seedToken?: string | null;
+  passageId?: string | null;
+  excludedPassageId?: string | null;
+}): boolean {
+  return Boolean(
+    input.seedToken &&
+    input.passageId &&
+    input.passageId === input.excludedPassageId
+  );
+}
+
+export function canShowTypingRoomResults(
+  room: Pick<TypingRoomSnapshot, "status" | "results"> | null | undefined,
+  participantId: string | null | undefined
+): boolean {
+  if (!room) {
+    return false;
+  }
+
+  return (
+    (participantId
+      ? room.results.some((result) => result.userId === participantId)
+      : false) || room.status === TYPING_ROOM_STATUS.FINISHED
+  );
+}
+
+export function resolveTypingRoomDisconnectAction(input: {
+  isExplicitLeave: boolean;
+  lobbyMode: boolean;
+  hasParticipant: boolean;
+  hasParticipantId: boolean;
+}): TypingRoomDisconnectAction {
+  if (input.isExplicitLeave) {
+    return TYPING_ROOM_DISCONNECT_ACTION.REFRESH_LIFECYCLE;
+  }
+
+  if (input.lobbyMode && input.hasParticipant) {
+    return TYPING_ROOM_DISCONNECT_ACTION.SCHEDULE_RECONNECT_CLEANUP;
+  }
+
+  if (input.hasParticipantId) {
+    return TYPING_ROOM_DISCONNECT_ACTION.REMOVE_PARTICIPANT;
+  }
+
+  return TYPING_ROOM_DISCONNECT_ACTION.SYNC_ONLY;
 }
 
 export type MatchJoinMessage = {

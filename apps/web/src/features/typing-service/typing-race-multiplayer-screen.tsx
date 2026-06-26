@@ -19,12 +19,12 @@ import {
   scheduleYeonInterval,
 } from "@yeon/ui/runtime/YeonBrowserRuntime";
 import {
+  canShowTypingRoomResults,
   resolveTypingSpeedStyle,
   TYPING_RACE_LANE_ACCENTS,
   TYPING_RACE_LANE_ROLE,
   TYPING_RACE_STAGE,
   TYPING_SPEED_STYLE,
-  TYPING_ROOM_STATUS,
   type TypingRaceLaneSnapshot,
   type TypingRaceSnapshot,
 } from "@yeon/race-shared";
@@ -303,9 +303,7 @@ export function TypingRaceMultiplayerScreen({
   const roomParticipants = race.roomSnapshot?.participants ?? [];
   const myResult = results.find((result) => result.userId === race.mySeat);
   const hasResults = results.length > 0;
-  const showResults =
-    Boolean(myResult) ||
-    race.roomSnapshot?.status === TYPING_ROOM_STATUS.FINISHED;
+  const showResults = canShowTypingRoomResults(race.roomSnapshot, race.mySeat);
 
   return (
     <YeonView className={SHARED_FEATURE_CLASS.pageSurface}>
