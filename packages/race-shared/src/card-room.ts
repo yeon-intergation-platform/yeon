@@ -4,6 +4,13 @@ export type CardRoomVisibility = "public" | "private";
 export type CardRoomStatus = "waiting" | "in_progress" | "finished" | "closed";
 export type CardRoomRole = "UNASSIGNED" | "MEMORIZER" | "CHECKER";
 export type CardRoomResult = "OK" | "GIVE_UP" | "HINTED_OK";
+export const CARD_ROOM_LOBBY_FILTER = {
+  ALL: "all",
+  PUBLIC: "public",
+  AVAILABLE: "available",
+} as const;
+export type CardRoomLobbyFilter =
+  (typeof CARD_ROOM_LOBBY_FILTER)[keyof typeof CARD_ROOM_LOBBY_FILTER];
 export type CardRoomParticipantDto = {
   id: string;
   nickname: string;
@@ -101,6 +108,13 @@ export type CardRoomLifecyclePolicyState = {
   status: CardRoomStatus;
 };
 
+export type CardRoomLobbySummaryPolicyState = CardRoomLifecyclePolicyState & {
+  visibility: CardRoomVisibility;
+  title: string;
+  deckTitle: string;
+  hostLabel: string;
+};
+
 export type CardRoomStudyPolicyState = CardRoomLifecyclePolicyState & {
   currentCardRevealed: boolean;
   currentCardResult: CardRoomResult | null;
@@ -133,6 +147,82 @@ export function isCardRoomFinished(
   state: CardRoomLifecyclePolicyState | null | undefined
 ): boolean {
   return state?.status === "finished" || state?.status === "closed";
+}
+
+export function canEndCardRoom(
+  state: CardRoomLifecyclePolicyState | null | undefined
+): boolean {
+  return Boolean(state && state.status !== "closed");
+}
+
+export function isCardRoomPublic(
+  room: Pick<CardRoomLobbySummaryPolicyState, "visibility">
+): boolean {
+  return room.visibility === "public";
+}
+
+export function isCardRoomLobbyAvailable(
+  room: CardRoomLifecyclePolicyState
+): boolean {
+  return isCardRoomWaiting(room);
+}
+
+export function matchesCardRoomLobbyFilter(
+  room: CardRoomLobbySummaryPolicyState,
+  selectedFilter: CardRoomLobbyFilter
+): boolean {
+  if (selectedFilter === CARD_ROOM_LOBBY_FILTER.ALL) {
+    return true;
+  }
+
+  if (selectedFilter === CARD_ROOM_LOBBY_FILTER.PUBLIC) {
+    return isCardRoomPublic(room);
+  }
+
+  return isCardRoomLobbyAvailable(room);
+}
+
+export function matchesCardRoomLobbySearchKeyword(
+  room: CardRoomLobbySummaryPolicyState,
+  normalizedKeyword: string
+): boolean {
+  return (
+    normalizedKeyword.length === 0 ||
+    room.title.toLowerCase().includes(normalizedKeyword) ||
+    room.deckTitle.toLowerCase().includes(normalizedKeyword) ||
+    room.hostLabel.toLowerCase().includes(normalizedKeyword)
+  );
+}
+
+export function filterCardRoomLobbyRooms<
+  T extends CardRoomLobbySummaryPolicyState,
+>(
+  rooms: readonly T[],
+  selectedFilter: CardRoomLobbyFilter,
+  searchKeyword: string
+): T[] {
+  const normalizedKeyword = searchKeyword.trim().toLowerCase();
+  return rooms.filter(
+    (room) =>
+      matchesCardRoomLobbyFilter(room, selectedFilter) &&
+      matchesCardRoomLobbySearchKeyword(room, normalizedKeyword)
+  );
+}
+
+export function countCardRoomParticipantsByRole(
+  participants: readonly CardRoomParticipantPolicyState[],
+  role: CardRoomRole
+): number {
+  return participants.filter((participant) => participant.role === role).length;
+}
+
+export function getCardRoomParticipantRoleCounts(
+  participants: readonly CardRoomParticipantPolicyState[]
+): { memorizer: number; checker: number } {
+  return {
+    memorizer: countCardRoomParticipantsByRole(participants, "MEMORIZER"),
+    checker: countCardRoomParticipantsByRole(participants, "CHECKER"),
+  };
 }
 
 export function isCardRoomCurrentCardResolved(

@@ -4,6 +4,10 @@ import {
   CARD_ROOM_STATUS,
 } from "@yeon/api-contract/card-rooms";
 import type { CardRoomCardDto, CardRoomRealtimeState } from "@yeon/race-shared";
+import {
+  getCardRoomParticipantRoleCounts,
+  isCardRoomWaiting,
+} from "@yeon/race-shared";
 import { YeonButton, YeonText, YeonView } from "@yeon/ui";
 import { YEON_WEB_SHARED_CLASS as SHARED_FEATURE_CLASS } from "@yeon/ui/theme/web-style-tokens";
 import { MarkdownContent } from "./components/markdown-content";
@@ -53,12 +57,8 @@ function getCardRoomResultSummary(
 }
 
 function CardRoomWaitingPanel({ state }: { state: CardRoomRealtimeState }) {
-  const memorizerCount = state.participants.filter(
-    (participant) => participant.role === "MEMORIZER"
-  ).length;
-  const checkerCount = state.participants.filter(
-    (participant) => participant.role === "CHECKER"
-  ).length;
+  const { memorizer: memorizerCount, checker: checkerCount } =
+    getCardRoomParticipantRoleCounts(state.participants);
 
   return (
     <YeonView className="flex min-h-[280px] flex-col items-center justify-center text-center">
@@ -262,7 +262,7 @@ export function CardRoomStudyPanel({
 
   return (
     <YeonView className={SHARED_FEATURE_CLASS.panelCard}>
-      {state?.status === CARD_ROOM_STATUS.WAITING ? (
+      {state && isCardRoomWaiting(state) ? (
         <CardRoomWaitingPanel state={state} />
       ) : state?.status === CARD_ROOM_STATUS.CLOSED ? (
         <CardRoomClosedPanel />

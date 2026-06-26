@@ -9,6 +9,7 @@ import type {
   CardRoomParticipantDto,
   CardRoomRealtimeState,
 } from "@yeon/race-shared";
+import { canEndCardRoom, isCardRoomWaiting } from "@yeon/race-shared";
 import {
   getYeonButtonClassName,
   YeonBadge,
@@ -64,9 +65,9 @@ export function deriveCardRoomHeaderSummary(
     statusLabel,
     title,
     subtitle,
-    isWaiting: state?.status === CARD_ROOM_STATUS.WAITING,
+    isWaiting: isCardRoomWaiting(state),
     isClosed: state?.status === CARD_ROOM_STATUS.CLOSED,
-    canEndRoom: Boolean(state && state.status !== CARD_ROOM_STATUS.CLOSED),
+    canEndRoom: canEndCardRoom(state),
   };
 }
 

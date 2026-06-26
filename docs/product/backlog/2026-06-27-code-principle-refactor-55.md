@@ -28,8 +28,8 @@
 ## 진행 현황
 
 - 목표: 55개
-- 완료: 12개
-- 진행 중: 13~55번 후속 배치 리팩터링
+- 완료: 16개
+- 진행 중: 13~20, 25~55번 후속 배치 리팩터링
 
 ## 태스크 체크리스트
 
@@ -53,10 +53,10 @@
 - [ ] 18. 웹 카드 list fetch 비정상 응답이 Error만 던지고 status/code를 잃는 문제 보강 (API 계약 일치)
 - [ ] 19. 웹 카드 fetch JSON parse 반환이 schema 검증 없이 type assertion만 쓰는 경계 조사 (입력 검증)
 - [ ] 20. 웹 카드 room profile parse 실패 처리의 fallback 정책 명시 (예외 은닉 금지)
-- [ ] 21. 웹 카드 room lobby filter의 waiting raw 문자열 비교를 status 정책으로 이동 (정책 단일화)
-- [ ] 22. 모바일 카드 room lobby filter의 waiting raw 문자열 비교를 status 정책으로 이동 (정책 단일화)
-- [ ] 23. 웹 카드 room header의 종료 가능 조건을 closed 단일 비교가 아니라 room 정책으로 표현 (상태 전이 명확화)
-- [ ] 24. 웹 카드 room study panel 참가자 role 탐색 중복을 shared helper로 대체 (DRY)
+- [x] 21. 웹 카드 room lobby filter의 waiting raw 문자열 비교를 status 정책으로 이동 (정책 단일화)
+- [x] 22. 모바일 카드 room lobby filter의 waiting raw 문자열 비교를 status 정책으로 이동 (정책 단일화)
+- [x] 23. 웹 카드 room header의 종료 가능 조건을 closed 단일 비교가 아니라 room 정책으로 표현 (상태 전이 명확화)
+- [x] 24. 웹 카드 room study panel 참가자 role 탐색 중복을 shared helper로 대체 (DRY)
 - [ ] 25. 모바일 카드 room role label 분기를 mapping으로 단순화 (KISS/OCP)
 - [ ] 26. 타자 room screen의 create/join mode raw 비교 반복을 view-state helper로 분리 (DRY)
 - [ ] 27. 타자 room screen host/guest role raw 비교를 shared role helper로 통일 (정책 단일화)
@@ -96,3 +96,5 @@
 - 8~11: `apps/web/src/features/typing-service/typing-service-fetch.ts`의 오류 JSON parse 정책을 SyntaxError fallback/예상 밖 예외 전파로 분리하고, 공개 대기방 predicate와 participant count normalize를 추가. `typing-service-fetch.test.ts`로 필터/정렬/오류 파싱 경계를 검증.
 - 12: `apps/mobile/src/features/card-service/onboarding-storage.ts`의 in-memory fallback read/write/clear helper를 분리.
 - 1~12 검증: `pnpm --filter @yeon/web exec vitest run src/features/community/community-date-format.test.ts src/features/typing-service/typing-service-fetch.test.ts`, `pnpm --filter @yeon/web typecheck`, `pnpm --filter @yeon/web lint`, `pnpm --filter @yeon/mobile typecheck`, `pnpm --filter @yeon/mobile lint` 통과.
+- 21~24: `packages/race-shared/src/card-room.ts`에 card room lobby filter, room end 가능 조건, participant role count 정책을 추가하고 web/mobile lobby, web header, web study panel에서 재사용.
+- 21~24 검증: `pnpm --filter @yeon/race-shared test -- card-room.test.ts`, `pnpm --filter @yeon/race-shared typecheck`, `pnpm --filter @yeon/race-shared lint`, `pnpm --filter @yeon/web typecheck`, `pnpm --filter @yeon/web lint`, `pnpm --filter @yeon/mobile typecheck`, `pnpm --filter @yeon/mobile lint` 통과.
