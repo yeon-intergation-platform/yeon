@@ -19,6 +19,7 @@ import {
   canSwitchTypingRoomTeam,
   canToggleTypingRoomReady,
   findTypingRoomParticipant,
+  isTypingRoomHostParticipant,
   isTypingRoomWaiting,
   type TypingRoomCreateMessage,
   type TypingRoomDifficulty,
@@ -60,6 +61,14 @@ import {
 import { normalizeDeckTitle } from "./typing-room-deck-format";
 import { resolveTypingRoomSelectedDeck } from "./typing-room-selection";
 import {
+  buildTypingRoomInviteCopyError,
+  buildTypingRoomParticipantSlots,
+  getTypingRoomEntryEventName,
+  isTypingRoomCreateMode,
+  isTypingRoomJoinMode,
+  type TypingRoomScreenMode,
+} from "./typing-room-screen-policy";
+import {
   TypingRoomConnectionErrorState,
   TypingRoomLoadingState,
   TypingRoomSeedErrorState,
@@ -100,7 +109,7 @@ import { useRoomVoiceCall } from "@/features/room-voice-call/use-room-voice-call
 
 type TypingRoomScreenProps = {
   roomId?: string;
-  mode: "create" | "join";
+  mode: TypingRoomScreenMode;
 };
 
 type DeckAwareCreateMessage = TypingRoomCreateMessage & {
@@ -577,7 +586,7 @@ function StandardRoomParticipantList({
                 className="mt-1 text-[11px] font-black text-[#666]"
               >
                 {participant
-                  ? participant.role === "host"
+                  ? isTypingRoomHostParticipant(participant)
                     ? labels.host
                     : participant.isReady
                       ? labels.readyDone
@@ -656,7 +665,7 @@ function TerritoryTeamColumn({
                 tone="inherit"
                 className="rounded-md border border-[#d7d7d7] px-2 py-1 text-[11px] font-black text-[#555]"
               >
-                {member.role === "host"
+                {isTypingRoomHostParticipant(member)
                   ? labels.host
                   : member.isReady
                     ? labels.readyShort
@@ -843,7 +852,7 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
   const hasTrackedRoomCreateSuccessRef = useRef(false);
 
   useEffect(() => {
-    if (mode !== "create") return;
+    if (!isTypingRoomCreateMode(mode)) return;
     let cancelled = false;
     setSeedState({ kind: "loading" });
 
@@ -877,7 +886,7 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
 
   const deckAwareCreateRoomOptions =
     useMemo<DeckAwareCreateMessage | null>(() => {
-      if (mode !== "create") return null;
+      if (!isTypingRoomCreateMode(mode)) return null;
       if (seedState.kind !== "ready") return null;
       if (useDefaultFallback) {
         return { ...createRoomOptions, selectedDeckId: undefined };
@@ -900,17 +909,17 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
     enabled:
       profileLoaded &&
       !!playerId &&
-      (mode !== "create" || !!deckAwareCreateRoomOptions),
+      (!isTypingRoomCreateMode(mode) || !!deckAwareCreateRoomOptions),
     playerLabel: profile.nickname,
     playerId,
     characterId: profile.characterId,
     locale: settings.locale,
-    roomId: mode === "join" ? roomId : null,
+    roomId: isTypingRoomJoinMode(mode) ? roomId : null,
     createRoom: deckAwareCreateRoomOptions,
   });
 
   useEffect(() => {
-    if (mode !== "create") return;
+    if (!isTypingRoomCreateMode(mode)) return;
     if (!race.roomId || hasTrackedRoomCreateSuccessRef.current) {
       return;
     }
@@ -959,7 +968,7 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
     messageOverrides: roomText.voiceCall.messages,
     normalizeServerError: normalizeVoiceCallServerError,
   });
-  const isHost = me?.role === "host";
+  const isHost = isTypingRoomHostParticipant(me);
   const isReady = Boolean(me?.isReady);
   const canEditSettings = canEditTypingRoomSettings(room, me);
   const canToggleReady = canToggleTypingRoomReady(room, me);
@@ -978,17 +987,16 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
     if (trackedRoomEntryRef.current === trackingKey) return;
 
     trackedRoomEntryRef.current = trackingKey;
-    trackEvent(mode === "create" ? "room_created" : "room_joined", {
+    trackEvent(getTypingRoomEntryEventName(mode), {
       source: "typing_room",
       room_id: race.roomId,
       visibility: room.visibility,
       game_type: room.gameType,
       current_participants: room.currentParticipants,
       max_participants: room.maxParticipants,
-      selected_deck_id:
-        mode === "create"
-          ? (deckAwareCreateRoomOptions?.selectedDeckId ?? null)
-          : null,
+      selected_deck_id: isTypingRoomCreateMode(mode)
+        ? (deckAwareCreateRoomOptions?.selectedDeckId ?? null)
+        : null,
     });
   }, [deckAwareCreateRoomOptions, mode, race.roomId, room]);
 
@@ -997,7 +1005,10 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
     try {
       const copiedSuccessfully = await copyYeonClipboardText(inviteUrl);
       if (!copiedSuccessfully) {
-        throw new Error(roomText.copyUnsupported);
+        throw buildTypingRoomInviteCopyError(
+          inviteUrl,
+          roomText.copyUnsupported
+        );
       }
       trackEvent("room_invite_copy", {
         source: "typing_room",
@@ -1204,16 +1215,10 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
   });
 
   const participants = useMemo(() => {
-    const values = room?.participants ?? [];
-    const host = values.find((item) => item.role === "host");
-    const guests = values.filter((item) => item.role === "guest");
-    const ordered = host ? [host, ...guests] : [...values];
-    const maxSlots = room?.maxParticipants ?? 0;
-    const padded = Array.from(
-      { length: Math.max(maxSlots - ordered.length, 0) },
-      () => null
+    return buildTypingRoomParticipantSlots(
+      room?.participants ?? [],
+      room?.maxParticipants ?? 0
     );
-    return [...ordered, ...padded].slice(0, maxSlots);
   }, [room?.maxParticipants, room?.participants]);
 
   const messages = useMemo(() => room?.messages ?? [], [room?.messages]);
@@ -1223,11 +1228,11 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
       ? statusLabels[room.status]
       : undefined;
 
-  if (mode === "create" && seedState.kind === "loading") {
+  if (isTypingRoomCreateMode(mode) && seedState.kind === "loading") {
     return <TypingRoomLoadingState message={roomText.selectedDeckLoading} />;
   }
 
-  if (mode === "create" && seedState.kind === "error") {
+  if (isTypingRoomCreateMode(mode) && seedState.kind === "error") {
     return (
       <TypingRoomSeedErrorState
         message={seedState.message}
@@ -1242,7 +1247,9 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
     return (
       <TypingRoomLoadingState
         message={
-          mode === "create" ? roomText.createLoading : roomText.joinLoading
+          isTypingRoomCreateMode(mode)
+            ? roomText.createLoading
+            : roomText.joinLoading
         }
       />
     );

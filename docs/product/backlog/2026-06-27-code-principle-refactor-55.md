@@ -28,8 +28,8 @@
 ## 진행 현황
 
 - 목표: 55개
-- 완료: 30개
-- 진행 중: 25~29, 33~45, 47~48, 51~55번 후속 배치 리팩터링
+- 완료: 35개
+- 진행 중: 33~45, 47~48, 51~55번 후속 배치 리팩터링
 
 ## 태스크 체크리스트
 
@@ -57,11 +57,11 @@
 - [x] 22. 모바일 카드 room lobby filter의 waiting raw 문자열 비교를 status 정책으로 이동 (정책 단일화)
 - [x] 23. 웹 카드 room header의 종료 가능 조건을 closed 단일 비교가 아니라 room 정책으로 표현 (상태 전이 명확화)
 - [x] 24. 웹 카드 room study panel 참가자 role 탐색 중복을 shared helper로 대체 (DRY)
-- [ ] 25. 모바일 카드 room role label 분기를 mapping으로 단순화 (KISS/OCP)
-- [ ] 26. 타자 room screen의 create/join mode raw 비교 반복을 view-state helper로 분리 (DRY)
-- [ ] 27. 타자 room screen host/guest role raw 비교를 shared role helper로 통일 (정책 단일화)
-- [ ] 28. 타자 room screen participant grouping 로직을 순수 함수로 분리하고 테스트 추가 (작은 함수)
-- [ ] 29. 타자 room screen invite copy 실패 메시지 정책을 helper로 분리 (예외 처리)
+- [x] 25. 모바일 카드 room role label 분기를 mapping으로 단순화 (KISS/OCP)
+- [x] 26. 타자 room screen의 create/join mode raw 비교 반복을 view-state helper로 분리 (DRY)
+- [x] 27. 타자 room screen host/guest role raw 비교를 shared role helper로 통일 (정책 단일화)
+- [x] 28. 타자 room screen participant grouping 로직을 순수 함수로 분리하고 테스트 추가 (작은 함수)
+- [x] 29. 타자 room screen invite copy 실패 메시지 정책을 helper로 분리 (예외 처리)
 - [x] 30. 타자 deck form create/update mode 분기를 mapping으로 단순화 (KISS)
 - [x] 31. 타자 territory phase label if-chain을 mapping으로 교체 (OCP/KISS)
 - [x] 32. 타자 territory screen의 raw `"playing"` phase 비교를 shared constant로 교체 (정책 단일화)
@@ -101,6 +101,9 @@
 - 13~15 검증: `pnpm --filter @yeon/mobile typecheck`, `pnpm --filter @yeon/mobile lint`, `bash bin/verify-ssot.sh --project-only`, `git diff --check` 통과.
 - 21~24: `packages/race-shared/src/card-room.ts`에 card room lobby filter, room end 가능 조건, participant role count 정책을 추가하고 web/mobile lobby, web header, web study panel에서 재사용.
 - 21~24 검증: `pnpm --filter @yeon/race-shared test -- card-room.test.ts`, `pnpm --filter @yeon/race-shared typecheck`, `pnpm --filter @yeon/race-shared lint`, `pnpm --filter @yeon/web typecheck`, `pnpm --filter @yeon/web lint`, `pnpm --filter @yeon/mobile typecheck`, `pnpm --filter @yeon/mobile lint` 통과.
+- 25: `card-room-screen-sections.tsx`의 모바일 role label/assignable role 분기를 mapping 상수로 정리.
+- 26~29: `typing-room-screen-policy.ts`에 create/join mode 판정, participant ordering/slot padding, invite copy diagnostic helper를 추가하고 `typing-room-screen.tsx`에서 재사용. `@yeon/race-shared`에 host/guest role helper 추가.
+- 25~29 검증: `pnpm --filter @yeon/race-shared test -- typing-race.test.ts`, `pnpm --filter @yeon/web exec vitest run src/features/typing-service/typing-room-screen-policy.test.ts src/features/typing-service/typing-room-screen.test.ts`, `pnpm --filter @yeon/race-shared typecheck`, `pnpm --filter @yeon/race-shared lint`, `pnpm --filter @yeon/web typecheck`, `pnpm --filter @yeon/web lint`, `pnpm --filter @yeon/mobile typecheck`, `pnpm --filter @yeon/mobile lint`, `bash bin/verify-ssot.sh --project-only`, `git diff --check` 통과.
 - 16~17: `apps/web/src/features/card-service/hooks/card-service-mutation-policy.ts`에 인증 만료 판정, server/guest query invalidation, 원인 예외 보존 wrapper를 추가하고 card/deck mutation hook이 재사용.
 - 18: `apps/web/src/features/card-service/card-service-fetch.ts`의 `listServerCardDecksOrNull`가 401은 guest fallback용 `null`로 유지하고, 그 외 비정상 응답은 `CardServiceApiError`로 status/code/message를 보존.
 - 16~18 검증: `pnpm --filter @yeon/web exec vitest run src/features/card-service/card-service-fetch.test.ts src/features/card-service/hooks/card-service-mutation-policy.test.ts`, `pnpm --filter @yeon/web typecheck`, `pnpm --filter @yeon/web lint`, `bash bin/verify-ssot.sh --project-only`, `git diff --check` 통과.
