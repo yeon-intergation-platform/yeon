@@ -79,6 +79,14 @@ describe("subdomain-routing", () => {
         pathname: "/snake-io",
       })
     ).toBe("/game-service/snake-io");
+
+    expect(
+      resolveServiceSubdomainRewritePath({
+        host: "game.yeon.world",
+        pathname: "/snake-io",
+        search: "?utm=search",
+      })
+    ).toBe("/game-service/snake-io?utm=search");
   });
 
   it("공개 콘텐츠 subdomain의 feed.xml을 channel 내부 route로 rewrite한다", () => {
@@ -229,8 +237,9 @@ describe("subdomain-routing", () => {
       resolveLegacyServicePathRedirectUrl({
         host: "game.yeon.world",
         pathname: "/game-service/snake-io",
+        search: "?utm=legacy",
       })?.toString()
-    ).toBe("https://game.yeon.world/snake-io");
+    ).toBe("https://game.yeon.world/snake-io?utm=legacy");
   });
 
   it("다른 서비스 subdomain의 legacy path는 redirect하지 않는다", () => {
