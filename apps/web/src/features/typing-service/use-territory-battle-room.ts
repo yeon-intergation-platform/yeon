@@ -309,9 +309,11 @@ export function useTerritoryBattleRoom({
 }
 
 export function getTerritoryPhaseLabel(phase: TerritoryBattlePhase | null) {
-  if (phase === TERRITORY_BATTLE_PHASE.WAITING) return "대기";
-  if (phase === TERRITORY_BATTLE_PHASE.COUNTDOWN) return "카운트다운";
-  if (phase === TERRITORY_BATTLE_PHASE.PLAYING) return "진행 중";
-  if (phase === TERRITORY_BATTLE_PHASE.FINISHED) return "종료";
-  return "연결 전";
+  const labels: Record<TerritoryBattlePhase, string> = {
+    [TERRITORY_BATTLE_PHASE.WAITING]: "대기",
+    [TERRITORY_BATTLE_PHASE.COUNTDOWN]: "카운트다운",
+    [TERRITORY_BATTLE_PHASE.PLAYING]: "진행 중",
+    [TERRITORY_BATTLE_PHASE.FINISHED]: "종료",
+  };
+  return phase ? labels[phase] : "연결 전";
 }
