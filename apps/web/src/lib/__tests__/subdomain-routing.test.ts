@@ -30,6 +30,13 @@ describe("subdomain-routing", () => {
 
     expect(
       resolveServiceSubdomainRewritePath({
+        host: "game.yeon.world",
+        pathname: "/",
+      })
+    ).toBe("/game-service");
+
+    expect(
+      resolveServiceSubdomainRewritePath({
         host: "support.yeon.world",
         pathname: "/",
       })
@@ -65,6 +72,13 @@ describe("subdomain-routing", () => {
         pathname: "/news",
       })
     ).toBe("/news/news");
+
+    expect(
+      resolveServiceSubdomainRewritePath({
+        host: "game.yeon.world",
+        pathname: "/snake-io",
+      })
+    ).toBe("/game-service/snake-io");
   });
 
   it("공개 콘텐츠 subdomain의 feed.xml을 channel 내부 route로 rewrite한다", () => {
@@ -172,6 +186,13 @@ describe("subdomain-routing", () => {
         pathname: "/support/nexa/guides/add-nexa-discord-bot",
       })?.toString()
     ).toBe("https://support.yeon.world/nexa/guides/add-nexa-discord-bot");
+
+    expect(
+      resolveLegacyServicePathRedirectUrl({
+        host: "yeon.world",
+        pathname: "/game-service/snake-io",
+      })?.toString()
+    ).toBe("https://game.yeon.world/snake-io");
   });
 
   it("서비스 subdomain에 legacy prefix가 남으면 prefix를 제거한 URL로 redirect한다", () => {
@@ -203,6 +224,13 @@ describe("subdomain-routing", () => {
         pathname: "/news",
       })
     ).toBeNull();
+
+    expect(
+      resolveLegacyServicePathRedirectUrl({
+        host: "game.yeon.world",
+        pathname: "/game-service/snake-io",
+      })?.toString()
+    ).toBe("https://game.yeon.world/snake-io");
   });
 
   it("다른 서비스 subdomain의 legacy path는 redirect하지 않는다", () => {
