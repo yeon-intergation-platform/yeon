@@ -26,6 +26,11 @@ const SEARCH_CONSOLE_TARGETS = [
     owner: "yeon-web",
   },
   {
+    siteUrl: "https://game.yeon.world/",
+    sitemapUrl: "https://game.yeon.world/sitemap.xml",
+    owner: "yeon-web",
+  },
+  {
     siteUrl: "https://support.yeon.world/",
     sitemapUrl: "https://support.yeon.world/sitemap.xml",
     owner: "yeon-web",
