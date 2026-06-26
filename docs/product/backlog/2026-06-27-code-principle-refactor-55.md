@@ -28,8 +28,8 @@
 ## 진행 현황
 
 - 목표: 55개
-- 완료: 28개
-- 진행 중: 19~20, 25~29, 33~45, 47~48, 51~55번 후속 배치 리팩터링
+- 완료: 30개
+- 진행 중: 25~29, 33~45, 47~48, 51~55번 후속 배치 리팩터링
 
 ## 태스크 체크리스트
 
@@ -51,8 +51,8 @@
 - [x] 16. 웹 카드 mutation 401 처리와 deck mutation 401 처리 중복 제거 (DRY)
 - [x] 17. 웹 카드 mutation 인증 실패 시 guest/server query invalidation 정책을 공용 함수로 통일 (정책 단일화)
 - [x] 18. 웹 카드 list fetch 비정상 응답이 Error만 던지고 status/code를 잃는 문제 보강 (API 계약 일치)
-- [ ] 19. 웹 카드 fetch JSON parse 반환이 schema 검증 없이 type assertion만 쓰는 경계 조사 (입력 검증)
-- [ ] 20. 웹 카드 room profile parse 실패 처리의 fallback 정책 명시 (예외 은닉 금지)
+- [x] 19. 웹 카드 fetch JSON parse 반환이 schema 검증 없이 type assertion만 쓰는 경계 조사 (입력 검증)
+- [x] 20. 웹 카드 room profile parse 실패 처리의 fallback 정책 명시 (예외 은닉 금지)
 - [x] 21. 웹 카드 room lobby filter의 waiting raw 문자열 비교를 status 정책으로 이동 (정책 단일화)
 - [x] 22. 모바일 카드 room lobby filter의 waiting raw 문자열 비교를 status 정책으로 이동 (정책 단일화)
 - [x] 23. 웹 카드 room header의 종료 가능 조건을 closed 단일 비교가 아니라 room 정책으로 표현 (상태 전이 명확화)
@@ -104,6 +104,9 @@
 - 16~17: `apps/web/src/features/card-service/hooks/card-service-mutation-policy.ts`에 인증 만료 판정, server/guest query invalidation, 원인 예외 보존 wrapper를 추가하고 card/deck mutation hook이 재사용.
 - 18: `apps/web/src/features/card-service/card-service-fetch.ts`의 `listServerCardDecksOrNull`가 401은 guest fallback용 `null`로 유지하고, 그 외 비정상 응답은 `CardServiceApiError`로 status/code/message를 보존.
 - 16~18 검증: `pnpm --filter @yeon/web exec vitest run src/features/card-service/card-service-fetch.test.ts src/features/card-service/hooks/card-service-mutation-policy.test.ts`, `pnpm --filter @yeon/web typecheck`, `pnpm --filter @yeon/web lint`, `bash bin/verify-ssot.sh --project-only`, `git diff --check` 통과.
+- 19: `card-service-fetch.ts`의 성공 응답 경로가 선택적으로 Zod `safeParse` 스키마를 받아 카드 덱/이미지/merge 응답 계약을 검증하고, mismatch는 `CardServiceApiError`로 사용자용 fallback과 code를 보존.
+- 20: `use-card-room-profile.ts`의 localStorage profile parser가 `cardRoomProfileSchema.partial()`로 shape을 검증하고 malformed/schema-invalid payload를 로깅 후 제거.
+- 19~20 검증: `pnpm --filter @yeon/web exec vitest run src/features/card-service/card-service-fetch.test.ts src/features/card-service/hooks/use-card-room-profile.test.ts`, `pnpm --filter @yeon/web typecheck`, `pnpm --filter @yeon/web lint`, `bash bin/verify-ssot.sh --project-only`, `git diff --check` 통과.
 - 30~32: `typing-deck-form.tsx`의 create mode 판정을 `isCreateMode`로 단일화하고, `getTerritoryPhaseLabel`을 phase mapping으로 교체, territory submit guard의 raw `"playing"` 비교를 `TERRITORY_BATTLE_PHASE.PLAYING`으로 교체.
 - 30~32 검증: `pnpm --filter @yeon/web exec vitest run src/features/typing-service/use-territory-battle-room.test.ts`, `pnpm --filter @yeon/web typecheck`, `pnpm --filter @yeon/web lint` 통과.
 - 46: `card-markdown-copy-utils.ts`에 카드 마크다운 코드 복사 실패 메시지 생성을 통합하고 `card-markdown-code-block.tsx`, `markdown-content.tsx`가 재사용.

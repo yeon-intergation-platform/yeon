@@ -3,6 +3,7 @@ import {
   CardServiceApiError,
   cardServiceFetchJson,
   cardServiceFetchVoid,
+  createServerCardDeck,
   listServerCardDecksOrNull,
   uploadCardDeckImage,
 } from "./card-service-fetch";
@@ -137,6 +138,49 @@ describe("card-service-fetch", () => {
       status: 503,
       code: "CARD_DECK_LIST_UNAVAILABLE",
       message: "덱 목록을 잠시 불러올 수 없습니다.",
+    } satisfies Partial<CardServiceApiError>);
+  });
+
+  it("덱 목록 조회의 성공 응답도 계약 스키마로 검증한다", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn<typeof fetch>().mockResolvedValue(
+        new Response(
+          JSON.stringify({ decks: [{ id: "deck-without-dates" }] }),
+          {
+            status: 200,
+            headers: { "content-type": "application/json" },
+          }
+        )
+      )
+    );
+
+    await expect(listServerCardDecksOrNull()).rejects.toMatchObject({
+      name: "CardServiceApiError",
+      status: 502,
+      code: "CARD_DECK_LIST_INVALID_RESPONSE",
+      message: "덱 목록을 불러오지 못했습니다.",
+    } satisfies Partial<CardServiceApiError>);
+  });
+
+  it("schema를 받은 JSON 요청은 성공 응답 shape mismatch를 사용자용 오류로 바꾼다", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn<typeof fetch>().mockResolvedValue(
+        new Response(JSON.stringify({ deck: { id: "deck-without-dates" } }), {
+          status: 201,
+          headers: { "content-type": "application/json" },
+        })
+      )
+    );
+
+    await expect(
+      createServerCardDeck({ title: "새 덱", description: null })
+    ).rejects.toMatchObject({
+      name: "CardServiceApiError",
+      status: 502,
+      code: "CARD_SERVICE_INVALID_RESPONSE",
+      message: "덱을 생성하지 못했습니다.",
     } satisfies Partial<CardServiceApiError>);
   });
 });

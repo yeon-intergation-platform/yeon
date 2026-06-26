@@ -1,8 +1,15 @@
 import type {
   CardDeckAssetUploadResponse,
+  CardDeckListResponse,
   CardDeckDetailResponse,
   CardDeckDto,
   CreateCardDeckBody,
+} from "@yeon/api-contract/card-decks";
+import {
+  cardDeckAssetUploadResponseSchema,
+  cardDeckDetailResponseSchema,
+  cardDeckListResponseSchema,
+  cardDeckResponseSchema,
 } from "@yeon/api-contract/card-decks";
 import {
   type MergeGuestResponse,
@@ -62,6 +69,24 @@ type CardServiceErrorBody = {
   detail: ErrorResponseMeta;
 };
 
+type CardServiceResponseSchema<T> = {
+  safeParse: (value: unknown) =>
+    | {
+        success: true;
+        data: T;
+      }
+    | {
+        success: false;
+      };
+};
+
+function createInvalidCardServiceResponseError(
+  fallbackErrorMessage: string,
+  code: string
+) {
+  return new CardServiceApiError(502, fallbackErrorMessage, { code });
+}
+
 async function readError(
   response: YeonResponse,
   fallbackErrorMessage: string
@@ -108,13 +133,39 @@ async function throwIfNotOk(
 export async function cardServiceFetchJson<T>(
   input: YeonFetchInput,
   init: YeonRequestInit,
-  fallbackErrorMessage: string
+  fallbackErrorMessage: string,
+  schema?: CardServiceResponseSchema<T>
 ): Promise<T> {
   const response = await fetchYeon(input, { ...init, credentials: "include" });
 
   await throwIfNotOk(response, fallbackErrorMessage);
 
-  return (await response.json()) as T;
+  let data: unknown;
+  try {
+    data = await response.json();
+  } catch (error) {
+    if (error instanceof SyntaxError) {
+      throw createInvalidCardServiceResponseError(
+        fallbackErrorMessage,
+        "CARD_SERVICE_INVALID_JSON_RESPONSE"
+      );
+    }
+    throw error;
+  }
+
+  if (!schema) {
+    return data as T;
+  }
+
+  const parsed = schema.safeParse(data);
+  if (!parsed.success) {
+    throw createInvalidCardServiceResponseError(
+      fallbackErrorMessage,
+      "CARD_SERVICE_INVALID_RESPONSE"
+    );
+  }
+
+  return parsed.data;
 }
 
 export async function cardServiceFetchVoid(
@@ -135,21 +186,23 @@ export async function uploadCardDeckImage(
   return cardServiceFetchJson<CardDeckAssetUploadResponse>(
     "/api/v1/card-decks/assets",
     { method: "POST", body: formData },
-    "이미지를 업로드하지 못했습니다."
+    "이미지를 업로드하지 못했습니다.",
+    cardDeckAssetUploadResponseSchema
   );
 }
 
 export async function createServerCardDeck(
   body: CreateCardDeckBody
 ): Promise<CardDeckDto> {
-  const data = await cardServiceFetchJson<{ deck: CardDeckDto }>(
+  const data = await cardServiceFetchJson(
     "/api/v1/card-decks",
     {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(body),
     },
-    "덱을 생성하지 못했습니다."
+    "덱을 생성하지 못했습니다.",
+    cardDeckResponseSchema
   );
   return data.deck;
 }
@@ -170,32 +223,53 @@ export async function listServerCardDecksOrNull(): Promise<
     throw new CardServiceApiError(response.status, message, detail);
   }
 
-  const data = (await response.json()) as { decks: CardDeckDto[] };
+  let raw: unknown;
+  try {
+    raw = await response.json();
+  } catch (error) {
+    if (error instanceof SyntaxError) {
+      throw createInvalidCardServiceResponseError(
+        "덱 목록을 불러오지 못했습니다.",
+        "CARD_DECK_LIST_INVALID_JSON_RESPONSE"
+      );
+    }
+    throw error;
+  }
+
+  const parsed = cardDeckListResponseSchema.safeParse(raw);
+  if (!parsed.success) {
+    throw createInvalidCardServiceResponseError(
+      "덱 목록을 불러오지 못했습니다.",
+      "CARD_DECK_LIST_INVALID_RESPONSE"
+    );
+  }
+
+  const data: CardDeckListResponse = parsed.data;
   return data.decks;
 }
 
 export async function loadServerCardDeckDetail(
   deckId: string
 ): Promise<CardDeckDetailResponse> {
-  return cardServiceFetchJson<CardDeckDetailResponse>(
+  return cardServiceFetchJson(
     `/api/v1/card-decks/${deckId}`,
     {},
-    "덱을 불러오지 못했습니다."
+    "덱을 불러오지 못했습니다.",
+    cardDeckDetailResponseSchema
   );
 }
 
 export async function mergeGuestCardDecksToServer(
   body: unknown
 ): Promise<MergeGuestResponse> {
-  const raw = await cardServiceFetchJson<unknown>(
+  return cardServiceFetchJson(
     "/api/v1/card-decks/merge-guest",
     {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(body),
     },
-    "덱 이관에 실패했습니다. 다시 시도해 주세요."
+    "덱 이관에 실패했습니다. 다시 시도해 주세요.",
+    mergeGuestResponseSchema
   );
-
-  return mergeGuestResponseSchema.parse(raw);
 }
