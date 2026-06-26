@@ -9,6 +9,7 @@ import {
   type YeonElement,
 } from "@yeon/ui";
 import { requestYeonAnimationFrame } from "@yeon/ui/runtime/YeonBrowserRuntime";
+import { canSendCommunityChatMessage } from "../community-post-format";
 import { useCommunityChat } from "../hooks/use-community-chat";
 import { useCommunityChatPanel } from "../hooks/use-community-chat-panel";
 import { CommunityChatForm } from "./community-chat-form";
@@ -50,7 +51,10 @@ export function CommunityChatWidget({
 
   const isCompact = variant === "compact";
   const isFeed = variant === "feed";
-  const canSendMessage = !isSendingMessage;
+  const canSendMessage = canSendCommunityChatMessage({
+    messageBody,
+    isSendingMessage,
+  });
   const shouldShowCollapsedShell = isShellCollapsed && isBodyCollapsed;
   const visibleMessages = useMemo(() => messages, [messages]);
 
@@ -79,11 +83,16 @@ export function CommunityChatWidget({
   }, [visibleMessages]);
 
   const submitMessage = useCallback(() => {
-    const trimmed = messageBody.trim();
-    if (!trimmed) {
+    if (
+      !canSendCommunityChatMessage({
+        messageBody,
+        isSendingMessage,
+      })
+    ) {
       return;
     }
 
+    const trimmed = messageBody.trim();
     void sendMessage(trimmed)
       .then(() => {
         setMessageBody("");
@@ -94,7 +103,7 @@ export function CommunityChatWidget({
       .catch(() => {
         messageInputRef.current?.focus();
       });
-  }, [messageBody, sendMessage]);
+  }, [isSendingMessage, messageBody, sendMessage]);
 
   const compactToggleButton = isCompact ? (
     <YeonButton

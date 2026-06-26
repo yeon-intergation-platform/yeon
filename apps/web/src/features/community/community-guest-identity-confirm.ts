@@ -3,18 +3,37 @@ export type CommunityGuestIdentity = {
   guestPassword: string;
 };
 
+export type CommunityGuestIdentityInput = Partial<CommunityGuestIdentity>;
+
+export function normalizeCommunityGuestIdentity(
+  identity: CommunityGuestIdentityInput
+): CommunityGuestIdentity {
+  return {
+    guestNickname: identity.guestNickname?.trim() ?? "",
+    guestPassword: identity.guestPassword?.trim() ?? "",
+  };
+}
+
 export function hasCompleteCommunityGuestIdentity(
-  identity: CommunityGuestIdentity
+  identity: CommunityGuestIdentityInput
 ) {
-  return Boolean(
-    identity.guestNickname.trim() && identity.guestPassword.trim()
-  );
+  const normalized = normalizeCommunityGuestIdentity(identity);
+
+  return Boolean(normalized.guestNickname && normalized.guestPassword);
 }
 
 export function canSkipCommunityGuestIdentityConfirm(
-  identity: CommunityGuestIdentity
+  identity: CommunityGuestIdentityInput
 ) {
   return hasCompleteCommunityGuestIdentity(identity);
+}
+
+export function resolveCommunityGuestActorPayload(
+  identity: CommunityGuestIdentityInput
+) {
+  const normalized = normalizeCommunityGuestIdentity(identity);
+
+  return hasCompleteCommunityGuestIdentity(normalized) ? normalized : {};
 }
 
 export async function runCommunityGuestIdentityAction(
@@ -22,7 +41,12 @@ export async function runCommunityGuestIdentityAction(
   run: (identity: CommunityGuestIdentity) => Promise<void>
 ) {
   try {
-    await run(identity);
+    const normalized = normalizeCommunityGuestIdentity(identity);
+    if (!hasCompleteCommunityGuestIdentity(normalized)) {
+      return false;
+    }
+
+    await run(normalized);
     return true;
   } catch {
     return false;

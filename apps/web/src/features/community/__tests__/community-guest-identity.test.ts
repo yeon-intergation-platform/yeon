@@ -10,6 +10,7 @@ import {
 import {
   canSkipCommunityGuestIdentityConfirm,
   hasCompleteCommunityGuestIdentity,
+  resolveCommunityGuestActorPayload,
   runCommunityGuestIdentityAction,
 } from "../community-guest-identity-confirm";
 
@@ -115,6 +116,24 @@ describe("community guest identity", () => {
     ).toBe(false);
   });
 
+  it("feed 액션에 전달할 게스트 작성자 payload를 완성된 인증 정보로만 만든다", () => {
+    expect(
+      resolveCommunityGuestActorPayload({
+        guestNickname: " 테스터 ",
+        guestPassword: " pw ",
+      })
+    ).toEqual({
+      guestNickname: "테스터",
+      guestPassword: "pw",
+    });
+    expect(
+      resolveCommunityGuestActorPayload({
+        guestNickname: "테스터",
+        guestPassword: " ",
+      })
+    ).toEqual({});
+  });
+
   it("닉네임과 비밀번호를 등록한 뒤에만 작성자 확인을 건너뛴다", () => {
     expect(
       canSkipCommunityGuestIdentityConfirm({
@@ -142,11 +161,29 @@ describe("community guest identity", () => {
   });
 
   it("저장된 게스트 인증 액션 성공을 true로 반환한다", async () => {
+    const run = vi.fn(async () => {});
+
     await expect(
       runCommunityGuestIdentityAction(
-        { guestNickname: "테스터", guestPassword: "pw" },
-        async () => {}
+        { guestNickname: " 테스터 ", guestPassword: " pw " },
+        run
       )
     ).resolves.toBe(true);
+    expect(run).toHaveBeenCalledWith({
+      guestNickname: "테스터",
+      guestPassword: "pw",
+    });
+  });
+
+  it("게스트 인증 정보가 비어 있으면 저장 액션을 실행하지 않는다", async () => {
+    const run = vi.fn(async () => {});
+
+    await expect(
+      runCommunityGuestIdentityAction(
+        { guestNickname: "테스터", guestPassword: " " },
+        run
+      )
+    ).resolves.toBe(false);
+    expect(run).not.toHaveBeenCalled();
   });
 });

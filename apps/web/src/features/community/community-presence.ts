@@ -12,6 +12,9 @@ import {
 
 const COMMUNITY_PRESENCE_SESSION_STORAGE_KEY =
   "yeon-community-presence-session";
+const COMMUNITY_PRESENCE_SESSION_PREFIX = "presence-";
+const COMMUNITY_PRESENCE_SESSION_ID_MIN_LENGTH =
+  COMMUNITY_PRESENCE_SESSION_PREFIX.length + 8;
 
 function createFallbackRandomId() {
   return getYeonRandom().toString(36).slice(2, 10);
@@ -20,15 +23,26 @@ function createFallbackRandomId() {
 function createPresenceSessionId() {
   const randomId = createYeonRandomUUID() ?? createFallbackRandomId();
 
-  return `presence-${randomId}-${getYeonNow()}`;
+  return `${COMMUNITY_PRESENCE_SESSION_PREFIX}${randomId}-${getYeonNow()}`;
+}
+
+export function isValidPresenceSessionId(sessionId: string | null | undefined) {
+  const normalized = sessionId?.trim() ?? "";
+
+  return (
+    normalized.length >= COMMUNITY_PRESENCE_SESSION_ID_MIN_LENGTH &&
+    normalized.startsWith(COMMUNITY_PRESENCE_SESSION_PREFIX) &&
+    !/\s/.test(normalized)
+  );
 }
 
 export function readPresenceSessionId() {
   const saved = readYeonSessionStorageItem(
     COMMUNITY_PRESENCE_SESSION_STORAGE_KEY
   );
-  if (saved?.trim()) {
-    return saved;
+  const normalizedSaved = saved?.trim() ?? "";
+  if (isValidPresenceSessionId(normalizedSaved)) {
+    return normalizedSaved;
   }
 
   const created = createPresenceSessionId();

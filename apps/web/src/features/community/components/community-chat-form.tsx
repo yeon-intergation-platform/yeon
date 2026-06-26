@@ -6,6 +6,7 @@ import {
   YeonForm,
   type YeonInputElement,
 } from "@yeon/ui";
+import { COMMUNITY_CHAT_MESSAGE_MAX_LENGTH } from "../community-post-format";
 
 type CommunityChatFormProps = {
   inputRef: RefObject<YeonInputElement | null>;
@@ -40,13 +41,13 @@ export function CommunityChatForm({
         onChange={(event) => onChangeMessageBody(event.target.value)}
         placeholder={feed ? "실시간 채팅 입력" : "메시지 입력"}
         className="h-10 rounded-full px-4 text-[14px]"
-        maxLength={1000}
+        maxLength={COMMUNITY_CHAT_MESSAGE_MAX_LENGTH}
       />
       <YeonButton
         type="submit"
         variant="primary"
         size="sm"
-        disabled={!canSendMessage || !messageBody.trim()}
+        disabled={!canSendMessage}
         className="h-10 rounded-full px-4 text-[13px] font-bold"
       >
         {isSendingMessage ? "전송 중" : "전송"}
