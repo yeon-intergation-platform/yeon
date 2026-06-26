@@ -34,6 +34,20 @@ export type CardSessionValue = {
   logout: () => Promise<void>;
 };
 
+function warnCardSessionBootFailure(error: unknown) {
+  console.warn(
+    "[CardSession] 저장된 세션 검증 실패 — 게이트로 전환합니다.",
+    error
+  );
+}
+
+function warnCardSessionLogoutFailure(error: unknown) {
+  console.warn(
+    "[CardSession] 서버 세션 무효화 실패 — 로컬 토큰은 삭제되나 서버 세션이 남아있을 수 있습니다.",
+    error
+  );
+}
+
 export function useCardSessionState(): CardSessionValue {
   const queryClient = useQueryClient();
   const [phase, setPhase] = useState<CardSessionPhase>("booting");
@@ -62,21 +76,7 @@ export function useCardSessionState(): CardSessionValue {
         return;
       }
 
-      console.warn(
-        "[CardSession] 저장된 세션 검증 실패 — 게이트로 전환합니다.",
-        error
-      );
-      await clearPrimaryAuthSessionToken();
-      setSessionToken(null);
-      setSignedIn(false);
-      setPhase("gate");
-      showYeonAlert(
-        CARD_SERVICE_TEXT.state.errorTitle,
-        getCardServiceErrorMessage(
-          error,
-          "카드 서비스 세션 확인에 실패했습니다."
-        )
-      );
+      await handleBootFailure(error);
       return;
     }
 
@@ -101,6 +101,26 @@ export function useCardSessionState(): CardSessionValue {
     }
 
     setPhase(optedIn ? "ready" : "gate");
+  }
+
+  function applySignedOutGateState() {
+    setSessionToken(null);
+    setSignedIn(false);
+    setPhase("gate");
+  }
+
+  function showBootFailureAlert(error: unknown) {
+    showYeonAlert(
+      CARD_SERVICE_TEXT.state.errorTitle,
+      getCardServiceErrorMessage(error, "카드 서비스 세션 확인에 실패했습니다.")
+    );
+  }
+
+  async function handleBootFailure(error: unknown) {
+    warnCardSessionBootFailure(error);
+    await clearPrimaryAuthSessionToken();
+    applySignedOutGateState();
+    showBootFailureAlert(error);
   }
 
   async function authenticate(nextSessionToken: string) {
@@ -135,17 +155,7 @@ export function useCardSessionState(): CardSessionValue {
 
   async function logout() {
     if (sessionToken) {
-      try {
-        await cardServiceApi.logout(sessionToken);
-      } catch (error) {
-        // idx-147: 서버 세션 무효화 실패는 로컬 로그아웃을 막지 않는다.
-        // 하지만 조용히 삼키지 않고 콘솔에 기록해 좀비 세션 추적이 가능하게 한다.
-        // 운영 환경에서는 telemetry 연동을 권장한다.
-        console.warn(
-          "[CardSession] 서버 세션 무효화 실패 — 로컬 토큰은 삭제되나 서버 세션이 남아있을 수 있습니다.",
-          error
-        );
-      }
+      await invalidateServerSessionForLogout(sessionToken);
     }
 
     await clearPrimaryAuthSessionToken();
@@ -155,6 +165,17 @@ export function useCardSessionState(): CardSessionValue {
     setSignedIn(false);
     setPhase("gate");
     queryClient.removeQueries({ queryKey: cardServiceQueryKeys.all });
+  }
+
+  async function invalidateServerSessionForLogout(token: string) {
+    try {
+      await cardServiceApi.logout(token);
+    } catch (error) {
+      // idx-147: 서버 세션 무효화 실패는 로컬 로그아웃을 막지 않는다.
+      // 하지만 조용히 삼키지 않고 콘솔에 기록해 좀비 세션 추적이 가능하게 한다.
+      // 운영 환경에서는 telemetry 연동을 권장한다.
+      warnCardSessionLogoutFailure(error);
+    }
   }
 
   return {
