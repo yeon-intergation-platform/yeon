@@ -11,9 +11,15 @@ import {
   TYPING_ROOM_GAME_TYPE,
   TYPING_ROOM_LANGUAGE,
   TYPING_ROOM_MODE,
-  TYPING_ROOM_STATUS,
   TYPING_ROOM_TEXT_TYPE,
   TYPING_ROOM_VISIBILITY,
+  canEditTypingRoomSettings,
+  canSendTypingRoomLobbyChat,
+  canStartTypingRoom,
+  canSwitchTypingRoomTeam,
+  canToggleTypingRoomReady,
+  findTypingRoomParticipant,
+  isTypingRoomWaiting,
   type TypingRoomCreateMessage,
   type TypingRoomDifficulty,
   type TypingRoomGameType,
@@ -128,6 +134,8 @@ type TerritoryLobbyPanelDisplayProps = {
 };
 
 type TerritoryLobbyPanelActionProps = {
+  canSwitchTeam: boolean;
+  canToggleReady: boolean;
   isReady: boolean;
   isLeavingRoom: boolean;
   isRoomToolsVisible: boolean;
@@ -188,6 +196,8 @@ function TerritoryLobbyPanel({
   difficultyLabels,
   gameTypeLabels,
   messages,
+  canSwitchTeam,
+  canToggleReady,
   isReady,
   isLeavingRoom,
   isRoomToolsVisible,
@@ -360,6 +370,7 @@ function TerritoryLobbyPanel({
                   <YeonButton
                     type="button"
                     onClick={onSwitchTeam}
+                    disabled={!canSwitchTeam}
                     variant="secondary"
                     size="lg"
                     title={nextTeamLabel}
@@ -371,6 +382,7 @@ function TerritoryLobbyPanel({
                   <YeonButton
                     type="button"
                     onClick={onToggleReady}
+                    disabled={!canToggleReady}
                     variant={isReady ? "secondary" : "primary"}
                     size="lg"
                     className="min-w-[220px] rounded-lg px-5 py-3 text-[15px] font-black"
@@ -925,9 +937,9 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
   ]);
 
   const room = race.roomSnapshot;
-  const me =
-    room?.participants.find((participant) => participant.id === race.mySeat) ??
-    null;
+  const me = room
+    ? findTypingRoomParticipant(room.participants, race.mySeat)
+    : null;
   const voiceParticipants = useMemo(
     () =>
       (room?.participants ?? []).map((participant) => ({
@@ -949,6 +961,10 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
   });
   const isHost = me?.role === "host";
   const isReady = Boolean(me?.isReady);
+  const canEditSettings = canEditTypingRoomSettings(room, me);
+  const canToggleReady = canToggleTypingRoomReady(room, me);
+  const canSwitchTeam = canSwitchTypingRoomTeam(room, me);
+  const canStart = canStartTypingRoom(room, me);
   const inviteOrigin = getYeonLocationOrigin();
   const inviteUrl =
     inviteOrigin && race.roomId
@@ -1000,17 +1016,17 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
 
   const sendSetting = useCallback(
     (payload: RoomSettingsUpdateMessage) => {
-      if (!isHost || room?.status !== TYPING_ROOM_STATUS.WAITING) return;
+      if (!canEditSettings) return;
       setSettingsError(null);
       race.sendRoomSettings(payload);
     },
-    [isHost, room?.status, race]
+    [canEditSettings, race]
   );
 
-  const canSendChat = Boolean(
-    room?.status === TYPING_ROOM_STATUS.WAITING &&
-    chatDraft.trim() &&
-    chatDraft.length <= MAX_LOBBY_CHAT_LENGTH
+  const canSendChat = canSendTypingRoomLobbyChat(
+    room,
+    chatDraft,
+    MAX_LOBBY_CHAT_LENGTH
   );
 
   const onChatDraftChange = useCallback((value: string) => {
@@ -1023,18 +1039,14 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
   }, []);
 
   const onChatSubmit = useCallback(() => {
-    if (!chatDraft.trim()) {
-      return;
-    }
-    if (chatDraft.length > MAX_LOBBY_CHAT_LENGTH) {
-      setChatError(roomText.chatTooLong(MAX_LOBBY_CHAT_LENGTH));
+    if (!canSendTypingRoomLobbyChat(room, chatDraft, MAX_LOBBY_CHAT_LENGTH)) {
       return;
     }
 
     setChatError(null);
     race.sendChat(chatDraft.trim());
     setChatDraft("");
-  }, [chatDraft, race]);
+  }, [chatDraft, race, room]);
 
   const onDeckChange = useCallback(
     async (event: YeonChangeEvent<YeonSelectElement>) => {
@@ -1063,7 +1075,7 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
   );
 
   const onStart = useCallback(async () => {
-    if (!isHost || !room?.canStart) return;
+    if (!canStart || !room) return;
 
     const activeDeck =
       deckState.decks.find((deck) => deck.id === room.selectedDeckId) ??
@@ -1079,15 +1091,7 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
     race.sendStart({
       raceSeed: result.seed ?? undefined,
     });
-  }, [
-    deckState.decks,
-    isHost,
-    race,
-    room?.canStart,
-    room?.language,
-    room?.selectedDeckId,
-    selectedDeck,
-  ]);
+  }, [deckState.decks, canStart, race, room, selectedDeck]);
 
   const onLeaveRoom = useCallback(async () => {
     if (isLeavingRoom) return;
@@ -1213,12 +1217,11 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
   }, [room?.maxParticipants, room?.participants]);
 
   const messages = useMemo(() => room?.messages ?? [], [room?.messages]);
-  const waitingStateLabel =
-    room?.status === TYPING_ROOM_STATUS.WAITING
-      ? roomText.waitingState
-      : room
-        ? statusLabels[room.status]
-        : undefined;
+  const waitingStateLabel = isTypingRoomWaiting(room)
+    ? roomText.waitingState
+    : room
+      ? statusLabels[room.status]
+      : undefined;
 
   if (mode === "create" && seedState.kind === "loading") {
     return <TypingRoomLoadingState message={roomText.selectedDeckLoading} />;
@@ -1257,7 +1260,7 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
     );
   }
 
-  if (room.status !== TYPING_ROOM_STATUS.WAITING) {
+  if (!isTypingRoomWaiting(room)) {
     return (
       <TypingRaceMultiplayerScreen
         race={race}
@@ -1289,6 +1292,8 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
           copied={copied}
           isHost={isHost}
           isReady={isReady}
+          canStart={canStart}
+          canToggleReady={canToggleReady}
           isLeavingRoom={isLeavingRoom}
           roomError={race.roomError}
           territoryHref={`/typing-service/territory?roomId=${encodeURIComponent(
@@ -1297,7 +1302,9 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
           onLeaveRoom={onLeaveRoom}
           onCopyInvite={copyInvite}
           onStart={onStart}
-          onToggleReady={() => race.sendReady(!isReady)}
+          onToggleReady={() => {
+            if (canToggleReady) race.sendReady(!isReady);
+          }}
         />
 
         <TerritoryLobbyPanel
@@ -1308,6 +1315,8 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
           difficultyLabels={difficultyLabels}
           gameTypeLabels={gameTypeLabels}
           messages={messages}
+          canSwitchTeam={canSwitchTeam}
+          canToggleReady={canToggleReady}
           isReady={isReady}
           isLeavingRoom={isLeavingRoom}
           isRoomToolsVisible={showRoomTools}
@@ -1316,8 +1325,12 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
           chatError={chatError}
           canSendChat={canSendChat}
           onLeaveRoom={onLeaveRoom}
-          onSwitchTeam={() => race.sendTeamChange()}
-          onToggleReady={() => race.sendReady(!isReady)}
+          onSwitchTeam={() => {
+            if (canSwitchTeam) race.sendTeamChange();
+          }}
+          onToggleReady={() => {
+            if (canToggleReady) race.sendReady(!isReady);
+          }}
           onToggleRoomTools={() => setShowRoomTools((value) => !value)}
           onChatDraftChange={onChatDraftChange}
           onChatSubmit={onChatSubmit}

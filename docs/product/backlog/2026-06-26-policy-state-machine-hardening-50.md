@@ -28,7 +28,7 @@
 ## 진행 현황
 
 - 목표: 50개
-- 완료: 23개
+- 완료: 28개
 - 진행 중: 타자방/커뮤니티 상태 정책 후보 조사
 
 ## 태스크 체크리스트
@@ -53,20 +53,20 @@
 - [x] 18. mobile 카드방 화면 상태가 shared 정책 함수를 사용하도록 리팩터링
 - [x] 19. 카드방 역할 기본값이 실제 참가자 없음 상태를 가리지 않게 정리
 - [x] 20. 카드방 상태 정책을 race-shared 패키지 테스트로 검증
-- [ ] 21. 타자방 시작 가능 조건의 participant/player 수 경계 조사
-- [ ] 22. 타자방 waiting/in_progress/finished 상태 판정 중복 조사
+- [x] 21. 타자방 시작 가능 조건의 participant/player 수 경계 조사
+- [x] 22. 타자방 waiting/in_progress/finished 상태 판정 중복 조사
 - [ ] 23. 타자방 에러 상태와 재시도 가능 상태 분리
 - [ ] 24. 타자방 결과 표시 가능 조건을 shared 정책으로 고정
 - [ ] 25. 타자방 랜덤 덱 선택 실패 fallback 정책 구체화
-- [ ] 26. 타자방 방장 권한 상태 전이를 테스트로 고정
-- [ ] 27. 타자방 준비 토글 가능 상태를 테스트로 고정
+- [x] 26. 타자방 방장 권한 상태 전이를 테스트로 고정
+- [x] 27. 타자방 준비 토글 가능 상태를 테스트로 고정
 - [ ] 28. 타자방 leave/reconnect 상태 cleanup 경계 고정
 - [ ] 29. territory battle phase 전이 가능 조건 조사
 - [ ] 30. territory battle 결과 확정 전 UI 노출 정책 고정
 - [ ] 31. 커뮤니티 guest identity 확정/수정/초기화 상태 정책 조사
 - [ ] 32. 커뮤니티 presence heartbeat stale cleanup 정책 구체화
-- [ ] 33. 커뮤니티 채팅 전송 가능 조건을 shared 정책으로 고정
-- [ ] 34. 커뮤니티 feed 작성 가능 조건과 게스트 식별 경계 고정
+- [x] 33. 타자방 로비 채팅 전송 가능 조건을 shared 정책으로 고정
+- [ ] 34. 커뮤니티 채팅/feed 작성 가능 조건과 게스트 식별 경계 고정
 - [ ] 35. 카드 서비스 guest/server 저장소 전환 상태 정책 조사
 - [ ] 36. 카드 덱 merge guest 성공/부분 실패/재시도 정책 구체화
 - [ ] 37. 카드 학습 play 상태 전이의 index 경계 고정
@@ -92,3 +92,5 @@
 - 47: `pnpm --filter @yeon/web typecheck`, `pnpm --filter @yeon/web lint`.
 - 48: `pnpm --filter @yeon/mobile typecheck`, `pnpm --filter @yeon/mobile lint`.
 - 49: `pnpm --filter @yeon/race-shared test -- card-room.test.ts`, `pnpm --filter @yeon/race-shared typecheck`, `pnpm --filter @yeon/race-shared lint`.
+- 21~22, 26~27, 33: `packages/race-shared/src/typing-race.ts`의 타자방 로비 정책 함수와 `packages/race-shared/src/typing-room-policy.test.ts` 테스트.
+- 21~22, 26~27, 33: `apps/web/src/features/typing-service/typing-room-screen.tsx`, `typing-room-waiting-header.tsx`가 shared 정책 함수를 사용.
