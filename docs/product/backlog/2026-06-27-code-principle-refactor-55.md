@@ -28,8 +28,8 @@
 ## 진행 현황
 
 - 목표: 55개
-- 완료: 35개
-- 진행 중: 33~45, 47~48, 51~55번 후속 배치 리팩터링
+- 완료: 44개
+- 진행 중: 33, 43~45, 47~48, 51~55번 후속 배치 리팩터링
 
 ## 태스크 체크리스트
 
@@ -66,15 +66,15 @@
 - [x] 31. 타자 territory phase label if-chain을 mapping으로 교체 (OCP/KISS)
 - [x] 32. 타자 territory screen의 raw `"playing"` phase 비교를 shared constant로 교체 (정책 단일화)
 - [ ] 33. 타자 territory screen result publish 조건과 UI 조건의 중복 여부 검증/정리 (상태 전이 명확화)
-- [ ] 34. race-server typing room Date.now 직접 호출을 clock/time provider 사용 가능 지점으로 축소 (시간 기준 분리)
-- [ ] 35. race-server typing room Math.random 기반 participant/message id 생성 정책 검토 및 helper화 (예측 가능성/테스트 가능성)
-- [ ] 36. race-server typing room waiting status guard 반복을 helper로 분리 (DRY)
-- [ ] 37. race-server typing room lobbyMode+waiting guard 반복을 helper로 분리 (DRY)
-- [ ] 38. race-server typing room onMessage handler별 validation 실패 응답 정책 정리 (입력 검증)
-- [ ] 39. race-server territory room Date.now 직접 호출을 clock 기준으로 통일 (시간 기준 분리)
-- [ ] 40. race-server territory player joinedAt 생성 정책을 helper로 분리 (시간 기준 분리)
-- [ ] 41. race-server backend client 내부 token header 생성 중복 여부 정리 (DRY)
-- [ ] 42. race-server card room backend error message에서 Spring 원인 code 보존 여부 검증 (API 계약 일치)
+- [x] 34. race-server typing room Date.now 직접 호출을 clock/time provider 사용 가능 지점으로 축소 (시간 기준 분리)
+- [x] 35. race-server typing room Math.random 기반 participant/message id 생성 정책 검토 및 helper화 (예측 가능성/테스트 가능성)
+- [x] 36. race-server typing room waiting status guard 반복을 helper로 분리 (DRY)
+- [x] 37. race-server typing room lobbyMode+waiting guard 반복을 helper로 분리 (DRY)
+- [x] 38. race-server typing room onMessage handler별 validation 실패 응답 정책 정리 (입력 검증)
+- [x] 39. race-server territory room Date.now 직접 호출을 clock 기준으로 통일 (시간 기준 분리)
+- [x] 40. race-server territory player joinedAt 생성 정책을 helper로 분리 (시간 기준 분리)
+- [x] 41. race-server backend client 내부 token header 생성 중복 여부 정리 (DRY)
+- [x] 42. race-server card room backend error message에서 Spring 원인 code 보존 여부 검증 (API 계약 일치)
 - [ ] 43. 카드 editor image upload catch 블록의 동일 메시지/side-effect 반복 제거 (DRY)
 - [ ] 44. 카드 editor image upload clipboard/paste/drop 실패 유형 분리 (실패 유형 명확화)
 - [ ] 45. 카드 editor HEIC 변환 오류가 원인 예외를 보존하는지 검증/보강 (원인 예외 보존)
@@ -115,3 +115,7 @@
 - 46: `card-markdown-copy-utils.ts`에 카드 마크다운 코드 복사 실패 메시지 생성을 통합하고 `card-markdown-code-block.tsx`, `markdown-content.tsx`가 재사용.
 - 49~50: `@yeon/ui/runtime/ports/card-deck`의 카드 덱 날짜 포맷이 invalid/missing fallback을 보장하고 web/mobile 상세 화면이 동일한 created date formatter를 사용.
 - 46,49~50 검증: `pnpm --filter @yeon/web exec vitest run src/features/card-service/card-deck-format.test.ts src/features/card-service/components/card-markdown-copy-utils.test.ts`, `pnpm --filter @yeon/ui typecheck`, `pnpm --filter @yeon/ui lint`, `pnpm --filter @yeon/web typecheck`, `pnpm --filter @yeon/web lint`, `pnpm --filter @yeon/mobile typecheck`, `pnpm --filter @yeon/mobile lint`, `pnpm verify:parity`, `bash bin/verify-ssot.sh --project-only`, `git diff --check` 통과.
+- 34~38: `typing-race-room.ts`의 시간 기준을 `now()` 경계로 모으고, 방 코드 생성은 `crypto.randomInt`, 메시지/관리자 seed id 생성은 `createRealtimeId`로 통일. waiting/lobby waiting guard와 room error 전송 정책을 private helper로 정리.
+- 39~40: `territory-battle-room.ts`의 시간 기준을 `now()`로 통일하고, `createTerritoryPlayer`의 `joinedAt` 생성 정책을 helper/인자로 분리.
+- 41: `spring-backend-headers.ts`에 Spring internal token/header 생성 정책을 통합하고 card room/typing room backend client가 재사용.
+- 42: `CardRoomBackendHttpError`가 Spring 오류 응답의 `status`, `code`, `detail`을 보존하고 card room error message가 code를 함께 전달.

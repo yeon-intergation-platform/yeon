@@ -67,7 +67,12 @@ import {
   type TerritoryBattleTeam,
 } from "@yeon/race-shared";
 import { type Client, Room } from "@colyseus/core";
-import { createHmac, randomInt, timingSafeEqual } from "node:crypto";
+import {
+  createHmac,
+  randomInt,
+  randomUUID,
+  timingSafeEqual,
+} from "node:crypto";
 import { awardTypingRaceFinished } from "./typing-race-room-backend-client";
 
 type ClockTimer = { clear: () => void };
@@ -505,7 +510,15 @@ function verifyRaceSeedToken(seed: RaceSeedMessage) {
 }
 
 function createRoomCode() {
-  return Math.floor(100000 + Math.random() * 900000).toString();
+  return randomInt(100000, 1000000).toString();
+}
+
+function getTypingRaceNow() {
+  return Date.now();
+}
+
+function createTypingRaceEntropySuffix() {
+  return randomUUID().slice(0, 8);
 }
 
 function normalizeSettings(
@@ -745,7 +758,7 @@ export class TypingRaceRoom extends Room {
 
   private countdownRemaining: number = TYPING_RACE_DEFAULTS.countdownSeconds;
 
-  private startedAt: number = Date.now();
+  private startedAt: number = getTypingRaceNow();
 
   private countdownAccumulator: number = 0;
 
@@ -753,7 +766,7 @@ export class TypingRaceRoom extends Room {
 
   private roomCode: string = createRoomCode();
 
-  private createdAt: number = Date.now();
+  private createdAt: number = getTypingRaceNow();
 
   private lobbyMode: boolean = false;
 
@@ -763,6 +776,26 @@ export class TypingRaceRoom extends Room {
     return resolveTypingSpeedStyle(
       this.roomSeed.languageTag ?? this.settings.language
     );
+  }
+
+  private now() {
+    return getTypingRaceNow();
+  }
+
+  private createRealtimeId(prefix: string, stableSuffix?: string) {
+    return `${prefix}-${this.now()}-${stableSuffix ?? createTypingRaceEntropySuffix()}`;
+  }
+
+  private isWaitingRoom() {
+    return this.status === TYPING_ROOM_STATUS.WAITING;
+  }
+
+  private isWaitingLobbyRoom() {
+    return this.lobbyMode && this.isWaitingRoom();
+  }
+
+  private sendRoomError(client: Client, message: string, code?: string) {
+    client.send(RACE_EVENTS.ROOM_ERROR, code ? { code, message } : { message });
   }
 
   onCreate(options?: TypingRoomCreateMessage) {
@@ -781,7 +814,7 @@ export class TypingRaceRoom extends Room {
     this.countdownRemaining = this.lobbyMode
       ? TYPING_RACE_DEFAULTS.roomCountdownSeconds
       : TYPING_RACE_DEFAULTS.countdownSeconds;
-    this.createdAt = Date.now();
+    this.createdAt = this.now();
     TypingRaceRoom.activeRooms.set(this.roomId, this);
     this.setMetadata(this.createSummary());
 
@@ -857,20 +890,22 @@ export class TypingRaceRoom extends Room {
     const isKnownParticipant = this.participants.has(participantId);
 
     if (this.lifecycle === TYPING_ROOM_LIFECYCLE.CLOSED) {
-      client.send(RACE_EVENTS.ROOM_ERROR, {
-        code: TYPING_ROOM_ERROR_CODE.CLOSED,
-        message: "이미 닫힌 방입니다.",
-      });
+      this.sendRoomError(
+        client,
+        "이미 닫힌 방입니다.",
+        TYPING_ROOM_ERROR_CODE.CLOSED
+      );
       client.leave();
       return;
     }
 
     if (this.lifecycle === TYPING_ROOM_LIFECYCLE.EMPTY_GRACE) {
       if (!isKnownParticipant) {
-        client.send(RACE_EVENTS.ROOM_ERROR, {
-          code: TYPING_ROOM_ERROR_CODE.REJOIN_ONLY,
-          message: "재접속 대기 중인 방입니다.",
-        });
+        this.sendRoomError(
+          client,
+          "재접속 대기 중인 방입니다.",
+          TYPING_ROOM_ERROR_CODE.REJOIN_ONLY
+        );
         client.leave();
         return;
       }
@@ -880,14 +915,15 @@ export class TypingRaceRoom extends Room {
 
     if (
       this.lobbyMode &&
-      this.status !== TYPING_ROOM_STATUS.WAITING &&
+      !this.isWaitingRoom() &&
       this.status !== TYPING_ROOM_STATUS.FINISHED &&
       !isKnownParticipant
     ) {
-      client.send(RACE_EVENTS.ROOM_ERROR, {
-        code: TYPING_ROOM_ERROR_CODE.STARTED,
-        message: "이미 시작된 방입니다.",
-      });
+      this.sendRoomError(
+        client,
+        "이미 시작된 방입니다.",
+        TYPING_ROOM_ERROR_CODE.STARTED
+      );
       client.leave();
       return;
     }
@@ -896,10 +932,11 @@ export class TypingRaceRoom extends Room {
       !isKnownParticipant &&
       this.participants.size >= this.settings.maxParticipants
     ) {
-      client.send(RACE_EVENTS.ROOM_ERROR, {
-        code: TYPING_ROOM_ERROR_CODE.FULL,
-        message: "방이 가득 찼습니다.",
-      });
+      this.sendRoomError(
+        client,
+        "방이 가득 찼습니다.",
+        TYPING_ROOM_ERROR_CODE.FULL
+      );
       client.leave();
       return;
     }
@@ -1028,7 +1065,7 @@ export class TypingRaceRoom extends Room {
       score: 0,
       rank: null,
       isReady: !this.lobbyMode || this.hostId === participantId,
-      joinedAt: Date.now(),
+      joinedAt: this.now(),
       verifiedUserId,
     };
 
@@ -1089,7 +1126,7 @@ export class TypingRaceRoom extends Room {
     const labelIndex = (serial - 1) % ADMIN_SEED_PARTICIPANT_LABELS.length;
     const label = ADMIN_SEED_PARTICIPANT_LABELS[labelIndex] ?? "테스트 팀원";
     return {
-      id: `admin-seed-${this.roomId}-${serial}-${Date.now()}`,
+      id: this.createRealtimeId(`admin-seed-${this.roomId}`, String(serial)),
       label: `${label} ${serial}`,
       characterId: ADMIN_SEED_CHARACTER_IDS[labelIndex] ?? "amane",
       accent:
@@ -1108,7 +1145,7 @@ export class TypingRaceRoom extends Room {
       score: 0,
       rank: null,
       isReady: false,
-      joinedAt: Date.now(),
+      joinedAt: this.now(),
       verifiedUserId: null,
     } satisfies RoomParticipant;
   }
@@ -1116,7 +1153,7 @@ export class TypingRaceRoom extends Room {
   private seedTerritoryTeamParticipants(
     payload: TypingRoomTeamSeedRequest
   ): TypingRoomTeamSeedResult {
-    if (!this.lobbyMode || this.status !== TYPING_ROOM_STATUS.WAITING) {
+    if (!this.isWaitingLobbyRoom()) {
       return {
         ok: false,
         message: "대기 중인 타자방에만 연습 참가자를 추가할 수 있습니다.",
@@ -1172,11 +1209,9 @@ export class TypingRaceRoom extends Room {
   }
 
   private updateTeam(client: Client, message?: RoomTeamChangeMessage) {
-    if (this.status !== TYPING_ROOM_STATUS.WAITING) return;
+    if (!this.isWaitingRoom()) return;
     if (this.settings.gameType !== TYPING_ROOM_GAME_TYPE.TERRITORY) {
-      client.send(RACE_EVENTS.ROOM_ERROR, {
-        message: "팀 이동은 점령전 방에서만 사용할 수 있어요.",
-      });
+      this.sendRoomError(client, "팀 이동은 점령전 방에서만 사용할 수 있어요.");
       return;
     }
 
@@ -1195,9 +1230,10 @@ export class TypingRaceRoom extends Room {
     if (currentTeam === nextTeam) return;
 
     if (!this.hasTerritoryTeamCapacity(nextTeam)) {
-      client.send(RACE_EVENTS.ROOM_ERROR, {
-        message: `${getTerritoryTeamLabel(nextTeam)}에 빈 자리가 없습니다.`,
-      });
+      this.sendRoomError(
+        client,
+        `${getTerritoryTeamLabel(nextTeam)}에 빈 자리가 없습니다.`
+      );
       return;
     }
 
@@ -1702,27 +1738,27 @@ export class TypingRaceRoom extends Room {
 
   private appendSystemMessage(content: string) {
     this.appendChatMessage({
-      id: `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
+      id: this.createRealtimeId("system"),
       messageType: "system",
       content,
-      createdAt: Date.now(),
+      createdAt: this.now(),
     });
   }
 
   private addChat(client: Client, message: RoomChatMessage) {
-    if (this.status !== TYPING_ROOM_STATUS.WAITING) return;
+    if (!this.isWaitingRoom()) return;
     const participantId = this.getParticipantId(client);
     const participant = this.participants.get(participantId);
     if (!participant) return;
     const content = optionalText(message.content, MAX_CHAT_MESSAGE_LENGTH);
     if (!content) return;
     this.appendChatMessage({
-      id: `${Date.now()}-${participantId}`,
+      id: this.createRealtimeId("chat", participantId),
       senderId: participant.id,
       senderLabel: participant.label,
       messageType: "user",
       content,
-      createdAt: Date.now(),
+      createdAt: this.now(),
     });
     const lastMessage = this.lobbyMessages[this.lobbyMessages.length - 1];
     if (lastMessage) {
@@ -1732,11 +1768,9 @@ export class TypingRaceRoom extends Room {
   }
 
   private updateSettings(client: Client, message: RoomSettingsUpdateMessage) {
-    if (!this.lobbyMode || this.status !== TYPING_ROOM_STATUS.WAITING) return;
+    if (!this.isWaitingLobbyRoom()) return;
     if (this.getParticipantId(client) !== this.hostId) {
-      client.send(RACE_EVENTS.ROOM_ERROR, {
-        message: "방장만 설정을 변경할 수 있어요.",
-      });
+      this.sendRoomError(client, "방장만 설정을 변경할 수 있어요.");
       return;
     }
 
@@ -1762,9 +1796,10 @@ export class TypingRaceRoom extends Room {
         next.maxParticipants
       );
       if (normalized < this.participants.size) {
-        client.send(RACE_EVENTS.ROOM_ERROR, {
-          message: "현재 참여자 수보다 적은 인원으로 변경할 수 없습니다.",
-        });
+        this.sendRoomError(
+          client,
+          "현재 참여자 수보다 적은 인원으로 변경할 수 없습니다."
+        );
         return;
       }
       if (normalized !== next.maxParticipants) {
@@ -1903,7 +1938,7 @@ export class TypingRaceRoom extends Room {
   }
 
   private updateReady(client: Client, message: RoomReadyMessage) {
-    if (this.status !== TYPING_ROOM_STATUS.WAITING) return;
+    if (!this.isWaitingRoom()) return;
     const participantId = this.getParticipantId(client);
     const participant = this.participants.get(participantId);
     if (!participant) return;
@@ -1924,23 +1959,20 @@ export class TypingRaceRoom extends Room {
   }
 
   private startFromLobby(client: Client, message?: RoomStartMessage) {
-    if (this.status !== TYPING_ROOM_STATUS.WAITING) return;
+    if (!this.isWaitingRoom()) return;
     if (this.getParticipantId(client) !== this.hostId) {
-      client.send(RACE_EVENTS.ROOM_ERROR, {
-        message: "방장만 게임을 시작할 수 있어요.",
-      });
+      this.sendRoomError(client, "방장만 게임을 시작할 수 있어요.");
       return;
     }
     if (this.settings.gameType === TYPING_ROOM_GAME_TYPE.TERRITORY) {
-      client.send(RACE_EVENTS.ROOM_ERROR, {
-        message: "점령전 방에서는 점령전 입장으로 게임을 시작해주세요.",
-      });
+      this.sendRoomError(
+        client,
+        "점령전 방에서는 점령전 입장으로 게임을 시작해주세요."
+      );
       return;
     }
     if (!this.canStart()) {
-      client.send(RACE_EVENTS.ROOM_ERROR, {
-        message: "아직 준비하지 않은 참여자가 있어요.",
-      });
+      this.sendRoomError(client, "아직 준비하지 않은 참여자가 있어요.");
       return;
     }
 
@@ -1993,7 +2025,7 @@ export class TypingRaceRoom extends Room {
     this.applyParticipantMetrics(participant, message);
     participant.progress = 100;
     participant.elapsedTimeMs = this.serverElapsedTimeMs();
-    participant.finishedAt = Date.now();
+    participant.finishedAt = this.now();
     participant.score = calculateTypingScore(
       participant.cpm,
       participant.accuracy
@@ -2118,7 +2150,7 @@ export class TypingRaceRoom extends Room {
   }
 
   private serverElapsedTimeMs() {
-    return normalizeNonNegativeInteger(Date.now() - this.startedAt);
+    return normalizeNonNegativeInteger(this.now() - this.startedAt);
   }
 
   private updateRanks() {
@@ -2150,7 +2182,7 @@ export class TypingRaceRoom extends Room {
   }
 
   private tick(deltaTime: number) {
-    if (this.status === TYPING_ROOM_STATUS.WAITING) {
+    if (this.isWaitingRoom()) {
       return;
     }
 
@@ -2164,7 +2196,7 @@ export class TypingRaceRoom extends Room {
         if (this.countdownRemaining === 0) {
           this.stage = TYPING_RACE_STAGE.LIVE;
           this.status = TYPING_ROOM_STATUS.LIVE;
-          this.startedAt = Date.now();
+          this.startedAt = this.now();
           if (!this.lobbyMode) {
             this.lock();
           }
@@ -2173,7 +2205,7 @@ export class TypingRaceRoom extends Room {
     }
 
     if (this.stage === TYPING_RACE_STAGE.LIVE) {
-      const elapsedSeconds = (Date.now() - this.startedAt) / 1000;
+      const elapsedSeconds = (this.now() - this.startedAt) / 1000;
       const promptTypingUnits = Math.max(
         1,
         countTypingMetricUnits(this.roomSeed.prompt, this.speedStyle)
@@ -2332,7 +2364,7 @@ export class TypingRaceRoom extends Room {
         score: 0,
         rank: null,
         isReady: true,
-        joinedAt: Date.now(),
+        joinedAt: this.now(),
         // 벤치마크(봇)는 로그인 사용자가 아니므로 항상 검증된 userId 없음.
         verifiedUserId: null,
       });
@@ -2342,7 +2374,7 @@ export class TypingRaceRoom extends Room {
   private resetRaceClock(seconds: number) {
     this.stage = TYPING_RACE_STAGE.COUNTDOWN;
     this.countdownRemaining = seconds;
-    this.startedAt = Date.now();
+    this.startedAt = this.now();
     this.countdownAccumulator = 0;
     this.participants.forEach((participant) => {
       participant.progress = 0;

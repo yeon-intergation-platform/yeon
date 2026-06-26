@@ -1,6 +1,12 @@
 import type { CardRoomDetailDto } from "@yeon/race-shared";
+import { mergeSpringInternalHeaders } from "./spring-backend-headers";
 
 type CardRoomResponse = { room: CardRoomDetailDto };
+type CardRoomBackendErrorBody = {
+  message?: unknown;
+  code?: unknown;
+  [key: string]: unknown;
+};
 
 type CardRoomBackendRequestInit = Omit<RequestInit, "headers"> & {
   headers?: RequestInit["headers"];
@@ -8,6 +14,30 @@ type CardRoomBackendRequestInit = Omit<RequestInit, "headers"> & {
 };
 
 const DEFAULT_BACKEND_BASE_URL = "http://127.0.0.1:8081";
+
+export class CardRoomBackendHttpError extends Error {
+  readonly status: number;
+  readonly code?: string;
+  readonly detail?: CardRoomBackendErrorBody;
+
+  constructor({
+    status,
+    message,
+    code,
+    detail,
+  }: {
+    status: number;
+    message: string;
+    code?: string;
+    detail?: CardRoomBackendErrorBody;
+  }) {
+    super(message);
+    this.name = "CardRoomBackendHttpError";
+    this.status = status;
+    this.code = code;
+    this.detail = detail;
+  }
+}
 
 function backendBaseUrl() {
   const raw =
@@ -18,25 +48,48 @@ function backendBaseUrl() {
     : DEFAULT_BACKEND_BASE_URL;
 }
 
-function springHeaders(participantId?: string) {
-  const headers: Record<string, string> = { accept: "application/json" };
-  const token = process.env.SPRING_INTERNAL_TOKEN?.trim();
-  if (token) headers["X-Yeon-Internal-Token"] = token;
-  if (participantId) headers["X-Yeon-Participant-Id"] = participantId;
-  return headers;
-}
-
 function mergeSpringHeaders(
   participantId?: string,
   headers?: RequestInit["headers"]
 ) {
-  const merged = new Headers(springHeaders(participantId));
-  if (headers) {
-    new Headers(headers).forEach((value, key) => {
-      merged.set(key, value);
-    });
+  return mergeSpringInternalHeaders(
+    { "X-Yeon-Participant-Id": participantId },
+    headers
+  );
+}
+
+function parseCardRoomBackendJson(text: string) {
+  if (!text) return null;
+  try {
+    return JSON.parse(text) as unknown;
+  } catch {
+    return null;
   }
-  return merged;
+}
+
+function normalizeCardRoomBackendErrorBody(
+  parsed: unknown
+): CardRoomBackendErrorBody | undefined {
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+    return undefined;
+  }
+  return parsed as CardRoomBackendErrorBody;
+}
+
+function getCardRoomBackendErrorMessage(
+  errorBody: CardRoomBackendErrorBody | undefined
+) {
+  return typeof errorBody?.message === "string" && errorBody.message.trim()
+    ? errorBody.message
+    : "카드방 서버 요청에 실패했습니다.";
+}
+
+function getCardRoomBackendErrorCode(
+  errorBody: CardRoomBackendErrorBody | undefined
+) {
+  return typeof errorBody?.code === "string" && errorBody.code.trim()
+    ? errorBody.code
+    : undefined;
 }
 
 async function readCardRoomBackendJson<T>(
@@ -48,9 +101,15 @@ async function readCardRoomBackendJson<T>(
     headers: mergeSpringHeaders(participantId, headers),
   });
   const text = await response.text();
-  const parsed = text ? JSON.parse(text) : null;
+  const parsed = parseCardRoomBackendJson(text);
   if (!response.ok) {
-    throw new Error(parsed?.message || "카드방 서버 요청에 실패했습니다.");
+    const errorBody = normalizeCardRoomBackendErrorBody(parsed);
+    throw new CardRoomBackendHttpError({
+      status: response.status,
+      message: getCardRoomBackendErrorMessage(errorBody),
+      code: getCardRoomBackendErrorCode(errorBody),
+      detail: errorBody,
+    });
   }
   return parsed as T;
 }
