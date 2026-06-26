@@ -330,6 +330,14 @@ export type TypingRoomParticipantSnapshot = {
   rank: number | null;
 };
 
+export const TYPING_ROOM_PARTICIPANT_ROLE = {
+  HOST: "host",
+  GUEST: "guest",
+} as const;
+
+export type TypingRoomParticipantRole =
+  (typeof TYPING_ROOM_PARTICIPANT_ROLE)[keyof typeof TYPING_ROOM_PARTICIPANT_ROLE];
+
 export type TypingRoomChatMessage = {
   id: string;
   senderId?: string | null;
@@ -426,6 +434,18 @@ export function findTypingRoomParticipant<
   return (
     participants.find((participant) => participant.id === participantId) ?? null
   );
+}
+
+export function isTypingRoomHostParticipant<
+  T extends Pick<TypingRoomParticipantPolicyState, "role">,
+>(participant: T | null | undefined): boolean {
+  return participant?.role === TYPING_ROOM_PARTICIPANT_ROLE.HOST;
+}
+
+export function isTypingRoomGuestParticipant<
+  T extends Pick<TypingRoomParticipantPolicyState, "role">,
+>(participant: T | null | undefined): boolean {
+  return participant?.role === TYPING_ROOM_PARTICIPANT_ROLE.GUEST;
 }
 
 export function isTypingRoomWaiting(

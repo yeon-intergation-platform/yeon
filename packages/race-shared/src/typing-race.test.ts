@@ -5,8 +5,11 @@ import {
   clampPercent,
   clampRaceProgress,
   countTypingMetricUnits,
+  isTypingRoomGuestParticipant,
+  isTypingRoomHostParticipant,
   rankTypingResults,
   resolveTypingSpeedStyle,
+  TYPING_ROOM_PARTICIPANT_ROLE,
   TYPING_SPEED_STYLE,
   toWpmFromCpm,
   type RankableTypingResult,
@@ -120,5 +123,24 @@ describe("typing race scoring", () => {
       "slow",
     ]);
     expect(ranked.map((item) => item.rank)).toEqual([1, 2, 3, 4]);
+  });
+});
+
+describe("typing room participant role helpers", () => {
+  it("checks host/guest roles through shared constants", () => {
+    expect(
+      isTypingRoomHostParticipant({
+        id: "host",
+        role: TYPING_ROOM_PARTICIPANT_ROLE.HOST,
+        isReady: false,
+      })
+    ).toBe(true);
+    expect(
+      isTypingRoomGuestParticipant({
+        id: "guest",
+        role: TYPING_ROOM_PARTICIPANT_ROLE.GUEST,
+        isReady: true,
+      })
+    ).toBe(true);
   });
 });

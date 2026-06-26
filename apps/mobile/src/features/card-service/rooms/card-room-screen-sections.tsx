@@ -18,16 +18,16 @@ import { cardRoomScreenStyles as styles } from "./card-room-screen-styles";
 
 const T = CARD_SERVICE_TEXT.rooms;
 
+const CARD_ROOM_ROLE_LABELS: Record<CardRoomRole, string> = {
+  CHECKER: T.roleChecker,
+  MEMORIZER: T.roleMemorizer,
+  UNASSIGNED: T.roleUnassigned,
+};
+
+const ASSIGNABLE_CARD_ROOM_ROLES = ["MEMORIZER", "CHECKER"] as const;
+
 function getCardRoomRoleLabel(role: CardRoomRole): string {
-  if (role === "MEMORIZER") {
-    return T.roleMemorizer;
-  }
-
-  if (role === "CHECKER") {
-    return T.roleChecker;
-  }
-
-  return T.roleUnassigned;
+  return CARD_ROOM_ROLE_LABELS[role];
 }
 
 // idx-123: 표시 전 제어문자 제거 + 최대 길이 슬라이스.
@@ -120,14 +120,13 @@ export function WaitingControls({
     <YeonView style={styles.section}>
       <YeonText style={styles.sectionTitle}>{T.waitingTitle}</YeonText>
       <YeonView style={styles.roleRow}>
-        {(["MEMORIZER", "CHECKER"] as const).map((role) => {
+        {ASSIGNABLE_CARD_ROOM_ROLES.map((role) => {
           const active = myRole === role;
+          const roleLabel = getCardRoomRoleLabel(role);
           return (
             <YeonButton
               accessibilityRole="button"
-              aria-label={
-                role === "MEMORIZER" ? T.roleMemorizer : T.roleChecker
-              }
+              aria-label={roleLabel}
               key={role}
               onPress={() => onChooseRole(role)}
               style={[styles.roleChip, active && styles.roleChipActive]}
@@ -135,7 +134,7 @@ export function WaitingControls({
               <YeonText
                 style={[styles.roleText, active && styles.roleTextActive]}
               >
-                {role === "MEMORIZER" ? T.roleMemorizer : T.roleChecker}
+                {roleLabel}
               </YeonText>
             </YeonButton>
           );
