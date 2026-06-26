@@ -40,6 +40,16 @@ function extractMessage(parsed: unknown) {
     : null;
 }
 
+export function resolveCardRoomsSpringErrorPayload(
+  parsed: unknown,
+  fallback: string
+) {
+  return {
+    code: extractSpringErrorCode(parsed),
+    message: extractMessage(parsed) ?? fallback,
+  };
+}
+
 export class CardRoomsSpringBackendHttpError extends Error {
   readonly code?: string;
   constructor(
@@ -76,10 +86,11 @@ async function fetchSpring<T>(
   const raw = await response.text();
   const parsed = tryParseJson(raw);
   if (!response.ok) {
+    const errorPayload = resolveCardRoomsSpringErrorPayload(parsed, fallback);
     throw new CardRoomsSpringBackendHttpError(
       response.status,
-      extractMessage(parsed) ?? fallback,
-      extractSpringErrorCode(parsed)
+      errorPayload.message,
+      errorPayload.code
     );
   }
   return parsed as T;

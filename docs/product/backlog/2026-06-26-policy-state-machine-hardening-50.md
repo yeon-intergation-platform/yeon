@@ -28,8 +28,8 @@
 ## 진행 현황
 
 - 목표: 50개
-- 완료: 42개
-- 진행 중: 카드 저장소/API 경계 상태 정책 후보 조사
+- 완료: 49개
+- 진행 중: 장부/작업 로그/PR 증거 정합성 점검
 
 ## 태스크 체크리스트
 
@@ -67,17 +67,17 @@
 - [x] 32. 커뮤니티 presence heartbeat stale cleanup 정책 구체화
 - [x] 33. 타자방 로비 채팅 전송 가능 조건을 shared 정책으로 고정
 - [x] 34. 커뮤니티 채팅/feed 작성 가능 조건과 게스트 식별 경계 고정
-- [ ] 35. 카드 서비스 guest/server 저장소 전환 상태 정책 조사
-- [ ] 36. 카드 덱 merge guest 성공/부분 실패/재시도 정책 구체화
+- [x] 35. 카드 서비스 guest/server 저장소 전환 상태 정책 조사
+- [x] 36. 카드 덱 merge guest 성공/부분 실패/재시도 정책 구체화
 - [x] 37. 카드 학습 play 상태 전이의 index 경계 고정
 - [x] 38. 카드 학습 review result 중복 입력 방지 경계 고정
 - [x] 39. 카드 import parser 실패 정책과 UI 상태 연결 조사
 - [x] 40. 카드 asset upload 실패/취소/성공 상태 정책 구체화
-- [ ] 41. queryKey 상태 원천이 web/mobile에서 동일한지 검증
-- [ ] 42. route-state search params 정책의 null/blank 경계 검증
-- [ ] 43. API route BFF 에러 변환 정책에서 status/code 누락 조사
-- [ ] 44. Spring-backed card room BFF auth/session 실패 경계 고정
-- [ ] 45. race-server card room participant token 요구 정책 문서화/검증
+- [x] 41. queryKey 상태 원천이 web/mobile에서 동일한지 검증
+- [x] 42. route-state search params 정책의 null/blank 경계 검증
+- [x] 43. API route BFF 에러 변환 정책에서 status/code 누락 조사
+- [x] 44. Spring-backed card room BFF auth/session 실패 경계 고정
+- [x] 45. race-server card room participant token 요구 정책 문서화/검증
 - [x] 46. Universal UI parity registry에 새 shared 상태 정책 필요 여부 검토
 - [x] 47. 관련 web lint/typecheck 통과
 - [x] 48. 관련 mobile typecheck 통과
@@ -115,3 +115,10 @@
 - 29~30: `apps/race-server/src/rooms/territory-battle-room.ts`가 territory phase 전이, submit phase 오류, result publish 조건을 shared 정책으로 판정.
 - 29~30: `pnpm --filter @yeon/race-shared test -- territory-battle.test.ts` 결과 4개 파일/32개 테스트 통과.
 - 29~30: `pnpm --filter @yeon/race-shared typecheck`, `pnpm --filter @yeon/race-shared lint`, `pnpm --filter @yeon/race-server typecheck`, `pnpm --filter @yeon/race-server lint`, `bash bin/verify-ssot.sh --project-only`, `git diff --check` 통과.
+- 35~36: `apps/web/src/features/card-service/hooks/use-merge-guest.ts`의 `resolveMergeGuestCleanupPublicIds`가 서버 생성 deck count와 dump snapshot 수가 일치할 때만 로컬 guest snapshot을 정리.
+- 41: `apps/web/src/features/card-service/card-service-query-keys.test.ts`가 web adapter와 `@yeon/ui/runtime/ports/card-deck` queryKey SSOT 동일성을 검증. mobile은 기존 `apps/mobile/src/services/card-service/query-keys.test.ts`가 같은 SSOT 값을 검증.
+- 42: `apps/web/src/lib/route-state/search-params.test.ts`가 null/undefined/blank 삭제, false/0 보존, CSV normalize, candidate narrowing 경계를 검증.
+- 43~44: `apps/web/src/server/card-rooms-spring-client.ts`의 `resolveCardRoomsSpringErrorPayload`와 `card-rooms-spring-client.test.ts`가 Spring BFF error status/code/message 보존과 fallback message 경계를 검증.
+- 45: `apps/race-server/src/rooms/card-room-participant-token.test.ts`가 `SPRING_INTERNAL_TOKEN` 미설정 legacy mode와 설정 시 HMAC participant token 필수 검증 경계를 고정.
+- 35~36, 41~45: `pnpm --filter @yeon/web test -- src/features/card-service/card-service-query-keys.test.ts src/features/card-service/hooks/use-merge-guest.test.ts src/lib/route-state/search-params.test.ts src/server/card-rooms-spring-client.test.ts` 결과 web Vitest 232개 파일/1028개 테스트 통과.
+- 35~36, 41~45: `pnpm --filter @yeon/web typecheck`, `pnpm --filter @yeon/web lint`, `pnpm --filter @yeon/race-server typecheck`, `pnpm --filter @yeon/race-server lint` 통과.
