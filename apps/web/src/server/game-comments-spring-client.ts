@@ -27,14 +27,22 @@ const USER_NAME_HEADER = "X-Yeon-User-Name";
 const USER_AVATAR_HEADER = "X-Yeon-User-Avatar";
 const USER_ROLE_HEADER = "X-Yeon-User-Role";
 
+function encodeHeaderValue(value: string) {
+  return encodeURIComponent(value);
+}
+
 function buildHeaders(viewer: CommentViewer | null, withBody: boolean) {
   const headers = buildSpringBffHeaders(
     withBody ? { "content-type": "application/json" } : undefined,
     { userId: viewer?.id ?? null }
   );
   if (viewer) {
-    if (viewer.displayName) headers.set(USER_NAME_HEADER, viewer.displayName);
-    if (viewer.avatarUrl) headers.set(USER_AVATAR_HEADER, viewer.avatarUrl);
+    if (viewer.displayName) {
+      headers.set(USER_NAME_HEADER, encodeHeaderValue(viewer.displayName));
+    }
+    if (viewer.avatarUrl) {
+      headers.set(USER_AVATAR_HEADER, encodeHeaderValue(viewer.avatarUrl));
+    }
     headers.set(USER_ROLE_HEADER, viewer.isAdmin ? "admin" : "user");
   }
   return headers;
