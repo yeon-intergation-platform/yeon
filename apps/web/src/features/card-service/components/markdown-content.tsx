@@ -68,6 +68,7 @@ import {
   applyCardEditorYouTubeIframeAttributes,
   replaceStandaloneCardEditorYouTubeLinksWithEmbeds,
 } from "./card-editor-youtube-utils";
+import { buildCardMarkdownCopyErrorMessage } from "./card-markdown-copy-utils";
 
 interface MarkdownContentProps {
   children: string;
@@ -79,10 +80,6 @@ interface MarkdownContentProps {
 interface MarkdownCodeElementProps {
   children?: ReactNode;
   className?: string;
-}
-
-function buildMarkdownCodeCopyErrorMessage(codeLength: number) {
-  return `마크다운 코드 클립보드 복사에 실패했습니다. 복사 대상 길이: ${codeLength}자. 브라우저 클립보드 권한 또는 보안 컨텍스트를 확인해 주세요.`;
 }
 
 const baseTextClass = "whitespace-pre-wrap break-words";
@@ -577,7 +574,12 @@ function decorateHtmlCodeBlocks(
       copyYeonClipboardText(codeText.replace(/\n$/, ""))
         .then((copiedSuccessfully) => {
           if (!copiedSuccessfully) {
-            throw new Error(buildMarkdownCodeCopyErrorMessage(codeText.length));
+            throw new Error(
+              buildCardMarkdownCopyErrorMessage({
+                targetLabel: "마크다운 코드",
+                codeLength: codeText.length,
+              })
+            );
           }
           setYeonNodeTextContent(copyButton, "복사됨");
           scheduleYeonTimeout(() => {

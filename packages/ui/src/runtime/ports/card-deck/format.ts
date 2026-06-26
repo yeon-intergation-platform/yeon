@@ -11,9 +11,27 @@ const DECK_UPDATED_DATE_FORMAT = new Intl.DateTimeFormat("ko-KR", {
   day: "numeric",
 });
 
-export function formatYeonCardDeckUpdatedDate(iso: string): string {
-  return DECK_UPDATED_DATE_FORMAT.format(new Date(iso));
+export const CARD_DECK_INVALID_DATE_LABEL = "-";
+
+function parseCardDeckDate(iso?: string | null): Date | null {
+  if (!iso) {
+    return null;
+  }
+
+  const date = new Date(iso);
+  return Number.isNaN(date.getTime()) ? null : date;
 }
+
+export function formatYeonCardDeckUpdatedDate(iso?: string | null): string {
+  const date = parseCardDeckDate(iso);
+  if (!date) {
+    return CARD_DECK_INVALID_DATE_LABEL;
+  }
+
+  return DECK_UPDATED_DATE_FORMAT.format(date);
+}
+
+export const formatYeonCardDeckCreatedDate = formatYeonCardDeckUpdatedDate;
 
 export function formatCardDeckMeta(deck: CardDeckDto): string {
   return `카드 ${deck.itemCount}장 · 업데이트 ${formatYeonCardDeckUpdatedDate(

@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import type { CardDeckDto } from "@yeon/api-contract/card-decks";
+import { formatYeonCardDeckCreatedDate } from "@yeon/ui/runtime/ports/card-deck";
 import { resolveYeonWebPath } from "@yeon/ui/runtime/ports";
 import { analyticsEvents, trackEvent } from "@/lib/analytics";
 import { YEON_WEB_SHARED_CLASS as SHARED_FEATURE_CLASS } from "@yeon/ui/theme/web-style-tokens";
@@ -27,18 +28,6 @@ interface DeckDetailHeaderProps {
   onRequestExport?: () => void;
 }
 
-function formatDate(value: string): string {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return "-";
-  }
-  return new Intl.DateTimeFormat("ko-KR", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(date);
-}
-
 export function DeckDetailHeader({
   deck,
   cardCount,
@@ -52,7 +41,7 @@ export function DeckDetailHeader({
   const [description, setDescription] = useState(deck.description ?? "");
   const updateMutation = useUpdateDeck(deck.id);
   const isSaving = updateMutation.isPending;
-  const createdDate = formatDate(deck.createdAt);
+  const createdDate = formatYeonCardDeckCreatedDate(deck.createdAt);
   const hasCards = cardCount > 0;
 
   const canSave = title.trim().length > 0 && !isSaving;
