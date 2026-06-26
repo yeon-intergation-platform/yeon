@@ -1,4 +1,8 @@
-import type { CardRoomSummaryDto } from "@yeon/api-contract/card-rooms";
+import {
+  CARD_ROOM_LOBBY_FILTER,
+  filterCardRoomLobbyRooms,
+  type CardRoomLobbyFilter,
+} from "@yeon/race-shared";
 import {
   useYeonQuery as useQuery,
   useYeonRouter as useRouter,
@@ -10,51 +14,28 @@ import { cardRoomApi } from "../../../services/card-rooms/client";
 import { CARD_SERVICE_TEXT } from "../card-service-copy";
 import { getCardRoomHref } from "./card-room-lobby-route";
 
+export type { CardRoomLobbyFilter } from "@yeon/race-shared";
+
 export const CARD_ROOM_LOBBY_FILTERS = [
-  { label: CARD_SERVICE_TEXT.rooms.filterAll, value: "all" },
-  { label: CARD_SERVICE_TEXT.rooms.filterPublic, value: "public" },
-  { label: CARD_SERVICE_TEXT.rooms.filterAvailable, value: "available" },
+  {
+    label: CARD_SERVICE_TEXT.rooms.filterAll,
+    value: CARD_ROOM_LOBBY_FILTER.ALL,
+  },
+  {
+    label: CARD_SERVICE_TEXT.rooms.filterPublic,
+    value: CARD_ROOM_LOBBY_FILTER.PUBLIC,
+  },
+  {
+    label: CARD_SERVICE_TEXT.rooms.filterAvailable,
+    value: CARD_ROOM_LOBBY_FILTER.AVAILABLE,
+  },
 ] as const;
-
-export type CardRoomLobbyFilter =
-  (typeof CARD_ROOM_LOBBY_FILTERS)[number]["value"];
-
-function matchesFilter(
-  room: CardRoomSummaryDto,
-  selectedFilter: CardRoomLobbyFilter
-) {
-  return (
-    selectedFilter === "all" ||
-    (selectedFilter === "public" && room.visibility === "public") ||
-    (selectedFilter === "available" && room.status === "waiting")
-  );
-}
-
-function matchesKeyword(room: CardRoomSummaryDto, keyword: string) {
-  return (
-    keyword.length === 0 ||
-    room.title.toLowerCase().includes(keyword) ||
-    room.deckTitle.toLowerCase().includes(keyword) ||
-    room.hostLabel.toLowerCase().includes(keyword)
-  );
-}
-
-function filterRooms(
-  rooms: CardRoomSummaryDto[],
-  selectedFilter: CardRoomLobbyFilter,
-  searchKeyword: string
-) {
-  const keyword = searchKeyword.trim().toLowerCase();
-  return rooms.filter(
-    (room) =>
-      matchesFilter(room, selectedFilter) && matchesKeyword(room, keyword)
-  );
-}
 
 export function useCardRoomLobbyState() {
   const router = useRouter();
-  const [selectedFilter, setSelectedFilter] =
-    useState<CardRoomLobbyFilter>("all");
+  const [selectedFilter, setSelectedFilter] = useState<CardRoomLobbyFilter>(
+    CARD_ROOM_LOBBY_FILTER.ALL
+  );
   const [searchKeyword, setSearchKeyword] = useState("");
   const [isCreateOpen, setCreateOpen] = useState(false);
 
@@ -64,7 +45,7 @@ export function useCardRoomLobbyState() {
   });
   const rooms = roomsQuery.data?.rooms ?? [];
   const filteredRooms = useMemo(
-    () => filterRooms(rooms, selectedFilter, searchKeyword),
+    () => filterCardRoomLobbyRooms(rooms, selectedFilter, searchKeyword),
     [rooms, searchKeyword, selectedFilter]
   );
 

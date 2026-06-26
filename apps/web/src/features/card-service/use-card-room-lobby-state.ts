@@ -2,41 +2,23 @@
 
 import { useCallback, useMemo, useState } from "react";
 import type { CardRoomSummaryDto } from "@yeon/api-contract/card-rooms";
+import {
+  CARD_ROOM_LOBBY_FILTER,
+  filterCardRoomLobbyRooms,
+  type CardRoomLobbyFilter,
+} from "@yeon/race-shared";
 import { useTypingSettings } from "@/features/typing-service/use-typing-settings";
 import { useCardRoomList, useCardRoomProfile } from "./hooks";
 
 export const CARD_ROOM_LOBBY_FILTERS = [
-  { label: "전체", value: "all" },
-  { label: "공개방", value: "public" },
-  { label: "입장 가능", value: "available" },
+  { label: "전체", value: CARD_ROOM_LOBBY_FILTER.ALL },
+  { label: "공개방", value: CARD_ROOM_LOBBY_FILTER.PUBLIC },
+  { label: "입장 가능", value: CARD_ROOM_LOBBY_FILTER.AVAILABLE },
 ] as const;
-
-export type CardRoomLobbyFilter =
-  (typeof CARD_ROOM_LOBBY_FILTERS)[number]["value"];
 
 const EMPTY_CARD_ROOMS: CardRoomSummaryDto[] = [];
 
 type CardRoomLobbyListState = "loading" | "error" | "empty" | "ready";
-
-function filterCardRoomLobbyRooms(
-  rooms: CardRoomSummaryDto[],
-  selectedFilter: CardRoomLobbyFilter,
-  searchKeyword: string
-) {
-  const keyword = searchKeyword.trim().toLowerCase();
-  return rooms.filter((room) => {
-    const matchesFilter =
-      selectedFilter === "all" ||
-      (selectedFilter === "public" && room.visibility === "public") ||
-      (selectedFilter === "available" && room.status === "waiting");
-    const matchesSearch =
-      keyword.length === 0 ||
-      room.title.toLowerCase().includes(keyword) ||
-      room.deckTitle.toLowerCase().includes(keyword) ||
-      room.hostLabel.toLowerCase().includes(keyword);
-    return matchesFilter && matchesSearch;
-  });
-}
 
 function deriveCardRoomLobbyListState(
   isLoading: boolean,
@@ -55,8 +37,9 @@ function deriveCardRoomLobbyListState(
 }
 
 export function useCardRoomLobbyState() {
-  const [selectedFilter, setSelectedFilter] =
-    useState<CardRoomLobbyFilter>("all");
+  const [selectedFilter, setSelectedFilter] = useState<CardRoomLobbyFilter>(
+    CARD_ROOM_LOBBY_FILTER.ALL
+  );
   const [searchKeyword, setSearchKeyword] = useState("");
   const [isCreateModalOpen, setCreateModalOpen] = useState(false);
   const { profile, loaded: profileLoaded } = useCardRoomProfile();
