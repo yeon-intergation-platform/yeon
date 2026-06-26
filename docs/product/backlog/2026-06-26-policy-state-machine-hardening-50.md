@@ -28,7 +28,7 @@
 ## 진행 현황
 
 - 목표: 50개
-- 완료: 31개
+- 완료: 34개
 - 진행 중: 타자방/커뮤니티/카드 상태 정책 후보 조사
 
 ## 태스크 체크리스트
@@ -69,8 +69,8 @@
 - [x] 34. 커뮤니티 채팅/feed 작성 가능 조건과 게스트 식별 경계 고정
 - [ ] 35. 카드 서비스 guest/server 저장소 전환 상태 정책 조사
 - [ ] 36. 카드 덱 merge guest 성공/부분 실패/재시도 정책 구체화
-- [ ] 37. 카드 학습 play 상태 전이의 index 경계 고정
-- [ ] 38. 카드 학습 review result 중복 입력 방지 경계 고정
+- [x] 37. 카드 학습 play 상태 전이의 index 경계 고정
+- [x] 38. 카드 학습 review result 중복 입력 방지 경계 고정
 - [ ] 39. 카드 import parser 실패 정책과 UI 상태 연결 조사
 - [ ] 40. 카드 asset upload 실패/취소/성공 상태 정책 구체화
 - [ ] 41. queryKey 상태 원천이 web/mobile에서 동일한지 검증
@@ -78,7 +78,7 @@
 - [ ] 43. API route BFF 에러 변환 정책에서 status/code 누락 조사
 - [ ] 44. Spring-backed card room BFF auth/session 실패 경계 고정
 - [ ] 45. race-server card room participant token 요구 정책 문서화/검증
-- [ ] 46. Universal UI parity registry에 새 shared 상태 정책 필요 여부 검토
+- [x] 46. Universal UI parity registry에 새 shared 상태 정책 필요 여부 검토
 - [x] 47. 관련 web lint/typecheck 통과
 - [x] 48. 관련 mobile typecheck 통과
 - [x] 49. 관련 shared package test/typecheck 통과
@@ -98,3 +98,6 @@
 - 32: `apps/web/src/features/community/community-presence.ts`의 presence session id 유효성 정책과 `community-presence.test.ts`.
 - 34: `apps/web/src/features/community/community-post-format.ts`의 게시글/댓글/채팅 작성 가능 정책과 `community-feed-forms.tsx`, `community-chat-widget.tsx`, `community-chat-form.tsx`, `community-post-detail-page.tsx` 적용.
 - 31~32, 34: `pnpm --filter @yeon/web test -- src/features/community/__tests__/community-guest-identity.test.ts src/features/community/__tests__/community-post-format.test.ts src/features/community/__tests__/community-presence.test.ts` 결과 web Vitest 227개 파일/1011개 테스트 통과.
+- 37~38: `packages/ui/src/runtime/ports/card-deck/play-policy.ts`의 카드 학습 index/review submit 정책과 `apps/web/src/features/card-service/deck-play-policy.test.ts`.
+- 37~38: `apps/web/src/features/card-service/hooks/use-deck-play-state.ts`, `apps/web/src/features/card-service/deck-play-screen.tsx`, `apps/mobile/src/features/card-service/use-card-deck-play-state.ts`가 공용 정책 함수를 사용.
+- 46: `pnpm verify:parity` 결과 Parity OK. 새 registry entry 없이 기존 card-service web/mobile 공유 정책 범위에서 통과.

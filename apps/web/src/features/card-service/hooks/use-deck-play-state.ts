@@ -10,18 +10,12 @@ import {
 } from "@yeon/ui/runtime/YeonBrowserRuntime";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CardDeckItemDto } from "@yeon/api-contract/card-decks";
-
-function clampIndex(index: number, length: number): number {
-  if (length <= 0) return 0;
-  if (index < 0) return 0;
-  if (index >= length) return length - 1;
-  return index;
-}
-
-function parseIndexFromParam(param: string | null): number {
-  const parsed = Number.parseInt(param ?? "", 10);
-  return Number.isNaN(parsed) || parsed < 0 ? 0 : parsed;
-}
+import {
+  canMoveToNextCardDeckPlayItem,
+  canMoveToPreviousCardDeckPlayItem,
+  clampCardDeckPlayIndex,
+  parseCardDeckPlayIndexParam,
+} from "@yeon/ui/runtime/ports/card-deck";
 
 function shuffleInPlace<T>(source: readonly T[]): T[] {
   const out = source.slice();
@@ -54,8 +48,8 @@ export function useDeckPlayState(items: CardDeckItemDto[]) {
 
   const visibleItems = isShuffled ? shuffledItems : items;
 
-  const rawIndex = parseIndexFromParam(searchParams.get("i"));
-  const currentIndex = clampIndex(rawIndex, visibleItems.length);
+  const rawIndex = parseCardDeckPlayIndexParam(searchParams.get("i"));
+  const currentIndex = clampCardDeckPlayIndex(rawIndex, visibleItems.length);
   const [isFlipped, setFlipped] = useState(false);
 
   // 인덱스 변경 렌더에서는 이전 카드의 뒷면 상태를 보여주지 않고 즉시 앞면을 보여준다.
@@ -73,7 +67,7 @@ export function useDeckPlayState(items: CardDeckItemDto[]) {
 
   const updateIndex = useCallback(
     (nextIndex: number) => {
-      const bounded = clampIndex(nextIndex, visibleItems.length);
+      const bounded = clampCardDeckPlayIndex(nextIndex, visibleItems.length);
       const nextParams = createYeonUrlSearchParams(searchParams.toString());
       if (bounded === 0) {
         nextParams.delete("i");
@@ -91,7 +85,14 @@ export function useDeckPlayState(items: CardDeckItemDto[]) {
   }, []);
 
   const handlePrev = useCallback(() => {
-    if (currentIndex <= 0) return;
+    if (
+      !canMoveToPreviousCardDeckPlayItem({
+        currentIndex,
+        itemCount: visibleItems.length,
+      })
+    ) {
+      return;
+    }
     updateIndex(currentIndex - 1);
   }, [currentIndex, updateIndex]);
 
@@ -100,7 +101,14 @@ export function useDeckPlayState(items: CardDeckItemDto[]) {
   }, [updateIndex]);
 
   const handleNext = useCallback(() => {
-    if (currentIndex >= visibleItems.length - 1) return;
+    if (
+      !canMoveToNextCardDeckPlayItem({
+        currentIndex,
+        itemCount: visibleItems.length,
+      })
+    ) {
+      return;
+    }
     updateIndex(currentIndex + 1);
   }, [currentIndex, updateIndex, visibleItems.length]);
 

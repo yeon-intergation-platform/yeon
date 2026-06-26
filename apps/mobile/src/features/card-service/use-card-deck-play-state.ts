@@ -9,7 +9,12 @@ import {
   useYeonQuery as useQuery,
 } from "@yeon/ui/native";
 import {
+  canMoveToNextCardDeckPlayItem,
+  canMoveToPreviousCardDeckPlayItem,
+  canSubmitCardDeckReview,
+  clampCardDeckPlayIndex,
   deriveCardDeckPlayViewState,
+  resolveNextReviewCardDeckPlayIndex,
   sortCardDeckItemsForPlay,
 } from "@yeon/ui/runtime/ports/card-deck";
 import { useEffect, useMemo, useState } from "react";
@@ -155,7 +160,7 @@ export function useCardDeckPlayState({ deckId }: UseCardDeckPlayStateParams) {
     setStudyMode(detailQuery.data.studyMode);
     if (currentIndex >= playItems.length) {
       resetCurrentCardVisibility();
-      setCurrentIndex(0);
+      setCurrentIndex(clampCardDeckPlayIndex(currentIndex, playItems.length));
     }
   }, [currentIndex, detailQuery.data, playItems.length]);
 
@@ -173,10 +178,12 @@ export function useCardDeckPlayState({ deckId }: UseCardDeckPlayStateParams) {
   }
 
   function moveNext() {
-    if (playItems.length === 0) {
-      return;
-    }
-    if (currentIndex + 1 >= playItems.length) {
+    if (
+      !canMoveToNextCardDeckPlayItem({
+        currentIndex,
+        itemCount: playItems.length,
+      })
+    ) {
       return;
     }
     setCurrentIndex((prev) => prev + 1);
@@ -184,10 +191,12 @@ export function useCardDeckPlayState({ deckId }: UseCardDeckPlayStateParams) {
   }
 
   function movePrev() {
-    if (playItems.length === 0) {
-      return;
-    }
-    if (currentIndex <= 0) {
+    if (
+      !canMoveToPreviousCardDeckPlayItem({
+        currentIndex,
+        itemCount: playItems.length,
+      })
+    ) {
       return;
     }
     setCurrentIndex((prev) => prev - 1);
@@ -210,8 +219,14 @@ export function useCardDeckPlayState({ deckId }: UseCardDeckPlayStateParams) {
       ),
     }
   );
-  const canMovePrev = currentIndex > 0;
-  const canMoveNext = currentIndex < playItems.length - 1;
+  const canMovePrev = canMoveToPreviousCardDeckPlayItem({
+    currentIndex,
+    itemCount: playItems.length,
+  });
+  const canMoveNext = canMoveToNextCardDeckPlayItem({
+    currentIndex,
+    itemCount: playItems.length,
+  });
 
   function handleStudyModeChange(nextMode: CardStudyMode) {
     setStudyMode(nextMode);
@@ -220,12 +235,12 @@ export function useCardDeckPlayState({ deckId }: UseCardDeckPlayStateParams) {
   }
 
   function moveToNextReviewCard() {
-    if (playItems.length === 0) {
-      setReviewAnswerVisible(false);
-      return;
-    }
-
-    setCurrentIndex((prev) => (prev + 1 >= playItems.length ? 0 : prev + 1));
+    setCurrentIndex((prev) =>
+      resolveNextReviewCardDeckPlayIndex({
+        currentIndex: prev,
+        itemCount: playItems.length,
+      })
+    );
     resetCurrentCardVisibility();
   }
 
@@ -238,7 +253,14 @@ export function useCardDeckPlayState({ deckId }: UseCardDeckPlayStateParams) {
   }
 
   function handleReview(difficulty: CardReviewDifficulty) {
-    if (!currentCard) {
+    if (
+      !currentCard ||
+      !canSubmitCardDeckReview({
+        currentItemId: currentCard?.id,
+        isAnswerVisible: isReviewAnswerVisible,
+        isSaving: reviewMutation.isPending,
+      })
+    ) {
       return;
     }
     reviewMutation.mutate({ difficulty, itemId: currentCard.id });

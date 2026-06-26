@@ -4,7 +4,11 @@ import { CARD_SERVICE_COMMON_CLASS } from "./card-service-common.const";
 import { useCallback, useEffect, useState } from "react";
 import type { YeonUseQueryResult as UseQueryResult } from "@yeon/ui/runtime/YeonQuery";
 import { resolveYeonWebPath } from "@yeon/ui/runtime/ports";
-import { deriveCardDeckPlayViewState } from "@yeon/ui/runtime/ports/card-deck";
+import {
+  canSubmitCardDeckReview,
+  deriveCardDeckPlayViewState,
+  resolveNextReviewCardDeckPlayIndex,
+} from "@yeon/ui/runtime/ports/card-deck";
 import { CARD_STUDY_MODES } from "@yeon/api-contract/card-decks";
 import type {
   CardReviewDifficulty,
@@ -239,7 +243,11 @@ function ReadyPlayBody({
 
   const moveToNextReviewCard = useCallback(() => {
     // 정답 숨김은 카드 id 파생(isReviewAnswerVisible)이 처리하므로 인덱스만 이동한다.
-    if (play.currentIndex >= play.items.length - 1) {
+    const nextIndex = resolveNextReviewCardDeckPlayIndex({
+      currentIndex: play.currentIndex,
+      itemCount: play.items.length,
+    });
+    if (nextIndex === 0) {
       play.handleFirst();
       return;
     }
@@ -264,15 +272,23 @@ function ReadyPlayBody({
 
   const handleReview = useCallback(
     (difficulty: CardReviewDifficulty) => {
-      if (!play.currentItem || reviewMutation.isPending) {
+      const currentItem = play.currentItem;
+      if (
+        !currentItem ||
+        !canSubmitCardDeckReview({
+          currentItemId: currentItem?.id,
+          isAnswerVisible: isReviewAnswerVisible,
+          isSaving: reviewMutation.isPending,
+        })
+      ) {
         return;
       }
       reviewMutation.mutate(
-        { difficulty, itemId: play.currentItem.id },
+        { difficulty, itemId: currentItem.id },
         { onSuccess: moveToNextReviewCard }
       );
     },
-    [moveToNextReviewCard, play, reviewMutation]
+    [isReviewAnswerVisible, moveToNextReviewCard, play, reviewMutation]
   );
 
   useEffect(() => {
