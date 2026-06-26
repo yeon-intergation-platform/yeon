@@ -28,8 +28,8 @@
 ## 진행 현황
 
 - 목표: 55개
-- 완료: 44개
-- 진행 중: 33, 43~45, 47~48, 51~55번 후속 배치 리팩터링
+- 완료: 49개
+- 진행 중: 33, 51~55번 후속 배치 리팩터링
 
 ## 태스크 체크리스트
 
@@ -75,12 +75,12 @@
 - [x] 40. race-server territory player joinedAt 생성 정책을 helper로 분리 (시간 기준 분리)
 - [x] 41. race-server backend client 내부 token header 생성 중복 여부 정리 (DRY)
 - [x] 42. race-server card room backend error message에서 Spring 원인 code 보존 여부 검증 (API 계약 일치)
-- [ ] 43. 카드 editor image upload catch 블록의 동일 메시지/side-effect 반복 제거 (DRY)
-- [ ] 44. 카드 editor image upload clipboard/paste/drop 실패 유형 분리 (실패 유형 명확화)
-- [ ] 45. 카드 editor HEIC 변환 오류가 원인 예외를 보존하는지 검증/보강 (원인 예외 보존)
+- [x] 43. 카드 editor image upload catch 블록의 동일 메시지/side-effect 반복 제거 (DRY)
+- [x] 44. 카드 editor image upload clipboard/paste/drop 실패 유형 분리 (실패 유형 명확화)
+- [x] 45. 카드 editor HEIC 변환 오류가 원인 예외를 보존하는지 검증/보강 (원인 예외 보존)
 - [x] 46. 카드 markdown code copy 오류 메시지 정책을 card/markdown 컴포넌트에서 공용화 (DRY)
-- [ ] 47. 카드 add form image side 상태 업데이트 중복을 reducer/action helper로 정리 (SRP)
-- [ ] 48. 카드 bulk import preview 숨김 개수와 submit 가능 조건 테스트 보강 (경계 테스트)
+- [x] 47. 카드 add form image side 상태 업데이트 중복을 reducer/action helper로 정리 (SRP)
+- [x] 48. 카드 bulk import preview 숨김 개수와 submit 가능 조건 테스트 보강 (경계 테스트)
 - [x] 49. 카드 deck play date formatting invalid 입력 fallback 검증 (경계값 처리)
 - [x] 50. 카드 deck detail mobile/web date formatter 중복 제거 가능성 검토 (DRY)
 - [ ] 51. community guest identity localStorage read/write 실패 로깅과 fallback 정책 공용화 (예외 처리)
@@ -119,3 +119,8 @@
 - 39~40: `territory-battle-room.ts`의 시간 기준을 `now()`로 통일하고, `createTerritoryPlayer`의 `joinedAt` 생성 정책을 helper/인자로 분리.
 - 41: `spring-backend-headers.ts`에 Spring internal token/header 생성 정책을 통합하고 card room/typing room backend client가 재사용.
 - 42: `CardRoomBackendHttpError`가 Spring 오류 응답의 `status`, `code`, `detail`을 보존하고 card room error message가 code를 함께 전달.
+- 43~44: `card-editor-image-utils.ts`에 이미지 업로드/붙여넣기/드롭 실패 메시지 정책을 통합하고, `use-card-editor-image-upload.ts`, `card-rich-markdown-editor.tsx`가 clipboard/paste/drop origin별 메시지를 재사용.
+- 45: `card-editor-image-heic.test.ts`로 HEIC 변환 실패 원인 예외가 `cause`로 보존되는지 검증.
+- 47: `createCardEditorImageUploadSideStateAction`으로 add card form의 front/back 업로드 side 상태 전이를 action helper화.
+- 48: `bulk-card-import-parser.test.ts`에 preview 5장 제한, hidden count, pending/empty submit 가능 조건 경계 테스트 추가.
+- 43~45,47~48 검증: `pnpm --filter @yeon/web exec vitest run src/features/card-service/components/card-editor-image-utils.test.ts src/features/card-service/components/card-editor-image-heic.test.ts src/features/card-service/utils/bulk-card-import-parser.test.ts`, `pnpm --filter @yeon/web typecheck`, `pnpm --filter @yeon/web lint`, `bash bin/verify-ssot.sh --project-only`, `git diff --check` 통과.

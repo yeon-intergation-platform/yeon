@@ -10,7 +10,11 @@ import {
   clampCardEditorImageHeight,
   clampCardEditorImageWidth,
   countCardEditorImages,
+  createCardEditorImageUploadSideStateAction,
   getCardEditorFileExtension,
+  getCardEditorImageInteractionFailureMessage,
+  getCardEditorImageUploadErrorMessage,
+  getCardEditorPasteImageSourceErrorMessage,
   isCardEditorImageUploadInProgress,
   parseCardEditorImageWidth,
   parseOptionalCardEditorImageHeight,
@@ -105,6 +109,9 @@ describe("card-editor-image-utils", () => {
     expect(
       updateCardEditorImageUploadSideState(frontUploading, "front", true)
     ).toBe(frontUploading);
+    expect(
+      createCardEditorImageUploadSideStateAction("back", true)(frontUploading)
+    ).toEqual({ front: true, back: true });
     expect(isCardEditorImageUploadInProgress(idle)).toBe(false);
   });
 
@@ -118,5 +125,20 @@ describe("card-editor-image-utils", () => {
     expect(
       canStartCardEditorImageUpload({ itemCount: 1, isUploading: true })
     ).toBe(false);
+  });
+
+  it("이미지 업로드/붙여넣기 실패 메시지를 작업 유형별로 만든다", () => {
+    expect(
+      getCardEditorImageUploadErrorMessage("sample.png", new Error("서버 실패"))
+    ).toBe("sample.png: 서버 실패");
+    expect(getCardEditorPasteImageSourceErrorMessage("CORS")).toBe(
+      "이미지 URL을 가져올 수 없습니다. 원인: CORS"
+    );
+    expect(getCardEditorImageInteractionFailureMessage("clipboard")).toBe(
+      "클립보드 이미지에 실패했습니다."
+    );
+    expect(
+      getCardEditorImageInteractionFailureMessage("drop", "파일 없음")
+    ).toBe("이미지 드롭에 실패했습니다. 원인: 파일 없음");
   });
 });
