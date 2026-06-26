@@ -28,8 +28,8 @@
 ## 진행 현황
 
 - 목표: 55개
-- 완료: 25개
-- 진행 중: 13~15, 19~20, 25~29, 33~45, 47~48, 51~55번 후속 배치 리팩터링
+- 완료: 28개
+- 진행 중: 19~20, 25~29, 33~45, 47~48, 51~55번 후속 배치 리팩터링
 
 ## 태스크 체크리스트
 
@@ -45,9 +45,9 @@
 - [x] 10. 타자 서비스 공개 대기방 필터 조건 체인을 의미 있는 predicate로 분리 (자기 설명적 코드)
 - [x] 11. 타자 서비스 공개 대기방 summary normalize에서 participants 범위 검증 추가 (경계값 처리)
 - [x] 12. 모바일 카드 게스트 opt-in storage read/write fallback 중복을 helper로 분리 (DRY/SRP)
-- [ ] 13. 모바일 카드 게스트 opt-in clear에서 browser remove 실패 시 fallback cleanup 정책 명시 (예외 처리)
-- [ ] 14. 모바일 카드 세션 boot catch가 token cleanup과 UI state 전이를 한 블록에 섞는 문제 분리 (SRP)
-- [ ] 15. 모바일 카드 세션 logout 서버 실패 로깅 정책을 재사용 가능한 helper로 분리 (예외 처리)
+- [x] 13. 모바일 카드 게스트 opt-in clear에서 browser remove 실패 시 fallback cleanup 정책 명시 (예외 처리)
+- [x] 14. 모바일 카드 세션 boot catch가 token cleanup과 UI state 전이를 한 블록에 섞는 문제 분리 (SRP)
+- [x] 15. 모바일 카드 세션 logout 서버 실패 로깅 정책을 재사용 가능한 helper로 분리 (예외 처리)
 - [x] 16. 웹 카드 mutation 401 처리와 deck mutation 401 처리 중복 제거 (DRY)
 - [x] 17. 웹 카드 mutation 인증 실패 시 guest/server query invalidation 정책을 공용 함수로 통일 (정책 단일화)
 - [x] 18. 웹 카드 list fetch 비정상 응답이 Error만 던지고 status/code를 잃는 문제 보강 (API 계약 일치)
@@ -96,6 +96,9 @@
 - 8~11: `apps/web/src/features/typing-service/typing-service-fetch.ts`의 오류 JSON parse 정책을 SyntaxError fallback/예상 밖 예외 전파로 분리하고, 공개 대기방 predicate와 participant count normalize를 추가. `typing-service-fetch.test.ts`로 필터/정렬/오류 파싱 경계를 검증.
 - 12: `apps/mobile/src/features/card-service/onboarding-storage.ts`의 in-memory fallback read/write/clear helper를 분리.
 - 1~12 검증: `pnpm --filter @yeon/web exec vitest run src/features/community/community-date-format.test.ts src/features/typing-service/typing-service-fetch.test.ts`, `pnpm --filter @yeon/web typecheck`, `pnpm --filter @yeon/web lint`, `pnpm --filter @yeon/mobile typecheck`, `pnpm --filter @yeon/mobile lint` 통과.
+- 13: `clearCardGuestOptIn`가 browser `removeItem` 실패를 로깅하고, 실패 여부와 관계없이 in-memory fallback을 정리하도록 명시.
+- 14~15: `use-card-session-state.ts`에서 boot 실패 처리, signed-out gate 전이, alert 표시, logout 서버 세션 무효화 실패 로깅을 helper로 분리.
+- 13~15 검증: `pnpm --filter @yeon/mobile typecheck`, `pnpm --filter @yeon/mobile lint`, `bash bin/verify-ssot.sh --project-only`, `git diff --check` 통과.
 - 21~24: `packages/race-shared/src/card-room.ts`에 card room lobby filter, room end 가능 조건, participant role count 정책을 추가하고 web/mobile lobby, web header, web study panel에서 재사용.
 - 21~24 검증: `pnpm --filter @yeon/race-shared test -- card-room.test.ts`, `pnpm --filter @yeon/race-shared typecheck`, `pnpm --filter @yeon/race-shared lint`, `pnpm --filter @yeon/web typecheck`, `pnpm --filter @yeon/web lint`, `pnpm --filter @yeon/mobile typecheck`, `pnpm --filter @yeon/mobile lint` 통과.
 - 16~17: `apps/web/src/features/card-service/hooks/card-service-mutation-policy.ts`에 인증 만료 판정, server/guest query invalidation, 원인 예외 보존 wrapper를 추가하고 card/deck mutation hook이 재사용.

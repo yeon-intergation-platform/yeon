@@ -25,6 +25,27 @@ function clearInMemoryOptIn() {
   inMemoryStorage.delete(CARD_GUEST_OPT_IN_KEY);
 }
 
+function warnBrowserOptInReadFailure(error: unknown) {
+  console.warn(
+    "[CardOnboardingStorage] 브라우저 게스트 선택 상태를 읽지 못해 메모리 저장소로 대체합니다.",
+    error
+  );
+}
+
+function warnBrowserOptInWriteFailure(error: unknown) {
+  console.warn(
+    "[CardOnboardingStorage] 브라우저 게스트 선택 상태를 저장하지 못해 메모리 저장소로 대체합니다.",
+    error
+  );
+}
+
+function warnBrowserOptInClearFailure(error: unknown) {
+  console.warn(
+    "[CardOnboardingStorage] 브라우저 게스트 선택 상태를 삭제하지 못했습니다. 메모리 저장소는 정리합니다.",
+    error
+  );
+}
+
 export async function readCardGuestOptIn(): Promise<boolean> {
   const secureStorage = getYeonSecureStorage();
 
@@ -39,10 +60,7 @@ export async function readCardGuestOptIn(): Promise<boolean> {
     try {
       return browserStorage.getItem(CARD_GUEST_OPT_IN_KEY) === OPT_IN_VALUE;
     } catch (error) {
-      console.warn(
-        "[CardOnboardingStorage] 브라우저 게스트 선택 상태를 읽지 못해 메모리 저장소로 대체합니다.",
-        error
-      );
+      warnBrowserOptInReadFailure(error);
       return readInMemoryOptIn();
     }
   }
@@ -65,10 +83,7 @@ export async function writeCardGuestOptIn(): Promise<void> {
       browserStorage.setItem(CARD_GUEST_OPT_IN_KEY, OPT_IN_VALUE);
       return;
     } catch (error) {
-      console.warn(
-        "[CardOnboardingStorage] 브라우저 게스트 선택 상태를 저장하지 못해 메모리 저장소로 대체합니다.",
-        error
-      );
+      warnBrowserOptInWriteFailure(error);
       writeInMemoryOptIn();
       return;
     }
@@ -90,6 +105,8 @@ export async function clearCardGuestOptIn(): Promise<void> {
   if (browserStorage) {
     try {
       browserStorage.removeItem(CARD_GUEST_OPT_IN_KEY);
+    } catch (error) {
+      warnBrowserOptInClearFailure(error);
     } finally {
       clearInMemoryOptIn();
     }
