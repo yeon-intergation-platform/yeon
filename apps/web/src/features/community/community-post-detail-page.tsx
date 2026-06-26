@@ -15,9 +15,9 @@ import {
 } from "@yeon/ui";
 import { CommunityGuestIdentityConfirmModal } from "./components/community-guest-identity-confirm-modal";
 import {
-  canSkipCommunityGuestIdentityConfirm,
-  runCommunityGuestIdentityAction,
   type CommunityGuestIdentity,
+  type PendingCommunityGuestIdentityAction,
+  runOrQueueCommunityGuestIdentityAction,
 } from "./community-guest-identity-confirm";
 import { CommunityGuestIdentityCard } from "./components/community-guest-identity-card";
 import { formatCommunityMediumDateTime } from "./community-date-format";
@@ -31,12 +31,6 @@ import {
 } from "./community-post-format";
 import { useCommunityFeed } from "./hooks/use-community-feed";
 import { type ChatServiceFeedPost } from "./chat-service-api";
-
-type PendingGuestIdentityAction = {
-  actionLabel: string;
-  run: (identity: CommunityGuestIdentity) => Promise<void>;
-  resolve: (completed: boolean) => void;
-} | null;
 
 export function CommunityPostDetailPage({
   postId,
@@ -76,7 +70,7 @@ export function CommunityPostDetailPage({
     parseCommunityPost(initialPost)
   );
   const [pendingGuestIdentityAction, setPendingGuestIdentityAction] =
-    useState<PendingGuestIdentityAction>(null);
+    useState<PendingCommunityGuestIdentityAction>(null);
 
   const post = useMemo(
     () => posts.find((candidate) => candidate.id === postId) ?? null,
@@ -109,18 +103,11 @@ export function CommunityPostDetailPage({
     actionLabel: string,
     run: (identity: CommunityGuestIdentity) => Promise<void>
   ) => {
-    const currentIdentity = { guestNickname, guestPassword };
-
-    if (canSkipCommunityGuestIdentityConfirm(currentIdentity)) {
-      return runCommunityGuestIdentityAction(currentIdentity, run);
-    }
-
-    return new Promise<boolean>((resolve) => {
-      setPendingGuestIdentityAction({
-        actionLabel,
-        run,
-        resolve,
-      });
+    return runOrQueueCommunityGuestIdentityAction({
+      actionLabel,
+      identity: { guestNickname, guestPassword },
+      queue: setPendingGuestIdentityAction,
+      run,
     });
   };
 

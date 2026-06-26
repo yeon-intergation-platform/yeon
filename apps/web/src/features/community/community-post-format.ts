@@ -61,11 +61,19 @@ export function canSendCommunityChatMessage(input: {
   messageBody: string;
   isSendingMessage: boolean;
 }) {
+  const normalizedMessage = normalizeCommunityChatMessageDraft(
+    input.messageBody
+  );
+
   return (
     !input.isSendingMessage &&
-    Boolean(input.messageBody.trim()) &&
-    input.messageBody.length <= COMMUNITY_CHAT_MESSAGE_MAX_LENGTH
+    Boolean(normalizedMessage) &&
+    normalizedMessage.length <= COMMUNITY_CHAT_MESSAGE_MAX_LENGTH
   );
+}
+
+export function normalizeCommunityChatMessageDraft(messageBody: string) {
+  return messageBody.trim();
 }
 
 export function parseCommunityPost(post: Pick<ChatServiceFeedPost, "body">) {

@@ -28,8 +28,8 @@
 ## 진행 현황
 
 - 목표: 55개
-- 완료: 49개
-- 진행 중: 33, 51~55번 후속 배치 리팩터링
+- 완료: 55개
+- 진행 중: 완료
 
 ## 태스크 체크리스트
 
@@ -65,7 +65,7 @@
 - [x] 30. 타자 deck form create/update mode 분기를 mapping으로 단순화 (KISS)
 - [x] 31. 타자 territory phase label if-chain을 mapping으로 교체 (OCP/KISS)
 - [x] 32. 타자 territory screen의 raw `"playing"` phase 비교를 shared constant로 교체 (정책 단일화)
-- [ ] 33. 타자 territory screen result publish 조건과 UI 조건의 중복 여부 검증/정리 (상태 전이 명확화)
+- [x] 33. 타자 territory screen result publish 조건과 UI 조건의 중복 여부 검증/정리 (상태 전이 명확화)
 - [x] 34. race-server typing room Date.now 직접 호출을 clock/time provider 사용 가능 지점으로 축소 (시간 기준 분리)
 - [x] 35. race-server typing room Math.random 기반 participant/message id 생성 정책 검토 및 helper화 (예측 가능성/테스트 가능성)
 - [x] 36. race-server typing room waiting status guard 반복을 helper로 분리 (DRY)
@@ -83,11 +83,11 @@
 - [x] 48. 카드 bulk import preview 숨김 개수와 submit 가능 조건 테스트 보강 (경계 테스트)
 - [x] 49. 카드 deck play date formatting invalid 입력 fallback 검증 (경계값 처리)
 - [x] 50. 카드 deck detail mobile/web date formatter 중복 제거 가능성 검토 (DRY)
-- [ ] 51. community guest identity localStorage read/write 실패 로깅과 fallback 정책 공용화 (예외 처리)
-- [ ] 52. community presence session id legacy cleanup 정책 테스트 확장 (경계 테스트)
-- [ ] 53. community feed mutation catch 블록의 반복되는 guest identity confirm 흐름 helper화 (DRY)
-- [ ] 54. community chat submit empty message guard와 form disable 조건의 정책 일치 검증 (검증 지속성)
-- [ ] 55. 전체 장부, 작업 로그, PR 증거, 검증 명령 정합성 점검
+- [x] 51. community guest identity localStorage read/write 실패 로깅과 fallback 정책 공용화 (예외 처리)
+- [x] 52. community presence session id legacy cleanup 정책 테스트 확장 (경계 테스트)
+- [x] 53. community feed mutation catch 블록의 반복되는 guest identity confirm 흐름 helper화 (DRY)
+- [x] 54. community chat submit empty message guard와 form disable 조건의 정책 일치 검증 (검증 지속성)
+- [x] 55. 전체 장부, 작업 로그, PR 증거, 검증 명령 정합성 점검
 
 ## 완료 증거
 
@@ -124,3 +124,10 @@
 - 47: `createCardEditorImageUploadSideStateAction`으로 add card form의 front/back 업로드 side 상태 전이를 action helper화.
 - 48: `bulk-card-import-parser.test.ts`에 preview 5장 제한, hidden count, pending/empty submit 가능 조건 경계 테스트 추가.
 - 43~45,47~48 검증: `pnpm --filter @yeon/web exec vitest run src/features/card-service/components/card-editor-image-utils.test.ts src/features/card-service/components/card-editor-image-heic.test.ts src/features/card-service/utils/bulk-card-import-parser.test.ts`, `pnpm --filter @yeon/web typecheck`, `pnpm --filter @yeon/web lint`, `bash bin/verify-ssot.sh --project-only`, `git diff --check` 통과.
+- 33: `use-territory-battle-room.ts`에 `canShowTerritoryBattleResult`를 추가해 종료 phase/result 존재 여부의 UI 표시 조건을 단일 정책으로 분리하고 `typing-territory-battle-screen.tsx`가 재사용.
+- 51: `community-guest-identity.ts`의 localStorage read/write/remove 실패 처리와 fallback logging을 helper로 통합하고 닉네임/비밀번호 경계 테스트를 추가.
+- 52: `community-presence.ts`가 invalid legacy session id를 제거한 뒤 새 id를 발급하도록 정리하고 cleanup 호출 여부를 테스트.
+- 53: `community-guest-identity-confirm.ts`에 `runOrQueueCommunityGuestIdentityAction`과 pending action 타입을 추가해 feed/detail mutation confirm 흐름을 공용화.
+- 54: `normalizeCommunityChatMessageDraft`를 도입해 채팅 전송 가능 조건과 실제 submit payload trim 정책을 일치시키고 길이 경계 테스트를 추가.
+- 55: 전체 장부와 작업 로그를 최신 상태로 맞추고 마지막 배치 검증 명령을 기록.
+- 33,51~55 검증: `pnpm --filter @yeon/web exec vitest run src/features/typing-service/use-territory-battle-room.test.ts src/features/community/__tests__/community-guest-identity.test.ts src/features/community/__tests__/community-presence.test.ts src/features/community/__tests__/community-post-format.test.ts`, `pnpm --filter @yeon/web typecheck`, `pnpm --filter @yeon/web lint` 통과.

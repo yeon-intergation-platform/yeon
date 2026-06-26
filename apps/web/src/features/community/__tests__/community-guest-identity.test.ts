@@ -12,9 +12,13 @@ import {
   hasCompleteCommunityGuestIdentity,
   resolveCommunityGuestActorPayload,
   runCommunityGuestIdentityAction,
+  runOrQueueCommunityGuestIdentityAction,
 } from "../community-guest-identity-confirm";
 
-function stubWindowLocalStorage(initialNickname?: string) {
+function stubWindowLocalStorage(
+  initialNickname?: string,
+  overrides: Partial<Storage> = {}
+) {
   const storage = new Map<string, string>();
   if (initialNickname) {
     storage.set("yeon-community-guest-nickname", initialNickname);
@@ -28,6 +32,7 @@ function stubWindowLocalStorage(initialNickname?: string) {
     removeItem: vi.fn((key: string) => {
       storage.delete(key);
     }),
+    ...overrides,
   };
 
   vi.stubGlobal("window", { localStorage });
@@ -61,6 +66,20 @@ describe("community guest identity", () => {
 
     expect(readCommunityGuestNickname()).toBe("익명1234");
     expect(localStorage.setItem).not.toHaveBeenCalled();
+  });
+
+  it("게스트 닉네임 저장소 읽기/쓰기 실패 시 임시 닉네임으로 fallback한다", () => {
+    const localStorage = stubWindowLocalStorage(undefined, {
+      getItem: vi.fn(() => {
+        throw new Error("read blocked");
+      }),
+      setItem: vi.fn(() => {
+        throw new Error("write blocked");
+      }),
+    });
+
+    expect(readCommunityGuestNickname()).toMatch(/^익명\d{4}$/);
+    expect(localStorage.setItem).toHaveBeenCalled();
   });
 
   it("커뮤니티에서 설정한 닉네임을 저장하고 채팅 닉네임으로 재사용한다", () => {
@@ -99,6 +118,23 @@ describe("community guest identity", () => {
       "yeon-community-guest-password"
     );
     expect(readCommunityGuestPassword()).toBe("");
+  });
+
+  it("게스트 비밀번호 저장소 실패 시 빈 값 fallback과 삭제 시도를 유지한다", () => {
+    const localStorage = stubWindowLocalStorage(undefined, {
+      getItem: vi.fn(() => {
+        throw new Error("read blocked");
+      }),
+      removeItem: vi.fn(() => {
+        throw new Error("remove blocked");
+      }),
+    });
+
+    expect(readCommunityGuestPassword()).toBe("");
+    writeCommunityGuestPassword(" ");
+    expect(localStorage.removeItem).toHaveBeenCalledWith(
+      "yeon-community-guest-password"
+    );
   });
 
   it("닉네임과 비밀번호가 모두 있을 때만 게스트 작성자 정보가 완성된다", () => {
@@ -185,5 +221,23 @@ describe("community guest identity", () => {
       )
     ).resolves.toBe(false);
     expect(run).not.toHaveBeenCalled();
+  });
+
+  it("게스트 인증 정보가 없으면 액션을 즉시 실행하지 않고 확인 큐에 넣는다", async () => {
+    const queue = vi.fn();
+    const run = vi.fn(async () => {});
+    const promise = runOrQueueCommunityGuestIdentityAction({
+      actionLabel: "글을 작성",
+      identity: { guestNickname: "", guestPassword: "" },
+      queue,
+      run,
+    });
+
+    expect(run).not.toHaveBeenCalled();
+    expect(queue).toHaveBeenCalledWith(
+      expect.objectContaining({ actionLabel: "글을 작성", run })
+    );
+    queue.mock.calls[0]?.[0].resolve(false);
+    await expect(promise).resolves.toBe(false);
   });
 });

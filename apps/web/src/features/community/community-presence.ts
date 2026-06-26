@@ -3,6 +3,7 @@ import {
   getYeonNow,
   getYeonRandom,
   readYeonSessionStorageItem,
+  removeYeonSessionStorageItem,
   writeYeonSessionStorageItem,
 } from "@yeon/ui/runtime/YeonBrowserRuntime";
 import {
@@ -43,6 +44,9 @@ export function readPresenceSessionId() {
   const normalizedSaved = saved?.trim() ?? "";
   if (isValidPresenceSessionId(normalizedSaved)) {
     return normalizedSaved;
+  }
+  if (normalizedSaved) {
+    removeYeonSessionStorageItem(COMMUNITY_PRESENCE_SESSION_STORAGE_KEY);
   }
 
   const created = createPresenceSessionId();

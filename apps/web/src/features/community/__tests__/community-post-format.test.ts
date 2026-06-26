@@ -7,6 +7,7 @@ import {
   canSendCommunityChatMessage,
   canSubmitCommunityPostDraft,
   canSubmitCommunityReplyDraft,
+  normalizeCommunityChatMessageDraft,
   parseCommunityPost,
   serializeCommunityPost,
 } from "../community-post-format";
@@ -132,5 +133,14 @@ describe("community post format", () => {
         isSendingMessage: false,
       })
     ).toBe(false);
+    expect(
+      canSendCommunityChatMessage({
+        messageBody: ` ${"가".repeat(COMMUNITY_CHAT_MESSAGE_MAX_LENGTH)} `,
+        isSendingMessage: false,
+      })
+    ).toBe(true);
+    expect(normalizeCommunityChatMessageDraft("  안녕하세요  ")).toBe(
+      "안녕하세요"
+    );
   });
 });

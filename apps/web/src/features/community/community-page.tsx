@@ -8,9 +8,9 @@ import { YeonServiceHelpDialog } from "@yeon/ui";
 import { YeonButton, YeonSurface, YeonText, YeonView } from "@yeon/ui";
 import { CommunityGuestIdentityConfirmModal } from "./components/community-guest-identity-confirm-modal";
 import {
-  canSkipCommunityGuestIdentityConfirm,
-  runCommunityGuestIdentityAction,
   type CommunityGuestIdentity,
+  type PendingCommunityGuestIdentityAction,
+  runOrQueueCommunityGuestIdentityAction,
 } from "./community-guest-identity-confirm";
 import { CommunityChatWidget } from "./components/community-chat-widget";
 import { CommunityGuestIdentityCard } from "./components/community-guest-identity-card";
@@ -33,12 +33,6 @@ import {
   COMMUNITY_SEO_HEADING,
   COMMUNITY_SEO_INTRO,
 } from "./community-content";
-
-type PendingGuestIdentityAction = {
-  actionLabel: string;
-  run: (identity: CommunityGuestIdentity) => Promise<void>;
-  resolve: (completed: boolean) => void;
-} | null;
 
 export function CommunityPage() {
   const {
@@ -78,7 +72,7 @@ export function CommunityPage() {
   const [postTitle, setPostTitle] = useState("");
   const [postContent, setPostContent] = useState("");
   const [pendingGuestIdentityAction, setPendingGuestIdentityAction] =
-    useState<PendingGuestIdentityAction>(null);
+    useState<PendingCommunityGuestIdentityAction>(null);
 
   const filteredPosts = useMemo(() => {
     if (selectedCategory === "전체") return posts;
@@ -110,18 +104,11 @@ export function CommunityPage() {
     actionLabel: string,
     run: (identity: CommunityGuestIdentity) => Promise<void>
   ) => {
-    const currentIdentity = { guestNickname, guestPassword };
-
-    if (canSkipCommunityGuestIdentityConfirm(currentIdentity)) {
-      return runCommunityGuestIdentityAction(currentIdentity, run);
-    }
-
-    return new Promise<boolean>((resolve) => {
-      setPendingGuestIdentityAction({
-        actionLabel,
-        run,
-        resolve,
-      });
+    return runOrQueueCommunityGuestIdentityAction({
+      actionLabel,
+      identity: { guestNickname, guestPassword },
+      queue: setPendingGuestIdentityAction,
+      run,
     });
   };
 
