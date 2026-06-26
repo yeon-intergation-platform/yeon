@@ -1,5 +1,7 @@
 package world.yeon.backend.game_service_comments.controller;
 
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 import org.springframework.web.bind.annotation.*;
 import world.yeon.backend.game_service_comments.dto.CommentLikeResponse;
@@ -48,8 +50,8 @@ public class GameServiceCommentsController {
 			request.content(),
 			request.isSecret(),
 			viewerUserId,
-			viewerName,
-			viewerAvatar,
+			decodeHeader(viewerName),
+			decodeHeader(viewerAvatar),
 			request.guestNickname(),
 			request.guestPassword()
 		);
@@ -80,6 +82,11 @@ public class GameServiceCommentsController {
 
 	private static boolean isAdmin(String role) {
 		return role != null && role.trim().equalsIgnoreCase("admin");
+	}
+
+	private static String decodeHeader(String value) {
+		if (value == null || value.isBlank()) return value;
+		return URLDecoder.decode(value, StandardCharsets.UTF_8);
 	}
 
 	public record CreateRequest(
