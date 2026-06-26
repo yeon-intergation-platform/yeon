@@ -14,6 +14,10 @@ import {
   writeCommunityGuestPassword,
   writeCommunityGuestNickname,
 } from "../community-guest-identity";
+import {
+  resolveCommunityGuestActorPayload,
+  type CommunityGuestIdentityInput,
+} from "../community-guest-identity-confirm";
 import { communityQueryKeys } from "./community-query-keys";
 
 type ErrorState = string | null;
@@ -26,19 +30,7 @@ type ErrorByPost = Record<string, ErrorState>;
 type ExpandedByPost = Record<string, boolean>;
 type SubmittingByPost = Record<string, boolean>;
 
-type FeedActor = {
-  guestNickname: string;
-  guestPassword: string;
-};
-
-export type FeedActorInput = Partial<FeedActor>;
-
-function toFeedActorPayload(input: FeedActorInput) {
-  return {
-    guestNickname: input.guestNickname?.trim() ?? "",
-    guestPassword: input.guestPassword?.trim() ?? "",
-  };
-}
+export type FeedActorInput = CommunityGuestIdentityInput;
 
 type UseCommunityFeedOptions = {
   initialPosts?: ChatServiceFeedPost[];
@@ -122,21 +114,15 @@ export function useCommunityFeed(options: UseCommunityFeedOptions = {}) {
   }, []);
 
   const actorPayload = useMemo(() => {
-    const currentActor = toFeedActorPayload({ guestNickname, guestPassword });
-
-    return currentActor.guestNickname && currentActor.guestPassword
-      ? currentActor
-      : {};
+    return resolveCommunityGuestActorPayload({ guestNickname, guestPassword });
   }, [guestNickname, guestPassword]);
 
   const resolveActorPayload = useCallback(
     (actor?: FeedActorInput) => {
       if (!actor) return actorPayload;
 
-      const currentActor = toFeedActorPayload(actor);
-      return currentActor.guestNickname && currentActor.guestPassword
-        ? currentActor
-        : actorPayload;
+      const currentActor = resolveCommunityGuestActorPayload(actor);
+      return "guestNickname" in currentActor ? currentActor : actorPayload;
     },
     [actorPayload]
   );

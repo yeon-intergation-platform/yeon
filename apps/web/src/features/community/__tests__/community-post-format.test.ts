@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
+  COMMUNITY_CHAT_MESSAGE_MAX_LENGTH,
+  COMMUNITY_POST_CONTENT_MAX_LENGTH,
+  COMMUNITY_POST_TITLE_MAX_LENGTH,
+  COMMUNITY_REPLY_CONTENT_MAX_LENGTH,
+  canSendCommunityChatMessage,
+  canSubmitCommunityPostDraft,
+  canSubmitCommunityReplyDraft,
   parseCommunityPost,
   serializeCommunityPost,
 } from "../community-post-format";
@@ -33,5 +40,97 @@ describe("community post format", () => {
     });
 
     expect(nextBody).toBe("[타자친구 모집] 밤 레이스 구합니다\n수정한 본문");
+  });
+
+  it("게시글 작성 가능 상태를 제목, 본문, 제출 중, 길이 경계로 판정한다", () => {
+    expect(
+      canSubmitCommunityPostDraft({
+        title: "모집",
+        content: "본문",
+        isSubmitting: false,
+      })
+    ).toBe(true);
+    expect(
+      canSubmitCommunityPostDraft({
+        title: " ",
+        content: "본문",
+        isSubmitting: false,
+      })
+    ).toBe(false);
+    expect(
+      canSubmitCommunityPostDraft({
+        title: "모집",
+        content: "본문",
+        isSubmitting: true,
+      })
+    ).toBe(false);
+    expect(
+      canSubmitCommunityPostDraft({
+        title: "가".repeat(COMMUNITY_POST_TITLE_MAX_LENGTH + 1),
+        content: "본문",
+        isSubmitting: false,
+      })
+    ).toBe(false);
+    expect(
+      canSubmitCommunityPostDraft({
+        title: "모집",
+        content: "가".repeat(COMMUNITY_POST_CONTENT_MAX_LENGTH + 1),
+        isSubmitting: false,
+      })
+    ).toBe(false);
+  });
+
+  it("댓글 작성 가능 상태를 본문, 제출 중, 길이 경계로 판정한다", () => {
+    expect(
+      canSubmitCommunityReplyDraft({
+        replyDraft: "참여할게요",
+        isSubmitting: false,
+      })
+    ).toBe(true);
+    expect(
+      canSubmitCommunityReplyDraft({
+        replyDraft: " ",
+        isSubmitting: false,
+      })
+    ).toBe(false);
+    expect(
+      canSubmitCommunityReplyDraft({
+        replyDraft: "참여할게요",
+        isSubmitting: true,
+      })
+    ).toBe(false);
+    expect(
+      canSubmitCommunityReplyDraft({
+        replyDraft: "가".repeat(COMMUNITY_REPLY_CONTENT_MAX_LENGTH + 1),
+        isSubmitting: false,
+      })
+    ).toBe(false);
+  });
+
+  it("채팅 전송 가능 상태를 본문, 전송 중, 길이 경계로 판정한다", () => {
+    expect(
+      canSendCommunityChatMessage({
+        messageBody: "안녕하세요",
+        isSendingMessage: false,
+      })
+    ).toBe(true);
+    expect(
+      canSendCommunityChatMessage({
+        messageBody: " ",
+        isSendingMessage: false,
+      })
+    ).toBe(false);
+    expect(
+      canSendCommunityChatMessage({
+        messageBody: "안녕하세요",
+        isSendingMessage: true,
+      })
+    ).toBe(false);
+    expect(
+      canSendCommunityChatMessage({
+        messageBody: "가".repeat(COMMUNITY_CHAT_MESSAGE_MAX_LENGTH + 1),
+        isSendingMessage: false,
+      })
+    ).toBe(false);
   });
 });

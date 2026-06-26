@@ -12,7 +12,10 @@ import {
   COMMUNITY_POST_CONTENT_MAX_LENGTH,
   COMMUNITY_POST_DRAFT_MAX_LENGTH,
   COMMUNITY_POST_TITLE_MAX_LENGTH,
+  COMMUNITY_REPLY_CONTENT_MAX_LENGTH,
   WRITABLE_CATEGORIES,
+  canSubmitCommunityPostDraft,
+  canSubmitCommunityReplyDraft,
   type WritableCommunityCategory,
 } from "../community-post-format";
 
@@ -72,6 +75,11 @@ export function FeedPostEditForm(props: {
     onSubmit,
   } = props;
   const draftLength = title.length + content.length;
+  const canSubmit = canSubmitCommunityPostDraft({
+    title,
+    content,
+    isSubmitting,
+  });
 
   return (
     <YeonSurface
@@ -128,7 +136,7 @@ export function FeedPostEditForm(props: {
             type="submit"
             size="sm"
             variant="primary"
-            disabled={isSubmitting || !title.trim() || !content.trim()}
+            disabled={!canSubmit}
           >
             {isSubmitting ? "저장 중" : "저장"}
           </YeonButton>
@@ -146,6 +154,10 @@ export function FeedPostReplyForm(props: {
   onSubmit: () => Promise<void>;
 }) {
   const { postId, replyDraft, isSubmitting, onChange, onSubmit } = props;
+  const canSubmit = canSubmitCommunityReplyDraft({
+    replyDraft,
+    isSubmitting,
+  });
 
   return (
     <YeonSurface
@@ -165,7 +177,7 @@ export function FeedPostReplyForm(props: {
         value={replyDraft}
         onChange={(event) => onChange(event.target.value)}
         rows={2}
-        maxLength={400}
+        maxLength={COMMUNITY_REPLY_CONTENT_MAX_LENGTH}
         placeholder="댓글을 입력하세요"
         className="min-h-[58px] resize-y border-0 bg-transparent text-[15px] leading-[1.5]"
       />
@@ -175,7 +187,7 @@ export function FeedPostReplyForm(props: {
           size="sm"
           variant="primary"
           className="h-9 px-4"
-          disabled={isSubmitting || !replyDraft.trim()}
+          disabled={!canSubmit}
         >
           {isSubmitting ? "게시 중" : "댓글"}
         </YeonButton>
@@ -206,6 +218,11 @@ export function WritePostPanel(props: {
     onCancel,
     onSubmit,
   } = props;
+  const canSubmit = canSubmitCommunityPostDraft({
+    title,
+    content,
+    isSubmitting: isCreatingPost,
+  });
 
   return (
     <YeonSurface
@@ -241,7 +258,7 @@ export function WritePostPanel(props: {
             type="submit"
             size="sm"
             variant="primary"
-            disabled={isCreatingPost || !title.trim() || !content.trim()}
+            disabled={!canSubmit}
           >
             {isCreatingPost ? "게시 중" : "게시"}
           </YeonButton>

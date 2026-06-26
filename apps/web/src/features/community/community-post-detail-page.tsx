@@ -22,6 +22,8 @@ import {
 import { CommunityGuestIdentityCard } from "./components/community-guest-identity-card";
 import { FeedPostEditForm } from "./components/community-feed-forms";
 import {
+  COMMUNITY_REPLY_CONTENT_MAX_LENGTH,
+  canSubmitCommunityReplyDraft,
   parseCommunityPost,
   serializeCommunityPost,
   type CommunityPostDraft,
@@ -87,6 +89,13 @@ export function CommunityPostDetailPage({
     [postId, posts]
   );
   const replies = repliesByPost[postId] ?? [];
+  const replyDraft = post ? (replyDrafts[post.id] ?? "") : "";
+  const canSubmitReply = post
+    ? canSubmitCommunityReplyDraft({
+        replyDraft,
+        isSubmitting: Boolean(isSubmittingReply[post.id]),
+      })
+    : false;
 
   useEffect(() => {
     if (post) {
@@ -293,12 +302,12 @@ export function CommunityPostDetailPage({
               >
                 <YeonField
                   as="textarea"
-                  value={replyDrafts[post.id] ?? ""}
+                  value={replyDraft}
                   onChange={(event) =>
                     setReplyDraft(post.id, event.target.value)
                   }
                   rows={2}
-                  maxLength={400}
+                  maxLength={COMMUNITY_REPLY_CONTENT_MAX_LENGTH}
                   placeholder="댓글을 입력하세요"
                   className="min-h-[70px]"
                 />
@@ -306,10 +315,7 @@ export function CommunityPostDetailPage({
                   type="submit"
                   size="sm"
                   variant="primary"
-                  disabled={
-                    !!isSubmittingReply[post.id] ||
-                    !(replyDrafts[post.id] ?? "").trim()
-                  }
+                  disabled={!canSubmitReply}
                   className="h-10"
                 >
                   {isSubmittingReply[post.id] ? "등록 중" : "등록"}

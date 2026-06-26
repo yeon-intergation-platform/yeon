@@ -20,6 +20,8 @@ export const COMMUNITY_POST_TITLE_MAX_LENGTH = 80;
 export const COMMUNITY_POST_CONTENT_MAX_LENGTH = 280;
 export const COMMUNITY_POST_DRAFT_MAX_LENGTH =
   COMMUNITY_POST_TITLE_MAX_LENGTH + COMMUNITY_POST_CONTENT_MAX_LENGTH;
+export const COMMUNITY_REPLY_CONTENT_MAX_LENGTH = 400;
+export const COMMUNITY_CHAT_MESSAGE_MAX_LENGTH = 1000;
 
 export const WRITABLE_CATEGORIES = COMMUNITY_CATEGORIES.filter(
   (category): category is WritableCommunityCategory => category !== "전체"
@@ -27,6 +29,43 @@ export const WRITABLE_CATEGORIES = COMMUNITY_CATEGORIES.filter(
 
 export function serializeCommunityPost(input: CommunityPostDraft) {
   return `[${input.category}] ${input.title.trim()}\n${input.content.trim()}`;
+}
+
+export function canSubmitCommunityPostDraft(input: {
+  title: string;
+  content: string;
+  isSubmitting: boolean;
+}) {
+  return (
+    !input.isSubmitting &&
+    Boolean(input.title.trim()) &&
+    Boolean(input.content.trim()) &&
+    input.title.length <= COMMUNITY_POST_TITLE_MAX_LENGTH &&
+    input.content.length <= COMMUNITY_POST_CONTENT_MAX_LENGTH &&
+    input.title.length + input.content.length <= COMMUNITY_POST_DRAFT_MAX_LENGTH
+  );
+}
+
+export function canSubmitCommunityReplyDraft(input: {
+  replyDraft: string;
+  isSubmitting: boolean;
+}) {
+  return (
+    !input.isSubmitting &&
+    Boolean(input.replyDraft.trim()) &&
+    input.replyDraft.length <= COMMUNITY_REPLY_CONTENT_MAX_LENGTH
+  );
+}
+
+export function canSendCommunityChatMessage(input: {
+  messageBody: string;
+  isSendingMessage: boolean;
+}) {
+  return (
+    !input.isSendingMessage &&
+    Boolean(input.messageBody.trim()) &&
+    input.messageBody.length <= COMMUNITY_CHAT_MESSAGE_MAX_LENGTH
+  );
 }
 
 export function parseCommunityPost(post: Pick<ChatServiceFeedPost, "body">) {
