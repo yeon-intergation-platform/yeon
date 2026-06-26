@@ -136,6 +136,44 @@ export type TerritoryBattleWinnerResult = {
   blueScore: number;
 };
 
+export function canStartTerritoryBattleRound(
+  phase: TerritoryBattlePhase
+): boolean {
+  return phase === TERRITORY_BATTLE_PHASE.WAITING;
+}
+
+export function canFinishTerritoryBattleRound(
+  phase: TerritoryBattlePhase
+): boolean {
+  return phase === TERRITORY_BATTLE_PHASE.PLAYING;
+}
+
+export function resolveTerritoryBattleSubmitError(input: {
+  phase: TerritoryBattlePhase;
+  now: number;
+  endsAt?: number;
+}): TerritoryBattleErrorCode | null {
+  if (input.phase !== TERRITORY_BATTLE_PHASE.PLAYING) {
+    return TERRITORY_BATTLE_ERROR.INVALID_PHASE;
+  }
+
+  if (input.endsAt !== undefined && input.now > input.endsAt) {
+    return TERRITORY_BATTLE_ERROR.ROUND_ENDED;
+  }
+
+  return null;
+}
+
+export function canPublishTerritoryBattleResult(
+  previousPhase: TerritoryBattlePhase,
+  nextPhase: TerritoryBattlePhase
+): boolean {
+  return (
+    previousPhase === TERRITORY_BATTLE_PHASE.PLAYING &&
+    nextPhase === TERRITORY_BATTLE_PHASE.FINISHED
+  );
+}
+
 export const TERRITORY_BATTLE_DEFAULT_WORDS = [
   "한동대",
   "구미",

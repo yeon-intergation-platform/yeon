@@ -28,8 +28,8 @@
 ## 진행 현황
 
 - 목표: 50개
-- 완료: 40개
-- 진행 중: territory battle/카드 저장소/API 경계 상태 정책 후보 조사
+- 완료: 42개
+- 진행 중: 카드 저장소/API 경계 상태 정책 후보 조사
 
 ## 태스크 체크리스트
 
@@ -61,8 +61,8 @@
 - [x] 26. 타자방 방장 권한 상태 전이를 테스트로 고정
 - [x] 27. 타자방 준비 토글 가능 상태를 테스트로 고정
 - [x] 28. 타자방 leave/reconnect 상태 cleanup 경계 고정
-- [ ] 29. territory battle phase 전이 가능 조건 조사
-- [ ] 30. territory battle 결과 확정 전 UI 노출 정책 고정
+- [x] 29. territory battle phase 전이 가능 조건 조사
+- [x] 30. territory battle 결과 확정 전 UI 노출 정책 고정
 - [x] 31. 커뮤니티 guest identity 확정/수정/초기화 상태 정책 조사
 - [x] 32. 커뮤니티 presence heartbeat stale cleanup 정책 구체화
 - [x] 33. 타자방 로비 채팅 전송 가능 조건을 shared 정책으로 고정
@@ -111,3 +111,7 @@
 - 28: `apps/race-server/src/rooms/typing-race-room.ts`의 `onLeave`가 명시적 퇴장/재접속 대기/즉시 제거/sync-only cleanup action을 shared 정책으로 분리.
 - 23~25, 28: `pnpm --filter @yeon/race-shared test -- typing-room-policy.test.ts` 결과 4개 파일/29개 테스트 통과.
 - 23~25, 28: `pnpm --filter @yeon/web typecheck`, `pnpm --filter @yeon/web lint`, `pnpm --filter @yeon/race-server typecheck`, `pnpm --filter @yeon/race-server lint`, `pnpm --filter @yeon/race-shared typecheck`, `pnpm --filter @yeon/race-shared lint` 통과.
+- 29~30: `packages/race-shared/src/territory-battle.ts`의 start/finish/submit/result publish phase 정책과 `territory-battle.test.ts` 테스트.
+- 29~30: `apps/race-server/src/rooms/territory-battle-room.ts`가 territory phase 전이, submit phase 오류, result publish 조건을 shared 정책으로 판정.
+- 29~30: `pnpm --filter @yeon/race-shared test -- territory-battle.test.ts` 결과 4개 파일/32개 테스트 통과.
+- 29~30: `pnpm --filter @yeon/race-shared typecheck`, `pnpm --filter @yeon/race-shared lint`, `pnpm --filter @yeon/race-server typecheck`, `pnpm --filter @yeon/race-server lint`, `bash bin/verify-ssot.sh --project-only`, `git diff --check` 통과.
