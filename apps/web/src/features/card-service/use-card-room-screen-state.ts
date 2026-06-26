@@ -1,10 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { CARD_ROOM_ROLE } from "@yeon/api-contract/card-rooms";
 import {
-  CARD_ROOM_ROLE,
-  CARD_ROOM_STATUS,
-} from "@yeon/api-contract/card-rooms";
+  canMoveToNextCardRoomCard,
+  canStartCardRoom,
+  findCardRoomParticipant,
+  shouldShowCardRoomBack,
+} from "@yeon/race-shared";
 import {
   readYeonSessionStorageItem,
   removeYeonSessionStorageItem,
@@ -129,33 +132,15 @@ export function useCardRoomScreenState(roomId: string) {
     localParticipantId: participantId,
     participants: voiceParticipants,
   });
-  const myParticipant =
-    state?.participants.find(
-      (participant) => participant.id === participantId
-    ) ?? null;
+  const myParticipant = state
+    ? findCardRoomParticipant(state.participants, participantId)
+    : null;
   const currentCard = state?.cards[state.currentCardIndex] ?? null;
   const isChecker = myParticipant?.role === CARD_ROOM_ROLE.CHECKER;
   const isMemorizer = myParticipant?.role === CARD_ROOM_ROLE.MEMORIZER;
-  const isWaiting = state?.status === CARD_ROOM_STATUS.WAITING;
-  const canStart = Boolean(
-    isWaiting &&
-    myParticipant?.isHost &&
-    state &&
-    state.cards.length > 0 &&
-    state.participants.some(
-      (participant) => participant.role === CARD_ROOM_ROLE.MEMORIZER
-    ) &&
-    state.participants.some(
-      (participant) => participant.role === CARD_ROOM_ROLE.CHECKER
-    ) &&
-    state.participants.every((participant) => participant.isReady)
-  );
-  // finding 20: 뒷면 공개는 방 status가 아니라 현재 카드의 공개/확정 상태로 판정한다.
-  const isResolved = Boolean(state && state.currentCardResult !== null);
-  const isRevealed = Boolean(state?.currentCardRevealed);
-  const shouldShowBack = isRevealed || isResolved;
-  // 다음 카드로 넘어갈 수 있는지는 현재 카드가 확정(resolved)됐는지로 판정한다.
-  const canMoveNext = isResolved;
+  const canStart = canStartCardRoom(state, myParticipant);
+  const shouldShowBack = shouldShowCardRoomBack(state);
+  const canMoveNext = canMoveToNextCardRoomCard(state);
 
   function submitChat() {
     const text = chatDraft.trim();

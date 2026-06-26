@@ -1,4 +1,11 @@
-import type { CardRoomRole } from "@yeon/race-shared";
+import {
+  canStartCardRoom,
+  findCardRoomParticipant,
+  isCardRoomFinished,
+  isCardRoomWaiting,
+  shouldShowCardRoomBack,
+  type CardRoomRole,
+} from "@yeon/race-shared";
 import { showYeonAlert, useYeonRouter as useRouter } from "@yeon/ui/native";
 import { useEffect, useMemo, useState } from "react";
 
@@ -100,25 +107,15 @@ export function useCardRoomScreenState(roomId: string) {
 
   const roomView = useMemo(() => {
     if (!state) return null;
-    const me = state.participants.find((p) => p.id === participantId) ?? null;
-    const myRole = me?.role ?? "MEMORIZER";
+    const me = findCardRoomParticipant(state.participants, participantId);
+    const myRole = me?.role ?? null;
     const isHost = me?.isHost ?? false;
     const currentCard = state.cards[state.currentCardIndex] ?? null;
     const isChecker = myRole === "CHECKER";
-    const isWaiting = state.status === "waiting";
-    const isFinished = state.status === "finished" || state.status === "closed";
-    // finding 20: 뒷면 공개는 방 status가 아니라 현재 카드의 공개/확정 상태로 판정한다.
-    const isRevealed =
-      state.currentCardRevealed || state.currentCardResult !== null;
-    // idx-126: web canStart와 동등한 조건으로 클라이언트 검증(서버 에러 의존 최소화).
-    const canStart = Boolean(
-      isWaiting &&
-      isHost &&
-      state.cards.length > 0 &&
-      state.participants.some((p) => p.role === "MEMORIZER") &&
-      state.participants.some((p) => p.role === "CHECKER") &&
-      state.participants.every((p) => p.isReady)
-    );
+    const isWaiting = isCardRoomWaiting(state);
+    const isFinished = isCardRoomFinished(state);
+    const isRevealed = shouldShowCardRoomBack(state);
+    const canStart = canStartCardRoom(state, me);
 
     return {
       canStart,

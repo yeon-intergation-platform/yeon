@@ -92,6 +92,92 @@ export type CardRoomRealtimeState = {
   results: readonly CardRoomResultDto[];
 };
 
+export type CardRoomParticipantPolicyState = Pick<
+  CardRoomParticipantDto,
+  "id" | "role" | "isHost" | "isReady"
+>;
+
+export type CardRoomLifecyclePolicyState = {
+  status: CardRoomStatus;
+};
+
+export type CardRoomStudyPolicyState = CardRoomLifecyclePolicyState & {
+  currentCardRevealed: boolean;
+  currentCardResult: CardRoomResult | null;
+};
+
+export type CardRoomStartPolicyState = CardRoomLifecyclePolicyState & {
+  cards: readonly unknown[];
+  participants: readonly CardRoomParticipantPolicyState[];
+};
+
+export function findCardRoomParticipant<
+  T extends CardRoomParticipantPolicyState,
+>(participants: readonly T[], participantId: string | null): T | null {
+  if (!participantId) {
+    return null;
+  }
+
+  return (
+    participants.find((participant) => participant.id === participantId) ?? null
+  );
+}
+
+export function isCardRoomWaiting(
+  state: CardRoomLifecyclePolicyState | null | undefined
+): boolean {
+  return state?.status === "waiting";
+}
+
+export function isCardRoomFinished(
+  state: CardRoomLifecyclePolicyState | null | undefined
+): boolean {
+  return state?.status === "finished" || state?.status === "closed";
+}
+
+export function isCardRoomCurrentCardResolved(
+  state: CardRoomStudyPolicyState | null | undefined
+): boolean {
+  return Boolean(state && state.currentCardResult !== null);
+}
+
+export function shouldShowCardRoomBack(
+  state: CardRoomStudyPolicyState | null | undefined
+): boolean {
+  return (
+    Boolean(state?.currentCardRevealed) || isCardRoomCurrentCardResolved(state)
+  );
+}
+
+export function canMoveToNextCardRoomCard(
+  state: CardRoomStudyPolicyState | null | undefined
+): boolean {
+  return isCardRoomCurrentCardResolved(state);
+}
+
+export function canStartCardRoom(
+  state: CardRoomStartPolicyState | null | undefined,
+  participant: CardRoomParticipantPolicyState | null | undefined
+): boolean {
+  if (!state || !participant || !isCardRoomWaiting(state)) {
+    return false;
+  }
+
+  if (!participant.isHost || state.cards.length === 0) {
+    return false;
+  }
+
+  const hasMemorizer = state.participants.some(
+    (candidate) => candidate.role === "MEMORIZER"
+  );
+  const hasChecker = state.participants.some(
+    (candidate) => candidate.role === "CHECKER"
+  );
+  const allReady = state.participants.every((candidate) => candidate.isReady);
+
+  return hasMemorizer && hasChecker && allReady;
+}
+
 export type CardRoomChatMessage = {
   content: string;
 };

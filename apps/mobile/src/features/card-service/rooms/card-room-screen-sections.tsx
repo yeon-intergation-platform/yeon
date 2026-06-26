@@ -18,6 +18,18 @@ import { cardRoomScreenStyles as styles } from "./card-room-screen-styles";
 
 const T = CARD_SERVICE_TEXT.rooms;
 
+function getCardRoomRoleLabel(role: CardRoomRole): string {
+  if (role === "MEMORIZER") {
+    return T.roleMemorizer;
+  }
+
+  if (role === "CHECKER") {
+    return T.roleChecker;
+  }
+
+  return T.roleUnassigned;
+}
+
 // idx-123: 표시 전 제어문자 제거 + 최대 길이 슬라이스.
 function sanitizeChatText(text: string, maxLen: number): string {
   // eslint-disable-next-line no-control-regex
@@ -75,7 +87,7 @@ export function CardRoomParticipantsSection({
               {p.isHost ? " 👑" : ""}
             </YeonText>
             <YeonText style={styles.participantRole}>
-              {p.role === "MEMORIZER" ? T.roleMemorizer : T.roleChecker}
+              {getCardRoomRoleLabel(p.role)}
               {p.isReady ? " ✓" : ""}
             </YeonText>
           </YeonView>
@@ -86,7 +98,7 @@ export function CardRoomParticipantsSection({
 }
 
 type WaitingControlsProps = {
-  myRole: CardRoomRole;
+  myRole: CardRoomRole | null;
   isReady: boolean;
   isHost: boolean;
   canStart: boolean;
