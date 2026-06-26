@@ -20,6 +20,7 @@ import {
   type CommunityGuestIdentity,
 } from "./community-guest-identity-confirm";
 import { CommunityGuestIdentityCard } from "./components/community-guest-identity-card";
+import { formatCommunityMediumDateTime } from "./community-date-format";
 import { FeedPostEditForm } from "./components/community-feed-forms";
 import {
   COMMUNITY_REPLY_CONTENT_MAX_LENGTH,
@@ -30,13 +31,6 @@ import {
 } from "./community-post-format";
 import { useCommunityFeed } from "./hooks/use-community-feed";
 import { type ChatServiceFeedPost } from "./chat-service-api";
-
-function formatKoreanDateTime(isoDate: string) {
-  return new Intl.DateTimeFormat("ko-KR", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(isoDate));
-}
 
 type PendingGuestIdentityAction = {
   actionLabel: string;
@@ -180,7 +174,7 @@ export function CommunityPostDetailPage({
                   className={SHARED_FEATURE_CLASS.text12Subtle}
                 >
                   {post.author.nickname} ·{" "}
-                  {formatKoreanDateTime(post.createdAt)}
+                  {formatCommunityMediumDateTime(post.createdAt)}
                 </YeonText>
               </YeonView>
 
@@ -365,7 +359,7 @@ export function CommunityPostDetailPage({
                         tone="inherit"
                         className="text-[11px] text-[#aaa]"
                       >
-                        {formatKoreanDateTime(reply.createdAt)}
+                        {formatCommunityMediumDateTime(reply.createdAt)}
                       </YeonText>
                     </YeonView>
                     <YeonText
