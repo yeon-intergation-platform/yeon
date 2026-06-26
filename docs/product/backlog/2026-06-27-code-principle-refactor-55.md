@@ -28,8 +28,8 @@
 ## 진행 현황
 
 - 목표: 55개
-- 완료: 16개
-- 진행 중: 13~20, 25~55번 후속 배치 리팩터링
+- 완료: 19개
+- 진행 중: 13~15, 19~20, 25~55번 후속 배치 리팩터링
 
 ## 태스크 체크리스트
 
@@ -48,9 +48,9 @@
 - [ ] 13. 모바일 카드 게스트 opt-in clear에서 browser remove 실패 시 fallback cleanup 정책 명시 (예외 처리)
 - [ ] 14. 모바일 카드 세션 boot catch가 token cleanup과 UI state 전이를 한 블록에 섞는 문제 분리 (SRP)
 - [ ] 15. 모바일 카드 세션 logout 서버 실패 로깅 정책을 재사용 가능한 helper로 분리 (예외 처리)
-- [ ] 16. 웹 카드 mutation 401 처리와 deck mutation 401 처리 중복 제거 (DRY)
-- [ ] 17. 웹 카드 mutation 인증 실패 시 guest/server query invalidation 정책을 공용 함수로 통일 (정책 단일화)
-- [ ] 18. 웹 카드 list fetch 비정상 응답이 Error만 던지고 status/code를 잃는 문제 보강 (API 계약 일치)
+- [x] 16. 웹 카드 mutation 401 처리와 deck mutation 401 처리 중복 제거 (DRY)
+- [x] 17. 웹 카드 mutation 인증 실패 시 guest/server query invalidation 정책을 공용 함수로 통일 (정책 단일화)
+- [x] 18. 웹 카드 list fetch 비정상 응답이 Error만 던지고 status/code를 잃는 문제 보강 (API 계약 일치)
 - [ ] 19. 웹 카드 fetch JSON parse 반환이 schema 검증 없이 type assertion만 쓰는 경계 조사 (입력 검증)
 - [ ] 20. 웹 카드 room profile parse 실패 처리의 fallback 정책 명시 (예외 은닉 금지)
 - [x] 21. 웹 카드 room lobby filter의 waiting raw 문자열 비교를 status 정책으로 이동 (정책 단일화)
@@ -98,3 +98,6 @@
 - 1~12 검증: `pnpm --filter @yeon/web exec vitest run src/features/community/community-date-format.test.ts src/features/typing-service/typing-service-fetch.test.ts`, `pnpm --filter @yeon/web typecheck`, `pnpm --filter @yeon/web lint`, `pnpm --filter @yeon/mobile typecheck`, `pnpm --filter @yeon/mobile lint` 통과.
 - 21~24: `packages/race-shared/src/card-room.ts`에 card room lobby filter, room end 가능 조건, participant role count 정책을 추가하고 web/mobile lobby, web header, web study panel에서 재사용.
 - 21~24 검증: `pnpm --filter @yeon/race-shared test -- card-room.test.ts`, `pnpm --filter @yeon/race-shared typecheck`, `pnpm --filter @yeon/race-shared lint`, `pnpm --filter @yeon/web typecheck`, `pnpm --filter @yeon/web lint`, `pnpm --filter @yeon/mobile typecheck`, `pnpm --filter @yeon/mobile lint` 통과.
+- 16~17: `apps/web/src/features/card-service/hooks/card-service-mutation-policy.ts`에 인증 만료 판정, server/guest query invalidation, 원인 예외 보존 wrapper를 추가하고 card/deck mutation hook이 재사용.
+- 18: `apps/web/src/features/card-service/card-service-fetch.ts`의 `listServerCardDecksOrNull`가 401은 guest fallback용 `null`로 유지하고, 그 외 비정상 응답은 `CardServiceApiError`로 status/code/message를 보존.
+- 16~18 검증: `pnpm --filter @yeon/web exec vitest run src/features/card-service/card-service-fetch.test.ts src/features/card-service/hooks/card-service-mutation-policy.test.ts`, `pnpm --filter @yeon/web typecheck`, `pnpm --filter @yeon/web lint`, `bash bin/verify-ssot.sh --project-only`, `git diff --check` 통과.

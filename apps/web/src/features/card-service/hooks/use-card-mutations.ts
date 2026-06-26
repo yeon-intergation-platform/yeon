@@ -15,21 +15,10 @@ import type {
   UpdateCardDeckItemBody,
 } from "@yeon/api-contract/card-decks";
 import { useCardServiceAuth } from "../auth-context";
-import { CardServiceApiError } from "../card-service-fetch";
-import { cardServiceQueryKeys } from "../card-service-query-keys";
-
-function invalidateDeckAndList(
-  queryClient: ReturnType<typeof useQueryClient>,
-  isAuthenticated: boolean,
-  deckId: string
-) {
-  void queryClient.invalidateQueries({
-    queryKey: cardServiceQueryKeys.deckDetail(isAuthenticated, deckId),
-  });
-  void queryClient.invalidateQueries({
-    queryKey: cardServiceQueryKeys.decks(isAuthenticated),
-  });
-}
+import {
+  invalidateCardDeckQueries,
+  withCardServiceAuthExpiredHandling,
+} from "./card-service-mutation-policy";
 
 // 데이터 변형은 repository 포트가, 401 인증 오류 처리는 세션(auth-context)이 담당한다(관심사 분리).
 function useDeckMutation<TInput, TOutput>(
@@ -42,23 +31,17 @@ function useDeckMutation<TInput, TOutput>(
   const repository = useYeonCardItemRepository();
   const shouldInvalidateOnSuccess = options?.invalidateOnSuccess !== false;
   return useMutation({
-    mutationFn: async (input: TInput) => {
-      try {
-        return await run(repository, input);
-      } catch (error) {
-        if (error instanceof CardServiceApiError && error.status === 401) {
-          markUnauthenticated();
-          invalidateDeckAndList(queryClient, true, deckId);
-          invalidateDeckAndList(queryClient, false, deckId);
-        }
-        throw error;
-      }
-    },
+    mutationFn: (input: TInput) =>
+      withCardServiceAuthExpiredHandling(() => run(repository, input), {
+        queryClient,
+        markUnauthenticated,
+        deckId,
+      }),
     onSuccess: () => {
       if (!shouldInvalidateOnSuccess) {
         return;
       }
-      invalidateDeckAndList(queryClient, isAuthenticated, deckId);
+      invalidateCardDeckQueries(queryClient, isAuthenticated, deckId);
     },
   });
 }
@@ -115,22 +98,12 @@ export function useUpdateCardStudyPreference(deckId: string) {
   const { isAuthenticated, markUnauthenticated } = useCardServiceAuth();
   const repository = useYeonCardItemRepository();
   return useMutation({
-    mutationFn: async (studyMode: CardStudyMode) => {
-      try {
-        return await repository.updateStudyPreference(studyMode);
-      } catch (error) {
-        if (error instanceof CardServiceApiError && error.status === 401) {
-          markUnauthenticated();
-          void queryClient.invalidateQueries({
-            queryKey: cardServiceQueryKeys.deckDetail(true, deckId),
-          });
-        }
-        throw error;
-      }
-    },
+    mutationFn: (studyMode: CardStudyMode) =>
+      withCardServiceAuthExpiredHandling(
+        () => repository.updateStudyPreference(studyMode),
+        { queryClient, markUnauthenticated, deckId }
+      ),
     onSuccess: () =>
-      void queryClient.invalidateQueries({
-        queryKey: cardServiceQueryKeys.deckDetail(isAuthenticated, deckId),
-      }),
+      invalidateCardDeckQueries(queryClient, isAuthenticated, deckId),
   });
 }
