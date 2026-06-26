@@ -28,6 +28,7 @@
     "validate": "pnpm lint && pnpm typecheck",
     "version:bump": "node scripts/bump-version.mjs",
     "release:verify": "node scripts/verify-release-version.mjs",
+    "verify:search-console-targets": "node bin/verify-search-console-targets.mjs",
     "verify:parity": "node bin/verify-parity.mjs",
     "sprite:alpha-key": "python3 scripts/sprites/alpha-key-sheet.py"
   },

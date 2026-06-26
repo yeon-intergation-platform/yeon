@@ -190,7 +190,7 @@ verification/credential 관리:
 
 1. Search Console에서 `sc-domain:yeon.world`를 열고 최근 7일 성과를 확인한다.
 2. `pnpm --filter @yeon/web public-content:governance-report`를 실행해 repo 기준 SEO/title/source/sitemap 상태를 확인한다.
-3. URL-prefix property `https://support.yeon.world/`, `https://news.yeon.world/`, `https://blog.yeon.world/`를 각각 연다.
+3. URL-prefix property `https://support.yeon.world/`, `https://news.yeon.world/`, `https://blog.yeon.world/`, `https://game.yeon.world/`, `https://discord-ai.yeon.world/`를 각각 연다.
 4. `실적`에서 총 노출수, 클릭수, CTR, 평균 게재순위를 기록한다.
 5. `페이지` 탭에서 노출이 생긴 URL 상위 10개를 기록한다.
 6. `검색어` 탭에서 support 글 제목 개선에 쓸 수 있는 query를 기록한다.
@@ -202,7 +202,7 @@ verification/credential 관리:
 1. `페이지 색인 생성`에서 색인 제외 페이지가 급증했는지 확인한다.
 2. `찾을 수 없음(404)`이 늘었으면 해당 URL의 내부 링크와 redirect 필요성을 확인한다.
 3. `대체 페이지(적절한 canonical 태그 있음)` 또는 canonical mismatch가 늘었는지 확인한다.
-4. `Sitemaps`에서 `support`, `news`, `blog`, `discord-ai` sitemap 제출 실패가 있는지 확인한다.
+4. `Sitemaps`에서 `support`, `news`, `blog`, `game`, `discord-ai` sitemap 제출 실패가 있는지 확인한다.
 5. `robots.txt` 테스트와 실제 `https://<host>/robots.txt` 응답이 같은 정책을 말하는지 확인한다.
 6. 오래된 support 글은 실제 서비스 동작과 다른 내용이 없는지 확인한다.
 
@@ -236,8 +236,8 @@ GA4 이벤트 의미:
 - [ ] `dev.yeon.world/robots.txt`는 전체 disallow 또는 noindex 정책을 반영한다.
 - [ ] 운영 `robots.txt`는 `/counseling-service`, `/check/`, `/auth/`, `/mockdata/`, `/api/`를 제외한다.
 - [ ] host별 `sitemap.xml`에는 해당 host canonical URL만 포함한다.
-- [ ] Search Console URL-prefix property는 `yeon`, `typing`, `card`, `community`, `support`, `news`, `blog`, `discord-ai` 8개를 등록한다.
-- [ ] Search Console sitemap은 위 8개 host의 `/sitemap.xml`을 각각 제출한다.
+- [ ] Search Console URL-prefix property는 `yeon`, `typing`, `card`, `community`, `game`, `support`, `news`, `blog`, `discord-ai` 9개를 등록한다.
+- [ ] Search Console sitemap은 위 9개 host의 `/sitemap.xml`을 각각 제출한다.
 - [ ] 운영 canonical은 최종 출력 기준으로 루트는 `https://yeon.world/...`, 서비스는 각 canonical subdomain으로 정렬된다.
 - [ ] `/admin/content`에서 support/news/blog의 Search Console, sitemap, robots 링크가 동작한다.
 - [ ] GA4에서 `page_view`, `public_content_cta_click`, `public_content_link_click` 이벤트를 확인한다.
