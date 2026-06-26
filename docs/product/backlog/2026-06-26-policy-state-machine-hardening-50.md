@@ -28,8 +28,8 @@
 ## 진행 현황
 
 - 목표: 50개
-- 완료: 49개
-- 진행 중: 장부/작업 로그/PR 증거 정합성 점검
+- 완료: 50개
+- 진행 중: 없음
 
 ## 태스크 체크리스트
 
@@ -82,10 +82,11 @@
 - [x] 47. 관련 web lint/typecheck 통과
 - [x] 48. 관련 mobile typecheck 통과
 - [x] 49. 관련 shared package test/typecheck 통과
-- [ ] 50. 장부/작업 로그/PR 증거 정합성 점검
+- [x] 50. 장부/작업 로그/PR 증거 정합성 점검
 
 ## 완료 증거
 
+- PR 증거: #847(1~20, 47~49), #848(21~22, 26~27, 33), #849(31~32, 34), #850(37~38, 46), #851(39~40), #852(23~25, 28), #853(29~30), #854(35~36, 41~45).
 - 01~20: `packages/race-shared/src/card-room.ts` 정책 함수와 `packages/race-shared/src/card-room.test.ts` 상태머신 테스트.
 - 17: `apps/web/src/features/card-service/use-card-room-screen-state.ts`가 shared 정책 함수를 사용.
 - 18~19: `apps/mobile/src/features/card-service/rooms/use-card-room-screen-state.ts`, `card-room-screen-sections.tsx`, `card-service-copy.ts`가 shared 정책 함수와 미배정 역할 라벨을 사용.
@@ -122,3 +123,4 @@
 - 45: `apps/race-server/src/rooms/card-room-participant-token.test.ts`가 `SPRING_INTERNAL_TOKEN` 미설정 legacy mode와 설정 시 HMAC participant token 필수 검증 경계를 고정.
 - 35~36, 41~45: `pnpm --filter @yeon/web test -- src/features/card-service/card-service-query-keys.test.ts src/features/card-service/hooks/use-merge-guest.test.ts src/lib/route-state/search-params.test.ts src/server/card-rooms-spring-client.test.ts` 결과 web Vitest 232개 파일/1028개 테스트 통과.
 - 35~36, 41~45: `pnpm --filter @yeon/web typecheck`, `pnpm --filter @yeon/web lint`, `pnpm --filter @yeon/race-server typecheck`, `pnpm --filter @yeon/race-server lint` 통과.
+- 50: 본 장부의 체크리스트, 완료 수, 작업 로그(`ai-log/hyeonjun/2026-06-26/16~24-작업-codex_policy-state-machine-hardening-*`)와 PR 증거(#847~#854)를 대조해 누락 없는 50/50 완료 상태로 고정.
