@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it } from "vitest";
+import { getGameSlugs } from "@/features/game-service/game-catalog";
 import {
   PUBLIC_CONTENT_CANONICAL_URLS,
+  SERVICE_CANONICAL_URLS,
   buildCanonicalUrl,
   buildSitemapUrlForHostname,
   buildServiceCanonicalUrl,
@@ -209,6 +211,17 @@ describe("seo", () => {
     ).toBe(true);
 
     expect(getIndexableSitemapEntriesForHostname("dev.yeon.world")).toEqual([]);
+  });
+
+  it("게임 host별 sitemap은 카탈로그의 모든 상세 페이지를 포함한다", () => {
+    const gameSitemapUrls = getIndexableSitemapEntriesForHostname(
+      "game.yeon.world"
+    ).map((entry) => entry.url);
+
+    expect(gameSitemapUrls).toEqual([
+      SERVICE_CANONICAL_URLS.game,
+      ...getGameSlugs().map((slug) => `${SERVICE_CANONICAL_URLS.game}/${slug}`),
+    ]);
   });
 
   it("host별 robots는 sitemap과 noindex 정책을 분리한다", () => {
