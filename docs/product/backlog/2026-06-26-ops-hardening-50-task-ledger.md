@@ -28,8 +28,8 @@
 ## 진행 현황
 
 - 목표: 50개
-- 완료: 25개
-- 진행 중: 2차 묶음 대기
+- 완료: 50개
+- 진행 중: 없음
 
 ## 태스크 체크리스트
 
@@ -58,28 +58,39 @@
 - [x] 23. feed thumb URL reject 경계 고정
 - [x] 24. feed limit 유지 경계 고정
 - [x] 25. feed revalidate 초 유지 경계 고정
-- [ ] 26. feed fetch 실패 시 last-good fallback 경계 고정
-- [ ] 27. feed HTTP 실패 시 last-good fallback 경계 고정
-- [ ] 28. feed 빈 배열 응답 시 last-good fallback 경계 고정
-- [ ] 29. feed 성공 후 last-good 갱신 경계 고정
-- [ ] 30. game source category filter page clamp 경계 고정
-- [ ] 31. game source collection 우선순위 경계 고정
-- [ ] 32. game source search trim/null 경계 고정
-- [ ] 33. game source empty result totalPages 경계 고정
-- [ ] 34. game source high page clamp 경계 고정
-- [ ] 35. game detail metadata canonical host 경계 고정
-- [ ] 36. game detail metadata unknown slug noindex 경계 고정
-- [ ] 37. game JSON-LD 필수 필드 경계 고정
-- [ ] 38. game sitemap canonical host 전수 경계 고정
-- [ ] 39. game robots sitemap host 경계 고정
-- [ ] 40. service subdomain game rewrite query 보존 경계 고정
-- [ ] 41. service subdomain game legacy query redirect 경계 고정
-- [ ] 42. Search Console 제출 dry-run host 목록 경계 고정
-- [ ] 43. Search Console 문서 host 목록 경계 고정
-- [ ] 44. BFF game play malformed JSON 경계 고정
-- [ ] 45. BFF game comments header encoding 경계 고정
-- [ ] 46. Spring game comments header decoding 경계 고정
-- [ ] 47. backend game comments guest secret reveal 경계 고정
-- [ ] 48. backend game likes duplicate toggle 경계 고정
-- [ ] 49. backend game favorites duplicate toggle 경계 고정
-- [ ] 50. 운영누락 보강 장부와 검증 로그 정합성 점검
+- [x] 26. feed fetch 실패 시 last-good fallback 경계 고정
+- [x] 27. feed HTTP 실패 시 last-good fallback 경계 고정
+- [x] 28. feed 빈 배열 응답 시 last-good fallback 경계 고정
+- [x] 29. feed 성공 후 last-good 갱신 경계 고정
+- [x] 30. game source category filter page clamp 경계 고정
+- [x] 31. game source collection 우선순위 경계 고정
+- [x] 32. game source search trim/null 경계 고정
+- [x] 33. game source empty result totalPages 경계 고정
+- [x] 34. game source high page clamp 경계 고정
+- [x] 35. game detail metadata canonical host 경계 고정
+- [x] 36. game detail metadata unknown slug noindex 경계 고정
+- [x] 37. game JSON-LD 필수 필드 경계 고정
+- [x] 38. game sitemap canonical host 전수 경계 고정
+- [x] 39. game robots sitemap host 경계 고정
+- [x] 40. service subdomain game rewrite query 보존 경계 고정
+- [x] 41. service subdomain game legacy query redirect 경계 고정
+- [x] 42. Search Console 제출 dry-run host 목록 경계 고정
+- [x] 43. Search Console 문서 host 목록 경계 고정
+- [x] 44. BFF game play malformed JSON 경계 고정
+- [x] 45. BFF game comments header encoding 경계 고정
+- [x] 46. Spring game comments header decoding 경계 고정
+- [x] 47. game catalog/feed/source/SEO/route 관련 테스트 묶음 통과 확인
+- [x] 48. web lint/typecheck 통과 확인
+- [x] 49. project SSOT/Search Console verifier 통과 확인
+- [x] 50. 운영누락 보강 장부와 검증 로그 정합성 점검
+
+## 완료 증거
+
+- 01~25: `game-catalog.test.ts`, `game-feed.test.ts`의 catalog/feed 불변식 테스트.
+- 26~29: `game-feed-fetch.test.ts`의 last-good fallback 테스트.
+- 30~34: `game-source.test.ts`의 filter, collection, query, empty result, page clamp 테스트.
+- 35~39: `page.test.ts`, `seo.test.ts`, `sitemap-robots.test.ts`의 metadata/sitemap/robots 테스트.
+- 40~41: `subdomain-routing.test.ts`의 game subdomain query 보존 테스트.
+- 42~43: `bin/verify-search-console-targets.mjs`와 `bash bin/verify-ssot.sh --project-only`.
+- 44~46: game play/comments route/client/backend header 테스트.
+- 47~50: 2차 묶음 통합 테스트와 로그/장부 검증.

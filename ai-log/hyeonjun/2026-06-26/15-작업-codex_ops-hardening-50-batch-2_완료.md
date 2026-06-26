@@ -1,0 +1,22 @@
+# 운영누락 보강 50개 태스크 2차 묶음
+
+- 목표: 운영누락 보강 50개 태스크 중 26~50번을 완료한다.
+- 범위:
+  - `game-feed-fetch.test.ts` 추가.
+  - `game-source.test.ts` 보강.
+  - `subdomain-routing.test.ts` game query 보존 경계 보강.
+  - 50개 태스크 장부 완료 처리.
+- 변경:
+  - 26~29번: feed fetch 실패/HTTP 실패/빈 배열/성공 후 실패 last-good fallback 테스트 추가.
+  - 30~34번: game source category filter, collection 우선순위, query trim/null, empty result, high page clamp 테스트 추가.
+  - 40~41번: game subdomain rewrite/legacy redirect query 보존 테스트 추가.
+  - 35~39, 42~46번: main의 기존 metadata/sitemap/robots/Search Console/BFF/header 테스트 증거를 장부에 연결.
+  - 47~50번: 통합 테스트, lint/typecheck, SSOT, 장부/로그 정합성 확인으로 완료 처리.
+- 검증:
+  - `pnpm --filter @yeon/web test -- src/features/game-service/__tests__/game-feed-fetch.test.ts src/features/game-service/__tests__/game-source.test.ts src/features/game-service/__tests__/game-catalog.test.ts src/features/game-service/__tests__/game-feed.test.ts src/lib/__tests__/subdomain-routing.test.ts src/lib/__tests__/seo.test.ts src/app/__tests__/sitemap-robots.test.ts 'src/app/game-service/[gameSlug]/__tests__/page.test.ts' src/app/api/v1/game-service/play/__tests__/route.test.ts src/server/__tests__/game-comments-spring-client.test.ts`
+  - `pnpm --filter @yeon/web lint`
+  - `pnpm --filter @yeon/web typecheck`
+  - `bash bin/verify-ssot.sh --project-only`
+  - `git diff --check`
+  - `cd apps/backend && ./gradlew test --tests world.yeon.backend.game_service_comments.controller.GameServiceCommentsControllerTests`
+- 상태: 완료.
