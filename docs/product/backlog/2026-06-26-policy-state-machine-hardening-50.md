@@ -28,8 +28,8 @@
 ## 진행 현황
 
 - 목표: 50개
-- 완료: 36개
-- 진행 중: 타자방/카드 저장소/API 경계 상태 정책 후보 조사
+- 완료: 40개
+- 진행 중: territory battle/카드 저장소/API 경계 상태 정책 후보 조사
 
 ## 태스크 체크리스트
 
@@ -55,12 +55,12 @@
 - [x] 20. 카드방 상태 정책을 race-shared 패키지 테스트로 검증
 - [x] 21. 타자방 시작 가능 조건의 participant/player 수 경계 조사
 - [x] 22. 타자방 waiting/in_progress/finished 상태 판정 중복 조사
-- [ ] 23. 타자방 에러 상태와 재시도 가능 상태 분리
-- [ ] 24. 타자방 결과 표시 가능 조건을 shared 정책으로 고정
-- [ ] 25. 타자방 랜덤 덱 선택 실패 fallback 정책 구체화
+- [x] 23. 타자방 에러 상태와 재시도 가능 상태 분리
+- [x] 24. 타자방 결과 표시 가능 조건을 shared 정책으로 고정
+- [x] 25. 타자방 랜덤 덱 선택 실패 fallback 정책 구체화
 - [x] 26. 타자방 방장 권한 상태 전이를 테스트로 고정
 - [x] 27. 타자방 준비 토글 가능 상태를 테스트로 고정
-- [ ] 28. 타자방 leave/reconnect 상태 cleanup 경계 고정
+- [x] 28. 타자방 leave/reconnect 상태 cleanup 경계 고정
 - [ ] 29. territory battle phase 전이 가능 조건 조사
 - [ ] 30. territory battle 결과 확정 전 UI 노출 정책 고정
 - [x] 31. 커뮤니티 guest identity 확정/수정/초기화 상태 정책 조사
@@ -105,3 +105,9 @@
 - 40: `apps/web/src/features/card-service/components/card-editor-image-utils.ts`의 업로드 side 상태/시작 가능 정책이 add form, row editor, upload hook에서 재사용됨.
 - 39~40: `pnpm --filter @yeon/web test -- src/features/card-service/utils/bulk-card-import-parser.test.ts src/features/card-service/components/card-editor-image-utils.test.ts` 결과 web Vitest 228개 파일/1019개 테스트 통과.
 - 39~40: `pnpm --filter @yeon/web typecheck`, `pnpm --filter @yeon/web lint`, `bash bin/verify-ssot.sh --project-only`, `git diff --check` 통과.
+- 23~25, 28: `packages/race-shared/src/typing-race.ts`의 retryable connection, result visibility, same seed retry, disconnect cleanup action 정책과 `typing-room-policy.test.ts` 테스트.
+- 24: `apps/web/src/features/typing-service/typing-race-multiplayer-screen.tsx`가 결과 패널 노출 조건을 shared 정책으로 판정.
+- 25: `apps/web/src/features/typing-service/typing-race-play-screen.tsx`가 동일 signed passage seed 재시도와 retryable connection fallback을 shared 정책으로 판정.
+- 28: `apps/race-server/src/rooms/typing-race-room.ts`의 `onLeave`가 명시적 퇴장/재접속 대기/즉시 제거/sync-only cleanup action을 shared 정책으로 분리.
+- 23~25, 28: `pnpm --filter @yeon/race-shared test -- typing-room-policy.test.ts` 결과 4개 파일/29개 테스트 통과.
+- 23~25, 28: `pnpm --filter @yeon/web typecheck`, `pnpm --filter @yeon/web lint`, `pnpm --filter @yeon/race-server typecheck`, `pnpm --filter @yeon/race-server lint`, `pnpm --filter @yeon/race-shared typecheck`, `pnpm --filter @yeon/race-shared lint` 통과.

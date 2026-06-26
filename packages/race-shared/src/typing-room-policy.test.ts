@@ -1,15 +1,21 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  canShowTypingRoomResults,
   canEditTypingRoomSettings,
   canSendTypingRoomLobbyChat,
   canStartTypingRoom,
   canSwitchTypingRoomTeam,
   canToggleTypingRoomReady,
   findTypingRoomParticipant,
+  isRetryableTypingRoomConnectionState,
   isTypingRoomTerminal,
   isTypingRoomWaiting,
+  resolveTypingRoomDisconnectAction,
+  shouldRetrySameTypingRaceSeed,
+  TYPING_ROOM_DISCONNECT_ACTION,
   TYPING_ROOM_GAME_TYPE,
+  type TypingResultSnapshot,
   type TypingRoomLobbyPolicyState,
   type TypingRoomParticipantPolicyState,
 } from "./typing-race";
@@ -38,6 +44,22 @@ function room(
     participants: [host, guest],
     ...overrides,
   };
+}
+
+function result(overrides: Partial<TypingResultSnapshot> = {}) {
+  return {
+    userId: "guest",
+    label: "Guest",
+    cpm: 320,
+    wpm: 64,
+    accuracy: 98,
+    mistakeCount: 1,
+    elapsedTimeMs: 15_000,
+    score: 314,
+    rank: 1,
+    finishedAt: 1_000,
+    ...overrides,
+  } satisfies TypingResultSnapshot;
 }
 
 describe("typing room lobby policy state machine", () => {
@@ -102,5 +124,91 @@ describe("typing room lobby policy state machine", () => {
     expect(
       canSendTypingRoomLobbyChat(room({ status: "live" }), "hello", 10)
     ).toBe(false);
+  });
+
+  it("separates retryable connection states from transient and successful states", () => {
+    expect(isRetryableTypingRoomConnectionState("error")).toBe(true);
+    expect(isRetryableTypingRoomConnectionState("disconnected")).toBe(true);
+    expect(isRetryableTypingRoomConnectionState("connecting")).toBe(false);
+    expect(isRetryableTypingRoomConnectionState("connected")).toBe(false);
+    expect(isRetryableTypingRoomConnectionState("idle")).toBe(false);
+  });
+
+  it("retries the same remote seed only when the signed passage repeats", () => {
+    expect(
+      shouldRetrySameTypingRaceSeed({
+        seedToken: "signed",
+        passageId: "p1",
+        excludedPassageId: "p1",
+      })
+    ).toBe(true);
+    expect(
+      shouldRetrySameTypingRaceSeed({
+        seedToken: null,
+        passageId: "p1",
+        excludedPassageId: "p1",
+      })
+    ).toBe(false);
+    expect(
+      shouldRetrySameTypingRaceSeed({
+        seedToken: "signed",
+        passageId: "p2",
+        excludedPassageId: "p1",
+      })
+    ).toBe(false);
+  });
+
+  it("shows results only after the current participant has a result or the room is finished", () => {
+    expect(
+      canShowTypingRoomResults(
+        { status: "live", results: [result({ userId: "guest" })] },
+        "guest"
+      )
+    ).toBe(true);
+    expect(
+      canShowTypingRoomResults(
+        { status: "live", results: [result({ userId: "guest" })] },
+        "host"
+      )
+    ).toBe(false);
+    expect(
+      canShowTypingRoomResults({ status: "finished", results: [] }, "host")
+    ).toBe(true);
+    expect(canShowTypingRoomResults(null, "host")).toBe(false);
+  });
+
+  it("resolves leave and reconnect cleanup actions without mixing explicit leave and network loss", () => {
+    expect(
+      resolveTypingRoomDisconnectAction({
+        isExplicitLeave: true,
+        lobbyMode: true,
+        hasParticipant: true,
+        hasParticipantId: true,
+      })
+    ).toBe(TYPING_ROOM_DISCONNECT_ACTION.REFRESH_LIFECYCLE);
+    expect(
+      resolveTypingRoomDisconnectAction({
+        isExplicitLeave: false,
+        lobbyMode: true,
+        hasParticipant: true,
+        hasParticipantId: true,
+      })
+    ).toBe(TYPING_ROOM_DISCONNECT_ACTION.SCHEDULE_RECONNECT_CLEANUP);
+    expect(
+      resolveTypingRoomDisconnectAction({
+        isExplicitLeave: false,
+        lobbyMode: false,
+        hasParticipant: false,
+        hasParticipantId: true,
+      })
+    ).toBe(TYPING_ROOM_DISCONNECT_ACTION.REMOVE_PARTICIPANT);
+    expect(
+      resolveTypingRoomDisconnectAction({
+        isExplicitLeave: false,
+        lobbyMode: false,
+        hasParticipant: false,
+        hasParticipantId: false,
+      })
+    ).toBe(TYPING_ROOM_DISCONNECT_ACTION.SYNC_ONLY);
   });
 });

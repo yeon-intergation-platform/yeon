@@ -2,6 +2,8 @@
 import { YEON_WEB_SHARED_CLASS as SHARED_FEATURE_CLASS } from "@yeon/ui/theme/web-style-tokens";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+  isRetryableTypingRoomConnectionState,
+  shouldRetrySameTypingRaceSeed,
   TYPING_ROOM_LANGUAGE,
   type TypingRoomCreateMessage,
 } from "@yeon/race-shared";
@@ -53,10 +55,13 @@ export function TypingRacePlayScreen() {
         settings.locale,
         { excludedPassageId: lastSeedPassageIdRef.current }
       );
-      const shouldRetrySameRemoteSeed =
-        result.ok &&
-        result.seed?.seedToken &&
-        result.seed.passageId === lastSeedPassageIdRef.current;
+      const shouldRetrySameRemoteSeed = result.ok
+        ? shouldRetrySameTypingRaceSeed({
+            seedToken: result.seed?.seedToken,
+            passageId: result.seed?.passageId,
+            excludedPassageId: lastSeedPassageIdRef.current,
+          })
+        : false;
       const finalResult = shouldRetrySameRemoteSeed
         ? await resolveTypingRaceSeed(deckState.selectedDeck, settings.locale, {
             excludedPassageId: lastSeedPassageIdRef.current,
@@ -125,10 +130,7 @@ export function TypingRacePlayScreen() {
   useEffect(() => {
     if (race.connectionState === "connected" || race.connectionState === "idle")
       return;
-    if (
-      race.connectionState === "error" ||
-      race.connectionState === "disconnected"
-    ) {
+    if (isRetryableTypingRoomConnectionState(race.connectionState)) {
       setFallbackToSolo(true);
       return;
     }
