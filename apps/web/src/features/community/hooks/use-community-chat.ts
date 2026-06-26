@@ -15,6 +15,7 @@ import {
   type CommunityChatMessage,
 } from "../community-chat-api";
 import { communityQueryKeys } from "./community-query-keys";
+import { normalizeCommunityChatMessageDraft } from "../community-post-format";
 
 type UseCommunityChatOptions = {
   pollIntervalMs?: number;
@@ -47,7 +48,7 @@ export function useCommunityChat({
 
   const sendMessageMutation = useMutation({
     mutationFn: async (message: string) => {
-      const trimmed = message.trim();
+      const trimmed = normalizeCommunityChatMessageDraft(message);
       if (!trimmed) {
         throw new Error("메시지를 입력해주세요.");
       }

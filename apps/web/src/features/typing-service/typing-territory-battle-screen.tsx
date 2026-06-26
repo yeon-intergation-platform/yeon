@@ -13,7 +13,10 @@ import {
   type TerritoryBattleTeam,
   type TerritoryCellSnapshot,
 } from "@yeon/race-shared";
-import { useTerritoryBattleRoom } from "./use-territory-battle-room";
+import {
+  canShowTerritoryBattleResult,
+  useTerritoryBattleRoom,
+} from "./use-territory-battle-room";
 import { useTypingSettings, type TypingLocale } from "./use-typing-settings";
 import {
   YeonBadge,
@@ -1056,9 +1059,10 @@ function TypingTerritoryBattleGameScreen({
     originRoomId
   )}`;
   const resultWinner = territoryRoom.result?.winner ?? winner;
-  const shouldShowResult =
-    engineSnapshot.phase === TERRITORY_BATTLE_PHASE.FINISHED ||
-    Boolean(territoryRoom.result);
+  const shouldShowResult = canShowTerritoryBattleResult({
+    result: territoryRoom.result,
+    snapshot: engineSnapshot,
+  });
   const territoryStatusMessage = territoryRoom.roomError
     ? labels.game.connectionError
     : message;

@@ -317,3 +317,13 @@ export function getTerritoryPhaseLabel(phase: TerritoryBattlePhase | null) {
   };
   return phase ? labels[phase] : "연결 전";
 }
+
+export function canShowTerritoryBattleResult(input: {
+  result: TerritoryBattleWinnerResult | null;
+  snapshot: Pick<TerritoryBattleSnapshot, "phase"> | null;
+}) {
+  return (
+    input.snapshot?.phase === TERRITORY_BATTLE_PHASE.FINISHED ||
+    Boolean(input.result)
+  );
+}

@@ -9,7 +9,10 @@ import {
   type YeonElement,
 } from "@yeon/ui";
 import { requestYeonAnimationFrame } from "@yeon/ui/runtime/YeonBrowserRuntime";
-import { canSendCommunityChatMessage } from "../community-post-format";
+import {
+  canSendCommunityChatMessage,
+  normalizeCommunityChatMessageDraft,
+} from "../community-post-format";
 import { useCommunityChat } from "../hooks/use-community-chat";
 import { useCommunityChatPanel } from "../hooks/use-community-chat-panel";
 import { CommunityChatForm } from "./community-chat-form";
@@ -92,7 +95,7 @@ export function CommunityChatWidget({
       return;
     }
 
-    const trimmed = messageBody.trim();
+    const trimmed = normalizeCommunityChatMessageDraft(messageBody);
     void sendMessage(trimmed)
       .then(() => {
         setMessageBody("");

@@ -4,12 +4,16 @@ const sessionStorage = new Map<string, string>();
 const writeYeonSessionStorageItem = vi.fn((key: string, value: string) => {
   sessionStorage.set(key, value);
 });
+const removeYeonSessionStorageItem = vi.fn((key: string) => {
+  sessionStorage.delete(key);
+});
 
 vi.mock("@yeon/ui/runtime/YeonBrowserRuntime", () => ({
   createYeonRandomUUID: () => "uuid-1234",
   getYeonNow: () => 1234567890,
   getYeonRandom: () => 0.123456789,
   readYeonSessionStorageItem: (key: string) => sessionStorage.get(key) ?? null,
+  removeYeonSessionStorageItem,
   writeYeonSessionStorageItem,
 }));
 
@@ -21,6 +25,7 @@ vi.mock("../community-presence-api", () => ({
 describe("community presence", () => {
   beforeEach(() => {
     sessionStorage.clear();
+    removeYeonSessionStorageItem.mockClear();
     writeYeonSessionStorageItem.mockClear();
   });
 
@@ -55,5 +60,16 @@ describe("community presence", () => {
       "yeon-community-presence-session",
       "presence-uuid-1234-1234567890"
     );
+    expect(removeYeonSessionStorageItem).toHaveBeenCalledWith(
+      "yeon-community-presence-session"
+    );
+  });
+
+  it("저장된 presence session id가 공백뿐이면 삭제 없이 새 값만 저장한다", async () => {
+    const { readPresenceSessionId } = await import("../community-presence");
+    sessionStorage.set("yeon-community-presence-session", "  ");
+
+    expect(readPresenceSessionId()).toBe("presence-uuid-1234-1234567890");
+    expect(removeYeonSessionStorageItem).not.toHaveBeenCalled();
   });
 });
