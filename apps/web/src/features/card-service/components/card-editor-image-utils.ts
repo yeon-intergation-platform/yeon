@@ -65,6 +65,37 @@ const IMAGE_MIME_TO_EXTS = {
 
 type CardEditorFileLike = Pick<YeonFile, "name" | "size" | "type">;
 type SupportedImageMimeType = keyof typeof IMAGE_MIME_TO_EXTS;
+export type CardEditorImageUploadSide = "front" | "back";
+export type CardEditorImageUploadSideState = Record<
+  CardEditorImageUploadSide,
+  boolean
+>;
+
+export function isCardEditorImageUploadInProgress(
+  state: CardEditorImageUploadSideState
+) {
+  return state.front || state.back;
+}
+
+export function updateCardEditorImageUploadSideState(
+  state: CardEditorImageUploadSideState,
+  side: CardEditorImageUploadSide,
+  isUploading: boolean
+): CardEditorImageUploadSideState {
+  return state[side] === isUploading
+    ? state
+    : {
+        ...state,
+        [side]: isUploading,
+      };
+}
+
+export function canStartCardEditorImageUpload(input: {
+  itemCount: number;
+  isUploading: boolean;
+}) {
+  return input.itemCount > 0 && !input.isUploading;
+}
 
 export function clampCardEditorImageWidth(value: number) {
   return Math.min(

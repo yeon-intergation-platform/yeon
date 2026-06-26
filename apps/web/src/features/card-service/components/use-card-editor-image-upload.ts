@@ -17,6 +17,7 @@ import {
   CARD_EDITOR_IMAGE_DEFAULT_WIDTH,
   CARD_EDITOR_MAX_IMAGE_COUNT,
   buildCardEditorMaxImageCountError,
+  canStartCardEditorImageUpload,
   countCardEditorImages,
   getCardEditorExtensionFromMime,
   getCardEditorImageNormalizationErrorMessage,
@@ -194,7 +195,12 @@ export function useCardEditorImageUpload() {
       files: YeonFile[],
       insertRange = getCurrentImageInsertRange(editor)
     ) => {
-      if (files.length === 0 || isUploading) {
+      if (
+        !canStartCardEditorImageUpload({
+          itemCount: files.length,
+          isUploading,
+        })
+      ) {
         return false;
       }
 
@@ -268,7 +274,12 @@ export function useCardEditorImageUpload() {
 
   const handleImageSourceFileReplacements = useCallback(
     async (editor: Editor, replacements: ImageSourceFileReplacement[]) => {
-      if (replacements.length === 0 || isUploading) {
+      if (
+        !canStartCardEditorImageUpload({
+          itemCount: replacements.length,
+          isUploading,
+        })
+      ) {
         return false;
       }
 
@@ -365,7 +376,12 @@ export function useCardEditorImageUpload() {
 
   const handlePasteImageSource = useCallback(
     async (editor: Editor, source: string) => {
-      if (isUploading) {
+      if (
+        !canStartCardEditorImageUpload({
+          itemCount: 1,
+          isUploading,
+        })
+      ) {
         return false;
       }
 

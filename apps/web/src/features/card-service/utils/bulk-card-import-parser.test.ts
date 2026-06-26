@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { parseBulkCardImportInput } from "./bulk-card-import-parser";
+import {
+  deriveBulkCardImportFormPolicy,
+  parseBulkCardImportInput,
+} from "./bulk-card-import-parser";
 
 describe("parseBulkCardImportInput", () => {
   it("[[Q]], [[A]], [[CARD]] 마커로 여러 카드를 파싱한다", () => {
@@ -98,5 +101,28 @@ describe("parseBulkCardImportInput", () => {
       frontText: "[[Q]]",
       backText: "[[CARD]]",
     });
+  });
+
+  it("일괄 추가 submit과 preview 상태를 parse 결과에서 파생한다", () => {
+    const result = parseBulkCardImportInput(`[[Q]]
+1
+[[A]]
+1
+[[CARD]]
+[[Q]]
+2
+[[A]]
+2`);
+
+    expect(deriveBulkCardImportFormPolicy(result, false)).toEqual({
+      canSubmit: true,
+      hiddenPreviewCount: 0,
+      previewCards: result.cards,
+    });
+    expect(deriveBulkCardImportFormPolicy(result, true).canSubmit).toBe(false);
+    expect(
+      deriveBulkCardImportFormPolicy({ ...result, errors: ["오류"] }, false)
+        .canSubmit
+    ).toBe(false);
   });
 });
