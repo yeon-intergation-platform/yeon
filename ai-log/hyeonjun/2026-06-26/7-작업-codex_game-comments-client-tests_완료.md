@@ -10,6 +10,7 @@
 - 댓글 client 테스트 작성 중 한글 `displayName`을 `Headers.set`에 직접 넣으면 Fetch ByteString 제한으로 TypeError가 나는 버그를 확인했다.
 - 웹 BFF는 댓글 viewer name/avatar 헤더를 percent-encode하고, Spring controller는 service 호출 전에 UTF-8 decode하도록 수정했다.
 - 댓글 목록/작성/비밀댓글 확인/삭제 client 호출 계약 테스트를 추가했다.
+- Spring controller 단위 테스트로 인코딩된 사용자 헤더가 service에는 원문으로 전달되는지 고정했다.
 
 ## 검증
 
@@ -18,5 +19,6 @@
 - `pnpm --filter @yeon/web typecheck`
 - `pnpm --filter @yeon/web lint`
 - `cd apps/backend && ./gradlew test`
+- `cd apps/backend && ./gradlew test --tests world.yeon.backend.game_service_comments.controller.GameServiceCommentsControllerTests`
 - `bash bin/verify-ssot.sh --project-only`
 - `git diff --check`
