@@ -163,12 +163,12 @@ function CardRoomLobbyLoadingState() {
 
 function CardRoomLobbyErrorState() {
   return (
-    <YeonView className="flex min-h-[280px] flex-col items-center justify-center px-6 py-16 text-center">
+    <YeonView className="flex min-h-[360px] flex-col items-center justify-center px-6 py-16 text-center">
       <YeonText
         as="h2"
         variant="unstyled"
         tone="inherit"
-        className="text-[28px] font-black tracking-[-0.05em]"
+        className="break-keep text-[22px] font-black tracking-[-0.04em] text-[#111] sm:text-[28px]"
       >
         목록을 불러오지 못했어요
       </YeonText>
@@ -176,10 +176,19 @@ function CardRoomLobbyErrorState() {
         as="p"
         variant="unstyled"
         tone="inherit"
-        className="mt-3 text-[#666]"
+        className="mt-3 max-w-[320px] break-keep leading-6 text-[#666]"
       >
-        카드방 서버 상태를 확인해 주세요.
+        잠시 후 다시 시도해 주세요. 문제가 계속되면 잠깐 뒤에 새로고침해 보세요.
       </YeonText>
+      <YeonButton
+        type="button"
+        onClick={() => window.location.reload()}
+        variant="secondary"
+        size="lg"
+        className="mt-6 h-11 rounded-lg px-5 text-[14px] font-bold"
+      >
+        다시 시도
+      </YeonButton>
     </YeonView>
   );
 }
@@ -190,12 +199,12 @@ type CardRoomLobbyEmptyStateProps = {
 
 function CardRoomLobbyEmptyState({ onCreate }: CardRoomLobbyEmptyStateProps) {
   return (
-    <YeonView className="flex flex-col items-center justify-center px-6 py-20 text-center">
+    <YeonView className="flex min-h-[360px] flex-col items-center justify-center px-6 py-16 text-center">
       <YeonText
         as="h2"
         variant="unstyled"
         tone="inherit"
-        className="break-keep text-[32px] font-black tracking-[-0.05em] text-[#111]"
+        className="break-keep text-[24px] font-black tracking-[-0.04em] text-[#111] sm:text-[32px]"
       >
         열린 카드방이 없어요
       </YeonText>
