@@ -449,10 +449,25 @@ export function TypingRoomLobbyScreen() {
             )}
 
             {state.kind === "error" && (
-              <YeonView className="flex min-h-[520px] items-center justify-center px-6 text-center text-[16px] font-semibold text-[#666]">
-                {settings.locale === "ko"
-                  ? state.message
-                  : roomText.connectionErrorTitle}
+              <YeonView className="flex min-h-[360px] flex-col items-center justify-center gap-4 px-6 text-center">
+                <YeonText
+                  as="p"
+                  variant="unstyled"
+                  tone="inherit"
+                  className="max-w-[360px] break-keep text-[16px] font-semibold leading-6 text-[#666]"
+                >
+                  {settings.locale === "ko"
+                    ? state.message
+                    : roomText.connectionErrorTitle}
+                </YeonText>
+                <YeonButton
+                  type="button"
+                  onClick={() => window.location.reload()}
+                  variant="secondary"
+                  className="h-11 rounded-lg px-5 text-[14px] font-bold"
+                >
+                  {settings.locale === "ko" ? "다시 시도" : "Try again"}
+                </YeonButton>
               </YeonView>
             )}
 
@@ -642,10 +657,12 @@ export function TypingRoomLobbyScreen() {
         </YeonView>
       </YeonView>
 
-      {!isInitialEmpty && (
+      {state.kind === "ready" && !isInitialEmpty && (
         <RoomCreateActionGroup
           compact
-          className="fixed right-5 bottom-5 z-30 justify-end md:hidden"
+          // 모바일 전용 플로팅 생성 버튼(방 목록이 있을 때만). 챗 위젯(fixed bottom-3, z-40)
+          // 위로 올리고 좌우 inset으로 가로 넘침을 막는다. 로딩/에러 상태에선 숨겨 겹침을 방지.
+          className="fixed inset-x-4 bottom-[84px] z-40 justify-end md:hidden"
           labels={roomText}
           onCreate={openCreateModal}
         />

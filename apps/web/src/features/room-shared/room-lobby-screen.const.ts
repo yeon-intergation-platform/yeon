@@ -1,11 +1,12 @@
 export const ROOM_LOBBY_CLASS = {
   heroSection:
-    "flex min-h-[174px] flex-col gap-6 px-6 py-10 md:flex-row md:items-center md:justify-between md:px-10",
+    "flex flex-col gap-5 px-6 py-7 md:flex-row md:items-center md:justify-between md:px-10 md:py-10",
   heroTitle:
-    "text-[48px] font-black leading-none tracking-[-0.06em] text-[#111] md:text-[56px]",
+    "text-[34px] font-black leading-[1.05] tracking-[-0.05em] text-[#111] sm:text-[44px] md:text-[52px]",
   heroDescription:
-    "mt-5 max-w-[20ch] break-keep text-[18px] font-medium leading-7 text-[#666] md:max-w-[34ch]",
-  listTopBorder: "border-t border-[#e5e5e5] px-6 py-6 md:px-10",
+    "mt-3 max-w-[24ch] break-keep text-[16px] font-medium leading-7 text-[#666] md:mt-5 md:max-w-[34ch] md:text-[18px]",
+  // 모바일 하단은 커뮤니티 챗 위젯(fixed bottom)이 떠 있어 콘텐츠가 가려지므로 여유 패딩을 둔다.
+  listTopBorder: "border-t border-[#e5e5e5] px-6 pt-6 pb-28 md:px-10 md:pb-12",
   filterRow:
     "flex flex-col gap-4 md:flex-row md:items-center md:justify-between",
   filterScroller: "flex gap-3 overflow-x-auto pb-1 md:pb-0",
