@@ -1280,14 +1280,9 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
     );
   }
 
+  // 음성통화는 대기실에서만 노출한다. 게임(레이스) 화면에는 넘기지 않는다.
   if (!isTypingRoomWaiting(room)) {
-    return (
-      <TypingRaceMultiplayerScreen
-        race={race}
-        voiceCall={voiceCall}
-        voiceCallLabels={roomText.voiceCall.panel}
-      />
-    );
+    return <TypingRaceMultiplayerScreen race={race} />;
   }
 
   return (

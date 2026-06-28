@@ -5,6 +5,7 @@ import type {
   useCardRoomScreenState,
 } from "./use-card-room-screen-state";
 import { YEON_WEB_SHARED_CLASS as SHARED_FEATURE_CLASS } from "@yeon/ui/theme/web-style-tokens";
+import { isCardRoomWaiting } from "@yeon/race-shared";
 import { YeonButton, YeonText, YeonView } from "@yeon/ui";
 import { RoomVoiceCallPanel } from "@/features/room-voice-call/room-voice-call-panel";
 import { CardRoomChatPanel } from "./card-room-chat-panel";
@@ -72,7 +73,10 @@ function CardRoomScreenSidePanel({ screen }: CardRoomScreenPartProps) {
             participantId={screen.participantId}
             frameOverrides={screen.frameOverrides}
           />
-          <RoomVoiceCallPanel voiceCall={screen.voiceCall} />
+          {/* 음성통화는 대기중에만 노출한다. 학습(게임) 진행 중에는 숨긴다. */}
+          {isCardRoomWaiting(screen.state) ? (
+            <RoomVoiceCallPanel voiceCall={screen.voiceCall} />
+          ) : null}
           <CardRoomStudyPanel
             state={screen.state}
             currentCard={screen.currentCard}

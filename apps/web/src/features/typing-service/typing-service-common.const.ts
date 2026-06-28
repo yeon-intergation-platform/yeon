@@ -32,7 +32,7 @@ export const TYPING_SERVICE_COMMON_CLASS = {
     "w-full resize-none rounded-lg border border-[#e5e5e5] bg-white px-5 py-4 font-mono text-[16px] leading-[1.7] text-[#111] outline-none transition-colors placeholder:text-[#aaa] focus:border-[#111] disabled:cursor-not-allowed disabled:opacity-40",
   racePromptTextPanel:
     "rounded-lg border border-[#e5e5e5] bg-[#fafafa] px-6 py-5 font-mono text-[19px] leading-[2] tracking-[0.01em]",
-  racePromptMismatchChar: "bg-[#fafafa] text-[#111]",
+  racePromptMismatchChar: "rounded-[3px] bg-[#ffe3e3] font-bold text-[#d11500]",
   racePromptMatchedChar: "text-[#111]",
   racePromptCurrentChar: "bg-[#111] text-white",
   racePromptPendingChar: "text-[#aaa]",
