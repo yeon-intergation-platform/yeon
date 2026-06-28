@@ -1,6 +1,6 @@
 export const ROOM_LOBBY_CLASS = {
   heroSection:
-    "flex flex-col gap-5 px-4 py-7 sm:px-6 md:flex-row md:items-center md:justify-between md:px-10 md:py-10",
+    "flex flex-col gap-5 bg-gradient-to-b from-[#fafafa] to-white px-4 py-7 sm:px-6 md:flex-row md:items-center md:justify-between md:px-10 md:py-10",
   heroTitle:
     "text-[34px] font-black leading-[1.05] tracking-[-0.05em] text-[#111] sm:text-[44px] md:text-[52px]",
   heroDescription:
