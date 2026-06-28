@@ -32,6 +32,8 @@ import {
   type TerritoryBattleTeam,
 } from "@yeon/race-shared";
 import { useCharacterFrameOverrides } from "./use-character-frame-overrides";
+import { CharacterSprite } from "./character-sprite";
+import { findCharacter } from "./characters";
 import { usePlayerIdentity } from "./use-player-identity";
 import { useRaceRoom } from "./use-race-room";
 import { useTypingProfile } from "./use-typing-profile";
@@ -540,6 +542,45 @@ function partitionTerritoryParticipants(
   return { redTeam, blueTeam };
 }
 
+// 대기실 슬롯 아바타. 하드코딩 🙂 대신 참가자가 선택한 캐릭터 스프라이트를 보여
+// 로비/생성 모달과 일관성을 맞춘다(R2). 빈 슬롯은 "+".
+function SlotAvatar({
+  characterId,
+  size = "md",
+}: {
+  characterId?: string;
+  size?: "sm" | "md";
+}) {
+  const frameOverrides = useCharacterFrameOverrides();
+  const box = size === "sm" ? "h-9 w-9" : "h-10 w-10";
+  if (!characterId) {
+    return (
+      <YeonText
+        as="span"
+        variant="unstyled"
+        tone="inherit"
+        aria-hidden="true"
+        className={`flex ${box} items-center justify-center rounded-full border border-dashed text-[20px] text-[#aaa]`}
+      >
+        +
+      </YeonText>
+    );
+  }
+  const character = findCharacter(characterId);
+  return (
+    <YeonView
+      aria-hidden="true"
+      className={`flex ${box} items-end justify-center overflow-hidden rounded-full border border-[#111] bg-[#fffbe8]`}
+    >
+      <CharacterSprite
+        character={character}
+        maxHeight={size === "sm" ? 30 : 34}
+        sequenceOverride={frameOverrides[character.id]}
+      />
+    </YeonView>
+  );
+}
+
 function StandardRoomParticipantList({
   participants,
   maxSlots,
@@ -560,16 +601,7 @@ function StandardRoomParticipantList({
           }`}
         >
           <YeonView className="flex items-center gap-3">
-            <YeonText
-              as="span"
-              variant="unstyled"
-              tone="inherit"
-              className={`flex h-10 w-10 items-center justify-center rounded-full border text-[20px] ${
-                participant ? "border-[#111] bg-[#fffbe8]" : "border-dashed"
-              }`}
-            >
-              {participant ? "🙂" : "+"}
-            </YeonText>
+            <SlotAvatar characterId={participant?.characterId} size="md" />
             <YeonView className="min-w-0">
               <YeonText
                 as="p"
@@ -640,16 +672,7 @@ function TerritoryTeamColumn({
               member ? "border-[#111]" : "border-[#e5e5e5]"
             }`}
           >
-            <YeonText
-              as="span"
-              variant="unstyled"
-              tone="inherit"
-              className={`flex h-9 w-9 items-center justify-center rounded-full border text-[20px] ${
-                member ? "border-[#111] bg-[#fffbe8]" : "border-dashed"
-              }`}
-            >
-              {member ? "🙂" : "+"}
-            </YeonText>
+            <SlotAvatar characterId={member?.characterId} size="sm" />
             <YeonText
               as="span"
               variant="unstyled"
