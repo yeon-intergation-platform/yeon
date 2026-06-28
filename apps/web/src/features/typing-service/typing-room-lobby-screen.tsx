@@ -558,9 +558,6 @@ export function TypingRoomLobbyScreen() {
                             {statusLabels[room.status]}
                           </YeonBadge>
                           <YeonBadge className="text-[11px] text-[#111]">
-                            {occupancy.seatLabel}
-                          </YeonBadge>
-                          <YeonBadge className="text-[11px] text-[#111]">
                             {gameTypeLabels[room.gameType]}
                           </YeonBadge>
                           <YeonText
@@ -637,9 +634,10 @@ export function TypingRoomLobbyScreen() {
                           as="span"
                           variant="unstyled"
                           tone="inherit"
-                          className="rounded-xl bg-[#111] px-4 py-2 text-[13px] font-bold text-white transition-opacity group-hover:opacity-90"
+                          className="inline-flex items-center gap-1 rounded-full border border-[#111] bg-white px-4 py-2 text-[13px] font-bold text-[#111] transition-colors group-hover:bg-[#111] group-hover:text-white"
                         >
                           {roomText.enterRoom}
+                          <span aria-hidden="true">→</span>
                         </YeonText>
                       </YeonView>
                     </YeonLink>
