@@ -18,6 +18,8 @@ import { resolveYeonWebPath } from "@yeon/ui/runtime/ports";
 import {
   RoomCharacterSummaryCard,
   RoomCreateDialog,
+  RoomLobbySpinner,
+  RoomLobbyStateIcon,
   ROOM_LOBBY_CLASS,
 } from "@/features/room-shared";
 import { CardRoomCreateForm } from "./card-room-create-screen";
@@ -150,21 +152,13 @@ function CardRoomLobbyListSurface({ lobby }: CardRoomLobbyPartProps) {
 }
 
 function CardRoomLobbyLoadingState() {
-  return (
-    <YeonText
-      as="p"
-      variant="label"
-      tone="secondary"
-      className="flex min-h-[280px] items-center justify-center text-[16px]"
-    >
-      실제 카드방 목록을 불러오는 중...
-    </YeonText>
-  );
+  return <RoomLobbySpinner label="카드방 목록을 불러오는 중..." />;
 }
 
 function CardRoomLobbyErrorState() {
   return (
     <YeonView className="flex min-h-[360px] flex-col items-center justify-center px-6 py-16 text-center">
+      <RoomLobbyStateIcon variant="error" />
       <YeonText
         as="h2"
         variant="unstyled"
@@ -201,6 +195,7 @@ type CardRoomLobbyEmptyStateProps = {
 function CardRoomLobbyEmptyState({ onCreate }: CardRoomLobbyEmptyStateProps) {
   return (
     <YeonView className="flex min-h-[360px] flex-col items-center justify-center px-6 py-16 text-center">
+      <RoomLobbyStateIcon variant="empty" />
       <YeonText
         as="h2"
         variant="unstyled"
