@@ -38,11 +38,11 @@ export function RoomCharacterSummaryCard({
         className
       )}
     >
-      <YeonView className="flex h-[72px] w-[72px] items-end justify-center overflow-hidden rounded-xl bg-white">
+      <YeonView className="flex h-[72px] w-[72px] items-center justify-center overflow-hidden rounded-xl border border-[#eee] bg-white">
         {loaded ? (
           <CharacterSprite
             character={character}
-            maxHeight={68}
+            maxHeight={64}
             sequenceOverride={frameOverrides[character.id]}
           />
         ) : null}

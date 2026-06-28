@@ -57,7 +57,7 @@ export function TypingRoomParticipantsPanel({
               spriteBoxClassName="flex h-[72px] items-end justify-center overflow-hidden rounded-xl bg-white px-2 py-1"
               spriteMaxHeight={68}
               titleClassName="text-[14px] font-semibold"
-              subtitleClassName="text-[#aaa]"
+              subtitleClassName="text-[#888]"
               badges={
                 participant ? (
                   <YeonView className="flex items-center justify-between gap-2">
