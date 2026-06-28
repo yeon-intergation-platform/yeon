@@ -37,7 +37,8 @@ export function TypingBgmButton({
         }}
         variant="pill"
         size="sm"
-        className={`gap-2 rounded-full px-3 py-1.5 ${SHARED_FEATURE_CLASS.text12EmphasisMuted}`}
+        data-active={playing}
+        className={`gap-2 rounded-full px-3 py-1.5 ${SHARED_FEATURE_CLASS.text12EmphasisMuted} data-[active=true]:border-[#111] data-[active=true]:bg-[#111] data-[active=true]:text-white`}
       >
         <YeonIcon name={iconName} size={14} />
         <YeonText as="span" variant="unstyled" tone="inherit">
