@@ -42,6 +42,7 @@ import {
 import {
   RoomCharacterSummaryCard,
   RoomCreateDialog,
+  RoomLobbySpinner,
   ROOM_LOBBY_CLASS,
 } from "@/features/room-shared";
 import { useTypingRoomLobby } from "./use-typing-room-lobby";
@@ -442,11 +443,7 @@ export function TypingRoomLobbyScreen() {
 
           <YeonSurface className="mt-7 min-h-[520px]">
             {state.kind === "loading" && (
-              <YeonView
-                className={`flex min-h-[520px] items-center justify-center ${SHARED_FEATURE_CLASS.text16Secondary}`}
-              >
-                {roomText.loadingRooms}
-              </YeonView>
+              <RoomLobbySpinner label={roomText.loadingRooms} />
             )}
 
             {state.kind === "error" && (
