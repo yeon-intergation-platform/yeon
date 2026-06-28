@@ -70,7 +70,7 @@ export function CardRoomLobbyHero({ lobby }: CardRoomLobbyPartProps) {
         nickname={lobby.profile.nickname}
         characterId={lobby.profile.characterId}
         locale={lobby.locale}
-        changeHref={resolveYeonWebPath("cardHome")}
+        changeHref={`${resolveYeonWebPath("cardHome")}#character-picker`}
       />
     </YeonView>
   );

@@ -393,7 +393,7 @@ export function TypingRoomLobbyScreen() {
             nickname={profile.nickname}
             characterId={profile.characterId}
             locale={settings.locale}
-            changeHref="/typing-service"
+            changeHref="/typing-service#character-picker"
           />
         </YeonView>
 
