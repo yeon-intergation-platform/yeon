@@ -92,11 +92,12 @@ function CardRoomLobbyFilterBar({ lobby }: CardRoomLobbyPartProps) {
             key={filter.value}
             type="button"
             onClick={() => lobby.setSelectedFilter(filter.value)}
+            aria-pressed={lobby.selectedFilter === filter.value}
             variant={
               lobby.selectedFilter === filter.value ? "pill" : "secondary"
             }
             size="lg"
-            className="h-[50px] shrink-0 rounded-full px-7 text-[16px]"
+            className="h-10 shrink-0 rounded-full px-4 text-[14px]"
           >
             {filter.label}
           </YeonButton>
@@ -113,6 +114,7 @@ function CardRoomLobbyFilterBar({ lobby }: CardRoomLobbyPartProps) {
             value={lobby.searchKeyword}
             onChange={(event) => lobby.setSearchKeyword(event.target.value)}
             placeholder="방 검색"
+            aria-label="카드방 검색"
             className="h-[50px] rounded-lg pl-12 pr-4 text-[16px] font-medium"
           />
         </YeonLabel>
