@@ -47,24 +47,14 @@ import {
   calculateTypingSpeedMetrics,
   getProgress,
 } from "./race-metrics";
-import {
-  RoomVoiceCallPanel,
-  type RoomVoiceCallPanelLabels,
-} from "@/features/room-voice-call/room-voice-call-panel";
-import type { RoomVoiceCallResult } from "@/features/room-voice-call/use-room-voice-call";
-
 export type TypingRaceMultiplayerScreenProps = {
   race: UseRaceRoomResult;
   onRestart?: () => void;
-  voiceCall?: RoomVoiceCallResult;
-  voiceCallLabels?: Partial<RoomVoiceCallPanelLabels>;
 };
 
 export function TypingRaceMultiplayerScreen({
   race,
   onRestart,
-  voiceCall,
-  voiceCallLabels,
 }: TypingRaceMultiplayerScreenProps) {
   const { profile, loaded: profileLoaded } = useTypingProfile();
   const { settings } = useTypingSettings();
@@ -485,15 +475,6 @@ export function TypingRaceMultiplayerScreen({
             {elapsedSeconds.toFixed(1)}s
           </YeonText>
         </YeonView>
-
-        {voiceCall ? (
-          <YeonView className="mt-3 max-w-[420px]">
-            <RoomVoiceCallPanel
-              voiceCall={voiceCall}
-              labels={voiceCallLabels}
-            />
-          </YeonView>
-        ) : null}
 
         <YeonView className="mt-3 grid gap-2 rounded-lg border border-[#e5e5e5] bg-white px-5 py-4">
           <YeonView
