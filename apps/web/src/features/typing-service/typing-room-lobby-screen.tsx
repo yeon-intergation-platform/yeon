@@ -730,8 +730,8 @@ export function TypingRoomLobbyScreen() {
                   key={option}
                   className={`flex h-[52px] cursor-pointer items-center justify-center rounded-lg border text-[16px] font-semibold transition-colors ${
                     visibility === option
-                      ? "border-[#111] bg-white text-[#111] shadow-[inset_0_0_0_1px_#111]"
-                      : "border-[#e5e5e5] bg-white text-[#111] hover:border-[#111]"
+                      ? "border-[#111] bg-[#111] text-white"
+                      : "border-[#e5e5e5] bg-white text-[#666] hover:border-[#111] hover:text-[#111]"
                   }`}
                 >
                   <YeonField

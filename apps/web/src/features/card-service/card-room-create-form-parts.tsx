@@ -84,6 +84,14 @@ export function CardRoomCreateSettingsFields({
           disabled={form.isSubmitting}
           className="min-h-[52px]"
         />
+        <YeonText
+          as="span"
+          variant="unstyled"
+          tone="inherit"
+          className="text-[12px] font-medium leading-[1.5] text-[#888]"
+        >
+          방에서 다른 참가자에게 보일 이름이에요.
+        </YeonText>
       </YeonLabel>
       {form.showNoDeckGuide ? (
         // 막다른 길 방지(#27): 덱이 없으면 비활성 셀렉트 대신 덱 생성 동선을 안내한다.
