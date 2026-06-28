@@ -4,7 +4,7 @@ export const ROOM_LOBBY_CLASS = {
   heroTitle:
     "text-[34px] font-black leading-[1.05] tracking-[-0.05em] text-[#111] sm:text-[44px] md:text-[52px]",
   heroDescription:
-    "mt-3 max-w-[24ch] break-keep text-[16px] font-medium leading-7 text-[#666] md:mt-5 md:max-w-[34ch] md:text-[18px]",
+    "mt-3 max-w-[27ch] break-keep text-[15px] font-medium leading-[1.55] text-[#666] md:mt-5 md:max-w-[34ch] md:text-[18px] md:leading-7",
   // 모바일 하단은 커뮤니티 챗 위젯(fixed bottom)이 떠 있어 콘텐츠가 가려지므로 여유 패딩을 둔다.
   listTopBorder:
     "border-t border-[#e5e5e5] px-4 pt-6 pb-28 sm:px-6 md:px-10 md:pb-12",
