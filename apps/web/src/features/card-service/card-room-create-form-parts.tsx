@@ -227,25 +227,28 @@ export function CardRoomCreateActions({
   submitLabel,
 }: CardRoomCreateActionsProps) {
   return (
-    <YeonView className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-end">
-      <YeonButton
-        type="button"
-        onClick={form.goToDecks}
-        disabled={form.isSubmitting}
-        variant="secondary"
-        size="lg"
-      >
-        내 덱 보기
-      </YeonButton>
-      <YeonButton
-        type="button"
-        onClick={onCancel ?? form.goToLobby}
-        disabled={form.isSubmitting}
-        variant="secondary"
-        size="lg"
-      >
-        로비로 돌아가기
-      </YeonButton>
+    // 모달이 길어도 주 CTA가 항상 보이도록 하단 고정 바(#25). 보조 액션은 약하게(#26).
+    <YeonView className="sticky bottom-0 z-10 -mx-6 -mb-6 mt-8 flex flex-col gap-2 border-t border-[#eee] bg-white px-6 py-4 sm:flex-row sm:items-center sm:justify-end">
+      <YeonView className="flex gap-2">
+        <YeonButton
+          type="button"
+          onClick={form.goToDecks}
+          disabled={form.isSubmitting}
+          variant="secondary"
+          size="md"
+        >
+          내 덱 보기
+        </YeonButton>
+        <YeonButton
+          type="button"
+          onClick={onCancel ?? form.goToLobby}
+          disabled={form.isSubmitting}
+          variant="secondary"
+          size="md"
+        >
+          로비로 돌아가기
+        </YeonButton>
+      </YeonView>
       <YeonButton
         type="submit"
         disabled={
@@ -253,6 +256,7 @@ export function CardRoomCreateActions({
         }
         variant="primary"
         size="lg"
+        className="sm:min-w-[200px]"
       >
         {form.isSubmitting ? "생성 중..." : submitLabel}
       </YeonButton>

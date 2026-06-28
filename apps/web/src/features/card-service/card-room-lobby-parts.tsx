@@ -3,7 +3,6 @@
 import type { useCardRoomLobbyState } from "./use-card-room-lobby-state";
 import { YEON_WEB_SHARED_CLASS as SHARED_FEATURE_CLASS } from "@yeon/ui/theme/web-style-tokens";
 import {
-  getYeonButtonClassName,
   YeonBadge,
   YeonButton,
   YeonField,
@@ -276,13 +275,10 @@ function CardRoomLobbyRoomList({ lobby }: CardRoomLobbyPartProps) {
               as="span"
               variant="unstyled"
               tone="inherit"
-              className={getYeonButtonClassName({
-                variant: "primary",
-                size: "sm",
-                className: "rounded-xl px-4 py-2 text-[13px]",
-              })}
+              className="inline-flex items-center gap-1 rounded-full border border-[#111] bg-white px-4 py-2 text-[13px] font-bold text-[#111] transition-colors group-hover:bg-[#111] group-hover:text-white"
             >
               입장하기
+              <span aria-hidden="true">→</span>
             </YeonText>
           </YeonView>
         </YeonLink>
