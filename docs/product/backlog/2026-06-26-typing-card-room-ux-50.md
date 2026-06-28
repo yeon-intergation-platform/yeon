@@ -100,9 +100,15 @@
 - ✅ **타자방 E2E**: 로비 → "일반 타자방 만들기" → 방 생성(race-server) → `/rooms/{id}` 입장 →
   대기실(참가자 슬롯/채팅/시작하기) 정상. 콘솔 에러 없음.
 - ✅ **백엔드 연동**: 카드 `/api/v1/card-rooms` 200, 타자 로비 "연결 에러" 사라지고 진짜 빈상태 노출.
-- ⚠️ **카드방 E2E(다중 참가자 동기화)**: 게스트 덱이 IndexedDB라 Playwright storageState로 못 옮겨
-  자동화로 끝까지 재현 불가. 단 카드방은 타자방과 동일한 BFF/룸 인프라(검증됨)를 쓴다. 수동(브라우저
-  로그인/덱+카드 생성)으로 최종 확인 권장.
+- ✅ **카드방 E2E(전 구간)**: 단일 Playwright 컨텍스트로 게스트 덱 생성 → 카드 추가(contenteditable
+  에디터) → 카드방 생성 → `/card-service/rooms/{id}` 입장 → race-server 콜리세우스 연결
+  (`ws://localhost:2567/...`) → 실시간 방 상태 로드 확인("대기중 · 검증덱 · 1/1 · 외우는 사람 ·
+  실제 참가자 Guest 방장 · 음성통화"). "연결 실패" 사라짐.
+  - **원인 분석(코드 결함 아님)**: 입장 시 떴던 "연결 실패 / 카드방 서버 요청에 실패했습니다"는
+    race-server → Spring `/api/v1/card-rooms/{id}` 호출이 `X-Yeon-Internal-Token` 없이 나가 **403**
+    이 된 것. 카드방은 race-server가 BFF로 Spring을 호출하는 구조라 race-server 프로세스에
+    `SPRING_INTERNAL_TOKEN`(+`SPRING_BACKEND_BASE_URL`)이 반드시 필요하다. 토큰 동봉 재기동 후 정상
+    (토큰 없이 403 → 토큰 포함 200, 방 데이터 정상 확인). 운영 환경엔 토큰이 설정돼 있어 영향 없음.
 - ✅ **추가 수정**: 카드 생성 덱-없음 막다른 길 → 덱 생성 안내 CTA(#27), 생성 에러 빨강 강조(#32),
   필터 칩 크기 정상화(#12), 필터 `aria-pressed`(#45), 카드 검색 `aria-label`(#46).
 
