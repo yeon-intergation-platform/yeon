@@ -428,7 +428,7 @@ export function TypingRoomLobbyScreen() {
                     onChange={(event) => setSearchKeyword(event.target.value)}
                     placeholder={roomText.searchPlaceholder}
                     aria-label={roomText.searchAriaLabel}
-                    className="h-[50px] rounded-lg pl-12 pr-4 text-[16px] font-medium placeholder:text-[#aaa]"
+                    className="h-[50px] rounded-lg pl-12 pr-4 text-[16px] font-medium placeholder:text-[#999]"
                   />
                 </YeonLabel>
                 <RoomCreateActionGroup
