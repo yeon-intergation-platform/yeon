@@ -138,7 +138,6 @@ type TerritoryLobbyPanelStateProps = {
 };
 
 type TerritoryLobbyPanelDisplayProps = {
-  roomSummary: string;
   labels: TypingUiText["room"];
   difficultyLabels: Record<TypingRoomDifficulty, string>;
   gameTypeLabels: Record<TypingRoomGameType, string>;
@@ -202,7 +201,6 @@ function localizeRoomSystemMessage(
 function TerritoryLobbyPanel({
   room,
   participants,
-  roomSummary,
   labels,
   difficultyLabels,
   gameTypeLabels,
@@ -337,14 +335,6 @@ function TerritoryLobbyPanel({
                 {isTerritoryRoom
                   ? labels.teamWaitingRoom
                   : labels.participantWaitingRoom}
-              </YeonText>
-              <YeonText
-                as="p"
-                variant="unstyled"
-                tone="inherit"
-                className="max-w-[720px] text-right text-[12px] font-semibold leading-5 text-[#666]"
-              >
-                {roomSummary}
               </YeonText>
             </YeonView>
 
@@ -1340,7 +1330,6 @@ export function TypingRoomScreen({ roomId, mode }: TypingRoomScreenProps) {
         <TerritoryLobbyPanel
           room={room}
           participants={participants}
-          roomSummary={roomSummary}
           labels={roomText}
           difficultyLabels={difficultyLabels}
           gameTypeLabels={gameTypeLabels}
