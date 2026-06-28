@@ -85,25 +85,57 @@ export function CardRoomCreateSettingsFields({
           className="min-h-[52px]"
         />
       </YeonLabel>
-      <YeonLabel className={CARD_SERVICE_COMMON_CLASS.panelFieldLabel}>
-        사용할 덱
-        <YeonField
-          as="select"
-          value={form.selectedDeck?.id ?? ""}
-          onChange={(event) => form.setSelectedDeckId(event.target.value)}
-          disabled={form.isSubmitting}
-          className="min-h-[52px]"
-        >
-          <YeonOption value="" disabled>
-            {form.deckSelectPlaceholder}
-          </YeonOption>
-          {form.decks.map((deck) => (
-            <YeonOption key={deck.id} value={deck.id}>
-              {deck.title} · {deck.itemCount}장
+      {form.showNoDeckGuide ? (
+        // 막다른 길 방지(#27): 덱이 없으면 비활성 셀렉트 대신 덱 생성 동선을 안내한다.
+        <YeonView className="grid gap-2 rounded-2xl border border-[#e5e5e5] bg-[#fafafa] p-4">
+          <YeonText
+            as="p"
+            variant="unstyled"
+            tone="inherit"
+            className="text-[14px] font-bold text-[#111]"
+          >
+            아직 사용할 덱이 없어요
+          </YeonText>
+          <YeonText
+            as="p"
+            variant="unstyled"
+            tone="inherit"
+            className="text-[13px] leading-[1.6] text-[#666]"
+          >
+            카드방은 덱의 카드를 스냅샷으로 사용합니다. 먼저 덱을 만들고 카드를
+            추가한 뒤 다시 와 주세요.
+          </YeonText>
+          <YeonButton
+            type="button"
+            onClick={form.goToDecks}
+            variant="primary"
+            size="lg"
+            className="mt-1 w-fit"
+          >
+            덱 만들고 카드 추가하기
+          </YeonButton>
+        </YeonView>
+      ) : (
+        <YeonLabel className={CARD_SERVICE_COMMON_CLASS.panelFieldLabel}>
+          사용할 덱
+          <YeonField
+            as="select"
+            value={form.selectedDeck?.id ?? ""}
+            onChange={(event) => form.setSelectedDeckId(event.target.value)}
+            disabled={form.isSubmitting}
+            className="min-h-[52px]"
+          >
+            <YeonOption value="" disabled>
+              {form.deckSelectPlaceholder}
             </YeonOption>
-          ))}
-        </YeonField>
-      </YeonLabel>
+            {form.decks.map((deck) => (
+              <YeonOption key={deck.id} value={deck.id}>
+                {deck.title} · {deck.itemCount}장
+              </YeonOption>
+            ))}
+          </YeonField>
+        </YeonLabel>
+      )}
       <CardRoomCreateVisibilitySelector form={form} />
     </YeonView>
   );
@@ -166,9 +198,10 @@ export function CardRoomCreateErrorMessage({
   return (
     <YeonText
       as="p"
-      variant="label"
-      tone="primary"
-      className="mt-5 rounded-xl border border-[#e5e5e5] bg-[#fafafa] px-4 py-3"
+      variant="unstyled"
+      tone="inherit"
+      role="alert"
+      className="mt-5 rounded-xl border border-[#e0376b] bg-[#fdeaf1] px-4 py-3 text-[13px] font-semibold leading-5 text-[#c01f54]"
     >
       {form.errorMessage}
     </YeonText>

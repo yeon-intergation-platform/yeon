@@ -407,8 +407,9 @@ export function TypingRoomLobbyScreen() {
                     type="button"
                     onClick={() => setSelectedFilter(filter)}
                     data-active={selectedFilter === filter}
+                    aria-pressed={selectedFilter === filter}
                     variant="pill"
-                    className="h-[50px] shrink-0 px-7 text-[16px] data-[active=true]:border-[#111] data-[active=true]:bg-[#fafafa] data-[active=true]:font-bold data-[active=true]:text-[#111] data-[active=true]:shadow-[inset_0_0_0_1px_#111]"
+                    className="h-10 shrink-0 px-4 text-[14px] data-[active=true]:border-[#111] data-[active=true]:bg-[#fafafa] data-[active=true]:font-bold data-[active=true]:text-[#111] data-[active=true]:shadow-[inset_0_0_0_1px_#111]"
                   >
                     {roomText.filters[filter]}
                   </YeonButton>

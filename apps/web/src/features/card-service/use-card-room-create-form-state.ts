@@ -108,6 +108,8 @@ export function useCardRoomCreateFormState({
   const deckSelectPlaceholder = decksQuery.isLoading
     ? "덱 불러오는 중"
     : "덱 선택";
+  // 덱 로딩이 끝났는데 덱이 하나도 없으면 막다른 길 대신 덱 생성 안내를 보여준다(#27).
+  const showNoDeckGuide = !decksQuery.isLoading && decks.length === 0;
 
   const selectedDeck = useMemo(
     () => decks.find((deck) => deck.id === selectedDeckId) ?? decks[0],
@@ -205,6 +207,7 @@ export function useCardRoomCreateFormState({
     decks,
     decksQuery,
     deckSelectPlaceholder,
+    showNoDeckGuide,
     settings,
     frameOverrides,
     character,
