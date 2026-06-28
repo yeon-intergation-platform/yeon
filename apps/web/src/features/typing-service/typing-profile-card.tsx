@@ -36,7 +36,10 @@ export function TypingProfileCard({
   const frameOverrides = useCharacterFrameOverrides();
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState(profile.nickname);
-  const [expanded, setExpanded] = useState(false);
+  // 선택한 캐릭터가 기본 3종에 없으면 목록을 펼친 채로 시작해 찾기 비용을 줄인다(#37).
+  const [expanded, setExpanded] = useState(
+    () => !(FEATURED_IDS as readonly string[]).includes(profile.characterId)
+  );
   const inputRef = useRef<YeonInputElement>(null);
   const text = getTypingUiText(locale).profile;
 
@@ -72,7 +75,7 @@ export function TypingProfileCard({
     }`;
 
   return (
-    <YeonView className={TYPING_PROFILE_CARD_CLASS.root}>
+    <YeonView className={TYPING_PROFILE_CARD_CLASS.root} id="character-picker">
       {/* 캐릭터 애니메이션 */}
       <YeonView className={TYPING_PROFILE_CARD_CLASS.spriteWrapper}>
         <CharacterSprite
@@ -123,6 +126,20 @@ export function TypingProfileCard({
           </YeonButton>
         )}
       </YeonView>
+
+      {/* 게스트 기본 닉네임이면 변경을 유도한다(#36) */}
+      {!isEditing && profile.nickname === "Guest" ? (
+        <YeonText
+          as="p"
+          variant="unstyled"
+          tone="inherit"
+          className="mt-1 text-center text-[12px] text-[#888]"
+        >
+          {locale === "ko"
+            ? "이름을 눌러 바꿀 수 있어요"
+            : "Tap your name to change it"}
+        </YeonText>
+      ) : null}
 
       {/* 캐릭터 선택 */}
       <YeonView className={TYPING_PROFILE_CARD_CLASS.characterListWrapper}>
