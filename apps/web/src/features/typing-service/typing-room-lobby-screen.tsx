@@ -1,6 +1,5 @@
 "use client";
 import { YEON_WEB_SHARED_CLASS as SHARED_FEATURE_CLASS } from "@yeon/ui/theme/web-style-tokens";
-import { TYPING_SERVICE_COMMON_CLASS } from "./typing-service-common.const";
 import { useYeonRouter } from "@yeon/ui/runtime/YeonNavigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -568,9 +567,7 @@ export function TypingRoomLobbyScreen() {
                             as="span"
                             variant="unstyled"
                             tone="inherit"
-                            className={
-                              TYPING_SERVICE_COMMON_CLASS.subtleInfoMono
-                            }
+                            className="inline-flex items-center rounded-md border border-[#e5e5e5] bg-white px-1.5 py-0.5 font-mono text-[11px] font-semibold text-[#888]"
                           >
                             #{room.roomCode}
                           </YeonText>
@@ -593,8 +590,7 @@ export function TypingRoomLobbyScreen() {
                           {textTypeLabels[room.textType]} ·{" "}
                           {difficultyLabels[room.difficulty]} ·{" "}
                           {roomText.roomRounds(room.roundCount)} ·{" "}
-                          {modeLabels[room.mode]} ·{" "}
-                          {gameTypeLabels[room.gameType]}
+                          {modeLabels[room.mode]}
                         </YeonText>
                         <YeonView className="mt-4 flex flex-wrap gap-2 text-[12px] font-semibold">
                           <YeonText
