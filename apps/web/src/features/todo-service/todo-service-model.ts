@@ -55,6 +55,16 @@ export type TodoTaskGroups = {
   doneToday: TodoTask[];
 };
 
+export type TodoCalendarDaySummary = {
+  date: string;
+  isInVisibleMonth: boolean;
+  isToday: boolean;
+  isSelected: boolean;
+  openCount: number;
+  doneCount: number;
+  totalCount: number;
+};
+
 const TODO_STATE_VERSION = 1;
 const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -145,6 +155,26 @@ export function getTodayServiceLocalDate(now = new Date()) {
     month: "2-digit",
     day: "2-digit",
   }).format(now);
+}
+
+export function addTodoServiceDays(date: string, amount: number) {
+  if (!isIsoLocalDate(date)) {
+    throw new Error("날짜 형식이 올바르지 않습니다.");
+  }
+
+  const nextDate = new Date(`${date}T00:00:00`);
+  nextDate.setDate(nextDate.getDate() + amount);
+  return getTodayServiceLocalDate(nextDate);
+}
+
+export function addTodoServiceMonths(date: string, amount: number) {
+  if (!isIsoLocalDate(date)) {
+    throw new Error("날짜 형식이 올바르지 않습니다.");
+  }
+
+  const [year, month] = date.split("-").map(Number);
+  const nextDate = new Date(year!, month! - 1 + amount, 1);
+  return getTodayServiceLocalDate(nextDate);
 }
 
 export function parseTodoServiceState(
@@ -324,7 +354,7 @@ export function countCarryOverTasks(tasks: readonly TodoTask[], today: string) {
   return tasks.filter(
     (task) =>
       task.plannedFor !== null &&
-      task.plannedFor !== today &&
+      task.plannedFor < today &&
       (task.status === TODO_TASK_STATUSES.planned ||
         task.status === TODO_TASK_STATUSES.active)
   ).length;
@@ -344,7 +374,7 @@ export function carryOverTodoTasks({
   return tasks.map((task) => {
     const shouldCarry =
       task.plannedFor !== null &&
-      task.plannedFor !== today &&
+      task.plannedFor < today &&
       (task.status === TODO_TASK_STATUSES.planned ||
         task.status === TODO_TASK_STATUSES.active);
 
@@ -366,18 +396,23 @@ export function groupTodoTasksForToday(
   tasks: readonly TodoTask[],
   today: string
 ): TodoTaskGroups {
-  const active = tasks.find((task) => task.status === "active") ?? null;
+  const active =
+    tasks.find(
+      (task) =>
+        task.status === TODO_TASK_STATUSES.active && task.plannedFor === today
+    ) ?? null;
   const planned = tasks.filter(
-    (task) => task.status === "planned" && task.plannedFor === today
+    (task) =>
+      task.status === TODO_TASK_STATUSES.planned && task.plannedFor === today
   );
   const inbox = tasks.filter(
     (task) =>
-      task.status === "inbox" ||
-      task.status === "deferred" ||
-      (task.status === "planned" && task.plannedFor !== today)
+      task.status === TODO_TASK_STATUSES.inbox ||
+      task.status === TODO_TASK_STATUSES.deferred
   );
   const doneToday = tasks.filter(
-    (task) => task.status === "done" && task.completedOn === today
+    (task) =>
+      task.status === TODO_TASK_STATUSES.done && task.completedOn === today
   );
 
   return {
@@ -392,4 +427,56 @@ export function countOpenTodayTasks(
   groups: Pick<TodoTaskGroups, "active" | "planned">
 ) {
   return groups.planned.length + (groups.active ? 1 : 0);
+}
+
+export function buildTodoServiceCalendarMonth({
+  tasks,
+  visibleDate,
+  selectedDate,
+  today,
+}: {
+  tasks: readonly TodoTask[];
+  visibleDate: string;
+  selectedDate: string;
+  today: string;
+}): TodoCalendarDaySummary[] {
+  if (
+    !isIsoLocalDate(visibleDate) ||
+    !isIsoLocalDate(selectedDate) ||
+    !isIsoLocalDate(today)
+  ) {
+    throw new Error("날짜 형식이 올바르지 않습니다.");
+  }
+
+  const [year, month] = visibleDate.split("-").map(Number);
+  const visibleMonthIndex = month! - 1;
+  const firstDate = new Date(year!, visibleMonthIndex, 1);
+  const cursor = new Date(firstDate);
+  cursor.setDate(firstDate.getDate() - firstDate.getDay());
+
+  return Array.from({ length: 42 }, () => {
+    const date = getTodayServiceLocalDate(cursor);
+    const openCount = tasks.filter(
+      (task) =>
+        task.plannedFor === date &&
+        (task.status === TODO_TASK_STATUSES.planned ||
+          task.status === TODO_TASK_STATUSES.active)
+    ).length;
+    const doneCount = tasks.filter(
+      (task) =>
+        task.completedOn === date && task.status === TODO_TASK_STATUSES.done
+    ).length;
+    const summary = {
+      date,
+      isInVisibleMonth: cursor.getMonth() === visibleMonthIndex,
+      isToday: date === today,
+      isSelected: date === selectedDate,
+      openCount,
+      doneCount,
+      totalCount: openCount + doneCount,
+    };
+
+    cursor.setDate(cursor.getDate() + 1);
+    return summary;
+  });
 }

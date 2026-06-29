@@ -3,6 +3,9 @@ import {
   TODO_TASK_ESTIMATES,
   TODO_TASK_PRIORITIES,
   TODO_TASK_STATUSES,
+  addTodoServiceDays,
+  addTodoServiceMonths,
+  buildTodoServiceCalendarMonth,
   carryOverTodoTasks,
   countCarryOverTasks,
   createTodoTask,
@@ -13,6 +16,7 @@ import {
 
 const TODAY = "2026-06-29";
 const YESTERDAY = "2026-06-28";
+const TOMORROW = "2026-06-30";
 const NOW = "2026-06-29T09:00:00.000Z";
 
 function task(id: string, title = `할 일 ${id}`) {
@@ -151,7 +155,25 @@ describe("todo-service-model", () => {
     ]);
   });
 
-  it("오늘 그룹은 active, planned, inbox, doneToday를 분리한다", () => {
+  it("미래 날짜 task는 carry-over 대상으로 보지 않는다", () => {
+    const futureTask = {
+      ...task("future"),
+      plannedFor: TOMORROW,
+      status: TODO_TASK_STATUSES.planned,
+    };
+
+    expect(countCarryOverTasks([futureTask], TODAY)).toBe(0);
+    expect(
+      carryOverTodoTasks({
+        tasks: [futureTask],
+        mode: "continue",
+        today: TODAY,
+        nowIso: NOW,
+      })
+    ).toEqual([futureTask]);
+  });
+
+  it("선택 날짜 그룹은 해당 날짜 active, planned, done만 분리한다", () => {
     const done = setTodoTaskStatus({
       tasks: [task("done")],
       taskId: "done",
@@ -163,7 +185,17 @@ describe("todo-service-model", () => {
       [
         { ...task("active"), status: TODO_TASK_STATUSES.active },
         task("planned"),
+        {
+          ...task("future-active"),
+          status: TODO_TASK_STATUSES.active,
+          plannedFor: TOMORROW,
+        },
         { ...task("old"), plannedFor: YESTERDAY },
+        {
+          ...task("inbox"),
+          status: TODO_TASK_STATUSES.inbox,
+          plannedFor: null,
+        },
         done,
       ],
       TODAY
@@ -171,7 +203,60 @@ describe("todo-service-model", () => {
 
     expect(groups.active?.id).toBe("active");
     expect(groups.planned.map((item) => item.id)).toEqual(["planned"]);
-    expect(groups.inbox.map((item) => item.id)).toEqual(["old"]);
+    expect(groups.inbox.map((item) => item.id)).toEqual(["inbox"]);
     expect(groups.doneToday.map((item) => item.id)).toEqual(["done"]);
+  });
+
+  it("날짜와 월 이동을 로컬 날짜 문자열로 계산한다", () => {
+    expect(addTodoServiceDays("2026-06-01", -1)).toBe("2026-05-31");
+    expect(addTodoServiceDays("2026-06-30", 1)).toBe("2026-07-01");
+    expect(addTodoServiceMonths("2026-06-29", -1)).toBe("2026-05-01");
+    expect(addTodoServiceMonths("2026-06-29", 1)).toBe("2026-07-01");
+  });
+
+  it("월간 달력은 6주 그리드와 날짜별 open/done 요약을 만든다", () => {
+    const done = setTodoTaskStatus({
+      tasks: [task("done")],
+      taskId: "done",
+      status: TODO_TASK_STATUSES.done,
+      today: TODAY,
+      nowIso: NOW,
+    })[0]!;
+    const calendar = buildTodoServiceCalendarMonth({
+      tasks: [
+        { ...task("planned"), plannedFor: TODAY },
+        {
+          ...task("active"),
+          status: TODO_TASK_STATUSES.active,
+          plannedFor: TODAY,
+        },
+        done,
+        { ...task("tomorrow"), plannedFor: TOMORROW },
+      ],
+      visibleDate: TODAY,
+      selectedDate: TODAY,
+      today: TODAY,
+    });
+
+    expect(calendar).toHaveLength(42);
+    const selectedDay = calendar.find((day) => day.date === TODAY);
+    const tomorrow = calendar.find((day) => day.date === TOMORROW);
+
+    expect(selectedDay).toEqual(
+      expect.objectContaining({
+        isSelected: true,
+        isToday: true,
+        openCount: 2,
+        doneCount: 1,
+        totalCount: 3,
+      })
+    );
+    expect(tomorrow).toEqual(
+      expect.objectContaining({
+        openCount: 1,
+        doneCount: 0,
+        totalCount: 1,
+      })
+    );
   });
 });

@@ -6,6 +6,8 @@ import {
   ArrowRight,
   CalendarDays,
   CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
   Circle,
   Inbox,
   ListTodo,
@@ -20,6 +22,9 @@ import {
   TODO_TASK_ESTIMATES,
   TODO_TASK_PRIORITIES,
   TODO_TASK_STATUSES,
+  addTodoServiceDays,
+  addTodoServiceMonths,
+  buildTodoServiceCalendarMonth,
   carryOverTodoTasks,
   countCarryOverTasks,
   countOpenTodayTasks,
@@ -30,6 +35,7 @@ import {
   removeTodoTask,
   setTodoTaskStatus,
   updateTodoTaskNote,
+  type TodoCalendarDaySummary,
   type TodoServiceState,
   type TodoTask,
   type TodoTaskEstimate,
@@ -39,6 +45,7 @@ import {
 
 const STORAGE_KEY = "yeon.todo-service.state.v1";
 const TODAY_LIMIT = 5;
+const WEEKDAY_LABELS = ["일", "월", "화", "수", "목", "금", "토"];
 
 const PRIORITY_OPTIONS: {
   value: TodoTaskPriority;
@@ -87,12 +94,27 @@ function readStoredState(today: string) {
   return parseTodoServiceState(window.localStorage.getItem(STORAGE_KEY), today);
 }
 
-function formatTodayLabel(today: string) {
+function formatDateLabel(date: string) {
   return new Intl.DateTimeFormat("ko-KR", {
     month: "long",
     day: "numeric",
     weekday: "short",
-  }).format(new Date(`${today}T00:00:00`));
+  }).format(new Date(`${date}T00:00:00`));
+}
+
+function formatMonthLabel(date: string) {
+  return new Intl.DateTimeFormat("ko-KR", {
+    year: "numeric",
+    month: "long",
+  }).format(new Date(`${date.slice(0, 7)}-01T00:00:00`));
+}
+
+function getDayNumber(date: string) {
+  return Number(date.slice(-2));
+}
+
+function isIsoDateInputValue(value: string) {
+  return /^\d{4}-\d{2}-\d{2}$/.test(value);
 }
 
 function taskOptionLabel<T extends string>(
@@ -194,7 +216,7 @@ function TaskCard({
           {task.status === TODO_TASK_STATUSES.inbox ||
           task.status === TODO_TASK_STATUSES.deferred ? (
             <IconButton
-              label="오늘로 이동"
+              label="선택 날짜로 이동"
               onClick={() => onStatus(task.id, TODO_TASK_STATUSES.planned)}
             >
               <ArrowRight size={16} aria-hidden="true" />
@@ -210,7 +232,7 @@ function TaskCard({
           ) : null}
           {task.status === TODO_TASK_STATUSES.active ? (
             <IconButton
-              label="오늘 목록으로 되돌리기"
+              label="선택 날짜 목록으로 되돌리기"
               onClick={() => onStatus(task.id, TODO_TASK_STATUSES.planned)}
             >
               <RotateCcw size={16} aria-hidden="true" />
@@ -225,7 +247,7 @@ function TaskCard({
             </IconButton>
           ) : (
             <IconButton
-              label="오늘 목록으로 복원"
+              label="선택 날짜 목록으로 복원"
               onClick={() => onStatus(task.id, TODO_TASK_STATUSES.planned)}
             >
               <Circle size={16} aria-hidden="true" />
@@ -321,10 +343,190 @@ function TaskColumn({
   );
 }
 
+function DateNavigator({
+  selectedDate,
+  actualToday,
+  onSelectDate,
+  onMoveDate,
+}: {
+  selectedDate: string;
+  actualToday: string;
+  onSelectDate: (date: string) => void;
+  onMoveDate: (amount: number) => void;
+}) {
+  const isTodaySelected = selectedDate === actualToday;
+
+  return (
+    <YeonView className="grid gap-2 rounded-xl border border-[#e5e5e5] bg-white p-3">
+      <YeonView className="flex items-center justify-between gap-2">
+        <YeonText
+          variant="unstyled"
+          tone="inherit"
+          className="text-[12px] font-black uppercase tracking-[0] text-[#71717a]"
+        >
+          날짜 이동
+        </YeonText>
+        <YeonButton
+          type="button"
+          variant={isTodaySelected ? "ghost" : "secondary"}
+          size="sm"
+          onClick={() => onSelectDate(actualToday)}
+          disabled={isTodaySelected}
+        >
+          오늘
+        </YeonButton>
+      </YeonView>
+      <YeonView className="grid grid-cols-[40px_minmax(0,1fr)_40px] gap-2">
+        <IconButton label="이전 날짜" onClick={() => onMoveDate(-1)}>
+          <ChevronLeft size={16} aria-hidden="true" />
+        </IconButton>
+        <YeonField
+          type="date"
+          aria-label="선택 날짜"
+          value={selectedDate}
+          onChange={(event) => {
+            if (isIsoDateInputValue(event.target.value)) {
+              onSelectDate(event.target.value);
+            }
+          }}
+          className="h-10 rounded-lg border-[#d4d4d8] bg-[#fafafa] text-center text-[14px] font-bold"
+        />
+        <IconButton label="다음 날짜" onClick={() => onMoveDate(1)}>
+          <ChevronRight size={16} aria-hidden="true" />
+        </IconButton>
+      </YeonView>
+    </YeonView>
+  );
+}
+
+function CalendarPanel({
+  days,
+  visibleDate,
+  selectedDate,
+  onSelectDate,
+  onMoveMonth,
+}: {
+  days: readonly TodoCalendarDaySummary[];
+  visibleDate: string;
+  selectedDate: string;
+  onSelectDate: (date: string) => void;
+  onMoveMonth: (amount: number) => void;
+}) {
+  return (
+    <YeonView
+      as="section"
+      className="rounded-xl border border-[#e5e5e5] bg-white p-3"
+    >
+      <YeonView className="mb-3 flex items-center justify-between gap-2">
+        <YeonView>
+          <YeonText
+            as="h2"
+            variant="unstyled"
+            tone="inherit"
+            className="m-0 text-[16px] font-black text-[#18181b]"
+          >
+            월간 전체보기
+          </YeonText>
+          <YeonText
+            variant="unstyled"
+            tone="inherit"
+            className="mt-1 text-[12px] font-semibold text-[#71717a]"
+          >
+            {formatMonthLabel(visibleDate)}
+          </YeonText>
+        </YeonView>
+        <YeonView className="flex gap-1">
+          <IconButton label="이전 달" onClick={() => onMoveMonth(-1)}>
+            <ChevronLeft size={16} aria-hidden="true" />
+          </IconButton>
+          <IconButton label="다음 달" onClick={() => onMoveMonth(1)}>
+            <ChevronRight size={16} aria-hidden="true" />
+          </IconButton>
+        </YeonView>
+      </YeonView>
+
+      <YeonView className="mb-1 grid grid-cols-7 gap-1">
+        {WEEKDAY_LABELS.map((label) => (
+          <YeonText
+            key={label}
+            variant="unstyled"
+            tone="inherit"
+            className="py-1 text-center text-[11px] font-black text-[#71717a]"
+          >
+            {label}
+          </YeonText>
+        ))}
+      </YeonView>
+
+      <YeonView className="grid grid-cols-7 gap-1">
+        {days.map((day) => {
+          const hasWork = day.totalCount > 0;
+          return (
+            <button
+              key={day.date}
+              type="button"
+              aria-pressed={day.date === selectedDate}
+              aria-label={`${day.date} 선택, 남은 일 ${day.openCount}개, 완료 ${day.doneCount}개`}
+              onClick={() => onSelectDate(day.date)}
+              className={`min-h-[62px] cursor-pointer rounded-lg border p-1.5 text-left transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2563eb] focus-visible:ring-offset-2 ${
+                day.isSelected
+                  ? "border-[#2563eb] bg-[#eff6ff] text-[#1d4ed8]"
+                  : hasWork
+                    ? "border-[#d4d4d8] bg-[#fafafa] text-[#18181b] hover:border-[#2563eb]"
+                    : "border-[#eeeeee] bg-white text-[#52525b] hover:border-[#d4d4d8]"
+              } ${day.isInVisibleMonth ? "" : "opacity-45"}`}
+            >
+              <span className="flex items-center justify-between gap-1">
+                <span className="text-[12px] font-black">
+                  {getDayNumber(day.date)}
+                </span>
+                {day.isToday ? (
+                  <span className="h-1.5 w-1.5 rounded-full bg-[#2563eb]" />
+                ) : null}
+              </span>
+              {hasWork ? (
+                <span className="mt-2 grid gap-1 text-[10px] font-black leading-none">
+                  {day.openCount > 0 ? (
+                    <span className="rounded-full bg-[#dbeafe] px-1.5 py-1 text-[#1d4ed8]">
+                      남 {day.openCount}
+                    </span>
+                  ) : null}
+                  {day.doneCount > 0 ? (
+                    <span className="rounded-full bg-[#dcfce7] px-1.5 py-1 text-[#15803d]">
+                      완 {day.doneCount}
+                    </span>
+                  ) : null}
+                </span>
+              ) : null}
+            </button>
+          );
+        })}
+      </YeonView>
+
+      <YeonView className="mt-3 flex flex-wrap gap-2 text-[11px] font-bold text-[#71717a]">
+        <span className="inline-flex items-center gap-1">
+          <span className="h-2 w-2 rounded-full bg-[#2563eb]" />
+          오늘
+        </span>
+        <span className="inline-flex items-center gap-1">
+          <span className="h-2 w-2 rounded-full bg-[#dbeafe]" />
+          남은 일
+        </span>
+        <span className="inline-flex items-center gap-1">
+          <span className="h-2 w-2 rounded-full bg-[#dcfce7]" />
+          완료
+        </span>
+      </YeonView>
+    </YeonView>
+  );
+}
+
 export function TodoServiceScreen() {
-  const today = useMemo(() => getTodayServiceLocalDate(), []);
+  const actualToday = useMemo(() => getTodayServiceLocalDate(), []);
+  const [selectedDate, setSelectedDate] = useState(actualToday);
+  const [visibleDate, setVisibleDate] = useState(actualToday);
   const [state, setState] = useState<TodoServiceState>(() =>
-    parseTodoServiceState(null, today)
+    parseTodoServiceState(null, actualToday)
   );
   const [hydrated, setHydrated] = useState(false);
   const [title, setTitle] = useState("");
@@ -337,9 +539,9 @@ export function TodoServiceScreen() {
   const [notice, setNotice] = useState<string | null>(null);
 
   useEffect(() => {
-    setState(readStoredState(today));
+    setState(readStoredState(actualToday));
     setHydrated(true);
-  }, [today]);
+  }, [actualToday]);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -353,16 +555,26 @@ export function TodoServiceScreen() {
   }, [hydrated, state]);
 
   const groups = useMemo(
-    () => groupTodoTasksForToday(state.tasks, today),
-    [state.tasks, today]
+    () => groupTodoTasksForToday(state.tasks, selectedDate),
+    [state.tasks, selectedDate]
   );
   const carryOverCount = useMemo(
-    () => countCarryOverTasks(state.tasks, today),
-    [state.tasks, today]
+    () => countCarryOverTasks(state.tasks, actualToday),
+    [state.tasks, actualToday]
   );
-  const openTodayCount = countOpenTodayTasks(groups);
+  const calendarDays = useMemo(
+    () =>
+      buildTodoServiceCalendarMonth({
+        tasks: state.tasks,
+        visibleDate,
+        selectedDate,
+        today: actualToday,
+      }),
+    [actualToday, selectedDate, state.tasks, visibleDate]
+  );
+  const openSelectedDateCount = countOpenTodayTasks(groups);
   const completionCount = groups.doneToday.length;
-  const completionTotal = openTodayCount + completionCount;
+  const completionTotal = openSelectedDateCount + completionCount;
   const completionRate =
     completionTotal === 0
       ? 0
@@ -371,9 +583,22 @@ export function TodoServiceScreen() {
   function updateTasks(updater: (tasks: TodoTask[]) => TodoTask[]) {
     setState((current) => ({
       ...current,
-      lastOpenedDate: today,
+      lastOpenedDate: actualToday,
       tasks: updater(current.tasks),
     }));
+  }
+
+  function handleSelectDate(date: string) {
+    setSelectedDate(date);
+    setVisibleDate(date);
+  }
+
+  function handleMoveDate(amount: number) {
+    handleSelectDate(addTodoServiceDays(selectedDate, amount));
+  }
+
+  function handleMoveMonth(amount: number) {
+    setVisibleDate((current) => addTodoServiceMonths(current, amount));
   }
 
   function handleAddTask(status: Extract<TodoTaskStatus, "inbox" | "planned">) {
@@ -383,19 +608,19 @@ export function TodoServiceScreen() {
         title,
         priority,
         estimate,
-        today,
+        today: selectedDate,
         nowIso: getNowIso(),
         status,
       });
       setState((current) => ({
         ...current,
-        lastOpenedDate: today,
+        lastOpenedDate: actualToday,
         tasks: [task, ...current.tasks],
       }));
       setTitle("");
       setNotice(
         status === "planned"
-          ? "오늘 목록에 추가했습니다."
+          ? `${formatDateLabel(selectedDate)} 목록에 추가했습니다.`
           : "Inbox에 추가했습니다."
       );
     } catch (error) {
@@ -411,7 +636,7 @@ export function TodoServiceScreen() {
         tasks,
         taskId,
         status,
-        today,
+        today: selectedDate,
         nowIso: getNowIso(),
       })
     );
@@ -422,7 +647,7 @@ export function TodoServiceScreen() {
       carryOverTodoTasks({
         tasks,
         mode,
-        today,
+        today: actualToday,
         nowIso: getNowIso(),
       })
     );
@@ -449,7 +674,7 @@ export function TodoServiceScreen() {
         as="main"
         className="mx-auto grid max-w-7xl gap-5 px-4 py-5 md:px-6"
       >
-        <YeonView className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
+        <YeonView className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_420px]">
           <YeonView>
             <YeonText
               as="p"
@@ -458,7 +683,7 @@ export function TodoServiceScreen() {
               className="mb-2 flex items-center gap-2 text-[13px] font-bold text-[#2563eb]"
             >
               <CalendarDays size={16} aria-hidden="true" />
-              {formatTodayLabel(today)}
+              {formatDateLabel(selectedDate)}
             </YeonText>
             <YeonText
               as="h1"
@@ -466,41 +691,54 @@ export function TodoServiceScreen() {
               tone="inherit"
               className="m-0 text-[30px] font-black leading-[1.1] tracking-[0] text-[#09090b] md:text-[40px]"
             >
-              오늘 할 일만 남기는 보드
+              {selectedDate === actualToday
+                ? "오늘 할 일만 남기는 보드"
+                : "선택 날짜 할 일 보드"}
             </YeonText>
             <YeonText
               variant="unstyled"
               tone="inherit"
               className="mt-3 max-w-2xl text-[15px] leading-[1.7] text-[#52525b]"
             >
-              생각나는 일은 Inbox에 두고, 오늘 끝낼 일만 Today에 올립니다. 지금
-              할 일은 하나만 활성화됩니다.
+              생각나는 일은 Inbox에 두고,{" "}
+              {selectedDate === actualToday
+                ? "오늘 끝낼 일만 Today에 올립니다."
+                : "선택한 날짜에 끝낼 일만 목록에 올립니다."}{" "}
+              지금 할 일은 하나만 활성화됩니다.
             </YeonText>
           </YeonView>
 
-          <YeonView className="grid grid-cols-3 gap-2 rounded-xl border border-[#e5e5e5] bg-white p-3">
-            {[
-              ["진행", openTodayCount],
-              ["완료", completionCount],
-              ["완료율", `${completionRate}%`],
-            ].map(([label, value]) => (
-              <YeonView key={label} className="rounded-lg bg-[#fafafa] p-3">
-                <YeonText
-                  variant="unstyled"
-                  tone="inherit"
-                  className="text-[12px] font-bold text-[#71717a]"
-                >
-                  {label}
-                </YeonText>
-                <YeonText
-                  variant="unstyled"
-                  tone="inherit"
-                  className="mt-1 text-[24px] font-black text-[#18181b]"
-                >
-                  {value}
-                </YeonText>
-              </YeonView>
-            ))}
+          <YeonView className="grid gap-3">
+            <DateNavigator
+              selectedDate={selectedDate}
+              actualToday={actualToday}
+              onSelectDate={handleSelectDate}
+              onMoveDate={handleMoveDate}
+            />
+            <YeonView className="grid grid-cols-3 gap-2 rounded-xl border border-[#e5e5e5] bg-white p-3">
+              {[
+                ["진행", openSelectedDateCount],
+                ["완료", completionCount],
+                ["완료율", `${completionRate}%`],
+              ].map(([label, value]) => (
+                <YeonView key={label} className="rounded-lg bg-[#fafafa] p-3">
+                  <YeonText
+                    variant="unstyled"
+                    tone="inherit"
+                    className="text-[12px] font-bold text-[#71717a]"
+                  >
+                    {label}
+                  </YeonText>
+                  <YeonText
+                    variant="unstyled"
+                    tone="inherit"
+                    className="mt-1 text-[24px] font-black text-[#18181b]"
+                  >
+                    {value}
+                  </YeonText>
+                </YeonView>
+              ))}
+            </YeonView>
           </YeonView>
         </YeonView>
 
@@ -555,7 +793,7 @@ export function TodoServiceScreen() {
           <YeonView className="flex flex-wrap gap-2">
             <YeonButton type="submit" variant="primary" className="h-11 gap-2">
               <Plus size={16} aria-hidden="true" />
-              오늘 추가
+              {selectedDate === actualToday ? "오늘 추가" : "선택 날짜 추가"}
             </YeonButton>
             <YeonButton
               type="button"
@@ -580,7 +818,7 @@ export function TodoServiceScreen() {
           </YeonText>
         ) : null}
 
-        {carryOverCount > 0 ? (
+        {selectedDate === actualToday && carryOverCount > 0 ? (
           <YeonView className="flex flex-col gap-3 rounded-xl border border-[#fde68a] bg-[#fffbeb] p-3 md:flex-row md:items-center md:justify-between">
             <YeonText
               variant="unstyled"
@@ -610,87 +848,101 @@ export function TodoServiceScreen() {
           </YeonView>
         ) : null}
 
-        <YeonView className="rounded-xl border border-[#dbeafe] bg-[#eff6ff] p-4">
-          <YeonView className="mb-3 flex items-center gap-2">
-            <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-white text-[#2563eb]">
-              <Play size={18} aria-hidden="true" />
-            </span>
-            <YeonText
-              as="h2"
-              variant="unstyled"
-              tone="inherit"
-              className="m-0 text-[16px] font-black text-[#1e3a8a]"
-            >
-              지금 할 일
-            </YeonText>
-          </YeonView>
-          {groups.active ? (
-            <TaskCard
-              task={groups.active}
-              onStatus={handleStatus}
-              onDelete={handleDelete}
-              onNoteChange={handleNoteChange}
-            />
-          ) : (
-            <YeonText
-              variant="unstyled"
-              tone="inherit"
-              className="rounded-lg border border-dashed border-[#bfdbfe] bg-white px-3 py-5 text-center text-[14px] font-bold text-[#2563eb]"
-            >
-              Today 목록에서 재생 버튼을 눌러 하나만 집중하세요.
-            </YeonText>
-          )}
-        </YeonView>
+        <YeonView className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
+          <YeonView className="grid gap-5">
+            <YeonView className="rounded-xl border border-[#dbeafe] bg-[#eff6ff] p-4">
+              <YeonView className="mb-3 flex items-center gap-2">
+                <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-white text-[#2563eb]">
+                  <Play size={18} aria-hidden="true" />
+                </span>
+                <YeonText
+                  as="h2"
+                  variant="unstyled"
+                  tone="inherit"
+                  className="m-0 text-[16px] font-black text-[#1e3a8a]"
+                >
+                  지금 할 일
+                </YeonText>
+              </YeonView>
+              {groups.active ? (
+                <TaskCard
+                  task={groups.active}
+                  onStatus={handleStatus}
+                  onDelete={handleDelete}
+                  onNoteChange={handleNoteChange}
+                />
+              ) : (
+                <YeonText
+                  variant="unstyled"
+                  tone="inherit"
+                  className="rounded-lg border border-dashed border-[#bfdbfe] bg-white px-3 py-5 text-center text-[14px] font-bold text-[#2563eb]"
+                >
+                  선택 날짜 목록에서 재생 버튼을 눌러 하나만 집중하세요.
+                </YeonText>
+              )}
+            </YeonView>
 
-        <YeonView className="grid gap-3 lg:grid-cols-3">
-          <TaskColumn
-            title={`Today ${openTodayCount > TODAY_LIMIT ? "· 줄이기 권장" : ""}`}
-            count={groups.planned.length}
-            icon={<ListTodo size={17} aria-hidden="true" />}
-            emptyText="오늘 확정한 일이 없습니다."
-          >
-            {groups.planned.map((task) => (
-              <TaskCard
-                key={task.id}
-                task={task}
-                onStatus={handleStatus}
-                onDelete={handleDelete}
-                onNoteChange={handleNoteChange}
-              />
-            ))}
-          </TaskColumn>
-          <TaskColumn
-            title="Inbox"
-            count={groups.inbox.length}
-            icon={<Inbox size={17} aria-hidden="true" />}
-            emptyText="나중에 볼 일이 없습니다."
-          >
-            {groups.inbox.map((task) => (
-              <TaskCard
-                key={task.id}
-                task={task}
-                onStatus={handleStatus}
-                onDelete={handleDelete}
-                onNoteChange={handleNoteChange}
-              />
-            ))}
-          </TaskColumn>
-          <TaskColumn
-            title="Done"
-            count={groups.doneToday.length}
-            icon={<CheckCircle2 size={17} aria-hidden="true" />}
-            emptyText="아직 오늘 완료한 일이 없습니다."
-          >
-            {groups.doneToday.map((task) => (
-              <TaskCard
-                key={task.id}
-                task={task}
-                onStatus={handleStatus}
-                onDelete={handleDelete}
-                onNoteChange={handleNoteChange}
-              />
-            ))}
-          </TaskColumn>
+            <YeonView className="grid gap-3 lg:grid-cols-3">
+              <TaskColumn
+                title={`${selectedDate === actualToday ? "Today" : "선택 날짜"} ${
+                  openSelectedDateCount > TODAY_LIMIT ? "· 줄이기 권장" : ""
+                }`}
+                count={groups.planned.length}
+                icon={<ListTodo size={17} aria-hidden="true" />}
+                emptyText="선택 날짜에 확정한 일이 없습니다."
+              >
+                {groups.planned.map((task) => (
+                  <TaskCard
+                    key={task.id}
+                    task={task}
+                    onStatus={handleStatus}
+                    onDelete={handleDelete}
+                    onNoteChange={handleNoteChange}
+                  />
+                ))}
+              </TaskColumn>
+              <TaskColumn
+                title="Inbox"
+                count={groups.inbox.length}
+                icon={<Inbox size={17} aria-hidden="true" />}
+                emptyText="나중에 볼 일이 없습니다."
+              >
+                {groups.inbox.map((task) => (
+                  <TaskCard
+                    key={task.id}
+                    task={task}
+                    onStatus={handleStatus}
+                    onDelete={handleDelete}
+                    onNoteChange={handleNoteChange}
+                  />
+                ))}
+              </TaskColumn>
+              <TaskColumn
+                title="Done"
+                count={groups.doneToday.length}
+                icon={<CheckCircle2 size={17} aria-hidden="true" />}
+                emptyText="선택 날짜에 완료한 일이 없습니다."
+              >
+                {groups.doneToday.map((task) => (
+                  <TaskCard
+                    key={task.id}
+                    task={task}
+                    onStatus={handleStatus}
+                    onDelete={handleDelete}
+                    onNoteChange={handleNoteChange}
+                  />
+                ))}
+              </TaskColumn>
+            </YeonView>
+          </YeonView>
+
+          <CalendarPanel
+            days={calendarDays}
+            visibleDate={visibleDate}
+            selectedDate={selectedDate}
+            onSelectDate={handleSelectDate}
+            onMoveMonth={handleMoveMonth}
+          />
         </YeonView>
       </YeonView>
     </YeonView>
