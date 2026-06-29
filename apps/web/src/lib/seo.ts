@@ -15,6 +15,7 @@ export const SERVICE_CANONICAL_URLS = {
   card: "https://card.yeon.world",
   community: "https://community.yeon.world",
   game: "https://game.yeon.world",
+  todo: "https://todo.yeon.world",
 } as const;
 
 export const PUBLIC_CONTENT_CANONICAL_URLS = {
@@ -79,6 +80,11 @@ export const INDEXABLE_SITEMAP_ENTRIES = [
   },
   {
     url: SERVICE_CANONICAL_URLS.community,
+    changeFrequency: "daily",
+    priority: 0.85,
+  },
+  {
+    url: SERVICE_CANONICAL_URLS.todo,
     changeFrequency: "daily",
     priority: 0.85,
   },

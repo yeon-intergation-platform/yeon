@@ -16,7 +16,13 @@ import { HeaderExperienceBadge } from "@/features/user-experience/header-experie
 import { resolveSectionBrandHref } from "@/lib/header-brand-nav";
 import { useLogout } from "@/lib/use-logout";
 
-type CommonServiceKey = "home" | "typing" | "card" | "community" | "game";
+type CommonServiceKey =
+  | "home"
+  | "typing"
+  | "card"
+  | "community"
+  | "game"
+  | "todo";
 
 // 서비스 키 → 내부 베이스 경로. SERVICE_SUBDOMAIN_ROUTES(subdomain-routing.ts)의
 // servicePath와 같은 값이며, 좌상단 "한 단계 위" 네비게이션 계산에만 쓴다.
@@ -25,6 +31,7 @@ const SERVICE_BASE_PATH: Record<Exclude<CommonServiceKey, "home">, string> = {
   card: "/card-service",
   community: "/community",
   game: "/game-service",
+  todo: "/todo-service",
 } as const;
 
 type CommonProductHeaderProps = {
@@ -36,6 +43,8 @@ type CommonProductHeaderProps = {
   profileLabels?: Partial<YeonProductProfileMenuLabels>;
   levelAriaLabel?: (level: number) => string;
   rightExtras?: ReactNode;
+  showBgmButton?: boolean;
+  showSettingsButton?: boolean;
 };
 
 type AuthSessionPayload = {
@@ -48,6 +57,7 @@ const COMMON_HEADER_BRAND_LABELS: Record<CommonServiceKey, string> = {
   card: "YEON 플래시카드",
   community: "YEON 커뮤니티",
   game: "YEON 게임",
+  todo: "YEON Today",
 } as const;
 
 async function fetchIsAuthenticated() {
@@ -76,6 +86,8 @@ export function CommonProductHeader({
   profileLabels,
   levelAriaLabel,
   rightExtras,
+  showBgmButton = true,
+  showSettingsButton = true,
 }: CommonProductHeaderProps) {
   const pathname = useYeonPathname();
   // 좌상단 "한 단계 위": 하위 화면 → 서비스 홈, 서비스 홈 → 플랫폼(yeon.world).
@@ -110,10 +122,14 @@ export function CommonProductHeader({
         <YeonView className="hidden shrink-0 md:block">
           <HeaderExperienceBadge levelAriaLabel={levelAriaLabel} />
         </YeonView>
-        <YeonView className="hidden shrink-0 md:block">
-          <TypingBgmButton />
-        </YeonView>
-        {settingsControl ?? <ProductHeaderDefaultSettingsButton />}
+        {showBgmButton ? (
+          <YeonView className="hidden shrink-0 md:block">
+            <TypingBgmButton />
+          </YeonView>
+        ) : null}
+        {showSettingsButton
+          ? (settingsControl ?? <ProductHeaderDefaultSettingsButton />)
+          : settingsControl}
         {profileControl ?? (
           <ProductHeaderProfileButton labels={profileLabels} />
         )}

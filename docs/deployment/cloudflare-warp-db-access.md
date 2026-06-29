@@ -52,6 +52,7 @@ race.yeon.world   → http://yeon-prod-race:2567
 dev.yeon.world    → http://yeon-dev-web:3000
 db.yeon.world     → tcp://yeon-prod-db:5432
 dbdev.yeon.world  → tcp://yeon-dev-db:5432
+todo.yeon.world   → http://yeon-prod-web:3000
 Catch-all         → http_status:404
 ```
 

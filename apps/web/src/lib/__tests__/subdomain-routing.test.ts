@@ -37,6 +37,13 @@ describe("subdomain-routing", () => {
 
     expect(
       resolveServiceSubdomainRewritePath({
+        host: "todo.yeon.world",
+        pathname: "/",
+      })
+    ).toBe("/todo-service");
+
+    expect(
+      resolveServiceSubdomainRewritePath({
         host: "support.yeon.world",
         pathname: "/",
       })
@@ -87,6 +94,14 @@ describe("subdomain-routing", () => {
         search: "?utm=search",
       })
     ).toBe("/game-service/snake-io?utm=search");
+
+    expect(
+      resolveServiceSubdomainRewritePath({
+        host: "todo.yeon.world",
+        pathname: "/today",
+        search: "?source=shortcut",
+      })
+    ).toBe("/todo-service/today?source=shortcut");
   });
 
   it("공개 콘텐츠 subdomain의 feed.xml을 channel 내부 route로 rewrite한다", () => {
@@ -201,6 +216,13 @@ describe("subdomain-routing", () => {
         pathname: "/game-service/snake-io",
       })?.toString()
     ).toBe("https://game.yeon.world/snake-io");
+
+    expect(
+      resolveLegacyServicePathRedirectUrl({
+        host: "yeon.world",
+        pathname: "/todo-service",
+      })?.toString()
+    ).toBe("https://todo.yeon.world/");
   });
 
   it("서비스 subdomain에 legacy prefix가 남으면 prefix를 제거한 URL로 redirect한다", () => {
@@ -240,6 +262,13 @@ describe("subdomain-routing", () => {
         search: "?utm=legacy",
       })?.toString()
     ).toBe("https://game.yeon.world/snake-io?utm=legacy");
+
+    expect(
+      resolveLegacyServicePathRedirectUrl({
+        host: "todo.yeon.world",
+        pathname: "/todo-service",
+      })?.toString()
+    ).toBe("https://todo.yeon.world/");
   });
 
   it("다른 서비스 subdomain의 legacy path는 redirect하지 않는다", () => {

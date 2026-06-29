@@ -16,6 +16,9 @@ describe("platform-services", () => {
     expect(getPlatformServiceBySlug("community")?.publicHref).toBe(
       "https://community.yeon.world"
     );
+    expect(getPlatformServiceBySlug("todo-service")?.publicHref).toBe(
+      "https://todo.yeon.world"
+    );
     expect(getPlatformServiceBySlug("news")?.publicHref).toBe(
       "https://news.yeon.world"
     );
@@ -60,6 +63,9 @@ describe("platform-services", () => {
     expect(
       services.find((service) => service.slug === "community")?.publicHref
     ).toBe("/community");
+    expect(
+      services.find((service) => service.slug === "todo-service")?.publicHref
+    ).toBe("/todo-service");
     expect(
       services.find((service) => service.slug === "news")?.publicHref
     ).toBe("https://news.yeon.world");

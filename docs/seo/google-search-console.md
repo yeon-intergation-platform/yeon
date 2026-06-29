@@ -13,6 +13,7 @@
 - 타자 서비스 검색 기준 URL: `https://typing.yeon.world`
 - 카드 서비스 검색 기준 URL: `https://card.yeon.world`
 - 커뮤니티 검색 기준 URL: `https://community.yeon.world`
+- Today 서비스 검색 기준 URL: `https://todo.yeon.world`
 - 공개 도움말 검색 기준 URL: `https://support.yeon.world`
 - 공식 소식 검색 기준 URL: `https://news.yeon.world`
 - 블로그 검색 기준 URL: `https://blog.yeon.world`
@@ -28,6 +29,7 @@
 - `https://typing.yeon.world/decks`
 - `https://card.yeon.world/`
 - `https://community.yeon.world/`
+- `https://todo.yeon.world/`
 - `https://support.yeon.world/`
 - `https://support.yeon.world/nexa/guides/add-nexa-discord-bot`
 - `https://support.yeon.world/nexa/guides/discord-bot-permissions`
@@ -70,6 +72,7 @@
    - `https://card.yeon.world/`
    - `https://community.yeon.world/`
    - `https://game.yeon.world/`
+   - `https://todo.yeon.world/`
    - `https://support.yeon.world/`
    - `https://news.yeon.world/`
    - `https://blog.yeon.world/`
@@ -81,11 +84,12 @@
    - `https://card.yeon.world/sitemap.xml`
    - `https://community.yeon.world/sitemap.xml`
    - `https://game.yeon.world/sitemap.xml`
+   - `https://todo.yeon.world/sitemap.xml`
    - `https://support.yeon.world/sitemap.xml`
    - `https://news.yeon.world/sitemap.xml`
    - `https://blog.yeon.world/sitemap.xml`
    - `https://discord-ai.yeon.world/sitemap.xml`
-5. `URL 검사`에서 `/`, `https://typing.yeon.world/`, `https://typing.yeon.world/rooms`, `https://card.yeon.world/`, `https://community.yeon.world/`, `https://game.yeon.world/`, `https://game.yeon.world/snake-io`, `https://support.yeon.world/nexa/guides/add-nexa-discord-bot`, `https://news.yeon.world/notice/public-content-network-start`, `https://blog.yeon.world/product/why-split-support-news-blog`, `https://discord-ai.yeon.world/`, `/privacy`, `/terms`가 자기 canonical host로 잡히는지 확인한다.
+5. `URL 검사`에서 `/`, `https://typing.yeon.world/`, `https://typing.yeon.world/rooms`, `https://card.yeon.world/`, `https://community.yeon.world/`, `https://game.yeon.world/`, `https://game.yeon.world/snake-io`, `https://todo.yeon.world/`, `https://support.yeon.world/nexa/guides/add-nexa-discord-bot`, `https://news.yeon.world/notice/public-content-network-start`, `https://blog.yeon.world/product/why-split-support-news-blog`, `https://discord-ai.yeon.world/`, `/privacy`, `/terms`가 자기 canonical host로 잡히는지 확인한다.
 6. `/counseling-service`, `/check/<token>`, `/auth/error`, `/mockdata/...`, `dev.yeon.world/*`가 noindex 또는 비제출 대상으로 보이는지 확인한다.
 
 ## Google API 자동화 기준

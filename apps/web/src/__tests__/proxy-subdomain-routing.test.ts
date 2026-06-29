@@ -43,4 +43,18 @@ describe("proxy subdomain routing", () => {
       "https://support.yeon.world/"
     );
   });
+
+  it("rewrites todo subdomain root to the todo service route", () => {
+    const response = proxy(
+      buildRequest("/", {
+        Host: "todo.yeon.world",
+        "x-forwarded-host": "todo.yeon.world",
+      })
+    );
+
+    expect(response.headers.get("x-middleware-rewrite")).toContain(
+      "/todo-service"
+    );
+    expect(response.headers.get("location")).toBeNull();
+  });
 });
