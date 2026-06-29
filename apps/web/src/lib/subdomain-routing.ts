@@ -18,6 +18,10 @@ export const SERVICE_SUBDOMAIN_ROUTES = {
     servicePath: "/game-service",
     publicUrl: "https://game.yeon.world",
   },
+  "todo.yeon.world": {
+    servicePath: "/todo-service",
+    publicUrl: "https://todo.yeon.world",
+  },
 } as const;
 
 export const CONTENT_SUBDOMAIN_ROUTES = {

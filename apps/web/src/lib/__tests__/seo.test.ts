@@ -42,6 +42,7 @@ describe("seo", () => {
     expect(buildServiceCanonicalUrl("community")).toBe(
       "https://community.yeon.world/"
     );
+    expect(buildServiceCanonicalUrl("todo")).toBe("https://todo.yeon.world/");
   });
 
   it("공개 콘텐츠 canonical url은 channel별 subdomain을 기준으로 둔다", () => {
@@ -86,6 +87,12 @@ describe("seo", () => {
         },
         {
           url: "https://community.yeon.world",
+          changeFrequency: "daily",
+          priority: 0.85,
+          lastModified: undefined,
+        },
+        {
+          url: "https://todo.yeon.world",
           changeFrequency: "daily",
           priority: 0.85,
           lastModified: undefined,
@@ -210,6 +217,15 @@ describe("seo", () => {
       )
     ).toBe(true);
 
+    expect(getIndexableSitemapEntriesForHostname("todo.yeon.world")).toEqual([
+      {
+        url: "https://todo.yeon.world",
+        changeFrequency: "daily",
+        priority: 0.85,
+        lastModified: undefined,
+      },
+    ]);
+
     expect(getIndexableSitemapEntriesForHostname("dev.yeon.world")).toEqual([]);
   });
 
@@ -243,6 +259,9 @@ describe("seo", () => {
 
     expect(buildSitemapUrlForHostname("card.yeon.world")).toBe(
       "https://card.yeon.world/sitemap.xml"
+    );
+    expect(buildSitemapUrlForHostname("todo.yeon.world")).toBe(
+      "https://todo.yeon.world/sitemap.xml"
     );
 
     expect(getRobotsForHostname("support.yeon.world")).toMatchObject({

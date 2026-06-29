@@ -1,7 +1,5 @@
 #!/usr/bin/env node
 
-import { google } from "googleapis";
-
 const WEBMASTERS_SCOPE = "https://www.googleapis.com/auth/webmasters";
 
 const SEARCH_CONSOLE_TARGETS = [
@@ -28,6 +26,11 @@ const SEARCH_CONSOLE_TARGETS = [
   {
     siteUrl: "https://game.yeon.world/",
     sitemapUrl: "https://game.yeon.world/sitemap.xml",
+    owner: "yeon-web",
+  },
+  {
+    siteUrl: "https://todo.yeon.world/",
+    sitemapUrl: "https://todo.yeon.world/sitemap.xml",
     owner: "yeon-web",
   },
   {
@@ -77,6 +80,7 @@ function printTargets() {
 }
 
 async function getWebmastersClient() {
+  const { google } = await import("googleapis");
   const auth = new google.auth.GoogleAuth({
     scopes: [WEBMASTERS_SCOPE],
   });

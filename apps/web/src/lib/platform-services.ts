@@ -79,6 +79,18 @@ export const PLATFORM_SERVICES = [
     listedInPlatformHome: true,
   },
   {
+    slug: "todo-service",
+    href: "/todo-service",
+    publicHref: "https://todo.yeon.world",
+    title: "오늘 보드",
+    summary:
+      "오늘 처리할 일만 고르고 지금 할 일 하나에 집중하는 개인용 데일리 보드입니다.",
+    audience: "오늘 할 일",
+    accessPolicy: platformServiceAccessPolicies.anonymous,
+    status: platformServiceStatuses.live,
+    listedInPlatformHome: true,
+  },
+  {
     slug: "discord-ai",
     href: "https://discord-ai.yeon.world",
     publicHref: "https://discord-ai.yeon.world",

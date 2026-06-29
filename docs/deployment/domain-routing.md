@@ -13,6 +13,7 @@
 | typing-service | `https://yeon.world/typing-service` | `https://typing.yeon.world`    | 신규 subdomain으로 308 redirect |
 | card-service   | `https://yeon.world/card-service`   | `https://card.yeon.world`      | 신규 subdomain으로 308 redirect |
 | community      | `https://yeon.world/community`      | `https://community.yeon.world` | 신규 subdomain으로 308 redirect |
+| todo-service   | `https://yeon.world/todo-service`   | `https://todo.yeon.world`      | 신규 subdomain으로 308 redirect |
 | support        | `https://yeon.world/support`        | `https://support.yeon.world`   | 신규 subdomain으로 308 redirect |
 | news           | `https://yeon.world/news`           | `https://news.yeon.world`      | 신규 subdomain으로 308 redirect |
 | blog           | `https://yeon.world/blog`           | `https://blog.yeon.world`      | 신규 subdomain으로 308 redirect |
@@ -50,6 +51,7 @@ Catch-all         -> http_status:404
 | `typing.yeon.world`    | `http://yeon-prod-web:3000` | Next.js web app에서 host/path 라우팅 처리 |
 | `card.yeon.world`      | `http://yeon-prod-web:3000` | Next.js web app에서 host/path 라우팅 처리 |
 | `community.yeon.world` | `http://yeon-prod-web:3000` | Next.js web app에서 host/path 라우팅 처리 |
+| `todo.yeon.world`      | `http://yeon-prod-web:3000` | Next.js web app에서 host/path 라우팅 처리 |
 | `support.yeon.world`   | `http://yeon-prod-web:3000` | 공개 도움말 host rewrite 처리             |
 | `news.yeon.world`      | `http://yeon-prod-web:3000` | 공식 소식 host rewrite 처리               |
 | `blog.yeon.world`      | `http://yeon-prod-web:3000` | 개발 블로그 host rewrite 처리             |
@@ -60,6 +62,7 @@ Catch-all         -> http_status:404
   - `typing.yeon.world`
   - `card.yeon.world`
   - `community.yeon.world`
+  - `todo.yeon.world`
   - `support.yeon.world`
   - `news.yeon.world`
   - `blog.yeon.world`
@@ -86,6 +89,7 @@ Catch-all         -> http_status:404
 apps/web/src/app/typing-service
 apps/web/src/app/card-service
 apps/web/src/app/community
+apps/web/src/app/todo-service
 apps/web/src/app/support
 apps/web/src/app/news
 apps/web/src/app/blog
@@ -100,12 +104,14 @@ apps/web/src/lib/seo.ts
 apps/web/src/app/typing-service/**
 apps/web/src/app/card-service/**
 apps/web/src/app/community/**
+apps/web/src/app/todo-service/**
 apps/web/src/app/support/**
 apps/web/src/app/news/**
 apps/web/src/app/blog/**
 apps/web/src/features/typing-service/**
 apps/web/src/features/card-service/**
 apps/web/src/features/community/**
+apps/web/src/features/todo-service/**
 apps/web/src/features/public-content/**
 apps/race-server/**
 apps/backend/**
@@ -122,6 +128,7 @@ packages/api-contract/**
    - `typing.yeon.world/*` -> `/typing-service/*`
    - `card.yeon.world/*` -> `/card-service/*`
    - `community.yeon.world/*` -> `/community/*`
+   - `todo.yeon.world/*` -> `/todo-service/*`
    - `support.yeon.world/*` -> `/support/*`
    - `news.yeon.world/*` -> `/news/*`
    - `blog.yeon.world/*` -> `/blog/*`
@@ -129,6 +136,7 @@ packages/api-contract/**
    - `https://yeon.world/typing-service/*` -> `https://typing.yeon.world/*`
    - `https://yeon.world/card-service/*` -> `https://card.yeon.world/*`
    - `https://yeon.world/community/*` -> `https://community.yeon.world/*`
+   - `https://yeon.world/todo-service/*` -> `https://todo.yeon.world/*`
    - `https://yeon.world/support/*` -> `https://support.yeon.world/*`
    - `https://yeon.world/news/*` -> `https://news.yeon.world/*`
    - `https://yeon.world/blog/*` -> `https://blog.yeon.world/*`
@@ -152,6 +160,7 @@ packages/api-contract/**
 https://typing.yeon.world
 https://card.yeon.world
 https://community.yeon.world
+https://todo.yeon.world
 https://support.yeon.world
 https://news.yeon.world
 https://blog.yeon.world
@@ -186,6 +195,13 @@ https://blog.yeon.world
 - 실시간 채팅 또는 presence 관련 API
 - 익명 닉네임 표시
 
+### todo-service
+
+- `https://todo.yeon.world` 접속
+- `/todo-service` 기존 path가 canonical subdomain으로 redirect되는지 확인
+- localStorage 저장/복원 확인
+- 오늘 추가, Inbox 추가, 진행중 지정, 완료, 미루기, 삭제 확인
+
 ## 검증 명령
 
 ```bash
@@ -194,9 +210,11 @@ pnpm --filter @yeon/web typecheck
 curl -I https://typing.yeon.world
 curl -I https://card.yeon.world
 curl -I https://community.yeon.world
+curl -I https://todo.yeon.world
 curl -I https://yeon.world/typing-service
 curl -I https://yeon.world/card-service
 curl -I https://yeon.world/community
+curl -I https://yeon.world/todo-service
 curl -I https://typing.yeon.world/typing-service
 curl -I https://race.yeon.world
 ```
@@ -219,6 +237,7 @@ WebSocket 확인은 브라우저 또는 Playwright로 확인한다.
 - `https://typing.yeon.world` HTTP 200 또는 의도한 redirect
 - `https://card.yeon.world` HTTP 200 또는 의도한 redirect
 - `https://community.yeon.world` HTTP 200 또는 의도한 redirect
+- `https://todo.yeon.world` HTTP 200 또는 의도한 redirect
 - 기존 path URL이 canonical subdomain으로 308 redirect되는지 확인
 - 로그인 후 새 subdomain 진입 확인
 - 브라우저 콘솔 CORS 오류 없음
@@ -233,6 +252,7 @@ WebSocket 확인은 브라우저 또는 Playwright로 확인한다.
 4. 앱 코드 redirect/rewrite 변경 PR을 revert한다.
 5. 기존 path URL이 정상 동작하는지 확인한다.
 6. `https://yeon.world/typing-service`, `https://yeon.world/card-service`, `https://yeon.world/community`를 smoke test한다.
+7. `https://yeon.world/todo-service`를 smoke test한다.
 
 ## 관련 문서
 
