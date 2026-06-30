@@ -22,6 +22,7 @@ import type { YeonRouteName } from "./routes";
 // 라우트 이름은 routes.ts의 YeonRouteName(YEON_ROUTE_TEMPLATES keyof)에서 파생한다 — drift 불가.
 // 도메인이 늘면 YEON_ROUTE_TEMPLATES에 추가하고 여기서 union member를 확장한다.
 export type YeonRouteTarget =
+  | { name: Extract<YeonRouteName, "cardStudyDesk"> }
   | { name: Extract<YeonRouteName, "cardDeckList"> }
   | {
       name: Extract<YeonRouteName, "cardDeckDetail">;
