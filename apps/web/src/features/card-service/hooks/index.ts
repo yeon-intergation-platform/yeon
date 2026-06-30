@@ -10,6 +10,7 @@ export {
   useDeleteCard,
   useUpdateCard,
   useReviewCard,
+  useReviewCardWithDeckDetailCache,
   useUpdateCardStudyPreference,
 } from "./use-card-mutations";
 export { useDeckPlayState } from "./use-deck-play-state";

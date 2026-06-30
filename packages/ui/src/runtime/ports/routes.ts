@@ -10,6 +10,7 @@ export const YEON_ROUTE_TEMPLATES = {
   cardDeckList: "/card-service/decks",
   cardDeckDetail: "/card-service/decks/[deckId]",
   cardDeckPlay: "/card-service/decks/[deckId]/play",
+  cardStudyDesk: "/card-service/study-desk",
   cardRoomList: "/card-service/rooms",
   cardRoomDetail: "/card-service/rooms/[roomId]",
 } as const;

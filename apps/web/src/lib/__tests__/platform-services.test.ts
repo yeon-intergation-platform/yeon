@@ -22,6 +22,9 @@ describe("platform-services", () => {
     expect(getPlatformServiceBySlug("news")?.publicHref).toBe(
       "https://news.yeon.world"
     );
+    expect(getPlatformServiceBySlug("mooddesk")?.publicHref).toBe(
+      "https://card.yeon.world/study-desk"
+    );
   });
 
   it("운영 apex host에서만 서비스 카드 진입 URL을 canonical subdomain으로 resolve한다", () => {
@@ -69,5 +72,8 @@ describe("platform-services", () => {
     expect(
       services.find((service) => service.slug === "news")?.publicHref
     ).toBe("https://news.yeon.world");
+    expect(
+      services.find((service) => service.slug === "mooddesk")?.publicHref
+    ).toBe("/card-service/study-desk");
   });
 });

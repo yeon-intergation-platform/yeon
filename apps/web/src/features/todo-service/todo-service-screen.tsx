@@ -19,10 +19,15 @@ import {
   RotateCcw,
   Settings,
   Star,
+  Timer,
   Trash2,
 } from "lucide-react";
 import { YeonButton, YeonField, YeonText, YeonView } from "@yeon/ui";
 import { CommonProductHeader } from "@/components/product-shell/product-header";
+import {
+  createStudyDeskTodoSearch,
+  resolveCardStudyDeskHref,
+} from "@/lib/study-desk-links";
 import {
   TODO_TASK_ESTIMATES,
   TODO_TASK_PRIORITIES,
@@ -152,6 +157,14 @@ function getTaskMinuteSummary(tasks: readonly TodoTask[]) {
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
   return minutes === 0 ? `예상 ${hours}h` : `예상 ${hours}h ${minutes}m`;
+}
+
+function resolveStudyDeskTaskUrl(task: TodoTask) {
+  const search = createStudyDeskTodoSearch({
+    todoTaskId: task.id,
+    todoTitle: task.title,
+  });
+  return resolveCardStudyDeskHref({ search });
 }
 
 function matchesBoardFilters({
@@ -291,6 +304,7 @@ function TaskCard({
   onDelete,
   onNoteChange,
   onMoveNextDay,
+  onOpenStudyDesk,
   showNoteEditor = true,
   showScore = false,
 }: {
@@ -299,6 +313,7 @@ function TaskCard({
   onDelete: (taskId: string) => void;
   onNoteChange: (taskId: string, note: string) => void;
   onMoveNextDay: (taskId: string) => void;
+  onOpenStudyDesk: (task: TodoTask) => void;
   showNoteEditor?: boolean;
   showScore?: boolean;
 }) {
@@ -346,6 +361,14 @@ function TaskCard({
               onClick={() => onStatus(task.id, TODO_TASK_STATUSES.planned)}
             >
               <RotateCcw size={16} aria-hidden="true" />
+            </IconButton>
+          ) : null}
+          {!isDone ? (
+            <IconButton
+              label="Study Desk로 집중 시작"
+              onClick={() => onOpenStudyDesk(task)}
+            >
+              <Timer size={16} aria-hidden="true" />
             </IconButton>
           ) : null}
           {!isDone ? (
@@ -632,11 +655,13 @@ function ActiveTaskPanel({
   topRecommendation,
   onStart,
   onComplete,
+  onOpenStudyDesk,
 }: {
   activeTask: TodoTask | null;
   topRecommendation: TodoTaskRecommendation | undefined;
   onStart: (taskId: string) => void;
   onComplete: (taskId: string) => void;
+  onOpenStudyDesk: (task: TodoTask) => void;
 }) {
   const task = activeTask ?? topRecommendation?.task ?? null;
 
@@ -688,17 +713,28 @@ function ActiveTaskPanel({
                 이득 점수 {calculateTodoTaskBenefitScore(task)}점
               </YeonText>
             </YeonView>
-            <YeonButton
-              type="button"
-              variant="primary"
-              className="h-11 shrink-0 gap-2"
-              onClick={() =>
-                activeTask ? onComplete(task.id) : onStart(task.id)
-              }
-            >
-              {activeTask ? "완료 처리" : "이 task 시작하기"}
-              <Play size={15} aria-hidden="true" />
-            </YeonButton>
+            <YeonView className="flex shrink-0 flex-wrap gap-2">
+              <YeonButton
+                type="button"
+                variant="secondary"
+                className="h-11 gap-2"
+                onClick={() => onOpenStudyDesk(task)}
+              >
+                작업대
+                <Timer size={15} aria-hidden="true" />
+              </YeonButton>
+              <YeonButton
+                type="button"
+                variant="primary"
+                className="h-11 gap-2"
+                onClick={() =>
+                  activeTask ? onComplete(task.id) : onStart(task.id)
+                }
+              >
+                {activeTask ? "완료 처리" : "이 task 시작하기"}
+                <Play size={15} aria-hidden="true" />
+              </YeonButton>
+            </YeonView>
           </YeonView>
         </YeonView>
       ) : (
@@ -1101,6 +1137,10 @@ export function TodoServiceScreen() {
     );
   }
 
+  function handleOpenStudyDesk(task: TodoTask) {
+    window.location.assign(resolveStudyDeskTaskUrl(task));
+  }
+
   return (
     <YeonView className="min-h-screen bg-[#fafafa] text-[#111]">
       <CommonProductHeader
@@ -1341,6 +1381,7 @@ export function TodoServiceScreen() {
               onComplete={(taskId) =>
                 handleStatus(taskId, TODO_TASK_STATUSES.done)
               }
+              onOpenStudyDesk={handleOpenStudyDesk}
             />
 
             <RecommendationPanel
@@ -1376,6 +1417,7 @@ export function TodoServiceScreen() {
                     onDelete={handleDelete}
                     onNoteChange={handleNoteChange}
                     onMoveNextDay={handleMoveTaskToNextDay}
+                    onOpenStudyDesk={handleOpenStudyDesk}
                     showScore
                   />
                 ))}
@@ -1394,6 +1436,7 @@ export function TodoServiceScreen() {
                     onDelete={handleDelete}
                     onNoteChange={handleNoteChange}
                     onMoveNextDay={handleMoveTaskToNextDay}
+                    onOpenStudyDesk={handleOpenStudyDesk}
                     showNoteEditor={false}
                   />
                 ))}
@@ -1420,6 +1463,7 @@ export function TodoServiceScreen() {
                     onDelete={handleDelete}
                     onNoteChange={handleNoteChange}
                     onMoveNextDay={handleMoveTaskToNextDay}
+                    onOpenStudyDesk={handleOpenStudyDesk}
                   />
                 ))}
               </TaskColumn>

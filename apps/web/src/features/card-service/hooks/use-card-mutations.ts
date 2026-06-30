@@ -8,6 +8,7 @@ import {
   type YeonCardItemRepository,
 } from "@yeon/ui/runtime/ports/card-deck";
 import type {
+  CardDeckDetailResponse,
   CardReviewDifficulty,
   CardStudyMode,
   CreateCardDeckItemBody,
@@ -15,10 +16,12 @@ import type {
   UpdateCardDeckItemBody,
 } from "@yeon/api-contract/card-decks";
 import { useCardServiceAuth } from "../auth-context";
+import { cardServiceQueryKeys } from "../card-service-query-keys";
 import {
   invalidateCardDeckQueries,
   withCardServiceAuthExpiredHandling,
 } from "./card-service-mutation-policy";
+import { replaceCardDeckDetailItem } from "./card-deck-detail-cache";
 
 // 데이터 변형은 repository 포트가, 401 인증 오류 처리는 세션(auth-context)이 담당한다(관심사 분리).
 function useDeckMutation<TInput, TOutput>(
@@ -91,6 +94,28 @@ export function useReviewCard(deckId: string) {
     ) => repository.reviewCard(deckId, params.itemId, params.difficulty),
     { invalidateOnSuccess: false }
   );
+}
+
+export function useReviewCardWithDeckDetailCache(deckId: string) {
+  const queryClient = useQueryClient();
+  const { isAuthenticated, markUnauthenticated } = useCardServiceAuth();
+  const repository = useYeonCardItemRepository();
+  return useMutation({
+    mutationFn: (params: {
+      itemId: string;
+      difficulty: CardReviewDifficulty;
+    }) =>
+      withCardServiceAuthExpiredHandling(
+        () => repository.reviewCard(deckId, params.itemId, params.difficulty),
+        { queryClient, markUnauthenticated, deckId }
+      ),
+    onSuccess: (updatedItem) => {
+      queryClient.setQueryData<CardDeckDetailResponse | undefined>(
+        cardServiceQueryKeys.deckDetail(isAuthenticated, deckId),
+        (detail) => replaceCardDeckDetailItem(detail, updatedItem)
+      );
+    },
+  });
 }
 
 export function useUpdateCardStudyPreference(deckId: string) {
