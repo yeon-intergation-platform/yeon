@@ -23,6 +23,7 @@ export const TODO_TASK_ESTIMATES = {
   fifteen: "15m",
   thirty: "30m",
   hour: "60m",
+  twoHours: "120m",
 } as const;
 
 export type TodoTaskEstimate =
@@ -65,8 +66,33 @@ export type TodoCalendarDaySummary = {
   totalCount: number;
 };
 
+export type TodoTaskRecommendation = {
+  task: TodoTask;
+  rank: number;
+  score: number;
+};
+
 const TODO_STATE_VERSION = 1;
 const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+const TODO_PRIORITY_SCORE: Record<TodoTaskPriority, number> = {
+  [TODO_TASK_PRIORITIES.important]: 28,
+  [TODO_TASK_PRIORITIES.normal]: 20,
+  [TODO_TASK_PRIORITIES.light]: 12,
+};
+const TODO_ESTIMATE_SCORE: Record<TodoTaskEstimate, number> = {
+  [TODO_TASK_ESTIMATES.five]: 18,
+  [TODO_TASK_ESTIMATES.fifteen]: 16,
+  [TODO_TASK_ESTIMATES.thirty]: 12,
+  [TODO_TASK_ESTIMATES.hour]: 8,
+  [TODO_TASK_ESTIMATES.twoHours]: 4,
+};
+const TODO_ESTIMATE_MINUTES: Record<TodoTaskEstimate, number> = {
+  [TODO_TASK_ESTIMATES.five]: 5,
+  [TODO_TASK_ESTIMATES.fifteen]: 15,
+  [TODO_TASK_ESTIMATES.thirty]: 30,
+  [TODO_TASK_ESTIMATES.hour]: 60,
+  [TODO_TASK_ESTIMATES.twoHours]: 120,
+};
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
@@ -427,6 +453,53 @@ export function countOpenTodayTasks(
   groups: Pick<TodoTaskGroups, "active" | "planned">
 ) {
   return groups.planned.length + (groups.active ? 1 : 0);
+}
+
+export function getTodoTaskEstimateMinutes(estimate: TodoTaskEstimate) {
+  return TODO_ESTIMATE_MINUTES[estimate];
+}
+
+export function calculateTodoTaskBenefitScore(task: TodoTask) {
+  const statusScore =
+    task.status === TODO_TASK_STATUSES.active
+      ? 8
+      : task.status === TODO_TASK_STATUSES.planned
+        ? 5
+        : 0;
+  const noteScore = task.note.trim() ? 5 : 0;
+  return Math.min(
+    99,
+    38 +
+      TODO_PRIORITY_SCORE[task.priority] +
+      TODO_ESTIMATE_SCORE[task.estimate] +
+      noteScore +
+      statusScore
+  );
+}
+
+export function buildTodoTaskRecommendations(
+  tasks: readonly TodoTask[],
+  limit = 3
+): TodoTaskRecommendation[] {
+  return tasks
+    .filter(
+      (task) =>
+        task.status === TODO_TASK_STATUSES.planned ||
+        task.status === TODO_TASK_STATUSES.active
+    )
+    .map((task) => ({
+      task,
+      score: calculateTodoTaskBenefitScore(task),
+    }))
+    .sort((left, right) => {
+      if (right.score !== left.score) return right.score - left.score;
+      return left.task.createdAt.localeCompare(right.task.createdAt);
+    })
+    .slice(0, limit)
+    .map((recommendation, index) => ({
+      ...recommendation,
+      rank: index + 1,
+    }));
 }
 
 export function buildTodoServiceCalendarMonth({
