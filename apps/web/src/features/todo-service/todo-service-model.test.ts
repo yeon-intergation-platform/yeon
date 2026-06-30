@@ -6,9 +6,12 @@ import {
   addTodoServiceDays,
   addTodoServiceMonths,
   buildTodoServiceCalendarMonth,
+  buildTodoTaskRecommendations,
+  calculateTodoTaskBenefitScore,
   carryOverTodoTasks,
   countCarryOverTasks,
   createTodoTask,
+  getTodoTaskEstimateMinutes,
   groupTodoTasksForToday,
   parseTodoServiceState,
   setTodoTaskStatus,
@@ -212,6 +215,52 @@ describe("todo-service-model", () => {
     expect(addTodoServiceDays("2026-06-30", 1)).toBe("2026-07-01");
     expect(addTodoServiceMonths("2026-06-29", -1)).toBe("2026-05-01");
     expect(addTodoServiceMonths("2026-06-29", 1)).toBe("2026-07-01");
+  });
+
+  it("예상 시간은 분 단위로 계산한다", () => {
+    expect(getTodoTaskEstimateMinutes(TODO_TASK_ESTIMATES.fifteen)).toBe(15);
+    expect(getTodoTaskEstimateMinutes(TODO_TASK_ESTIMATES.hour)).toBe(60);
+    expect(getTodoTaskEstimateMinutes(TODO_TASK_ESTIMATES.twoHours)).toBe(120);
+  });
+
+  it("추천 목록은 우선순위와 예상 시간, 메모를 기준으로 점수가 높은 순서로 만든다", () => {
+    const important = {
+      ...task("important"),
+      priority: TODO_TASK_PRIORITIES.important,
+      estimate: TODO_TASK_ESTIMATES.fifteen,
+      note: "바로 시작",
+    };
+    const normal = {
+      ...task("normal"),
+      priority: TODO_TASK_PRIORITIES.normal,
+      estimate: TODO_TASK_ESTIMATES.thirty,
+    };
+    const light = {
+      ...task("light"),
+      priority: TODO_TASK_PRIORITIES.light,
+      estimate: TODO_TASK_ESTIMATES.twoHours,
+    };
+    const done = setTodoTaskStatus({
+      tasks: [task("done")],
+      taskId: "done",
+      status: TODO_TASK_STATUSES.done,
+      today: TODAY,
+      nowIso: NOW,
+    })[0]!;
+
+    const recommendations = buildTodoTaskRecommendations(
+      [light, normal, done, important],
+      2
+    );
+
+    expect(calculateTodoTaskBenefitScore(important)).toBeGreaterThan(
+      calculateTodoTaskBenefitScore(normal)
+    );
+    expect(recommendations.map((item) => item.task.id)).toEqual([
+      "important",
+      "normal",
+    ]);
+    expect(recommendations.map((item) => item.rank)).toEqual([1, 2]);
   });
 
   it("월간 달력은 6주 그리드와 날짜별 open/done 요약을 만든다", () => {
