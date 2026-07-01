@@ -135,27 +135,33 @@ jobs:
 
           if [[ "${{ steps.fresh_main.outputs.should_run }}" != "true" ]]; then
             echo "최신 main이 아닌 run이므로 변경 서비스를 모두 false로 표시합니다."
-            echo "web=false" >> "$GITHUB_OUTPUT"
-            echo "backend=false" >> "$GITHUB_OUTPUT"
-            echo "race=false" >> "$GITHUB_OUTPUT"
-            echo "mobile=false" >> "$GITHUB_OUTPUT"
+            {
+              echo "web=false"
+              echo "backend=false"
+              echo "race=false"
+              echo "mobile=false"
+            } >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
             echo "수동 실행은 전체 Docker 서비스와 mobile 검증을 최신 대상으로 표시합니다."
-            echo "web=true" >> "$GITHUB_OUTPUT"
-            echo "backend=true" >> "$GITHUB_OUTPUT"
-            echo "race=true" >> "$GITHUB_OUTPUT"
-            echo "mobile=true" >> "$GITHUB_OUTPUT"
+            {
+              echo "web=true"
+              echo "backend=true"
+              echo "race=true"
+              echo "mobile=true"
+            } >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
           mark_all_changed() {
-            echo "web=true" >> "$GITHUB_OUTPUT"
-            echo "backend=true" >> "$GITHUB_OUTPUT"
-            echo "race=true" >> "$GITHUB_OUTPUT"
-            echo "mobile=true" >> "$GITHUB_OUTPUT"
+            {
+              echo "web=true"
+              echo "backend=true"
+              echo "race=true"
+              echo "mobile=true"
+            } >> "$GITHUB_OUTPUT"
           }
 
           base_sha="${{ github.event.before }}"
@@ -253,10 +259,12 @@ jobs:
           echo "race=$race"
           echo "mobile=$mobile"
 
-          echo "web=$web" >> "$GITHUB_OUTPUT"
-          echo "backend=$backend" >> "$GITHUB_OUTPUT"
-          echo "race=$race" >> "$GITHUB_OUTPUT"
-          echo "mobile=$mobile" >> "$GITHUB_OUTPUT"
+          {
+            echo "web=$web"
+            echo "backend=$backend"
+            echo "race=$race"
+            echo "mobile=$mobile"
+          } >> "$GITHUB_OUTPUT"
 
   build_web:
     if: github.ref == 'refs/heads/main' && needs.detect_changes.outputs.web == 'true'

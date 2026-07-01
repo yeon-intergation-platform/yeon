@@ -58,10 +58,31 @@ jobs:
           docker image prune -f --filter "until=48h"
 
       - name: Resolve BUILDX_LOCAL_CACHE
-        run: echo "BUILDX_LOCAL_CACHE=$HOME/.cache/buildx-yeon-backend-arm64" >> "$GITHUB_ENV"
+        run: |
+          cache_root="$HOME/.cache/buildx-yeon-backend-arm64"
+          {
+            echo "BUILDX_LOCAL_CACHE=${cache_root}"
+            echo "BUILDX_LOCAL_CACHE_NEW=${cache_root}-new-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          } >> "$GITHUB_ENV"
 
       - name: Prepare local buildx cache dir
-        run: mkdir -p "${BUILDX_LOCAL_CACHE}"
+        run: |
+          rm -rf "${BUILDX_LOCAL_CACHE_NEW}"
+          mkdir -p "${BUILDX_LOCAL_CACHE}" "${BUILDX_LOCAL_CACHE_NEW}"
+
+      - name: 빌드 전 러너 상태 출력
+        run: |
+          set +e
+          echo "디스크 사용량:"
+          df -h / "$HOME" 2>/dev/null || df -h
+          echo "메모리 사용량:"
+          free -h || true
+          echo "Docker 사용량:"
+          docker system df || true
+          echo "Buildx builder:"
+          docker buildx ls || true
+          echo "local buildx cache:"
+          du -sh "${BUILDX_LOCAL_CACHE}" "${BUILDX_LOCAL_CACHE_NEW}" 2>/dev/null || true
 
       - name: Build backend arm64 image by digest
         uses: docker/build-push-action@v7.1.0
@@ -78,8 +99,35 @@ jobs:
             type=local,src=${{ env.BUILDX_LOCAL_CACHE }}
             type=registry,ref=${{ steps.image.outputs.ref }}:buildcache-arm64
           cache-to: |
-            type=local,dest=${{ env.BUILDX_LOCAL_CACHE }},mode=max
+            type=local,dest=${{ env.BUILDX_LOCAL_CACHE_NEW }},mode=max
             type=registry,ref=${{ steps.image.outputs.ref }}:buildcache-arm64,mode=min
+
+      - name: Local buildx cache 교체
+        run: |
+          set -euo pipefail
+
+          if [ ! -f "${BUILDX_LOCAL_CACHE_NEW}/index.json" ]; then
+            echo "::error::새 local buildx cache index.json이 없습니다: ${BUILDX_LOCAL_CACHE_NEW}"
+            exit 1
+          fi
+
+          old_cache="${BUILDX_LOCAL_CACHE}-old-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          rm -rf "${old_cache}"
+
+          if [ -d "${BUILDX_LOCAL_CACHE}" ]; then
+            mv "${BUILDX_LOCAL_CACHE}" "${old_cache}"
+          fi
+
+          if mv "${BUILDX_LOCAL_CACHE_NEW}" "${BUILDX_LOCAL_CACHE}"; then
+            rm -rf "${old_cache}"
+          else
+            echo "::error::local buildx cache 교체에 실패했습니다."
+            if [ -d "${old_cache}" ]; then
+              rm -rf "${BUILDX_LOCAL_CACHE}"
+              mv "${old_cache}" "${BUILDX_LOCAL_CACHE}"
+            fi
+            exit 1
+          fi
 
       - name: Export arm64 digest
         run: |
@@ -96,9 +144,25 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
+      - name: 실패 시 러너 상태 출력
+        if: failure() || cancelled()
+        run: |
+          set +e
+          echo "실패 시 디스크 사용량:"
+          df -h / "$HOME" 2>/dev/null || df -h
+          echo "실패 시 메모리 사용량:"
+          free -h || true
+          echo "실패 시 Docker 사용량:"
+          docker system df || true
+          echo "실패 시 Buildx builder:"
+          docker buildx ls || true
+          echo "실패 시 local buildx cache:"
+          du -sh "${BUILDX_LOCAL_CACHE}" "${BUILDX_LOCAL_CACHE_NEW}" 2>/dev/null || true
+
       - name: Buildx 캐시 정리 (빌더 prune + local 캐시 디렉터리 상한)
         if: always()
         run: |
+          rm -rf "${BUILDX_LOCAL_CACHE_NEW:-}" || true
           docker buildx prune -f --keep-storage 10GB --filter "until=168h" || true
           # type=local 캐시는 buildx prune 대상이 아니라 오래된 blob이 누적될 수 있다.
           # 8GB 초과 시 비워 무한 증가를 막는다(다음 빌드는 cold, 이후 다시 캐시됨).
