@@ -26,6 +26,9 @@
 - 백로그 원장: `docs/product/backlog/2026-07-01-server-client-contract-vulnerability-ledger.md`.
 - `game_service_*` 직접 `ResponseStatusException` throw 13곳을 `GameServiceException(ApiException)` 기반으로 전환했다.
 - `GameServiceErrorContractControllerTests`를 추가해 댓글/라이브러리/좋아요 오류 응답의 `code`와 `message`를 검증한다.
+- PR #889로 1차 16건을 `main`에 병합했다.
+- 2차에서 Spring MVC 프레임워크 오류 84건(SCC-017~SCC-100)을 전역 `GlobalApiExceptionHandler`에서 계약형 응답으로 정규화했다.
+- 첫 focused test 실패는 nested probe controller가 WebMvc slice에 등록되지 않아 전부 404로 떨어진 것이 원인이었다. `@Import`에 probe controller를 명시해 테스트 surface를 고정했다.
 
 ## 검증 결과
 
@@ -33,3 +36,5 @@
 - `./gradlew test --tests 'world.yeon.backend.game_service_*.*'` 통과.
 - `./gradlew test --tests 'world.yeon.backend.architecture.LayeredArchitectureTest'` 통과.
 - `git diff --check` 통과.
+- `./gradlew test --tests 'world.yeon.backend.common.error.GlobalApiExceptionHandlerTests'` 통과.
+- `./gradlew test --tests 'world.yeon.backend.common.error.GlobalApiExceptionHandlerTests' --tests 'world.yeon.backend.game_service_*.*' --tests 'world.yeon.backend.community_chat.*' --tests 'world.yeon.backend.chat_service_*.*' --tests 'world.yeon.backend.card_decks.*' --tests 'world.yeon.backend.card_rooms.*' --tests 'world.yeon.backend.typing_decks.*' --tests 'world.yeon.backend.typing_character_frames.*' --tests 'world.yeon.backend.architecture.LayeredArchitectureTest'` 통과.
