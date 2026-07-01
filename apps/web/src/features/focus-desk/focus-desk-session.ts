@@ -13,6 +13,8 @@ export const FOCUS_DESK_MODES = {
 export type FocusDeskMode =
   (typeof FOCUS_DESK_MODES)[keyof typeof FOCUS_DESK_MODES];
 
+export type FocusDeskSessionStatus = "setup" | "running" | "finished";
+
 export const FOCUS_DESK_SESSION_MINUTES = [10, 25, 50] as const;
 
 export type FocusDeskSessionMinutes =
@@ -91,23 +93,23 @@ export function getNextFocusDeskCardIndex({
 }: {
   currentIndex: number;
   queueLength: number;
-}) {
+}): number {
   return Math.min(currentIndex + 1, queueLength);
 }
 
-function isDueOrHardReview(item: CardDeckItemDto, nowMs: number) {
+function isDueOrHardReview(item: CardDeckItemDto, nowMs: number): boolean {
   if (item.reviewDifficulty === CARD_REVIEW_DIFFICULTIES.hard) return true;
   if (!item.nextReviewAt) return false;
   const nextReviewMs = Date.parse(item.nextReviewAt);
   return Number.isFinite(nextReviewMs) && nextReviewMs <= nowMs;
 }
 
-function getExamPriority(item: CardDeckItemDto) {
+function getExamPriority(item: CardDeckItemDto): number {
   if (item.reviewDifficulty) return REVIEW_PRIORITY[item.reviewDifficulty];
   return 1;
 }
 
-function getLastReviewedMs(item: CardDeckItemDto) {
+function getLastReviewedMs(item: CardDeckItemDto): number {
   if (!item.lastReviewedAt) return 0;
   const parsed = Date.parse(item.lastReviewedAt);
   return Number.isFinite(parsed) ? parsed : 0;
@@ -116,7 +118,7 @@ function getLastReviewedMs(item: CardDeckItemDto) {
 function limitQueue(
   items: readonly CardDeckItemDto[],
   minutes: FocusDeskSessionMinutes
-) {
+): CardDeckItemDto[] {
   return items.slice(0, minutes);
 }
 
