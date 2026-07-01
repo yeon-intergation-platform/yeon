@@ -4,7 +4,7 @@ import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
+import world.yeon.backend.game_service_common.service.GameServiceException;
 import world.yeon.backend.game_service_likes.dto.GameLikeRankingResponse;
 import world.yeon.backend.game_service_likes.dto.GameLikeStatusResponse;
 import world.yeon.backend.game_service_likes.repository.GameServiceLikesRepository;
@@ -13,6 +13,8 @@ import world.yeon.backend.game_service_likes.repository.GameServiceLikesReposito
 public class GameServiceLikesService {
 	private static final int MAX_SLUG_LENGTH = 80;
 	private static final int MAX_RANKING_LIMIT = 100;
+	private static final String CODE_AUTH_REQUIRED = "GAME_LIKE_AUTH_REQUIRED";
+	private static final String CODE_SLUG_INVALID = "GAME_SLUG_INVALID";
 
 	private final GameServiceLikesRepository repository;
 
@@ -31,7 +33,8 @@ public class GameServiceLikesService {
 	@Transactional
 	public GameLikeStatusResponse toggle(String gameSlug, UUID userId) {
 		if (userId == null) {
-			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "좋아요는 로그인 후 이용할 수 있습니다.");
+			throw new GameServiceException(HttpStatus.UNAUTHORIZED.value(), CODE_AUTH_REQUIRED,
+				"좋아요는 로그인 후 이용할 수 있습니다.");
 		}
 		String slug = requireSlug(gameSlug);
 		if (repository.exists(slug, userId)) {
@@ -57,7 +60,8 @@ public class GameServiceLikesService {
 	private static String requireSlug(String gameSlug) {
 		String slug = gameSlug == null ? "" : gameSlug.trim();
 		if (slug.isEmpty() || slug.length() > MAX_SLUG_LENGTH || !slug.matches("[a-z0-9-]+")) {
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "gameSlug가 올바르지 않습니다.");
+			throw new GameServiceException(HttpStatus.BAD_REQUEST.value(), CODE_SLUG_INVALID,
+				"gameSlug가 올바르지 않습니다.");
 		}
 		return slug;
 	}

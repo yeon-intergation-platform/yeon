@@ -7,11 +7,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 import world.yeon.backend.game_service_comments.dto.CommentLikeResponse;
 import world.yeon.backend.game_service_comments.dto.GameCommentDto;
 import world.yeon.backend.game_service_comments.repository.GameServiceCommentsRepository;
 import world.yeon.backend.game_service_comments.repository.GameServiceCommentsRepository.CommentRow;
+import world.yeon.backend.game_service_common.service.GameServiceException;
 
 @Service
 public class GameServiceCommentsService {
@@ -21,6 +21,15 @@ public class GameServiceCommentsService {
 	private static final int MIN_GUEST_PASSWORD_LENGTH = 4;
 	// BCrypt 는 72바이트 초과분을 무시하므로 입력도 그 범위로 제한한다.
 	private static final int MAX_GUEST_PASSWORD_LENGTH = 72;
+	private static final String CODE_GUEST_PASSWORD_LENGTH_INVALID = "GAME_COMMENT_GUEST_PASSWORD_LENGTH_INVALID";
+	private static final String CODE_SECRET_REVEAL_FORBIDDEN = "GAME_COMMENT_SECRET_REVEAL_FORBIDDEN";
+	private static final String CODE_DELETE_FORBIDDEN = "GAME_COMMENT_DELETE_FORBIDDEN";
+	private static final String CODE_LIKE_AUTH_REQUIRED = "GAME_COMMENT_LIKE_AUTH_REQUIRED";
+	private static final String CODE_NOT_FOUND = "GAME_COMMENT_NOT_FOUND";
+	private static final String CODE_PASSWORD_MISMATCH = "GAME_COMMENT_PASSWORD_MISMATCH";
+	private static final String CODE_SLUG_INVALID = "GAME_SLUG_INVALID";
+	private static final String CODE_CONTENT_LENGTH_INVALID = "GAME_COMMENT_CONTENT_LENGTH_INVALID";
+	private static final String CODE_NICKNAME_LENGTH_INVALID = "GAME_COMMENT_NICKNAME_LENGTH_INVALID";
 
 	private final GameServiceCommentsRepository repository;
 	private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
@@ -57,7 +66,8 @@ public class GameServiceCommentsService {
 		String guestPassword
 	) {
 		String slug = requireSlug(gameSlug);
-		String normalizedContent = requireText(content, "댓글 내용", 1, MAX_CONTENT_LENGTH);
+		String normalizedContent = requireText(content, "댓글 내용", 1, MAX_CONTENT_LENGTH,
+			CODE_CONTENT_LENGTH_INVALID);
 
 		UUID authorUserId;
 		String displayName;
@@ -71,11 +81,12 @@ public class GameServiceCommentsService {
 			guestPasswordHash = null;
 		} else {
 			authorUserId = null;
-			displayName = requireText(guestNickname, "닉네임", 1, MAX_NICKNAME_LENGTH);
+			displayName = requireText(guestNickname, "닉네임", 1, MAX_NICKNAME_LENGTH,
+				CODE_NICKNAME_LENGTH_INVALID);
 			avatarUrl = null;
 			String password = guestPassword == null ? "" : guestPassword;
 			if (password.length() < MIN_GUEST_PASSWORD_LENGTH || password.length() > MAX_GUEST_PASSWORD_LENGTH) {
-				throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+				throw new GameServiceException(HttpStatus.BAD_REQUEST.value(), CODE_GUEST_PASSWORD_LENGTH_INVALID,
 					"비밀번호는 " + MIN_GUEST_PASSWORD_LENGTH + "~" + MAX_GUEST_PASSWORD_LENGTH + "자여야 합니다.");
 			}
 			guestPasswordHash = passwordEncoder.encode(password);
@@ -101,7 +112,8 @@ public class GameServiceCommentsService {
 		}
 		if (!row.hasGuestPassword()) {
 			// 로그인 사용자의 비밀댓글은 비밀번호로 열람할 수 없다(작성자/운영자만).
-			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "이 비밀댓글은 작성자와 운영자만 볼 수 있습니다.");
+			throw new GameServiceException(HttpStatus.FORBIDDEN.value(), CODE_SECRET_REVEAL_FORBIDDEN,
+				"이 비밀댓글은 작성자와 운영자만 볼 수 있습니다.");
 		}
 		verifyGuestPassword(commentId, password);
 		return row.content();
@@ -115,7 +127,8 @@ public class GameServiceCommentsService {
 		}
 		if (row.authorUserId() != null) {
 			if (viewerUserId == null || !row.authorUserId().equals(viewerUserId)) {
-				throw new ResponseStatusException(HttpStatus.FORBIDDEN, "본인 댓글만 삭제할 수 있습니다.");
+				throw new GameServiceException(HttpStatus.FORBIDDEN.value(), CODE_DELETE_FORBIDDEN,
+					"본인 댓글만 삭제할 수 있습니다.");
 			}
 			return repository.softDelete(commentId);
 		}
@@ -127,10 +140,11 @@ public class GameServiceCommentsService {
 	@Transactional
 	public CommentLikeResponse toggleLike(UUID commentId, UUID userId) {
 		if (userId == null) {
-			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "좋아요는 로그인 후 이용할 수 있습니다.");
+			throw new GameServiceException(HttpStatus.UNAUTHORIZED.value(), CODE_LIKE_AUTH_REQUIRED,
+				"좋아요는 로그인 후 이용할 수 있습니다.");
 		}
 		if (!repository.commentExists(commentId)) {
-			throw new ResponseStatusException(HttpStatus.NOT_FOUND, "댓글을 찾을 수 없습니다.");
+			throw new GameServiceException(HttpStatus.NOT_FOUND.value(), CODE_NOT_FOUND, "댓글을 찾을 수 없습니다.");
 		}
 		if (repository.commentLikeExists(commentId, userId)) {
 			repository.removeCommentLike(commentId, userId);
@@ -173,14 +187,15 @@ public class GameServiceCommentsService {
 	private void verifyGuestPassword(UUID commentId, String password) {
 		String hash = repository.findGuestPasswordHash(commentId);
 		if (hash == null || password == null || !passwordEncoder.matches(password, hash)) {
-			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "비밀번호가 일치하지 않습니다.");
+			throw new GameServiceException(HttpStatus.FORBIDDEN.value(), CODE_PASSWORD_MISMATCH,
+				"비밀번호가 일치하지 않습니다.");
 		}
 	}
 
 	private CommentRow requireComment(UUID commentId) {
 		CommentRow row = repository.findById(commentId);
 		if (row == null) {
-			throw new ResponseStatusException(HttpStatus.NOT_FOUND, "댓글을 찾을 수 없습니다.");
+			throw new GameServiceException(HttpStatus.NOT_FOUND.value(), CODE_NOT_FOUND, "댓글을 찾을 수 없습니다.");
 		}
 		return row;
 	}
@@ -188,15 +203,16 @@ public class GameServiceCommentsService {
 	private static String requireSlug(String gameSlug) {
 		String slug = trimToNull(gameSlug);
 		if (slug == null || slug.length() > MAX_SLUG_LENGTH || !slug.matches("[a-z0-9-]+")) {
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "gameSlug가 올바르지 않습니다.");
+			throw new GameServiceException(HttpStatus.BAD_REQUEST.value(), CODE_SLUG_INVALID,
+				"gameSlug가 올바르지 않습니다.");
 		}
 		return slug;
 	}
 
-	private static String requireText(String value, String label, int min, int max) {
+	private static String requireText(String value, String label, int min, int max, String code) {
 		String text = value == null ? "" : value.trim();
 		if (text.length() < min || text.length() > max) {
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+			throw new GameServiceException(HttpStatus.BAD_REQUEST.value(), code,
 				label + "은(는) " + min + "~" + max + "자여야 합니다.");
 		}
 		return text;

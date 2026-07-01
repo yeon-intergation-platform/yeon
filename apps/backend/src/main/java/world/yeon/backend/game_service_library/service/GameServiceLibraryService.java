@@ -5,13 +5,15 @@ import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
+import world.yeon.backend.game_service_common.service.GameServiceException;
 import world.yeon.backend.game_service_library.repository.GameServiceLibraryRepository;
 
 @Service
 public class GameServiceLibraryService {
 	private static final int MAX_SLUG_LENGTH = 80;
 	private static final int RECENT_LIMIT = 24;
+	private static final String CODE_AUTH_REQUIRED = "GAME_LIBRARY_AUTH_REQUIRED";
+	private static final String CODE_SLUG_INVALID = "GAME_SLUG_INVALID";
 
 	private final GameServiceLibraryRepository repository;
 
@@ -48,7 +50,7 @@ public class GameServiceLibraryService {
 
 	private static UUID requireUser(UUID userId) {
 		if (userId == null) {
-			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인이 필요합니다.");
+			throw new GameServiceException(HttpStatus.UNAUTHORIZED.value(), CODE_AUTH_REQUIRED, "로그인이 필요합니다.");
 		}
 		return userId;
 	}
@@ -56,7 +58,8 @@ public class GameServiceLibraryService {
 	private static String requireSlug(String gameSlug) {
 		String slug = gameSlug == null ? "" : gameSlug.trim();
 		if (slug.isEmpty() || slug.length() > MAX_SLUG_LENGTH || !slug.matches("[a-z0-9-]+")) {
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "gameSlug가 올바르지 않습니다.");
+			throw new GameServiceException(HttpStatus.BAD_REQUEST.value(), CODE_SLUG_INVALID,
+				"gameSlug가 올바르지 않습니다.");
 		}
 		return slug;
 	}
