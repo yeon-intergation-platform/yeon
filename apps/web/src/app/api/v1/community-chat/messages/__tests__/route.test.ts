@@ -126,6 +126,7 @@ describe("api/v1/community-chat/messages route", () => {
 
     expect(response.status).toBe(401);
     await expect(response.json()).resolves.toEqual({
+      code: "UNAUTHENTICATED",
       message: "커뮤니티 채팅을 불러오지 못했습니다.",
     });
   });
@@ -152,6 +153,7 @@ describe("api/v1/community-chat/messages route", () => {
 
     expect(response.status).toBe(401);
     await expect(response.json()).resolves.toEqual({
+      code: "UNAUTHENTICATED",
       message: "커뮤니티 채팅 메시지를 전송하지 못했습니다.",
     });
   });

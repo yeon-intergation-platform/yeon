@@ -8,6 +8,8 @@ import java.util.List;
 import world.yeon.backend.public_check_runtime.dto.*;
 import world.yeon.backend.public_check_runtime.service.PublicCheckRuntimeService;
 import world.yeon.backend.public_check_runtime.service.PublicCheckRuntimeServiceException;
+import world.yeon.backend.common.error.ApiErrorResponse;
+import world.yeon.backend.common.error.ApiErrorResponses;
 
 @Validated
 @RestController
@@ -34,14 +36,12 @@ public class PublicCheckRuntimeController {
 	}
 
 	@ExceptionHandler(IllegalArgumentException.class)
-	public ResponseEntity<ErrorResponse> handleBadRequest(IllegalArgumentException error) {
-		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse("INVALID_REQUEST", error.getMessage()));
+	public ResponseEntity<ApiErrorResponse> handleBadRequest(IllegalArgumentException error) {
+		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiErrorResponses.ofCurrentRequest("INVALID_REQUEST", error.getMessage()));
 	}
 
 	@ExceptionHandler(PublicCheckRuntimeServiceException.class)
-	public ResponseEntity<ErrorResponse> handleServiceError(PublicCheckRuntimeServiceException error) {
-		return ResponseEntity.status(error.status()).body(new ErrorResponse(error.code(), error.getMessage()));
+	public ResponseEntity<ApiErrorResponse> handleServiceError(PublicCheckRuntimeServiceException error) {
+		return ResponseEntity.status(error.status()).body(ApiErrorResponses.ofCurrentRequest(error.code(), error.getMessage()));
 	}
-
-	public record ErrorResponse(String code, String message) {}
 }

@@ -1,7 +1,7 @@
 import { authSessionResponseSchema } from "@yeon/api-contract/auth";
-import { errorResponseSchema } from "@yeon/api-contract/error";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
+import { createErrorResponseBody } from "@/server/bff-error";
 import { getAuthSessionTokensFromRequest } from "@/server/auth/request-session-token";
 import { clearAuthSessionCookie } from "@/server/auth/session";
 import {
@@ -10,7 +10,9 @@ import {
 } from "@/server/auth-session-spring-client";
 
 function jsonError(message: string, status: number) {
-  return NextResponse.json(errorResponseSchema.parse({ message }), { status });
+  return NextResponse.json(createErrorResponseBody(message, status), {
+    status,
+  });
 }
 
 export async function GET(request: NextRequest) {

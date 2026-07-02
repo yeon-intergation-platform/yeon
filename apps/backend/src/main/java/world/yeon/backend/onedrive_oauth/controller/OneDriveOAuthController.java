@@ -16,6 +16,8 @@ import world.yeon.backend.onedrive_oauth.dto.OneDriveOAuthCallbackRequest;
 import world.yeon.backend.onedrive_oauth.dto.OneDriveOAuthUrlResponse;
 import world.yeon.backend.onedrive_oauth.service.OneDriveOAuthService;
 import world.yeon.backend.onedrive_oauth.service.OneDriveOAuthServiceException;
+import world.yeon.backend.common.error.ApiErrorResponse;
+import world.yeon.backend.common.error.ApiErrorResponses;
 
 @Validated
 @RestController
@@ -33,8 +35,7 @@ public class OneDriveOAuthController {
 	}
 
 	@ExceptionHandler(OneDriveOAuthServiceException.class)
-	public ResponseEntity<ErrorResponse> handleServiceError(OneDriveOAuthServiceException error) {
-		return ResponseEntity.status(error.status()).contentType(MediaType.APPLICATION_JSON).body(new ErrorResponse(error.code(), error.getMessage()));
+	public ResponseEntity<ApiErrorResponse> handleServiceError(OneDriveOAuthServiceException error) {
+		return ResponseEntity.status(error.status()).contentType(MediaType.APPLICATION_JSON).body(ApiErrorResponses.ofCurrentRequest(error.code(), error.getMessage()));
 	}
-	public record ErrorResponse(String code, String message) {}
 }

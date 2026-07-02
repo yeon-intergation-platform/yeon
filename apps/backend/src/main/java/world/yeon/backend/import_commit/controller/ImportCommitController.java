@@ -13,6 +13,8 @@ import world.yeon.backend.import_commit.dto.ImportCommitRequest;
 import world.yeon.backend.import_commit.dto.ImportCommitResponse;
 import world.yeon.backend.import_commit.service.ImportCommitService;
 import world.yeon.backend.import_commit.service.ImportCommitServiceException;
+import world.yeon.backend.common.error.ApiErrorResponse;
+import world.yeon.backend.common.error.ApiErrorResponses;
 
 @Validated
 @RestController
@@ -24,8 +26,7 @@ public class ImportCommitController {
 		return ResponseEntity.status(HttpStatus.CREATED).body(service.commitImport(userId, request));
 	}
 	@ExceptionHandler(IllegalArgumentException.class)
-	public ResponseEntity<ErrorResponse> handleBadRequest(IllegalArgumentException error) { return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse("INVALID_REQUEST", error.getMessage())); }
+	public ResponseEntity<ApiErrorResponse> handleBadRequest(IllegalArgumentException error) { return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiErrorResponses.ofCurrentRequest("INVALID_REQUEST", error.getMessage())); }
 	@ExceptionHandler(ImportCommitServiceException.class)
-	public ResponseEntity<ErrorResponse> handleServiceError(ImportCommitServiceException error) { return ResponseEntity.status(error.status()).body(new ErrorResponse(error.code(), error.getMessage())); }
-	public record ErrorResponse(String code, String message) {}
+	public ResponseEntity<ApiErrorResponse> handleServiceError(ImportCommitServiceException error) { return ResponseEntity.status(error.status()).body(ApiErrorResponses.ofCurrentRequest(error.code(), error.getMessage())); }
 }

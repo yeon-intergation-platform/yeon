@@ -2,9 +2,17 @@ import type { NextConfig } from "next";
 import path from "node:path";
 import { withSentryConfig } from "@sentry/nextjs";
 
+const skipNextTypeCheckDuringDockerBuild =
+  process.env.YEON_SKIP_NEXT_TYPECHECK_DURING_DOCKER_BUILD === "1";
+
 const nextConfig: NextConfig = {
   output: "standalone",
   outputFileTracingRoot: path.join(__dirname, "../../"),
+  typescript: {
+    // Docker image build runs after CI typecheck; skipping the duplicate Next check
+    // prevents long silent self-hosted build steps from being canceled.
+    ignoreBuildErrors: skipNextTypeCheckDuringDockerBuild,
+  },
   transpilePackages: [
     "@yeon/api-contract",
     "@yeon/design-tokens",

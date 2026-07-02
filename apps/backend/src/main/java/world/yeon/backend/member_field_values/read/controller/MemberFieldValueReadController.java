@@ -16,6 +16,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import world.yeon.backend.member_field_values.read.dto.MemberFieldValueListResponse;
 import world.yeon.backend.member_field_values.read.service.MemberFieldValueReadService;
+import world.yeon.backend.common.error.ApiErrorResponse;
+import world.yeon.backend.common.error.ApiErrorResponses;
 
 @Validated
 @RestController
@@ -39,7 +41,7 @@ public class MemberFieldValueReadController {
 	}
 
 	@ExceptionHandler(NoSuchElementException.class)
-	public ResponseEntity<ErrorResponse> handleNotFound(NoSuchElementException error) {
+	public ResponseEntity<ApiErrorResponse> handleNotFound(NoSuchElementException error) {
 		String code = switch (error.getMessage()) {
 			case "스페이스를 찾지 못했습니다." -> "SPACE_NOT_FOUND";
 			case "탭을 찾지 못했습니다." -> "TAB_NOT_FOUND";
@@ -47,18 +49,16 @@ public class MemberFieldValueReadController {
 			default -> "NOT_FOUND";
 		};
 		return ResponseEntity.status(HttpStatus.NOT_FOUND)
-			.body(new ErrorResponse(code, error.getMessage()));
+			.body(ApiErrorResponses.ofCurrentRequest(code, error.getMessage()));
 	}
 
 	@ExceptionHandler(IllegalArgumentException.class)
-	public ResponseEntity<ErrorResponse> handleBadRequest(IllegalArgumentException error) {
+	public ResponseEntity<ApiErrorResponse> handleBadRequest(IllegalArgumentException error) {
 		String code = "탭이 스페이스에 속하지 않습니다.".equals(error.getMessage())
 			? "TAB_SPACE_MISMATCH"
 			: "INVALID_REQUEST";
 		return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-			.body(new ErrorResponse(code, error.getMessage()));
+			.body(ApiErrorResponses.ofCurrentRequest(code, error.getMessage()));
 	}
 
-	public record ErrorResponse(String code, String message) {
-	}
 }

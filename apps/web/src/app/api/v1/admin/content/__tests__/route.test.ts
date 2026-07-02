@@ -146,6 +146,7 @@ describe("api/v1/admin/content route", () => {
 
     expect(response.status).toBe(403);
     await expect(response.json()).resolves.toEqual({
+      code: "FORBIDDEN",
       message: "관리자 권한이 필요합니다.",
     });
   });

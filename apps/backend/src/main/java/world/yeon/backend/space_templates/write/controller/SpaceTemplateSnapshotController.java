@@ -20,6 +20,8 @@ import jakarta.validation.Valid;
 import world.yeon.backend.space_templates.write.dto.SnapshotSpaceTemplateRequest;
 import world.yeon.backend.space_templates.write.dto.SpaceTemplateMutationResponse;
 import world.yeon.backend.space_templates.write.service.SpaceTemplateWriteService;
+import world.yeon.backend.common.error.ApiErrorResponse;
+import world.yeon.backend.common.error.ApiErrorResponses;
 
 @Validated
 @RestController
@@ -43,9 +45,9 @@ public class SpaceTemplateSnapshotController {
 	}
 
 	@ExceptionHandler(NoSuchElementException.class)
-	public ResponseEntity<ErrorResponse> handleNotFound(NoSuchElementException error) {
+	public ResponseEntity<ApiErrorResponse> handleNotFound(NoSuchElementException error) {
 		return ResponseEntity.status(HttpStatus.NOT_FOUND)
-			.body(new ErrorResponse("SPACE_NOT_FOUND", error.getMessage()));
+			.body(ApiErrorResponses.ofCurrentRequest("SPACE_NOT_FOUND", error.getMessage()));
 	}
 
 	@ExceptionHandler({
@@ -53,15 +55,13 @@ public class SpaceTemplateSnapshotController {
 		MethodArgumentNotValidException.class,
 		HandlerMethodValidationException.class
 	})
-	public ResponseEntity<ErrorResponse> handleBadRequest(Exception error) {
+	public ResponseEntity<ApiErrorResponse> handleBadRequest(Exception error) {
 		String message = "요청 데이터가 올바르지 않습니다.";
 		if (error instanceof IllegalArgumentException illegalArgumentException) {
 			message = illegalArgumentException.getMessage();
 		}
 		return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-			.body(new ErrorResponse("INVALID_REQUEST", message));
+			.body(ApiErrorResponses.ofCurrentRequest("INVALID_REQUEST", message));
 	}
 
-	public record ErrorResponse(String code, String message) {
-	}
 }

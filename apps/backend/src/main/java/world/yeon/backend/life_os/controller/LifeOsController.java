@@ -8,6 +8,8 @@ import org.springframework.web.bind.annotation.*;
 import world.yeon.backend.life_os.dto.*;
 import world.yeon.backend.life_os.service.LifeOsService;
 import world.yeon.backend.life_os.service.LifeOsServiceException;
+import world.yeon.backend.common.error.ApiErrorResponse;
+import world.yeon.backend.common.error.ApiErrorResponses;
 
 @Validated
 @RestController
@@ -49,14 +51,12 @@ public class LifeOsController {
 	}
 
 	@ExceptionHandler(IllegalArgumentException.class)
-	public ResponseEntity<ErrorResponse> handleBadRequest(IllegalArgumentException error) {
-		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse("INVALID_REQUEST", error.getMessage()));
+	public ResponseEntity<ApiErrorResponse> handleBadRequest(IllegalArgumentException error) {
+		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiErrorResponses.ofCurrentRequest("INVALID_REQUEST", error.getMessage()));
 	}
 
 	@ExceptionHandler(LifeOsServiceException.class)
-	public ResponseEntity<ErrorResponse> handleServiceError(LifeOsServiceException error) {
-		return ResponseEntity.status(error.status()).body(new ErrorResponse(error.code(), error.getMessage()));
+	public ResponseEntity<ApiErrorResponse> handleServiceError(LifeOsServiceException error) {
+		return ResponseEntity.status(error.status()).body(ApiErrorResponses.ofCurrentRequest(error.code(), error.getMessage()));
 	}
-
-	public record ErrorResponse(String code, String message) {}
 }

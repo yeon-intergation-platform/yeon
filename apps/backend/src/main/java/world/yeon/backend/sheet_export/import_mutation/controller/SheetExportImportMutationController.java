@@ -16,6 +16,8 @@ import world.yeon.backend.sheet_export.import_mutation.dto.SheetExportImportMuta
 import world.yeon.backend.sheet_export.import_mutation.dto.SheetExportImportMutationResponse;
 import world.yeon.backend.sheet_export.import_mutation.service.SheetExportImportMutationService;
 import world.yeon.backend.sheet_export.import_mutation.service.SheetExportImportMutationServiceException;
+import world.yeon.backend.common.error.ApiErrorResponse;
+import world.yeon.backend.common.error.ApiErrorResponses;
 
 @Validated
 @RestController
@@ -38,11 +40,9 @@ public class SheetExportImportMutationController {
 	}
 
 	@ExceptionHandler(SheetExportImportMutationServiceException.class)
-	public ResponseEntity<ErrorResponse> handleServiceError(SheetExportImportMutationServiceException error) {
+	public ResponseEntity<ApiErrorResponse> handleServiceError(SheetExportImportMutationServiceException error) {
 		return ResponseEntity.status(error.status())
-			.body(new ErrorResponse(error.code(), error.getMessage()));
+			.body(ApiErrorResponses.ofCurrentRequest(error.code(), error.getMessage()));
 	}
 
-	public record ErrorResponse(String code, String message) {
-	}
 }

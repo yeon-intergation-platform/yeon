@@ -23,6 +23,8 @@ import world.yeon.backend.counseling_record_ai.service.CounselingRecordAiService
 import world.yeon.backend.counseling_record_ai.service.CounselingRecordAiServiceException;
 import world.yeon.backend.counseling_record_details.service.CounselingRecordDetailServiceException;
 import world.yeon.backend.counseling_record_mutation.dto.MutationOkResponse;
+import world.yeon.backend.common.error.ApiErrorResponse;
+import world.yeon.backend.common.error.ApiErrorResponses;
 
 @RestController
 public class CounselingRecordAiController {
@@ -105,19 +107,17 @@ public class CounselingRecordAiController {
 	}
 
 	@ExceptionHandler(CounselingRecordAiServiceException.class)
-	public ResponseEntity<ErrorResponse> handleServiceError(CounselingRecordAiServiceException error) {
-		return ResponseEntity.status(error.status()).body(new ErrorResponse(error.code(), error.getMessage()));
+	public ResponseEntity<ApiErrorResponse> handleServiceError(CounselingRecordAiServiceException error) {
+		return ResponseEntity.status(error.status()).body(ApiErrorResponses.ofCurrentRequest(error.code(), error.getMessage()));
 	}
 
 	@ExceptionHandler(CounselingRecordDetailServiceException.class)
-	public ResponseEntity<ErrorResponse> handleDetailServiceError(CounselingRecordDetailServiceException error) {
-		return ResponseEntity.status(error.status()).body(new ErrorResponse(error.code(), error.getMessage()));
+	public ResponseEntity<ApiErrorResponse> handleDetailServiceError(CounselingRecordDetailServiceException error) {
+		return ResponseEntity.status(error.status()).body(ApiErrorResponses.ofCurrentRequest(error.code(), error.getMessage()));
 	}
 
 	@ExceptionHandler(IllegalArgumentException.class)
-	public ResponseEntity<ErrorResponse> handleBadRequest(IllegalArgumentException error) {
-		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse("INVALID_REQUEST", error.getMessage()));
+	public ResponseEntity<ApiErrorResponse> handleBadRequest(IllegalArgumentException error) {
+		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiErrorResponses.ofCurrentRequest("INVALID_REQUEST", error.getMessage()));
 	}
-
-	public record ErrorResponse(String code, String message) {}
 }

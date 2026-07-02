@@ -16,6 +16,8 @@ import org.springframework.web.bind.annotation.RestController;
 import world.yeon.backend.space_templates.read.dto.SpaceTemplateItemResponse;
 import world.yeon.backend.space_templates.read.dto.SpaceTemplateListResponse;
 import world.yeon.backend.space_templates.read.service.SpaceTemplateReadService;
+import world.yeon.backend.common.error.ApiErrorResponse;
+import world.yeon.backend.common.error.ApiErrorResponses;
 
 @Validated
 @RestController
@@ -46,17 +48,15 @@ public class SpaceTemplateReadController {
 	}
 
 	@ExceptionHandler(NoSuchElementException.class)
-	public ResponseEntity<ErrorResponse> handleNotFound(NoSuchElementException error) {
+	public ResponseEntity<ApiErrorResponse> handleNotFound(NoSuchElementException error) {
 		return ResponseEntity.status(HttpStatus.NOT_FOUND)
-			.body(new ErrorResponse("SPACE_TEMPLATE_NOT_FOUND", error.getMessage()));
+			.body(ApiErrorResponses.ofCurrentRequest("SPACE_TEMPLATE_NOT_FOUND", error.getMessage()));
 	}
 
 	@ExceptionHandler({ IllegalArgumentException.class })
-	public ResponseEntity<ErrorResponse> handleBadRequest(RuntimeException error) {
+	public ResponseEntity<ApiErrorResponse> handleBadRequest(RuntimeException error) {
 		return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-			.body(new ErrorResponse("INVALID_REQUEST", error.getMessage()));
+			.body(ApiErrorResponses.ofCurrentRequest("INVALID_REQUEST", error.getMessage()));
 	}
 
-	public record ErrorResponse(String code, String message) {
-	}
 }

@@ -13,6 +13,8 @@ import world.yeon.backend.user_experience.admin.dto.AdminUserCardDecksResponse;
 import world.yeon.backend.user_experience.admin.dto.AdminUserListResponse;
 import world.yeon.backend.user_experience.admin.service.AdminExperienceService;
 import world.yeon.backend.user_experience.service.ExperienceServiceException;
+import world.yeon.backend.common.error.ApiErrorResponse;
+import world.yeon.backend.common.error.ApiErrorResponses;
 
 @RestController
 @RequestMapping("/api/v1/admin")
@@ -38,14 +40,12 @@ public class AdminExperienceController {
   }
 
   @ExceptionHandler(ExperienceServiceException.class)
-  public ResponseEntity<ErrorResponse> handleServiceError(ExperienceServiceException error) {
-    return ResponseEntity.status(error.status()).body(new ErrorResponse(error.code(), error.getMessage()));
+  public ResponseEntity<ApiErrorResponse> handleServiceError(ExperienceServiceException error) {
+    return ResponseEntity.status(error.status()).body(ApiErrorResponses.ofCurrentRequest(error.code(), error.getMessage()));
   }
 
   @ExceptionHandler(IllegalArgumentException.class)
-  public ResponseEntity<ErrorResponse> handleBadRequest(IllegalArgumentException error) {
-    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse("INVALID_REQUEST", error.getMessage()));
+  public ResponseEntity<ApiErrorResponse> handleBadRequest(IllegalArgumentException error) {
+    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiErrorResponses.ofCurrentRequest("INVALID_REQUEST", error.getMessage()));
   }
-
-  public record ErrorResponse(String code, String message) {}
 }

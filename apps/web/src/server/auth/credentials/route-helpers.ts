@@ -67,9 +67,12 @@ export function respondWithAuthError(error: AuthFlowError) {
 }
 
 export function respondWithInvalidInput(message: string) {
-  return NextResponse.json(errorResponseSchema.parse({ message }), {
-    status: 400,
-  });
+  return NextResponse.json(
+    errorResponseSchema.parse({ code: "INVALID_REQUEST", message }),
+    {
+      status: 400,
+    }
+  );
 }
 
 export function respondWithServerError() {

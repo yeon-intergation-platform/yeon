@@ -1,7 +1,7 @@
-import { errorResponseSchema } from "@yeon/api-contract/error";
 import { createYeonUrl } from "@yeon/ui/runtime/YeonBrowserRuntime";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
+import { createErrorResponseBody } from "@/server/bff-error";
 import {
   DEFAULT_POST_LOGIN_PATH,
   getAppOrigin,
@@ -17,7 +17,9 @@ import { applyAuthSessionCookie } from "@/server/auth/session";
 export const runtime = "nodejs";
 
 function jsonError(message: string, status: number) {
-  return NextResponse.json(errorResponseSchema.parse({ message }), { status });
+  return NextResponse.json(createErrorResponseBody(message, status), {
+    status,
+  });
 }
 
 export async function GET(request: NextRequest) {

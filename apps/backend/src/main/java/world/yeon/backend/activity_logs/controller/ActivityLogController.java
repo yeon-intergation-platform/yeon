@@ -17,6 +17,8 @@ import world.yeon.backend.activity_logs.dto.CreateActivityLogResponse;
 import world.yeon.backend.activity_logs.dto.GetActivityLogsResponse;
 import world.yeon.backend.activity_logs.service.ActivityLogService;
 import world.yeon.backend.activity_logs.service.ActivityLogServiceException;
+import world.yeon.backend.common.error.ApiErrorResponse;
+import world.yeon.backend.common.error.ApiErrorResponses;
 
 @Validated
 @RestController
@@ -38,14 +40,12 @@ public class ActivityLogController {
 	}
 
 	@ExceptionHandler(IllegalArgumentException.class)
-	public ResponseEntity<ErrorResponse> handleBadRequest(IllegalArgumentException error) {
-		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse("INVALID_REQUEST", error.getMessage()));
+	public ResponseEntity<ApiErrorResponse> handleBadRequest(IllegalArgumentException error) {
+		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiErrorResponses.ofCurrentRequest("INVALID_REQUEST", error.getMessage()));
 	}
 
 	@ExceptionHandler(ActivityLogServiceException.class)
-	public ResponseEntity<ErrorResponse> handleServiceError(ActivityLogServiceException error) {
-		return ResponseEntity.status(error.status()).body(new ErrorResponse(error.code(), error.getMessage()));
+	public ResponseEntity<ApiErrorResponse> handleServiceError(ActivityLogServiceException error) {
+		return ResponseEntity.status(error.status()).body(ApiErrorResponses.ofCurrentRequest(error.code(), error.getMessage()));
 	}
-
-	public record ErrorResponse(String code, String message) {}
 }

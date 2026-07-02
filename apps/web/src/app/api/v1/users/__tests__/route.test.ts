@@ -43,6 +43,7 @@ describe("api/v1/users route", () => {
 
     expect(response.status).toBe(401);
     await expect(response.json()).resolves.toEqual({
+      code: "UNAUTHENTICATED",
       message: "로그인이 필요합니다.",
     });
   });
@@ -98,6 +99,7 @@ describe("api/v1/users route", () => {
 
     expect(response.status).toBe(403);
     await expect(response.json()).resolves.toEqual({
+      code: "FORBIDDEN",
       message: "관리자 권한이 필요합니다.",
     });
   });
@@ -117,6 +119,7 @@ describe("api/v1/users route", () => {
 
     expect(response.status).toBe(400);
     await expect(response.json()).resolves.toEqual({
+      code: "INVALID_REQUEST",
       message: "요청 본문 JSON 형식이 올바르지 않습니다.",
     });
   });
@@ -136,6 +139,7 @@ describe("api/v1/users route", () => {
 
     expect(response.status).toBe(400);
     await expect(response.json()).resolves.toEqual({
+      code: "INVALID_REQUEST",
       message: "사용자 생성 요청 값이 올바르지 않습니다.",
     });
   });
@@ -158,6 +162,7 @@ describe("api/v1/users route", () => {
 
     expect(response.status).toBe(409);
     await expect(response.json()).resolves.toEqual({
+      code: "CONFLICT",
       message: "이미 등록된 이메일입니다.",
     });
   });

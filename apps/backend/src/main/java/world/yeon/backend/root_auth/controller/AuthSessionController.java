@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.RestController;
 import world.yeon.backend.root_auth.dto.*;
 import world.yeon.backend.root_auth.service.AuthSessionService;
 import world.yeon.backend.root_auth.service.AuthSessionServiceException;
+import world.yeon.backend.common.error.ApiErrorResponse;
+import world.yeon.backend.common.error.ApiErrorResponses;
 
 @Validated
 @RestController
@@ -63,25 +65,23 @@ public class AuthSessionController {
 	}
 
 	@ExceptionHandler(AuthSessionServiceException.class)
-	public ResponseEntity<ErrorResponse> handleServiceError(AuthSessionServiceException error) {
-		return ResponseEntity.status(error.status()).body(new ErrorResponse(error.code(), error.getMessage()));
+	public ResponseEntity<ApiErrorResponse> handleServiceError(AuthSessionServiceException error) {
+		return ResponseEntity.status(error.status()).body(ApiErrorResponses.ofCurrentRequest(error.code(), error.getMessage()));
 	}
 
 	@ExceptionHandler(IllegalStateException.class)
-	public ResponseEntity<ErrorResponse> handleIllegalState(IllegalStateException error) {
-		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ErrorResponse("AUTH_SESSION_STATE_ERROR", "인증 세션 상태를 해석하지 못했습니다."));
+	public ResponseEntity<ApiErrorResponse> handleIllegalState(IllegalStateException error) {
+		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ApiErrorResponses.ofCurrentRequest("AUTH_SESSION_STATE_ERROR", "인증 세션 상태를 해석하지 못했습니다."));
 	}
 
 	@ExceptionHandler(IllegalArgumentException.class)
-	public ResponseEntity<ErrorResponse> handleBadRequest(IllegalArgumentException error) {
-		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse("AUTH_INVALID_REQUEST", "인증 요청이 올바르지 않습니다."));
+	public ResponseEntity<ApiErrorResponse> handleBadRequest(IllegalArgumentException error) {
+		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiErrorResponses.ofCurrentRequest("AUTH_INVALID_REQUEST", "인증 요청이 올바르지 않습니다."));
 	}
 
 	@ExceptionHandler(Exception.class)
-	public ResponseEntity<ErrorResponse> handleUnexpected(Exception error) {
+	public ResponseEntity<ApiErrorResponse> handleUnexpected(Exception error) {
 		log.error("인증 세션 처리 중 예기치 못한 오류", error);
-		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ErrorResponse("AUTH_SESSION_ERROR", "인증 처리 중 오류가 발생했습니다."));
+		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ApiErrorResponses.ofCurrentRequest("AUTH_SESSION_ERROR", "인증 처리 중 오류가 발생했습니다."));
 	}
-
-	public record ErrorResponse(String code, String message) {}
 }

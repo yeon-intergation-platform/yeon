@@ -16,6 +16,8 @@ import world.yeon.backend.googledrive_oauth.dto.GoogleDriveOAuthCallbackRequest;
 import world.yeon.backend.googledrive_oauth.dto.GoogleDriveOAuthUrlResponse;
 import world.yeon.backend.googledrive_oauth.service.GoogleDriveOAuthService;
 import world.yeon.backend.googledrive_oauth.service.GoogleDriveOAuthServiceException;
+import world.yeon.backend.common.error.ApiErrorResponse;
+import world.yeon.backend.common.error.ApiErrorResponses;
 
 @Validated
 @RestController
@@ -33,8 +35,7 @@ public class GoogleDriveOAuthController {
 	}
 
 	@ExceptionHandler(GoogleDriveOAuthServiceException.class)
-	public ResponseEntity<ErrorResponse> handleServiceError(GoogleDriveOAuthServiceException error) {
-		return ResponseEntity.status(error.status()).contentType(MediaType.APPLICATION_JSON).body(new ErrorResponse(error.code(), error.getMessage()));
+	public ResponseEntity<ApiErrorResponse> handleServiceError(GoogleDriveOAuthServiceException error) {
+		return ResponseEntity.status(error.status()).contentType(MediaType.APPLICATION_JSON).body(ApiErrorResponses.ofCurrentRequest(error.code(), error.getMessage()));
 	}
-	public record ErrorResponse(String code, String message) {}
 }

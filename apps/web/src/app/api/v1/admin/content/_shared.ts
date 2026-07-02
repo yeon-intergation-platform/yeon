@@ -1,7 +1,7 @@
-import { errorResponseSchema } from "@yeon/api-contract/error";
 import type { AuthUserDto } from "@yeon/api-contract/auth";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
+import { createErrorResponseBody } from "@/server/bff-error";
 import { getAuthSessionTokensFromRequest } from "@/server/auth/request-session-token";
 import {
   clearAuthSessionCookie,
@@ -21,7 +21,9 @@ type AdminPublicContentAuthResult =
     };
 
 export function jsonAdminPublicContentError(message: string, status: number) {
-  return NextResponse.json(errorResponseSchema.parse({ message }), { status });
+  return NextResponse.json(createErrorResponseBody(message, status), {
+    status,
+  });
 }
 
 export async function requireAdminPublicContentAuthenticatedUser(

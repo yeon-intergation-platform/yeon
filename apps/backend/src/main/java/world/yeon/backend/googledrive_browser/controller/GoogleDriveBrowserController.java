@@ -15,6 +15,8 @@ import world.yeon.backend.googledrive_browser.dto.GoogleDriveFilesResponse;
 import world.yeon.backend.googledrive_browser.dto.GoogleDriveStatusResponse;
 import world.yeon.backend.googledrive_browser.service.GoogleDriveBrowserService;
 import world.yeon.backend.googledrive_browser.service.GoogleDriveBrowserServiceException;
+import world.yeon.backend.common.error.ApiErrorResponse;
+import world.yeon.backend.common.error.ApiErrorResponses;
 
 @Validated
 @RestController
@@ -42,14 +44,12 @@ public class GoogleDriveBrowserController {
 	}
 
 	@ExceptionHandler(IllegalArgumentException.class)
-	public ResponseEntity<ErrorResponse> handleBadRequest(IllegalArgumentException error) {
-		return ResponseEntity.badRequest().body(new ErrorResponse("INVALID_REQUEST", error.getMessage()));
+	public ResponseEntity<ApiErrorResponse> handleBadRequest(IllegalArgumentException error) {
+		return ResponseEntity.badRequest().body(ApiErrorResponses.ofCurrentRequest("INVALID_REQUEST", error.getMessage()));
 	}
 
 	@ExceptionHandler(GoogleDriveBrowserServiceException.class)
-	public ResponseEntity<ErrorResponse> handleServiceError(GoogleDriveBrowserServiceException error) {
-		return ResponseEntity.status(error.status()).contentType(MediaType.APPLICATION_JSON).body(new ErrorResponse(error.code(), error.getMessage()));
+	public ResponseEntity<ApiErrorResponse> handleServiceError(GoogleDriveBrowserServiceException error) {
+		return ResponseEntity.status(error.status()).contentType(MediaType.APPLICATION_JSON).body(ApiErrorResponses.ofCurrentRequest(error.code(), error.getMessage()));
 	}
-
-	public record ErrorResponse(String code, String message) {}
 }

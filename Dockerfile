@@ -11,6 +11,10 @@ RUN corepack enable \
     && corepack prepare "pnpm@${PNPM_VERSION}" --activate \
     && pnpm config set store-dir /pnpm/store --global
 
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends python3 make g++ \
+    && rm -rf /var/lib/apt/lists/*
+
 # ── Stage 1: turbo prune ──────────────────────────────────────────────────────
 # @yeon/web에 필요한 workspace 패키지만 추출한다.
 # 새 packages/* 가 생겨도 이 단계가 자동으로 포함하므로 Dockerfile을 수정하지 않아도 된다.
@@ -48,6 +52,7 @@ COPY --from=pruner /app/out/full/ .
 COPY --from=pruner /app/scripts/ ./scripts/
 
 ENV NEXT_TELEMETRY_DISABLED=1
+ENV YEON_SKIP_NEXT_TYPECHECK_DURING_DOCKER_BUILD=1
 
 # 플랫폼에 따라 워크플로우에서 --build-arg NODE_MEMORY=<value> 로 조정한다.
 ARG NODE_MEMORY=4096

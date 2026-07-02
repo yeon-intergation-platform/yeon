@@ -104,6 +104,7 @@ describe("api/v1/content/[channel]/[...slug] route", () => {
 
     expect(response.status).toBe(404);
     await expect(response.json()).resolves.toEqual({
+      code: "NOT_FOUND",
       message: "공개 콘텐츠 글을 찾을 수 없습니다.",
     });
   });

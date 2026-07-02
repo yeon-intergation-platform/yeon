@@ -14,6 +14,8 @@ import world.yeon.backend.student_board_read.dto.StudentBoardReadResponse;
 import world.yeon.backend.student_board_write.dto.UpdateStudentBoardRequest;
 import world.yeon.backend.student_board_write.service.StudentBoardWriteService;
 import world.yeon.backend.student_board_write.service.StudentBoardWriteServiceException;
+import world.yeon.backend.common.error.ApiErrorResponse;
+import world.yeon.backend.common.error.ApiErrorResponses;
 
 @Validated
 @RestController
@@ -35,14 +37,12 @@ public class StudentBoardWriteController {
 	}
 
 	@ExceptionHandler(IllegalArgumentException.class)
-	public ResponseEntity<ErrorResponse> handleBadRequest(IllegalArgumentException error) {
-		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse("INVALID_REQUEST", error.getMessage()));
+	public ResponseEntity<ApiErrorResponse> handleBadRequest(IllegalArgumentException error) {
+		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiErrorResponses.ofCurrentRequest("INVALID_REQUEST", error.getMessage()));
 	}
 
 	@ExceptionHandler(StudentBoardWriteServiceException.class)
-	public ResponseEntity<ErrorResponse> handleServiceError(StudentBoardWriteServiceException error) {
-		return ResponseEntity.status(error.status()).body(new ErrorResponse(error.code(), error.getMessage()));
+	public ResponseEntity<ApiErrorResponse> handleServiceError(StudentBoardWriteServiceException error) {
+		return ResponseEntity.status(error.status()).body(ApiErrorResponses.ofCurrentRequest(error.code(), error.getMessage()));
 	}
-
-	public record ErrorResponse(String code, String message) {}
 }

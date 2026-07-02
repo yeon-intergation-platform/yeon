@@ -21,6 +21,8 @@ import world.yeon.backend.member_tabs.write.dto.CreateMemberTabRequest;
 import world.yeon.backend.member_tabs.write.dto.MemberTabMutationResponse;
 import world.yeon.backend.member_tabs.write.dto.UpdateMemberTabRequest;
 import world.yeon.backend.member_tabs.write.service.MemberTabWriteService;
+import world.yeon.backend.common.error.ApiErrorResponse;
+import world.yeon.backend.common.error.ApiErrorResponses;
 
 @Validated
 @RestController
@@ -64,31 +66,29 @@ public class MemberTabWriteController {
 	}
 
 	@ExceptionHandler(NoSuchElementException.class)
-	public ResponseEntity<ErrorResponse> handleNotFound(NoSuchElementException error) {
+	public ResponseEntity<ApiErrorResponse> handleNotFound(NoSuchElementException error) {
 		String code = "탭을 찾지 못했습니다.".equals(error.getMessage())
 			? "MEMBER_TAB_NOT_FOUND"
 			: "SPACE_NOT_FOUND";
 		return ResponseEntity.status(HttpStatus.NOT_FOUND)
-			.body(new ErrorResponse(code, error.getMessage()));
+			.body(ApiErrorResponses.ofCurrentRequest(code, error.getMessage()));
 	}
 
 	@ExceptionHandler(IllegalStateException.class)
-	public ResponseEntity<ErrorResponse> handleForbidden(IllegalStateException error) {
+	public ResponseEntity<ApiErrorResponse> handleForbidden(IllegalStateException error) {
 		String code = switch (error.getMessage()) {
 			case "기본 탭은 수정할 수 없습니다.", "기본 탭은 삭제할 수 없습니다." -> "PROTECTED_SYSTEM_TAB";
 			case "시스템 탭은 삭제할 수 없습니다." -> "SYSTEM_TAB_DELETE_FORBIDDEN";
 			default -> "MEMBER_TAB_FORBIDDEN";
 		};
 		return ResponseEntity.status(HttpStatus.FORBIDDEN)
-			.body(new ErrorResponse(code, error.getMessage()));
+			.body(ApiErrorResponses.ofCurrentRequest(code, error.getMessage()));
 	}
 
 	@ExceptionHandler(IllegalArgumentException.class)
-	public ResponseEntity<ErrorResponse> handleBadRequest(IllegalArgumentException error) {
+	public ResponseEntity<ApiErrorResponse> handleBadRequest(IllegalArgumentException error) {
 		return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-			.body(new ErrorResponse("INVALID_REQUEST", error.getMessage()));
+			.body(ApiErrorResponses.ofCurrentRequest("INVALID_REQUEST", error.getMessage()));
 	}
 
-	public record ErrorResponse(String code, String message) {
-	}
 }

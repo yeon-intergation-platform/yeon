@@ -10,6 +10,8 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import world.yeon.backend.common.error.ApiErrorResponse;
+import world.yeon.backend.common.error.ApiErrorResponses;
 import world.yeon.backend.public_content.dto.PublicContentDtos.PublicContentAdminArticleListResponse;
 import world.yeon.backend.public_content.dto.PublicContentDtos.PublicContentAdminArticleResponse;
 import world.yeon.backend.public_content.service.PublicContentAdminService;
@@ -52,18 +54,18 @@ public class PublicContentAdminController {
 	}
 
 	@ExceptionHandler(IllegalArgumentException.class)
-	public ResponseEntity<PublicContentController.ErrorResponse> handleBadRequest(
+	public ResponseEntity<ApiErrorResponse> handleBadRequest(
 		IllegalArgumentException error
 	) {
 		return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-			.body(new PublicContentController.ErrorResponse("INVALID_REQUEST", error.getMessage()));
+			.body(ApiErrorResponses.ofCurrentRequest("INVALID_REQUEST", error.getMessage()));
 	}
 
 	@ExceptionHandler(PublicContentServiceException.class)
-	public ResponseEntity<PublicContentController.ErrorResponse> handleServiceError(
+	public ResponseEntity<ApiErrorResponse> handleServiceError(
 		PublicContentServiceException error
 	) {
 		return ResponseEntity.status(error.status())
-			.body(new PublicContentController.ErrorResponse(error.code(), error.getMessage()));
+			.body(ApiErrorResponses.ofCurrentRequest(error.code(), error.getMessage()));
 	}
 }

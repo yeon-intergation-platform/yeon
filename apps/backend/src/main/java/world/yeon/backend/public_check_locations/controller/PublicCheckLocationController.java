@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.RestController;
 import world.yeon.backend.public_check_locations.dto.PublicCheckLocationSearchResponse;
 import world.yeon.backend.public_check_locations.service.PublicCheckLocationService;
 import world.yeon.backend.public_check_locations.service.PublicCheckLocationServiceException;
+import world.yeon.backend.common.error.ApiErrorResponse;
+import world.yeon.backend.common.error.ApiErrorResponses;
 
 @Validated
 @RestController
@@ -32,9 +34,7 @@ public class PublicCheckLocationController {
 	}
 
 	@ExceptionHandler(PublicCheckLocationServiceException.class)
-	public ResponseEntity<ErrorResponse> handleServiceError(PublicCheckLocationServiceException error) {
-		return ResponseEntity.status(error.status()).body(new ErrorResponse(error.code(), error.getMessage()));
+	public ResponseEntity<ApiErrorResponse> handleServiceError(PublicCheckLocationServiceException error) {
+		return ResponseEntity.status(error.status()).body(ApiErrorResponses.ofCurrentRequest(error.code(), error.getMessage()));
 	}
-
-	public record ErrorResponse(String code, String message) {}
 }

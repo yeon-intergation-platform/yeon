@@ -9,6 +9,8 @@ import org.springframework.web.bind.annotation.*;
 import world.yeon.backend.import_drafts.dto.*;
 import world.yeon.backend.import_drafts.service.ImportDraftService;
 import world.yeon.backend.import_drafts.service.ImportDraftServiceException;
+import world.yeon.backend.common.error.ApiErrorResponse;
+import world.yeon.backend.common.error.ApiErrorResponses;
 
 @Validated
 @RestController
@@ -34,8 +36,7 @@ public class ImportDraftController {
 	public ImportDraftFileResponse getDraftFile(@RequestHeader("X-Yeon-User-Id") UUID userId, @PathVariable String draftId) { return service.getDraftFile(userId, draftId); }
 
 	@ExceptionHandler(IllegalArgumentException.class)
-	public ResponseEntity<ErrorResponse> handleBadRequest(IllegalArgumentException error) { return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse("INVALID_REQUEST", error.getMessage())); }
+	public ResponseEntity<ApiErrorResponse> handleBadRequest(IllegalArgumentException error) { return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiErrorResponses.ofCurrentRequest("INVALID_REQUEST", error.getMessage())); }
 	@ExceptionHandler(ImportDraftServiceException.class)
-	public ResponseEntity<ErrorResponse> handleServiceError(ImportDraftServiceException error) { return ResponseEntity.status(error.status()).body(new ErrorResponse(error.code(), error.getMessage())); }
-	public record ErrorResponse(String code, String message) {}
+	public ResponseEntity<ApiErrorResponse> handleServiceError(ImportDraftServiceException error) { return ResponseEntity.status(error.status()).body(ApiErrorResponses.ofCurrentRequest(error.code(), error.getMessage())); }
 }

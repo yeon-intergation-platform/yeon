@@ -96,6 +96,7 @@ describe("api/v1/card-decks/merge-guest route", () => {
 
     expect(response.status).toBe(400);
     await expect(response.json()).resolves.toEqual({
+      code: "INVALID_REQUEST",
       message: "덱 제목은 비워 둘 수 없습니다.",
     });
   });

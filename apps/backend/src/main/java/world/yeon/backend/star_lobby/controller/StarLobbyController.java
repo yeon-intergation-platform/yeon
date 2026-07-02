@@ -7,6 +7,8 @@ import org.springframework.web.bind.annotation.*;
 import world.yeon.backend.star_lobby.dto.StarLobbyDtos.*;
 import world.yeon.backend.star_lobby.service.StarLobbyService;
 import world.yeon.backend.star_lobby.service.StarLobbyServiceException;
+import world.yeon.backend.common.error.ApiErrorResponse;
+import world.yeon.backend.common.error.ApiErrorResponses;
 
 @RestController
 @RequestMapping("/api/v1/star-lobby")
@@ -100,9 +102,7 @@ public class StarLobbyController {
 	}
 
 	@ExceptionHandler(StarLobbyServiceException.class)
-	public ResponseEntity<ErrorResponse> serviceError(StarLobbyServiceException error) {
-		return ResponseEntity.status(error.status()).body(new ErrorResponse(error.code(), error.getMessage()));
+	public ResponseEntity<ApiErrorResponse> serviceError(StarLobbyServiceException error) {
+		return ResponseEntity.status(error.status()).body(ApiErrorResponses.ofCurrentRequest(error.code(), error.getMessage()));
 	}
-
-	public record ErrorResponse(String code, String message) {}
 }
