@@ -314,7 +314,7 @@ export function DeckDetailHeader({
               })
             }
           >
-            학습 시작
+            학습하기
           </YeonLink>
         </YeonView>
       ) : (
