@@ -115,18 +115,6 @@ export const PLATFORM_SERVICES = [
     listedInPlatformHome: true,
   },
   {
-    slug: "mooddesk",
-    href: "/card-service/study-desk",
-    publicHref: "https://card.yeon.world/study-desk",
-    title: "MoodDesk 집중 작업대",
-    summary:
-      "내가 고른 카드 덱을 시간에 맞춰 집중 학습 세션으로 실행하는 뽀모도로 작업대입니다.",
-    audience: "카드 집중 학습",
-    accessPolicy: platformServiceAccessPolicies.anonymous,
-    status: platformServiceStatuses.live,
-    listedInPlatformHome: true,
-  },
-  {
     slug: "game-service",
     href: "/game-service",
     publicHref: "https://game.yeon.world",

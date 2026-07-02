@@ -76,9 +76,6 @@ describe("public content data", () => {
       canonicalUrl: "https://support.yeon.world/nexa/guides",
     });
     expect(nexaGuidesCollection?.articles.length).toBeGreaterThan(1);
-    expect(
-      getPublicContentCollectionBySlug("support", ["mooddesk"])
-    ).toBeNull();
   });
 
   it("news와 blog collection은 실제 발행 글 기준으로 파생한다", () => {
@@ -229,7 +226,7 @@ describe("public content data", () => {
     expect(bodyText).not.toContain("재현 순서");
   });
 
-  it("Yeon 서비스 support 초기 글을 서비스별 공개 URL로 제공하고 mooddesk는 제외한다", () => {
+  it("Yeon 서비스 support 초기 글을 서비스별 공개 URL로 제공한다", () => {
     const requiredSlugs = [
       ["typing", "getting-started", "start-typing-practice"],
       ["typing", "guides", "join-typing-room"],
@@ -274,9 +271,6 @@ describe("public content data", () => {
         "login-with-yeon-account",
       ])
     ).toBeNull();
-    expect(
-      supportArticles.some((article) => article.slugSegments[0] === "mooddesk")
-    ).toBe(false);
   });
 
   it("Yeon 서비스 support 글은 서비스별 운영 기준을 본문에 포함한다", () => {
