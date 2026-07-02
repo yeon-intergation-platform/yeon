@@ -56,7 +56,6 @@ const STORAGE_KEY = "yeon.todo-service.state.v1";
 const TODAY_LIMIT = 5;
 const WEEKDAY_LABELS = ["일", "월", "화", "수", "목", "금", "토"];
 const BOARD_SURFACE_CLASS = "rounded-lg border border-[#e5e5e5] bg-white";
-const MUTED_TEXT_CLASS = "text-[#666]";
 const SUBTLE_TEXT_CLASS = "text-[#aaa]";
 const FOCUS_CLASS =
   "focus:outline-none focus-visible:ring-2 focus-visible:ring-[#111] focus-visible:ring-offset-2";
@@ -126,10 +125,6 @@ function formatMonthLabel(date: string) {
 
 function getDayNumber(date: string) {
   return Number(date.slice(-2));
-}
-
-function isIsoDateInputValue(value: string) {
-  return /^\d{4}-\d{2}-\d{2}$/.test(value);
 }
 
 function getPriorityLabel(priority: TodoTaskPriority) {
@@ -334,7 +329,7 @@ function TaskCard({
           ) : null}
           {task.status === TODO_TASK_STATUSES.planned ? (
             <IconButton
-              label="지금 할 일로 지정"
+              label="진행 중으로 지정"
               onClick={() => onStatus(task.id, TODO_TASK_STATUSES.active)}
             >
               <Play size={16} aria-hidden="true" />
@@ -447,62 +442,6 @@ function TaskColumn({
         ) : (
           children
         )}
-      </YeonView>
-    </YeonView>
-  );
-}
-
-function DateNavigator({
-  selectedDate,
-  actualToday,
-  onSelectDate,
-  onMoveDate,
-}: {
-  selectedDate: string;
-  actualToday: string;
-  onSelectDate: (date: string) => void;
-  onMoveDate: (amount: number) => void;
-}) {
-  const isTodaySelected = selectedDate === actualToday;
-
-  return (
-    <YeonView className={`${BOARD_SURFACE_CLASS} grid gap-2 p-3`}>
-      <YeonView className="flex items-center justify-between gap-2">
-        <YeonText
-          variant="unstyled"
-          tone="inherit"
-          className="text-[12px] font-black tracking-[0] text-[#666]"
-        >
-          날짜 이동
-        </YeonText>
-        <YeonButton
-          type="button"
-          variant={isTodaySelected ? "ghost" : "secondary"}
-          size="sm"
-          onClick={() => onSelectDate(actualToday)}
-          disabled={isTodaySelected}
-        >
-          오늘
-        </YeonButton>
-      </YeonView>
-      <YeonView className="grid grid-cols-[40px_minmax(0,1fr)_40px] gap-2">
-        <IconButton label="이전 날짜" onClick={() => onMoveDate(-1)}>
-          <ChevronLeft size={16} aria-hidden="true" />
-        </IconButton>
-        <YeonField
-          type="date"
-          aria-label="선택 날짜"
-          value={selectedDate}
-          onChange={(event) => {
-            if (isIsoDateInputValue(event.target.value)) {
-              onSelectDate(event.target.value);
-            }
-          }}
-          className="h-10 rounded-lg bg-[#fafafa] text-center text-[14px] font-bold"
-        />
-        <IconButton label="다음 날짜" onClick={() => onMoveDate(1)}>
-          <ChevronRight size={16} aria-hidden="true" />
-        </IconButton>
       </YeonView>
     </YeonView>
   );
@@ -623,95 +562,6 @@ function CalendarPanel({
           완료
         </span>
       </YeonView>
-    </YeonView>
-  );
-}
-
-function ActiveTaskPanel({
-  activeTask,
-  topRecommendation,
-  onStart,
-  onComplete,
-}: {
-  activeTask: TodoTask | null;
-  topRecommendation: TodoTaskRecommendation | undefined;
-  onStart: (taskId: string) => void;
-  onComplete: (taskId: string) => void;
-}) {
-  const task = activeTask ?? topRecommendation?.task ?? null;
-
-  return (
-    <YeonView className={`${BOARD_SURFACE_CLASS} bg-[#fafafa] p-4`}>
-      <YeonView className="mb-3 flex items-center gap-2">
-        <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[#e5e5e5] bg-white text-[#111]">
-          <Play size={17} aria-hidden="true" />
-        </span>
-        <YeonText
-          as="h2"
-          variant="unstyled"
-          tone="inherit"
-          className="m-0 text-[17px] font-black text-[#111]"
-        >
-          지금 할 일
-        </YeonText>
-      </YeonView>
-      {task ? (
-        <YeonView className={`${BOARD_SURFACE_CLASS} p-3`}>
-          <YeonView className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            <YeonView className="min-w-0">
-              <YeonView className="mb-2 flex flex-wrap items-center gap-2">
-                {activeTask ? null : (
-                  <YeonText
-                    as="span"
-                    variant="unstyled"
-                    tone="inherit"
-                    className="inline-flex h-6 items-center rounded-full border border-[#e5e5e5] bg-white px-2 text-[11px] font-black text-[#111]"
-                  >
-                    추천
-                  </YeonText>
-                )}
-                <StatusBadge task={task} />
-              </YeonView>
-              <YeonText
-                as="h3"
-                variant="unstyled"
-                tone="inherit"
-                className="m-0 text-[16px] font-black text-[#111]"
-              >
-                {task.title}
-              </YeonText>
-              <YeonText
-                variant="unstyled"
-                tone="inherit"
-                className={`mt-2 text-[12px] font-semibold ${MUTED_TEXT_CLASS}`}
-              >
-                이득 점수 {calculateTodoTaskBenefitScore(task)}점
-              </YeonText>
-            </YeonView>
-            <YeonView className="flex shrink-0 flex-wrap gap-2">
-              <YeonButton
-                type="button"
-                variant="primary"
-                className="h-11 gap-2"
-                onClick={() =>
-                  activeTask ? onComplete(task.id) : onStart(task.id)
-                }
-              >
-                {activeTask ? "완료 처리" : "이 task 시작하기"}
-                <Play size={15} aria-hidden="true" />
-              </YeonButton>
-            </YeonView>
-          </YeonView>
-        </YeonView>
-      ) : (
-        <YeonText
-          variant="unstyled"
-          tone="inherit"
-          className="rounded-lg border border-dashed border-[#e5e5e5] bg-white px-3 py-5 text-center text-[14px] font-bold text-[#666]"
-        >
-          선택 날짜 목록에 일을 추가하면 바로 시작할 task를 추천합니다.
-        </YeonText>
-      )}
     </YeonView>
   );
 }
@@ -967,7 +817,7 @@ export function TodoServiceScreen() {
     ...(groups.active ? [groups.active] : []),
     ...groups.planned,
   ];
-  const filteredPlannedTasks = groups.planned.filter((task) =>
+  const filteredSelectedDateTasks = selectedDateTasks.filter((task) =>
     matchesBoardFilters({ task, priorityFilter, estimateFilter })
   );
   const filteredRecommendationTasks = groups.planned.filter((task) =>
@@ -992,10 +842,6 @@ export function TodoServiceScreen() {
   function handleSelectDate(date: string) {
     setSelectedDate(date);
     setVisibleDate(date);
-  }
-
-  function handleMoveDate(amount: number) {
-    handleSelectDate(addTodoServiceDays(selectedDate, amount));
   }
 
   function handleMoveMonth(amount: number) {
@@ -1144,17 +990,11 @@ export function TodoServiceScreen() {
               {selectedDate === actualToday
                 ? "오늘 끝낼 일만 Today에 올립니다."
                 : "선택한 날짜에 끝낼 일만 목록에 올립니다."}{" "}
-              지금 할 일은 하나만 활성화됩니다.
+              날짜 선택은 오른쪽 달력에서 처리합니다.
             </YeonText>
           </YeonView>
 
           <YeonView className="grid gap-3">
-            <DateNavigator
-              selectedDate={selectedDate}
-              actualToday={actualToday}
-              onSelectDate={handleSelectDate}
-              onMoveDate={handleMoveDate}
-            />
             <YeonView className={`${BOARD_SURFACE_CLASS} grid grid-cols-3 p-3`}>
               {[
                 ["진행", openSelectedDateCount],
@@ -1334,17 +1174,6 @@ export function TodoServiceScreen() {
 
         <YeonView className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
           <YeonView className="grid gap-5">
-            <ActiveTaskPanel
-              activeTask={groups.active}
-              topRecommendation={recommendations[0]}
-              onStart={(taskId) =>
-                handleStatus(taskId, TODO_TASK_STATUSES.active)
-              }
-              onComplete={(taskId) =>
-                handleStatus(taskId, TODO_TASK_STATUSES.done)
-              }
-            />
-
             <RecommendationPanel
               recommendations={recommendations}
               onStart={(taskId) =>
@@ -1366,11 +1195,11 @@ export function TodoServiceScreen() {
                 title={`${selectedDate === actualToday ? "Today" : "선택 날짜"} ${
                   openSelectedDateCount > TODAY_LIMIT ? "· 줄이기 권장" : ""
                 }`}
-                count={filteredPlannedTasks.length}
+                count={filteredSelectedDateTasks.length}
                 icon={<ListTodo size={17} aria-hidden="true" />}
                 emptyText="필터에 맞는 선택 날짜 일이 없습니다."
               >
-                {filteredPlannedTasks.map((task) => (
+                {filteredSelectedDateTasks.map((task) => (
                   <TaskCard
                     key={task.id}
                     task={task}
