@@ -1,5 +1,6 @@
 package world.yeon.backend.card_decks.route.controller;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.Map;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
@@ -8,7 +9,8 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import world.yeon.backend.card_decks.route.dto.*;
 import world.yeon.backend.card_decks.route.service.CardDeckRouteService;
-import world.yeon.backend.card_decks.route.service.CardDeckRouteServiceException;
+import world.yeon.backend.common.error.ApiErrorResponse;
+import world.yeon.backend.common.error.ApiErrorResponses;
 
 @Validated
 @RestController
@@ -82,9 +84,8 @@ public class CardDeckRouteController {
 	}
 
 	@ExceptionHandler(IllegalArgumentException.class)
-	public ResponseEntity<ErrorResponse> handleBadRequest(IllegalArgumentException error) {
-		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse("INVALID_REQUEST", error.getMessage()));
+	public ResponseEntity<ApiErrorResponse> handleBadRequest(IllegalArgumentException error, HttpServletRequest request) {
+		return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+			.body(ApiErrorResponses.of(request, "INVALID_REQUEST", error.getMessage()));
 	}
-
-	public record ErrorResponse(String code, String message) {}
 }

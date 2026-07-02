@@ -1,10 +1,13 @@
 package world.yeon.backend.typing_character_frames.controller;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import world.yeon.backend.common.error.ApiErrorResponse;
+import world.yeon.backend.common.error.ApiErrorResponses;
 import world.yeon.backend.typing_character_frames.dto.*;
 import world.yeon.backend.typing_character_frames.service.TypingCharacterFrameService;
 
@@ -32,9 +35,8 @@ public class TypingCharacterFrameController {
 	}
 
 	@ExceptionHandler(IllegalArgumentException.class)
-	public ResponseEntity<ErrorResponse> handleBadRequest(IllegalArgumentException error) {
-		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse("INVALID_REQUEST", error.getMessage()));
+	public ResponseEntity<ApiErrorResponse> handleBadRequest(IllegalArgumentException error, HttpServletRequest request) {
+		return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+			.body(ApiErrorResponses.of(request, "INVALID_REQUEST", error.getMessage()));
 	}
-
-	public record ErrorResponse(String code, String message) {}
 }

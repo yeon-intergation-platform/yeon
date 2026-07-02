@@ -19,22 +19,35 @@ describe("errorResponseSchema", () => {
     const parsed = errorResponseSchema.parse({
       code: "INVALID_STATE_TRANSITION",
       message: "현재 상태에서는 제출할 수 없습니다.",
+      requestId: "req_abc123",
       details: { field: "phoneNumber", reason: "invalid_format" },
       currentState: "DRAFT",
       requiredState: "READY_TO_SUBMIT",
       failedCondition: "phone_verification_completed",
       blockedAction: "ACCOUNT_SIGN_UP",
-      actionGuide: "인증번호를 입력해 인증을 완료해 주세요.",
+      actionGuide: { action: "VERIFY_PHONE", label: "인증하기" },
     });
+    expect(parsed.requestId).toBe("req_abc123");
     expect(parsed.currentState).toBe("DRAFT");
     expect(parsed.requiredState).toBe("READY_TO_SUBMIT");
     expect(parsed.failedCondition).toBe("phone_verification_completed");
     expect(parsed.blockedAction).toBe("ACCOUNT_SIGN_UP");
-    expect(parsed.actionGuide).toBe("인증번호를 입력해 인증을 완료해 주세요.");
+    expect(parsed.actionGuide).toEqual({
+      action: "VERIFY_PHONE",
+      label: "인증하기",
+    });
     expect(parsed.details).toEqual({
       field: "phoneNumber",
       reason: "invalid_format",
     });
+  });
+
+  it("문자열 actionGuide도 하위호환으로 받는다", () => {
+    const parsed = errorResponseSchema.parse({
+      message: "인증이 필요합니다.",
+      actionGuide: "인증번호를 입력해 인증을 완료해 주세요.",
+    });
+    expect(parsed.actionGuide).toBe("인증번호를 입력해 인증을 완료해 주세요.");
   });
 
   it("message가 없으면 거부", () => {
