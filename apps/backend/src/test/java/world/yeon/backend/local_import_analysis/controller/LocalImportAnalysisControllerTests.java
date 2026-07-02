@@ -3,8 +3,11 @@ package world.yeon.backend.local_import_analysis.controller;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.asyncDispatch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.request;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.util.Map;
@@ -12,11 +15,13 @@ import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 import world.yeon.backend.local_import_analysis.dto.LocalAnalyzeResponse;
 import world.yeon.backend.local_import_analysis.service.LocalImportAnalysisException;
 import world.yeon.backend.local_import_analysis.service.LocalImportAnalysisService;
@@ -44,5 +49,26 @@ class LocalImportAnalysisControllerTests {
 		mockMvc.perform(multipart("/integrations/local/analyze").file(file).header("X-Yeon-User-Id", OWNER_ID.toString()).header("X-Yeon-Internal-Token", "test-internal-token"))
 			.andExpect(status().isBadRequest())
 			.andExpect(jsonPath("$.message").value("지원하지 않는 파일 형식입니다."));
+	}
+
+	@Test void stream서비스오류는requestId를이벤트에포함한다() throws Exception {
+		when(service.analyze(eq(OWNER_ID), any(), any())).thenThrow(new LocalImportAnalysisException(400, "UNSUPPORTED_FILE_KIND", "지원하지 않는 파일 형식입니다."));
+		MockMultipartFile file = new MockMultipartFile("file", "archive.zip", "application/zip", "bad".getBytes());
+
+		MvcResult result = mockMvc.perform(
+			multipart("/integrations/local/analyze")
+				.file(file)
+				.header("X-Yeon-User-Id", OWNER_ID.toString())
+				.header("X-Yeon-Internal-Token", "test-internal-token")
+				.header("X-Request-Id", "req_local_stream")
+				.accept(MediaType.TEXT_EVENT_STREAM)
+		)
+			.andExpect(request().asyncStarted())
+			.andReturn();
+
+		mockMvc.perform(asyncDispatch(result))
+			.andExpect(status().isOk())
+			.andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_EVENT_STREAM))
+			.andExpect(content().string("data: {\"type\":\"error\",\"code\":\"UNSUPPORTED_FILE_KIND\",\"message\":\"지원하지 않는 파일 형식입니다.\",\"requestId\":\"req_local_stream\"}\n\n"));
 	}
 }
