@@ -16,10 +16,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
-import world.yeon.backend.local_import_analysis.dto.ErrorResponse;
 import world.yeon.backend.local_import_analysis.dto.LocalAnalyzeResponse;
 import world.yeon.backend.local_import_analysis.service.LocalImportAnalysisException;
 import world.yeon.backend.local_import_analysis.service.LocalImportAnalysisService;
+import world.yeon.backend.common.error.ApiErrorResponse;
+import world.yeon.backend.common.error.ApiErrorResponses;
 
 @Validated
 @RestController
@@ -64,7 +65,7 @@ public class LocalImportAnalysisController {
 				done.put("assistantMessage", response.assistantMessage());
 				writeEvent(outputStream, done);
 			} catch (LocalImportAnalysisException error) {
-				writeEvent(outputStream, java.util.Map.of("type", "error", "message", error.getMessage()));
+				writeEvent(outputStream, java.util.Map.of("type", "error", "code", error.code(), "message", error.getMessage()));
 			}
 		};
 		return ResponseEntity.ok()
@@ -83,12 +84,12 @@ public class LocalImportAnalysisController {
 	}
 
 	@ExceptionHandler(LocalImportAnalysisException.class)
-	public ResponseEntity<ErrorResponse> handleServiceError(LocalImportAnalysisException error) {
-		return ResponseEntity.status(error.status()).body(new ErrorResponse(error.code(), error.getMessage()));
+	public ResponseEntity<ApiErrorResponse> handleServiceError(LocalImportAnalysisException error) {
+		return ResponseEntity.status(error.status()).body(ApiErrorResponses.ofCurrentRequest(error.code(), error.getMessage()));
 	}
 
 	@ExceptionHandler(IllegalArgumentException.class)
-	public ResponseEntity<ErrorResponse> handleBadRequest(IllegalArgumentException error) {
-		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse("INVALID_REQUEST", error.getMessage()));
+	public ResponseEntity<ApiErrorResponse> handleBadRequest(IllegalArgumentException error) {
+		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiErrorResponses.ofCurrentRequest("INVALID_REQUEST", error.getMessage()));
 	}
 }

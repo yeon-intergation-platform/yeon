@@ -2,6 +2,8 @@ package world.yeon.backend.common.error;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.Map;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 import world.yeon.backend.common.request.RequestIdFilter;
 
 public final class ApiErrorResponses {
@@ -9,6 +11,18 @@ public final class ApiErrorResponses {
 
 	public static ApiErrorResponse of(HttpServletRequest request, String code, String message) {
 		return of(request, code, message, null);
+	}
+
+	public static ApiErrorResponse ofCurrentRequest(String code, String message) {
+		return ofCurrentRequest(code, message, null);
+	}
+
+	public static ApiErrorResponse ofCurrentRequest(String code, String message, Map<String, Object> details) {
+		HttpServletRequest request = currentRequest();
+		if (request == null) {
+			return new ApiErrorResponse(code, message, null, details, null, null, null, null, null);
+		}
+		return of(request, code, message, details);
 	}
 
 	public static ApiErrorResponse of(
@@ -42,5 +56,12 @@ public final class ApiErrorResponses {
 			error.blockedAction(),
 			error.actionGuide()
 		);
+	}
+
+	private static HttpServletRequest currentRequest() {
+		if (RequestContextHolder.getRequestAttributes() instanceof ServletRequestAttributes attributes) {
+			return attributes.getRequest();
+		}
+		return null;
 	}
 }

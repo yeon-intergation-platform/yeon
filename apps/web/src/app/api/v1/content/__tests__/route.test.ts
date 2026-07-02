@@ -88,6 +88,7 @@ describe("api/v1/content route", () => {
 
     expect(response.status).toBe(503);
     await expect(response.json()).resolves.toEqual({
+      code: "SERVICE_UNAVAILABLE",
       message: "공개 콘텐츠 목록을 불러오지 못했습니다.",
     });
   });

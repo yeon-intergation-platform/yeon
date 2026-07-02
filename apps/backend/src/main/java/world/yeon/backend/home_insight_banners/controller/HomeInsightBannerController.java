@@ -7,6 +7,8 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import world.yeon.backend.home_insight_banners.dto.*;
 import world.yeon.backend.home_insight_banners.service.HomeInsightBannerService;
+import world.yeon.backend.common.error.ApiErrorResponse;
+import world.yeon.backend.common.error.ApiErrorResponses;
 
 @Validated
 @RestController
@@ -18,6 +20,5 @@ public class HomeInsightBannerController {
 	@PostMapping("/home/insight-banners/dismiss")
 	public DismissHomeInsightBannerResponse dismiss(@RequestHeader("X-Yeon-User-Id") UUID userId, @RequestBody DismissHomeInsightBannerRequest request) { return service.dismiss(userId, request); }
 	@ExceptionHandler(IllegalArgumentException.class)
-	public ResponseEntity<ErrorResponse> handleBadRequest(IllegalArgumentException error) { return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse("INVALID_REQUEST", error.getMessage())); }
-	public record ErrorResponse(String code, String message) {}
+	public ResponseEntity<ApiErrorResponse> handleBadRequest(IllegalArgumentException error) { return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiErrorResponses.ofCurrentRequest("INVALID_REQUEST", error.getMessage())); }
 }

@@ -11,6 +11,8 @@ import org.springframework.http.ResponseEntity;
 import world.yeon.backend.member_risk_profiles.dto.MemberRiskProfilesRequest;
 import world.yeon.backend.member_risk_profiles.dto.MemberRiskProfilesResponse;
 import world.yeon.backend.member_risk_profiles.service.MemberRiskProfileService;
+import world.yeon.backend.common.error.ApiErrorResponse;
+import world.yeon.backend.common.error.ApiErrorResponses;
 
 @Validated
 @RestController
@@ -30,9 +32,7 @@ public class MemberRiskProfileController {
 	}
 
 	@ExceptionHandler(Exception.class)
-	public ResponseEntity<ErrorResponse> handleUnhandled(Exception error) {
-		return ResponseEntity.status(500).body(new ErrorResponse("INTERNAL_ERROR", error.getMessage()));
+	public ResponseEntity<ApiErrorResponse> handleUnhandled(Exception error) {
+		return ResponseEntity.status(500).body(ApiErrorResponses.ofCurrentRequest("INTERNAL_ERROR", error.getMessage()));
 	}
-
-	public record ErrorResponse(String code, String message) {}
 }

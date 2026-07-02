@@ -21,6 +21,8 @@ import world.yeon.backend.member_fields.write.dto.MemberFieldMutationResponse;
 import world.yeon.backend.member_fields.write.dto.UpdateMemberFieldRequest;
 import world.yeon.backend.member_fields.write.service.MemberFieldWriteService;
 import world.yeon.backend.member_fields.write.service.MemberFieldWriteServiceException;
+import world.yeon.backend.common.error.ApiErrorResponse;
+import world.yeon.backend.common.error.ApiErrorResponses;
 
 @Validated
 @RestController
@@ -69,10 +71,8 @@ public class MemberFieldWriteController {
 	}
 
 	@ExceptionHandler(MemberFieldWriteServiceException.class)
-	public ResponseEntity<ErrorResponse> handle(MemberFieldWriteServiceException error) {
+	public ResponseEntity<ApiErrorResponse> handle(MemberFieldWriteServiceException error) {
 		return ResponseEntity.status(error.getStatus())
-			.body(new ErrorResponse(error.getCode(), error.getMessage()));
+			.body(ApiErrorResponses.ofCurrentRequest(error.getCode(), error.getMessage()));
 	}
-
-	public record ErrorResponse(String code, String message) {}
 }

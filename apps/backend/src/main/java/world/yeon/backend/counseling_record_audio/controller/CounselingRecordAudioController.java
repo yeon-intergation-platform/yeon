@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 import world.yeon.backend.counseling_record_audio.service.CounselingRecordAudioService;
 import world.yeon.backend.counseling_record_audio.service.CounselingRecordAudioServiceException;
+import world.yeon.backend.common.error.ApiErrorResponse;
+import world.yeon.backend.common.error.ApiErrorResponses;
 
 @RestController
 public class CounselingRecordAudioController {
@@ -40,9 +42,7 @@ public class CounselingRecordAudioController {
 	}
 
 	@ExceptionHandler(CounselingRecordAudioServiceException.class)
-	public ResponseEntity<ErrorResponse> handleServiceError(CounselingRecordAudioServiceException error) {
-		return ResponseEntity.status(error.status()).body(new ErrorResponse(error.code(), error.getMessage()));
+	public ResponseEntity<ApiErrorResponse> handleServiceError(CounselingRecordAudioServiceException error) {
+		return ResponseEntity.status(error.status()).body(ApiErrorResponses.ofCurrentRequest(error.code(), error.getMessage()));
 	}
-
-	public record ErrorResponse(String code, String message) {}
 }

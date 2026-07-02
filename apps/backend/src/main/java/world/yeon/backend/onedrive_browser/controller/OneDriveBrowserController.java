@@ -15,6 +15,8 @@ import world.yeon.backend.onedrive_browser.dto.OneDriveFilesResponse;
 import world.yeon.backend.onedrive_browser.dto.OneDriveStatusResponse;
 import world.yeon.backend.onedrive_browser.service.OneDriveBrowserService;
 import world.yeon.backend.onedrive_browser.service.OneDriveBrowserServiceException;
+import world.yeon.backend.common.error.ApiErrorResponse;
+import world.yeon.backend.common.error.ApiErrorResponses;
 
 @Validated
 @RestController
@@ -42,14 +44,12 @@ public class OneDriveBrowserController {
 	}
 
 	@ExceptionHandler(IllegalArgumentException.class)
-	public ResponseEntity<ErrorResponse> handleBadRequest(IllegalArgumentException error) {
-		return ResponseEntity.badRequest().body(new ErrorResponse("INVALID_REQUEST", error.getMessage()));
+	public ResponseEntity<ApiErrorResponse> handleBadRequest(IllegalArgumentException error) {
+		return ResponseEntity.badRequest().body(ApiErrorResponses.ofCurrentRequest("INVALID_REQUEST", error.getMessage()));
 	}
 
 	@ExceptionHandler(OneDriveBrowserServiceException.class)
-	public ResponseEntity<ErrorResponse> handleServiceError(OneDriveBrowserServiceException error) {
-		return ResponseEntity.status(error.status()).contentType(MediaType.APPLICATION_JSON).body(new ErrorResponse(error.code(), error.getMessage()));
+	public ResponseEntity<ApiErrorResponse> handleServiceError(OneDriveBrowserServiceException error) {
+		return ResponseEntity.status(error.status()).contentType(MediaType.APPLICATION_JSON).body(ApiErrorResponses.ofCurrentRequest(error.code(), error.getMessage()));
 	}
-
-	public record ErrorResponse(String code, String message) {}
 }

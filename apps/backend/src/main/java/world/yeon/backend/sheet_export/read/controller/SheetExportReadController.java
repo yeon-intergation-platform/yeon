@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import world.yeon.backend.sheet_export.read.dto.SheetExportRowsResponse;
 import world.yeon.backend.sheet_export.read.service.SheetExportReadService;
+import world.yeon.backend.common.error.ApiErrorResponse;
+import world.yeon.backend.common.error.ApiErrorResponses;
 
 @Validated
 @RestController
@@ -36,13 +38,11 @@ public class SheetExportReadController {
 	}
 
 	@ExceptionHandler(NoSuchElementException.class)
-	public ResponseEntity<ErrorResponse> handleNotFound(NoSuchElementException error) {
+	public ResponseEntity<ApiErrorResponse> handleNotFound(NoSuchElementException error) {
 		String code = "스페이스를 찾지 못했습니다.".equals(error.getMessage())
 			? "SPACE_NOT_FOUND"
 			: "NOT_FOUND";
 		return ResponseEntity.status(HttpStatus.NOT_FOUND)
-			.body(new ErrorResponse(code, error.getMessage()));
+			.body(ApiErrorResponses.ofCurrentRequest(code, error.getMessage()));
 	}
-
-	public record ErrorResponse(String code, String message) {}
 }

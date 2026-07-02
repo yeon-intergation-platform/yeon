@@ -6,6 +6,7 @@ import {
 import type { ErrorResponseMeta } from "@yeon/api-contract/error";
 import type { YeonRequest } from "@yeon/ui/runtime/YeonBrowserRuntime";
 import { NextResponse } from "next/server";
+import { createErrorResponseBody } from "@/server/bff-error";
 import {
   CommunityChatSpringBackendHttpError,
   fetchCommunityChatMessagesFromSpring,
@@ -24,7 +25,9 @@ function jsonError(
   status: number,
   detail?: ErrorResponseMeta
 ) {
-  return NextResponse.json({ message, ...detail }, { status });
+  return NextResponse.json(createErrorResponseBody(message, status, detail), {
+    status,
+  });
 }
 
 async function readJson(request: YeonRequest) {

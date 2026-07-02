@@ -13,6 +13,8 @@ import org.springframework.web.multipart.MultipartFile;
 import world.yeon.backend.counseling_record_create.service.CounselingRecordCreateService;
 import world.yeon.backend.counseling_record_create.service.CounselingRecordCreateServiceException;
 import world.yeon.backend.counseling_record_details.dto.CounselingRecordDetailItemResponse;
+import world.yeon.backend.common.error.ApiErrorResponse;
+import world.yeon.backend.common.error.ApiErrorResponses;
 
 @RestController
 public class CounselingRecordCreateController {
@@ -54,15 +56,14 @@ public class CounselingRecordCreateController {
 	}
 
 	@ExceptionHandler(CounselingRecordCreateServiceException.class)
-	public ResponseEntity<ErrorResponse> handleServiceError(CounselingRecordCreateServiceException error) {
-		return ResponseEntity.status(error.status()).body(new ErrorResponse(error.code(), error.getMessage()));
+	public ResponseEntity<ApiErrorResponse> handleServiceError(CounselingRecordCreateServiceException error) {
+		return ResponseEntity.status(error.status()).body(ApiErrorResponses.ofCurrentRequest(error.code(), error.getMessage()));
 	}
 
 	@ExceptionHandler(IllegalArgumentException.class)
-	public ResponseEntity<ErrorResponse> handleBadRequest(IllegalArgumentException error) {
-		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse("INVALID_REQUEST", error.getMessage()));
+	public ResponseEntity<ApiErrorResponse> handleBadRequest(IllegalArgumentException error) {
+		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiErrorResponses.ofCurrentRequest("INVALID_REQUEST", error.getMessage()));
 	}
 
 	public record CounselingRecordCreateResponse(CounselingRecordDetailItemResponse record) {}
-	public record ErrorResponse(String code, String message) {}
 }

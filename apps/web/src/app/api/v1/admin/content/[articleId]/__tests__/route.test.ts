@@ -140,6 +140,7 @@ describe("api/v1/admin/content/[articleId] route", () => {
 
     expect(response.status).toBe(404);
     await expect(response.json()).resolves.toEqual({
+      code: "NOT_FOUND",
       message: "관리 대상 공개 콘텐츠 글을 찾을 수 없습니다.",
     });
   });

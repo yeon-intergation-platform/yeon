@@ -24,7 +24,7 @@ describe("counseling-records api shared helpers", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockClearAuthSessionCookie.mockImplementation(
-      (response: Response) => response,
+      (response: Response) => response
     );
   });
 
@@ -32,7 +32,10 @@ describe("counseling-records api shared helpers", () => {
     const response = jsonError("실패", 400);
 
     expect(response.status).toBe(400);
-    await expect(response.json()).resolves.toEqual({ message: "실패" });
+    await expect(response.json()).resolves.toEqual({
+      code: "INVALID_REQUEST",
+      message: "실패",
+    });
   });
 
   it("withHandler는 ServiceError를 그대로 응답으로 변환한다", async () => {
@@ -41,7 +44,10 @@ describe("counseling-records api shared helpers", () => {
     });
 
     expect(response.status).toBe(403);
-    await expect(response.json()).resolves.toEqual({ message: "권한 없음" });
+    await expect(response.json()).resolves.toEqual({
+      code: "FORBIDDEN",
+      message: "권한 없음",
+    });
   });
 
   it("withHandler는 일반 예외를 Sentry에 보고하고 500을 반환한다", async () => {
@@ -53,13 +59,14 @@ describe("counseling-records api shared helpers", () => {
     expect(response.status).toBe(500);
     expect(mockCaptureException).toHaveBeenCalledWith(error);
     await expect(response.json()).resolves.toEqual({
+      code: "INTERNAL_ERROR",
       message: "서버 오류가 발생했습니다.",
     });
   });
 
   it("requireAuthenticatedUser는 세션이 없으면 401을 반환한다", async () => {
     const request = new NextRequest(
-      "http://localhost/api/v1/counseling-records",
+      "http://localhost/api/v1/counseling-records"
     );
 
     const result = await requireAuthenticatedUser(request);
@@ -78,7 +85,7 @@ describe("counseling-records api shared helpers", () => {
         headers: {
           cookie: "yeon.session=stale-token",
         },
-      },
+      }
     );
 
     const result = await requireAuthenticatedUser(request);
@@ -97,7 +104,7 @@ describe("counseling-records api shared helpers", () => {
         headers: {
           cookie: "yeon.session=valid-token",
         },
-      },
+      }
     );
 
     const result = await requireAuthenticatedUser(request);
@@ -106,7 +113,6 @@ describe("counseling-records api shared helpers", () => {
     expect(result.currentUser).toEqual({ id: "user-1" });
     expect(result.response).toBeNull();
   });
-
 
   it("중복 세션 쿠키가 있으면 stale 후보 다음 유효 후보를 사용한다", async () => {
     mockGetAuthUserBySessionToken
@@ -120,18 +126,18 @@ describe("counseling-records api shared helpers", () => {
           cookie:
             "yeon.session=stale-token; yeon.session=valid-token; yeon.session=stale-token",
         },
-      },
+      }
     );
 
     const result = await requireAuthenticatedUser(request);
 
     expect(mockGetAuthUserBySessionToken).toHaveBeenNthCalledWith(
       1,
-      "stale-token",
+      "stale-token"
     );
     expect(mockGetAuthUserBySessionToken).toHaveBeenNthCalledWith(
       2,
-      "valid-token",
+      "valid-token"
     );
     expect(result.currentUser).toEqual({ id: "user-1" });
     expect(result.response).toBeNull();
@@ -148,7 +154,7 @@ describe("counseling-records api shared helpers", () => {
           authorization: "Bearer bearer-token",
           cookie: "yeon.session=cookie-token",
         },
-      },
+      }
     );
 
     const result = await requireAuthenticatedUser(request);
@@ -169,13 +175,13 @@ describe("counseling-records api shared helpers", () => {
           authorization: "Bearer stale-bearer-token",
           cookie: "yeon.session=cookie-token",
         },
-      },
+      }
     );
 
     const result = await requireAuthenticatedUser(request);
 
     expect(mockGetAuthUserBySessionToken).toHaveBeenCalledWith(
-      "stale-bearer-token",
+      "stale-bearer-token"
     );
     expect(result.currentUser).toBeNull();
     expect(result.response?.status).toBe(401);

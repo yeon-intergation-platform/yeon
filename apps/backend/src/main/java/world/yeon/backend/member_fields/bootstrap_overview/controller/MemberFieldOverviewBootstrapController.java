@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import world.yeon.backend.member_fields.bootstrap_overview.dto.OkResponse;
 import world.yeon.backend.member_fields.bootstrap_overview.service.MemberFieldOverviewBootstrapService;
+import world.yeon.backend.common.error.ApiErrorResponse;
+import world.yeon.backend.common.error.ApiErrorResponses;
 
 @Validated
 @RestController
@@ -37,27 +39,25 @@ public class MemberFieldOverviewBootstrapController {
 	}
 
 	@ExceptionHandler(NoSuchElementException.class)
-	public ResponseEntity<ErrorResponse> handleNotFound(NoSuchElementException error) {
+	public ResponseEntity<ApiErrorResponse> handleNotFound(NoSuchElementException error) {
 		String code = switch (error.getMessage()) {
 			case "스페이스를 찾지 못했습니다." -> "SPACE_NOT_FOUND";
 			case "탭을 찾지 못했습니다." -> "TAB_NOT_FOUND";
 			default -> "NOT_FOUND";
 		};
 		return ResponseEntity.status(HttpStatus.NOT_FOUND)
-			.body(new ErrorResponse(code, error.getMessage()));
+			.body(ApiErrorResponses.ofCurrentRequest(code, error.getMessage()));
 	}
 
 	@ExceptionHandler(IllegalArgumentException.class)
-	public ResponseEntity<ErrorResponse> handleBadRequest(IllegalArgumentException error) {
+	public ResponseEntity<ApiErrorResponse> handleBadRequest(IllegalArgumentException error) {
 		String code = switch (error.getMessage()) {
 			case "탭이 스페이스에 속하지 않습니다." -> "TAB_SPACE_MISMATCH";
 			case "개요 탭에서만 기본 필드 초기화를 수행할 수 있습니다." -> "OVERVIEW_TAB_ONLY";
 			default -> "INVALID_REQUEST";
 		};
 		return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-			.body(new ErrorResponse(code, error.getMessage()));
+			.body(ApiErrorResponses.ofCurrentRequest(code, error.getMessage()));
 	}
 
-	public record ErrorResponse(String code, String message) {
-	}
 }

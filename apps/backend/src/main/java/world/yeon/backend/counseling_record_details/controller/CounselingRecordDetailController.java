@@ -17,6 +17,8 @@ import world.yeon.backend.counseling_record_details.dto.CounselingRecordTrendSou
 import world.yeon.backend.counseling_record_details.dto.CounselingRecordTrendSourcesResponse;
 import world.yeon.backend.counseling_record_details.service.CounselingRecordDetailService;
 import world.yeon.backend.counseling_record_details.service.CounselingRecordDetailServiceException;
+import world.yeon.backend.common.error.ApiErrorResponse;
+import world.yeon.backend.common.error.ApiErrorResponses;
 
 @RestController
 public class CounselingRecordDetailController {
@@ -51,15 +53,14 @@ public class CounselingRecordDetailController {
 	}
 
 	@ExceptionHandler(CounselingRecordDetailServiceException.class)
-	public ResponseEntity<ErrorResponse> handleServiceError(CounselingRecordDetailServiceException error) {
-		return ResponseEntity.status(error.status()).body(new ErrorResponse(error.code(), error.getMessage()));
+	public ResponseEntity<ApiErrorResponse> handleServiceError(CounselingRecordDetailServiceException error) {
+		return ResponseEntity.status(error.status()).body(ApiErrorResponses.ofCurrentRequest(error.code(), error.getMessage()));
 	}
 
 	@ExceptionHandler(IllegalArgumentException.class)
-	public ResponseEntity<ErrorResponse> handleBadRequest(IllegalArgumentException error) {
-		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse("INVALID_REQUEST", error.getMessage()));
+	public ResponseEntity<ApiErrorResponse> handleBadRequest(IllegalArgumentException error) {
+		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiErrorResponses.ofCurrentRequest("INVALID_REQUEST", error.getMessage()));
 	}
 
 	public record CounselingRecordDetailResponse(CounselingRecordDetailItemResponse record) {}
-	public record ErrorResponse(String code, String message) {}
 }

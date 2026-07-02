@@ -6,7 +6,7 @@ import java.util.Map;
  * API 도메인 비즈니스 예외 공통 베이스.
  *
  * 모든 도메인 예외가 (status, code, message)를 동일하게 노출하므로, 컨트롤러마다
- * @ExceptionHandler + record ErrorResponse를 중복하지 않고 GlobalApiExceptionHandler가
+ * @ExceptionHandler + 로컬 오류 DTO를 중복하지 않고 GlobalApiExceptionHandler가
  * 일관 처리한다. 상태 전이 실패처럼 클라이언트 분기에 필요한 메타데이터도 선택적으로 보존한다.
  */
 public abstract class ApiException extends RuntimeException {

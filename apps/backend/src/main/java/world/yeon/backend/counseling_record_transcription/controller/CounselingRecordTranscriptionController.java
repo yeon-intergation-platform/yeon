@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.RestController;
 import world.yeon.backend.counseling_record_details.dto.CounselingRecordDetailItemResponse;
 import world.yeon.backend.counseling_record_transcription.service.CounselingRecordTranscriptionService;
 import world.yeon.backend.counseling_record_transcription.service.CounselingRecordTranscriptionServiceException;
+import world.yeon.backend.common.error.ApiErrorResponse;
+import world.yeon.backend.common.error.ApiErrorResponses;
 
 @RestController
 public class CounselingRecordTranscriptionController {
@@ -30,15 +32,14 @@ public class CounselingRecordTranscriptionController {
 	}
 
 	@ExceptionHandler(CounselingRecordTranscriptionServiceException.class)
-	public ResponseEntity<ErrorResponse> handleServiceError(CounselingRecordTranscriptionServiceException error) {
-		return ResponseEntity.status(error.status()).body(new ErrorResponse(error.code(), error.getMessage()));
+	public ResponseEntity<ApiErrorResponse> handleServiceError(CounselingRecordTranscriptionServiceException error) {
+		return ResponseEntity.status(error.status()).body(ApiErrorResponses.ofCurrentRequest(error.code(), error.getMessage()));
 	}
 
 	@ExceptionHandler(IllegalArgumentException.class)
-	public ResponseEntity<ErrorResponse> handleBadRequest(IllegalArgumentException error) {
-		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse("INVALID_REQUEST", error.getMessage()));
+	public ResponseEntity<ApiErrorResponse> handleBadRequest(IllegalArgumentException error) {
+		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiErrorResponses.ofCurrentRequest("INVALID_REQUEST", error.getMessage()));
 	}
 
 	public record CounselingRecordTranscriptionResponse(CounselingRecordDetailItemResponse record) {}
-	public record ErrorResponse(String code, String message) {}
 }

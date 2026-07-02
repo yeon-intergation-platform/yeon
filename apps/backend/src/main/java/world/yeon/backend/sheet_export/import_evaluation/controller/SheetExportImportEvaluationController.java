@@ -17,6 +17,8 @@ import org.springframework.web.bind.annotation.RestController;
 import world.yeon.backend.sheet_export.import_evaluation.dto.SheetExportImportEvaluationRequest;
 import world.yeon.backend.sheet_export.import_evaluation.dto.SheetExportImportEvaluationResponse;
 import world.yeon.backend.sheet_export.import_evaluation.service.SheetExportImportEvaluationService;
+import world.yeon.backend.common.error.ApiErrorResponse;
+import world.yeon.backend.common.error.ApiErrorResponses;
 
 @Validated
 @RestController
@@ -29,13 +31,12 @@ public class SheetExportImportEvaluationController {
 		return service.evaluate(spaceId, request);
 	}
 	@ExceptionHandler(NoSuchElementException.class)
-	public ResponseEntity<ErrorResponse> handleNotFound(NoSuchElementException error) {
+	public ResponseEntity<ApiErrorResponse> handleNotFound(NoSuchElementException error) {
 		String code = "연동된 익스포트 시트를 찾지 못했습니다.".equals(error.getMessage()) ? "SHEET_INTEGRATION_NOT_FOUND" : "NOT_FOUND";
-		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ErrorResponse(code, error.getMessage()));
+		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiErrorResponses.ofCurrentRequest(code, error.getMessage()));
 	}
 	@ExceptionHandler(IllegalArgumentException.class)
-	public ResponseEntity<ErrorResponse> handleBadRequest(IllegalArgumentException error) {
-		return ResponseEntity.badRequest().body(new ErrorResponse("INVALID_REQUEST", error.getMessage()));
+	public ResponseEntity<ApiErrorResponse> handleBadRequest(IllegalArgumentException error) {
+		return ResponseEntity.badRequest().body(ApiErrorResponses.ofCurrentRequest("INVALID_REQUEST", error.getMessage()));
 	}
-	public record ErrorResponse(String code, String message) {}
 }

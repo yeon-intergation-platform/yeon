@@ -1,10 +1,8 @@
 import { chatServiceSessionResponseSchema } from "@yeon/api-contract/chat-service";
-import {
-  errorResponseSchema,
-  type ErrorResponseMeta,
-} from "@yeon/api-contract/error";
+import type { ErrorResponseMeta } from "@yeon/api-contract/error";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
+import { createErrorResponseBody } from "@/server/bff-error";
 import { fetchChatServiceSessionFromSpring } from "@/server/chat-service-auth-spring-client";
 import { ServiceError } from "@/server/errors/service-error";
 
@@ -15,7 +13,7 @@ export function jsonChatServiceError(
   status: number,
   detail?: ErrorResponseMeta
 ) {
-  return NextResponse.json(errorResponseSchema.parse({ message, ...detail }), {
+  return NextResponse.json(createErrorResponseBody(message, status, detail), {
     status,
   });
 }

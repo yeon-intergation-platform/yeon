@@ -100,6 +100,7 @@ describe("api/auth/dev-login route", () => {
     expect(mockIsDevLoginAllowed).toHaveBeenCalled();
     expect(response.status).toBe(404);
     await expect(response.json()).resolves.toEqual({
+      code: "NOT_FOUND",
       message: "선택한 테스트 계정을 찾지 못했습니다.",
     });
   });

@@ -15,6 +15,8 @@ import world.yeon.backend.public_content.dto.PublicContentDtos.PublicContentArti
 import world.yeon.backend.public_content.dto.PublicContentDtos.PublicContentSitemapResponse;
 import world.yeon.backend.public_content.service.PublicContentService;
 import world.yeon.backend.public_content.service.PublicContentServiceException;
+import world.yeon.backend.common.error.ApiErrorResponse;
+import world.yeon.backend.common.error.ApiErrorResponses;
 
 @RestController
 public class PublicContentController {
@@ -47,17 +49,17 @@ public class PublicContentController {
 	}
 
 	@ExceptionHandler(IllegalArgumentException.class)
-	public ResponseEntity<ErrorResponse> handleBadRequest(IllegalArgumentException error) {
+	public ResponseEntity<ApiErrorResponse> handleBadRequest(IllegalArgumentException error) {
 		return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-			.body(new ErrorResponse("INVALID_REQUEST", error.getMessage()));
+			.body(ApiErrorResponses.ofCurrentRequest("INVALID_REQUEST", error.getMessage()));
 	}
 
 	@ExceptionHandler(PublicContentServiceException.class)
-	public ResponseEntity<ErrorResponse> handleServiceError(
+	public ResponseEntity<ApiErrorResponse> handleServiceError(
 		PublicContentServiceException error
 	) {
 		return ResponseEntity.status(error.status())
-			.body(new ErrorResponse(error.code(), error.getMessage()));
+			.body(ApiErrorResponses.ofCurrentRequest(error.code(), error.getMessage()));
 	}
 
 	private String extractSlug(HttpServletRequest request, String channel) {
@@ -75,6 +77,4 @@ public class PublicContentController {
 
 		return URLDecoder.decode(slug, StandardCharsets.UTF_8);
 	}
-
-	public record ErrorResponse(String code, String message) {}
 }

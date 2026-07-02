@@ -19,6 +19,8 @@ import org.springframework.web.method.annotation.HandlerMethodValidationExceptio
 import jakarta.validation.Valid;
 import world.yeon.backend.space_templates.write.dto.ApplySpaceTemplateRequest;
 import world.yeon.backend.space_templates.write.service.SpaceTemplateWriteService;
+import world.yeon.backend.common.error.ApiErrorResponse;
+import world.yeon.backend.common.error.ApiErrorResponses;
 
 @Validated
 @RestController
@@ -42,26 +44,24 @@ public class SpaceTemplateApplyController {
 	}
 
 	@ExceptionHandler(NoSuchElementException.class)
-	public ResponseEntity<ErrorResponse> handleNotFound(NoSuchElementException error) {
+	public ResponseEntity<ApiErrorResponse> handleNotFound(NoSuchElementException error) {
 		String code = error.getMessage() != null && error.getMessage().contains("스페이스")
 			? "SPACE_NOT_FOUND"
 			: "SPACE_TEMPLATE_NOT_FOUND";
 		return ResponseEntity.status(HttpStatus.NOT_FOUND)
-			.body(new ErrorResponse(code, error.getMessage()));
+			.body(ApiErrorResponses.ofCurrentRequest(code, error.getMessage()));
 	}
 
 	@ExceptionHandler({ IllegalArgumentException.class, MethodArgumentNotValidException.class, HandlerMethodValidationException.class })
-	public ResponseEntity<ErrorResponse> handleBadRequest(Exception error) {
+	public ResponseEntity<ApiErrorResponse> handleBadRequest(Exception error) {
 		String message = error instanceof IllegalArgumentException iae
 			? iae.getMessage()
 			: "요청 데이터가 올바르지 않습니다.";
 		return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-			.body(new ErrorResponse("INVALID_REQUEST", message));
+			.body(ApiErrorResponses.ofCurrentRequest("INVALID_REQUEST", message));
 	}
 
 	public record ApplyResponse(boolean ok) {
 	}
 
-	public record ErrorResponse(String code, String message) {
-	}
 }

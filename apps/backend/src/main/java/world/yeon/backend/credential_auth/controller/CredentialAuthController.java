@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.RestController;
 import world.yeon.backend.credential_auth.dto.*;
 import world.yeon.backend.credential_auth.service.CredentialAuthService;
 import world.yeon.backend.credential_auth.service.CredentialAuthServiceException;
+import world.yeon.backend.common.error.ApiErrorResponse;
+import world.yeon.backend.common.error.ApiErrorResponses;
 
 @Validated
 @RestController
@@ -67,9 +69,7 @@ public class CredentialAuthController {
 	}
 
 	@ExceptionHandler(CredentialAuthServiceException.class)
-	public ResponseEntity<ErrorResponse> handleServiceError(CredentialAuthServiceException error) {
-		return ResponseEntity.status(error.status()).body(new ErrorResponse(error.code(), error.getMessage()));
+	public ResponseEntity<ApiErrorResponse> handleServiceError(CredentialAuthServiceException error) {
+		return ResponseEntity.status(error.status()).body(ApiErrorResponses.ofCurrentRequest(error.code(), error.getMessage()));
 	}
-
-	public record ErrorResponse(String code, String message) {}
 }

@@ -1,7 +1,7 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-import { errorResponseSchema } from "@yeon/api-contract/error";
 import type { ErrorResponseMeta } from "@yeon/api-contract/error";
+import { createErrorResponseBody } from "@/server/bff-error";
 import { getAuthSessionTokenFromRequest } from "@/server/auth/request-session-token";
 import { getAuthUserBySessionToken } from "@/server/auth/session";
 import { isAdminUser } from "@/server/auth/admin";
@@ -12,7 +12,7 @@ export function jsonError(
   status: number,
   detail?: ErrorResponseMeta
 ) {
-  return NextResponse.json(errorResponseSchema.parse({ message, ...detail }), {
+  return NextResponse.json(createErrorResponseBody(message, status, detail), {
     status,
   });
 }

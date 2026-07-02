@@ -1,10 +1,8 @@
 import { mergeGuestRequestSchema } from "@yeon/api-contract/card-deck-merge-guest";
-import {
-  errorResponseSchema,
-  type ErrorResponseMeta,
-} from "@yeon/api-contract/error";
+import type { ErrorResponseMeta } from "@yeon/api-contract/error";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
+import { createErrorResponseBody } from "@/server/bff-error";
 import {
   CardDeckMergeGuestSpringBackendHttpError,
   mergeGuestCardDecksInSpring,
@@ -19,7 +17,7 @@ function jsonError(
   status: number,
   detail?: ErrorResponseMeta
 ) {
-  return NextResponse.json(errorResponseSchema.parse({ message, ...detail }), {
+  return NextResponse.json(createErrorResponseBody(message, status, detail), {
     status,
   });
 }

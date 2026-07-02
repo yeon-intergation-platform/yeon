@@ -175,6 +175,7 @@ describe("api/v1/auth/session route", () => {
 
     expect(response.status).toBe(500);
     await expect(response.json()).resolves.toEqual({
+      code: "INTERNAL_ERROR",
       message: "로그아웃을 처리하지 못했습니다.",
     });
   });

@@ -17,6 +17,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import world.yeon.backend.member_field_values.read.dto.MemberFieldValueDetailedListResponse;
 import world.yeon.backend.member_field_values.read.service.MemberFieldValueReadService;
+import world.yeon.backend.common.error.ApiErrorResponse;
+import world.yeon.backend.common.error.ApiErrorResponses;
 
 @Validated
 @RestController
@@ -40,22 +42,20 @@ public class MemberFieldValueMemberReadController {
 	}
 
 	@ExceptionHandler(NoSuchElementException.class)
-	public ResponseEntity<ErrorResponse> handleNotFound(NoSuchElementException error) {
+	public ResponseEntity<ApiErrorResponse> handleNotFound(NoSuchElementException error) {
 		String code = switch (error.getMessage()) {
 			case "스페이스를 찾지 못했습니다." -> "SPACE_NOT_FOUND";
 			case "수강생을 찾지 못했습니다." -> "MEMBER_NOT_FOUND";
 			default -> "NOT_FOUND";
 		};
 		return ResponseEntity.status(HttpStatus.NOT_FOUND)
-			.body(new ErrorResponse(code, error.getMessage()));
+			.body(ApiErrorResponses.ofCurrentRequest(code, error.getMessage()));
 	}
 
 	@ExceptionHandler(IllegalArgumentException.class)
-	public ResponseEntity<ErrorResponse> handleBadRequest(IllegalArgumentException error) {
+	public ResponseEntity<ApiErrorResponse> handleBadRequest(IllegalArgumentException error) {
 		return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-			.body(new ErrorResponse("INVALID_REQUEST", error.getMessage()));
+			.body(ApiErrorResponses.ofCurrentRequest("INVALID_REQUEST", error.getMessage()));
 	}
 
-	public record ErrorResponse(String code, String message) {
-	}
 }

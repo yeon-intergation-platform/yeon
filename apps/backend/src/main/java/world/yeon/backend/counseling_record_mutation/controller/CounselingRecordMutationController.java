@@ -18,6 +18,8 @@ import world.yeon.backend.counseling_record_mutation.dto.UpdateTranscriptSegment
 import world.yeon.backend.counseling_record_mutation.dto.UpdateTranscriptSegmentResponse;
 import world.yeon.backend.counseling_record_mutation.service.CounselingRecordMutationService;
 import world.yeon.backend.counseling_record_mutation.service.CounselingRecordMutationServiceException;
+import world.yeon.backend.common.error.ApiErrorResponse;
+import world.yeon.backend.common.error.ApiErrorResponses;
 
 @RestController
 public class CounselingRecordMutationController {
@@ -73,14 +75,12 @@ public class CounselingRecordMutationController {
 	}
 
 	@ExceptionHandler(CounselingRecordMutationServiceException.class)
-	public ResponseEntity<ErrorResponse> handleServiceError(CounselingRecordMutationServiceException error) {
-		return ResponseEntity.status(error.status()).body(new ErrorResponse(error.code(), error.getMessage()));
+	public ResponseEntity<ApiErrorResponse> handleServiceError(CounselingRecordMutationServiceException error) {
+		return ResponseEntity.status(error.status()).body(ApiErrorResponses.ofCurrentRequest(error.code(), error.getMessage()));
 	}
 
 	@ExceptionHandler(IllegalArgumentException.class)
-	public ResponseEntity<ErrorResponse> handleBadRequest(IllegalArgumentException error) {
-		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse("INVALID_REQUEST", error.getMessage()));
+	public ResponseEntity<ApiErrorResponse> handleBadRequest(IllegalArgumentException error) {
+		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiErrorResponses.ofCurrentRequest("INVALID_REQUEST", error.getMessage()));
 	}
-
-	public record ErrorResponse(String code, String message) {}
 }

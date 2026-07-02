@@ -1,4 +1,3 @@
-import { errorResponseSchema } from "@yeon/api-contract/error";
 import {
   createUserBodySchema,
   createUserResponseSchema,
@@ -16,9 +15,12 @@ import {
   fetchUsersFromSpring,
   UsersSpringBackendHttpError,
 } from "@/server/users-spring-client";
+import { createErrorResponseBody } from "@/server/bff-error";
 
 function jsonError(message: string, status: number) {
-  return NextResponse.json(errorResponseSchema.parse({ message }), { status });
+  return NextResponse.json(createErrorResponseBody(message, status), {
+    status,
+  });
 }
 
 function getAuthenticatedUserFromRequest(request: NextRequest) {
