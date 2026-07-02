@@ -22,6 +22,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { YeonButton, YeonField, YeonText, YeonView } from "@yeon/ui";
+import { useYeonRouter } from "@yeon/ui/runtime/YeonNavigation";
 import { CommonProductHeader } from "@/components/product-shell/product-header";
 import {
   TODO_TASK_ESTIMATES,
@@ -51,8 +52,12 @@ import {
   type TodoTaskRecommendation,
   type TodoTaskStatus,
 } from "./todo-service-model";
+import { getTodoFocusHref } from "./todo-service-routing";
+import {
+  readTodoServiceState,
+  writeTodoServiceState,
+} from "./todo-service-storage";
 
-const STORAGE_KEY = "yeon.todo-service.state.v1";
 const TODAY_LIMIT = 5;
 const WEEKDAY_LABELS = ["일", "월", "화", "수", "목", "금", "토"];
 const BOARD_SURFACE_CLASS = "rounded-lg border border-[#e5e5e5] bg-white";
@@ -60,17 +65,11 @@ const SUBTLE_TEXT_CLASS = "text-[#aaa]";
 const FOCUS_CLASS =
   "focus:outline-none focus-visible:ring-2 focus-visible:ring-[#111] focus-visible:ring-offset-2";
 
-type TodoPriorityFilter = "all" | TodoTaskPriority;
-type TodoEstimateFilter = "all" | TodoTaskEstimate;
-
 const PRIORITY_OPTIONS: { value: TodoTaskPriority; label: string }[] = [
   { value: TODO_TASK_PRIORITIES.important, label: "높음" },
   { value: TODO_TASK_PRIORITIES.normal, label: "보통" },
   { value: TODO_TASK_PRIORITIES.light, label: "낮음" },
 ];
-
-const PRIORITY_FILTER_OPTIONS: { value: TodoPriorityFilter; label: string }[] =
-  [{ value: "all", label: "전체" }, ...PRIORITY_OPTIONS];
 
 const ESTIMATE_META: Record<TodoTaskEstimate, { label: string }> = {
   [TODO_TASK_ESTIMATES.five]: { label: "5분" },
@@ -87,9 +86,6 @@ const CREATE_ESTIMATE_OPTIONS: { value: TodoTaskEstimate; label: string }[] = [
   { value: TODO_TASK_ESTIMATES.twoHours, label: "2시간+" },
 ];
 
-const ESTIMATE_FILTER_OPTIONS: { value: TodoEstimateFilter; label: string }[] =
-  [{ value: "all", label: "전체" }, ...CREATE_ESTIMATE_OPTIONS];
-
 function createClientTaskId() {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
     return crypto.randomUUID();
@@ -99,13 +95,6 @@ function createClientTaskId() {
 
 function getNowIso() {
   return new Date().toISOString();
-}
-
-function readStoredState(today: string) {
-  if (typeof window === "undefined") {
-    return parseTodoServiceState(null, today);
-  }
-  return parseTodoServiceState(window.localStorage.getItem(STORAGE_KEY), today);
 }
 
 function formatDateLabel(date: string) {
@@ -149,22 +138,6 @@ function getTaskMinuteSummary(tasks: readonly TodoTask[]) {
   return minutes === 0 ? `예상 ${hours}h` : `예상 ${hours}h ${minutes}m`;
 }
 
-function matchesBoardFilters({
-  task,
-  priorityFilter,
-  estimateFilter,
-}: {
-  task: TodoTask;
-  priorityFilter: TodoPriorityFilter;
-  estimateFilter: TodoEstimateFilter;
-}) {
-  const priorityMatches =
-    priorityFilter === "all" || task.priority === priorityFilter;
-  const estimateMatches =
-    estimateFilter === "all" || task.estimate === estimateFilter;
-  return priorityMatches && estimateMatches;
-}
-
 function IconButton({
   label,
   onClick,
@@ -177,16 +150,23 @@ function IconButton({
   disabled?: boolean;
 }) {
   return (
-    <button
-      type="button"
-      aria-label={label}
-      title={label}
-      onClick={onClick}
-      disabled={disabled}
-      className={`inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg border border-[#e5e5e5] bg-white text-[#111] transition-colors hover:bg-[#fafafa] disabled:cursor-not-allowed disabled:opacity-50 ${FOCUS_CLASS}`}
-    >
-      {children}
-    </button>
+    <span className="group relative inline-flex">
+      <button
+        type="button"
+        aria-label={label}
+        onClick={onClick}
+        disabled={disabled}
+        className={`inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg border border-[#e5e5e5] bg-white text-[#111] transition-colors hover:bg-[#fafafa] disabled:cursor-not-allowed disabled:opacity-50 ${FOCUS_CLASS}`}
+      >
+        {children}
+      </button>
+      <span
+        role="tooltip"
+        className="pointer-events-none absolute left-1/2 top-[calc(100%+6px)] z-20 hidden -translate-x-1/2 whitespace-nowrap rounded-lg border border-[#e5e5e5] bg-[#111] px-2 py-1 text-[11px] font-bold text-white shadow-sm group-focus-within:block group-hover:block"
+      >
+        {label}
+      </span>
+    </span>
   );
 }
 
@@ -286,6 +266,7 @@ function TaskCard({
   onDelete,
   onNoteChange,
   onMoveNextDay,
+  onStart,
   showNoteEditor = true,
   showScore = false,
 }: {
@@ -294,6 +275,7 @@ function TaskCard({
   onDelete: (taskId: string) => void;
   onNoteChange: (taskId: string, note: string) => void;
   onMoveNextDay: (taskId: string) => void;
+  onStart: (task: TodoTask) => void;
   showNoteEditor?: boolean;
   showScore?: boolean;
 }) {
@@ -317,7 +299,20 @@ function TaskCard({
             <StatusBadge task={task} />
           </YeonView>
         </YeonView>
-        <YeonView className="flex shrink-0 gap-1">
+        <YeonView className="flex shrink-0 flex-wrap justify-end gap-1">
+          {task.status === TODO_TASK_STATUSES.planned ||
+          task.status === TODO_TASK_STATUSES.active ? (
+            <YeonButton
+              type="button"
+              variant="secondary"
+              size="sm"
+              className="h-9 gap-1.5 rounded-lg px-3"
+              onClick={() => onStart(task)}
+            >
+              <Play size={14} aria-hidden="true" />
+              시작
+            </YeonButton>
+          ) : null}
           {task.status === TODO_TASK_STATUSES.inbox ||
           task.status === TODO_TASK_STATUSES.deferred ? (
             <IconButton
@@ -325,14 +320,6 @@ function TaskCard({
               onClick={() => onStatus(task.id, TODO_TASK_STATUSES.planned)}
             >
               <ArrowRight size={16} aria-hidden="true" />
-            </IconButton>
-          ) : null}
-          {task.status === TODO_TASK_STATUSES.planned ? (
-            <IconButton
-              label="진행 중으로 지정"
-              onClick={() => onStatus(task.id, TODO_TASK_STATUSES.active)}
-            >
-              <Play size={16} aria-hidden="true" />
             </IconButton>
           ) : null}
           {task.status === TODO_TASK_STATUSES.active ? (
@@ -574,7 +561,7 @@ function RecommendationPanel({
   onShowMore,
 }: {
   recommendations: readonly TodoTaskRecommendation[];
-  onStart: (taskId: string) => void;
+  onStart: (task: TodoTask) => void;
   onMoveNextDay: (taskId: string) => void;
   onDone: (taskId: string) => void;
   onShowMore: () => void;
@@ -661,7 +648,7 @@ function RecommendationPanel({
                   type="button"
                   variant="secondary"
                   size="sm"
-                  onClick={() => onStart(task.id)}
+                  onClick={() => onStart(task)}
                 >
                   <Play size={13} aria-hidden="true" />
                   시작
@@ -750,6 +737,7 @@ function PrioritySuggestionPanel({
 }
 
 export function TodoServiceScreen() {
+  const router = useYeonRouter();
   const actualToday = useMemo(() => getTodayServiceLocalDate(), []);
   const [selectedDate, setSelectedDate] = useState(actualToday);
   const [visibleDate, setVisibleDate] = useState(actualToday);
@@ -764,15 +752,11 @@ export function TodoServiceScreen() {
   const [estimate, setEstimate] = useState<TodoTaskEstimate>(
     TODO_TASK_ESTIMATES.fifteen
   );
-  const [priorityFilter, setPriorityFilter] =
-    useState<TodoPriorityFilter>("all");
-  const [estimateFilter, setEstimateFilter] =
-    useState<TodoEstimateFilter>("all");
   const [recommendationLimit, setRecommendationLimit] = useState(3);
   const [notice, setNotice] = useState<string | null>(null);
 
   useEffect(() => {
-    setState(readStoredState(actualToday));
+    setState(readTodoServiceState(actualToday));
     setHydrated(true);
   }, [actualToday]);
 
@@ -780,7 +764,7 @@ export function TodoServiceScreen() {
     if (!hydrated) return;
 
     try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      writeTodoServiceState(state);
       setNotice(null);
     } catch {
       setNotice("브라우저 저장소에 저장하지 못했습니다.");
@@ -817,14 +801,8 @@ export function TodoServiceScreen() {
     ...(groups.active ? [groups.active] : []),
     ...groups.planned,
   ];
-  const filteredSelectedDateTasks = selectedDateTasks.filter((task) =>
-    matchesBoardFilters({ task, priorityFilter, estimateFilter })
-  );
-  const filteredRecommendationTasks = groups.planned.filter((task) =>
-    matchesBoardFilters({ task, priorityFilter, estimateFilter })
-  );
   const recommendations = buildTodoTaskRecommendations(
-    filteredRecommendationTasks,
+    groups.planned,
     recommendationLimit
   );
   const lowPriorityTasks = groups.planned.filter(
@@ -886,6 +864,39 @@ export function TodoServiceScreen() {
         today: selectedDate,
         nowIso: getNowIso(),
       })
+    );
+  }
+
+  function handleStartTask(task: TodoTask) {
+    const focusDate = task.plannedFor ?? selectedDate;
+    const nowIso = getNowIso();
+    const nextState: TodoServiceState = {
+      ...state,
+      lastOpenedDate: actualToday,
+      tasks: setTodoTaskStatus({
+        tasks: state.tasks,
+        taskId: task.id,
+        status: TODO_TASK_STATUSES.active,
+        today: focusDate,
+        nowIso,
+      }),
+    };
+
+    setState(nextState);
+    try {
+      writeTodoServiceState(nextState);
+    } catch {
+      setNotice("브라우저 저장소에 저장하지 못했습니다.");
+      return;
+    }
+
+    router.push(
+      getTodoFocusHref({
+        taskId: task.id,
+        date: focusDate,
+        minutes: getTodoTaskEstimateMinutes(task.estimate),
+      }),
+      { scroll: false }
     );
   }
 
@@ -1034,7 +1045,7 @@ export function TodoServiceScreen() {
             handleAddTask(TODO_TASK_STATUSES.planned);
           }}
         >
-          <YeonView className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto_220px_auto_auto] lg:items-center">
+          <YeonView className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto_auto_auto] lg:items-center">
             <YeonField
               aria-label="새 할 일"
               value={title}
@@ -1050,25 +1061,6 @@ export function TodoServiceScreen() {
               <Plus size={15} aria-hidden="true" />
               추가
             </YeonButton>
-            <YeonField
-              as="select"
-              aria-label="우선순위 필터"
-              value={priorityFilter}
-              onChange={(event) => {
-                const nextPriority = event.target.value as TodoPriorityFilter;
-                setPriorityFilter(nextPriority);
-                if (nextPriority !== "all") {
-                  setPriority(nextPriority);
-                }
-              }}
-              className="h-11 rounded-lg bg-white text-[13px] font-bold"
-            >
-              {PRIORITY_FILTER_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  우선순위: {option.label}
-                </option>
-              ))}
-            </YeonField>
             <YeonButton type="submit" variant="primary" className="h-11 gap-2">
               <Plus size={16} aria-hidden="true" />
               {selectedDate === actualToday ? "오늘 추가" : "선택 날짜 추가"}
@@ -1091,16 +1083,11 @@ export function TodoServiceScreen() {
             >
               우선순위
             </YeonText>
-            {PRIORITY_FILTER_OPTIONS.map((option) => (
+            {PRIORITY_OPTIONS.map((option) => (
               <SegmentButton
                 key={option.value}
-                selected={priorityFilter === option.value}
-                onClick={() => {
-                  setPriorityFilter(option.value);
-                  if (option.value !== "all") {
-                    setPriority(option.value);
-                  }
-                }}
+                selected={priority === option.value}
+                onClick={() => setPriority(option.value)}
               >
                 {option.label}
               </SegmentButton>
@@ -1112,16 +1099,11 @@ export function TodoServiceScreen() {
             >
               예상 시간
             </YeonText>
-            {ESTIMATE_FILTER_OPTIONS.map((option) => (
+            {CREATE_ESTIMATE_OPTIONS.map((option) => (
               <SegmentButton
                 key={option.value}
-                selected={estimateFilter === option.value}
-                onClick={() => {
-                  setEstimateFilter(option.value);
-                  if (option.value !== "all") {
-                    setEstimate(option.value);
-                  }
-                }}
+                selected={estimate === option.value}
+                onClick={() => setEstimate(option.value)}
               >
                 {option.label}
               </SegmentButton>
@@ -1176,16 +1158,12 @@ export function TodoServiceScreen() {
           <YeonView className="grid gap-5">
             <RecommendationPanel
               recommendations={recommendations}
-              onStart={(taskId) =>
-                handleStatus(taskId, TODO_TASK_STATUSES.active)
-              }
+              onStart={handleStartTask}
               onMoveNextDay={handleMoveTaskToNextDay}
               onDone={(taskId) => handleStatus(taskId, TODO_TASK_STATUSES.done)}
               onShowMore={() =>
                 setRecommendationLimit((current) =>
-                  current >= filteredRecommendationTasks.length
-                    ? 3
-                    : filteredRecommendationTasks.length
+                  current >= groups.planned.length ? 3 : groups.planned.length
                 )
               }
             />
@@ -1195,11 +1173,11 @@ export function TodoServiceScreen() {
                 title={`${selectedDate === actualToday ? "Today" : "선택 날짜"} ${
                   openSelectedDateCount > TODAY_LIMIT ? "· 줄이기 권장" : ""
                 }`}
-                count={filteredSelectedDateTasks.length}
+                count={selectedDateTasks.length}
                 icon={<ListTodo size={17} aria-hidden="true" />}
-                emptyText="필터에 맞는 선택 날짜 일이 없습니다."
+                emptyText="선택 날짜에 남은 일이 없습니다."
               >
-                {filteredSelectedDateTasks.map((task) => (
+                {selectedDateTasks.map((task) => (
                   <TaskCard
                     key={task.id}
                     task={task}
@@ -1207,6 +1185,7 @@ export function TodoServiceScreen() {
                     onDelete={handleDelete}
                     onNoteChange={handleNoteChange}
                     onMoveNextDay={handleMoveTaskToNextDay}
+                    onStart={handleStartTask}
                     showScore
                   />
                 ))}
@@ -1225,6 +1204,7 @@ export function TodoServiceScreen() {
                     onDelete={handleDelete}
                     onNoteChange={handleNoteChange}
                     onMoveNextDay={handleMoveTaskToNextDay}
+                    onStart={handleStartTask}
                     showNoteEditor={false}
                   />
                 ))}
@@ -1251,6 +1231,7 @@ export function TodoServiceScreen() {
                     onDelete={handleDelete}
                     onNoteChange={handleNoteChange}
                     onMoveNextDay={handleMoveTaskToNextDay}
+                    onStart={handleStartTask}
                   />
                 ))}
               </TaskColumn>
@@ -1295,7 +1276,7 @@ export function TodoServiceScreen() {
                 tone="inherit"
                 className={`mt-1 text-[12px] font-semibold ${SUBTLE_TEXT_CLASS}`}
               >
-                필터와 관계없이 선택 날짜에 남은 일 기준입니다.
+                선택 날짜에 남은 일 기준입니다.
               </YeonText>
             </YeonView>
           </YeonView>
