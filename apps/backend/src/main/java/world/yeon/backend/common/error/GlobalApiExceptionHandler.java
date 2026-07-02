@@ -1,9 +1,13 @@
 package world.yeon.backend.common.error;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
@@ -35,40 +39,68 @@ public class GlobalApiExceptionHandler {
 	private static final String CODE_HTTP_STATUS_ERROR = "HTTP_STATUS_ERROR";
 
 	@ExceptionHandler(ApiException.class)
-	public ResponseEntity<ApiErrorResponse> handleApiException(ApiException error) {
-		return error(error.status(), error.code(), error.getMessage());
+	public ResponseEntity<ApiErrorResponse> handleApiException(ApiException error, HttpServletRequest request) {
+		return ResponseEntity.status(error.status()).body(ApiErrorResponses.from(request, error));
 	}
 
 	@ExceptionHandler(MissingServletRequestParameterException.class)
-	public ResponseEntity<ApiErrorResponse> handleMissingRequestParameter() {
+	public ResponseEntity<ApiErrorResponse> handleMissingRequestParameter(
+		MissingServletRequestParameterException error,
+		HttpServletRequest request
+	) {
 		return error(
+			request,
 			HttpStatus.BAD_REQUEST.value(),
 			CODE_REQUEST_PARAMETER_REQUIRED,
-			"필수 요청 파라미터가 누락되었습니다."
+			"필수 요청 파라미터가 누락되었습니다.",
+			details(
+				"parameter",
+				error.getParameterName(),
+				"expectedType",
+				error.getParameterType()
+			)
 		);
 	}
 
 	@ExceptionHandler(MissingRequestHeaderException.class)
-	public ResponseEntity<ApiErrorResponse> handleMissingRequestHeader() {
+	public ResponseEntity<ApiErrorResponse> handleMissingRequestHeader(
+		MissingRequestHeaderException error,
+		HttpServletRequest request
+	) {
 		return error(
+			request,
 			HttpStatus.BAD_REQUEST.value(),
 			CODE_REQUEST_HEADER_REQUIRED,
-			"필수 요청 헤더가 누락되었습니다."
+			"필수 요청 헤더가 누락되었습니다.",
+			details("header", error.getHeaderName())
 		);
 	}
 
 	@ExceptionHandler(MethodArgumentTypeMismatchException.class)
-	public ResponseEntity<ApiErrorResponse> handleMethodArgumentTypeMismatch() {
+	public ResponseEntity<ApiErrorResponse> handleMethodArgumentTypeMismatch(
+		MethodArgumentTypeMismatchException error,
+		HttpServletRequest request
+	) {
 		return error(
+			request,
 			HttpStatus.BAD_REQUEST.value(),
 			CODE_REQUEST_VALUE_TYPE_INVALID,
-			"요청 값의 형식이 올바르지 않습니다."
+			"요청 값의 형식이 올바르지 않습니다.",
+			details(
+				"name",
+				error.getName(),
+				"requiredType",
+				requiredTypeName(error),
+				"value",
+				error.getValue()
+			)
 		);
 	}
 
 	@ExceptionHandler(HttpMessageNotReadableException.class)
-	public ResponseEntity<ApiErrorResponse> handleHttpMessageNotReadable() {
+	public ResponseEntity<ApiErrorResponse> handleHttpMessageNotReadable(HttpServletRequest request) {
 		return error(
+			request,
 			HttpStatus.BAD_REQUEST.value(),
 			CODE_REQUEST_BODY_INVALID,
 			"요청 본문 형식이 올바르지 않습니다."
@@ -80,11 +112,13 @@ public class GlobalApiExceptionHandler {
 		HandlerMethodValidationException.class,
 		ConstraintViolationException.class
 	})
-	public ResponseEntity<ApiErrorResponse> handleValidationFailure() {
+	public ResponseEntity<ApiErrorResponse> handleValidationFailure(Exception error, HttpServletRequest request) {
 		return error(
+			request,
 			HttpStatus.BAD_REQUEST.value(),
 			CODE_REQUEST_VALIDATION_FAILED,
-			"요청 데이터가 올바르지 않습니다."
+			"요청 데이터가 올바르지 않습니다.",
+			validationDetails(error)
 		);
 	}
 
@@ -92,8 +126,9 @@ public class GlobalApiExceptionHandler {
 		NoHandlerFoundException.class,
 		NoResourceFoundException.class
 	})
-	public ResponseEntity<ApiErrorResponse> handleNotFound() {
+	public ResponseEntity<ApiErrorResponse> handleNotFound(HttpServletRequest request) {
 		return error(
+			request,
 			HttpStatus.NOT_FOUND.value(),
 			CODE_RESOURCE_NOT_FOUND,
 			"요청한 리소스를 찾을 수 없습니다."
@@ -101,17 +136,36 @@ public class GlobalApiExceptionHandler {
 	}
 
 	@ExceptionHandler(ResponseStatusException.class)
-	public ResponseEntity<ApiErrorResponse> handleResponseStatusException(ResponseStatusException error) {
+	public ResponseEntity<ApiErrorResponse> handleResponseStatusException(
+		ResponseStatusException error,
+		HttpServletRequest request
+	) {
 		int status = error.getStatusCode().value();
 		return error(
+			request,
 			status,
 			codeForStatus(status),
 			messageOrDefault(error.getReason(), defaultMessageForStatus(status))
 		);
 	}
 
-	private static ResponseEntity<ApiErrorResponse> error(int status, String code, String message) {
-		return ResponseEntity.status(status).body(new ApiErrorResponse(code, message));
+	private static ResponseEntity<ApiErrorResponse> error(
+		HttpServletRequest request,
+		int status,
+		String code,
+		String message
+	) {
+		return error(request, status, code, message, null);
+	}
+
+	private static ResponseEntity<ApiErrorResponse> error(
+		HttpServletRequest request,
+		int status,
+		String code,
+		String message,
+		Map<String, Object> details
+	) {
+		return ResponseEntity.status(status).body(ApiErrorResponses.of(request, code, message, details));
 	}
 
 	private static String codeForStatus(int status) {
@@ -139,5 +193,54 @@ public class GlobalApiExceptionHandler {
 			return defaultMessage;
 		}
 		return message;
+	}
+
+	private static Map<String, Object> details(Object... keysAndValues) {
+		Map<String, Object> details = new LinkedHashMap<>();
+		for (int index = 0; index + 1 < keysAndValues.length; index += 2) {
+			if (!(keysAndValues[index] instanceof String key)) {
+				continue;
+			}
+			Object value = keysAndValues[index + 1];
+			if (value != null) {
+				details.put(key, value);
+			}
+		}
+		if (details.isEmpty()) {
+			return null;
+		}
+		return details;
+	}
+
+	private static String requiredTypeName(MethodArgumentTypeMismatchException error) {
+		Class<?> requiredType = error.getRequiredType();
+		if (requiredType == null) {
+			return null;
+		}
+		return requiredType.getSimpleName();
+	}
+
+	private static Map<String, Object> validationDetails(Exception error) {
+		if (error instanceof MethodArgumentNotValidException methodArgumentError) {
+			Map<String, Object> details = new LinkedHashMap<>();
+			for (FieldError fieldError : methodArgumentError.getBindingResult().getFieldErrors()) {
+				details.putIfAbsent(
+					fieldError.getField(),
+					messageOrDefault(fieldError.getDefaultMessage(), "유효하지 않은 값입니다.")
+				);
+			}
+			return ApiErrorMetadata.copyOrNull(details);
+		}
+		if (error instanceof ConstraintViolationException constraintError) {
+			Map<String, Object> details = new LinkedHashMap<>();
+			constraintError.getConstraintViolations().forEach(violation ->
+				details.putIfAbsent(
+					violation.getPropertyPath().toString(),
+					messageOrDefault(violation.getMessage(), "유효하지 않은 값입니다.")
+				)
+			);
+			return ApiErrorMetadata.copyOrNull(details);
+		}
+		return null;
 	}
 }

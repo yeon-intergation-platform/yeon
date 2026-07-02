@@ -1,10 +1,13 @@
 package world.yeon.backend.card_decks.assets.controller;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import world.yeon.backend.common.error.ApiErrorResponse;
+import world.yeon.backend.common.error.ApiErrorResponses;
 
 /**
  * 멀티파트 업로드 크기 초과를 일관된 400 응답으로 변환한다.
@@ -18,11 +21,13 @@ import org.springframework.web.multipart.MaxUploadSizeExceededException;
 public class MultipartUploadExceptionHandler {
 
 	@ExceptionHandler(MaxUploadSizeExceededException.class)
-	public ResponseEntity<CardDeckAssetController.ErrorResponse> handleMaxUploadSize(
-		MaxUploadSizeExceededException error
+	public ResponseEntity<ApiErrorResponse> handleMaxUploadSize(
+		MaxUploadSizeExceededException error,
+		HttpServletRequest request
 	) {
 		return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-			.body(new CardDeckAssetController.ErrorResponse(
+			.body(ApiErrorResponses.of(
+				request,
 				"CARD_ASSET_TOO_LARGE",
 				"이미지는 5MB 이하만 업로드할 수 있습니다."
 			));

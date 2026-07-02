@@ -9,7 +9,6 @@ public class CardDeckAssetServiceException extends ApiException {
 	}
 
 	public CardDeckAssetServiceException(int status, String code, String message, Throwable cause) {
-		super(status, code, message);
-		initCause(cause);
+		super(status, code, message, cause);
 	}
 }

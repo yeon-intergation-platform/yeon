@@ -1,6 +1,7 @@
 package world.yeon.backend.typing_decks.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -28,6 +29,8 @@ import world.yeon.backend.typing_decks.dto.TypingDeckResponse;
 import world.yeon.backend.typing_decks.dto.TypingRaceSeedResponse;
 import world.yeon.backend.typing_decks.dto.UpdateTypingDeckPassageRequest;
 import world.yeon.backend.typing_decks.dto.UpdateTypingDeckRequest;
+import world.yeon.backend.common.error.ApiErrorResponse;
+import world.yeon.backend.common.error.ApiErrorResponses;
 import world.yeon.backend.typing_decks.service.TypingDeckService;
 
 @Validated
@@ -140,9 +143,8 @@ public class TypingDeckController {
 	}
 
 	@ExceptionHandler(IllegalArgumentException.class)
-	public ResponseEntity<ErrorResponse> handleBadRequest(IllegalArgumentException error) {
-		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse("INVALID_REQUEST", error.getMessage()));
+	public ResponseEntity<ApiErrorResponse> handleBadRequest(IllegalArgumentException error, HttpServletRequest request) {
+		return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+			.body(ApiErrorResponses.of(request, "INVALID_REQUEST", error.getMessage()));
 	}
-
-	public record ErrorResponse(String code, String message) {}
 }

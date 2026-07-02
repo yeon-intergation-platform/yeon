@@ -46,6 +46,4 @@ public class CardDeckAssetController {
 		String encoded = index >= 0 ? uri.substring(index + ASSET_PATH_PREFIX.length()) : "";
 		return URLDecoder.decode(encoded, StandardCharsets.UTF_8);
 	}
-
-	public record ErrorResponse(String code, String message) {}
 }

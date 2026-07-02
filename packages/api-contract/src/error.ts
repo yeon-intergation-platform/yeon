@@ -14,17 +14,23 @@ import { z } from "zod";
  * - currentState/requiredState: 상태 전이 실패일 때만.
  * - failedCondition: 선행 조건이 깨진 게 핵심일 때만.
  * - blockedAction: 어떤 행동이 막혔는지가 도움이 될 때만.
- * - actionGuide: 사용자가 취할 다음 행동이 명확할 때만.
+ * - actionGuide: 사용자가 취할 다음 행동이 명확할 때만. 신규 생산자는 객체형을 우선한다.
  */
+export const errorActionGuideSchema = z.union([
+  z.string(),
+  z.record(z.string(), z.unknown()),
+]);
+
 export const errorResponseSchema = z.object({
   code: z.string().optional(),
   message: z.string(),
+  requestId: z.string().optional(),
   details: z.record(z.string(), z.unknown()).optional(),
   currentState: z.string().optional(),
   requiredState: z.string().optional(),
   failedCondition: z.string().optional(),
   blockedAction: z.string().optional(),
-  actionGuide: z.string().optional(),
+  actionGuide: errorActionGuideSchema.optional(),
 });
 
 export type ErrorResponse = z.infer<typeof errorResponseSchema>;
