@@ -87,7 +87,7 @@
 
 .stage {
   display: grid;
-  width: min(520px, 100%);
+  width: min(760px, 100%);
   flex: 1;
   place-items: center;
   margin: 0 auto;
@@ -104,14 +104,15 @@
 .focusPanel {
   display: grid;
   width: 100%;
-  gap: 22px;
-  padding: clamp(20px, 3vw, 30px);
+  gap: clamp(24px, 3vw, 34px);
+  padding: clamp(30px, 4vw, 44px);
 }
 
 .taskMeta {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  margin-bottom: 18px;
 }
 
 .pill {
@@ -127,21 +128,27 @@
   font-weight: 900;
 }
 
+.taskMeta .pill {
+  min-height: 40px;
+  padding: 0 20px;
+  font-size: 17px;
+}
+
 .taskTitle {
   margin: 0;
   color: #2e211c;
-  font-size: clamp(24px, 3vw, 34px);
+  font-size: clamp(32px, 4vw, 46px);
   font-weight: 950;
-  line-height: 1.2;
+  line-height: 1.14;
   letter-spacing: 0;
 }
 
 .timerCard {
   display: grid;
-  gap: 16px;
+  gap: 22px;
   border: 1px solid rgba(63, 48, 40, 0.12);
-  border-radius: 24px;
-  padding: 20px;
+  border-radius: 28px;
+  padding: clamp(24px, 3vw, 30px);
   background: rgba(255, 255, 255, 0.56);
 }
 
@@ -151,16 +158,17 @@
   justify-content: space-between;
   gap: 12px;
   color: #6b5548;
-  font-size: 13px;
+  font-size: 16px;
   font-weight: 900;
 }
 
 .timerValue {
   color: #221814;
-  font-size: clamp(58px, 8vw, 92px);
+  font-size: clamp(88px, 12vw, 132px);
   font-weight: 950;
   line-height: 0.95;
   letter-spacing: 0;
+  text-align: center;
 }
 
 .meter {
@@ -181,15 +189,15 @@
 .presetGrid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 8px;
+  gap: 18px;
 }
 
 .presetButton {
-  min-height: 40px;
+  min-height: 56px;
   border-color: rgba(63, 48, 40, 0.18);
   background: rgba(255, 255, 255, 0.6);
   color: #3f3028;
-  font-size: 13px;
+  font-size: 18px;
 }
 
 .presetButtonActive {
@@ -200,12 +208,12 @@
 
 .minuteControl {
   display: grid;
-  grid-template-columns: 42px minmax(0, 1fr) 42px;
-  gap: 8px;
+  grid-template-columns: 58px minmax(0, 1fr) 58px;
+  gap: 18px;
 }
 
 .iconButton {
-  min-height: 42px;
+  min-height: 58px;
   border-color: rgba(63, 48, 40, 0.18);
   background: rgba(255, 255, 255, 0.6);
   color: #2e211c;
@@ -213,28 +221,28 @@
 
 .minuteInput {
   width: 100%;
-  min-height: 42px;
+  min-height: 58px;
   border: 1px solid rgba(63, 48, 40, 0.18);
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.6);
   color: #2e211c;
-  font-size: 15px;
+  font-size: 20px;
   font-weight: 900;
   text-align: center;
 }
 
 .buttonRow {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 10px;
+  grid-template-columns: minmax(0, 2.2fr) minmax(160px, 0.8fr);
+  gap: 18px;
 }
 
 .primaryButton,
 .ghostButton {
-  min-height: 52px;
-  gap: 8px;
-  padding: 0 20px;
-  font-size: 15px;
+  min-height: 76px;
+  gap: 12px;
+  padding: 0 24px;
+  font-size: 24px;
 }
 
 .primaryButton {
@@ -251,16 +259,16 @@
 
 .completionButton {
   display: inline-flex;
-  min-height: 54px;
+  min-height: 82px;
   cursor: pointer;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 12px;
   border: 0;
-  border-radius: 18px;
+  border-radius: 26px;
   background: #2e211c;
   color: #fff8ef;
-  font-size: 16px;
+  font-size: 26px;
   font-weight: 950;
 }
 
@@ -294,5 +302,75 @@
 
   .buttonRow {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 620px) {
+  .shell {
+    gap: 22px;
+  }
+
+  .focusPanel {
+    gap: 20px;
+    padding: 22px;
+  }
+
+  .taskMeta {
+    margin-bottom: 12px;
+  }
+
+  .taskMeta .pill {
+    min-height: 28px;
+    padding: 0 11px;
+    font-size: 12px;
+  }
+
+  .taskTitle {
+    font-size: clamp(25px, 8vw, 34px);
+  }
+
+  .timerCard {
+    gap: 16px;
+    padding: 18px;
+  }
+
+  .timerLabel {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .timerValue {
+    font-size: clamp(60px, 18vw, 86px);
+  }
+
+  .presetGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .presetButton {
+    min-height: 46px;
+    font-size: 15px;
+  }
+
+  .minuteControl {
+    grid-template-columns: 48px minmax(0, 1fr) 48px;
+    gap: 10px;
+  }
+
+  .iconButton,
+  .minuteInput {
+    min-height: 48px;
+  }
+
+  .primaryButton,
+  .ghostButton {
+    min-height: 58px;
+    font-size: 18px;
+  }
+
+  .completionButton {
+    min-height: 64px;
+    font-size: 20px;
   }
 }
