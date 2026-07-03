@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowLeft,
   CheckCircle2,
@@ -38,7 +38,7 @@ import {
 import styles from "./todo-focus-room-screen.module.css";
 
 const DURATION_PRESETS = [15, 25, 45, 60] as const;
-const MIN_DURATION_MINUTES = 5;
+const MIN_DURATION_MINUTES = 1;
 const MAX_DURATION_MINUTES = 180;
 const LOCAL_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -56,20 +56,10 @@ const ESTIMATE_LABELS: Record<TodoTaskEstimate, string> = {
   [TODO_TASK_ESTIMATES.twoHours]: "2시간+",
 };
 
-const DECORATIVE_CARDS = [
-  {
-    src: "/mooddesk/src/assets/cards/note.png",
-    alt: "",
-  },
-  {
-    src: "/mooddesk/src/assets/cards/sound.png",
-    alt: "",
-  },
-  {
-    src: "/mooddesk/src/assets/cards/quote.png",
-    alt: "",
-  },
-] as const;
+type BrowserWindowWithLegacyAudio = Window &
+  typeof globalThis & {
+    webkitAudioContext?: typeof AudioContext;
+  };
 
 function clampDurationMinutes(value: number) {
   if (!Number.isFinite(value)) return 25;
@@ -115,6 +105,44 @@ function getTaskDuration(task: TodoTask | null, fallbackMinutes: number) {
   return task ? getTodoTaskEstimateMinutes(task.estimate) : fallbackMinutes;
 }
 
+function playTimeoutSound() {
+  if (typeof window === "undefined") return;
+
+  const audioWindow = window as BrowserWindowWithLegacyAudio;
+  const AudioContextConstructor =
+    audioWindow.AudioContext ?? audioWindow.webkitAudioContext;
+
+  if (!AudioContextConstructor) return;
+
+  try {
+    const audioContext = new AudioContextConstructor();
+    const startedAt = audioContext.currentTime;
+    const gain = audioContext.createGain();
+    gain.connect(audioContext.destination);
+    gain.gain.setValueAtTime(0.0001, startedAt);
+    gain.gain.exponentialRampToValueAtTime(0.18, startedAt + 0.03);
+    gain.gain.exponentialRampToValueAtTime(0.0001, startedAt + 0.9);
+
+    [0, 0.18, 0.36].forEach((offset, index) => {
+      const oscillator = audioContext.createOscillator();
+      oscillator.type = "sine";
+      oscillator.frequency.setValueAtTime(
+        index === 1 ? 880 : 660,
+        startedAt + offset
+      );
+      oscillator.connect(gain);
+      oscillator.start(startedAt + offset);
+      oscillator.stop(startedAt + offset + 0.12);
+    });
+
+    window.setTimeout(() => {
+      void audioContext.close().catch(() => undefined);
+    }, 1100);
+  } catch {
+    // 브라우저가 오디오 컨텍스트를 막아도 타이머 완료 흐름은 유지한다.
+  }
+}
+
 export function TodoFocusRoomScreen() {
   const router = useYeonRouter();
   const searchParams = useYeonSearchParams();
@@ -128,6 +156,7 @@ export function TodoFocusRoomScreen() {
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  const timeoutSoundPlayedRef = useRef(false);
 
   const task = useMemo(() => findTask(state, taskId), [state, taskId]);
   const effectiveMinutes = getTaskDuration(task, durationMinutes);
@@ -151,6 +180,7 @@ export function TodoFocusRoomScreen() {
     setRemainingSeconds(queryMinutes * 60);
     setElapsedSeconds(0);
     setIsRunning(false);
+    timeoutSoundPlayedRef.current = false;
   }, [queryMinutes, taskId]);
 
   useEffect(() => {
@@ -160,6 +190,7 @@ export function TodoFocusRoomScreen() {
     );
     setDurationMinutes(taskMinutes);
     setRemainingSeconds(taskMinutes * 60);
+    timeoutSoundPlayedRef.current = false;
   }, [searchParams, task]);
 
   useEffect(() => {
@@ -181,6 +212,15 @@ export function TodoFocusRoomScreen() {
     return () => window.clearInterval(intervalId);
   }, [isRunning]);
 
+  useEffect(() => {
+    if (remainingSeconds !== 0 || timeoutSoundPlayedRef.current || !task) {
+      return;
+    }
+
+    timeoutSoundPlayedRef.current = true;
+    playTimeoutSound();
+  }, [remainingSeconds, task]);
+
   function moveHome() {
     router.push(getTodoServiceHomeHref(), { scroll: false });
   }
@@ -191,6 +231,7 @@ export function TodoFocusRoomScreen() {
     setDurationMinutes(clampedMinutes);
     setRemainingSeconds(clampedMinutes * 60);
     setElapsedSeconds(0);
+    timeoutSoundPlayedRef.current = false;
 
     if (!taskId) return;
     router.replace(
@@ -207,6 +248,7 @@ export function TodoFocusRoomScreen() {
     setIsRunning(false);
     setRemainingSeconds(durationMinutes * 60);
     setElapsedSeconds(0);
+    timeoutSoundPlayedRef.current = false;
   }
 
   function completeTask() {
@@ -267,30 +309,10 @@ export function TodoFocusRoomScreen() {
           </button>
           <div className={styles.topActions}>
             <span className={styles.pill}>{formatDateLabel(focusDate)}</span>
-            <span className={styles.pill}>마음저널 집중 화면</span>
           </div>
         </header>
 
         <section className={styles.stage} aria-label="Todo 집중 화면">
-          <div className={styles.hero}>
-            <p className={styles.eyebrow}>YEON Today Focus</p>
-            <h1 className={styles.title}>창문 앞에서 한 가지 일만.</h1>
-            <p className={styles.subtitle}>
-              시작한 일은 이 화면에서 조용히 붙잡고, 끝나면 바로 완료
-              처리합니다. 뒤로가기는 진행 상태만 유지하고 보드로 돌아갑니다.
-            </p>
-            <div className={styles.decorGrid} aria-hidden="true">
-              {DECORATIVE_CARDS.map((card) => (
-                <img
-                  key={card.src}
-                  className={styles.decorCard}
-                  src={card.src}
-                  alt={card.alt}
-                />
-              ))}
-            </div>
-          </div>
-
           <div className={`${styles.panel} ${styles.focusPanel}`}>
             <div>
               <div className={styles.taskMeta}>
@@ -347,8 +369,8 @@ export function TodoFocusRoomScreen() {
                 <button
                   type="button"
                   className={styles.iconButton}
-                  aria-label="집중 시간 5분 줄이기"
-                  onClick={() => updateDuration(durationMinutes - 5)}
+                  aria-label="집중 시간 1분 줄이기"
+                  onClick={() => updateDuration(durationMinutes - 1)}
                 >
                   <Minus size={17} aria-hidden="true" />
                 </button>
@@ -357,7 +379,7 @@ export function TodoFocusRoomScreen() {
                   type="number"
                   min={MIN_DURATION_MINUTES}
                   max={MAX_DURATION_MINUTES}
-                  step={5}
+                  step={1}
                   value={durationMinutes}
                   aria-label="집중 시간 직접 입력"
                   onChange={(event) =>
@@ -367,8 +389,8 @@ export function TodoFocusRoomScreen() {
                 <button
                   type="button"
                   className={styles.iconButton}
-                  aria-label="집중 시간 5분 늘리기"
-                  onClick={() => updateDuration(durationMinutes + 5)}
+                  aria-label="집중 시간 1분 늘리기"
+                  onClick={() => updateDuration(durationMinutes + 1)}
                 >
                   <Plus size={17} aria-hidden="true" />
                 </button>
