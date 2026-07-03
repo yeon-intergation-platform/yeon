@@ -87,63 +87,10 @@
 
 .stage {
   display: grid;
-  width: min(1180px, 100%);
+  width: min(520px, 100%);
   flex: 1;
-  grid-template-columns: minmax(0, 1fr) minmax(340px, 480px);
-  gap: clamp(24px, 5vw, 64px);
-  align-items: center;
+  place-items: center;
   margin: 0 auto;
-}
-
-.hero {
-  color: #fff8ef;
-  text-shadow: 0 12px 36px rgba(20, 12, 8, 0.42);
-}
-
-.eyebrow {
-  margin: 0 0 16px;
-  font-size: 14px;
-  font-weight: 900;
-}
-
-.title {
-  max-width: 760px;
-  margin: 0;
-  font-size: clamp(42px, 7vw, 92px);
-  font-weight: 950;
-  line-height: 0.98;
-  letter-spacing: 0;
-}
-
-.subtitle {
-  max-width: 520px;
-  margin: 24px 0 0;
-  font-size: clamp(16px, 2vw, 21px);
-  font-weight: 700;
-  line-height: 1.8;
-}
-
-.decorGrid {
-  display: grid;
-  max-width: 520px;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 14px;
-  margin-top: 34px;
-}
-
-.decorCard {
-  width: 100%;
-  border-radius: 24px;
-  box-shadow: 0 24px 46px rgba(25, 16, 11, 0.26);
-  animation: floatCard 8s ease-in-out infinite;
-}
-
-.decorCard:nth-child(2) {
-  animation-delay: -2.2s;
-}
-
-.decorCard:nth-child(3) {
-  animation-delay: -4.4s;
 }
 
 .panel {
@@ -156,6 +103,7 @@
 
 .focusPanel {
   display: grid;
+  width: 100%;
   gap: 22px;
   padding: clamp(20px, 3vw, 30px);
 }
@@ -330,16 +278,6 @@
   line-height: 1.6;
 }
 
-@keyframes floatCard {
-  0%,
-  100% {
-    transform: translate3d(0, 0, 0) rotate(0deg);
-  }
-  50% {
-    transform: translate3d(0, -9px, 0) rotate(-1deg);
-  }
-}
-
 @media (max-width: 900px) {
   .screen {
     overflow: auto;
@@ -351,12 +289,7 @@
   }
 
   .stage {
-    grid-template-columns: 1fr;
-    align-items: start;
-  }
-
-  .decorGrid {
-    display: none;
+    align-items: center;
   }
 
   .buttonRow {
