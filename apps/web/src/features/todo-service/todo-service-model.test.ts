@@ -15,6 +15,7 @@ import {
   groupTodoTasksForToday,
   parseTodoServiceState,
   setTodoTaskStatus,
+  updateTodoTaskSettings,
 } from "./todo-service-model";
 
 const TODAY = "2026-06-29";
@@ -221,6 +222,28 @@ describe("todo-service-model", () => {
     expect(getTodoTaskEstimateMinutes(TODO_TASK_ESTIMATES.fifteen)).toBe(15);
     expect(getTodoTaskEstimateMinutes(TODO_TASK_ESTIMATES.hour)).toBe(60);
     expect(getTodoTaskEstimateMinutes(TODO_TASK_ESTIMATES.twoHours)).toBe(120);
+  });
+
+  it("task 설정 변경은 우선순위와 예상 시간을 원본 task에 저장한다", () => {
+    const [updatedTask] = updateTodoTaskSettings({
+      tasks: [task("settings")],
+      taskId: "settings",
+      priority: TODO_TASK_PRIORITIES.important,
+      estimate: TODO_TASK_ESTIMATES.thirty,
+      nowIso: "2026-06-29T10:00:00.000Z",
+    });
+
+    expect(updatedTask).toEqual(
+      expect.objectContaining({
+        id: "settings",
+        priority: TODO_TASK_PRIORITIES.important,
+        estimate: TODO_TASK_ESTIMATES.thirty,
+        updatedAt: "2026-06-29T10:00:00.000Z",
+      })
+    );
+    expect(calculateTodoTaskBenefitScore(updatedTask!)).toBeGreaterThan(
+      calculateTodoTaskBenefitScore(task("settings"))
+    );
   });
 
   it("추천 목록은 우선순위와 예상 시간, 메모를 기준으로 점수가 높은 순서로 만든다", () => {
