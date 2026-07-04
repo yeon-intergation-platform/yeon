@@ -3,6 +3,7 @@ import { YeonScript } from "@yeon/ui";
 import { createYeonGoogleAnalyticsBootstrapScript } from "@yeon/ui/runtime/YeonBrowserRuntime";
 import { Suspense, type ReactNode } from "react";
 import { GoogleAnalyticsPageTracker } from "@/components/analytics/google-analytics-page-tracker";
+import { PlatformLanguageDocumentSync } from "@/components/platform-language-document-sync";
 import { CommunityPresenceTracker } from "@/features/community/components/community-presence-tracker";
 import {
   getDefaultSiteRobots,
@@ -79,6 +80,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
             </Suspense>
           </>
         ) : null}
+        <PlatformLanguageDocumentSync />
         <CommunityPresenceTracker />
         {children}
       </body>

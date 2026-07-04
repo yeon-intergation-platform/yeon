@@ -3,13 +3,19 @@ import { YeonLink, YeonText, YeonView } from "@yeon/ui";
 import { CommonProductHeader } from "@/components/product-shell/product-header";
 import { SHARED_FEATURE_CLASS } from "@/features/shared-style-constants";
 import {
-  GAME_HUB_TABS,
   GAME_REGIONS,
-  getGameTags,
   type GameHubTab,
   type GameEntry,
   type GameRegion,
 } from "./game-catalog";
+import {
+  getGameServiceText,
+  getLocalizedGameHubTabs,
+  getLocalizedGameRegionLabel,
+  getLocalizedGameTags,
+  getLocalizedGameText,
+  type GameServiceLanguage,
+} from "./game-service-i18n";
 import { GamePointsBanner } from "./game-points-banner";
 import type { HubGamesResult } from "./game-source";
 
@@ -21,6 +27,7 @@ type HubLinkParams = {
   query?: string;
   page?: number;
   region: GameRegion;
+  language: GameServiceLanguage;
 };
 
 function buildHubHref({
@@ -30,8 +37,10 @@ function buildHubHref({
   query,
   page,
   region,
+  language,
 }: HubLinkParams): string {
   const params = new URLSearchParams();
+  params.set("lang", language);
   if (region !== GAME_REGIONS.global) params.set("region", region);
   if (collection) params.set("collection", collection);
   if (category) params.set("category", category);
@@ -43,14 +52,22 @@ function buildHubHref({
 }
 
 // 탭 → 링크. 전체는 랜딩, 컬렉션/장르는 각 그리드로 보낸다.
-function hrefForTab(tab: GameHubTab, region: GameRegion): string {
+function hrefForTab(
+  tab: GameHubTab,
+  region: GameRegion,
+  language: GameServiceLanguage
+): string {
   if (tab.type === "collection") {
-    return buildHubHref({ collection: tab.collection, region });
+    return buildHubHref({ collection: tab.collection, region, language });
   }
   if (tab.type === "category") {
-    return buildHubHref({ category: tab.category, region });
+    return buildHubHref({ category: tab.category, region, language });
   }
-  return buildHubHref({ region });
+  return buildHubHref({ region, language });
+}
+
+function buildGameDetailHref(game: GameEntry, language: GameServiceLanguage) {
+  return `/game-service/${game.slug}?lang=${language}`;
 }
 
 function TagChips({ tags }: { tags: readonly string[] }) {
@@ -62,7 +79,7 @@ function TagChips({ tags }: { tags: readonly string[] }) {
           as="span"
           variant="unstyled"
           tone="inherit"
-          className="inline-flex items-center rounded-full bg-[#f1f0fb] px-2 py-0.5 text-[10px] font-semibold text-[#6b5bd2]"
+          className="inline-flex items-center rounded-full border border-[#e5e5e5] bg-[#fafafa] px-2 py-0.5 text-[10px] font-semibold text-[#666]"
         >
           {tag}
         </YeonText>
@@ -71,25 +88,33 @@ function TagChips({ tags }: { tags: readonly string[] }) {
   );
 }
 
-function PlayPill() {
+function PlayPill({ label }: { label: string }) {
   return (
     <YeonText
       as="span"
       variant="unstyled"
       tone="inherit"
-      className="inline-flex items-center gap-1 rounded-full border border-[#e5e5e5] bg-white px-3 py-1 text-[12px] font-bold text-[#111] transition-colors duration-200 group-hover:border-[#6b5bd2] group-hover:text-[#6b5bd2]"
+      className="inline-flex items-center gap-1 rounded-full border border-[#e5e5e5] bg-white px-3 py-1 text-[12px] font-bold text-[#111] transition-colors duration-200 group-hover:border-[#111]"
     >
-      ▶ 플레이하기
+      ▶ {label}
     </YeonText>
   );
 }
 
 // 운영자 추천 히어로(좌측 큰 카드). 썸네일을 배경으로 깔고 정보를 얹는다.
-function HeroCard({ game }: { game: GameEntry }) {
+function HeroCard({
+  game,
+  language,
+}: {
+  game: GameEntry;
+  language: GameServiceLanguage;
+}) {
+  const text = getGameServiceText(language);
+  const gameText = getLocalizedGameText(game, language);
   return (
     <YeonLink
-      href={`/game-service/${game.slug}`}
-      className="group relative flex min-h-[260px] flex-col justify-end overflow-hidden rounded-2xl border border-[#e5e5e5] bg-[#1b1530] bg-cover bg-center p-5 text-left no-underline md:min-h-[300px]"
+      href={buildGameDetailHref(game, language)}
+      className="group relative flex min-h-[260px] flex-col justify-end overflow-hidden rounded-2xl border border-[#e5e5e5] bg-[#111] bg-cover bg-center p-5 text-left no-underline md:min-h-[300px]"
       style={
         game.thumbUrl
           ? { backgroundImage: `url("${game.thumbUrl}")` }
@@ -101,9 +126,9 @@ function HeroCard({ game }: { game: GameEntry }) {
         as="span"
         variant="unstyled"
         tone="inherit"
-        className="relative inline-flex w-fit items-center rounded-md bg-[#6b5bd2] px-2 py-0.5 text-[11px] font-bold text-white"
+        className="relative inline-flex w-fit items-center rounded-md bg-white px-2 py-0.5 text-[11px] font-bold text-[#111]"
       >
-        추천
+        {text.featuredBadge}
       </YeonText>
       <YeonText
         as="h3"
@@ -111,7 +136,7 @@ function HeroCard({ game }: { game: GameEntry }) {
         tone="inherit"
         className="relative mt-2 text-[24px] font-black tracking-[-0.03em] text-white md:text-[28px]"
       >
-        {game.title}
+        {gameText.title}
       </YeonText>
       <YeonText
         as="p"
@@ -119,11 +144,11 @@ function HeroCard({ game }: { game: GameEntry }) {
         tone="inherit"
         className="relative mt-1 max-w-[420px] text-[13px] leading-[1.6] text-white/85"
       >
-        {game.summary}
+        {gameText.summary}
       </YeonText>
       <YeonView className="relative mt-3 flex items-center justify-between">
         <YeonView className="flex flex-wrap gap-1">
-          {getGameTags(game)
+          {getLocalizedGameTags(game, language)
             .slice(0, 4)
             .map((tag) => (
               <YeonText
@@ -141,9 +166,9 @@ function HeroCard({ game }: { game: GameEntry }) {
           as="span"
           variant="unstyled"
           tone="inherit"
-          className="inline-flex items-center gap-1 rounded-full bg-[#6b5bd2] px-4 py-1.5 text-[13px] font-bold text-white transition-transform duration-200 group-hover:scale-105"
+          className="inline-flex items-center gap-1 rounded-full bg-white px-4 py-1.5 text-[13px] font-bold text-[#111] transition-transform duration-200 group-hover:scale-105"
         >
-          ▶ 플레이하기
+          ▶ {text.playLabel}
         </YeonText>
       </YeonView>
     </YeonLink>
@@ -151,14 +176,22 @@ function HeroCard({ game }: { game: GameEntry }) {
 }
 
 // 운영자 추천 우측 카드(썸네일 + 제목 + 요약 + 태그 + 플레이).
-function FeatureCard({ game }: { game: GameEntry }) {
+function FeatureCard({
+  game,
+  language,
+}: {
+  game: GameEntry;
+  language: GameServiceLanguage;
+}) {
+  const text = getGameServiceText(language);
+  const gameText = getLocalizedGameText(game, language);
   return (
     <YeonLink
-      href={`/game-service/${game.slug}`}
-      className="group flex min-w-0 flex-col overflow-hidden rounded-xl border border-[#e5e5e5] bg-white text-left no-underline transition-colors duration-200 hover:border-[#6b5bd2]"
+      href={buildGameDetailHref(game, language)}
+      className="group flex min-w-0 flex-col overflow-hidden rounded-xl border border-[#e5e5e5] bg-white text-left no-underline transition-colors duration-200 hover:border-[#111]"
     >
       <YeonView
-        className="aspect-video w-full bg-cover bg-center bg-[#f2f2f2]"
+        className="aspect-video w-full bg-[#fafafa] bg-cover bg-center"
         style={
           game.thumbUrl
             ? { backgroundImage: `url("${game.thumbUrl}")` }
@@ -172,19 +205,19 @@ function FeatureCard({ game }: { game: GameEntry }) {
           tone="inherit"
           className="truncate text-[14px] font-bold tracking-[-0.02em] text-[#111]"
         >
-          {game.title}
+          {gameText.title}
         </YeonText>
         <YeonText
           as="p"
           variant="unstyled"
           tone="inherit"
-          className="line-clamp-2 text-[12px] leading-[1.5] text-[#777]"
+          className="line-clamp-2 text-[12px] leading-[1.5] text-[#666]"
         >
-          {game.summary}
+          {gameText.summary}
         </YeonText>
-        <TagChips tags={getGameTags(game)} />
+        <TagChips tags={getLocalizedGameTags(game, language)} />
         <YeonView className="mt-1">
-          <PlayPill />
+          <PlayPill label={text.playLabel} />
         </YeonView>
       </YeonView>
     </YeonLink>
@@ -192,14 +225,21 @@ function FeatureCard({ game }: { game: GameEntry }) {
 }
 
 // 행/그리드 공용 컴팩트 카드(썸네일 + 제목 + 태그).
-function CompactCard({ game }: { game: GameEntry }) {
+function CompactCard({
+  game,
+  language,
+}: {
+  game: GameEntry;
+  language: GameServiceLanguage;
+}) {
+  const gameText = getLocalizedGameText(game, language);
   return (
     <YeonLink
-      href={`/game-service/${game.slug}`}
-      className="group flex min-w-0 flex-col overflow-hidden rounded-xl border border-[#e5e5e5] bg-white text-left no-underline transition-colors duration-200 hover:border-[#6b5bd2]"
+      href={buildGameDetailHref(game, language)}
+      className="group flex min-w-0 flex-col overflow-hidden rounded-xl border border-[#e5e5e5] bg-white text-left no-underline transition-colors duration-200 hover:border-[#111]"
     >
       <YeonView
-        className="aspect-video w-full bg-cover bg-center bg-[#f2f2f2]"
+        className="aspect-video w-full bg-[#fafafa] bg-cover bg-center"
         style={
           game.thumbUrl
             ? { backgroundImage: `url("${game.thumbUrl}")` }
@@ -213,18 +253,30 @@ function CompactCard({ game }: { game: GameEntry }) {
           tone="inherit"
           className="truncate text-[13px] font-bold tracking-[-0.02em] text-[#111]"
         >
-          {game.title}
+          {gameText.title}
         </YeonText>
-        <TagChips tags={getGameTags(game)} />
+        <TagChips tags={getLocalizedGameTags(game, language)} />
       </YeonView>
     </YeonLink>
   );
 }
 
-function RegionToggle({ region }: { region: GameRegion }) {
+function RegionToggle({
+  region,
+  language,
+}: {
+  region: GameRegion;
+  language: GameServiceLanguage;
+}) {
   const tabs: { key: GameRegion; label: string }[] = [
-    { key: GAME_REGIONS.kr, label: "🇰🇷 한국" },
-    { key: GAME_REGIONS.us, label: "🇺🇸 미국" },
+    {
+      key: GAME_REGIONS.kr,
+      label: getLocalizedGameRegionLabel(GAME_REGIONS.kr, language),
+    },
+    {
+      key: GAME_REGIONS.us,
+      label: getLocalizedGameRegionLabel(GAME_REGIONS.us, language),
+    },
   ];
   return (
     <YeonView className="flex gap-1.5">
@@ -233,11 +285,11 @@ function RegionToggle({ region }: { region: GameRegion }) {
         return (
           <YeonLink
             key={tab.key}
-            href={buildHubHref({ region: tab.key })}
+            href={buildHubHref({ region: tab.key, language })}
             className={`inline-flex items-center rounded-full border px-3 py-1 text-[12px] font-semibold no-underline transition-colors duration-200 ${
               isActive
-                ? "border-[#6b5bd2] bg-[#6b5bd2] text-white"
-                : "border-[#e5e5e5] bg-white text-[#444] hover:border-[#6b5bd2]"
+                ? "border-[#111] bg-[#111] text-white"
+                : "border-[#e5e5e5] bg-white text-[#666] hover:border-[#111] hover:text-[#111]"
             }`}
           >
             {tab.label}
@@ -252,22 +304,24 @@ function RegionToggle({ region }: { region: GameRegion }) {
 function HubTabBar({
   region,
   activeKey,
+  language,
 }: {
   region: GameRegion;
   activeKey: string;
+  language: GameServiceLanguage;
 }) {
   return (
-    <YeonView className="mt-3 flex flex-wrap gap-1.5 border-b border-[#eee] pb-3">
-      {GAME_HUB_TABS.map((tab) => {
+    <YeonView className="mt-3 flex flex-wrap gap-1.5 border-b border-[#e5e5e5] pb-3">
+      {getLocalizedGameHubTabs(language).map((tab) => {
         const isActive = tab.key === activeKey;
         return (
           <YeonLink
             key={tab.key}
-            href={hrefForTab(tab, region)}
+            href={hrefForTab(tab, region, language)}
             className={`inline-flex items-center rounded-full px-3.5 py-1.5 text-[13px] font-semibold no-underline transition-colors duration-200 ${
               isActive
-                ? "bg-[#6b5bd2] text-white"
-                : "text-[#555] hover:bg-[#f2f0fb] hover:text-[#6b5bd2]"
+                ? "bg-[#111] text-white"
+                : "text-[#666] hover:bg-[#fafafa] hover:text-[#111]"
             }`}
           >
             {tab.label}
@@ -282,9 +336,13 @@ function HubTabBar({
 function SearchBar({
   region,
   defaultValue,
+  language,
+  text,
 }: {
   region: GameRegion;
   defaultValue?: string;
+  language: GameServiceLanguage;
+  text: ReturnType<typeof getGameServiceText>;
 }) {
   return (
     <form
@@ -295,19 +353,20 @@ function SearchBar({
       {region !== GAME_REGIONS.global ? (
         <input type="hidden" name="region" value={region} />
       ) : null}
+      <input type="hidden" name="lang" value={language} />
       <input type="hidden" name="view" value="all" />
       <input
         type="search"
         name="q"
         defaultValue={defaultValue}
-        placeholder="게임을 검색해보세요"
-        aria-label="게임 검색"
-        className="w-full rounded-full border border-[#e5e5e5] bg-[#fafafa] px-4 py-2 pr-10 text-[13px] text-[#111] outline-none transition-colors focus:border-[#6b5bd2] focus:bg-white"
+        placeholder={text.searchPlaceholder}
+        aria-label={text.searchLabel}
+        className="w-full rounded-full border border-[#e5e5e5] bg-[#fafafa] px-4 py-2 pr-10 text-[13px] text-[#111] outline-none transition-colors focus:border-[#111] focus:bg-white"
       />
       <button
         type="submit"
-        aria-label="검색"
-        className="absolute right-2 top-1/2 -translate-y-1/2 text-[#888] transition-colors hover:text-[#6b5bd2]"
+        aria-label={text.searchSubmitLabel}
+        className="absolute right-2 top-1/2 -translate-y-1/2 text-[#666] transition-colors hover:text-[#111]"
       >
         <svg
           width="18"
@@ -331,12 +390,14 @@ function SearchBar({
 function SectionHeader({
   title,
   moreHref,
+  moreLabel,
 }: {
   title: string;
   moreHref?: string;
+  moreLabel: string;
 }) {
   return (
-    <YeonView className="flex items-center justify-between">
+    <YeonView className="flex min-w-0 flex-1 items-center justify-between gap-3">
       <YeonText
         as="h2"
         variant="unstyled"
@@ -345,27 +406,33 @@ function SectionHeader({
       >
         <span
           aria-hidden="true"
-          className="inline-block h-[16px] w-[3px] rounded-full bg-[#6b5bd2]"
+          className="inline-block h-[16px] w-[3px] rounded-full bg-[#111]"
         />
         {title}
       </YeonText>
       {moreHref ? (
         <YeonLink
           href={moreHref}
-          className="text-[12px] font-semibold text-[#888] no-underline transition-colors hover:text-[#6b5bd2]"
+          className="text-[12px] font-semibold text-[#666] no-underline transition-colors hover:text-[#111]"
         >
-          더보기 ›
+          {moreLabel} ›
         </YeonLink>
       ) : null}
     </YeonView>
   );
 }
 
-function GameRow({ games }: { games: readonly GameEntry[] }) {
+function GameRow({
+  games,
+  language,
+}: {
+  games: readonly GameEntry[];
+  language: GameServiceLanguage;
+}) {
   return (
     <YeonView className="mt-2 grid grid-cols-2 gap-2.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
       {games.map((game) => (
-        <CompactCard key={game.slug} game={game} />
+        <CompactCard key={game.slug} game={game} language={language} />
       ))}
     </YeonView>
   );
@@ -375,6 +442,7 @@ type GameServiceHomeProps =
   | {
       mode: "landing";
       region: GameRegion;
+      language: GameServiceLanguage;
       featured: readonly GameEntry[];
       retro: readonly GameEntry[];
       popular: readonly GameEntry[];
@@ -384,6 +452,7 @@ type GameServiceHomeProps =
   | {
       mode: "grid";
       region: GameRegion;
+      language: GameServiceLanguage;
       activeKey: string;
       heading: string;
       result: HubGamesResult;
@@ -392,15 +461,25 @@ type GameServiceHomeProps =
 function PageShell({
   region,
   searchDefault,
+  language,
   children,
 }: {
   region: GameRegion;
   searchDefault?: string;
+  language: GameServiceLanguage;
   children: ReactNode;
 }) {
+  const text = getGameServiceText(language);
+
   return (
     <YeonView className={SHARED_FEATURE_CLASS.pageSurface}>
-      <CommonProductHeader activeService="game" />
+      <CommonProductHeader
+        activeService="game"
+        ariaLabel={text.navAriaLabel}
+        brandLabel={text.headerBrand}
+        profileLabels={text.profileMenu}
+        showBgmButton={false}
+      />
       <YeonView
         as="main"
         className="mx-auto w-full max-w-[1280px] px-3 py-4 sm:px-5"
@@ -414,20 +493,25 @@ function PageShell({
                 tone="inherit"
                 className="text-[20px] font-black tracking-[-0.03em] text-[#111]"
               >
-                바로 즐기는 게임 모음
+                {text.heroTitle}
               </YeonText>
               <YeonText
                 as="p"
                 variant="unstyled"
                 tone="inherit"
-                className="mt-0.5 text-[12px] leading-[1.5] text-[#888]"
+                className="mt-0.5 text-[12px] leading-[1.5] text-[#666]"
               >
-                설치 없이 브라우저에서 바로 플레이할 수 있어요!
+                {text.heroDescription}
               </YeonText>
             </YeonView>
-            <SearchBar region={region} defaultValue={searchDefault} />
+            <SearchBar
+              region={region}
+              language={language}
+              defaultValue={searchDefault}
+              text={text}
+            />
           </YeonView>
-          <GamePointsBanner />
+          <GamePointsBanner language={language} />
         </YeonView>
         {children}
       </YeonView>
@@ -437,10 +521,15 @@ function PageShell({
 
 export function GameServiceHome(props: GameServiceHomeProps) {
   if (props.mode === "grid") {
-    const { region, activeKey, heading, result } = props;
+    const { region, activeKey, heading, result, language } = props;
+    const text = getGameServiceText(language);
     return (
-      <PageShell region={region} searchDefault={result.query ?? undefined}>
-        <HubTabBar region={region} activeKey={activeKey} />
+      <PageShell
+        region={region}
+        language={language}
+        searchDefault={result.query ?? undefined}
+      >
+        <HubTabBar region={region} activeKey={activeKey} language={language} />
         <YeonView as="section" className="mt-4">
           <YeonText
             as="h2"
@@ -453,15 +542,15 @@ export function GameServiceHome(props: GameServiceHomeProps) {
               as="span"
               variant="unstyled"
               tone="inherit"
-              className="ml-2 text-[13px] font-semibold text-[#999]"
+              className="ml-2 text-[13px] font-semibold text-[#666]"
             >
-              {result.totalCount}개
+              {text.count(result.totalCount)}
             </YeonText>
           </YeonText>
           {result.games.length > 0 ? (
             <YeonView className="mt-3 grid grid-cols-2 gap-2.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7">
               {result.games.map((game) => (
-                <CompactCard key={game.slug} game={game} />
+                <CompactCard key={game.slug} game={game} language={language} />
               ))}
             </YeonView>
           ) : (
@@ -469,53 +558,60 @@ export function GameServiceHome(props: GameServiceHomeProps) {
               as="p"
               variant="unstyled"
               tone="inherit"
-              className="mt-10 text-center text-[14px] text-[#999]"
+              className="mt-10 text-center text-[14px] text-[#666]"
             >
-              표시할 게임이 없습니다. 곧 추가될 예정이에요.
+              {text.empty}
             </YeonText>
           )}
-          <Pagination region={region} result={result} />
+          <Pagination region={region} language={language} result={result} />
         </YeonView>
       </PageShell>
     );
   }
 
-  const { region, featured, retro, popular, favorites, recent } = props;
+  const { region, featured, retro, popular, favorites, recent, language } =
+    props;
+  const text = getGameServiceText(language);
   const hero = featured[0];
   const featuredSide = featured.slice(1, 5);
 
   return (
-    <PageShell region={region}>
-      <HubTabBar region={region} activeKey="all" />
+    <PageShell region={region} language={language}>
+      <HubTabBar region={region} activeKey="all" language={language} />
 
       {recent.length > 0 ? (
         <YeonView as="section" className="mt-4">
-          <SectionHeader title="최근 플레이" />
-          <GameRow games={recent.slice(0, 6)} />
+          <SectionHeader title={text.recent} moreLabel={text.more} />
+          <GameRow games={recent.slice(0, 6)} language={language} />
         </YeonView>
       ) : null}
 
       {favorites.length > 0 ? (
         <YeonView as="section" className="mt-7">
-          <SectionHeader title="찜한 게임" />
-          <GameRow games={favorites.slice(0, 6)} />
+          <SectionHeader title={text.favorites} moreLabel={text.more} />
+          <GameRow games={favorites.slice(0, 6)} language={language} />
         </YeonView>
       ) : null}
 
       <YeonView as="section" className="mt-4">
         <YeonView className="flex items-center justify-between">
           <SectionHeader
-            title="운영자 추천"
-            moreHref={buildHubHref({ collection: "featured", region })}
+            title={text.featured}
+            moreLabel={text.more}
+            moreHref={buildHubHref({
+              collection: "featured",
+              region,
+              language,
+            })}
           />
-          <RegionToggle region={region} />
+          <RegionToggle region={region} language={language} />
         </YeonView>
         {hero ? (
           <YeonView className="mt-2 grid gap-2.5 lg:grid-cols-[1.4fr_2fr]">
-            <HeroCard game={hero} />
+            <HeroCard game={hero} language={language} />
             <YeonView className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
               {featuredSide.map((game) => (
-                <FeatureCard key={game.slug} game={game} />
+                <FeatureCard key={game.slug} game={game} language={language} />
               ))}
             </YeonView>
           </YeonView>
@@ -525,27 +621,29 @@ export function GameServiceHome(props: GameServiceHomeProps) {
       {retro.length > 0 ? (
         <YeonView as="section" className="mt-7">
           <SectionHeader
-            title="추억의 플래시 게임"
-            moreHref={buildHubHref({ collection: "retro", region })}
+            title={text.retro}
+            moreLabel={text.more}
+            moreHref={buildHubHref({ collection: "retro", region, language })}
           />
-          <GameRow games={retro.slice(0, 6)} />
+          <GameRow games={retro.slice(0, 6)} language={language} />
         </YeonView>
       ) : null}
 
       <YeonView as="section" className="mt-7">
         <SectionHeader
-          title="인기 게임"
-          moreHref={buildHubHref({ collection: "popular", region })}
+          title={text.popular}
+          moreLabel={text.more}
+          moreHref={buildHubHref({ collection: "popular", region, language })}
         />
-        <GameRow games={popular.slice(0, 6)} />
+        <GameRow games={popular.slice(0, 6)} language={language} />
       </YeonView>
 
       <YeonView className="mt-8 flex justify-center">
         <YeonLink
-          href={buildHubHref({ view: "all", region })}
-          className="inline-flex items-center gap-2 rounded-full border border-[#6b5bd2] bg-white px-6 py-3 text-[14px] font-bold text-[#6b5bd2] no-underline transition-colors duration-200 hover:bg-[#6b5bd2] hover:text-white"
+          href={buildHubHref({ view: "all", region, language })}
+          className="inline-flex items-center gap-2 rounded-full border border-[#111] bg-white px-6 py-3 text-[14px] font-bold text-[#111] no-underline transition-colors duration-200 hover:bg-[#111] hover:text-white"
         >
-          전체 게임 보러가기 ›
+          {text.viewAll} ›
         </YeonLink>
       </YeonView>
     </PageShell>
@@ -554,9 +652,11 @@ export function GameServiceHome(props: GameServiceHomeProps) {
 
 function Pagination({
   region,
+  language,
   result,
 }: {
   region: GameRegion;
+  language: GameServiceLanguage;
   result: HubGamesResult;
 }) {
   if (result.totalPages <= 1) return null;
@@ -565,6 +665,7 @@ function Pagination({
   const hasNext = result.page < result.totalPages;
   const baseParams: HubLinkParams = {
     region,
+    language,
     category: result.category ?? undefined,
     collection: result.collection ?? undefined,
     query: result.query ?? undefined,
@@ -578,11 +679,11 @@ function Pagination({
         aria-disabled={!hasPrev}
         className={`inline-flex items-center rounded-full border px-4 py-2 text-[13px] font-medium no-underline transition-colors duration-200 ${
           hasPrev
-            ? "border-[#e5e5e5] bg-white text-[#111] hover:border-[#6b5bd2]"
-            : "pointer-events-none border-[#f0f0f0] bg-[#fafafa] text-[#bbb]"
+            ? "border-[#e5e5e5] bg-white text-[#111] hover:border-[#111]"
+            : "pointer-events-none border-[#e5e5e5] bg-[#fafafa] text-[#aaa]"
         }`}
       >
-        ← 이전
+        ← {getGameServiceText(language).previous}
       </YeonLink>
       <YeonText
         as="span"
@@ -597,11 +698,11 @@ function Pagination({
         aria-disabled={!hasNext}
         className={`inline-flex items-center rounded-full border px-4 py-2 text-[13px] font-medium no-underline transition-colors duration-200 ${
           hasNext
-            ? "border-[#e5e5e5] bg-white text-[#111] hover:border-[#6b5bd2]"
-            : "pointer-events-none border-[#f0f0f0] bg-[#fafafa] text-[#bbb]"
+            ? "border-[#e5e5e5] bg-white text-[#111] hover:border-[#111]"
+            : "pointer-events-none border-[#e5e5e5] bg-[#fafafa] text-[#aaa]"
         }`}
       >
-        다음 →
+        {getGameServiceText(language).next} →
       </YeonLink>
     </YeonView>
   );

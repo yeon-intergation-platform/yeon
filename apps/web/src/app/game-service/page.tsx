@@ -1,24 +1,27 @@
 import { type YeonPageMetadata } from "@yeon/ui/runtime/YeonPageMetadata";
 import { YeonStructuredData } from "@yeon/ui";
-import { getYeonRequestHeaders } from "@yeon/ui/runtime/YeonServerRequest";
 import { SITE_BRAND_NAME } from "@/lib/site-brand";
 import { buildServiceCanonicalUrl } from "@/lib/seo";
 import {
   GAME_CATEGORIES,
-  GAME_CATEGORY_LABELS,
-  GAME_COLLECTION_LABELS,
   GameServiceHome,
   getCollectionGames,
   getGamesBySlugs,
   getHubGames,
+  getGameServiceText,
+  getLanguageDefaultGameRegion,
+  getLocalizedGameCategoryLabel,
+  getLocalizedGameCollectionLabel,
+  getLocalizedGameText,
   isGameCollection,
   isGameRegion,
-  resolveRegionFromCountry,
   type GameCategory,
   type GameCollection,
   type GameEntry,
   type GameRegion,
+  type GameServiceLanguage,
 } from "@/features/game-service";
+import { resolvePlatformLanguageFromRequest } from "@/lib/platform-language-server";
 import { getCurrentAuthUser } from "@/server/auth/session";
 import { getLikeRanking } from "@/server/game-likes-spring-client";
 import { listFavorites, listRecent } from "@/server/game-library-spring-client";
@@ -29,7 +32,10 @@ async function resolveMyGames(): Promise<{
   favorites: GameEntry[];
   recent: GameEntry[];
 }> {
-  const user = await getCurrentAuthUser();
+  const user = await getCurrentAuthUser().catch((error) => {
+    console.warn("[game-service] 로그인 세션 조회 실패", error);
+    return null;
+  });
   if (!user) return { favorites: [], recent: [] };
   const [favSlugs, recentSlugs] = await Promise.all([
     listFavorites(user.id).catch(() => []),
@@ -97,21 +103,22 @@ type GameHubSearchParams = {
   q?: string | string[];
   page?: string | string[];
   region?: string | string[];
+  lang?: string | string[];
 };
 
 function firstParam(value: string | string[] | undefined): string | undefined {
   return Array.isArray(value) ? value[0] : value;
 }
 
-// 추천 국가는 URL 토글(?region=)이 우선, 없으면 접속 국가(Cloudflare CF-IPCountry)로 정한다.
+// 추천 국가는 URL 토글(?region=)이 우선, 없으면 선택 언어의 기본 지역으로 정한다.
 function resolveActiveRegion(
   regionParam: string | undefined,
-  countryHeader: string | null
+  language: GameServiceLanguage
 ): GameRegion {
   if (isGameRegion(regionParam)) {
     return regionParam;
   }
-  return resolveRegionFromCountry(countryHeader);
+  return getLanguageDefaultGameRegion(language);
 }
 
 function parseCategory(value: string | undefined): GameCategory | null {
@@ -124,16 +131,24 @@ function parsePage(value: string | undefined): number {
   return Number.isFinite(page) && page > 1 ? page : 1;
 }
 
-function getGameHubJsonLd(games: readonly GameEntry[]) {
+function getGameHubJsonLd(
+  games: readonly GameEntry[],
+  language: GameServiceLanguage
+) {
+  const text = getGameServiceText(language);
   return {
     "@context": "https://schema.org",
     "@graph": [
       {
         "@type": "CollectionPage",
-        name: `${SITE_BRAND_NAME} 게임`,
+        name:
+          language === "en"
+            ? `${SITE_BRAND_NAME} Games`
+            : `${SITE_BRAND_NAME} 게임`,
         url: buildServiceCanonicalUrl("game"),
-        description: GAME_HUB_DESCRIPTION,
-        inLanguage: "ko-KR",
+        description:
+          language === "en" ? text.heroDescription : GAME_HUB_DESCRIPTION,
+        inLanguage: language === "en" ? "en-US" : "ko-KR",
         mainEntity: {
           "@type": "ItemList",
           itemListElement: games.map((game, index) => ({
@@ -141,7 +156,7 @@ function getGameHubJsonLd(games: readonly GameEntry[]) {
             position: index + 1,
             name: game.title,
             url: buildServiceCanonicalUrl("game", `/${game.slug}`),
-            description: game.summary,
+            description: getLocalizedGameText(game, language).summary,
           })),
         },
       },
@@ -154,23 +169,30 @@ function resolveGridHeading(params: {
   query: string | null;
   collection: GameCollection | null;
   category: GameCategory | null;
+  language: GameServiceLanguage;
 }): { heading: string; activeKey: string } {
+  const text = getGameServiceText(params.language);
   if (params.query) {
-    return { heading: `'${params.query}' 검색 결과`, activeKey: "" };
+    return { heading: text.searchHeading(params.query), activeKey: "" };
   }
   if (params.collection) {
     return {
-      heading: GAME_COLLECTION_LABELS[params.collection],
+      heading: getLocalizedGameCollectionLabel(
+        params.collection,
+        params.language
+      ),
       activeKey: params.collection,
     };
   }
   if (params.category) {
     return {
-      heading: `${GAME_CATEGORY_LABELS[params.category]} 게임`,
+      heading: text.categoryHeading(
+        getLocalizedGameCategoryLabel(params.category, params.language)
+      ),
       activeKey: params.category,
     };
   }
-  return { heading: "전체 게임", activeKey: "" };
+  return { heading: text.allGames, activeKey: "" };
 }
 
 export default async function GameServicePage({
@@ -178,12 +200,12 @@ export default async function GameServicePage({
 }: {
   searchParams: Promise<GameHubSearchParams>;
 }) {
-  const { category, collection, view, q, page, region } = await searchParams;
-  const headerStore = await getYeonRequestHeaders();
-  const activeRegion = resolveActiveRegion(
-    firstParam(region),
-    headerStore.get("cf-ipcountry")
+  const { category, collection, view, q, page, region, lang } =
+    await searchParams;
+  const activeLanguage = await resolvePlatformLanguageFromRequest(
+    firstParam(lang)
   );
+  const activeRegion = resolveActiveRegion(firstParam(region), activeLanguage);
 
   const categoryParam = firstParam(category);
   const collectionParam = firstParam(collection);
@@ -208,11 +230,12 @@ export default async function GameServicePage({
       <>
         <YeonStructuredData
           id="game-service-jsonld"
-          data={getGameHubJsonLd([...featured, ...popular])}
+          data={getGameHubJsonLd([...featured, ...popular], activeLanguage)}
         />
         <GameServiceHome
           mode="landing"
           region={activeRegion}
+          language={activeLanguage}
           featured={featured}
           retro={retro}
           popular={popular}
@@ -241,17 +264,19 @@ export default async function GameServicePage({
     query: result.query,
     collection: result.collection,
     category: result.category,
+    language: activeLanguage,
   });
 
   return (
     <>
       <YeonStructuredData
         id="game-service-jsonld"
-        data={getGameHubJsonLd(result.games)}
+        data={getGameHubJsonLd(result.games, activeLanguage)}
       />
       <GameServiceHome
         mode="grid"
         region={activeRegion}
+        language={activeLanguage}
         activeKey={activeKey}
         heading={heading}
         result={result}

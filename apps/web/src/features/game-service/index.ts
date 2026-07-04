@@ -36,3 +36,14 @@ export {
   type HubGamesQuery,
   type HubGamesResult,
 } from "./game-source";
+export {
+  getGameServiceText,
+  getLanguageDefaultGameRegion,
+  getLocalizedGameCategoryLabel,
+  getLocalizedGameCollectionLabel,
+  getLocalizedGameHubTabs,
+  getLocalizedGameRegionLabel,
+  getLocalizedGameTags,
+  getLocalizedGameText,
+  type GameServiceLanguage,
+} from "./game-service-i18n";

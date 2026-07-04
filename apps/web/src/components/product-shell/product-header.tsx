@@ -14,6 +14,13 @@ import { useYeonPathname } from "@yeon/ui/runtime/YeonNavigation";
 import { TypingBgmButton } from "@/features/typing-service/typing-bgm-button";
 import { HeaderExperienceBadge } from "@/features/user-experience/header-experience-badge";
 import { resolveSectionBrandHref } from "@/lib/header-brand-nav";
+import {
+  PLATFORM_LANGUAGE_LABELS,
+  PLATFORM_PROFILE_MENU_LABELS,
+  PLATFORM_LANGUAGES,
+  type PlatformLanguage,
+} from "@/lib/platform-language";
+import { usePlatformLanguage } from "@/lib/use-platform-language";
 import { useLogout } from "@/lib/use-logout";
 
 type CommonServiceKey =
@@ -140,19 +147,66 @@ export function CommonProductHeader({
 
 export function ProductHeaderDefaultSettingsButton() {
   const [open, setOpen] = useState(false);
+  const { language, setLanguage } = usePlatformLanguage();
+  const settingsLabel = language === "en" ? "Settings" : "설정";
+  const languageLabel = language === "en" ? "Language" : "언어";
+  const helpText =
+    language === "en"
+      ? "Game and profile screens use this language. Typing settings stay in sync."
+      : "게임과 프로필 화면은 이 언어로 표시됩니다. 타자 설정도 함께 맞춥니다.";
+
+  const handleLanguageChange = (nextLanguage: PlatformLanguage) => {
+    setLanguage(nextLanguage);
+    setOpen(false);
+    const nextUrl = new URL(window.location.href);
+    nextUrl.searchParams.set("lang", nextLanguage);
+    window.location.assign(nextUrl.toString());
+  };
 
   return (
     <YeonView className="relative shrink-0">
       <ProductHeaderSettingsButton
-        aria-label="설정"
-        title="설정"
+        aria-label={settingsLabel}
+        title={settingsLabel}
         aria-expanded={open}
         onClick={() => setOpen((value) => !value)}
       />
       {open ? (
-        <YeonView className="absolute right-0 top-full z-50 mt-2 w-48 rounded-xl border border-[#e5e5e5] bg-white p-3 text-[12px] leading-[1.5] text-[#666] shadow-lg">
-          <YeonText variant="caption" tone="secondary">
-            BGM은 헤더에서 바로 조절할 수 있습니다.
+        <YeonView className="absolute right-0 top-full z-50 mt-2 w-56 rounded-xl border border-[#e5e5e5] bg-white p-3 text-[12px] leading-[1.5] text-[#666] shadow-lg">
+          <YeonText
+            as="p"
+            variant="unstyled"
+            tone="inherit"
+            className="text-[11px] font-black text-[#111]"
+          >
+            {languageLabel}
+          </YeonText>
+          <YeonView className="mt-2 grid grid-cols-2 gap-1.5">
+            {Object.values(PLATFORM_LANGUAGES).map((option) => {
+              const isActive = language === option;
+              return (
+                <button
+                  key={option}
+                  type="button"
+                  onClick={() => handleLanguageChange(option)}
+                  className={`rounded-lg border px-3 py-2 text-[12px] font-bold transition-colors ${
+                    isActive
+                      ? "border-[#111] bg-[#111] text-white"
+                      : "border-[#e5e5e5] bg-white text-[#666] hover:border-[#111] hover:text-[#111]"
+                  }`}
+                >
+                  {PLATFORM_LANGUAGE_LABELS[language][option]}
+                </button>
+              );
+            })}
+          </YeonView>
+          <YeonText
+            as="p"
+            variant="unstyled"
+            tone="inherit"
+            className="mt-2 text-[11px] leading-[1.6] text-[#666]"
+          >
+            {helpText}
           </YeonText>
         </YeonView>
       ) : null}
@@ -169,6 +223,11 @@ export function ProductHeaderProfileButton({
 }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const { logout, isLoggingOut } = useLogout();
+  const { language } = usePlatformLanguage();
+  const resolvedLabels = {
+    ...PLATFORM_PROFILE_MENU_LABELS[language],
+    ...labels,
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -196,7 +255,7 @@ export function ProductHeaderProfileButton({
       href={href}
       isAuthenticated={isAuthenticated}
       isLoggingOut={isLoggingOut}
-      labels={labels}
+      labels={resolvedLabels}
       onLogout={logout}
     />
   );
