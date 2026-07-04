@@ -372,6 +372,31 @@ export function updateTodoTaskNote({
   );
 }
 
+export function updateTodoTaskSettings({
+  tasks,
+  taskId,
+  priority,
+  estimate,
+  nowIso,
+}: {
+  tasks: readonly TodoTask[];
+  taskId: string;
+  priority?: TodoTaskPriority;
+  estimate?: TodoTaskEstimate;
+  nowIso: string;
+}) {
+  return tasks.map((task) =>
+    task.id === taskId
+      ? {
+          ...task,
+          priority: priority ?? task.priority,
+          estimate: estimate ?? task.estimate,
+          updatedAt: nowIso,
+        }
+      : task
+  );
+}
+
 export function removeTodoTask(tasks: readonly TodoTask[], taskId: string) {
   return tasks.filter((task) => task.id !== taskId);
 }

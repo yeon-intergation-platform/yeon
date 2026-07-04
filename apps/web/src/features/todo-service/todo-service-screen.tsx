@@ -5,6 +5,7 @@ import {
   Archive,
   ArrowRight,
   CalendarDays,
+  ChevronDown,
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
@@ -44,6 +45,7 @@ import {
   removeTodoTask,
   setTodoTaskStatus,
   updateTodoTaskNote,
+  updateTodoTaskSettings,
   type TodoCalendarDaySummary,
   type TodoServiceState,
   type TodoTask,
@@ -85,6 +87,7 @@ const CREATE_ESTIMATE_OPTIONS: { value: TodoTaskEstimate; label: string }[] = [
   { value: TODO_TASK_ESTIMATES.hour, label: "1시간" },
   { value: TODO_TASK_ESTIMATES.twoHours, label: "2시간+" },
 ];
+const EDIT_ESTIMATE_OPTIONS = CREATE_ESTIMATE_OPTIONS;
 
 function createClientTaskId() {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
@@ -228,6 +231,98 @@ function StatusBadge({ task }: { task: TodoTask }) {
   );
 }
 
+function TaskSettingSelect<TValue extends string>({
+  label,
+  value,
+  fallbackLabel,
+  options,
+  onChange,
+  tone = "muted",
+}: {
+  label: string;
+  value: TValue;
+  fallbackLabel?: string;
+  options: readonly { value: TValue; label: string }[];
+  onChange: (value: TValue) => void;
+  tone?: "strong" | "muted";
+}) {
+  const hasOption = options.some((option) => option.value === value);
+
+  return (
+    <span className="relative inline-flex">
+      <select
+        aria-label={label}
+        title={label}
+        value={hasOption ? value : ""}
+        onChange={(event) => {
+          if (!event.target.value) return;
+          onChange(event.target.value as TValue);
+        }}
+        className={`h-6 cursor-pointer appearance-none rounded-full border border-[#e5e5e5] py-0 pl-2 pr-6 text-[11px] font-bold transition-colors hover:border-[#111] ${FOCUS_CLASS} ${
+          tone === "strong"
+            ? "bg-[#fafafa] text-[#111]"
+            : "bg-white text-[#666]"
+        }`}
+      >
+        {!hasOption ? (
+          <option value="" disabled>
+            {fallbackLabel ?? value}
+          </option>
+        ) : null}
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+      <ChevronDown
+        size={12}
+        aria-hidden="true"
+        className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[#666]"
+      />
+    </span>
+  );
+}
+
+function EditableStatusBadge({
+  task,
+  onPriorityChange,
+  onEstimateChange,
+}: {
+  task: TodoTask;
+  onPriorityChange: (priority: TodoTaskPriority) => void;
+  onEstimateChange: (estimate: TodoTaskEstimate) => void;
+}) {
+  return (
+    <YeonView className="flex flex-wrap items-center gap-1.5">
+      <TaskSettingSelect
+        label={`${task.title} 우선순위 변경`}
+        value={task.priority}
+        options={PRIORITY_OPTIONS}
+        onChange={onPriorityChange}
+        tone="strong"
+      />
+      <TaskSettingSelect
+        label={`${task.title} 예상 시간 변경`}
+        value={task.estimate}
+        fallbackLabel={getEstimateLabel(task.estimate)}
+        options={EDIT_ESTIMATE_OPTIONS}
+        onChange={onEstimateChange}
+      />
+      {task.note.trim() ? (
+        <YeonText
+          as="span"
+          variant="unstyled"
+          tone="inherit"
+          className="inline-flex h-6 items-center rounded-full border border-[#e5e5e5] bg-white px-2 text-[11px] font-bold text-[#666]"
+        >
+          메모 있음
+        </YeonText>
+      ) : null}
+    </YeonView>
+  );
+}
+
 function TaskBenefitScore({ task }: { task: TodoTask }) {
   const score = calculateTodoTaskBenefitScore(task);
 
@@ -265,6 +360,8 @@ function TaskCard({
   onStatus,
   onDelete,
   onNoteChange,
+  onPriorityChange,
+  onEstimateChange,
   onMoveNextDay,
   onStart,
   showNoteEditor = true,
@@ -274,6 +371,8 @@ function TaskCard({
   onStatus: (taskId: string, status: TodoTaskStatus) => void;
   onDelete: (taskId: string) => void;
   onNoteChange: (taskId: string, note: string) => void;
+  onPriorityChange: (taskId: string, priority: TodoTaskPriority) => void;
+  onEstimateChange: (taskId: string, estimate: TodoTaskEstimate) => void;
   onMoveNextDay: (taskId: string) => void;
   onStart: (task: TodoTask) => void;
   showNoteEditor?: boolean;
@@ -296,7 +395,15 @@ function TaskCard({
             {task.title}
           </YeonText>
           <YeonView className="mt-2">
-            <StatusBadge task={task} />
+            <EditableStatusBadge
+              task={task}
+              onPriorityChange={(nextPriority) =>
+                onPriorityChange(task.id, nextPriority)
+              }
+              onEstimateChange={(nextEstimate) =>
+                onEstimateChange(task.id, nextEstimate)
+              }
+            />
           </YeonView>
         </YeonView>
         <YeonView className="flex shrink-0 flex-wrap justify-end gap-1">
@@ -960,6 +1067,28 @@ export function TodoServiceScreen() {
     );
   }
 
+  function handlePriorityChange(taskId: string, priority: TodoTaskPriority) {
+    updateTasks((tasks) =>
+      updateTodoTaskSettings({
+        tasks,
+        taskId,
+        priority,
+        nowIso: getNowIso(),
+      })
+    );
+  }
+
+  function handleEstimateChange(taskId: string, estimate: TodoTaskEstimate) {
+    updateTasks((tasks) =>
+      updateTodoTaskSettings({
+        tasks,
+        taskId,
+        estimate,
+        nowIso: getNowIso(),
+      })
+    );
+  }
+
   return (
     <YeonView className="min-h-screen bg-[#fafafa] text-[#111]">
       <CommonProductHeader
@@ -1184,6 +1313,8 @@ export function TodoServiceScreen() {
                     onStatus={handleStatus}
                     onDelete={handleDelete}
                     onNoteChange={handleNoteChange}
+                    onPriorityChange={handlePriorityChange}
+                    onEstimateChange={handleEstimateChange}
                     onMoveNextDay={handleMoveTaskToNextDay}
                     onStart={handleStartTask}
                     showScore
@@ -1203,6 +1334,8 @@ export function TodoServiceScreen() {
                     onStatus={handleStatus}
                     onDelete={handleDelete}
                     onNoteChange={handleNoteChange}
+                    onPriorityChange={handlePriorityChange}
+                    onEstimateChange={handleEstimateChange}
                     onMoveNextDay={handleMoveTaskToNextDay}
                     onStart={handleStartTask}
                     showNoteEditor={false}
@@ -1230,6 +1363,8 @@ export function TodoServiceScreen() {
                     onStatus={handleStatus}
                     onDelete={handleDelete}
                     onNoteChange={handleNoteChange}
+                    onPriorityChange={handlePriorityChange}
+                    onEstimateChange={handleEstimateChange}
                     onMoveNextDay={handleMoveTaskToNextDay}
                     onStart={handleStartTask}
                   />
