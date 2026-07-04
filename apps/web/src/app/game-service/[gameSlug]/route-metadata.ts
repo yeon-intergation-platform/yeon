@@ -6,6 +6,11 @@ import {
   getGameSlugs,
   type GameEntry,
 } from "@/features/game-service/game-catalog";
+import {
+  getLocalizedGameCategoryLabel,
+  getLocalizedGameText,
+  type GameServiceLanguage,
+} from "@/features/game-service/game-service-i18n";
 import { getDetailGame } from "@/features/game-service/game-source";
 
 export type GameDetailRouteParams = {
@@ -83,19 +88,24 @@ export async function generateMetadata({
   };
 }
 
-export function getGameJsonLd(game: GameEntry, canonical: string) {
+export function getGameJsonLd(
+  game: GameEntry,
+  canonical: string,
+  language: GameServiceLanguage = "ko"
+) {
   const image = toAbsoluteImage(game.thumbUrl);
+  const gameText = getLocalizedGameText(game, language);
   return {
     "@context": "https://schema.org",
     "@graph": [
       {
         "@type": "VideoGame",
         name: game.title,
-        description: game.description,
+        description: gameText.description,
         url: canonical,
-        inLanguage: "ko-KR",
+        inLanguage: language === "en" ? "en-US" : "ko-KR",
         ...(image ? { image } : {}),
-        genre: GAME_CATEGORY_LABELS[game.category],
+        genre: getLocalizedGameCategoryLabel(game.category, language),
         applicationCategory: "GameApplication",
         operatingSystem: "Web",
         gamePlatform: "Web browser",
@@ -114,14 +124,14 @@ export function getGameJsonLd(game: GameEntry, canonical: string) {
           {
             "@type": "ListItem",
             position: 1,
-            name: "YEON 게임",
+            name: language === "en" ? "YEON Games" : "YEON 게임",
             item: GAME_HUB_URL,
           },
           {
             "@type": "ListItem",
             position: 2,
-            name: GAME_CATEGORY_LABELS[game.category],
-            item: `${GAME_HUB_URL}?category=${game.category}`,
+            name: getLocalizedGameCategoryLabel(game.category, language),
+            item: `${GAME_HUB_URL}?category=${game.category}&lang=${language}`,
           },
           {
             "@type": "ListItem",

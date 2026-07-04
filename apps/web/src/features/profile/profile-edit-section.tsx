@@ -2,6 +2,7 @@
 import { useRef, useState } from "react";
 import { fetchYeon } from "@yeon/ui/runtime/YeonBrowserRuntime";
 import { YeonText, YeonView } from "@yeon/ui";
+import { getProfileText, type ProfileLanguage } from "./profile-i18n";
 
 type Feedback = { type: "ok" | "err"; text: string } | null;
 
@@ -12,10 +13,13 @@ function initialOf(name: string): string {
 export function ProfileEditSection({
   initialDisplayName,
   initialAvatarUrl,
+  language,
 }: {
   initialDisplayName: string | null;
   initialAvatarUrl: string | null;
+  language: ProfileLanguage;
 }) {
+  const text = getProfileText(language).edit;
   const [displayName, setDisplayName] = useState(initialDisplayName ?? "");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(initialAvatarUrl);
   const [uploading, setUploading] = useState(false);
@@ -41,16 +45,13 @@ export function ProfileEditSection({
         message?: string;
       } | null;
       if (!response.ok || !data?.imageUrl) {
-        throw new Error(data?.message ?? "이미지를 업로드하지 못했습니다.");
+        throw new Error(data?.message ?? text.uploadFailed);
       }
       setAvatarUrl(data.imageUrl);
     } catch (error) {
       setFeedback({
         type: "err",
-        text:
-          error instanceof Error
-            ? error.message
-            : "이미지를 업로드하지 못했습니다.",
+        text: error instanceof Error ? error.message : text.uploadFailed,
       });
     } finally {
       setUploading(false);
@@ -60,7 +61,7 @@ export function ProfileEditSection({
 
   const handleSave = async () => {
     if (displayName.trim().length < 1) {
-      setFeedback({ type: "err", text: "닉네임을 입력해 주세요." });
+      setFeedback({ type: "err", text: text.displayNameRequired });
       return;
     }
     setSaving(true);
@@ -76,16 +77,13 @@ export function ProfileEditSection({
         message?: string;
       } | null;
       if (!response.ok) {
-        throw new Error(data?.message ?? "프로필을 저장하지 못했습니다.");
+        throw new Error(data?.message ?? text.saveFailed);
       }
-      setFeedback({ type: "ok", text: "프로필을 저장했어요." });
+      setFeedback({ type: "ok", text: text.saveOk });
     } catch (error) {
       setFeedback({
         type: "err",
-        text:
-          error instanceof Error
-            ? error.message
-            : "프로필을 저장하지 못했습니다.",
+        text: error instanceof Error ? error.message : text.saveFailed,
       });
     } finally {
       setSaving(false);
@@ -100,28 +98,28 @@ export function ProfileEditSection({
         tone="inherit"
         className="text-[15px] font-bold text-[#111]"
       >
-        프로필 등록
+        {text.title}
       </YeonText>
       <YeonText
         as="p"
         variant="unstyled"
         tone="inherit"
-        className="mt-1 text-[12px] leading-[1.6] text-[#888]"
+        className="mt-1 text-[12px] leading-[1.6] text-[#666]"
       >
-        닉네임과 프로필 사진은 게임 댓글 등 사이트 곳곳에 표시됩니다.
+        {text.description}
       </YeonText>
 
       <YeonView className="mt-5 flex items-center gap-4">
         {avatarUrl ? (
           <img
             src={avatarUrl}
-            alt="프로필 사진"
+            alt={text.avatarAlt}
             className="h-16 w-16 rounded-full object-cover"
           />
         ) : (
           <span
             aria-hidden="true"
-            className="flex h-16 w-16 items-center justify-center rounded-full bg-[#6b5bd2] text-[24px] font-bold text-white"
+            className="flex h-16 w-16 items-center justify-center rounded-full bg-[#111] text-[24px] font-bold text-white"
           >
             {initialOf(displayName)}
           </span>
@@ -137,17 +135,17 @@ export function ProfileEditSection({
           />
           <label
             htmlFor="profile-avatar-input"
-            className="inline-flex w-fit cursor-pointer items-center rounded-full border border-[#e5e5e5] bg-white px-4 py-2 text-[13px] font-semibold text-[#111] transition-colors hover:border-[#6b5bd2]"
+            className="inline-flex w-fit cursor-pointer items-center rounded-full border border-[#e5e5e5] bg-white px-4 py-2 text-[13px] font-semibold text-[#111] transition-colors hover:border-[#111]"
           >
-            {uploading ? "업로드 중..." : "사진 변경"}
+            {uploading ? text.uploading : text.changePhoto}
           </label>
           {avatarUrl ? (
             <button
               type="button"
               onClick={() => setAvatarUrl(null)}
-              className="w-fit text-[11px] text-[#bbb] hover:text-[#d2685b]"
+              className="w-fit text-[11px] text-[#aaa] hover:text-[#111]"
             >
-              사진 제거
+              {text.removePhoto}
             </button>
           ) : null}
         </YeonView>
@@ -158,7 +156,7 @@ export function ProfileEditSection({
           htmlFor="profile-nickname-input"
           className="text-[12px] font-semibold text-[#666]"
         >
-          닉네임
+          {text.displayNameLabel}
         </label>
         <input
           id="profile-nickname-input"
@@ -166,8 +164,8 @@ export function ProfileEditSection({
           value={displayName}
           onChange={(e) => setDisplayName(e.target.value)}
           maxLength={80}
-          placeholder="닉네임"
-          className="mt-1.5 w-full max-w-[360px] rounded-lg border border-[#e5e5e5] bg-white px-3 py-2 text-[14px] outline-none focus:border-[#6b5bd2]"
+          placeholder={text.displayNamePlaceholder}
+          className="mt-1.5 w-full max-w-[360px] rounded-lg border border-[#e5e5e5] bg-white px-3 py-2 text-[14px] outline-none focus:border-[#111]"
         />
       </YeonView>
 
@@ -176,16 +174,16 @@ export function ProfileEditSection({
           type="button"
           onClick={handleSave}
           disabled={saving || uploading}
-          className="rounded-full bg-[#6b5bd2] px-6 py-2.5 text-[13px] font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+          className="rounded-full bg-[#111] px-6 py-2.5 text-[13px] font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
         >
-          {saving ? "저장 중..." : "저장"}
+          {saving ? text.saving : text.save}
         </button>
         {feedback ? (
           <YeonText
             as="span"
             variant="unstyled"
             tone="inherit"
-            className={`text-[12px] ${feedback.type === "ok" ? "text-[#3a9a5c]" : "text-[#d2685b]"}`}
+            className="text-[12px] text-[#666]"
           >
             {feedback.text}
           </YeonText>

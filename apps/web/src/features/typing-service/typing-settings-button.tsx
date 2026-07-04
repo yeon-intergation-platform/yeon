@@ -13,6 +13,7 @@ import {
 } from "@yeon/ui";
 import { useYeonDocumentEvent } from "@yeon/ui/hooks/YeonBrowserHooks";
 import { YEON_WEB_SHARED_CLASS as SHARED_FEATURE_CLASS } from "@yeon/ui/theme/web-style-tokens";
+import { writePlatformLanguagePreference } from "@/lib/platform-language";
 import {
   createTranslator,
   type TypingLocale,
@@ -90,7 +91,10 @@ export function TypingSettingsButton() {
               <YeonButton
                 key={opt.value}
                 type="button"
-                onClick={() => updateSettings({ locale: opt.value })}
+                onClick={() => {
+                  updateSettings({ locale: opt.value });
+                  writePlatformLanguagePreference(opt.value);
+                }}
                 variant="ghost"
                 size="sm"
                 className={`w-full justify-between rounded-none px-3 py-2 text-[13px] ${

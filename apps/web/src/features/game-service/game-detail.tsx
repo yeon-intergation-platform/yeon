@@ -3,10 +3,16 @@ import { useRef, useState } from "react";
 import { YeonButton, YeonLink, YeonText, YeonView } from "@yeon/ui";
 import { CommonProductHeader } from "@/components/product-shell/product-header";
 import { SHARED_FEATURE_CLASS } from "@/features/shared-style-constants";
-import { GAME_CATEGORY_LABELS, type GameEntry } from "./game-catalog";
+import type { GameEntry } from "./game-catalog";
 import { GameComments } from "./game-comments";
 import { GameFavoriteButton } from "./game-favorite-button";
 import { GameLikeButton } from "./game-like-button";
+import {
+  getGameServiceText,
+  getLocalizedGameCategoryLabel,
+  getLocalizedGameText,
+  type GameServiceLanguage,
+} from "./game-service-i18n";
 import { RuffleGamePlayer } from "./ruffle-game-player";
 
 // 외부 임베드 게임은 신뢰 경계가 다르므로 최소 권한만 부여한다.
@@ -20,7 +26,15 @@ const GAME_IFRAME_SANDBOX =
 //   CrazyGames 게임이 로드되지 않고 흰 화면이 된다.
 const GAME_IFRAME_ALLOW = "fullscreen; autoplay; clipboard-write";
 
-export function GameDetail({ game }: { game: GameEntry }) {
+export function GameDetail({
+  game,
+  language,
+}: {
+  game: GameEntry;
+  language: GameServiceLanguage;
+}) {
+  const text = getGameServiceText(language);
+  const gameText = getLocalizedGameText(game, language);
   // 처음엔 iframe을 로드하지 않고 썸네일 포스터만 띄운다. 사용자가 "게임 시작"을
   // 눌러야(=user gesture) 로드 + 전체화면 진입 → FPS류의 pointer-lock 흔들림을 막는다.
   const [started, setStarted] = useState(false);
@@ -53,17 +67,23 @@ export function GameDetail({ game }: { game: GameEntry }) {
 
   return (
     <YeonView className={SHARED_FEATURE_CLASS.pageSurface}>
-      <CommonProductHeader activeService="game" />
+      <CommonProductHeader
+        activeService="game"
+        ariaLabel={text.navAriaLabel}
+        brandLabel={text.headerBrand}
+        profileLabels={text.profileMenu}
+        showBgmButton={false}
+      />
 
       <YeonView
         as="main"
         className="mx-auto max-w-[980px] px-4 py-6 sm:px-6 md:px-10 md:py-8"
       >
         <YeonLink
-          href="/game-service"
+          href={`/game-service?lang=${language}`}
           className={`inline-flex items-center gap-1.5 no-underline ${SHARED_FEATURE_CLASS.text13Emphasis}`}
         >
-          ← 게임 목록
+          ← {text.backToList}
         </YeonLink>
 
         <YeonView as="header" className="mt-4">
@@ -74,7 +94,7 @@ export function GameDetail({ game }: { game: GameEntry }) {
               tone="inherit"
               className="text-[24px] font-black tracking-[-0.04em] text-[#111] md:text-[30px]"
             >
-              {game.title}
+              {gameText.title}
             </YeonText>
             <YeonText
               as="span"
@@ -82,7 +102,7 @@ export function GameDetail({ game }: { game: GameEntry }) {
               tone="inherit"
               className="inline-flex items-center rounded-full border border-[#e5e5e5] bg-[#fafafa] px-2.5 py-1 text-[11px] font-medium text-[#666]"
             >
-              {GAME_CATEGORY_LABELS[game.category]}
+              {getLocalizedGameCategoryLabel(game.category, language)}
             </YeonText>
           </YeonView>
           <YeonText
@@ -91,7 +111,7 @@ export function GameDetail({ game }: { game: GameEntry }) {
             tone="inherit"
             className="mt-2 text-[14px] leading-[1.75] text-[#666] md:text-[15px]"
           >
-            {game.summary}
+            {gameText.summary}
           </YeonText>
           <YeonView className="mt-3 flex flex-wrap items-center gap-2">
             <GameLikeButton gameSlug={game.slug} />
@@ -126,14 +146,14 @@ export function GameDetail({ game }: { game: GameEntry }) {
                   ? { backgroundImage: `url("${game.thumbUrl}")` }
                   : undefined
               }
-              aria-label={`${game.title} 게임 시작`}
+              aria-label={`${game.title} ${text.startGame}`}
             >
               <span className="absolute inset-0 bg-black/45 transition-colors duration-200 group-hover:bg-black/30" />
               <span className="relative flex h-16 w-16 items-center justify-center rounded-full bg-white/90 text-[26px] text-[#111] shadow-lg transition-transform duration-200 group-hover:scale-105">
                 ▶
               </span>
               <span className="relative rounded-full bg-white/90 px-4 py-1.5 text-[13px] font-bold text-[#111]">
-                게임 시작
+                {text.startGame}
               </span>
             </button>
           )}
@@ -144,22 +164,22 @@ export function GameDetail({ game }: { game: GameEntry }) {
             as="p"
             variant="unstyled"
             tone="inherit"
-            className="text-[12px] leading-[1.6] text-[#999]"
+            className="text-[12px] leading-[1.6] text-[#666]"
           >
             {game.kind === "swf" ? (
               // 호스팅 SWF는 Ruffle로만 재생한다. 원본 파일 링크를 노출하지 않아
               // 무심코 다운로드되는 일을 막는다. 용량이 커 로딩이 걸릴 수 있음을 안내한다.
-              "용량이 큰 추억의 플래시 게임입니다. 처음 불러올 때 잠시 기다려 주세요."
+              text.swfLoading
             ) : (
               <>
-                게임이 보이지 않으면{" "}
+                {text.openNewTab}{" "}
                 <YeonLink
                   href={game.embedUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className={SHARED_FEATURE_CLASS.text13Emphasis}
                 >
-                  새 탭에서 열기
+                  {text.openNewTabLink}
                 </YeonLink>
               </>
             )}
@@ -170,7 +190,7 @@ export function GameDetail({ game }: { game: GameEntry }) {
               variant="secondary"
               onClick={requestFullscreen}
             >
-              전체화면
+              {text.fullscreen}
             </YeonButton>
           ) : null}
         </YeonView>
@@ -185,15 +205,15 @@ export function GameDetail({ game }: { game: GameEntry }) {
             tone="inherit"
             className="text-[16px] font-bold text-[#111]"
           >
-            게임 소개
+            {text.gameIntro}
           </YeonText>
           <YeonText
             as="p"
             variant="unstyled"
             tone="inherit"
-            className="mt-3 whitespace-pre-line break-keep text-[14px] leading-[1.85] text-[#444]"
+            className="mt-3 whitespace-pre-line break-keep text-[14px] leading-[1.85] text-[#666]"
           >
-            {game.description}
+            {gameText.description}
           </YeonText>
 
           <YeonText
@@ -202,10 +222,10 @@ export function GameDetail({ game }: { game: GameEntry }) {
             tone="inherit"
             className="mt-6 text-[14px] font-bold text-[#111]"
           >
-            조작법
+            {text.controls}
           </YeonText>
           <ul className="mt-2 flex flex-col gap-1.5">
-            {game.controls.map((control) => (
+            {gameText.controls.map((control) => (
               <li
                 key={control}
                 className="text-[13px] leading-[1.7] text-[#666]"
@@ -219,9 +239,9 @@ export function GameDetail({ game }: { game: GameEntry }) {
             as="p"
             variant="unstyled"
             tone="inherit"
-            className="mt-6 text-[12px] leading-[1.6] text-[#999]"
+            className="mt-6 text-[12px] leading-[1.6] text-[#666]"
           >
-            출처: {game.provider}
+            {text.source}: {game.provider}
           </YeonText>
         </YeonView>
 
