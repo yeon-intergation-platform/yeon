@@ -2,7 +2,9 @@ package world.yeon.backend.users.controller;
 
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -20,7 +22,11 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import world.yeon.backend.users.dto.CreateUserRequest;
 import world.yeon.backend.users.dto.CreateUserResponse;
+import world.yeon.backend.users.dto.DeleteUserResponse;
 import world.yeon.backend.users.dto.GetUsersResponse;
+import world.yeon.backend.users.dto.InvalidateUserSessionsResponse;
+import world.yeon.backend.users.dto.UpdateUserRoleRequest;
+import world.yeon.backend.users.dto.UpdateUserResponse;
 import world.yeon.backend.users.dto.UserResponse;
 import world.yeon.backend.users.service.UserService;
 import world.yeon.backend.users.service.UserServiceException;
@@ -36,23 +42,56 @@ class UserControllerTests {
 
 	@Test void list응답shape를반환한다() throws Exception {
 		when(service.listUsers(eq(OWNER_ID))).thenReturn(new GetUsersResponse(List.of(
-			new UserResponse("550e8400-e29b-41d4-a716-446655440000", "user@yeon.world", "유저", "user", OffsetDateTime.parse("2026-05-08T08:00:00Z"), OffsetDateTime.parse("2026-05-08T07:00:00Z"), OffsetDateTime.parse("2026-05-08T07:00:00Z"))
+			userResponse("550e8400-e29b-41d4-a716-446655440000", "user@yeon.world", "유저", "user")
 		)));
 
 		mockMvc.perform(get("/users").header("X-Yeon-User-Id", OWNER_ID.toString()).header("X-Yeon-Internal-Token", "test-internal-token"))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.users[0].email").value("user@yeon.world"))
 			.andExpect(jsonPath("$.users[0].role").value("user"))
-			.andExpect(jsonPath("$.users[0].lastLoginAt").value("2026-05-08T08:00:00Z"));
+			.andExpect(jsonPath("$.users[0].lastLoginAt").value("2026-05-08T08:00:00Z"))
+			.andExpect(jsonPath("$.users[0].sessionCount").value(1))
+			.andExpect(jsonPath("$.users[0].identityProviders[0]").value("google"));
 	}
 
 	@Test void create응답shape를반환한다() throws Exception {
 		when(service.createUser(eq(OWNER_ID), eq(new CreateUserRequest("user@yeon.world", "유저"))))
-			.thenReturn(new CreateUserResponse(new UserResponse("550e8400-e29b-41d4-a716-446655440000", "user@yeon.world", "유저", "user", OffsetDateTime.parse("2026-05-08T08:00:00Z"), OffsetDateTime.parse("2026-05-08T07:00:00Z"), OffsetDateTime.parse("2026-05-08T07:00:00Z"))));
+			.thenReturn(new CreateUserResponse(userResponse("550e8400-e29b-41d4-a716-446655440000", "user@yeon.world", "유저", "user")));
 
 		mockMvc.perform(post("/users").header("X-Yeon-User-Id", OWNER_ID.toString()).header("X-Yeon-Internal-Token", "test-internal-token").contentType(MediaType.APPLICATION_JSON).content("{\"email\":\"user@yeon.world\",\"displayName\":\"유저\"}"))
 			.andExpect(status().isCreated())
 			.andExpect(jsonPath("$.user.id").value("550e8400-e29b-41d4-a716-446655440000"));
+	}
+
+	@Test void role변경응답shape를반환한다() throws Exception {
+		UUID targetUserId = UUID.fromString("550e8400-e29b-41d4-a716-446655440000");
+		when(service.updateUserRole(eq(OWNER_ID), eq(targetUserId), eq(new UpdateUserRoleRequest("admin"))))
+			.thenReturn(new UpdateUserResponse(userResponse(targetUserId.toString(), "user@yeon.world", "유저", "admin")));
+
+		mockMvc.perform(patch("/users/{targetUserId}/role", targetUserId).header("X-Yeon-User-Id", OWNER_ID.toString()).header("X-Yeon-Internal-Token", "test-internal-token").contentType(MediaType.APPLICATION_JSON).content("{\"role\":\"admin\"}"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.user.role").value("admin"));
+	}
+
+	@Test void 세션무효화응답shape를반환한다() throws Exception {
+		UUID targetUserId = UUID.fromString("550e8400-e29b-41d4-a716-446655440000");
+		when(service.invalidateUserSessions(eq(OWNER_ID), eq(targetUserId)))
+			.thenReturn(new InvalidateUserSessionsResponse(targetUserId.toString(), 3));
+
+		mockMvc.perform(post("/users/{targetUserId}/sessions/invalidate", targetUserId).header("X-Yeon-User-Id", OWNER_ID.toString()).header("X-Yeon-Internal-Token", "test-internal-token"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.invalidatedSessions").value(3));
+	}
+
+	@Test void 삭제응답shape를반환한다() throws Exception {
+		UUID targetUserId = UUID.fromString("550e8400-e29b-41d4-a716-446655440000");
+		when(service.deleteUser(eq(OWNER_ID), eq(targetUserId)))
+			.thenReturn(new DeleteUserResponse(targetUserId.toString(), true, 1));
+
+		mockMvc.perform(delete("/users/{targetUserId}", targetUserId).header("X-Yeon-User-Id", OWNER_ID.toString()).header("X-Yeon-Internal-Token", "test-internal-token"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.deleted").value(true))
+			.andExpect(jsonPath("$.invalidatedSessions").value(1));
 	}
 
 	@Test void duplicateEmail은409를반환한다() throws Exception {
@@ -71,5 +110,22 @@ class UserControllerTests {
 		mockMvc.perform(get("/users").header("X-Yeon-User-Id", OWNER_ID.toString()).header("X-Yeon-Internal-Token", "test-internal-token"))
 			.andExpect(status().isForbidden())
 			.andExpect(jsonPath("$.message").value("관리자 권한이 필요합니다."));
+	}
+
+	private UserResponse userResponse(String id, String email, String displayName, String role) {
+		return new UserResponse(
+			id,
+			email,
+			displayName,
+			role,
+			OffsetDateTime.parse("2026-05-08T08:00:00Z"),
+			OffsetDateTime.parse("2026-05-08T07:00:00Z"),
+			OffsetDateTime.parse("2026-05-08T07:00:00Z"),
+			null,
+			1,
+			List.of("google"),
+			2,
+			3
+		);
 	}
 }

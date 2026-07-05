@@ -4,13 +4,17 @@ import { useYeonQuery as useQuery } from "@yeon/ui/runtime/YeonQuery";
 import { fetchYeon } from "@yeon/ui/runtime/YeonBrowserRuntime";
 import { gameLikeStatusSchema } from "@yeon/api-contract/game-like";
 import { QueryProvider } from "@/lib/query-provider";
+import {
+  getGameServiceText,
+  type GameServiceLanguage,
+} from "./game-service-i18n";
 
-async function loadStatus(gameSlug: string) {
+async function loadStatus(gameSlug: string, loadError: string) {
   const response = await fetchYeon(
     `/api/v1/game-service/likes?gameSlug=${encodeURIComponent(gameSlug)}`,
     { credentials: "include", cache: "no-store" }
   );
-  if (!response.ok) throw new Error("좋아요 정보를 불러오지 못했습니다.");
+  if (!response.ok) throw new Error(loadError);
   return gameLikeStatusSchema.parse(await response.json());
 }
 
@@ -32,10 +36,17 @@ function HeartIcon({ filled }: { filled: boolean }) {
   );
 }
 
-function GameLikeButtonInner({ gameSlug }: { gameSlug: string }) {
+function GameLikeButtonInner({
+  gameSlug,
+  language,
+}: {
+  gameSlug: string;
+  language: GameServiceLanguage;
+}) {
+  const text = getGameServiceText(language).like;
   const likeQuery = useQuery({
-    queryKey: ["game-like", gameSlug],
-    queryFn: () => loadStatus(gameSlug),
+    queryKey: ["game-like", gameSlug, language],
+    queryFn: () => loadStatus(gameSlug, text.loadError),
   });
   const [pending, setPending] = useState(false);
 
@@ -53,13 +64,13 @@ function GameLikeButtonInner({ gameSlug }: { gameSlug: string }) {
         body: JSON.stringify({ gameSlug }),
       });
       if (response.status === 401) {
-        window.alert("좋아요는 로그인 후 이용할 수 있어요.");
+        window.alert(text.loginRequired);
         return;
       }
       if (!response.ok) throw new Error("실패");
       await likeQuery.refetch();
     } catch {
-      window.alert("좋아요를 처리하지 못했어요.");
+      window.alert(text.actionFailed);
     } finally {
       setPending(false);
     }
@@ -71,7 +82,7 @@ function GameLikeButtonInner({ gameSlug }: { gameSlug: string }) {
       onClick={handleToggle}
       disabled={pending}
       aria-pressed={liked}
-      aria-label={liked ? "좋아요 취소" : "좋아요"}
+      aria-label={liked ? text.unlikeLabel : text.likeLabel}
       className={`inline-flex items-center gap-1.5 rounded-full border px-4 py-2 text-[13px] font-bold transition-colors duration-200 disabled:opacity-60 ${
         liked
           ? "border-[#e0376b] bg-[#fdeaf1] text-[#e0376b]"
@@ -79,15 +90,21 @@ function GameLikeButtonInner({ gameSlug }: { gameSlug: string }) {
       }`}
     >
       <HeartIcon filled={liked} />
-      {count.toLocaleString("ko-KR")}
+      {count.toLocaleString(language === "en" ? "en-US" : "ko-KR")}
     </button>
   );
 }
 
-export function GameLikeButton({ gameSlug }: { gameSlug: string }) {
+export function GameLikeButton({
+  gameSlug,
+  language,
+}: {
+  gameSlug: string;
+  language: GameServiceLanguage;
+}) {
   return (
     <QueryProvider>
-      <GameLikeButtonInner gameSlug={gameSlug} />
+      <GameLikeButtonInner gameSlug={gameSlug} language={language} />
     </QueryProvider>
   );
 }

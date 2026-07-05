@@ -18,6 +18,7 @@ describe("game detail route metadata", () => {
     const canonical = `https://game.yeon.world/${game.slug}`;
     const metadata = await generateMetadata({
       params: Promise.resolve({ gameSlug: game.slug }),
+      searchParams: Promise.resolve({ lang: "ko" }),
     });
 
     expect(metadata).toMatchObject({
@@ -43,6 +44,7 @@ describe("game detail route metadata", () => {
     await expect(
       generateMetadata({
         params: Promise.resolve({ gameSlug: "missing-game" }),
+        searchParams: Promise.resolve({ lang: "ko" }),
       })
     ).resolves.toEqual({ title: "게임을 찾을 수 없습니다 | YEON" });
   });

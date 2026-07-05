@@ -477,6 +477,7 @@ function PageShell({
         activeService="game"
         ariaLabel={text.navAriaLabel}
         brandLabel={text.headerBrand}
+        initialLanguage={language}
         profileLabels={text.profileMenu}
         showBgmButton={false}
       />

@@ -4,7 +4,12 @@ import {
 } from "@yeon/ui/runtime/YeonBrowserRuntime";
 import {
   createUserResponseSchema,
+  deleteUserResponseSchema,
+  invalidateUserSessionsResponseSchema,
   listUsersResponseSchema,
+  updateUserResponseSchema,
+  type UpdateUserBody,
+  type UpdateUserRoleBody,
 } from "@yeon/api-contract/users";
 import { buildSpringBffHeaders } from "@/server/spring-bff-client";
 
@@ -91,6 +96,65 @@ export async function createUserInSpring(
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(body),
+    })
+  );
+}
+
+export async function updateUserInSpring(
+  userId: string,
+  targetUserId: string,
+  body: UpdateUserBody
+) {
+  return updateUserResponseSchema.parse(
+    await fetchJson(`/users/${encodeURIComponent(targetUserId)}`, userId, {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body),
+    })
+  );
+}
+
+export async function updateUserRoleInSpring(
+  userId: string,
+  targetUserId: string,
+  body: UpdateUserRoleBody
+) {
+  return updateUserResponseSchema.parse(
+    await fetchJson(`/users/${encodeURIComponent(targetUserId)}/role`, userId, {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body),
+    })
+  );
+}
+
+export async function invalidateUserSessionsInSpring(
+  userId: string,
+  targetUserId: string
+) {
+  return invalidateUserSessionsResponseSchema.parse(
+    await fetchJson(
+      `/users/${encodeURIComponent(targetUserId)}/sessions/invalidate`,
+      userId,
+      {
+        method: "POST",
+      }
+    )
+  );
+}
+
+export async function deleteUserInSpring(userId: string, targetUserId: string) {
+  return deleteUserResponseSchema.parse(
+    await fetchJson(`/users/${encodeURIComponent(targetUserId)}`, userId, {
+      method: "DELETE",
+    })
+  );
+}
+
+export async function withdrawCurrentUserInSpring(userId: string) {
+  return deleteUserResponseSchema.parse(
+    await fetchJson("/users/me", userId, {
+      method: "DELETE",
     })
   );
 }

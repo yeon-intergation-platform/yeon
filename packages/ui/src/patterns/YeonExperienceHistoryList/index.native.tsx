@@ -1,7 +1,4 @@
-import type {
-  ExperienceActivityLabels,
-  ExperienceHistoryItem,
-} from "@yeon/api-contract/user-experience";
+import type { ExperienceHistoryItem } from "@yeon/api-contract/user-experience";
 
 import { YeonText } from "../../primitives/YeonText/index.native";
 import {
@@ -12,24 +9,24 @@ import { createYeonStyleSheet } from "../../runtime/YeonBrowserRuntime/index.nat
 import { yeonMobileAppColors } from "../../theme";
 
 export type YeonExperienceHistoryListProps = {
-  activityLabels: ExperienceActivityLabels;
+  activityLabels: Record<string, string>;
+  emptyText?: string;
   items: ExperienceHistoryItem[];
+  locale?: string;
   style?: YeonViewProps["style"];
 };
 
 function resolveLabel(
-  activityLabels: ExperienceActivityLabels,
+  activityLabels: Record<string, string>,
   activityType: string
 ) {
-  return (
-    (activityLabels as Record<string, string>)[activityType] ?? activityType
-  );
+  return activityLabels[activityType] ?? activityType;
 }
 
-function formatTimestamp(value: string) {
+function formatTimestamp(value: string, locale: string) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleString("ko-KR", {
+  return date.toLocaleString(locale, {
     year: "numeric",
     month: "long",
     day: "numeric",
@@ -41,14 +38,16 @@ function formatTimestamp(value: string) {
 // 경험치 적립 이력 리스트(활동 라벨 + +XP + 시각). 데이터 패칭 없음(순수 표시).
 export function YeonExperienceHistoryList({
   activityLabels,
+  emptyText = "아직 적립된 경험치가 없습니다.",
   items,
+  locale = "ko-KR",
   style,
 }: YeonExperienceHistoryListProps) {
   if (items.length === 0) {
     return (
       <YeonView style={[styles.empty, style]}>
         <YeonText variant="unstyled" tone="inherit" style={styles.emptyText}>
-          아직 적립된 경험치가 없습니다.
+          {emptyText}
         </YeonText>
       </YeonView>
     );
@@ -72,7 +71,7 @@ export function YeonExperienceHistoryList({
                 tone="inherit"
                 style={styles.timestamp}
               >
-                {formatTimestamp(item.createdAt)}
+                {formatTimestamp(item.createdAt, locale)}
               </YeonText>
             </YeonView>
             <YeonText variant="unstyled" tone="inherit" style={styles.xp}>

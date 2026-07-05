@@ -5,45 +5,17 @@ import {
 } from "@yeon/api-contract/users";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-import { AUTH_SESSION_COOKIE_NAME } from "@/server/auth/constants";
-import {
-  clearAuthSessionCookie,
-  getAuthUserBySessionToken,
-} from "@/server/auth/session";
+import { jsonUserRouteError, requireUsersRouteUser } from "./user-route-utils";
 import {
   createUserInSpring,
   fetchUsersFromSpring,
   UsersSpringBackendHttpError,
 } from "@/server/users-spring-client";
-import { createErrorResponseBody } from "@/server/bff-error";
-
-function jsonError(message: string, status: number) {
-  return NextResponse.json(createErrorResponseBody(message, status), {
-    status,
-  });
-}
-
-function getAuthenticatedUserFromRequest(request: NextRequest) {
-  const sessionToken = request.cookies.get(AUTH_SESSION_COOKIE_NAME)?.value;
-
-  return {
-    sessionToken,
-    userPromise: sessionToken ? getAuthUserBySessionToken(sessionToken) : null,
-  };
-}
 
 export async function GET(request: NextRequest) {
-  const { sessionToken, userPromise } =
-    getAuthenticatedUserFromRequest(request);
-  const currentUser = await userPromise;
+  const { currentUser, response } = await requireUsersRouteUser(request);
 
-  if (!currentUser) {
-    const response = jsonError("로그인이 필요합니다.", 401);
-
-    if (sessionToken) {
-      clearAuthSessionCookie(response);
-    }
-
+  if (response) {
     return response;
   }
 
@@ -53,26 +25,18 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(listUsersResponseSchema.parse(users));
   } catch (error) {
     if (error instanceof UsersSpringBackendHttpError) {
-      return jsonError(error.message, error.status);
+      return jsonUserRouteError(error.message, error.status);
     }
 
     console.error(error);
-    return jsonError("사용자 목록을 불러오지 못했습니다.", 500);
+    return jsonUserRouteError("사용자 목록을 불러오지 못했습니다.", 500);
   }
 }
 
 export async function POST(request: NextRequest) {
-  const { sessionToken, userPromise } =
-    getAuthenticatedUserFromRequest(request);
-  const currentUser = await userPromise;
+  const { currentUser, response } = await requireUsersRouteUser(request);
 
-  if (!currentUser) {
-    const response = jsonError("로그인이 필요합니다.", 401);
-
-    if (sessionToken) {
-      clearAuthSessionCookie(response);
-    }
-
+  if (response) {
     return response;
   }
 
@@ -81,13 +45,13 @@ export async function POST(request: NextRequest) {
   try {
     body = await request.json();
   } catch {
-    return jsonError("요청 본문 JSON 형식이 올바르지 않습니다.", 400);
+    return jsonUserRouteError("요청 본문 JSON 형식이 올바르지 않습니다.", 400);
   }
 
   const parseResult = createUserBodySchema.safeParse(body);
 
   if (!parseResult.success) {
-    return jsonError("사용자 생성 요청 값이 올바르지 않습니다.", 400);
+    return jsonUserRouteError("사용자 생성 요청 값이 올바르지 않습니다.", 400);
   }
 
   try {
@@ -98,10 +62,10 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     if (error instanceof UsersSpringBackendHttpError) {
-      return jsonError(error.message, error.status);
+      return jsonUserRouteError(error.message, error.status);
     }
 
     console.error(error);
-    return jsonError("사용자를 생성하지 못했습니다.", 500);
+    return jsonUserRouteError("사용자를 생성하지 못했습니다.", 500);
   }
 }

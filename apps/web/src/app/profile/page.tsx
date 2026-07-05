@@ -3,6 +3,7 @@ import type { YeonPageMetadata } from "@yeon/ui/runtime/YeonPageMetadata";
 import { YeonText, YeonView } from "@yeon/ui";
 import { YEON_WEB_SHARED_CLASS as SHARED_FEATURE_CLASS } from "@yeon/ui/theme/web-style-tokens";
 import { CommonProductHeader } from "@/components/product-shell/product-header";
+import { ProfileDangerZone } from "@/features/profile/profile-danger-zone";
 import { ProfileEditSection } from "@/features/profile/profile-edit-section";
 import {
   getProfileText,
@@ -10,15 +11,9 @@ import {
 } from "@/features/profile/profile-i18n";
 import { ProfileExperienceSection } from "@/features/user-experience/profile-experience-section";
 import { NON_INDEXABLE_ROBOTS } from "@/lib/seo";
-import { SITE_BRAND_NAME } from "@/lib/site-brand";
 import { resolvePlatformLanguageFromRequest } from "@/lib/platform-language-server";
 import { buildAuthSessionCleanupHref } from "@/server/auth/constants";
 import { getCurrentAuthUser } from "@/server/auth/session";
-
-export const metadata: YeonPageMetadata = {
-  title: `내정보 | ${SITE_BRAND_NAME}`,
-  robots: NON_INDEXABLE_ROBOTS,
-};
 
 type ProfileSearchParams = {
   lang?: string | string[];
@@ -28,6 +23,22 @@ type AuthUser = Awaited<ReturnType<typeof getCurrentAuthUser>>;
 
 function firstParam(value: string | string[] | undefined): string | undefined {
   return Array.isArray(value) ? value[0] : value;
+}
+
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<ProfileSearchParams>;
+}): Promise<YeonPageMetadata> {
+  const { lang } = await searchParams;
+  const language = await resolvePlatformLanguageFromRequest(firstParam(lang));
+  const text = getProfileText(language);
+
+  return {
+    title: text.metadataTitle,
+    description: text.metadataDescription,
+    robots: NON_INDEXABLE_ROBOTS,
+  };
 }
 
 function formatDateTime(value: string, language: ProfileLanguage) {
@@ -64,6 +75,7 @@ export default async function ProfilePage({
       <CommonProductHeader
         activeService="home"
         brandLabel={text.brandLabel}
+        initialLanguage={language}
         profileLabels={text.profileMenu}
         showBgmButton={false}
       />
@@ -172,7 +184,8 @@ export default async function ProfilePage({
                 initialAvatarUrl={user.avatarUrl}
                 language={language}
               />
-              <ProfileExperienceSection />
+              <ProfileExperienceSection language={language} />
+              <ProfileDangerZone language={language} />
             </YeonView>
           ) : (
             <YeonView className="mt-8 rounded-2xl border border-[#e5e5e5] bg-white p-5">

@@ -1,6 +1,9 @@
 "use client";
 import { YeonExperienceBadge, YeonLink } from "@yeon/ui";
 import { QueryProvider } from "@/lib/query-provider";
+import { usePlatformLanguage } from "@/lib/use-platform-language";
+import type { PlatformLanguage } from "@/lib/platform-language";
+import { getProfileText } from "@/features/profile/profile-i18n";
 import { useExperienceAuthState } from "./use-experience-auth-state";
 import { useUserExperience } from "./use-user-experience";
 
@@ -40,11 +43,16 @@ function HeaderExperienceBadgeInner({
 
 // 공통 헤더는 전역 QueryProvider 밖에서도 렌더되므로 배지가 자체 provider를 갖는다.
 export function HeaderExperienceBadge({
+  initialLanguage = "ko",
   levelAriaLabel,
 }: {
+  initialLanguage?: PlatformLanguage;
   levelAriaLabel?: (level: number) => string;
 } = {}) {
   const isAuthenticated = useExperienceAuthState();
+  const { language } = usePlatformLanguage(initialLanguage);
+  const resolvedLevelAriaLabel =
+    levelAriaLabel ?? getProfileText(language).experience.levelAriaLabel;
 
   // 인증 확인 전(null)·비로그인 시 미표시.
   if (isAuthenticated !== true) {
@@ -55,7 +63,7 @@ export function HeaderExperienceBadge({
     <QueryProvider>
       <HeaderExperienceBadgeInner
         isAuthenticated={isAuthenticated}
-        levelAriaLabel={levelAriaLabel}
+        levelAriaLabel={resolvedLevelAriaLabel}
       />
     </QueryProvider>
   );

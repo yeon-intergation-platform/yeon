@@ -10,61 +10,67 @@ import {
   getSeoMetadataBase,
   isCanonicalDeployment,
 } from "@/lib/seo";
-import {
-  SITE_BRAND_NAME,
-  SITE_DESCRIPTION,
-  SITE_KEYWORDS,
-  SITE_TITLE,
-} from "@/lib/site-brand";
+import { getSiteBrandText, SITE_BRAND_NAME } from "@/lib/site-brand";
+import { resolvePlatformLanguageFromRequest } from "@/lib/platform-language-server";
 import { GA_MEASUREMENT_ID } from "@/lib/analytics-constants";
 import "@uiw/react-md-editor/markdown-editor.css";
 import "@uiw/react-markdown-preview/markdown.css";
 import "./globals.css";
 
-export const metadata: YeonPageMetadata = {
-  title: SITE_TITLE,
-  description: SITE_DESCRIPTION,
-  keywords: [...SITE_KEYWORDS],
-  metadataBase: getSeoMetadataBase(),
-  alternates: {
-    canonical: "/",
-  },
-  openGraph: {
-    title: SITE_TITLE,
-    description: SITE_DESCRIPTION,
-    siteName: SITE_BRAND_NAME,
-    type: "website",
-    url: "/",
-    locale: "ko_KR",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: SITE_TITLE,
-    description: SITE_DESCRIPTION,
-  },
-  robots: getDefaultSiteRobots(),
-  verification: {
-    google: process.env.GOOGLE_SITE_VERIFICATION ?? "",
-    // 네이버 서치어드바이저 사이트 소유확인(yeon.world). 공개 토큰이라 커밋해도 안전하며,
-    // env(NAVER_SITE_VERIFICATION)로 덮어쓸 수 있다. <head>에 naver-site-verification 메타로 출력된다.
-    other: {
-      "naver-site-verification":
-        process.env.NAVER_SITE_VERIFICATION ??
-        "f1621a2cd36bfabefa595b65d8a3c2460ffffe2a",
+export async function generateMetadata(): Promise<YeonPageMetadata> {
+  const language = await resolvePlatformLanguageFromRequest();
+  const siteText = getSiteBrandText(language);
+
+  return {
+    title: siteText.title,
+    description: siteText.description,
+    keywords: [...siteText.keywords],
+    metadataBase: getSeoMetadataBase(),
+    alternates: {
+      canonical: "/",
+      languages: {
+        ko: "/?lang=ko",
+        en: "/?lang=en",
+      },
     },
-  },
-};
+    openGraph: {
+      title: siteText.title,
+      description: siteText.description,
+      siteName: SITE_BRAND_NAME,
+      type: "website",
+      url: "/",
+      locale: siteText.openGraphLocale,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: siteText.title,
+      description: siteText.description,
+    },
+    robots: getDefaultSiteRobots(),
+    verification: {
+      google: process.env.GOOGLE_SITE_VERIFICATION ?? "",
+      // 네이버 서치어드바이저 사이트 소유확인(yeon.world). 공개 토큰이라 커밋해도 안전하며,
+      // env(NAVER_SITE_VERIFICATION)로 덮어쓸 수 있다. <head>에 naver-site-verification 메타로 출력된다.
+      other: {
+        "naver-site-verification":
+          process.env.NAVER_SITE_VERIFICATION ??
+          "f1621a2cd36bfabefa595b65d8a3c2460ffffe2a",
+      },
+    },
+  };
+}
 
 type RootLayoutProps = {
   children: ReactNode;
 };
 
-export default function RootLayout({ children }: RootLayoutProps) {
+export default async function RootLayout({ children }: RootLayoutProps) {
+  const language = await resolvePlatformLanguageFromRequest();
   const shouldLoadGoogleAnalytics =
     isCanonicalDeployment() && GA_MEASUREMENT_ID.length > 0;
 
   return (
-    <html lang="ko">
+    <html lang={language}>
       <body>
         {shouldLoadGoogleAnalytics ? (
           <>

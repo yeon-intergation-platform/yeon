@@ -5,8 +5,11 @@ import {
   YeonText,
   YeonView,
 } from "@yeon/ui";
-import { EXPERIENCE_ACTIVITY_LABELS } from "@yeon/api-contract/user-experience";
 import { QueryProvider } from "@/lib/query-provider";
+import {
+  getProfileText,
+  type ProfileLanguage,
+} from "@/features/profile/profile-i18n";
 import { useExperienceAuthState } from "./use-experience-auth-state";
 import { useExperienceHistory } from "./use-experience-history";
 import { useUserExperience } from "./use-user-experience";
@@ -23,14 +26,19 @@ function SectionHeading({ label }: { label: string }) {
   );
 }
 
-function ProfileExperienceSectionInner() {
+function ProfileExperienceSectionInner({
+  language,
+}: {
+  language: ProfileLanguage;
+}) {
+  const text = getProfileText(language).experience;
   const experienceQuery = useUserExperience(true);
   const historyQuery = useExperienceHistory(true);
 
   return (
     <YeonView className="mt-6 grid gap-4">
       <YeonView className="rounded-2xl border border-[#e5e5e5] bg-white p-5">
-        <SectionHeading label="Level & XP" />
+        <SectionHeading label={text.levelHeading} />
         {experienceQuery.data ? (
           <YeonExperiencePanel
             className="mt-3"
@@ -45,20 +53,20 @@ function ProfileExperienceSectionInner() {
             tone="inherit"
             className="mt-3 text-[13px] text-[#666]"
           >
-            {experienceQuery.isError
-              ? "경험치 정보를 불러오지 못했습니다."
-              : "경험치 정보를 불러오는 중입니다."}
+            {experienceQuery.isError ? text.loadError : text.loading}
           </YeonText>
         )}
       </YeonView>
 
       <YeonView className="rounded-2xl border border-[#e5e5e5] bg-white p-5">
-        <SectionHeading label="Experience history" />
+        <SectionHeading label={text.historyHeading} />
         <YeonView className="mt-3">
           {historyQuery.data ? (
             <YeonExperienceHistoryList
-              activityLabels={EXPERIENCE_ACTIVITY_LABELS}
+              activityLabels={text.activityLabels}
+              emptyText={text.emptyHistory}
               items={historyQuery.data.items}
+              locale={getProfileText(language).dateLocale}
             />
           ) : (
             <YeonText
@@ -67,8 +75,8 @@ function ProfileExperienceSectionInner() {
               className="text-[13px] text-[#666]"
             >
               {historyQuery.isError
-                ? "경험치 이력을 불러오지 못했습니다."
-                : "경험치 이력을 불러오는 중입니다."}
+                ? text.historyLoadError
+                : text.historyLoading}
             </YeonText>
           )}
         </YeonView>
@@ -78,7 +86,11 @@ function ProfileExperienceSectionInner() {
 }
 
 // 프로필 경험치 섹션. 전역 QueryProvider 밖에서도 동작하도록 자체 provider를 갖는다.
-export function ProfileExperienceSection() {
+export function ProfileExperienceSection({
+  language,
+}: {
+  language: ProfileLanguage;
+}) {
   const isAuthenticated = useExperienceAuthState();
 
   if (isAuthenticated !== true) {
@@ -87,7 +99,7 @@ export function ProfileExperienceSection() {
 
   return (
     <QueryProvider>
-      <ProfileExperienceSectionInner />
+      <ProfileExperienceSectionInner language={language} />
     </QueryProvider>
   );
 }

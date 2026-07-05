@@ -420,6 +420,10 @@ export function useTypingSettings() {
   return { settings, updateSettings, setDefaultDeckForLanguage, loaded };
 }
 
+export function syncTypingSettingsLocale(locale: TypingLocale) {
+  useTypingSettingsStore.getState().updateSettings({ locale });
+}
+
 export function useTypingDeckOptions(
   languageTag: TypingDeckLanguageTag | TypingLocale
 ) {

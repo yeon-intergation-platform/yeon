@@ -41,6 +41,7 @@ export function TypingServiceHeader({
     <CommonProductHeader
       activeService="typing"
       ariaLabel={text.header.navAriaLabel}
+      initialLanguage={settings.locale}
       profileLabels={text.header.profileMenu}
       levelAriaLabel={text.header.levelAriaLabel}
       settingsControl={

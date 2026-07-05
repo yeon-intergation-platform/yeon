@@ -78,9 +78,11 @@ function readCookieValue(cookieText: string, name: string): string | null {
   );
 }
 
-export function readPlatformLanguagePreference(): PlatformLanguage {
+export function readPlatformLanguagePreference(
+  fallback: PlatformLanguage = DEFAULT_PLATFORM_LANGUAGE
+): PlatformLanguage {
   if (typeof window === "undefined") {
-    return DEFAULT_PLATFORM_LANGUAGE;
+    return fallback;
   }
 
   try {
@@ -107,7 +109,7 @@ export function readPlatformLanguagePreference(): PlatformLanguage {
     );
   }
 
-  return DEFAULT_PLATFORM_LANGUAGE;
+  return fallback;
 }
 
 export function writePlatformLanguagePreference(language: PlatformLanguage) {

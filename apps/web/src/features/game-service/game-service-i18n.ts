@@ -20,6 +20,9 @@ export type GameServiceLanguage = PlatformLanguage;
 type GameServiceText = {
   headerBrand: string;
   navAriaLabel: string;
+  metadataTitle: string;
+  metadataDescription: string;
+  metadataLocale: string;
   heroTitle: string;
   heroDescription: string;
   searchPlaceholder: string;
@@ -46,10 +49,58 @@ type GameServiceText = {
   openNewTab: string;
   openNewTabLink: string;
   swfLoading: string;
+  swfOverlayLoading: string;
+  swfOverlayDescription: string;
   fullscreen: string;
   gameIntro: string;
   controls: string;
   source: string;
+  dateLocale: string;
+  like: {
+    loadError: string;
+    loginRequired: string;
+    actionFailed: string;
+    likeLabel: string;
+    unlikeLabel: string;
+  };
+  favorite: {
+    loadError: string;
+    loginRequired: string;
+    actionFailed: string;
+    addLabel: string;
+    removeLabel: string;
+    activeLabel: string;
+    inactiveLabel: string;
+  };
+  comments: {
+    heading: string;
+    count: (count: number) => string;
+    loadError: string;
+    contentRequired: string;
+    nicknameRequired: string;
+    passwordRequired: string;
+    submitFailed: string;
+    passwordPrompt: string;
+    revealFailed: string;
+    deleteConfirm: string;
+    deleteFailed: string;
+    likeLoginRequired: string;
+    likeFailed: string;
+    nicknamePlaceholder: string;
+    passwordPlaceholder: string;
+    contentPlaceholder: string;
+    secretLabel: string;
+    submitting: string;
+    submit: string;
+    latest: string;
+    popular: string;
+    empty: string;
+    guest: string;
+    secretComment: string;
+    likeLabel: string;
+    revealWithPassword: string;
+    delete: string;
+  };
   profileMenu: Partial<YeonProductProfileMenuLabels>;
 };
 
@@ -57,6 +108,10 @@ const GAME_SERVICE_TEXT: Record<GameServiceLanguage, GameServiceText> = {
   ko: {
     headerBrand: "YEON 게임",
     navAriaLabel: "YEON 게임 서비스 이동",
+    metadataTitle: "게임 - 브라우저에서 바로 즐기는 게임 모음",
+    metadataDescription:
+      "설치 없이 브라우저에서 바로 플레이할 수 있는 게임을 한곳에 모은 YEON 게임 허브입니다.",
+    metadataLocale: "ko_KR",
     heroTitle: "바로 즐기는 게임 모음",
     heroDescription: "설치 없이 브라우저에서 바로 플레이할 수 있어요!",
     searchPlaceholder: "게임을 검색해보세요",
@@ -84,15 +139,67 @@ const GAME_SERVICE_TEXT: Record<GameServiceLanguage, GameServiceText> = {
     openNewTabLink: "새 탭에서 열기",
     swfLoading:
       "용량이 큰 추억의 플래시 게임입니다. 처음 불러올 때 잠시 기다려 주세요.",
+    swfOverlayLoading: "게임을 불러오는 중...",
+    swfOverlayDescription: "용량이 커서 잠시 걸릴 수 있어요",
     fullscreen: "전체화면",
     gameIntro: "게임 소개",
     controls: "조작법",
     source: "출처",
+    dateLocale: "ko-KR",
+    like: {
+      loadError: "좋아요 정보를 불러오지 못했습니다.",
+      loginRequired: "좋아요는 로그인 후 이용할 수 있어요.",
+      actionFailed: "좋아요를 처리하지 못했어요.",
+      likeLabel: "좋아요",
+      unlikeLabel: "좋아요 취소",
+    },
+    favorite: {
+      loadError: "찜 목록을 불러오지 못했습니다.",
+      loginRequired: "찜은 로그인 후 이용할 수 있어요.",
+      actionFailed: "찜을 처리하지 못했어요.",
+      addLabel: "찜하기",
+      removeLabel: "찜 취소",
+      activeLabel: "찜함",
+      inactiveLabel: "찜",
+    },
+    comments: {
+      heading: "댓글",
+      count: (count) => `${count}개`,
+      loadError: "댓글을 불러오지 못했습니다.",
+      contentRequired: "댓글 내용을 입력해 주세요.",
+      nicknameRequired: "닉네임을 입력해 주세요.",
+      passwordRequired: "비밀번호는 4자 이상이어야 합니다.",
+      submitFailed: "댓글을 등록하지 못했습니다.",
+      passwordPrompt: "비밀번호를 입력하세요",
+      revealFailed: "확인하지 못했습니다.",
+      deleteConfirm: "댓글을 삭제할까요?",
+      deleteFailed: "삭제하지 못했습니다.",
+      likeLoginRequired: "좋아요는 로그인 후 이용할 수 있어요.",
+      likeFailed: "좋아요를 처리하지 못했어요.",
+      nicknamePlaceholder: "닉네임",
+      passwordPlaceholder: "비밀번호",
+      contentPlaceholder: "댓글을 남겨보세요",
+      secretLabel: "비밀댓글",
+      submitting: "등록 중...",
+      submit: "등록",
+      latest: "최신순",
+      popular: "인기순",
+      empty: "첫 댓글을 남겨보세요!",
+      guest: "게스트",
+      secretComment: "비밀 댓글입니다.",
+      likeLabel: "좋아요",
+      revealWithPassword: "비밀번호로 보기",
+      delete: "삭제",
+    },
     profileMenu: PLATFORM_PROFILE_MENU_LABELS.ko,
   },
   en: {
     headerBrand: "YEON Games",
     navAriaLabel: "YEON game service navigation",
+    metadataTitle: "Games - Instant browser games",
+    metadataDescription:
+      "YEON Games collects browser games you can play instantly without installing anything.",
+    metadataLocale: "en_US",
     heroTitle: "Instant Browser Games",
     heroDescription: "Play curated browser games without installing anything.",
     searchPlaceholder: "Search games",
@@ -120,10 +227,58 @@ const GAME_SERVICE_TEXT: Record<GameServiceLanguage, GameServiceText> = {
     openNewTabLink: "open it in a new tab",
     swfLoading:
       "This is a larger retro Flash game. Please wait a moment while it loads.",
+    swfOverlayLoading: "Loading game...",
+    swfOverlayDescription: "Large games can take a moment to start.",
     fullscreen: "Fullscreen",
     gameIntro: "About this game",
     controls: "Controls",
     source: "Source",
+    dateLocale: "en-US",
+    like: {
+      loadError: "Could not load like information.",
+      loginRequired: "Sign in to like games.",
+      actionFailed: "Could not update the like.",
+      likeLabel: "Like",
+      unlikeLabel: "Unlike",
+    },
+    favorite: {
+      loadError: "Could not load favorites.",
+      loginRequired: "Sign in to save favorites.",
+      actionFailed: "Could not update favorites.",
+      addLabel: "Add to favorites",
+      removeLabel: "Remove from favorites",
+      activeLabel: "Saved",
+      inactiveLabel: "Save",
+    },
+    comments: {
+      heading: "Comments",
+      count: (count) => `${count} ${count === 1 ? "comment" : "comments"}`,
+      loadError: "Could not load comments.",
+      contentRequired: "Enter a comment.",
+      nicknameRequired: "Enter a nickname.",
+      passwordRequired: "Password must be at least 4 characters.",
+      submitFailed: "Could not post the comment.",
+      passwordPrompt: "Enter the password",
+      revealFailed: "Could not verify it.",
+      deleteConfirm: "Delete this comment?",
+      deleteFailed: "Could not delete the comment.",
+      likeLoginRequired: "Sign in to like comments.",
+      likeFailed: "Could not update the like.",
+      nicknamePlaceholder: "Nickname",
+      passwordPlaceholder: "Password",
+      contentPlaceholder: "Write a comment",
+      secretLabel: "Secret comment",
+      submitting: "Posting...",
+      submit: "Post",
+      latest: "Latest",
+      popular: "Popular",
+      empty: "Be the first to comment.",
+      guest: "Guest",
+      secretComment: "Secret comment.",
+      likeLabel: "Like",
+      revealWithPassword: "Reveal with password",
+      delete: "Delete",
+    },
     profileMenu: PLATFORM_PROFILE_MENU_LABELS.en,
   },
 };

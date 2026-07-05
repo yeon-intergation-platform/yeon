@@ -10,6 +10,22 @@ function initialOf(name: string): string {
   return name.trim().charAt(0).toUpperCase() || "?";
 }
 
+function resolveProfileErrorMessage({
+  fallback,
+  language,
+  serverMessage,
+}: {
+  fallback: string;
+  language: ProfileLanguage;
+  serverMessage?: string;
+}) {
+  if (language === "ko") {
+    return serverMessage ?? fallback;
+  }
+
+  return fallback;
+}
+
 export function ProfileEditSection({
   initialDisplayName,
   initialAvatarUrl,
@@ -45,7 +61,13 @@ export function ProfileEditSection({
         message?: string;
       } | null;
       if (!response.ok || !data?.imageUrl) {
-        throw new Error(data?.message ?? text.uploadFailed);
+        throw new Error(
+          resolveProfileErrorMessage({
+            fallback: text.uploadFailed,
+            language,
+            serverMessage: data?.message,
+          })
+        );
       }
       setAvatarUrl(data.imageUrl);
     } catch (error) {
@@ -77,7 +99,13 @@ export function ProfileEditSection({
         message?: string;
       } | null;
       if (!response.ok) {
-        throw new Error(data?.message ?? text.saveFailed);
+        throw new Error(
+          resolveProfileErrorMessage({
+            fallback: text.saveFailed,
+            language,
+            serverMessage: data?.message,
+          })
+        );
       }
       setFeedback({ type: "ok", text: text.saveOk });
     } catch (error) {

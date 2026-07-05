@@ -6,6 +6,8 @@ import {
 export type ProfileLanguage = PlatformLanguage;
 
 export type ProfileText = {
+  metadataTitle: string;
+  metadataDescription: string;
   brandLabel: string;
   eyebrow: string;
   title: string;
@@ -19,6 +21,17 @@ export type ProfileText = {
   cleanupAction: string;
   profileMenu: (typeof PLATFORM_PROFILE_MENU_LABELS)[ProfileLanguage];
   dateLocale: string;
+  experience: {
+    levelHeading: string;
+    historyHeading: string;
+    loadError: string;
+    loading: string;
+    historyLoadError: string;
+    historyLoading: string;
+    emptyHistory: string;
+    levelAriaLabel: (level: number) => string;
+    activityLabels: Record<string, string>;
+  };
   edit: {
     title: string;
     description: string;
@@ -35,10 +48,23 @@ export type ProfileText = {
     saveFailed: string;
     saveOk: string;
   };
+  danger: {
+    title: string;
+    description: string;
+    confirmationLabel: string;
+    confirmationPlaceholder: string;
+    confirmationValue: string;
+    action: string;
+    processing: string;
+    required: string;
+    failed: string;
+  };
 };
 
 const PROFILE_TEXT: Record<ProfileLanguage, ProfileText> = {
   ko: {
+    metadataTitle: "내정보 | YEON",
+    metadataDescription: "YEON 계정 정보와 프로필 설정을 확인합니다.",
     brandLabel: "YEON 내정보",
     eyebrow: "My profile",
     title: "내정보",
@@ -53,6 +79,24 @@ const PROFILE_TEXT: Record<ProfileLanguage, ProfileText> = {
     cleanupAction: "세션 정리 후 다시 시도",
     profileMenu: PLATFORM_PROFILE_MENU_LABELS.ko,
     dateLocale: "ko-KR",
+    experience: {
+      levelHeading: "Level & XP",
+      historyHeading: "Experience history",
+      loadError: "경험치 정보를 불러오지 못했습니다.",
+      loading: "경험치 정보를 불러오는 중입니다.",
+      historyLoadError: "경험치 이력을 불러오지 못했습니다.",
+      historyLoading: "경험치 이력을 불러오는 중입니다.",
+      emptyHistory: "아직 적립된 경험치가 없습니다.",
+      levelAriaLabel: (level) => `레벨 ${level} 경험치 보기`,
+      activityLabels: {
+        deck_created: "카드덱 생성",
+        card_room_finished: "카드방 학습 완료",
+        typing_race_finished: "타자 레이스 완료",
+        community_post: "커뮤니티 활동",
+        daily_login: "출석",
+        game_play: "게임 플레이",
+      },
+    },
     edit: {
       title: "프로필 등록",
       description:
@@ -70,8 +114,22 @@ const PROFILE_TEXT: Record<ProfileLanguage, ProfileText> = {
       saveFailed: "프로필을 저장하지 못했습니다.",
       saveOk: "프로필을 저장했어요.",
     },
+    danger: {
+      title: "회원탈퇴",
+      description:
+        "계정을 삭제하면 세션과 YEON 서비스 데이터가 함께 정리되며 되돌릴 수 없습니다.",
+      confirmationLabel: "확인을 위해 회원탈퇴를 입력하세요.",
+      confirmationPlaceholder: "회원탈퇴",
+      confirmationValue: "회원탈퇴",
+      action: "회원탈퇴",
+      processing: "탈퇴 처리 중...",
+      required: "확인 문구를 정확히 입력해 주세요.",
+      failed: "회원탈퇴를 처리하지 못했습니다.",
+    },
   },
   en: {
+    metadataTitle: "Profile | YEON",
+    metadataDescription: "View your YEON account and profile settings.",
     brandLabel: "YEON Profile",
     eyebrow: "My profile",
     title: "Profile",
@@ -86,6 +144,24 @@ const PROFILE_TEXT: Record<ProfileLanguage, ProfileText> = {
     cleanupAction: "Clear session and retry",
     profileMenu: PLATFORM_PROFILE_MENU_LABELS.en,
     dateLocale: "en-US",
+    experience: {
+      levelHeading: "Level & XP",
+      historyHeading: "Experience history",
+      loadError: "Could not load XP information.",
+      loading: "Loading XP information.",
+      historyLoadError: "Could not load XP history.",
+      historyLoading: "Loading XP history.",
+      emptyHistory: "No XP has been earned yet.",
+      levelAriaLabel: (level) => `View level ${level} XP`,
+      activityLabels: {
+        deck_created: "Card deck created",
+        card_room_finished: "Card study finished",
+        typing_race_finished: "Typing race finished",
+        community_post: "Community activity",
+        daily_login: "Daily login",
+        game_play: "Game played",
+      },
+    },
     edit: {
       title: "Profile",
       description:
@@ -102,6 +178,18 @@ const PROFILE_TEXT: Record<ProfileLanguage, ProfileText> = {
       uploadFailed: "Could not upload the image.",
       saveFailed: "Could not save the profile.",
       saveOk: "Profile saved.",
+    },
+    danger: {
+      title: "Delete account",
+      description:
+        "Deleting your account also removes active sessions and YEON service data. This cannot be undone.",
+      confirmationLabel: "Type DELETE to confirm.",
+      confirmationPlaceholder: "DELETE",
+      confirmationValue: "DELETE",
+      action: "Delete account",
+      processing: "Deleting...",
+      required: "Enter the confirmation text exactly.",
+      failed: "Could not delete the account.",
     },
   },
 };

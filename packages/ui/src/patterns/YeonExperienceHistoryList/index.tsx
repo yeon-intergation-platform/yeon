@@ -1,31 +1,28 @@
-import type {
-  ExperienceActivityLabels,
-  ExperienceHistoryItem,
-} from "@yeon/api-contract/user-experience";
+import type { ExperienceHistoryItem } from "@yeon/api-contract/user-experience";
 
 import { YeonText } from "../../primitives/YeonText";
 import { YeonView } from "../../primitives/YeonView";
 import { joinClassNames } from "../../utils";
 
 export type YeonExperienceHistoryListProps = {
-  activityLabels: ExperienceActivityLabels;
+  activityLabels: Record<string, string>;
   className?: string;
+  emptyText?: string;
   items: ExperienceHistoryItem[];
+  locale?: string;
 };
 
 function resolveLabel(
-  activityLabels: ExperienceActivityLabels,
+  activityLabels: Record<string, string>,
   activityType: string
 ) {
-  return (
-    (activityLabels as Record<string, string>)[activityType] ?? activityType
-  );
+  return activityLabels[activityType] ?? activityType;
 }
 
-function formatTimestamp(value: string) {
+function formatTimestamp(value: string, locale: string) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleString("ko-KR", {
+  return date.toLocaleString(locale, {
     year: "numeric",
     month: "long",
     day: "numeric",
@@ -38,7 +35,9 @@ function formatTimestamp(value: string) {
 export function YeonExperienceHistoryList({
   activityLabels,
   className,
+  emptyText = "아직 적립된 경험치가 없습니다.",
   items,
+  locale = "ko-KR",
 }: YeonExperienceHistoryListProps) {
   if (items.length === 0) {
     return (
@@ -53,7 +52,7 @@ export function YeonExperienceHistoryList({
           tone="inherit"
           className="text-center text-[13px] text-[#aaa]"
         >
-          아직 적립된 경험치가 없습니다.
+          {emptyText}
         </YeonText>
       </YeonView>
     );
@@ -79,7 +78,7 @@ export function YeonExperienceHistoryList({
               tone="inherit"
               className="text-[12px] text-[#aaa]"
             >
-              {formatTimestamp(item.createdAt)}
+              {formatTimestamp(item.createdAt, locale)}
             </YeonText>
           </YeonView>
           <YeonText

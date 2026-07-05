@@ -71,6 +71,7 @@ export function GameDetail({
         activeService="game"
         ariaLabel={text.navAriaLabel}
         brandLabel={text.headerBrand}
+        initialLanguage={language}
         profileLabels={text.profileMenu}
         showBgmButton={false}
       />
@@ -114,8 +115,8 @@ export function GameDetail({
             {gameText.summary}
           </YeonText>
           <YeonView className="mt-3 flex flex-wrap items-center gap-2">
-            <GameLikeButton gameSlug={game.slug} />
-            <GameFavoriteButton gameSlug={game.slug} />
+            <GameLikeButton gameSlug={game.slug} language={language} />
+            <GameFavoriteButton gameSlug={game.slug} language={language} />
           </YeonView>
         </YeonView>
 
@@ -125,11 +126,16 @@ export function GameDetail({
         >
           {started ? (
             game.kind === "swf" ? (
-              <RuffleGamePlayer swfUrl={game.embedUrl} title={game.title} />
+              <RuffleGamePlayer
+                swfUrl={game.embedUrl}
+                title={gameText.title}
+                loadingTitle={text.swfOverlayLoading}
+                loadingDescription={text.swfOverlayDescription}
+              />
             ) : (
               <iframe
                 src={game.embedUrl}
-                title={game.title}
+                title={gameText.title}
                 sandbox={GAME_IFRAME_SANDBOX}
                 allow={GAME_IFRAME_ALLOW}
                 allowFullScreen
@@ -146,7 +152,7 @@ export function GameDetail({
                   ? { backgroundImage: `url("${game.thumbUrl}")` }
                   : undefined
               }
-              aria-label={`${game.title} ${text.startGame}`}
+              aria-label={`${gameText.title} ${text.startGame}`}
             >
               <span className="absolute inset-0 bg-black/45 transition-colors duration-200 group-hover:bg-black/30" />
               <span className="relative flex h-16 w-16 items-center justify-center rounded-full bg-white/90 text-[26px] text-[#111] shadow-lg transition-transform duration-200 group-hover:scale-105">
@@ -245,7 +251,7 @@ export function GameDetail({
           </YeonText>
         </YeonView>
 
-        <GameComments gameSlug={game.slug} />
+        <GameComments gameSlug={game.slug} language={language} />
       </YeonView>
     </YeonView>
   );

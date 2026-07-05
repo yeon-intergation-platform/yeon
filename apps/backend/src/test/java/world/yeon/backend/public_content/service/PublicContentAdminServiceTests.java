@@ -100,7 +100,12 @@ class PublicContentAdminServiceTests {
 			role,
 			null,
 			null,
-			null
+			null,
+			null,
+			0,
+			List.of(),
+			0,
+			0
 		);
 	}
 
