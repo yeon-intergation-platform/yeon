@@ -1,6 +1,7 @@
 package world.yeon.backend.users.dto;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 
 public record UserResponse(
 	String id,
@@ -9,5 +10,10 @@ public record UserResponse(
 	String role,
 	OffsetDateTime lastLoginAt,
 	OffsetDateTime createdAt,
-	OffsetDateTime updatedAt
+	OffsetDateTime updatedAt,
+	OffsetDateTime emailVerifiedAt,
+	int sessionCount,
+	List<String> identityProviders,
+	int cardDeckCount,
+	int typingDeckCount
 ) {}

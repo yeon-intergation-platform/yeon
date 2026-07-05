@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import jakarta.persistence.PersistenceException;
@@ -87,6 +88,46 @@ class UserServiceTests {
 		assertThat(service.listUsers(OWNER_ID).users()).isEmpty();
 	}
 
+	@Test void 역할을변경한다() {
+		UUID targetUserId = UUID.fromString("550e8400-e29b-41d4-a716-446655440000");
+		when(repository.findById(OWNER_ID)).thenReturn(adminRow());
+		when(repository.findById(targetUserId)).thenReturn(userRow(targetUserId.toString(), "user@yeon.world", "User", "user"));
+		when(repository.updateRole(eq(targetUserId), eq("admin"), any()))
+			.thenReturn(userRow(targetUserId.toString(), "user@yeon.world", "User", "admin"));
+
+		var result = service.updateUserRole(OWNER_ID, targetUserId, new world.yeon.backend.users.dto.UpdateUserRoleRequest("ADMIN"));
+
+		assertThat(result.user().role()).isEqualTo("admin");
+	}
+
+	@Test void 본인관리자권한강등은막는다() {
+		when(repository.findById(OWNER_ID)).thenReturn(adminRow());
+
+		assertThatThrownBy(() -> service.updateUserRole(OWNER_ID, OWNER_ID, new world.yeon.backend.users.dto.UpdateUserRoleRequest("user")))
+			.isInstanceOf(UserServiceException.class)
+			.hasMessage("본인의 관리자 권한은 직접 낮출 수 없습니다.");
+	}
+
+	@Test void 세션무효화는대상사용자존재후삭제한다() {
+		UUID targetUserId = UUID.fromString("550e8400-e29b-41d4-a716-446655440000");
+		when(repository.findById(OWNER_ID)).thenReturn(adminRow());
+		when(repository.findById(targetUserId)).thenReturn(userRow(targetUserId.toString(), "user@yeon.world", "User", "user"));
+		when(repository.deleteSessionsByUserId(targetUserId)).thenReturn(2);
+
+		var result = service.invalidateUserSessions(OWNER_ID, targetUserId);
+
+		assertThat(result.invalidatedSessions()).isEqualTo(2);
+		verify(repository).deleteSessionsByUserId(targetUserId);
+	}
+
+	@Test void 관리자화면본인삭제는막는다() {
+		when(repository.findById(OWNER_ID)).thenReturn(adminRow());
+
+		assertThatThrownBy(() -> service.deleteUser(OWNER_ID, OWNER_ID))
+			.isInstanceOf(UserServiceException.class)
+			.hasMessage("관리자 화면에서는 본인 계정을 삭제할 수 없습니다.");
+	}
+
 	private UserRepository.UserRow adminRow() {
 		return userRow(OWNER_ID.toString(), "admin@yeon.world", "관리자", "admin");
 	}
@@ -99,7 +140,12 @@ class UserServiceTests {
 			role,
 			OffsetDateTime.parse("2026-05-08T08:00:00Z"),
 			OffsetDateTime.parse("2026-05-08T07:00:00Z"),
-			OffsetDateTime.parse("2026-05-08T07:00:00Z")
+			OffsetDateTime.parse("2026-05-08T07:00:00Z"),
+			null,
+			0,
+			List.of(),
+			0,
+			0
 		);
 	}
 }

@@ -1,23 +1,63 @@
 import type { ReactNode } from "react";
 import { YeonLink, YeonText, YeonView } from "@yeon/ui";
 import { YEON_WEB_SHARED_CLASS as SHARED_FEATURE_CLASS } from "@yeon/ui/theme/web-style-tokens";
+import type { PlatformLanguage } from "@/lib/platform-language";
 
 export const ADMIN_NAV_ITEMS = [
-  { href: "/admin", label: "운영 홈" },
-  { href: "/admin/content", label: "공개 콘텐츠" },
-  { href: "/admin/members", label: "회원 관리" },
-  { href: "/admin/users", label: "사용자 · 경험치" },
-  { href: "/admin/typing-decks", label: "타자 덱" },
-  { href: "/admin/typing-characters", label: "타자 캐릭터" },
-  { href: "/admin/typing-rooms", label: "타자방 운영" },
+  { href: "/admin", labels: { ko: "운영 홈", en: "Ops home" } },
+  {
+    href: "/admin/content",
+    labels: { ko: "공개 콘텐츠", en: "Public content" },
+  },
+  { href: "/admin/members", labels: { ko: "회원 관리", en: "Members" } },
+  { href: "/admin/users", labels: { ko: "사용자 · 경험치", en: "Users · XP" } },
+  {
+    href: "/admin/typing-decks",
+    labels: { ko: "타자 덱", en: "Typing decks" },
+  },
+  {
+    href: "/admin/typing-characters",
+    labels: { ko: "타자 캐릭터", en: "Typing characters" },
+  },
+  {
+    href: "/admin/typing-rooms",
+    labels: { ko: "타자방 운영", en: "Typing rooms" },
+  },
 ] as const;
 
 type AdminPageShellProps = {
   adminEmail: string;
   children: ReactNode;
   currentHref: string;
+  language?: PlatformLanguage;
   sectionLabel: string;
 };
+
+const ADMIN_SHELL_TEXT = {
+  ko: {
+    admin: "관리자",
+    accessOnly: "관리자 전용",
+    accessRequired: "관리자 권한이 필요합니다",
+    defaultDeniedDescription: "admin role 계정만 접근할 수 있습니다.",
+    seedEmailCount: (count: number) =>
+      ` 시드 이메일은 ${count.toLocaleString("ko-KR")}개 설정되어 있습니다.`,
+    login: "로그인하기",
+    home: "홈으로",
+  },
+  en: {
+    admin: "Admin",
+    accessOnly: "Admin only",
+    accessRequired: "Admin access required",
+    defaultDeniedDescription:
+      "Only accounts with the admin role can access this page.",
+    seedEmailCount: (count: number) =>
+      ` ${count.toLocaleString("en-US")} seed ${
+        count === 1 ? "email is" : "emails are"
+      } configured.`,
+    login: "Log in",
+    home: "Home",
+  },
+} as const;
 
 function isCurrentAdminNavItem(itemHref: string, currentHref: string) {
   if (itemHref === "/admin") {
@@ -31,8 +71,11 @@ export function AdminPageShell({
   adminEmail,
   children,
   currentHref,
+  language = "ko",
   sectionLabel,
 }: AdminPageShellProps) {
+  const shellText = ADMIN_SHELL_TEXT[language];
+
   return (
     <YeonView className="min-h-screen bg-white text-[#111]">
       <YeonView className="border-b border-[#e5e5e5] bg-white px-6 py-3 md:px-12">
@@ -43,7 +86,7 @@ export function AdminPageShell({
               tone="inherit"
               className={SHARED_FEATURE_CLASS.text13EmphasisSubtle}
             >
-              관리자
+              {shellText.admin}
             </YeonText>
             <YeonText
               variant="unstyled"
@@ -66,7 +109,7 @@ export function AdminPageShell({
                       : SHARED_FEATURE_CLASS.ghostButtonMd13
                   }
                 >
-                  {item.label}
+                  {item.labels[language]}
                 </YeonLink>
               );
             })}
@@ -79,12 +122,16 @@ export function AdminPageShell({
 }
 
 export function AdminAccessDenied({
-  description = "admin role 계정만 접근할 수 있습니다.",
+  description,
+  language = "ko",
   seedEmailCount,
 }: {
   description?: string;
+  language?: PlatformLanguage;
   seedEmailCount?: number;
 }) {
+  const shellText = ADMIN_SHELL_TEXT[language];
+
   return (
     <YeonView
       as="main"
@@ -99,7 +146,7 @@ export function AdminAccessDenied({
           tone="inherit"
           className={SHARED_FEATURE_CLASS.text13EmphasisSubtle}
         >
-          관리자 전용
+          {shellText.accessOnly}
         </YeonText>
         <YeonText
           as="h1"
@@ -107,16 +154,16 @@ export function AdminAccessDenied({
           tone="inherit"
           className="mt-2 text-[26px] font-semibold text-[#111]"
         >
-          관리자 권한이 필요합니다
+          {shellText.accessRequired}
         </YeonText>
         <YeonText
           variant="unstyled"
           tone="inherit"
           className="mt-3 text-[14px] leading-6 text-[#666]"
         >
-          {description}
+          {description ?? shellText.defaultDeniedDescription}
           {typeof seedEmailCount === "number"
-            ? ` 시드 이메일은 ${seedEmailCount.toLocaleString("ko-KR")}개 설정되어 있습니다.`
+            ? shellText.seedEmailCount(seedEmailCount)
             : null}
         </YeonText>
         <YeonView className={SHARED_FEATURE_CLASS.wrapGap2 + " mt-6"}>
@@ -124,10 +171,10 @@ export function AdminAccessDenied({
             href="/auth/login"
             className={SHARED_FEATURE_CLASS.primaryActionButtonMd14}
           >
-            로그인하기
+            {shellText.login}
           </YeonLink>
           <YeonLink href="/" className={SHARED_FEATURE_CLASS.ghostButtonMd14}>
-            홈으로
+            {shellText.home}
           </YeonLink>
         </YeonView>
       </YeonView>

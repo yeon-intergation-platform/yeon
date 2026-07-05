@@ -4,15 +4,23 @@ import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 import world.yeon.backend.users.dto.CreateUserRequest;
 import world.yeon.backend.users.dto.CreateUserResponse;
+import world.yeon.backend.users.dto.DeleteUserResponse;
 import world.yeon.backend.users.dto.GetUsersResponse;
+import world.yeon.backend.users.dto.InvalidateUserSessionsResponse;
+import world.yeon.backend.users.dto.UpdateUserRequest;
+import world.yeon.backend.users.dto.UpdateUserResponse;
+import world.yeon.backend.users.dto.UpdateUserRoleRequest;
 import world.yeon.backend.users.service.UserService;
 import world.yeon.backend.users.service.UserServiceException;
 import world.yeon.backend.common.error.ApiErrorResponse;
@@ -37,6 +45,31 @@ public class UserController {
 	@PostMapping("/users")
 	public ResponseEntity<CreateUserResponse> createUser(@RequestHeader("X-Yeon-User-Id") UUID userId, @RequestBody CreateUserRequest request) {
 		return ResponseEntity.status(HttpStatus.CREATED).body(service.createUser(userId, request));
+	}
+
+	@PatchMapping("/users/{targetUserId}")
+	public UpdateUserResponse updateUser(@RequestHeader("X-Yeon-User-Id") UUID userId, @PathVariable UUID targetUserId, @RequestBody UpdateUserRequest request) {
+		return service.updateUser(userId, targetUserId, request);
+	}
+
+	@PatchMapping("/users/{targetUserId}/role")
+	public UpdateUserResponse updateUserRole(@RequestHeader("X-Yeon-User-Id") UUID userId, @PathVariable UUID targetUserId, @RequestBody UpdateUserRoleRequest request) {
+		return service.updateUserRole(userId, targetUserId, request);
+	}
+
+	@PostMapping("/users/{targetUserId}/sessions/invalidate")
+	public InvalidateUserSessionsResponse invalidateUserSessions(@RequestHeader("X-Yeon-User-Id") UUID userId, @PathVariable UUID targetUserId) {
+		return service.invalidateUserSessions(userId, targetUserId);
+	}
+
+	@DeleteMapping("/users/{targetUserId}")
+	public DeleteUserResponse deleteUser(@RequestHeader("X-Yeon-User-Id") UUID userId, @PathVariable UUID targetUserId) {
+		return service.deleteUser(userId, targetUserId);
+	}
+
+	@DeleteMapping("/users/me")
+	public DeleteUserResponse deleteMe(@RequestHeader("X-Yeon-User-Id") UUID userId) {
+		return service.deleteMe(userId);
 	}
 
 	@ExceptionHandler(IllegalArgumentException.class)

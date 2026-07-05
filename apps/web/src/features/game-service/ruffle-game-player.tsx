@@ -42,9 +42,13 @@ function ensureRuffleScript(): HTMLScriptElement {
 export function RuffleGamePlayer({
   swfUrl,
   title,
+  loadingTitle,
+  loadingDescription,
 }: {
   swfUrl: string;
   title: string;
+  loadingTitle: string;
+  loadingDescription: string;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   // SWF는 용량이 커(수 MB~수십 MB) 로딩 동안 검은 화면만 보이면 고장처럼 느껴진다.
@@ -98,10 +102,10 @@ export function RuffleGamePlayer({
         <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/80 text-white">
           <span className="h-8 w-8 animate-spin rounded-full border-2 border-white/30 border-t-white" />
           <span className="text-[13px] font-medium text-white/85">
-            게임을 불러오는 중...
+            {loadingTitle}
           </span>
           <span className="text-[11px] text-white/55">
-            용량이 커서 잠시 걸릴 수 있어요
+            {loadingDescription}
           </span>
         </div>
       ) : null}

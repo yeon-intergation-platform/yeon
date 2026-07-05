@@ -8,6 +8,10 @@ import {
   type GameComment,
 } from "@yeon/api-contract/game-comment";
 import { QueryProvider } from "@/lib/query-provider";
+import {
+  getGameServiceText,
+  type GameServiceLanguage,
+} from "./game-service-i18n";
 
 type SessionInfo = {
   authenticated: boolean;
@@ -58,10 +62,10 @@ function Avatar({
   );
 }
 
-function formatDate(iso: string): string {
+function formatDate(iso: string, locale: string): string {
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return "";
-  return new Intl.DateTimeFormat("ko-KR", {
+  return new Intl.DateTimeFormat(locale, {
     year: "2-digit",
     month: "2-digit",
     day: "2-digit",
@@ -93,27 +97,36 @@ type CommentSort = "latest" | "popular";
 
 async function loadComments(
   gameSlug: string,
-  sort: CommentSort
+  sort: CommentSort,
+  loadError: string
 ): Promise<GameComment[]> {
   const response = await fetchYeon(
     `/api/v1/game-service/comments?gameSlug=${encodeURIComponent(gameSlug)}&sort=${sort}`,
     { credentials: "include", cache: "no-store" }
   );
   if (!response.ok) {
-    throw new Error("댓글을 불러오지 못했습니다.");
+    throw new Error(loadError);
   }
   return gameCommentListResponseSchema.parse(await response.json()).items;
 }
 
-function GameCommentsInner({ gameSlug }: { gameSlug: string }) {
+function GameCommentsInner({
+  gameSlug,
+  language,
+}: {
+  gameSlug: string;
+  language: GameServiceLanguage;
+}) {
+  const text = getGameServiceText(language);
+  const commentsText = text.comments;
   const [sort, setSort] = useState<CommentSort>("latest");
   const sessionQuery = useQuery({
     queryKey: ["auth-session"],
     queryFn: loadSession,
   });
   const commentsQuery = useQuery({
-    queryKey: ["game-comments", gameSlug, sort],
-    queryFn: () => loadComments(gameSlug, sort),
+    queryKey: ["game-comments", gameSlug, sort, language],
+    queryFn: () => loadComments(gameSlug, sort, commentsText.loadError),
   });
 
   const [revealed, setRevealed] = useState<Record<string, string>>({});
@@ -123,6 +136,10 @@ function GameCommentsInner({ gameSlug }: { gameSlug: string }) {
   const [guestPassword, setGuestPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const resolveServerMessage = (
+    serverMessage: string | undefined,
+    fallback: string
+  ) => (language === "ko" ? (serverMessage ?? fallback) : fallback);
 
   const sessionReady = sessionQuery.isSuccess;
   const isAuthenticated = sessionQuery.data?.authenticated === true;
@@ -136,16 +153,16 @@ function GameCommentsInner({ gameSlug }: { gameSlug: string }) {
 
     const trimmed = content.trim();
     if (!trimmed) {
-      setFormError("댓글 내용을 입력해 주세요.");
+      setFormError(commentsText.contentRequired);
       return;
     }
     if (!isAuthenticated) {
       if (guestNickname.trim().length < 1) {
-        setFormError("닉네임을 입력해 주세요.");
+        setFormError(commentsText.nicknameRequired);
         return;
       }
       if (guestPassword.length < 4) {
-        setFormError("비밀번호는 4자 이상이어야 합니다.");
+        setFormError(commentsText.passwordRequired);
         return;
       }
     }
@@ -168,7 +185,9 @@ function GameCommentsInner({ gameSlug }: { gameSlug: string }) {
         const data = (await response.json().catch(() => null)) as {
           message?: string;
         } | null;
-        throw new Error(data?.message ?? "댓글을 등록하지 못했습니다.");
+        throw new Error(
+          resolveServerMessage(data?.message, commentsText.submitFailed)
+        );
       }
       setContent("");
       setIsSecret(false);
@@ -176,7 +195,7 @@ function GameCommentsInner({ gameSlug }: { gameSlug: string }) {
       await commentsQuery.refetch();
     } catch (error) {
       setFormError(
-        error instanceof Error ? error.message : "댓글을 등록하지 못했습니다."
+        error instanceof Error ? error.message : commentsText.submitFailed
       );
     } finally {
       setSubmitting(false);
@@ -184,7 +203,7 @@ function GameCommentsInner({ gameSlug }: { gameSlug: string }) {
   };
 
   const handleReveal = async (comment: GameComment) => {
-    const password = window.prompt("비밀번호를 입력하세요");
+    const password = window.prompt(commentsText.passwordPrompt);
     if (!password) return;
     try {
       const response = await fetchYeon(
@@ -201,7 +220,9 @@ function GameCommentsInner({ gameSlug }: { gameSlug: string }) {
         message?: string;
       } | null;
       if (!response.ok || !data?.content) {
-        window.alert(data?.message ?? "확인하지 못했습니다.");
+        window.alert(
+          resolveServerMessage(data?.message, commentsText.revealFailed)
+        );
         return;
       }
       setRevealed((prev) => ({
@@ -209,16 +230,16 @@ function GameCommentsInner({ gameSlug }: { gameSlug: string }) {
         [comment.id]: data.content as string,
       }));
     } catch {
-      window.alert("확인하지 못했습니다.");
+      window.alert(commentsText.revealFailed);
     }
   };
 
   const handleDelete = async (comment: GameComment) => {
     let password: string | null = null;
     if (comment.isGuest && !comment.isMine) {
-      password = window.prompt("비밀번호를 입력하세요");
+      password = window.prompt(commentsText.passwordPrompt);
       if (!password) return;
-    } else if (!window.confirm("댓글을 삭제할까요?")) {
+    } else if (!window.confirm(commentsText.deleteConfirm)) {
       return;
     }
     try {
@@ -231,12 +252,14 @@ function GameCommentsInner({ gameSlug }: { gameSlug: string }) {
         const data = (await response.json().catch(() => null)) as {
           message?: string;
         } | null;
-        window.alert(data?.message ?? "삭제하지 못했습니다.");
+        window.alert(
+          resolveServerMessage(data?.message, commentsText.deleteFailed)
+        );
         return;
       }
       await commentsQuery.refetch();
     } catch {
-      window.alert("삭제하지 못했습니다.");
+      window.alert(commentsText.deleteFailed);
     }
   };
 
@@ -247,13 +270,13 @@ function GameCommentsInner({ gameSlug }: { gameSlug: string }) {
         { method: "POST", credentials: "include" }
       );
       if (response.status === 401) {
-        window.alert("좋아요는 로그인 후 이용할 수 있어요.");
+        window.alert(commentsText.likeLoginRequired);
         return;
       }
       if (!response.ok) throw new Error("실패");
       await commentsQuery.refetch();
     } catch {
-      window.alert("좋아요를 처리하지 못했어요.");
+      window.alert(commentsText.likeFailed);
     }
   };
 
@@ -268,14 +291,14 @@ function GameCommentsInner({ gameSlug }: { gameSlug: string }) {
         tone="inherit"
         className="text-[16px] font-bold text-[#111]"
       >
-        댓글{" "}
+        {commentsText.heading}{" "}
         <YeonText
           as="span"
           variant="unstyled"
           tone="inherit"
           className="text-[13px] font-semibold text-[#999]"
         >
-          {count}개
+          {commentsText.count(count)}
         </YeonText>
       </YeonText>
 
@@ -286,7 +309,7 @@ function GameCommentsInner({ gameSlug }: { gameSlug: string }) {
               type="text"
               value={guestNickname}
               onChange={(e) => setGuestNickname(e.target.value)}
-              placeholder="닉네임"
+              placeholder={commentsText.nicknamePlaceholder}
               maxLength={40}
               className="w-32 rounded-lg border border-[#e5e5e5] bg-white px-3 py-2 text-[13px] outline-none focus:border-[#6b5bd2]"
             />
@@ -294,7 +317,7 @@ function GameCommentsInner({ gameSlug }: { gameSlug: string }) {
               type="password"
               value={guestPassword}
               onChange={(e) => setGuestPassword(e.target.value)}
-              placeholder="비밀번호"
+              placeholder={commentsText.passwordPlaceholder}
               maxLength={72}
               className="w-32 rounded-lg border border-[#e5e5e5] bg-white px-3 py-2 text-[13px] outline-none focus:border-[#6b5bd2]"
             />
@@ -303,7 +326,7 @@ function GameCommentsInner({ gameSlug }: { gameSlug: string }) {
         <textarea
           value={content}
           onChange={(e) => setContent(e.target.value)}
-          placeholder="댓글을 남겨보세요"
+          placeholder={commentsText.contentPlaceholder}
           rows={3}
           maxLength={1000}
           className="w-full resize-y rounded-lg border border-[#e5e5e5] bg-white px-3 py-2 text-[13px] leading-[1.6] outline-none focus:border-[#6b5bd2]"
@@ -316,14 +339,14 @@ function GameCommentsInner({ gameSlug }: { gameSlug: string }) {
               onChange={(e) => setIsSecret(e.target.checked)}
               className="h-3.5 w-3.5 accent-[#6b5bd2]"
             />
-            비밀댓글
+            {commentsText.secretLabel}
           </label>
           <button
             type="submit"
             disabled={submitting}
             className="rounded-full bg-[#6b5bd2] px-5 py-2 text-[13px] font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
           >
-            {submitting ? "등록 중..." : "등록"}
+            {submitting ? commentsText.submitting : commentsText.submit}
           </button>
         </YeonView>
         {formError ? (
@@ -342,8 +365,8 @@ function GameCommentsInner({ gameSlug }: { gameSlug: string }) {
         <YeonView className="mt-5 flex gap-1.5">
           {(
             [
-              { key: "latest", label: "최신순" },
-              { key: "popular", label: "인기순" },
+              { key: "latest", label: commentsText.latest },
+              { key: "popular", label: commentsText.popular },
             ] as const
           ).map((option) => (
             <button
@@ -370,7 +393,7 @@ function GameCommentsInner({ gameSlug }: { gameSlug: string }) {
             tone="inherit"
             className="py-6 text-center text-[13px] text-[#999]"
           >
-            댓글을 불러오지 못했습니다.
+            {commentsText.loadError}
           </YeonText>
         ) : commentsQuery.isSuccess && count === 0 ? (
           <YeonText
@@ -379,7 +402,7 @@ function GameCommentsInner({ gameSlug }: { gameSlug: string }) {
             tone="inherit"
             className="py-6 text-center text-[13px] text-[#999]"
           >
-            첫 댓글을 남겨보세요!
+            {commentsText.empty}
           </YeonText>
         ) : (
           comments?.map((comment) => {
@@ -412,7 +435,7 @@ function GameCommentsInner({ gameSlug }: { gameSlug: string }) {
                         tone="inherit"
                         className="rounded bg-[#f2f2f2] px-1.5 py-0.5 text-[10px] text-[#999]"
                       >
-                        게스트
+                        {commentsText.guest}
                       </YeonText>
                     ) : null}
                     <YeonText
@@ -421,7 +444,7 @@ function GameCommentsInner({ gameSlug }: { gameSlug: string }) {
                       tone="inherit"
                       className="text-[11px] text-[#bbb]"
                     >
-                      {formatDate(comment.createdAt)}
+                      {formatDate(comment.createdAt, text.dateLocale)}
                     </YeonText>
                   </YeonView>
                   <YeonText
@@ -431,7 +454,9 @@ function GameCommentsInner({ gameSlug }: { gameSlug: string }) {
                     className="mt-1 whitespace-pre-line break-words text-[13px] leading-[1.6] text-[#444]"
                   >
                     {masked ? (
-                      <span className="text-[#999]">🔒 비밀 댓글입니다.</span>
+                      <span className="text-[#999]">
+                        🔒 {commentsText.secretComment}
+                      </span>
                     ) : (
                       shownContent
                     )}
@@ -458,7 +483,9 @@ function GameCommentsInner({ gameSlug }: { gameSlug: string }) {
                       >
                         <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1L12 21l7.7-7.6 1.1-1a5.5 5.5 0 0 0 0-7.8z" />
                       </svg>
-                      {comment.likeCount > 0 ? comment.likeCount : "좋아요"}
+                      {comment.likeCount > 0
+                        ? comment.likeCount
+                        : commentsText.likeLabel}
                     </button>
                     {comment.canRevealWithPassword && masked ? (
                       <button
@@ -466,7 +493,7 @@ function GameCommentsInner({ gameSlug }: { gameSlug: string }) {
                         onClick={() => handleReveal(comment)}
                         className="text-[11px] font-semibold text-[#6b5bd2] hover:underline"
                       >
-                        비밀번호로 보기
+                        {commentsText.revealWithPassword}
                       </button>
                     ) : null}
                     {comment.canDelete ? (
@@ -475,7 +502,7 @@ function GameCommentsInner({ gameSlug }: { gameSlug: string }) {
                         onClick={() => handleDelete(comment)}
                         className="text-[11px] text-[#bbb] hover:text-[#d2685b]"
                       >
-                        삭제
+                        {commentsText.delete}
                       </button>
                     ) : null}
                   </YeonView>
@@ -490,10 +517,16 @@ function GameCommentsInner({ gameSlug }: { gameSlug: string }) {
 }
 
 // 공통 헤더처럼 전역 QueryProvider 밖에서도 동작하도록 자체 provider로 감싼다.
-export function GameComments({ gameSlug }: { gameSlug: string }) {
+export function GameComments({
+  gameSlug,
+  language,
+}: {
+  gameSlug: string;
+  language: GameServiceLanguage;
+}) {
   return (
     <QueryProvider>
-      <GameCommentsInner gameSlug={gameSlug} />
+      <GameCommentsInner gameSlug={gameSlug} language={language} />
     </QueryProvider>
   );
 }

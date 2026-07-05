@@ -121,8 +121,15 @@ import {
 } from "@yeon/api-contract/public-content";
 import {
   createUserResponseSchema,
+  deleteUserResponseSchema,
+  invalidateUserSessionsResponseSchema,
   listUsersResponseSchema,
+  updateUserBodySchema,
+  updateUserResponseSchema,
+  updateUserRoleBodySchema,
   type CreateUserBody,
+  type UpdateUserBody,
+  type UpdateUserRoleBody,
 } from "@yeon/api-contract/users";
 
 export class ApiClientError extends Error {
@@ -699,6 +706,48 @@ export function createApiClient(options: ApiClientOptions = {}) {
         init: {
           method: "POST",
           body: JSON.stringify(body),
+        },
+      });
+    },
+    updateUser(userId: string, body: UpdateUserBody) {
+      const parsedBody = updateUserBodySchema.parse(body);
+
+      return request({
+        path: `/api/v1/users/${encodePathSegments(userId)}`,
+        schema: updateUserResponseSchema,
+        init: {
+          method: "PATCH",
+          body: JSON.stringify(parsedBody),
+        },
+      });
+    },
+    updateUserRole(userId: string, body: UpdateUserRoleBody) {
+      const parsedBody = updateUserRoleBodySchema.parse(body);
+
+      return request({
+        path: `/api/v1/users/${encodePathSegments(userId)}/role`,
+        schema: updateUserResponseSchema,
+        init: {
+          method: "PATCH",
+          body: JSON.stringify(parsedBody),
+        },
+      });
+    },
+    invalidateUserSessions(userId: string) {
+      return request({
+        path: `/api/v1/users/${encodePathSegments(userId)}/sessions`,
+        schema: invalidateUserSessionsResponseSchema,
+        init: {
+          method: "DELETE",
+        },
+      });
+    },
+    deleteUser(userId: string) {
+      return request({
+        path: `/api/v1/users/${encodePathSegments(userId)}`,
+        schema: deleteUserResponseSchema,
+        init: {
+          method: "DELETE",
         },
       });
     },

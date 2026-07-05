@@ -12,6 +12,7 @@ import {
 } from "@yeon/ui";
 import { useYeonPathname } from "@yeon/ui/runtime/YeonNavigation";
 import { TypingBgmButton } from "@/features/typing-service/typing-bgm-button";
+import { syncTypingSettingsLocale } from "@/features/typing-service/use-typing-settings";
 import { HeaderExperienceBadge } from "@/features/user-experience/header-experience-badge";
 import { resolveSectionBrandHref } from "@/lib/header-brand-nav";
 import {
@@ -45,6 +46,7 @@ type CommonProductHeaderProps = {
   activeService: CommonServiceKey;
   ariaLabel?: string;
   brandLabel?: string;
+  initialLanguage?: PlatformLanguage;
   settingsControl?: ReactNode;
   profileControl?: ReactNode;
   profileLabels?: Partial<YeonProductProfileMenuLabels>;
@@ -58,13 +60,35 @@ type AuthSessionPayload = {
   authenticated?: unknown;
 };
 
-const COMMON_HEADER_BRAND_LABELS: Record<CommonServiceKey, string> = {
-  home: "YEON",
-  typing: "YEON 타자방",
-  card: "YEON 플래시카드",
-  community: "YEON 커뮤니티",
-  game: "YEON 게임",
-  todo: "YEON Today",
+const COMMON_HEADER_TEXT: Record<
+  PlatformLanguage,
+  {
+    navAriaLabel: string;
+    brandLabels: Record<CommonServiceKey, string>;
+  }
+> = {
+  ko: {
+    navAriaLabel: "YEON 공통 서비스 이동",
+    brandLabels: {
+      home: "YEON",
+      typing: "YEON 타자방",
+      card: "YEON 플래시카드",
+      community: "YEON 커뮤니티",
+      game: "YEON 게임",
+      todo: "YEON Today",
+    },
+  },
+  en: {
+    navAriaLabel: "YEON common service navigation",
+    brandLabels: {
+      home: "YEON",
+      typing: "YEON Typing",
+      card: "YEON Flashcards",
+      community: "YEON Community",
+      game: "YEON Games",
+      todo: "YEON Today",
+    },
+  },
 } as const;
 
 async function fetchIsAuthenticated() {
@@ -86,8 +110,9 @@ export const ProductHeaderSettingsButton = YeonProductHeaderActionButton;
 
 export function CommonProductHeader({
   activeService,
-  ariaLabel = "YEON 공통 서비스 이동",
-  brandLabel = COMMON_HEADER_BRAND_LABELS[activeService],
+  ariaLabel,
+  brandLabel,
+  initialLanguage = "ko",
   settingsControl,
   profileControl,
   profileLabels,
@@ -97,6 +122,11 @@ export function CommonProductHeader({
   showSettingsButton = true,
 }: CommonProductHeaderProps) {
   const pathname = useYeonPathname();
+  const { language } = usePlatformLanguage(initialLanguage);
+  const commonText = COMMON_HEADER_TEXT[language];
+  const resolvedAriaLabel = ariaLabel ?? commonText.navAriaLabel;
+  const resolvedBrandLabel =
+    brandLabel ?? commonText.brandLabels[activeService];
   // 좌상단 "한 단계 위": 하위 화면 → 서비스 홈, 서비스 홈 → 플랫폼(yeon.world).
   // 플랫폼 홈(home) 자체에서는 그대로 루트를 가리킨다.
   const brandHref =
@@ -107,7 +137,7 @@ export function CommonProductHeader({
   return (
     <YeonProductHeader
       as="nav"
-      ariaLabel={ariaLabel}
+      ariaLabel={resolvedAriaLabel}
       innerClassName="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 md:gap-6"
     >
       <YeonLink
@@ -115,7 +145,7 @@ export function CommonProductHeader({
         aria-current={activeService === "home" ? "page" : undefined}
         className="min-w-0 text-[19px] font-black tracking-[-0.04em] text-[#111] no-underline transition-opacity hover:opacity-70 md:text-[23px]"
       >
-        {brandLabel}
+        {resolvedBrandLabel}
       </YeonLink>
 
       <YeonView aria-hidden="true" />
@@ -127,7 +157,10 @@ export function CommonProductHeader({
           </YeonView>
         ) : null}
         <YeonView className="hidden shrink-0 md:block">
-          <HeaderExperienceBadge levelAriaLabel={levelAriaLabel} />
+          <HeaderExperienceBadge
+            initialLanguage={language}
+            levelAriaLabel={levelAriaLabel}
+          />
         </YeonView>
         {showBgmButton ? (
           <YeonView className="hidden shrink-0 md:block">
@@ -135,19 +168,28 @@ export function CommonProductHeader({
           </YeonView>
         ) : null}
         {showSettingsButton
-          ? (settingsControl ?? <ProductHeaderDefaultSettingsButton />)
+          ? (settingsControl ?? (
+              <ProductHeaderDefaultSettingsButton initialLanguage={language} />
+            ))
           : settingsControl}
         {profileControl ?? (
-          <ProductHeaderProfileButton labels={profileLabels} />
+          <ProductHeaderProfileButton
+            initialLanguage={language}
+            labels={profileLabels}
+          />
         )}
       </YeonView>
     </YeonProductHeader>
   );
 }
 
-export function ProductHeaderDefaultSettingsButton() {
+export function ProductHeaderDefaultSettingsButton({
+  initialLanguage = "ko",
+}: {
+  initialLanguage?: PlatformLanguage;
+} = {}) {
   const [open, setOpen] = useState(false);
-  const { language, setLanguage } = usePlatformLanguage();
+  const { language, setLanguage } = usePlatformLanguage(initialLanguage);
   const settingsLabel = language === "en" ? "Settings" : "설정";
   const languageLabel = language === "en" ? "Language" : "언어";
   const helpText =
@@ -157,6 +199,7 @@ export function ProductHeaderDefaultSettingsButton() {
 
   const handleLanguageChange = (nextLanguage: PlatformLanguage) => {
     setLanguage(nextLanguage);
+    syncTypingSettingsLocale(nextLanguage);
     setOpen(false);
     const nextUrl = new URL(window.location.href);
     nextUrl.searchParams.set("lang", nextLanguage);
@@ -216,14 +259,16 @@ export function ProductHeaderDefaultSettingsButton() {
 
 export function ProductHeaderProfileButton({
   href = "/profile",
+  initialLanguage = "ko",
   labels,
 }: {
   href?: string;
+  initialLanguage?: PlatformLanguage;
   labels?: Partial<YeonProductProfileMenuLabels>;
 }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const { logout, isLoggingOut } = useLogout();
-  const { language } = usePlatformLanguage();
+  const { language } = usePlatformLanguage(initialLanguage);
   const resolvedLabels = {
     ...PLATFORM_PROFILE_MENU_LABELS[language],
     ...labels,

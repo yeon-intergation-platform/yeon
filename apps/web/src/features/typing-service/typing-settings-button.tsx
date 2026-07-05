@@ -13,7 +13,10 @@ import {
 } from "@yeon/ui";
 import { useYeonDocumentEvent } from "@yeon/ui/hooks/YeonBrowserHooks";
 import { YEON_WEB_SHARED_CLASS as SHARED_FEATURE_CLASS } from "@yeon/ui/theme/web-style-tokens";
-import { writePlatformLanguagePreference } from "@/lib/platform-language";
+import {
+  PLATFORM_LANGUAGE_CHANGE_EVENT,
+  writePlatformLanguagePreference,
+} from "@/lib/platform-language";
 import {
   createTranslator,
   type TypingLocale,
@@ -94,6 +97,9 @@ export function TypingSettingsButton() {
                 onClick={() => {
                   updateSettings({ locale: opt.value });
                   writePlatformLanguagePreference(opt.value);
+                  window.dispatchEvent(
+                    new Event(PLATFORM_LANGUAGE_CHANGE_EVENT)
+                  );
                 }}
                 variant="ghost"
                 size="sm"

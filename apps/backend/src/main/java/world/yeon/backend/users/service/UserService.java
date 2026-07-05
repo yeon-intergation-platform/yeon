@@ -14,13 +14,19 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import world.yeon.backend.users.dto.CreateUserRequest;
 import world.yeon.backend.users.dto.CreateUserResponse;
+import world.yeon.backend.users.dto.DeleteUserResponse;
 import world.yeon.backend.users.dto.GetUsersResponse;
+import world.yeon.backend.users.dto.InvalidateUserSessionsResponse;
+import world.yeon.backend.users.dto.UpdateUserRequest;
+import world.yeon.backend.users.dto.UpdateUserResponse;
+import world.yeon.backend.users.dto.UpdateUserRoleRequest;
 import world.yeon.backend.users.dto.UserResponse;
 import world.yeon.backend.users.repository.UserRepository;
 
 @Service
 public class UserService {
 	private static final String ADMIN_ROLE = "admin";
+	private static final String USER_ROLE = "user";
 
 	private final UserRepository repository;
 	private final Set<String> adminSeedEmails;
@@ -58,8 +64,75 @@ public class UserService {
 		}
 	}
 
+	@Transactional
+	public UpdateUserResponse updateUser(UUID actorUserId, UUID targetUserId, UpdateUserRequest request) {
+		requireAdmin(actorUserId);
+		requireExistingUser(targetUserId);
+		String displayName = normalizeDisplayName(request == null ? null : request.displayName());
+		var updated = repository.updateDisplayName(targetUserId, displayName, OffsetDateTime.now(ZoneOffset.UTC));
+		if (updated == null) {
+			throw new UserServiceException(404, "USER_NOT_FOUND", "사용자를 찾을 수 없습니다.");
+		}
+		return new UpdateUserResponse(toResponse(updated));
+	}
+
+	@Transactional
+	public UpdateUserResponse updateUserRole(UUID actorUserId, UUID targetUserId, UpdateUserRoleRequest request) {
+		requireAdmin(actorUserId);
+		requireExistingUser(targetUserId);
+		String role = normalizeRole(request == null ? null : request.role());
+		if (role == null) {
+			throw new IllegalArgumentException("역할은 admin 또는 user만 사용할 수 있습니다.");
+		}
+		if (actorUserId.equals(targetUserId) && !ADMIN_ROLE.equals(role)) {
+			throw new UserServiceException(409, "SELF_DEMOTION_BLOCKED", "본인의 관리자 권한은 직접 낮출 수 없습니다.");
+		}
+		var updated = repository.updateRole(targetUserId, role, OffsetDateTime.now(ZoneOffset.UTC));
+		if (updated == null) {
+			throw new UserServiceException(404, "USER_NOT_FOUND", "사용자를 찾을 수 없습니다.");
+		}
+		return new UpdateUserResponse(toResponse(updated));
+	}
+
+	@Transactional
+	public InvalidateUserSessionsResponse invalidateUserSessions(UUID actorUserId, UUID targetUserId) {
+		requireAdmin(actorUserId);
+		requireExistingUser(targetUserId);
+		int deleted = repository.deleteSessionsByUserId(targetUserId);
+		return new InvalidateUserSessionsResponse(targetUserId.toString(), deleted);
+	}
+
+	@Transactional
+	public DeleteUserResponse deleteUser(UUID actorUserId, UUID targetUserId) {
+		requireAdmin(actorUserId);
+		requireExistingUser(targetUserId);
+		if (actorUserId.equals(targetUserId)) {
+			throw new UserServiceException(409, "SELF_DELETE_REQUIRES_WITHDRAWAL", "관리자 화면에서는 본인 계정을 삭제할 수 없습니다.");
+		}
+		return deleteExistingUser(targetUserId);
+	}
+
+	@Transactional
+	public DeleteUserResponse deleteMe(UUID userId) {
+		requireExistingUser(userId);
+		return deleteExistingUser(userId);
+	}
+
 	private UserResponse toResponse(UserRepository.UserRow row) {
-		return new UserResponse(row.id(), row.email(), row.displayName(), row.role(), row.lastLoginAt(), row.createdAt(), row.updatedAt());
+		return new UserResponse(
+			row.id(),
+			row.email(),
+			row.displayName(),
+			row.role(),
+			row.lastLoginAt(),
+			row.createdAt(),
+			row.updatedAt(),
+			row.emailVerifiedAt(),
+			row.sessionCount(),
+			row.identityProviders(),
+			row.cardDeckCount(),
+			row.typingDeckCount()
+		);
 	}
 
 	private void requireAdmin(UUID userId) {
@@ -74,6 +147,21 @@ public class UserService {
 			return;
 		}
 		throw new UserServiceException(403, "ADMIN_REQUIRED", "관리자 권한이 필요합니다.");
+	}
+
+	private void requireExistingUser(UUID userId) {
+		if (userId == null || repository.findById(userId) == null) {
+			throw new UserServiceException(404, "USER_NOT_FOUND", "사용자를 찾을 수 없습니다.");
+		}
+	}
+
+	private DeleteUserResponse deleteExistingUser(UUID userId) {
+		int invalidatedSessions = repository.deleteSessionsByUserId(userId);
+		int deleted = repository.deleteUser(userId);
+		if (deleted < 1) {
+			throw new UserServiceException(404, "USER_NOT_FOUND", "사용자를 찾을 수 없습니다.");
+		}
+		return new DeleteUserResponse(userId.toString(), true, invalidatedSessions);
 	}
 
 	private static Set<String> parseAdminSeedEmails(String value) {
@@ -97,6 +185,13 @@ public class UserService {
 		String trimmed = raw.trim();
 		if (trimmed.isBlank()) return null;
 		return trimmed.length() <= 80 ? trimmed : trimmed.substring(0, 80);
+	}
+
+	private String normalizeRole(String raw) {
+		if (raw == null) return null;
+		String role = raw.trim().toLowerCase(Locale.ROOT);
+		if (ADMIN_ROLE.equals(role) || USER_ROLE.equals(role)) return role;
+		return null;
 	}
 
 	private static final String UNIQUE_VIOLATION_SQL_STATE = "23505";

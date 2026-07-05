@@ -4,13 +4,17 @@ import { useYeonQuery as useQuery } from "@yeon/ui/runtime/YeonQuery";
 import { fetchYeon } from "@yeon/ui/runtime/YeonBrowserRuntime";
 import { gameSlugListResponseSchema } from "@yeon/api-contract/game-library";
 import { QueryProvider } from "@/lib/query-provider";
+import {
+  getGameServiceText,
+  type GameServiceLanguage,
+} from "./game-service-i18n";
 
-async function loadFavorites(): Promise<string[]> {
+async function loadFavorites(loadError: string): Promise<string[]> {
   const response = await fetchYeon("/api/v1/game-service/favorites", {
     credentials: "include",
     cache: "no-store",
   });
-  if (!response.ok) throw new Error("찜 목록을 불러오지 못했습니다.");
+  if (!response.ok) throw new Error(loadError);
   return gameSlugListResponseSchema.parse(await response.json()).slugs;
 }
 
@@ -32,10 +36,17 @@ function BookmarkIcon({ filled }: { filled: boolean }) {
   );
 }
 
-function GameFavoriteButtonInner({ gameSlug }: { gameSlug: string }) {
+function GameFavoriteButtonInner({
+  gameSlug,
+  language,
+}: {
+  gameSlug: string;
+  language: GameServiceLanguage;
+}) {
+  const text = getGameServiceText(language).favorite;
   const favoritesQuery = useQuery({
-    queryKey: ["game-favorites"],
-    queryFn: loadFavorites,
+    queryKey: ["game-favorites", language],
+    queryFn: () => loadFavorites(text.loadError),
   });
   const [pending, setPending] = useState(false);
 
@@ -52,13 +63,13 @@ function GameFavoriteButtonInner({ gameSlug }: { gameSlug: string }) {
         body: JSON.stringify({ gameSlug }),
       });
       if (response.status === 401) {
-        window.alert("찜은 로그인 후 이용할 수 있어요.");
+        window.alert(text.loginRequired);
         return;
       }
       if (!response.ok) throw new Error("실패");
       await favoritesQuery.refetch();
     } catch {
-      window.alert("찜을 처리하지 못했어요.");
+      window.alert(text.actionFailed);
     } finally {
       setPending(false);
     }
@@ -70,7 +81,7 @@ function GameFavoriteButtonInner({ gameSlug }: { gameSlug: string }) {
       onClick={handleToggle}
       disabled={pending}
       aria-pressed={isFavorite}
-      aria-label={isFavorite ? "찜 취소" : "찜하기"}
+      aria-label={isFavorite ? text.removeLabel : text.addLabel}
       className={`inline-flex items-center gap-1.5 rounded-full border px-4 py-2 text-[13px] font-bold transition-colors duration-200 disabled:opacity-60 ${
         isFavorite
           ? "border-[#6b5bd2] bg-[#f1f0fb] text-[#6b5bd2]"
@@ -78,15 +89,21 @@ function GameFavoriteButtonInner({ gameSlug }: { gameSlug: string }) {
       }`}
     >
       <BookmarkIcon filled={isFavorite} />
-      {isFavorite ? "찜함" : "찜"}
+      {isFavorite ? text.activeLabel : text.inactiveLabel}
     </button>
   );
 }
 
-export function GameFavoriteButton({ gameSlug }: { gameSlug: string }) {
+export function GameFavoriteButton({
+  gameSlug,
+  language,
+}: {
+  gameSlug: string;
+  language: GameServiceLanguage;
+}) {
   return (
     <QueryProvider>
-      <GameFavoriteButtonInner gameSlug={gameSlug} />
+      <GameFavoriteButtonInner gameSlug={gameSlug} language={language} />
     </QueryProvider>
   );
 }

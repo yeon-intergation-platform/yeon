@@ -60,6 +60,11 @@ describe("api/v1/users route", () => {
           lastLoginAt: "2026-04-13T10:00:00.000Z",
           createdAt: "2026-04-12T10:00:00.000Z",
           updatedAt: "2026-04-12T10:00:00.000Z",
+          emailVerifiedAt: null,
+          sessionCount: 0,
+          identityProviders: [],
+          cardDeckCount: 0,
+          typingDeckCount: 0,
         },
       ],
     });
@@ -81,6 +86,11 @@ describe("api/v1/users route", () => {
           lastLoginAt: "2026-04-13T10:00:00.000Z",
           createdAt: "2026-04-12T10:00:00.000Z",
           updatedAt: "2026-04-12T10:00:00.000Z",
+          emailVerifiedAt: null,
+          sessionCount: 0,
+          identityProviders: [],
+          cardDeckCount: 0,
+          typingDeckCount: 0,
         },
       ],
     });
@@ -178,6 +188,11 @@ describe("api/v1/users route", () => {
         lastLoginAt: "2026-04-13T10:00:00.000Z",
         createdAt: "2026-04-12T10:00:00.000Z",
         updatedAt: "2026-04-12T10:00:00.000Z",
+        emailVerifiedAt: null,
+        sessionCount: 0,
+        identityProviders: [],
+        cardDeckCount: 0,
+        typingDeckCount: 0,
       },
     });
     const request = new NextRequest("http://localhost/api/v1/users", {
@@ -205,6 +220,11 @@ describe("api/v1/users route", () => {
         lastLoginAt: "2026-04-13T10:00:00.000Z",
         createdAt: "2026-04-12T10:00:00.000Z",
         updatedAt: "2026-04-12T10:00:00.000Z",
+        emailVerifiedAt: null,
+        sessionCount: 0,
+        identityProviders: [],
+        cardDeckCount: 0,
+        typingDeckCount: 0,
       },
     });
   });

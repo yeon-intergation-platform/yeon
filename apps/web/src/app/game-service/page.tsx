@@ -67,35 +67,6 @@ function orderByLikeCount(
     .map((entry) => entry.game);
 }
 
-const GAME_HUB_TITLE = "게임 - 브라우저에서 바로 즐기는 게임 모음";
-const GAME_HUB_DESCRIPTION =
-  "설치 없이 브라우저에서 바로 플레이할 수 있는 게임을 한곳에 모은 YEON 게임 허브입니다.";
-
-export const metadata: YeonPageMetadata = {
-  title: GAME_HUB_TITLE,
-  description: GAME_HUB_DESCRIPTION,
-  alternates: {
-    canonical: buildServiceCanonicalUrl("game"),
-  },
-  openGraph: {
-    title: GAME_HUB_TITLE,
-    description: GAME_HUB_DESCRIPTION,
-    url: buildServiceCanonicalUrl("game"),
-    siteName: SITE_BRAND_NAME,
-    type: "website",
-    locale: "ko_KR",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: GAME_HUB_TITLE,
-    description: GAME_HUB_DESCRIPTION,
-  },
-  robots: {
-    index: true,
-    follow: true,
-  },
-};
-
 type GameHubSearchParams = {
   category?: string | string[];
   collection?: string | string[];
@@ -108,6 +79,46 @@ type GameHubSearchParams = {
 
 function firstParam(value: string | string[] | undefined): string | undefined {
   return Array.isArray(value) ? value[0] : value;
+}
+
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<GameHubSearchParams>;
+}): Promise<YeonPageMetadata> {
+  const { lang } = await searchParams;
+  const language = await resolvePlatformLanguageFromRequest(firstParam(lang));
+  const text = getGameServiceText(language);
+  const canonical = buildServiceCanonicalUrl("game");
+
+  return {
+    title: text.metadataTitle,
+    description: text.metadataDescription,
+    alternates: {
+      canonical,
+      languages: {
+        ko: `${canonical}?lang=ko`,
+        en: `${canonical}?lang=en`,
+      },
+    },
+    openGraph: {
+      title: text.metadataTitle,
+      description: text.metadataDescription,
+      url: canonical,
+      siteName: SITE_BRAND_NAME,
+      type: "website",
+      locale: text.metadataLocale,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: text.metadataTitle,
+      description: text.metadataDescription,
+    },
+    robots: {
+      index: true,
+      follow: true,
+    },
+  };
 }
 
 // 추천 국가는 URL 토글(?region=)이 우선, 없으면 선택 언어의 기본 지역으로 정한다.
@@ -146,15 +157,14 @@ function getGameHubJsonLd(
             ? `${SITE_BRAND_NAME} Games`
             : `${SITE_BRAND_NAME} 게임`,
         url: buildServiceCanonicalUrl("game"),
-        description:
-          language === "en" ? text.heroDescription : GAME_HUB_DESCRIPTION,
+        description: text.metadataDescription,
         inLanguage: language === "en" ? "en-US" : "ko-KR",
         mainEntity: {
           "@type": "ItemList",
           itemListElement: games.map((game, index) => ({
             "@type": "ListItem",
             position: index + 1,
-            name: game.title,
+            name: getLocalizedGameText(game, language).title,
             url: buildServiceCanonicalUrl("game", `/${game.slug}`),
             description: getLocalizedGameText(game, language).summary,
           })),

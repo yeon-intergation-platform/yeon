@@ -9,16 +9,17 @@ import {
   type PlatformLanguage,
 } from "@/lib/platform-language";
 
-export function usePlatformLanguage() {
-  const [language, setLanguageState] = useState<PlatformLanguage>(
-    DEFAULT_PLATFORM_LANGUAGE
-  );
+export function usePlatformLanguage(
+  initialLanguage: PlatformLanguage = DEFAULT_PLATFORM_LANGUAGE
+) {
+  const [language, setLanguageState] =
+    useState<PlatformLanguage>(initialLanguage);
 
   useEffect(() => {
-    setLanguageState(readPlatformLanguagePreference());
+    setLanguageState(readPlatformLanguagePreference(initialLanguage));
 
     const syncFromStorage = () => {
-      setLanguageState(readPlatformLanguagePreference());
+      setLanguageState(readPlatformLanguagePreference(initialLanguage));
     };
     const syncFromLocalStorage = (event: StorageEvent) => {
       if (event.key === PLATFORM_LANGUAGE_STORAGE_KEY) {
@@ -35,7 +36,7 @@ export function usePlatformLanguage() {
       );
       window.removeEventListener("storage", syncFromLocalStorage);
     };
-  }, []);
+  }, [initialLanguage]);
 
   const setLanguage = useCallback((nextLanguage: PlatformLanguage) => {
     writePlatformLanguagePreference(nextLanguage);
