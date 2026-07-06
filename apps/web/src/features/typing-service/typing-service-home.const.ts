@@ -30,7 +30,7 @@ export const TYPING_SERVICE_HOME_CLASS = {
     "group flex items-center gap-4 rounded-2xl border border-[#e5e5e5] bg-white px-4 py-3.5 no-underline transition-colors hover:border-[#111] hover:bg-[#fafafa] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#111] focus-visible:ring-offset-2",
   featureIconWrap:
     "flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#f6f6f6]",
-  featureIcon: "h-[22px] w-[22px]",
+  featureIcon: "h-[26px] w-[26px]",
   featureBody: "flex min-w-0 flex-1 flex-col gap-0.5",
   featureTitle: "text-[15px] font-bold leading-tight text-[#111]",
   featureDescription: "text-[13px] leading-[1.5] text-[#666]",
