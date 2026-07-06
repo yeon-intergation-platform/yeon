@@ -123,11 +123,13 @@ export function LandingHome({
                   service.accessPolicy ===
                   platformServiceAccessPolicies.authRequired;
                 const canOpen =
-                  isLive && !inDevelopment && (!requiresAuth || isAuthenticated);
+                  isLive &&
+                  !inDevelopment &&
+                  (!requiresAuth || isAuthenticated);
                 const needsLogin =
                   isLive && !inDevelopment && requiresAuth && !isAuthenticated;
                 const cardBase =
-                  "group flex min-w-0 flex-col rounded-2xl border border-[#e5e5e5] bg-[#fafafa] p-5 text-left shadow-sm transition-colors duration-200";
+                  "group flex min-w-0 flex-col rounded-2xl border border-[#e5e5e5] bg-[#fafafa] p-5 text-center shadow-sm transition-colors duration-200";
                 const interactiveCard = "hover:border-[#111] hover:bg-white";
                 const cardInner = (
                   <>
@@ -175,7 +177,7 @@ export function LandingHome({
                         {service.summary}
                       </YeonText>
                     </YeonView>
-                    <YeonView className="mt-auto flex items-center border-t border-[#e5e5e5] pt-4">
+                    <YeonView className="mt-auto flex items-center justify-center border-t border-[#e5e5e5] pt-4">
                       <YeonText
                         as="span"
                         variant="unstyled"
