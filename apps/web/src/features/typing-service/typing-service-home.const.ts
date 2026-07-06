@@ -1,4 +1,3 @@
-import { YEON_WEB_SHADOW_CLASS } from "@yeon/ui/theme/web-style-tokens";
 import { YEON_WEB_SHARED_CLASS as SHARED_FEATURE_CLASS } from "@yeon/ui/theme/web-style-tokens";
 
 export const TYPING_SERVICE_HOME_CLASS = {
@@ -17,14 +16,24 @@ export const TYPING_SERVICE_HOME_CLASS = {
   actionPanel: "min-w-0 p-4 md:p-6",
   sectionTitle: "text-[16px] font-bold text-[#111]",
   sectionBody: "mt-5 flex justify-center",
-  ctaWrap: "mt-5 grid gap-4",
-  startCardBase:
-    "group relative flex min-h-[96px] cursor-pointer items-start overflow-hidden rounded-2xl px-5 py-5 text-left transition-all duration-200 hover:-translate-y-0.5 focus-visible:-translate-y-0.5 active:translate-y-0 active:duration-75",
-  startCardPrimary: `shadow-sm hover:border-[#111] ${YEON_WEB_SHADOW_CLASS.hoverStartPrimary} active:shadow-sm`,
-  startCardSecondary: `hover:border-[#111] hover:bg-[#fafafa] ${YEON_WEB_SHADOW_CLASS.hoverStartSecondary} active:shadow-none`,
-  startCardLabel: "block text-[17px] font-extrabold tracking-[-0.03em]",
-  startCardDescriptionPrimary:
-    "pointer-events-none absolute inset-x-5 bottom-4 line-clamp-2 text-[13px] font-medium leading-[1.45] text-white/72 transition-all duration-200 ease-out sm:translate-y-1 sm:opacity-0 sm:group-hover:translate-y-0 sm:group-hover:opacity-100 sm:group-focus-visible:translate-y-0 sm:group-focus-visible:opacity-100",
-  startCardDescriptionSecondary:
-    "pointer-events-none absolute inset-x-5 bottom-4 line-clamp-2 text-[13px] font-medium leading-[1.45] text-[#666] transition-all duration-200 ease-out sm:translate-y-1 sm:opacity-0 sm:group-hover:translate-y-0 sm:group-hover:opacity-100 sm:group-focus-visible:translate-y-0 sm:group-focus-visible:opacity-100",
+
+  // 오늘의 시작: 레이스 입장 배너(제공된 race-entry-card 에셋)
+  raceBanner:
+    "group mt-5 block overflow-hidden rounded-[20px] shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md focus-visible:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#111] focus-visible:ring-offset-2 active:translate-y-0 active:duration-75",
+  raceBannerImage: "block h-auto w-full",
+
+  // 다른 기능: 아이콘 + 제목 + 설명 + chevron 행 목록
+  featureDivider: "my-6 border-t border-[#e5e5e5]",
+  featureListTitle: "text-[15px] font-bold text-[#111]",
+  featureList: "mt-4 grid gap-3",
+  featureRow:
+    "group flex items-center gap-4 rounded-2xl border border-[#e5e5e5] bg-white px-4 py-3.5 no-underline transition-colors hover:border-[#111] hover:bg-[#fafafa] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#111] focus-visible:ring-offset-2",
+  featureIconWrap:
+    "flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#f6f6f6]",
+  featureIcon: "h-[22px] w-[22px]",
+  featureBody: "flex min-w-0 flex-1 flex-col gap-0.5",
+  featureTitle: "text-[15px] font-bold leading-tight text-[#111]",
+  featureDescription: "text-[13px] leading-[1.5] text-[#666]",
+  featureChevron:
+    "shrink-0 text-[#bbb] transition-colors group-hover:text-[#111]",
 } as const;

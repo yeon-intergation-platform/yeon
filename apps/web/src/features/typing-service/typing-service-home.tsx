@@ -1,5 +1,13 @@
 "use client";
-import { YeonButton, YeonSurface, YeonView, YeonText } from "@yeon/ui";
+import {
+  YeonButton,
+  YeonIcon,
+  YeonImage,
+  YeonLink,
+  YeonSurface,
+  YeonView,
+  YeonText,
+} from "@yeon/ui";
 import { analyticsEvents, trackEvent } from "@/lib/analytics";
 import { useTypingProfile } from "./use-typing-profile";
 import {
@@ -15,59 +23,65 @@ type TypingServiceHomeProps = {
   showCharacterAdminLink?: boolean;
 };
 
-type StartCardProps = {
+type FeatureRowProps = {
   href: string;
+  icon: string;
   label: string;
   description: string;
-  tone: "primary" | "secondary";
   onClick: () => void;
 };
 
-function StartCard({
+function FeatureRow({
   href,
+  icon,
   label,
   description,
-  tone,
   onClick,
-}: StartCardProps) {
-  const isPrimary = tone === "primary";
-
+}: FeatureRowProps) {
   return (
-    <YeonButton
-      as="a"
+    <YeonLink
       href={href}
-      variant={isPrimary ? "primary" : "secondary"}
       aria-label={`${label} — ${description}`}
-      className={`${TYPING_SERVICE_HOME_CLASS.startCardBase} ${
-        isPrimary
-          ? TYPING_SERVICE_HOME_CLASS.startCardPrimary
-          : TYPING_SERVICE_HOME_CLASS.startCardSecondary
-      }`}
+      className={TYPING_SERVICE_HOME_CLASS.featureRow}
       onClick={onClick}
     >
-      <YeonText
+      <YeonView
         as="span"
-        variant="unstyled"
-        tone="inherit"
         aria-hidden="true"
-        className={TYPING_SERVICE_HOME_CLASS.startCardLabel}
+        className={TYPING_SERVICE_HOME_CLASS.featureIconWrap}
       >
-        {label}
-      </YeonText>
-      <YeonText
-        as="span"
-        variant="unstyled"
-        tone="inherit"
+        <YeonImage
+          src={icon}
+          alt=""
+          aria-hidden="true"
+          className={TYPING_SERVICE_HOME_CLASS.featureIcon}
+        />
+      </YeonView>
+      <YeonView as="span" className={TYPING_SERVICE_HOME_CLASS.featureBody}>
+        <YeonText
+          as="span"
+          variant="unstyled"
+          tone="inherit"
+          className={TYPING_SERVICE_HOME_CLASS.featureTitle}
+        >
+          {label}
+        </YeonText>
+        <YeonText
+          as="span"
+          variant="unstyled"
+          tone="inherit"
+          className={TYPING_SERVICE_HOME_CLASS.featureDescription}
+        >
+          {description}
+        </YeonText>
+      </YeonView>
+      <YeonIcon
+        name="chevron-right"
+        size={18}
         aria-hidden="true"
-        className={
-          isPrimary
-            ? TYPING_SERVICE_HOME_CLASS.startCardDescriptionPrimary
-            : TYPING_SERVICE_HOME_CLASS.startCardDescriptionSecondary
-        }
-      >
-        {description}
-      </YeonText>
-    </YeonButton>
+        className={TYPING_SERVICE_HOME_CLASS.featureChevron}
+      />
+    </YeonLink>
   );
 }
 
@@ -165,34 +179,55 @@ export function TypingServiceHome({
               {text.home.startTitle}
             </YeonText>
 
-            <YeonView className={TYPING_SERVICE_HOME_CLASS.ctaWrap}>
-              <StartCard
+            <YeonLink
+              href="/typing-service/play"
+              aria-label={`${text.home.cards.race.label} — ${text.home.cards.race.description}`}
+              className={TYPING_SERVICE_HOME_CLASS.raceBanner}
+              onClick={() => handleCtaClick("play")}
+            >
+              <YeonImage
+                src="/typing/race-entry-card.png"
+                srcSet="/typing/race-entry-card.png 1x, /typing/race-entry-card@2x.png 2x"
+                alt={`${text.home.cards.race.label} — ${text.home.cards.race.description}`}
+                className={TYPING_SERVICE_HOME_CLASS.raceBannerImage}
+              />
+            </YeonLink>
+
+            <YeonView
+              aria-hidden="true"
+              className={TYPING_SERVICE_HOME_CLASS.featureDivider}
+            />
+
+            <YeonText
+              as="h3"
+              variant="unstyled"
+              tone="inherit"
+              className={TYPING_SERVICE_HOME_CLASS.featureListTitle}
+            >
+              {text.home.otherFeaturesTitle}
+            </YeonText>
+
+            <YeonView className={TYPING_SERVICE_HOME_CLASS.featureList}>
+              <FeatureRow
                 href="/typing-service/rooms"
+                icon="/typing/typing-room-icon.svg"
                 label={text.home.cards.rooms.label}
                 description={text.home.cards.rooms.description}
-                tone="primary"
                 onClick={() => handleCtaClick("rooms")}
               />
-              <StartCard
+              <FeatureRow
                 href="/typing-service/decks"
+                icon="/typing/practice-deck-icon.svg"
                 label={text.home.cards.decks.label}
                 description={text.home.cards.decks.description}
-                tone="secondary"
                 onClick={() => handleCtaClick("decks")}
               />
-              <StartCard
+              <FeatureRow
                 href="/typing-service/rooms"
+                icon="/typing/conquest-room-icon.svg"
                 label={text.home.cards.territory.label}
                 description={text.home.cards.territory.description}
-                tone="secondary"
                 onClick={() => handleCtaClick("territory")}
-              />
-              <StartCard
-                href="/typing-service/play"
-                label={text.home.cards.race.label}
-                description={text.home.cards.race.description}
-                tone="secondary"
-                onClick={() => handleCtaClick("play")}
               />
             </YeonView>
           </YeonView>

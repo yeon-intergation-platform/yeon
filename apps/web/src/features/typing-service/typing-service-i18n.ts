@@ -49,6 +49,7 @@ export type TypingUiText = {
     heroDescription: string;
     profileTitle: string;
     startTitle: string;
+    otherFeaturesTitle: string;
     cards: {
       rooms: { label: string; description: string };
       decks: { label: string; description: string };
@@ -360,22 +361,23 @@ const TYPING_UI_TEXT: Record<TypingLocale, TypingUiText> = {
         "원하는 방식으로 연습하거나, 친구들과 함께 타자방에 입장하세요.",
       profileTitle: "내 프로필",
       startTitle: "오늘의 시작",
+      otherFeaturesTitle: "다른 기능",
       cards: {
         rooms: {
           label: "타자방 입장",
-          description: "친구들과 실시간으로 함께 연습합니다.",
+          description: "친구들과 함께 타자방에 입장해요",
         },
         decks: {
           label: "연습 덱 관리",
-          description: "연습할 문장을 직접 추가하고 관리합니다.",
+          description: "내가 만든 연습 덱을 관리해요",
         },
         territory: {
           label: "점령전 방 찾기",
-          description: "점령전 방에 참가하거나 새로 만듭니다.",
+          description: "점령전 모드를 플레이할 방을 찾아요",
         },
         race: {
           label: "레이스 입장",
-          description: "다른 사용자와 타자 속도를 겨룹니다.",
+          description: "실시간 타자 대결을 바로 시작해요",
         },
       },
     },
@@ -754,22 +756,23 @@ const TYPING_UI_TEXT: Record<TypingLocale, TypingUiText> = {
         "Practice your way, join a room with friends, or jump into a race.",
       profileTitle: "My Profile",
       startTitle: "Start Here",
+      otherFeaturesTitle: "Other features",
       cards: {
         rooms: {
           label: "Enter Typing Rooms",
-          description: "Practice live with friends in real time.",
+          description: "Enter a typing room with friends",
         },
         decks: {
           label: "Manage Practice Decks",
-          description: "Add and manage the prompts you want to practice.",
+          description: "Manage the practice decks you created",
         },
         territory: {
           label: "Find Territory Rooms",
-          description: "Join or create a team territory room.",
+          description: "Find a room to play territory mode",
         },
         race: {
           label: "Enter Race",
-          description: "Compete against other players on typing speed.",
+          description: "Start a real-time typing match now",
         },
       },
     },

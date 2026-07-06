@@ -5,6 +5,7 @@ export const YEON_ICON_NAMES = [
   "arrow-left",
   "bold",
   "chevron-down",
+  "chevron-right",
   "circle-help",
   "circle-user",
   "code",
