@@ -1,0 +1,974 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>백지 학습 · 타자 서비스 통합 목업</title>
+    <style>
+      :root {
+        --bg: #fff;
+        --ink: #111;
+        --n50: #fafafa;
+        --n100: #e5e5e5;
+        --n400: #aaa;
+        --n600: #666;
+        --font:
+          -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+          "Pretendard", "Segoe UI", Roboto, sans-serif;
+        --mono: "SF Mono", "JetBrains Mono", "Menlo", ui-monospace, monospace;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: #eee;
+        color: var(--ink);
+        font-family: var(--font);
+        -webkit-font-smoothing: antialiased;
+      }
+      .page-head {
+        max-width: 1120px;
+        margin: 0 auto;
+        padding: 40px 24px 4px;
+      }
+      .page-head h1 {
+        font-size: 22px;
+        margin: 0 0 6px;
+        letter-spacing: -0.02em;
+      }
+      .page-head p {
+        margin: 0;
+        color: var(--n600);
+        font-size: 13px;
+        line-height: 1.6;
+      }
+      .badge-new {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 0.06em;
+        background: var(--ink);
+        color: #fff;
+        border-radius: 5px;
+        padding: 2px 6px;
+        vertical-align: 2px;
+      }
+      .stack {
+        max-width: 1120px;
+        margin: 0 auto;
+        padding: 20px 24px 90px;
+        display: flex;
+        flex-direction: column;
+        gap: 44px;
+      }
+      .cap {
+        font-size: 13px;
+        font-weight: 600;
+        margin: 0 0 12px;
+      }
+      .cap small {
+        color: var(--n400);
+        font-weight: 400;
+      }
+
+      .win {
+        border-radius: 14px;
+        overflow: hidden;
+        box-shadow: 0 16px 50px rgba(17, 17, 17, 0.12);
+        border: 1px solid var(--n100);
+        background: #fff;
+      }
+      .win-bar {
+        height: 40px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 0 14px;
+        background: var(--n50);
+        border-bottom: 1px solid var(--n100);
+      }
+      .dot {
+        width: 11px;
+        height: 11px;
+        border-radius: 50%;
+        background: var(--n100);
+      }
+      .win-url {
+        margin-left: 12px;
+        flex: 1;
+        height: 24px;
+        border-radius: 7px;
+        background: #fff;
+        border: 1px solid var(--n100);
+        display: flex;
+        align-items: center;
+        padding: 0 12px;
+        font-size: 12px;
+        color: var(--n400);
+      }
+
+      /* yeon typing service header */
+      .svc-header {
+        height: 56px;
+        display: flex;
+        align-items: center;
+        gap: 24px;
+        padding: 0 28px;
+        border-bottom: 1px solid var(--n100);
+      }
+      .svc-brand {
+        font-size: 16px;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+      }
+      .svc-nav {
+        display: flex;
+        gap: 22px;
+        font-size: 13px;
+        color: var(--n600);
+      }
+      .svc-nav a {
+        color: var(--n600);
+        text-decoration: none;
+        padding: 4px 0;
+      }
+      .svc-nav a.active {
+        color: var(--ink);
+        font-weight: 700;
+        border-bottom: 2px solid var(--ink);
+      }
+      .svc-right {
+        margin-left: auto;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 12px;
+        color: var(--n400);
+      }
+      .avatar {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: var(--n100);
+      }
+
+      /* home body */
+      .home {
+        padding: 34px 40px;
+      }
+      .intro-title {
+        font-size: 34px;
+        font-weight: 900;
+        letter-spacing: -0.04em;
+        margin: 0;
+      }
+      .intro-desc {
+        margin: 12px 0 0;
+        color: var(--n600);
+        font-size: 15px;
+        line-height: 1.75;
+        max-width: 680px;
+      }
+      .board {
+        margin-top: 32px;
+        display: grid;
+        grid-template-columns: 430px minmax(0, 1fr);
+        border: 1px solid var(--n100);
+        border-radius: 28px;
+        overflow: hidden;
+      }
+      .profile-panel {
+        border-right: 1px solid var(--n100);
+        padding: 24px;
+      }
+      .action-panel {
+        padding: 24px;
+      }
+      .panel-title {
+        font-size: 16px;
+        font-weight: 800;
+        margin: 0 0 18px;
+      }
+      /* profile card */
+      .pcard {
+        border: 1px solid var(--n100);
+        border-radius: 20px;
+        padding: 26px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 14px;
+      }
+      .sprite {
+        width: 96px;
+        height: 96px;
+        border-radius: 18px;
+        background: var(--n50);
+        border: 1px solid var(--n100);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 44px;
+      }
+      .pname {
+        font-size: 18px;
+        font-weight: 800;
+      }
+      .pmeta {
+        font-size: 12px;
+        color: var(--n600);
+      }
+      .plvl {
+        display: flex;
+        gap: 8px;
+        margin-top: 6px;
+      }
+      .chip {
+        font-size: 11px;
+        border: 1px solid var(--n100);
+        border-radius: 999px;
+        padding: 4px 10px;
+        color: var(--n600);
+      }
+
+      /* race banner */
+      .race-banner {
+        margin-top: 6px;
+        border-radius: 20px;
+        background: var(--ink);
+        color: #fff;
+        padding: 22px 24px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+      }
+      .race-banner .rb-emoji {
+        font-size: 30px;
+      }
+      .race-banner .rb-t {
+        font-size: 17px;
+        font-weight: 800;
+      }
+      .race-banner .rb-s {
+        font-size: 12px;
+        color: #bbb;
+        margin-top: 3px;
+      }
+      .race-banner .rb-go {
+        margin-left: auto;
+        font-size: 20px;
+      }
+
+      .divider {
+        margin: 24px 0;
+        border-top: 1px solid var(--n100);
+      }
+      .feat-title {
+        font-size: 15px;
+        font-weight: 800;
+        margin: 0 0 14px;
+      }
+      .feat-list {
+        display: grid;
+        gap: 12px;
+      }
+      .feat-row {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        border: 1px solid var(--n100);
+        border-radius: 16px;
+        padding: 14px 16px;
+        background: #fff;
+      }
+      .feat-row.newrow {
+        border-color: var(--ink);
+        box-shadow: 0 0 0 1px var(--ink);
+      }
+      .feat-ico {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        background: #f6f6f6;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        flex: 0 0 44px;
+      }
+      .feat-body {
+        flex: 1;
+        min-width: 0;
+      }
+      .feat-l {
+        font-size: 15px;
+        font-weight: 800;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .feat-d {
+        font-size: 13px;
+        color: var(--n600);
+        margin-top: 2px;
+      }
+      .feat-chev {
+        color: #bbb;
+        font-size: 18px;
+      }
+
+      /* baekji landing (within shell) */
+      .bk {
+        padding: 34px 40px;
+      }
+      .bk-top {
+        display: flex;
+        align-items: flex-end;
+        gap: 16px;
+        margin-bottom: 24px;
+      }
+      .bk-top h2 {
+        font-size: 28px;
+        font-weight: 900;
+        letter-spacing: -0.03em;
+        margin: 0;
+      }
+      .bk-top p {
+        margin: 0;
+        color: var(--n600);
+        font-size: 13px;
+      }
+      .bk-today {
+        border: 1px solid var(--ink);
+        border-radius: 18px;
+        padding: 22px 26px;
+        display: flex;
+        align-items: center;
+        gap: 24px;
+        margin-bottom: 22px;
+      }
+      .bk-today .big {
+        font-size: 44px;
+        font-weight: 900;
+        letter-spacing: -0.03em;
+        line-height: 1;
+      }
+      .bk-today .tx .t1 {
+        font-size: 15px;
+        font-weight: 800;
+      }
+      .bk-today .tx .t2 {
+        font-size: 12px;
+        color: var(--n600);
+        margin-top: 4px;
+      }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        height: 46px;
+        padding: 0 24px;
+        border-radius: 10px;
+        background: var(--ink);
+        color: #fff;
+        font-size: 15px;
+        font-weight: 700;
+      }
+      .btn.ghost {
+        background: #fff;
+        color: var(--ink);
+        border: 1.5px solid var(--n100);
+      }
+      .steps3 {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 14px;
+        margin-bottom: 24px;
+      }
+      .step-c {
+        border: 1px solid var(--n100);
+        border-radius: 16px;
+        padding: 18px;
+      }
+      .step-c .sn {
+        font-size: 11px;
+        font-weight: 800;
+        color: var(--n400);
+        letter-spacing: 0.06em;
+      }
+      .step-c .st {
+        font-size: 16px;
+        font-weight: 800;
+        margin-top: 8px;
+      }
+      .step-c .sd {
+        font-size: 12px;
+        color: var(--n600);
+        margin-top: 6px;
+        line-height: 1.5;
+      }
+      .bk-decktitle {
+        font-size: 12px;
+        font-weight: 800;
+        color: var(--n400);
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        margin: 0 0 12px;
+      }
+      .deck-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 14px;
+      }
+      .deck-c {
+        border: 1px solid var(--n100);
+        border-radius: 16px;
+        padding: 18px;
+      }
+      .deck-c .ico {
+        width: 38px;
+        height: 38px;
+        border-radius: 10px;
+        background: var(--n50);
+        border: 1px solid var(--n100);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 12px;
+        font-size: 16px;
+      }
+      .deck-c .nm {
+        font-size: 15px;
+        font-weight: 700;
+      }
+      .deck-c .sub {
+        font-size: 12px;
+        color: var(--n600);
+        margin-top: 4px;
+      }
+      .deck-c .due {
+        margin-top: 12px;
+        font-size: 12px;
+        font-weight: 700;
+        border: 1px solid var(--ink);
+        border-radius: 999px;
+        padding: 3px 10px;
+        display: inline-block;
+      }
+      .deck-c .due.zero {
+        color: var(--n400);
+        border-color: var(--n100);
+        font-weight: 400;
+      }
+
+      /* baekji session (focus, within shell) */
+      .play {
+        min-height: 560px;
+        display: flex;
+        flex-direction: column;
+      }
+      .play-top {
+        height: 56px;
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        padding: 0 28px;
+        border-bottom: 1px solid var(--n100);
+      }
+      .play-top .exit {
+        font-size: 13px;
+        color: var(--n600);
+      }
+      .play-top .pt {
+        font-size: 14px;
+        font-weight: 800;
+      }
+      .play-top .sp {
+        flex: 1;
+      }
+      .ladder {
+        display: flex;
+        gap: 8px;
+        font-size: 12px;
+      }
+      .ladder .s {
+        padding: 6px 12px;
+        border-radius: 8px;
+        border: 1px solid var(--n100);
+        color: var(--n400);
+      }
+      .ladder .s.done {
+        color: var(--ink);
+        border-color: var(--ink);
+      }
+      .ladder .s.active {
+        background: var(--ink);
+        color: #fff;
+        border-color: var(--ink);
+        font-weight: 800;
+      }
+      .pcount {
+        font-size: 13px;
+        color: var(--n400);
+      }
+      .play-stage {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 44px 40px;
+      }
+      .pcol {
+        width: 100%;
+        max-width: 700px;
+      }
+      .stag {
+        text-align: center;
+        font-size: 12px;
+        color: var(--n400);
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        margin-bottom: 16px;
+      }
+      .pblank {
+        text-align: center;
+        color: var(--n400);
+        font-size: 14px;
+        border: 1px dashed var(--n100);
+        border-radius: 16px;
+        padding: 24px;
+        background: var(--n50);
+      }
+      .hint {
+        text-align: center;
+        font-size: 13px;
+        color: var(--n400);
+        margin: 18px 0 20px;
+      }
+      .hint b {
+        color: var(--n600);
+      }
+      .tlg {
+        min-height: 130px;
+        border: 1.5px solid var(--ink);
+        border-radius: 16px;
+        padding: 20px 22px;
+        font-family: var(--mono);
+        font-size: 18px;
+        line-height: 1.8;
+      }
+      .tlg.empty {
+        color: var(--n400);
+        font-family: var(--font);
+        font-size: 15px;
+      }
+      .caret {
+        display: inline-block;
+        width: 2px;
+        height: 20px;
+        background: var(--ink);
+        vertical-align: -3px;
+        animation: blink 1s steps(1) infinite;
+      }
+      @keyframes blink {
+        50% {
+          opacity: 0;
+        }
+      }
+      .pfoot {
+        height: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 22px;
+        border-top: 1px solid var(--n100);
+        font-size: 12px;
+        color: var(--n400);
+      }
+      .key {
+        font-family: var(--mono);
+        border: 1px solid var(--n100);
+        border-radius: 6px;
+        padding: 2px 8px;
+        color: var(--n600);
+      }
+
+      /* result within shell */
+      .res {
+        min-height: 560px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 40px;
+      }
+      .rcol {
+        width: 100%;
+        max-width: 720px;
+        text-align: center;
+      }
+      .score {
+        font-size: 68px;
+        font-weight: 900;
+        letter-spacing: -0.04em;
+        line-height: 1;
+      }
+      .score small {
+        font-size: 26px;
+        color: var(--n400);
+      }
+      .verdict {
+        font-size: 15px;
+        font-weight: 800;
+        margin-top: 10px;
+      }
+      .verdict::before {
+        content: "▲ ";
+      }
+      .diff {
+        text-align: left;
+        border: 1px solid var(--n100);
+        border-radius: 16px;
+        padding: 20px 22px;
+        font-family: var(--mono);
+        font-size: 17px;
+        line-height: 2;
+        margin: 24px 0 18px;
+      }
+      .diff .wrong {
+        background: var(--ink);
+        color: #fff;
+        border-radius: 3px;
+        padding: 0 3px;
+      }
+      .diff .miss {
+        color: var(--n400);
+        border-bottom: 2px solid var(--n400);
+      }
+      .rstats {
+        display: flex;
+        gap: 12px;
+      }
+      .rstats .r {
+        flex: 1;
+        border: 1px solid var(--n100);
+        border-radius: 10px;
+        padding: 14px;
+      }
+      .rstats .r .v {
+        font-size: 22px;
+        font-weight: 800;
+      }
+      .rstats .r .k {
+        font-size: 12px;
+        color: var(--n600);
+        margin-top: 4px;
+      }
+      .rnote {
+        font-size: 13px;
+        color: var(--n600);
+        margin: 18px 0;
+      }
+      .ractions {
+        display: flex;
+        gap: 12px;
+        justify-content: center;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page-head">
+      <h1>백지 학습 · <b>타자 서비스에 통합</b>된 목업</h1>
+      <p>
+        새 앱이 아니라 기존 yeon <b>타자 연습</b> 서비스 안에
+        <span class="badge-new">NEW</span> <b>백지 학습</b> 모드로 추가. 실제
+        타자 홈 레이아웃(인트로 · 내 프로필 · 오늘의 시작 · 다른 기능)을 그대로
+        재현하고 "백지 학습" 기능 행을 끼워 넣었습니다. yeon 모노크롬 톤 준수.
+      </p>
+    </div>
+
+    <div class="stack">
+      <!-- 1. 타자 연습 홈 (백지 통합) -->
+      <div>
+        <p class="cap">
+          1 · 타자 연습 홈 — 기존 서비스에 <b>백지 학습</b> 기능 행 추가
+          <small>(기존: 타자방 · 연습 덱 · 점령전 / 신규: 백지 학습)</small>
+        </p>
+        <div class="win">
+          <div class="win-bar">
+            <i class="dot"></i><i class="dot"></i><i class="dot"></i>
+            <div class="win-url">yeon.world/typing-service</div>
+          </div>
+          <div class="svc-header">
+            <span class="svc-brand">타자 연습</span>
+            <nav class="svc-nav">
+              <a class="active" href="#">홈</a>
+              <a href="#">타자방</a>
+              <a href="#">연습 덱</a>
+              <a href="#">점령전</a>
+              <a href="#"
+                >백지
+                <span class="badge-new" style="vertical-align: 1px"
+                  >NEW</span
+                ></a
+              >
+            </nav>
+            <div class="svc-right">
+              <span>레벨 12</span><span class="avatar"></span>
+            </div>
+          </div>
+          <div class="home">
+            <h1 class="intro-title">바로 시작하는 타자 연습</h1>
+            <p class="intro-desc">
+              회원가입 없이 바로 타자 연습을 시작하고, 이제 안 보고 외우는
+              <b>백지 학습</b>까지 한곳에서.
+            </p>
+            <div class="board">
+              <div class="profile-panel">
+                <h2 class="panel-title">내 프로필</h2>
+                <div class="pcard">
+                  <div class="sprite">🐣</div>
+                  <div class="pname">현준</div>
+                  <div class="pmeta">평균 320 타/분 · 정확도 97%</div>
+                  <div class="plvl">
+                    <span class="chip">Lv.12</span
+                    ><span class="chip">연속 7일</span>
+                  </div>
+                </div>
+              </div>
+              <div class="action-panel">
+                <h2 class="panel-title">오늘의 시작</h2>
+                <div class="race-banner">
+                  <span class="rb-emoji">⚡</span>
+                  <div>
+                    <div class="rb-t">레이스 입장</div>
+                    <div class="rb-s">실시간 타자 대결을 바로 시작해요</div>
+                  </div>
+                  <span class="rb-go">→</span>
+                </div>
+                <div class="divider"></div>
+                <h3 class="feat-title">다른 기능</h3>
+                <div class="feat-list">
+                  <div class="feat-row">
+                    <div class="feat-ico">👥</div>
+                    <div class="feat-body">
+                      <div class="feat-l">타자방 입장</div>
+                      <div class="feat-d">친구들과 함께 타자방에 입장해요</div>
+                    </div>
+                    <span class="feat-chev">›</span>
+                  </div>
+                  <div class="feat-row">
+                    <div class="feat-ico">🗂️</div>
+                    <div class="feat-body">
+                      <div class="feat-l">연습 덱 관리</div>
+                      <div class="feat-d">내가 만든 연습 덱을 관리해요</div>
+                    </div>
+                    <span class="feat-chev">›</span>
+                  </div>
+                  <div class="feat-row">
+                    <div class="feat-ico">🚩</div>
+                    <div class="feat-body">
+                      <div class="feat-l">점령전 방 찾기</div>
+                      <div class="feat-d">
+                        점령전 모드를 플레이할 방을 찾아요
+                      </div>
+                    </div>
+                    <span class="feat-chev">›</span>
+                  </div>
+                  <div class="feat-row newrow">
+                    <div class="feat-ico">📄</div>
+                    <div class="feat-body">
+                      <div class="feat-l">
+                        백지 학습 <span class="badge-new">NEW</span>
+                      </div>
+                      <div class="feat-d">
+                        안 보고 쓰면서 외우는 3단 백지 학습 · 오늘 18문장
+                      </div>
+                    </div>
+                    <span class="feat-chev">›</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. 백지 랜딩 (타자 셸 안) -->
+      <div>
+        <p class="cap">
+          2 · 백지 학습 홈
+          <small>— 타자 헤더 아래 진입. 오늘의 백지 + 3단계 설명 + 덱</small>
+        </p>
+        <div class="win">
+          <div class="win-bar">
+            <i class="dot"></i><i class="dot"></i><i class="dot"></i>
+            <div class="win-url">yeon.world/typing-service/baekji</div>
+          </div>
+          <div class="svc-header">
+            <span class="svc-brand">타자 연습</span>
+            <nav class="svc-nav">
+              <a href="#">홈</a><a href="#">타자방</a><a href="#">연습 덱</a
+              ><a href="#">점령전</a>
+              <a class="active" href="#">백지</a>
+            </nav>
+            <div class="svc-right">
+              <span>레벨 12</span><span class="avatar"></span>
+            </div>
+          </div>
+          <div class="bk">
+            <div class="bk-top">
+              <h2>오늘의 백지</h2>
+              <p>안 보고 쓸 수 있으면, 진짜 아는 것.</p>
+            </div>
+            <div class="bk-today">
+              <div class="big">18</div>
+              <div class="tx">
+                <div class="t1">오늘 쓸 카드</div>
+                <div class="t2">3개 덱 · 복습 예정 우선 · 연속 7일</div>
+              </div>
+              <div style="margin-left: auto">
+                <div class="btn">백지 복습 시작 →</div>
+              </div>
+            </div>
+            <div class="steps3">
+              <div class="step-c">
+                <div class="sn">STEP 1</div>
+                <div class="st">보고 쓰기</div>
+                <div class="sd">원문을 보며 그대로 따라 쳐서 익힙니다.</div>
+              </div>
+              <div class="step-c">
+                <div class="sn">STEP 2</div>
+                <div class="st">가리고 쓰기</div>
+                <div class="sd">일부를 빈칸으로 가리고 전체를 씁니다.</div>
+              </div>
+              <div class="step-c">
+                <div class="sn">STEP 3</div>
+                <div class="st">안 보고 쓰기</div>
+                <div class="sd">아무것도 안 보고 기억으로 전부 써냅니다.</div>
+              </div>
+            </div>
+            <p class="bk-decktitle">백지로 외울 덱</p>
+            <div class="deck-grid">
+              <div class="deck-c">
+                <div class="ico">A</div>
+                <div class="nm">영어 회화 문장</div>
+                <div class="sub">축자 채점 · 42문장</div>
+                <div class="due">12장</div>
+              </div>
+              <div class="deck-c">
+                <div class="ico">&lt;/&gt;</div>
+                <div class="nm">알고리즘 스니펫</div>
+                <div class="sub">축자(코드) · 15문장</div>
+                <div class="due">6장</div>
+              </div>
+              <div class="deck-c">
+                <div class="ico">”</div>
+                <div class="nm">좋아하는 문장</div>
+                <div class="sub">축자 채점 · 20문장</div>
+                <div class="due zero">복습 완료</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. 안 보고 쓰기 세션 -->
+      <div>
+        <p class="cap">
+          3 · 안 보고 쓰기(STEP 3) 세션
+          <small>— 원문 비노출, 최소 힌트, 기억으로 전부</small>
+        </p>
+        <div class="win">
+          <div class="win-bar">
+            <i class="dot"></i><i class="dot"></i><i class="dot"></i>
+            <div class="win-url">yeon.world/typing-service/baekji/session</div>
+          </div>
+          <div class="play">
+            <div class="play-top">
+              <span class="exit">✕ 나가기</span>
+              <span class="pt">영어 회화 문장</span>
+              <span class="sp"></span>
+              <div class="ladder">
+                <span class="s done">보고 쓰기</span
+                ><span class="s done">가리고 쓰기</span
+                ><span class="s active">안 보고 쓰기</span>
+              </div>
+              <span class="pcount">5 / 12</span>
+            </div>
+            <div class="play-stage">
+              <div class="pcol">
+                <div class="stag">졸업 시도 · 원문 안 보임</div>
+                <div class="pblank">
+                  원문이 표시되지 않습니다 — 기억으로 써 보세요
+                </div>
+                <div class="hint">
+                  힌트 · 주제 <b>“연습과 유창함”</b> · <b>8단어</b> · 첫 글자
+                  <b>P</b>
+                </div>
+                <div class="tlg">
+                  Practice is the single most<span class="caret"></span>
+                </div>
+              </div>
+            </div>
+            <div class="pfoot">
+              <span><span class="key">Enter</span> 제출</span>
+              <span><span class="key">Esc</span> 나가기</span>
+              <span>안 보고 쓸 수 있으면 진짜 아는 겁니다</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. 결과 -->
+      <div>
+        <p class="cap">
+          4 · 채점 결과 <small>— 글자 diff · 통과/승급 · 다음 복습일</small>
+        </p>
+        <div class="win">
+          <div class="win-bar">
+            <i class="dot"></i><i class="dot"></i><i class="dot"></i>
+            <div class="win-url">yeon.world/typing-service/baekji/session</div>
+          </div>
+          <div class="res">
+            <div class="rcol">
+              <div class="score">92<small>%</small></div>
+              <div class="verdict">통과 · 마스터로 승급</div>
+              <div class="diff">
+                <span>Practice is the single most </span
+                ><span class="wrong">reliabel</span><span> path to </span
+                ><span class="miss">fluency</span><span>.</span>
+              </div>
+              <div class="rstats">
+                <div class="r">
+                  <div class="v">92%</div>
+                  <div class="k">정확도</div>
+                </div>
+                <div class="r">
+                  <div class="v">61</div>
+                  <div class="k">타/분</div>
+                </div>
+                <div class="r">
+                  <div class="v">2</div>
+                  <div class="k">오탈자</div>
+                </div>
+                <div class="r">
+                  <div class="v">4일 뒤</div>
+                  <div class="k">다음 복습</div>
+                </div>
+              </div>
+              <div class="rnote">
+                이 문장은 이제 <b>마스터</b> 상태 · 4일 뒤 다시 확인합니다
+              </div>
+              <div class="ractions">
+                <div class="btn">다음 카드 →</div>
+                <div class="btn ghost">이 문장 다시 쓰기</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
