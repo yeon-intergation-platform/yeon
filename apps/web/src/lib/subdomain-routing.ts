@@ -6,6 +6,11 @@ export const SERVICE_SUBDOMAIN_ROUTES = {
     servicePath: "/typing-service",
     publicUrl: "https://typing.yeon.world",
   },
+  // 백지 학습(blurt) — 공개 서비스. 타자와 분리된 독립 서비스 경로.
+  "blurt.yeon.world": {
+    servicePath: "/recall-service",
+    publicUrl: "https://blurt.yeon.world",
+  },
   "card.yeon.world": {
     servicePath: "/card-service",
     publicUrl: "https://card.yeon.world",
