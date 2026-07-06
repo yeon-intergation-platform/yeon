@@ -152,6 +152,22 @@ describe("subdomain-routing", () => {
     ).toBeNull();
   });
 
+  it("루트 도메인 전용 /profile은 서비스 subdomain에서도 rewrite하지 않는다", () => {
+    expect(
+      resolveServiceSubdomainRewritePath({
+        host: "typing.yeon.world",
+        pathname: "/profile",
+      })
+    ).toBeNull();
+
+    expect(
+      resolveServiceSubdomainRewritePath({
+        host: "card.yeon.world",
+        pathname: "/profile",
+      })
+    ).toBeNull();
+  });
+
   it("API, auth, Next asset, 정적 파일은 rewrite하지 않는다", () => {
     for (const pathname of [
       "/api/v1/card-decks",
