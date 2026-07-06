@@ -14,6 +14,7 @@ const NATIVE_ICON_GLYPHS: Record<YeonIconName, string> = {
   "arrow-left": "←",
   bold: "B",
   "chevron-down": "⌄",
+  "chevron-right": "›",
   "circle-help": "?",
   "circle-user": "◉",
   code: "<>",

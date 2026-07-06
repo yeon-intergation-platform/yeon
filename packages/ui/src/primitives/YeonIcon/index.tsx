@@ -9,6 +9,7 @@ const ICON_LABELS: Record<YeonIconName, string> = {
   "arrow-left": "뒤로",
   bold: "굵게",
   "chevron-down": "펼치기",
+  "chevron-right": "다음",
   "circle-help": "도움말",
   "circle-user": "사용자",
   code: "코드",
@@ -103,6 +104,7 @@ function renderIcon(name: YeonIconName, { strokeWidth }: IconRenderProps) {
     ),
     bold: textIcon("B"),
     "chevron-down": <path d="m6 9 6 6 6-6" {...strokeProps} />,
+    "chevron-right": <path d="m9 6 6 6-6 6" {...strokeProps} />,
     "circle-help": (
       <>
         <circle cx="12" cy="12" r="9" {...strokeProps} />
