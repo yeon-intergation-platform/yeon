@@ -58,6 +58,9 @@ const REWRITE_EXCLUDED_PATH_PREFIXES = [
   "/favicon.ico",
   "/robots.txt",
   "/sitemap.xml",
+  // 루트 도메인 전용 플랫폼 페이지. 서비스 subdomain에서 접근해도
+  // /{service}/profile로 rewrite되어 404 나지 않도록 rewrite 대상에서 제외한다.
+  "/profile",
 ] as const;
 const CONTENT_FEED_PATHNAME = "/feed.xml";
 const NEWS_CONTENT_CATEGORY_PATH_PREFIXES = [

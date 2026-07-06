@@ -104,7 +104,7 @@ const PRODUCT_HEADER_INNER_DEFAULT_LAYOUT_CLASS =
 const PRODUCT_HEADER_ACTION_BUTTON_CLASS =
   "flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-[#e5e5e5] bg-white p-2 text-[#666] transition-colors hover:border-[#aaa] hover:text-[#111]";
 const PRODUCT_PROFILE_MENU_ITEM_CLASS =
-  "flex min-h-11 w-full !justify-start gap-2 !rounded-none !border-0 !bg-white !px-4 !py-0 text-left text-[13px] font-semibold leading-none !text-[#111] no-underline transition-colors hover:!bg-[#fafafa] disabled:cursor-not-allowed disabled:opacity-60";
+  "flex min-h-11 w-full items-center !justify-start gap-2 !rounded-none !border-0 !bg-white !px-4 !py-0 text-left text-[13px] font-semibold leading-none !text-[#111] no-underline transition-colors hover:!bg-[#fafafa] disabled:cursor-not-allowed disabled:opacity-60";
 
 export function YeonProductHeader({
   ariaLabel,
