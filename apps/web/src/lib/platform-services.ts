@@ -53,7 +53,18 @@ export const PLATFORM_SERVICES = [
     accessPolicy: platformServiceAccessPolicies.anonymous,
     status: platformServiceStatuses.live,
     listedInPlatformHome: true,
-    inDevelopment: true,
+  },
+  {
+    slug: "recall-service",
+    href: "/recall-service",
+    publicHref: "https://blurt.yeon.world",
+    title: "백지 학습",
+    summary:
+      "안 보고 빈 화면에 기억으로 써서 외우는 백지 학습 서비스입니다. 보고 쓰기 → 가리고 쓰기 → 안 보고 쓰기.",
+    audience: "백지 암기",
+    accessPolicy: platformServiceAccessPolicies.anonymous,
+    status: platformServiceStatuses.live,
+    listedInPlatformHome: true,
   },
   {
     slug: "card-service",
