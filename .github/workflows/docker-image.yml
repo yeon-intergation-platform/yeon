@@ -380,6 +380,26 @@ jobs:
           set -eu
           install -m 644 "${COMPOSE_FILE}" "${DEPLOY_DIR}/${COMPOSE_FILE}"
 
+      - name: 시크릿을 배포 .env에 주입
+        if: steps.fresh_main.outputs.deploy == 'true'
+        env:
+          ZAI_API_KEY: ${{ secrets.ZAI_API_KEY }}
+        run: |
+          set -eu
+          # 호스트 .env를 손으로 관리하지 않고 GitHub Secrets를 원천으로 idempotent upsert 한다.
+          env_file="${DEPLOY_DIR}/.env"
+          touch "$env_file"
+          upsert_env() {
+            local key="$1" value="$2"
+            [ -n "$value" ] || { echo "경고: ${key} 시크릿이 비어 주입을 건너뜁니다."; return 0; }
+            grep -v "^${key}=" "$env_file" > "${env_file}.tmp" 2>/dev/null || true
+            printf '%s=%s\n' "$key" "$value" >> "${env_file}.tmp"
+            mv "${env_file}.tmp" "$env_file"
+            echo "${key} 를 배포 .env에 동기화했습니다."
+          }
+          upsert_env ZAI_API_KEY "${ZAI_API_KEY:-}"
+          chmod 600 "$env_file"
+
       - name: Deploy on Raspberry Pi
         if: steps.fresh_main.outputs.deploy == 'true'
         run: |
