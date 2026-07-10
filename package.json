@@ -30,6 +30,7 @@
     "release:verify": "node scripts/verify-release-version.mjs",
     "verify:search-console-targets": "node bin/verify-search-console-targets.mjs",
     "verify:parity": "node bin/verify-parity.mjs",
+    "test:runtime-secrets": "node --test scripts/runtime/runtime-secret-loader.test.mjs && sh scripts/runtime/runtime-secret-entrypoint.test.sh && sh scripts/runtime/compose-secret-contract.test.sh && sh scripts/ci/buildx-build-with-retry.test.sh",
     "sprite:alpha-key": "python3 scripts/sprites/alpha-key-sheet.py"
   },
   "devDependencies": {

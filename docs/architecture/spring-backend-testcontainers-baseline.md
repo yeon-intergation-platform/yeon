@@ -28,9 +28,9 @@
 ## baseline 설계
 
 - 테스트는 `dev.local` profile을 사용한다.
-- 운영/배포 datasource source of truth는 `DATABASE_URL`이다.
-- Testcontainers는 호환 fallback인 `BACKEND_JDBC_DATABASE_*` 키로 값을 공급한다.
-  차이는 값 공급 방식만 바꾼다.
+- 운영 datasource 비밀번호 source of truth는 `POSTGRES_PASSWORD`이고, 나머지 연결 속성은
+  non-secret `POSTGRES_*` 설정이다. `DATABASE_URL`은 로컬/Testcontainers 호환 입력으로 유지한다.
+- Testcontainers는 `DATABASE_URL`을 동적으로 공급한다. 차이는 값 공급 방식만 바꾼다.
   - 이전: 로컬 shell env
   - 이후: `PostgreSQLContainer` → `@DynamicPropertySource`
 

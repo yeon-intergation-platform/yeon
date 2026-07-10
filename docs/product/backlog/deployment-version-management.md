@@ -9,7 +9,8 @@
 - MAJOR/MINOR/PATCH bump 기준을 에이전트 SSOT 문서에 기록한다.
 - `vX.Y.Z` tag push 또는 수동 dispatch 시 GitHub Release를 생성하는 workflow를 추가한다.
 - release workflow는 tag와 `package.json` version이 다르면 실패한다.
-- 운영 Docker rollout은 `sha-<short-sha>` 이미지 태그를 사용해 실제 배포 커밋을 추적 가능하게 한다.
+- 운영 Docker rollout은 publish된 manifest digest로 고정하고, `sha-<short-sha>` 태그는 커밋
+  추적용 별칭으로만 유지한다.
 
 ### 논의 필요
 

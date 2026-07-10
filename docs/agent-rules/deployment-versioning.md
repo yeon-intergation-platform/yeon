@@ -8,7 +8,8 @@
 
 - 운영 제품 버전의 SSOT는 성공한 `main` 배포 뒤 생성되는 GitHub Release tag다.
 - 릴리즈 태그는 항상 SemVer `vMAJOR.MINOR.PATCH` 형식이다. 예: `v0.1.0`.
-- 운영 Docker rollout은 디버깅 가능성을 위해 현재 커밋의 `sha-<short-sha>` 이미지 태그를 사용하고, 제품 릴리즈 이력은 GitHub Release로 관리한다.
+- 운영 Docker rollout은 publish된 manifest의 `sha256` digest를 사용한다. `sha-<short-sha>` 태그는
+  커밋 추적용 별칭일 뿐 배포 원천이 아니며, 제품 릴리즈 이력은 GitHub Release로 관리한다.
 - root `package.json`의 `version`은 패키지/도구 기준값일 수 있지만, 자동 운영 릴리즈 번호를 막거나 대체하는 기준으로 쓰지 않는다.
 - 수동 tag 기반 release workflow는 `package.json`과 tag version 불일치를 경고할 수 있으나, 자동 배포 릴리즈의 성공/실패 기준은 GitHub Release tag다.
 

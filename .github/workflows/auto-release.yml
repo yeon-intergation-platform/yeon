@@ -22,12 +22,11 @@ jobs:
       github.event.workflow_run.conclusion == 'success' &&
       (github.event.workflow_run.event == 'push' || github.event.workflow_run.event == 'workflow_dispatch') &&
       github.event.workflow_run.head_branch == 'main'
-    # GitHub-hosted ubuntu-latest는 무료 private repo의 Actions 결제 차단에 막힌다.
-    # 운영 self-hosted ARM64 러너에서 git/gh 기반 릴리즈 태깅을 수행한다.
-    runs-on: [self-hosted, Linux, ARM64]
+    # release metadata 작업은 운영 Docker host가 필요 없는 hosted runner에서 수행한다.
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout deployed commit
-        uses: actions/checkout@v6.0.2
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
           ref: ${{ github.event.workflow_run.head_sha }}
@@ -88,7 +87,7 @@ jobs:
           if [ -n "${pr_numbers}" ]; then
             while IFS= read -r pr_number; do
               [ -z "${pr_number}" ] && continue
-              # self-hosted 러너엔 gh/jq가 없으므로 REST API 원본 JSON을 그대로 컨텍스트에 덧붙인다.
+              # CLI 설치 여부와 무관하게 REST API 원본 JSON을 그대로 컨텍스트에 덧붙인다.
               # 아래 grep이 JSON 안의 semver/release 신호(title·body·label)를 직접 스캔한다.
               pr_payload="$(curl -fsSL \
                 -H "Authorization: Bearer ${GH_TOKEN}" \
@@ -150,7 +149,7 @@ jobs:
 
           release_api="${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/releases"
 
-          # self-hosted 러너엔 gh CLI가 없으므로 REST API로 릴리즈 존재 확인/생성을 처리한다.
+          # 별도 gh CLI 의존 없이 REST API로 릴리즈 존재 확인/생성을 처리한다.
           if curl -fsSL \
             -H "Authorization: Bearer ${GH_TOKEN}" \
             -H "Accept: application/vnd.github+json" \

@@ -22,8 +22,23 @@ public class JdbcProfileConfig {
 			.build();
 	}
 
-	private JdbcConnectionProperties resolveConnection(Environment environment) {
-		return parseDatabaseUrl(require(environment, "DATABASE_URL"));
+	JdbcConnectionProperties resolveConnection(Environment environment) {
+		String databaseUrl = read(environment, "DATABASE_URL");
+		boolean production = java.util.Arrays.asList(environment.getActiveProfiles()).contains("prod");
+		if (production && databaseUrl != null) {
+			throw new IllegalStateException("prod profile에서는 DATABASE_URL을 사용할 수 없습니다.");
+		}
+		if (databaseUrl != null) {
+			return parseDatabaseUrl(databaseUrl);
+		}
+
+		String host = require(environment, "POSTGRES_HOST");
+		String port = require(environment, "POSTGRES_PORT");
+		String database = require(environment, "POSTGRES_DB");
+		String username = require(environment, "POSTGRES_USER");
+		String password = require(environment, "POSTGRES_PASSWORD");
+		String jdbcUrl = "jdbc:postgresql://" + host + ":" + port + "/" + database;
+		return new JdbcConnectionProperties(jdbcUrl, username, password);
 	}
 
 	private JdbcConnectionProperties parseDatabaseUrl(String databaseUrl) {
@@ -68,5 +83,5 @@ public class JdbcProfileConfig {
 		return value;
 	}
 
-	private record JdbcConnectionProperties(String jdbcUrl, String username, String password) {}
+	record JdbcConnectionProperties(String jdbcUrl, String username, String password) {}
 }
