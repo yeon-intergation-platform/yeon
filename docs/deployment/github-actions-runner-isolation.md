@@ -23,7 +23,7 @@ repository-level runner label은 접근 제어가 아니다. PR이 workflow의 `
 prod_unit=actions.runner.Hyeonjun0527-yeon.hyeonjun0527.service
 
 sudo install -o root -g root -m 755 scripts/ops/yeon-prod-runner-job-guard.sh \
-  /usr/local/sbin/yeon-prod-runner-job-guard
+  /usr/local/sbin/yeon-prod-runner-job-guard.sh
 sudo install -d -o root -g root -m 755 "/etc/systemd/system/${prod_unit}.d"
 sudo install -o root -g root -m 644 scripts/ops/yeon-prod-runner-job-guard.conf \
   "/etc/systemd/system/${prod_unit}.d/10-job-guard.conf"
@@ -52,11 +52,14 @@ sudo -u nobody env \
   GITHUB_EVENT_NAME=pull_request \
   GITHUB_REF=refs/pull/1/merge \
   GITHUB_WORKFLOW_REF=yeon-intergation-platform/yeon/.github/workflows/ssot-check.yml@refs/pull/1/merge \
-  /usr/local/sbin/yeon-prod-runner-job-guard
+  /usr/local/sbin/yeon-prod-runner-job-guard.sh
 ```
 
 두 번째 명령은 실패해야 한다. GitHub runner 목록에는 `hyeonjun0527` runner와 `yeon-prod` label을
 가진 운영 runner만 남아 있다. 과거 `yeon-ci` runner와 OS 계정은 제거했으며 다시 만들지 않는다.
+
+GitHub Actions Runner job hook은 실행 파일 경로가 `.sh`, `.ps1`, `.js` 중 하나로 끝나야 한다.
+설치 대상 경로에서 `.sh` 확장자를 제거하면 runner가 job step 전에 hook 설정 자체를 거부한다.
 
 ## 잔여 위험
 
