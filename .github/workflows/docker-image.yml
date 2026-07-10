@@ -437,6 +437,11 @@ jobs:
           WEB_IMAGE_DIGEST: ${{ needs.build_web.outputs.image_digest }}
           BACKEND_IMAGE_DIGEST: ${{ needs.build_backend.outputs.image_digest }}
           RACE_IMAGE_DIGEST: ${{ needs.build_race.outputs.image_digest }}
+          WEB_CHANGED: ${{ needs.detect_changes.outputs.web }}
+          BACKEND_CHANGED: ${{ needs.detect_changes.outputs.backend }}
+          RACE_CHANGED: ${{ needs.detect_changes.outputs.race }}
+          MOBILE_CHANGED: ${{ needs.detect_changes.outputs.mobile }}
+          WORKFLOW_EVENT_NAME: ${{ github.event_name }}
         run: |
           set -euo pipefail
 
@@ -561,7 +566,7 @@ jobs:
             fi
           }
 
-          if [[ "${{ needs.detect_changes.outputs.web }}" == "true" ]]; then
+          if [[ "${WEB_CHANGED}" == "true" ]]; then
             require_image_digest web "${WEB_IMAGE_DIGEST:-}"
             YEON_WEB_IMAGE="ghcr.io/${owner_lower}/yeon-web-app@${WEB_IMAGE_DIGEST}"
           else
@@ -569,7 +574,7 @@ jobs:
           fi
           export YEON_WEB_IMAGE
 
-          if [[ "${{ needs.detect_changes.outputs.backend }}" == "true" ]]; then
+          if [[ "${BACKEND_CHANGED}" == "true" ]]; then
             require_image_digest backend "${BACKEND_IMAGE_DIGEST:-}"
             YEON_BACKEND_IMAGE="ghcr.io/${owner_lower}/yeon-backend@${BACKEND_IMAGE_DIGEST}"
           else
@@ -577,7 +582,7 @@ jobs:
           fi
           export YEON_BACKEND_IMAGE
 
-          if [[ "${{ needs.detect_changes.outputs.race }}" == "true" ]]; then
+          if [[ "${RACE_CHANGED}" == "true" ]]; then
             require_image_digest race-server "${RACE_IMAGE_DIGEST:-}"
             YEON_RACE_SERVER_IMAGE="ghcr.io/${owner_lower}/yeon-race-server@${RACE_IMAGE_DIGEST}"
           else
@@ -737,13 +742,13 @@ jobs:
           "${compose[@]}" config --quiet
 
           services=()
-          if [[ "${{ needs.detect_changes.outputs.backend }}" == "true" ]]; then
+          if [[ "${BACKEND_CHANGED}" == "true" ]]; then
             services+=(db backend)
           fi
-          if [[ "${{ needs.detect_changes.outputs.web }}" == "true" ]]; then
+          if [[ "${WEB_CHANGED}" == "true" ]]; then
             services+=(web)
           fi
-          if [[ "${{ needs.detect_changes.outputs.race }}" == "true" ]]; then
+          if [[ "${RACE_CHANGED}" == "true" ]]; then
             services+=(race-server)
           fi
           services+=(cloudflared)
@@ -798,13 +803,13 @@ jobs:
             exit 1
           }
 
-          if [[ "${{ needs.detect_changes.outputs.backend }}" == "true" ]]; then
+          if [[ "${BACKEND_CHANGED}" == "true" ]]; then
             preflight_http_service backend "${backend_preflight}" 8081 /actuator/health
           fi
-          if [[ "${{ needs.detect_changes.outputs.web }}" == "true" ]]; then
+          if [[ "${WEB_CHANGED}" == "true" ]]; then
             preflight_http_service web "${web_preflight}" 3100 /api/health
           fi
-          if [[ "${{ needs.detect_changes.outputs.race }}" == "true" ]]; then
+          if [[ "${RACE_CHANGED}" == "true" ]]; then
             preflight_http_service race-server "${race_preflight}" 2568 /health
           fi
 
@@ -839,7 +844,7 @@ jobs:
           compose=(docker compose --env-file /dev/null -f "${active_compose}")
 
           up_args=(-d --wait --no-deps)
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+          if [[ "${WORKFLOW_EVENT_NAME}" == "workflow_dispatch" ]]; then
             # 같은 SHA에서 Secret만 회전해도 /run/secrets가 새 값으로 다시 만들어져야 한다.
             up_args+=(--force-recreate)
           fi
@@ -976,10 +981,10 @@ jobs:
             echo "main_sha=${GITHUB_SHA}"
             echo "github_run_id=${GITHUB_RUN_ID}"
             echo "secret_source=github_environment_production"
-            echo "web_changed=${{ needs.detect_changes.outputs.web }}"
-            echo "backend_changed=${{ needs.detect_changes.outputs.backend }}"
-            echo "race_changed=${{ needs.detect_changes.outputs.race }}"
-            echo "mobile_changed=${{ needs.detect_changes.outputs.mobile }}"
+            echo "web_changed=${WEB_CHANGED}"
+            echo "backend_changed=${BACKEND_CHANGED}"
+            echo "race_changed=${RACE_CHANGED}"
+            echo "mobile_changed=${MOBILE_CHANGED}"
             echo "web_image=$(actual_image web)"
             echo "web_image_id=$(actual_image_id web)"
             echo "backend_image=$(actual_image backend)"
