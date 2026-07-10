@@ -1,15 +1,22 @@
 # N100 Proxmox 운영 이전 계획
 
-기준일: 2026-05-19
+기준일: 2026-07-11
 
 ## 현재 운영 상황 요약
 
-- 현재 운영 서비스는 Raspberry Pi ARM64 self-hosted runner에서 배포된다.
+- 현재 운영 서비스는 Raspberry Pi의 보호된 self-hosted deploy runner에서 배포된다.
 - `main` push 시 `.github/workflows/docker-image.yml`이 변경 범위를 감지하고 Docker 서비스를 배포한다.
-- Docker 이미지는 이미 `linux/amd64`와 `linux/arm64`를 모두 빌드한 뒤 multi-arch manifest로 publish한다.
-- 실제 운영 배포 job은 `runs-on: [self-hosted, Linux, ARM64]`라 Raspberry Pi에 고정되어 있다.
-- 운영 compose 기준 경로는 `/srv/yeon/compose.prod.yml`이고 `.env`는 서버 로컬에만 존재한다.
-- 운영 서비스 구성은 `backend`, `web`, `race-server`, `db(Postgres)`다.
+- 현재 이미지 workflow는 운영 Raspberry Pi용 `linux/arm64`만 build/publish한다. N100 이전 전에
+  `linux/amd64` build를 다시 추가해야 한다.
+- 실제 운영 배포 job은 `runs-on: [self-hosted, Linux, ARM64, yeon-prod]`라 Raspberry Pi에 고정되어 있다.
+- 운영 compose 기준 경로는 `/srv/yeon/compose.prod.yml`이다. 운영 시크릿의 원천은 GitHub
+  `production` Environment Secrets/Variables이며 custom branch policy로 `main`만 허용한다.
+- 시크릿 이관 컷오버 전까지 기존 Pi의 활성 `/srv/yeon/.env`는 보존한다. 성공한 새 배포와
+  재시작 검증 뒤 제거하며, N100에는 활성 `.env`를 복사하지 않는다.
+- 운영 앱 이미지는 tag가 아닌 GHCR digest로 고정한다.
+- PR/품질 검증과 ARM64 build/publish는 GitHub-hosted runner에서 실행하고, 배포만 root 소유
+  job-start hook으로 제한된 `yeon-prod` runner에서 실행한다.
+- 운영 서비스 구성은 `backend`, `web`, `race-server`, `db(Postgres)`, `cloudflared`다.
 - 운영 접근은 Cloudflare Zero Trust/Tunnel 기반이라 서버 공인 IP나 DNS A 레코드에 직접 의존하지 않는 구성이 목표다.
 - StarCraft OCR 관측기는 Linux 운영 서버에 넣지 않는다. Windows VM에서 별도 관측 클라이언트로 실행하고 Spring API로 관측 결과를 전송한다.
 - 현재 실사용자는 없으므로 장기간 blue/green 병행보다 짧은 중단 후 N100으로 공격적 절체한다.
@@ -38,6 +45,8 @@ N100 Proxmox
 - OCR 관측기는 운영 compose에 포함하지 않는다.
 - GitHub Actions 자동 배포 대상은 N100 검증 후 `yeon-prod-amd64`로 전환한다.
 - ARM64 경로는 N100 정상화 후 제거하거나 수동 rollback 후보로만 남긴다.
+- N100 운영 runner에도 현재 `yeon-prod`와 같은 repository/event/ref/workflow job-start guard를
+  설치한다. 공개 저장소 PR 코드는 persistent self-hosted runner에서 실행하지 않는다.
 
 ## 상세 체크리스트
 
@@ -66,19 +75,18 @@ N100 Proxmox
   - [ ] `X64`
   - [ ] `yeon-prod-amd64`
 - [ ] runner service 자동 시작 등록
+- [ ] root 소유 job-start guard 설치 및 `pull_request` 거부 테스트
 - [ ] runner가 GitHub Actions에서 online인지 확인
 
 ### 3. N100 운영 디렉터리와 네트워크
 
 - [ ] `/srv/yeon` 생성
-- [ ] `/srv/yeon/.env` 작성
-  - [ ] Raspberry Pi 운영 `.env`와 값 대조
-  - [ ] `DATABASE_URL`
-  - [ ] `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`
-  - [ ] `AUTH_SECRET`
-  - [ ] `SPRING_INTERNAL_TOKEN`
-  - [ ] OAuth/R2/OpenAI 등 운영 secret
-  - [ ] Discord webhook 관련 값은 비어 있어도 부팅 가능해야 함
+- [ ] GitHub `production` Environment Secrets/Variables가
+      [production-runtime-secrets.md](./production-runtime-secrets.md)의 목록과 일치하는지 확인
+- [ ] `production` Environment custom branch policy가 `main`만 허용하는지 확인
+- [ ] N100 runner를 `yeon-prod-amd64` 배포 대상으로 전환하되 운영 시크릿을 runner host 파일로
+      복사하지 않음
+- [ ] deploy workflow가 GitHub 원천 값을 Compose Secrets로 전달하는지 preflight로 확인
 - [ ] `compose.prod.yml` 배치
 - [ ] Docker network 생성
 
@@ -91,20 +99,21 @@ docker network create yeon-db-edge
 
 ### 4. Raspberry Pi 최종 백업
 
-- [ ] 현재 Pi `/srv/yeon/.env` 별도 백업
+- [ ] 현재 Pi `/srv/yeon/backups/secret-migration/20260710T171840Z` 복구 백업 별도 보관
 - [ ] 현재 Pi `compose.prod.yml` 별도 백업
 - [ ] 현재 실행 컨테이너 확인
 
 ```bash
 cd /srv/yeon
-docker compose -f compose.prod.yml ps
+docker compose --env-file /dev/null -f compose.prod.yml ps
 ```
 
 - [ ] DB dump 생성
 
 ```bash
 cd /srv/yeon
-docker compose -f compose.prod.yml exec db pg_dump -U yeon -d yeon -Fc > yeon-prod.dump
+docker compose --env-file /dev/null -f compose.prod.yml exec db \
+  pg_dump -U yeon -d yeon -Fc > yeon-prod.dump
 ```
 
 - [ ] dump 파일 크기 확인
@@ -113,37 +122,40 @@ docker compose -f compose.prod.yml exec db pg_dump -U yeon -d yeon -Fc > yeon-pr
 
 ### 5. Raspberry Pi 운영 중단
 
-- [ ] Pi에서 compose 중단
+- [ ] Pi에서 기존 컨테이너 중단. Secret 원천이 없는 서버에서 `compose down/up`으로 재생성하지 않음
 
 ```bash
 cd /srv/yeon
-docker compose -f compose.prod.yml down
+docker compose --env-file /dev/null -f compose.prod.yml ps -q \
+  | xargs -r docker stop
 ```
 
 - [ ] Pi cloudflared 중지
 - [ ] Pi GitHub runner 중지 또는 offline 처리
 - [ ] Pi는 즉시 초기화하지 말고 rollback용으로 전원 유지
 
-### 6. N100 DB 복구
+### 6. N100 최초 배포와 DB 복구
 
-- [ ] N100에서 DB만 먼저 기동
+- [ ] 아래 9절의 runner 전환을 먼저 완료하고 `workflow_dispatch`로 N100에 전체 stack을 최초 배포
+- [ ] local health 성공 뒤 데이터 쓰기 방지를 위해 N100의 app/tunnel 컨테이너를 중단하고 DB만 유지
 
 ```bash
 cd /srv/yeon
-docker compose -f compose.prod.yml up -d db
+docker compose --env-file /dev/null -f compose.prod.yml ps -q backend web race-server cloudflared \
+  | xargs -r docker stop
 ```
 
 - [ ] DB health 확인
 
 ```bash
-docker compose -f compose.prod.yml ps db
+docker compose --env-file /dev/null -f compose.prod.yml ps db
 ```
 
 - [ ] dump restore
 
 ```bash
 cd /srv/yeon
-docker compose -f compose.prod.yml exec -T db pg_restore \
+docker compose --env-file /dev/null -f compose.prod.yml exec -T db pg_restore \
   -U yeon \
   -d yeon \
   --clean \
@@ -154,22 +166,23 @@ docker compose -f compose.prod.yml exec -T db pg_restore \
 - [ ] 주요 테이블 row count 확인
 - [ ] Flyway schema version 확인
 
-### 7. N100 서비스 기동
+### 7. N100 서비스 재기동
 
-- [ ] 전체 서비스 기동
+- [ ] 기존 컨테이너 재기동. 재생성이 필요하면 `workflow_dispatch`를 다시 실행
 
 ```bash
 cd /srv/yeon
-docker compose -f compose.prod.yml up -d --wait
+docker compose --env-file /dev/null -f compose.prod.yml ps -aq \
+  | xargs -r docker start
 ```
 
 - [ ] 서비스 상태 확인
 
 ```bash
-docker compose -f compose.prod.yml ps
-docker compose -f compose.prod.yml logs --tail=100 backend
-docker compose -f compose.prod.yml logs --tail=100 web
-docker compose -f compose.prod.yml logs --tail=100 race-server
+docker compose --env-file /dev/null -f compose.prod.yml ps
+docker compose --env-file /dev/null -f compose.prod.yml logs --tail=100 backend
+docker compose --env-file /dev/null -f compose.prod.yml logs --tail=100 web
+docker compose --env-file /dev/null -f compose.prod.yml logs --tail=100 race-server
 ```
 
 - [ ] backend health 확인: `/actuator/health`
@@ -183,7 +196,7 @@ docker compose -f compose.prod.yml logs --tail=100 race-server
 
 - [ ] N100 cloudflared가 같은 Tunnel credential을 사용할 수 있게 설정
 - [ ] Tunnel ingress rule이 N100 local origin을 바라보는지 확인
-  - [ ] `yeon.world` → web `localhost:3000` 또는 compose network origin
+  - [ ] `yeon.world` → compose network의 web service alias
   - [ ] `www.yeon.world` → web
   - [ ] `race.yeon.world` → race-server
 - [ ] Pi cloudflared가 꺼진 상태인지 확인
@@ -194,6 +207,8 @@ docker compose -f compose.prod.yml logs --tail=100 race-server
 
 ### 9. GitHub Actions 자동 배포 전환
 
+- [ ] 세 `docker-build-*.yml`에 `linux/amd64` build/publish를 추가하고 GHCR manifest digest를
+      운영 배포 출력으로 유지
 - [ ] `.github/workflows/docker-image.yml`의 운영 배포 runner를 N100 label로 전환
 
 ```yaml
@@ -203,6 +218,8 @@ runs-on: [self-hosted, yeon-prod-amd64]
 - [ ] 단계명에서 Raspberry Pi 고정 표현 제거
 - [ ] `/srv/yeon` 경로는 N100 Linux VM 기준으로 유지
 - [ ] `compose.prod.yml` sync 유지
+- [ ] `production` Environment의 main-only policy와 운영 job의 `environment: production` 유지
+- [ ] N100 runner job-start guard의 repository/event/ref/workflow 허용 목록 검증
 - [ ] preflight 로직 유지
   - [ ] backend `/actuator/health`
   - [ ] web `/api/health`
@@ -236,8 +253,8 @@ runs-on: [self-hosted, yeon-prod-amd64]
 
 ## Rollback 기준
 
-- N100 DB restore 실패: Pi compose/cloudflared를 다시 켠다.
-- N100 서비스 health 실패: N100 compose down 후 Pi compose/cloudflared를 다시 켠다.
+- N100 DB restore 실패: N100 stack을 중단하고 Pi의 기존 컨테이너를 `docker start`로 되살린다.
+- N100 서비스 health 실패: N100 컨테이너를 중단하고 Pi의 기존 컨테이너를 되살린다.
 - Cloudflare Tunnel 전환 실패: N100 cloudflared 중지 후 Pi cloudflared를 다시 켠다.
 - GitHub Actions 전환 실패: workflow runner label을 ARM64/Pi 경로로 되돌린다.
 

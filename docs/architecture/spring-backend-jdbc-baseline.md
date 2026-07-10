@@ -13,15 +13,19 @@
 - starter: `spring-boot-starter-jdbc`
 - driver: `org.postgresql:postgresql`
 - 활성화 방식: 공통 datasource 설정을 사용하고, 환경 구분은 `dev.local` / `staging` / `prod` profile로 한다.
-- env key:
-  - `DATABASE_URL` (`postgresql://user:password@host:port/database`)
-  - Spring 내부에서 JDBC URL로 변환한다.
+- env contract:
+  - 로컬/테스트 호환: `DATABASE_URL` (`postgresql://user:password@host:port/database`)
+  - 운영: non-secret `POSTGRES_HOST`, `POSTGRES_PORT`, `POSTGRES_DB`, `POSTGRES_USER`와
+    Compose Secret에서 로드한 `POSTGRES_PASSWORD`
+  - Spring 내부에서 두 입력 경로를 하나의 JDBC 연결 속성으로 변환한다.
   - backend 전용 `BACKEND_DATABASE_URL`, `BACKEND_JDBC_DATABASE_URL`, `BACKEND_JDBC_DATABASE_USERNAME`, `BACKEND_JDBC_DATABASE_PASSWORD` fallback은 사용하지 않는다.
 
 ## 이유
 
 - 현재 Spring backend는 실제 서비스 API를 담당하므로 DB 없는 부팅 성공을 정상 상태로 보지 않는다.
-- `dev.local`은 로컬 개발, `staging`은 스테이징 서버, `prod`는 운영 서버의 source of truth다.
+- `dev.local`은 로컬 개발, `staging`은 스테이징 서버, `prod`는 운영 서버 profile이다.
+- 운영 DB 비밀번호의 source of truth는 GitHub의 `POSTGRES_PASSWORD` 하나이며 비밀번호를 포함한
+  `DATABASE_URL`을 운영 Secret으로 중복 저장하지 않는다.
 - `pnpm dev:all`은 `dev.local` profile을 기본으로 주입한다.
 
 ## smoke 기준

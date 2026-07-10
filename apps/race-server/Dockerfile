@@ -38,6 +38,7 @@ FROM deps AS builder
 WORKDIR /app
 
 COPY --from=pruner /app/out/full/ .
+COPY --from=pruner /app/scripts/runtime ./scripts/runtime
 
 RUN pnpm --filter @yeon/race-server build
 
@@ -51,7 +52,11 @@ ENV PORT=2567
 ENV HOME=/tmp
 
 COPY --from=builder --chown=65532:65532 /app/apps/race-server/dist ./dist
+COPY --from=builder --chown=65532:65532 /app/scripts/runtime/runtime-secret-loader.mjs ./scripts/runtime/runtime-secret-loader.mjs
+COPY --from=builder --chown=65532:65532 /app/scripts/runtime/run-with-runtime-secrets.mjs ./scripts/runtime/run-with-runtime-secrets.mjs
+
+ENV YEON_RUNTIME_ENTRYPOINT=dist/index.js
 
 EXPOSE 2567
 
-CMD ["dist/index.js"]
+CMD ["scripts/runtime/run-with-runtime-secrets.mjs"]

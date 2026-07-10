@@ -1,7 +1,7 @@
 name: Registry Image Cleanup
 
 # ghcr.io 레지스트리 이미지 자동정리.
-# docker-build-*.yml은 셀프호스트 러너의 "로컬" Docker만 prune한다(레지스트리 무관).
+# docker-build-*.yml의 hosted runner는 매 job 폐기되므로 registry 보존 정책만 별도로 관리한다.
 # main push마다 sha-* 태그 + push-by-digest의 untagged 매니페스트 + buildcache가
 # ghcr.io(yeon-web-app/yeon-race-server/yeon-backend)에 무한 누적되므로, 주기적으로
 # 오래된 버전을 보존 정책으로 삭제한다. latest/develop/buildcache-arm64는 보호한다.
@@ -26,17 +26,12 @@ concurrency:
 
 jobs:
   cleanup:
-    # GitHub-hosted ubuntu-latest는 무료 private repo의 Actions 결제 차단에 막힌다.
-    # 운영 self-hosted ARM64 러너에서 수행한다. snok 액션 이미지는 amd64 전용이라 ARM64에서
-    # 그대로 실행하면 "exec format error"가 난다. setup-qemu로 binfmt를 등록해 emulation으로 실행한다.
-    runs-on: [self-hosted, Linux, ARM64]
+    # Registry API만 사용하므로 운영 Docker host가 아닌 hosted runner에서 수행한다.
+    runs-on: ubuntu-latest
     name: ghcr 오래된 이미지 정리
     steps:
-      - name: Set up QEMU (amd64 binfmt 등록 — snok 액션 emulation 실행)
-        uses: docker/setup-qemu-action@v3.2.0
-
       - name: Prune old container image versions
-        uses: snok/container-retention-policy@v3.1.0
+        uses: snok/container-retention-policy@d3bdcf5ce9b05f685154e4a16c39233b245e3d53 # v3.1.0
         with:
           account: ${{ github.repository_owner }}
           # 기본은 GITHUB_TOKEN(packages: write). 조직 패키지 권한이 부족해 403이면

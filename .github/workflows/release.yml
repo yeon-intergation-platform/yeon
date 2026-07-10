@@ -1,9 +1,6 @@
 name: GitHub Release
 
 on:
-  push:
-    tags:
-      - "v*.*.*"
   workflow_dispatch:
     inputs:
       tag:
@@ -16,25 +13,35 @@ permissions:
 
 jobs:
   create_release:
-    # GitHub-hosted ubuntu-latest는 무료 private repo의 Actions 결제 차단에 막힌다.
-    # 태그 push 기반 릴리즈 공개도 운영 self-hosted ARM64 러너에서 수행한다.
-    runs-on: [self-hosted, Linux, ARM64]
+    if: github.ref == 'refs/heads/main'
+    # 수동 복구 release도 default branch의 trusted workflow를 hosted runner에서 실행한다.
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v6.0.2
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
-          ref: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag || github.ref }}
+          ref: main
+          persist-credentials: false
 
       - name: Resolve release tag
         id: release
         run: |
           set -eu
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            tag="${{ github.event.inputs.tag }}"
-          else
-            tag="${GITHUB_REF_NAME}"
+          tag="${{ github.event.inputs.tag }}"
+
+          if [[ ! "${tag}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::유효한 SemVer tag가 아닙니다: ${tag}"
+            exit 1
           fi
+
+          git fetch --force origin main "refs/tags/${tag}:refs/tags/${tag}"
+          tag_commit="$(git rev-list -n 1 "${tag}")"
+          if ! git merge-base --is-ancestor "${tag_commit}" origin/main; then
+            echo "::error::main 이력에 없는 tag는 release할 수 없습니다: ${tag}"
+            exit 1
+          fi
+
           echo "tag=${tag}" >> "$GITHUB_OUTPUT"
 
       - name: Report package version match
@@ -57,7 +64,7 @@ jobs:
 
           release_api="${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/releases"
 
-          # self-hosted 러너엔 gh CLI가 없으므로 REST API로 릴리즈 존재 확인/생성을 처리한다.
+          # 별도 gh CLI 의존 없이 REST API로 릴리즈 존재 확인/생성을 처리한다.
           if curl -fsSL \
             -H "Authorization: Bearer ${GH_TOKEN}" \
             -H "Accept: application/vnd.github+json" \

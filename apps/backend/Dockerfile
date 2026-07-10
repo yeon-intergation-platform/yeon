@@ -31,9 +31,11 @@ RUN addgroup -S -g 1001 spring \
     && adduser -S -u 1001 -G spring spring
 
 COPY --from=builder /app/build/libs/*.jar /app/app.jar
+COPY --chmod=755 scripts/runtime/runtime-secret-entrypoint.sh /app/runtime-secret-entrypoint.sh
 
 USER spring
 
 EXPOSE 8081
 
-ENTRYPOINT ["java", "-jar", "/app/app.jar"]
+ENTRYPOINT ["/app/runtime-secret-entrypoint.sh"]
+CMD ["java", "-jar", "/app/app.jar"]

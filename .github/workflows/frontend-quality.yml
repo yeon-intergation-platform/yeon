@@ -34,9 +34,8 @@ permissions:
 
 jobs:
   quality:
-    # GitHub-hosted ubuntu-latest는 무료 private repo의 Actions 결제 차단에 막혀 잡이 시작되지 않는다.
-    # 운영 self-hosted ARM64 러너로 고정한다. (단일 러너라 다른 워크플로와 순차 실행됨)
-    runs-on: [self-hosted, Linux, ARM64]
+    # 공개 저장소의 PR 코드는 job마다 폐기되는 GitHub-hosted runner에서만 실행한다.
+    runs-on: ubuntu-latest
     name: 타입체크 · 린트 · 프론트 단위 테스트
     env:
       # 대형 web 앱 tsc/vitest가 러너 기본 Node 힙(~2GB)을 초과해 OOM(exit 134) 나는 것을 방지.
@@ -44,12 +43,13 @@ jobs:
       # corepack이 pnpm 다운로드 시 비대화형 CI에서 멈추지 않도록 프롬프트 비활성화.
       COREPACK_ENABLE_DOWNLOAD_PROMPT: "0"
     steps:
-      - uses: actions/checkout@v6.0.2
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
 
-      # self-hosted ARM64 러너의 내장 npm이 깨져 pnpm/action-setup self-installer가 실패한다.
-      # setup-node로 완비된 node(+npm)를 PATH에 깔고 corepack으로 packageManager 핀을 활성화한다.
+      # setup-node와 corepack으로 packageManager 핀을 활성화한다.
       - name: Setup Node
-        uses: actions/setup-node@v6.4.0
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version: "22"
 

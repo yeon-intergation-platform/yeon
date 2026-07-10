@@ -1,279 +1,80 @@
-# Raspberry Pi `docker compose` Deployment Guide
+# Raspberry Pi Docker Compose 운영
 
-기준 시점: 2026-04-07
+기준 시점: 2026-07-11
 
-이 문서는 `yeon` 저장소를 Raspberry Pi에 `docker compose`로 배포하는 기준 절차를 정리한다. 현재 기준 운영 모델은 `develop` 서버와 `main` 운영 서버를 분리하는 2계층 구조다.
+이 문서는 현재 Raspberry Pi 운영 호스트의 실행 원칙만 다룬다. 시크릿 이름, 전달 구조,
+백업과 롤백의 SSOT는 [production-runtime-secrets.md](./production-runtime-secrets.md)다.
 
-## 1. 브랜치와 서버 매핑
+## 현재 운영 모델
 
-- `develop` -> develop 서버 -> `dev.yeon.world`
-- `main` -> 운영 서버 -> `yeon.world`
+- 배포 브랜치: `main`만 사용한다. `develop` 배포는 중단된 상태다.
+- 배포 디렉터리: `/srv/yeon`
+- Compose 파일: `/srv/yeon/compose.prod.yml`
+- 서비스: `db`, `backend`, `web`, `race-server`, `cloudflared`
+- 외부 네트워크: `yeon-edge`, `yeon-db-edge`
+- 이미지 빌드/GHCR 게시: 일회성 GitHub-hosted ARM64 runner가 담당한다.
+- 운영 배포: 보호된 `yeon-prod` self-hosted runner가 digest만 받아 수행한다.
+- PR, 테스트, lint, typecheck, SSOT 검증: GitHub-hosted `ubuntu-latest` runner가 담당한다.
 
-브랜치 push 기준:
+컷오버가 끝난 운영 디렉터리에는 활성 `.env`를 두지 않는다. 현재 기존
+`/srv/yeon/.env`는 새 배포와 컨테이너 재생성/재시작 검증이 성공할 때까지 유지하며, 검증 전에
+삭제하지 않는다. 전환 중에도 이 파일을 수정하지 않고 `production` Environment만 변경 원천으로
+사용한다.
 
-- `develop` push 시 `compose.dev.yml` 기준 자동 배포
-- `main` push 시 `compose.prod.yml` 기준 자동 배포
-
-## 2. 저장소에 있는 배포 자산
-
-- [Dockerfile](/home/osuma/coding_stuffs/yeon/Dockerfile)
-- [compose.dev.yml](/home/osuma/coding_stuffs/yeon/compose.dev.yml)
-- [compose.prod.yml](/home/osuma/coding_stuffs/yeon/compose.prod.yml)
-- [.env.example](/home/osuma/coding_stuffs/yeon/.env.example)
-- [.github/workflows/docker-image.yml](/home/osuma/coding_stuffs/yeon/.github/workflows/docker-image.yml)
-
-현재 [apps/web/package.json](/home/osuma/coding_stuffs/yeon/apps/web/package.json)에는 production `build`, `start` 스크립트가 있다.
-
-## 3. 권장 배포 전략
-
-권장 방식은 아래와 같다.
-
-1. Raspberry Pi에는 `Raspberry Pi OS Lite 64-bit`를 사용한다.
-2. Pi 안에서 이미지를 직접 빌드하지 않는다.
-3. GitHub Actions가 GHCR로 `linux/amd64`, `linux/arm64` 이미지를 publish한다.
-4. Pi에서는 `docker compose pull && docker compose up -d`만 수행한다.
-
-이 방식이 나은 이유:
-
-- Pi에서 직접 빌드하면 느리고 메모리 여유가 적다.
-- 운영 서버에는 빌드 도구보다 실행 산출물만 두는 편이 단순하다.
-- branch별 태그 기준으로 롤백과 재배포가 쉽다.
-
-## 4. 서버 디렉터리 구조
-
-운영 서버:
-
-```txt
+```text
 /srv/yeon/
   compose.prod.yml
-  .env
+  .deploy-state
+  backups/
 ```
 
-develop 서버:
+`backups/` 아래의 과거 `.env` 사본은 장애 복구 전용이며 Compose가 자동으로 읽는 활성 설정이
+아니다. 권한은 디렉터리 `700`, 파일 `600`을 유지한다.
+최초 이관 백업은 `/srv/yeon/backups/secret-migration/20260710T171840Z`에 있다.
 
-```txt
-/srv/yeon-develop/
-  compose.dev.yml
-  .env
-```
+## 배포 흐름
 
-중요:
+1. `main` 변경 범위를 감지한다.
+2. 변경된 ARM64 이미지를 GHCR에 push하고 publish된 manifest digest를 얻는다.
+3. `production` Environment의 main-only deploy step이 Secrets/Variables를 받는다.
+4. Docker Compose가 시크릿을 `/run/secrets/<NAME>` 파일로 서비스별 전달한다.
+5. 새 이미지 preflight와 health check를 통과한 서비스만 교체한다.
+6. 실제 GHCR digest image가 렌더링된 활성 Compose와 image ID를 `/srv/yeon/.deploy-state`에 기록한다.
 
-- GitHub Actions가 compose 파일은 매번 동기화한다.
-- `.env`는 각 서버에만 두고 저장소에는 넣지 않는다.
+컨테이너를 새로 만드는 `docker compose up`, `run`, `create`는 GitHub Actions 배포 workflow에서만
+실행한다. 운영 호스트에는 재생성에 필요한 원본 시크릿이 없기 때문이다.
 
-## 5. DB 분리 기준
+## 운영 호스트에서 허용되는 점검
 
-develop 서버를 상시 자동배포 환경으로 운영할 거면 DB도 운영과 분리해야 한다.
-
-최소 기준:
-
-- 다른 DB 이름
-- 다른 DB 유저
-- 다른 비밀번호
-- 다른 Docker volume 또는 다른 외부 DB 인스턴스
-
-권장 기준:
-
-- 운영 DB와 develop DB를 별도 Postgres 인스턴스 또는 별도 서버로 분리
-
-이유:
-
-- develop 배포 중 스키마 변경이 운영 데이터를 건드리면 안 된다.
-- seed, 테스트 데이터, 임시 복구 작업이 운영 데이터와 섞이면 안 된다.
-- 운영 장애 분석 중 develop 데이터가 노이즈가 되면 안 된다.
-
-`compose.dev.yml`은 기본값도 운영과 다르게 잡아 두었다.
-
-- `POSTGRES_DB=yeon_develop`
-- `POSTGRES_USER=yeon_develop`
-- 이미지 태그 기본값 `:develop`
-
-## 6. `.env` 예시
-
-운영 서버 예시:
-
-```env
-YEON_WEB_IMAGE=ghcr.io/hyeonjun0527/yeon-web-app:latest
-YEON_RACE_SERVER_IMAGE=ghcr.io/hyeonjun0527/yeon-race-server:latest
-YEON_BACKEND_IMAGE=ghcr.io/hyeonjun0527/yeon-backend:latest
-WEB_PORT=3000
-BACKEND_PORT=8081
-NODE_ENV=production
-PORT=3000
-NEXT_PUBLIC_APP_URL=https://yeon.world
-AUTH_SECRET=<prod-secret>
-SPRING_INTERNAL_TOKEN=<prod-internal-token>
-GOOGLE_CLIENT_ID=<google-client-id>
-GOOGLE_CLIENT_SECRET=<google-client-secret>
-KAKAO_REST_API_KEY=<kakao-rest-api-key>
-KAKAO_CLIENT_SECRET=<kakao-client-secret>
-POSTGRES_DB=yeon
-POSTGRES_USER=yeon
-POSTGRES_PASSWORD=<prod-password>
-DATABASE_URL=postgresql://yeon:<prod-password>@db:5432/yeon
-```
-
-develop 서버 예시:
-
-```env
-YEON_WEB_IMAGE=ghcr.io/hyeonjun0527/yeon-web-app:develop
-YEON_RACE_SERVER_IMAGE=ghcr.io/hyeonjun0527/yeon-race-server:develop
-YEON_BACKEND_IMAGE=ghcr.io/hyeonjun0527/yeon-backend:develop
-WEB_PORT=3001
-BACKEND_PORT=8081
-NODE_ENV=production
-PORT=3000
-NEXT_PUBLIC_APP_URL=https://dev.yeon.world
-AUTH_SECRET=<dev-secret>
-SPRING_INTERNAL_TOKEN=<dev-internal-token>
-GOOGLE_CLIENT_ID=<google-client-id>
-GOOGLE_CLIENT_SECRET=<google-client-secret>
-KAKAO_REST_API_KEY=<kakao-rest-api-key>
-KAKAO_CLIENT_SECRET=<kakao-client-secret>
-POSTGRES_DB=yeon_develop
-POSTGRES_USER=yeon_develop
-POSTGRES_PASSWORD=<dev-password>
-DATABASE_URL=postgresql://yeon_develop:<dev-password>@db:5432/yeon_develop
-```
-
-원칙:
-
-- 민감 값은 이미지에 bake하지 않는다.
-- `.env`는 서버에만 둔다.
-- develop과 운영은 절대 같은 `DATABASE_URL`을 쓰지 않는다.
-- `CLOUDFLARE_TUNNEL_TOKEN`은 앱 `.env`가 아니라 별도 `cloudflared` 컨테이너 환경변수에 둔다.
-
-## 7. 수동 배포 명령
-
-운영 서버:
+값을 요구하지 않는 조회와 기존 컨테이너 재시작은 서버에서 직접 실행할 수 있다.
 
 ```bash
 cd /srv/yeon
-docker compose -f compose.prod.yml pull
-docker compose -f compose.prod.yml up -d
-docker compose -f compose.prod.yml ps
+docker compose --env-file /dev/null -f compose.prod.yml ps
+docker compose --env-file /dev/null -f compose.prod.yml logs --tail=200 backend web race-server cloudflared
+docker compose --env-file /dev/null -f compose.prod.yml ps -q \
+  | xargs -r docker restart
 ```
 
-develop 서버:
+`docker restart`는 기존 컨테이너의 `/run/secrets`를 보존한다. 재생성이 필요하면 GitHub Actions의
+`workflow_dispatch`를 사용한다. 수동 workflow는 같은 image digest라도 다섯 서비스를
+`--force-recreate`해 회전된 `/run/secrets` 값을 반영한다.
 
-```bash
-cd /srv/yeon-develop
-docker compose -f compose.dev.yml pull
-docker compose -f compose.dev.yml up -d
-docker compose -f compose.dev.yml ps
-```
+## 네트워크와 Tunnel
 
-로그 확인:
+- `yeon.world`, 서비스 subdomain은 `cloudflared`에서 `yeon-edge`의 서비스 alias로 전달한다.
+- web/backend/race는 host port를 publish하지 않는다. health도 container network에서 검사한다.
+- DB WARP 경로는 `yeon-db-edge`를 사용한다.
+- Tunnel token은 Compose command나 Docker metadata에 직접 넣지 않고
+  `/run/secrets/CLOUDFLARE_TUNNEL_TOKEN`을 `--token-file`로 읽는다.
+- cloudflared도 `compose.prod.yml`이 소유하며 별도 수동 컨테이너로 만들지 않는다.
 
-```bash
-docker compose -f compose.prod.yml logs -f
-docker compose -f compose.dev.yml logs -f
-```
+## 장애 확인 순서
 
-## 8. Cloudflare Tunnel 기준
+1. `/srv/yeon/.deploy-state`의 배포 SHA, digest image ref와 image ID를 확인한다.
+2. `docker compose ... ps`에서 다섯 서비스 상태를 확인한다.
+3. backend/web/race의 local health와 DB `pg_isready`를 확인한다.
+4. 공개 `yeon.world`, `blurt.yeon.world`, `race.yeon.world`를 확인한다.
+5. 재생성이 필요하면 서버에서 임의 환경변수를 만들지 말고 배포 workflow를 재실행한다.
 
-현재처럼 같은 Pi에 운영/개발 앱을 함께 올리고, `cloudflared`도 Docker 컨테이너로 띄우는 구조라면 기존 `yeon-tunnel` 하나에 hostname 두 개를 매핑하는 방식이 가장 빠르다. 다만 `web:3001`처럼 서비스명에 host 포트를 붙이는 방식은 맞지 않는다. 컨테이너 간 통신은 둘 다 내부 포트 `3000`을 쓰고, 운영/개발 웹에 서로 다른 Docker alias를 주는 쪽이 안전하다.
-
-권장:
-
-- `yeon.world` -> `http://yeon-prod-web:3000`
-- `dev.yeon.world` -> `http://yeon-dev-web:3000`
-- web 내부 Spring 호출 -> `http://yeon-prod-backend:8081`, `http://yeon-dev-backend:8081`
-
-전제:
-
-- 운영/개발 compose와 `cloudflared` 컨테이너가 공용 Docker network `yeon-edge`에 join해야 한다.
-- [compose.prod.yml](/home/osuma/coding_stuffs/yeon/compose.prod.yml)은 `yeon-prod-web` alias를, [compose.dev.yml](/home/osuma/coding_stuffs/yeon/compose.dev.yml)은 `yeon-dev-web` alias를 사용한다.
-- GitHub Actions deploy job도 `yeon-edge`가 없으면 자동으로 생성한다.
-
-### 권장안 A. tunnel 1개 + ingress 2개
-
-- 현재 이미 `yeon-tunnel`이 살아 있고, 같은 Pi에서 운영/개발을 함께 띄우는 구조에 가장 잘 맞는다.
-- Public Hostname 두 개만 추가하면 된다.
-
-예시:
-
-```yaml
-tunnel: yeon-tunnel
-credentials-file: /etc/cloudflared/yeon-tunnel.json
-
-ingress:
-  - hostname: yeon.world
-    service: http://yeon-prod-web:3000
-  - hostname: dev.yeon.world
-    service: http://yeon-dev-web:3000
-  - service: http_status:404
-```
-
-`cloudflared` Docker Compose 예시:
-
-```yaml
-services:
-  cloudflared:
-    image: cloudflare/cloudflared:latest
-    restart: unless-stopped
-    command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}
-    networks:
-      - yeon-edge
-
-networks:
-  yeon-edge:
-    external: true
-```
-
-### 대안 B. tunnel 2개 완전 분리
-
-- 운영과 develop의 장애 범위를 더 잘 나눌 수 있다.
-- 다만 지금 상태에서는 새 tunnel 생성, token 교체, Public Hostname 재정리가 추가로 필요하다.
-
-운영 tunnel 예시:
-
-```yaml
-tunnel: yeon-production
-credentials-file: /etc/cloudflared/yeon-production.json
-
-ingress:
-  - hostname: yeon.world
-    service: http://yeon-prod-web:3000
-  - service: http_status:404
-```
-
-develop tunnel 예시:
-
-```yaml
-tunnel: yeon-development
-credentials-file: /etc/cloudflared/yeon-development.json
-
-ingress:
-  - hostname: dev.yeon.world
-    service: http://yeon-dev-web:3000
-  - service: http_status:404
-```
-
-## 9. 자동 배포 메모
-
-- [docker-image.yml](/home/osuma/coding_stuffs/yeon/.github/workflows/docker-image.yml)이 branch별 GHCR publish와 self-hosted runner 로컬 deploy를 처리한다.
-- `develop` push 시 runner가 `/srv/yeon-develop`에 `compose.dev.yml`을 동기화하고 deploy한다.
-- `main` push 시 runner가 `/srv/yeon`에 `compose.prod.yml`을 동기화하고 deploy한다.
-- 별도 SSH secret 없이 runner가 같은 Pi 로컬 Docker를 직접 조작한다.
-- 각 디렉터리의 `.env`가 없으면 deploy job은 실패한다.
-
-## 10. 운영 체크리스트
-
-- Raspberry Pi OS Lite 64-bit인가
-- `docker compose version` 확인했는가
-- `docker network create yeon-edge`를 해 두었는가
-- `arm64` 이미지가 실제로 push 되었는가
-- 운영 `.env`와 develop `.env`가 분리되어 있는가
-- 운영 DB와 develop DB가 분리되어 있는가
-- `dev.yeon.world`, `yeon.world` Public Hostname이 각각 `yeon-dev-web:3000`, `yeon-prod-web:3000`을 가리키는가
-- 앱 `.env`에 tunnel token을 넣지 않았는가
-- `docker compose logs`로 기동 확인을 했는가
-
-## Sources
-
-- Docker Engine on Raspberry Pi OS: https://docs.docker.com/engine/install/raspberry-pi-os/
-- Docker Compose plugin on Linux: https://docs.docker.com/compose/install/linux/
-- Docker multi-platform builds: https://docs.docker.com/build/building/multi-platform/
-- Cloudflare Tunnel docs: https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/
+DB volume을 삭제하는 `docker compose down -v`는 금지한다.

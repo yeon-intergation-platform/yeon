@@ -1,59 +1,27 @@
-# GitHub Actions + GHCR Setup
+# GitHub Actions + GHCR 운영 배포
 
-기준 시점: 2026-04-07
+기준 시점: 2026-07-11
 
-이 문서는 `yeon` 저장소에서 GitHub Actions로 Docker 이미지를 GHCR에 publish하고, 브랜치에 따라 develop 서버 또는 운영 서버로 자동 배포하는 절차를 정리한다.
+## 배포 경로
 
-## 1. 저장소에 포함된 배포 파일
+- `main` push 또는 `workflow_dispatch`가 `.github/workflows/docker-image.yml`을 실행한다.
+- `develop` 배포 경로는 현재 중단되어 있다.
+- Docker 이미지는 GHCR의 `yeon-web-app`, `yeon-backend`, `yeon-race-server`에 저장한다.
+- 운영 배포는 publish된 manifest의 `sha256` digest를 사용한다. `sha-<short-sha>`와 `latest`는
+  추적/편의를 위한 tag일 뿐 배포 원천이 아니다.
 
-- [.github/workflows/docker-image.yml](/home/osuma/coding_stuffs/yeon/.github/workflows/docker-image.yml)
-- [Dockerfile](/home/osuma/coding_stuffs/yeon/Dockerfile)
-- [.dockerignore](/home/osuma/coding_stuffs/yeon/.dockerignore)
-- [compose.dev.yml](/home/osuma/coding_stuffs/yeon/compose.dev.yml)
-- [compose.prod.yml](/home/osuma/coding_stuffs/yeon/compose.prod.yml)
-- [.env.example](/home/osuma/coding_stuffs/yeon/.env.example)
+## 러너 경계
 
-## 2. 워크플로 동작 방식
+- PR과 품질 검증은 job마다 폐기되는 GitHub-hosted `ubuntu-latest` runner를 사용한다.
+- ARM64 이미지 build는 GitHub-hosted `ubuntu-24.04-arm`, manifest publish는 `ubuntu-latest`에서
+  수행한다.
+- `yeon-prod`: publish된 immutable digest를 `/srv/yeon`에 배포하는 작업만 수행하는 운영 러너다.
+- registry 정리와 release 작업은 GitHub-hosted runner에서 실행한다.
 
-워크플로는 아래 경우에 실행된다.
+운영 runner의 root 소유 job-start hook은 `pull_request`와 main 이외 ref를 step 실행 전에 거부한다.
+세부 설치와 검증은 [github-actions-runner-isolation.md](./github-actions-runner-isolation.md)를 따른다.
 
-- `develop` 브랜치 push
-- `main` 브랜치 push
-- 수동 실행 `workflow_dispatch`
-
-워크플로는 다음 순서로 동작한다.
-
-1. checkout
-2. QEMU / buildx 준비
-3. `GITHUB_TOKEN`으로 GHCR 로그인
-4. branch 기준 Docker tag 생성
-5. `linux/amd64`, `linux/arm64` 멀티플랫폼 이미지 build + push
-6. branch에 맞는 self-hosted runner가 같은 Pi 안에서 compose 파일 동기화 후 로컬 deploy
-
-## 3. 브랜치별 배포 기준
-
-- `develop` push
-  - 이미지 태그: `develop`, `sha-<short-sha>`
-  - 배포 대상: develop 서버
-  - 원격 디렉터리: `/srv/yeon-develop`
-  - compose 파일: `compose.dev.yml`
-- `main` push
-  - 이미지 태그: `latest`, `sha-<short-sha>`
-  - 배포 대상: 운영 서버
-  - 원격 디렉터리: `/srv/yeon`
-  - compose 파일: `compose.prod.yml`
-  - 앱 host 포트: `3000`
-
-중요:
-
-- 현재 기준 deploy job은 `self-hosted`, `Linux`, `ARM64` 라벨 runner에서 실행된다.
-- 즉 GitHub Actions가 SSH로 외부 Pi에 붙는 구조가 아니라, Pi 위 runner가 자기 로컬 디렉터리를 직접 배포한다.
-- 서버에는 최소한 각 디렉터리의 `.env`, Docker, Compose가 준비되어 있어야 한다.
-- 같은 Pi에서 운영과 develop을 함께 띄우면 develop 앱 host 포트는 `3001`로 분리하는 것을 권장한다.
-- `cloudflared`가 Docker 네트워크로 앱에 붙는 구조라면 `web:3001`이 아니라 고유 alias `yeon-prod-web:3000`, `yeon-dev-web:3000`처럼 라우팅해야 한다.
-- deploy job은 `yeon-edge` external network가 없으면 자동으로 생성한다.
-
-## 4. 핵심 권한
+## 권한과 인증
 
 ```yaml
 permissions:
@@ -61,104 +29,49 @@ permissions:
   packages: write
 ```
 
-의미:
+GHCR 로그인은 job-scoped `github.token`을 사용한다. 재사용 workflow에 repository secrets 전체를
+넘기는 `secrets: inherit`는 사용하지 않는다.
 
-- `contents: read`: 저장소 코드 checkout
-- `packages: write`: GHCR push
+운영 시크릿의 원천은 GitHub `production` Environment Secrets, 일반 설정의 원천은 같은
+Environment Variables다.
+이름과 서비스별 전달 범위는 [production-runtime-secrets.md](./production-runtime-secrets.md)를
+따른다. 리팩터링된 deploy command는 `/srv/yeon/.env`를 읽지 않고 `.env` 자동 로딩을 명시적으로
+비활성화한다.
 
-## 5. GHCR 패키지와 태그
+전환 중인 기존 활성 `/srv/yeon/.env`는 새 배포와 컨테이너 재생성/재시작 검증이 성공한 뒤에만
+제거한다. 백업 위치는 [production-runtime-secrets.md](./production-runtime-secrets.md)에 기록한다.
 
-워크플로가 성공하면 GHCR에 아래 이미지가 갱신된다.
+`production` Environment는 custom branch policy로 `main`만 허용한다. 전환 검증 뒤
+Repository-level runtime Secret/Variable을 제거해 중복 원천을 남기지 않는다.
 
-```txt
-ghcr.io/<owner>/yeon-web-app
-ghcr.io/<owner>/yeon-race-server
-ghcr.io/<owner>/yeon-backend
-```
+## 이미지 배포 흐름
 
-기본 태그:
+1. 변경 범위를 계산한다.
+2. 대상 이미지를 ARM64로 build한다.
+3. GHCR OAuth 또는 네트워크 일시 실패는 제한된 횟수와 backoff로 자동 재시도한다.
+4. digest를 기준으로 `sha-*`와 `latest` manifest를 만들고 최종 manifest digest를 caller에 반환한다.
+5. 운영 Compose preflight를 실행한다.
+6. 세 앱의 실제 digest image ref를 렌더링한 Compose를 활성 파일로 원자 교체한다.
+7. 변경 서비스와 cloudflared를 `up -d --wait`로 조정한다.
+8. Docker metadata의 raw secret 환경변수와 실행 image 불일치를 검사한다.
+9. container/public/OAuth/DB health를 확인하고 `.deploy-state`를 갱신한다.
+10. 활성 Compose 교체 뒤 어느 검증에서든 실패하면 직전 Compose와 실행 image ID를 자동 복구한다.
 
-- `develop`: develop 서버가 소비하는 최신 develop 이미지
-- `latest`: 운영 서버가 소비하는 최신 운영 이미지
-- `sha-<short-sha>`: 공통 롤백용 태그
+## 수동 재배포
 
-## 6. GitHub Actions secret 기준
+컨테이너 재생성은 GitHub Actions의 `workflow_dispatch`로 실행한다. 수동 실행은 Secret 값만
+바뀐 경우에도 전체 서비스를 `--force-recreate`한다. 운영 서버에서 `.env`나 임시 secret 파일을
+만들어 `docker compose up`을 실행하지 않는다. 기존 컨테이너의 단순 재시작은
+`docker restart <container>`로 가능하다.
 
-현재 same Pi + self-hosted runner 기준에서는 별도 `DEV_RPI_*`, `PROD_RPI_*`, `RPI_*` SSH secret이 필요 없다.
+## 실패 확인 순서
 
-필수:
+- 필요한 GitHub Secret/Variable 이름이 존재하는지 확인한다. 값은 로그로 출력하지 않는다.
+- GitHub-hosted 검증/build job과 `yeon-prod` deploy runner 상태를 각각 확인한다.
+- GHCR `packages: write` 권한과 로그인 단계를 확인한다.
+- build/push 3회 실패 후의 마지막 오류를 확인한다.
+- preflight container 로그와 local health 실패 지점을 확인한다.
+- `/srv/yeon/.deploy-state`가 새 배포 SHA와 digest image ref로 갱신됐는지 확인한다.
 
-- 기본 `GITHUB_TOKEN`
-
-선택:
-
-- 없음
-
-메모:
-
-- self-hosted runner가 로컬 Docker에 로그인한 뒤 GHCR 이미지를 pull한다.
-- `cloudflared` 컨테이너를 따로 운영한다면 tunnel token은 앱 `.env`가 아니라 `cloudflared` 컨테이너 환경변수에 둔다.
-- 같은 tunnel 컨테이너가 운영/개발 앱 둘 다 붙어야 하면 공용 Docker network(`yeon-edge`)에 join시킨다.
-
-## 7. 원격 서버가 만족해야 하는 조건
-
-develop 서버와 운영 서버 모두 아래 전제를 만족해야 한다.
-
-- Docker Engine 설치
-- `docker compose` 사용 가능
-- GitHub self-hosted runner online 상태
-- 각 서버 디렉터리에 실제 `.env` 배치
-
-Pi에 저장소 전체를 clone할 필요는 없다.
-workflow가 compose 파일은 runner에서 해당 디렉터리로 매번 동기화한다.
-
-## 8. 수동 배포 예시
-
-운영 서버:
-
-```bash
-cd /srv/yeon
-docker compose -f compose.prod.yml pull
-docker compose -f compose.prod.yml up -d
-```
-
-develop 서버:
-
-```bash
-cd /srv/yeon-develop
-docker compose -f compose.dev.yml pull
-docker compose -f compose.dev.yml up -d
-```
-
-이미지가 private이면 먼저 GHCR 로그인:
-
-```bash
-docker login ghcr.io
-```
-
-## 9. 실패 시 가장 먼저 볼 것
-
-- workflow YAML의 `permissions.packages: write` 누락
-- GitHub Settings -> Actions 정책 제한
-- Docker build 실패
-- GHCR 로그인 실패
-- self-hosted runner offline
-- 각 서버의 `.env` 누락
-- host 포트 충돌 (`3000`, `3001`)
-
-로그에서 자주 보이는 실패 유형:
-
-- `permission_denied`
-- `insufficient_scope`
-- `denied: permission`
-- `403 Forbidden` on GHCR blob HEAD request
-- `/srv/yeon-develop/.env` 없음
-- self-hosted runner queue 대기
-
-## 10. 운영 메모
-
-- `develop`은 develop 서버 배포 브랜치다.
-- `main`은 운영 서버 배포 브랜치다.
-- `dev.yeon.world`는 develop 서버를 향하도록 분리한다.
-- `yeon.world`는 운영 서버를 향하도록 유지한다.
-- Docker service discovery를 쓰는 구조면 `yeon.world -> http://yeon-prod-web:3000`, `dev.yeon.world -> http://yeon-dev-web:3000`으로 붙인다.
+같은 실패 run을 짧은 간격으로 반복 조회하지 않는다. GitHub API 확인은 제한하고, 운영 상태는
+가능하면 서버의 container/health로 검증한다.

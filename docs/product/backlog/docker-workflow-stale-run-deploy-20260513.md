@@ -1,5 +1,8 @@
 # Docker workflow stale run 배포/검증 정합성 백로그 (2026-05-13)
 
+> 상태: 2026-07-11 정책으로 대체됨. 현재 stale run은 운영 배포를 건너뛰고 최신 `main` run만
+> GHCR digest 이미지를 배포한다. 아래 내용은 당시 의사결정 기록이다.
+
 ## 배경
 
 Docker workflow에서 오래된 main run이 deploy 단계까지 도달하면 이미지 build/push는 이미 성공한 상태다. 그런데 deploy 단계는 최신 main이 아니라는 이유로 skip/cancel하고, verify 단계는 같은 stale run을 실패로 처리해 "skip인데 실패"라는 모순 상태가 생긴다.

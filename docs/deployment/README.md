@@ -10,3 +10,5 @@
 - `domain-routing.md` — 서비스 subdomain 전환, Cloudflare Tunnel/Public Hostname, Access, DNS, redirect, 검증/롤백 SSOT
 - `domain-routing-checklist-300.md` — typing/card/community subdomain 전환 300단계 체크리스트
 - `public-content-release-readiness.md` — support/news/blog 공개 콘텐츠 main 반영 전 release readiness 체크리스트
+- `production-runtime-secrets.md` — GitHub Secrets/Variables, Compose secret mount, runner 격리, 운영 롤백 SSOT
+- `github-actions-runner-isolation.md` — hosted PR 검증과 운영 runner fail-closed job hook

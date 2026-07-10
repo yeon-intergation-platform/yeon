@@ -9,6 +9,8 @@ on:
       - ".github/workflows/docker-build-web.yml"
       - ".github/workflows/docker-build-backend.yml"
       - ".github/workflows/docker-build-race.yml"
+      - "scripts/ci/**"
+      - "scripts/runtime/**"
       - "Dockerfile"
       - ".dockerignore"
       - ".env.example"
@@ -26,9 +28,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  actions: write
   contents: read
-  packages: write
 
 concurrency:
   group: docker-image-${{ github.ref }}
@@ -43,11 +43,12 @@ env:
 
 jobs:
   detect_changes:
-    if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
-    # GitHub-hosted ubuntu-latest는 무료 private repo의 Actions 결제 차단에 막혀
-    # 이 게이트 잡이 시작되지 않으면 전체 빌드/배포 파이프라인이 함께 죽는다.
-    # 운영 self-hosted ARM64 러너로 고정한다.
-    runs-on: [self-hosted, Linux, ARM64]
+    if: github.ref == 'refs/heads/main'
+    # 변경 범위와 stale run 취소는 Docker 권한이 필요 없는 hosted runner에서 수행한다.
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+      contents: read
     outputs:
       web: ${{ steps.scope.outputs.web }}
       backend: ${{ steps.scope.outputs.backend }}
@@ -56,9 +57,13 @@ jobs:
       should_run: ${{ steps.fresh_main.outputs.should_run }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v6.0.2
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
+          persist-credentials: false
+
+      - name: jq 설치 확인
+        run: command -v jq >/dev/null
 
       - name: 최신 main 빌드 여부 확인
         id: fresh_main
@@ -67,7 +72,7 @@ jobs:
         run: |
           set -eu
 
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" || "${{ github.ref }}" != "refs/heads/main" ]]; then
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
             echo "should_run=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -227,6 +232,12 @@ jobs:
                 race="true"
                 ;;
 
+              scripts/runtime/*|scripts/ci/*)
+                web="true"
+                backend="true"
+                race="true"
+                ;;
+
               package.json|pnpm-lock.yaml|pnpm-workspace.yaml|turbo.json)
                 web="true"
                 backend="true"
@@ -270,37 +281,45 @@ jobs:
     if: github.ref == 'refs/heads/main' && needs.detect_changes.outputs.web == 'true'
     needs: detect_changes
     uses: ./.github/workflows/docker-build-web.yml
-    secrets: inherit
+    permissions:
+      contents: read
+      packages: write
 
   build_backend:
     if: github.ref == 'refs/heads/main' && needs.detect_changes.outputs.backend == 'true'
     needs: detect_changes
     uses: ./.github/workflows/docker-build-backend.yml
-    secrets: inherit
+    permissions:
+      contents: read
+      packages: write
 
   build_race:
     if: github.ref == 'refs/heads/main' && needs.detect_changes.outputs.race == 'true'
     needs: detect_changes
     uses: ./.github/workflows/docker-build-race.yml
-    secrets: inherit
+    permissions:
+      contents: read
+      packages: write
 
   verify_mobile:
     if: github.ref == 'refs/heads/main' && needs.detect_changes.outputs.mobile == 'true'
     needs: detect_changes
-    # GitHub-hosted ubuntu-latest는 무료 private repo의 Actions 결제 차단에 막힌다.
-    # 운영 self-hosted ARM64 러너에서 mobile typecheck를 수행한다.
-    runs-on: [self-hosted, Linux, ARM64]
+    # 검증 코드는 job마다 폐기되는 GitHub-hosted runner에서 실행한다.
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
     env:
       # corepack이 pnpm 다운로드 시 비대화형 CI에서 멈추지 않도록 프롬프트 비활성화.
       COREPACK_ENABLE_DOWNLOAD_PROMPT: "0"
     steps:
       - name: Checkout
-        uses: actions/checkout@v6.0.2
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
 
-      # self-hosted ARM64 러너의 내장 npm이 깨져 pnpm/action-setup self-installer가 실패한다.
-      # setup-node로 완비된 node(+npm)를 PATH에 깔고 corepack으로 packageManager 핀을 활성화한다.
+      # setup-node로 node/npm을 고정하고 corepack으로 packageManager 핀을 활성화한다.
       - name: Setup Node
-        uses: actions/setup-node@v6.4.0
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version: "22"
 
@@ -328,15 +347,21 @@ jobs:
       - build_race
       - build_backend
       - verify_mobile
-    runs-on: [self-hosted, Linux, ARM64]
+    runs-on: [self-hosted, Linux, ARM64, yeon-prod]
+    environment: production
+    permissions:
+      contents: read
+      packages: read
     env:
       DEPLOY_DIR: /srv/yeon
       COMPOSE_FILE: compose.prod.yml
-      IMAGE_TAG: latest
+      COMPOSE_DISABLE_ENV_FILE: "1"
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6.0.2
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
 
       - name: 배포 실행 대상 확인
         id: fresh_main
@@ -349,66 +374,371 @@ jobs:
           echo "current_sha=${GITHUB_SHA}"
 
           if [ "${latest_main_sha}" != "${GITHUB_SHA}" ]; then
-            echo "현재 run은 최신 main이 아니지만 deploy 단계까지 도달했으므로 이미 push된 SHA 이미지로 배포합니다."
-            echo "최신 main run이 뒤이어 성공하면 최신 이미지로 다시 덮어씁니다."
+            echo "현재 run은 최신 main이 아니므로 운영 배포를 건너뜁니다."
+            echo "deploy=false" >> "$GITHUB_OUTPUT"
+            exit 0
           fi
 
           echo "deploy=true" >> "$GITHUB_OUTPUT"
 
       - name: GHCR 로그인
         if: steps.fresh_main.outputs.deploy == 'true'
-        uses: docker/login-action@v4.1.0
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          password: ${{ github.token }}
 
       - name: Check deploy prerequisites
         if: steps.fresh_main.outputs.deploy == 'true'
         run: |
           set -eu
-          install -d "${DEPLOY_DIR}"
-          test -f "${DEPLOY_DIR}/.env"
+          install -d -m 750 "${DEPLOY_DIR}"
           command -v docker
           docker compose version
           docker network inspect yeon-edge >/dev/null 2>&1 || docker network create yeon-edge
           docker network inspect yeon-db-edge >/dev/null 2>&1 || docker network create yeon-db-edge
 
-      - name: Sync compose file
-        if: steps.fresh_main.outputs.deploy == 'true'
-        run: |
-          set -eu
-          install -m 644 "${COMPOSE_FILE}" "${DEPLOY_DIR}/${COMPOSE_FILE}"
-
-      - name: 시크릿을 배포 .env에 주입
-        if: steps.fresh_main.outputs.deploy == 'true'
-        env:
-          ZAI_API_KEY: ${{ secrets.ZAI_API_KEY }}
-        run: |
-          set -eu
-          # 호스트 .env를 손으로 관리하지 않고 GitHub Secrets를 원천으로 idempotent upsert 한다.
-          env_file="${DEPLOY_DIR}/.env"
-          touch "$env_file"
-          upsert_env() {
-            local key="$1" value="$2"
-            [ -n "$value" ] || { echo "경고: ${key} 시크릿이 비어 주입을 건너뜁니다."; return 0; }
-            grep -v "^${key}=" "$env_file" > "${env_file}.tmp" 2>/dev/null || true
-            printf '%s=%s\n' "$key" "$value" >> "${env_file}.tmp"
-            mv "${env_file}.tmp" "$env_file"
-            echo "${key} 를 배포 .env에 동기화했습니다."
-          }
-          upsert_env ZAI_API_KEY "${ZAI_API_KEY:-}"
-          chmod 600 "$env_file"
-
       - name: Deploy on Raspberry Pi
         if: steps.fresh_main.outputs.deploy == 'true'
+        env:
+          AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
+          CLOUDFLARE_TUNNEL_TOKEN: ${{ secrets.CLOUDFLARE_TUNNEL_TOKEN }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          KAKAO_REST_API_KEY: ${{ secrets.KAKAO_REST_API_KEY }}
+          KAKAO_CLIENT_SECRET: ${{ secrets.KAKAO_CLIENT_SECRET }}
+          MICROSOFT_CLIENT_SECRET: ${{ secrets.MICROSOFT_CLIENT_SECRET }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          SPRING_INTERNAL_TOKEN: ${{ secrets.SPRING_INTERNAL_TOKEN }}
+          TYPING_RACE_SEED_SECRET: ${{ secrets.TYPING_RACE_SEED_SECRET }}
+          ZAI_API_KEY: ${{ secrets.ZAI_API_KEY }}
+          GOOGLE_CLIENT_ID: ${{ vars.GOOGLE_CLIENT_ID }}
+          MICROSOFT_CLIENT_ID: ${{ vars.MICROSOFT_CLIENT_ID }}
+          NEXT_PUBLIC_APP_URL: ${{ vars.NEXT_PUBLIC_APP_URL }}
+          NEXT_PUBLIC_SENTRY_DSN: ${{ vars.NEXT_PUBLIC_SENTRY_DSN }}
+          OPENAI_AI_CHAT_MODEL: ${{ vars.OPENAI_AI_CHAT_MODEL }}
+          OPENAI_AI_IMPORT_MODEL: ${{ vars.OPENAI_AI_IMPORT_MODEL }}
+          OPENAI_AI_VISION_MODEL: ${{ vars.OPENAI_AI_VISION_MODEL }}
+          OPENAI_TRANSCRIPTION_MODEL: ${{ vars.OPENAI_TRANSCRIPTION_MODEL }}
+          OPENAI_TRANSCRIPTION_FALLBACK_MODELS: ${{ vars.OPENAI_TRANSCRIPTION_FALLBACK_MODELS }}
+          POSTGRES_DB: ${{ vars.POSTGRES_DB }}
+          POSTGRES_USER: ${{ vars.POSTGRES_USER }}
+          R2_ACCOUNT_ID: ${{ vars.R2_ACCOUNT_ID }}
+          R2_BUCKET_NAME: ${{ vars.R2_BUCKET_NAME }}
+          R2_ENDPOINT: ${{ vars.R2_ENDPOINT }}
+          ROOM_VOICE_CALL_ENABLED: ${{ vars.ROOM_VOICE_CALL_ENABLED }}
+          SENTRY_DSN: ${{ vars.SENTRY_DSN }}
+          YEON_ADMIN_EMAILS: ${{ vars.YEON_ADMIN_EMAILS }}
+          ZAI_BASE_URL: ${{ vars.ZAI_BASE_URL }}
+          ZAI_GRADING_MODEL: ${{ vars.ZAI_GRADING_MODEL }}
+          WEB_IMAGE_DIGEST: ${{ needs.build_web.outputs.image_digest }}
+          BACKEND_IMAGE_DIGEST: ${{ needs.build_backend.outputs.image_digest }}
+          RACE_IMAGE_DIGEST: ${{ needs.build_race.outputs.image_digest }}
         run: |
-          set -eu
+          set -euo pipefail
+
+          required_secrets=(
+            AUTH_SECRET CLOUDFLARE_TUNNEL_TOKEN
+            GOOGLE_CLIENT_SECRET KAKAO_REST_API_KEY KAKAO_CLIENT_SECRET
+            MICROSOFT_CLIENT_SECRET OPENAI_API_KEY POSTGRES_PASSWORD
+            R2_ACCESS_KEY_ID R2_SECRET_ACCESS_KEY SPRING_INTERNAL_TOKEN
+            TYPING_RACE_SEED_SECRET ZAI_API_KEY
+          )
+          for key in "${required_secrets[@]}"; do
+            if [ -z "${!key:-}" ]; then
+              echo "::error::필수 production Environment Secret이 비어 있습니다: ${key}"
+              exit 1
+            fi
+          done
+
+          required_variables=(
+            GOOGLE_CLIENT_ID MICROSOFT_CLIENT_ID NEXT_PUBLIC_APP_URL
+            POSTGRES_DB POSTGRES_USER R2_ACCOUNT_ID R2_BUCKET_NAME
+          )
+          for key in "${required_variables[@]}"; do
+            if [ -z "${!key:-}" ]; then
+              echo "::error::필수 production Environment Variable이 비어 있습니다: ${key}"
+              exit 1
+            fi
+          done
+
           owner_lower="$(printf '%s' "${GITHUB_REPOSITORY_OWNER}" | tr '[:upper:]' '[:lower:]')"
-          cd "${DEPLOY_DIR}"
+          candidate_compose="${DEPLOY_DIR}/.${COMPOSE_FILE}.candidate-${GITHUB_RUN_ID}"
+          rendered_compose="${DEPLOY_DIR}/.${COMPOSE_FILE}.rendered-${GITHUB_RUN_ID}"
+          active_compose="${DEPLOY_DIR}/${COMPOSE_FILE}"
+          previous_compose="${DEPLOY_DIR}/.${COMPOSE_FILE}.previous"
+          active_compose_replaced=false
+          deployment_committed=false
+          had_active_compose=false
+          previous_web_image=""
+          previous_backend_image=""
+          previous_race_image=""
+          previous_db_image=""
+          previous_web_image_id=""
+          previous_backend_image_id=""
+          previous_race_image_id=""
+          previous_db_image_id=""
+          public_response_dir="$(mktemp -d)"
+          install -m 644 "${GITHUB_WORKSPACE}/${COMPOSE_FILE}" "${candidate_compose}"
+          compose=(docker compose --env-file /dev/null -f "${candidate_compose}")
+
+          current_service_image() {
+            local service="$1"
+            local repository="$2"
+            local container_id
+            local image
+
+            container_id="$(docker ps -q \
+              --filter 'label=com.docker.compose.project=yeon' \
+              --filter "label=com.docker.compose.service=${service}" \
+              | head -n 1)"
+            if [ -z "${container_id}" ]; then
+              echo "::error::변경되지 않은 ${service}의 실행 중 컨테이너를 찾지 못했습니다." >&2
+              return 1
+            fi
+
+            image="$(docker inspect "${container_id}" --format '{{.Config.Image}}')"
+            case "${image}" in
+              "ghcr.io/${owner_lower}/${repository}@sha256:"*)
+                printf '%s\n' "${image}"
+                ;;
+              *)
+                echo "::error::${service}가 digest 이미지로 실행되고 있지 않습니다: ${image}" >&2
+                return 1
+                ;;
+            esac
+          }
+
+          running_service_image() {
+            local service="$1"
+            local container_id
+
+            container_id="$(docker ps -q \
+              --filter 'label=com.docker.compose.project=yeon' \
+              --filter "label=com.docker.compose.service=${service}" \
+              | head -n 1)"
+            if [ -z "${container_id}" ]; then
+              echo "::error::${service}의 실행 중 컨테이너를 찾지 못했습니다." >&2
+              return 1
+            fi
+            docker inspect "${container_id}" --format '{{.Config.Image}}'
+          }
+
+          running_service_image_id() {
+            local service="$1"
+            local container_id
+
+            container_id="$(docker ps -q \
+              --filter 'label=com.docker.compose.project=yeon' \
+              --filter "label=com.docker.compose.service=${service}" \
+              | head -n 1)"
+            if [ -z "${container_id}" ]; then
+              echo "::error::${service}의 실행 중 컨테이너를 찾지 못했습니다." >&2
+              return 1
+            fi
+            docker inspect "${container_id}" --format '{{.Image}}'
+          }
+
+          previous_web_image="$(running_service_image web)"
+          previous_backend_image="$(running_service_image backend)"
+          previous_race_image="$(running_service_image race-server)"
+          previous_db_image="$(running_service_image db)"
+          previous_web_image_id="$(running_service_image_id web)"
+          previous_backend_image_id="$(running_service_image_id backend)"
+          previous_race_image_id="$(running_service_image_id race-server)"
+          previous_db_image_id="$(running_service_image_id db)"
+
+          require_image_digest() {
+            local service="$1"
+            local digest="$2"
+
+            if [[ ! "${digest}" =~ ^sha256:[0-9a-f]{64}$ ]]; then
+              echo "::error::${service} build가 유효한 manifest digest를 반환하지 않았습니다."
+              return 1
+            fi
+          }
+
+          if [[ "${{ needs.detect_changes.outputs.web }}" == "true" ]]; then
+            require_image_digest web "${WEB_IMAGE_DIGEST:-}"
+            YEON_WEB_IMAGE="ghcr.io/${owner_lower}/yeon-web-app@${WEB_IMAGE_DIGEST}"
+          else
+            YEON_WEB_IMAGE="$(current_service_image web yeon-web-app)"
+          fi
+          export YEON_WEB_IMAGE
+
+          if [[ "${{ needs.detect_changes.outputs.backend }}" == "true" ]]; then
+            require_image_digest backend "${BACKEND_IMAGE_DIGEST:-}"
+            YEON_BACKEND_IMAGE="ghcr.io/${owner_lower}/yeon-backend@${BACKEND_IMAGE_DIGEST}"
+          else
+            YEON_BACKEND_IMAGE="$(current_service_image backend yeon-backend)"
+          fi
+          export YEON_BACKEND_IMAGE
+
+          if [[ "${{ needs.detect_changes.outputs.race }}" == "true" ]]; then
+            require_image_digest race-server "${RACE_IMAGE_DIGEST:-}"
+            YEON_RACE_SERVER_IMAGE="ghcr.io/${owner_lower}/yeon-race-server@${RACE_IMAGE_DIGEST}"
+          else
+            YEON_RACE_SERVER_IMAGE="$(current_service_image race-server yeon-race-server)"
+          fi
+          export YEON_RACE_SERVER_IMAGE
+
+          echo "web image: ${YEON_WEB_IMAGE}"
+          echo "backend image: ${YEON_BACKEND_IMAGE}"
+          echo "race image: ${YEON_RACE_SERVER_IMAGE}"
+
+          backend_preflight="yeon-backend-preflight-${GITHUB_RUN_ID}"
+          web_preflight="yeon-web-preflight-${GITHUB_RUN_ID}"
+          race_preflight="yeon-race-preflight-${GITHUB_RUN_ID}"
+          cloudflared_preflight="yeon-cloudflared-preflight-${GITHUB_RUN_ID}"
+
+          rollback_previous_deployment() {
+            local rollback_env_file
+            local legacy_rollback=false
+            local service
+            local restored=false
+            local -a rollback_compose
+            local -a rollback_command
+            local -a rollback_services=(db backend web race-server)
+
+            if [ ! -f "${previous_compose}" ]; then
+              echo "::error::직전 Compose 파일이 없어 컨테이너 자동 롤백을 수행할 수 없습니다."
+              return 1
+            fi
+
+            if grep -q '^secrets:' "${previous_compose}"; then
+              rollback_env_file=/dev/null
+            elif [ -f "${DEPLOY_DIR}/.env" ]; then
+              # 최초 컷오버 실패에만 동결된 기존 .env를 복구 입력으로 사용한다.
+              rollback_env_file="${DEPLOY_DIR}/.env"
+              legacy_rollback=true
+            else
+              echo "::error::직전 Compose에 필요한 복구용 .env가 없습니다."
+              return 1
+            fi
+
+            rollback_compose=(docker compose --env-file "${rollback_env_file}" -f "${previous_compose}")
+            for service in db backend web race-server; do
+              if ! "${rollback_compose[@]}" config --services | grep -Fxq "${service}"; then
+                echo "::error::직전 Compose에 롤백 필수 서비스가 없습니다: ${service}"
+                return 1
+              fi
+            done
+
+            if "${rollback_compose[@]}" config --services | grep -Fxq cloudflared; then
+              rollback_services+=(cloudflared)
+            else
+              # 최초 컷오버 전 Compose에는 tunnel 정의가 없으므로 검증된 새 connector를 유지한다.
+              echo "직전 Compose에 cloudflared가 없어 현재 tunnel connector를 유지합니다."
+            fi
+
+            echo "직전 Compose와 실행 image ref로 운영 컨테이너 롤백을 시작합니다."
+            if [[ "${legacy_rollback}" == "true" ]]; then
+              # 구형 Compose의 mutable Postgres tag를 배포 전 실제 image ID에 다시 고정한다.
+              if ! docker image tag "${previous_db_image_id}" "${previous_db_image}"; then
+                echo "::error::직전 DB image tag 복구에 실패했습니다."
+                return 1
+              fi
+              # Compose 보간에서 현재 GitHub Environment가 frozen legacy .env를 덮어쓰지 못하게 한다.
+              rollback_command=(
+                env -i
+                "PATH=${PATH}"
+                "HOME=${HOME}"
+                "YEON_WEB_IMAGE=${previous_web_image}"
+                "YEON_BACKEND_IMAGE=${previous_backend_image}"
+                "YEON_RACE_SERVER_IMAGE=${previous_race_image}"
+                docker compose --env-file "${rollback_env_file}" -f "${previous_compose}"
+                up -d --wait --no-deps "${rollback_services[@]}"
+              )
+            else
+              rollback_command=(
+                env
+                "YEON_WEB_IMAGE=${previous_web_image}"
+                "YEON_BACKEND_IMAGE=${previous_backend_image}"
+                "YEON_RACE_SERVER_IMAGE=${previous_race_image}"
+                "${rollback_compose[@]}"
+                up -d --wait --no-deps "${rollback_services[@]}"
+              )
+            fi
+            if ! "${rollback_command[@]}"; then
+              echo "::error::직전 운영 컨테이너 재기동에 실패했습니다."
+              return 1
+            fi
+
+            verify_rollback_image_id() {
+              local rollback_service="$1"
+              local expected_id="$2"
+              local actual_id
+
+              actual_id="$(running_service_image_id "${rollback_service}")"
+              if [[ "${actual_id}" != "${expected_id}" ]]; then
+                echo "::error::${rollback_service} 롤백 image ID가 직전 실행 상태와 다릅니다."
+                return 1
+              fi
+            }
+            verify_rollback_image_id web "${previous_web_image_id}" || return 1
+            verify_rollback_image_id backend "${previous_backend_image_id}" || return 1
+            verify_rollback_image_id race-server "${previous_race_image_id}" || return 1
+            verify_rollback_image_id db "${previous_db_image_id}" || return 1
+
+            for _ in $(seq 1 30); do
+              if curl -fsS --max-time 10 https://yeon.world/api/health >/dev/null 2>&1 &&
+                curl -fsS --max-time 10 https://race.yeon.world/health >/dev/null 2>&1; then
+                restored=true
+                break
+              fi
+              sleep 2
+            done
+            if [[ "${restored}" != "true" ]]; then
+              echo "::error::컨테이너 롤백 뒤 공개 health 검증에 실패했습니다."
+              return 1
+            fi
+
+            echo "직전 운영 컨테이너와 공개 health를 복구했습니다."
+          }
+
+          cleanup_deploy_temps() {
+            local original_status=$?
+            trap - EXIT
+            set +e
+            if [[ "${active_compose_replaced}" == "true" && "${deployment_committed}" != "true" ]]; then
+              if [[ "${had_active_compose}" == "true" && -f "${previous_compose}" ]]; then
+                if install -m 640 "${previous_compose}" "${active_compose}"; then
+                  echo "::warning::배포 실패로 활성 Compose 파일을 직전 버전으로 복구했습니다."
+                else
+                  echo "::error::활성 Compose 파일 복구에 실패했습니다. 백업 runbook으로 즉시 복구해야 합니다."
+                fi
+                rollback_previous_deployment || \
+                  echo "::error::자동 컨테이너 롤백 실패. 백업 runbook으로 즉시 복구해야 합니다."
+              else
+                rm -f "${active_compose}"
+                echo "::warning::배포 실패로 최초 활성 Compose 파일을 제거했습니다."
+              fi
+            fi
+            docker rm -f \
+              "${backend_preflight}" \
+              "${web_preflight}" \
+              "${race_preflight}" \
+              "${cloudflared_preflight}" >/dev/null 2>&1 || true
+            rm -f "${candidate_compose}" "${rendered_compose}"
+            rm -rf "${public_response_dir}"
+            exit "${original_status}"
+          }
+          trap 'exit 130' INT
+          trap 'exit 143' TERM
+          trap cleanup_deploy_temps EXIT
+
+          docker ps -a --format '{{.Names}}' \
+            | grep -E '^yeon-(backend|web|race|cloudflared)-preflight-[0-9]+$' \
+            | xargs -r docker rm -f >/dev/null 2>&1 || true
+
+          "${compose[@]}" config --quiet
+
           services=()
           if [[ "${{ needs.detect_changes.outputs.backend }}" == "true" ]]; then
-            services+=(backend)
+            services+=(db backend)
           fi
           if [[ "${{ needs.detect_changes.outputs.web }}" == "true" ]]; then
             services+=(web)
@@ -416,41 +746,16 @@ jobs:
           if [[ "${{ needs.detect_changes.outputs.race }}" == "true" ]]; then
             services+=(race-server)
           fi
+          services+=(cloudflared)
 
           if [ "${#services[@]}" -eq 0 ]; then
             echo "변경된 서비스가 없어 배포를 스킵합니다."
             exit 0
           fi
 
-          image_tag="sha-${GITHUB_SHA::7}"
-          latest_tag="latest"
-          echo "배포 이미지 태그: ${image_tag}"
-
-          if [[ "${{ needs.detect_changes.outputs.web }}" == "true" ]]; then
-            export YEON_WEB_IMAGE="ghcr.io/${owner_lower}/yeon-web-app:${image_tag}"
-          else
-            export YEON_WEB_IMAGE="ghcr.io/${owner_lower}/yeon-web-app:${latest_tag}"
-          fi
-
-          if [[ "${{ needs.detect_changes.outputs.backend }}" == "true" ]]; then
-            export YEON_BACKEND_IMAGE="ghcr.io/${owner_lower}/yeon-backend:${image_tag}"
-          else
-            export YEON_BACKEND_IMAGE="ghcr.io/${owner_lower}/yeon-backend:${latest_tag}"
-          fi
-
-          if [[ "${{ needs.detect_changes.outputs.race }}" == "true" ]]; then
-            export YEON_RACE_SERVER_IMAGE="ghcr.io/${owner_lower}/yeon-race-server:${image_tag}"
-          else
-            export YEON_RACE_SERVER_IMAGE="ghcr.io/${owner_lower}/yeon-race-server:${latest_tag}"
-          fi
-
-          echo "web image: ${YEON_WEB_IMAGE}"
-          echo "backend image: ${YEON_BACKEND_IMAGE}"
-          echo "race image: ${YEON_RACE_SERVER_IMAGE}"
-
           # Pi 네트워크 대응: pull 실패 시 최대 3회 재시도
           for i in 1 2 3; do
-            docker compose -f "${COMPOSE_FILE}" pull "${services[@]}" && break
+            "${compose[@]}" pull "${services[@]}" && break
             [ "$i" -eq 3 ] && exit 1
             echo "pull 실패 (${i}/3), 30초 후 재시도..."
             sleep 30
@@ -470,7 +775,7 @@ jobs:
               docker rm -f "${container_name}" >/dev/null 2>&1 || true
             }
 
-            docker compose -f "${COMPOSE_FILE}" run -d --name "${container_name}" --no-deps -e PORT="${port}" "${service}" >/dev/null
+            "${compose[@]}" run -d --name "${container_name}" --no-deps -e PORT="${port}" "${service}" >/dev/null
             for _ in $(seq 1 30); do
               if ! docker inspect -f '{{.State.Running}}' "${container_name}" 2>/dev/null | grep -q true; then
                 echo "::error::${service} preflight 컨테이너가 health 확인 전에 종료되었습니다."
@@ -494,23 +799,56 @@ jobs:
           }
 
           if [[ "${{ needs.detect_changes.outputs.backend }}" == "true" ]]; then
-            preflight_http_service backend "yeon-backend-preflight-${GITHUB_RUN_ID}" 8081 /actuator/health
+            preflight_http_service backend "${backend_preflight}" 8081 /actuator/health
           fi
           if [[ "${{ needs.detect_changes.outputs.web }}" == "true" ]]; then
-            preflight_http_service web "yeon-web-preflight-${GITHUB_RUN_ID}" 3100 /api/health
+            preflight_http_service web "${web_preflight}" 3100 /api/health
           fi
           if [[ "${{ needs.detect_changes.outputs.race }}" == "true" ]]; then
-            preflight_http_service race-server "yeon-race-preflight-${GITHUB_RUN_ID}" 2568 /health
+            preflight_http_service race-server "${race_preflight}" 2568 /health
           fi
 
-          # --force-recreate 제거: 변경된 서비스(web)만 재시작, DB는 불필요하게 재시작하지 않음
-          # --wait: 모든 서비스가 healthy 상태가 될 때까지 대기 후 반환
-          docker compose -f "${COMPOSE_FILE}" up -d --wait "${services[@]}"
+          docker rm -f "${cloudflared_preflight}" >/dev/null 2>&1 || true
+          "${compose[@]}" run -d --name "${cloudflared_preflight}" --no-deps cloudflared >/dev/null
+          sleep 8
+          if ! docker inspect -f '{{.State.Running}}' "${cloudflared_preflight}" | grep -q true; then
+            echo "::error::cloudflared token-file preflight가 종료되었습니다."
+            docker logs "${cloudflared_preflight}" --tail=120 || true
+            docker rm -f "${cloudflared_preflight}" >/dev/null 2>&1 || true
+            exit 1
+          fi
+          docker rm -f "${cloudflared_preflight}" >/dev/null
+
+          "${compose[@]}" config > "${rendered_compose}"
+          rendered_content="$(cat "${rendered_compose}")"
+          for key in "${required_secrets[@]}"; do
+            if [[ "${rendered_content}" == *"${!key}"* ]]; then
+              echo "::error::렌더링된 Compose에 ${key} 값이 포함되었습니다."
+              exit 1
+            fi
+          done
+          unset rendered_content
+
+          if [ -f "${active_compose}" ]; then
+            had_active_compose=true
+            install -m 640 "${active_compose}" "${previous_compose}"
+          fi
+          install -m 640 "${rendered_compose}" "${active_compose}.next"
+          mv -f "${active_compose}.next" "${active_compose}"
+          active_compose_replaced=true
+          compose=(docker compose --env-file /dev/null -f "${active_compose}")
+
+          up_args=(-d --wait --no-deps)
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            # 같은 SHA에서 Secret만 회전해도 /run/secrets가 새 값으로 다시 만들어져야 한다.
+            up_args+=(--force-recreate)
+          fi
+          "${compose[@]}" up "${up_args[@]}" "${services[@]}"
 
           verify_image() {
             service="$1"
             expected_image="$2"
-            container_id="$(docker compose -f "${COMPOSE_FILE}" ps -q "$service")"
+            container_id="$("${compose[@]}" ps -q "$service")"
             if [ -z "$container_id" ]; then
               echo "::error::${service} 컨테이너를 찾지 못했습니다."
               exit 1
@@ -524,26 +862,138 @@ jobs:
             fi
           }
 
-          if [[ "${{ needs.detect_changes.outputs.backend }}" == "true" ]]; then
-            verify_image backend "${YEON_BACKEND_IMAGE}"
+          verify_image backend "${YEON_BACKEND_IMAGE}"
+          verify_image web "${YEON_WEB_IMAGE}"
+          verify_image race-server "${YEON_RACE_SERVER_IMAGE}"
+
+          sensitive_key_pattern='^(AUTH_SECRET|CLOUDFLARE_TUNNEL_TOKEN|DATABASE_URL|GOOGLE_CLIENT_SECRET|KAKAO_REST_API_KEY|KAKAO_CLIENT_SECRET|MICROSOFT_CLIENT_SECRET|OPENAI_API_KEY|POSTGRES_PASSWORD|R2_ACCESS_KEY_ID|R2_SECRET_ACCESS_KEY|SPRING_INTERNAL_TOKEN|TYPING_RACE_SEED_SECRET|ZAI_API_KEY)$'
+          for service in backend web race-server db cloudflared; do
+            container_id="$("${compose[@]}" ps -q "$service")"
+            inline_secret_keys="$(docker inspect "$container_id" --format '{{range .Config.Env}}{{println .}}{{end}}' | cut -d= -f1 | grep -E "$sensitive_key_pattern" || true)"
+            if [ -n "$inline_secret_keys" ]; then
+              echo "::error::${service} Docker metadata에 평문 시크릿 환경변수가 남아 있습니다:"
+              printf '%s\n' "$inline_secret_keys"
+              exit 1
+            fi
+          done
+
+          cloudflared_id="$("${compose[@]}" ps -q cloudflared)"
+          cloudflared_command="$(docker inspect "$cloudflared_id" --format '{{json .Config.Cmd}}')"
+          if ! grep -q -- '--token-file' <<< "$cloudflared_command"; then
+            echo "::error::cloudflared가 token-file 방식으로 실행되지 않았습니다."
+            exit 1
           fi
-          if [[ "${{ needs.detect_changes.outputs.web }}" == "true" ]]; then
-            verify_image web "${YEON_WEB_IMAGE}"
-          fi
-          if [[ "${{ needs.detect_changes.outputs.race }}" == "true" ]]; then
-            verify_image race-server "${YEON_RACE_SERVER_IMAGE}"
-          fi
+
+          verify_container_health() {
+            service="$1"
+            port="$2"
+            path="$3"
+            container_id="$("${compose[@]}" ps -q "${service}")"
+            while IFS= read -r container_ip; do
+              [ -n "${container_ip}" ] || continue
+              if curl -fsS --max-time 5 "http://${container_ip}:${port}${path}" >/dev/null; then
+                echo "${service} container health OK"
+                return 0
+              fi
+            done < <(docker inspect -f '{{range $name, $network := .NetworkSettings.Networks}}{{println $network.IPAddress}}{{end}}' "${container_id}")
+            echo "::error::${service} container network health 확인에 실패했습니다."
+            return 1
+          }
+
+          verify_container_health backend 8081 /actuator/health
+          verify_container_health web 3000 /api/health
+          verify_container_health race-server 2567 /health
+          "${compose[@]}" exec -T db pg_isready -U "${POSTGRES_USER}" -d "${POSTGRES_DB}" >/dev/null
+
+          verify_public_health() {
+            name="$1"
+            url="$2"
+            marker="$3"
+            response_file="${public_response_dir}/${name}.body"
+            for attempt in $(seq 1 30); do
+              status="$(curl -sS --location --max-time 10 -H 'Cache-Control: no-cache' \
+                -o "${response_file}" -w '%{http_code}' \
+                "${url}?deploy_run=${GITHUB_RUN_ID}" || true)"
+              if [ "${status}" = "200" ] && grep -Fq "${marker}" "${response_file}"; then
+                echo "${name} public health OK"
+                return 0
+              fi
+              echo "${name} public health 대기 (${attempt}/30)"
+              sleep 2
+            done
+            echo "::error::${name} public health 확인에 실패했습니다: ${url}"
+            return 1
+          }
+
+          verify_public_health yeon-web https://yeon.world/api/health '"status":"ok"'
+          verify_public_health blurt-web https://blurt.yeon.world '백지'
+          verify_public_health race-server https://race.yeon.world/health '"ok":true'
+
+          verify_oauth_redirect() {
+            local provider="$1"
+            local expected_host="$2"
+            local headers_file="${public_response_dir}/oauth-${provider}.headers"
+            local status
+            local location
+            local location_without_scheme
+            local actual_host
+
+            status="$(curl -sS --max-time 10 -o /dev/null -D "${headers_file}" -w '%{http_code}' \
+              "https://yeon.world/api/auth/${provider}" || true)"
+            case "${status}" in
+              302 | 303 | 307 | 308)
+                ;;
+              *)
+                echo "::error::${provider} OAuth 시작 응답이 redirect가 아닙니다: HTTP ${status}"
+                return 1
+                ;;
+            esac
+
+            location="$(awk 'BEGIN { IGNORECASE=1 } /^location:/ { sub(/^[^:]+:[[:space:]]*/, ""); sub(/\r$/, ""); print; exit }' "${headers_file}")"
+            location_without_scheme="${location#*://}"
+            actual_host="${location_without_scheme%%/*}"
+            actual_host="${actual_host%%:*}"
+            if [ "${actual_host}" != "${expected_host}" ]; then
+              echo "::error::${provider} OAuth redirect host 불일치: ${actual_host:-missing}"
+              return 1
+            fi
+            echo "${provider} OAuth redirect OK: ${actual_host}"
+          }
+
+          verify_oauth_redirect google accounts.google.com
+          verify_oauth_redirect kakao kauth.kakao.com
+
+          actual_image() {
+            container_id="$("${compose[@]}" ps -q "$1")"
+            docker inspect "$container_id" --format '{{.Config.Image}}'
+          }
+          actual_image_id() {
+            container_id="$("${compose[@]}" ps -q "$1")"
+            docker inspect "$container_id" --format '{{.Image}}'
+          }
 
           {
             echo "main_sha=${GITHUB_SHA}"
+            echo "github_run_id=${GITHUB_RUN_ID}"
+            echo "secret_source=github_environment_production"
             echo "web_changed=${{ needs.detect_changes.outputs.web }}"
             echo "backend_changed=${{ needs.detect_changes.outputs.backend }}"
             echo "race_changed=${{ needs.detect_changes.outputs.race }}"
             echo "mobile_changed=${{ needs.detect_changes.outputs.mobile }}"
-            echo "web_image=${YEON_WEB_IMAGE}"
-            echo "backend_image=${YEON_BACKEND_IMAGE}"
-            echo "race_image=${YEON_RACE_SERVER_IMAGE}"
-          } > "${DEPLOY_DIR}/.deploy-state"
+            echo "web_image=$(actual_image web)"
+            echo "web_image_id=$(actual_image_id web)"
+            echo "backend_image=$(actual_image backend)"
+            echo "backend_image_id=$(actual_image_id backend)"
+            echo "race_image=$(actual_image race-server)"
+            echo "race_image_id=$(actual_image_id race-server)"
+            echo "db_image=$(actual_image db)"
+            echo "db_image_id=$(actual_image_id db)"
+            echo "cloudflared_image=$(actual_image cloudflared)"
+            echo "cloudflared_image_id=$(actual_image_id cloudflared)"
+          } > "${DEPLOY_DIR}/.deploy-state.tmp"
+          install -m 600 "${DEPLOY_DIR}/.deploy-state.tmp" "${DEPLOY_DIR}/.deploy-state"
+          rm -f "${DEPLOY_DIR}/.deploy-state.tmp"
+          deployment_committed=true
 
       - name: 오래된 로컬 sha 이미지 정리 (repo별 최신 N개 유지)
         if: steps.fresh_main.outputs.deploy == 'true'
@@ -551,9 +1001,9 @@ jobs:
           KEEP_RECENT: "3"
         run: |
           set -eu
-          # 배포는 매번 sha-* 태그 이미지를 파이 로컬에 남기는데, registry-cleanup은 원격 GHCR만
-          # 정리한다(로컬 미관리). repo별로 latest + 최신 KEEP_RECENT개 sha만 남기고 오래된 로컬
-          # 이미지를 정리한다. 실행 중 컨테이너가 쓰는 이미지는 docker rmi(비강제)가 거부하므로 안전.
+          # digest 배포 전 남은 sha-* 태그는 원격 registry-cleanup과 별개로 파이 로컬에 남을 수 있다.
+          # repo별 최신 KEEP_RECENT개만 보존하고 오래된 로컬 태그를 정리한다. 실행 중 컨테이너가
+          # 쓰는 이미지는 docker rmi(비강제)가 거부하므로 보존된다.
           owner_lower="$(printf '%s' "${GITHUB_REPOSITORY_OWNER}" | tr '[:upper:]' '[:lower:]')"
           for repo in yeon-web-app yeon-backend yeon-race-server; do
             ref="ghcr.io/${owner_lower}/${repo}"
@@ -577,14 +1027,16 @@ jobs:
       - build_race
       - verify_mobile
       - deploy_production
-    # GitHub-hosted ubuntu-latest는 무료 private repo의 Actions 결제 차단에 막힌다.
-    # 운영 self-hosted ARM64 러너에서 최신성 invariant를 검증한다.
-    runs-on: [self-hosted, Linux, ARM64]
+    # 최신성 invariant는 job마다 폐기되는 GitHub-hosted runner에서 검증한다.
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - name: Checkout
-        uses: actions/checkout@v6.0.2
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Verify workflow completion invariant
         env:
@@ -604,7 +1056,7 @@ jobs:
           latest_main_sha="$(git rev-parse FETCH_HEAD)"
           if [ "$latest_main_sha" != "$GITHUB_SHA" ]; then
             echo "최신 main이 아닌 run입니다: current=${GITHUB_SHA}, latest=${latest_main_sha}"
-            echo "deploy 단계에 도달한 stale run은 해당 SHA 이미지 배포까지 허용하고, 최신성 검증은 latest main run에 위임합니다."
+            echo "deploy 단계에서 stale run은 건너뛰며, 최신성 검증은 latest main run에 위임합니다."
             {
               echo "## 최신성 검증 위임"
               echo "- current: ${GITHUB_SHA}"
