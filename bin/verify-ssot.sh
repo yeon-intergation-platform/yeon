@@ -108,6 +108,12 @@ else
   fail "bin/verify-search-console-targets.mjs 없음"
 fi
 
+if [ -f "$REPO_ROOT/bin/verify-github-workflow-expression-size.mjs" ]; then
+  pass "bin/verify-github-workflow-expression-size.mjs 존재"
+else
+  fail "bin/verify-github-workflow-expression-size.mjs 없음"
+fi
+
 echo ""
 echo "=== Backend CI 계약 ==="
 if [ -f "$REPO_ROOT/bin/verify-backend-ci-contract.mjs" ]; then
@@ -117,6 +123,18 @@ if [ -f "$REPO_ROOT/bin/verify-backend-ci-contract.mjs" ]; then
     fail "backend-tests.yml Karate schema preflight 계약 위반"
     echo "    --- check 결과 ---"
     sed 's/^/    /' /tmp/backend-ci-contract-check.out
+  fi
+fi
+
+echo ""
+echo "=== GitHub workflow 표현식 크기 ==="
+if [ -f "$REPO_ROOT/bin/verify-github-workflow-expression-size.mjs" ]; then
+  if node "$REPO_ROOT/bin/verify-github-workflow-expression-size.mjs" >/tmp/workflow-expression-size-check.out 2>&1; then
+    pass "Actions 표현식 21,000자 제한 회귀 없음"
+  else
+    fail "Actions 표현식 크기 제한 위반"
+    echo "    --- check 결과 ---"
+    sed 's/^/    /' /tmp/workflow-expression-size-check.out
   fi
 fi
 
