@@ -419,6 +419,13 @@ async function resolveServices() {
       SPRING_PROFILES_ACTIVE: springProfilesActive,
       ...databaseEnv,
       ...rootAuthProviderEnv,
+      ...toOptionalEnv([
+        "ZAI_API_KEY",
+        "ZAI_BASE_URL",
+        "ZAI_GRADING_MODEL",
+        "ZAI_DECK_GENERATION_MODEL",
+        "ZAI_MODEL",
+      ]),
     },
     assignedPort: backendPort,
     interactive: false,

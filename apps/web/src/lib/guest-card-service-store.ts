@@ -14,6 +14,10 @@ import type {
 } from "@yeon/api-contract/card-decks";
 import type { MergeGuestRequest } from "@yeon/api-contract/card-deck-merge-guest";
 import { mergeGuestLimits } from "@yeon/api-contract/card-deck-merge-guest";
+import type {
+  CreateCardDeckWithItemsBody,
+  CreateCardDeckWithItemsResponse,
+} from "@yeon/api-contract/recall";
 import { type DBSchema, type IDBPDatabase, openDB } from "idb";
 import {
   createYeonRandomUUID,
@@ -221,6 +225,48 @@ export async function createGuestDeck(
   };
   await db.put("decks", row);
   return toDeckDto(row, 0);
+}
+
+export async function createGuestDeckWithItems(
+  body: CreateCardDeckWithItemsBody
+): Promise<CreateCardDeckWithItemsResponse> {
+  const db = await getDb();
+  const deckPublicId = randomId();
+  const createdAt = nowIso();
+  const deckRow: GuestDeckRow = {
+    publicId: deckPublicId,
+    title: body.title,
+    description: body.description ?? null,
+    createdAt,
+    updatedAt: createdAt,
+  };
+  const itemRows: GuestItemRow[] = body.items.map((item, index) => {
+    const itemCreatedAt = new Date(Date.parse(createdAt) + index).toISOString();
+    return {
+      publicId: randomId(),
+      deckPublicId,
+      frontText: item.frontText,
+      backText: item.backText,
+      imageStorageKey: item.imageStorageKey ?? null,
+      reviewDifficulty: null,
+      lastReviewedAt: null,
+      nextReviewAt: null,
+      createdAt: itemCreatedAt,
+      updatedAt: itemCreatedAt,
+    };
+  });
+
+  const transaction = db.transaction(["decks", "items"], "readwrite");
+  await Promise.all([
+    transaction.objectStore("decks").put(deckRow),
+    ...itemRows.map((row) => transaction.objectStore("items").put(row)),
+    transaction.done,
+  ]);
+
+  return {
+    deck: toDeckDto(deckRow, itemRows.length),
+    items: itemRows.map(toItemDto),
+  };
 }
 
 export async function updateGuestDeck(

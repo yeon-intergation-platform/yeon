@@ -19,6 +19,19 @@ import {
   type UpdateCardStudyPreferenceBody,
 } from "@yeon/api-contract/card-decks";
 import {
+  RECALL_API_PATHS,
+  cardDeckAiPreviewResponseSchema,
+  createCardDeckAiPreviewBodySchema,
+  createCardDeckWithItemsBodySchema,
+  createCardDeckWithItemsResponseSchema,
+  createRecallAttemptBodySchema,
+  recallAttemptListResponseSchema,
+  recallGradeResponseSchema,
+  type CreateCardDeckAiPreviewBody,
+  type CreateCardDeckWithItemsBody,
+  type CreateRecallAttemptBody,
+} from "@yeon/api-contract/recall";
+import {
   chatServiceBlockProfileResponseSchema,
   chatServiceCreateAskPostBodySchema,
   chatServiceCreateAskPostResponseSchema,
@@ -490,6 +503,60 @@ export function createApiClient(options: ApiClientOptions = {}) {
       return request({
         path: `/api/v1/card-decks/${deckId}/items/${itemId}/review`,
         schema: cardDeckItemResponseSchema,
+        init: {
+          method: "POST",
+          headers: createAuthSessionHeaders(sessionToken),
+          body: JSON.stringify(parsedBody),
+        },
+      });
+    },
+    createRecallAttempt(
+      deckId: string,
+      itemId: string,
+      body: CreateRecallAttemptBody,
+      sessionToken?: string
+    ) {
+      const parsedBody = createRecallAttemptBodySchema.parse(body);
+      return request({
+        path: RECALL_API_PATHS.attempts(deckId, itemId),
+        schema: recallGradeResponseSchema,
+        init: {
+          method: "POST",
+          headers: createAuthSessionHeaders(sessionToken),
+          body: JSON.stringify(parsedBody),
+        },
+      });
+    },
+    listRecallAttempts(deckId: string, limit = 20, sessionToken?: string) {
+      return request({
+        path: RECALL_API_PATHS.attemptHistory(deckId, limit),
+        schema: recallAttemptListResponseSchema,
+        init: { headers: createAuthSessionHeaders(sessionToken) },
+      });
+    },
+    createCardDeckAiPreview(
+      body: CreateCardDeckAiPreviewBody,
+      sessionToken?: string
+    ) {
+      const parsedBody = createCardDeckAiPreviewBodySchema.parse(body);
+      return request({
+        path: RECALL_API_PATHS.aiDeckPreviews,
+        schema: cardDeckAiPreviewResponseSchema,
+        init: {
+          method: "POST",
+          headers: createAuthSessionHeaders(sessionToken),
+          body: JSON.stringify(parsedBody),
+        },
+      });
+    },
+    createCardDeckWithItems(
+      body: CreateCardDeckWithItemsBody,
+      sessionToken?: string
+    ) {
+      const parsedBody = createCardDeckWithItemsBodySchema.parse(body);
+      return request({
+        path: RECALL_API_PATHS.createDeckWithItems,
+        schema: createCardDeckWithItemsResponseSchema,
         init: {
           method: "POST",
           headers: createAuthSessionHeaders(sessionToken),

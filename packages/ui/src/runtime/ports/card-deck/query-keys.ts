@@ -22,3 +22,15 @@ export const cardDeckQueryKeys = {
   detail: (isAuthenticated: boolean, deckId: string) =>
     ["card-service", "decks", scope(isAuthenticated), deckId] as const,
 } as const;
+
+export const cardRecallQueryKeys = {
+  root: ["card-service", "recall"] as const,
+  history: (isAuthenticated: boolean, deckId: string) =>
+    [
+      "card-service",
+      "recall",
+      scope(isAuthenticated),
+      deckId,
+      "history",
+    ] as const,
+} as const;

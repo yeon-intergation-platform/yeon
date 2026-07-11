@@ -28,6 +28,9 @@ env \
   R2_SECRET_ACCESS_KEY=test-r2-secret-key \
   SPRING_INTERNAL_TOKEN=test-internal-token \
   TYPING_RACE_SEED_SECRET=test-race-seed \
+  YEON_CARD_AI_ENABLED=true \
+  YEON_CARD_AI_GLOBAL_DAILY_REQUEST_LIMIT=1000 \
+  YEON_CARD_AI_GLOBAL_DAILY_TOKEN_LIMIT=5000000 \
   YEON_BACKEND_IMAGE="ghcr.io/example/yeon-backend@$digest" \
   YEON_RACE_SERVER_IMAGE="ghcr.io/example/yeon-race-server@$digest" \
   YEON_WEB_IMAGE="ghcr.io/example/yeon-web-app@$digest" \
@@ -54,13 +57,18 @@ jq -e '
   (environment("db").POSTGRES_PASSWORD | not) and
 
   environment("backend").POSTGRES_PASSWORD_FILE == "/run/secrets/POSTGRES_PASSWORD" and
+  environment("backend").ZAI_API_KEY_FILE == "/run/secrets/ZAI_API_KEY" and
+  environment("backend").YEON_CARD_AI_ENABLED == "true" and
+  environment("backend").YEON_CARD_AI_GLOBAL_DAILY_REQUEST_LIMIT == "1000" and
+  environment("backend").YEON_CARD_AI_GLOBAL_DAILY_TOKEN_LIMIT == "5000000" and
   environment("web").GOOGLE_CLIENT_ID == "test-google-client" and
   environment("web").KAKAO_REST_API_KEY_FILE == "/run/secrets/KAKAO_REST_API_KEY" and
   environment("db").POSTGRES_PASSWORD_FILE == "/run/secrets/POSTGRES_PASSWORD" and
 
   (secret_sources("web") | index("AUTH_SECRET") != null) and
-  (secret_sources("web") | index("ZAI_API_KEY") != null) and
   (secret_sources("backend") | index("POSTGRES_PASSWORD") != null) and
+  (secret_sources("backend") | index("ZAI_API_KEY") != null) and
+  (secret_sources("web") | index("ZAI_API_KEY") == null) and
   (secret_sources("race-server") | index("TYPING_RACE_SEED_SECRET") != null) and
   (secret_sources("cloudflared") | index("CLOUDFLARE_TUNNEL_TOKEN") != null) and
 

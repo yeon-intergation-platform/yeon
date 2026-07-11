@@ -132,6 +132,102 @@ const CHECKS = {
     }
   },
 
+  "card-recall-query-keys": () => {
+    const ssot = "packages/ui/src/runtime/ports/card-deck/query-keys.ts";
+    mustContain("card-recall-query-keys", ssot, ["cardRecallQueryKeys"]);
+    for (const adapter of [
+      "apps/web/src/features/card-service/card-service-query-keys.ts",
+      "apps/mobile/src/services/card-service/query-keys.ts",
+    ]) {
+      mustContain("card-recall-query-keys", adapter, [
+        "@yeon/ui/runtime/ports/card-deck",
+        "cardRecallQueryKeys",
+      ]);
+      mustNotMatch(
+        "card-recall-query-keys",
+        adapter,
+        /\["card-service",\s*"recall"/,
+        "raw recall queryKey 재선언"
+      );
+    }
+  },
+
+  "card-recall-session-policy": () => {
+    const ssot = "packages/ui/src/runtime/ports/card-deck/recall-policy.ts";
+    mustContain("card-recall-session-policy", ssot, [
+      "getCardRecallExclusionReason",
+      "partitionCardDeckItemsForRecall",
+    ]);
+    for (const adapter of [
+      "apps/web/src/features/typing-service/use-baekji-session.ts",
+      "apps/mobile/src/features/card-service/card-recall-screen.tsx",
+    ]) {
+      mustContain("card-recall-session-policy", adapter, [
+        "partitionCardDeckItemsForRecall",
+      ]);
+      mustNotMatch(
+        "card-recall-session-policy",
+        adapter,
+        /frontText\.trim\(\)|backText\.trim\(\)/,
+        "raw 백지 카드 유효성 재선언"
+      );
+    }
+    mustContain(
+      "card-recall-session-policy",
+      "apps/web/src/features/typing-service/baekji-home.tsx",
+      ["getCardRecallExclusionReason", "partitionCardDeckItemsForRecall"]
+    );
+  },
+
+  "card-recall-request-state": () => {
+    mustContain(
+      "card-recall-request-state",
+      "packages/ui/src/runtime/ports/card-deck/ai-draft-state.ts",
+      [
+        "classifyAiDeckSaveFailure",
+        "deriveAiDeckOperationPolicy",
+        "shouldApplyAiPreview",
+      ]
+    );
+    mustContain(
+      "card-recall-request-state",
+      "packages/ui/src/runtime/ports/card-deck/recall-session-state.ts",
+      ["createCardRecallSessionIdentity", "shouldApplyCardRecallResponse"]
+    );
+    mustContain(
+      "card-recall-request-state",
+      "apps/web/src/features/card-service/components/create-deck-ai-form.tsx",
+      [
+        "classifyAiDeckSaveFailure",
+        "deriveAiDeckOperationPolicy",
+        "shouldApplyAiPreview",
+      ]
+    );
+    mustContain(
+      "card-recall-request-state",
+      "apps/mobile/src/features/card-service/card-ai-draft-state.ts",
+      ["@yeon/ui/runtime/ports/card-deck", "deriveAiDeckOperationPolicy"]
+    );
+    mustContain(
+      "card-recall-request-state",
+      "apps/mobile/src/features/card-service/mobile-create-deck-ai-form.tsx",
+      [
+        "classifyAiDeckSaveFailure",
+        "deriveAiDeckOperationPolicy",
+        "shouldApplyAiPreview",
+      ]
+    );
+    for (const adapter of [
+      "apps/web/src/features/typing-service/use-baekji-session.ts",
+      "apps/mobile/src/features/card-service/card-recall-screen.tsx",
+    ]) {
+      mustContain("card-recall-request-state", adapter, [
+        "createCardRecallSessionIdentity",
+        "shouldApplyCardRecallResponse",
+      ]);
+    }
+  },
+
   "route-identity": () => {
     mustContain("route-identity", "packages/ui/src/runtime/ports/shared.ts", [
       "YeonRouteTarget",
@@ -139,6 +235,8 @@ const CHECKS = {
     // 경로 템플릿 SSOT: web/mobile가 같은 템플릿에서 파생해야 한다(하드코딩 금지).
     mustContain("route-identity", "packages/ui/src/runtime/ports/routes.ts", [
       "YEON_ROUTE_TEMPLATES",
+      "cardDeckRecall",
+      "recallSession",
     ]);
     mustContain(
       "route-identity",
@@ -155,6 +253,25 @@ const CHECKS = {
       "route-identity",
       "apps/mobile/src/features/card-service/card-deck-list-screen.tsx",
       ["YEON_ROUTE_TEMPLATES"]
+    );
+    mustContain(
+      "route-identity",
+      "apps/web/src/features/typing-service/baekji-home.tsx",
+      [
+        "YEON_ROUTE_TEMPLATES.recallSession",
+        "https://card.yeon.world/card-service/decks",
+      ]
+    );
+    mustNotMatch(
+      "route-identity",
+      "apps/web/src/features/typing-service/baekji-home.tsx",
+      /CARD_DECKS_HREF\s*=\s*["']\/card-service/,
+      "blurt 서브도메인에서 깨지는 상대 카드 서비스 경로"
+    );
+    mustContain(
+      "route-identity",
+      "apps/mobile/src/features/card-service/card-deck-detail-screen.tsx",
+      ["YEON_ROUTE_TEMPLATES.cardDeckRecall"]
     );
   },
 
@@ -234,6 +351,24 @@ const CHECKS = {
       "card-deck-repository",
       "apps/mobile/src/features/card-service/runtime-adapters/card-deck-repository.ts",
       ["YeonCardDeckRepository"]
+    );
+  },
+
+  "card-recall-repository": () => {
+    mustContain(
+      "card-recall-repository",
+      "packages/ui/src/runtime/ports/card-deck/recall-repository.ts",
+      ["YeonCardRecallRepository", "createRecallIdempotencyKey"]
+    );
+    mustContain(
+      "card-recall-repository",
+      "apps/web/src/features/card-service/runtime-adapters/create-card-recall-repository.ts",
+      ["YeonCardRecallRepository", "@yeon/api-contract/recall"]
+    );
+    mustContain(
+      "card-recall-repository",
+      "apps/mobile/src/features/card-service/runtime-adapters/card-recall-repository.ts",
+      ["YeonCardRecallRepository", "createRecallAttempt"]
     );
   },
 

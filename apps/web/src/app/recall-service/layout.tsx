@@ -1,12 +1,29 @@
 import type { ReactNode } from "react";
 import { QueryProvider } from "@/lib/query-provider";
+import { CardServiceAuthProvider } from "@/features/card-service/auth-context";
+import { WebCardDeckRepositoryProvider } from "@/features/card-service/runtime-adapters/card-deck-repository";
+import { WebCardItemRepositoryProvider } from "@/features/card-service/runtime-adapters/card-item-repository";
+import { WebCardRecallRepositoryProvider } from "@/features/card-service/runtime-adapters/card-recall-repository";
+import { getCurrentAuthUser } from "@/server/auth/session";
 
-// 백지 학습 서비스 레이아웃. 재사용하는 타자 헤더가 React Query 훅에 의존하므로
-// QueryProvider로 감싼다(타자 서비스 레이아웃과 동일한 provider).
-export default function RecallServiceLayout({
+// 백지 학습은 카드 서비스와 같은 인증·게스트 저장소·query cache를 사용한다.
+export default async function RecallServiceLayout({
   children,
 }: {
   children: ReactNode;
 }) {
-  return <QueryProvider>{children}</QueryProvider>;
+  const user = await getCurrentAuthUser();
+  return (
+    <QueryProvider>
+      <CardServiceAuthProvider isAuthenticated={Boolean(user)}>
+        <WebCardDeckRepositoryProvider>
+          <WebCardItemRepositoryProvider>
+            <WebCardRecallRepositoryProvider>
+              {children}
+            </WebCardRecallRepositoryProvider>
+          </WebCardItemRepositoryProvider>
+        </WebCardDeckRepositoryProvider>
+      </CardServiceAuthProvider>
+    </QueryProvider>
+  );
 }

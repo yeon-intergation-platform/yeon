@@ -6,3 +6,11 @@ management:
     web:
       exposure:
         include: health
+
+yeon:
+  card:
+    ai:
+      enabled: true
+      global:
+        daily-request-limit: 1000
+        daily-token-limit: 5000000

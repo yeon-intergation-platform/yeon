@@ -4,10 +4,14 @@
 //
 // idx=158 fix: web adapter(deckDetail: cardDeckQueryKeys.detail)와 시그니처 통일.
 // 양 앱 어댑터 모두 (isAuthenticated, deckId) 순서. 호출부도 함께 수정됨.
-import { cardDeckQueryKeys } from "@yeon/ui/runtime/ports/card-deck";
+import {
+  cardDeckQueryKeys,
+  cardRecallQueryKeys,
+} from "@yeon/ui/runtime/ports/card-deck";
 
 export const cardServiceQueryKeys = {
   all: cardDeckQueryKeys.root,
   decks: cardDeckQueryKeys.list,
   deckDetail: cardDeckQueryKeys.detail,
+  recallHistory: cardRecallQueryKeys.history,
 };

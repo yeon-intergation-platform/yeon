@@ -8,6 +8,7 @@ import { createYeonStyleSheet } from "../../runtime/YeonBrowserRuntime/index.nat
 import { yeonMobileAppColors } from "../../theme";
 
 export type YeonTextFieldProps = {
+  disabled?: boolean;
   keyboardType?: YeonFieldProps["keyboardType"];
   label: string;
   maxLength?: number;
@@ -25,6 +26,7 @@ export type YeonTextFieldProps = {
 };
 
 export function YeonTextField({
+  disabled = false,
   keyboardType = "default",
   label,
   maxLength,
@@ -52,6 +54,7 @@ export function YeonTextField({
         ) : null}
       </YeonView>
       <YeonField
+        editable={!disabled}
         keyboardType={keyboardType}
         maxLength={maxLength}
         multiline={multiline}
@@ -64,6 +67,7 @@ export function YeonTextField({
         selection={selection}
         style={[
           styles.input,
+          disabled ? styles.inputDisabled : null,
           multiline ? styles.multiline : null,
           multiline && typeof multilineMinHeight === "number"
             ? { minHeight: multilineMinHeight }
@@ -98,6 +102,9 @@ const styles = createYeonStyleSheet({
     minHeight: 48,
     paddingHorizontal: 14,
     paddingVertical: 12,
+  },
+  inputDisabled: {
+    opacity: 0.55,
   },
   multiline: {
     minHeight: 92,

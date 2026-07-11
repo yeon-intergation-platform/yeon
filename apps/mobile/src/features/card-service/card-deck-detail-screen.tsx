@@ -3,7 +3,10 @@ import {
   type YeonHref as Href,
   useYeonRouter as useRouter,
 } from "@yeon/ui/native";
-import { formatYeonCardDeckCreatedDate } from "@yeon/ui/runtime/ports/card-deck";
+import {
+  formatYeonCardDeckCreatedDate,
+  partitionCardDeckItemsForRecall,
+} from "@yeon/ui/runtime/ports/card-deck";
 import { YEON_ROUTE_TEMPLATES } from "@yeon/ui/runtime/ports";
 import { useCallback, useMemo } from "react";
 import { showYeonAlert } from "@yeon/ui/native";
@@ -40,6 +43,8 @@ import {
 } from "./card-service-session";
 
 const CARD_SERVICE_DECK_PLAY_ROUTE = YEON_ROUTE_TEMPLATES.cardDeckPlay as Href;
+const CARD_SERVICE_DECK_RECALL_ROUTE =
+  YEON_ROUTE_TEMPLATES.cardDeckRecall as Href;
 
 const SHEET_MODE_LOCKED_KINDS = new Set<SheetState["kind"]>(["edit"]);
 
@@ -58,6 +63,13 @@ interface CardDeckDetailScreenProps {
 function getCardServiceDeckPlayHref(deckId: string): Href {
   return {
     pathname: CARD_SERVICE_DECK_PLAY_ROUTE,
+    params: { deckId },
+  } as Href;
+}
+
+function getCardServiceDeckRecallHref(deckId: string): Href {
+  return {
+    pathname: CARD_SERVICE_DECK_RECALL_ROUTE,
     params: { deckId },
   } as Href;
 }
@@ -107,6 +119,10 @@ export function CardDeckDetailScreen({ deckId }: CardDeckDetailScreenProps) {
       isServerMode: mode === CARD_SERVICE_MODE.server,
       itemRepository,
     });
+  const recallEligibleCardCount = useMemo(
+    () => partitionCardDeckItemsForRecall(listItems).eligibleItems.length,
+    [listItems]
+  );
 
   const {
     bulkCreateButtonLabel,
@@ -177,6 +193,14 @@ export function CardDeckDetailScreen({ deckId }: CardDeckDetailScreenProps) {
           router.push(getCardServiceDeckPlayHref(deckId));
         }}
         variant="dark"
+      />
+      <ActionButton
+        disabled={!detail || recallEligibleCardCount === 0}
+        label={CARD_SERVICE_TEXT.detail.recallButtonLabel}
+        onPress={() => {
+          if (deckId) router.push(getCardServiceDeckRecallHref(deckId));
+        }}
+        variant="secondary"
       />
 
       {detailState.kind === "loading" ? (
