@@ -7,11 +7,13 @@ import {
   YeonFormStack as FormStack,
   YeonImage,
   YeonSectionCard as SectionCard,
+  YeonSegmentedControl as SegmentedControl,
   YeonStateBlock as StateBlock,
   YeonText,
   YeonTextField as TextField,
   YeonView,
 } from "@yeon/ui/native";
+import { useState } from "react";
 
 import { HeaderExperienceBadge } from "../user-experience/header-experience-badge";
 import {
@@ -24,6 +26,12 @@ import { DeckCard } from "./card-deck-list-deck-card";
 import { styles } from "./card-deck-list-screen.styles";
 import { CARD_SERVICE_TEXT } from "./card-service-copy";
 import type { CardDeckListState } from "./use-card-deck-list-state";
+import { MobileCreateDeckAiForm } from "./mobile-create-deck-ai-form";
+
+const CREATE_DECK_MODES = {
+  manual: "manual",
+  ai: "ai",
+} as const;
 
 type CardDeckListHeaderProps = Pick<CardDeckListState, never>;
 
@@ -214,26 +222,64 @@ export function CreateDeckSheet({
   setTitle,
   title,
 }: CreateDeckSheetProps) {
+  const [mode, setMode] = useState<
+    (typeof CREATE_DECK_MODES)[keyof typeof CREATE_DECK_MODES]
+  >(CREATE_DECK_MODES.manual);
+  const [aiOperationLocked, setAiOperationLocked] = useState(false);
+  const isSheetLocked = mode === CREATE_DECK_MODES.ai && aiOperationLocked;
+  const requestClose = () => {
+    if (!isSheetLocked) onCloseCreateSheet();
+  };
   return (
     <BottomSheetModal
       closeAccessibilityLabel="닫기"
-      onClose={onCloseCreateSheet}
+      onClose={requestClose}
       visible={isCreateSheetOpen}
     >
       <BottomSheetForm>
         <FormIntro title={CARD_SERVICE_TEXT.list.deckSectionTitle} />
-        <TextField
-          label={CARD_SERVICE_TEXT.list.deckNameLabel}
-          onChangeText={setTitle}
-          placeholder={CARD_SERVICE_TEXT.list.deckNamePlaceholder}
-          value={title}
+        <SegmentedControl
+          value={mode}
+          onValueChange={(nextMode) => {
+            if (!isSheetLocked) setMode(nextMode);
+          }}
+          options={[
+            {
+              disabled: isSheetLocked,
+              label: "직접 입력",
+              value: CREATE_DECK_MODES.manual,
+            },
+            {
+              disabled: isSheetLocked,
+              label: "AI로 만들기",
+              value: CREATE_DECK_MODES.ai,
+            },
+          ]}
         />
-        <ActionButton
-          disabled={!canCreateDeck}
-          label={createDeckButtonLabel}
-          onPress={handleCreateDeck}
-          variant="dark"
-        />
+        {mode === CREATE_DECK_MODES.ai ? (
+          <MobileCreateDeckAiForm
+            onCreated={() => {
+              setAiOperationLocked(false);
+              onCloseCreateSheet();
+            }}
+            onOperationLockChange={setAiOperationLocked}
+          />
+        ) : (
+          <>
+            <TextField
+              label={CARD_SERVICE_TEXT.list.deckNameLabel}
+              onChangeText={setTitle}
+              placeholder={CARD_SERVICE_TEXT.list.deckNamePlaceholder}
+              value={title}
+            />
+            <ActionButton
+              disabled={!canCreateDeck}
+              label={createDeckButtonLabel}
+              onPress={handleCreateDeck}
+              variant="dark"
+            />
+          </>
+        )}
       </BottomSheetForm>
     </BottomSheetModal>
   );

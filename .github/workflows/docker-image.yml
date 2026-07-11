@@ -433,7 +433,12 @@ jobs:
           SENTRY_DSN: ${{ vars.SENTRY_DSN }}
           YEON_ADMIN_EMAILS: ${{ vars.YEON_ADMIN_EMAILS }}
           ZAI_BASE_URL: ${{ vars.ZAI_BASE_URL }}
+          ZAI_DECK_GENERATION_MODEL: ${{ vars.ZAI_DECK_GENERATION_MODEL }}
           ZAI_GRADING_MODEL: ${{ vars.ZAI_GRADING_MODEL }}
+          ZAI_MODEL: ${{ vars.ZAI_MODEL }}
+          YEON_CARD_AI_ENABLED: ${{ vars.YEON_CARD_AI_ENABLED }}
+          YEON_CARD_AI_GLOBAL_DAILY_REQUEST_LIMIT: ${{ vars.YEON_CARD_AI_GLOBAL_DAILY_REQUEST_LIMIT }}
+          YEON_CARD_AI_GLOBAL_DAILY_TOKEN_LIMIT: ${{ vars.YEON_CARD_AI_GLOBAL_DAILY_TOKEN_LIMIT }}
           WEB_IMAGE_DIGEST: ${{ needs.build_web.outputs.image_digest }}
           BACKEND_IMAGE_DIGEST: ${{ needs.build_backend.outputs.image_digest }}
           RACE_IMAGE_DIGEST: ${{ needs.build_race.outputs.image_digest }}
@@ -462,6 +467,8 @@ jobs:
           required_variables=(
             GOOGLE_CLIENT_ID MICROSOFT_CLIENT_ID NEXT_PUBLIC_APP_URL
             POSTGRES_DB POSTGRES_USER R2_ACCOUNT_ID R2_BUCKET_NAME
+            YEON_CARD_AI_ENABLED YEON_CARD_AI_GLOBAL_DAILY_REQUEST_LIMIT
+            YEON_CARD_AI_GLOBAL_DAILY_TOKEN_LIMIT
           )
           for key in "${required_variables[@]}"; do
             if [ -z "${!key:-}" ]; then

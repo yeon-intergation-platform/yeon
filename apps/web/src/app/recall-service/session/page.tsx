@@ -16,5 +16,5 @@ function pickFirst(value: string | string[] | undefined) {
 export default async function RecallSessionPage({ searchParams }: PageProps) {
   const resolved = await searchParams;
   const deckId = pickFirst(resolved.deckId) ?? null;
-  return <BaekjiSession deckId={deckId} />;
+  return <BaekjiSession key={deckId ?? "missing-deck"} deckId={deckId} />;
 }

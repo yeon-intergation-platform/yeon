@@ -4,6 +4,7 @@ import { YeonView } from "@yeon/ui";
 import { CardServiceAuthProvider } from "@/features/card-service/auth-context";
 import { WebCardDeckRepositoryProvider } from "@/features/card-service/runtime-adapters/card-deck-repository";
 import { WebCardItemRepositoryProvider } from "@/features/card-service/runtime-adapters/card-item-repository";
+import { WebCardRecallRepositoryProvider } from "@/features/card-service/runtime-adapters/card-recall-repository";
 import { CommunityChatWidget } from "@/features/community/components/community-chat-widget";
 import { QueryProvider } from "@/lib/query-provider";
 import { getCurrentAuthUser } from "@/server/auth/session";
@@ -26,10 +27,12 @@ export default async function CardServiceLayout({
       <CardServiceAuthProvider isAuthenticated={Boolean(user)}>
         <WebCardDeckRepositoryProvider>
           <WebCardItemRepositoryProvider>
-            {children}
-            <YeonView className="fixed inset-x-4 bottom-3 z-40 sm:inset-auto sm:right-6 sm:bottom-6">
-              <CommunityChatWidget variant="compact" />
-            </YeonView>
+            <WebCardRecallRepositoryProvider>
+              {children}
+              <YeonView className="fixed inset-x-4 bottom-3 z-40 sm:inset-auto sm:right-6 sm:bottom-6">
+                <CommunityChatWidget variant="compact" />
+              </YeonView>
+            </WebCardRecallRepositoryProvider>
           </WebCardItemRepositoryProvider>
         </WebCardDeckRepositoryProvider>
       </CardServiceAuthProvider>

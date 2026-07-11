@@ -7,6 +7,7 @@ import type {
 } from "../../types";
 
 export type YeonTextFieldProps = {
+  disabled?: boolean;
   keyboardType?: "default" | "email-address" | "number-pad" | "phone-pad";
   label: string;
   maxLength?: number;
@@ -27,6 +28,7 @@ const inputTypeByKeyboard = {
 } as const;
 
 export function YeonTextField({
+  disabled = false,
   keyboardType = "default",
   label,
   maxLength,
@@ -57,6 +59,7 @@ export function YeonTextField({
       <YeonField
         as={multiline ? "textarea" : "input"}
         maxLength={maxLength}
+        disabled={disabled}
         onChange={(
           event: YeonChangeEvent<YeonInputElement | YeonTextAreaElement>
         ) => onChangeText(event.currentTarget.value)}

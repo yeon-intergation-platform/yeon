@@ -40,6 +40,7 @@ function CardServiceNavigator() {
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="decks/[deckId]" />
       <Stack.Screen name="decks/[deckId]/play" />
+      <Stack.Screen name="decks/[deckId]/recall" />
       <Stack.Screen name="rooms/[roomId]" />
     </Stack>
   );

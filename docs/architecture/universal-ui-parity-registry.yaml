@@ -21,7 +21,7 @@
 #   - 새 공유 개념을 도입하면 먼저 이 레지스트리에 entry를 추가하고 parity를 정한다.
 
 version: 1
-updated: 2026-06-03
+updated: 2026-07-11
 owner: universal-ui
 parent_backlog: docs/product/backlog/2026-06-03-universal-ui-screen-ports-ssot.md
 
@@ -57,6 +57,39 @@ concepts:
     note: >
       이전 drift 사례: web ["card-decks", mode] ↔ mobile ["card-service","decks", mode].
       같은 개념인데 키 배열이 어긋나 캐시 의미가 분리됐다. SSOT로 통일했다.
+
+  - id: card-recall-query-keys
+    concept: 카드 기반 백지 시도 기록 TanStack queryKey
+    parity: identical-value
+    ssot: packages/ui/src/runtime/ports/card-deck/query-keys.ts
+    adapters:
+      - apps/web/src/features/card-service/card-service-query-keys.ts
+      - apps/mobile/src/services/card-service/query-keys.ts
+    verify: 양 앱이 cardRecallQueryKeys.history를 재수출 + raw recall 배열 재선언 금지
+
+  - id: card-recall-session-policy
+    concept: 백지 세션 질문·답 유효성 판정과 제외 정책
+    parity: identical-value
+    ssot: packages/ui/src/runtime/ports/card-deck/recall-policy.ts
+    adapters:
+      - web: apps/web/src/features/typing-service/use-baekji-session.ts
+      - mobile: apps/mobile/src/features/card-service/card-recall-screen.tsx
+    verify: 양 플랫폼이 partitionCardDeckItemsForRecall을 소비 + 빈 질문/답 직접 필터 재선언 금지
+    note: >
+      질문 또는 답에 표시 가능한 텍스트·미디어가 없는 legacy/guest 카드는 세션에서 제외한다.
+      웹 홈은 같은 정책으로 제외 사유를 보여 주고 직접 URL 진입과 모바일도 동일하게 방어한다.
+
+  - id: card-recall-request-state
+    concept: AI 덱 초안 저장 실패 분류·idempotency key 회전·세션 응답 적용 정책
+    parity: identical-value
+    ssot: packages/ui/src/runtime/ports/card-deck/ai-draft-state.ts
+    adapters:
+      - web: apps/web/src/features/card-service/components/create-deck-ai-form.tsx
+      - mobile: apps/mobile/src/features/card-service/mobile-create-deck-ai-form.tsx
+    verify: 양 플랫폼이 공용 실패 분류와 operation policy를 소비 + 5xx/408/transport 불확실 상태 테스트
+    note: >
+      저장 결과가 불확실하면 초안 변경과 닫기를 막고 같은 payload와 idempotency key 재시도만 허용한다.
+      백지 세션 identity와 늦은 응답 적용 여부는 recall-session-state.ts를 함께 SSOT로 사용한다.
 
   - id: user-experience-query-keys
     concept: 경험치/레벨 TanStack queryKey
@@ -135,6 +168,18 @@ concepts:
       이 비대칭은 어댑터 내부에서 흡수했다(모바일 addCards는 루프, 웹은 bulk). 화면은 동일 포트 동사만 호출.
       덮어쓰기(replaceCards)는 기존 item 전체 삭제 후 새 bulk 입력으로 완전 대체한다. 웹/모바일 모두 같은 포트 동사를 호출하고 삭제/생성 구현 차이는 어댑터 내부에서 흡수한다.
       모바일은 typecheck/lint 검증. 시각/동작 런타임 검증(slice 20)은 시뮬레이터에서 별도 수행 권장.
+
+  - id: card-recall-repository
+    concept: 백지 atomic 채점·기록·AI 초안·덱 일괄 저장 능력
+    parity: shared-contract
+    ssot: packages/ui/src/runtime/ports/card-deck/recall-repository.ts # YeonCardRecallRepository
+    adapters:
+      - web: apps/web/src/features/card-service/runtime-adapters/card-recall-repository.tsx
+      - mobile: apps/mobile/src/features/card-service/runtime-adapters/card-recall-repository.ts
+    verify: 양 어댑터가 YeonCardRecallRepository 구현 + @yeon/api-contract/recall 타입 소비
+    note: >
+      인증 사용자의 채점과 SRS 갱신은 createAttempt 한 번으로 원자 처리한다. 게스트는 서버 AI 채점을
+      호출하지 않고 card-item-repository.reviewCard로 정답 공개 후 직접 평가를 로컬 SRS에 저장한다.
 
   - id: card-deck-repository
     concept: 카드 덱 데이터 CRUD 능력

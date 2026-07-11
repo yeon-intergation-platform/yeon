@@ -57,6 +57,7 @@ export const CARD_SERVICE_TEXT = {
     emptyMessage:
       "카드 추가 버튼을 눌러 첫 카드부터 질문과 답변을 작성해보세요.",
     playButtonLabel: "▶ 학습 시작",
+    recallButtonLabel: "백지로 복습",
     deckTitleFallback: "카드 덱",
     itemLabel: "카드 목록",
     allCardsLabel: "전체",
