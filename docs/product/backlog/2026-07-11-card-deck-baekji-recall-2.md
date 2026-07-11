@@ -1,7 +1,7 @@
 # 카드 덱 기반 백지 학습 2차 구현 백로그
 
 작성일: 2026-07-11
-상태: 구현·로컬 검증 완료, 운영 배포 대기
+상태: 완료 (2026-07-11)
 서비스: `card-service` 연동 백지 학습 (`blurt.yeon.world`)
 
 ## 제품 정의
@@ -121,4 +121,9 @@
 - `pnpm lint`, `pnpm typecheck`, web production build, Compose secret contract가 통과했다.
 - Playwright로 게스트 덱 생성 → 명시적 덱 선택 → 질문·답 미리보기 → 답안 작성 →
   정답 대조·자기 평가 → 완료 요약을 desktop/mobile viewport에서 확인했다.
-- 남은 종료 조건은 PR main 머지와 운영 E2E다.
+- PR #914가 main에 squash merge됐고, 배포 run `29134791256`이 성공했다.
+- 운영 backend에 `ZAI_API_KEY_FILE`과 카드 AI 전역 예산 설정이 전달되고, web에는
+  Z.ai 키가 남지 않는 것을 컨테이너 metadata의 변수 이름으로 확인했다.
+- Flyway V21 적용(`21:true`), 활성 `/srv/yeon/.env` 부재, `yeon.world`·`race.yeon.world`
+  health, `blurt.yeon.world`와 `/session` 200을 확인했다.
+- 비인증 백지 채점과 AI 덱 초안은 401이며, 폐기한 공개 채점 URL은 404로 확인했다.
