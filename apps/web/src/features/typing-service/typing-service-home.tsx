@@ -9,6 +9,7 @@ import {
   YeonText,
 } from "@yeon/ui";
 import { analyticsEvents, trackEvent } from "@/lib/analytics";
+import { ProductPageHeader } from "@/components/product-shell/product-page-header";
 import { useTypingProfile } from "./use-typing-profile";
 import {
   TypingProfileCard,
@@ -116,28 +117,11 @@ export function TypingServiceHome({
       />
 
       <YeonView as="main" className={TYPING_SERVICE_HOME_CLASS.main}>
-        <YeonView
-          as="section"
-          className={TYPING_SERVICE_HOME_CLASS.introSection}
-        >
-          <YeonView className={TYPING_SERVICE_HOME_CLASS.introCopy}>
-            <YeonText
-              as="h1"
-              variant="unstyled"
-              tone="inherit"
-              className={TYPING_SERVICE_HOME_CLASS.introTitle}
-            >
-              {text.home.heroTitle}
-            </YeonText>
-            <YeonText
-              as="p"
-              variant="unstyled"
-              tone="inherit"
-              className={TYPING_SERVICE_HOME_CLASS.introDescription}
-            >
-              {text.home.heroDescription}
-            </YeonText>
-          </YeonView>
+        <YeonView className={TYPING_SERVICE_HOME_CLASS.introSection}>
+          <ProductPageHeader
+            title={text.home.heroTitle}
+            description={text.home.heroDescription}
+          />
         </YeonView>
 
         <YeonSurface

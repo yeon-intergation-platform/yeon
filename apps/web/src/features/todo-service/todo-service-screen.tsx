@@ -25,6 +25,7 @@ import {
 import { YeonButton, YeonField, YeonText, YeonView } from "@yeon/ui";
 import { useYeonRouter } from "@yeon/ui/runtime/YeonNavigation";
 import { CommonProductHeader } from "@/components/product-shell/product-header";
+import { ProductPageHeader } from "@/components/product-shell/product-page-header";
 import {
   TODO_TASK_ESTIMATES,
   TODO_TASK_PRIORITIES,
@@ -1091,50 +1092,34 @@ export function TodoServiceScreen() {
 
   return (
     <YeonView className="min-h-screen bg-[#fafafa] text-[#111]">
-      <CommonProductHeader
-        activeService="todo"
-        showBgmButton={false}
-        showSettingsButton={false}
-      />
+      <CommonProductHeader activeService="todo" />
       <YeonView
         as="main"
         className="mx-auto grid max-w-[1500px] gap-5 px-4 py-5 md:px-6"
       >
-        <YeonView className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_420px]">
-          <YeonView>
-            <YeonText
-              as="p"
-              variant="unstyled"
-              tone="inherit"
-              className="mb-2 flex items-center gap-2 text-[13px] font-bold text-[#111]"
-            >
+        <ProductPageHeader
+          eyebrow={
+            <>
               <CalendarDays size={16} aria-hidden="true" />
               {formatDateLabel(selectedDate)}
-            </YeonText>
-            <YeonText
-              as="h1"
-              variant="unstyled"
-              tone="inherit"
-              className="m-0 text-[30px] font-black leading-[1.1] tracking-[0] text-[#111] md:text-[40px]"
-            >
-              {selectedDate === actualToday
-                ? "오늘 할 일만 남기는 보드"
-                : "선택 날짜 할 일 보드"}
-            </YeonText>
-            <YeonText
-              variant="unstyled"
-              tone="inherit"
-              className="mt-3 max-w-2xl text-[15px] leading-[1.7] text-[#666]"
-            >
+            </>
+          }
+          title={
+            selectedDate === actualToday
+              ? "오늘 할 일만 남기는 보드"
+              : "선택 날짜 할 일 보드"
+          }
+          description={
+            <>
               생각나는 일은 Inbox에 두고,{" "}
               {selectedDate === actualToday
                 ? "오늘 끝낼 일만 Today에 올립니다."
                 : "선택한 날짜에 끝낼 일만 목록에 올립니다."}{" "}
               날짜 선택은 오른쪽 달력에서 처리합니다.
-            </YeonText>
-          </YeonView>
-
-          <YeonView className="grid gap-3">
+            </>
+          }
+          trailingClassName="w-full lg:w-[420px]"
+          trailing={
             <YeonView className={`${BOARD_SURFACE_CLASS} grid grid-cols-3 p-3`}>
               {[
                 ["진행", openSelectedDateCount],
@@ -1164,8 +1149,8 @@ export function TodoServiceScreen() {
                 </YeonView>
               ))}
             </YeonView>
-          </YeonView>
-        </YeonView>
+          }
+        />
 
         <form
           className={`${BOARD_SURFACE_CLASS} grid gap-3 p-3`}

@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { YeonLink, YeonText, YeonView } from "@yeon/ui";
 import { CommonProductHeader } from "@/components/product-shell/product-header";
+import { ProductPageHeader } from "@/components/product-shell/product-page-header";
 import { SHARED_FEATURE_CLASS } from "@/features/shared-style-constants";
 import {
   GAME_REGIONS,
@@ -479,39 +480,25 @@ function PageShell({
         brandLabel={text.headerBrand}
         initialLanguage={language}
         profileLabels={text.profileMenu}
-        showBgmButton={false}
       />
       <YeonView
         as="main"
         className="mx-auto w-full max-w-[1280px] px-3 py-4 sm:px-5"
       >
         <YeonView className="flex flex-col gap-3">
-          <YeonView className="flex flex-wrap items-center justify-between gap-2">
-            <YeonView className="min-w-0">
-              <YeonText
-                as="h1"
-                variant="unstyled"
-                tone="inherit"
-                className="text-[20px] font-black tracking-[-0.03em] text-[#111]"
-              >
-                {text.heroTitle}
-              </YeonText>
-              <YeonText
-                as="p"
-                variant="unstyled"
-                tone="inherit"
-                className="mt-0.5 text-[12px] leading-[1.5] text-[#666]"
-              >
-                {text.heroDescription}
-              </YeonText>
-            </YeonView>
-            <SearchBar
-              region={region}
-              language={language}
-              defaultValue={searchDefault}
-              text={text}
-            />
-          </YeonView>
+          <ProductPageHeader
+            title={text.heroTitle}
+            description={text.heroDescription}
+            trailingClassName="w-full lg:w-[520px]"
+            trailing={
+              <SearchBar
+                region={region}
+                language={language}
+                defaultValue={searchDefault}
+                text={text}
+              />
+            }
+          />
           <GamePointsBanner language={language} />
         </YeonView>
         {children}
