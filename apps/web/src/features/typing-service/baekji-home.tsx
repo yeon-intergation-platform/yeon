@@ -25,8 +25,8 @@ import { useDeckDetail } from "../card-service/hooks/use-deck-detail";
 import { useDeckList } from "../card-service/hooks/use-deck-list";
 import { countGuestCardDecks } from "@/lib/guest-card-service-store";
 import { resolveBaekjiSelectedDeckId } from "./baekji-deck-selection";
+import { BaekjiServiceHeader } from "./baekji-service-header";
 import { GuestRecallDeckCreator } from "./guest-recall-deck-creator";
-import { TypingServiceHeader } from "./typing-service-header";
 import { TYPING_SERVICE_HOME_CLASS as C } from "./typing-service-home.const";
 import { TYPING_SERVICE_COMMON_CLASS as CC } from "./typing-service-common.const";
 
@@ -536,7 +536,7 @@ export function BaekjiHome() {
 
   return (
     <YeonView className={C.root}>
-      <TypingServiceHeader active="home" title={BAEKJI_HOME_COPY.headerTitle} />
+      <BaekjiServiceHeader title={BAEKJI_HOME_COPY.headerTitle} />
 
       <YeonView as="main" className={C.main}>
         <YeonView as="section" className={C.introSection}>

@@ -19,7 +19,7 @@ import {
 import type { ReactNode } from "react";
 import { YEON_ROUTE_TEMPLATES } from "@yeon/ui/runtime/ports";
 import { MarkdownContent } from "../card-service/components/markdown-content";
-import { TypingServiceHeader } from "./typing-service-header";
+import { BaekjiServiceHeader } from "./baekji-service-header";
 import { TYPING_SERVICE_HOME_CLASS as C } from "./typing-service-home.const";
 import { TYPING_SERVICE_COMMON_CLASS as CC } from "./typing-service-common.const";
 import {
@@ -63,7 +63,7 @@ const HOME_HREF = YEON_ROUTE_TEMPLATES.recallHome;
 function Shell({ children }: { children: ReactNode }) {
   return (
     <YeonView className={C.root}>
-      <TypingServiceHeader active="home" title={COPY.header} />
+      <BaekjiServiceHeader title={COPY.header} />
       <YeonView as="main" className={C.main}>
         <YeonView as="section" className={C.introSection}>
           {children}
