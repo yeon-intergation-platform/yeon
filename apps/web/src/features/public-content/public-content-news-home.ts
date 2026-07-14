@@ -25,40 +25,31 @@ export type PublicContentNewsArticleContext = {
   items: readonly PublicContentNewsContextItem[];
 };
 
-export type PublicContentNewsHomeSection = {
-  articles: readonly PublicContentArticle[];
-  category: PublicContentNewsHomeCategory;
-  description: string;
+export type PublicContentNewsHomeFilter = {
+  count: number;
   href: string;
-  title: string;
+  key: "all" | PublicContentNewsHomeCategory;
+  label: string;
 };
 
 export type PublicContentNewsHomeModel = {
   featuredArticle: PublicContentArticle | null;
-  sections: readonly PublicContentNewsHomeSection[];
+  filters: readonly PublicContentNewsHomeFilter[];
+  latestArticles: readonly PublicContentArticle[];
+  totalCount: number;
 };
 
 const NEWS_HOME_SECTION_COPY = {
   notice: {
     title: "공식 공지",
-    description: "운영 기준, 공개 채널, 중요한 정책 변화를 먼저 확인합니다.",
   },
   updates: {
     title: "제품 업데이트",
-    description: "서비스 변경 요약과 사용자가 바로 확인할 영향을 정리합니다.",
   },
   news: {
     title: "업계 뉴스 해설",
-    description:
-      "AI, Discord, 개발자 생태계 변화가 YEON 사용자에게 주는 의미만 다룹니다.",
   },
-} as const satisfies Record<
-  PublicContentNewsHomeCategory,
-  {
-    description: string;
-    title: string;
-  }
->;
+} as const satisfies Record<PublicContentNewsHomeCategory, { title: string }>;
 
 const NEWS_HOME_CATEGORY_RANK = new Map<string, number>(
   PUBLIC_CONTENT_NEWS_HOME_CATEGORY_ORDER.map((category, index) => [
@@ -146,26 +137,43 @@ export function getPublicContentNewsArticleContext(
 export function getPublicContentNewsHomeModel(): PublicContentNewsHomeModel {
   const articles = getPublicContentArticles(PUBLIC_CONTENT_CHANNELS.news);
   const featuredArticle =
-    [...articles].sort(compareNewsHomePriority)[0] ?? null;
-  const sections = PUBLIC_CONTENT_NEWS_HOME_CATEGORY_ORDER.map((category) => {
-    const sectionArticles = articles
-      .filter((article) => article.category === category)
-      .sort(compareArticlesByDate);
-    const copy = NEWS_HOME_SECTION_COPY[category];
+    [...articles]
+      .filter((article) => article.category === "notice")
+      .sort(compareArticlesByDate)[0] ??
+    [...articles].sort(compareNewsHomePriority)[0] ??
+    null;
+  const filters: PublicContentNewsHomeFilter[] = [
+    {
+      count: articles.length,
+      href: buildPublicContentCanonicalUrl(PUBLIC_CONTENT_CHANNELS.news),
+      key: "all",
+      label: "전체",
+    },
+    ...PUBLIC_CONTENT_NEWS_HOME_CATEGORY_ORDER.flatMap((category) => {
+      const count = articles.filter(
+        (article) => article.category === category
+      ).length;
+      if (count === 0) return [];
 
-    return {
-      articles: sectionArticles,
-      category,
-      description: copy.description,
-      href: buildPublicContentCanonicalUrl(PUBLIC_CONTENT_CHANNELS.news, [
-        category,
-      ]),
-      title: copy.title,
-    };
-  }).filter((section) => section.articles.length > 0);
+      return [
+        {
+          count,
+          href: buildPublicContentCanonicalUrl(PUBLIC_CONTENT_CHANNELS.news, [
+            category,
+          ]),
+          key: category,
+          label: NEWS_HOME_SECTION_COPY[category].title,
+        },
+      ];
+    }),
+  ];
 
   return {
     featuredArticle,
-    sections,
+    filters,
+    latestArticles: [...articles]
+      .filter((article) => article !== featuredArticle)
+      .sort(compareNewsHomePriority),
+    totalCount: articles.length,
   };
 }

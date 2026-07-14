@@ -21,7 +21,6 @@ const BLOG_CATEGORY_PURPOSES = {
 } as const satisfies Record<(typeof BLOG_CATEGORY_ORDER)[number], string>;
 
 export type PublicContentBlogCategoryEntry = {
-  article: PublicContentArticle;
   count: number;
   href: string;
   key: string;
@@ -30,6 +29,7 @@ export type PublicContentBlogCategoryEntry = {
 };
 
 export type PublicContentBlogHomeModel = {
+  articleCount: number;
   categoryEntries: readonly PublicContentBlogCategoryEntry[];
   latestArticles: readonly PublicContentArticle[];
 };
@@ -54,12 +54,10 @@ function getCategoryEntries(
     const categoryArticles = articles.filter(
       (article) => article.category === category
     );
-    const article = categoryArticles[0];
-    if (!article) return [];
+    if (categoryArticles.length === 0) return [];
 
     return [
       {
-        article,
         count: categoryArticles.length,
         href: buildPublicContentCanonicalUrl(PUBLIC_CONTENT_CHANNELS.blog, [
           category,
@@ -76,6 +74,7 @@ export function getPublicContentBlogHomeModel(): PublicContentBlogHomeModel {
   const articles = getBlogArticles();
 
   return {
+    articleCount: articles.length,
     categoryEntries: getCategoryEntries(articles),
     latestArticles: articles.slice(0, 4),
   };

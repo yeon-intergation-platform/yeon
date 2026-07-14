@@ -10,25 +10,30 @@ import {
 } from "./public-content-news-home";
 
 describe("public content news home", () => {
-  it("news 홈은 notice, updates, news 순서로 섹션을 만든다", () => {
+  it("news 홈은 전체와 notice, updates, news 순서의 필터를 만든다", () => {
     const model = getPublicContentNewsHomeModel();
 
-    expect(model.sections.map((section) => section.category)).toEqual(
-      PUBLIC_CONTENT_NEWS_HOME_CATEGORY_ORDER
-    );
-    expect(model.sections.every((section) => section.articles.length > 0)).toBe(
+    expect(model.filters.map((filter) => filter.key)).toEqual([
+      "all",
+      ...PUBLIC_CONTENT_NEWS_HOME_CATEGORY_ORDER,
+    ]);
+    expect(model.filters[0]).toMatchObject({
+      count: model.totalCount,
+      href: "https://news.yeon.world/",
+      label: "전체",
+    });
+    expect(model.filters.slice(1).every((filter) => filter.count > 0)).toBe(
       true
     );
-    expect(model.sections[0]?.title).toBe("공식 공지");
-    expect(model.sections[1]?.title).toBe("제품 업데이트");
-    expect(model.sections[2]?.title).toBe("업계 뉴스 해설");
   });
 
-  it("featured는 하나만 두고 업계 뉴스보다 공지와 업데이트를 우선한다", () => {
+  it("featured는 공지를 우선하고 최신 소식 목록에서 중복하지 않는다", () => {
     const model = getPublicContentNewsHomeModel();
 
     expect(model.featuredArticle).not.toBeNull();
-    expect(["notice", "updates"]).toContain(model.featuredArticle?.category);
+    expect(model.featuredArticle?.category).toBe("notice");
+    expect(model.latestArticles).not.toContain(model.featuredArticle);
+    expect(model.latestArticles.length).toBe(model.totalCount - 1);
   });
 
   it("news category별 상단 맥락을 제공한다", () => {

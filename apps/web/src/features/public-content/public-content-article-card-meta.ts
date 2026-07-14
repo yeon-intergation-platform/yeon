@@ -14,3 +14,21 @@ export function getPublicContentArticleCardMetaItems(
     `${article.readingMinutes}분`,
   ];
 }
+
+export function getPublicContentArticleCardClassificationItems(
+  article: PublicContentArticle
+) {
+  return [
+    getPublicContentServiceLabel(article.service),
+    getPublicContentCategoryLabel(article.category),
+  ];
+}
+
+export function getPublicContentArticleCardPublicationItems(
+  article: PublicContentArticle
+) {
+  return [
+    article.publishedAt.replaceAll("-", "."),
+    `${article.readingMinutes}분 읽기`,
+  ];
+}

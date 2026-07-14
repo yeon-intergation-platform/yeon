@@ -1,14 +1,6 @@
 import { PublicContentArticleCard } from "./public-content-article-card";
 import type { PublicContentBlogHomeModel } from "./public-content-blog-home";
-import {
-  PUBLIC_CONTENT_CHANNELS,
-  buildPublicContentCanonicalUrl,
-} from "./public-content-data";
 import { PublicContentTrackedLink } from "./public-content-tracked-link";
-
-function getArticleSlug(slugSegments: readonly string[]) {
-  return slugSegments.join("/");
-}
 
 export function PublicContentBlogHomePriority({
   model,
@@ -17,16 +9,56 @@ export function PublicContentBlogHomePriority({
 }) {
   return (
     <section className="mx-auto max-w-6xl px-6 pb-16 md:px-8">
-      <div className="border-t border-[#e5e5e5] pt-10">
+      <nav
+        aria-label="블로그 글 분류"
+        className="border-y border-[#e5e5e5] py-4"
+      >
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <p className="text-[13px] font-semibold text-[#111]">글 종류</p>
+          <div className="flex flex-wrap gap-2">
+            <PublicContentTrackedLink
+              href="https://blog.yeon.world/"
+              className="inline-flex h-11 items-center border border-[#111] bg-[#111] px-4 text-[13px] font-semibold text-white no-underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#111]"
+              trackingParams={{
+                channel: "blog",
+                link_kind: "category_nav",
+                target_title: "전체",
+              }}
+            >
+              전체 {model.articleCount}
+            </PublicContentTrackedLink>
+            {model.categoryEntries.map((entry) => (
+              <PublicContentTrackedLink
+                key={entry.key}
+                href={entry.href}
+                className="inline-flex h-11 items-center border border-[#e5e5e5] bg-white px-4 text-[13px] font-semibold text-[#666] no-underline transition-colors hover:border-[#111] hover:text-[#111] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#111]"
+                trackingParams={{
+                  category: entry.key,
+                  channel: "blog",
+                  link_kind: "category_nav",
+                  target_title: entry.label,
+                }}
+              >
+                {entry.label} {entry.count}
+              </PublicContentTrackedLink>
+            ))}
+          </div>
+        </div>
+      </nav>
+
+      <section className="pt-10" aria-labelledby="blog-home-latest-title">
         <div className="mb-5 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
           <div>
-            <p className="text-[13px] font-semibold text-[#555]">Latest</p>
-            <h2 className="mt-1 text-[28px] font-semibold text-[#111]">
-              최신 글
+            <p className="text-[13px] font-semibold text-[#555]">최신 기록</p>
+            <h2
+              id="blog-home-latest-title"
+              className="mt-1 text-[28px] font-semibold text-[#111]"
+            >
+              최근에 남긴 글
             </h2>
           </div>
           <p className="text-[13px] text-[#666]">
-            최근 발행한 제작 기록과 기술 글
+            제품을 만들며 남긴 기술 선택과 운영 판단
           </p>
         </div>
         <div className="grid gap-4 md:grid-cols-2">
@@ -37,75 +69,55 @@ export function PublicContentBlogHomePriority({
             />
           ))}
         </div>
-      </div>
+      </section>
 
-      <div className="mt-12 border-t border-[#e5e5e5] pt-10">
+      <section
+        className="mt-12 border-t border-[#e5e5e5] pt-10"
+        aria-labelledby="blog-home-category-title"
+      >
         <div className="mb-5 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
           <div>
-            <p className="text-[13px] font-semibold text-[#555]">Categories</p>
-            <h2 className="mt-1 text-[28px] font-semibold text-[#111]">
-              분류별 대표 글
+            <p className="text-[13px] font-semibold text-[#555]">읽는 경로</p>
+            <h2
+              id="blog-home-category-title"
+              className="mt-1 text-[24px] font-semibold text-[#111]"
+            >
+              글의 성격으로 찾기
             </h2>
           </div>
           <p className="text-[13px] text-[#666]">
-            글의 목적에 따라 읽을 경로를 나눕니다
+            필요한 기록만 빠르게 모아 볼 수 있어요
           </p>
         </div>
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="border-y border-[#e5e5e5]">
           {model.categoryEntries.map((entry) => (
-            <section
+            <PublicContentTrackedLink
               key={entry.key}
-              className="min-w-0 border border-[#e5e5e5] bg-white p-5"
+              href={entry.href}
+              className="group flex min-w-0 items-center justify-between gap-5 border-b border-[#e5e5e5] py-5 last:border-b-0 no-underline transition-colors hover:text-[#111] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#111]"
+              trackingParams={{
+                category: entry.key,
+                channel: "blog",
+                link_kind: "category_nav",
+                target_title: entry.label,
+              }}
             >
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <p className="text-[12px] font-semibold text-[#555]">
-                    {entry.purpose}
-                  </p>
-                  <h3 className="mt-1 text-[20px] font-semibold text-[#111]">
-                    {entry.label}
-                  </h3>
-                </div>
-                <PublicContentTrackedLink
-                  href={entry.href}
-                  className="rounded-lg border border-[#d4d4d4] px-3 py-2 text-[12px] font-semibold text-[#555] no-underline transition-colors hover:border-[#111] hover:text-[#111]"
-                  trackingParams={{
-                    category: entry.key,
-                    channel: PUBLIC_CONTENT_CHANNELS.blog,
-                    link_kind: "category_nav",
-                    target_title: entry.label,
-                  }}
-                >
-                  {entry.count}개 보기
-                </PublicContentTrackedLink>
+              <div>
+                <p className="text-[13px] text-[#666]">{entry.purpose}</p>
+                <h3 className="mt-1 text-[20px] font-semibold text-[#111]">
+                  {entry.label}{" "}
+                  <span className="text-[14px] text-[#666]">
+                    {entry.count}개
+                  </span>
+                </h3>
               </div>
-              <PublicContentTrackedLink
-                href={buildPublicContentCanonicalUrl(
-                  entry.article.channel,
-                  entry.article.slugSegments
-                )}
-                className="mt-5 block border-t border-[#e5e5e5] pt-5 text-[#111] no-underline"
-                trackingParams={{
-                  category: entry.article.category,
-                  channel: entry.article.channel,
-                  link_kind: "article_card",
-                  service: entry.article.service,
-                  slug: getArticleSlug(entry.article.slugSegments),
-                  target_title: entry.article.title,
-                }}
-              >
-                <p className="text-[13px] font-semibold text-[#555]">대표 글</p>
-                <h4 className="mt-2 text-[18px] font-semibold leading-7 text-[#111]">
-                  {entry.article.title}
-                </h4>
-                <p className="mt-2 text-[14px] leading-6 text-[#666]">
-                  {entry.article.summary}
-                </p>
-              </PublicContentTrackedLink>
-            </section>
+              <span aria-hidden="true" className="text-[20px] text-[#111]">
+                →
+              </span>
+            </PublicContentTrackedLink>
           ))}
         </div>
-      </div>
+      </section>
     </section>
   );
 }

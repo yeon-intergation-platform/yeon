@@ -19,6 +19,7 @@ import { PublicContentRelatedArticles } from "./public-content-related-articles-
 import {
   PUBLIC_CONTENT_CHANNEL_CONFIG,
   PUBLIC_CONTENT_CHANNELS,
+  PUBLIC_CONTENT_SERVICES,
   buildPublicContentCanonicalUrl,
   buildPublicContentOpenGraphImageUrl,
   getPublicContentArticleBySlug,
@@ -28,7 +29,6 @@ import {
   getPublicContentCollectionBySlug,
   getPublicContentCollections,
   getPublicContentServiceLabel,
-  getPublicContentServicesForChannel,
   type PublicContentArticle,
   type PublicContentChannel,
   type PublicContentCollection,
@@ -65,7 +65,13 @@ import {
   PublicContentSupportHomeProblemEntries,
   PublicContentSupportHomeReportCta,
   PublicContentSupportHomeServiceEntries,
+  PublicContentSupportHomeQuickLinks,
 } from "./public-content-support-home-view";
+import { PublicContentSupportSearch } from "./public-content-support-search-view";
+import {
+  normalizePublicContentSearchQuery,
+  searchPublicContentSupportArticles,
+} from "./public-content-search";
 import {
   buildPublicContentTableOfContents,
   shouldShowPublicContentTableOfContents,
@@ -75,6 +81,7 @@ import { PublicContentTrackedLink } from "./public-content-tracked-link";
 
 type PublicContentHomeProps = {
   channel: PublicContentChannel;
+  supportSearchQuery?: string;
 };
 
 type PublicContentArticleProps = {
@@ -287,22 +294,42 @@ function ServiceSection({
   const articles = getPublicContentArticles(channel)
     .filter((article) => article.service === service)
     .sort(compareArticlesByDate);
+  const visibleArticles = articles.slice(0, 4);
+  const serviceLabel = getPublicContentServiceLabel(service);
+  const serviceHref = buildPublicContentCanonicalUrl(channel, [service]);
 
   return (
-    <section className="border-t border-[#e5e5e5] py-10">
+    <section
+      id={`support-${service}-documents`}
+      className="border-t border-[#e5e5e5] py-10"
+    >
       <div className="mb-5 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
         <div>
           <p className="text-[13px] font-semibold text-[#555]">
-            {getPublicContentServiceLabel(service)}
+            {serviceLabel}
           </p>
           <h2 className="mt-1 text-[24px] font-semibold text-[#111]">
-            {getPublicContentServiceLabel(service)} 문서
+            {serviceLabel} 도움말
           </h2>
+          <p className="mt-2 text-[14px] leading-6 text-[#666]">
+            자주 필요한 문서부터 확인하고, 더 많은 문서는 전체 목록에서 보세요.
+          </p>
         </div>
-        <p className="text-[13px] text-[#666]">{articles.length}개 글</p>
+        <PublicContentTrackedLink
+          href={serviceHref}
+          className="w-fit text-[13px] font-semibold text-[#555] no-underline underline-offset-4 transition-colors hover:text-[#111] hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#111]"
+          trackingParams={{
+            channel,
+            link_kind: "service_nav",
+            service,
+            target_title: `${serviceLabel} 전체 문서`,
+          }}
+        >
+          전체 {articles.length}개 보기 <span aria-hidden="true">→</span>
+        </PublicContentTrackedLink>
       </div>
       <div className="grid gap-4 md:grid-cols-2">
-        {articles.map((article) => (
+        {visibleArticles.map((article) => (
           <PublicContentArticleCard
             key={article.slugSegments.join("/")}
             article={article}
@@ -506,12 +533,23 @@ export function getPublicContentStaticParams(channel: PublicContentChannel) {
   ];
 }
 
-export function PublicContentHome({ channel }: PublicContentHomeProps) {
+function getPublicContentHomeHeroClassName(channel: PublicContentChannel) {
+  if (channel === PUBLIC_CONTENT_CHANNELS.support) {
+    return "mx-auto max-w-6xl px-6 pb-8 pt-12 md:px-8 md:pb-10 md:pt-14";
+  }
+
+  if (channel === PUBLIC_CONTENT_CHANNELS.blog) {
+    return "mx-auto max-w-6xl px-6 py-12 md:px-8 md:py-14";
+  }
+
+  return "mx-auto max-w-6xl px-6 py-14 md:px-8 md:py-16";
+}
+
+export function PublicContentHome({
+  channel,
+  supportSearchQuery,
+}: PublicContentHomeProps) {
   const config = getPublicContentChannelConfig(channel);
-  const articles = getPublicContentArticles(channel).sort(
-    compareArticlesByDate
-  );
-  const services = getPublicContentServicesForChannel(channel);
   const newsHomeModel =
     channel === PUBLIC_CONTENT_CHANNELS.news
       ? getPublicContentNewsHomeModel()
@@ -520,13 +558,17 @@ export function PublicContentHome({ channel }: PublicContentHomeProps) {
     channel === PUBLIC_CONTENT_CHANNELS.blog
       ? getPublicContentBlogHomeModel()
       : null;
-  const featuredArticle =
-    channel === PUBLIC_CONTENT_CHANNELS.news ||
-    channel === PUBLIC_CONTENT_CHANNELS.blog
-      ? null
-      : (articles[0] ?? null);
-  const serviceNavItems = getPublicContentServiceNavItems({ channel });
-  const categoryNavItems = getPublicContentCategoryNavItems({ channel });
+  const supportServices =
+    channel === PUBLIC_CONTENT_CHANNELS.support
+      ? Object.values(PUBLIC_CONTENT_SERVICES)
+      : [];
+  const normalizedSupportSearchQuery =
+    channel === PUBLIC_CONTENT_CHANNELS.support
+      ? normalizePublicContentSearchQuery(supportSearchQuery)
+      : "";
+  const supportSearchResults = normalizedSupportSearchQuery
+    ? searchPublicContentSupportArticles(normalizedSupportSearchQuery)
+    : [];
   const supportProblemEntries =
     channel === PUBLIC_CONTENT_CHANNELS.support
       ? getPublicContentSupportHomeProblemEntries()
@@ -546,58 +588,54 @@ export function PublicContentHome({ channel }: PublicContentHomeProps) {
         id={`${channel}-home-jsonld`}
         data={getJsonLdForHome(channel)}
       />
-      <section className="mx-auto max-w-6xl px-6 py-14 md:px-8 md:py-16">
+      <section className={getPublicContentHomeHeroClassName(channel)}>
         <p className="text-[13px] font-semibold text-[#555]">
           {config.homeEyebrow}
         </p>
-        <div className="mt-4 grid gap-8 md:grid-cols-3 md:items-end">
-          <div className="md:col-span-2">
-            <h1 className="max-w-3xl text-[40px] font-semibold leading-tight text-[#111] md:text-[48px]">
-              {config.homeTitle}
-            </h1>
-            <p className="mt-5 max-w-2xl text-[16px] leading-7 text-[#666]">
-              {config.homeDescription}
-            </p>
-          </div>
-          {featuredArticle ? (
-            <PublicContentArticleCard article={featuredArticle} />
-          ) : null}
-        </div>
+        <h1 className="mt-4 max-w-3xl text-[40px] font-semibold leading-tight text-[#111] md:text-[48px]">
+          {config.homeTitle}
+        </h1>
+        <p className="mt-5 max-w-2xl text-[16px] leading-7 text-[#666]">
+          {config.homeDescription}
+        </p>
       </section>
       {channel === PUBLIC_CONTENT_CHANNELS.support ? (
-        <PublicContentSupportHomeReportCta entry={supportReportEntry} />
+        <PublicContentSupportSearch
+          query={normalizedSupportSearchQuery}
+          results={supportSearchResults}
+        />
+      ) : null}
+      {channel === PUBLIC_CONTENT_CHANNELS.support ? (
+        <PublicContentSupportHomeQuickLinks />
+      ) : null}
+      {channel === PUBLIC_CONTENT_CHANNELS.support ? (
+        <PublicContentSupportHomeServiceEntries
+          entries={supportServiceEntries}
+        />
       ) : null}
       {channel === PUBLIC_CONTENT_CHANNELS.support ? (
         <PublicContentSupportHomeProblemEntries
           entries={supportProblemEntries}
         />
       ) : null}
-      {channel === PUBLIC_CONTENT_CHANNELS.support ? (
-        <PublicContentSupportHomeServiceEntries
-          entries={supportServiceEntries}
-        />
-      ) : (
-        <section className="mx-auto max-w-6xl px-6 pb-8 md:px-8">
-          <PublicContentNavigationGroup
-            categoryItems={categoryNavItems}
-            channel={channel}
-            serviceItems={serviceNavItems}
-          />
-        </section>
-      )}
       {newsHomeModel ? (
         <PublicContentNewsHomePriority model={newsHomeModel} />
       ) : null}
       {blogHomeModel ? (
         <PublicContentBlogHomePriority model={blogHomeModel} />
       ) : null}
-      {channel !== PUBLIC_CONTENT_CHANNELS.news &&
-      channel !== PUBLIC_CONTENT_CHANNELS.blog ? (
-        <section className="mx-auto max-w-6xl px-6 pb-16 md:px-8">
-          {services.map((service) => (
+      {channel === PUBLIC_CONTENT_CHANNELS.support ? (
+        <section
+          id="support-documents"
+          className="mx-auto max-w-6xl px-6 pb-8 md:px-8"
+        >
+          {supportServices.map((service) => (
             <ServiceSection key={service} channel={channel} service={service} />
           ))}
         </section>
+      ) : null}
+      {channel === PUBLIC_CONTENT_CHANNELS.support ? (
+        <PublicContentSupportHomeReportCta entry={supportReportEntry} />
       ) : null}
     </PublicContentShell>
   );
