@@ -262,6 +262,7 @@ const BLOG_CATEGORY_TITLES = {
 } as const;
 
 const PUBLISHED_DATE = "2026-06-17";
+const DAILYTING_FASTSTART_PUBLISHED_DATE = "2026-07-14";
 
 export const PUBLIC_CONTENT_ARTICLES: readonly PublicContentArticle[] = [
   {
@@ -2853,6 +2854,100 @@ export const PUBLIC_CONTENT_ARTICLES: readonly PublicContentArticle[] = [
           "draft, admin, auth, API 경로는 색인 대상에서 제외합니다.",
           "Search Console에는 각 URL-prefix property와 sitemap을 제출합니다.",
         ],
+      },
+    ],
+  },
+  {
+    channel: PUBLIC_CONTENT_CHANNELS.blog,
+    service: PUBLIC_CONTENT_SERVICES.account,
+    category: "engineering",
+    slugSegments: ["engineering", "dailyting-video-faststart"],
+    title: "Dailyting 영상 로딩에서 mp4 faststart를 선택한 이유",
+    description:
+      "Dailyting 영상 업로드 뒤 mp4 재생 인덱스를 파일 앞쪽으로 옮긴 이유와, 같은 영상에서 확인한 구조 측정의 범위를 정리합니다.",
+    summary:
+      "파일의 moov atom 배치를 바꿔 재생 인덱스에 도달하기 전 필요한 선행 다운로드 조건을 구조적으로 줄였습니다.",
+    publishedAt: DAILYTING_FASTSTART_PUBLISHED_DATE,
+    updatedAt: DAILYTING_FASTSTART_PUBLISHED_DATE,
+    readingMinutes: 5,
+    ctaLabel: "기술 글 더 보기",
+    ctaHref: "https://blog.yeon.world/engineering",
+    sourcePaths: [
+      "/Users/osuma/coding_stuffs/backend-engineering-evidence/case-studies/dailyting-faststart.md",
+    ],
+    body: [
+      {
+        type: "paragraph",
+        text: "Dailyting에서 정상적인 영상 URL인데도 재생 시작이 늦어지는 경우를 확인했습니다. 앱 렌더링이나 스토리지 속도로 바로 단정하지 않고, 먼저 mp4 파일의 top-level atom 배치를 확인했습니다.",
+      },
+      {
+        type: "heading",
+        title: "문제를 파일 구조부터 확인한 이유",
+      },
+      {
+        type: "paragraph",
+        text: "mp4의 moov atom에는 재생 인덱스가 들어 있습니다. 이 atom이 파일 끝에 있으면 progressive 재생기는 인덱스를 읽을 때까지 재생을 시작할 수 없습니다. Dailyting의 원본은 ftyp → mdat → moov 순서여서, 재생 시작 전에 파일의 대부분을 먼저 내려받아야 했습니다.",
+      },
+      {
+        type: "code",
+        language: "bash",
+        filename: "faststart-remux.sh",
+        code: "ffmpeg -y -i input.mp4 -c copy -movflags +faststart output.mp4",
+      },
+      {
+        type: "paragraph",
+        text: "해결은 업로드 확정 단계에서 재인코딩 없이 remux하는 것이었습니다. -c copy로 코덱을 다시 변환하지 않고, -movflags +faststart로 moov atom만 파일 앞쪽으로 옮깁니다.",
+      },
+      {
+        type: "heading",
+        title: "같은 영상으로 비교한 구조",
+      },
+      {
+        type: "code",
+        language: "text",
+        filename: "atom-layout.txt",
+        code: "파일: 1280×720, 10초, 약 829KB\n\nBefore: ftyp → mdat → moov\n  moov offset: 824,577\n  재생 전 필요한 선행 다운로드: 828,968B (100%)\n\nAfter:  ftyp → moov → mdat\n  moov offset: 32\n  재생 전 필요한 선행 다운로드: 4,423B (0.5%)",
+      },
+      {
+        type: "paragraph",
+        text: "이 값은 네트워크 속도나 단말 성능이 아니라 재생 인덱스를 읽기 전 필요한 파일 바이트 수입니다. 같은 파일 구조에서 재생 인덱스에 도달하기 전 필요한 다운로드가 100%에서 0.5%로 줄었습니다.",
+      },
+      {
+        type: "heading",
+        title: "운영 파이프라인에서 지킨 경계",
+      },
+      {
+        type: "steps",
+        items: [
+          "업로드 확정 단계에서 faststart remux를 수행합니다.",
+          "처리에 실패하면 원본을 확정해 업로드 자체가 막히지 않게 합니다.",
+          "상태 전환은 중복 실행되지 않도록 처리합니다.",
+          "측정 결과는 파일 구조 근거와 함께 기록하고, 단말 체감 성능 수치로 바꾸어 말하지 않습니다.",
+        ],
+      },
+      {
+        type: "callout",
+        tone: PUBLIC_CONTENT_CALLOUT_TONES.warning,
+        title: "약 99%는 첫 프레임 시간 자체가 아닙니다",
+        text: "실제 첫 프레임 시간은 네트워크 RTT, 플레이어 버퍼 정책, 단말 성능에 따라 달라집니다. 이 결과는 재생기가 인덱스를 얻기 전 기다려야 하는 파일 선행 다운로드 조건이 약 99% 줄었다는 구조 측정입니다.",
+      },
+      {
+        type: "links",
+        title: "공개 가능한 근거",
+        links: [
+          {
+            href: "https://github.com/Hyeonjun0527/backend-engineering-evidence/blob/main/case-studies/dailyting-faststart.md",
+            label: "Dailyting faststart 공개 기술 증빙",
+          },
+          {
+            href: "https://dailyting.cloud",
+            label: "Dailyting 서비스",
+          },
+        ],
+      },
+      {
+        type: "paragraph",
+        text: "운영 파일, 사용자 데이터, 내부 경로, 배포 구성은 공개하지 않습니다.",
       },
     ],
   },

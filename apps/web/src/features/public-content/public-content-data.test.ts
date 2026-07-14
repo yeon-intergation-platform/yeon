@@ -347,4 +347,33 @@ describe("public content data", () => {
       expect(hasPublicYeonLink(article)).toBe(true);
     });
   });
+
+  it("Dailyting faststart 글은 구조 측정의 범위와 공개 기술 근거를 함께 제공한다", () => {
+    const article = getPublicContentArticleBySlug("blog", [
+      "engineering",
+      "dailyting-video-faststart",
+    ]);
+    expect(article).toMatchObject({
+      service: "account",
+      title: "Dailyting 영상 로딩에서 mp4 faststart를 선택한 이유",
+      publishedAt: "2026-07-14",
+    });
+
+    const codeText = article!.body
+      .filter((block) => block.type === "code")
+      .map((block) => block.code)
+      .join(" ");
+    const calloutText = article!.body
+      .filter((block) => block.type === "callout")
+      .map((block) => `${block.title} ${block.text}`)
+      .join(" ");
+    const links = getPublicContentArticleLinks(article!);
+
+    expect(codeText).toContain("824,577");
+    expect(codeText).toContain("4,423B");
+    expect(calloutText).toContain("첫 프레임 시간 자체가 아닙니다");
+    expect(links).toContain(
+      "https://github.com/Hyeonjun0527/backend-engineering-evidence/blob/main/case-studies/dailyting-faststart.md"
+    );
+  });
 });

@@ -37,6 +37,10 @@ const REPO_SOURCE_PREFIXES = [
     localPrefix: "/Users/osuma/coding_stuffs/discord-assitant/",
     repoBaseUrl: "https://github.com/Hyeonjun0527/discord-ai-network-bot",
   },
+  {
+    localPrefix: "/Users/osuma/coding_stuffs/backend-engineering-evidence/",
+    repoBaseUrl: "https://github.com/Hyeonjun0527/backend-engineering-evidence",
+  },
 ] as const;
 
 function compareArticlesByDate(
