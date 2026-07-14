@@ -2,12 +2,12 @@ import { YeonStructuredData } from "@yeon/ui";
 import { showYeonNotFound } from "@yeon/ui/runtime/YeonRouteControl";
 import type { YeonPageMetadata } from "@yeon/ui/runtime/YeonPageMetadata";
 import { Suspense, type ReactNode } from "react";
+import { CommonProductHeader } from "@/components/product-shell/product-header";
 import {
   buildPublicContentArticleBreadcrumb,
   buildPublicContentCollectionBreadcrumb,
 } from "./public-content-breadcrumb";
 import { PublicContentBreadcrumb } from "./public-content-breadcrumb-view";
-import { PublicContentBrandLink } from "./public-content-brand-link";
 import { PublicContentArticleCard } from "./public-content-article-card";
 import { getPublicContentBlogDetailModel } from "./public-content-blog-detail";
 import { PublicContentBlogArticleContextPanel } from "./public-content-blog-detail-view";
@@ -227,42 +227,53 @@ function PublicContentShell({
 
   return (
     <main className="min-h-screen bg-white text-[#111]">
-      <header className="border-b border-[#e5e5e5] bg-white">
-        <div className="mx-auto flex max-w-6xl flex-col gap-5 px-6 py-6 md:flex-row md:items-center md:justify-between md:px-8">
-          <PublicContentBrandLink
-            channel={channel}
-            basePath={activeConfig.internalBasePath}
-            brandLabel={activeConfig.brandLabel}
-            className="w-fit text-[16px] font-semibold text-[#111] no-underline"
-          />
-          <nav className="flex flex-wrap gap-2" aria-label="공개 콘텐츠 채널">
-            {CHANNEL_NAV_ITEMS.map((item) => {
-              const isActive = item.label === activeConfig.label;
-
-              return (
-                <PublicContentTrackedLink
-                  key={item.href}
-                  href={item.href}
-                  className={`rounded-lg border px-3 py-2 text-[13px] font-semibold no-underline transition-colors ${
-                    isActive
-                      ? "border-[#111] bg-[#111] text-white"
-                      : "border-[#e5e5e5] text-[#666] hover:border-[#111] hover:text-[#111]"
-                  }`}
-                  trackingParams={{
-                    channel,
-                    link_kind: "channel_nav",
-                    target_title: item.label,
-                  }}
-                >
-                  {item.label}
-                </PublicContentTrackedLink>
-              );
-            })}
-          </nav>
-        </div>
-      </header>
+      <CommonProductHeader activeService={channel} />
+      <PublicContentChannelNavigation
+        activeLabel={activeConfig.label}
+        channel={channel}
+      />
       {children}
     </main>
+  );
+}
+
+function PublicContentChannelNavigation({
+  activeLabel,
+  channel,
+}: {
+  activeLabel: string;
+  channel: PublicContentChannel;
+}) {
+  return (
+    <nav
+      aria-label="공개 콘텐츠 채널"
+      className="border-b border-[#e5e5e5] bg-white"
+    >
+      <div className="mx-auto flex max-w-[1400px] gap-2 overflow-x-auto px-6 py-2 md:px-12">
+        {CHANNEL_NAV_ITEMS.map((item) => {
+          const isActive = item.label === activeLabel;
+
+          return (
+            <PublicContentTrackedLink
+              key={item.href}
+              href={item.href}
+              className={`inline-flex h-11 shrink-0 items-center rounded-xl border px-4 text-[13px] font-semibold no-underline transition-colors ${
+                isActive
+                  ? "border-[#111] bg-[#111] text-white"
+                  : "border-[#e5e5e5] text-[#666] hover:border-[#111] hover:text-[#111]"
+              }`}
+              trackingParams={{
+                channel,
+                link_kind: "channel_nav",
+                target_title: item.label,
+              }}
+            >
+              {item.label}
+            </PublicContentTrackedLink>
+          );
+        })}
+      </div>
+    </nav>
   );
 }
 

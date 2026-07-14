@@ -27,19 +27,27 @@ import { useLogout } from "@/lib/use-logout";
 type CommonServiceKey =
   | "home"
   | "typing"
+  | "recall"
   | "card"
   | "community"
   | "game"
-  | "todo";
+  | "todo"
+  | "support"
+  | "news"
+  | "blog";
 
 // 서비스 키 → 내부 베이스 경로. SERVICE_SUBDOMAIN_ROUTES(subdomain-routing.ts)의
 // servicePath와 같은 값이며, 좌상단 "한 단계 위" 네비게이션 계산에만 쓴다.
 const SERVICE_BASE_PATH: Record<Exclude<CommonServiceKey, "home">, string> = {
   typing: "/typing-service",
+  recall: "/recall-service",
   card: "/card-service",
   community: "/community",
   game: "/game-service",
   todo: "/todo-service",
+  support: "/support",
+  news: "/news",
+  blog: "/blog",
 } as const;
 
 type CommonProductHeaderProps = {
@@ -72,10 +80,14 @@ const COMMON_HEADER_TEXT: Record<
     brandLabels: {
       home: "YEON",
       typing: "YEON 타자방",
+      recall: "YEON 백지",
       card: "YEON 플래시카드",
       community: "YEON 커뮤니티",
       game: "YEON 게임",
       todo: "YEON Today",
+      support: "YEON 고객지원",
+      news: "YEON 뉴스",
+      blog: "YEON 블로그",
     },
   },
   en: {
@@ -83,10 +95,14 @@ const COMMON_HEADER_TEXT: Record<
     brandLabels: {
       home: "YEON",
       typing: "YEON Typing",
+      recall: "YEON Recall",
       card: "YEON Flashcards",
       community: "YEON Community",
       game: "YEON Games",
       todo: "YEON Today",
+      support: "YEON Support",
+      news: "YEON News",
+      blog: "YEON Blog",
     },
   },
 } as const;
