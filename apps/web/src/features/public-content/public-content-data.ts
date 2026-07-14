@@ -169,10 +169,10 @@ export const PUBLIC_CONTENT_CHANNEL_CONFIG = {
     title: "YEON Support",
     description:
       "NEXA, 타자연습, 플래시카드, 커뮤니티를 바로 사용할 수 있게 돕는 공개 도움말입니다.",
-    homeEyebrow: "Help center",
-    homeTitle: "필요한 해결 방법을 서비스별로 찾으세요",
+    homeEyebrow: "도움말 · 문제 해결",
+    homeTitle: "무엇을 해결하고 싶으신가요?",
     homeDescription:
-      "처음 시작, 권한 설정, 오류 해결, FAQ를 실제 서비스 흐름 기준으로 정리합니다.",
+      "문서를 검색하거나 서비스를 먼저 선택해, 지금 겪고 있는 문제의 해결 방법을 찾으세요.",
   },
   news: {
     channel: PUBLIC_CONTENT_CHANNELS.news,
@@ -183,10 +183,10 @@ export const PUBLIC_CONTENT_CHANNEL_CONFIG = {
     title: "YEON News",
     description:
       "YEON과 NEXA의 공식 공지, 제품 업데이트, 업계 뉴스 해설을 정리합니다.",
-    homeEyebrow: "Official updates",
+    homeEyebrow: "공식 소식 · 변경사항",
     homeTitle: "YEON의 공식 소식과 제품 변경사항",
     homeDescription:
-      "공지, 업데이트, 업계 해설을 분리해 실제 사용자 영향이 보이게 기록합니다.",
+      "서비스 점검, 정책 변경, 새 기능처럼 사용자가 알아야 할 소식을 모았습니다.",
   },
   blog: {
     channel: PUBLIC_CONTENT_CHANNELS.blog,
@@ -197,7 +197,7 @@ export const PUBLIC_CONTENT_CHANNEL_CONFIG = {
     title: "YEON Blog",
     description:
       "YEON과 NEXA를 만들며 남기는 기술 글, 제품 제작기, 개발 일지입니다.",
-    homeEyebrow: "Build notes",
+    homeEyebrow: "제작 기록 · 기술과 판단",
     homeTitle: "제품을 만들며 남기는 기술과 결정의 기록",
     homeDescription:
       "개발기, 기술 선택, 제품 운영 판단을 실제 코드와 서비스 맥락에 맞춰 남깁니다.",

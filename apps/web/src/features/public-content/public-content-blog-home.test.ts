@@ -5,6 +5,9 @@ describe("public content blog home", () => {
   it("blog 홈은 최신 글을 먼저 파생한다", () => {
     const model = getPublicContentBlogHomeModel();
 
+    expect(model.articleCount).toBeGreaterThanOrEqual(
+      model.latestArticles.length
+    );
     expect(model.latestArticles.length).toBeGreaterThan(0);
     expect(model.latestArticles.length).toBeLessThanOrEqual(4);
     expect(
@@ -12,7 +15,7 @@ describe("public content blog home", () => {
     ).toBe(true);
   });
 
-  it("blog 홈은 정책 분류 4개를 목적과 대표 글로 나눈다", () => {
+  it("blog 홈은 정책 분류 4개를 목적과 문서 수로 나눈다", () => {
     const model = getPublicContentBlogHomeModel();
 
     expect(
@@ -49,10 +52,6 @@ describe("public content blog home", () => {
       },
     ]);
 
-    expect(
-      model.categoryEntries.every(
-        (entry) => entry.article.category === entry.key && entry.count > 0
-      )
-    ).toBe(true);
+    expect(model.categoryEntries.every((entry) => entry.count > 0)).toBe(true);
   });
 });
