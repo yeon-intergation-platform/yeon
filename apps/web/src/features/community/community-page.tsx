@@ -4,6 +4,7 @@ import {
   CommonProductHeader,
   ProductHeaderDefaultSettingsButton,
 } from "@/components/product-shell/product-header";
+import { ProductPageHeader } from "@/components/product-shell/product-page-header";
 import { YeonServiceHelpDialog } from "@yeon/ui";
 import { YeonButton, YeonSurface, YeonText, YeonView } from "@yeon/ui";
 import { CommunityGuestIdentityConfirmModal } from "./components/community-guest-identity-confirm-modal";
@@ -133,183 +134,181 @@ export function CommunityPage() {
 
       <YeonView
         as="main"
-        className="mx-auto grid w-full max-w-[1160px] gap-4 px-4 py-6 sm:px-6 lg:grid-cols-[minmax(0,840px)_280px] lg:items-start lg:px-8"
+        className="mx-auto w-full max-w-[1160px] px-4 py-6 sm:px-6 lg:px-8"
       >
-        <YeonSurface
-          as="section"
-          className="order-2 min-w-0 rounded-3xl lg:order-1"
-        >
-          <YeonView
-            as="header"
-            className="border-b border-[#e5e5e5] px-5 py-4 sm:px-6"
-          >
-            <YeonText
-              as="h1"
-              variant="unstyled"
-              tone="inherit"
-              className="text-[24px] font-black tracking-[-0.035em] text-[#111]"
-            >
-              YEON 커뮤니티
-            </YeonText>
-          </YeonView>
+        <ProductPageHeader title="커뮤니티" />
 
-          <YeonView
-            className="border-b border-[#e5e5e5]"
-            aria-label="실시간 채팅"
+        <YeonView className="mt-6 grid gap-4 lg:grid-cols-[minmax(0,840px)_280px] lg:items-start">
+          <YeonSurface
+            as="section"
+            className="order-2 min-w-0 rounded-3xl lg:order-1"
           >
-            <CommunityChatWidget variant="feed" guestNickname={guestNickname} />
-          </YeonView>
-
-          <YeonView className="space-y-4 border-b border-[#e5e5e5] px-5 pb-4 pt-5 sm:px-6">
-            <YeonText
-              as="h2"
-              variant="unstyled"
-              tone="inherit"
-              className="text-[16px] font-black tracking-[-0.02em] text-[#111]"
+            <YeonView
+              className="border-b border-[#e5e5e5]"
+              aria-label="실시간 채팅"
             >
-              게시판
-            </YeonText>
-            <YeonView className="relative">
-              <YeonView
-                className="flex gap-2 overflow-x-auto scroll-pr-6 pb-1 pr-6"
-                role="group"
-                aria-label="게시글 분류 필터"
-              >
-                {COMMUNITY_CATEGORIES.map((category) => (
-                  <YeonButton
-                    key={category}
-                    type="button"
-                    onClick={() => setSelectedCategory(category)}
-                    aria-pressed={selectedCategory === category}
-                    variant={selectedCategory === category ? "primary" : "pill"}
-                    size="sm"
-                    className="shrink-0 whitespace-nowrap px-4 py-2 text-[13px] font-bold"
-                  >
-                    {category}
-                  </YeonButton>
-                ))}
-              </YeonView>
-              <YeonView
-                aria-hidden
-                className="pointer-events-none absolute inset-y-0 right-0 w-6 bg-gradient-to-l from-white to-transparent"
+              <CommunityChatWidget
+                variant="feed"
+                guestNickname={guestNickname}
               />
             </YeonView>
 
-            <YeonView>
-              <FeedWriteControl
-                isWriteOpen={isWriteOpen}
-                onToggleWrite={() => setIsWriteOpen((value) => !value)}
-              />
-
-              {isWriteOpen ? (
-                <WritePostPanel
-                  category={postCategory}
-                  title={postTitle}
-                  content={postContent}
-                  isCreatingPost={isCreatingPost}
-                  onChangeCategory={setPostCategory}
-                  onChangeTitle={setPostTitle}
-                  onChangeContent={setPostContent}
-                  onCancel={() => setIsWriteOpen(false)}
-                  onSubmit={handleCreatePost}
+            <YeonView className="space-y-4 border-b border-[#e5e5e5] px-5 pb-4 pt-5 sm:px-6">
+              <YeonText
+                as="h2"
+                variant="unstyled"
+                tone="inherit"
+                className="text-[16px] font-black tracking-[-0.02em] text-[#111]"
+              >
+                게시판
+              </YeonText>
+              <YeonView className="relative">
+                <YeonView
+                  className="flex gap-2 overflow-x-auto scroll-pr-6 pb-1 pr-6"
+                  role="group"
+                  aria-label="게시글 분류 필터"
+                >
+                  {COMMUNITY_CATEGORIES.map((category) => (
+                    <YeonButton
+                      key={category}
+                      type="button"
+                      onClick={() => setSelectedCategory(category)}
+                      aria-pressed={selectedCategory === category}
+                      variant={
+                        selectedCategory === category ? "primary" : "pill"
+                      }
+                      size="sm"
+                      className="shrink-0 whitespace-nowrap px-4 py-2 text-[13px] font-bold"
+                    >
+                      {category}
+                    </YeonButton>
+                  ))}
+                </YeonView>
+                <YeonView
+                  aria-hidden
+                  className="pointer-events-none absolute inset-y-0 right-0 w-6 bg-gradient-to-l from-white to-transparent"
                 />
+              </YeonView>
+
+              <YeonView>
+                <FeedWriteControl
+                  isWriteOpen={isWriteOpen}
+                  onToggleWrite={() => setIsWriteOpen((value) => !value)}
+                />
+
+                {isWriteOpen ? (
+                  <WritePostPanel
+                    category={postCategory}
+                    title={postTitle}
+                    content={postContent}
+                    isCreatingPost={isCreatingPost}
+                    onChangeCategory={setPostCategory}
+                    onChangeTitle={setPostTitle}
+                    onChangeContent={setPostContent}
+                    onCancel={() => setIsWriteOpen(false)}
+                    onSubmit={handleCreatePost}
+                  />
+                ) : null}
+              </YeonView>
+            </YeonView>
+
+            {postsError ? (
+              <YeonText
+                variant="caption"
+                tone="danger"
+                className="border-b border-[#e5e5e5] px-5 py-3 font-semibold sm:px-6"
+              >
+                {postsError}
+              </YeonText>
+            ) : null}
+
+            {isPostsLoading ? (
+              <YeonText
+                variant="body"
+                tone="secondary"
+                className="border-b border-[#e5e5e5] px-5 py-6 text-center font-semibold sm:px-6"
+              >
+                글 목록을 불러오는 중...
+              </YeonText>
+            ) : null}
+
+            <YeonView className="space-y-4 px-5 py-5 sm:px-6">
+              {filteredPosts.map((post) => (
+                <FeedPostItem
+                  key={post.id}
+                  post={post}
+                  expanded={!!expandedReplies[post.id]}
+                  replies={repliesByPost[post.id] ?? []}
+                  isRepliesLoading={!!isRepliesLoading[post.id]}
+                  replyError={replyErrors[post.id] ?? null}
+                  replyDraft={replyDrafts[post.id] ?? ""}
+                  isSubmittingReply={!!isSubmittingReply[post.id]}
+                  postError={postErrors[post.id] ?? null}
+                  isUpdatingPost={!!isUpdatingPost[post.id]}
+                  isDeletingPost={!!isDeletingPost[post.id]}
+                  isDeletingReply={isDeletingReply}
+                  replyDeleteErrors={replyDeleteErrors}
+                  onToggleReplies={() => {
+                    toggleReplies(post.id);
+                  }}
+                  onChangeReplyDraft={(postId, value) => {
+                    setReplyDraft(postId, value);
+                  }}
+                  onSubmitReply={async (postId) => {
+                    await runWithGuestIdentityConfirm(
+                      "댓글을 작성",
+                      (identity) => submitReply(postId, identity)
+                    );
+                  }}
+                  onUpdatePost={async (postId, body) => {
+                    return runWithGuestIdentityConfirm(
+                      "글을 수정",
+                      (identity) => updatePost(postId, body, identity)
+                    );
+                  }}
+                  onDeletePost={async (postId) => {
+                    return runWithGuestIdentityConfirm(
+                      "글을 삭제",
+                      (identity) => deletePost(postId, identity)
+                    );
+                  }}
+                  onDeleteReply={async (postId, replyId) => {
+                    return runWithGuestIdentityConfirm(
+                      "댓글을 삭제",
+                      (identity) => deleteReply(postId, replyId, identity)
+                    );
+                  }}
+                />
+              ))}
+
+              {!isPostsLoading && !postsError && !hasFilteredPosts ? (
+                <YeonSurface variant="empty" className="px-4 py-8">
+                  <YeonText
+                    variant="body"
+                    tone="secondary"
+                    className="text-center font-semibold"
+                  >
+                    아직 게시글이 없습니다. 첫 글을 남겨보세요.
+                  </YeonText>
+                </YeonSurface>
               ) : null}
             </YeonView>
+          </YeonSurface>
+
+          <YeonView
+            as="aside"
+            className="order-1 min-w-0 lg:sticky lg:top-20 lg:order-2"
+            aria-label="게스트 인증"
+          >
+            <CommunityGuestIdentityCard
+              guestNickname={guestNickname}
+              guestPassword={guestPassword}
+              onSaveIdentity={(identity) => {
+                setGuestNickname(identity.guestNickname);
+                setGuestPassword(identity.guestPassword);
+              }}
+            />
           </YeonView>
-
-          {postsError ? (
-            <YeonText
-              variant="caption"
-              tone="danger"
-              className="border-b border-[#e5e5e5] px-5 py-3 font-semibold sm:px-6"
-            >
-              {postsError}
-            </YeonText>
-          ) : null}
-
-          {isPostsLoading ? (
-            <YeonText
-              variant="body"
-              tone="secondary"
-              className="border-b border-[#e5e5e5] px-5 py-6 text-center font-semibold sm:px-6"
-            >
-              글 목록을 불러오는 중...
-            </YeonText>
-          ) : null}
-
-          <YeonView className="space-y-4 px-5 py-5 sm:px-6">
-            {filteredPosts.map((post) => (
-              <FeedPostItem
-                key={post.id}
-                post={post}
-                expanded={!!expandedReplies[post.id]}
-                replies={repliesByPost[post.id] ?? []}
-                isRepliesLoading={!!isRepliesLoading[post.id]}
-                replyError={replyErrors[post.id] ?? null}
-                replyDraft={replyDrafts[post.id] ?? ""}
-                isSubmittingReply={!!isSubmittingReply[post.id]}
-                postError={postErrors[post.id] ?? null}
-                isUpdatingPost={!!isUpdatingPost[post.id]}
-                isDeletingPost={!!isDeletingPost[post.id]}
-                isDeletingReply={isDeletingReply}
-                replyDeleteErrors={replyDeleteErrors}
-                onToggleReplies={() => {
-                  toggleReplies(post.id);
-                }}
-                onChangeReplyDraft={(postId, value) => {
-                  setReplyDraft(postId, value);
-                }}
-                onSubmitReply={async (postId) => {
-                  await runWithGuestIdentityConfirm("댓글을 작성", (identity) =>
-                    submitReply(postId, identity)
-                  );
-                }}
-                onUpdatePost={async (postId, body) => {
-                  return runWithGuestIdentityConfirm("글을 수정", (identity) =>
-                    updatePost(postId, body, identity)
-                  );
-                }}
-                onDeletePost={async (postId) => {
-                  return runWithGuestIdentityConfirm("글을 삭제", (identity) =>
-                    deletePost(postId, identity)
-                  );
-                }}
-                onDeleteReply={async (postId, replyId) => {
-                  return runWithGuestIdentityConfirm(
-                    "댓글을 삭제",
-                    (identity) => deleteReply(postId, replyId, identity)
-                  );
-                }}
-              />
-            ))}
-
-            {!isPostsLoading && !postsError && !hasFilteredPosts ? (
-              <YeonSurface variant="empty" className="px-4 py-8">
-                <YeonText
-                  variant="body"
-                  tone="secondary"
-                  className="text-center font-semibold"
-                >
-                  아직 게시글이 없습니다. 첫 글을 남겨보세요.
-                </YeonText>
-              </YeonSurface>
-            ) : null}
-          </YeonView>
-        </YeonSurface>
-
-        <YeonView
-          as="aside"
-          className="order-1 min-w-0 lg:sticky lg:top-20 lg:order-2"
-          aria-label="게스트 인증"
-        >
-          <CommunityGuestIdentityCard
-            guestNickname={guestNickname}
-            guestPassword={guestPassword}
-            onSaveIdentity={(identity) => {
-              setGuestNickname(identity.guestNickname);
-              setGuestPassword(identity.guestPassword);
-            }}
-          />
         </YeonView>
       </YeonView>
 

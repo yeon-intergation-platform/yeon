@@ -73,7 +73,6 @@ export function GameDetail({
         brandLabel={text.headerBrand}
         initialLanguage={language}
         profileLabels={text.profileMenu}
-        showBgmButton={false}
       />
 
       <YeonView

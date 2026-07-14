@@ -194,8 +194,8 @@ export function ProductHeaderDefaultSettingsButton({
   const languageLabel = language === "en" ? "Language" : "언어";
   const helpText =
     language === "en"
-      ? "Game and profile screens use this language. Typing settings stay in sync."
-      : "게임과 프로필 화면은 이 언어로 표시됩니다. 타자 설정도 함께 맞춥니다.";
+      ? "Supported screens use this language. Typing settings stay in sync."
+      : "지원하는 화면은 이 언어로 표시됩니다. 타자 설정도 함께 맞춥니다.";
 
   const handleLanguageChange = (nextLanguage: PlatformLanguage) => {
     setLanguage(nextLanguage);

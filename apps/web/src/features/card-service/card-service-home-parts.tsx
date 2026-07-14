@@ -1,5 +1,6 @@
 "use client";
 import { CommonProductHeader } from "@/components/product-shell/product-header";
+import { ProductPageHeader } from "@/components/product-shell/product-page-header";
 import {
   TypingProfileCard,
   TypingProfileCardSkeleton,
@@ -55,26 +56,11 @@ export function CardServiceHomeHeader({ home }: CardServiceHomePartsProps) {
 
 export function CardServiceHomeIntroSection() {
   return (
-    <YeonView as="section" className={CARD_SERVICE_HOME_CLASS.introSection}>
-      <YeonView className={CARD_SERVICE_HOME_CLASS.introCopy}>
-        <YeonText
-          as="h1"
-          variant="unstyled"
-          tone="inherit"
-          className={`${CARD_SERVICE_HOME_CLASS.introTitle} break-keep`}
-        >
-          바로 시작하는 카드공부
-        </YeonText>
-        <YeonText
-          as="p"
-          variant="unstyled"
-          tone="inherit"
-          className={`${CARD_SERVICE_HOME_CLASS.introDescription} break-keep`}
-        >
-          카드를 넘기기 전에 먼저 떠올리고, 친구와 함께 답을 확인해보세요. 혼자
-          복습하거나 카드방에서 함께 공부할 수 있어요.
-        </YeonText>
-      </YeonView>
+    <YeonView className={CARD_SERVICE_HOME_CLASS.introSection}>
+      <ProductPageHeader
+        title="바로 시작하는 카드공부"
+        description="카드를 넘기기 전에 먼저 떠올리고, 친구와 함께 답을 확인해보세요. 혼자 복습하거나 카드방에서 함께 공부할 수 있어요."
+      />
     </YeonView>
   );
 }
