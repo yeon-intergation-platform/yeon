@@ -143,7 +143,13 @@ describe("seo", () => {
           url: "https://blog.yeon.world/engineering",
           changeFrequency: "weekly",
           priority: 0.6,
-          lastModified: "2026-06-17",
+          lastModified: "2026-07-14",
+        }),
+        expect.objectContaining({
+          url: "https://blog.yeon.world/engineering/dailyting-video-faststart",
+          changeFrequency: "weekly",
+          priority: 0.55,
+          lastModified: "2026-07-14",
         }),
       ])
     );
