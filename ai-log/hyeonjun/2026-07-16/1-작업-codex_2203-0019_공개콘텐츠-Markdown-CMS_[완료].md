@@ -1,8 +1,10 @@
 # 공개 콘텐츠 Markdown CMS 작업 로그
 
 - 시작: 2026-07-16 22:03 KST
+- 종료: 2026-07-17 00:19 KST
 - 브랜치: `feat/public-content-admin-markdown-cms-20260716`
 - 기준: `origin/main`
+- PR: [#921](https://github.com/yeon-intergation-platform/yeon/pull/921)
 - 목표: 관리자 작성·검수·발행·보관, Markdown 편집/미리보기, 단건·일괄 export, 공개 발행본 SSOT 전환
 
 ## 초기 확인
@@ -21,7 +23,8 @@
 - [x] 관리자 편집 UI와 Next BFF 구현
 - [x] 공개 발행본 조회 전환
 - [x] 테스트·빌드·Playwright·리뷰·재검증
-- [ ] commit·push·PR(main)·merge
+- [x] commit·push·PR(main) 생성
+- [x] PR 검증 증거·마이그레이션·rollback·release intent 기록
 
 ## 구현 결과
 
@@ -63,6 +66,12 @@
 - 새 공개 글 브라우저 console error 0개, hydration heading ID 불일치 수정 후 재검증 성공
 - 3차 critic: 직전 4개 major와 Setext H2를 실제 코드·테스트로 재검증했고 `ACCEPT`, critical/major 0개
 - `origin/main` #920 통합: 최신 화면 구조·블로그 인플레이스 필터·삭제된 상세 패널을 유지하고 CMS runtime만 결합했다. Spring bootstrap은 최신 43개 원문으로 재생성했다.
+
+## Ship
+
+- PR #921을 `main`으로 생성했다.
+- 이 로그를 PR에 추가한 뒤 `gh pr merge --squash --delete-branch`로 머지 명령을 실행한다.
+- 머지 후 CI/CD·릴리즈는 저장소 정책대로 비동기 흐름에 맡기고 상태를 반복 폴링하지 않는다.
 
 ## 시각 증거
 
