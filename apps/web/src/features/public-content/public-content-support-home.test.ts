@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  getPublicContentSupportHomeNoticeEntry,
   getPublicContentSupportHomeProblemEntries,
   getPublicContentSupportHomeReportEntry,
   getPublicContentSupportHomeServiceEntries,
@@ -60,11 +61,18 @@ describe("public content support home", () => {
     expect(entries.every((entry) => entry.description.length > 0)).toBe(true);
   });
 
-  it("support 홈 오류 신고 CTA는 공개 문의 이메일과 신고 안내 글을 함께 제공한다", () => {
+  it("support 홈 최근 공지는 실제 News 공지를 재사용한다", () => {
+    expect(getPublicContentSupportHomeNoticeEntry()).toMatchObject({
+      href: "https://news.yeon.world/notice/public-content-network-start",
+      article: {
+        channel: "news",
+        title: "YEON 공개 도움말, 뉴스, 블로그 채널을 분리합니다",
+      },
+    });
+  });
+
+  it("support 홈 오류 신고 CTA는 공개 문의 이메일을 제공한다", () => {
     expect(getPublicContentSupportHomeReportEntry()).toMatchObject({
-      articleHref:
-        "https://support.yeon.world/account/troubleshooting/report-service-error",
-      articleTitle: "YEON 오류를 바로 신고하는 곳",
       href: "mailto:hiclaudepro@gmail.com?subject=%5BYEON%20%EC%98%A4%EB%A5%98%20%EC%8B%A0%EA%B3%A0%5D",
       label: "오류 신고하기",
     });

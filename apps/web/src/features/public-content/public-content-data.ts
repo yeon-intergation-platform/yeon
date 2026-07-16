@@ -169,10 +169,10 @@ export const PUBLIC_CONTENT_CHANNEL_CONFIG = {
     title: "YEON Support",
     description:
       "NEXA, 타자연습, 플래시카드, 커뮤니티를 바로 사용할 수 있게 돕는 공개 도움말입니다.",
-    homeEyebrow: "도움말 · 문제 해결",
-    homeTitle: "무엇을 해결하고 싶으신가요?",
+    homeEyebrow: "도움말 센터",
+    homeTitle: "서비스별로 알맞은 해결 방법을 찾아보세요",
     homeDescription:
-      "문서를 검색하거나 서비스를 먼저 선택해, 지금 겪고 있는 문제의 해결 방법을 찾으세요.",
+      "사용 가이드, 정책 안내, 문제 해결 방법을 쉽고 빠르게 찾아볼 수 있습니다.",
   },
   news: {
     channel: PUBLIC_CONTENT_CHANNELS.news,

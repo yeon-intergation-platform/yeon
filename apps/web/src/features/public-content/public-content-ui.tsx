@@ -55,6 +55,7 @@ import { PublicContentNewsDetailSections } from "./public-content-news-detail-vi
 import { PublicContentOpsToolbarClient } from "./public-content-ops-toolbar-client";
 import { buildPublicContentArticleStructuredData } from "./public-content-structured-data";
 import {
+  getPublicContentSupportHomeNoticeEntry,
   getPublicContentSupportHomeProblemEntries,
   getPublicContentSupportHomeReportEntry,
   getPublicContentSupportHomeServiceEntries,
@@ -65,7 +66,7 @@ import {
   PublicContentSupportHomeProblemEntries,
   PublicContentSupportHomeReportCta,
   PublicContentSupportHomeServiceEntries,
-  PublicContentSupportHomeQuickLinks,
+  PublicContentSupportHomeHero,
 } from "./public-content-support-home-view";
 import { PublicContentSupportSearch } from "./public-content-support-search-view";
 import {
@@ -526,10 +527,6 @@ export function getPublicContentStaticParams(channel: PublicContentChannel) {
 }
 
 function getPublicContentHomeHeroClassName(channel: PublicContentChannel) {
-  if (channel === PUBLIC_CONTENT_CHANNELS.support) {
-    return "mx-auto max-w-6xl px-6 pb-8 pt-12 md:px-8 md:pb-10 md:pt-14";
-  }
-
   if (channel === PUBLIC_CONTENT_CHANNELS.blog) {
     return "mx-auto max-w-6xl px-6 py-12 md:px-8 md:py-14";
   }
@@ -565,6 +562,10 @@ export function PublicContentHome({
     channel === PUBLIC_CONTENT_CHANNELS.support
       ? getPublicContentSupportHomeProblemEntries()
       : [];
+  const supportNoticeEntry =
+    channel === PUBLIC_CONTENT_CHANNELS.support
+      ? getPublicContentSupportHomeNoticeEntry()
+      : null;
   const supportServiceEntries =
     channel === PUBLIC_CONTENT_CHANNELS.support
       ? getPublicContentSupportHomeServiceEntries()
@@ -580,33 +581,42 @@ export function PublicContentHome({
         id={`${channel}-home-jsonld`}
         data={getJsonLdForHome(channel)}
       />
-      <section className={getPublicContentHomeHeroClassName(channel)}>
-        <div className="flex flex-col gap-7 md:flex-row md:items-start md:justify-between">
-          <div>
-            <p className="text-[13px] font-semibold text-[#555]">
-              {config.homeEyebrow}
-            </p>
-            <h1 className="mt-4 max-w-3xl text-[40px] font-semibold leading-tight text-[#111] md:text-[48px]">
-              {config.homeTitle}
-            </h1>
-            <p className="mt-5 max-w-2xl text-[16px] leading-7 text-[#666]">
-              {config.homeDescription}
-            </p>
+      {channel === PUBLIC_CONTENT_CHANNELS.support ? (
+        <PublicContentSupportHomeHero
+          channelNavigation={
+            <PublicContentChannelNavigation channel={channel} />
+          }
+          description={config.homeDescription}
+          eyebrow={config.homeEyebrow}
+          noticeEntry={supportNoticeEntry}
+          title={config.homeTitle}
+        />
+      ) : (
+        <section className={getPublicContentHomeHeroClassName(channel)}>
+          <div className="flex flex-col gap-7 md:flex-row md:items-start md:justify-between">
+            <div>
+              <p className="text-[13px] font-semibold text-[#555]">
+                {config.homeEyebrow}
+              </p>
+              <h1 className="mt-4 max-w-3xl text-[40px] font-semibold leading-tight text-[#111] md:text-[48px]">
+                {config.homeTitle}
+              </h1>
+              <p className="mt-5 max-w-2xl text-[16px] leading-7 text-[#666]">
+                {config.homeDescription}
+              </p>
+            </div>
+            <PublicContentChannelNavigation
+              channel={channel}
+              className="shrink-0 md:mt-1"
+            />
           </div>
-          <PublicContentChannelNavigation
-            channel={channel}
-            className="shrink-0 md:mt-1"
-          />
-        </div>
-      </section>
+        </section>
+      )}
       {channel === PUBLIC_CONTENT_CHANNELS.support ? (
         <PublicContentSupportSearch
           query={normalizedSupportSearchQuery}
           results={supportSearchResults}
         />
-      ) : null}
-      {channel === PUBLIC_CONTENT_CHANNELS.support ? (
-        <PublicContentSupportHomeQuickLinks />
       ) : null}
       {channel === PUBLIC_CONTENT_CHANNELS.support ? (
         <PublicContentSupportHomeServiceEntries

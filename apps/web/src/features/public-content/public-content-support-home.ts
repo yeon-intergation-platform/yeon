@@ -28,11 +28,14 @@ export type PublicContentSupportHomeServiceEntry = {
 };
 
 export type PublicContentSupportHomeReportEntry = {
-  articleHref: string;
-  articleTitle: string;
   description: string;
   href: string;
   label: string;
+};
+
+export type PublicContentSupportHomeNoticeEntry = {
+  article: PublicContentArticle;
+  href: string;
 };
 
 type SupportHomeProblemSeed = {
@@ -133,6 +136,20 @@ export function getPublicContentSupportHomeServiceEntries(): PublicContentSuppor
   });
 }
 
+export function getPublicContentSupportHomeNoticeEntry(): PublicContentSupportHomeNoticeEntry | null {
+  const article = getPublicContentArticleBySlug(PUBLIC_CONTENT_CHANNELS.news, [
+    "notice",
+    "public-content-network-start",
+  ]);
+
+  if (!article) return null;
+
+  return {
+    article,
+    href: buildPublicContentCanonicalUrl(article.channel, article.slugSegments),
+  };
+}
+
 export function getPublicContentSupportHomeReportEntry(): PublicContentSupportHomeReportEntry | null {
   const article = getPublicContentArticleBySlug(
     PUBLIC_CONTENT_CHANNELS.support,
@@ -142,11 +159,6 @@ export function getPublicContentSupportHomeReportEntry(): PublicContentSupportHo
   if (!article) return null;
 
   return {
-    articleHref: buildPublicContentCanonicalUrl(
-      article.channel,
-      article.slugSegments
-    ),
-    articleTitle: article.title,
     description:
       "타자연습, 카드, 커뮤니티, NEXA에서 문제가 생기면 서비스 주소와 화면 상태만 짧게 보내도 됩니다.",
     href: PUBLIC_CONTENT_ERROR_REPORT_MAILTO,
