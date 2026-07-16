@@ -779,6 +779,48 @@ test.describe("public content SEO smoke", () => {
     expect(articleWidth).toBeLessThanOrEqual(960);
   });
 
+  test("article table of contents floats left without moving the reading column", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1440, height: 960 });
+    await page.goto("/news/notice/support-open");
+
+    const tableOfContents = page.getByRole("navigation", {
+      name: "본문 목차",
+    });
+    const firstParagraph = page
+      .getByText(
+        /YEON은 사용자가 문제를 해결할 때 바로 검색해서 들어올 수 있도록/
+      )
+      .first();
+
+    await expect(tableOfContents).toBeVisible();
+    await expect(firstParagraph).toBeVisible();
+
+    const [tableOfContentsBox, paragraphBox] = await Promise.all([
+      tableOfContents.boundingBox(),
+      firstParagraph.boundingBox(),
+    ]);
+
+    if (!tableOfContentsBox || !paragraphBox) {
+      throw new Error("본문 목차 또는 첫 문단의 위치를 확인할 수 없습니다.");
+    }
+
+    expect(tableOfContentsBox.x + tableOfContentsBox.width).toBeLessThanOrEqual(
+      paragraphBox.x
+    );
+    await expect(tableOfContents).toHaveCSS("position", "sticky");
+
+    await page.evaluate(() => window.scrollTo({ top: 720 }));
+
+    await expect
+      .poll(async () => (await tableOfContents.boundingBox())?.y ?? -1)
+      .toBeGreaterThanOrEqual(28);
+    await expect
+      .poll(async () => (await tableOfContents.boundingBox())?.y ?? -1)
+      .toBeLessThanOrEqual(40);
+  });
+
   test("public content CTA click sends GA4 event params", async ({ page }) => {
     await installAnalyticsRecorder(page);
     await page.goto("/support/nexa/guides/add-nexa-discord-bot");

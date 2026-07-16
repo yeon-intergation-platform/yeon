@@ -382,7 +382,7 @@ function PublicContentTableOfContents({
 
   if (variant === "mobile") {
     return (
-      <details className="rounded-lg border border-[#e5e5e5] bg-white p-4 lg:hidden">
+      <details className="rounded-lg border border-[#e5e5e5] bg-white p-4 xl:hidden">
         <summary className="cursor-pointer text-[13px] font-semibold text-[#111]">
           본문 목차
         </summary>
@@ -394,9 +394,9 @@ function PublicContentTableOfContents({
   }
 
   return (
-    <aside className="hidden lg:block">
+    <aside className="absolute inset-y-0 right-full mr-8 hidden w-40 xl:block">
       <nav
-        className="sticky top-8 border-l border-[#e5e5e5] pl-4"
+        className="sticky top-8 max-h-[calc(100vh-4rem)] overflow-y-auto border-l border-[#e5e5e5] pl-4"
         aria-label="본문 목차"
       >
         <p className="mb-3 text-[12px] font-semibold text-[#555]">본문 목차</p>
@@ -841,13 +841,7 @@ export async function PublicContentArticlePage({
               variant="mobile"
             />
           ) : null}
-          <div
-            className={
-              hasTableOfContents
-                ? "mt-8 grid gap-8 lg:grid-cols-[180px_minmax(0,1fr)]"
-                : undefined
-            }
-          >
+          <div className={hasTableOfContents ? "relative mt-8" : undefined}>
             {hasTableOfContents ? (
               <PublicContentTableOfContents
                 items={tableOfContents}
