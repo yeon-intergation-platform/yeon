@@ -53,9 +53,9 @@ const PUBLIC_CONTENT_PAGE_CASES: readonly PublicContentPageCase[] = [
   },
   {
     path: "/news",
-    heading: "YEON의 공식 소식과 제품 변경사항",
+    heading: "YEON의 실제 변경사항",
     canonical: "https://news.yeon.world/",
-    descriptionIncludes: "공식 공지",
+    descriptionIncludes: "실제로 적용된 변경",
     structuredData: {
       expectedType: "CollectionPage",
       expectedName: "YEON News",
@@ -63,9 +63,9 @@ const PUBLIC_CONTENT_PAGE_CASES: readonly PublicContentPageCase[] = [
   },
   {
     path: "/blog",
-    heading: "제품을 만들며 남기는 기술과 결정의 기록",
+    heading: "서비스를 만들며 확인한 구현 기록",
     canonical: "https://blog.yeon.world/",
-    descriptionIncludes: "개발 일지",
+    descriptionIncludes: "실제 구현",
     structuredData: {
       expectedType: "CollectionPage",
       expectedName: "YEON Blog",
@@ -92,23 +92,23 @@ const PUBLIC_CONTENT_PAGE_CASES: readonly PublicContentPageCase[] = [
     },
   },
   {
-    path: "/news/notice/support-open",
-    heading: "YEON support.yeon.world 오픈 안내",
-    canonical: "https://news.yeon.world/notice/support-open",
-    descriptionIncludes: "support.yeon.world",
+    path: "/news/notice/public-content-network-start",
+    heading: "YEON 공개 콘텐츠 화면을 정리했습니다",
+    canonical: "https://news.yeon.world/notice/public-content-network-start",
+    descriptionIncludes: "Support는 문제 해결",
     structuredData: {
       expectedType: "NewsArticle",
-      expectedName: "YEON support.yeon.world 오픈 안내",
+      expectedName: "YEON 공개 콘텐츠 화면을 정리했습니다",
     },
   },
   {
-    path: "/news/updates/nexa",
-    heading: "NEXA 제품 업데이트",
-    canonical: "https://news.yeon.world/updates/nexa",
-    descriptionIncludes: "NEXA 제품 업데이트",
+    path: "/news/notice",
+    heading: "공지",
+    canonical: "https://news.yeon.world/notice",
+    descriptionIncludes: "공지",
     structuredData: {
       expectedType: "CollectionPage",
-      expectedName: "NEXA 제품 업데이트",
+      expectedName: "공식 공지",
     },
   },
   {
@@ -123,13 +123,13 @@ const PUBLIC_CONTENT_PAGE_CASES: readonly PublicContentPageCase[] = [
   },
   {
     path: "/blog/product/nexa-discord-server-operator-design",
-    heading: "NEXA를 Discord 서버 운영자 관점에서 설계하는 이유",
+    heading: "NEXA에서 채널 권한과 Provider Pool을 함께 확인하는 이유",
     canonical:
       "https://blog.yeon.world/product/nexa-discord-server-operator-design",
-    descriptionIncludes: "Discord 서버 운영자",
+    descriptionIncludes: "Message Content Intent",
     structuredData: {
       expectedType: "BlogPosting",
-      expectedName: "NEXA를 Discord 서버 운영자 관점에서 설계하는 이유",
+      expectedName: "NEXA에서 채널 권한과 Provider Pool을 함께 확인하는 이유",
     },
   },
 ];
@@ -158,12 +158,13 @@ const PUBLIC_CONTENT_HOST_CASES: readonly PublicContentHostCase[] = [
   {
     host: "news.yeon.world",
     homeCanonical: "https://news.yeon.world/",
-    homeHeading: "YEON의 공식 소식과 제품 변경사항",
-    collectionPath: "/updates/nexa",
-    collectionCanonical: "https://news.yeon.world/updates/nexa",
-    articlePath: "/notice/support-open",
-    articleCanonical: "https://news.yeon.world/notice/support-open",
-    articleHeading: "YEON support.yeon.world 오픈 안내",
+    homeHeading: "YEON의 실제 변경사항",
+    collectionPath: "/notice",
+    collectionCanonical: "https://news.yeon.world/notice",
+    articlePath: "/notice/public-content-network-start",
+    articleCanonical:
+      "https://news.yeon.world/notice/public-content-network-start",
+    articleHeading: "YEON 공개 콘텐츠 화면을 정리했습니다",
     sitemapUrl: "https://news.yeon.world/sitemap.xml",
     homeStructuredData: {
       expectedType: "CollectionPage",
@@ -171,19 +172,19 @@ const PUBLIC_CONTENT_HOST_CASES: readonly PublicContentHostCase[] = [
     },
     articleStructuredData: {
       expectedType: "NewsArticle",
-      expectedName: "YEON support.yeon.world 오픈 안내",
+      expectedName: "YEON 공개 콘텐츠 화면을 정리했습니다",
     },
   },
   {
     host: "blog.yeon.world",
     homeCanonical: "https://blog.yeon.world/",
-    homeHeading: "제품을 만들며 남기는 기술과 결정의 기록",
+    homeHeading: "서비스를 만들며 확인한 구현 기록",
     collectionPath: "/engineering",
     collectionCanonical: "https://blog.yeon.world/engineering",
     articlePath: "/product/nexa-discord-server-operator-design",
     articleCanonical:
       "https://blog.yeon.world/product/nexa-discord-server-operator-design",
-    articleHeading: "NEXA를 Discord 서버 운영자 관점에서 설계하는 이유",
+    articleHeading: "NEXA에서 채널 권한과 Provider Pool을 함께 확인하는 이유",
     sitemapUrl: "https://blog.yeon.world/sitemap.xml",
     homeStructuredData: {
       expectedType: "CollectionPage",
@@ -191,7 +192,7 @@ const PUBLIC_CONTENT_HOST_CASES: readonly PublicContentHostCase[] = [
     },
     articleStructuredData: {
       expectedType: "BlogPosting",
-      expectedName: "NEXA를 Discord 서버 운영자 관점에서 설계하는 이유",
+      expectedName: "NEXA에서 채널 권한과 Provider Pool을 함께 확인하는 이유",
     },
   },
 ];
@@ -209,6 +210,13 @@ const PUBLIC_CONTENT_VIEWPORT_CASES = [
 
 const DRAFT_LIKE_PUBLIC_PATH =
   "/support/draft/support-nexa-guides-add-nexa-discord-bot";
+
+const UNPUBLISHED_PUBLIC_CONTENT_PATHS = [
+  "/news/notice/support-open",
+  "/news/updates/nexa",
+  "/blog/product/why-split-support-news-blog",
+  "/blog/engineering/dailyting-video-faststart",
+] as const;
 
 function normalizeUrl(rawUrl: string | null) {
   expect(rawUrl).toBeTruthy();
@@ -602,6 +610,15 @@ test.describe("public content SEO smoke", () => {
     await expect(page).not.toHaveURL(/login=1|auth\/login/);
   });
 
+  for (const path of UNPUBLISHED_PUBLIC_CONTENT_PATHS) {
+    test(`${path} is no longer published`, async ({ page }) => {
+      const response = await page.goto(path);
+
+      expect(response?.status()).toBe(404);
+      await expect(page).not.toHaveURL(/login=1|auth\/login/);
+    });
+  }
+
   test("public content home supports keyboard focus movement", async ({
     page,
   }) => {
@@ -675,13 +692,13 @@ test.describe("public content SEO smoke", () => {
   test("public content keeps only action-relevant article context", async ({
     page,
   }) => {
-    await page.goto("/news/notice/support-open");
+    await page.goto("/news/notice/public-content-network-start");
 
     await expect(
-      page.getByText("적용 서비스 계정/정책", { exact: true })
+      page.getByText("적용 서비스 Support · News · Blog", { exact: true })
     ).toBeVisible();
     await expect(
-      page.getByText("적용일 2026.06.17", { exact: true })
+      page.getByText("적용일 2026.07.16", { exact: true })
     ).toBeVisible();
     await expect(page.getByText("핵심 확인 사항", { exact: true })).toHaveCount(
       0
@@ -689,6 +706,8 @@ test.describe("public content SEO smoke", () => {
     await expect(
       page.getByText("support 글을 반복하지 않습니다", { exact: true })
     ).toHaveCount(0);
+    await expect(page.getByRole("button", { name: /BGM/ })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "설정" })).toHaveCount(0);
 
     await page.goto("/support/nexa/guides/add-nexa-discord-bot");
     await expect(
@@ -730,11 +749,16 @@ test.describe("public content SEO smoke", () => {
     await page.goto("/blog");
 
     const homeHeading = page.getByRole("heading", {
-      name: "제품을 만들며 남기는 기술과 결정의 기록",
+      name: "서비스를 만들며 확인한 구현 기록",
     });
     const productFilter = page.getByRole("button", { name: /제품 글/ });
 
     await expect(homeHeading).toBeVisible();
+    await expect(
+      page.getByText("게스트 덱을 계정으로 옮길 때 사용자 선택을 남긴 이유", {
+        exact: true,
+      })
+    ).toBeVisible();
     await expect(productFilter).toHaveAttribute("aria-pressed", "false");
     await productFilter.scrollIntoViewIfNeeded();
     await page.evaluate(() => {
@@ -819,16 +843,12 @@ test.describe("public content SEO smoke", () => {
     page,
   }) => {
     await page.setViewportSize({ width: 1440, height: 960 });
-    await page.goto("/news/notice/support-open");
+    await page.goto("/support/nexa/guides/add-nexa-discord-bot");
 
     const tableOfContents = page.getByRole("navigation", {
       name: "본문 목차",
     });
-    const firstParagraph = page
-      .getByText(
-        /YEON은 사용자가 문제를 해결할 때 바로 검색해서 들어올 수 있도록/
-      )
-      .first();
+    const firstParagraph = page.locator("article p").first();
 
     await expect(tableOfContents).toBeVisible();
     await expect(firstParagraph).toBeVisible();

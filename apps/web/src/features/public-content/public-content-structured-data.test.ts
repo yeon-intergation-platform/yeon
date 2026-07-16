@@ -35,7 +35,7 @@ describe("public content structured data", () => {
   it("모든 article structured data에 Article 계열과 BreadcrumbList를 포함한다", () => {
     const article = getArticle("blog", [
       "engineering",
-      "search-console-sitemap-operations",
+      "typing-realtime-server-needed",
     ]);
     const structuredData = buildPublicContentArticleStructuredData(article);
 
@@ -45,9 +45,8 @@ describe("public content structured data", () => {
 
   it("Article 계열 structured data는 채널 기본 OG image를 참조한다", () => {
     const article = getArticle("news", [
-      "news",
-      "ai",
-      "discord-ai-news-interpretation",
+      "notice",
+      "public-content-network-start",
     ]);
     const articleJsonLd = buildPublicContentArticleJsonLd(article);
 
@@ -55,7 +54,7 @@ describe("public content structured data", () => {
       "@type": "NewsArticle",
       image: ["https://news.yeon.world/opengraph-image"],
       mainEntityOfPage:
-        "https://news.yeon.world/news/ai/discord-ai-news-interpretation",
+        "https://news.yeon.world/notice/public-content-network-start",
     });
   });
 
@@ -137,13 +136,12 @@ describe("public content structured data", () => {
 
   it("news와 blog 글에는 FAQPage와 HowTo를 붙이지 않는다", () => {
     const newsArticle = getArticle("news", [
-      "news",
-      "ai",
-      "discord-ai-news-interpretation",
+      "notice",
+      "public-content-network-start",
     ]);
     const blogArticle = getArticle("blog", [
-      "devlog",
-      "public-content-network-start",
+      "engineering",
+      "typing-realtime-server-needed",
     ]);
 
     expect(buildPublicContentFaqPageJsonLd(newsArticle)).toBeNull();

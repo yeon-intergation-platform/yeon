@@ -1,19 +1,16 @@
 import { describe, expect, it } from "vitest";
-import {
-  PUBLIC_CONTENT_NEWS_HOME_CATEGORY_ORDER,
-  getPublicContentNewsHomeModel,
-} from "./public-content-news-home";
+import { getPublicContentNewsHomeModel } from "./public-content-news-home";
 
 describe("public content news home", () => {
-  it("news 홈은 전체와 notice, updates, news 순서의 필터를 만든다", () => {
+  it("news 홈은 실제 발행된 분류만 필터로 만든다", () => {
     const model = getPublicContentNewsHomeModel();
 
     expect(model.filters.map((filter) => filter.key)).toEqual([
       "all",
-      ...PUBLIC_CONTENT_NEWS_HOME_CATEGORY_ORDER,
+      "notice",
     ]);
     expect(model.filters[0]).toMatchObject({
-      count: model.totalCount,
+      count: 1,
       href: "/news",
       label: "전체",
     });
@@ -27,7 +24,10 @@ describe("public content news home", () => {
 
     expect(model.featuredArticle).not.toBeNull();
     expect(model.featuredArticle?.category).toBe("notice");
+    expect(model.featuredArticle?.title).toBe(
+      "YEON 공개 콘텐츠 화면을 정리했습니다"
+    );
     expect(model.latestArticles).not.toContain(model.featuredArticle);
-    expect(model.latestArticles.length).toBe(model.totalCount - 1);
+    expect(model.latestArticles).toHaveLength(0);
   });
 });

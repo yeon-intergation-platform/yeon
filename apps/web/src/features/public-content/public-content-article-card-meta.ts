@@ -10,7 +10,7 @@ export function getPublicContentArticleCardMetaItems(
   return [
     getPublicContentServiceLabel(article.service),
     getPublicContentCategoryLabel(article.category),
-    article.publishedAt,
+    ...(article.channel === "support" ? [] : [article.publishedAt]),
     `${article.readingMinutes}분`,
   ];
 }
@@ -27,6 +27,10 @@ export function getPublicContentArticleCardClassificationItems(
 export function getPublicContentArticleCardPublicationItems(
   article: PublicContentArticle
 ) {
+  if (article.channel === "support") {
+    return [`${article.readingMinutes}분 읽기`];
+  }
+
   return [
     article.publishedAt.replaceAll("-", "."),
     `${article.readingMinutes}분 읽기`,

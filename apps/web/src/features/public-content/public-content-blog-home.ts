@@ -116,6 +116,6 @@ export function getPublicContentBlogHomeModel(
     articleCount: filteredArticles.length,
     categoryEntries: getCategoryEntries(articles),
     totalArticleCount: articles.length,
-    visibleArticles: activeCategory ? filteredArticles : articles.slice(0, 4),
+    visibleArticles: filteredArticles,
   };
 }

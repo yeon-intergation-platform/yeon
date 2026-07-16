@@ -56,10 +56,10 @@ describe("public content navigation", () => {
     });
   });
 
-  it("news와 blog 홈 category nav는 channel 1depth collection을 만든다", () => {
+  it("news와 blog 홈 category nav는 실제 발행된 collection만 만든다", () => {
     expect(
       getPublicContentCategoryNavItems({
-        activeCategory: "updates",
+        activeCategory: "notice",
         channel: "news",
       }).map((item) => ({
         active: item.active,
@@ -68,19 +68,9 @@ describe("public content navigation", () => {
       }))
     ).toEqual([
       {
-        active: false,
+        active: true,
         href: "/news/notice",
         label: "공지",
-      },
-      {
-        active: true,
-        href: "/news/updates",
-        label: "업데이트",
-      },
-      {
-        active: false,
-        href: "/news/news",
-        label: "뉴스 해설",
       },
     ]);
 
@@ -96,40 +86,7 @@ describe("public content navigation", () => {
     });
   });
 
-  it("news와 blog service nav는 parent category 안에서 링크 가능한 서비스만 만든다", () => {
-    expect(
-      getPublicContentServiceNavItems({
-        activeService: "nexa",
-        channel: "news",
-        parentCategory: "updates",
-      }).map((item) => ({
-        active: item.active,
-        href: item.href,
-        label: item.label,
-      }))
-    ).toEqual([
-      {
-        active: true,
-        href: "/news/updates/nexa",
-        label: "NEXA",
-      },
-      {
-        active: false,
-        href: "/news/updates/typing",
-        label: "타자연습",
-      },
-      {
-        active: false,
-        href: "/news/updates/card",
-        label: "플래시카드",
-      },
-      {
-        active: false,
-        href: "/news/updates/community",
-        label: "커뮤니티",
-      },
-    ]);
-
+  it("blog service nav는 parent category 안에서 링크 가능한 서비스만 만든다", () => {
     expect(
       getPublicContentServiceNavItems({
         channel: "blog",
@@ -139,11 +96,10 @@ describe("public content navigation", () => {
       "/blog/product/nexa",
       "/blog/product/card",
       "/blog/product/community",
-      "/blog/product/account",
     ]);
   });
 
-  it("업계 뉴스 목록은 서비스가 아니라 주제 필터를 만든다", () => {
+  it("업계 뉴스 해설이 없으면 주제 필터도 만들지 않는다", () => {
     expect(
       getPublicContentServiceNavItems({
         channel: "news",
@@ -157,12 +113,6 @@ describe("public content navigation", () => {
         href: item.href,
         label: item.label,
       }))
-    ).toEqual([
-      {
-        active: true,
-        href: "/news/news/ai",
-        label: "AI",
-      },
-    ]);
+    ).toEqual([]);
   });
 });

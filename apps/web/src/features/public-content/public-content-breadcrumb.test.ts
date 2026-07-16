@@ -77,17 +77,13 @@ describe("public content breadcrumb", () => {
 
   it("collection breadcrumb는 현재 collection을 마지막 항목으로 둔다", () => {
     const breadcrumb = buildPublicContentCollectionBreadcrumb(
-      getCollection("news", ["updates", "nexa"])
+      getCollection("news", ["notice"])
     );
 
-    expect(breadcrumb.map((item) => item.label)).toEqual([
-      "News",
-      "업데이트",
-      "NEXA",
-    ]);
+    expect(breadcrumb.map((item) => item.label)).toEqual(["News", "공지"]);
     expect(breadcrumb.at(-1)).toMatchObject({
       current: true,
-      href: "/news/updates/nexa",
+      href: "/news/notice",
     });
   });
 });

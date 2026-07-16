@@ -15,8 +15,8 @@ describe("public content coverage report", () => {
     });
 
     expect(report.summary.articleCount).toBe(PUBLIC_CONTENT_ARTICLES.length);
-    expect(report.summary.targetBucketCount).toBe(12);
-    expect(report.summary.coveredBucketCount).toBe(12);
+    expect(report.summary.targetBucketCount).toBe(9);
+    expect(report.summary.coveredBucketCount).toBe(9);
     expect(report.summary.missingBucketCount).toBe(0);
     expect(report.channels.map((channel) => channel.channel)).toEqual([
       PUBLIC_CONTENT_CHANNELS.support,
@@ -25,7 +25,7 @@ describe("public content coverage report", () => {
     ]);
   });
 
-  it("정책상 필요한 news/blog bucket이 모두 채워져 있다", () => {
+  it("현재 공개 기준으로 필요한 news/blog bucket이 모두 채워져 있다", () => {
     const report = buildPublicContentCoverageReport();
     const missingBucketIds = report.buckets
       .filter((bucket) => bucket.status === "missing")
@@ -45,33 +45,34 @@ describe("public content coverage report", () => {
 
     expect(markdown).toContain("# 공개 콘텐츠 Coverage 리포트");
     expect(markdown).toContain(`Support: ${supportArticleCount}개`);
-    expect(markdown).toContain("[채움] news 업계 뉴스 해설 (1/1)");
-    expect(markdown).toContain("[채움] blog 개발 일지 (1/1)");
+    expect(markdown).toContain("[채움] news 공식 공지 (1/1)");
+    expect(markdown).toContain("[채움] blog 기술 글 (1/1)");
   });
 
-  it("새 devlog 글이 들어오면 blog devlog bucket이 채워진다", () => {
+  it("새 제품 글이 들어오면 blog 제품 글 bucket 수를 반영한다", () => {
     const report = buildPublicContentCoverageReport({
       articles: [
         ...PUBLIC_CONTENT_ARTICLES,
         {
-          body: [{ text: "개발 일지 본문입니다.", type: "paragraph" }],
-          category: "devlog",
+          body: [{ text: "제품 글 본문입니다.", type: "paragraph" }],
+          category: "product",
           channel: PUBLIC_CONTENT_CHANNELS.blog,
-          description: "개발 일지 테스트 설명입니다.",
+          description: "제품 글 테스트 설명입니다.",
           publishedAt: "2026-06-17",
           readingMinutes: 1,
           service: "nexa",
-          slugSegments: ["devlog", "coverage-test"],
+          slugSegments: ["product", "coverage-test"],
           sourcePaths: ["apps/web/src/features/public-content"],
-          summary: "개발 일지 테스트 요약입니다.",
-          title: "개발 일지 테스트",
+          summary: "제품 글 테스트 요약입니다.",
+          title: "제품 글 테스트",
           updatedAt: "2026-06-17",
         },
       ],
     });
 
     expect(
-      report.buckets.find((bucket) => bucket.id === "blog:devlog")?.status
-    ).toBe("covered");
+      report.buckets.find((bucket) => bucket.id === "blog:product")
+        ?.articleCount
+    ).toBe(4);
   });
 });

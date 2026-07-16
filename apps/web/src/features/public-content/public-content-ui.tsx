@@ -54,7 +54,6 @@ import { PublicContentNewsHomePriority } from "./public-content-news-home-view";
 import { PublicContentOpsToolbarClient } from "./public-content-ops-toolbar-client";
 import { buildPublicContentArticleStructuredData } from "./public-content-structured-data";
 import {
-  getPublicContentSupportHomeNoticeEntry,
   getPublicContentSupportHomeProblemEntries,
   getPublicContentSupportHomeReportEntry,
   getPublicContentSupportHomeServiceEntries,
@@ -123,12 +122,15 @@ function getPublicContentArticleHeaderMetaItems(article: PublicContentArticle) {
   ) {
     return [
       categoryLabel,
-      `적용 서비스 ${serviceLabel}`,
+      `적용 서비스 ${article.affectedServiceLabel ?? serviceLabel}`,
       `적용일 ${publishedAt}`,
     ];
   }
 
-  const items = [serviceLabel, categoryLabel, publishedAt];
+  const items =
+    article.channel === PUBLIC_CONTENT_CHANNELS.support
+      ? [serviceLabel, categoryLabel]
+      : [serviceLabel, categoryLabel, publishedAt];
 
   if (article.channel === PUBLIC_CONTENT_CHANNELS.support) {
     items.push(`최근 확인 ${getPublicContentReviewDate(article)}`);
@@ -252,6 +254,8 @@ function PublicContentShell({
     <main className="min-h-screen bg-white text-[#111]">
       <CommonProductHeader
         activeService={channel}
+        showBgmButton={false}
+        showSettingsButton={false}
         titleNavigation={<PublicContentChannelNavigation channel={channel} />}
       />
       {children}
@@ -590,10 +594,6 @@ export function PublicContentHome({
     channel === PUBLIC_CONTENT_CHANNELS.support
       ? getPublicContentSupportHomeProblemEntries()
       : [];
-  const supportNoticeEntry =
-    channel === PUBLIC_CONTENT_CHANNELS.support
-      ? getPublicContentSupportHomeNoticeEntry()
-      : null;
   const supportServiceEntries =
     channel === PUBLIC_CONTENT_CHANNELS.support
       ? getPublicContentSupportHomeServiceEntries()
@@ -613,7 +613,6 @@ export function PublicContentHome({
         <PublicContentSupportHomeHero
           description={config.homeDescription}
           eyebrow={config.homeEyebrow}
-          noticeEntry={supportNoticeEntry}
           title={config.homeTitle}
         />
       ) : (

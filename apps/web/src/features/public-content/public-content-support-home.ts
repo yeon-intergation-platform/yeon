@@ -33,11 +33,6 @@ export type PublicContentSupportHomeReportEntry = {
   label: string;
 };
 
-export type PublicContentSupportHomeNoticeEntry = {
-  article: PublicContentArticle;
-  href: string;
-};
-
 type SupportHomeProblemSeed = {
   prompt: string;
   slugSegments: readonly string[];
@@ -134,20 +129,6 @@ export function getPublicContentSupportHomeServiceEntries(): PublicContentSuppor
       },
     ];
   });
-}
-
-export function getPublicContentSupportHomeNoticeEntry(): PublicContentSupportHomeNoticeEntry | null {
-  const article = getPublicContentArticleBySlug(PUBLIC_CONTENT_CHANNELS.news, [
-    "notice",
-    "public-content-network-start",
-  ]);
-
-  if (!article) return null;
-
-  return {
-    article,
-    href: buildPublicContentInternalHref(article.channel, article.slugSegments),
-  };
 }
 
 export function getPublicContentSupportHomeReportEntry(): PublicContentSupportHomeReportEntry | null {

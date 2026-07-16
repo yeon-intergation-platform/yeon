@@ -14,7 +14,7 @@ describe("public content RSS feed", () => {
       '<atom:link href="https://blog.yeon.world/feed.xml" rel="self" type="application/rss+xml" />'
     );
     expect(feed).toContain(
-      "<link>https://blog.yeon.world/engineering/search-console-sitemap-operations</link>"
+      "<link>https://blog.yeon.world/engineering/typing-realtime-server-needed</link>"
     );
     expect(feed).not.toContain("https://support.yeon.world/nexa/guides");
   });

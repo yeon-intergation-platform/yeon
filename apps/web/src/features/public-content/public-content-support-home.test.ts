@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import {
-  getPublicContentSupportHomeNoticeEntry,
   getPublicContentSupportHomeProblemEntries,
   getPublicContentSupportHomeReportEntry,
   getPublicContentSupportHomeServiceEntries,
@@ -59,16 +58,6 @@ describe("public content support home", () => {
     });
     expect(entries.every((entry) => entry.articleCount > 0)).toBe(true);
     expect(entries.every((entry) => entry.description.length > 0)).toBe(true);
-  });
-
-  it("support 홈 최근 공지는 실제 News 공지를 재사용한다", () => {
-    expect(getPublicContentSupportHomeNoticeEntry()).toMatchObject({
-      href: "/news/notice/public-content-network-start",
-      article: {
-        channel: "news",
-        title: "YEON 공개 도움말, 뉴스, 블로그 채널을 분리합니다",
-      },
-    });
   });
 
   it("support 홈 오류 신고 CTA는 공개 문의 이메일을 제공한다", () => {

@@ -1,6 +1,5 @@
 import { ArrowRight, MessageCircle } from "lucide-react";
 import type {
-  PublicContentSupportHomeNoticeEntry,
   PublicContentSupportHomeProblemEntry,
   PublicContentSupportHomeReportEntry,
   PublicContentSupportHomeServiceEntry,
@@ -11,53 +10,22 @@ import { PublicContentTrackedLink } from "./public-content-tracked-link";
 export function PublicContentSupportHomeHero({
   description,
   eyebrow,
-  noticeEntry,
   title,
 }: {
   description: string;
   eyebrow: string;
-  noticeEntry: PublicContentSupportHomeNoticeEntry | null;
   title: string;
 }) {
   return (
     <section className="mx-auto max-w-6xl px-6 pb-8 pt-12 md:px-8 md:pb-10 md:pt-14">
-      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start">
-        <div>
-          <p className="text-[13px] font-semibold text-[#555]">{eyebrow}</p>
-          <h1 className="mt-4 max-w-3xl text-[42px] font-semibold leading-[1.12] tracking-[-0.045em] text-[#111] md:text-[52px]">
-            {title}
-          </h1>
-          <p className="mt-5 max-w-2xl text-[16px] leading-7 text-[#666]">
-            {description}
-          </p>
-        </div>
-        <aside className="min-w-0 lg:pt-1">
-          {noticeEntry ? (
-            <PublicContentTrackedLink
-              href={noticeEntry.href}
-              className="block border border-[#e5e5e5] bg-[#fafafa] p-5 text-[#111] no-underline transition-colors hover:border-[#111] hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#111]"
-              trackingParams={{
-                category: noticeEntry.article.category,
-                channel: "support",
-                link_kind: "article_card",
-                service: noticeEntry.article.service,
-                slug: noticeEntry.article.slugSegments.join("/"),
-                target_title: noticeEntry.article.title,
-              }}
-            >
-              <p className="text-[12px] font-semibold text-[#555]">최근 공지</p>
-              <h2 className="mt-3 text-[18px] font-semibold leading-7 text-[#111]">
-                {noticeEntry.article.title}
-              </h2>
-              <p className="mt-3 text-[14px] leading-6 text-[#666]">
-                {noticeEntry.article.summary}
-              </p>
-              <span className="mt-5 flex items-center gap-2 text-[13px] font-semibold text-[#111]">
-                공지사항 보기 <ArrowRight aria-hidden="true" size={15} />
-              </span>
-            </PublicContentTrackedLink>
-          ) : null}
-        </aside>
+      <div>
+        <p className="text-[13px] font-semibold text-[#555]">{eyebrow}</p>
+        <h1 className="mt-4 max-w-3xl text-[42px] font-semibold leading-[1.12] tracking-[-0.045em] text-[#111] md:text-[52px]">
+          {title}
+        </h1>
+        <p className="mt-5 max-w-2xl text-[16px] leading-7 text-[#666]">
+          {description}
+        </p>
       </div>
     </section>
   );

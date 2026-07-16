@@ -9,17 +9,14 @@ describe("public content blog home", () => {
   it("blog 홈은 최신 글을 먼저 파생한다", () => {
     const model = getPublicContentBlogHomeModel();
 
-    expect(model.articleCount).toBeGreaterThanOrEqual(
-      model.visibleArticles.length
-    );
+    expect(model.visibleArticles).toHaveLength(model.articleCount);
     expect(model.visibleArticles.length).toBeGreaterThan(0);
-    expect(model.visibleArticles.length).toBeLessThanOrEqual(4);
     expect(
       model.visibleArticles.every((article) => article.channel === "blog")
     ).toBe(true);
   });
 
-  it("blog 홈은 정책 분류 4개를 목적과 문서 수로 나눈다", () => {
+  it("blog 홈은 실제 발행된 분류를 목적과 문서 수로 나눈다", () => {
     const model = getPublicContentBlogHomeModel();
 
     expect(
@@ -38,11 +35,6 @@ describe("public content blog home", () => {
         key: "product",
         label: "제품 글",
         purpose: "사용자 문제와 제품 판단",
-      },
-      {
-        key: "devlog",
-        label: "개발 일지",
-        purpose: "진행 상황과 배운 점",
       },
       {
         key: "essay",
