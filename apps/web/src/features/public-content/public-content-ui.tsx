@@ -9,7 +9,10 @@ import {
 } from "./public-content-breadcrumb";
 import { PublicContentBreadcrumb } from "./public-content-breadcrumb-view";
 import { PublicContentArticleCard } from "./public-content-article-card";
-import { getPublicContentBlogHomeModel } from "./public-content-blog-home";
+import {
+  getPublicContentBlogHomeModel,
+  type PublicContentBlogCategory,
+} from "./public-content-blog-home";
 import { PublicContentBlogHomePriority } from "./public-content-blog-home-view";
 import { PublicContentBlockView } from "./public-content-block-view";
 import { getPublicContentRelatedArticles } from "./public-content-related-articles";
@@ -76,6 +79,7 @@ import {
 import { PublicContentTrackedLink } from "./public-content-tracked-link";
 
 type PublicContentHomeProps = {
+  blogCategory?: PublicContentBlogCategory;
   channel: PublicContentChannel;
   supportSearchQuery?: string;
 };
@@ -558,6 +562,7 @@ function getPublicContentHomeHeroClassName(channel: PublicContentChannel) {
 }
 
 export function PublicContentHome({
+  blogCategory,
   channel,
   supportSearchQuery,
 }: PublicContentHomeProps) {
@@ -568,7 +573,7 @@ export function PublicContentHome({
       : null;
   const blogHomeModel =
     channel === PUBLIC_CONTENT_CHANNELS.blog
-      ? getPublicContentBlogHomeModel()
+      ? getPublicContentBlogHomeModel(blogCategory)
       : null;
   const supportServices =
     channel === PUBLIC_CONTENT_CHANNELS.support

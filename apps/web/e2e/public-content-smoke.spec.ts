@@ -723,6 +723,42 @@ test.describe("public content SEO smoke", () => {
     ).toHaveCount(0);
   });
 
+  test("blog category filters keep the home screen and scroll position", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1440, height: 960 });
+    await page.goto("/blog");
+
+    const homeHeading = page.getByRole("heading", {
+      name: "제품을 만들며 남기는 기술과 결정의 기록",
+    });
+    const productFilter = page.getByRole("button", { name: /제품 글/ });
+
+    await expect(homeHeading).toBeVisible();
+    await expect(productFilter).toHaveAttribute("aria-pressed", "false");
+    await productFilter.scrollIntoViewIfNeeded();
+    await page.evaluate(() => {
+      document.documentElement.scrollTop = 260;
+    });
+
+    const scrollBeforeFilter = await page.evaluate(() => window.scrollY);
+    await productFilter.click();
+
+    await expect(page).toHaveURL(/\/blog\?category=product$/);
+    await expect(homeHeading).toBeVisible();
+    await expect(productFilter).toHaveAttribute("aria-pressed", "true");
+    await expect(page.getByRole("heading", { name: /제품 글/ })).toBeVisible();
+    await expect
+      .poll(async () => page.evaluate(() => window.scrollY))
+      .toBeGreaterThanOrEqual(scrollBeforeFilter - 8);
+
+    await page.reload();
+
+    await expect(homeHeading).toBeVisible();
+    await expect(productFilter).toHaveAttribute("aria-pressed", "true");
+    await expect(page.getByRole("heading", { name: /제품 글/ })).toBeVisible();
+  });
+
   test("public content home has no color contrast violations", async ({
     page,
   }) => {
