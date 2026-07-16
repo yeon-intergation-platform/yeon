@@ -187,6 +187,9 @@ export const publicContentArticleDetailDtoSchema =
     bodyMarkdown: z.string().min(1).max(120000),
     ctaLabel: z.string().min(1).max(80).nullable(),
     ctaHref: publicContentCtaHrefSchema,
+    metaTitle: z.string().min(1).max(180).nullable().default(null),
+    metaDescription: z.string().min(1).max(260).nullable().default(null),
+    ogImageUrl: publicContentOptionalUrlSchema.default(null),
   });
 export type PublicContentArticleDetailDto = z.infer<
   typeof publicContentArticleDetailDtoSchema
@@ -206,22 +209,109 @@ export const publicContentAdminArticleDtoSchema =
     sourceRepo: z.string().min(1).max(160).nullable(),
     sourcePaths: z.array(z.string().min(1).max(2048)).default([]),
     redirectTo: publicContentOptionalUrlSchema,
+    version: z.number().int().positive().default(1),
+    publishedRevisionId: z.string().min(1).max(80).nullable().default(null),
   });
 export type PublicContentAdminArticleDto = z.infer<
   typeof publicContentAdminArticleDtoSchema
 >;
 
-export const publicContentImportManuscriptFrontmatterSchema = z
+const publicContentNullableTextSchema = (maxLength: number) =>
+  z.string().trim().min(1).max(maxLength).nullable();
+
+const publicContentEditableArticleFieldsSchema = z
   .object({
+    channel: publicContentChannelSchema,
+    serviceKey: publicContentServiceKeySchema,
+    category: publicContentCategorySchema,
+    slug: publicContentSlugSchema,
     title: z.string().trim().min(1).max(160),
     description: z.string().trim().min(1).max(240),
+    summary: z.string().trim().min(1).max(320),
+    bodyFormat: z
+      .literal(PUBLIC_CONTENT_BODY_FORMATS.markdown)
+      .default(PUBLIC_CONTENT_BODY_FORMATS.markdown),
+    bodyMarkdown: z.string().trim().min(1).max(120000),
+    ctaLabel: publicContentNullableTextSchema(80),
+    ctaHref: publicContentCtaHrefSchema,
+    visibility: publicContentVisibilitySchema,
+    noindex: z.boolean(),
+    metaTitle: publicContentNullableTextSchema(180),
+    metaDescription: publicContentNullableTextSchema(260),
+    ogImageUrl: publicContentOptionalUrlSchema,
+    authorKey: z.string().trim().min(1).max(80),
+    sourceRepo: publicContentNullableTextSchema(160),
+    sourcePaths: z.array(z.string().trim().min(1).max(2048)).max(100),
+    redirectTo: publicContentOptionalUrlSchema,
+  })
+  .strict();
+
+export const createPublicContentArticleBodySchema =
+  publicContentEditableArticleFieldsSchema;
+export type CreatePublicContentArticleBody = z.infer<
+  typeof createPublicContentArticleBodySchema
+>;
+
+export const updatePublicContentArticleBodySchema =
+  publicContentEditableArticleFieldsSchema.extend({
+    version: z.number().int().positive(),
+  });
+export type UpdatePublicContentArticleBody = z.infer<
+  typeof updatePublicContentArticleBodySchema
+>;
+
+export const transitionPublicContentArticleBodySchema = z
+  .object({
+    version: z.number().int().positive(),
+  })
+  .strict();
+export type TransitionPublicContentArticleBody = z.infer<
+  typeof transitionPublicContentArticleBodySchema
+>;
+
+export const publicContentRevisionDtoSchema = z.object({
+  id: z.string().min(1).max(80),
+  articleId: z.string().min(1).max(80),
+  revisionNumber: z.number().int().positive(),
+  title: z.string().min(1).max(160),
+  bodyMarkdown: z.string().min(1).max(120000),
+  publishedAt: z.string().datetime(),
+  createdBy: z.string().uuid().nullable(),
+});
+export type PublicContentRevisionDto = z.infer<
+  typeof publicContentRevisionDtoSchema
+>;
+
+export const publicContentRevisionListResponseSchema = z.object({
+  revisions: z.array(publicContentRevisionDtoSchema),
+});
+export type PublicContentRevisionListResponse = z.infer<
+  typeof publicContentRevisionListResponseSchema
+>;
+
+export const publicContentImportManuscriptFrontmatterSchema = z
+  .object({
+    schema_version: z.literal("1").default("1"),
+    title: z.string().trim().min(1).max(160),
+    description: z.string().trim().min(1).max(240),
+    summary: z.string().trim().min(1).max(320).optional(),
     channel: publicContentChannelSchema,
     service: publicContentServiceKeySchema,
     category: publicContentCategorySchema,
     slug: publicContentSlugSchema,
     status: publicContentStatusSchema,
+    visibility: publicContentVisibilitySchema.optional(),
+    noindex: z.enum(["true", "false"]).optional(),
+    meta_title: z.string().trim().min(1).max(180).optional(),
+    meta_description: z.string().trim().min(1).max(260).optional(),
+    og_image_url: z.string().url().max(2048).optional(),
+    cta_label: z.string().trim().min(1).max(80).optional(),
+    cta_href: z.string().trim().min(1).max(2048).optional(),
+    author_key: z.string().trim().min(1).max(80).optional(),
     source_repo: z.string().trim().min(1).max(160),
     source_path: z.array(z.string().trim().min(1).max(2048)).default([]),
+    redirect_to: z.string().url().max(2048).optional(),
+    content_version: z.string().regex(/^\d+$/).optional(),
   })
   .strict();
 export type PublicContentImportManuscriptFrontmatter = z.infer<
@@ -252,6 +342,20 @@ export type PublicContentArticleResponse = z.infer<
   typeof publicContentArticleResponseSchema
 >;
 
+export const publicContentRedirectResponseSchema = z.object({
+  redirectTo: z.string().url().max(2048),
+});
+export type PublicContentRedirectResponse = z.infer<
+  typeof publicContentRedirectResponseSchema
+>;
+
+export const publicContentSnapshotResponseSchema = z.object({
+  articles: z.array(publicContentArticleDetailDtoSchema),
+});
+export type PublicContentSnapshotResponse = z.infer<
+  typeof publicContentSnapshotResponseSchema
+>;
+
 export const publicContentSitemapResponseSchema = z.object({
   entries: z.array(publicContentSitemapEntryDtoSchema),
 });
@@ -275,8 +379,12 @@ export type PublicContentAdminArticleResponse = z.infer<
 
 export const PUBLIC_CONTENT_API_PATHS = {
   publicList: "/api/v1/content",
+  publicSnapshot: "/api/v1/content/snapshot",
   publicArticle(channel: PublicContentChannel, slug: string) {
     return `/api/v1/content/${channel}/${slug}`;
+  },
+  publicRedirect(channel: PublicContentChannel) {
+    return `/api/v1/content/${channel}/redirect`;
   },
   publicSitemap(channel: PublicContentChannel) {
     return `/api/v1/content/${channel}/sitemap`;
@@ -285,4 +393,23 @@ export const PUBLIC_CONTENT_API_PATHS = {
   adminArticle(articleId: string) {
     return `/api/v1/admin/content/${articleId}`;
   },
+  adminReview(articleId: string) {
+    return `/api/v1/admin/content/${articleId}/review`;
+  },
+  adminPublish(articleId: string) {
+    return `/api/v1/admin/content/${articleId}/publish`;
+  },
+  adminArchive(articleId: string) {
+    return `/api/v1/admin/content/${articleId}/archive`;
+  },
+  adminRestore(articleId: string) {
+    return `/api/v1/admin/content/${articleId}/restore`;
+  },
+  adminRevisions(articleId: string) {
+    return `/api/v1/admin/content/${articleId}/revisions`;
+  },
+  adminExport(articleId: string) {
+    return `/api/v1/admin/content/${articleId}/export`;
+  },
+  adminBatchExport: "/api/v1/admin/content/export",
 } as const;

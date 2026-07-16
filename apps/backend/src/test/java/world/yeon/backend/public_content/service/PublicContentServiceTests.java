@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -51,6 +52,9 @@ class PublicContentServiceTests {
 
 		assertThat(response.article().bodyMarkdown()).contains("본문입니다.");
 		assertThat(response.article().ctaHref()).isEqualTo("/nexa/guides/discord-bot-permissions");
+		assertThat(response.article().metaTitle()).isEqualTo("검색 제목입니다.");
+		assertThat(response.article().ogImageUrl())
+			.isEqualTo("https://cdn.yeon.world/public-content/example.png");
 	}
 
 	@Test
@@ -67,10 +71,49 @@ class PublicContentServiceTests {
 	}
 
 	@Test
+	void snapshot은목록과동일하게채널서비스분류를필터링한다() {
+		when(repository.findAll()).thenReturn(List.of(
+			article("support", "nexa", "guides", "nexa/guides/add-nexa-discord-bot"),
+			article("support", "card", "guides", "card/guides/create-flashcard-deck"),
+			article("blog", "nexa", "engineering", "engineering/nexa-architecture")
+		));
+
+		var response = service.getSnapshot("support", "nexa", "guides");
+
+		assertThat(response.articles())
+			.extracting("slug")
+			.containsExactly("nexa/guides/add-nexa-discord-bot");
+	}
+
+	@Test
+	void 보관글redirect는별도공개계약으로반환한다() {
+		when(repository.findArchivedRedirect(
+			"blog",
+			"engineering/old-article"
+		)).thenReturn(Optional.of("https://blog.yeon.world/product/new-article"));
+
+		var response = service.getArchivedRedirect("blog", "engineering/old-article");
+
+		assertThat(response.redirectTo())
+			.isEqualTo("https://blog.yeon.world/product/new-article");
+	}
+
+	@Test
 	void 없는글은404서비스오류를던진다() {
 		when(repository.findAll()).thenReturn(List.of());
 
 		assertThatThrownBy(() -> service.getArticle("support", "nexa/guides/missing"))
+			.isInstanceOf(PublicContentServiceException.class)
+			.extracting("status")
+			.isEqualTo(404);
+	}
+
+	@Test
+	void redirect가없는보관글은404서비스오류를던진다() {
+		when(repository.findArchivedRedirect("blog", "engineering/missing"))
+			.thenReturn(Optional.empty());
+
+		assertThatThrownBy(() -> service.getArchivedRedirect("blog", "engineering/missing"))
 			.isInstanceOf(PublicContentServiceException.class)
 			.extracting("status")
 			.isEqualTo(404);
@@ -105,7 +148,9 @@ class PublicContentServiceTests {
 			"본문입니다.",
 			"권한 가이드 보기",
 			"/nexa/guides/discord-bot-permissions",
+			"검색 제목입니다.",
 			"설명입니다.",
+			"https://cdn.yeon.world/public-content/example.png",
 			List.of("apps/backend/src/main/resources/public-content/articles.json")
 		);
 	}

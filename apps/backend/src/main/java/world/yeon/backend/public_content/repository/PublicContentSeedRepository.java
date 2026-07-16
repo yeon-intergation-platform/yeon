@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.beans.factory.annotation.Value;
@@ -17,7 +18,9 @@ import org.springframework.stereotype.Repository;
 	havingValue = "seed",
 	matchIfMissing = true
 )
-public class PublicContentSeedRepository implements PublicContentArticleStore {
+public class PublicContentSeedRepository implements
+	PublicContentArticleStore,
+	PublicContentAdminArticleStore {
 	private final List<PublicContentArticleRecord> articles;
 
 	public PublicContentSeedRepository(
@@ -30,6 +33,18 @@ public class PublicContentSeedRepository implements PublicContentArticleStore {
 	@Override
 	public List<PublicContentArticleRecord> findAll() {
 		return articles;
+	}
+
+	@Override
+	public Optional<String> findArchivedRedirect(String channel, String slug) {
+		return Optional.empty();
+	}
+
+	@Override
+	public List<PublicContentAdminArticleRecord> findAllForAdmin() {
+		return articles.stream()
+			.map(PublicContentAdminArticleRecord::fromPublishedArticle)
+			.toList();
 	}
 
 	private List<PublicContentArticleRecord> loadArticles(

@@ -25,6 +25,7 @@ export const PUBLIC_CONTENT_SERVICES = {
   card: "card",
   community: "community",
   account: "account",
+  yeon: "yeon",
 } as const;
 
 export type PublicContentService =
@@ -137,8 +138,12 @@ export type PublicContentArticle = {
   readingMinutes: number;
   ctaLabel?: string;
   ctaHref?: string;
+  metaTitle?: string;
+  metaDescription?: string;
+  ogImageUrl?: string;
   sourcePaths: readonly string[];
   body: readonly PublicContentBlock[];
+  bodyMarkdown?: string;
 };
 
 export type PublicContentCollection = {
@@ -223,6 +228,7 @@ export const PUBLIC_CONTENT_SERVICE_LABELS = {
   card: "플래시카드",
   community: "커뮤니티",
   account: "계정/정책",
+  yeon: "YEON",
 } as const satisfies Record<PublicContentService, string>;
 
 export const PUBLIC_CONTENT_CATEGORY_LABELS = {
@@ -3289,10 +3295,13 @@ export function getPublicContentChannelConfig(channel: PublicContentChannel) {
   return PUBLIC_CONTENT_CHANNEL_CONFIG[channel];
 }
 
-export function getPublicContentArticles(channel?: PublicContentChannel) {
+export function getPublicContentArticles(
+  channel?: PublicContentChannel,
+  sourceArticles: readonly PublicContentArticle[] = PUBLIC_CONTENT_ARTICLES
+) {
   return channel
-    ? PUBLIC_CONTENT_ARTICLES.filter((article) => article.channel === channel)
-    : [...PUBLIC_CONTENT_ARTICLES];
+    ? sourceArticles.filter((article) => article.channel === channel)
+    : [...sourceArticles];
 }
 
 function compareArticlesByDate(
@@ -3304,12 +3313,13 @@ function compareArticlesByDate(
 
 export function getPublicContentArticleBySlug(
   channel: PublicContentChannel,
-  slugSegments: readonly string[]
+  slugSegments: readonly string[],
+  sourceArticles: readonly PublicContentArticle[] = PUBLIC_CONTENT_ARTICLES
 ) {
   const slug = slugSegments.join("/");
 
   return (
-    PUBLIC_CONTENT_ARTICLES.find(
+    sourceArticles.find(
       (article) =>
         article.channel === channel && article.slugSegments.join("/") === slug
     ) ?? null
@@ -3329,10 +3339,13 @@ export function getPublicContentServiceLabel(service: PublicContentService) {
 }
 
 export function getPublicContentServicesForChannel(
-  channel: PublicContentChannel
+  channel: PublicContentChannel,
+  sourceArticles: readonly PublicContentArticle[] = PUBLIC_CONTENT_ARTICLES
 ) {
   const services = new Set(
-    getPublicContentArticles(channel).map((article) => article.service)
+    getPublicContentArticles(channel, sourceArticles).map(
+      (article) => article.service
+    )
   );
 
   return [...services];
@@ -3386,7 +3399,8 @@ function getFirstCollectionArticle(articles: readonly PublicContentArticle[]) {
 
 function getCollectionArticles(
   channel: PublicContentChannel,
-  slugSegments: readonly string[]
+  slugSegments: readonly string[],
+  sourceArticles: readonly PublicContentArticle[] = PUBLIC_CONTENT_ARTICLES
 ) {
   const [firstSegment, secondSegment] = slugSegments;
 
@@ -3394,7 +3408,7 @@ function getCollectionArticles(
     return [];
   }
 
-  return getPublicContentArticles(channel)
+  return getPublicContentArticles(channel, sourceArticles)
     .filter((article) => {
       if (channel === PUBLIC_CONTENT_CHANNELS.support) {
         if (slugSegments.length === 1) {
@@ -3511,9 +3525,10 @@ function buildCollectionDescription({
 
 export function getPublicContentCollectionBySlug(
   channel: PublicContentChannel,
-  slugSegments: readonly string[]
+  slugSegments: readonly string[],
+  sourceArticles: readonly PublicContentArticle[] = PUBLIC_CONTENT_ARTICLES
 ): PublicContentCollection | null {
-  const articles = getCollectionArticles(channel, slugSegments);
+  const articles = getCollectionArticles(channel, slugSegments, sourceArticles);
   if (articles.length === 0) return null;
 
   return {
@@ -3531,10 +3546,13 @@ export function getPublicContentCollectionBySlug(
   };
 }
 
-export function getPublicContentCollections(channel: PublicContentChannel) {
+export function getPublicContentCollections(
+  channel: PublicContentChannel,
+  sourceArticles: readonly PublicContentArticle[] = PUBLIC_CONTENT_ARTICLES
+) {
   const collectionSlugs = new Map<string, readonly string[]>();
 
-  for (const article of getPublicContentArticles(channel)) {
+  for (const article of getPublicContentArticles(channel, sourceArticles)) {
     const candidates =
       channel === PUBLIC_CONTENT_CHANNELS.support
         ? [[article.service], [article.service, article.category]]
@@ -3554,7 +3572,7 @@ export function getPublicContentCollections(channel: PublicContentChannel) {
 
   return [...collectionSlugs.values()]
     .map((slugSegments) =>
-      getPublicContentCollectionBySlug(channel, slugSegments)
+      getPublicContentCollectionBySlug(channel, slugSegments, sourceArticles)
     )
     .filter((collection): collection is PublicContentCollection =>
       Boolean(collection)
@@ -3609,7 +3627,9 @@ export function resolvePublicContentNavigationHref(href: string) {
   }
 }
 
-export function getPublicContentSitemapEntries(): PublicContentSitemapEntry[] {
+export function getPublicContentSitemapEntries(
+  sourceArticles: readonly PublicContentArticle[] = PUBLIC_CONTENT_ARTICLES
+): PublicContentSitemapEntry[] {
   return [
     ...Object.values(PUBLIC_CONTENT_CHANNEL_CONFIG).map((config) => ({
       url: config.host,
@@ -3617,14 +3637,16 @@ export function getPublicContentSitemapEntries(): PublicContentSitemapEntry[] {
       priority: 0.7,
     })),
     ...Object.values(PUBLIC_CONTENT_CHANNELS).flatMap((channel) =>
-      getPublicContentCollections(channel).map((collection) => ({
-        url: collection.canonicalUrl,
-        lastModified: collection.lastModified,
-        changeFrequency: "weekly" as const,
-        priority: 0.6,
-      }))
+      getPublicContentCollections(channel, sourceArticles).map(
+        (collection) => ({
+          url: collection.canonicalUrl,
+          lastModified: collection.lastModified,
+          changeFrequency: "weekly" as const,
+          priority: 0.6,
+        })
+      )
     ),
-    ...PUBLIC_CONTENT_ARTICLES.map((article) => {
+    ...sourceArticles.map((article) => {
       const changeFrequency: PublicContentSitemapEntry["changeFrequency"] =
         article.channel === "support" ? "monthly" : "weekly";
 

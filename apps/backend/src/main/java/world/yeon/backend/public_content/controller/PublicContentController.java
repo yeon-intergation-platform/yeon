@@ -12,7 +12,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import world.yeon.backend.public_content.dto.PublicContentDtos.PublicContentArticleListResponse;
 import world.yeon.backend.public_content.dto.PublicContentDtos.PublicContentArticleResponse;
+import world.yeon.backend.public_content.dto.PublicContentDtos.PublicContentRedirectResponse;
 import world.yeon.backend.public_content.dto.PublicContentDtos.PublicContentSitemapResponse;
+import world.yeon.backend.public_content.dto.PublicContentDtos.PublicContentSnapshotResponse;
 import world.yeon.backend.public_content.service.PublicContentService;
 import world.yeon.backend.public_content.service.PublicContentServiceException;
 import world.yeon.backend.common.error.ApiErrorResponse;
@@ -38,6 +40,23 @@ public class PublicContentController {
 	@GetMapping("/api/v1/content/{channel}/sitemap")
 	public PublicContentSitemapResponse sitemap(@PathVariable String channel) {
 		return service.getSitemap(channel);
+	}
+
+	@GetMapping("/api/v1/content/snapshot")
+	public PublicContentSnapshotResponse snapshot(
+		@RequestParam(value = "channel", required = false) String channel,
+		@RequestParam(value = "serviceKey", required = false) String serviceKey,
+		@RequestParam(value = "category", required = false) String category
+	) {
+		return service.getSnapshot(channel, serviceKey, category);
+	}
+
+	@GetMapping("/api/v1/content/{channel}/redirect")
+	public PublicContentRedirectResponse redirect(
+		@PathVariable String channel,
+		@RequestParam("slug") String slug
+	) {
+		return service.getArchivedRedirect(channel, slug);
 	}
 
 	@GetMapping("/api/v1/content/{channel}/**")

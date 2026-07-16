@@ -5,9 +5,13 @@ import {
   PUBLIC_CONTENT_CHANNELS,
   publicContentArticleResponseSchema,
   publicContentAdminArticleResponseSchema,
+  createPublicContentArticleBodySchema,
   publicContentImportManuscriptFrontmatterSchema,
   publicContentListQuerySchema,
+  publicContentRedirectResponseSchema,
   publicContentSlugSchema,
+  publicContentSnapshotResponseSchema,
+  transitionPublicContentArticleBodySchema,
 } from "../public-content";
 
 describe("public content API contract", () => {
@@ -31,6 +35,17 @@ describe("public content API contract", () => {
     ).toBe("nexa/guides/add-nexa-discord-bot");
     expect(() => publicContentSlugSchema.parse("NEXA/guides")).toThrow();
     expect(() => publicContentSlugSchema.parse("nexa//guides")).toThrow();
+  });
+
+  it("defines archived redirect as a separate public response", () => {
+    expect(
+      publicContentRedirectResponseSchema.parse({
+        redirectTo: "https://blog.yeon.world/product/new-article",
+      })
+    ).toEqual({ redirectTo: "https://blog.yeon.world/product/new-article" });
+    expect(PUBLIC_CONTENT_API_PATHS.publicRedirect("blog")).toBe(
+      "/api/v1/content/blog/redirect"
+    );
   });
 
   it("validates portable public article responses", () => {
@@ -187,5 +202,71 @@ describe("public content API contract", () => {
     expect(PUBLIC_CONTENT_API_PATHS.adminArticle("article-1")).toBe(
       "/api/v1/admin/content/article-1"
     );
+    expect(PUBLIC_CONTENT_API_PATHS.adminPublish("article-1")).toBe(
+      "/api/v1/admin/content/article-1/publish"
+    );
+    expect(PUBLIC_CONTENT_API_PATHS.adminBatchExport).toBe(
+      "/api/v1/admin/content/export"
+    );
+  });
+
+  it("validates strict Markdown create and transition requests", () => {
+    const body = createPublicContentArticleBodySchema.parse({
+      channel: "blog",
+      serviceKey: "yeon",
+      category: "engineering",
+      slug: "engineering/markdown-cms",
+      title: "Markdown CMS",
+      description: "관리자가 Markdown으로 작성합니다.",
+      summary: "작성과 발행을 관리합니다.",
+      bodyMarkdown: "## 시작\n\n본문입니다.",
+      ctaLabel: null,
+      ctaHref: null,
+      visibility: "public",
+      noindex: false,
+      metaTitle: null,
+      metaDescription: null,
+      ogImageUrl: null,
+      authorKey: "yeon",
+      sourceRepo: "yeon",
+      sourcePaths: [],
+      redirectTo: null,
+    });
+
+    expect(body.bodyFormat).toBe("markdown");
+    expect(
+      transitionPublicContentArticleBodySchema.parse({ version: 3 })
+    ).toEqual({ version: 3 });
+    expect(() =>
+      transitionPublicContentArticleBodySchema.parse({
+        version: 3,
+        force: true,
+      })
+    ).toThrow();
+  });
+
+  it("validates the published snapshot used by public pages", () => {
+    const snapshot = publicContentSnapshotResponseSchema.parse({
+      articles: [
+        {
+          channel: "news",
+          serviceKey: "yeon",
+          category: "updates",
+          slug: "updates/markdown-cms",
+          title: "Markdown CMS 공개",
+          description: "관리자 CMS 공개 소식입니다.",
+          summary: "발행본만 공개 화면에 반영합니다.",
+          canonicalUrl: "https://news.yeon.world/updates/markdown-cms",
+          publishedAt: "2026-07-16T00:00:00.000Z",
+          updatedAt: "2026-07-16T00:00:00.000Z",
+          readingMinutes: 1,
+          bodyMarkdown: "## 변경 내용\n\n본문입니다.",
+          ctaLabel: null,
+          ctaHref: null,
+        },
+      ],
+    });
+
+    expect(snapshot.articles[0]?.bodyFormat).toBe("markdown");
   });
 });

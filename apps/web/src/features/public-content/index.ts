@@ -3,7 +3,6 @@ export {
   PublicContentHome,
   getPublicContentArticleMetadata,
   getPublicContentHomeMetadata,
-  getPublicContentStaticParams,
 } from "./public-content-ui";
 export { PublicContentNotFound } from "./public-content-not-found-view";
 export { getPublicContentBlogCategory } from "./public-content-blog-home";

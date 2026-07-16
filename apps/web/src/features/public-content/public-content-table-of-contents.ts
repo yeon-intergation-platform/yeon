@@ -2,6 +2,7 @@ import {
   PUBLIC_CONTENT_CHANNELS,
   type PublicContentArticle,
 } from "./public-content-data";
+import { getPublicContentMarkdownHeadings } from "./public-content-markdown";
 
 export type PublicContentTableOfContentsItem = {
   blockIndex: number;
@@ -14,8 +15,18 @@ function buildPublicContentHeadingId(headingIndex: number) {
 }
 
 export function buildPublicContentTableOfContents(
-  article: Pick<PublicContentArticle, "body">
+  article: Pick<PublicContentArticle, "body" | "bodyMarkdown">
 ): readonly PublicContentTableOfContentsItem[] {
+  if (article.bodyMarkdown) {
+    return getPublicContentMarkdownHeadings(article.bodyMarkdown).map(
+      (heading, blockIndex) => ({
+        blockIndex,
+        id: heading.id,
+        title: heading.title,
+      })
+    );
+  }
+
   const items: PublicContentTableOfContentsItem[] = [];
 
   article.body.forEach((block, blockIndex) => {

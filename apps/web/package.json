@@ -16,6 +16,7 @@
     "public-content:coverage-report": "tsx scripts/report-public-content-coverage.ts",
     "public-content:governance-report": "tsx scripts/report-public-content-governance.ts",
     "public-content:import:dry-run": "tsx scripts/dry-run-public-content-import.ts",
+    "public-content:seed:sync": "tsx scripts/sync-public-content-seed.ts",
     "r2:test": "tsx scripts/test-r2-storage.ts",
     "search-console:sitemaps": "node scripts/submit-search-console-sitemaps.mjs",
     "typecheck": "tsc -p tsconfig.json",
@@ -82,6 +83,7 @@
     "resend": "^6.12.2",
     "vaul": "^1.1.2",
     "xlsx": "^0.18.5",
+    "yaml": "^2.8.3",
     "zod": "^4.3.6",
     "zustand": "^5.0.12"
   },

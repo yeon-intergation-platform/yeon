@@ -2,56 +2,20 @@ package world.yeon.backend.public_content.service;
 
 import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.regex.Pattern;
 import org.springframework.stereotype.Service;
 import world.yeon.backend.public_content.dto.PublicContentDtos.PublicContentArticleDetailDto;
 import world.yeon.backend.public_content.dto.PublicContentDtos.PublicContentArticleListResponse;
 import world.yeon.backend.public_content.dto.PublicContentDtos.PublicContentArticleResponse;
+import world.yeon.backend.public_content.dto.PublicContentDtos.PublicContentRedirectResponse;
 import world.yeon.backend.public_content.dto.PublicContentDtos.PublicContentArticleSummaryDto;
 import world.yeon.backend.public_content.dto.PublicContentDtos.PublicContentSitemapEntryDto;
 import world.yeon.backend.public_content.dto.PublicContentDtos.PublicContentSitemapResponse;
+import world.yeon.backend.public_content.dto.PublicContentDtos.PublicContentSnapshotResponse;
 import world.yeon.backend.public_content.repository.PublicContentArticleRecord;
 import world.yeon.backend.public_content.repository.PublicContentArticleStore;
 
 @Service
 public class PublicContentService {
-	private static final Set<String> CHANNELS = Set.of("support", "news", "blog");
-	private static final Set<String> SERVICE_KEYS = Set.of(
-		"nexa",
-		"typing",
-		"card",
-		"community",
-		"account",
-		"yeon"
-	);
-	private static final Set<String> CATEGORIES = Set.of(
-		"getting-started",
-		"guides",
-		"tutorials",
-		"troubleshooting",
-		"faq",
-		"policy",
-		"notice",
-		"updates",
-		"news",
-		"engineering",
-		"product",
-		"devlog",
-		"essay"
-	);
-	private static final Map<String, String> CHANNEL_HOSTS = Map.of(
-		"support",
-		"https://support.yeon.world",
-		"news",
-		"https://news.yeon.world",
-		"blog",
-		"https://blog.yeon.world"
-	);
-	private static final Pattern SLUG_PATTERN = Pattern.compile(
-		"^[a-z0-9]+(?:-[a-z0-9]+)*(?:/[a-z0-9]+(?:-[a-z0-9]+)*)*$"
-	);
 	private static final Comparator<PublicContentArticleRecord> ARTICLE_ORDER =
 		Comparator.comparing(PublicContentArticleRecord::publishedAt)
 			.reversed()
@@ -68,9 +32,7 @@ public class PublicContentService {
 		String serviceKey,
 		String category
 	) {
-		requireOptionalValue(channel, CHANNELS, "지원하지 않는 공개 콘텐츠 채널입니다.");
-		requireOptionalValue(serviceKey, SERVICE_KEYS, "지원하지 않는 공개 콘텐츠 서비스입니다.");
-		requireOptionalValue(category, CATEGORIES, "지원하지 않는 공개 콘텐츠 분류입니다.");
+		validateListFilters(channel, serviceKey, category);
 
 		var articles = repository.findAll().stream()
 			.filter(article -> channel == null || article.channel().equals(channel))
@@ -84,8 +46,8 @@ public class PublicContentService {
 	}
 
 	public PublicContentArticleResponse getArticle(String channel, String slug) {
-		requireValue(channel, CHANNELS, "지원하지 않는 공개 콘텐츠 채널입니다.");
-		requireSlug(slug);
+		requireChannel(channel);
+		PublicContentPolicy.requireSlug(slug);
 
 		return repository.findAll().stream()
 			.filter(article -> article.channel().equals(channel) && article.slug().equals(slug))
@@ -100,8 +62,37 @@ public class PublicContentService {
 			);
 	}
 
+	public PublicContentSnapshotResponse getSnapshot(
+		String channel,
+		String serviceKey,
+		String category
+	) {
+		validateListFilters(channel, serviceKey, category);
+		return new PublicContentSnapshotResponse(
+			repository.findAll().stream()
+				.filter(article -> channel == null || article.channel().equals(channel))
+				.filter(article -> serviceKey == null || article.serviceKey().equals(serviceKey))
+				.filter(article -> category == null || article.category().equals(category))
+				.sorted(ARTICLE_ORDER)
+				.map(this::toDetail)
+				.toList()
+		);
+	}
+
+	public PublicContentRedirectResponse getArchivedRedirect(String channel, String slug) {
+		requireChannel(channel);
+		PublicContentPolicy.requireSlug(slug);
+		return repository.findArchivedRedirect(channel, slug)
+			.map(PublicContentRedirectResponse::new)
+			.orElseThrow(() -> new PublicContentServiceException(
+				404,
+				"PUBLIC_CONTENT_REDIRECT_NOT_FOUND",
+				"보관된 공개 콘텐츠의 redirect를 찾을 수 없습니다."
+			));
+	}
+
 	public PublicContentSitemapResponse getSitemap(String channel) {
-		requireValue(channel, CHANNELS, "지원하지 않는 공개 콘텐츠 채널입니다.");
+		requireChannel(channel);
 
 		var articles = repository.findAll().stream()
 			.filter(article -> article.channel().equals(channel))
@@ -145,7 +136,10 @@ public class PublicContentService {
 			article.bodyFormat(),
 			article.bodyMarkdown(),
 			article.ctaLabel(),
-			article.ctaHref()
+			article.ctaHref(),
+			article.metaTitle(),
+			article.metaDescription(),
+			article.ogImageUrl()
 		);
 	}
 
@@ -159,7 +153,7 @@ public class PublicContentService {
 			.orElse("2026-06-17T00:00:00.000Z");
 
 		return new PublicContentSitemapEntryDto(
-			CHANNEL_HOSTS.get(channel),
+			PublicContentPolicy.channelHost(channel),
 			lastModified,
 			"weekly",
 			0.7
@@ -178,26 +172,27 @@ public class PublicContentService {
 		);
 	}
 
-	private void requireOptionalValue(
-		String value,
-		Set<String> allowedValues,
-		String message
-	) {
-		if (value == null || value.isBlank()) {
-			return;
-		}
-		requireValue(value, allowedValues, message);
-	}
-
-	private void requireValue(String value, Set<String> allowedValues, String message) {
-		if (value == null || value.isBlank() || !allowedValues.contains(value)) {
-			throw new IllegalArgumentException(message);
+	private void requireChannel(String channel) {
+		if (channel == null || !PublicContentPolicy.CHANNELS.contains(channel)) {
+			throw new IllegalArgumentException("지원하지 않는 공개 콘텐츠 채널입니다.");
 		}
 	}
 
-	private void requireSlug(String slug) {
-		if (slug == null || slug.isBlank() || !SLUG_PATTERN.matcher(slug).matches()) {
-			throw new IllegalArgumentException("공개 콘텐츠 slug 형식이 올바르지 않습니다.");
-		}
+	private void validateListFilters(String channel, String serviceKey, String category) {
+		PublicContentPolicy.requireOptionalValue(
+			channel,
+			PublicContentPolicy.CHANNELS,
+			"지원하지 않는 공개 콘텐츠 채널입니다."
+		);
+		PublicContentPolicy.requireOptionalValue(
+			serviceKey,
+			PublicContentPolicy.SERVICE_KEYS,
+			"지원하지 않는 공개 콘텐츠 서비스입니다."
+		);
+		PublicContentPolicy.requireOptionalValue(
+			category,
+			PublicContentPolicy.CATEGORIES,
+			"지원하지 않는 공개 콘텐츠 분류입니다."
+		);
 	}
 }

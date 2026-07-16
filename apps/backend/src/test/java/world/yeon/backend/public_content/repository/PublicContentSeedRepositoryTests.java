@@ -19,13 +19,15 @@ class PublicContentSeedRepositoryTests {
 
 		var articles = repository.findAll();
 
-		assertThat(articles).hasSize(33);
+		assertThat(articles).hasSize(43);
 		assertThat(articles)
 			.extracting(PublicContentArticleRecord::slug)
 			.contains("nexa/guides/add-nexa-discord-bot");
 		assertThat(articles)
 			.extracting(PublicContentArticleRecord::bodyMarkdown)
 			.noneMatch(body -> body.contains("/Users/osuma"));
+		assertThat(repository.findArchivedRedirect("blog", "engineering/old"))
+			.isEmpty();
 	}
 
 	@Test

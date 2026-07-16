@@ -3,6 +3,7 @@ import {
   getPublicContentArticleCardClassificationItems,
   getPublicContentArticleCardMetaItems,
   getPublicContentArticleCardPublicationItems,
+  formatPublicContentDisplayDate,
 } from "./public-content-article-card-meta";
 import {
   PUBLIC_CONTENT_CHANNELS,
@@ -20,7 +21,9 @@ describe("public content article card", () => {
     expect(metaItems).toContain(
       getPublicContentCategoryLabel(article.category)
     );
-    expect(metaItems).toContain(article.publishedAt);
+    expect(metaItems).toContain(
+      formatPublicContentDisplayDate(article.publishedAt)
+    );
     expect(metaItems).toContain(`${article.readingMinutes}분`);
   });
 
@@ -33,8 +36,14 @@ describe("public content article card", () => {
       getPublicContentCategoryLabel(article.category),
     ]);
     expect(getPublicContentArticleCardPublicationItems(article)).toEqual([
-      article.publishedAt.replaceAll("-", "."),
+      formatPublicContentDisplayDate(article.publishedAt).replaceAll("-", "."),
       `${article.readingMinutes}분 읽기`,
     ]);
+  });
+
+  it("Spring ISO 시각은 화면에서 날짜만 표시한다", () => {
+    expect(formatPublicContentDisplayDate("2026-07-16T12:34:56Z")).toBe(
+      "2026-07-16"
+    );
   });
 });

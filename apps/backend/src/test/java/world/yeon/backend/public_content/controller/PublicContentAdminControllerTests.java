@@ -1,9 +1,13 @@
 package world.yeon.backend.public_content.controller;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -21,6 +25,7 @@ import world.yeon.backend.public_content.dto.PublicContentDtos.PublicContentAdmi
 import world.yeon.backend.public_content.dto.PublicContentDtos.PublicContentAdminArticleListResponse;
 import world.yeon.backend.public_content.dto.PublicContentDtos.PublicContentAdminArticleResponse;
 import world.yeon.backend.public_content.service.PublicContentAdminService;
+import world.yeon.backend.public_content.service.PublicContentExportFile;
 import world.yeon.backend.public_content.service.PublicContentServiceException;
 
 @WebMvcTest(PublicContentAdminController.class)
@@ -85,9 +90,63 @@ class PublicContentAdminControllerTests {
 	}
 
 	@Test
-	void 수정메서드는열지않는다() throws Exception {
-		mockMvc.perform(withAdminHeaders(patch("/api/v1/admin/content/draft-1")))
-			.andExpect(status().isMethodNotAllowed());
+	void 수정메서드는version이포함된Markdown원고를받는다() throws Exception {
+		when(service.updateArticle(eq(ADMIN_ID), eq("draft-1"), any()))
+			.thenReturn(new PublicContentAdminArticleResponse(adminArticle()));
+
+		mockMvc.perform(withAdminHeaders(patch("/api/v1/admin/content/draft-1"))
+				.contentType("application/json")
+				.content("""
+					{
+					  "channel": "blog",
+					  "serviceKey": "yeon",
+					  "category": "engineering",
+					  "slug": "engineering/draft-search-console-note",
+					  "title": "Search Console 초안",
+					  "description": "설명입니다.",
+					  "summary": "요약입니다.",
+					  "bodyFormat": "markdown",
+					  "bodyMarkdown": "본문입니다.",
+					  "visibility": "internal",
+					  "noindex": true,
+					  "authorKey": "yeon",
+					  "sourcePaths": [],
+					  "version": 1
+					}
+					"""))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.article.version").value(1));
+	}
+
+	@Test
+	void 발행메서드는낙관적version을받아상태를변경한다() throws Exception {
+		when(service.publish(eq(ADMIN_ID), eq("draft-1"), eq(1L)))
+			.thenReturn(new PublicContentAdminArticleResponse(adminArticle()));
+
+		mockMvc.perform(withAdminHeaders(post("/api/v1/admin/content/draft-1/publish"))
+				.contentType("application/json")
+				.content("{\"version\":1}"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.article.id").value("draft-1"));
+	}
+
+	@Test
+	void 단일Markdown내보내기는첨부파일헤더를반환한다() throws Exception {
+		when(service.exportArticle(eq(ADMIN_ID), eq("draft-1")))
+			.thenReturn(new PublicContentExportFile(
+				"blog-yeon-engineering-example.md",
+				"text/markdown; charset=utf-8",
+				"---\ntitle: example\n---\n".getBytes(java.nio.charset.StandardCharsets.UTF_8)
+			));
+
+		mockMvc.perform(withAdminHeaders(get("/api/v1/admin/content/draft-1/export")))
+			.andExpect(status().isOk())
+			.andExpect(header().string(
+				"Content-Disposition",
+				"attachment; filename=\"blog-yeon-engineering-example.md\""
+			))
+			.andExpect(content().contentType("text/markdown;charset=utf-8"))
+			.andExpect(content().string("---\ntitle: example\n---\n"));
 	}
 
 	private MockHttpServletRequestBuilder withAdminHeaders(
@@ -125,6 +184,8 @@ class PublicContentAdminControllerTests {
 			"yeon",
 			"yeon",
 			List.of("docs/seo/example.md"),
+			null,
+			1,
 			null
 		);
 	}

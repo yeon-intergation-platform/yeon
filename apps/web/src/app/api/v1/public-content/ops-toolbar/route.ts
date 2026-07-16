@@ -5,6 +5,7 @@ import {
   type PublicContentChannel,
 } from "@/features/public-content/public-content-data";
 import { buildPublicContentOpsToolbarModel } from "@/features/public-content/public-content-ops-toolbar";
+import { loadPublishedPublicContentArticles } from "@/features/public-content/public-content-runtime";
 import { NOINDEX_X_ROBOTS_TAG_VALUE } from "@/lib/seo";
 import { getCurrentAdminUser } from "@/server/auth/admin";
 
@@ -44,7 +45,12 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const article = getPublicContentArticleBySlug(channel, slug.split("/"));
+  const articles = await loadPublishedPublicContentArticles(channel);
+  const article = getPublicContentArticleBySlug(
+    channel,
+    slug.split("/"),
+    articles
+  );
   if (!article) {
     return NextResponse.json(
       { message: "운영 확인 대상 글을 찾을 수 없습니다." },

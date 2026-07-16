@@ -467,17 +467,25 @@ function ArticleList({
               </YeonView>
               <YeonView className={SHARED_FEATURE_CLASS.wrapGap2}>
                 <YeonLink
-                  href={row.internalHref}
+                  href={`/admin/content/${row.article.id}/edit`}
                   className={SHARED_FEATURE_CLASS.primaryActionButtonMd13}
                 >
-                  공개 글
+                  편집
                 </YeonLink>
                 <YeonLink
-                  href={row.canonicalUrl}
+                  href={`/api/v1/admin/content/${row.article.id}/export`}
                   className={SHARED_FEATURE_CLASS.ghostButtonMd13}
                 >
-                  canonical
+                  Markdown
                 </YeonLink>
+                {canOpenPublicArticle(row) ? (
+                  <YeonLink
+                    href={row.canonicalUrl}
+                    className={SHARED_FEATURE_CLASS.ghostButtonMd13}
+                  >
+                    공개 글
+                  </YeonLink>
+                ) : null}
               </YeonView>
             </YeonView>
           </YeonView>
@@ -612,13 +620,27 @@ export function AdminPublicContentDashboard({
               공개 콘텐츠 현황
             </YeonText>
           </YeonView>
-          <YeonText
-            variant="unstyled"
-            tone="inherit"
-            className="text-[13px] leading-5 text-[#666]"
-          >
-            마지막 갱신 {formatDate(stats.lastUpdatedAt)}
-          </YeonText>
+          <YeonView className={SHARED_FEATURE_CLASS.wrapGap2}>
+            <YeonLink
+              href="/admin/content/new"
+              className={SHARED_FEATURE_CLASS.primaryActionButtonMd14}
+            >
+              새 글 작성
+            </YeonLink>
+            <YeonLink
+              href="/api/v1/admin/content/export"
+              className={SHARED_FEATURE_CLASS.ghostButtonMd14}
+            >
+              전체 Markdown
+            </YeonLink>
+            <YeonText
+              variant="unstyled"
+              tone="inherit"
+              className="self-center text-[13px] leading-5 text-[#666]"
+            >
+              마지막 갱신 {formatDate(stats.lastUpdatedAt)}
+            </YeonText>
+          </YeonView>
         </YeonView>
 
         <YeonView className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
@@ -840,8 +862,20 @@ export function AdminPublicContentChannelScreen({
           </YeonView>
           <YeonView className={SHARED_FEATURE_CLASS.wrapGap2}>
             <YeonLink
-              href={summary.publicHomeUrl}
+              href={`/admin/content/new?channel=${summary.channel}`}
               className={SHARED_FEATURE_CLASS.primaryActionButtonMd13}
+            >
+              새 글 작성
+            </YeonLink>
+            <YeonLink
+              href={`/api/v1/admin/content/export?channel=${summary.channel}`}
+              className={SHARED_FEATURE_CLASS.ghostButtonMd13}
+            >
+              채널 Markdown
+            </YeonLink>
+            <YeonLink
+              href={summary.publicHomeUrl}
+              className={SHARED_FEATURE_CLASS.ghostButtonMd13}
             >
               공개 홈
             </YeonLink>

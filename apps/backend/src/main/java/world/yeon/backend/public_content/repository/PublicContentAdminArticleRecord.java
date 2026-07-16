@@ -30,7 +30,9 @@ public record PublicContentAdminArticleRecord(
 	String authorKey,
 	String sourceRepo,
 	List<String> sourcePaths,
-	String redirectTo
+	String redirectTo,
+	long version,
+	String publishedRevisionId
 ) {
 	private static final String SEED_SOURCE_PATH =
 		"apps/backend/src/main/resources/public-content/articles.json";
@@ -69,12 +71,14 @@ public record PublicContentAdminArticleRecord(
 			"published",
 			"public",
 			false,
-			null,
+			article.metaTitle(),
 			metaDescription,
-			null,
+			article.ogImageUrl(),
 			"yeon",
 			"yeon",
 			sourcePaths,
+			null,
+			1,
 			null
 		);
 	}

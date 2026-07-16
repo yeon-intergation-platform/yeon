@@ -2,7 +2,6 @@ import {
   PUBLIC_CONTENT_CHANNELS,
   PublicContentArticlePage,
   getPublicContentArticleMetadata,
-  getPublicContentStaticParams,
 } from "@/features/public-content";
 
 type NewsArticleRouteProps = {
@@ -10,10 +9,6 @@ type NewsArticleRouteProps = {
     slug?: string[];
   }>;
 };
-
-export function generateStaticParams() {
-  return getPublicContentStaticParams(PUBLIC_CONTENT_CHANNELS.news);
-}
 
 export async function generateMetadata({ params }: NewsArticleRouteProps) {
   return getPublicContentArticleMetadata({

@@ -58,6 +58,30 @@ describe("public content table of contents", () => {
     ).toEqual([]);
   });
 
+  it("Markdown 원문과 본문 renderer가 같은 heading id를 사용한다", () => {
+    expect(
+      buildPublicContentTableOfContents({
+        body: [],
+        bodyMarkdown: "## 첫 번째\n\n### 두 번째",
+      })
+    ).toEqual([
+      { blockIndex: 0, id: "section-1", title: "첫 번째" },
+      { blockIndex: 1, id: "section-2", title: "두 번째" },
+    ]);
+  });
+
+  it("Setext H2도 Markdown 목차에 포함한다", () => {
+    expect(
+      buildPublicContentTableOfContents({
+        body: [],
+        bodyMarkdown: "Setext 섹션\n---\n\n## ATX 섹션",
+      })
+    ).toEqual([
+      { blockIndex: 0, id: "section-1", title: "Setext 섹션" },
+      { blockIndex: 1, id: "section-2", title: "ATX 섹션" },
+    ]);
+  });
+
   it("blog 목차는 긴 engineering 글에만 기본 노출한다", () => {
     const body = [{ title: "결정 근거", type: "heading" }] as const;
 

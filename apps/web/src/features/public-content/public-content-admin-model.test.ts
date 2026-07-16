@@ -170,6 +170,8 @@ describe("public content admin model", () => {
           sourceRepo: "yeon",
           sourcePaths: ["docs/source.md"],
           redirectTo: null,
+          version: 0,
+          publishedRevisionId: null,
         },
         {
           id: "article-draft",
@@ -198,6 +200,8 @@ describe("public content admin model", () => {
           sourceRepo: "yeon",
           sourcePaths: [],
           redirectTo: null,
+          version: 0,
+          publishedRevisionId: null,
         },
       ],
       sitemapEntries: [
@@ -286,6 +290,8 @@ describe("public content admin model", () => {
           sourceRepo: "yeon",
           sourcePaths: ["apps/backend"],
           redirectTo: null,
+          version: 0,
+          publishedRevisionId: null,
         },
       ],
       sitemapEntries: [],
@@ -298,6 +304,6 @@ describe("public content admin model", () => {
     ]);
     expect(data.seoWarningRows).toHaveLength(0);
     expect(data.rows).toHaveLength(1);
-    expect(data.rows[0].serviceLabel).toBe("yeon");
+    expect(data.rows[0].serviceLabel).toBe("YEON");
   });
 });

@@ -10,7 +10,9 @@ export function getPublicContentArticleCardMetaItems(
   return [
     getPublicContentServiceLabel(article.service),
     getPublicContentCategoryLabel(article.category),
-    ...(article.channel === "support" ? [] : [article.publishedAt]),
+    ...(article.channel === "support"
+      ? []
+      : [formatPublicContentDisplayDate(article.publishedAt)]),
     `${article.readingMinutes}분`,
   ];
 }
@@ -32,7 +34,11 @@ export function getPublicContentArticleCardPublicationItems(
   }
 
   return [
-    article.publishedAt.replaceAll("-", "."),
+    formatPublicContentDisplayDate(article.publishedAt).replaceAll("-", "."),
     `${article.readingMinutes}분 읽기`,
   ];
+}
+
+export function formatPublicContentDisplayDate(value: string) {
+  return value.split("T", 1)[0] ?? value;
 }

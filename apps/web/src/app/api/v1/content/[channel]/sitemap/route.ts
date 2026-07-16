@@ -1,10 +1,7 @@
 import { publicContentChannelSchema } from "@yeon/api-contract/public-content";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-import {
-  PublicContentSpringBackendHttpError,
-  fetchPublicContentSitemapFromSpring,
-} from "@/server/public-content-spring-client";
+import { loadPublicContentSitemap } from "@/server/public-content-public-read";
 import { jsonPublicContentError } from "../../_shared";
 
 export const runtime = "nodejs";
@@ -31,13 +28,9 @@ export async function GET(
 
   try {
     return NextResponse.json(
-      await fetchPublicContentSitemapFromSpring(parsedChannel.data)
+      await loadPublicContentSitemap(parsedChannel.data)
     );
   } catch (error) {
-    if (error instanceof PublicContentSpringBackendHttpError) {
-      return jsonPublicContentError(error.message, error.status);
-    }
-
     console.error(error);
     return jsonPublicContentError(
       "공개 콘텐츠 sitemap을 불러오지 못했습니다.",

@@ -64,13 +64,19 @@ export function normalizePublicContentSearchQuery(value: string | undefined) {
   return value?.trim().replace(/\s+/g, " ") ?? "";
 }
 
-export function searchPublicContentSupportArticles(query: string) {
+export function searchPublicContentSupportArticles(
+  query: string,
+  sourceArticles?: readonly PublicContentArticle[]
+) {
   const normalizedQuery = normalizePublicContentSearchQuery(query);
   if (!normalizedQuery) return [];
 
   const terms = normalizeSearchText(normalizedQuery).split(" ").filter(Boolean);
 
-  return getPublicContentArticles(PUBLIC_CONTENT_CHANNELS.support)
+  return getPublicContentArticles(
+    PUBLIC_CONTENT_CHANNELS.support,
+    sourceArticles
+  )
     .filter((article) => {
       const searchableText = getArticleSearchText(article);
       return terms.every((term) => searchableText.includes(term));
