@@ -97,6 +97,7 @@ type PublicContentRouteProps = {
 
 const CHANNEL_NAV_ITEMS = Object.values(PUBLIC_CONTENT_CHANNEL_CONFIG).map(
   (config) => ({
+    channel: config.channel,
     label: config.label,
     href: config.host,
   })
@@ -230,41 +231,32 @@ function PublicContentShell({
   channel: PublicContentChannel;
   children: ReactNode;
 }) {
-  const activeConfig = getPublicContentChannelConfig(channel);
-
   return (
     <main className="min-h-screen bg-white text-[#111]">
       <CommonProductHeader activeService={channel} />
-      <PublicContentChannelNavigation
-        activeLabel={activeConfig.label}
-        channel={channel}
-      />
       {children}
     </main>
   );
 }
 
 function PublicContentChannelNavigation({
-  activeLabel,
   channel,
+  className,
 }: {
-  activeLabel: string;
   channel: PublicContentChannel;
+  className?: string;
 }) {
   return (
-    <nav
-      aria-label="공개 콘텐츠 채널"
-      className="border-b border-[#e5e5e5] bg-white"
-    >
-      <div className="mx-auto flex max-w-[1400px] gap-2 overflow-x-auto px-6 py-2 md:px-12">
+    <nav aria-label="공개 콘텐츠 채널" className={className}>
+      <div className="flex gap-1.5 overflow-x-auto">
         {CHANNEL_NAV_ITEMS.map((item) => {
-          const isActive = item.label === activeLabel;
+          const isActive = item.channel === channel;
 
           return (
             <PublicContentTrackedLink
               key={item.href}
               href={item.href}
-              className={`inline-flex h-11 shrink-0 items-center rounded-xl border px-4 text-[13px] font-semibold no-underline transition-colors ${
+              className={`inline-flex h-9 shrink-0 items-center rounded-lg border px-3 text-[12px] font-semibold no-underline transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#111] ${
                 isActive
                   ? "border-[#111] bg-[#111] text-white"
                   : "border-[#e5e5e5] text-[#666] hover:border-[#111] hover:text-[#111]"
@@ -589,15 +581,23 @@ export function PublicContentHome({
         data={getJsonLdForHome(channel)}
       />
       <section className={getPublicContentHomeHeroClassName(channel)}>
-        <p className="text-[13px] font-semibold text-[#555]">
-          {config.homeEyebrow}
-        </p>
-        <h1 className="mt-4 max-w-3xl text-[40px] font-semibold leading-tight text-[#111] md:text-[48px]">
-          {config.homeTitle}
-        </h1>
-        <p className="mt-5 max-w-2xl text-[16px] leading-7 text-[#666]">
-          {config.homeDescription}
-        </p>
+        <div className="flex flex-col gap-7 md:flex-row md:items-start md:justify-between">
+          <div>
+            <p className="text-[13px] font-semibold text-[#555]">
+              {config.homeEyebrow}
+            </p>
+            <h1 className="mt-4 max-w-3xl text-[40px] font-semibold leading-tight text-[#111] md:text-[48px]">
+              {config.homeTitle}
+            </h1>
+            <p className="mt-5 max-w-2xl text-[16px] leading-7 text-[#666]">
+              {config.homeDescription}
+            </p>
+          </div>
+          <PublicContentChannelNavigation
+            channel={channel}
+            className="shrink-0 md:mt-1"
+          />
+        </div>
       </section>
       {channel === PUBLIC_CONTENT_CHANNELS.support ? (
         <PublicContentSupportSearch
@@ -706,11 +706,17 @@ function PublicContentCollectionPage({
         data={getJsonLdForCollection(collection)}
       />
       <section className="mx-auto max-w-6xl px-6 py-12 md:px-8 md:py-16">
-        <PublicContentBreadcrumb
-          channel={collection.channel}
-          items={breadcrumbItems}
-          sourceTitle={collection.title}
-        />
+        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+          <PublicContentBreadcrumb
+            channel={collection.channel}
+            items={breadcrumbItems}
+            sourceTitle={collection.title}
+          />
+          <PublicContentChannelNavigation
+            channel={collection.channel}
+            className="shrink-0"
+          />
+        </div>
         <div className="mt-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
             <h1 className="max-w-3xl text-[36px] font-semibold leading-tight text-[#111] md:text-[48px]">
@@ -781,13 +787,19 @@ export async function PublicContentArticlePage({
         data={buildPublicContentArticleStructuredData(article)}
       />
       <article className={getArticleContainerClassName(article)}>
-        <PublicContentBreadcrumb
-          category={article.category}
-          channel={article.channel}
-          items={breadcrumbItems}
-          service={article.service}
-          sourceTitle={article.title}
-        />
+        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+          <PublicContentBreadcrumb
+            category={article.category}
+            channel={article.channel}
+            items={breadcrumbItems}
+            service={article.service}
+            sourceTitle={article.title}
+          />
+          <PublicContentChannelNavigation
+            channel={article.channel}
+            className="shrink-0"
+          />
+        </div>
         <div className="mt-6 flex flex-wrap gap-2 text-[13px] font-semibold text-[#555]">
           <span>{getPublicContentServiceLabel(article.service)}</span>
           <span aria-hidden="true">/</span>
