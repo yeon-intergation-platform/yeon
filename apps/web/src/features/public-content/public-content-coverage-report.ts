@@ -102,20 +102,6 @@ const COVERAGE_TARGETS: readonly PublicContentCoverageTarget[] = [
     minArticles: 1,
   },
   {
-    category: "updates",
-    channel: PUBLIC_CONTENT_CHANNELS.news,
-    id: "news:updates",
-    label: "news 제품 업데이트",
-    minArticles: 1,
-  },
-  {
-    category: "news",
-    channel: PUBLIC_CONTENT_CHANNELS.news,
-    id: "news:news",
-    label: "news 업계 뉴스 해설",
-    minArticles: 1,
-  },
-  {
     category: "engineering",
     channel: PUBLIC_CONTENT_CHANNELS.blog,
     id: "blog:engineering",
@@ -127,13 +113,6 @@ const COVERAGE_TARGETS: readonly PublicContentCoverageTarget[] = [
     channel: PUBLIC_CONTENT_CHANNELS.blog,
     id: "blog:product",
     label: "blog 제품 글",
-    minArticles: 1,
-  },
-  {
-    category: "devlog",
-    channel: PUBLIC_CONTENT_CHANNELS.blog,
-    id: "blog:devlog",
-    label: "blog 개발 일지",
     minArticles: 1,
   },
   {

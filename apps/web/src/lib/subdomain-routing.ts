@@ -180,6 +180,24 @@ export function resolveLegacyServicePathRedirectUrl({
     SUBDOMAIN_ROUTES[normalizedHost as ServiceSubdomainHost];
 
   if (subdomainRoute?.servicePath !== serviceRoute.servicePath) {
+    const currentContentRoute =
+      CONTENT_SUBDOMAIN_ROUTES[normalizedHost as ContentSubdomainHost];
+    const targetContentRoute = Object.values(CONTENT_SUBDOMAIN_ROUTES).find(
+      (route) => route.servicePath === serviceRoute.servicePath
+    );
+
+    // 공개 콘텐츠끼리는 내부 base path로 링크해도 대상 채널의 canonical
+    // subdomain으로 전환한다. 로컬·dev에서는 이 분기가 실행되지 않아
+    // /support, /news, /blog 내부 경로를 그대로 검증할 수 있다.
+    if (currentContentRoute && targetContentRoute) {
+      return buildServicePublicUrl({
+        publicUrl: serviceRoute.publicUrl,
+        serviceBasePath: serviceRoute.servicePath,
+        pathname,
+        search,
+      });
+    }
+
     return null;
   }
 

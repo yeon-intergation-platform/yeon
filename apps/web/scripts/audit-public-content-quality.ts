@@ -6,15 +6,7 @@ import {
   type PublicContentBlock,
   getPublicContentSupportCtaTarget,
 } from "../src/features/public-content/public-content-data";
-import {
-  getPublicContentSupportPrimaryActionItems,
-  hasPublicContentSupportFaqHeadingStructure,
-} from "../src/features/public-content/public-content-support-action-summary";
-import { getPublicContentNewsArticleContext } from "../src/features/public-content/public-content-news-home";
-import {
-  getPublicContentNewsDetailSections,
-  hasPublicContentNewsDetailSections,
-} from "../src/features/public-content/public-content-news-detail";
+import { hasPublicContentSupportFaqHeadingStructure } from "../src/features/public-content/public-content-support-faq-structure";
 import { getPublicContentNewsEditorialWarnings } from "../src/features/public-content/public-content-news-editorial-quality";
 import { getPublicContentTitleQualityWarnings } from "../src/features/public-content/public-content-title-quality";
 
@@ -28,20 +20,6 @@ const FROZEN_SOURCE_PATTERN = /counseling|student-management|상담/i;
 const PUBLIC_CONTENT_CALLOUT_TONE_VALUES = new Set<string>(
   Object.values(PUBLIC_CONTENT_CALLOUT_TONES)
 );
-const NEWS_NOTICE_REQUIRED_SECTIONS = [
-  "무엇이 바뀌었나요",
-  "사용자에게 영향이 있나요",
-  "필요한 조치",
-] as const;
-const NEWS_UPDATES_REQUIRED_SECTIONS = [
-  "변경 전",
-  "변경 후",
-  "관련 support 문서",
-] as const;
-const NEWS_INDUSTRY_REQUIRED_SECTIONS = [
-  "YEON 서비스와의 관련성",
-  "관련 blog 글",
-] as const;
 
 function getArticleRef(article: PublicContentArticle) {
   return `${article.channel}:${article.slugSegments.join("/")}`;
@@ -120,84 +98,14 @@ function auditSupportActionStructure(
 
   if (
     article.category !== "policy" &&
-    getPublicContentSupportPrimaryActionItems(article).length === 0
+    !article.body.some(
+      (block) => block.type === "steps" || block.type === "checklist"
+    )
   ) {
     pushIssue(
       issues,
       article,
       "support 글은 실제 해결 단계나 확인 목록을 먼저 드러낼 action block이 필요합니다."
-    );
-  }
-}
-
-function auditNewsArticleContext(
-  issues: AuditIssue[],
-  article: PublicContentArticle
-) {
-  if (article.channel !== PUBLIC_CONTENT_CHANNELS.news) return;
-
-  const context = getPublicContentNewsArticleContext(article);
-  if (!context) {
-    pushIssue(
-      issues,
-      article,
-      "news 글은 category별 상단 맥락 정보를 제공해야 합니다."
-    );
-  }
-}
-
-function auditNewsDetailSections(
-  issues: AuditIssue[],
-  article: PublicContentArticle
-) {
-  if (article.channel !== PUBLIC_CONTENT_CHANNELS.news) return;
-
-  const requiredSectionsByCategory: Record<string, readonly string[]> = {
-    news: NEWS_INDUSTRY_REQUIRED_SECTIONS,
-    notice: NEWS_NOTICE_REQUIRED_SECTIONS,
-    updates: NEWS_UPDATES_REQUIRED_SECTIONS,
-  };
-  const requiredSections = requiredSectionsByCategory[article.category];
-  if (!requiredSections) return;
-
-  if (!hasPublicContentNewsDetailSections(article, requiredSections)) {
-    pushIssue(
-      issues,
-      article,
-      `news ${article.category} detail 필수 섹션이 부족합니다.`
-    );
-  }
-
-  const sections = getPublicContentNewsDetailSections(article);
-  const supportSection = sections.find(
-    (section) => section.title === "관련 support 문서"
-  );
-  if (
-    article.category === "updates" &&
-    !supportSection?.links?.some((link) =>
-      link.href.startsWith("https://support.yeon.world")
-    )
-  ) {
-    pushIssue(
-      issues,
-      article,
-      "updates detail은 관련 support 문서 링크를 포함해야 합니다."
-    );
-  }
-
-  const blogSection = sections.find(
-    (section) => section.title === "관련 blog 글"
-  );
-  if (
-    article.category === "news" &&
-    !blogSection?.links?.some((link) =>
-      link.href.startsWith("https://blog.yeon.world")
-    )
-  ) {
-    pushIssue(
-      issues,
-      article,
-      "업계 뉴스 detail은 관련 blog 글 링크를 포함해야 합니다."
     );
   }
 }
@@ -340,8 +248,6 @@ function auditArticle(
 
   auditSupportCta(issues, article);
   auditSupportActionStructure(issues, article);
-  auditNewsArticleContext(issues, article);
-  auditNewsDetailSections(issues, article);
 
   if (article.slugSegments.length === 0) {
     pushIssue(issues, article, "slugSegments가 비어 있습니다.");

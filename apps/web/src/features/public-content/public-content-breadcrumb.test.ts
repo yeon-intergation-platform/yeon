@@ -54,22 +54,22 @@ describe("public content breadcrumb", () => {
     ).toEqual([
       {
         current: false,
-        href: "https://support.yeon.world",
+        href: "/support",
         label: "Support",
       },
       {
         current: false,
-        href: "https://support.yeon.world/nexa",
+        href: "/support/nexa",
         label: "NEXA",
       },
       {
         current: false,
-        href: "https://support.yeon.world/nexa/faq",
+        href: "/support/nexa/faq",
         label: "FAQ",
       },
       {
         current: true,
-        href: "https://support.yeon.world/nexa/faq/free-plan-limit",
+        href: "/support/nexa/faq/free-plan-limit",
         label: "NEXA 무료 플랜에서는 무엇까지 사용할 수 있나요?",
       },
     ]);
@@ -77,17 +77,13 @@ describe("public content breadcrumb", () => {
 
   it("collection breadcrumb는 현재 collection을 마지막 항목으로 둔다", () => {
     const breadcrumb = buildPublicContentCollectionBreadcrumb(
-      getCollection("news", ["updates", "nexa"])
+      getCollection("news", ["notice"])
     );
 
-    expect(breadcrumb.map((item) => item.label)).toEqual([
-      "News",
-      "업데이트",
-      "NEXA",
-    ]);
+    expect(breadcrumb.map((item) => item.label)).toEqual(["News", "공지"]);
     expect(breadcrumb.at(-1)).toMatchObject({
       current: true,
-      href: "https://news.yeon.world/updates/nexa",
+      href: "/news/notice",
     });
   });
 });

@@ -2,7 +2,7 @@ import {
   PUBLIC_CONTENT_CHANNELS,
   PUBLIC_CONTENT_ERROR_REPORT_MAILTO,
   PUBLIC_CONTENT_SERVICES,
-  buildPublicContentCanonicalUrl,
+  buildPublicContentInternalHref,
   getPublicContentArticleBySlug,
   getPublicContentCategoryLabel,
   getPublicContentServiceLabel,
@@ -28,8 +28,6 @@ export type PublicContentSupportHomeServiceEntry = {
 };
 
 export type PublicContentSupportHomeReportEntry = {
-  articleHref: string;
-  articleTitle: string;
   description: string;
   href: string;
   label: string;
@@ -93,7 +91,7 @@ function toSupportHomeProblemEntry(
   return {
     article,
     categoryLabel: getPublicContentCategoryLabel(article.category),
-    href: buildPublicContentCanonicalUrl(article.channel, article.slugSegments),
+    href: buildPublicContentInternalHref(article.channel, article.slugSegments),
     prompt: seed.prompt,
     serviceLabel: getPublicContentServiceLabel(article.service),
   };
@@ -142,11 +140,6 @@ export function getPublicContentSupportHomeReportEntry(): PublicContentSupportHo
   if (!article) return null;
 
   return {
-    articleHref: buildPublicContentCanonicalUrl(
-      article.channel,
-      article.slugSegments
-    ),
-    articleTitle: article.title,
     description:
       "타자연습, 카드, 커뮤니티, NEXA에서 문제가 생기면 서비스 주소와 화면 상태만 짧게 보내도 됩니다.",
     href: PUBLIC_CONTENT_ERROR_REPORT_MAILTO,

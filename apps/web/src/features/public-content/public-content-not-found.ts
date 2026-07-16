@@ -1,4 +1,5 @@
 import {
+  buildPublicContentInternalHref,
   getPublicContentArticles,
   getPublicContentChannelConfig,
   type PublicContentArticle,
@@ -23,7 +24,7 @@ export function getPublicContentNotFoundHomeLink(
   const config = getPublicContentChannelConfig(channel);
 
   return {
-    href: config.host,
+    href: buildPublicContentInternalHref(channel),
     label: `${config.label} 홈으로 이동`,
   };
 }

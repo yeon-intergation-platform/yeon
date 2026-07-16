@@ -295,4 +295,28 @@ describe("subdomain-routing", () => {
       })
     ).toBeNull();
   });
+
+  it("공개 콘텐츠 subdomain 사이의 내부 채널 경로는 대상 canonical host로 전환한다", () => {
+    expect(
+      resolveLegacyServicePathRedirectUrl({
+        host: "support.yeon.world",
+        pathname: "/news",
+        search: "?source=header",
+      })?.toString()
+    ).toBe("https://news.yeon.world/?source=header");
+
+    expect(
+      resolveLegacyServicePathRedirectUrl({
+        host: "news.yeon.world",
+        pathname: "/blog/engineering",
+      })?.toString()
+    ).toBe("https://blog.yeon.world/engineering");
+
+    expect(
+      resolveLegacyServicePathRedirectUrl({
+        host: "blog.yeon.world",
+        pathname: "/support",
+      })?.toString()
+    ).toBe("https://support.yeon.world/");
+  });
 });

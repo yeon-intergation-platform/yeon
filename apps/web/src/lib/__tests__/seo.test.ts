@@ -128,13 +128,13 @@ describe("seo", () => {
           lastModified: "2026-06-17",
         }),
         expect.objectContaining({
-          url: "https://news.yeon.world/updates/nexa",
+          url: "https://news.yeon.world/notice",
           changeFrequency: "weekly",
           priority: 0.6,
-          lastModified: "2026-06-17",
+          lastModified: "2026-07-16",
         }),
         expect.objectContaining({
-          url: "https://blog.yeon.world/product/why-split-support-news-blog",
+          url: "https://blog.yeon.world/product/nexa-discord-server-operator-design",
           changeFrequency: "weekly",
           priority: 0.55,
           lastModified: "2026-06-17",
@@ -143,13 +143,13 @@ describe("seo", () => {
           url: "https://blog.yeon.world/engineering",
           changeFrequency: "weekly",
           priority: 0.6,
-          lastModified: "2026-07-14",
+          lastModified: "2026-06-19",
         }),
         expect.objectContaining({
-          url: "https://blog.yeon.world/engineering/dailyting-video-faststart",
+          url: "https://blog.yeon.world/engineering/typing-realtime-server-needed",
           changeFrequency: "weekly",
           priority: 0.55,
-          lastModified: "2026-07-14",
+          lastModified: "2026-06-19",
         }),
       ])
     );

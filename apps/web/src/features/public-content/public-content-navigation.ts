@@ -1,5 +1,6 @@
 import {
-  buildPublicContentCanonicalUrl,
+  PUBLIC_CONTENT_CHANNEL_CONFIG,
+  buildPublicContentInternalHref,
   getPublicContentCategoryLabel,
   getPublicContentNewsTopic,
   getPublicContentNewsTopicLabel,
@@ -23,6 +24,12 @@ export type PublicContentNavigationItem = {
   slugSegments: readonly string[];
 };
 
+export type PublicContentChannelNavigationItem = {
+  channel: PublicContentChannel;
+  href: string;
+  label: string;
+};
+
 type PublicContentServiceNavParams = {
   activeService?: PublicContentService;
   channel: PublicContentChannel;
@@ -43,6 +50,14 @@ const PUBLIC_CONTENT_SERVICE_ORDER = Object.values(PUBLIC_CONTENT_SERVICES);
 const PUBLIC_CONTENT_CATEGORY_ORDER = Object.keys(
   PUBLIC_CONTENT_CATEGORY_LABELS
 );
+
+export function getPublicContentChannelNavigationItems(): PublicContentChannelNavigationItem[] {
+  return Object.values(PUBLIC_CONTENT_CHANNEL_CONFIG).map((config) => ({
+    channel: config.channel,
+    href: buildPublicContentInternalHref(config.channel),
+    label: config.label,
+  }));
+}
 
 export function isPublicContentService(
   value: string | undefined
@@ -80,7 +95,7 @@ function toNavigationItem({
   return {
     active,
     count: collection.articles.length,
-    href: buildPublicContentCanonicalUrl(
+    href: buildPublicContentInternalHref(
       collection.channel,
       collection.slugSegments
     ),
@@ -166,7 +181,7 @@ export function getPublicContentNewsTopicNavItems({
     .map(([topic, count]) => ({
       active: activeTopic === topic,
       count,
-      href: buildPublicContentCanonicalUrl(PUBLIC_CONTENT_CHANNELS.news, [
+      href: buildPublicContentInternalHref(PUBLIC_CONTENT_CHANNELS.news, [
         "news",
         topic,
       ]),

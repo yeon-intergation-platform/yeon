@@ -123,6 +123,7 @@ export type PublicContentBlock =
     };
 
 export type PublicContentArticle = {
+  affectedServiceLabel?: string;
   channel: PublicContentChannel;
   service: PublicContentService;
   category: string;
@@ -169,10 +170,10 @@ export const PUBLIC_CONTENT_CHANNEL_CONFIG = {
     title: "YEON Support",
     description:
       "NEXA, 타자연습, 플래시카드, 커뮤니티를 바로 사용할 수 있게 돕는 공개 도움말입니다.",
-    homeEyebrow: "도움말 · 문제 해결",
-    homeTitle: "무엇을 해결하고 싶으신가요?",
+    homeEyebrow: "도움말 센터",
+    homeTitle: "서비스별로 알맞은 해결 방법을 찾아보세요",
     homeDescription:
-      "문서를 검색하거나 서비스를 먼저 선택해, 지금 겪고 있는 문제의 해결 방법을 찾으세요.",
+      "사용 가이드, 정책 안내, 문제 해결 방법을 쉽고 빠르게 찾아볼 수 있습니다.",
   },
   news: {
     channel: PUBLIC_CONTENT_CHANNELS.news,
@@ -181,12 +182,10 @@ export const PUBLIC_CONTENT_CHANNEL_CONFIG = {
     label: "News",
     brandLabel: "YEON 뉴스",
     title: "YEON News",
-    description:
-      "YEON과 NEXA의 공식 공지, 제품 업데이트, 업계 뉴스 해설을 정리합니다.",
+    description: "YEON 서비스에 실제로 적용된 변경과 필요한 조치만 알립니다.",
     homeEyebrow: "공식 소식 · 변경사항",
-    homeTitle: "YEON의 공식 소식과 제품 변경사항",
-    homeDescription:
-      "서비스 점검, 정책 변경, 새 기능처럼 사용자가 알아야 할 소식을 모았습니다.",
+    homeTitle: "YEON의 실제 변경사항",
+    homeDescription: "서비스 기능, 정책, 접속에 영향을 주는 변경만 기록합니다.",
   },
   blog: {
     channel: PUBLIC_CONTENT_CHANNELS.blog,
@@ -196,11 +195,11 @@ export const PUBLIC_CONTENT_CHANNEL_CONFIG = {
     brandLabel: "YEON 블로그",
     title: "YEON Blog",
     description:
-      "YEON과 NEXA를 만들며 남기는 기술 글, 제품 제작기, 개발 일지입니다.",
+      "YEON 서비스의 실제 구현과 제품 동작을 남기는 기술·제품 기록입니다.",
     homeEyebrow: "제작 기록 · 기술과 판단",
-    homeTitle: "제품을 만들며 남기는 기술과 결정의 기록",
+    homeTitle: "서비스를 만들며 확인한 구현 기록",
     homeDescription:
-      "개발기, 기술 선택, 제품 운영 판단을 실제 코드와 서비스 맥락에 맞춰 남깁니다.",
+      "NEXA, 타자방, 플래시카드, 커뮤니티에서 실제로 선택한 구조와 동작을 기록합니다.",
   },
 } as const satisfies Record<
   PublicContentChannel,
@@ -263,8 +262,14 @@ const BLOG_CATEGORY_TITLES = {
 
 const PUBLISHED_DATE = "2026-06-17";
 const DAILYTING_FASTSTART_PUBLISHED_DATE = "2026-07-14";
+const PUBLIC_CONTENT_EDITORIAL_UPDATE_DATE = "2026-07-16";
+const NEXA_OPERATOR_ARTICLE_DATE = "2026-06-17";
+const TYPING_REALTIME_ARTICLE_DATE = "2026-06-19";
+const CARD_GUEST_ARTICLE_DATE = "2026-06-09";
+const COMMUNITY_GUEST_ARTICLE_DATE = "2026-06-27";
+const NEXA_SAFETY_ARTICLE_DATE = "2026-06-17";
 
-export const PUBLIC_CONTENT_ARTICLES: readonly PublicContentArticle[] = [
+const PUBLIC_CONTENT_ARTICLE_DRAFTS: readonly PublicContentArticle[] = [
   {
     channel: PUBLIC_CONTENT_CHANNELS.support,
     service: PUBLIC_CONTENT_SERVICES.nexa,
@@ -354,10 +359,6 @@ export const PUBLIC_CONTENT_ARTICLES: readonly PublicContentArticle[] = [
           {
             href: "https://support.yeon.world/nexa/troubleshooting/bot-not-responding",
             label: "NEXA 봇이 응답하지 않을 때 확인할 5가지",
-          },
-          {
-            href: "https://news.yeon.world/updates/nexa/discord-permission-guides",
-            label: "NEXA 권한 안내 업데이트",
           },
         ],
       },
@@ -452,10 +453,6 @@ export const PUBLIC_CONTENT_ARTICLES: readonly PublicContentArticle[] = [
             href: "https://support.yeon.world/nexa/guides/exclude-channel",
             label: "AI가 답변하면 안 되는 채널을 제외하는 법",
           },
-          {
-            href: "https://news.yeon.world/updates/nexa/discord-permission-guides",
-            label: "NEXA 디스코드 권한 안내 문서 공개",
-          },
         ],
       },
     ],
@@ -510,10 +507,6 @@ export const PUBLIC_CONTENT_ARTICLES: readonly PublicContentArticle[] = [
           {
             href: "https://support.yeon.world/nexa/guides/discord-bot-permissions",
             label: "NEXA 봇에게 필요한 디스코드 권한",
-          },
-          {
-            href: "https://news.yeon.world/updates/nexa/discord-permission-guides",
-            label: "NEXA 디스코드 권한 안내 업데이트",
           },
         ],
       },
@@ -2214,32 +2207,41 @@ export const PUBLIC_CONTENT_ARTICLES: readonly PublicContentArticle[] = [
     service: PUBLIC_CONTENT_SERVICES.account,
     category: "notice",
     slugSegments: ["notice", "public-content-network-start"],
-    title: "YEON 공개 도움말, 뉴스, 블로그 채널을 분리합니다",
+    affectedServiceLabel: "Support · News · Blog",
+    title: "YEON 공개 콘텐츠 화면을 정리했습니다",
     description:
-      "YEON은 support, news, blog를 분리해 사용법, 공식 소식, 개발 기록을 각각 운영합니다.",
+      "Support는 문제 해결, News는 실제 변경, Blog는 제작 기록만 보여주도록 공개 콘텐츠 목록을 정리했습니다.",
     summary:
-      "사용법은 support, 공식 소식은 news, 개발 기록은 blog로 나누어 운영합니다.",
-    publishedAt: PUBLISHED_DATE,
-    updatedAt: PUBLISHED_DATE,
-    readingMinutes: 2,
-    ctaLabel: "Support 오픈 공지 보기",
-    ctaHref: "https://news.yeon.world/notice/support-open",
+      "안내성 글과 내부 운영 글은 피드에서 숨기고, 필요한 정보만 남겼습니다.",
+    publishedAt: PUBLIC_CONTENT_EDITORIAL_UPDATE_DATE,
+    updatedAt: PUBLIC_CONTENT_EDITORIAL_UPDATE_DATE,
+    readingMinutes: 1,
     sourcePaths: [
-      "/Users/osuma/coding_stuffs/yeon/docs/seo/public-content-channel-policy.md",
-      "/Users/osuma/coding_stuffs/yeon/docs/product/backlog/2026-06-17-public-content-network-500-step-plan.md",
+      "/Users/osuma/coding_stuffs/yeon/apps/web/src/features/public-content/public-content-data.ts",
+      "/Users/osuma/coding_stuffs/yeon/docs/product/backlog/2026-07-16-public-content-editorial-cleanup-2.md",
     ],
     body: [
       {
         type: "paragraph",
-        text: "YEON은 공개 콘텐츠를 세 채널로 나누어 운영합니다. 사용자가 문제를 해결할 때는 support, 제품 변경사항을 확인할 때는 news, 제작 과정과 기술 글을 읽을 때는 blog를 사용합니다.",
+        text: "2026년 7월 16일 공개 콘텐츠 화면을 정리했습니다. 사용법과 오류 해결은 Support에서, 실제 서비스 변경은 News에서, 구현 기록은 Blog에서 바로 찾을 수 있게 목록을 줄였습니다.",
+      },
+      {
+        type: "heading",
+        title: "바뀐 점",
       },
       {
         type: "checklist",
         items: [
-          "support.yeon.world: 사용법, 튜토리얼, 문제 해결, FAQ",
-          "news.yeon.world: 공식 공지, 업데이트, 업계 뉴스 해설",
-          "blog.yeon.world: 개발기, 기술 글, 제품 제작기, 회고",
+          "Support 홈에서 채널 안내 공지를 빼고 검색, 서비스 선택, 문제 해결 문서만 남겼습니다.",
+          "News 피드에서 내부 운영과 문서 홍보 성격의 글을 숨기고 실제 변경 공지만 남겼습니다.",
+          "Blog 피드에서 채널 분리와 검색 운영 글을 빼고 서비스 구현 기록만 남겼습니다.",
         ],
+      },
+      {
+        type: "callout",
+        tone: PUBLIC_CONTENT_CALLOUT_TONES.note,
+        title: "사용자 조치 없음",
+        text: "기존 서비스 주소와 사용 방식은 바뀌지 않습니다. 필요한 정보가 더 짧은 경로로 보이도록 목록과 화면만 정리했습니다.",
       },
     ],
   },
@@ -2384,11 +2386,6 @@ export const PUBLIC_CONTENT_ARTICLES: readonly PublicContentArticle[] = [
           "updates: 제품 변경사항과 사용자 영향",
           "news: AI, Discord, 개발자 도구, 제품 운영 관련 해설",
         ],
-      },
-      {
-        type: "callout",
-        title: "support 글을 반복하지 않습니다",
-        text: "사용법과 오류 해결은 support에 두고, news는 변경 사실과 필요한 조치만 요약한 뒤 관련 support 문서로 연결합니다.",
       },
     ],
   },
@@ -2956,13 +2953,13 @@ export const PUBLIC_CONTENT_ARTICLES: readonly PublicContentArticle[] = [
     service: PUBLIC_CONTENT_SERVICES.nexa,
     category: "product",
     slugSegments: ["product", "nexa-discord-server-operator-design"],
-    title: "NEXA를 Discord 서버 운영자 관점에서 설계하는 이유",
+    title: "NEXA에서 채널 권한과 Provider Pool을 함께 확인하는 이유",
     description:
-      "NEXA가 단순 AI 채팅봇이 아니라 Discord 서버 운영자가 이해할 수 있는 권한, 정책, 안전 흐름을 먼저 다루는 이유입니다.",
+      "Discord 채널 권한, Message Content Intent, Provider Pool 전달 경로를 운영자가 한 흐름에서 확인해야 하는 이유를 기록합니다.",
     summary:
-      "서버 관리자는 채널, 권한, 책임, 안전 기준을 관리해야 하므로 NEXA도 운영자 관점의 제품 구조가 필요합니다.",
-    publishedAt: PUBLISHED_DATE,
-    updatedAt: PUBLISHED_DATE,
+      "질문이 어디서 읽히고 어느 Provider PC로 전달될 수 있는지부터 확인할 수 있게 구성했습니다.",
+    publishedAt: NEXA_OPERATOR_ARTICLE_DATE,
+    updatedAt: NEXA_OPERATOR_ARTICLE_DATE,
     readingMinutes: 5,
     ctaLabel: "NEXA 설치 페이지 보기",
     ctaHref: "https://discord-ai.yeon.world/install",
@@ -3001,13 +2998,13 @@ export const PUBLIC_CONTENT_ARTICLES: readonly PublicContentArticle[] = [
     service: PUBLIC_CONTENT_SERVICES.typing,
     category: "engineering",
     slugSegments: ["engineering", "typing-realtime-server-needed"],
-    title: "타자 서비스에서 실시간 서버가 필요한 이유",
+    title: "타자방에서 race-server가 참가자 상태를 맡는 이유",
     description:
-      "YEON 타자연습이 혼자 연습과 별도로 race-server 기반 실시간 방 구조를 두는 이유를 정리했습니다.",
+      "혼자 연습과 달리 타자방의 참여자, 준비 상태, 레이스 시작 시점을 실시간 서버가 맞추는 방식을 기록합니다.",
     summary:
-      "혼자 연습은 로컬 문장과 덱으로 충분하지만, 방 참여와 참가자 상태는 실시간 서버가 필요합니다.",
-    publishedAt: PUBLISHED_DATE,
-    updatedAt: PUBLISHED_DATE,
+      "혼자 연습은 로컬 상태로 유지하고, 여러 사람이 함께 보는 방 상태만 race-server로 분리했습니다.",
+    publishedAt: TYPING_REALTIME_ARTICLE_DATE,
+    updatedAt: TYPING_REALTIME_ARTICLE_DATE,
     readingMinutes: 4,
     ctaLabel: "타자연습 열기",
     ctaHref: "https://typing.yeon.world",
@@ -3045,13 +3042,13 @@ export const PUBLIC_CONTENT_ARTICLES: readonly PublicContentArticle[] = [
     service: PUBLIC_CONTENT_SERVICES.card,
     category: "product",
     slugSegments: ["product", "why-card-guest-mode-matters"],
-    title: "플래시카드 서비스에서 게스트 사용성을 고려한 이유",
+    title: "게스트 덱을 계정으로 옮길 때 사용자 선택을 남긴 이유",
     description:
-      "card.yeon.world가 로그인 전 덱 생성과 로그인 후 계정 이관 흐름을 함께 둔 제품 판단을 정리했습니다.",
+      "게스트 덱을 바로 만들 수 있게 두되, 로그인 뒤 계정 저장으로 옮길 때 사용자 선택을 남긴 방식을 기록합니다.",
     summary:
-      "학습 도구는 시작 장벽이 낮아야 하지만, 오래 쓸 덱은 계정에 안전하게 연결되어야 합니다.",
-    publishedAt: PUBLISHED_DATE,
-    updatedAt: PUBLISHED_DATE,
+      "시작은 빠르게 하고, 오래 쓸 덱은 이관 전 덱과 카드 수를 확인한 뒤 계정에 저장합니다.",
+    publishedAt: CARD_GUEST_ARTICLE_DATE,
+    updatedAt: CARD_GUEST_ARTICLE_DATE,
     readingMinutes: 4,
     ctaLabel: "플래시카드 열기",
     ctaHref: "https://card.yeon.world",
@@ -3089,13 +3086,13 @@ export const PUBLIC_CONTENT_ARTICLES: readonly PublicContentArticle[] = [
     service: PUBLIC_CONTENT_SERVICES.community,
     category: "product",
     slugSegments: ["product", "why-community-starts-small"],
-    title: "커뮤니티 기능을 작게 시작하는 이유",
+    title: "비회원 글쓰기에서 수정·삭제 확인을 남긴 이유",
     description:
-      "community.yeon.world가 큰 SNS보다 글, 댓글, 게스트 정체성 같은 작은 기능부터 시작하는 이유입니다.",
+      "자동 게스트 닉네임과 비밀번호를 글·댓글 수정 및 삭제 확인에 쓰는 현재 커뮤니티 경계를 기록합니다.",
     summary:
-      "커뮤니티는 기능 수보다 작성 신뢰, 공개성, 수정·삭제 경계가 먼저 안정되어야 합니다.",
-    publishedAt: PUBLISHED_DATE,
-    updatedAt: PUBLISHED_DATE,
+      "로그인 없이 글을 쓰더라도 작성자가 자신의 글과 댓글을 다시 관리할 수 있게 최소한의 확인 절차를 둡니다.",
+    publishedAt: COMMUNITY_GUEST_ARTICLE_DATE,
+    updatedAt: COMMUNITY_GUEST_ARTICLE_DATE,
     readingMinutes: 4,
     ctaLabel: "커뮤니티 열기",
     ctaHref: "https://community.yeon.world",
@@ -3218,13 +3215,13 @@ export const PUBLIC_CONTENT_ARTICLES: readonly PublicContentArticle[] = [
     service: PUBLIC_CONTENT_SERVICES.nexa,
     category: "essay",
     slugSegments: ["essay", "why-ai-bot-safety-policy-first"],
-    title: "AI 봇 안전 정책을 문서로 먼저 공개하는 이유",
+    title: "NEXA에서 답변 채널과 Provider PC 전달 범위를 먼저 정한 이유",
     description:
-      "NEXA처럼 Discord 서버에서 동작하는 AI 봇이 기능보다 안전 정책과 관리자 책임을 먼저 문서화해야 하는 이유입니다.",
+      "Discord 채널 권한과 Provider Pool 전달 경로가 정해지기 전에는 NEXA를 안전하게 운영할 수 없는 이유를 기록합니다.",
     summary:
-      "AI 봇은 답변 품질만이 아니라 권한, 개인정보, 불법 콘텐츠, 관리자 책임 경계를 함께 다뤄야 합니다.",
-    publishedAt: PUBLISHED_DATE,
-    updatedAt: PUBLISHED_DATE,
+      "질문이 읽히는 채널, Provider PC 전달 가능성, 관리자 책임 범위를 기능 설명보다 먼저 공개했습니다.",
+    publishedAt: NEXA_SAFETY_ARTICLE_DATE,
+    updatedAt: NEXA_SAFETY_ARTICLE_DATE,
     readingMinutes: 4,
     ctaLabel: "NEXA 안전 정책 보기",
     ctaHref: "https://support.yeon.world/nexa/policy/admin-safety-controls",
@@ -3258,6 +3255,35 @@ export const PUBLIC_CONTENT_ARTICLES: readonly PublicContentArticle[] = [
     ],
   },
 ];
+
+const UNPUBLISHED_PUBLIC_CONTENT_ARTICLE_KEYS = new Set([
+  "news:updates/nexa/discord-permission-guides",
+  "news:updates/typing/support-guides",
+  "news:notice/support-open",
+  "news:notice/news-operation-principles",
+  "news:notice/blog-operation-principles",
+  "news:news/ai/discord-ai-news-interpretation",
+  "news:updates/card/support-guides",
+  "news:updates/community/support-guides",
+  "news:notice/nexa/support-docs-start",
+  "news:notice/nexa/discord-ai-sitemap-registration",
+  "blog:product/why-split-support-news-blog",
+  "blog:devlog/public-content-network-start",
+  "blog:essay/why-support-docs-first",
+  "blog:engineering/nexa-provider-pool-overview",
+  "blog:engineering/search-console-sitemap-operations",
+  "blog:engineering/dailyting-video-faststart",
+  "blog:product/public-content-channel-decision",
+  "blog:engineering/public-url-canonical-record",
+]);
+
+export const PUBLIC_CONTENT_ARTICLES: readonly PublicContentArticle[] =
+  PUBLIC_CONTENT_ARTICLE_DRAFTS.filter(
+    (article) =>
+      !UNPUBLISHED_PUBLIC_CONTENT_ARTICLE_KEYS.has(
+        `${article.channel}:${article.slugSegments.join("/")}`
+      )
+  );
 
 export function getPublicContentChannelConfig(channel: PublicContentChannel) {
   return PUBLIC_CONTENT_CHANNEL_CONFIG[channel];
@@ -3561,6 +3587,26 @@ export function buildPublicContentInternalHref(
   const { internalBasePath } = getPublicContentChannelConfig(channel);
   const suffix = slugSegments.length > 0 ? `/${slugSegments.join("/")}` : "";
   return `${internalBasePath}${suffix}`;
+}
+
+/**
+ * 공개 콘텐츠의 canonical URL은 SEO, RSS, 공유 미리보기에만 사용한다.
+ * 화면 내 이동은 실행 중인 환경을 벗어나지 않도록 내부 경로로 바꾼다.
+ */
+export function resolvePublicContentNavigationHref(href: string) {
+  try {
+    const url = new URL(href);
+    const config = Object.values(PUBLIC_CONTENT_CHANNEL_CONFIG).find(
+      (candidate) => candidate.host === url.origin
+    );
+
+    if (!config) return href;
+
+    const pathname = url.pathname === "/" ? "" : url.pathname;
+    return `${config.internalBasePath}${pathname}${url.search}${url.hash}`;
+  } catch {
+    return href;
+  }
 }
 
 export function getPublicContentSitemapEntries(): PublicContentSitemapEntry[] {

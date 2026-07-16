@@ -1,38 +1,74 @@
 import {
   PUBLIC_CONTENT_CHANNELS,
-  buildPublicContentCanonicalUrl,
   getPublicContentArticles,
   getPublicContentCategoryLabel,
   type PublicContentArticle,
 } from "./public-content-data";
 
-const BLOG_CATEGORY_ORDER = [
+export const PUBLIC_CONTENT_BLOG_CATEGORIES = [
   "engineering",
   "product",
   "devlog",
   "essay",
 ] as const;
 
+export const PUBLIC_CONTENT_BLOG_CATEGORY_QUERY_KEY = "category";
+
+export type PublicContentBlogCategory =
+  (typeof PUBLIC_CONTENT_BLOG_CATEGORIES)[number];
+
 const BLOG_CATEGORY_PURPOSES = {
   engineering: "기술 선택과 구현 근거",
   product: "사용자 문제와 제품 판단",
   devlog: "진행 상황과 배운 점",
   essay: "짧은 개인 관점과 제품 철학",
-} as const satisfies Record<(typeof BLOG_CATEGORY_ORDER)[number], string>;
+} as const satisfies Record<PublicContentBlogCategory, string>;
 
 export type PublicContentBlogCategoryEntry = {
   count: number;
-  href: string;
-  key: string;
+  key: PublicContentBlogCategory;
   label: string;
   purpose: string;
 };
 
 export type PublicContentBlogHomeModel = {
+  activeCategory?: PublicContentBlogCategory;
   articleCount: number;
   categoryEntries: readonly PublicContentBlogCategoryEntry[];
-  latestArticles: readonly PublicContentArticle[];
+  totalArticleCount: number;
+  visibleArticles: readonly PublicContentArticle[];
 };
+
+export function getPublicContentBlogCategory(value?: string) {
+  if (!value) return undefined;
+
+  return PUBLIC_CONTENT_BLOG_CATEGORIES.includes(
+    value as PublicContentBlogCategory
+  )
+    ? (value as PublicContentBlogCategory)
+    : undefined;
+}
+
+export function buildPublicContentBlogCategoryFilterHref({
+  category,
+  pathname = "/blog",
+  searchParams,
+}: {
+  category?: PublicContentBlogCategory;
+  pathname?: string;
+  searchParams?: string;
+}) {
+  const params = new URLSearchParams(searchParams);
+
+  if (category) {
+    params.set(PUBLIC_CONTENT_BLOG_CATEGORY_QUERY_KEY, category);
+  } else {
+    params.delete(PUBLIC_CONTENT_BLOG_CATEGORY_QUERY_KEY);
+  }
+
+  const query = params.toString();
+  return query ? `${pathname}?${query}` : pathname;
+}
 
 function compareArticlesByDate(
   left: PublicContentArticle,
@@ -50,7 +86,7 @@ function getBlogArticles() {
 function getCategoryEntries(
   articles: readonly PublicContentArticle[]
 ): PublicContentBlogCategoryEntry[] {
-  return BLOG_CATEGORY_ORDER.flatMap((category) => {
+  return PUBLIC_CONTENT_BLOG_CATEGORIES.flatMap((category) => {
     const categoryArticles = articles.filter(
       (article) => article.category === category
     );
@@ -59,9 +95,6 @@ function getCategoryEntries(
     return [
       {
         count: categoryArticles.length,
-        href: buildPublicContentCanonicalUrl(PUBLIC_CONTENT_CHANNELS.blog, [
-          category,
-        ]),
         key: category,
         label: getPublicContentCategoryLabel(category),
         purpose: BLOG_CATEGORY_PURPOSES[category],
@@ -70,12 +103,19 @@ function getCategoryEntries(
   });
 }
 
-export function getPublicContentBlogHomeModel(): PublicContentBlogHomeModel {
+export function getPublicContentBlogHomeModel(
+  activeCategory?: PublicContentBlogCategory
+): PublicContentBlogHomeModel {
   const articles = getBlogArticles();
+  const filteredArticles = activeCategory
+    ? articles.filter((article) => article.category === activeCategory)
+    : articles;
 
   return {
-    articleCount: articles.length,
+    activeCategory,
+    articleCount: filteredArticles.length,
     categoryEntries: getCategoryEntries(articles),
-    latestArticles: articles.slice(0, 4),
+    totalArticleCount: articles.length,
+    visibleArticles: filteredArticles,
   };
 }

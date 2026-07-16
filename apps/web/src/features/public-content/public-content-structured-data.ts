@@ -1,6 +1,7 @@
 import {
   buildPublicContentCanonicalUrl,
   buildPublicContentOpenGraphImageUrl,
+  getPublicContentChannelConfig,
   type PublicContentArticle,
   type PublicContentBlock,
 } from "./public-content-data";
@@ -81,7 +82,10 @@ export function buildPublicContentBreadcrumbJsonLd(
     "@type": "BreadcrumbList",
     itemListElement: breadcrumbItems.map((item, index) => ({
       "@type": "ListItem",
-      item: item.href,
+      item:
+        item.slugSegments.length === 0
+          ? getPublicContentChannelConfig(article.channel).host
+          : buildPublicContentCanonicalUrl(article.channel, item.slugSegments),
       name: item.label,
       position: index + 1,
     })),

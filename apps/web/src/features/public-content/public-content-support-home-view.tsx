@@ -1,36 +1,33 @@
+import { ArrowRight, MessageCircle } from "lucide-react";
 import type {
   PublicContentSupportHomeProblemEntry,
   PublicContentSupportHomeReportEntry,
   PublicContentSupportHomeServiceEntry,
 } from "./public-content-support-home";
+import { PublicContentServiceIcon } from "./public-content-service-icon";
 import { PublicContentTrackedLink } from "./public-content-tracked-link";
 
-const SUPPORT_HOME_QUICK_LINKS = [
-  { href: "#support-search", label: "문제 검색" },
-  { href: "#support-services", label: "서비스 선택" },
-  { href: "#support-problems", label: "자주 찾는 문제" },
-  { href: "#support-documents", label: "서비스별 문서" },
-] as const;
-
-export function PublicContentSupportHomeQuickLinks() {
+export function PublicContentSupportHomeHero({
+  description,
+  eyebrow,
+  title,
+}: {
+  description: string;
+  eyebrow: string;
+  title: string;
+}) {
   return (
-    <nav
-      aria-label="도움말 바로가기"
-      className="mx-auto max-w-6xl overflow-x-auto px-6 pb-8 md:px-8"
-    >
-      <div className="flex min-w-max items-center gap-4 border-y border-[#e5e5e5] py-3 text-[13px]">
-        <span className="font-semibold text-[#111]">바로가기</span>
-        {SUPPORT_HOME_QUICK_LINKS.map((item) => (
-          <a
-            key={item.href}
-            href={item.href}
-            className="text-[#666] no-underline transition-colors hover:text-[#111] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#111]"
-          >
-            {item.label}
-          </a>
-        ))}
+    <section className="mx-auto max-w-6xl px-6 pb-8 pt-12 md:px-8 md:pb-10 md:pt-14">
+      <div>
+        <p className="text-[13px] font-semibold text-[#555]">{eyebrow}</p>
+        <h1 className="mt-4 max-w-3xl text-[42px] font-semibold leading-[1.12] tracking-[-0.045em] text-[#111] md:text-[52px]">
+          {title}
+        </h1>
+        <p className="mt-5 max-w-2xl text-[16px] leading-7 text-[#666]">
+          {description}
+        </p>
       </div>
-    </nav>
+    </section>
   );
 }
 
@@ -49,15 +46,14 @@ export function PublicContentSupportHomeProblemEntries({
     <section
       id="support-problems"
       aria-labelledby="support-problem-entry-title"
-      className="mx-auto max-w-6xl px-6 pb-8 md:px-8"
+      className="mx-auto max-w-6xl px-6 pb-10 md:px-8"
     >
-      <div className="border-t border-[#e5e5e5] pt-8">
+      <div className="border-t border-[#e5e5e5] pt-10">
         <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
           <div>
-            <p className="text-[13px] font-semibold text-[#555]">빠른 해결</p>
             <h2
               id="support-problem-entry-title"
-              className="mt-1 text-[24px] font-semibold text-[#111]"
+              className="text-[25px] font-semibold tracking-[-0.03em] text-[#111]"
             >
               자주 찾는 문제
             </h2>
@@ -72,7 +68,7 @@ export function PublicContentSupportHomeProblemEntries({
             <PublicContentTrackedLink
               key={getArticleSlug(entry)}
               href={entry.href}
-              className="group border border-[#e5e5e5] bg-[#fafafa] p-5 text-left no-underline transition-colors hover:border-[#111] hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#111]"
+              className="group flex min-h-52 flex-col border border-[#e5e5e5] bg-white p-5 text-left no-underline transition-colors hover:border-[#111] hover:bg-[#fafafa] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#111]"
               trackingParams={{
                 category: entry.article.category,
                 channel: entry.article.channel,
@@ -91,8 +87,13 @@ export function PublicContentSupportHomeProblemEntries({
               <span className="mt-3 block text-[14px] leading-6 text-[#666]">
                 {entry.article.summary}
               </span>
-              <span className="mt-5 block text-[13px] font-semibold text-[#111]">
-                해결 방법 보기 <span aria-hidden="true">→</span>
+              <span className="mt-auto flex items-end justify-end pt-5 text-[#111]">
+                <span className="sr-only">문서 보기</span>
+                <ArrowRight
+                  aria-hidden="true"
+                  className="transition-transform duration-200 group-hover:translate-x-1"
+                  size={18}
+                />
               </span>
             </PublicContentTrackedLink>
           ))}
@@ -114,48 +115,36 @@ export function PublicContentSupportHomeReportCta({
       aria-labelledby="support-error-report-title"
       className="mx-auto max-w-6xl px-6 pb-16 md:px-8"
     >
-      <div className="flex flex-col gap-5 border border-[#111] bg-[#111] p-5 text-white md:flex-row md:items-center md:justify-between md:p-6">
-        <div className="min-w-0">
-          <p className="text-[13px] font-semibold text-white/70">
-            그래도 해결되지 않았다면
-          </p>
-          <h2
-            id="support-error-report-title"
-            className="mt-1 text-[22px] font-semibold text-white"
-          >
-            원하는 답을 찾지 못하셨나요?
-          </h2>
-          <p className="mt-3 max-w-3xl text-[14px] leading-6 text-white/75">
-            {entry.description}
-          </p>
+      <div className="flex flex-col gap-5 border border-[#e5e5e5] bg-white p-5 md:flex-row md:items-center md:justify-between md:p-6">
+        <div className="flex min-w-0 items-start gap-4">
+          <span className="flex size-12 shrink-0 items-center justify-center rounded-full border border-[#e5e5e5] text-[#111]">
+            <MessageCircle aria-hidden="true" size={22} strokeWidth={1.75} />
+          </span>
+          <div>
+            <h2
+              id="support-error-report-title"
+              className="text-[22px] font-semibold tracking-[-0.03em] text-[#111]"
+            >
+              원하는 답을 찾지 못하셨나요?
+            </h2>
+            <p className="mt-2 max-w-3xl text-[14px] leading-6 text-[#666]">
+              {entry.description}
+            </p>
+          </div>
         </div>
-        <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
-          <PublicContentTrackedLink
-            eventType="cta"
-            href={entry.href}
-            className="border border-white bg-white px-4 py-3 text-center text-[14px] font-semibold text-[#111] no-underline transition-opacity hover:opacity-80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-            trackingParams={{
-              channel: "support",
-              link_kind: "support_error_report",
-              service: "account",
-              target_title: entry.label,
-            }}
-          >
-            {entry.label}
-          </PublicContentTrackedLink>
-          <PublicContentTrackedLink
-            href={entry.articleHref}
-            className="border border-white/30 px-4 py-3 text-center text-[14px] font-semibold text-white no-underline transition-colors hover:border-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-            trackingParams={{
-              channel: "support",
-              link_kind: "support_error_report_guide",
-              service: "account",
-              target_title: entry.articleTitle,
-            }}
-          >
-            신고 전에 볼 내용
-          </PublicContentTrackedLink>
-        </div>
+        <PublicContentTrackedLink
+          eventType="cta"
+          href={entry.href}
+          className="inline-flex shrink-0 items-center justify-center gap-2 bg-[#111] px-5 py-3 text-center text-[14px] font-semibold text-white no-underline transition-opacity hover:opacity-80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#111]"
+          trackingParams={{
+            channel: "support",
+            link_kind: "support_error_report",
+            service: "account",
+            target_title: entry.label,
+          }}
+        >
+          문의하기 <ArrowRight aria-hidden="true" size={16} />
+        </PublicContentTrackedLink>
       </div>
     </section>
   );
@@ -172,14 +161,13 @@ export function PublicContentSupportHomeServiceEntries({
     <section
       id="support-services"
       aria-labelledby="support-service-entry-title"
-      className="mx-auto max-w-6xl px-6 pb-8 md:px-8"
+      className="mx-auto max-w-6xl px-6 pb-10 md:px-8"
     >
       <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
         <div>
-          <p className="text-[13px] font-semibold text-[#555]">서비스 선택</p>
           <h2
             id="support-service-entry-title"
-            className="mt-1 text-[24px] font-semibold text-[#111]"
+            className="text-[25px] font-semibold tracking-[-0.03em] text-[#111]"
           >
             어떤 서비스에서 문제가 생겼나요?
           </h2>
@@ -189,12 +177,12 @@ export function PublicContentSupportHomeServiceEntries({
         </div>
         <p className="text-[13px] text-[#666]">{entries.length}개 서비스</p>
       </div>
-      <div className="mt-5 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+      <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
         {entries.map((entry) => (
           <PublicContentTrackedLink
             key={entry.service}
             href={entry.href}
-            className="group border border-[#e5e5e5] bg-[#fafafa] p-5 no-underline transition-colors hover:border-[#111] hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#111]"
+            className="group flex min-h-48 flex-col border border-[#e5e5e5] bg-white p-4 no-underline transition-colors hover:border-[#111] hover:bg-[#fafafa] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#111]"
             trackingParams={{
               channel: "support",
               link_kind: "service_nav",
@@ -202,14 +190,21 @@ export function PublicContentSupportHomeServiceEntries({
               target_title: entry.label,
             }}
           >
-            <span className="flex items-center justify-between gap-3 text-[18px] font-semibold text-[#111]">
-              {entry.label}
-              <span aria-hidden="true">→</span>
+            <span className="flex items-start justify-between gap-3 text-[#111]">
+              <PublicContentServiceIcon service={entry.service} size={24} />
+              <ArrowRight
+                aria-hidden="true"
+                className="mt-1 transition-transform duration-200 group-hover:translate-x-1"
+                size={17}
+              />
             </span>
-            <span className="mt-3 block text-[14px] leading-6 text-[#666]">
+            <span className="mt-4 block text-[17px] font-semibold text-[#111]">
+              {entry.label}
+            </span>
+            <span className="mt-2 block text-[13px] leading-5 text-[#666]">
               {entry.description}
             </span>
-            <span className="mt-5 block text-[12px] font-semibold text-[#555]">
+            <span className="mt-auto block pt-4 text-[12px] font-semibold text-[#555]">
               문서 {entry.articleCount}개
             </span>
           </PublicContentTrackedLink>

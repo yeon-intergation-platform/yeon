@@ -1,4 +1,7 @@
-import type { PublicContentBlock } from "./public-content-data";
+import {
+  resolvePublicContentNavigationHref,
+  type PublicContentBlock,
+} from "./public-content-data";
 import {
   getPublicContentCodeBlockLabel,
   getPublicContentCalloutStyle,
@@ -109,21 +112,25 @@ export function PublicContentBlockView({
       <section className="border-t border-[#e5e5e5] pt-5">
         <p className="text-[14px] font-semibold text-[#111]">{block.title}</p>
         <ul className="mt-3 space-y-2">
-          {block.links.map((link) => (
-            <li key={link.href}>
-              <a
-                className="text-[14px] font-semibold text-[#555] underline underline-offset-4 transition-colors hover:text-[#111]"
-                href={link.href}
-                rel={getPublicContentLinkRel({
-                  href: link.href,
-                  target: "_blank",
-                })}
-                target="_blank"
-              >
-                {link.label}
-              </a>
-            </li>
-          ))}
+          {block.links.map((link) => {
+            const href = resolvePublicContentNavigationHref(link.href);
+
+            return (
+              <li key={link.href}>
+                <a
+                  className="text-[14px] font-semibold text-[#555] underline underline-offset-4 transition-colors hover:text-[#111]"
+                  href={href}
+                  rel={getPublicContentLinkRel({
+                    href,
+                    target: "_blank",
+                  })}
+                  target="_blank"
+                >
+                  {link.label}
+                </a>
+              </li>
+            );
+          })}
         </ul>
       </section>
     );

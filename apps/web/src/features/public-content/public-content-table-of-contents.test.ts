@@ -95,7 +95,7 @@ describe("public content table of contents", () => {
     ).toBe(false);
   });
 
-  it("support와 news는 기존처럼 heading이 있으면 목차를 노출한다", () => {
+  it("support는 heading을, news는 두 개 이상의 heading을 목차로 노출한다", () => {
     const body = [{ title: "확인", type: "heading" }] as const;
 
     expect(
@@ -112,6 +112,17 @@ describe("public content table of contents", () => {
         category: "notice",
         channel: "news",
         readingMinutes: 2,
+      })
+    ).toBe(false);
+    expect(
+      shouldShowPublicContentTableOfContents({
+        body: [
+          { title: "바뀐 점", type: "heading" },
+          { title: "사용자 영향", type: "heading" },
+        ],
+        category: "notice",
+        channel: "news",
+        readingMinutes: 3,
       })
     ).toBe(true);
   });

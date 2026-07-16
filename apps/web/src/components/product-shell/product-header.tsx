@@ -62,6 +62,7 @@ type CommonProductHeaderProps = {
   rightExtras?: ReactNode;
   showBgmButton?: boolean;
   showSettingsButton?: boolean;
+  titleNavigation?: ReactNode;
 };
 
 type AuthSessionPayload = {
@@ -136,6 +137,7 @@ export function CommonProductHeader({
   rightExtras,
   showBgmButton = true,
   showSettingsButton = true,
+  titleNavigation,
 }: CommonProductHeaderProps) {
   const pathname = useYeonPathname();
   const { language } = usePlatformLanguage(initialLanguage);
@@ -154,7 +156,14 @@ export function CommonProductHeader({
     <YeonProductHeader
       as="nav"
       ariaLabel={resolvedAriaLabel}
-      innerClassName="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 md:gap-6"
+      className={
+        titleNavigation ? "!h-auto min-h-[61px] md:!h-[61px]" : undefined
+      }
+      innerClassName={
+        titleNavigation
+          ? "!h-auto grid min-h-11 grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 md:!h-full md:grid-cols-[auto_minmax(0,1fr)_auto] md:gap-x-6 md:gap-y-0"
+          : "grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 md:gap-6"
+      }
     >
       <YeonLink
         href={brandHref}
@@ -164,9 +173,19 @@ export function CommonProductHeader({
         {resolvedBrandLabel}
       </YeonLink>
 
-      <YeonView aria-hidden="true" />
+      {titleNavigation ? (
+        <YeonView className="col-span-2 row-start-2 min-w-0 md:col-span-1 md:col-start-2 md:row-start-1">
+          {titleNavigation}
+        </YeonView>
+      ) : (
+        <YeonView aria-hidden="true" />
+      )}
 
-      <YeonView className="flex min-w-0 items-center justify-end gap-2">
+      <YeonView
+        className={`flex min-w-0 items-center justify-end gap-2 ${
+          titleNavigation ? "col-start-2 row-start-1 md:col-start-3" : ""
+        }`}
+      >
         {rightExtras ? (
           <YeonView className="hidden items-center gap-2 md:flex">
             {rightExtras}

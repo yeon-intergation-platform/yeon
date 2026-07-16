@@ -43,7 +43,11 @@ export function shouldShowPublicContentTableOfContents(
   const tableOfContents = buildPublicContentTableOfContents(article);
   if (tableOfContents.length === 0) return false;
 
-  if (article.channel !== PUBLIC_CONTENT_CHANNELS.blog) return true;
+  if (article.channel === PUBLIC_CONTENT_CHANNELS.support) return true;
+
+  if (article.channel === PUBLIC_CONTENT_CHANNELS.news) {
+    return tableOfContents.length > 1;
+  }
 
   return article.category === "engineering" && article.readingMinutes >= 4;
 }

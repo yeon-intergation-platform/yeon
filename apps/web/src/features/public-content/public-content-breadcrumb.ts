@@ -1,5 +1,5 @@
 import {
-  buildPublicContentCanonicalUrl,
+  buildPublicContentInternalHref,
   getPublicContentCategoryLabel,
   getPublicContentChannelConfig,
   getPublicContentServiceLabel,
@@ -37,7 +37,7 @@ function buildCollectionBreadcrumbItems(
   const items: PublicContentBreadcrumbItem[] = [
     {
       current: collection.slugSegments.length === 0,
-      href: config.host,
+      href: buildPublicContentInternalHref(collection.channel),
       label: config.label,
       slugSegments: [],
     },
@@ -48,7 +48,7 @@ function buildCollectionBreadcrumbItems(
 
     items.push({
       current: index === collection.slugSegments.length - 1,
-      href: buildPublicContentCanonicalUrl(collection.channel, slugSegments),
+      href: buildPublicContentInternalHref(collection.channel, slugSegments),
       label: getBreadcrumbSegmentLabel(segment),
       slugSegments,
     });
@@ -78,7 +78,7 @@ export function buildPublicContentArticleBreadcrumb(
     ...collectionItems,
     {
       current: true,
-      href: buildPublicContentCanonicalUrl(
+      href: buildPublicContentInternalHref(
         article.channel,
         article.slugSegments
       ),
