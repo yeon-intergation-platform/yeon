@@ -1,6 +1,6 @@
 import {
   PUBLIC_CONTENT_CHANNELS,
-  buildPublicContentCanonicalUrl,
+  buildPublicContentInternalHref,
   getPublicContentArticles,
   getPublicContentCategoryLabel,
   type PublicContentArticle,
@@ -59,7 +59,7 @@ function getCategoryEntries(
     return [
       {
         count: categoryArticles.length,
-        href: buildPublicContentCanonicalUrl(PUBLIC_CONTENT_CHANNELS.blog, [
+        href: buildPublicContentInternalHref(PUBLIC_CONTENT_CHANNELS.blog, [
           category,
         ]),
         key: category,

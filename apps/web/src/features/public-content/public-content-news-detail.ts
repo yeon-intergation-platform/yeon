@@ -1,9 +1,10 @@
 import {
   PUBLIC_CONTENT_CHANNELS,
-  buildPublicContentCanonicalUrl,
+  buildPublicContentInternalHref,
   getPublicContentArticles,
   getPublicContentCategoryLabel,
   getPublicContentServiceLabel,
+  resolvePublicContentNavigationHref,
   type PublicContentArticle,
 } from "./public-content-data";
 
@@ -22,7 +23,7 @@ function getSupportLink(article: PublicContentArticle) {
   if (!article.ctaHref?.startsWith("https://support.yeon.world")) return null;
 
   return {
-    href: article.ctaHref,
+    href: resolvePublicContentNavigationHref(article.ctaHref),
     label: article.ctaLabel ?? "관련 support 문서 보기",
   };
 }
@@ -32,7 +33,7 @@ function getRelatedBlogLinks(article: PublicContentArticle) {
     .filter((candidate) => candidate.service === article.service)
     .slice(0, 2)
     .map((candidate) => ({
-      href: buildPublicContentCanonicalUrl(
+      href: buildPublicContentInternalHref(
         candidate.channel,
         candidate.slugSegments
       ),
@@ -63,7 +64,7 @@ function buildNoticeSections(
       links: article.ctaHref
         ? [
             {
-              href: article.ctaHref,
+              href: resolvePublicContentNavigationHref(article.ctaHref),
               label: article.ctaLabel ?? "관련 문서 보기",
             },
           ]

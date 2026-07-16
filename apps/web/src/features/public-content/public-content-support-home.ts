@@ -2,7 +2,7 @@ import {
   PUBLIC_CONTENT_CHANNELS,
   PUBLIC_CONTENT_ERROR_REPORT_MAILTO,
   PUBLIC_CONTENT_SERVICES,
-  buildPublicContentCanonicalUrl,
+  buildPublicContentInternalHref,
   getPublicContentArticleBySlug,
   getPublicContentCategoryLabel,
   getPublicContentServiceLabel,
@@ -96,7 +96,7 @@ function toSupportHomeProblemEntry(
   return {
     article,
     categoryLabel: getPublicContentCategoryLabel(article.category),
-    href: buildPublicContentCanonicalUrl(article.channel, article.slugSegments),
+    href: buildPublicContentInternalHref(article.channel, article.slugSegments),
     prompt: seed.prompt,
     serviceLabel: getPublicContentServiceLabel(article.service),
   };
@@ -146,7 +146,7 @@ export function getPublicContentSupportHomeNoticeEntry(): PublicContentSupportHo
 
   return {
     article,
-    href: buildPublicContentCanonicalUrl(article.channel, article.slugSegments),
+    href: buildPublicContentInternalHref(article.channel, article.slugSegments),
   };
 }
 

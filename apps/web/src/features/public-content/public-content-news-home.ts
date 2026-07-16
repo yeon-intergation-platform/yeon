@@ -1,6 +1,6 @@
 import {
   PUBLIC_CONTENT_CHANNELS,
-  buildPublicContentCanonicalUrl,
+  buildPublicContentInternalHref,
   getPublicContentArticles,
   getPublicContentServiceLabel,
   type PublicContentArticle,
@@ -145,7 +145,7 @@ export function getPublicContentNewsHomeModel(): PublicContentNewsHomeModel {
   const filters: PublicContentNewsHomeFilter[] = [
     {
       count: articles.length,
-      href: buildPublicContentCanonicalUrl(PUBLIC_CONTENT_CHANNELS.news),
+      href: buildPublicContentInternalHref(PUBLIC_CONTENT_CHANNELS.news),
       key: "all",
       label: "전체",
     },
@@ -158,7 +158,7 @@ export function getPublicContentNewsHomeModel(): PublicContentNewsHomeModel {
       return [
         {
           count,
-          href: buildPublicContentCanonicalUrl(PUBLIC_CONTENT_CHANNELS.news, [
+          href: buildPublicContentInternalHref(PUBLIC_CONTENT_CHANNELS.news, [
             category,
           ]),
           key: category,

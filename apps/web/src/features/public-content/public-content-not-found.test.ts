@@ -7,7 +7,7 @@ import {
 describe("public content not found", () => {
   it("channel 홈 링크를 만든다", () => {
     expect(getPublicContentNotFoundHomeLink("support")).toEqual({
-      href: "https://support.yeon.world",
+      href: "/support",
       label: "Support 홈으로 이동",
     });
   });

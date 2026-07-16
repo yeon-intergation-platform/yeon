@@ -3563,6 +3563,26 @@ export function buildPublicContentInternalHref(
   return `${internalBasePath}${suffix}`;
 }
 
+/**
+ * 공개 콘텐츠의 canonical URL은 SEO, RSS, 공유 미리보기에만 사용한다.
+ * 화면 내 이동은 실행 중인 환경을 벗어나지 않도록 내부 경로로 바꾼다.
+ */
+export function resolvePublicContentNavigationHref(href: string) {
+  try {
+    const url = new URL(href);
+    const config = Object.values(PUBLIC_CONTENT_CHANNEL_CONFIG).find(
+      (candidate) => candidate.host === url.origin
+    );
+
+    if (!config) return href;
+
+    const pathname = url.pathname === "/" ? "" : url.pathname;
+    return `${config.internalBasePath}${pathname}${url.search}${url.hash}`;
+  } catch {
+    return href;
+  }
+}
+
 export function getPublicContentSitemapEntries(): PublicContentSitemapEntry[] {
   return [
     ...Object.values(PUBLIC_CONTENT_CHANNEL_CONFIG).map((config) => ({

@@ -1,6 +1,6 @@
 import {
   PUBLIC_CONTENT_CHANNELS,
-  buildPublicContentCanonicalUrl,
+  buildPublicContentInternalHref,
   getPublicContentArticles,
   type PublicContentArticle,
 } from "./public-content-data";
@@ -52,7 +52,7 @@ function compareArticlesByDate(
 
 function buildArticleLink(article: PublicContentArticle) {
   return {
-    href: buildPublicContentCanonicalUrl(article.channel, article.slugSegments),
+    href: buildPublicContentInternalHref(article.channel, article.slugSegments),
     title: article.title,
   };
 }

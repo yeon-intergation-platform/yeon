@@ -20,7 +20,7 @@ describe("public content support home", () => {
     ]);
     expect(entries[0]).toMatchObject({
       categoryLabel: "가이드",
-      href: "https://support.yeon.world/nexa/guides/add-nexa-discord-bot",
+      href: "/support/nexa/guides/add-nexa-discord-bot",
       serviceLabel: "NEXA",
     });
     expect(entries.every((entry) => entry.article.channel === "support")).toBe(
@@ -34,9 +34,9 @@ describe("public content support home", () => {
         (entry) => entry.href
       )
     ).toEqual([
-      "https://support.yeon.world/nexa/guides/add-nexa-discord-bot",
-      "https://support.yeon.world/nexa/troubleshooting/bot-not-responding",
-      "https://support.yeon.world/nexa/guides/discord-bot-permissions",
+      "/support/nexa/guides/add-nexa-discord-bot",
+      "/support/nexa/troubleshooting/bot-not-responding",
+      "/support/nexa/guides/discord-bot-permissions",
     ]);
     expect(
       getPublicContentSupportHomeProblemEntries({ limit: 0 })
@@ -54,7 +54,7 @@ describe("public content support home", () => {
       "account",
     ]);
     expect(entries[0]).toMatchObject({
-      href: "https://support.yeon.world/nexa",
+      href: "/support/nexa",
       label: "NEXA",
     });
     expect(entries.every((entry) => entry.articleCount > 0)).toBe(true);
@@ -63,7 +63,7 @@ describe("public content support home", () => {
 
   it("support 홈 최근 공지는 실제 News 공지를 재사용한다", () => {
     expect(getPublicContentSupportHomeNoticeEntry()).toMatchObject({
-      href: "https://news.yeon.world/notice/public-content-network-start",
+      href: "/news/notice/public-content-network-start",
       article: {
         channel: "news",
         title: "YEON 공개 도움말, 뉴스, 블로그 채널을 분리합니다",

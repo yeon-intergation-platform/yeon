@@ -27,25 +27,25 @@ describe("public content blog home", () => {
       }))
     ).toEqual([
       {
-        href: "https://blog.yeon.world/engineering",
+        href: "/blog/engineering",
         key: "engineering",
         label: "기술 글",
         purpose: "기술 선택과 구현 근거",
       },
       {
-        href: "https://blog.yeon.world/product",
+        href: "/blog/product",
         key: "product",
         label: "제품 글",
         purpose: "사용자 문제와 제품 판단",
       },
       {
-        href: "https://blog.yeon.world/devlog",
+        href: "/blog/devlog",
         key: "devlog",
         label: "개발 일지",
         purpose: "진행 상황과 배운 점",
       },
       {
-        href: "https://blog.yeon.world/essay",
+        href: "/blog/essay",
         key: "essay",
         label: "에세이",
         purpose: "짧은 개인 관점과 제품 철학",

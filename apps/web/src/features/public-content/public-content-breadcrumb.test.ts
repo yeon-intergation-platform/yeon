@@ -54,22 +54,22 @@ describe("public content breadcrumb", () => {
     ).toEqual([
       {
         current: false,
-        href: "https://support.yeon.world",
+        href: "/support",
         label: "Support",
       },
       {
         current: false,
-        href: "https://support.yeon.world/nexa",
+        href: "/support/nexa",
         label: "NEXA",
       },
       {
         current: false,
-        href: "https://support.yeon.world/nexa/faq",
+        href: "/support/nexa/faq",
         label: "FAQ",
       },
       {
         current: true,
-        href: "https://support.yeon.world/nexa/faq/free-plan-limit",
+        href: "/support/nexa/faq/free-plan-limit",
         label: "NEXA 무료 플랜에서는 무엇까지 사용할 수 있나요?",
       },
     ]);
@@ -87,7 +87,7 @@ describe("public content breadcrumb", () => {
     ]);
     expect(breadcrumb.at(-1)).toMatchObject({
       current: true,
-      href: "https://news.yeon.world/updates/nexa",
+      href: "/news/updates/nexa",
     });
   });
 });

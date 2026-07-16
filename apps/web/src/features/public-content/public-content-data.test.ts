@@ -6,6 +6,7 @@ import {
   PUBLIC_CONTENT_NEXA_DISCORD_BOT_INVITE_URL,
   PUBLIC_CONTENT_NEXA_INSTALL_URL,
   buildPublicContentCanonicalUrl,
+  resolvePublicContentNavigationHref,
   buildPublicContentOpenGraphImageUrl,
   getPublicContentArticleBySlug,
   getPublicContentCollectionBySlug,
@@ -155,6 +156,22 @@ describe("public content data", () => {
     );
     expect(buildPublicContentOpenGraphImageUrl("blog")).toBe(
       "https://blog.yeon.world/opengraph-image"
+    );
+  });
+
+  it("공개 콘텐츠 화면 링크는 canonical host 대신 내부 경로를 사용한다", () => {
+    expect(
+      resolvePublicContentNavigationHref(
+        "https://news.yeon.world/updates/nexa?source=header#details"
+      )
+    ).toBe("/news/updates/nexa?source=header#details");
+    expect(
+      resolvePublicContentNavigationHref(
+        "https://support.yeon.world/nexa/guides/add-nexa-discord-bot"
+      )
+    ).toBe("/support/nexa/guides/add-nexa-discord-bot");
+    expect(resolvePublicContentNavigationHref("https://example.com/help")).toBe(
+      "https://example.com/help"
     );
   });
 

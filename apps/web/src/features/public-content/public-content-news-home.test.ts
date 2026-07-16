@@ -19,7 +19,7 @@ describe("public content news home", () => {
     ]);
     expect(model.filters[0]).toMatchObject({
       count: model.totalCount,
-      href: "https://news.yeon.world/",
+      href: "/news",
       label: "전체",
     });
     expect(model.filters.slice(1).every((filter) => filter.count > 0)).toBe(

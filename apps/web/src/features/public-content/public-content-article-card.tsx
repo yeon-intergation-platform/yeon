@@ -1,5 +1,5 @@
 import {
-  buildPublicContentCanonicalUrl,
+  buildPublicContentInternalHref,
   type PublicContentArticle,
 } from "./public-content-data";
 import {
@@ -17,7 +17,7 @@ export function PublicContentArticleCard({
 }: {
   article: PublicContentArticle;
 }) {
-  const href = buildPublicContentCanonicalUrl(
+  const href = buildPublicContentInternalHref(
     article.channel,
     article.slugSegments
   );

@@ -17,7 +17,7 @@ export function PublicContentBlogHomePriority({
           <p className="text-[13px] font-semibold text-[#111]">글 종류</p>
           <div className="flex flex-wrap gap-2">
             <PublicContentTrackedLink
-              href="https://blog.yeon.world/"
+              href="/blog"
               className="inline-flex h-11 items-center border border-[#111] bg-[#111] px-4 text-[13px] font-semibold text-white no-underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#111]"
               trackingParams={{
                 channel: "blog",

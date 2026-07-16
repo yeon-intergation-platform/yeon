@@ -52,9 +52,7 @@ describe("public content news detail", () => {
       expect(
         sections
           .find((section) => section.title === "관련 support 문서")
-          ?.links?.some((link) =>
-            link.href.startsWith("https://support.yeon.world")
-          )
+          ?.links?.some((link) => link.href.startsWith("/support"))
       ).toBe(true);
     });
   });
@@ -78,9 +76,7 @@ describe("public content news detail", () => {
       expect(
         sections
           .find((section) => section.title === "관련 blog 글")
-          ?.links?.some((link) =>
-            link.href.startsWith("https://blog.yeon.world")
-          )
+          ?.links?.some((link) => link.href.startsWith("/blog"))
       ).toBe(true);
     });
   });

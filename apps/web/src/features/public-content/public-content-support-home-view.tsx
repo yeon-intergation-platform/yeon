@@ -1,5 +1,4 @@
 import { ArrowRight, MessageCircle } from "lucide-react";
-import type { ReactNode } from "react";
 import type {
   PublicContentSupportHomeNoticeEntry,
   PublicContentSupportHomeProblemEntry,
@@ -10,13 +9,11 @@ import { PublicContentServiceIcon } from "./public-content-service-icon";
 import { PublicContentTrackedLink } from "./public-content-tracked-link";
 
 export function PublicContentSupportHomeHero({
-  channelNavigation,
   description,
   eyebrow,
   noticeEntry,
   title,
 }: {
-  channelNavigation: ReactNode;
   description: string;
   eyebrow: string;
   noticeEntry: PublicContentSupportHomeNoticeEntry | null;
@@ -35,13 +32,10 @@ export function PublicContentSupportHomeHero({
           </p>
         </div>
         <aside className="min-w-0 lg:pt-1">
-          <div className="flex justify-start lg:justify-end">
-            {channelNavigation}
-          </div>
           {noticeEntry ? (
             <PublicContentTrackedLink
               href={noticeEntry.href}
-              className="mt-4 block border border-[#e5e5e5] bg-[#fafafa] p-5 text-[#111] no-underline transition-colors hover:border-[#111] hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#111]"
+              className="block border border-[#e5e5e5] bg-[#fafafa] p-5 text-[#111] no-underline transition-colors hover:border-[#111] hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#111]"
               trackingParams={{
                 category: noticeEntry.article.category,
                 channel: "support",

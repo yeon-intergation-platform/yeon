@@ -17,10 +17,10 @@ import { PublicContentBlockView } from "./public-content-block-view";
 import { getPublicContentRelatedArticles } from "./public-content-related-articles";
 import { PublicContentRelatedArticles } from "./public-content-related-articles-view";
 import {
-  PUBLIC_CONTENT_CHANNEL_CONFIG,
   PUBLIC_CONTENT_CHANNELS,
   PUBLIC_CONTENT_SERVICES,
   buildPublicContentCanonicalUrl,
+  buildPublicContentInternalHref,
   buildPublicContentOpenGraphImageUrl,
   getPublicContentArticleBySlug,
   getPublicContentArticles,
@@ -29,6 +29,7 @@ import {
   getPublicContentCollectionBySlug,
   getPublicContentCollections,
   getPublicContentServiceLabel,
+  resolvePublicContentNavigationHref,
   type PublicContentArticle,
   type PublicContentChannel,
   type PublicContentCollection,
@@ -36,6 +37,7 @@ import {
 import { getPublicContentReviewDate } from "./public-content-freshness";
 import {
   getPublicContentCategoryNavItems,
+  getPublicContentChannelNavigationItems,
   getPublicContentNewsTopicNavItems,
   getPublicContentServiceNavItems,
   isPublicContentService,
@@ -97,25 +99,17 @@ type PublicContentRouteProps = {
   }>;
 };
 
-const CHANNEL_NAV_ITEMS = Object.values(PUBLIC_CONTENT_CHANNEL_CONFIG).map(
-  (config) => ({
-    channel: config.channel,
-    label: config.label,
-    href: config.host,
-  })
-);
-
 function buildCtaHref(article: PublicContentArticle) {
   if (!article.ctaHref) return null;
 
   if (article.ctaHref.startsWith("/")) {
-    return buildPublicContentCanonicalUrl(
+    return buildPublicContentInternalHref(
       article.channel,
       article.ctaHref.split("/").filter(Boolean)
     );
   }
 
-  return article.ctaHref;
+  return resolvePublicContentNavigationHref(article.ctaHref);
 }
 
 function getArticleSlug(article: PublicContentArticle) {
@@ -235,7 +229,10 @@ function PublicContentShell({
 }) {
   return (
     <main className="min-h-screen bg-white text-[#111]">
-      <CommonProductHeader activeService={channel} />
+      <CommonProductHeader
+        activeService={channel}
+        titleNavigation={<PublicContentChannelNavigation channel={channel} />}
+      />
       {children}
     </main>
   );
@@ -243,26 +240,34 @@ function PublicContentShell({
 
 function PublicContentChannelNavigation({
   channel,
-  className,
 }: {
   channel: PublicContentChannel;
-  className?: string;
 }) {
+  const items = getPublicContentChannelNavigationItems();
+
   return (
-    <nav aria-label="공개 콘텐츠 채널" className={className}>
-      <div className="flex gap-1.5 overflow-x-auto">
-        {CHANNEL_NAV_ITEMS.map((item) => {
+    <div aria-label="공개 콘텐츠 채널" className="min-w-0" role="group">
+      <div className="flex min-w-0 gap-1 overflow-x-auto pb-px">
+        {items.map((item) => {
           const isActive = item.channel === channel;
+
+          if (isActive) {
+            return (
+              <span
+                key={item.channel}
+                aria-current="page"
+                className="inline-flex h-8 shrink-0 items-center border border-[#111] bg-[#111] px-2.5 text-[12px] font-semibold text-white"
+              >
+                {item.label}
+              </span>
+            );
+          }
 
           return (
             <PublicContentTrackedLink
-              key={item.href}
+              key={item.channel}
               href={item.href}
-              className={`inline-flex h-9 shrink-0 items-center rounded-lg border px-3 text-[12px] font-semibold no-underline transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#111] ${
-                isActive
-                  ? "border-[#111] bg-[#111] text-white"
-                  : "border-[#e5e5e5] text-[#666] hover:border-[#111] hover:text-[#111]"
-              }`}
+              className="inline-flex h-8 shrink-0 items-center border border-[#e5e5e5] bg-white px-2.5 text-[12px] font-semibold text-[#666] no-underline transition-colors hover:border-[#111] hover:text-[#111] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#111]"
               trackingParams={{
                 channel,
                 link_kind: "channel_nav",
@@ -274,7 +279,7 @@ function PublicContentChannelNavigation({
           );
         })}
       </div>
-    </nav>
+    </div>
   );
 }
 
@@ -290,7 +295,7 @@ function ServiceSection({
     .sort(compareArticlesByDate);
   const visibleArticles = articles.slice(0, 4);
   const serviceLabel = getPublicContentServiceLabel(service);
-  const serviceHref = buildPublicContentCanonicalUrl(channel, [service]);
+  const serviceHref = buildPublicContentInternalHref(channel, [service]);
 
   return (
     <section
@@ -584,9 +589,6 @@ export function PublicContentHome({
       />
       {channel === PUBLIC_CONTENT_CHANNELS.support ? (
         <PublicContentSupportHomeHero
-          channelNavigation={
-            <PublicContentChannelNavigation channel={channel} />
-          }
           description={config.homeDescription}
           eyebrow={config.homeEyebrow}
           noticeEntry={supportNoticeEntry}
@@ -594,22 +596,16 @@ export function PublicContentHome({
         />
       ) : (
         <section className={getPublicContentHomeHeroClassName(channel)}>
-          <div className="flex flex-col gap-7 md:flex-row md:items-start md:justify-between">
-            <div>
-              <p className="text-[13px] font-semibold text-[#555]">
-                {config.homeEyebrow}
-              </p>
-              <h1 className="mt-4 max-w-3xl text-[40px] font-semibold leading-tight text-[#111] md:text-[48px]">
-                {config.homeTitle}
-              </h1>
-              <p className="mt-5 max-w-2xl text-[16px] leading-7 text-[#666]">
-                {config.homeDescription}
-              </p>
-            </div>
-            <PublicContentChannelNavigation
-              channel={channel}
-              className="shrink-0 md:mt-1"
-            />
+          <div>
+            <p className="text-[13px] font-semibold text-[#555]">
+              {config.homeEyebrow}
+            </p>
+            <h1 className="mt-4 max-w-3xl text-[40px] font-semibold leading-tight text-[#111] md:text-[48px]">
+              {config.homeTitle}
+            </h1>
+            <p className="mt-5 max-w-2xl text-[16px] leading-7 text-[#666]">
+              {config.homeDescription}
+            </p>
           </div>
         </section>
       )}
@@ -717,17 +713,11 @@ function PublicContentCollectionPage({
         data={getJsonLdForCollection(collection)}
       />
       <section className="mx-auto max-w-6xl px-6 py-12 md:px-8 md:py-16">
-        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-          <PublicContentBreadcrumb
-            channel={collection.channel}
-            items={breadcrumbItems}
-            sourceTitle={collection.title}
-          />
-          <PublicContentChannelNavigation
-            channel={collection.channel}
-            className="shrink-0"
-          />
-        </div>
+        <PublicContentBreadcrumb
+          channel={collection.channel}
+          items={breadcrumbItems}
+          sourceTitle={collection.title}
+        />
         <div className="mt-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
             <h1 className="max-w-3xl text-[36px] font-semibold leading-tight text-[#111] md:text-[48px]">
@@ -798,19 +788,13 @@ export async function PublicContentArticlePage({
         data={buildPublicContentArticleStructuredData(article)}
       />
       <article className={getArticleContainerClassName(article)}>
-        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-          <PublicContentBreadcrumb
-            category={article.category}
-            channel={article.channel}
-            items={breadcrumbItems}
-            service={article.service}
-            sourceTitle={article.title}
-          />
-          <PublicContentChannelNavigation
-            channel={article.channel}
-            className="shrink-0"
-          />
-        </div>
+        <PublicContentBreadcrumb
+          category={article.category}
+          channel={article.channel}
+          items={breadcrumbItems}
+          service={article.service}
+          sourceTitle={article.title}
+        />
         <div className="mt-6 flex flex-wrap gap-2 text-[13px] font-semibold text-[#555]">
           <span>{getPublicContentServiceLabel(article.service)}</span>
           <span aria-hidden="true">/</span>

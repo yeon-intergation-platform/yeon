@@ -630,6 +630,48 @@ test.describe("public content SEO smoke", () => {
     ).toBeGreaterThanOrEqual(2);
   });
 
+  test("public content channel tabs stay on local internal routes", async ({
+    page,
+  }) => {
+    await page.goto("/support");
+
+    const header = page.getByRole("navigation", {
+      name: "YEON 공통 서비스 이동",
+    });
+    const channelNavigation = header.getByRole("group", {
+      name: "공개 콘텐츠 채널",
+    });
+
+    await expect(channelNavigation).toBeVisible();
+    await expect(
+      page.getByRole("group", { name: "공개 콘텐츠 채널" })
+    ).toHaveCount(1);
+
+    const publicCanonicalLinks = page.locator(
+      'a[href^="https://support.yeon.world"], a[href^="https://news.yeon.world"], a[href^="https://blog.yeon.world"]'
+    );
+    await expect(publicCanonicalLinks).toHaveCount(0);
+    await expect(
+      page.getByRole("link", { name: /NEXA를 서버에 추가해야 해요/ })
+    ).toHaveAttribute("href", "/support/nexa/guides/add-nexa-discord-bot");
+
+    const newsLink = channelNavigation.getByRole("link", { name: "News" });
+
+    await expect(newsLink).toHaveAttribute("href", "/news");
+    await newsLink.click();
+    await expect(page).toHaveURL("http://localhost:3000/news");
+    await expect(publicCanonicalLinks).toHaveCount(0);
+
+    const blogLink = page
+      .getByRole("group", { name: "공개 콘텐츠 채널" })
+      .getByRole("link", { name: "Blog" });
+
+    await expect(blogLink).toHaveAttribute("href", "/blog");
+    await blogLink.click();
+    await expect(page).toHaveURL("http://localhost:3000/blog");
+    await expect(publicCanonicalLinks).toHaveCount(0);
+  });
+
   test("public content home has no color contrast violations", async ({
     page,
   }) => {
