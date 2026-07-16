@@ -2385,11 +2385,6 @@ export const PUBLIC_CONTENT_ARTICLES: readonly PublicContentArticle[] = [
           "news: AI, Discord, 개발자 도구, 제품 운영 관련 해설",
         ],
       },
-      {
-        type: "callout",
-        title: "support 글을 반복하지 않습니다",
-        text: "사용법과 오류 해결은 support에 두고, news는 변경 사실과 필요한 조치만 요약한 뒤 관련 support 문서로 연결합니다.",
-      },
     ],
   },
   {

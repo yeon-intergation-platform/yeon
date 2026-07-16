@@ -9,8 +9,6 @@ import {
 } from "./public-content-breadcrumb";
 import { PublicContentBreadcrumb } from "./public-content-breadcrumb-view";
 import { PublicContentArticleCard } from "./public-content-article-card";
-import { getPublicContentBlogDetailModel } from "./public-content-blog-detail";
-import { PublicContentBlogArticleContextPanel } from "./public-content-blog-detail-view";
 import { getPublicContentBlogHomeModel } from "./public-content-blog-home";
 import { PublicContentBlogHomePriority } from "./public-content-blog-home-view";
 import { PublicContentBlockView } from "./public-content-block-view";
@@ -49,11 +47,7 @@ import {
   PublicContentTopicNav,
 } from "./public-content-navigation-view";
 import { getPublicContentNewsHomeModel } from "./public-content-news-home";
-import {
-  PublicContentNewsArticleContextPanel,
-  PublicContentNewsHomePriority,
-} from "./public-content-news-home-view";
-import { PublicContentNewsDetailSections } from "./public-content-news-detail-view";
+import { PublicContentNewsHomePriority } from "./public-content-news-home-view";
 import { PublicContentOpsToolbarClient } from "./public-content-ops-toolbar-client";
 import { buildPublicContentArticleStructuredData } from "./public-content-structured-data";
 import {
@@ -62,8 +56,6 @@ import {
   getPublicContentSupportHomeReportEntry,
   getPublicContentSupportHomeServiceEntries,
 } from "./public-content-support-home";
-import { getPublicContentSupportPrimaryActionItems } from "./public-content-support-action-summary";
-import { PublicContentSupportActionSummary } from "./public-content-support-action-summary-view";
 import {
   PublicContentSupportHomeProblemEntries,
   PublicContentSupportHomeReportCta,
@@ -114,6 +106,31 @@ function buildCtaHref(article: PublicContentArticle) {
 
 function getArticleSlug(article: PublicContentArticle) {
   return article.slugSegments.join("/");
+}
+
+function getPublicContentArticleHeaderMetaItems(article: PublicContentArticle) {
+  const publishedAt = article.publishedAt.replaceAll("-", ".");
+  const serviceLabel = getPublicContentServiceLabel(article.service);
+  const categoryLabel = getPublicContentCategoryLabel(article.category);
+
+  if (
+    article.channel === PUBLIC_CONTENT_CHANNELS.news &&
+    article.category === "notice"
+  ) {
+    return [
+      categoryLabel,
+      `적용 서비스 ${serviceLabel}`,
+      `적용일 ${publishedAt}`,
+    ];
+  }
+
+  const items = [serviceLabel, categoryLabel, publishedAt];
+
+  if (article.channel === PUBLIC_CONTENT_CHANNELS.support) {
+    items.push(`최근 확인 ${getPublicContentReviewDate(article)}`);
+  }
+
+  return items;
 }
 
 function getArticleContainerClassName(article: PublicContentArticle) {
@@ -769,7 +786,6 @@ export async function PublicContentArticlePage({
 
   const relatedArticles = getPublicContentRelatedArticles(article);
   const ctaHref = buildCtaHref(article);
-  const blogDetailModel = getPublicContentBlogDetailModel(article);
   const tableOfContents = shouldShowPublicContentTableOfContents(article)
     ? buildPublicContentTableOfContents(article)
     : [];
@@ -778,8 +794,7 @@ export async function PublicContentArticlePage({
     tableOfContents.map((item) => [item.blockIndex, item.id])
   );
   const breadcrumbItems = buildPublicContentArticleBreadcrumb(article);
-  const supportPrimaryActionItems =
-    getPublicContentSupportPrimaryActionItems(article);
+  const headerMetaItems = getPublicContentArticleHeaderMetaItems(article);
 
   return (
     <PublicContentShell channel={article.channel}>
@@ -795,18 +810,13 @@ export async function PublicContentArticlePage({
           service={article.service}
           sourceTitle={article.title}
         />
-        <div className="mt-6 flex flex-wrap gap-2 text-[13px] font-semibold text-[#555]">
-          <span>{getPublicContentServiceLabel(article.service)}</span>
-          <span aria-hidden="true">/</span>
-          <span>{getPublicContentCategoryLabel(article.category)}</span>
-          <span aria-hidden="true">/</span>
-          <span>{article.publishedAt}</span>
-          {article.channel === "support" ? (
-            <>
-              <span aria-hidden="true">/</span>
-              <span>최근 확인 {getPublicContentReviewDate(article)}</span>
-            </>
-          ) : null}
+        <div className="mt-6 flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] font-semibold text-[#555]">
+          {headerMetaItems.map((item, index) => (
+            <span key={item} className="contents">
+              {index > 0 ? <span aria-hidden="true">·</span> : null}
+              <span>{item}</span>
+            </span>
+          ))}
         </div>
         <h1 className="mt-4 text-[36px] font-semibold leading-tight text-[#111] md:text-[48px]">
           {article.title}
@@ -814,10 +824,6 @@ export async function PublicContentArticlePage({
         <p className="mt-5 max-w-[760px] text-[17px] leading-8 text-[#666]">
           {article.description}
         </p>
-        <PublicContentBlogArticleContextPanel
-          article={article}
-          model={blogDetailModel}
-        />
         <Suspense fallback={null}>
           <PublicContentOpsToolbarClient
             article={{
@@ -828,9 +834,6 @@ export async function PublicContentArticlePage({
             }}
           />
         </Suspense>
-        <PublicContentNewsArticleContextPanel article={article} />
-        <PublicContentNewsDetailSections article={article} />
-        <PublicContentSupportActionSummary items={supportPrimaryActionItems} />
         <div className="mt-8 border-t border-[#e5e5e5] pt-8">
           {hasTableOfContents ? (
             <PublicContentTableOfContents
@@ -863,13 +866,10 @@ export async function PublicContentArticlePage({
           </div>
         </div>
         {ctaHref ? (
-          <div className="mt-10 rounded-lg border border-[#e5e5e5] bg-[#fafafa] p-5">
-            <p className="text-[14px] font-semibold text-[#111]">
-              다음 단계로 이동
-            </p>
+          <div className="mt-10 border-t border-[#e5e5e5] pt-5">
             <PublicContentTrackedLink
               href={ctaHref}
-              className="mt-4 inline-flex rounded-lg bg-[#111] px-4 py-2 text-[14px] font-semibold text-white no-underline"
+              className="inline-flex items-center gap-2 bg-[#111] px-4 py-2.5 text-[14px] font-semibold text-white no-underline transition-opacity hover:opacity-80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#111]"
               eventType="cta"
               trackingParams={{
                 category: article.category,
@@ -882,6 +882,7 @@ export async function PublicContentArticlePage({
               }}
             >
               {article.ctaLabel}
+              <span aria-hidden="true">→</span>
             </PublicContentTrackedLink>
           </div>
         ) : null}

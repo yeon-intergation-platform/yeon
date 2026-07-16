@@ -43,7 +43,7 @@ type AnalyticsWindow = Window & {
 const PUBLIC_CONTENT_PAGE_CASES: readonly PublicContentPageCase[] = [
   {
     path: "/support",
-    heading: "필요한 해결 방법을 서비스별로 찾으세요",
+    heading: "서비스별로 알맞은 해결 방법을 찾아보세요",
     canonical: "https://support.yeon.world/",
     descriptionIncludes: "공개 도움말",
     structuredData: {
@@ -138,7 +138,7 @@ const PUBLIC_CONTENT_HOST_CASES: readonly PublicContentHostCase[] = [
   {
     host: "support.yeon.world",
     homeCanonical: "https://support.yeon.world/",
-    homeHeading: "필요한 해결 방법을 서비스별로 찾으세요",
+    homeHeading: "서비스별로 알맞은 해결 방법을 찾아보세요",
     collectionPath: "/nexa/guides",
     collectionCanonical: "https://support.yeon.world/nexa/guides",
     articlePath: "/nexa/guides/add-nexa-discord-bot",
@@ -199,7 +199,7 @@ const PUBLIC_CONTENT_HOST_CASES: readonly PublicContentHostCase[] = [
 const PUBLIC_CONTENT_VIEWPORT_CASES = [
   {
     path: "/support",
-    heading: "필요한 해결 방법을 서비스별로 찾으세요",
+    heading: "서비스별로 알맞은 해결 방법을 찾아보세요",
   },
   {
     path: "/support/nexa/guides/add-nexa-discord-bot",
@@ -672,6 +672,57 @@ test.describe("public content SEO smoke", () => {
     await expect(publicCanonicalLinks).toHaveCount(0);
   });
 
+  test("public content keeps only action-relevant article context", async ({
+    page,
+  }) => {
+    await page.goto("/news/notice/support-open");
+
+    await expect(
+      page.getByText("적용 서비스 계정/정책", { exact: true })
+    ).toBeVisible();
+    await expect(
+      page.getByText("적용일 2026.06.17", { exact: true })
+    ).toBeVisible();
+    await expect(page.getByText("핵심 확인 사항", { exact: true })).toHaveCount(
+      0
+    );
+    await expect(
+      page.getByText("support 글을 반복하지 않습니다", { exact: true })
+    ).toHaveCount(0);
+
+    await page.goto("/support/nexa/guides/add-nexa-discord-bot");
+    await expect(
+      page.getByRole("heading", { name: "먼저 확인할 것" })
+    ).toHaveCount(0);
+
+    await page.goto("/blog/product/nexa-discord-server-operator-design");
+    await expect(page.getByText("운영 주체", { exact: true })).toHaveCount(0);
+    await expect(page.getByText("관련 공식 소식", { exact: true })).toHaveCount(
+      0
+    );
+  });
+
+  test("public content homes do not repeat category navigation", async ({
+    page,
+  }) => {
+    await page.goto("/news");
+
+    await expect(page.getByText("소식 분류", { exact: true })).toHaveCount(0);
+    await expect(
+      page.getByRole("heading", { name: "먼저 확인할 변경사항" })
+    ).toHaveCount(0);
+    await expect(page.getByText("정렬: 최신순", { exact: true })).toHaveCount(
+      0
+    );
+
+    await page.goto("/blog");
+
+    await expect(page.getByText("글 종류", { exact: true })).toHaveCount(0);
+    await expect(
+      page.getByRole("heading", { name: "글의 성격으로 찾기" })
+    ).toHaveCount(0);
+  });
+
   test("public content home has no color contrast violations", async ({
     page,
   }) => {
@@ -777,8 +828,7 @@ test.describe("public content SEO smoke", () => {
           service: "nexa",
           slug: "nexa/guides/add-nexa-discord-bot",
           target_title: "디스코드 서버에 NEXA AI 봇 추가하는 방법",
-          target_url:
-            "https://support.yeon.world/nexa/guides/add-nexa-discord-bot",
+          target_url: "/support/nexa/guides/add-nexa-discord-bot",
         }),
       ]);
   });
