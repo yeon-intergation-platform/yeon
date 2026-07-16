@@ -1,20 +1,12 @@
-import {
-  ArrowRight,
-  Bot,
-  CreditCard,
-  Keyboard,
-  MessageCircle,
-  ShieldCheck,
-  UsersRound,
-} from "lucide-react";
+import { ArrowRight, MessageCircle } from "lucide-react";
 import type { ReactNode } from "react";
-import type { PublicContentService } from "./public-content-data";
 import type {
   PublicContentSupportHomeNoticeEntry,
   PublicContentSupportHomeProblemEntry,
   PublicContentSupportHomeReportEntry,
   PublicContentSupportHomeServiceEntry,
 } from "./public-content-support-home";
+import { PublicContentServiceIcon } from "./public-content-service-icon";
 import { PublicContentTrackedLink } from "./public-content-tracked-link";
 
 export function PublicContentSupportHomeHero({
@@ -196,51 +188,6 @@ export function PublicContentSupportHomeReportCta({
   );
 }
 
-function SupportServiceIcon({ service }: { service: PublicContentService }) {
-  const iconClassName = "size-5";
-
-  switch (service) {
-    case "nexa":
-      return (
-        <Bot aria-hidden="true" className={iconClassName} strokeWidth={1.75} />
-      );
-    case "typing":
-      return (
-        <Keyboard
-          aria-hidden="true"
-          className={iconClassName}
-          strokeWidth={1.75}
-        />
-      );
-    case "card":
-      return (
-        <CreditCard
-          aria-hidden="true"
-          className={iconClassName}
-          strokeWidth={1.75}
-        />
-      );
-    case "community":
-      return (
-        <UsersRound
-          aria-hidden="true"
-          className={iconClassName}
-          strokeWidth={1.75}
-        />
-      );
-    case "account":
-      return (
-        <ShieldCheck
-          aria-hidden="true"
-          className={iconClassName}
-          strokeWidth={1.75}
-        />
-      );
-    default:
-      return null;
-  }
-}
-
 export function PublicContentSupportHomeServiceEntries({
   entries,
 }: {
@@ -282,9 +229,7 @@ export function PublicContentSupportHomeServiceEntries({
             }}
           >
             <span className="flex items-start justify-between gap-3 text-[#111]">
-              <span className="flex size-9 items-center justify-center border border-[#e5e5e5]">
-                <SupportServiceIcon service={entry.service} />
-              </span>
+              <PublicContentServiceIcon service={entry.service} size={24} />
               <ArrowRight
                 aria-hidden="true"
                 className="mt-1 transition-transform duration-200 group-hover:translate-x-1"

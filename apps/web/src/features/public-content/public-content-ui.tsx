@@ -69,6 +69,7 @@ import {
   PublicContentSupportHomeHero,
 } from "./public-content-support-home-view";
 import { PublicContentSupportSearch } from "./public-content-support-search-view";
+import { PublicContentServiceIcon } from "./public-content-service-icon";
 import {
   normalizePublicContentSearchQuery,
   searchPublicContentSupportArticles,
@@ -298,12 +299,12 @@ function ServiceSection({
     >
       <div className="mb-5 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
         <div>
-          <p className="text-[13px] font-semibold text-[#555]">
-            {serviceLabel}
-          </p>
-          <h2 className="mt-1 text-[24px] font-semibold text-[#111]">
-            {serviceLabel} 도움말
-          </h2>
+          <div className="flex items-center gap-2.5">
+            <PublicContentServiceIcon service={service} size={23} />
+            <h2 className="text-[24px] font-semibold text-[#111]">
+              {serviceLabel} 도움말
+            </h2>
+          </div>
           <p className="mt-2 text-[14px] leading-6 text-[#666]">
             자주 필요한 문서부터 확인하고, 더 많은 문서는 전체 목록에서 보세요.
           </p>
