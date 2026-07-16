@@ -1,6 +1,7 @@
 import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { parse as parseYaml } from "yaml";
 
 import {
   PUBLIC_CONTENT_STATUSES,
@@ -18,7 +19,7 @@ type FrontmatterValue = string | readonly string[];
 
 type ManuscriptFrontmatter = PublicContentImportManuscriptFrontmatter;
 
-type ParsedManuscript = {
+export type ParsedPublicContentManuscript = {
   filePath: string;
   frontmatter: ManuscriptFrontmatter;
   body: string;
@@ -31,9 +32,9 @@ type ValidationMessage = {
 
 type ContractIssue = {
   code: string;
-  keys?: readonly string[];
+  keys?: readonly PropertyKey[];
   message: string;
-  path: readonly (number | string)[];
+  path: readonly PropertyKey[];
 };
 
 type CliOptions = {
@@ -170,64 +171,58 @@ async function findMarkdownFiles(inputDir: string): Promise<string[]> {
   return files.flat().sort();
 }
 
-function stripQuotes(value: string) {
-  const trimmedValue = value.trim();
-  if (
-    (trimmedValue.startsWith('"') && trimmedValue.endsWith('"')) ||
-    (trimmedValue.startsWith("'") && trimmedValue.endsWith("'"))
-  ) {
-    return trimmedValue.slice(1, -1);
-  }
-  return trimmedValue;
-}
-
-function parseFrontmatterBlock(
+export function parsePublicContentFrontmatterBlock(
   block: string
 ): Record<string, FrontmatterValue> {
-  const values: Record<string, FrontmatterValue> = {};
-  let currentListKey: string | undefined;
+  let parsed: unknown;
+  try {
+    parsed = parseYaml(block, { maxAliasCount: 0 });
+  } catch (error) {
+    throw new Error(
+      `frontmatter YAML을 해석하지 못했습니다: ${error instanceof Error ? error.message : String(error)}`
+    );
+  }
 
-  block.split(/\r?\n/).forEach((line) => {
-    if (line.trim().length === 0) {
-      return;
-    }
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+    throw new Error("frontmatter는 YAML 객체여야 합니다.");
+  }
 
-    const listItemMatch = line.match(/^\s*-\s+(.+)$/);
-    if (listItemMatch && currentListKey) {
-      const previousValue = values[currentListKey];
-      const previousItems = Array.isArray(previousValue) ? previousValue : [];
-      values[currentListKey] = [
-        ...previousItems,
-        stripQuotes(listItemMatch[1]),
-      ];
-      return;
-    }
-
-    const fieldMatch = line.match(/^([A-Za-z0-9_]+):(?:\s*(.*))?$/);
-    if (!fieldMatch) {
-      throw new Error(`지원하지 않는 frontmatter 줄입니다: ${line}`);
-    }
-
-    const [, key, rawValue = ""] = fieldMatch;
-    const value = rawValue.trim();
-    if (value.length === 0) {
-      values[key] = [];
-      currentListKey = key;
-      return;
-    }
-
-    values[key] = stripQuotes(value);
-    currentListKey = undefined;
-  });
-
-  return values;
+  return Object.fromEntries(
+    Object.entries(parsed).map(([key, value]) => {
+      if (value === null) return [key, []];
+      if (Array.isArray(value)) {
+        if (
+          value.some(
+            (item) =>
+              item === null ||
+              (typeof item !== "string" &&
+                typeof item !== "number" &&
+                typeof item !== "boolean")
+          )
+        ) {
+          throw new Error(`${key} 목록에는 문자열 값만 사용할 수 있습니다.`);
+        }
+        return [key, value.map(String)];
+      }
+      if (
+        typeof value === "string" ||
+        typeof value === "number" ||
+        typeof value === "boolean"
+      ) {
+        return [key, String(value)];
+      }
+      throw new Error(
+        `${key} frontmatter 값은 문자열 또는 문자열 목록이어야 합니다.`
+      );
+    })
+  );
 }
 
 function formatContractIssue(issue: ContractIssue) {
-  const fieldName = issue.path.join(".") || "frontmatter";
+  const fieldName = issue.path.map(String).join(".") || "frontmatter";
 
   if (issue.code === "unrecognized_keys") {
-    return `허용되지 않는 frontmatter 필드: ${(issue.keys ?? []).join(", ")}`;
+    return `허용되지 않는 frontmatter 필드: ${(issue.keys ?? []).map(String).join(", ")}`;
   }
   if (issue.code === "invalid_type") {
     return `${fieldName} 형식이 contract와 맞지 않습니다.`;
@@ -265,10 +260,10 @@ function parseFrontmatterContract(
   return parsed.data;
 }
 
-function parseManuscript(
+export function parsePublicContentManuscript(
   filePath: string,
   fileContent: string
-): ParsedManuscript {
+): ParsedPublicContentManuscript {
   const lines = fileContent.split(/\r?\n/);
   if (!FRONTMATTER_BOUNDARY_PATTERN.test(lines[0] ?? "")) {
     throw new Error("frontmatter 시작 구분자 --- 가 없습니다.");
@@ -281,7 +276,7 @@ function parseManuscript(
     throw new Error("frontmatter 종료 구분자 --- 가 없습니다.");
   }
 
-  const frontmatterValues = parseFrontmatterBlock(
+  const frontmatterValues = parsePublicContentFrontmatterBlock(
     lines.slice(1, closingIndex).join("\n")
   );
 
@@ -308,7 +303,7 @@ function getSlugSegments(slug: string) {
 }
 
 function validateFilename(
-  manuscript: ParsedManuscript,
+  manuscript: ParsedPublicContentManuscript,
   errors: ValidationMessage[]
 ) {
   const { channel, service, category, slug } = manuscript.frontmatter;
@@ -318,19 +313,20 @@ function validateFilename(
     return;
   }
 
-  const expectedFileName = `${channel}-${service}-${category}-${articleSlug}.md`;
+  const legacyFileName = `${channel}-${service}-${category}-${articleSlug}.md`;
+  const exportFileName = `${channel}-${service}-${category}-${slug.replaceAll("/", "--")}.md`;
   const actualFileName = path.basename(manuscript.filePath);
 
-  if (actualFileName !== expectedFileName) {
+  if (actualFileName !== legacyFileName && actualFileName !== exportFileName) {
     errors.push({
       filePath: manuscript.filePath,
-      message: `파일명은 ${expectedFileName} 이어야 합니다.`,
+      message: `파일명은 ${legacyFileName} 또는 ${exportFileName} 이어야 합니다.`,
     });
   }
 }
 
 function validateSlug(
-  manuscript: ParsedManuscript,
+  manuscript: ParsedPublicContentManuscript,
   errors: ValidationMessage[]
 ) {
   const slugSegments = getSlugSegments(manuscript.frontmatter.slug);
@@ -353,7 +349,7 @@ function validateSlug(
 }
 
 function validateCategory(
-  manuscript: ParsedManuscript,
+  manuscript: ParsedPublicContentManuscript,
   errors: ValidationMessage[]
 ) {
   if (CATEGORY_SET.has(manuscript.frontmatter.category)) {
@@ -367,7 +363,7 @@ function validateCategory(
 }
 
 function validateStatusMode(
-  manuscript: ParsedManuscript,
+  manuscript: ParsedPublicContentManuscript,
   mode: PublicContentImportMode,
   errors: ValidationMessage[]
 ) {
@@ -382,7 +378,7 @@ function validateStatusMode(
 }
 
 function validateBody(
-  manuscript: ParsedManuscript,
+  manuscript: ParsedPublicContentManuscript,
   errors: ValidationMessage[],
   warnings: ValidationMessage[]
 ) {
@@ -419,7 +415,7 @@ function validateBody(
 }
 
 function validateSourcePaths(
-  manuscript: ParsedManuscript,
+  manuscript: ParsedPublicContentManuscript,
   warnings: ValidationMessage[]
 ) {
   if (manuscript.frontmatter.source_path.length === 0) {
@@ -441,7 +437,7 @@ function validateSourcePaths(
 }
 
 function validateDuplicateSlug(
-  manuscript: ParsedManuscript,
+  manuscript: ParsedPublicContentManuscript,
   seenSlugs: Map<string, string>,
   errors: ValidationMessage[]
 ) {
@@ -457,7 +453,9 @@ function validateDuplicateSlug(
   seenSlugs.set(slugKey, manuscript.filePath);
 }
 
-function getImportOperation(manuscript: ParsedManuscript): ImportOperation {
+function getImportOperation(
+  manuscript: ParsedPublicContentManuscript
+): ImportOperation {
   if (
     manuscript.frontmatter.status === PUBLIC_CONTENT_IMPORT_STATUSES.archived
   ) {
@@ -473,7 +471,7 @@ function getImportOperation(manuscript: ParsedManuscript): ImportOperation {
 }
 
 function summarizeImportOperations(
-  manuscripts: readonly ParsedManuscript[]
+  manuscripts: readonly ParsedPublicContentManuscript[]
 ): ImportOperationSummary {
   return manuscripts.reduce(
     (summary, manuscript) => {
@@ -485,7 +483,7 @@ function summarizeImportOperations(
 }
 
 function validateManuscripts(
-  manuscripts: readonly ParsedManuscript[],
+  manuscripts: readonly ParsedPublicContentManuscript[],
   mode: PublicContentImportMode
 ) {
   const errors: ValidationMessage[] = [];
@@ -522,13 +520,13 @@ async function main() {
   const { inputDir, mode } = getCliOptions();
   const markdownFiles = await findMarkdownFiles(inputDir);
   const parseErrors: ValidationMessage[] = [];
-  const manuscripts: ParsedManuscript[] = [];
+  const manuscripts: ParsedPublicContentManuscript[] = [];
 
   await Promise.all(
     markdownFiles.map(async (filePath) => {
       try {
         const fileContent = await readFile(filePath, "utf8");
-        manuscripts.push(parseManuscript(filePath, fileContent));
+        manuscripts.push(parsePublicContentManuscript(filePath, fileContent));
       } catch (error) {
         parseErrors.push({
           filePath,
@@ -555,11 +553,13 @@ async function main() {
   }
 }
 
-main().catch((error) => {
-  console.error(
-    `[public-content:import:dry-run] 실행 실패: ${
-      error instanceof Error ? error.message : String(error)
-    }`
-  );
-  process.exitCode = 1;
-});
+if (path.resolve(process.argv[1] ?? "") === fileURLToPath(import.meta.url)) {
+  main().catch((error) => {
+    console.error(
+      `[public-content:import:dry-run] 실행 실패: ${
+        error instanceof Error ? error.message : String(error)
+      }`
+    );
+    process.exitCode = 1;
+  });
+}

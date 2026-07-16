@@ -16,11 +16,12 @@ function compareArticlesByPublishedDate(
 
 export function getPublicContentRelatedArticles(
   article: PublicContentArticle,
-  limit = 2
+  limit = 2,
+  sourceArticles?: readonly PublicContentArticle[]
 ): readonly PublicContentArticle[] {
   const articleSlug = getArticleSlug(article);
 
-  return getPublicContentArticles(article.channel)
+  return getPublicContentArticles(article.channel, sourceArticles)
     .filter(
       (candidate) =>
         candidate.service === article.service &&

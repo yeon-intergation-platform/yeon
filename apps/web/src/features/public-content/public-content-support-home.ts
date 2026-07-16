@@ -49,6 +49,8 @@ const SUPPORT_HOME_SERVICE_DESCRIPTIONS = {
     "글 작성, 댓글, 게스트 닉네임, 커뮤니티 이용 기준을 안내합니다.",
   [PUBLIC_CONTENT_SERVICES.account]:
     "로그인이 자꾸 풀릴 때, 개인정보, 공개 URL, 오류 신고 위치를 확인합니다.",
+  [PUBLIC_CONTENT_SERVICES.yeon]:
+    "YEON 전체 서비스의 공통 운영 안내와 정책을 확인합니다.",
 } as const satisfies Record<PublicContentService, string>;
 
 const SUPPORT_HOME_PROBLEM_SEEDS = [
@@ -79,11 +81,13 @@ const SUPPORT_HOME_PROBLEM_SEEDS = [
 ] as const satisfies readonly SupportHomeProblemSeed[];
 
 function toSupportHomeProblemEntry(
-  seed: SupportHomeProblemSeed
+  seed: SupportHomeProblemSeed,
+  sourceArticles?: readonly PublicContentArticle[]
 ): PublicContentSupportHomeProblemEntry | null {
   const article = getPublicContentArticleBySlug(
     PUBLIC_CONTENT_CHANNELS.support,
-    seed.slugSegments
+    seed.slugSegments,
+    sourceArticles
   );
 
   if (!article) return null;
@@ -99,21 +103,28 @@ function toSupportHomeProblemEntry(
 
 export function getPublicContentSupportHomeProblemEntries({
   limit = SUPPORT_HOME_PROBLEM_SEEDS.length,
+  sourceArticles,
 }: {
   limit?: number;
+  sourceArticles?: readonly PublicContentArticle[];
 } = {}): PublicContentSupportHomeProblemEntry[] {
   if (limit <= 0) return [];
 
-  return SUPPORT_HOME_PROBLEM_SEEDS.map(toSupportHomeProblemEntry)
+  return SUPPORT_HOME_PROBLEM_SEEDS.map((seed) =>
+    toSupportHomeProblemEntry(seed, sourceArticles)
+  )
     .filter((entry): entry is PublicContentSupportHomeProblemEntry =>
       Boolean(entry)
     )
     .slice(0, limit);
 }
 
-export function getPublicContentSupportHomeServiceEntries(): PublicContentSupportHomeServiceEntry[] {
+export function getPublicContentSupportHomeServiceEntries(
+  sourceArticles?: readonly PublicContentArticle[]
+): PublicContentSupportHomeServiceEntry[] {
   return getPublicContentServiceNavItems({
     channel: PUBLIC_CONTENT_CHANNELS.support,
+    sourceArticles,
   }).flatMap((item): PublicContentSupportHomeServiceEntry[] => {
     const [service] = item.slugSegments;
 
@@ -131,10 +142,13 @@ export function getPublicContentSupportHomeServiceEntries(): PublicContentSuppor
   });
 }
 
-export function getPublicContentSupportHomeReportEntry(): PublicContentSupportHomeReportEntry | null {
+export function getPublicContentSupportHomeReportEntry(
+  sourceArticles?: readonly PublicContentArticle[]
+): PublicContentSupportHomeReportEntry | null {
   const article = getPublicContentArticleBySlug(
     PUBLIC_CONTENT_CHANNELS.support,
-    ["account", "troubleshooting", "report-service-error"]
+    ["account", "troubleshooting", "report-service-error"],
+    sourceArticles
   );
 
   if (!article) return null;

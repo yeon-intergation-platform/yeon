@@ -4,6 +4,7 @@ import type { YeonMetadataRoute } from "@yeon/ui/runtime/YeonMetadataRoute";
 import {
   PUBLIC_CONTENT_CHANNEL_CONFIG,
   type PublicContentChannel,
+  type PublicContentArticle,
   getPublicContentSitemapEntries,
 } from "@/features/public-content/public-content-data";
 import { getGameSlugs } from "@/features/game-service/game-catalog";
@@ -67,7 +68,7 @@ export const NON_INDEXABLE_ROBOTS: YeonPageMetadata["robots"] = {
 
 type IndexableSitemapEntry = YeonMetadataRoute["Sitemap"][number];
 
-export const INDEXABLE_SITEMAP_ENTRIES = [
+const STATIC_INDEXABLE_SITEMAP_ENTRIES = [
   {
     url: `${CANONICAL_SITE_URL}/`,
     changeFrequency: "weekly",
@@ -115,7 +116,6 @@ export const INDEXABLE_SITEMAP_ENTRIES = [
       priority: 0.7,
     })
   ),
-  ...getPublicContentSitemapEntries(),
   {
     url: `${CANONICAL_SITE_URL}/privacy`,
     changeFrequency: "yearly",
@@ -126,6 +126,11 @@ export const INDEXABLE_SITEMAP_ENTRIES = [
     changeFrequency: "yearly",
     priority: 0.2,
   },
+] satisfies readonly IndexableSitemapEntry[];
+
+export const INDEXABLE_SITEMAP_ENTRIES = [
+  ...STATIC_INDEXABLE_SITEMAP_ENTRIES,
+  ...getPublicContentSitemapEntries(),
 ] satisfies readonly IndexableSitemapEntry[];
 
 function parseUrl(rawUrl: string | undefined) {
@@ -229,8 +234,17 @@ export function getDefaultSiteRobots(): YeonPageMetadata["robots"] {
     : NON_INDEXABLE_ROBOTS;
 }
 
-export function getIndexableSitemapEntries(): YeonMetadataRoute["Sitemap"] {
-  return INDEXABLE_SITEMAP_ENTRIES.map((entry) => ({
+export function getIndexableSitemapEntries(
+  publicContentArticles?: readonly PublicContentArticle[]
+): YeonMetadataRoute["Sitemap"] {
+  const entries = publicContentArticles
+    ? [
+        ...STATIC_INDEXABLE_SITEMAP_ENTRIES,
+        ...getPublicContentSitemapEntries(publicContentArticles),
+      ]
+    : INDEXABLE_SITEMAP_ENTRIES;
+
+  return entries.map((entry) => ({
     url: entry.url,
     changeFrequency: entry.changeFrequency,
     priority: entry.priority,
@@ -239,14 +253,15 @@ export function getIndexableSitemapEntries(): YeonMetadataRoute["Sitemap"] {
 }
 
 export function getIndexableSitemapEntriesForHostname(
-  hostname: string | null | undefined
+  hostname: string | null | undefined,
+  publicContentArticles?: readonly PublicContentArticle[]
 ): YeonMetadataRoute["Sitemap"] {
   const publicSeoOrigin = getPublicSeoOriginForHostname(hostname);
   if (!publicSeoOrigin) return [];
 
   const publicSeoHostname = createYeonUrl(publicSeoOrigin).hostname;
 
-  return getIndexableSitemapEntries().filter((entry) => {
+  return getIndexableSitemapEntries(publicContentArticles).filter((entry) => {
     return createYeonUrl(entry.url).hostname === publicSeoHostname;
   });
 }

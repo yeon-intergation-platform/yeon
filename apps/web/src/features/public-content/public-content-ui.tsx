@@ -3,6 +3,7 @@ import { showYeonNotFound } from "@yeon/ui/runtime/YeonRouteControl";
 import type { YeonPageMetadata } from "@yeon/ui/runtime/YeonPageMetadata";
 import { Suspense, type ReactNode } from "react";
 import { CommonProductHeader } from "@/components/product-shell/product-header";
+import { redirectArchivedPublicContentIfConfigured } from "./public-content-archived-route";
 import {
   buildPublicContentArticleBreadcrumb,
   buildPublicContentCollectionBreadcrumb,
@@ -15,11 +16,12 @@ import {
 } from "./public-content-blog-home";
 import { PublicContentBlogHomePriority } from "./public-content-blog-home-view";
 import { PublicContentBlockView } from "./public-content-block-view";
+import { PublicContentMarkdownView } from "./public-content-markdown-view";
+import { buildPublicContentArticleMetadata } from "./public-content-metadata";
 import { getPublicContentRelatedArticles } from "./public-content-related-articles";
 import { PublicContentRelatedArticles } from "./public-content-related-articles-view";
 import {
   PUBLIC_CONTENT_CHANNELS,
-  PUBLIC_CONTENT_SERVICES,
   buildPublicContentCanonicalUrl,
   buildPublicContentInternalHref,
   buildPublicContentOpenGraphImageUrl,
@@ -28,7 +30,7 @@ import {
   getPublicContentCategoryLabel,
   getPublicContentChannelConfig,
   getPublicContentCollectionBySlug,
-  getPublicContentCollections,
+  getPublicContentServicesForChannel,
   getPublicContentServiceLabel,
   resolvePublicContentNavigationHref,
   type PublicContentArticle,
@@ -76,6 +78,7 @@ import {
   type PublicContentTableOfContentsItem,
 } from "./public-content-table-of-contents";
 import { PublicContentTrackedLink } from "./public-content-tracked-link";
+import { loadPublishedPublicContentArticles } from "./public-content-runtime";
 
 type PublicContentHomeProps = {
   blogCategory?: PublicContentBlogCategory;
@@ -194,9 +197,11 @@ function PublicContentNavigationGroup({
   );
 }
 
-function getJsonLdForHome(channel: PublicContentChannel) {
+function getJsonLdForHome(
+  channel: PublicContentChannel,
+  articles: readonly PublicContentArticle[]
+) {
   const config = getPublicContentChannelConfig(channel);
-  const articles = getPublicContentArticles(channel);
 
   return {
     "@context": "https://schema.org",
@@ -311,11 +316,13 @@ function PublicContentChannelNavigation({
 function ServiceSection({
   channel,
   service,
+  sourceArticles,
 }: {
   channel: PublicContentChannel;
   service: PublicContentArticle["service"];
+  sourceArticles: readonly PublicContentArticle[];
 }) {
-  const articles = getPublicContentArticles(channel)
+  const articles = getPublicContentArticles(channel, sourceArticles)
     .filter((article) => article.service === service)
     .sort(compareArticlesByDate);
   const visibleArticles = articles.slice(0, 4);
@@ -462,50 +469,15 @@ export async function getPublicContentArticleMetadata({
   params: PublicContentRouteProps["params"];
 }): Promise<YeonPageMetadata> {
   const { slug = [] } = await params;
-  const article = getPublicContentArticleBySlug(channel, slug);
+  const articles = await loadPublishedPublicContentArticles(channel);
+  const article = getPublicContentArticleBySlug(channel, slug, articles);
   const config = getPublicContentChannelConfig(channel);
 
   if (article) {
-    const canonical = buildPublicContentCanonicalUrl(
-      article.channel,
-      article.slugSegments
-    );
-    const imageUrl = buildPublicContentOpenGraphImageUrl(article.channel);
-
-    return {
-      title: `${article.title} | ${config.title}`,
-      description: article.description,
-      alternates: {
-        canonical,
-      },
-      openGraph: {
-        title: article.title,
-        description: article.description,
-        siteName: config.title,
-        type: "article",
-        url: canonical,
-        locale: "ko_KR",
-        publishedTime: article.publishedAt,
-        modifiedTime: article.updatedAt,
-        images: [
-          {
-            url: imageUrl,
-            width: 1200,
-            height: 630,
-            alt: article.title,
-          },
-        ],
-      },
-      twitter: {
-        card: "summary_large_image",
-        title: article.title,
-        description: article.description,
-        images: [imageUrl],
-      },
-    };
+    return buildPublicContentArticleMetadata(article);
   }
 
-  const collection = getPublicContentCollectionBySlug(channel, slug);
+  const collection = getPublicContentCollectionBySlug(channel, slug, articles);
   if (collection) {
     const imageUrl = buildPublicContentOpenGraphImageUrl(channel);
 
@@ -546,17 +518,6 @@ export async function getPublicContentArticleMetadata({
   };
 }
 
-export function getPublicContentStaticParams(channel: PublicContentChannel) {
-  return [
-    ...getPublicContentCollections(channel).map((collection) => ({
-      slug: [...collection.slugSegments],
-    })),
-    ...getPublicContentArticles(channel).map((article) => ({
-      slug: [...article.slugSegments],
-    })),
-  ];
-}
-
 function getPublicContentHomeHeroClassName(channel: PublicContentChannel) {
   if (channel === PUBLIC_CONTENT_CHANNELS.blog) {
     return "mx-auto max-w-6xl px-6 py-12 md:px-8 md:py-14";
@@ -565,49 +526,50 @@ function getPublicContentHomeHeroClassName(channel: PublicContentChannel) {
   return "mx-auto max-w-6xl px-6 py-14 md:px-8 md:py-16";
 }
 
-export function PublicContentHome({
+export async function PublicContentHome({
   blogCategory,
   channel,
   supportSearchQuery,
 }: PublicContentHomeProps) {
+  const articles = await loadPublishedPublicContentArticles(channel);
   const config = getPublicContentChannelConfig(channel);
   const newsHomeModel =
     channel === PUBLIC_CONTENT_CHANNELS.news
-      ? getPublicContentNewsHomeModel()
+      ? getPublicContentNewsHomeModel(articles)
       : null;
   const blogHomeModel =
     channel === PUBLIC_CONTENT_CHANNELS.blog
-      ? getPublicContentBlogHomeModel(blogCategory)
+      ? getPublicContentBlogHomeModel(blogCategory, articles)
       : null;
   const supportServices =
     channel === PUBLIC_CONTENT_CHANNELS.support
-      ? Object.values(PUBLIC_CONTENT_SERVICES)
+      ? getPublicContentServicesForChannel(channel, articles)
       : [];
   const normalizedSupportSearchQuery =
     channel === PUBLIC_CONTENT_CHANNELS.support
       ? normalizePublicContentSearchQuery(supportSearchQuery)
       : "";
   const supportSearchResults = normalizedSupportSearchQuery
-    ? searchPublicContentSupportArticles(normalizedSupportSearchQuery)
+    ? searchPublicContentSupportArticles(normalizedSupportSearchQuery, articles)
     : [];
   const supportProblemEntries =
     channel === PUBLIC_CONTENT_CHANNELS.support
-      ? getPublicContentSupportHomeProblemEntries()
+      ? getPublicContentSupportHomeProblemEntries({ sourceArticles: articles })
       : [];
   const supportServiceEntries =
     channel === PUBLIC_CONTENT_CHANNELS.support
-      ? getPublicContentSupportHomeServiceEntries()
+      ? getPublicContentSupportHomeServiceEntries(articles)
       : [];
   const supportReportEntry =
     channel === PUBLIC_CONTENT_CHANNELS.support
-      ? getPublicContentSupportHomeReportEntry()
+      ? getPublicContentSupportHomeReportEntry(articles)
       : null;
 
   return (
     <PublicContentShell channel={channel}>
       <YeonStructuredData
         id={`${channel}-home-jsonld`}
-        data={getJsonLdForHome(channel)}
+        data={getJsonLdForHome(channel, articles)}
       />
       {channel === PUBLIC_CONTENT_CHANNELS.support ? (
         <PublicContentSupportHomeHero
@@ -658,7 +620,12 @@ export function PublicContentHome({
           className="mx-auto max-w-6xl px-6 pb-8 md:px-8"
         >
           {supportServices.map((service) => (
-            <ServiceSection key={service} channel={channel} service={service} />
+            <ServiceSection
+              key={service}
+              channel={channel}
+              service={service}
+              sourceArticles={articles}
+            />
           ))}
         </section>
       ) : null}
@@ -698,8 +665,10 @@ function getCollectionActiveNewsTopic(collection: PublicContentCollection) {
 
 function PublicContentCollectionPage({
   collection,
+  sourceArticles,
 }: {
   collection: PublicContentCollection;
+  sourceArticles: readonly PublicContentArticle[];
 }) {
   const breadcrumbItems = buildPublicContentCollectionBreadcrumb(collection);
   const activeService = getCollectionActiveService(collection);
@@ -712,6 +681,7 @@ function PublicContentCollectionPage({
       collection.channel === PUBLIC_CONTENT_CHANNELS.support
         ? activeService
         : undefined,
+    sourceArticles,
   });
   const serviceNavItems = getPublicContentServiceNavItems({
     activeService,
@@ -720,11 +690,15 @@ function PublicContentCollectionPage({
       collection.channel === PUBLIC_CONTENT_CHANNELS.support
         ? undefined
         : activeCategory,
+    sourceArticles,
   });
   const topicNavItems =
     collection.channel === PUBLIC_CONTENT_CHANNELS.news &&
     activeCategory === "news"
-      ? getPublicContentNewsTopicNavItems({ activeTopic: activeNewsTopic })
+      ? getPublicContentNewsTopicNavItems({
+          activeTopic: activeNewsTopic,
+          sourceArticles,
+        })
       : [];
 
   return (
@@ -777,18 +751,37 @@ export async function PublicContentArticlePage({
   channel,
   slugSegments,
 }: PublicContentArticleProps) {
-  const article = getPublicContentArticleBySlug(channel, slugSegments);
+  const articles = await loadPublishedPublicContentArticles(channel);
+  const article = getPublicContentArticleBySlug(
+    channel,
+    slugSegments,
+    articles
+  );
 
   if (!article) {
-    const collection = getPublicContentCollectionBySlug(channel, slugSegments);
+    const collection = getPublicContentCollectionBySlug(
+      channel,
+      slugSegments,
+      articles
+    );
     if (collection) {
-      return <PublicContentCollectionPage collection={collection} />;
+      return (
+        <PublicContentCollectionPage
+          collection={collection}
+          sourceArticles={articles}
+        />
+      );
     }
+
+    await redirectArchivedPublicContentIfConfigured({
+      channel,
+      slugSegments,
+    });
 
     showYeonNotFound();
   }
 
-  const relatedArticles = getPublicContentRelatedArticles(article);
+  const relatedArticles = getPublicContentRelatedArticles(article, 2, articles);
   const ctaHref = buildCtaHref(article);
   const tableOfContents = shouldShowPublicContentTableOfContents(article)
     ? buildPublicContentTableOfContents(article)
@@ -853,13 +846,17 @@ export async function PublicContentArticlePage({
               />
             ) : null}
             <div className={getArticleBodyClassName(article)}>
-              {article.body.map((block, index) => (
-                <PublicContentBlockView
-                  key={index}
-                  block={block}
-                  headingId={headingIdByBlockIndex.get(index)}
-                />
-              ))}
+              {article.bodyMarkdown ? (
+                <PublicContentMarkdownView markdown={article.bodyMarkdown} />
+              ) : (
+                article.body.map((block, index) => (
+                  <PublicContentBlockView
+                    key={index}
+                    block={block}
+                    headingId={headingIdByBlockIndex.get(index)}
+                  />
+                ))
+              )}
             </div>
           </div>
         </div>

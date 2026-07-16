@@ -2,7 +2,6 @@ import {
   PUBLIC_CONTENT_CHANNELS,
   PublicContentArticlePage,
   getPublicContentArticleMetadata,
-  getPublicContentStaticParams,
 } from "@/features/public-content";
 
 type BlogArticleRouteProps = {
@@ -10,10 +9,6 @@ type BlogArticleRouteProps = {
     slug?: string[];
   }>;
 };
-
-export function generateStaticParams() {
-  return getPublicContentStaticParams(PUBLIC_CONTENT_CHANNELS.blog);
-}
 
 export async function generateMetadata({ params }: BlogArticleRouteProps) {
   return getPublicContentArticleMetadata({

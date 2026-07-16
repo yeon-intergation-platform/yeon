@@ -1,10 +1,7 @@
 import { publicContentListQuerySchema } from "@yeon/api-contract/public-content";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-import {
-  PublicContentSpringBackendHttpError,
-  fetchPublicContentArticlesFromSpring,
-} from "@/server/public-content-spring-client";
+import { loadPublicContentList } from "@/server/public-content-public-read";
 import { jsonPublicContentError } from "./_shared";
 
 export const runtime = "nodejs";
@@ -22,14 +19,8 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    return NextResponse.json(
-      await fetchPublicContentArticlesFromSpring(parsedQuery.data)
-    );
+    return NextResponse.json(await loadPublicContentList(parsedQuery.data));
   } catch (error) {
-    if (error instanceof PublicContentSpringBackendHttpError) {
-      return jsonPublicContentError(error.message, error.status);
-    }
-
     console.error(error);
     return jsonPublicContentError(
       "공개 콘텐츠 목록을 불러오지 못했습니다.",

@@ -64,9 +64,12 @@ function buildRssItem(article: PublicContentArticle) {
   ].join("\n");
 }
 
-export function buildPublicContentRssFeed(channel: PublicContentChannel) {
+export function buildPublicContentRssFeed(
+  channel: PublicContentChannel,
+  sourceArticles?: readonly PublicContentArticle[]
+) {
   const config = getPublicContentChannelConfig(channel);
-  const articles = getPublicContentArticles(channel)
+  const articles = getPublicContentArticles(channel, sourceArticles)
     .sort(compareArticlesByPublishedDate)
     .slice(0, RSS_ITEM_LIMIT);
   const lastUpdatedAt = getMostRecentUpdatedAt(articles);

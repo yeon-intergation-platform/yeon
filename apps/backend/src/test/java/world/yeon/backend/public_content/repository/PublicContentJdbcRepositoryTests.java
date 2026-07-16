@@ -39,7 +39,9 @@ class PublicContentJdbcRepositoryTests {
 			"본문입니다.",
 			null,
 			null,
+			null,
 			"설명입니다.",
+			null,
 			List.of("apps/backend/src/main/resources/public-content/articles.json")
 		);
 		when(jdbc.query(anyString(), any(RowMapper.class))).thenReturn(List.of(article));
@@ -52,10 +54,12 @@ class PublicContentJdbcRepositoryTests {
 		verify(jdbc).query(sqlCaptor.capture(), any(RowMapper.class));
 		assertThat(sqlCaptor.getValue())
 			.contains("source_paths::text as source_paths")
-			.contains("status = 'published'")
-			.contains("visibility = 'public'")
-			.contains("noindex = false")
-			.contains("published_at is not null");
+			.contains("revision.meta_title")
+			.contains("revision.og_image_url")
+			.contains("revision.id = article.published_revision_id")
+			.contains("article.status <> 'archived'")
+			.contains("revision.visibility = 'public'")
+			.contains("revision.noindex = false");
 	}
 
 	@Test
@@ -86,6 +90,8 @@ class PublicContentJdbcRepositoryTests {
 			"yeon",
 			"yeon",
 			List.of("docs/seo/example.md"),
+			null,
+			1,
 			null
 		);
 		when(jdbc.query(anyString(), any(RowMapper.class))).thenReturn(List.of(article));
@@ -98,6 +104,7 @@ class PublicContentJdbcRepositoryTests {
 		verify(jdbc).query(sqlCaptor.capture(), any(RowMapper.class));
 		assertThat(sqlCaptor.getValue())
 			.contains("source_paths::text as source_paths")
+			.contains("published_revision_id::text as published_revision_id")
 			.doesNotContain("where status = 'published'");
 	}
 }

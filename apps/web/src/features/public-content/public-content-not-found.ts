@@ -31,9 +31,10 @@ export function getPublicContentNotFoundHomeLink(
 
 export function getPublicContentNotFoundArticles(
   channel: PublicContentChannel,
-  limit = 3
+  limit = 3,
+  sourceArticles?: readonly PublicContentArticle[]
 ): readonly PublicContentArticle[] {
-  return getPublicContentArticles(channel)
+  return getPublicContentArticles(channel, sourceArticles)
     .sort(compareArticlesByDate)
     .slice(0, limit);
 }

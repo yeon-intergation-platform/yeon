@@ -29,6 +29,7 @@ const SERVICE_TITLE_KEYWORDS = {
   card: ["card.yeon.world", "플래시카드", "카드", "덱", "복습"],
   community: ["community.yeon.world", "커뮤니티", "글", "댓글", "닉네임"],
   account: ["YEON", "계정", "로그인", "개인정보", "서비스", "공개 URL"],
+  yeon: ["YEON", "서비스", "운영", "정책", "플랫폼"],
 } as const satisfies Record<PublicContentService, readonly string[]>;
 
 const SUPPORT_INTENT_KEYWORDS = [

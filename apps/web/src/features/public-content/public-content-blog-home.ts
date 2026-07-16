@@ -77,10 +77,11 @@ function compareArticlesByDate(
   return right.publishedAt.localeCompare(left.publishedAt);
 }
 
-function getBlogArticles() {
-  return getPublicContentArticles(PUBLIC_CONTENT_CHANNELS.blog).sort(
-    compareArticlesByDate
-  );
+function getBlogArticles(sourceArticles?: readonly PublicContentArticle[]) {
+  return getPublicContentArticles(
+    PUBLIC_CONTENT_CHANNELS.blog,
+    sourceArticles
+  ).sort(compareArticlesByDate);
 }
 
 function getCategoryEntries(
@@ -104,9 +105,10 @@ function getCategoryEntries(
 }
 
 export function getPublicContentBlogHomeModel(
-  activeCategory?: PublicContentBlogCategory
+  activeCategory?: PublicContentBlogCategory,
+  sourceArticles?: readonly PublicContentArticle[]
 ): PublicContentBlogHomeModel {
-  const articles = getBlogArticles();
+  const articles = getBlogArticles(sourceArticles);
   const filteredArticles = activeCategory
     ? articles.filter((article) => article.category === activeCategory)
     : articles;

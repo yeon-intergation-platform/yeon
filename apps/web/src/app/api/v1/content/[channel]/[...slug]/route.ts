@@ -4,10 +4,8 @@ import {
 } from "@yeon/api-contract/public-content";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-import {
-  PublicContentSpringBackendHttpError,
-  fetchPublicContentArticleFromSpring,
-} from "@/server/public-content-spring-client";
+import { PublicContentSpringBackendHttpError } from "@/server/public-content-spring-client";
+import { loadPublicContentArticle } from "@/server/public-content-public-read";
 import { jsonPublicContentError } from "../../_shared";
 
 export const runtime = "nodejs";
@@ -36,7 +34,7 @@ export async function GET(
 
   try {
     return NextResponse.json(
-      await fetchPublicContentArticleFromSpring({
+      await loadPublicContentArticle({
         channel: parsedChannel.data,
         slug: parsedSlug.data,
       })

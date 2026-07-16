@@ -3,6 +3,7 @@ import {
   fetchAdminPublicContentArticleFromSpring,
   fetchAdminPublicContentArticlesFromSpring,
   fetchPublicContentArticleFromSpring,
+  fetchPublicContentRedirectFromSpring,
 } from "../public-content-spring-client";
 
 describe("public-content-spring-client", () => {
@@ -44,6 +45,7 @@ describe("public-content-spring-client", () => {
 
   afterEach(() => {
     vi.unstubAllGlobals();
+    vi.restoreAllMocks();
     process.env.SPRING_BACKEND_BASE_URL = originalSpringBackendBaseUrl;
     process.env.SPRING_INTERNAL_TOKEN = originalSpringInternalToken;
   });
@@ -71,6 +73,9 @@ describe("public-content-spring-client", () => {
             bodyMarkdown: "본문입니다.",
             ctaLabel: null,
             ctaHref: null,
+            metaTitle: null,
+            metaDescription: "검색 설명입니다.",
+            ogImageUrl: null,
           },
         }),
         {
@@ -80,6 +85,7 @@ describe("public-content-spring-client", () => {
       )
     );
     vi.stubGlobal("fetch", fetchMock);
+    const timeoutSpy = vi.spyOn(AbortSignal, "timeout");
 
     await fetchPublicContentArticleFromSpring({
       channel: "support",
@@ -92,8 +98,32 @@ describe("public-content-spring-client", () => {
       "http://spring.test/api/v1/content/support/nexa/guides/add-nexa-discord-bot"
     );
     expect(init?.cache).toBe("no-store");
+    expect(init?.signal).toBeInstanceOf(AbortSignal);
+    expect(timeoutSpy).toHaveBeenCalledWith(5_000);
     expect(headers.get("accept")).toBe("application/json");
     expect(headers.get("X-Yeon-Internal-Token")).toBeNull();
+  });
+
+  it("보관 글 redirect 조회는 slug를 query로 인코딩한다", async () => {
+    process.env.SPRING_BACKEND_BASE_URL = "http://spring.test";
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          redirectTo: "https://blog.yeon.world/product/new-article",
+        }),
+        { status: 200, headers: { "content-type": "application/json" } }
+      )
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await fetchPublicContentRedirectFromSpring({
+      channel: "blog",
+      slug: "engineering/old-article",
+    });
+
+    expect(String(fetchMock.mock.calls[0]?.[0])).toBe(
+      "http://spring.test/api/v1/content/blog/redirect?slug=engineering%2Fold-article"
+    );
   });
 
   it("관리자 목록 조회는 내부 토큰과 인증 사용자 id를 Spring으로 전달한다", async () => {

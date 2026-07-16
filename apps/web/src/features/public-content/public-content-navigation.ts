@@ -11,6 +11,7 @@ import {
   PUBLIC_CONTENT_CHANNELS,
   PUBLIC_CONTENT_SERVICES,
   type PublicContentChannel,
+  type PublicContentArticle,
   type PublicContentCollection,
   type PublicContentService,
 } from "./public-content-data";
@@ -34,16 +35,19 @@ type PublicContentServiceNavParams = {
   activeService?: PublicContentService;
   channel: PublicContentChannel;
   parentCategory?: string;
+  sourceArticles?: readonly PublicContentArticle[];
 };
 
 type PublicContentCategoryNavParams = {
   activeCategory?: string;
   channel: PublicContentChannel;
   service?: PublicContentService;
+  sourceArticles?: readonly PublicContentArticle[];
 };
 
 type PublicContentNewsTopicNavParams = {
   activeTopic?: string;
+  sourceArticles?: readonly PublicContentArticle[];
 };
 
 const PUBLIC_CONTENT_SERVICE_ORDER = Object.values(PUBLIC_CONTENT_SERVICES);
@@ -109,12 +113,13 @@ export function getPublicContentServiceNavItems({
   activeService,
   channel,
   parentCategory,
+  sourceArticles,
 }: PublicContentServiceNavParams): PublicContentNavigationItem[] {
   if (channel === PUBLIC_CONTENT_CHANNELS.news && parentCategory === "news") {
     return [];
   }
 
-  return getPublicContentCollections(channel)
+  return getPublicContentCollections(channel, sourceArticles)
     .flatMap((collection) => {
       const [firstSegment, secondSegment] = collection.slugSegments;
 
@@ -164,11 +169,13 @@ export function getPublicContentServiceNavItems({
 
 export function getPublicContentNewsTopicNavItems({
   activeTopic,
+  sourceArticles,
 }: PublicContentNewsTopicNavParams = {}): PublicContentNavigationItem[] {
   const topicCounts = new Map<string, number>();
 
   for (const article of getPublicContentArticles(
-    PUBLIC_CONTENT_CHANNELS.news
+    PUBLIC_CONTENT_CHANNELS.news,
+    sourceArticles
   )) {
     const topic = getPublicContentNewsTopic(article);
     if (!topic) continue;
@@ -195,8 +202,9 @@ export function getPublicContentCategoryNavItems({
   activeCategory,
   channel,
   service,
+  sourceArticles,
 }: PublicContentCategoryNavParams): PublicContentNavigationItem[] {
-  return getPublicContentCollections(channel)
+  return getPublicContentCollections(channel, sourceArticles)
     .flatMap((collection) => {
       const [firstSegment, secondSegment] = collection.slugSegments;
 

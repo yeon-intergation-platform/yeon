@@ -14,6 +14,7 @@ import world.yeon.backend.public_content.controller.PublicContentAdminController
 import world.yeon.backend.public_content.controller.PublicContentController;
 import world.yeon.backend.public_content.repository.PublicContentSeedRepository;
 import world.yeon.backend.public_content.service.PublicContentAdminService;
+import world.yeon.backend.public_content.service.PublicContentMarkdownExporter;
 import world.yeon.backend.public_content.service.PublicContentService;
 import world.yeon.backend.users.repository.UserRepository;
 
@@ -23,6 +24,7 @@ import world.yeon.backend.users.repository.UserRepository;
 	PublicContentAdminController.class,
 	PublicContentController.class,
 	PublicContentAdminService.class,
+	PublicContentMarkdownExporter.class,
 	PublicContentService.class,
 	PublicContentSeedRepository.class,
 })

@@ -74,7 +74,7 @@ describe("api/v1/content route", () => {
     expect(mockFetchPublicContentArticlesFromSpring).not.toHaveBeenCalled();
   });
 
-  it("GET은 Spring 오류를 그대로 매핑한다", async () => {
+  it("GET은 Spring 장애 시 내장 발행 목록으로 fallback한다", async () => {
     mockFetchPublicContentArticlesFromSpring.mockRejectedValue(
       new PublicContentSpringBackendHttpError(
         503,
@@ -86,10 +86,11 @@ describe("api/v1/content route", () => {
       new NextRequest("http://localhost/api/v1/content?channel=support")
     );
 
-    expect(response.status).toBe(503);
+    expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({
-      code: "SERVICE_UNAVAILABLE",
-      message: "공개 콘텐츠 목록을 불러오지 못했습니다.",
+      articles: expect.arrayContaining([
+        expect.objectContaining({ channel: "support" }),
+      ]),
     });
   });
 });

@@ -34,7 +34,10 @@ public final class PublicContentDtos {
 		String bodyFormat,
 		String bodyMarkdown,
 		String ctaLabel,
-		String ctaHref
+		String ctaHref,
+		String metaTitle,
+		String metaDescription,
+		String ogImageUrl
 	) {}
 
 	public record PublicContentArticleListResponse(
@@ -43,6 +46,14 @@ public final class PublicContentDtos {
 
 	public record PublicContentArticleResponse(
 		PublicContentArticleDetailDto article
+	) {}
+
+	public record PublicContentRedirectResponse(
+		String redirectTo
+	) {}
+
+	public record PublicContentSnapshotResponse(
+		List<PublicContentArticleDetailDto> articles
 	) {}
 
 	public record PublicContentAdminArticleDto(
@@ -71,8 +82,40 @@ public final class PublicContentDtos {
 		String authorKey,
 		String sourceRepo,
 		List<String> sourcePaths,
-		String redirectTo
+		String redirectTo,
+		long version,
+		String publishedRevisionId
 	) {}
+
+	public record PublicContentAdminArticleWriteRequest(
+		String channel,
+		String serviceKey,
+		String category,
+		String slug,
+		String title,
+		String description,
+		String summary,
+		String bodyFormat,
+		String bodyMarkdown,
+		String ctaLabel,
+		String ctaHref,
+		String visibility,
+		boolean noindex,
+		String metaTitle,
+		String metaDescription,
+		String ogImageUrl,
+		String authorKey,
+		String sourceRepo,
+		List<String> sourcePaths,
+		String redirectTo,
+		Long version
+	) {
+		public PublicContentAdminArticleWriteRequest {
+			sourcePaths = sourcePaths == null ? List.of() : List.copyOf(sourcePaths);
+		}
+	}
+
+	public record PublicContentTransitionRequest(long version) {}
 
 	public record PublicContentAdminArticleListResponse(
 		List<PublicContentAdminArticleDto> articles
@@ -80,6 +123,20 @@ public final class PublicContentDtos {
 
 	public record PublicContentAdminArticleResponse(
 		PublicContentAdminArticleDto article
+	) {}
+
+	public record PublicContentRevisionDto(
+		String id,
+		String articleId,
+		int revisionNumber,
+		String title,
+		String bodyMarkdown,
+		String publishedAt,
+		String createdBy
+	) {}
+
+	public record PublicContentRevisionListResponse(
+		List<PublicContentRevisionDto> revisions
 	) {}
 
 	public record PublicContentSitemapEntryDto(

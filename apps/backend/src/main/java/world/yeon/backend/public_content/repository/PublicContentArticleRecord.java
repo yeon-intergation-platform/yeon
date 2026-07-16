@@ -18,7 +18,9 @@ public record PublicContentArticleRecord(
 	String bodyMarkdown,
 	String ctaLabel,
 	String ctaHref,
+	String metaTitle,
 	String metaDescription,
+	String ogImageUrl,
 	List<String> sourcePaths
 ) {
 	public PublicContentArticleRecord {

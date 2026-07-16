@@ -70,8 +70,13 @@ function compareNewsHomePriority(
   );
 }
 
-export function getPublicContentNewsHomeModel(): PublicContentNewsHomeModel {
-  const articles = getPublicContentArticles(PUBLIC_CONTENT_CHANNELS.news);
+export function getPublicContentNewsHomeModel(
+  sourceArticles?: readonly PublicContentArticle[]
+): PublicContentNewsHomeModel {
+  const articles = getPublicContentArticles(
+    PUBLIC_CONTENT_CHANNELS.news,
+    sourceArticles
+  );
   const featuredArticle =
     [...articles]
       .filter((article) => article.category === "notice")
