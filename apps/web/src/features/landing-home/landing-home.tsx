@@ -129,26 +129,34 @@ export function LandingHome({
                 const needsLogin =
                   isLive && !inDevelopment && requiresAuth && !isAuthenticated;
                 const cardBase =
-                  "group flex min-w-0 flex-col rounded-2xl border border-[#e5e5e5] bg-[#fafafa] p-5 text-center shadow-sm transition-colors duration-200";
+                  "group flex min-w-0 flex-col rounded-2xl border border-[#e5e5e5] bg-[#fafafa] p-6 text-left shadow-sm transition-colors duration-200";
                 const interactiveCard = "hover:border-[#111] hover:bg-white";
                 const cardInner = (
                   <>
-                    <YeonView className="flex items-start justify-end gap-3">
+                    <YeonView className="flex items-start justify-between gap-3">
+                      <YeonText
+                        as="h3"
+                        variant="unstyled"
+                        tone="inherit"
+                        className="min-w-0 text-[19px] font-bold tracking-[-0.03em] text-[#111]"
+                      >
+                        {inDevelopment
+                          ? `${service.title} (개발중)`
+                          : service.title}
+                      </YeonText>
                       <YeonView
                         as="span"
-                        className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium ${
+                        className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium ${
                           isLive && !inDevelopment
-                            ? "border border-emerald-300 bg-emerald-100 text-emerald-800"
-                            : inDevelopment
-                              ? "border border-amber-300 bg-amber-100 text-amber-800"
-                              : "border border-[#e5e5e5] bg-[#fafafa] text-[#aaa]"
+                            ? "border border-[#e5e5e5] bg-[#f5f5f5] text-[#333]"
+                            : "border border-[#e5e5e5] bg-white text-[#999]"
                         }`}
                       >
                         {isLive && !inDevelopment ? (
                           <YeonView
                             as="span"
                             aria-hidden="true"
-                            className="h-1.5 w-1.5 rounded-full bg-emerald-600"
+                            className="h-1.5 w-1.5 rounded-full bg-[#111]"
                           />
                         ) : null}
                         {inDevelopment
@@ -158,26 +166,14 @@ export function LandingHome({
                             : "준비 중"}
                       </YeonView>
                     </YeonView>
-                    <YeonView className="mt-4">
-                      <YeonText
-                        as="h3"
-                        variant="unstyled"
-                        tone="inherit"
-                        className="text-[20px] font-semibold tracking-[-0.03em] text-[#111]"
-                      >
-                        {inDevelopment
-                          ? `${service.title} (개발중)`
-                          : service.title}
-                      </YeonText>
-                      <YeonText
-                        variant="unstyled"
-                        tone="inherit"
-                        className={`mt-3 break-keep ${SHARED_FEATURE_CLASS.text14Neutral} leading-[1.8]`}
-                      >
-                        {service.summary}
-                      </YeonText>
-                    </YeonView>
-                    <YeonView className="mt-auto flex items-center justify-center border-t border-[#e5e5e5] pt-4">
+                    <YeonText
+                      variant="unstyled"
+                      tone="inherit"
+                      className={`mt-3 break-keep ${SHARED_FEATURE_CLASS.text14Neutral} leading-[1.75]`}
+                    >
+                      {service.summary}
+                    </YeonText>
+                    <YeonView className="mt-auto flex items-center justify-start border-t border-[#e5e5e5] pt-4">
                       <YeonText
                         as="span"
                         variant="unstyled"
