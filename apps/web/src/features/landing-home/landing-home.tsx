@@ -115,7 +115,7 @@ export function LandingHome({
           </YeonView>
 
           <YeonView as="section" className="mt-8">
-            <YeonView className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <YeonView className="grid grid-cols-1 items-start gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {visibleServices.map((service) => {
                 const isLive = service.status === platformServiceStatuses.live;
                 const inDevelopment = service.inDevelopment === true;
@@ -156,7 +156,7 @@ export function LandingHome({
                           <YeonView
                             as="span"
                             aria-hidden="true"
-                            className="h-1.5 w-1.5 rounded-full bg-[#111]"
+                            className="h-1.5 w-1.5 rounded-full bg-emerald-500"
                           />
                         ) : null}
                         {inDevelopment
@@ -169,11 +169,11 @@ export function LandingHome({
                     <YeonText
                       variant="unstyled"
                       tone="inherit"
-                      className={`mt-3 break-keep ${SHARED_FEATURE_CLASS.text14Neutral} leading-[1.75]`}
+                      className={`mt-4 break-keep ${SHARED_FEATURE_CLASS.text14Neutral} leading-[1.75]`}
                     >
                       {service.summary}
                     </YeonText>
-                    <YeonView className="mt-auto flex items-center justify-start border-t border-[#e5e5e5] pt-4">
+                    <YeonView className="mt-4 flex items-center justify-start border-t border-[#e5e5e5] pt-4">
                       <YeonText
                         as="span"
                         variant="unstyled"
