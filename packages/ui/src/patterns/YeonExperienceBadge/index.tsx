@@ -36,7 +36,7 @@ export function YeonExperienceBadge({
       <YeonText
         variant="unstyled"
         tone="inherit"
-        className="text-[11px] font-extrabold text-[#111]"
+        className="bg-gradient-to-r from-[#4f46e5] via-[#a855f7] to-[#ec4899] bg-clip-text text-[11px] font-extrabold text-transparent"
       >
         {`Lv.${level}`}
       </YeonText>
