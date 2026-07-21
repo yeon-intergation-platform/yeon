@@ -52,9 +52,7 @@ describe("proxy subdomain routing", () => {
       })
     );
 
-    expect(response.headers.get("x-middleware-rewrite")).toContain(
-      "/todo-service"
-    );
+    expect(response.headers.get("x-middleware-rewrite")).toContain("/today");
     expect(response.headers.get("location")).toBeNull();
   });
 });

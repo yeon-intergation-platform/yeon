@@ -4,16 +4,36 @@
 
 | 항목           | 값                                                                         |
 | -------------- | -------------------------------------------------------------------------- |
-| 상태           | 구현 대기                                                                  |
+| 상태           | 1~5차 구현·검증 완료, 6차 후속                                             |
 | 작성일         | 2026-07-22                                                                 |
 | 제품 정의 SSOT | [`../yeon-today-screen-definition.md`](../yeon-today-screen-definition.md) |
-| 대상           | Spring 백엔드, API 계약·클라이언트, Next.js 웹, 후속 Expo 패리티           |
-| 제외           | 이번 문서 작성 턴의 실제 기능 코드 변경                                    |
+| 대상           | Spring 백엔드, API 계약·클라이언트, Next.js 웹                             |
+| 제외           | Expo 네이티브 화면, 고급 통계, 30분 이하 기록 단위                         |
 | 대체하는 결정  | 기존 Today MVP 백로그의 `localStorage` 장기 저장 결정                      |
 
 이 백로그는 사용자가 제공한 5개 화면과 화면 정의서를 서버 기반 제품으로 구현하기 위한 실행 순서다. 구현 중 제품 행동을 바꾸면 화면 정의서와 이 백로그를 같은 PR에서 갱신한다.
 
 기존 `today-service-mvp-20260629.md`, `today-service-calendar-navigation-20260629.md`, `today-service-design-system-board-20260630.md`는 이미 완료된 브라우저 MVP의 역사적 근거다. 앞으로 저장소·라우트·화면을 개편할 때는 이 문서의 Spring 단일 원본 결정을 우선한다.
+
+### 0.1 2026-07-22 구현 결과
+
+| 차수 | 상태 | 구현 결과                                                                                                                                                                    |
+| ---- | ---- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0차  | 완료 | 사용자의 명시적 지시 범위에서 Today를 재활성화하고 `/today`, `/today/record`, 구 경로 리다이렉트를 확정했다. 유지보수 3종 정책과 모바일 패리티 레지스트리는 변경하지 않았다. |
+| 1차  | 완료 | Flyway V23/V24, Spring Controller → Service → Repository, 공유 Zod 계약과 typed API client를 구현했다.                                                                       |
+| 2차  | 완료 | 세션 기반 Next BFF, TanStack Query, URL `date` 상태, 구 `/todo-service` 호환 리다이렉트를 구현했다.                                                                          |
+| 3차  | 완료 | 메인·빈·활성·추가·다른 날짜 선택 5개 상태와 반응형 할 일 보드를 구현했다.                                                                                                    |
+| 4차  | 완료 | 기존 storage 파일·키·reader·writer를 삭제했다. 이관 테이블·API·배너·adapter는 만들지 않았다.                                                                                 |
+| 5차  | 완료 | 서버 저장 활동 항목과 24개 시간 슬롯, 활동 관리, 날짜별 요약을 구현했다.                                                                                                     |
+| 6차  | 후속 | 고급 추천 설명, 상세·월간 통계, Expo UI는 별도 구현 대상으로 남긴다.                                                                                                         |
+
+검증 증거:
+
+- Spring 전체 테스트, 웹 전체 1,120개 테스트, lint/typecheck, 운영 빌드 통과
+- 실제 PostgreSQL의 Flyway V23/V24 성공 적용 확인
+- localhost Playwright로 생성·수정·날짜 이동·Inbox 이동·삭제·완료·필터·새로고침 영속성·날짜 공유·하루 기록·모바일 overflow 확인
+- 스크린샷: `ai-log/hyeonjun/2026-07-22/yeon-today-server-redesign-screenshots/`
+- 제품 코드의 Today `localStorage` 및 `yeon.todo-service.state.v1` 참조 0건
 
 ## 1. 요구사항 요약
 
@@ -23,7 +43,7 @@
 - Today, Inbox, Done, 완료율, 월간 캘린더, 날짜 요약은 같은 사용자별 서버 데이터에서 계산한다.
 - 할 일 추가·수정·이동·완료·완료 취소·삭제는 Spring 서비스가 규칙과 소유권을 검증한다.
 - 로그인 사용자의 장기 상태 원본은 PostgreSQL이며 브라우저 `localStorage`가 아니다.
-- 기존 `yeon.todo-service.state.v1`은 동의 기반 일회성 이관에만 사용한다.
+- 기존 `yeon.todo-service.state.v1`은 이관하지 않고 저장 키와 관련 코드를 완전히 제거한다.
 - 웹은 TanStack Query로 서버 상태를 소비하며 Next route handler는 인증 쿠키 브리지와 Spring 호출만 담당한다.
 - 데스크톱, 태블릿, 모바일 웹의 레이아웃과 접근성 요구를 충족한다.
 - 하루 기록은 24개 시간 슬롯과 사용자 활동 항목을 서버에 저장한다.
@@ -32,7 +52,7 @@
 
 | 현재 상태                                                             | 근거                                                                                               | 변경 방향                                                                     |
 | --------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
-| 할 일 전체 상태를 브라우저에서 읽고 쓴다.                             | `apps/web/src/features/todo-service/todo-service-storage.ts:6-20`                                  | 서버 조회·mutation으로 교체하고 이관 전용 reader만 한시 유지                  |
+| 할 일 전체 상태를 브라우저에서 읽고 쓴다.                             | `apps/web/src/features/todo-service/todo-service-storage.ts:6-20`                                  | 서버 조회·mutation으로 교체하고 storage key, reader, writer를 모두 삭제       |
 | 상태와 날짜·추천 계산이 단일 프론트 모델에 있다.                      | `apps/web/src/features/todo-service/todo-service-model.ts:1-95`, `206-220`                         | 계약 DTO, 서버 도메인 규칙, 순수 표시 계산으로 책임 분리                      |
 | 화면이 1,407줄 단일 컴포넌트다.                                       | `apps/web/src/features/todo-service/todo-service-screen.tsx`                                       | 화면 shell, query hooks, 입력, 목록, 캘린더, 요약 컴포넌트로 분리             |
 | 현재 App Router 진입점은 `/todo-service`와 `/todo-service/focus`다.   | `apps/web/src/app/todo-service/page.tsx:1-64`, `apps/web/src/app/todo-service/focus/page.tsx:1-42` | 제품 URL `/today`, `/today/record`를 추가하고 구 URL은 호환 리다이렉트        |
@@ -56,13 +76,13 @@
 
 #### 저장 방식
 
-| 선택지                              | 장점                          | 단점                                      |
-| ----------------------------------- | ----------------------------- | ----------------------------------------- |
-| A. localStorage 유지                | 구현량이 작음                 | 기기 간 동기화·복구·소유권·서버 통계 불가 |
-| B. localStorage + 서버 이중 쓰기    | 점진 전환처럼 보임            | 두 원본 충돌, 부분 실패, 중복 이관 위험   |
-| C. Spring 단일 원본 + 일회성 import | 동기화·소유권·일관성이 명확함 | 초기 백엔드·이관 구현 필요                |
+| 선택지                               | 장점                          | 단점                                      |
+| ------------------------------------ | ----------------------------- | ----------------------------------------- |
+| A. localStorage 유지                 | 구현량이 작음                 | 기기 간 동기화·복구·소유권·서버 통계 불가 |
+| B. localStorage + 서버 이중 쓰기     | 점진 전환처럼 보임            | 두 원본 충돌, 부분 실패, 중복 이관 위험   |
+| C. Spring 단일 원본 + 로컬 저장 제거 | 동기화·소유권·일관성이 명확함 | 기존 브라우저 데이터는 유지되지 않음      |
 
-**결정: C.** 사용자가 서버 사용을 명시했고, 현재 프로젝트도 신규 장기 상태를 Spring이 소유하도록 규정한다. 운영 중 이중 쓰기는 만들지 않는다.
+**결정: C.** 사용자가 서버 사용과 `localStorage` 최종 제거를 명시했고, 현재 프로젝트도 신규 장기 상태를 Spring이 소유하도록 규정한다. 이관 API나 운영 중 이중 쓰기는 만들지 않는다.
 
 #### 보드 조회 방식
 
@@ -92,7 +112,7 @@
 
 ## 4. 서버 도메인·DB 초안
 
-실제 migration 번호는 구현 시작 시 `apps/backend/src/main/resources/db/migration/`의 최신 버전 다음 번호로 확정한다.
+구현 migration은 V23 `create today board and records`, V24 `enforce today activity slot ownership`로 확정했다.
 
 ### 4.1 `public.today_tasks`
 
@@ -124,21 +144,7 @@
 - `(owner_user_id, status, created_at)`
 - `(owner_user_id, updated_at)`
 
-### 4.2 `public.today_local_imports`
-
-| 필드             | 타입/제약               | 의미                              |
-| ---------------- | ----------------------- | --------------------------------- |
-| `id`             | `uuid primary key`      | import 실행 ID                    |
-| `owner_user_id`  | `uuid not null` FK      | 소유 사용자                       |
-| `migration_id`   | `varchar(120) not null` | 클라이언트가 생성한 재시도 식별자 |
-| `imported_count` | `integer not null`      | 생성된 task 수                    |
-| `skipped_count`  | `integer not null`      | 유효성 때문에 제외된 수           |
-| `created_at`     | `timestamptz not null`  | 완료 시각                         |
-
-- `(owner_user_id, migration_id)` unique로 재시도 중복 생성을 막는다.
-- task 생성과 import 이력 기록은 하나의 transaction에서 성공하거나 함께 rollback한다.
-
-### 4.3 `public.today_activity_types`
+### 4.2 `public.today_activity_types`
 
 | 필드                       | 타입/제약              | 의미                  |
 | -------------------------- | ---------------------- | --------------------- |
@@ -154,7 +160,7 @@
 - 사용자별 이름 중복 정책은 대소문자와 앞뒤 공백을 정규화한 뒤 검증한다.
 - raw CSS 색상이나 임의 SVG/URL은 저장하지 않는다.
 
-### 4.4 `public.today_activity_slots`
+### 4.3 `public.today_activity_slots`
 
 | 필드                       | 타입/제약                | 의미        |
 | -------------------------- | ------------------------ | ----------- |
@@ -168,23 +174,6 @@
 
 - `(owner_user_id, record_date, hour)` unique로 시간당 하나만 저장한다.
 - 활동 항목 삭제는 기록 손실을 막기 위해 hard delete 대신 `active=false`를 기본으로 한다.
-
-### 4.5 로컬 데이터 이관 매핑
-
-| 기존 값                       | 서버 값                  |
-| ----------------------------- | ------------------------ |
-| `important / normal / light`  | `high / normal / low`    |
-| `5m / 15m / 30m / 60m / 120m` | `5 / 15 / 30 / 60 / 120` |
-| `inbox`                       | `inbox`                  |
-| `planned / active / deferred` | `planned`                |
-| `done`                        | `done`                   |
-| `plannedFor`                  | `planned_date`           |
-| `completedAt`                 | `completed_at`           |
-
-- 클라이언트가 기존 JSON을 계약 스키마로 먼저 정제하고, 서버가 다시 검증한다.
-- `migrationId`와 `owner_user_id`를 unique로 기록해 같은 데이터가 두 번 생성되지 않게 한다.
-- 사용자가 미리보기에서 가져올 개수와 제외 개수를 확인한 뒤 동의해야 실행한다.
-- import 성공 후에도 브라우저 원본은 즉시 삭제하지 않고, 서버 재조회와 개수 대조가 끝난 뒤 `importedAt` 표식만 남긴다. 실제 삭제는 별도 사용자 선택으로 둔다.
 
 ## 5. API 계약 초안
 
@@ -201,7 +190,6 @@
 | `POST`   | `/api/v1/today/tasks/{taskId}/complete` | 완료 전이                             |
 | `POST`   | `/api/v1/today/tasks/{taskId}/reopen`   | 완료 취소 전이                        |
 | `DELETE` | `/api/v1/today/tasks/{taskId}`          | 사용자 소유 할 일 삭제                |
-| `POST`   | `/api/v1/today/imports/local-storage`   | 일회성 기존 데이터 이관               |
 
 `TodayBoardResponse` 최소 구성:
 
@@ -232,7 +220,7 @@ serverTime
 
 ### 5.3 인증과 BFF 경계
 
-- 웹의 `apps/web/src/app/api/today/**/route.ts`는 세션에서 사용자 ID를 읽고, 입력을 Zod로 검증한 뒤 Spring client를 호출한다.
+- 웹의 `apps/web/src/app/api/v1/today/[...segments]/route.ts`는 세션에서 사용자 ID를 읽고, 입력을 Zod로 검증한 뒤 Spring client를 호출한다.
 - `apps/web/src/server/today-spring-client.ts`는 내부 토큰과 신뢰된 `X-Yeon-User-Id`를 Spring에 전달하고 응답 계약을 검증한다.
 - route handler에는 완료율 계산, 상태 전이, 소유권 판정, DB 접근을 넣지 않는다.
 - Spring controller는 요청 파싱, service 호출, 응답만 담당한다.
@@ -309,9 +297,9 @@ apps/web/src/features/today/
 
 #### 작업내용
 
-- 최신 Flyway 번호로 `today_tasks`와 import 이력 테이블을 추가한다.
+- 최신 Flyway 번호로 `today_tasks`를 추가한다.
 - `apps/backend/.../today/controller`, `service`, `repository`, `dto`를 추가한다.
-- board snapshot, calendar summary, create/update/complete/reopen/delete/import API를 구현한다.
+- board snapshot, calendar summary, create/update/complete/reopen/delete API를 구현한다.
 - `packages/api-contract/src/today.ts`와 package export를 추가한다.
 - `packages/api-client/src/today.ts`에 typed public client를 추가한다.
 - 소유권, 입력 경계, 상태 전이, 동시성 충돌, 집계 정합성 테스트를 작성한다.
@@ -361,11 +349,11 @@ apps/web/src/features/today/
 #### 선택지
 
 1. 로그인 필수로 두고 인증 후 원래 `date`로 복귀한다.
-2. 게스트 localStorage 보드를 계속 제공하고 로그인 후 병합한다.
+2. 게스트 브라우저 저장 보드를 계속 제공한다.
 
 #### 추천
 
-1번. 운영 원본을 서버 하나로 고정하고 이중 저장 분기를 만들지 않는다. 기존 로컬 데이터는 로그인 후 import로만 처리한다.
+1번. 운영 원본을 서버 하나로 고정하고 이중 저장·이관 분기를 만들지 않는다. 기존 로컬 데이터는 의도적으로 폐기한다.
 
 #### 사용자 방향
 
@@ -376,7 +364,7 @@ apps/web/src/features/today/
 - `/today?date=2026-07-24` 새로고침 뒤에도 7월 24일이 유지된다.
 - 보드에서 하루 기록으로 이동하고 돌아와도 date가 유지된다.
 - BFF에서 임의 사용자가 `X-Yeon-User-Id`를 주입해 다른 계정으로 호출할 수 없다.
-- 화면 코드에서 신규 `window.localStorage.setItem`으로 task를 저장하지 않는다.
+- Today 화면·모델·라우트 어디에도 task 영속화를 위한 `localStorage` 참조가 없다.
 
 ### 3차 — 할 일 보드 5개 화면 상태 구현
 
@@ -415,29 +403,27 @@ apps/web/src/features/today/
 - 제목 공백은 저장되지 않고, 저장 실패 시 폼이 유지되며 목록의 거짓 항목이 제거된다.
 - 키보드로 탭, 날짜, select/menu, 체크박스, 더보기, 삭제 확인을 조작할 수 있다.
 
-### 4차 — 기존 localStorage 일회성 이관과 운영 전환
+### 4차 — 기존 localStorage 완전 제거와 운영 전환
 
 #### 작업내용
 
-- `yeon.todo-service.state.v1`을 읽고 정제하는 import adapter를 기존 모델에서 분리한다.
-- 로그인 후 기존 데이터가 있으면 자동 실행하지 않고 import 배너와 미리보기를 제공한다.
-- idempotent import API로 전송하고 서버 재조회·개수 대조 후 완료 처리한다.
-- 이관 성공 사용자에게는 배너를 다시 표시하지 않는다.
-- 이관 기간 종료 조건과 legacy reader 삭제 백로그를 작성한다.
+- `todo-service-storage.ts`, `TODO_SERVICE_STORAGE_KEY`, reader, writer를 삭제한다.
+- 기존 `todo-service` 화면과 focus 화면의 storage 의존성을 제거하고 새 `/today` 서버 화면으로 전환한다.
+- import 테이블, API, 배너, adapter를 만들지 않는다.
+- 저장소 전체에서 `yeon.todo-service.state.v1`과 Today task `localStorage` 참조가 0건인지 검사한다.
 
 #### 논의 필요
 
-- 브라우저 데이터와 서버에 같은 제목·날짜가 있을 때 중복으로 볼지 병합할지 결정해야 한다.
-- 이관 기능을 몇 번의 릴리즈 동안 유지할지 결정해야 한다.
+- 기존 브라우저 데이터를 별도 수동 export로 보존할지 결정해야 한다.
 
 #### 선택지
 
-1. 제목·날짜가 같으면 자동 병합한다.
-2. 각 로컬 ID를 서버 import key로 보존해 전부 가져오고, import 자체만 중복 방지한다.
+1. 별도 이관 없이 즉시 완전 제거한다.
+2. 제품 외부의 수동 export 도구를 별도 백로그로 만든다.
 
 #### 추천
 
-2번. 제목이 같은 별도 할 일을 잘못 합치는 데이터 손실을 피한다.
+1번. 사용자가 서버 단일 원본과 최종 제거를 명시했으므로 임시 코드를 운영에 남기지 않는다.
 
 #### 사용자 방향
 
@@ -445,10 +431,9 @@ apps/web/src/features/today/
 
 #### 완료 조건
 
-- 같은 import를 네트워크 재시도로 두 번 보내도 서버 task 수가 한 번만 증가한다.
-- 손상된 로컬 항목은 제외 개수와 이유를 보여주고 유효 항목 이관을 막지 않는다.
-- 서버 조회 대조가 실패하면 로컬 데이터를 삭제하거나 import 완료로 표시하지 않는다.
-- 신규 task mutation은 localStorage에 이중 쓰기하지 않는다.
+- `todo-service-storage.ts`와 import 관련 서버 테이블/API가 존재하지 않는다.
+- `rg` 검사에서 Today task 저장 키, reader, writer, import adapter가 0건이다.
+- 모든 신규 task mutation은 Spring API만 호출한다.
 
 ### 5차 — 하루 기록 24시간 화면과 활동 관리
 
@@ -529,13 +514,13 @@ apps/web/src/features/today/
 5. Today 수, 완료 수, Done 수, 진행률, 날짜 요약이 단일 snapshot에서 모순되지 않는다.
 6. 할 일 제목은 trim 후 1~200자, 예상 시간은 1~1,440분만 저장된다.
 7. mutation 실패 시 폼 입력은 유지되고 낙관적으로 바뀐 목록·수치가 rollback된다.
-8. 기존 localStorage import를 같은 `migrationId`로 반복해도 중복 task가 생기지 않는다.
+8. 기존 Today storage key, reader, writer, import adapter, import API가 최종 코드에 존재하지 않는다.
 9. 메인·빈·활성·추가·날짜 선택 상태가 저장된 5개 기준 이미지의 위계와 동작을 충족한다.
 10. 24시간 기록에서 한 사용자·날짜·시간에는 최대 하나의 활동만 저장된다.
 11. 데스크톱, 태블릿, 모바일 웹에서 가로 스크롤 없이 주요 행동을 수행할 수 있다.
 12. 키보드와 화면 읽기 도구가 활성 탭, 선택 날짜, 오늘, 완료, 오류 상태를 인식한다.
 13. `/todo-service` 기존 링크는 date를 잃지 않고 `/today`로 이동한다.
-14. task 장기 상태를 쓰는 localStorage 코드는 이관 adapter 외에는 남지 않는다.
+14. Today task 장기 상태를 쓰는 `localStorage` 코드와 `yeon.todo-service.state.v1` 키가 한 줄도 남지 않는다.
 
 ## 9. 검증 계획
 
@@ -551,7 +536,7 @@ apps/web/src/features/today/
 - Flyway migration + Spring ApplicationContext 부팅
 - 실제 PostgreSQL에서 board snapshot과 calendar summary 대조
 - BFF 세션 → 내부 헤더 → Spring owner 경계
-- localStorage import idempotency와 부분 손상 입력
+- Today 코드의 localStorage 참조 0건 정적 검사
 - activity type 비활성 후 과거 slot 조회
 
 ### 9.3 E2E·시각 검증
@@ -584,7 +569,7 @@ pnpm verify:parity
 | 위험                                     | 사용자 영향                                     | 완화                                                                   |
 | ---------------------------------------- | ----------------------------------------------- | ---------------------------------------------------------------------- |
 | Today가 현재 유지보수 정책에서 빠져 있음 | 후속 에이전트가 변경을 거부하거나 패리티를 누락 | 0차에서 정책과 레지스트리를 먼저 갱신                                  |
-| localStorage와 서버 이중 원본            | 중복·유실·기기별 다른 상태                      | 운영 이중 쓰기 금지, 동의 기반 idempotent import만 허용                |
+| localStorage와 서버 이중 원본            | 중복·유실·기기별 다른 상태                      | 기존 storage·import 코드를 모두 삭제하고 Spring만 사용                 |
 | BFF 사용자 헤더 spoof                    | 다른 사용자 데이터 접근                         | 외부 헤더 무시, 세션에서 user ID 재구성, 내부 토큰 검증                |
 | 여러 API 응답 간 수치 drift              | 진행률·Done·요약 불일치                         | board snapshot 단일 응답과 서버 집계 사용                              |
 | 날짜·시간대 오해                         | 다른 날짜에 저장·완료 표시                      | 계획 날짜는 명시적 `date`, 완료 시각은 서버 timestamp, URL 파서 단일화 |
@@ -595,12 +580,11 @@ pnpm verify:parity
 
 ## 11. 배포·관찰·롤백
 
-- migration은 additive하게 배포하고 기존 localStorage UI를 즉시 삭제하지 않는다.
+- migration은 additive하게 배포하고 새 `/today` 서버 화면 활성화와 함께 기존 localStorage UI를 삭제한다.
 - backend/API가 정상 응답하는 것을 확인한 뒤 새 `/today` UI를 활성화한다.
-- 초기 릴리즈는 오류율, 401/403/409/5xx, mutation latency, import 성공·제외·중복 차단 수를 구조화 로그로 관찰한다.
+- 초기 릴리즈는 오류율, 401/403/409/5xx와 mutation latency를 구조화 로그로 관찰한다.
 - 심각한 UI 문제가 있으면 새 route 노출을 이전 화면으로 되돌릴 수 있지만, 서버에 저장된 신규 데이터와 migration은 삭제하지 않는다.
-- import 장애 시 import CTA만 비활성화하고 task CRUD는 유지한다.
-- 롤백 과정에서도 localStorage로 다시 이중 쓰기하지 않는다.
+- 롤백 과정에서도 localStorage UI나 이중 쓰기를 복구하지 않는다.
 
 ## 12. 문서 갱신 규칙
 

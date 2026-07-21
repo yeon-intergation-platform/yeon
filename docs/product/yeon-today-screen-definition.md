@@ -22,8 +22,8 @@
 ### 0.2 데이터 원본 결정
 
 - 로그인 사용자의 할 일, 날짜, 완료 상태, 하루 기록, 활동 항목은 **Spring 백엔드와 DB가 source of truth**다.
-- Next.js와 브라우저 `localStorage`는 장기 상태의 원본이 아니다.
-- 기존 `yeon.todo-service.state.v1` 데이터는 서버 전환 시 사용자가 확인하고 한 번만 가져오는 이관 원본으로만 사용할 수 있다.
+- Next.js와 브라우저 `localStorage`는 장기 상태의 원본이 아니며 Today 기능에서 사용하지 않는다.
+- 기존 `yeon.todo-service.state.v1` 데이터는 이관하지 않는다. 서버 전환과 함께 저장 키, reader, writer, import adapter를 모두 삭제한다.
 - 서버 저장 실패 시 성공한 것처럼 로컬 상태를 확정하지 않는다. 낙관적 UI를 사용하더라도 실패하면 이전 상태로 되돌리고 한국어 오류를 표시한다.
 
 ## 1. 문서 개요
@@ -762,7 +762,7 @@ URL date 쿼리와 서버 조회 기준 유지
 
 ### 1차 구현
 
-- Spring 기반 사용자별 저장과 기존 로컬 데이터 이관
+- Spring 기반 사용자별 저장과 기존 로컬 저장 코드 완전 제거
 - 할 일 보드 / 하루 기록 탭
 - URL 기반 날짜 공유
 - Today / Inbox / Done

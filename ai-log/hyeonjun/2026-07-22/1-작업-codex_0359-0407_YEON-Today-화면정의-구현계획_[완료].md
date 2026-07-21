@@ -10,7 +10,7 @@
 
 - 화면 정의서에 5개 화면 ID, 공통 컴포넌트, 숫자 의미, 날짜 공유, 반응형, 접근성, 오류 문구를 고정했다.
 - 원본 PNG 5개를 `docs/product/mockups/yeon-today/`에 바이트 그대로 보존했다.
-- Spring 단일 원본, Flyway 테이블, API/BFF 경계, localStorage 일회성 import, 0~6차 구현 순서를 백로그로 정리했다.
+- Spring 단일 원본, Flyway 테이블, API/BFF 경계, localStorage 완전 제거, 0~6차 구현 순서를 백로그로 정리했다.
 - 기존 localStorage MVP 백로그 3개에 새 서버 기반 SSOT 링크를 추가해 우선순위를 분명히 했다.
 
 ## 핵심 결정
@@ -19,7 +19,7 @@
 - `Today`는 선택 날짜 전체, `Done`은 그중 완료된 부분집합이다.
 - 진행률, Done 수, 날짜 요약 완료 수는 하나의 board snapshot에서 일치해야 한다.
 - 선택 날짜는 `/today?date=YYYY-MM-DD`와 `/today/record?date=YYYY-MM-DD` 사이에서 공유한다.
-- 기존 `yeon.todo-service.state.v1`은 사용자 동의 기반 idempotent import에만 사용하고 운영 이중 쓰기는 금지한다.
+- 기존 `yeon.todo-service.state.v1`은 이관하지 않고 저장 키와 reader/writer를 최종 코드에서 완전히 제거한다.
 
 ## 검증
 
