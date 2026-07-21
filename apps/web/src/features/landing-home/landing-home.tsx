@@ -22,6 +22,37 @@ type LandingHomeProps = {
   isAuthenticated: boolean;
 };
 
+type FrameBreakArtwork = {
+  order: string;
+  backgroundSrc: string;
+  foregroundSrc: string;
+  foregroundWidth: number;
+  foregroundHeight: number;
+  foregroundAlt: string;
+};
+
+const FRAME_BREAK_ARTWORK_BY_SERVICE: Readonly<
+  Record<string, FrameBreakArtwork>
+> = {
+  "typing-service": {
+    order: "1",
+    backgroundSrc: "/images/landing/typing-frame-break-background.webp",
+    foregroundSrc:
+      "/images/landing/typing-frame-break-foreground-restored.webp",
+    foregroundWidth: 1934,
+    foregroundHeight: 1013,
+    foregroundAlt: "키보드 앞에서 전등을 켜고 타자 연습 중인 캐릭터",
+  },
+  "recall-service": {
+    order: "2",
+    backgroundSrc: "/images/landing/baekji-frame-break-background.webp",
+    foregroundSrc: "/images/landing/baekji-frame-break-foreground.webp",
+    foregroundWidth: 1454,
+    foregroundHeight: 630,
+    foregroundAlt: "노트를 보며 백지 학습 내용을 떠올리는 캐릭터",
+  },
+};
+
 export function LandingHome({
   nextPath,
   initialLoginModalOpen = false,
@@ -129,7 +160,9 @@ export function LandingHome({
                   (!requiresAuth || isAuthenticated);
                 const needsLogin =
                   isLive && !inDevelopment && requiresAuth && !isAuthenticated;
-                const hasFrameBreakArtwork = service.slug === "typing-service";
+                const frameBreakArtwork =
+                  FRAME_BREAK_ARTWORK_BY_SERVICE[service.slug];
+                const hasFrameBreakArtwork = frameBreakArtwork !== undefined;
                 const cardBase = hasFrameBreakArtwork
                   ? "group relative flex min-w-0 flex-col rounded-2xl border border-[#e5e5e5] bg-white text-left shadow-sm transition-colors duration-200"
                   : "group flex min-w-0 flex-col rounded-2xl border border-[#e5e5e5] bg-[#fafafa] p-6 text-left shadow-sm transition-colors duration-200";
@@ -215,7 +248,7 @@ export function LandingHome({
                     </YeonView>
                   </>
                 );
-                const frameBreakCardInner = (
+                const frameBreakCardInner = frameBreakArtwork ? (
                   <>
                     <YeonView className="relative overflow-hidden rounded-t-2xl">
                       <YeonView
@@ -231,7 +264,7 @@ export function LandingHome({
                             aria-hidden="true"
                             className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#111] text-[15px] font-bold text-white"
                           >
-                            1
+                            {frameBreakArtwork.order}
                           </YeonText>
                           <YeonText
                             as="h3"
@@ -250,7 +283,7 @@ export function LandingHome({
                       <YeonView className="relative z-20 h-48 overflow-hidden sm:h-52">
                         <YeonView className="absolute inset-0 overflow-hidden">
                           <Image
-                            src="/images/landing/typing-frame-break-background.webp"
+                            src={frameBreakArtwork.backgroundSrc}
                             alt=""
                             fill
                             loading="eager"
@@ -260,10 +293,10 @@ export function LandingHome({
                         </YeonView>
                       </YeonView>
                       <Image
-                        src="/images/landing/typing-frame-break-foreground-restored.webp"
-                        alt="키보드 앞에서 전등을 켜고 타자 연습 중인 캐릭터"
-                        width={1934}
-                        height={1013}
+                        src={frameBreakArtwork.foregroundSrc}
+                        alt={frameBreakArtwork.foregroundAlt}
+                        width={frameBreakArtwork.foregroundWidth}
+                        height={frameBreakArtwork.foregroundHeight}
                         loading="eager"
                         sizes="(min-width: 1024px) 46vw, (min-width: 640px) 70vw, 170vw"
                         className="pointer-events-none absolute -bottom-2 left-1/2 z-40 h-auto w-[min(170%,35rem)] max-w-none -translate-x-1/2 drop-shadow-[0_12px_16px_rgba(0,0,0,0.18)] transition-transform duration-300 group-hover:-translate-y-0.5 motion-reduce:transition-none"
@@ -305,10 +338,8 @@ export function LandingHome({
                       </YeonView>
                     </YeonView>
                   </>
-                );
-                const cardInner = hasFrameBreakArtwork
-                  ? frameBreakCardInner
-                  : standardCardInner;
+                ) : null;
+                const cardInner = frameBreakCardInner ?? standardCardInner;
 
                 if (canOpen) {
                   const handleEntryClick = () =>
