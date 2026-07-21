@@ -220,9 +220,9 @@ export function LandingHome({
                     <YeonView className="relative overflow-hidden rounded-t-2xl">
                       <YeonView
                         aria-hidden="true"
-                        className="absolute inset-x-0 top-0 z-10 h-16 bg-white"
+                        className="absolute inset-x-0 top-0 z-10 h-24 bg-white"
                       />
-                      <YeonView className="relative z-50 flex min-h-16 items-center justify-between gap-3 px-5 py-3">
+                      <YeonView className="relative z-50 flex h-24 items-start justify-between gap-3 px-5 pb-8 pt-3">
                         <YeonView className="flex min-w-0 items-center gap-3">
                           <YeonText
                             as="span"
@@ -260,7 +260,7 @@ export function LandingHome({
                         </YeonView>
                         <Image
                           src="/images/landing/typing-frame-break-foreground.webp"
-                          alt="키보드 앞에서 타자 연습 중인 캐릭터"
+                          alt="키보드 앞에서 전등을 켜고 타자 연습 중인 캐릭터"
                           width={1934}
                           height={813}
                           loading="eager"
@@ -268,7 +268,7 @@ export function LandingHome({
                           className="pointer-events-none absolute -bottom-2 -left-[35%] z-20 h-auto w-[170%] max-w-none drop-shadow-[0_12px_16px_rgba(0,0,0,0.18)] transition-transform duration-300 group-hover:-translate-y-0.5 sm:-left-[22%] sm:w-[145%] motion-reduce:transition-none"
                         />
                       </YeonView>
-                      <YeonView className="pointer-events-none absolute inset-x-0 top-0 z-40 h-16 overflow-hidden [clip-path:inset(0_0_0_45%)]">
+                      <YeonView className="pointer-events-none absolute inset-x-0 top-0 z-40 h-24 overflow-hidden">
                         <Image
                           src="/images/landing/typing-frame-break-foreground.webp"
                           alt=""
@@ -276,7 +276,7 @@ export function LandingHome({
                           height={813}
                           loading="eager"
                           sizes="(min-width: 1024px) 46vw, (min-width: 640px) 70vw, 170vw"
-                          className="absolute -left-[35%] top-8 h-auto w-[170%] max-w-none sm:-left-[22%] sm:top-6 sm:w-[145%]"
+                          className="absolute -left-[35%] top-16 h-auto w-[170%] max-w-none sm:-left-[22%] sm:top-14 sm:w-[145%]"
                         />
                       </YeonView>
                     </YeonView>
