@@ -223,7 +223,7 @@ export function LandingHome({
                         className="absolute inset-x-0 top-0 z-10 h-24 bg-white"
                       />
                       <YeonView className="relative z-50 flex h-24 items-start justify-between gap-3 px-5 pb-8 pt-3">
-                        <YeonView className="flex min-w-0 items-center gap-3">
+                        <YeonView className="relative z-50 flex min-w-0 items-center gap-3 bg-white pr-3">
                           <YeonText
                             as="span"
                             variant="unstyled"
@@ -258,31 +258,16 @@ export function LandingHome({
                             className="object-cover"
                           />
                         </YeonView>
-                        <Image
-                          src="/images/landing/typing-frame-break-foreground.webp"
-                          alt="키보드 앞에서 전등을 켜고 타자 연습 중인 캐릭터"
-                          width={1934}
-                          height={813}
-                          loading="eager"
-                          sizes="(min-width: 1024px) 46vw, (min-width: 640px) 70vw, 170vw"
-                          className="pointer-events-none absolute -bottom-2 -left-[35%] z-20 h-auto w-[170%] max-w-none drop-shadow-[0_12px_16px_rgba(0,0,0,0.18)] transition-transform duration-300 group-hover:-translate-y-0.5 sm:-left-[22%] sm:w-[145%] motion-reduce:transition-none"
-                        />
                       </YeonView>
-                      <YeonView
-                        aria-hidden="true"
-                        className="pointer-events-none absolute left-[29.5%] top-12 z-30 h-4 w-[4.5%] rounded-t-md bg-[#15131b] sm:left-[33%] sm:top-10 sm:w-[4%]"
+                      <Image
+                        src="/images/landing/typing-frame-break-foreground-restored.webp"
+                        alt="키보드 앞에서 전등을 켜고 타자 연습 중인 캐릭터"
+                        width={1934}
+                        height={1013}
+                        loading="eager"
+                        sizes="(min-width: 1024px) 46vw, (min-width: 640px) 70vw, 170vw"
+                        className="pointer-events-none absolute -bottom-2 left-1/2 z-40 h-auto w-[min(170%,35rem)] max-w-none -translate-x-1/2 drop-shadow-[0_12px_16px_rgba(0,0,0,0.18)] transition-transform duration-300 group-hover:-translate-y-0.5 motion-reduce:transition-none"
                       />
-                      <YeonView className="pointer-events-none absolute inset-x-0 top-0 z-40 h-24 overflow-hidden">
-                        <Image
-                          src="/images/landing/typing-frame-break-foreground.webp"
-                          alt=""
-                          width={1934}
-                          height={813}
-                          loading="eager"
-                          sizes="(min-width: 1024px) 46vw, (min-width: 640px) 70vw, 170vw"
-                          className="absolute -left-[35%] top-16 h-auto w-[170%] max-w-none sm:-left-[22%] sm:top-14 sm:w-[145%]"
-                        />
-                      </YeonView>
                     </YeonView>
 
                     <YeonView className="relative z-30 mt-auto rounded-b-2xl bg-white px-5 py-4">
