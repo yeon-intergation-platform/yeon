@@ -29,6 +29,7 @@ type FrameBreakArtwork = {
   foregroundWidth: number;
   foregroundHeight: number;
   foregroundAlt: string;
+  foregroundBottomClassName: string;
 };
 
 const FRAME_BREAK_ARTWORK_BY_SERVICE: Readonly<
@@ -41,6 +42,7 @@ const FRAME_BREAK_ARTWORK_BY_SERVICE: Readonly<
     foregroundWidth: 1574,
     foregroundHeight: 792,
     foregroundAlt: "키보드 앞에서 전등을 켜고 타자 연습 중인 캐릭터",
+    foregroundBottomClassName: "-bottom-8",
   },
   "recall-service": {
     order: "2",
@@ -49,6 +51,7 @@ const FRAME_BREAK_ARTWORK_BY_SERVICE: Readonly<
     foregroundWidth: 1454,
     foregroundHeight: 630,
     foregroundAlt: "노트를 보며 백지 학습 내용을 떠올리는 캐릭터",
+    foregroundBottomClassName: "-bottom-2",
   },
   "card-service": {
     order: "3",
@@ -57,6 +60,7 @@ const FRAME_BREAK_ARTWORK_BY_SERVICE: Readonly<
     foregroundWidth: 1448,
     foregroundHeight: 632,
     foregroundAlt: "플래시카드를 넘기며 복습하는 캐릭터",
+    foregroundBottomClassName: "-bottom-2",
   },
 };
 
@@ -306,7 +310,7 @@ export function LandingHome({
                         height={frameBreakArtwork.foregroundHeight}
                         loading="eager"
                         sizes="(min-width: 1024px) 46vw, (min-width: 640px) 70vw, 170vw"
-                        className="pointer-events-none absolute -bottom-2 left-1/2 z-40 h-auto w-[min(170%,35rem)] max-w-none -translate-x-1/2 drop-shadow-[0_12px_16px_rgba(0,0,0,0.18)] transition-transform duration-300 group-hover:-translate-y-0.5 motion-reduce:transition-none"
+                        className={`pointer-events-none absolute left-1/2 z-40 h-auto w-[min(170%,35rem)] max-w-none -translate-x-1/2 drop-shadow-[0_12px_16px_rgba(0,0,0,0.18)] transition-transform duration-300 group-hover:-translate-y-0.5 motion-reduce:transition-none ${frameBreakArtwork.foregroundBottomClassName}`}
                       />
                     </YeonView>
 
