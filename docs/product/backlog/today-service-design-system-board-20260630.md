@@ -1,5 +1,7 @@
 # Today 서비스 디자인 시스템 보드 개편
 
+> 완료된 브라우저 MVP의 역사 문서다. 2026-07-22 이후 화면·저장·상태 의미는 [`../yeon-today-screen-definition.md`](../yeon-today-screen-definition.md)와 [`2026-07-22-yeon-today-server-redesign.md`](./2026-07-22-yeon-today-server-redesign.md)를 우선한다.
+
 ## 목표
 
 `todo.yeon.world`의 Today 화면을 스크린샷처럼 실전형 작업 보드로 개편한다. 새 시각 언어를 임의로 만들지 않고, Yeon 흰 배경 서비스 디자인 시스템의 정규 색상과 공용 UI 패턴만 사용한다.
