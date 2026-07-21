@@ -51,6 +51,14 @@ const FRAME_BREAK_ARTWORK_BY_SERVICE: Readonly<
     foregroundHeight: 630,
     foregroundAlt: "노트를 보며 백지 학습 내용을 떠올리는 캐릭터",
   },
+  "card-service": {
+    order: "3",
+    backgroundSrc: "/images/landing/card-deck-frame-break-background.webp",
+    foregroundSrc: "/images/landing/card-deck-frame-break-foreground.webp",
+    foregroundWidth: 1448,
+    foregroundHeight: 632,
+    foregroundAlt: "플래시카드를 넘기며 복습하는 캐릭터",
+  },
 };
 
 export function LandingHome({
