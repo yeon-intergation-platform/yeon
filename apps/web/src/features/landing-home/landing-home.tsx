@@ -1,6 +1,7 @@
 "use client";
 import { YeonButton, YeonLink, YeonText, YeonView } from "@yeon/ui";
 import { YEON_WEB_SHARED_CLASS as SHARED_FEATURE_CLASS } from "@yeon/ui/theme/web-style-tokens";
+import Image from "next/image";
 import { useCallback, useEffect, useState } from "react";
 import type { DevLoginOption } from "@/lib/auth/dev-login-options";
 import { analyticsEvents, trackEvent } from "@/lib/analytics";
@@ -128,10 +129,44 @@ export function LandingHome({
                   (!requiresAuth || isAuthenticated);
                 const needsLogin =
                   isLive && !inDevelopment && requiresAuth && !isAuthenticated;
-                const cardBase =
-                  "group flex min-w-0 flex-col rounded-2xl border border-[#e5e5e5] bg-[#fafafa] p-6 text-left shadow-sm transition-colors duration-200";
+                const hasFrameBreakArtwork = service.slug === "typing-service";
+                const cardBase = hasFrameBreakArtwork
+                  ? "group relative flex min-w-0 flex-col rounded-2xl border border-[#e5e5e5] bg-white text-left shadow-sm transition-colors duration-200"
+                  : "group flex min-w-0 flex-col rounded-2xl border border-[#e5e5e5] bg-[#fafafa] p-6 text-left shadow-sm transition-colors duration-200";
                 const interactiveCard = "hover:border-[#111] hover:bg-white";
-                const cardInner = (
+                const statusBadge = (
+                  <YeonView
+                    as="span"
+                    className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium ${
+                      isLive && !inDevelopment
+                        ? hasFrameBreakArtwork
+                          ? "border border-[#ddd6fe] bg-[#f5f3ff] text-[#5b21b6]"
+                          : "border border-[#e5e5e5] bg-[#f5f5f5] text-[#333]"
+                        : "border border-[#e5e5e5] bg-white text-[#999]"
+                    }`}
+                  >
+                    {isLive && !inDevelopment ? (
+                      <YeonView
+                        as="span"
+                        aria-hidden="true"
+                        className={`h-1.5 w-1.5 rounded-full ${
+                          hasFrameBreakArtwork
+                            ? "bg-[#7c3aed]"
+                            : "bg-emerald-500"
+                        }`}
+                      />
+                    ) : null}
+                    {inDevelopment ? "개발 중" : isLive ? "운영 중" : "준비 중"}
+                  </YeonView>
+                );
+                const actionLabel = canOpen
+                  ? "바로 이동"
+                  : needsLogin
+                    ? "로그인 후 이동"
+                    : inDevelopment
+                      ? "개발 중"
+                      : "준비 중";
+                const standardCardInner = (
                   <>
                     <YeonView className="flex items-start justify-between gap-3">
                       <YeonText
@@ -144,27 +179,7 @@ export function LandingHome({
                           ? `${service.title} (개발중)`
                           : service.title}
                       </YeonText>
-                      <YeonView
-                        as="span"
-                        className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium ${
-                          isLive && !inDevelopment
-                            ? "border border-[#e5e5e5] bg-[#f5f5f5] text-[#333]"
-                            : "border border-[#e5e5e5] bg-white text-[#999]"
-                        }`}
-                      >
-                        {isLive && !inDevelopment ? (
-                          <YeonView
-                            as="span"
-                            aria-hidden="true"
-                            className="h-1.5 w-1.5 rounded-full bg-emerald-500"
-                          />
-                        ) : null}
-                        {inDevelopment
-                          ? "개발 중"
-                          : isLive
-                            ? "운영 중"
-                            : "준비 중"}
-                      </YeonView>
+                      {statusBadge}
                     </YeonView>
                     <YeonText
                       variant="unstyled"
@@ -184,13 +199,7 @@ export function LandingHome({
                             : SHARED_FEATURE_CLASS.text13EmphasisSubtle
                         }`}
                       >
-                        {canOpen
-                          ? "바로 이동"
-                          : needsLogin
-                            ? "로그인 후 이동"
-                            : inDevelopment
-                              ? "개발 중"
-                              : "준비 중"}
+                        {actionLabel}
                         {isLive && !inDevelopment ? (
                           <YeonText
                             as="span"
@@ -206,6 +215,111 @@ export function LandingHome({
                     </YeonView>
                   </>
                 );
+                const frameBreakCardInner = (
+                  <>
+                    <YeonView className="relative overflow-hidden rounded-t-2xl">
+                      <YeonView
+                        aria-hidden="true"
+                        className="absolute inset-x-0 top-0 z-10 h-16 bg-white"
+                      />
+                      <YeonView className="relative z-50 flex min-h-16 items-center justify-between gap-3 px-5 py-3">
+                        <YeonView className="flex min-w-0 items-center gap-3">
+                          <YeonText
+                            as="span"
+                            variant="unstyled"
+                            tone="inherit"
+                            aria-hidden="true"
+                            className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#111] text-[15px] font-bold text-white"
+                          >
+                            1
+                          </YeonText>
+                          <YeonText
+                            as="h3"
+                            variant="unstyled"
+                            tone="inherit"
+                            className="truncate text-[18px] font-bold tracking-[-0.03em] text-[#111]"
+                          >
+                            {service.title}
+                          </YeonText>
+                        </YeonView>
+                        <YeonView className="relative z-30">
+                          {statusBadge}
+                        </YeonView>
+                      </YeonView>
+
+                      <YeonView className="relative z-20 h-48 overflow-hidden sm:h-52">
+                        <YeonView className="absolute inset-0 overflow-hidden">
+                          <Image
+                            src="/images/landing/typing-frame-break-background.webp"
+                            alt=""
+                            fill
+                            loading="eager"
+                            sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+                            className="object-cover"
+                          />
+                        </YeonView>
+                        <Image
+                          src="/images/landing/typing-frame-break-foreground.webp"
+                          alt="키보드 앞에서 타자 연습 중인 캐릭터"
+                          width={1934}
+                          height={813}
+                          loading="eager"
+                          sizes="(min-width: 1024px) 46vw, (min-width: 640px) 70vw, 170vw"
+                          className="pointer-events-none absolute -bottom-2 -left-[35%] z-20 h-auto w-[170%] max-w-none drop-shadow-[0_12px_16px_rgba(0,0,0,0.18)] transition-transform duration-300 group-hover:-translate-y-0.5 sm:-left-[22%] sm:w-[145%] motion-reduce:transition-none"
+                        />
+                      </YeonView>
+                      <YeonView className="pointer-events-none absolute inset-x-0 top-0 z-40 h-16 overflow-hidden [clip-path:inset(0_0_0_45%)]">
+                        <Image
+                          src="/images/landing/typing-frame-break-foreground.webp"
+                          alt=""
+                          width={1934}
+                          height={813}
+                          loading="eager"
+                          sizes="(min-width: 1024px) 46vw, (min-width: 640px) 70vw, 170vw"
+                          className="absolute -left-[35%] top-8 h-auto w-[170%] max-w-none sm:-left-[22%] sm:top-6 sm:w-[145%]"
+                        />
+                      </YeonView>
+                    </YeonView>
+
+                    <YeonView className="relative z-30 mt-auto rounded-b-2xl bg-white px-5 py-4">
+                      <YeonText
+                        variant="unstyled"
+                        tone="inherit"
+                        className={`break-keep ${SHARED_FEATURE_CLASS.text14Neutral} leading-[1.7]`}
+                      >
+                        {service.summary}
+                      </YeonText>
+                      <YeonView className="mt-4 flex items-center justify-end border-t border-[#e5e5e5] pt-4">
+                        <YeonText
+                          as="span"
+                          variant="unstyled"
+                          tone="inherit"
+                          className={`inline-flex items-center gap-2 ${
+                            isLive && !inDevelopment
+                              ? SHARED_FEATURE_CLASS.text13Emphasis
+                              : SHARED_FEATURE_CLASS.text13EmphasisSubtle
+                          }`}
+                        >
+                          {actionLabel}
+                          {isLive && !inDevelopment ? (
+                            <YeonText
+                              as="span"
+                              variant="unstyled"
+                              tone="inherit"
+                              aria-hidden="true"
+                              className="text-base transition-transform duration-200 group-hover:translate-x-0.5"
+                            >
+                              →
+                            </YeonText>
+                          ) : null}
+                        </YeonText>
+                      </YeonView>
+                    </YeonView>
+                  </>
+                );
+                const cardInner = hasFrameBreakArtwork
+                  ? frameBreakCardInner
+                  : standardCardInner;
 
                 if (canOpen) {
                   const handleEntryClick = () =>
