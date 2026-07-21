@@ -44,7 +44,7 @@ const SERVICE_BASE_PATH: Record<Exclude<CommonServiceKey, "home">, string> = {
   card: "/card-service",
   community: "/community",
   game: "/game-service",
-  todo: "/todo-service",
+  todo: "/today",
   support: "/support",
   news: "/news",
   blog: "/blog",

@@ -24,7 +24,7 @@ export const SERVICE_SUBDOMAIN_ROUTES = {
     publicUrl: "https://game.yeon.world",
   },
   "todo.yeon.world": {
-    servicePath: "/todo-service",
+    servicePath: "/today",
     publicUrl: "https://todo.yeon.world",
   },
 } as const;

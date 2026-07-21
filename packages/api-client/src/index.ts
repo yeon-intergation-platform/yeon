@@ -154,6 +154,8 @@ import {
   type UpdateUserRoleBody,
 } from "@yeon/api-contract/users";
 
+export { createTodayApiClient, todayKeys } from "./today";
+
 export class ApiClientError extends Error {
   /** 프론트 분기용 고정 식별자(백엔드 code). 없을 수 있다. */
   public readonly code?: string;

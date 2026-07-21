@@ -65,7 +65,7 @@ describe("platform-services", () => {
     ).toBe("/community");
     expect(
       services.find((service) => service.slug === "todo-service")?.publicHref
-    ).toBe("/todo-service");
+    ).toBe("/today");
     expect(
       services.find((service) => service.slug === "news")?.publicHref
     ).toBe("https://news.yeon.world");

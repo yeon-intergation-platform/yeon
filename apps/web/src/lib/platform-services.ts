@@ -91,13 +91,13 @@ export const PLATFORM_SERVICES = [
   },
   {
     slug: "todo-service",
-    href: "/todo-service",
+    href: "/today",
     publicHref: "https://todo.yeon.world",
-    title: "오늘 보드",
+    title: "YEON Today",
     summary:
-      "오늘 처리할 일만 고르고 지금 할 일 하나에 집중하는 개인용 데일리 보드입니다.",
-    audience: "오늘 할 일",
-    accessPolicy: platformServiceAccessPolicies.anonymous,
+      "할 일 보드로 계획하고 24시간 기록으로 실제 하루를 함께 관리합니다.",
+    audience: "할 일 · 하루 기록",
+    accessPolicy: platformServiceAccessPolicies.authRequired,
     status: platformServiceStatuses.live,
     listedInPlatformHome: true,
   },

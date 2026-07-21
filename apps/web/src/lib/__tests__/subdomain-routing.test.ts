@@ -40,7 +40,7 @@ describe("subdomain-routing", () => {
         host: "todo.yeon.world",
         pathname: "/",
       })
-    ).toBe("/todo-service");
+    ).toBe("/today");
 
     expect(
       resolveServiceSubdomainRewritePath({
@@ -98,10 +98,10 @@ describe("subdomain-routing", () => {
     expect(
       resolveServiceSubdomainRewritePath({
         host: "todo.yeon.world",
-        pathname: "/today",
+        pathname: "/record",
         search: "?source=shortcut",
       })
-    ).toBe("/todo-service/today?source=shortcut");
+    ).toBe("/today/record?source=shortcut");
   });
 
   it("공개 콘텐츠 subdomain의 feed.xml을 channel 내부 route로 rewrite한다", () => {
@@ -236,7 +236,7 @@ describe("subdomain-routing", () => {
     expect(
       resolveLegacyServicePathRedirectUrl({
         host: "yeon.world",
-        pathname: "/todo-service",
+        pathname: "/today",
       })?.toString()
     ).toBe("https://todo.yeon.world/");
   });
@@ -282,7 +282,7 @@ describe("subdomain-routing", () => {
     expect(
       resolveLegacyServicePathRedirectUrl({
         host: "todo.yeon.world",
-        pathname: "/todo-service",
+        pathname: "/today",
       })?.toString()
     ).toBe("https://todo.yeon.world/");
   });

@@ -29,7 +29,8 @@
     "./community-chat": "./src/community-chat.ts",
     "./star-lobby": "./src/star-lobby.ts",
     "./user-experience": "./src/user-experience.ts",
-    "./user-profile": "./src/user-profile.ts"
+    "./user-profile": "./src/user-profile.ts",
+    "./today": "./src/today.ts"
   },
   "scripts": {
     "lint": "eslint src --ext .ts",
