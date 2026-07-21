@@ -36,11 +36,10 @@ const FRAME_BREAK_ARTWORK_BY_SERVICE: Readonly<
 > = {
   "typing-service": {
     order: "1",
-    backgroundSrc: "/images/landing/typing-frame-break-background.webp",
-    foregroundSrc:
-      "/images/landing/typing-frame-break-foreground-restored.webp",
-    foregroundWidth: 1934,
-    foregroundHeight: 1013,
+    backgroundSrc: "/images/landing/typing-frame-break-background-v2.webp",
+    foregroundSrc: "/images/landing/typing-frame-break-foreground-v2.webp",
+    foregroundWidth: 1448,
+    foregroundHeight: 552,
     foregroundAlt: "키보드 앞에서 전등을 켜고 타자 연습 중인 캐릭터",
   },
   "recall-service": {
