@@ -22,46 +22,60 @@ type LandingHomeProps = {
   isAuthenticated: boolean;
 };
 
+type FrameBreakForeground = {
+  src: string;
+  width: number;
+  height: number;
+  alt: string;
+  bottomClassName: string;
+};
+
 type FrameBreakArtwork = {
   order: string;
-  backgroundSrc: string;
-  foregroundSrc: string;
-  foregroundWidth: number;
-  foregroundHeight: number;
-  foregroundAlt: string;
-  foregroundBottomClassName: string;
+  foreground?: FrameBreakForeground;
 };
+
+const LANDING_CARD_BACKGROUND_SRC =
+  "/images/landing/baekji-frame-break-background.webp";
 
 const FRAME_BREAK_ARTWORK_BY_SERVICE: Readonly<
   Record<string, FrameBreakArtwork>
 > = {
   "typing-service": {
     order: "1",
-    backgroundSrc: "/images/landing/typing-frame-break-background-v3.webp",
-    foregroundSrc: "/images/landing/typing-frame-break-foreground-v9.webp",
-    foregroundWidth: 2225,
-    foregroundHeight: 792,
-    foregroundAlt: "키보드 앞에서 전등을 켜고 타자 연습 중인 캐릭터",
-    foregroundBottomClassName: "-bottom-8",
+    foreground: {
+      src: "/images/landing/typing-frame-break-foreground-v9.webp",
+      width: 2225,
+      height: 792,
+      alt: "키보드 앞에서 전등을 켜고 타자 연습 중인 캐릭터",
+      bottomClassName: "-bottom-8",
+    },
   },
   "recall-service": {
     order: "2",
-    backgroundSrc: "/images/landing/baekji-frame-break-background.webp",
-    foregroundSrc: "/images/landing/baekji-frame-break-foreground.webp",
-    foregroundWidth: 1454,
-    foregroundHeight: 630,
-    foregroundAlt: "노트를 보며 백지 학습 내용을 떠올리는 캐릭터",
-    foregroundBottomClassName: "-bottom-2",
+    foreground: {
+      src: "/images/landing/baekji-frame-break-foreground.webp",
+      width: 1454,
+      height: 630,
+      alt: "노트를 보며 백지 학습 내용을 떠올리는 캐릭터",
+      bottomClassName: "-bottom-2",
+    },
   },
   "card-service": {
     order: "3",
-    backgroundSrc: "/images/landing/card-deck-frame-break-background.webp",
-    foregroundSrc: "/images/landing/card-deck-frame-break-foreground.webp",
-    foregroundWidth: 1448,
-    foregroundHeight: 632,
-    foregroundAlt: "플래시카드를 넘기며 복습하는 캐릭터",
-    foregroundBottomClassName: "-bottom-2",
+    foreground: {
+      src: "/images/landing/card-deck-frame-break-foreground.webp",
+      width: 1448,
+      height: 632,
+      alt: "플래시카드를 넘기며 복습하는 캐릭터",
+      bottomClassName: "-bottom-2",
+    },
   },
+  community: { order: "4" },
+  "todo-service": { order: "5" },
+  "discord-ai": { order: "6" },
+  news: { order: "7" },
+  "game-service": { order: "8" },
 };
 
 export function LandingHome({
@@ -294,7 +308,7 @@ export function LandingHome({
                       <YeonView className="relative z-20 h-48 overflow-hidden sm:h-52">
                         <YeonView className="absolute inset-0 overflow-hidden">
                           <Image
-                            src={frameBreakArtwork.backgroundSrc}
+                            src={LANDING_CARD_BACKGROUND_SRC}
                             alt=""
                             fill
                             loading="eager"
@@ -303,15 +317,17 @@ export function LandingHome({
                           />
                         </YeonView>
                       </YeonView>
-                      <Image
-                        src={frameBreakArtwork.foregroundSrc}
-                        alt={frameBreakArtwork.foregroundAlt}
-                        width={frameBreakArtwork.foregroundWidth}
-                        height={frameBreakArtwork.foregroundHeight}
-                        loading="eager"
-                        sizes="(min-width: 1024px) 46vw, (min-width: 640px) 70vw, 170vw"
-                        className={`pointer-events-none absolute left-1/2 z-40 h-auto w-[min(170%,35rem)] max-w-none -translate-x-1/2 drop-shadow-[0_12px_16px_rgba(0,0,0,0.18)] transition-transform duration-300 group-hover:-translate-y-0.5 motion-reduce:transition-none ${frameBreakArtwork.foregroundBottomClassName}`}
-                      />
+                      {frameBreakArtwork.foreground ? (
+                        <Image
+                          src={frameBreakArtwork.foreground.src}
+                          alt={frameBreakArtwork.foreground.alt}
+                          width={frameBreakArtwork.foreground.width}
+                          height={frameBreakArtwork.foreground.height}
+                          loading="eager"
+                          sizes="(min-width: 1024px) 46vw, (min-width: 640px) 70vw, 170vw"
+                          className={`pointer-events-none absolute left-1/2 z-40 h-auto w-[min(170%,35rem)] max-w-none -translate-x-1/2 drop-shadow-[0_12px_16px_rgba(0,0,0,0.18)] transition-transform duration-300 group-hover:-translate-y-0.5 motion-reduce:transition-none ${frameBreakArtwork.foreground.bottomClassName}`}
+                        />
+                      ) : null}
                     </YeonView>
 
                     <YeonView className="relative z-30 mt-auto rounded-b-2xl bg-white px-5 py-4">
