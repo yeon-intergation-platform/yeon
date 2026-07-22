@@ -28,6 +28,7 @@ type FrameBreakForeground = {
   height: number;
   alt: string;
   bottomClassName: string;
+  widthClassName?: string;
 };
 
 type FrameBreakArtwork = {
@@ -91,7 +92,17 @@ const FRAME_BREAK_ARTWORK_BY_SERVICE: Readonly<
       bottomClassName: "-bottom-12",
     },
   },
-  "discord-ai": { order: "6" },
+  "discord-ai": {
+    order: "6",
+    foreground: {
+      src: "/images/landing/discord-ai-frame-break-foreground-v1.webp",
+      width: 1921,
+      height: 786,
+      alt: "Discord AI 어시스턴트 패널을 확인하는 캐릭터",
+      bottomClassName: "-bottom-6",
+      widthClassName: "w-[min(185%,38rem)]",
+    },
+  },
   news: {
     order: "7",
     foreground: {
@@ -102,7 +113,17 @@ const FRAME_BREAK_ARTWORK_BY_SERVICE: Readonly<
       bottomClassName: "-bottom-2",
     },
   },
-  "game-service": { order: "8" },
+  "game-service": {
+    order: "8",
+    foreground: {
+      src: "/images/landing/game-frame-break-foreground-v1.webp",
+      width: 1762,
+      height: 766,
+      alt: "헤드셋을 쓰고 게임을 플레이하는 캐릭터",
+      bottomClassName: "-bottom-6",
+      widthClassName: "w-[min(185%,38rem)]",
+    },
+  },
   "owner-portfolio": { order: "9" },
 };
 
@@ -353,7 +374,7 @@ export function LandingHome({
                           height={frameBreakArtwork.foreground.height}
                           loading="eager"
                           sizes="(min-width: 1024px) 46vw, (min-width: 640px) 70vw, 170vw"
-                          className={`pointer-events-none absolute left-1/2 z-40 h-auto w-[min(170%,35rem)] max-w-none -translate-x-1/2 drop-shadow-[0_12px_16px_rgba(0,0,0,0.18)] transition-transform duration-300 group-hover:-translate-y-0.5 motion-reduce:transition-none ${frameBreakArtwork.foreground.bottomClassName}`}
+                          className={`pointer-events-none absolute left-1/2 z-40 h-auto max-w-none -translate-x-1/2 drop-shadow-[0_12px_16px_rgba(0,0,0,0.18)] transition-transform duration-300 group-hover:-translate-y-0.5 motion-reduce:transition-none ${frameBreakArtwork.foreground.widthClassName ?? "w-[min(170%,35rem)]"} ${frameBreakArtwork.foreground.bottomClassName}`}
                         />
                       ) : null}
                     </YeonView>
