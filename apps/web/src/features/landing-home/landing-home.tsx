@@ -32,9 +32,6 @@ type FrameBreakForeground = {
 
 type FrameBreakArtwork = {
   order: string;
-  backgroundSrc?: string;
-  backgroundAlt?: string;
-  backgroundClassName?: string;
   foreground?: FrameBreakForeground;
 };
 
@@ -76,13 +73,35 @@ const FRAME_BREAK_ARTWORK_BY_SERVICE: Readonly<
   },
   community: {
     order: "4",
-    backgroundSrc: "/images/landing/community-card-visual-v1.webp",
-    backgroundAlt: "대화와 공지를 주고받는 커뮤니티 화면",
-    backgroundClassName: "object-cover object-center",
+    foreground: {
+      src: "/images/landing/community-frame-break-foreground-v2.webp",
+      width: 1482,
+      height: 967,
+      alt: "대화와 공지를 주고받는 커뮤니티 캐릭터와 말풍선",
+      bottomClassName: "-bottom-4",
+    },
   },
-  "todo-service": { order: "5" },
+  "todo-service": {
+    order: "5",
+    foreground: {
+      src: "/images/landing/today-frame-break-foreground-v1.webp",
+      width: 1536,
+      height: 1024,
+      alt: "오늘 할 일을 보드에 정리하는 캐릭터",
+      bottomClassName: "-bottom-4",
+    },
+  },
   "discord-ai": { order: "6" },
-  news: { order: "7" },
+  news: {
+    order: "7",
+    foreground: {
+      src: "/images/landing/news-frame-break-foreground-v1.webp",
+      width: 1446,
+      height: 675,
+      alt: "YEON 뉴스를 읽으며 소식을 확인하는 캐릭터",
+      bottomClassName: "-bottom-2",
+    },
+  },
   "game-service": { order: "8" },
   "owner-portfolio": { order: "9" },
 };
@@ -309,7 +328,7 @@ export function LandingHome({
                             {service.title}
                           </YeonText>
                         </YeonView>
-                        <YeonView className="relative z-30">
+                        <YeonView className="relative z-50">
                           {statusBadge}
                         </YeonView>
                       </YeonView>
@@ -317,18 +336,12 @@ export function LandingHome({
                       <YeonView className="relative z-20 h-48 overflow-hidden sm:h-52">
                         <YeonView className="absolute inset-0 overflow-hidden">
                           <Image
-                            src={
-                              frameBreakArtwork.backgroundSrc ??
-                              LANDING_CARD_BACKGROUND_SRC
-                            }
-                            alt={frameBreakArtwork.backgroundAlt ?? ""}
+                            src={LANDING_CARD_BACKGROUND_SRC}
+                            alt=""
                             fill
                             loading="eager"
                             sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
-                            className={
-                              frameBreakArtwork.backgroundClassName ??
-                              "object-cover"
-                            }
+                            className="object-cover"
                           />
                         </YeonView>
                       </YeonView>
