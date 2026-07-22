@@ -4,7 +4,7 @@
 
 | 항목      | 값                                                                                                                   |
 | --------- | -------------------------------------------------------------------------------------------------------------------- |
-| 상태      | 구현·검증 완료, PR 전달 진행 중                                                                                      |
+| 상태      | 완료 — PR [#931](https://github.com/yeon-intergation-platform/yeon/pull/931)                                         |
 | 작성일    | 2026-07-22                                                                                                           |
 | 대상      | Spring Today 도메인, 공용 API 계약·클라이언트, Next BFF·웹 화면, 테스트·QA                                           |
 | 제품 정의 | [`../yeon-today-screen-definition.md`](../yeon-today-screen-definition.md)                                           |
@@ -148,4 +148,4 @@
 - [x] P0/P1 버그와 이번 변경에 포함한 P2 버그가 테스트로 보호된다.
 - [x] 관련 Spring/web 테스트, lint, typecheck, build가 통과한다.
 - [x] 실제 브라우저 핵심 흐름이 통과한다.
-- [ ] PR이 `main`에 merge된다.
+- [x] PR이 `main`에 merge된다.
