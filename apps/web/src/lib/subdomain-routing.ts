@@ -27,6 +27,10 @@ export const SERVICE_SUBDOMAIN_ROUTES = {
     servicePath: "/today",
     publicUrl: "https://todo.yeon.world",
   },
+  "portforlio.yeon.world": {
+    servicePath: "/portfolio",
+    publicUrl: "https://portforlio.yeon.world",
+  },
 } as const;
 
 export const CONTENT_SUBDOMAIN_ROUTES = {

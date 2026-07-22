@@ -17,6 +17,7 @@ export const SERVICE_CANONICAL_URLS = {
   community: "https://community.yeon.world",
   game: "https://game.yeon.world",
   todo: "https://todo.yeon.world",
+  portfolio: "https://portforlio.yeon.world",
 } as const;
 
 export const PUBLIC_CONTENT_CANONICAL_URLS = {
@@ -107,6 +108,11 @@ const STATIC_INDEXABLE_SITEMAP_ENTRIES = [
   {
     url: SERVICE_CANONICAL_URLS.game,
     changeFrequency: "weekly",
+    priority: 0.8,
+  },
+  {
+    url: SERVICE_CANONICAL_URLS.portfolio,
+    changeFrequency: "monthly",
     priority: 0.8,
   },
   ...getGameSlugs().map(

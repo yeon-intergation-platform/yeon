@@ -137,6 +137,18 @@ export const PLATFORM_SERVICES = [
     status: platformServiceStatuses.live,
     listedInPlatformHome: true,
   },
+  {
+    slug: "owner-portfolio",
+    href: "/portfolio",
+    publicHref: "https://portforlio.yeon.world",
+    title: "쥔장의 포트폴리오",
+    summary:
+      "최현준의 프로젝트 기록과 문제 해결 과정, 이력서와 포트폴리오를 한곳에 모았습니다.",
+    audience: "개발 기록 · 경력",
+    accessPolicy: platformServiceAccessPolicies.anonymous,
+    status: platformServiceStatuses.live,
+    listedInPlatformHome: true,
+  },
 ] as const satisfies readonly PlatformServiceDescriptor[];
 
 const CANONICAL_ROOT_HOSTS = new Set(["yeon.world", "www.yeon.world"]);
