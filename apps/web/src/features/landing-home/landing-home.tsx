@@ -44,8 +44,8 @@ const FRAME_BREAK_ARTWORK_BY_SERVICE: Readonly<
   "typing-service": {
     order: "1",
     foreground: {
-      src: "/images/landing/typing-frame-break-foreground-v9.webp",
-      width: 2225,
+      src: "/images/landing/typing-frame-break-foreground-v10.webp",
+      width: 1830,
       height: 792,
       alt: "키보드 앞에서 전등을 켜고 타자 연습 중인 캐릭터",
       bottomClassName: "-bottom-8",
