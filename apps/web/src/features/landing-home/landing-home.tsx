@@ -75,11 +75,12 @@ const FRAME_BREAK_ARTWORK_BY_SERVICE: Readonly<
   community: {
     order: "4",
     foreground: {
-      src: "/images/landing/community-frame-break-foreground-v3.webp",
-      width: 1455,
-      height: 711,
+      src: "/images/landing/community-frame-break-foreground-v4.webp",
+      width: 1560,
+      height: 1018,
       alt: "대화와 공지를 주고받는 커뮤니티 캐릭터와 말풍선",
       bottomClassName: "-bottom-4",
+      widthClassName: "w-[min(150%,31rem)]",
     },
   },
   "todo-service": {
