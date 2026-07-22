@@ -32,6 +32,9 @@ type FrameBreakForeground = {
 
 type FrameBreakArtwork = {
   order: string;
+  backgroundSrc?: string;
+  backgroundAlt?: string;
+  backgroundClassName?: string;
   foreground?: FrameBreakForeground;
 };
 
@@ -71,7 +74,12 @@ const FRAME_BREAK_ARTWORK_BY_SERVICE: Readonly<
       bottomClassName: "-bottom-2",
     },
   },
-  community: { order: "4" },
+  community: {
+    order: "4",
+    backgroundSrc: "/images/landing/community-card-visual-v1.webp",
+    backgroundAlt: "대화와 공지를 주고받는 커뮤니티 화면",
+    backgroundClassName: "object-cover object-center",
+  },
   "todo-service": { order: "5" },
   "discord-ai": { order: "6" },
   news: { order: "7" },
@@ -308,12 +316,18 @@ export function LandingHome({
                       <YeonView className="relative z-20 h-48 overflow-hidden sm:h-52">
                         <YeonView className="absolute inset-0 overflow-hidden">
                           <Image
-                            src={LANDING_CARD_BACKGROUND_SRC}
-                            alt=""
+                            src={
+                              frameBreakArtwork.backgroundSrc ??
+                              LANDING_CARD_BACKGROUND_SRC
+                            }
+                            alt={frameBreakArtwork.backgroundAlt ?? ""}
                             fill
                             loading="eager"
                             sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
-                            className="object-cover"
+                            className={
+                              frameBreakArtwork.backgroundClassName ??
+                              "object-cover"
+                            }
                           />
                         </YeonView>
                       </YeonView>
