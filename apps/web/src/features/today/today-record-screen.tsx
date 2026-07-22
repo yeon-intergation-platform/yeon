@@ -8,15 +8,19 @@ import {
   Dumbbell,
   Gamepad2,
   Moon,
+  PencilLine,
   Plus,
   Settings2,
   Trash2,
   Utensils,
 } from "lucide-react";
 import { useEffect, useMemo, useState, type ComponentType } from "react";
-import type {
-  TodayActivityType,
-  TodayRecordResponse,
+import {
+  TODAY_ACTIVITY_COLORS,
+  TODAY_ACTIVITY_ICONS,
+  type CreateTodayActivityTypeBody,
+  type TodayActivityType,
+  type TodayRecordResponse,
 } from "@yeon/api-contract/today";
 import {
   useYeonRouter,
@@ -50,7 +54,10 @@ const FOCUS_RING =
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#111] focus-visible:ring-offset-2";
 const SURFACE = "rounded-2xl border border-[#dedede] bg-white";
 
-const COLOR_CLASS: Record<string, string> = {
+type TodayActivityColor = TodayActivityType["colorToken"];
+type TodayActivityIcon = TodayActivityType["iconKey"];
+
+const COLOR_CLASS = {
   blue: "border-[#b9d7ff] bg-[#eaf4ff] text-[#155fa8]",
   green: "border-[#b9e2cc] bg-[#ecf8f1] text-[#26724a]",
   orange: "border-[#ffd3ab] bg-[#fff3e6] text-[#a95b17]",
@@ -58,12 +65,19 @@ const COLOR_CLASS: Record<string, string> = {
   yellow: "border-[#f1dda1] bg-[#fff8dc] text-[#876a13]",
   red: "border-[#fac3bd] bg-[#fff0ee] text-[#a93d31]",
   gray: "border-[#d6d6d6] bg-[#f2f2f2] text-[#555]",
-};
+} satisfies Record<TodayActivityColor, string>;
 
-const ICONS: Record<
-  string,
-  ComponentType<{ size?: number; className?: string }>
-> = {
+const COLOR_LABEL = {
+  blue: "파랑",
+  green: "초록",
+  orange: "주황",
+  purple: "보라",
+  yellow: "노랑",
+  red: "빨강",
+  gray: "회색",
+} satisfies Record<TodayActivityColor, string>;
+
+const ICONS = {
   book: BookOpen,
   gamepad: Gamepad2,
   utensils: Utensils,
@@ -72,7 +86,21 @@ const ICONS: Record<
   moon: Moon,
   dumbbell: Dumbbell,
   circle: CircleDot,
-};
+} satisfies Record<
+  TodayActivityIcon,
+  ComponentType<{ size?: number; className?: string }>
+>;
+
+const ICON_LABEL = {
+  book: "책",
+  gamepad: "게임패드",
+  utensils: "식기",
+  car: "자동차",
+  coffee: "컵",
+  moon: "달",
+  dumbbell: "운동",
+  circle: "점",
+} satisfies Record<TodayActivityIcon, string>;
 
 export function TodayRecordScreen() {
   const searchParams = useYeonSearchParams();
@@ -149,6 +177,7 @@ function RecordContent({
   const [selectedActivityId, setSelectedActivityId] = useState<string | null>(
     activeTypes[0]?.id ?? null
   );
+  const [editingNoteHour, setEditingNoteHour] = useState<number | null>(null);
   const [manageOpen, setManageOpen] = useState(false);
   const mutations = useTodayRecordMutations(date);
   const activityCommands = useCommandLock<string>();
@@ -167,6 +196,14 @@ function RecordContent({
       setSelectedActivityId(activeTypes[0]?.id ?? null);
     }
   }, [activeTypes, selectedActivityId]);
+
+  useEffect(() => setEditingNoteHour(null), [date]);
+
+  const editingNoteSlot =
+    editingNoteHour === null
+      ? null
+      : (record.slots.find((slot) => slot.hour === editingNoteHour) ?? null);
+  const editingActivityTypeId = editingNoteSlot?.activityType?.id ?? null;
 
   return (
     <div className="space-y-4">
@@ -189,7 +226,7 @@ function RecordContent({
           </button>
         </div>
         <div
-          className="-mx-1 mt-3 flex gap-2 overflow-x-auto px-1 py-1"
+          className="mt-3 flex gap-2 overflow-x-auto px-1 py-1"
           role={activeTypes.length ? "listbox" : undefined}
           aria-label={activeTypes.length ? "기록할 활동" : undefined}
         >
@@ -293,6 +330,7 @@ function RecordContent({
                       mutations.upsertSlot.mutateAsync({
                         hour: slot.hour,
                         activityTypeId: selectedActivityId,
+                        note: slot.note,
                       })
                     )
                     .catch(() => undefined);
@@ -304,11 +342,36 @@ function RecordContent({
                   .run(slot.hour, () =>
                     mutations.deleteSlot.mutateAsync(slot.hour)
                   )
+                  .then(() => {
+                    if (editingNoteHour === slot.hour) {
+                      setEditingNoteHour(null);
+                    }
+                  })
                   .catch(() => undefined);
               }}
+              onEditNote={() => setEditingNoteHour(slot.hour)}
             />
           ))}
         </div>
+        {editingNoteSlot?.activityType && editingActivityTypeId ? (
+          <SlotNoteEditor
+            key={`${date}-${editingNoteSlot.hour}`}
+            slot={editingNoteSlot}
+            isSaving={slotCommands.isLocked(editingNoteSlot.hour)}
+            onCancel={() => setEditingNoteHour(null)}
+            onSave={async (note) => {
+              mutations.resetErrors();
+              await slotCommands.run(editingNoteSlot.hour, () =>
+                mutations.upsertSlot.mutateAsync({
+                  hour: editingNoteSlot.hour,
+                  activityTypeId: editingActivityTypeId,
+                  note,
+                })
+              );
+              setEditingNoteHour(null);
+            }}
+          />
+        ) : null}
       </section>
 
       <section className={`${SURFACE} p-5`}>
@@ -367,26 +430,28 @@ function HourCell({
   clearDisabled,
   onAssign,
   onClear,
+  onEditNote,
 }: {
   slot: TodayRecordResponse["slots"][number];
   disabled: boolean;
   clearDisabled: boolean;
   onAssign(): void;
   onClear(): void;
+  onEditNote(): void;
 }) {
   const Icon = slot.activityType
     ? (ICONS[slot.activityType.iconKey] ?? CircleDot)
     : Plus;
   return (
     <div
-      className={`group relative flex aspect-square min-h-[82px] flex-col rounded-xl border p-2 transition-colors ${slot.activityType ? (COLOR_CLASS[slot.activityType.colorToken] ?? COLOR_CLASS.gray) : "border-[#e2e2e2] bg-[#fafafa] text-[#999] hover:border-[#aaa] hover:bg-white"}`}
+      className={`group relative flex min-h-28 flex-col rounded-xl border p-2 transition-colors ${slot.activityType ? (COLOR_CLASS[slot.activityType.colorToken] ?? COLOR_CLASS.gray) : "border-[#e2e2e2] bg-[#fafafa] text-[#999] hover:border-[#aaa] hover:bg-white"}`}
     >
       <button
         type="button"
         disabled={disabled}
         onClick={onAssign}
-        aria-label={`${slot.hour}시, ${slot.activityType?.name ?? "기록 없음"}. 선택한 활동으로 기록`}
-        className={`${FOCUS_RING} flex h-full flex-col items-center justify-center rounded-lg disabled:cursor-not-allowed`}
+        aria-label={`${slot.hour}시, ${slot.activityType?.name ?? "기록 없음"}${slot.note ? `, 설명 ${slot.note}` : ""}. 선택한 활동으로 기록`}
+        className={`${FOCUS_RING} flex min-h-0 flex-1 cursor-pointer flex-col items-center justify-center rounded-lg disabled:cursor-not-allowed`}
       >
         <span className="absolute left-2 top-2 text-[11px] font-black tabular-nums">
           {String(slot.hour).padStart(2, "0")}
@@ -397,20 +462,119 @@ function HourCell({
         </span>
       </button>
       {slot.activityType ? (
-        <button
-          type="button"
-          disabled={clearDisabled}
-          onClick={(event) => {
-            event.stopPropagation();
-            onClear();
-          }}
-          aria-label={`${slot.hour}시 기록 삭제`}
-          className={`${FOCUS_RING} absolute right-1.5 top-1.5 grid size-7 place-items-center rounded-lg bg-white/80 opacity-100 shadow-sm hover:bg-white sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100`}
-        >
-          <Trash2 size={13} aria-hidden="true" />
-        </button>
+        <>
+          <button
+            type="button"
+            disabled={clearDisabled}
+            onClick={onEditNote}
+            aria-label={`${slot.hour}시 설명 ${slot.note ? "수정" : "추가"}`}
+            title={slot.note ?? "설명 추가"}
+            className={`${FOCUS_RING} mt-1 flex min-h-7 w-full cursor-pointer items-center justify-center rounded-md border border-black/10 bg-white/45 px-1.5 py-1 text-center text-[9px] font-bold leading-[1.25] hover:bg-white/75 disabled:cursor-not-allowed disabled:opacity-50`}
+          >
+            {slot.note ? (
+              <span className="line-clamp-2 max-w-full break-all">
+                {slot.note}
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 opacity-70">
+                <PencilLine size={10} aria-hidden="true" />
+                설명 추가
+              </span>
+            )}
+          </button>
+          <button
+            type="button"
+            disabled={clearDisabled}
+            onClick={(event) => {
+              event.stopPropagation();
+              onClear();
+            }}
+            aria-label={`${slot.hour}시 기록 삭제`}
+            className={`${FOCUS_RING} absolute right-1.5 top-1.5 grid size-7 cursor-pointer place-items-center rounded-lg bg-white/80 opacity-100 shadow-sm hover:bg-white sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100`}
+          >
+            <Trash2 size={13} aria-hidden="true" />
+          </button>
+        </>
       ) : null}
     </div>
+  );
+}
+
+function SlotNoteEditor({
+  slot,
+  isSaving,
+  onSave,
+  onCancel,
+}: {
+  slot: TodayRecordResponse["slots"][number];
+  isSaving: boolean;
+  onSave(note: string | null): Promise<unknown>;
+  onCancel(): void;
+}) {
+  const [note, setNote] = useState(slot.note ?? "");
+  const normalizedNote = note.trim();
+  const initialNote = slot.note ?? "";
+  const helpId = `slot-note-${slot.hour}-help`;
+
+  return (
+    <form
+      aria-label={`${slot.hour}시 설명 편집`}
+      className="mt-4 rounded-xl border border-[#d8d8d8] bg-[#fafafa] p-3 sm:p-4"
+      onSubmit={async (event) => {
+        event.preventDefault();
+        try {
+          await onSave(normalizedNote || null);
+        } catch {
+          // 상위 mutation 오류 영역을 유지하고 사용자의 입력도 보존한다.
+        }
+      }}
+    >
+      <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+        <label
+          htmlFor={`slot-note-${slot.hour}`}
+          className="text-sm font-black text-[#222]"
+        >
+          {String(slot.hour).padStart(2, "0")}시 · {slot.activityType?.name}{" "}
+          설명
+        </label>
+        <span className="text-xs font-medium text-[#777]">
+          블록에는 최대 두 줄만 표시됩니다.
+        </span>
+      </div>
+      <textarea
+        id={`slot-note-${slot.hour}`}
+        value={note}
+        maxLength={200}
+        rows={2}
+        autoFocus
+        aria-describedby={helpId}
+        onChange={(event) => setNote(event.target.value)}
+        placeholder="예: 카페에서 커피를 마시며 쉬었어요."
+        className={`${FOCUS_RING} mt-3 w-full resize-none rounded-xl border border-[#d3d3d3] bg-white px-3 py-2.5 text-sm leading-5 text-[#222] placeholder:text-[#999]`}
+      />
+      <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <span id={helpId} className="text-xs text-[#777]">
+          {note.length}/200자 · 비워서 저장하면 설명이 삭제됩니다.
+        </span>
+        <div className="flex justify-end gap-2">
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={isSaving}
+            className={`${FOCUS_RING} min-h-10 cursor-pointer rounded-xl border border-[#d8d8d8] bg-white px-4 text-sm font-bold text-[#444] hover:bg-[#f4f4f4] disabled:cursor-not-allowed disabled:opacity-50`}
+          >
+            취소
+          </button>
+          <button
+            type="submit"
+            disabled={isSaving || normalizedNote === initialNote}
+            className={`${FOCUS_RING} min-h-10 cursor-pointer rounded-xl bg-[#111] px-4 text-sm font-black text-white hover:bg-[#333] disabled:cursor-not-allowed disabled:bg-[#ccc]`}
+          >
+            {isSaving ? "저장 중" : "설명 저장"}
+          </button>
+        </div>
+      </div>
+    </form>
   );
 }
 
@@ -422,45 +586,19 @@ function ActivityManager({
   isActivityPending,
 }: {
   activityTypes: TodayActivityType[];
-  onCreate(body: {
-    name: string;
-    colorToken:
-      | "blue"
-      | "green"
-      | "orange"
-      | "purple"
-      | "yellow"
-      | "red"
-      | "gray";
-    iconKey:
-      | "book"
-      | "gamepad"
-      | "utensils"
-      | "car"
-      | "coffee"
-      | "moon"
-      | "dumbbell"
-      | "circle";
-  }): Promise<unknown>;
+  onCreate(body: CreateTodayActivityTypeBody): Promise<unknown>;
   onToggle(activity: TodayActivityType): void;
   isCreating: boolean;
   isActivityPending(activityId: string): boolean;
 }) {
   const runSubmit = useSubmitLock();
   const [name, setName] = useState("");
-  const [colorToken, setColorToken] = useState<
-    "blue" | "green" | "orange" | "purple" | "yellow" | "red" | "gray"
-  >("blue");
-  const [iconKey, setIconKey] = useState<
-    | "book"
-    | "gamepad"
-    | "utensils"
-    | "car"
-    | "coffee"
-    | "moon"
-    | "dumbbell"
-    | "circle"
-  >("circle");
+  const [colorToken, setColorToken] = useState<TodayActivityColor>(
+    TODAY_ACTIVITY_COLORS.blue
+  );
+  const [iconKey, setIconKey] = useState<TodayActivityIcon>(
+    TODAY_ACTIVITY_ICONS.circle
+  );
   return (
     <section className={`${SURFACE} p-5`} aria-label="활동 항목 관리">
       <h2 className="text-lg font-black tracking-[-0.03em]">활동 항목 관리</h2>
@@ -495,9 +633,9 @@ function ActivityManager({
           aria-label="활동 색상"
           className={`${FOCUS_RING} h-11 rounded-xl border border-[#d8d8d8] px-3 text-sm font-bold`}
         >
-          {Object.keys(COLOR_CLASS).map((color) => (
+          {Object.values(TODAY_ACTIVITY_COLORS).map((color) => (
             <option key={color} value={color}>
-              {color}
+              {COLOR_LABEL[color]}
             </option>
           ))}
         </select>
@@ -507,9 +645,9 @@ function ActivityManager({
           aria-label="활동 아이콘"
           className={`${FOCUS_RING} h-11 rounded-xl border border-[#d8d8d8] px-3 text-sm font-bold`}
         >
-          {Object.keys(ICONS).map((icon) => (
+          {Object.values(TODAY_ACTIVITY_ICONS).map((icon) => (
             <option key={icon} value={icon}>
-              {icon}
+              {ICON_LABEL[icon]}
             </option>
           ))}
         </select>

@@ -113,10 +113,12 @@ export function useTodayRecordMutations(date: string) {
     mutationFn: ({
       hour,
       activityTypeId,
+      note,
     }: {
       hour: number;
       activityTypeId: string;
-    }) => client.upsertRecordSlot(date, hour, { activityTypeId }),
+      note?: string | null;
+    }) => client.upsertRecordSlot(date, hour, { activityTypeId, note }),
     onSuccess: refreshRecord,
   });
   const deleteSlot = useYeonMutation({
