@@ -74,9 +74,9 @@ const FRAME_BREAK_ARTWORK_BY_SERVICE: Readonly<
   community: {
     order: "4",
     foreground: {
-      src: "/images/landing/community-frame-break-foreground-v2.webp",
-      width: 1482,
-      height: 967,
+      src: "/images/landing/community-frame-break-foreground-v3.webp",
+      width: 1455,
+      height: 711,
       alt: "대화와 공지를 주고받는 커뮤니티 캐릭터와 말풍선",
       bottomClassName: "-bottom-4",
     },
@@ -84,9 +84,9 @@ const FRAME_BREAK_ARTWORK_BY_SERVICE: Readonly<
   "todo-service": {
     order: "5",
     foreground: {
-      src: "/images/landing/today-frame-break-foreground-v1.webp",
-      width: 1536,
-      height: 1024,
+      src: "/images/landing/today-frame-break-foreground-v2.webp",
+      width: 1479,
+      height: 748,
       alt: "오늘 할 일을 보드에 정리하는 캐릭터",
       bottomClassName: "-bottom-4",
     },
