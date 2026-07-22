@@ -197,7 +197,7 @@ export function LandingHome({
                   FRAME_BREAK_ARTWORK_BY_SERVICE[service.slug];
                 const hasFrameBreakArtwork = frameBreakArtwork !== undefined;
                 const cardBase = hasFrameBreakArtwork
-                  ? "group relative flex min-w-0 flex-col rounded-2xl border border-[#e5e5e5] bg-white text-left shadow-sm transition-colors duration-200"
+                  ? "group relative flex min-w-0 flex-col !items-stretch !justify-start rounded-2xl border border-[#e5e5e5] bg-white !p-0 text-left !font-normal shadow-sm transition-colors duration-200"
                   : "group flex min-w-0 flex-col rounded-2xl border border-[#e5e5e5] bg-[#fafafa] p-6 text-left shadow-sm transition-colors duration-200";
                 const interactiveCard = "hover:border-[#111] hover:bg-white";
                 const statusBadge = (
