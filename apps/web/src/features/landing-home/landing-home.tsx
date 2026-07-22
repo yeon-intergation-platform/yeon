@@ -28,6 +28,7 @@ type FrameBreakForeground = {
   height: number;
   alt: string;
   bottomClassName: string;
+  widthClassName?: string;
 };
 
 type FrameBreakArtwork = {
@@ -48,7 +49,7 @@ const FRAME_BREAK_ARTWORK_BY_SERVICE: Readonly<
       width: 1830,
       height: 792,
       alt: "키보드 앞에서 전등을 켜고 타자 연습 중인 캐릭터",
-      bottomClassName: "-bottom-8",
+      bottomClassName: "-bottom-6",
     },
   },
   "recall-service": {
@@ -74,11 +75,12 @@ const FRAME_BREAK_ARTWORK_BY_SERVICE: Readonly<
   community: {
     order: "4",
     foreground: {
-      src: "/images/landing/community-frame-break-foreground-v3.webp",
-      width: 1455,
-      height: 711,
+      src: "/images/landing/community-frame-break-foreground-v4.webp",
+      width: 1560,
+      height: 1018,
       alt: "대화와 공지를 주고받는 커뮤니티 캐릭터와 말풍선",
       bottomClassName: "-bottom-4",
+      widthClassName: "w-[min(150%,31rem)]",
     },
   },
   "todo-service": {
@@ -88,10 +90,20 @@ const FRAME_BREAK_ARTWORK_BY_SERVICE: Readonly<
       width: 1479,
       height: 748,
       alt: "오늘 할 일을 보드에 정리하는 캐릭터",
-      bottomClassName: "-bottom-4",
+      bottomClassName: "-bottom-12",
     },
   },
-  "discord-ai": { order: "6" },
+  "discord-ai": {
+    order: "6",
+    foreground: {
+      src: "/images/landing/discord-ai-frame-break-foreground-v1.webp",
+      width: 1921,
+      height: 786,
+      alt: "Discord AI 어시스턴트 패널을 확인하는 캐릭터",
+      bottomClassName: "-bottom-6",
+      widthClassName: "w-[min(185%,38rem)]",
+    },
+  },
   news: {
     order: "7",
     foreground: {
@@ -102,7 +114,17 @@ const FRAME_BREAK_ARTWORK_BY_SERVICE: Readonly<
       bottomClassName: "-bottom-2",
     },
   },
-  "game-service": { order: "8" },
+  "game-service": {
+    order: "8",
+    foreground: {
+      src: "/images/landing/game-frame-break-foreground-v1.webp",
+      width: 1762,
+      height: 766,
+      alt: "헤드셋을 쓰고 게임을 플레이하는 캐릭터",
+      bottomClassName: "-bottom-6",
+      widthClassName: "w-[min(185%,38rem)]",
+    },
+  },
   "owner-portfolio": { order: "9" },
 };
 
@@ -353,7 +375,7 @@ export function LandingHome({
                           height={frameBreakArtwork.foreground.height}
                           loading="eager"
                           sizes="(min-width: 1024px) 46vw, (min-width: 640px) 70vw, 170vw"
-                          className={`pointer-events-none absolute left-1/2 z-40 h-auto w-[min(170%,35rem)] max-w-none -translate-x-1/2 drop-shadow-[0_12px_16px_rgba(0,0,0,0.18)] transition-transform duration-300 group-hover:-translate-y-0.5 motion-reduce:transition-none ${frameBreakArtwork.foreground.bottomClassName}`}
+                          className={`pointer-events-none absolute left-1/2 z-40 h-auto max-w-none -translate-x-1/2 drop-shadow-[0_12px_16px_rgba(0,0,0,0.18)] transition-transform duration-300 group-hover:-translate-y-0.5 motion-reduce:transition-none ${frameBreakArtwork.foreground.widthClassName ?? "w-[min(170%,35rem)]"} ${frameBreakArtwork.foreground.bottomClassName}`}
                         />
                       ) : null}
                     </YeonView>
