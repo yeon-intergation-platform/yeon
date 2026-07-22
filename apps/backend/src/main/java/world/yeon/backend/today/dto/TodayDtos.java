@@ -84,11 +84,18 @@ public final class TodayDtos {
 
 	public record ActivityTypeResponse(ActivityType activityType) {}
 
-	public record RecordSlot(int hour, ActivityType activityType, String note) {}
+	public record RecordEntry(int entryIndex, ActivityType activityType, String note) {}
+
+	public record RecordSlot(
+		int hour,
+		ActivityType activityType,
+		String note,
+		List<RecordEntry> entries
+	) {}
 
 	public record RecordSummary(int recordedHours, int recordRate, Map<String, Integer> activityMinutes) {}
 
 	public record RecordResponse(String date, List<RecordSlot> slots, RecordSummary summary) {}
 
-	public record UpsertRecordSlotRequest(UUID activityTypeId, String note) {}
+	public record UpsertRecordSlotRequest(UUID activityTypeId, String note, Integer entryIndex) {}
 }

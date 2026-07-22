@@ -192,6 +192,49 @@ describe("api/v1/today catch-all route", () => {
     }
   });
 
+  it("시간 기록 하나 삭제 시 entryIndex를 검증해 Spring으로 전달한다", async () => {
+    mockRequestTodaySpring.mockResolvedValue({
+      status: 200,
+      payload: {
+        date: "2026-07-22",
+        slots: Array.from({ length: 24 }, (_, hour) => ({
+          hour,
+          activityType: null,
+          note: null,
+        })),
+        summary: { recordedHours: 0, recordRate: 0, activityMinutes: {} },
+      },
+    });
+
+    const response = await DELETE(
+      new NextRequest(
+        "http://localhost/api/v1/today/records/2026-07-22/slots/18?entryIndex=1",
+        { method: "DELETE" }
+      ),
+      context(["records", "2026-07-22", "slots", "18"])
+    );
+
+    expect(response.status).toBe(200);
+    expect(mockRequestTodaySpring).toHaveBeenCalledWith(
+      "user-1",
+      "/today/records/2026-07-22/slots/18?entryIndex=1",
+      expect.objectContaining({ method: "DELETE" })
+    );
+  });
+
+  it("허용 범위를 벗어난 entryIndex는 Spring 호출 전 400으로 거절한다", async () => {
+    const response = await DELETE(
+      new NextRequest(
+        "http://localhost/api/v1/today/records/2026-07-22/slots/18?entryIndex=2",
+        { method: "DELETE" }
+      ),
+      context(["records", "2026-07-22", "slots", "18"])
+    );
+
+    expect(response.status).toBe(400);
+    expect(mockRequestTodaySpring).not.toHaveBeenCalled();
+  });
+
   it("응답 계약 오류 로그에 사용자 payload를 기록하지 않는다", async () => {
     const consoleError = vi
       .spyOn(console, "error")

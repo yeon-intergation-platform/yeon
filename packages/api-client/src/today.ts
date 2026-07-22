@@ -167,9 +167,10 @@ export function createTodayApiClient(options: TodayClientOptions = {}) {
         }
       );
     },
-    deleteRecordSlot(date: string, hour: number) {
+    deleteRecordSlot(date: string, hour: number, entryIndex?: number) {
+      const path = TODAY_API_PATHS.recordSlot(date, hour);
       return request(
-        TODAY_API_PATHS.recordSlot(date, hour),
+        entryIndex === undefined ? path : `${path}?entryIndex=${entryIndex}`,
         todayRecordResponseSchema,
         { method: "DELETE" }
       );

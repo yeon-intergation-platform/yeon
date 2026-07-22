@@ -272,34 +272,66 @@ public class TodayService {
 			throw new TodayServiceException(409, "TODAY_ACTIVITY_INACTIVE", "사용 중인 활동만 기록할 수 있습니다.");
 		}
 		String note = normalizeOptional(request.note(), 200, "메모는 200자 이하로 입력해주세요.");
-		repository.upsertActivitySlot(owner, date, hour, activityType.id(), note, now());
+		Integer entryIndex = request.entryIndex();
+		if (entryIndex == null) {
+			if (!repository.appendActivitySlot(owner, date, hour, activityType.id(), note, now())) {
+				throw new TodayServiceException(
+					409,
+					"TODAY_RECORD_SLOT_FULL",
+					"한 시간에는 활동을 두 개까지 기록할 수 있습니다."
+				);
+			}
+		} else {
+			validateEntryIndex(entryIndex);
+			if (!repository.updateActivitySlotEntry(owner, date, hour, entryIndex, activityType.id(), note, now())) {
+				throw new TodayServiceException(404, "TODAY_RECORD_ENTRY_NOT_FOUND", "수정할 시간 기록을 찾지 못했습니다.");
+			}
+		}
 		return buildRecord(owner, date);
 	}
 
-	public TodayDtos.RecordResponse deleteRecordSlot(UUID ownerUserId, String rawDate, int hour) {
+	public TodayDtos.RecordResponse deleteRecordSlot(UUID ownerUserId, String rawDate, int hour, Integer entryIndex) {
 		UUID owner = requireOwner(ownerUserId);
 		LocalDate date = parseDate(rawDate);
 		validateHour(hour);
-		repository.deleteActivitySlot(owner, date, hour);
+		if (entryIndex == null) {
+			repository.deleteActivitySlot(owner, date, hour);
+		} else {
+			validateEntryIndex(entryIndex);
+			if (!repository.deleteActivitySlotEntry(owner, date, hour, entryIndex)) {
+				throw new TodayServiceException(404, "TODAY_RECORD_ENTRY_NOT_FOUND", "삭제할 시간 기록을 찾지 못했습니다.");
+			}
+		}
 		return buildRecord(owner, date);
 	}
 
 	private TodayDtos.RecordResponse buildRecord(UUID ownerUserId, LocalDate date) {
-		Map<Integer, TodayRepository.ActivitySlotRow> byHour = new LinkedHashMap<>();
+		Map<Integer, List<TodayRepository.ActivitySlotRow>> byHour = new LinkedHashMap<>();
 		for (TodayRepository.ActivitySlotRow row : repository.listActivitySlots(ownerUserId, date)) {
-			byHour.put(row.hour(), row);
+			byHour.computeIfAbsent(row.hour(), ignored -> new ArrayList<>()).add(row);
 		}
 		List<TodayDtos.RecordSlot> slots = new ArrayList<>(24);
 		Map<String, Integer> activityMinutes = new LinkedHashMap<>();
 		for (int hour = 0; hour < 24; hour += 1) {
-			TodayRepository.ActivitySlotRow row = byHour.get(hour);
-			if (row == null) {
-				slots.add(new TodayDtos.RecordSlot(hour, null, null));
+			List<TodayRepository.ActivitySlotRow> rows = byHour.getOrDefault(hour, List.of());
+			if (rows.isEmpty()) {
+				slots.add(new TodayDtos.RecordSlot(hour, null, null, List.of()));
 				continue;
 			}
-			TodayDtos.ActivityType activityType = toActivityType(row.activityType());
-			slots.add(new TodayDtos.RecordSlot(hour, activityType, row.note()));
-			activityMinutes.merge(activityType.name(), 60, Integer::sum);
+			List<TodayDtos.RecordEntry> entries = rows.stream()
+				.map(row -> new TodayDtos.RecordEntry(row.entryIndex(), toActivityType(row.activityType()), row.note()))
+				.toList();
+			TodayDtos.RecordEntry firstEntry = entries.getFirst();
+			slots.add(new TodayDtos.RecordSlot(
+				hour,
+				firstEntry.activityType(),
+				firstEntry.note(),
+				entries
+			));
+			int minutesPerEntry = 60 / entries.size();
+			for (TodayDtos.RecordEntry entry : entries) {
+				activityMinutes.merge(entry.activityType().name(), minutesPerEntry, Integer::sum);
+			}
 		}
 		int recordedHours = byHour.size();
 		return new TodayDtos.RecordResponse(
@@ -307,6 +339,12 @@ public class TodayService {
 			slots,
 			new TodayDtos.RecordSummary(recordedHours, (int) Math.round(recordedHours * 100.0 / 24), activityMinutes)
 		);
+	}
+
+	private void validateEntryIndex(int entryIndex) {
+		if (entryIndex < 0 || entryIndex > 1) {
+			throw badRequest("시간 기록 순서를 확인해주세요.");
+		}
 	}
 
 	private TodayDtos.Recommendation buildRecommendation(List<TodayRepository.TaskRow> rows) {

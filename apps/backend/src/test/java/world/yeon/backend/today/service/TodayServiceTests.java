@@ -190,13 +190,14 @@ class TodayServiceTests {
 			0
 		);
 		when(repository.listActivitySlots(OWNER_ID, LocalDate.parse("2026-07-22"))).thenReturn(
-			List.of(new TodayRepository.ActivitySlotRow(9, activity, null))
+			List.of(new TodayRepository.ActivitySlotRow(9, 0, activity, null))
 		);
 
 		TodayDtos.RecordResponse result = service.getRecord(OWNER_ID, "2026-07-22");
 
 		assertThat(result.slots()).hasSize(24);
 		assertThat(result.slots().get(9).activityType().name()).isEqualTo("공부");
+		assertThat(result.slots().get(9).entries()).hasSize(1);
 		assertThat(result.summary().recordedHours()).isEqualTo(1);
 		assertThat(result.summary().recordRate()).isEqualTo(4);
 		assertThat(result.summary().activityMinutes()).containsEntry("공부", 60);
@@ -217,7 +218,7 @@ class TodayServiceTests {
 		LocalDate date = LocalDate.parse("2026-07-22");
 		when(repository.listActivitySlots(OWNER_ID, date)).thenReturn(
 			IntStream.range(0, 24)
-				.mapToObj(hour -> new TodayRepository.ActivitySlotRow(hour, activity, null))
+				.mapToObj(hour -> new TodayRepository.ActivitySlotRow(hour, 0, activity, null))
 				.toList()
 		);
 
@@ -229,6 +230,159 @@ class TodayServiceTests {
 		verify(repository).listActivitySlots(OWNER_ID, date);
 		verify(repository, never()).listActivityTypes(OWNER_ID);
 		verify(repository, never()).findActivityType(eq(OWNER_ID), any());
+	}
+
+	@Test
+	void 한시간에두활동을기록하면각각30분으로집계한다() {
+		TodayRepository.ActivityTypeRow study = activity(
+			"00000000-0000-0000-0000-000000001003",
+			"공부",
+			"blue",
+			"book"
+		);
+		TodayRepository.ActivityTypeRow rest = activity(
+			"00000000-0000-0000-0000-000000001004",
+			"휴식",
+			"yellow",
+			"coffee"
+		);
+		when(repository.listActivitySlots(OWNER_ID, LocalDate.parse("2026-07-22"))).thenReturn(List.of(
+			new TodayRepository.ActivitySlotRow(18, 0, study, "문서 읽기"),
+			new TodayRepository.ActivitySlotRow(18, 1, rest, "커피 마시기")
+		));
+
+		TodayDtos.RecordResponse result = service.getRecord(OWNER_ID, "2026-07-22");
+
+		assertThat(result.slots().get(18).entries())
+			.extracting(TodayDtos.RecordEntry::entryIndex, entry -> entry.activityType().name(), TodayDtos.RecordEntry::note)
+			.containsExactly(
+				org.assertj.core.groups.Tuple.tuple(0, "공부", "문서 읽기"),
+				org.assertj.core.groups.Tuple.tuple(1, "휴식", "커피 마시기")
+			);
+		assertThat(result.summary().recordedHours()).isEqualTo(1);
+		assertThat(result.summary().activityMinutes())
+			.containsEntry("공부", 30)
+			.containsEntry("휴식", 30);
+	}
+
+	@Test
+	void 같은활동을두번기록해도설명은분리하고시간은합산한다() {
+		TodayRepository.ActivityTypeRow rest = activity(
+			"00000000-0000-0000-0000-000000001003",
+			"휴식",
+			"yellow",
+			"coffee"
+		);
+		when(repository.listActivitySlots(OWNER_ID, LocalDate.parse("2026-07-22"))).thenReturn(List.of(
+			new TodayRepository.ActivitySlotRow(18, 0, rest, "산책"),
+			new TodayRepository.ActivitySlotRow(18, 1, rest, "커피")
+		));
+
+		TodayDtos.RecordResponse result = service.getRecord(OWNER_ID, "2026-07-22");
+
+		assertThat(result.slots().get(18).entries())
+			.extracting(TodayDtos.RecordEntry::note)
+			.containsExactly("산책", "커피");
+		assertThat(result.summary().activityMinutes()).containsEntry("휴식", 60);
+	}
+
+	@Test
+	void 비어있는순서에새기록을추가한다() {
+		UUID activityId = UUID.fromString("00000000-0000-0000-0000-000000001003");
+		TodayRepository.ActivityTypeRow activity = activity(
+			activityId.toString(),
+			"공부",
+			"blue",
+			"book"
+		);
+		LocalDate date = LocalDate.parse("2026-07-22");
+		when(repository.findActivityType(OWNER_ID, activityId)).thenReturn(activity);
+		when(repository.appendActivitySlot(eq(OWNER_ID), eq(date), eq(9), eq(activityId), eq("복습"), any()))
+			.thenReturn(true);
+		when(repository.listActivitySlots(OWNER_ID, date)).thenReturn(List.of(
+			new TodayRepository.ActivitySlotRow(9, 0, activity, "복습")
+		));
+
+		TodayDtos.RecordResponse result = service.upsertRecordSlot(
+			OWNER_ID,
+			date.toString(),
+			9,
+			new TodayDtos.UpsertRecordSlotRequest(activityId, "복습", null)
+		);
+
+		assertThat(result.slots().get(9).entries()).hasSize(1);
+		verify(repository).appendActivitySlot(eq(OWNER_ID), eq(date), eq(9), eq(activityId), eq("복습"), any());
+		verify(repository, never()).updateActivitySlotEntry(any(), any(), any(Integer.class), any(Integer.class), any(), any(), any());
+	}
+
+	@Test
+	void 두기록이이미있으면409를반환한다() {
+		UUID activityId = UUID.fromString("00000000-0000-0000-0000-000000001003");
+		TodayRepository.ActivityTypeRow activity = activity(
+			activityId.toString(),
+			"공부",
+			"blue",
+			"book"
+		);
+		LocalDate date = LocalDate.parse("2026-07-22");
+		when(repository.findActivityType(OWNER_ID, activityId)).thenReturn(activity);
+		when(repository.appendActivitySlot(eq(OWNER_ID), eq(date), eq(9), eq(activityId), isNull(), any()))
+			.thenReturn(false);
+
+		assertThatThrownBy(() -> service.upsertRecordSlot(
+			OWNER_ID,
+			date.toString(),
+			9,
+			new TodayDtos.UpsertRecordSlotRequest(activityId, null, null)
+		)).isInstanceOf(TodayServiceException.class)
+			.satisfies(error -> {
+				TodayServiceException serviceError = (TodayServiceException) error;
+				assertThat(serviceError.status()).isEqualTo(409);
+				assertThat(serviceError.code()).isEqualTo("TODAY_RECORD_SLOT_FULL");
+			});
+	}
+
+	@Test
+	void 지정한기록순서의활동과설명만수정한다() {
+		UUID activityId = UUID.fromString("00000000-0000-0000-0000-000000001003");
+		TodayRepository.ActivityTypeRow activity = activity(
+			activityId.toString(),
+			"공부",
+			"blue",
+			"book"
+		);
+		LocalDate date = LocalDate.parse("2026-07-22");
+		when(repository.findActivityType(OWNER_ID, activityId)).thenReturn(activity);
+		when(repository.updateActivitySlotEntry(eq(OWNER_ID), eq(date), eq(9), eq(1), eq(activityId), eq("두 번째"), any()))
+			.thenReturn(true);
+		when(repository.listActivitySlots(OWNER_ID, date)).thenReturn(List.of(
+			new TodayRepository.ActivitySlotRow(9, 1, activity, "두 번째")
+		));
+
+		service.upsertRecordSlot(
+			OWNER_ID,
+			date.toString(),
+			9,
+			new TodayDtos.UpsertRecordSlotRequest(activityId, "두 번째", 1)
+		);
+
+		verify(repository).updateActivitySlotEntry(
+			eq(OWNER_ID), eq(date), eq(9), eq(1), eq(activityId), eq("두 번째"), any()
+		);
+		verify(repository, never()).appendActivitySlot(any(), any(), any(Integer.class), any(), any(), any());
+	}
+
+	@Test
+	void 지정한기록하나만삭제한다() {
+		LocalDate date = LocalDate.parse("2026-07-22");
+		when(repository.deleteActivitySlotEntry(OWNER_ID, date, 9, 0)).thenReturn(true);
+		when(repository.listActivitySlots(OWNER_ID, date)).thenReturn(List.of());
+
+		TodayDtos.RecordResponse result = service.deleteRecordSlot(OWNER_ID, date.toString(), 9, 0);
+
+		assertThat(result.slots().get(9).entries()).isEmpty();
+		verify(repository).deleteActivitySlotEntry(OWNER_ID, date, 9, 0);
+		verify(repository, never()).deleteActivitySlot(any(), any(), any(Integer.class));
 	}
 
 	@Test
@@ -250,7 +404,7 @@ class TodayServiceTests {
 			OWNER_ID,
 			"2026-07-22",
 			9,
-			new TodayDtos.UpsertRecordSlotRequest(activityId, null)
+			new TodayDtos.UpsertRecordSlotRequest(activityId, null, null)
 		)).isInstanceOf(TodayServiceException.class)
 			.satisfies(error -> {
 				TodayServiceException serviceError = (TodayServiceException) error;
@@ -258,7 +412,7 @@ class TodayServiceTests {
 				assertThat(serviceError.code()).isEqualTo("TODAY_ACTIVITY_INACTIVE");
 			});
 		verify(repository, never()).listActivityTypes(OWNER_ID);
-		verify(repository, never()).upsertActivitySlot(any(), any(), any(Integer.class), any(), any(), any());
+		verify(repository, never()).appendActivitySlot(any(), any(), any(Integer.class), any(), any(), any());
 	}
 
 	@Test
@@ -269,11 +423,11 @@ class TodayServiceTests {
 			OWNER_ID,
 			"2026-07-22",
 			24,
-			new TodayDtos.UpsertRecordSlotRequest(activityId, null)
+			new TodayDtos.UpsertRecordSlotRequest(activityId, null, null)
 		)).isInstanceOf(TodayServiceException.class)
 			.satisfies(error -> assertThat(((TodayServiceException) error).status()).isEqualTo(400));
 		verify(repository, never()).findActivityType(any(), any());
-		verify(repository, never()).upsertActivitySlot(any(), any(), any(Integer.class), any(), any(), any());
+		verify(repository, never()).appendActivitySlot(any(), any(), any(Integer.class), any(), any(), any());
 	}
 
 	@Test
@@ -317,6 +471,24 @@ class TodayServiceTests {
 			version,
 			CREATED_AT,
 			CREATED_AT
+		);
+	}
+
+	private TodayRepository.ActivityTypeRow activity(
+		String id,
+		String name,
+		String colorToken,
+		String iconKey
+	) {
+		return new TodayRepository.ActivityTypeRow(
+			UUID.fromString(id),
+			OWNER_ID,
+			name,
+			colorToken,
+			iconKey,
+			0,
+			true,
+			0
 		);
 	}
 }
