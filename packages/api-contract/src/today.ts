@@ -182,10 +182,19 @@ export const todayActivityTypeResponseSchema = z.object({
   activityType: todayActivityTypeSchema,
 });
 
+export const todayRecordEntryIndexSchema = z.number().int().min(0).max(1);
+
+export const todayRecordEntrySchema = z.object({
+  entryIndex: todayRecordEntryIndexSchema,
+  activityType: todayActivityTypeSchema,
+  note: z.string().max(200).nullable(),
+});
+
 export const todayRecordSlotSchema = z.object({
   hour: z.number().int().min(0).max(23),
   activityType: todayActivityTypeSchema.nullable(),
   note: z.string().max(200).nullable(),
+  entries: z.array(todayRecordEntrySchema).max(2).default([]),
 });
 
 export const todayRecordSummarySchema = z.object({
@@ -203,6 +212,7 @@ export const todayRecordResponseSchema = z.object({
 export const upsertTodayRecordSlotBodySchema = z.object({
   activityTypeId: z.uuid(),
   note: z.string().trim().max(200).nullable().optional(),
+  entryIndex: todayRecordEntryIndexSchema.optional(),
 });
 
 export const todayApiErrorSchema = z.object({
@@ -243,6 +253,7 @@ export type UpdateTodayActivityTypeBody = z.infer<
   typeof updateTodayActivityTypeBodySchema
 >;
 export type TodayRecordResponse = z.infer<typeof todayRecordResponseSchema>;
+export type TodayRecordEntry = z.infer<typeof todayRecordEntrySchema>;
 export type UpsertTodayRecordSlotBody = z.infer<
   typeof upsertTodayRecordSlotBodySchema
 >;

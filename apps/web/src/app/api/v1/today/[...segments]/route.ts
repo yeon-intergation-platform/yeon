@@ -9,6 +9,7 @@ import {
   todayCalendarResponseSchema,
   todayDateSchema,
   todayMonthSchema,
+  todayRecordEntryIndexSchema,
   todayRecordResponseSchema,
   todayTaskResponseSchema,
   transitionTodayTaskBodySchema,
@@ -43,6 +44,11 @@ const hourSchema = z
   .string()
   .regex(/^(?:[0-9]|1\d|2[0-3])$/)
   .transform(Number);
+const entryIndexQuerySchema = z
+  .string()
+  .regex(/^[01]$/)
+  .transform(Number)
+  .pipe(todayRecordEntryIndexSchema);
 
 type RouteContract = {
   springPath: string;
@@ -199,12 +205,24 @@ function resolveContract(
   ) {
     const date = todayDateSchema.safeParse(segments[1]);
     const hour = hourSchema.safeParse(segments[3]);
-    return date.success && hour.success
-      ? {
-          springPath: `/today/records/${date.data}/slots/${hour.data}`,
-          responseSchema: todayRecordResponseSchema,
-        }
-      : null;
+    const rawEntryIndex = searchParams.get("entryIndex");
+    const entryIndex =
+      rawEntryIndex === null
+        ? null
+        : entryIndexQuerySchema.safeParse(rawEntryIndex);
+    if (
+      !date.success ||
+      !hour.success ||
+      (entryIndex !== null && !entryIndex.success)
+    ) {
+      return null;
+    }
+    return {
+      springPath: `/today/records/${date.data}/slots/${hour.data}${
+        entryIndex === null ? "" : `?entryIndex=${entryIndex.data}`
+      }`,
+      responseSchema: todayRecordResponseSchema,
+    };
   }
   return null;
 }
