@@ -4,6 +4,7 @@ import {
   createTodayTaskBodySchema,
   todayActivityTypeResponseSchema,
   todayActivityTypesResponseSchema,
+  todayApiErrorSchema,
   todayBoardResponseSchema,
   todayCalendarResponseSchema,
   todayRecordResponseSchema,
@@ -26,6 +27,18 @@ type TodayClientOptions = {
   headers?: HeadersInit;
 };
 
+export class TodayApiError extends Error {
+  readonly status: number;
+  readonly code?: string;
+
+  constructor(status: number, message: string, code?: string) {
+    super(message);
+    this.name = "TodayApiError";
+    this.status = status;
+    this.code = code;
+  }
+}
+
 export const todayKeys = {
   all: (userScope: string) => ["today", userScope] as const,
   boards: (userScope: string) =>
@@ -46,11 +59,7 @@ export function createTodayApiClient(options: TodayClientOptions = {}) {
   const fetchImpl = options.fetch ?? fetch;
   const baseUrl = options.baseUrl ?? "";
 
-  async function request<T>(
-    path: string,
-    schema: { parse(input: unknown): T },
-    init?: RequestInit
-  ) {
+  async function execute(path: string, init?: RequestInit) {
     const response = await fetchImpl(
       baseUrl ? new URL(path, baseUrl).toString() : path,
       {
@@ -64,32 +73,30 @@ export function createTodayApiClient(options: TodayClientOptions = {}) {
       }
     );
     if (!response.ok) {
-      const payload = (await response.json().catch(() => null)) as {
-        message?: string;
-      } | null;
-      throw new Error(payload?.message ?? "Today 요청을 처리하지 못했습니다.");
+      const rawPayload = await response.json().catch(() => null);
+      const payload = todayApiErrorSchema.safeParse(rawPayload);
+      throw new TodayApiError(
+        response.status,
+        payload.success
+          ? payload.data.message
+          : "Today 요청을 처리하지 못했습니다.",
+        payload.success ? payload.data.code : undefined
+      );
     }
+    return response;
+  }
+
+  async function request<T>(
+    path: string,
+    schema: { parse(input: unknown): T },
+    init?: RequestInit
+  ) {
+    const response = await execute(path, init);
     return schema.parse(await response.json());
   }
 
   async function requestNoContent(path: string, init?: RequestInit) {
-    const response = await fetchImpl(
-      baseUrl ? new URL(path, baseUrl).toString() : path,
-      {
-        ...init,
-        headers: {
-          accept: "application/json",
-          ...options.headers,
-          ...init?.headers,
-        },
-      }
-    );
-    if (!response.ok) {
-      const payload = (await response.json().catch(() => null)) as {
-        message?: string;
-      } | null;
-      throw new Error(payload?.message ?? "Today 요청을 처리하지 못했습니다.");
-    }
+    await execute(path, init);
   }
 
   return {

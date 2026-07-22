@@ -91,6 +91,54 @@ class TodayServiceTests {
 	}
 
 	@Test
+	void 이미완료된할일은성공응답을잃고같은버전으로재시도해도최신상태를반환한다() {
+		TodayRepository.TaskRow completed = task(
+			"완료한 일",
+			"normal",
+			30,
+			"done",
+			LocalDate.parse("2026-07-22"),
+			CREATED_AT.plusHours(2),
+			4
+		);
+		when(repository.findTask(OWNER_ID, TASK_ID)).thenReturn(completed);
+
+		TodayDtos.TaskResponse result = service.completeTask(
+			OWNER_ID,
+			TASK_ID,
+			new TodayDtos.TransitionTaskRequest(3L)
+		);
+
+		assertThat(result.task().status()).isEqualTo("done");
+		assertThat(result.task().version()).isEqualTo(4);
+		verify(repository, never()).updateTaskStatus(eq(OWNER_ID), eq(TASK_ID), any(Long.class), any(), any(), any());
+	}
+
+	@Test
+	void 이미재개된할일은성공응답을잃고같은버전으로재시도해도최신상태를반환한다() {
+		TodayRepository.TaskRow planned = task(
+			"다시 진행할 일",
+			"normal",
+			30,
+			"planned",
+			LocalDate.parse("2026-07-22"),
+			null,
+			6
+		);
+		when(repository.findTask(OWNER_ID, TASK_ID)).thenReturn(planned);
+
+		TodayDtos.TaskResponse result = service.reopenTask(
+			OWNER_ID,
+			TASK_ID,
+			new TodayDtos.TransitionTaskRequest(5L)
+		);
+
+		assertThat(result.task().status()).isEqualTo("planned");
+		assertThat(result.task().version()).isEqualTo(6);
+		verify(repository, never()).updateTaskStatus(eq(OWNER_ID), eq(TASK_ID), any(Long.class), any(), any(), any());
+	}
+
+	@Test
 	void 완료한할일을Inbox로이동하면완료상태도함께해제한다() {
 		TodayRepository.TaskRow completed = task(
 			"완료한 일",

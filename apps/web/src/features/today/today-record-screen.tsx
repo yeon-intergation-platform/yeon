@@ -13,7 +13,7 @@ import {
   Trash2,
   Utensils,
 } from "lucide-react";
-import { useEffect, useState, type ComponentType } from "react";
+import { useEffect, useMemo, useState, type ComponentType } from "react";
 import type {
   TodayActivityType,
   TodayRecordResponse,
@@ -35,11 +35,16 @@ import {
 } from "@/features/today/today-shell";
 import {
   getTodayErrorMessage,
+  isTodayAuthenticationError,
   useTodayActivityTypes,
   useTodayCalendar,
   useTodayRecord,
   useTodayRecordMutations,
 } from "@/features/today/use-today-data";
+import {
+  useCommandLock,
+  useSubmitLock,
+} from "@/features/today/use-command-lock";
 
 const FOCUS_RING =
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#111] focus-visible:ring-offset-2";
@@ -77,6 +82,7 @@ export function TodayRecordScreen() {
   const recordQuery = useTodayRecord(date);
   const activityTypesQuery = useTodayActivityTypes();
   const calendarQuery = useTodayCalendar(visibleMonth);
+  const queryError = recordQuery.error ?? activityTypesQuery.error;
 
   useEffect(() => {
     const rawDate = searchParams.get("date");
@@ -93,21 +99,30 @@ export function TodayRecordScreen() {
       visibleMonth={visibleMonth}
       onVisibleMonthChange={setVisibleMonth}
       calendar={calendarQuery.data}
+      calendarError={
+        calendarQuery.isError
+          ? getTodayErrorMessage(calendarQuery.error)
+          : undefined
+      }
+      calendarRetrying={calendarQuery.isFetching}
+      onRetryCalendar={() => void calendarQuery.refetch()}
       totalCount={24}
       completedCount={record?.summary.recordedHours ?? 0}
       estimatedMinutes={(record?.summary.recordedHours ?? 0) * 60}
     >
-      {recordQuery.isPending || activityTypesQuery.isPending ? (
-        <TodayLoadingState />
-      ) : null}
-      {recordQuery.isError || activityTypesQuery.isError ? (
+      {queryError ? (
         <TodayErrorState
-          message={getTodayErrorMessage(
-            recordQuery.error ?? activityTypesQuery.error
-          )}
+          message={getTodayErrorMessage(queryError)}
+          onRetry={() => {
+            if (recordQuery.isError) void recordQuery.refetch();
+            if (activityTypesQuery.isError) void activityTypesQuery.refetch();
+          }}
+          isRetrying={recordQuery.isFetching || activityTypesQuery.isFetching}
+          showLogin={isTodayAuthenticationError(queryError)}
         />
-      ) : null}
-      {record && activityTypesQuery.data ? (
+      ) : recordQuery.isPending || activityTypesQuery.isPending ? (
+        <TodayLoadingState />
+      ) : record && activityTypesQuery.data ? (
         <RecordContent
           date={date}
           record={record}
@@ -127,12 +142,17 @@ function RecordContent({
   record: TodayRecordResponse;
   activityTypes: TodayActivityType[];
 }) {
-  const activeTypes = activityTypes.filter((activity) => activity.active);
+  const activeTypes = useMemo(
+    () => activityTypes.filter((activity) => activity.active),
+    [activityTypes]
+  );
   const [selectedActivityId, setSelectedActivityId] = useState<string | null>(
     activeTypes[0]?.id ?? null
   );
   const [manageOpen, setManageOpen] = useState(false);
   const mutations = useTodayRecordMutations(date);
+  const activityCommands = useCommandLock<string>();
+  const slotCommands = useCommandLock<number>();
   const error =
     mutations.upsertSlot.error ??
     mutations.deleteSlot.error ??
@@ -170,37 +190,63 @@ function RecordContent({
         </div>
         <div
           className="mt-4 flex gap-2 overflow-x-auto pb-1"
-          role="listbox"
-          aria-label="기록할 활동"
+          role={activeTypes.length ? "listbox" : undefined}
+          aria-label={activeTypes.length ? "기록할 활동" : undefined}
         >
-          {activeTypes.map((activity) => (
-            <ActivityButton
-              key={activity.id}
-              activity={activity}
-              selected={selectedActivityId === activity.id}
-              onClick={() => setSelectedActivityId(activity.id)}
-            />
-          ))}
+          {activeTypes.length ? (
+            activeTypes.map((activity) => (
+              <ActivityButton
+                key={activity.id}
+                activity={activity}
+                selected={selectedActivityId === activity.id}
+                onClick={() => setSelectedActivityId(activity.id)}
+              />
+            ))
+          ) : (
+            <div className="flex min-w-full flex-col items-start gap-2 rounded-xl border border-dashed border-[#d8d8d8] bg-[#fafafa] px-4 py-4 text-sm text-[#666] sm:flex-row sm:items-center sm:justify-between">
+              <span>
+                사용 중인 활동이 없습니다. 활동 관리에서 하나를 추가하거나 다시
+                사용하세요.
+              </span>
+              <button
+                type="button"
+                onClick={() => setManageOpen(true)}
+                className={`${FOCUS_RING} shrink-0 rounded-lg border border-[#d8d8d8] bg-white px-3 py-2 font-bold text-[#333]`}
+              >
+                활동 관리 열기
+              </button>
+            </div>
+          )}
         </div>
       </section>
 
       {manageOpen ? (
         <ActivityManager
           activityTypes={activityTypes}
-          onCreate={mutations.createActivityType.mutateAsync}
-          onToggle={(activity) =>
-            mutations.updateActivityType.mutate({
-              activityTypeId: activity.id,
-              body: {
-                version: activity.version,
-                name: activity.name,
-                colorToken: activity.colorToken,
-                iconKey: activity.iconKey,
-                sortOrder: activity.sortOrder,
-                active: !activity.active,
-              },
-            })
-          }
+          isCreating={mutations.createActivityType.isPending}
+          isActivityPending={activityCommands.isLocked}
+          onCreate={(body) => {
+            mutations.resetErrors();
+            return mutations.createActivityType.mutateAsync(body);
+          }}
+          onToggle={(activity) => {
+            mutations.resetErrors();
+            void activityCommands
+              .run(activity.id, () =>
+                mutations.updateActivityType.mutateAsync({
+                  activityTypeId: activity.id,
+                  body: {
+                    version: activity.version,
+                    name: activity.name,
+                    colorToken: activity.colorToken,
+                    iconKey: activity.iconKey,
+                    sortOrder: activity.sortOrder,
+                    active: !activity.active,
+                  },
+                })
+              )
+              .catch(() => undefined);
+          }}
         />
       ) : null}
 
@@ -237,16 +283,29 @@ function RecordContent({
             <HourCell
               key={slot.hour}
               slot={slot}
-              disabled={!selectedActivityId || mutations.upsertSlot.isPending}
+              disabled={!selectedActivityId || slotCommands.isLocked(slot.hour)}
+              clearDisabled={slotCommands.isLocked(slot.hour)}
               onAssign={() => {
                 if (selectedActivityId) {
-                  mutations.upsertSlot.mutate({
-                    hour: slot.hour,
-                    activityTypeId: selectedActivityId,
-                  });
+                  mutations.resetErrors();
+                  void slotCommands
+                    .run(slot.hour, () =>
+                      mutations.upsertSlot.mutateAsync({
+                        hour: slot.hour,
+                        activityTypeId: selectedActivityId,
+                      })
+                    )
+                    .catch(() => undefined);
                 }
               }}
-              onClear={() => mutations.deleteSlot.mutate(slot.hour)}
+              onClear={() => {
+                mutations.resetErrors();
+                void slotCommands
+                  .run(slot.hour, () =>
+                    mutations.deleteSlot.mutateAsync(slot.hour)
+                  )
+                  .catch(() => undefined);
+              }}
             />
           ))}
         </div>
@@ -305,11 +364,13 @@ function ActivityButton({
 function HourCell({
   slot,
   disabled,
+  clearDisabled,
   onAssign,
   onClear,
 }: {
   slot: TodayRecordResponse["slots"][number];
   disabled: boolean;
+  clearDisabled: boolean;
   onAssign(): void;
   onClear(): void;
 }) {
@@ -338,6 +399,7 @@ function HourCell({
       {slot.activityType ? (
         <button
           type="button"
+          disabled={clearDisabled}
           onClick={(event) => {
             event.stopPropagation();
             onClear();
@@ -356,6 +418,8 @@ function ActivityManager({
   activityTypes,
   onCreate,
   onToggle,
+  isCreating,
+  isActivityPending,
 }: {
   activityTypes: TodayActivityType[];
   onCreate(body: {
@@ -379,7 +443,10 @@ function ActivityManager({
       | "circle";
   }): Promise<unknown>;
   onToggle(activity: TodayActivityType): void;
+  isCreating: boolean;
+  isActivityPending(activityId: string): boolean;
 }) {
+  const runSubmit = useSubmitLock();
   const [name, setName] = useState("");
   const [colorToken, setColorToken] = useState<
     "blue" | "green" | "orange" | "purple" | "yellow" | "red" | "gray"
@@ -401,13 +468,15 @@ function ActivityManager({
         className="mt-4 grid gap-2 sm:grid-cols-[minmax(160px,1fr)_130px_130px_auto]"
         onSubmit={async (event) => {
           event.preventDefault();
-          if (!name.trim()) return;
-          try {
-            await onCreate({ name: name.trim(), colorToken, iconKey });
-            setName("");
-          } catch {
-            // mutation 상태가 오류 문구를 렌더하며 입력값은 재시도를 위해 유지한다.
-          }
+          if (!name.trim() || isCreating) return;
+          await runSubmit(async () => {
+            try {
+              await onCreate({ name: name.trim(), colorToken, iconKey });
+              setName("");
+            } catch {
+              // mutation 상태가 오류 문구를 렌더하며 입력값은 재시도를 위해 유지한다.
+            }
+          });
         }}
       >
         <input
@@ -446,10 +515,10 @@ function ActivityManager({
         </select>
         <button
           type="submit"
-          disabled={!name.trim()}
+          disabled={!name.trim() || isCreating}
           className={`${FOCUS_RING} h-11 rounded-xl bg-[#111] px-4 text-sm font-black text-white disabled:bg-[#ccc]`}
         >
-          추가
+          {isCreating ? "추가 중" : "추가"}
         </button>
       </form>
       <ul className="mt-4 grid gap-2 sm:grid-cols-2">
@@ -458,15 +527,12 @@ function ActivityManager({
             key={activity.id}
             className="flex items-center justify-between rounded-xl border border-[#e6e6e6] px-3 py-2.5"
           >
-            <ActivityButton
-              activity={activity}
-              selected={false}
-              onClick={() => undefined}
-            />
+            <ActivityChip activity={activity} />
             <button
               type="button"
+              disabled={isActivityPending(activity.id)}
               onClick={() => onToggle(activity)}
-              className={`${FOCUS_RING} rounded-lg px-3 py-2 text-xs font-bold ${activity.active ? "text-[#a33] hover:bg-[#fff3f2]" : "text-[#26724a] hover:bg-[#eef8f2]"}`}
+              className={`${FOCUS_RING} rounded-lg px-3 py-2 text-xs font-bold disabled:cursor-not-allowed disabled:opacity-50 ${activity.active ? "text-[#a33] hover:bg-[#fff3f2]" : "text-[#26724a] hover:bg-[#eef8f2]"}`}
             >
               {activity.active ? "숨기기" : "사용"}
             </button>
@@ -474,5 +540,17 @@ function ActivityManager({
         ))}
       </ul>
     </section>
+  );
+}
+
+function ActivityChip({ activity }: { activity: TodayActivityType }) {
+  const Icon = ICONS[activity.iconKey] ?? CircleDot;
+  return (
+    <span
+      className={`inline-flex min-w-0 items-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-bold ${COLOR_CLASS[activity.colorToken] ?? COLOR_CLASS.gray}`}
+    >
+      <Icon className="shrink-0" size={17} aria-hidden="true" />
+      <span className="truncate">{activity.name}</span>
+    </span>
   );
 }

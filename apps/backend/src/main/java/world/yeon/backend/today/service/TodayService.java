@@ -142,13 +142,13 @@ public class TodayService {
 		UUID owner = requireOwner(ownerUserId);
 		TodayRepository.TaskRow current = requireTask(owner, taskId);
 		long version = requireVersion(request == null ? null : request.version());
-		assertVersion(current.version(), version);
-		if (STATUS_INBOX.equals(current.status())) {
-			throw new TodayServiceException(409, "TODAY_TASK_NOT_PLANNED", "날짜를 먼저 지정한 뒤 완료해주세요.");
-		}
 		if (STATUS_DONE.equals(current.status())) {
 			return new TodayDtos.TaskResponse(toTask(current));
 		}
+		if (STATUS_INBOX.equals(current.status())) {
+			throw new TodayServiceException(409, "TODAY_TASK_NOT_PLANNED", "날짜를 먼저 지정한 뒤 완료해주세요.");
+		}
+		assertVersion(current.version(), version);
 		if (!repository.updateTaskStatus(owner, taskId, version, STATUS_DONE, now(), now())) {
 			throw conflict();
 		}
@@ -159,6 +159,9 @@ public class TodayService {
 		UUID owner = requireOwner(ownerUserId);
 		TodayRepository.TaskRow current = requireTask(owner, taskId);
 		long version = requireVersion(request == null ? null : request.version());
+		if (STATUS_PLANNED.equals(current.status())) {
+			return new TodayDtos.TaskResponse(toTask(current));
+		}
 		assertVersion(current.version(), version);
 		if (!STATUS_DONE.equals(current.status())) {
 			return new TodayDtos.TaskResponse(toTask(current));

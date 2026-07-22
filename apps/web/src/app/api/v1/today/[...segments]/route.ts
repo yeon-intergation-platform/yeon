@@ -39,7 +39,10 @@ const versionSchema = z
   .regex(/^(0|[1-9]\d*)$/)
   .transform(Number)
   .refine(Number.isSafeInteger);
-const hourSchema = z.coerce.number().int().min(0).max(23);
+const hourSchema = z
+  .string()
+  .regex(/^(?:[0-9]|1\d|2[0-3])$/)
+  .transform(Number);
 
 type RouteContract = {
   springPath: string;
@@ -241,10 +244,11 @@ async function handle(
     }
     const validated = contract.responseSchema?.safeParse(result.payload);
     if (!validated?.success) {
-      console.error(
-        "Today Spring 응답 계약이 일치하지 않습니다.",
-        result.payload
-      );
+      console.error("Today Spring 응답 계약이 일치하지 않습니다.", {
+        method: request.method,
+        path: contract.springPath,
+        status: result.status,
+      });
       return jsonError("Today 서버 응답 형식이 올바르지 않습니다.", 502);
     }
     return NextResponse.json(validated.data, { status: result.status });

@@ -39,10 +39,15 @@ import {
 } from "@/features/today/today-shell";
 import {
   getTodayErrorMessage,
+  isTodayAuthenticationError,
   useTodayBoard,
   useTodayCalendar,
   useTodayMutations,
 } from "@/features/today/use-today-data";
+import {
+  useCommandLock,
+  useSubmitLock,
+} from "@/features/today/use-command-lock";
 
 const FOCUS_RING =
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#111] focus-visible:ring-offset-2";
@@ -82,15 +87,29 @@ export function TodayBoardScreen() {
       visibleMonth={visibleMonth}
       onVisibleMonthChange={setVisibleMonth}
       calendar={calendarQuery.data}
+      calendarError={
+        calendarQuery.isError
+          ? getTodayErrorMessage(calendarQuery.error)
+          : undefined
+      }
+      calendarRetrying={calendarQuery.isFetching}
+      onRetryCalendar={() => void calendarQuery.refetch()}
       totalCount={summary?.totalCount ?? 0}
       completedCount={summary?.completedCount ?? 0}
       estimatedMinutes={summary?.estimatedMinutes ?? 0}
     >
-      {boardQuery.isPending ? <TodayLoadingState /> : null}
       {boardQuery.isError ? (
-        <TodayErrorState message={getTodayErrorMessage(boardQuery.error)} />
+        <TodayErrorState
+          message={getTodayErrorMessage(boardQuery.error)}
+          onRetry={() => void boardQuery.refetch()}
+          isRetrying={boardQuery.isFetching}
+          showLogin={isTodayAuthenticationError(boardQuery.error)}
+        />
+      ) : boardQuery.isPending ? (
+        <TodayLoadingState />
+      ) : board ? (
+        <BoardContent date={date} board={board} />
       ) : null}
-      {board ? <BoardContent date={date} board={board} /> : null}
     </TodayPageFrame>
   );
 }
@@ -108,6 +127,7 @@ function BoardContent({
     "all"
   );
   const mutations = useTodayMutations();
+  const taskCommands = useCommandLock<string>();
   const tasks = useMemo(
     () => selectTasks(board.tasks, tab, sort, priorityFilter),
     [board.tasks, priorityFilter, sort, tab]
@@ -128,7 +148,10 @@ function BoardContent({
     <div className="space-y-4">
       <TaskComposer
         date={date}
-        onCreate={mutations.createTask.mutateAsync}
+        onCreate={(body) => {
+          mutations.resetErrors();
+          return mutations.createTask.mutateAsync(body);
+        }}
         isPending={mutations.createTask.isPending}
       />
       <RecommendationCard
@@ -228,24 +251,43 @@ function BoardContent({
                 key={task.id}
                 task={task}
                 selectedDate={date}
-                onToggle={() => mutations.toggleTask.mutate(task)}
-                onMove={(plannedDate) =>
-                  mutations.updateTask.mutate({
-                    taskId: task.id,
-                    body: {
-                      version: task.version,
-                      title: task.title,
-                      priority: task.priority,
-                      estimatedMinutes: task.estimatedMinutes,
-                      categoryLabel: task.categoryLabel,
-                      plannedDate,
-                    },
-                  })
-                }
-                onUpdate={(body) =>
-                  mutations.updateTask.mutateAsync({ taskId: task.id, body })
-                }
-                onDelete={() => mutations.deleteTask.mutate(task)}
+                busy={taskCommands.isLocked(task.id)}
+                onToggle={() => {
+                  mutations.resetErrors();
+                  void taskCommands
+                    .run(task.id, () => mutations.toggleTask.mutateAsync(task))
+                    .catch(() => undefined);
+                }}
+                onMove={(plannedDate) => {
+                  mutations.resetErrors();
+                  void taskCommands
+                    .run(task.id, () =>
+                      mutations.updateTask.mutateAsync({
+                        taskId: task.id,
+                        body: {
+                          version: task.version,
+                          title: task.title,
+                          priority: task.priority,
+                          estimatedMinutes: task.estimatedMinutes,
+                          categoryLabel: task.categoryLabel,
+                          plannedDate,
+                        },
+                      })
+                    )
+                    .catch(() => undefined);
+                }}
+                onUpdate={(body) => {
+                  mutations.resetErrors();
+                  return taskCommands.run(task.id, () =>
+                    mutations.updateTask.mutateAsync({ taskId: task.id, body })
+                  );
+                }}
+                onDelete={() => {
+                  mutations.resetErrors();
+                  void taskCommands
+                    .run(task.id, () => mutations.deleteTask.mutateAsync(task))
+                    .catch(() => undefined);
+                }}
               />
             ))}
           </ul>
@@ -284,28 +326,31 @@ function TaskComposer({
   const [estimate, setEstimate] = useState<number | "direct">(30);
   const [directMinutes, setDirectMinutes] = useState(30);
   const inputRef = useRef<HTMLInputElement>(null);
+  const runSubmit = useSubmitLock();
   const minutes = estimate === "direct" ? directMinutes : estimate;
   const valid = title.trim().length > 0 && minutes >= 1 && minutes <= 1440;
   const isToday = date === getLocalDate();
 
   const submit = async (plannedDate: string | null) => {
     if (!valid || isPending) return;
-    try {
-      await onCreate({
-        title: title.trim(),
-        priority,
-        estimatedMinutes: minutes,
-        categoryLabel: null,
-        plannedDate,
-      });
-      setTitle("");
-      setPriority("normal");
-      setEstimate(30);
-      setDirectMinutes(30);
-      inputRef.current?.focus();
-    } catch {
-      inputRef.current?.focus();
-    }
+    await runSubmit(async () => {
+      try {
+        await onCreate({
+          title: title.trim(),
+          priority,
+          estimatedMinutes: minutes,
+          categoryLabel: null,
+          plannedDate,
+        });
+        setTitle("");
+        setPriority("normal");
+        setEstimate(30);
+        setDirectMinutes(30);
+        inputRef.current?.focus();
+      } catch {
+        inputRef.current?.focus();
+      }
+    });
   };
 
   return (
@@ -424,7 +469,7 @@ function EstimateSelect({
   const options: Array<{ value: number | "direct"; label: string }> = [
     ...ESTIMATES.map((minutes) => ({
       value: minutes,
-      label: minutes === 120 ? "2시간 이상" : `${minutes}분`,
+      label: minutes === 120 ? "2시간" : `${minutes}분`,
     })),
     { value: "direct", label: "직접 입력" },
   ];
@@ -560,6 +605,7 @@ function BoardTabButton({
 function TaskRow({
   task,
   selectedDate,
+  busy,
   onToggle,
   onMove,
   onUpdate,
@@ -567,6 +613,7 @@ function TaskRow({
 }: {
   task: TodayTask;
   selectedDate: string;
+  busy: boolean;
   onToggle(): void;
   onMove(date: string | null): void;
   onUpdate(body: UpdateTodayTaskBody): Promise<unknown>;
@@ -575,6 +622,7 @@ function TaskRow({
   const done = task.status === "done";
   const inbox = task.status === "inbox";
   const menuRef = useRef<HTMLDetailsElement>(null);
+  const runEditSubmit = useSubmitLock();
   const [editing, setEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(task.title);
   const [editPriority, setEditPriority] = useState(task.priority);
@@ -594,27 +642,29 @@ function TaskRow({
 
   const submitEdit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!editValid) return;
-    try {
-      await onUpdate({
-        version: task.version,
-        title: editTitle.trim(),
-        priority: editPriority,
-        estimatedMinutes: editMinutes,
-        categoryLabel: task.categoryLabel,
-        plannedDate: editDate || null,
-      });
-      setEditing(false);
-    } catch {
-      // mutation 상태가 오류 문구를 렌더하며 편집값은 재시도를 위해 유지한다.
-    }
+    if (!editValid || busy) return;
+    await runEditSubmit(async () => {
+      try {
+        const result = await onUpdate({
+          version: task.version,
+          title: editTitle.trim(),
+          priority: editPriority,
+          estimatedMinutes: editMinutes,
+          categoryLabel: task.categoryLabel,
+          plannedDate: editDate || null,
+        });
+        if (result !== undefined) setEditing(false);
+      } catch {
+        // mutation 상태가 오류 문구를 렌더하며 편집값은 재시도를 위해 유지한다.
+      }
+    });
   };
 
   return (
     <li className="grid min-h-[74px] grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 border-b border-[#ededed] px-4 last:border-b-0 sm:grid-cols-[auto_minmax(180px,1fr)_88px_90px_110px_auto] sm:px-5">
       <button
         type="button"
-        disabled={inbox}
+        disabled={inbox || busy}
         onClick={onToggle}
         aria-label={
           inbox
@@ -631,6 +681,11 @@ function TaskRow({
         >
           {task.title}
         </p>
+        {done && task.completedAt ? (
+          <p className="mt-1 text-[11px] font-medium text-[#999]">
+            완료 {formatCompletedTime(task.completedAt)}
+          </p>
+        ) : null}
         <div className="mt-2 flex gap-2 sm:hidden">
           <PriorityBadge priority={task.priority} />
           <span className="text-xs text-[#666]">
@@ -651,12 +706,17 @@ function TaskRow({
         <summary
           className={`${FOCUS_RING} grid size-9 cursor-pointer list-none place-items-center rounded-lg hover:bg-[#f3f3f3]`}
           aria-label={`${task.title} 더보기`}
+          aria-disabled={busy}
+          onClick={(event) => {
+            if (busy) event.preventDefault();
+          }}
         >
           <MoreVertical size={18} aria-hidden="true" />
         </summary>
         <div className="absolute right-0 z-20 mt-2 w-44 rounded-xl border border-[#dedede] bg-white p-1.5 text-sm shadow-xl">
           <button
             type="button"
+            disabled={busy}
             onClick={startEditing}
             className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left font-semibold hover:bg-[#f4f4f4]"
           >
@@ -665,6 +725,7 @@ function TaskRow({
           {inbox ? (
             <button
               type="button"
+              disabled={busy}
               onClick={() => onMove(selectedDate)}
               className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left font-semibold hover:bg-[#f4f4f4]"
             >
@@ -674,6 +735,7 @@ function TaskRow({
           ) : (
             <button
               type="button"
+              disabled={busy}
               onClick={() => onMove(null)}
               className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left font-semibold hover:bg-[#f4f4f4]"
             >
@@ -683,6 +745,7 @@ function TaskRow({
           )}
           <button
             type="button"
+            disabled={busy}
             onClick={() => {
               if (window.confirm("이 할 일을 삭제할까요?")) onDelete();
             }}
@@ -738,7 +801,7 @@ function TaskRow({
           <div className="flex gap-2">
             <button
               type="submit"
-              disabled={!editValid}
+              disabled={!editValid || busy}
               className={`${FOCUS_RING} h-10 rounded-lg bg-[#111] px-4 text-sm font-bold text-white disabled:bg-[#bbb]`}
             >
               저장
@@ -850,4 +913,11 @@ function selectTasks(
         left.createdAt.localeCompare(right.createdAt)
       );
     });
+}
+
+function formatCompletedTime(completedAt: string) {
+  return new Intl.DateTimeFormat("ko-KR", {
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(completedAt));
 }
