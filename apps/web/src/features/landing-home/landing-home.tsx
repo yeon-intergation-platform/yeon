@@ -125,7 +125,17 @@ const FRAME_BREAK_ARTWORK_BY_SERVICE: Readonly<
       widthClassName: "w-[min(185%,38rem)]",
     },
   },
-  "owner-portfolio": { order: "9" },
+  "owner-portfolio": {
+    order: "9",
+    foreground: {
+      src: "/images/landing/owner-portfolio-frame-break-foreground-v1.webp",
+      width: 1876,
+      height: 852,
+      alt: "포트폴리오 화면과 설계 문서를 펼쳐 둔 작업 책상",
+      bottomClassName: "-bottom-6",
+      widthClassName: "w-[min(185%,38rem)]",
+    },
+  },
 };
 
 export function LandingHome({
