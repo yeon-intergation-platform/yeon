@@ -189,7 +189,7 @@ function RecordContent({
           </button>
         </div>
         <div
-          className="mt-4 flex gap-2 overflow-x-auto pb-1"
+          className="-mx-1 mt-3 flex gap-2 overflow-x-auto px-1 py-1"
           role={activeTypes.length ? "listbox" : undefined}
           aria-label={activeTypes.length ? "기록할 활동" : undefined}
         >
