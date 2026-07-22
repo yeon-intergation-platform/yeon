@@ -252,7 +252,6 @@ public class TodayService {
 	public TodayDtos.RecordResponse getRecord(UUID ownerUserId, String rawDate) {
 		UUID owner = requireOwner(ownerUserId);
 		LocalDate date = parseDate(rawDate);
-		ensureActivityTypes(owner);
 		return buildRecord(owner, date);
 	}
 
@@ -383,7 +382,6 @@ public class TodayService {
 		if (activityTypeId == null) {
 			throw badRequest("활동 식별자가 올바르지 않습니다.");
 		}
-		ensureActivityTypes(ownerUserId);
 		TodayRepository.ActivityTypeRow row = repository.findActivityType(ownerUserId, activityTypeId);
 		if (row == null) {
 			throw new TodayServiceException(404, "TODAY_ACTIVITY_NOT_FOUND", "활동을 찾을 수 없습니다.");

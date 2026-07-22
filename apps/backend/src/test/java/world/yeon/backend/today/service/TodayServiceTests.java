@@ -13,6 +13,7 @@ import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.IntStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -199,6 +200,80 @@ class TodayServiceTests {
 		assertThat(result.summary().recordedHours()).isEqualTo(1);
 		assertThat(result.summary().recordRate()).isEqualTo(4);
 		assertThat(result.summary().activityMinutes()).containsEntry("공부", 60);
+	}
+
+	@Test
+	void 하루기록조회는슬롯수와무관하게조인된슬롯을한번만조회한다() {
+		TodayRepository.ActivityTypeRow activity = new TodayRepository.ActivityTypeRow(
+			UUID.fromString("00000000-0000-0000-0000-000000001003"),
+			OWNER_ID,
+			"공부",
+			"blue",
+			"book",
+			0,
+			true,
+			0
+		);
+		LocalDate date = LocalDate.parse("2026-07-22");
+		when(repository.listActivitySlots(OWNER_ID, date)).thenReturn(
+			IntStream.range(0, 24)
+				.mapToObj(hour -> new TodayRepository.ActivitySlotRow(hour, activity, null))
+				.toList()
+		);
+
+		TodayDtos.RecordResponse result = service.getRecord(OWNER_ID, date.toString());
+
+		assertThat(result.slots()).hasSize(24);
+		assertThat(result.summary().recordedHours()).isEqualTo(24);
+		assertThat(result.summary().recordRate()).isEqualTo(100);
+		verify(repository).listActivitySlots(OWNER_ID, date);
+		verify(repository, never()).listActivityTypes(OWNER_ID);
+		verify(repository, never()).findActivityType(eq(OWNER_ID), any());
+	}
+
+	@Test
+	void 비활성활동은시간블록에기록하지않는다() {
+		UUID activityId = UUID.fromString("00000000-0000-0000-0000-000000001003");
+		TodayRepository.ActivityTypeRow inactiveActivity = new TodayRepository.ActivityTypeRow(
+			activityId,
+			OWNER_ID,
+			"숨긴 활동",
+			"gray",
+			"circle",
+			0,
+			false,
+			1
+		);
+		when(repository.findActivityType(OWNER_ID, activityId)).thenReturn(inactiveActivity);
+
+		assertThatThrownBy(() -> service.upsertRecordSlot(
+			OWNER_ID,
+			"2026-07-22",
+			9,
+			new TodayDtos.UpsertRecordSlotRequest(activityId, null)
+		)).isInstanceOf(TodayServiceException.class)
+			.satisfies(error -> {
+				TodayServiceException serviceError = (TodayServiceException) error;
+				assertThat(serviceError.status()).isEqualTo(409);
+				assertThat(serviceError.code()).isEqualTo("TODAY_ACTIVITY_INACTIVE");
+			});
+		verify(repository, never()).listActivityTypes(OWNER_ID);
+		verify(repository, never()).upsertActivitySlot(any(), any(), any(Integer.class), any(), any(), any());
+	}
+
+	@Test
+	void 하루기록시간은0시부터23시까지만허용한다() {
+		UUID activityId = UUID.fromString("00000000-0000-0000-0000-000000001003");
+
+		assertThatThrownBy(() -> service.upsertRecordSlot(
+			OWNER_ID,
+			"2026-07-22",
+			24,
+			new TodayDtos.UpsertRecordSlotRequest(activityId, null)
+		)).isInstanceOf(TodayServiceException.class)
+			.satisfies(error -> assertThat(((TodayServiceException) error).status()).isEqualTo(400));
+		verify(repository, never()).findActivityType(any(), any());
+		verify(repository, never()).upsertActivitySlot(any(), any(), any(Integer.class), any(), any(), any());
 	}
 
 	@Test
