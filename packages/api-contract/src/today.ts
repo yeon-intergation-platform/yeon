@@ -205,6 +205,11 @@ export const upsertTodayRecordSlotBodySchema = z.object({
   note: z.string().trim().max(200).nullable().optional(),
 });
 
+export const todayApiErrorSchema = z.object({
+  code: z.string().min(1).optional(),
+  message: z.string().min(1),
+});
+
 export const TODAY_API_PATHS = {
   board: "/api/v1/today/board",
   calendar: "/api/v1/today/calendar",
@@ -241,3 +246,4 @@ export type TodayRecordResponse = z.infer<typeof todayRecordResponseSchema>;
 export type UpsertTodayRecordSlotBody = z.infer<
   typeof upsertTodayRecordSlotBodySchema
 >;
+export type TodayApiErrorPayload = z.infer<typeof todayApiErrorSchema>;

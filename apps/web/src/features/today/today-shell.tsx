@@ -129,6 +129,9 @@ export function TodayPageFrame({
   visibleMonth,
   onVisibleMonthChange,
   calendar,
+  calendarError,
+  calendarRetrying = false,
+  onRetryCalendar,
   totalCount,
   completedCount,
   estimatedMinutes,
@@ -139,6 +142,9 @@ export function TodayPageFrame({
   visibleMonth: string;
   onVisibleMonthChange(month: string): void;
   calendar?: TodayCalendarResponse;
+  calendarError?: string;
+  calendarRetrying?: boolean;
+  onRetryCalendar?(): void;
   totalCount: number;
   completedCount: number;
   estimatedMinutes: number;
@@ -168,6 +174,9 @@ export function TodayPageFrame({
             visibleMonth={visibleMonth}
             onVisibleMonthChange={onVisibleMonthChange}
             calendar={calendar}
+            calendarError={calendarError}
+            calendarRetrying={calendarRetrying}
+            onRetryCalendar={onRetryCalendar}
             totalCount={totalCount}
             completedCount={completedCount}
             estimatedMinutes={estimatedMinutes}
@@ -184,6 +193,9 @@ function TodaySidebar({
   visibleMonth,
   onVisibleMonthChange,
   calendar,
+  calendarError,
+  calendarRetrying,
+  onRetryCalendar,
   totalCount,
   completedCount,
   estimatedMinutes,
@@ -193,6 +205,9 @@ function TodaySidebar({
   visibleMonth: string;
   onVisibleMonthChange(month: string): void;
   calendar?: TodayCalendarResponse;
+  calendarError?: string;
+  calendarRetrying: boolean;
+  onRetryCalendar?(): void;
   totalCount: number;
   completedCount: number;
   estimatedMinutes: number;
@@ -203,7 +218,7 @@ function TodaySidebar({
   const summaries = new Map(calendar?.days.map((day) => [day.date, day]));
 
   const selectDate = (nextDate: string) => {
-    router.replace(
+    router.push(
       active === "board"
         ? `/today?date=${nextDate}`
         : `/today/record?date=${nextDate}`
@@ -243,6 +258,24 @@ function TodaySidebar({
             </button>
           </div>
         </div>
+        {calendarError ? (
+          <div
+            className="mt-4 rounded-xl border border-[#f0d5d2] bg-[#fff8f7] px-3 py-3 text-xs text-[#8b302b]"
+            role="alert"
+          >
+            <p>{calendarError}</p>
+            {onRetryCalendar ? (
+              <button
+                type="button"
+                disabled={calendarRetrying}
+                onClick={onRetryCalendar}
+                className={`${FOCUS_RING} mt-2 rounded-lg border border-[#e5c4c1] bg-white px-3 py-2 font-bold disabled:cursor-not-allowed disabled:opacity-60`}
+              >
+                {calendarRetrying ? "다시 불러오는 중" : "캘린더 다시 불러오기"}
+              </button>
+            ) : null}
+          </div>
+        ) : null}
         <div
           className="mt-5 grid grid-cols-7 text-center text-[11px] font-bold text-[#777]"
           aria-hidden="true"
@@ -369,7 +402,17 @@ export function TodayLoadingState() {
   );
 }
 
-export function TodayErrorState({ message }: { message: string }) {
+export function TodayErrorState({
+  message,
+  onRetry,
+  isRetrying = false,
+  showLogin = false,
+}: {
+  message: string;
+  onRetry?(): void;
+  isRetrying?: boolean;
+  showLogin?: boolean;
+}) {
   return (
     <div
       className="rounded-2xl border border-[#dedede] bg-white px-6 py-12 text-center"
@@ -378,19 +421,24 @@ export function TodayErrorState({ message }: { message: string }) {
       <h2 className="text-xl font-black">데이터를 불러오지 못했습니다.</h2>
       <p className="mt-2 text-sm text-[#666]">{message}</p>
       <div className="mt-5 flex justify-center gap-2">
-        <button
-          type="button"
-          onClick={() => window.location.reload()}
-          className={`${FOCUS_RING} rounded-xl bg-[#111] px-5 py-3 text-sm font-bold text-white`}
-        >
-          다시 시도
-        </button>
-        <a
-          href="/?login=1"
-          className={`${FOCUS_RING} rounded-xl border border-[#dedede] px-5 py-3 text-sm font-bold`}
-        >
-          로그인
-        </a>
+        {onRetry ? (
+          <button
+            type="button"
+            disabled={isRetrying}
+            onClick={onRetry}
+            className={`${FOCUS_RING} rounded-xl bg-[#111] px-5 py-3 text-sm font-bold text-white disabled:cursor-not-allowed disabled:bg-[#999]`}
+          >
+            {isRetrying ? "다시 불러오는 중" : "다시 시도"}
+          </button>
+        ) : null}
+        {showLogin ? (
+          <a
+            href="/?login=1"
+            className={`${FOCUS_RING} rounded-xl border border-[#dedede] px-5 py-3 text-sm font-bold`}
+          >
+            로그인
+          </a>
+        ) : null}
       </div>
     </div>
   );

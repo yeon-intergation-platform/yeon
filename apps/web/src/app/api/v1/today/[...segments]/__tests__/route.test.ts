@@ -26,7 +26,7 @@ vi.mock("@/server/today-spring-client", async () => {
   };
 });
 
-import { DELETE, GET, POST } from "../route";
+import { DELETE, GET, POST, PUT } from "../route";
 
 const context = (segments: string[]) => ({
   params: Promise.resolve({ segments }),
@@ -135,5 +135,89 @@ describe("api/v1/today catch-all route", () => {
       code: "TODAY_VERSION_CONFLICT",
       message: "새로고침 후 다시 시도해주세요.",
     });
+  });
+
+  it.each(["1.0", "1e1", " 1", "+1", "01", "24"])(
+    "비정규 시간 경로 %s는 Spring 호출 전 400으로 거절한다",
+    async (hour) => {
+      const response = await PUT(
+        new NextRequest(
+          `http://localhost/api/v1/today/records/2026-07-22/slots/${encodeURIComponent(hour)}`,
+          {
+            method: "PUT",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({
+              activityTypeId: "550e8400-e29b-41d4-a716-446655440000",
+            }),
+          }
+        ),
+        context(["records", "2026-07-22", "slots", hour])
+      );
+
+      expect(response.status).toBe(400);
+      expect(mockRequestTodaySpring).not.toHaveBeenCalled();
+    }
+  );
+
+  it("정규 시간 경로 0과 23은 Spring으로 전달한다", async () => {
+    mockRequestTodaySpring.mockResolvedValue({
+      status: 200,
+      payload: {
+        date: "2026-07-22",
+        slots: Array.from({ length: 24 }, (_, hour) => ({
+          hour,
+          activityType: null,
+          note: null,
+        })),
+        summary: { recordedHours: 0, recordRate: 0, activityMinutes: {} },
+      },
+    });
+
+    for (const hour of ["0", "23"]) {
+      const response = await PUT(
+        new NextRequest(
+          `http://localhost/api/v1/today/records/2026-07-22/slots/${hour}`,
+          {
+            method: "PUT",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({
+              activityTypeId: "550e8400-e29b-41d4-a716-446655440000",
+            }),
+          }
+        ),
+        context(["records", "2026-07-22", "slots", hour])
+      );
+
+      expect(response.status).toBe(200);
+    }
+  });
+
+  it("응답 계약 오류 로그에 사용자 payload를 기록하지 않는다", async () => {
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+    mockRequestTodaySpring.mockResolvedValue({
+      status: 200,
+      payload: { taskTitle: "외부에 남으면 안 되는 할 일" },
+    });
+
+    const response = await GET(
+      new NextRequest("http://localhost/api/v1/today/board?date=2026-07-22"),
+      context(["board"])
+    );
+
+    expect(response.status).toBe(502);
+    expect(JSON.stringify(consoleError.mock.calls)).not.toContain(
+      "외부에 남으면 안 되는 할 일"
+    );
+    expect(consoleError).toHaveBeenCalledWith(
+      "Today Spring 응답 계약이 일치하지 않습니다.",
+      expect.objectContaining({
+        method: "GET",
+        path: "/today/board?date=2026-07-22",
+        status: 200,
+      })
+    );
+    consoleError.mockRestore();
   });
 });
