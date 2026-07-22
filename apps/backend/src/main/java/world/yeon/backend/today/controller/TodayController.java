@@ -141,9 +141,10 @@ public class TodayController {
 	public TodayDtos.RecordResponse deleteRecordSlot(
 		@RequestHeader(value = USER_ID_HEADER, required = false) UUID userId,
 		@PathVariable String date,
-		@PathVariable int hour
+		@PathVariable int hour,
+		@RequestParam(required = false) Integer entryIndex
 	) {
-		return service.deleteRecordSlot(userId, date, hour);
+		return service.deleteRecordSlot(userId, date, hour, entryIndex);
 	}
 
 	@ExceptionHandler(TodayServiceException.class)

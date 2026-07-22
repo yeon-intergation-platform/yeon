@@ -43,7 +43,7 @@ public class TodayRepository {
 		long version
 	) {}
 
-	public record ActivitySlotRow(int hour, ActivityTypeRow activityType, String note) {}
+	public record ActivitySlotRow(int hour, int entryIndex, ActivityTypeRow activityType, String note) {}
 
 	private static final String TASK_COLUMNS = """
 		id, owner_user_id, title, priority, estimated_minutes, category_label,
@@ -239,14 +239,15 @@ public class TodayRepository {
 
 	public List<ActivitySlotRow> listActivitySlots(UUID ownerUserId, LocalDate date) {
 		return jdbc.query("""
-			select s.hour, s.note,
+			select s.hour, s.entry_index, s.note,
 			       a.id, a.owner_user_id, a.name, a.color_token, a.icon_key, a.sort_order, a.active, a.version
 			from public.today_activity_slots s
 			join public.today_activity_types a on a.id = s.activity_type_id
 			where s.owner_user_id = ? and s.record_date = ?
-			order by s.hour
+			order by s.hour, s.entry_index
 			""", (resultSet, rowNumber) -> new ActivitySlotRow(
 			resultSet.getInt("hour"),
+			resultSet.getInt("entry_index"),
 			new ActivityTypeRow(
 				resultSet.getObject("id", UUID.class),
 				resultSet.getObject("owner_user_id", UUID.class),
@@ -262,7 +263,7 @@ public class TodayRepository {
 	}
 
 	@Transactional
-	public void upsertActivitySlot(
+	public boolean appendActivitySlot(
 		UUID ownerUserId,
 		LocalDate date,
 		int hour,
@@ -270,15 +271,45 @@ public class TodayRepository {
 		String note,
 		OffsetDateTime now
 	) {
-		jdbc.update("""
+		if (insertActivitySlotEntry(ownerUserId, date, hour, 0, activityTypeId, note, now)) {
+			return true;
+		}
+		return insertActivitySlotEntry(ownerUserId, date, hour, 1, activityTypeId, note, now);
+	}
+
+	private boolean insertActivitySlotEntry(
+		UUID ownerUserId,
+		LocalDate date,
+		int hour,
+		int entryIndex,
+		UUID activityTypeId,
+		String note,
+		OffsetDateTime now
+	) {
+		return jdbc.update("""
 			insert into public.today_activity_slots (
-			  id, owner_user_id, record_date, hour, activity_type_id, note, created_at, updated_at
-			) values (?, ?, ?, ?, ?, ?, ?, ?)
-			on conflict (owner_user_id, record_date, hour)
-			do update set activity_type_id = excluded.activity_type_id,
-			              note = excluded.note,
-			              updated_at = excluded.updated_at
-			""", UUID.randomUUID(), ownerUserId, date, hour, activityTypeId, note, now, now);
+			  id, owner_user_id, record_date, hour, entry_index,
+			  activity_type_id, note, created_at, updated_at
+			)
+			values (?, ?, ?, ?, ?, ?, ?, ?, ?)
+			on conflict (owner_user_id, record_date, hour, entry_index) do nothing
+			""", UUID.randomUUID(), ownerUserId, date, hour, entryIndex, activityTypeId, note, now, now) == 1;
+	}
+
+	public boolean updateActivitySlotEntry(
+		UUID ownerUserId,
+		LocalDate date,
+		int hour,
+		int entryIndex,
+		UUID activityTypeId,
+		String note,
+		OffsetDateTime now
+	) {
+		return jdbc.update("""
+			update public.today_activity_slots
+			set activity_type_id = ?, note = ?, updated_at = ?
+			where owner_user_id = ? and record_date = ? and hour = ? and entry_index = ?
+			""", activityTypeId, note, now, ownerUserId, date, hour, entryIndex) == 1;
 	}
 
 	public void deleteActivitySlot(UUID ownerUserId, LocalDate date, int hour) {
@@ -288,6 +319,26 @@ public class TodayRepository {
 			date,
 			hour
 		);
+	}
+
+	@Transactional
+	public boolean deleteActivitySlotEntry(UUID ownerUserId, LocalDate date, int hour, int entryIndex) {
+		int deleted = jdbc.update(
+			"delete from public.today_activity_slots where owner_user_id = ? and record_date = ? and hour = ? and entry_index = ?",
+			ownerUserId,
+			date,
+			hour,
+			entryIndex
+		);
+		if (deleted == 0) {
+			return false;
+		}
+		jdbc.update("""
+			update public.today_activity_slots
+			set entry_index = 0
+			where owner_user_id = ? and record_date = ? and hour = ? and entry_index = 1
+			""", ownerUserId, date, hour);
+		return true;
 	}
 
 	private static final RowMapper<TaskRow> TASK_MAPPER = (resultSet, rowNumber) -> new TaskRow(

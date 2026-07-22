@@ -4,6 +4,8 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -68,6 +70,47 @@ class TodayControllerTests {
 			.andExpect(status().isCreated())
 			.andExpect(jsonPath("$.task.id").value(TASK_ID.toString()))
 			.andExpect(jsonPath("$.task.version").value(0));
+	}
+
+	@Test
+	void 시간기록수정은기록순서를요청본문으로전달한다() throws Exception {
+		UUID activityTypeId = UUID.fromString("00000000-0000-0000-0000-000000001013");
+		TodayDtos.UpsertRecordSlotRequest request =
+			new TodayDtos.UpsertRecordSlotRequest(activityTypeId, "커피 마시기", 1);
+		when(service.upsertRecordSlot(OWNER_ID, "2026-07-22", 18, request))
+			.thenReturn(emptyRecord());
+
+		mockMvc.perform(put("/today/records/2026-07-22/slots/18")
+			.header("X-Yeon-User-Id", OWNER_ID.toString())
+			.header("X-Yeon-Internal-Token", "test-internal-token")
+			.contentType(MediaType.APPLICATION_JSON)
+			.content("{\"activityTypeId\":\"" + activityTypeId + "\",\"note\":\"커피 마시기\",\"entryIndex\":1}"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.slots").isArray());
+	}
+
+	@Test
+	void 시간기록하나삭제는기록순서를쿼리로전달한다() throws Exception {
+		when(service.deleteRecordSlot(OWNER_ID, "2026-07-22", 18, 0))
+			.thenReturn(emptyRecord());
+
+		mockMvc.perform(delete("/today/records/2026-07-22/slots/18")
+			.queryParam("entryIndex", "0")
+			.header("X-Yeon-User-Id", OWNER_ID.toString())
+			.header("X-Yeon-Internal-Token", "test-internal-token"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.summary.recordedHours").value(0));
+	}
+
+	private TodayDtos.RecordResponse emptyRecord() {
+		List<TodayDtos.RecordSlot> slots = java.util.stream.IntStream.range(0, 24)
+			.mapToObj(hour -> new TodayDtos.RecordSlot(hour, null, null, List.of()))
+			.toList();
+		return new TodayDtos.RecordResponse(
+			"2026-07-22",
+			slots,
+			new TodayDtos.RecordSummary(0, 0, java.util.Map.of())
+		);
 	}
 
 	private TodayDtos.Task task() {
