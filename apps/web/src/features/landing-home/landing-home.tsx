@@ -88,7 +88,7 @@ const FRAME_BREAK_ARTWORK_BY_SERVICE: Readonly<
       width: 1479,
       height: 748,
       alt: "오늘 할 일을 보드에 정리하는 캐릭터",
-      bottomClassName: "-bottom-8",
+      bottomClassName: "-bottom-12",
     },
   },
   "discord-ai": { order: "6" },
