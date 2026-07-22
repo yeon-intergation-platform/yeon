@@ -84,6 +84,7 @@ const FRAME_BREAK_ARTWORK_BY_SERVICE: Readonly<
   "discord-ai": { order: "6" },
   news: { order: "7" },
   "game-service": { order: "8" },
+  "owner-portfolio": { order: "9" },
 };
 
 export function LandingHome({

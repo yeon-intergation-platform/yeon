@@ -55,4 +55,18 @@ describe("proxy subdomain routing", () => {
     expect(response.headers.get("x-middleware-rewrite")).toContain("/today");
     expect(response.headers.get("location")).toBeNull();
   });
+
+  it("rewrites portfolio subdomain root to the public portfolio route", () => {
+    const response = proxy(
+      buildRequest("/", {
+        Host: "portforlio.yeon.world",
+        "x-forwarded-host": "portforlio.yeon.world",
+      })
+    );
+
+    expect(response.headers.get("x-middleware-rewrite")).toContain(
+      "/portfolio"
+    );
+    expect(response.headers.get("location")).toBeNull();
+  });
 });

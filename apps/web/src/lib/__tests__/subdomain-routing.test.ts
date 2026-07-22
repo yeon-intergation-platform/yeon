@@ -48,6 +48,13 @@ describe("subdomain-routing", () => {
         pathname: "/",
       })
     ).toBe("/support");
+
+    expect(
+      resolveServiceSubdomainRewritePath({
+        host: "portforlio.yeon.world",
+        pathname: "/",
+      })
+    ).toBe("/portfolio");
   });
 
   it("서비스 subdomain의 하위 경로와 query string을 보존한다", () => {
@@ -102,6 +109,14 @@ describe("subdomain-routing", () => {
         search: "?source=shortcut",
       })
     ).toBe("/today/record?source=shortcut");
+
+    expect(
+      resolveServiceSubdomainRewritePath({
+        host: "portforlio.yeon.world",
+        pathname: "/",
+        search: "?source=gallery",
+      })
+    ).toBe("/portfolio?source=gallery");
   });
 
   it("공개 콘텐츠 subdomain의 feed.xml을 channel 내부 route로 rewrite한다", () => {
@@ -239,6 +254,13 @@ describe("subdomain-routing", () => {
         pathname: "/today",
       })?.toString()
     ).toBe("https://todo.yeon.world/");
+
+    expect(
+      resolveLegacyServicePathRedirectUrl({
+        host: "yeon.world",
+        pathname: "/portfolio",
+      })?.toString()
+    ).toBe("https://portforlio.yeon.world/");
   });
 
   it("서비스 subdomain에 legacy prefix가 남으면 prefix를 제거한 URL로 redirect한다", () => {
@@ -278,6 +300,13 @@ describe("subdomain-routing", () => {
         search: "?utm=legacy",
       })?.toString()
     ).toBe("https://game.yeon.world/snake-io?utm=legacy");
+
+    expect(
+      resolveLegacyServicePathRedirectUrl({
+        host: "portforlio.yeon.world",
+        pathname: "/portfolio",
+      })?.toString()
+    ).toBe("https://portforlio.yeon.world/");
 
     expect(
       resolveLegacyServicePathRedirectUrl({

@@ -43,6 +43,9 @@ describe("seo", () => {
       "https://community.yeon.world/"
     );
     expect(buildServiceCanonicalUrl("todo")).toBe("https://todo.yeon.world/");
+    expect(buildServiceCanonicalUrl("portfolio")).toBe(
+      "https://portforlio.yeon.world/"
+    );
   });
 
   it("공개 콘텐츠 canonical url은 channel별 subdomain을 기준으로 둔다", () => {
@@ -95,6 +98,12 @@ describe("seo", () => {
           url: "https://todo.yeon.world",
           changeFrequency: "daily",
           priority: 0.85,
+          lastModified: undefined,
+        },
+        {
+          url: "https://portforlio.yeon.world",
+          changeFrequency: "monthly",
+          priority: 0.8,
           lastModified: undefined,
         },
         {
@@ -228,6 +237,17 @@ describe("seo", () => {
         url: "https://todo.yeon.world",
         changeFrequency: "daily",
         priority: 0.85,
+        lastModified: undefined,
+      },
+    ]);
+
+    expect(
+      getIndexableSitemapEntriesForHostname("portforlio.yeon.world")
+    ).toEqual([
+      {
+        url: "https://portforlio.yeon.world",
+        changeFrequency: "monthly",
+        priority: 0.8,
         lastModified: undefined,
       },
     ]);
