@@ -662,40 +662,44 @@ function SplitEntryButton({
   ): void;
 }) {
   const positionLabel = position === "first" ? "첫 번째" : "두 번째";
+  const Icon = ICONS[entry.activityType.iconKey] ?? CircleDot;
   return (
-    <div
-      role="group"
-      aria-label={`${hour}시 ${positionLabel} 기록, ${entry.activityType.name}${entry.note ? `, 설명 ${entry.note}` : ", 설명 없음"}`}
-      title={`${entry.activityType.name} · ${entry.note ?? "설명 없음"} · 오른쪽 클릭하여 메뉴 열기`}
-      onContextMenu={(event) => {
-        event.preventDefault();
-        onOpenMenu(entry.entryIndex, {
-          x: event.clientX,
-          y: event.clientY,
-        });
-      }}
-      className={`absolute inset-0 transition-[filter] hover:brightness-[0.97] ${disabled ? "opacity-60" : ""} ${COLOR_CLASS[entry.activityType.colorToken] ?? COLOR_CLASS.gray}`}
-      style={{
-        clipPath:
-          position === "first"
-            ? "polygon(0 0, 100% 0, 0 100%)"
-            : "polygon(100% 0, 100% 100%, 0 100%)",
-      }}
-    >
-      <span
-        className={`absolute flex max-w-[62%] flex-col text-[9px] font-bold leading-tight ${
-          position === "first"
-            ? "right-8 top-2 items-end text-right"
-            : "bottom-2 left-8 items-start text-left"
-        }`}
+    <>
+      <div
+        role="group"
+        aria-label={`${hour}시 ${positionLabel} 기록, ${entry.activityType.name}${entry.note ? `, 설명 ${entry.note}` : ", 설명 없음"}`}
+        title={`${entry.activityType.name} · ${entry.note ?? "설명 없음"} · 오른쪽 클릭하여 메뉴 열기`}
+        onContextMenu={(event) => {
+          event.preventDefault();
+          onOpenMenu(entry.entryIndex, {
+            x: event.clientX,
+            y: event.clientY,
+          });
+        }}
+        className={`absolute inset-0 transition-[filter] hover:brightness-[0.97] ${disabled ? "opacity-60" : ""} ${COLOR_CLASS[entry.activityType.colorToken] ?? COLOR_CLASS.gray}`}
+        style={{
+          clipPath:
+            position === "first"
+              ? "polygon(0 0, 100% 0, 100% 45%, 0 55%)"
+              : "polygon(0 55%, 100% 45%, 100% 100%, 0 100%)",
+        }}
       >
-        <span className="max-w-full truncate text-[10px]">
-          {entry.activityType.name}
+        <span
+          className={`absolute left-2 right-2 flex flex-col items-center text-center font-bold leading-tight ${
+            position === "first" ? "top-8" : "bottom-7"
+          }`}
+        >
+          <span className="flex max-w-full items-center justify-center gap-1">
+            <Icon size={15} className="shrink-0" aria-hidden="true" />
+            <span className="max-w-full truncate text-[10px]">
+              {entry.activityType.name}
+            </span>
+          </span>
+          <span className="mt-1 max-w-full truncate text-[8px] font-semibold opacity-75">
+            {entry.note ?? "설명 추가"}
+          </span>
         </span>
-        <span className="mt-0.5 max-w-full truncate opacity-75">
-          {entry.note ?? "설명 추가"}
-        </span>
-      </span>
+      </div>
       <button
         type="button"
         disabled={disabled}
@@ -715,7 +719,7 @@ function SplitEntryButton({
       >
         <MoreHorizontal size={14} aria-hidden="true" />
       </button>
-    </div>
+    </>
   );
 }
 
