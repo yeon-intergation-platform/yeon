@@ -32,7 +32,7 @@ import {
   type TodayRecordEntry,
   type TodayRecordResponse,
 } from "@yeon/api-contract/today";
-import { YeonContextMenu } from "@yeon/ui";
+import { YeonContextMenu, type YeonContextMenuItem } from "@yeon/ui";
 import {
   useYeonRouter,
   useYeonSearchParams,
@@ -78,6 +78,16 @@ const COLOR_CLASS = {
   gray: "border-[#d6d6d6] bg-[#f2f2f2] text-[#555]",
 } satisfies Record<TodayActivityColor, string>;
 
+const TEXT_COLOR_CLASS = {
+  blue: "text-[#155fa8]",
+  green: "text-[#26724a]",
+  orange: "text-[#a95b17]",
+  purple: "text-[#6742a0]",
+  yellow: "text-[#876a13]",
+  red: "text-[#a93d31]",
+  gray: "text-[#555]",
+} satisfies Record<TodayActivityColor, string>;
+
 const COLOR_LABEL = {
   blue: "파랑",
   green: "초록",
@@ -118,12 +128,22 @@ type EditingRecordEntry = {
   entryIndex: number;
 };
 
-type RecordContextMenuState = EditingRecordEntry & {
-  position: {
-    x: number;
-    y: number;
-  };
-};
+type RecordContextMenuState =
+  | (EditingRecordEntry & {
+      target: "entry";
+      position: {
+        x: number;
+        y: number;
+      };
+    })
+  | {
+      target: "slot";
+      hour: number;
+      position: {
+        x: number;
+        y: number;
+      };
+    };
 
 function getSlotEntries(
   slot: TodayRecordResponse["slots"][number]
@@ -271,6 +291,57 @@ function RecordContent({
       setEditingEntry(null);
     }
   };
+  const contextMenuSlot = contextMenu
+    ? (record.slots.find((slot) => slot.hour === contextMenu.hour) ?? null)
+    : null;
+  const contextMenuEntries = contextMenuSlot
+    ? getSlotEntries(contextMenuSlot)
+    : [];
+  const contextMenuEntry =
+    contextMenu?.target === "entry"
+      ? (contextMenuEntries.find(
+          (entry) => entry.entryIndex === contextMenu.entryIndex
+        ) ?? null)
+      : null;
+  const createEntryMenuItems = (
+    hour: number,
+    entry: TodayRecordEntry,
+    includeActivityName = false
+  ): YeonContextMenuItem[] => {
+    const labelPrefix = includeActivityName
+      ? `${entry.activityType.name} · `
+      : "";
+    return [
+      {
+        key: `edit-note-${entry.entryIndex}`,
+        label: `${labelPrefix}설명 편집`,
+        icon: <PencilLine size={15} aria-hidden="true" />,
+        disabled: slotCommands.isLocked(hour),
+        onSelect: () =>
+          setEditingEntry({
+            hour,
+            entryIndex: entry.entryIndex,
+          }),
+      },
+      {
+        key: `delete-record-${entry.entryIndex}`,
+        label: `${labelPrefix}기록 삭제`,
+        icon: <Trash2 size={15} aria-hidden="true" />,
+        destructive: true,
+        disabled: slotCommands.isLocked(hour),
+        onSelect: () =>
+          deleteEntry(hour, entry.entryIndex).catch(() => undefined),
+      },
+    ];
+  };
+  const contextMenuItems =
+    contextMenu?.target === "slot"
+      ? contextMenuEntries.flatMap((entry) =>
+          createEntryMenuItems(contextMenu.hour, entry, true)
+        )
+      : contextMenu?.target === "entry" && contextMenuEntry
+        ? createEntryMenuItems(contextMenu.hour, contextMenuEntry)
+        : [];
 
   return (
     <div className="space-y-4">
@@ -405,8 +476,16 @@ function RecordContent({
               }}
               onOpenMenu={(entryIndex, position) =>
                 setContextMenu({
+                  target: "entry",
                   hour: slot.hour,
                   entryIndex,
+                  position,
+                })
+              }
+              onOpenSlotMenu={(position) =>
+                setContextMenu({
+                  target: "slot",
+                  hour: slot.hour,
                   position,
                 })
               }
@@ -418,30 +497,7 @@ function RecordContent({
             position={contextMenu.position}
             ariaLabel={`${contextMenu.hour}시 기록 메뉴`}
             onClose={() => setContextMenu(null)}
-            items={[
-              {
-                key: "edit-note",
-                label: "설명 편집",
-                icon: <PencilLine size={15} aria-hidden="true" />,
-                disabled: slotCommands.isLocked(contextMenu.hour),
-                onSelect: () =>
-                  setEditingEntry({
-                    hour: contextMenu.hour,
-                    entryIndex: contextMenu.entryIndex,
-                  }),
-              },
-              {
-                key: "delete-record",
-                label: "기록 삭제",
-                icon: <Trash2 size={15} aria-hidden="true" />,
-                destructive: true,
-                disabled: slotCommands.isLocked(contextMenu.hour),
-                onSelect: () =>
-                  deleteEntry(contextMenu.hour, contextMenu.entryIndex).catch(
-                    () => undefined
-                  ),
-              },
-            ]}
+            items={contextMenuItems}
           />
         ) : null}
         {editingSlot && selectedEntry ? (
@@ -524,6 +580,7 @@ function HourCell({
   actionDisabled,
   onAppend,
   onOpenMenu,
+  onOpenSlotMenu,
 }: {
   slot: TodayRecordResponse["slots"][number];
   disabled: boolean;
@@ -533,6 +590,7 @@ function HourCell({
     entryIndex: number,
     position: RecordContextMenuState["position"]
   ): void;
+  onOpenSlotMenu(position: RecordContextMenuState["position"]): void;
 }) {
   const entries = getSlotEntries(slot);
   const openMenuFromButton = (
@@ -554,6 +612,16 @@ function HourCell({
     onOpenMenu(entryIndex, {
       x: event.clientX,
       y: event.clientY,
+    });
+  };
+  const openSlotMenuFromButton = (
+    event: ReactMouseEvent<HTMLButtonElement>
+  ) => {
+    event.stopPropagation();
+    const rect = event.currentTarget.getBoundingClientRect();
+    onOpenSlotMenu({
+      x: rect.right,
+      y: rect.bottom + 4,
     });
   };
 
@@ -617,15 +685,15 @@ function HourCell({
 
   const [firstEntry, secondEntry] = entries;
   return (
-    <div className="relative min-h-32 overflow-hidden rounded-xl border border-[#cfcfcf] bg-white">
-      <SplitEntryButton
+    <div className="group relative min-h-32 overflow-hidden rounded-xl border border-[#cfcfcf] bg-white">
+      <SplitEntryTriangle
         hour={slot.hour}
         entry={firstEntry!}
         position="first"
         disabled={actionDisabled}
         onOpenMenu={onOpenMenu}
       />
-      <SplitEntryButton
+      <SplitEntryTriangle
         hour={slot.hour}
         entry={secondEntry!}
         position="second"
@@ -637,15 +705,26 @@ function HourCell({
         className="pointer-events-none absolute inset-0 z-10"
         style={{
           background:
-            "linear-gradient(to bottom right, transparent calc(50% - 0.75px), rgba(17, 17, 17, 0.38) 50%, transparent calc(50% + 0.75px))",
+            "linear-gradient(to bottom right, transparent calc(50% - 0.75px), rgba(17, 17, 17, 0.32) 50%, transparent calc(50% + 0.75px))",
         }}
       />
       <HourLabel hour={slot.hour} emphasized />
+      <button
+        type="button"
+        disabled={actionDisabled}
+        aria-label={`${slot.hour}시 기록 메뉴 열기`}
+        aria-haspopup="menu"
+        title="두 기록 메뉴"
+        onClick={openSlotMenuFromButton}
+        className={`${FOCUS_RING} absolute right-1.5 top-1.5 z-20 grid size-7 cursor-pointer place-items-center rounded-lg bg-white/90 shadow-sm hover:bg-white disabled:cursor-not-allowed disabled:opacity-50`}
+      >
+        <MoreHorizontal size={14} aria-hidden="true" />
+      </button>
     </div>
   );
 }
 
-function SplitEntryButton({
+function SplitEntryTriangle({
   hour,
   entry,
   position,
@@ -680,45 +759,25 @@ function SplitEntryButton({
         style={{
           clipPath:
             position === "first"
-              ? "polygon(0 0, 100% 0, 100% 45%, 0 55%)"
-              : "polygon(0 55%, 100% 45%, 100% 100%, 0 100%)",
+              ? "polygon(0 0, 100% 0, 0 100%)"
+              : "polygon(100% 0, 100% 100%, 0 100%)",
         }}
+      />
+      <span
+        className={`pointer-events-none absolute z-10 flex w-14 -translate-x-1/2 -translate-y-1/2 flex-col items-center text-center font-bold leading-tight ${
+          position === "first" ? "left-1/3 top-1/3" : "left-2/3 top-2/3"
+        } ${disabled ? "opacity-60" : ""} ${TEXT_COLOR_CLASS[entry.activityType.colorToken] ?? TEXT_COLOR_CLASS.gray}`}
       >
-        <span
-          className={`absolute left-2 right-2 flex flex-col items-center text-center font-bold leading-tight ${
-            position === "first" ? "top-8" : "bottom-7"
-          }`}
-        >
-          <span className="flex max-w-full items-center justify-center gap-1">
-            <Icon size={15} className="shrink-0" aria-hidden="true" />
-            <span className="max-w-full truncate text-[10px]">
-              {entry.activityType.name}
-            </span>
-          </span>
-          <span className="mt-1 max-w-full truncate text-[8px] font-semibold opacity-75">
-            {entry.note ?? "설명 추가"}
+        <span className="flex max-w-full items-center justify-center gap-1">
+          <Icon size={15} className="shrink-0" aria-hidden="true" />
+          <span className="max-w-full truncate text-[10px]">
+            {entry.activityType.name}
           </span>
         </span>
-      </div>
-      <button
-        type="button"
-        disabled={disabled}
-        aria-label={`${hour}시 ${positionLabel} 기록 메뉴 열기`}
-        aria-haspopup="menu"
-        onClick={(event) => {
-          event.stopPropagation();
-          const rect = event.currentTarget.getBoundingClientRect();
-          onOpenMenu(entry.entryIndex, {
-            x: position === "first" ? rect.right : rect.left,
-            y: position === "first" ? rect.bottom + 4 : rect.top - 4,
-          });
-        }}
-        className={`${FOCUS_RING} absolute z-20 grid size-7 cursor-pointer place-items-center rounded-lg bg-white/80 shadow-sm hover:bg-white disabled:cursor-not-allowed disabled:opacity-50 ${
-          position === "first" ? "right-1.5 top-1.5" : "bottom-1.5 left-1.5"
-        }`}
-      >
-        <MoreHorizontal size={14} aria-hidden="true" />
-      </button>
+        <span className="mt-1 max-w-full truncate text-[8px] font-semibold opacity-75">
+          {entry.note ?? "설명 추가"}
+        </span>
+      </span>
     </>
   );
 }
