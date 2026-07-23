@@ -79,7 +79,7 @@ const FRAME_BREAK_ARTWORK_BY_SERVICE: Readonly<
       width: 1535,
       height: 1024,
       alt: "대화와 공지를 주고받는 커뮤니티 캐릭터와 말풍선",
-      bottomClassName: "-bottom-4",
+      bottomClassName: "-bottom-16",
       widthClassName: "w-[min(150%,31rem)]",
     },
   },
