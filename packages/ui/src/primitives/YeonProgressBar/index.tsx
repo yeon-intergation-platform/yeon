@@ -26,7 +26,7 @@ export function YeonProgressBar({
       aria-valuemin={0}
       aria-valuenow={clampProgress(value)}
       className={joinClassNames(
-        "h-2 overflow-hidden rounded-full bg-[#fafafa]",
+        "h-2 overflow-hidden rounded-full bg-yeon-neutral-100",
         className
       )}
       role="progressbar"
