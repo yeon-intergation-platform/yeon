@@ -55,8 +55,8 @@ import {
   getProgress,
 } from "./race-metrics";
 import {
-  applyTypingInputClamp,
   getLockedInputLength,
+  normalizeTypingInput,
 } from "./typing-input-utils";
 
 const BENCHMARK_LANES = [
@@ -503,12 +503,7 @@ export function TypingRaceSoloScreen({
   };
 
   const handleInputChange = (nextRawValue: string) => {
-    const { nextInput } = applyTypingInputClamp(
-      nextRawValue,
-      promptChars,
-      input
-    );
-    setInput(nextInput);
+    setInput(normalizeTypingInput(nextRawValue, promptChars.length));
   };
 
   const handleClipboardBlock = (

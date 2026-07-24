@@ -43,7 +43,7 @@ describe("typing default deck compatibility", () => {
 
     expect(koSelection.selectedDeckId).toBe(OLD_KO_DEFAULT_ID);
     expect(koSelection.selectedDeck.id).toBe("local-default-ko");
-    expect(koSelection.selectedDeck.title).toBe("기본 타자 문장");
+    expect(koSelection.selectedDeck.title).toBe("알쓸신잡 지식");
     expect(enSelection.selectedDeckId).toBe(OLD_EN_DEFAULT_ID);
     expect(enSelection.selectedDeck.id).toBe("local-default-en");
     expect(enSelection.selectedDeck.title).toBe("Default local passages");

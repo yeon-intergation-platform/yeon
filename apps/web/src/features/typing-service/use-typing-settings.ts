@@ -65,8 +65,8 @@ const DEFAULT_SETTINGS: TypingSettings = {
 const LOCAL_DEFAULT_DECKS: Record<TypingLocale, TypingDeckOption> = {
   ko: {
     id: `${LOCAL_DEFAULT_DECK_ID_PREFIX}-ko`,
-    title: "기본 타자 문장",
-    description: "네트워크 없이 사용할 수 있는 기본 문장",
+    title: "알쓸신잡 지식",
+    description: "상식적이면서 신기한 기술·과학·문화 이야기",
     languageTag: "ko",
     visibility: "default",
     source: "default",

@@ -2,6 +2,7 @@ import type {
   YeonProductProfileMenuLabels,
   YeonServiceHelpDialogLabels,
 } from "@yeon/ui";
+import { TYPING_FALLBACK_PASSAGE_BY_LOCALE } from "./typing-content";
 import type { RoomVoiceCallMessages } from "@/features/room-voice-call/use-room-voice-call";
 import type { RoomVoiceCallPanelLabels } from "@/features/room-voice-call/room-voice-call-panel";
 import {
@@ -527,9 +528,8 @@ const TYPING_UI_TEXT: Record<TypingLocale, TypingUiText> = {
     },
     race: {
       opponent: "상대",
-      fallbackPassageTitle: "기본 문장",
-      fallbackPassagePrompt:
-        "오늘도 한 문장씩 정확하게 입력하면 손끝의 리듬이 조금씩 살아납니다.",
+      fallbackPassageTitle: TYPING_FALLBACK_PASSAGE_BY_LOCALE.ko.title,
+      fallbackPassagePrompt: TYPING_FALLBACK_PASSAGE_BY_LOCALE.ko.prompt,
       selectedPracticeDeck: "선택한 연습 덱",
       loadingPracticeDeck: "선택한 연습 덱을 불러오는 중...",
       speedLabel: "타수",
@@ -923,9 +923,8 @@ const TYPING_UI_TEXT: Record<TypingLocale, TypingUiText> = {
     },
     race: {
       opponent: "Opponent",
-      fallbackPassageTitle: "Default Passage",
-      fallbackPassagePrompt:
-        "Start with one clear sentence and keep a steady rhythm from the first key.",
+      fallbackPassageTitle: TYPING_FALLBACK_PASSAGE_BY_LOCALE.en.title,
+      fallbackPassagePrompt: TYPING_FALLBACK_PASSAGE_BY_LOCALE.en.prompt,
       selectedPracticeDeck: "Selected practice deck",
       loadingPracticeDeck: "Loading selected practice deck...",
       speedLabel: "Speed",
