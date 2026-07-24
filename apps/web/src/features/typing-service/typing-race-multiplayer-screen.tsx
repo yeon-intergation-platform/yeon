@@ -39,8 +39,8 @@ import { TypingServiceHeader } from "./typing-service-header";
 import { getTypingUiText } from "./typing-service-i18n";
 import type { UseRaceRoomResult } from "./use-race-room";
 import {
-  applyTypingInputClamp,
   getLockedInputLength,
+  normalizeTypingInput,
 } from "./typing-input-utils";
 import {
   calculateAccuracy,
@@ -264,11 +264,7 @@ export function TypingRaceMultiplayerScreen({
   };
 
   const handleInputChange = (nextRawValue: string) => {
-    const { nextInput } = applyTypingInputClamp(
-      nextRawValue,
-      promptChars,
-      input
-    );
+    const nextInput = normalizeTypingInput(nextRawValue, promptChars.length);
     const nextChars = Array.from(nextInput);
     let addedMistakes = 0;
 
