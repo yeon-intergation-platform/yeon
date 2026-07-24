@@ -59,8 +59,8 @@ describe("proxy subdomain routing", () => {
   it("rewrites portfolio subdomain root to the public portfolio route", () => {
     const response = proxy(
       buildRequest("/", {
-        Host: "portforlio.yeon.world",
-        "x-forwarded-host": "portforlio.yeon.world",
+        Host: "portfolio.yeon.world",
+        "x-forwarded-host": "portfolio.yeon.world",
       })
     );
 
@@ -68,5 +68,19 @@ describe("proxy subdomain routing", () => {
       "/portfolio"
     );
     expect(response.headers.get("location")).toBeNull();
+  });
+
+  it("redirects the misspelled portfolio host to the canonical host", () => {
+    const response = proxy(
+      buildRequest("/pull-it?source=legacy", {
+        Host: "portforlio.yeon.world",
+        "x-forwarded-host": "portforlio.yeon.world",
+      })
+    );
+
+    expect(response.status).toBe(308);
+    expect(response.headers.get("location")).toBe(
+      "https://portfolio.yeon.world/pull-it?source=legacy"
+    );
   });
 });

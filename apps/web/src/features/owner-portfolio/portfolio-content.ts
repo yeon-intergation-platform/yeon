@@ -52,6 +52,7 @@ export type PortfolioGalleryEntry = {
   summary: string;
   imageSrc?: string;
   imageAlt?: string;
+  href?: string;
 };
 
 export const PORTFOLIO_GALLERY_ENTRIES: readonly PortfolioGalleryEntry[] = [
@@ -90,6 +91,7 @@ export const PORTFOLIO_GALLERY_ENTRIES: readonly PortfolioGalleryEntry[] = [
     period: "2025.09 — 2025.11",
     summary:
       "사용자 요청은 먼저 접수하고 AI 문제 생성은 RabbitMQ Worker가 처리하도록 상태와 완료 알림 흐름을 분리했습니다.",
+    href: "/pull-it",
   },
   {
     id: "zero-one-study-matching",

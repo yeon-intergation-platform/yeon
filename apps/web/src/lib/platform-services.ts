@@ -140,7 +140,7 @@ export const PLATFORM_SERVICES = [
   {
     slug: "owner-portfolio",
     href: "/portfolio",
-    publicHref: "https://portforlio.yeon.world",
+    publicHref: "https://portfolio.yeon.world",
     title: "쥔장의 포트폴리오",
     summary:
       "최현준의 프로젝트 기록과 문제 해결 과정, 이력서와 포트폴리오를 한곳에 모았습니다.",

@@ -23,7 +23,7 @@ describe("platform-services", () => {
       "https://news.yeon.world"
     );
     expect(getPlatformServiceBySlug("owner-portfolio")?.publicHref).toBe(
-      "https://portforlio.yeon.world"
+      "https://portfolio.yeon.world"
     );
   });
 

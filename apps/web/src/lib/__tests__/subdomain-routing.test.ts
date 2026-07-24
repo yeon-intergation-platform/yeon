@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  resolveLegacyHostnameRedirectUrl,
   resolveLegacyServicePathRedirectUrl,
   resolveServiceSubdomainRewritePath,
 } from "../subdomain-routing";
@@ -51,7 +52,7 @@ describe("subdomain-routing", () => {
 
     expect(
       resolveServiceSubdomainRewritePath({
-        host: "portforlio.yeon.world",
+        host: "portfolio.yeon.world",
         pathname: "/",
       })
     ).toBe("/portfolio");
@@ -112,7 +113,7 @@ describe("subdomain-routing", () => {
 
     expect(
       resolveServiceSubdomainRewritePath({
-        host: "portforlio.yeon.world",
+        host: "portfolio.yeon.world",
         pathname: "/",
         search: "?source=gallery",
       })
@@ -260,7 +261,17 @@ describe("subdomain-routing", () => {
         host: "yeon.world",
         pathname: "/portfolio",
       })?.toString()
-    ).toBe("https://portforlio.yeon.world/");
+    ).toBe("https://portfolio.yeon.world/");
+  });
+
+  it("기존 오타 포트폴리오 host를 정상 host로 redirect한다", () => {
+    expect(
+      resolveLegacyHostnameRedirectUrl({
+        host: "portforlio.yeon.world",
+        pathname: "/pull-it",
+        search: "?source=legacy",
+      })?.toString()
+    ).toBe("https://portfolio.yeon.world/pull-it?source=legacy");
   });
 
   it("서비스 subdomain에 legacy prefix가 남으면 prefix를 제거한 URL로 redirect한다", () => {
@@ -303,10 +314,10 @@ describe("subdomain-routing", () => {
 
     expect(
       resolveLegacyServicePathRedirectUrl({
-        host: "portforlio.yeon.world",
+        host: "portfolio.yeon.world",
         pathname: "/portfolio",
       })?.toString()
-    ).toBe("https://portforlio.yeon.world/");
+    ).toBe("https://portfolio.yeon.world/");
 
     expect(
       resolveLegacyServicePathRedirectUrl({

@@ -17,7 +17,7 @@ export const SERVICE_CANONICAL_URLS = {
   community: "https://community.yeon.world",
   game: "https://game.yeon.world",
   todo: "https://todo.yeon.world",
-  portfolio: "https://portforlio.yeon.world",
+  portfolio: "https://portfolio.yeon.world",
 } as const;
 
 export const PUBLIC_CONTENT_CANONICAL_URLS = {
