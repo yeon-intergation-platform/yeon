@@ -91,9 +91,9 @@ export const TYPING_FAQS: readonly TypingServiceFaq[] = [
       "가능합니다. typing-service는 익명 진입을 기본으로 설계해 첫 방문에서도 바로 연습을 시작할 수 있습니다.",
   },
   {
-    question: "어떤 문장으로 연습하나요?",
+    question: "어떤 내용으로 연습하나요?",
     answer:
-      "짧은 문장, 호흡이 있는 설명문, 속도 중심 문장을 번갈아 제공해 정확도와 리듬을 함께 연습할 수 있게 구성합니다.",
+      "QR 코드, 우주, 인터넷, 생물처럼 알아두면 쓸모 있고 의외성이 있는 지식을 길이별로 제공합니다.",
   },
   {
     question: "타수와 정확도는 어떻게 보나요?",
@@ -107,40 +107,90 @@ export const TYPING_FAQS: readonly TypingServiceFaq[] = [
   },
 ] as const;
 
-export const TYPING_PASSAGES: readonly TypingPassage[] = [
+export const TYPING_PASSAGES = [
   {
-    id: "starter-campus",
+    id: "curiosity-qr-recovery",
     difficulty: "starter",
-    title: "짧고 또렷하게",
-    description: "초반 손 풀기에 맞춘 짧은 문장",
+    title: "QR 코드는 상처를 견딘다",
+    description: "오류 정정으로 손상된 정보를 복원하는 원리",
     prompt:
-      "오늘도 한 문장씩 정확하게 입력하면 손끝의 리듬이 조금씩 살아납니다.",
-    targetSeconds: 24,
-    tags: ["초보", "정확도", "짧은 문장"],
+      "QR 코드는 일부가 더럽혀지거나 손상돼도 오류 정정 기능으로 데이터를 복원할 수 있습니다. 가장 높은 일반 오류 정정 단계는 전체 코드워드의 최대 30퍼센트까지 복구하도록 설계됩니다.",
+    targetSeconds: 48,
+    tags: ["기술", "QR 코드", "오류 정정"],
   },
   {
-    id: "flow-focus",
+    id: "curiosity-bluetooth-name",
+    difficulty: "starter",
+    title: "블루투스는 왕의 별명이었다",
+    description: "무선 기술 이름과 로고에 숨은 역사",
+    prompt:
+      "블루투스라는 이름은 덴마크와 노르웨이를 통합한 하랄 블로탄 왕의 별명에서 왔습니다. 로고도 하랄의 이니셜 H와 B에 해당하는 두 룬 문자를 합친 모양입니다.",
+    targetSeconds: 42,
+    tags: ["기술", "역사", "블루투스"],
+  },
+  {
+    id: "curiosity-first-website",
+    difficulty: "starter",
+    title: "최초의 웹사이트",
+    description: "웹이 시작된 장소와 첫 페이지의 주제",
+    prompt:
+      "세계 최초의 웹사이트는 CERN에서 팀 버너스리가 사용하던 NeXT 컴퓨터에 열렸습니다. 그 사이트가 소개한 주제는 다름 아닌 월드 와이드 웹 프로젝트 자체였습니다.",
+    targetSeconds: 40,
+    tags: ["인터넷", "CERN", "웹"],
+  },
+  {
+    id: "curiosity-mars-sunset",
     difficulty: "flow",
-    title: "호흡 있는 문단",
-    description: "집중력을 유지하며 리듬을 맞추는 연습",
+    title: "화성의 노을은 푸르다",
+    description: "지구와 반대로 보이는 화성의 빛",
     prompt:
-      "빠르게 치는 것보다 중요한 건 흐름을 끊지 않는 일입니다. 눈으로 먼저 읽고 손은 조금 늦게 따라가면 오타가 줄고 문장이 더 안정적으로 이어집니다.",
-    targetSeconds: 45,
-    tags: ["중급", "집중", "문단"],
+      "화성의 낮 하늘은 붉거나 주황빛이지만 해가 질 때 태양 주변은 푸른빛을 띱니다. 화성 대기의 미세한 먼지가 푸른빛을 태양 가까이에 남도록 산란시키기 때문입니다.",
+    targetSeconds: 43,
+    tags: ["우주", "화성", "빛"],
   },
   {
-    id: "burst-sprint",
-    difficulty: "burst",
-    title: "속도 스프린트",
-    description: "짧은 시간 안에 리듬과 속도를 올리는 연습",
+    id: "curiosity-atomic-second",
+    difficulty: "flow",
+    title: "1초를 만드는 숫자",
+    description: "원자시계가 시간을 세는 기준",
     prompt:
-      "리듬을 유지한 채 속도를 올리려면 손가락보다 시선이 먼저 움직여야 합니다. 다음 단어를 미리 읽고 박자를 놓치지 않으면 짧은 구간에서도 탄력이 붙습니다.",
-    targetSeconds: 38,
-    tags: ["속도", "상급", "스프린트"],
+      "국제단위계의 1초는 세슘 원자가 특정 상태를 오갈 때 생기는 복사의 주기를 91억 9263만 1770번 세는 시간으로 정의됩니다.",
+    targetSeconds: 36,
+    tags: ["과학", "시간", "원자시계"],
   },
-] as const;
+  {
+    id: "curiosity-octopus-hearts",
+    difficulty: "flow",
+    title: "문어에게는 심장이 세 개다",
+    description: "두 개는 아가미로, 하나는 온몸으로",
+    prompt:
+      "문어를 포함한 두족류에게는 심장이 세 개 있습니다. 두 개는 산소가 부족한 피를 아가미로 보내고, 나머지 하나는 산소를 얻은 피를 온몸으로 보냅니다. 구리 기반 헤모시아닌 때문에 피는 푸른색입니다.",
+    targetSeconds: 52,
+    tags: ["생물", "문어", "두족류"],
+  },
+  {
+    id: "curiosity-gps-relativity",
+    difficulty: "burst",
+    title: "GPS에는 상대성이론이 들어 있다",
+    description: "스마트폰 위치를 지키는 시공간 보정",
+    prompt:
+      "GPS는 우주의 위성 시계와 지상의 시계를 함께 사용합니다. 빠른 이동과 중력 차이로 시간이 다르게 흐르는 상대론적 효과를 보정하지 않으면 지금처럼 정확한 위치를 계산할 수 없습니다.",
+    targetSeconds: 45,
+    tags: ["기술", "GPS", "상대성이론"],
+  },
+  {
+    id: "curiosity-emoji-roots",
+    difficulty: "burst",
+    title: "이모지는 일본 통신사에서 세계 표준으로",
+    description: "휴대전화 그림문자가 유니코드에 들어온 과정",
+    prompt:
+      "오늘날 쓰는 많은 이모지의 뿌리는 일본 이동통신사의 그림문자 세트에 있습니다. 2010년 유니코드 6.0에 일본 통신사 출신 이모지 수백 개가 포함되면서 여러 기기에서 같은 문자를 주고받을 기반이 생겼습니다.",
+    targetSeconds: 50,
+    tags: ["디지털 문화", "이모지", "유니코드"],
+  },
+] as const satisfies readonly TypingPassage[];
 
-export const TYPING_PASSAGES_EN: readonly TypingPassage[] = [
+export const TYPING_PASSAGES_EN = [
   {
     id: "starter-clear-keys",
     difficulty: "starter",
@@ -171,7 +221,15 @@ export const TYPING_PASSAGES_EN: readonly TypingPassage[] = [
     targetSeconds: 38,
     tags: ["Speed", "Advanced", "Sprint"],
   },
-] as const;
+] as const satisfies readonly TypingPassage[];
+
+export const TYPING_FALLBACK_PASSAGE_BY_LOCALE: Record<
+  TypingContentLocale,
+  TypingPassage
+> = {
+  ko: TYPING_PASSAGES[0],
+  en: TYPING_PASSAGES_EN[0],
+};
 
 export const TYPING_PASSAGES_BY_LOCALE: Record<
   TypingContentLocale,
