@@ -30,7 +30,7 @@ export function YeonProgressBar({
       accessibilityValue={{ min: 0, max: 100, now: progress }}
       style={[
         {
-          backgroundColor: yeonColors.neutral[50],
+          backgroundColor: yeonColors.neutral[100],
           borderRadius: yeonRadius.full,
           height: 8,
           overflow: "hidden",

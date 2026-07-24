@@ -55,8 +55,8 @@ const styles = createYeonStyleSheet({
     paddingVertical: 6,
   },
   bar: {
-    height: 6,
-    width: 48,
+    height: 8,
+    width: 56,
   },
   level: {
     color: yeonMobileAppColors.neutral,

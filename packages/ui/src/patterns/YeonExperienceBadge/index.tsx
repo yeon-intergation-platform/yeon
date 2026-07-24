@@ -41,7 +41,7 @@ export function YeonExperienceBadge({
         {`Lv.${level}`}
       </YeonText>
       <YeonProgressBar
-        className="h-1.5 w-12"
+        className="h-2 w-14"
         label={`레벨 ${level} 진행도`}
         value={percent}
       />
