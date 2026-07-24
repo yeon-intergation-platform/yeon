@@ -240,6 +240,15 @@ function GallerySection() {
                 <p className="mt-3 break-keep text-[14px] leading-7 text-[#5f5f5f]">
                   {entry.summary}
                 </p>
+                {entry.href ? (
+                  <a
+                    href={entry.href}
+                    className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-full border border-[#d8d0ff] px-4 text-[13px] font-bold text-[#5b3ce0] no-underline transition-colors hover:border-[#5b3ce0] hover:bg-[#f4f0ff] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#6d4aff]"
+                  >
+                    서비스 열기
+                    <ArrowIcon />
+                  </a>
+                ) : null}
               </div>
             </article>
           ))}

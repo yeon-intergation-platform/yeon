@@ -1,6 +1,6 @@
 # Domain Routing
 
-기준일: 2026-07-22
+기준일: 2026-07-24
 
 ## 목적
 
@@ -8,16 +8,16 @@
 
 ## URL 매핑
 
-| 서비스          | 기존 URL                            | 목표 URL                        | 기본 처리                       |
-| --------------- | ----------------------------------- | ------------------------------- | ------------------------------- |
-| typing-service  | `https://yeon.world/typing-service` | `https://typing.yeon.world`     | 신규 subdomain으로 308 redirect |
-| card-service    | `https://yeon.world/card-service`   | `https://card.yeon.world`       | 신규 subdomain으로 308 redirect |
-| community       | `https://yeon.world/community`      | `https://community.yeon.world`  | 신규 subdomain으로 308 redirect |
-| todo-service    | `https://yeon.world/todo-service`   | `https://todo.yeon.world`       | 신규 subdomain으로 308 redirect |
-| support         | `https://yeon.world/support`        | `https://support.yeon.world`    | 신규 subdomain으로 308 redirect |
-| news            | `https://yeon.world/news`           | `https://news.yeon.world`       | 신규 subdomain으로 308 redirect |
-| blog            | `https://yeon.world/blog`           | `https://blog.yeon.world`       | 신규 subdomain으로 308 redirect |
-| owner-portfolio | `https://yeon.world/portfolio`      | `https://portforlio.yeon.world` | 신규 subdomain으로 308 redirect |
+| 서비스          | 기존 URL                            | 목표 URL                       | 기본 처리                       |
+| --------------- | ----------------------------------- | ------------------------------ | ------------------------------- |
+| typing-service  | `https://yeon.world/typing-service` | `https://typing.yeon.world`    | 신규 subdomain으로 308 redirect |
+| card-service    | `https://yeon.world/card-service`   | `https://card.yeon.world`      | 신규 subdomain으로 308 redirect |
+| community       | `https://yeon.world/community`      | `https://community.yeon.world` | 신규 subdomain으로 308 redirect |
+| todo-service    | `https://yeon.world/todo-service`   | `https://todo.yeon.world`      | 신규 subdomain으로 308 redirect |
+| support         | `https://yeon.world/support`        | `https://support.yeon.world`   | 신규 subdomain으로 308 redirect |
+| news            | `https://yeon.world/news`           | `https://news.yeon.world`      | 신규 subdomain으로 308 redirect |
+| blog            | `https://yeon.world/blog`           | `https://blog.yeon.world`      | 신규 subdomain으로 308 redirect |
+| owner-portfolio | `https://yeon.world/portfolio`      | `https://portfolio.yeon.world` | 신규 subdomain으로 308 redirect |
 
 ## 현재 확인된 운영 라우트 근거
 
@@ -32,7 +32,8 @@ race.yeon.world   -> http://yeon-prod-race:2567
 dev.yeon.world    -> http://yeon-dev-web:3000
 db.yeon.world     -> tcp://yeon-prod-db:5432
 dbdev.yeon.world  -> tcp://yeon-dev-db:5432
-portforlio.yeon.world -> http://yeon-prod-web:3000
+portforlio.yeon.world -> http://yeon-prod-web:3000 (legacy redirect)
+portfolio.yeon.world  -> http://yeon-prod-web:3000
 Catch-all         -> http_status:404
 ```
 
@@ -44,7 +45,8 @@ Catch-all         -> http_status:404
 10 typing.yeon.world     * -> http://yeon-prod-web:3000
 11 card.yeon.world       * -> http://yeon-prod-web:3000
 12 community.yeon.world  * -> http://yeon-prod-web:3000
-19 portforlio.yeon.world * -> http://yeon-prod-web:3000 (2026-07-22, remote config v37)
+19 portforlio.yeon.world * -> http://yeon-prod-web:3000 (legacy, 2026-07-22 remote config v37)
+20 portfolio.yeon.world  * -> http://yeon-prod-web:3000
 ```
 
 ## 목표 Cloudflare Tunnel public hostname
@@ -58,7 +60,8 @@ Catch-all         -> http_status:404
 | `support.yeon.world`    | `http://yeon-prod-web:3000` | 공개 도움말 host rewrite 처리             |
 | `news.yeon.world`       | `http://yeon-prod-web:3000` | 공식 소식 host rewrite 처리               |
 | `blog.yeon.world`       | `http://yeon-prod-web:3000` | 개발 블로그 host rewrite 처리             |
-| `portforlio.yeon.world` | `http://yeon-prod-web:3000` | 공개 포트폴리오 host rewrite 처리         |
+| `portfolio.yeon.world`  | `http://yeon-prod-web:3000` | 공개 포트폴리오 host rewrite 처리         |
+| `portforlio.yeon.world` | `http://yeon-prod-web:3000` | 정상 철자 host로 308 redirect             |
 
 ## Cloudflare에서 확인할 항목
 
@@ -70,7 +73,8 @@ Catch-all         -> http_status:404
   - `support.yeon.world`
   - `news.yeon.world`
   - `blog.yeon.world`
-  - `portforlio.yeon.world`
+  - `portfolio.yeon.world`
+  - `portforlio.yeon.world` (legacy redirect)
 - 각 레코드는 Tunnel public hostname 생성으로 자동 CNAME 생성 가능 여부 확인
 - Proxy 상태는 Cloudflare proxied 사용
 - SSL/TLS 인증서가 `*.yeon.world` 또는 각 hostname을 커버하는지 확인
@@ -140,7 +144,8 @@ packages/api-contract/**
    - `support.yeon.world/*` -> `/support/*`
    - `news.yeon.world/*` -> `/news/*`
    - `blog.yeon.world/*` -> `/blog/*`
-   - `portforlio.yeon.world/*` -> `/portfolio/*`
+   - `portfolio.yeon.world/*` -> `/portfolio/*`
+   - `portforlio.yeon.world/*` -> `https://portfolio.yeon.world/*` 308 redirect
 3. 기존 path URL은 public 진입점으로 유지하지 않고 308 redirect한다.
    - `https://yeon.world/typing-service/*` -> `https://typing.yeon.world/*`
    - `https://yeon.world/card-service/*` -> `https://card.yeon.world/*`
@@ -149,7 +154,7 @@ packages/api-contract/**
    - `https://yeon.world/support/*` -> `https://support.yeon.world/*`
    - `https://yeon.world/news/*` -> `https://news.yeon.world/*`
    - `https://yeon.world/blog/*` -> `https://blog.yeon.world/*`
-   - `https://yeon.world/portfolio/*` -> `https://portforlio.yeon.world/*`
+   - `https://yeon.world/portfolio/*` -> `https://portfolio.yeon.world/*`
 4. Next.js 내부 rewrite target으로 기존 route 디렉터리는 유지한다.
 
 ## 인증/쿠키 확인 항목
@@ -174,7 +179,7 @@ https://todo.yeon.world
 https://support.yeon.world
 https://news.yeon.world
 https://blog.yeon.world
-https://portforlio.yeon.world
+https://portfolio.yeon.world
 ```
 
 ## 서비스별 검증 항목
@@ -215,7 +220,9 @@ https://portforlio.yeon.world
 
 ### owner-portfolio
 
-- `https://portforlio.yeon.world` 접속
+- `https://portfolio.yeon.world` 접속
+- `https://portfolio.yeon.world/pull-it` 접속
+- `https://portforlio.yeon.world`가 정상 철자 host로 308 redirect되는지 확인
 - `/portfolio` 기존 path가 canonical subdomain으로 redirect되는지 확인
 - 포트폴리오 PDF v22와 이력서 PDF v21 다운로드 확인
 - GitHub와 기술 블로그 외부 링크 확인
@@ -230,6 +237,8 @@ curl -I https://typing.yeon.world
 curl -I https://card.yeon.world
 curl -I https://community.yeon.world
 curl -I https://todo.yeon.world
+curl -I https://portfolio.yeon.world
+curl -I https://portfolio.yeon.world/pull-it
 curl -I https://portforlio.yeon.world
 curl -I https://yeon.world/typing-service
 curl -I https://yeon.world/card-service
@@ -244,7 +253,9 @@ WebSocket 확인은 브라우저 또는 Playwright로 확인한다.
 
 ## 배포 전 체크
 
-- Cloudflare Published application route에 `portforlio.yeon.world` 추가 완료
+- Cloudflare Published application route에 `portfolio.yeon.world` 추가 완료
+- `portforlio.yeon.world` legacy redirect route 유지
+- PULL-IT 프런트·백엔드·문서 원본 환경변수 설정 완료
 - Access 정책 확인 완료
 - 앱 라우팅 구현 완료
 - CORS/CSRF/cookie 확인 완료
@@ -259,7 +270,9 @@ WebSocket 확인은 브라우저 또는 Playwright로 확인한다.
 - `https://card.yeon.world` HTTP 200 또는 의도한 redirect
 - `https://community.yeon.world` HTTP 200 또는 의도한 redirect
 - `https://todo.yeon.world` HTTP 200 또는 의도한 redirect
-- `https://portforlio.yeon.world` HTTP 200 또는 의도한 redirect
+- `https://portfolio.yeon.world` HTTP 200
+- `https://portfolio.yeon.world/pull-it` HTTP 200
+- `https://portforlio.yeon.world` 정상 철자 host로 308 redirect
 - 기존 path URL이 canonical subdomain으로 308 redirect되는지 확인
 - 로그인 후 새 subdomain 진입 확인
 - 브라우저 콘솔 CORS 오류 없음
@@ -268,7 +281,7 @@ WebSocket 확인은 브라우저 또는 Playwright로 확인한다.
 
 ## 롤백
 
-1. Cloudflare Published application route에서 `portforlio.yeon.world`를 제거하거나 이전 origin으로 되돌린다.
+1. Cloudflare Published application route에서 `portfolio.yeon.world`를 제거하거나 이전 origin으로 되돌린다.
 2. DNS 레코드가 수동 생성되어 있으면 삭제하거나 이전 값으로 복구한다.
 3. Access Application/Policy 변경을 이전 상태로 되돌린다.
 4. 앱 코드 redirect/rewrite 변경 PR을 revert한다.

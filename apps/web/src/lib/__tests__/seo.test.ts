@@ -44,7 +44,7 @@ describe("seo", () => {
     );
     expect(buildServiceCanonicalUrl("todo")).toBe("https://todo.yeon.world/");
     expect(buildServiceCanonicalUrl("portfolio")).toBe(
-      "https://portforlio.yeon.world/"
+      "https://portfolio.yeon.world/"
     );
   });
 
@@ -101,7 +101,7 @@ describe("seo", () => {
           lastModified: undefined,
         },
         {
-          url: "https://portforlio.yeon.world",
+          url: "https://portfolio.yeon.world",
           changeFrequency: "monthly",
           priority: 0.8,
           lastModified: undefined,
@@ -242,10 +242,10 @@ describe("seo", () => {
     ]);
 
     expect(
-      getIndexableSitemapEntriesForHostname("portforlio.yeon.world")
+      getIndexableSitemapEntriesForHostname("portfolio.yeon.world")
     ).toEqual([
       {
-        url: "https://portforlio.yeon.world",
+        url: "https://portfolio.yeon.world",
         changeFrequency: "monthly",
         priority: 0.8,
         lastModified: undefined,

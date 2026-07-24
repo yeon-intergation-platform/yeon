@@ -27,9 +27,9 @@ export const SERVICE_SUBDOMAIN_ROUTES = {
     servicePath: "/today",
     publicUrl: "https://todo.yeon.world",
   },
-  "portforlio.yeon.world": {
+  "portfolio.yeon.world": {
     servicePath: "/portfolio",
-    publicUrl: "https://portforlio.yeon.world",
+    publicUrl: "https://portfolio.yeon.world",
   },
 } as const;
 
@@ -59,6 +59,9 @@ export type ServiceRouteSlug =
   (typeof SUBDOMAIN_ROUTES)[ServiceSubdomainHost]["servicePath"];
 
 const ROOT_CANONICAL_HOST = "yeon.world";
+const LEGACY_HOST_REDIRECTS = {
+  "portforlio.yeon.world": "portfolio.yeon.world",
+} as const;
 
 const REWRITE_EXCLUDED_PATH_PREFIXES = [
   "/api",
@@ -126,6 +129,26 @@ function findServiceRouteByPathname(pathname: string) {
   return Object.values(SUBDOMAIN_ROUTES).find(({ servicePath }) =>
     isAlreadyServicePath(pathname, servicePath)
   );
+}
+
+export function resolveLegacyHostnameRedirectUrl({
+  host,
+  pathname,
+  search = "",
+}: {
+  host: string | null | undefined;
+  pathname: string;
+  search?: string;
+}) {
+  const normalizedHost = normalizeRequestHostname(host);
+  const canonicalHost =
+    LEGACY_HOST_REDIRECTS[normalizedHost as keyof typeof LEGACY_HOST_REDIRECTS];
+
+  if (!canonicalHost) return null;
+
+  const redirectUrl = createYeonUrl(pathname, `https://${canonicalHost}`);
+  redirectUrl.search = search;
+  return redirectUrl;
 }
 
 export function resolveServiceSubdomainRewritePath({

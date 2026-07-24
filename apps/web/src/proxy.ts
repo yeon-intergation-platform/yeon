@@ -12,9 +12,11 @@ import {
 } from "@/lib/seo";
 import { normalizeRequestHostname } from "@/lib/request-host";
 import {
+  resolveLegacyHostnameRedirectUrl,
   resolveLegacyServicePathRedirectUrl,
   resolveServiceSubdomainRewritePath,
 } from "@/lib/subdomain-routing";
+import { resolvePullitProxyTarget } from "@/lib/pullit-proxy";
 import { AUTH_SESSION_COOKIE_NAME } from "@/server/auth/constants";
 
 const COUNSELING_SERVICE_BASE_PATH = "/counseling-service";
@@ -78,6 +80,39 @@ export function proxy(request: NextRequest) {
     redirectUrl.port = canonicalUrl.port;
 
     return NextResponse.redirect(redirectUrl, 308);
+  }
+
+  const legacyHostnameRedirectUrl = resolveLegacyHostnameRedirectUrl({
+    host: requestHost,
+    pathname,
+    search: request.nextUrl.search,
+  });
+
+  if (legacyHostnameRedirectUrl) {
+    return withSeoHeaders(
+      NextResponse.redirect(legacyHostnameRedirectUrl, 308),
+      hostname,
+      request
+    );
+  }
+
+  const pullitProxyTarget = resolvePullitProxyTarget({
+    hostname,
+    pathname,
+    search: request.nextUrl.search,
+    origins: {
+      frontend: process.env.PULLIT_FRONTEND_ORIGIN,
+      backend: process.env.PULLIT_BACKEND_ORIGIN,
+      docs: process.env.PULLIT_DOCS_ORIGIN,
+    },
+  });
+
+  if (pullitProxyTarget) {
+    return withSeoHeaders(
+      NextResponse.rewrite(pullitProxyTarget),
+      hostname,
+      request
+    );
   }
 
   const legacyServiceRedirectUrl = isSubdomainRewritePass
